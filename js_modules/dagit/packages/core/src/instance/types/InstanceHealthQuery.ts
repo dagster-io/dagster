@@ -4,6 +4,8 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
+import { RepositoryLocationLoadStatus } from "./../../types/globalTypes";
+
 // ====================================================
 // GraphQL query operation: InstanceHealthQuery
 // ====================================================
@@ -48,6 +50,7 @@ export interface InstanceHealthQuery_repositoryLocationsOrError_RepositoryLocati
   isReloadSupported: boolean;
   serverId: string | null;
   name: string;
+  loadStatus: RepositoryLocationLoadStatus;
 }
 
 export interface InstanceHealthQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocationLoadFailure_error {
@@ -60,9 +63,16 @@ export interface InstanceHealthQuery_repositoryLocationsOrError_RepositoryLocati
   id: string;
   name: string;
   error: InstanceHealthQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocationLoadFailure_error;
+  loadStatus: RepositoryLocationLoadStatus;
 }
 
-export type InstanceHealthQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes = InstanceHealthQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation | InstanceHealthQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocationLoadFailure;
+export interface InstanceHealthQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocationLoading {
+  __typename: "RepositoryLocationLoading";
+  id: string;
+  name: string;
+}
+
+export type InstanceHealthQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes = InstanceHealthQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation | InstanceHealthQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocationLoadFailure | InstanceHealthQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocationLoading;
 
 export interface InstanceHealthQuery_repositoryLocationsOrError_RepositoryLocationConnection {
   __typename: "RepositoryLocationConnection";

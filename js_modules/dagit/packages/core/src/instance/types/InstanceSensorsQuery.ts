@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { JobType, JobStatus, PipelineRunStatus, JobTickStatus } from "./../../types/globalTypes";
+import { RepositoryLocationLoadStatus, JobType, JobStatus, PipelineRunStatus, JobTickStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: InstanceSensorsQuery
@@ -50,6 +50,7 @@ export interface InstanceSensorsQuery_repositoryLocationsOrError_RepositoryLocat
   isReloadSupported: boolean;
   serverId: string | null;
   name: string;
+  loadStatus: RepositoryLocationLoadStatus;
 }
 
 export interface InstanceSensorsQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocationLoadFailure_error {
@@ -62,9 +63,16 @@ export interface InstanceSensorsQuery_repositoryLocationsOrError_RepositoryLocat
   id: string;
   name: string;
   error: InstanceSensorsQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocationLoadFailure_error;
+  loadStatus: RepositoryLocationLoadStatus;
 }
 
-export type InstanceSensorsQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes = InstanceSensorsQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation | InstanceSensorsQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocationLoadFailure;
+export interface InstanceSensorsQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocationLoading {
+  __typename: "RepositoryLocationLoading";
+  id: string;
+  name: string;
+}
+
+export type InstanceSensorsQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes = InstanceSensorsQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation | InstanceSensorsQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocationLoadFailure | InstanceSensorsQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocationLoading;
 
 export interface InstanceSensorsQuery_repositoryLocationsOrError_RepositoryLocationConnection {
   __typename: "RepositoryLocationConnection";

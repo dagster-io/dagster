@@ -4,6 +4,7 @@ import warnings
 from abc import ABC, abstractmethod
 from collections import OrderedDict, namedtuple
 from contextlib import ExitStack
+from enum import Enum
 from typing import List
 
 from dagster import check
@@ -30,7 +31,8 @@ class IWorkspace(ABC):
 
 class WorkspaceSnapshot(
     namedtuple(
-        "WorkspaceSnapshot", "location_origin_dict location_error_dict repository_locations_dict"
+        "WorkspaceSnapshot",
+        "location_origin_dict location_error_dict repository_locations_dict location_status_dict",
     )
 ):
     """
@@ -42,12 +44,19 @@ class WorkspaceSnapshot(
     at the same time the repository location was being cleaned up, we would run into errors.
     """
 
-    def __new__(cls, location_origin_dict, location_error_dict, repository_locations_dict):
-
+    def __new__(
+        cls,
+        location_origin_dict,
+        location_error_dict,
+        repository_locations_dict,
+        location_status_dict,
+    ):
         for location_name in location_origin_dict:
             check.invariant(
-                location_name in location_error_dict or location_name in repository_locations_dict,
-                f"{location_name} is listed as an origin but has neither a location nor an error",
+                location_name in location_error_dict
+                or location_name in repository_locations_dict
+                or location_status_dict[location_name] == WorkspaceLocationLoadStatus.LOADING,
+                f"{location_name} is listed as an origin but is not loading and has neither a location nor an error",
             )
 
         return super(WorkspaceSnapshot, cls).__new__(
@@ -55,6 +64,7 @@ class WorkspaceSnapshot(
             location_origin_dict,
             location_error_dict,
             repository_locations_dict,
+            location_status_dict,
         )
 
     def is_reload_supported(self, location_name):
@@ -75,6 +85,16 @@ class WorkspaceSnapshot(
     def get_repository_location_error(self, location_name):
         check.str_param(location_name, "location_name")
         return self.location_error_dict[location_name]
+
+    def get_load_status(self, location_name):
+        check.str_param(location_name, "location_name")
+        return self.location_status_dict[location_name]
+
+
+# For locations that are loaded asynchronously
+class WorkspaceLocationLoadStatus(Enum):
+    LOADING = "LOADING"  # Waiting for location to load or update
+    LOADED = "LOADED"  # Finished loading (may be an error)
 
 
 class Workspace(IWorkspace):
@@ -108,8 +128,10 @@ class Workspace(IWorkspace):
                 ProcessGrpcServerRegistry(reload_interval=0, heartbeat_ttl=30)
             )
 
+        self._location_origin_dict = OrderedDict()
         self._location_dict = {}
         self._location_error_dict = {}
+        self._location_status_dict = {}
 
         with self._lock:
             self._load_workspace()
@@ -129,6 +151,7 @@ class Workspace(IWorkspace):
         self._location_origin_dict = OrderedDict()
         self._location_dict = {}
         self._location_error_dict = {}
+        self._location_status_dict = {}
         for origin in repository_location_origins:
             check.invariant(
                 self._location_origin_dict.get(origin.location_name) is None,
@@ -215,6 +238,7 @@ class Workspace(IWorkspace):
                     location_name=location_name, error_string=error_info.to_string()
                 )
             )
+        self._location_status_dict[location_name] = WorkspaceLocationLoadStatus.LOADED
 
     def create_snapshot(self):
         with self._lock:
@@ -222,6 +246,7 @@ class Workspace(IWorkspace):
                 self._location_origin_dict.copy(),
                 self._location_error_dict.copy(),
                 self._location_dict.copy(),
+                self._location_status_dict.copy(),
             )
 
     @property
@@ -274,6 +299,7 @@ class Workspace(IWorkspace):
         for location in self.repository_locations:
             location.cleanup()
 
+        self._location_origin_dict = OrderedDict()
         self._location_dict = {}
         self._location_error_dict = {}
 

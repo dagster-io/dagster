@@ -28,7 +28,7 @@ const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
   const manyRepos = nodes.length > 1;
 
   const allEntries = nodes.reduce((accum, repoLocation) => {
-    if (repoLocation.__typename === 'RepositoryLocationLoadFailure') {
+    if (repoLocation.__typename !== 'RepositoryLocation') {
       return accum;
     }
 

@@ -56,6 +56,12 @@ type RepositoryLocation {
   environmentPath: String
   repositories: [Repository!]!
   serverId: String
+  loadStatus: RepositoryLocationLoadStatus!
+}
+
+enum RepositoryLocationLoadStatus {
+  LOADING
+  LOADED
 }
 
 type Pipeline implements SolidContainer & IPipelineSnapshot {
@@ -718,12 +724,18 @@ type RepositoryLocationConnection {
   nodes: [RepositoryLocationOrLoadFailure!]!
 }
 
-union RepositoryLocationOrLoadFailure = RepositoryLocation | RepositoryLocationLoadFailure
+union RepositoryLocationOrLoadFailure = RepositoryLocation | RepositoryLocationLoadFailure | RepositoryLocationLoading
 
 type RepositoryLocationLoadFailure {
   id: ID!
   name: String!
   error: PythonError!
+  loadStatus: RepositoryLocationLoadStatus!
+}
+
+type RepositoryLocationLoading {
+  id: ID!
+  name: String!
 }
 
 union PipelineOrError = Pipeline | PipelineNotFoundError | InvalidSubsetError | PythonError

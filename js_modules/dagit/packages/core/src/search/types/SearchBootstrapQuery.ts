@@ -13,7 +13,7 @@ export interface SearchBootstrapQuery_repositoryLocationsOrError_PythonError {
 }
 
 export interface SearchBootstrapQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocationLoadFailure {
-  __typename: "RepositoryLocationLoadFailure";
+  __typename: "RepositoryLocationLoadFailure" | "RepositoryLocationLoading";
 }
 
 export interface SearchBootstrapQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation_repositories_pipelines {

@@ -47,6 +47,7 @@ const ROOT_REPOSITORIES_QUERY = gql`
           __typename
           ... on RepositoryLocation {
             id
+            loadStatus
             isReloadSupported
             serverId
             name
@@ -68,9 +69,14 @@ const ROOT_REPOSITORIES_QUERY = gql`
           ... on RepositoryLocationLoadFailure {
             id
             name
+            loadStatus
             error {
               ...PythonErrorFragment
             }
+          }
+          ... on RepositoryLocationLoading {
+            id
+            name
           }
         }
       }
@@ -92,6 +98,7 @@ export const REPOSITORY_LOCATIONS_FRAGMENT = gql`
           isReloadSupported
           serverId
           name
+          loadStatus
         }
         ... on RepositoryLocationLoadFailure {
           id
@@ -99,6 +106,11 @@ export const REPOSITORY_LOCATIONS_FRAGMENT = gql`
           error {
             message
           }
+          loadStatus
+        }
+        ... on RepositoryLocationLoading {
+          id
+          name
         }
       }
     }
@@ -139,7 +151,7 @@ const useWorkspaceState = () => {
     }
 
     options = data.repositoryLocationsOrError.nodes.reduce((accum, repositoryLocation) => {
-      if (repositoryLocation.__typename === 'RepositoryLocationLoadFailure') {
+      if (repositoryLocation.__typename !== 'RepositoryLocation') {
         return accum;
       }
       const reposForLocation = repositoryLocation.repositories.map((repository) => {

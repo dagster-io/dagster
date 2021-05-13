@@ -13,16 +13,22 @@ import {Table} from '../ui/Table';
 import {WorkspaceContext} from './WorkspaceContext';
 import {RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes as LocationOrError} from './types/RootRepositoriesQuery';
 
-const LocationStatus: React.FC<{locationOrError: LocationOrError; reloading: boolean}> = (
-  props,
-) => {
-  const {locationOrError, reloading} = props;
+const LocationStatus: React.FC<{locationOrError: LocationOrError}> = (props) => {
+  const {locationOrError} = props;
   const [showDialog, setShowDialog] = React.useState(false);
 
-  if (reloading) {
+  if (locationOrError.__typename === 'RepositoryLocationLoading') {
     return (
       <Tag minimal intent="primary">
-        Reloading...
+        Loading...
+      </Tag>
+    );
+  }
+
+  if (locationOrError.loadStatus === 'LOADING') {
+    return (
+      <Tag minimal intent="primary">
+        Updating...
       </Tag>
     );
   }
@@ -60,6 +66,7 @@ const LocationStatus: React.FC<{locationOrError: LocationOrError; reloading: boo
       </>
     );
   }
+
   return (
     <Tag minimal intent="success">
       Loaded
@@ -69,10 +76,9 @@ const LocationStatus: React.FC<{locationOrError: LocationOrError; reloading: boo
 
 const ReloadButton: React.FC<{
   location: string;
-  onReload: (location: string) => Promise<any>;
 }> = (props) => {
-  const {location, onReload} = props;
-  const {reloading, onClick} = useRepositoryLocationReload(location, () => onReload(location));
+  const {location} = props;
+  const {reloading, onClick} = useRepositoryLocationReload(location);
   const {canReloadRepositoryLocation} = usePermissions();
 
   if (!canReloadRepositoryLocation) {
@@ -95,7 +101,6 @@ const ReloadButton: React.FC<{
 
 export const RepositoryLocationsList = () => {
   const {locations, loading} = React.useContext(WorkspaceContext);
-  const [reloading, setReloading] = React.useState<string | null>(null);
 
   if (loading && !locations.length) {
     return <div style={{color: Colors.GRAY3}}>Loading…</div>;
@@ -104,11 +109,6 @@ export const RepositoryLocationsList = () => {
   if (!locations.length) {
     return <NonIdealState icon="cube" title="No repository locations!" />;
   }
-
-  const onReload = async (name: string) => {
-    setReloading(name);
-    setReloading(null);
-  };
 
   return (
     <Table>
@@ -123,10 +123,10 @@ export const RepositoryLocationsList = () => {
           <tr key={location.name}>
             <td style={{width: '30%'}}>{location.name}</td>
             <td style={{width: '20%'}}>
-              <LocationStatus locationOrError={location} reloading={location.name === reloading} />
+              <LocationStatus locationOrError={location} />
             </td>
             <td style={{width: '100%'}}>
-              <ReloadButton location={location.name} onReload={onReload} />
+              <ReloadButton location={location.name} />
             </td>
           </tr>
         ))}

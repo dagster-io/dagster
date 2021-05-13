@@ -1,7 +1,11 @@
 from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional, Union
 
 from dagster import check
-from dagster.cli.workspace.workspace import Workspace, WorkspaceSnapshot
+from dagster.cli.workspace.workspace import (
+    Workspace,
+    WorkspaceLocationLoadStatus,
+    WorkspaceSnapshot,
+)
 from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.host_representation import (
     ExternalExecutionPlan,
@@ -63,6 +67,9 @@ class WorkspaceRequestContext(NamedTuple):
 
     def get_repository_location(self, name: str) -> RepositoryLocation:
         return self.repository_locations_dict[name]
+
+    def get_load_status(self, name: str) -> WorkspaceLocationLoadStatus:
+        return self.workspace_snapshot.get_load_status(name)
 
     def has_repository_location_error(self, name: str) -> bool:
         return self.workspace_snapshot.has_repository_location_error(name)

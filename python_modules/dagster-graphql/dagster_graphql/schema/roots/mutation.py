@@ -11,6 +11,7 @@ from ...implementation.execution import (
     wipe_assets,
 )
 from ...implementation.external import (
+    fetch_repository_location,
     fetch_repository_locations,
     get_full_external_pipeline_or_raise,
 )
@@ -324,13 +325,7 @@ class GrapheneReloadRepositoryLocationMutation(graphene.Mutation):
         # our current WorkspaceRequestContext outdated. Therefore, `reload_repository_location` returns
         # an updated WorkspaceRequestContext for us to use.
         new_context = graphene_info.context.reload_repository_location(location_name)
-
-        if new_context.has_repository_location(location_name):
-            return GrapheneRepositoryLocation(new_context.get_repository_location(location_name))
-        else:
-            return GrapheneRepositoryLocationLoadFailure(
-                location_name, new_context.get_repository_location_error(location_name)
-            )
+        return fetch_repository_location(new_context, location_name)
 
 
 class GrapheneReloadWorkspaceMutationResult(graphene.Union):

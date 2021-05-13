@@ -8,6 +8,10 @@
 // GraphQL mutation operation: ReloadWorkspaceMutation
 // ====================================================
 
+export interface ReloadWorkspaceMutation_reloadWorkspace_RepositoryLocationConnection_nodes_RepositoryLocationLoading {
+  __typename: "RepositoryLocationLoading";
+}
+
 export interface ReloadWorkspaceMutation_reloadWorkspace_RepositoryLocationConnection_nodes_RepositoryLocation_repositories_pipelines {
   __typename: "Pipeline";
   id: string;
@@ -38,7 +42,7 @@ export interface ReloadWorkspaceMutation_reloadWorkspace_RepositoryLocationConne
   error: ReloadWorkspaceMutation_reloadWorkspace_RepositoryLocationConnection_nodes_RepositoryLocationLoadFailure_error;
 }
 
-export type ReloadWorkspaceMutation_reloadWorkspace_RepositoryLocationConnection_nodes = ReloadWorkspaceMutation_reloadWorkspace_RepositoryLocationConnection_nodes_RepositoryLocation | ReloadWorkspaceMutation_reloadWorkspace_RepositoryLocationConnection_nodes_RepositoryLocationLoadFailure;
+export type ReloadWorkspaceMutation_reloadWorkspace_RepositoryLocationConnection_nodes = ReloadWorkspaceMutation_reloadWorkspace_RepositoryLocationConnection_nodes_RepositoryLocationLoading | ReloadWorkspaceMutation_reloadWorkspace_RepositoryLocationConnection_nodes_RepositoryLocation | ReloadWorkspaceMutation_reloadWorkspace_RepositoryLocationConnection_nodes_RepositoryLocationLoadFailure;
 
 export interface ReloadWorkspaceMutation_reloadWorkspace_RepositoryLocationConnection {
   __typename: "RepositoryLocationConnection";

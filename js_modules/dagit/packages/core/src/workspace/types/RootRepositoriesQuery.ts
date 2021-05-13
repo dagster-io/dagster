@@ -4,6 +4,8 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
+import { RepositoryLocationLoadStatus } from "./../../types/globalTypes";
+
 // ====================================================
 // GraphQL query operation: RootRepositoriesQuery
 // ====================================================
@@ -46,6 +48,7 @@ export interface RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLoca
 export interface RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation {
   __typename: "RepositoryLocation";
   id: string;
+  loadStatus: RepositoryLocationLoadStatus;
   isReloadSupported: boolean;
   serverId: string | null;
   name: string;
@@ -69,10 +72,17 @@ export interface RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLoca
   __typename: "RepositoryLocationLoadFailure";
   id: string;
   name: string;
+  loadStatus: RepositoryLocationLoadStatus;
   error: RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocationLoadFailure_error;
 }
 
-export type RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes = RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation | RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocationLoadFailure;
+export interface RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocationLoading {
+  __typename: "RepositoryLocationLoading";
+  id: string;
+  name: string;
+}
+
+export type RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes = RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation | RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocationLoadFailure | RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocationLoading;
 
 export interface RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection {
   __typename: "RepositoryLocationConnection";

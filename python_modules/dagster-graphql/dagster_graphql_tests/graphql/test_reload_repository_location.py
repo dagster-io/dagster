@@ -59,7 +59,12 @@ class TestReloadWorkspace(
 
             assert len(nodes) == 1
 
-            assert all([node["__typename"] == "RepositoryLocation" for node in nodes])
+            assert all(
+                [
+                    node["__typename"] == "RepositoryLocation" and node["loadStatus"] == "LOADED"
+                    for node in nodes
+                ]
+            )
 
             # Simulate adding an origin with an error, reload
 
@@ -84,12 +89,23 @@ class TestReloadWorkspace(
             nodes = result.data["reloadWorkspace"]["nodes"]
             assert len(nodes) == 3
 
-            assert len([node for node in nodes if node["__typename"] == "RepositoryLocation"]) == 2
+            assert (
+                len(
+                    [
+                        node
+                        for node in nodes
+                        if node["__typename"] == "RepositoryLocation"
+                        and node["loadStatus"] == "LOADED"
+                    ]
+                )
+                == 2
+            )
             failures = [
                 node for node in nodes if node["__typename"] == "RepositoryLocationLoadFailure"
             ]
             assert len(failures) == 1
             assert failures[0]["name"] == "error_location"
+            assert failures[0]["loadStatus"] == "LOADED"
 
             # Add another origin without an error, reload
 
@@ -266,6 +282,7 @@ class TestReloadRepositoriesOutOfProcess(
         assert result.data["reloadRepositoryLocation"]
         assert result.data["reloadRepositoryLocation"]["__typename"] == "RepositoryLocation"
         assert result.data["reloadRepositoryLocation"]["name"] == "test"
+        assert result.data["reloadRepositoryLocation"]["loadStatus"] == "LOADED"
         repositories = result.data["reloadRepositoryLocation"]["repositories"]
         assert len(repositories) == 1
         assert repositories[0]["name"] == "test_repo"
@@ -286,12 +303,14 @@ mutation ($repositoryLocationName: String!) {
           }
         }
         isReloadSupported
+        loadStatus
       }
       ... on RepositoryLocationLoadFailure {
           name
           error {
               message
           }
+          loadStatus
       }
    }
 }
@@ -307,6 +326,7 @@ mutation {
           ... on RepositoryLocation {
             id
             name
+            loadStatus
             repositories {
               name
             }
@@ -315,6 +335,7 @@ mutation {
           ... on RepositoryLocationLoadFailure {
             id
             name
+            loadStatus
             error {
               message
             }
@@ -343,6 +364,7 @@ class TestReloadRepositoriesManagedGrpc(
         assert result.data["reloadRepositoryLocation"]
         assert result.data["reloadRepositoryLocation"]["__typename"] == "RepositoryLocation"
         assert result.data["reloadRepositoryLocation"]["name"] == "test"
+        assert result.data["reloadRepositoryLocation"]["loadStatus"] == "LOADED"
 
         repositories = result.data["reloadRepositoryLocation"]["repositories"]
         assert len(repositories) == 1

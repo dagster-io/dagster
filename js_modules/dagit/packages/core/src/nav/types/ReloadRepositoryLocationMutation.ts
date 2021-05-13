@@ -4,6 +4,8 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
+import { RepositoryLocationLoadStatus } from "./../../types/globalTypes";
+
 // ====================================================
 // GraphQL mutation operation: ReloadRepositoryLocationMutation
 // ====================================================
@@ -25,6 +27,7 @@ export interface ReloadRepositoryLocationMutation_reloadRepositoryLocation_Repos
   __typename: "RepositoryLocation";
   id: string;
   repositories: ReloadRepositoryLocationMutation_reloadRepositoryLocation_RepositoryLocation_repositories[];
+  loadStatus: RepositoryLocationLoadStatus;
 }
 
 export interface ReloadRepositoryLocationMutation_reloadRepositoryLocation_ReloadNotSupported {
@@ -46,6 +49,7 @@ export interface ReloadRepositoryLocationMutation_reloadRepositoryLocation_Repos
   __typename: "RepositoryLocationLoadFailure";
   id: string;
   error: ReloadRepositoryLocationMutation_reloadRepositoryLocation_RepositoryLocationLoadFailure_error;
+  loadStatus: RepositoryLocationLoadStatus;
 }
 
 export type ReloadRepositoryLocationMutation_reloadRepositoryLocation = ReloadRepositoryLocationMutation_reloadRepositoryLocation_RepositoryLocation | ReloadRepositoryLocationMutation_reloadRepositoryLocation_ReloadNotSupported | ReloadRepositoryLocationMutation_reloadRepositoryLocation_RepositoryLocationNotFound | ReloadRepositoryLocationMutation_reloadRepositoryLocation_RepositoryLocationLoadFailure;

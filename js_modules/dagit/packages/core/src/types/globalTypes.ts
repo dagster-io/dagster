@@ -119,6 +119,11 @@ export enum PipelineRunStatus {
   SUCCESS = "SUCCESS",
 }
 
+export enum RepositoryLocationLoadStatus {
+  LOADED = "LOADED",
+  LOADING = "LOADING",
+}
+
 export enum StepEventStatus {
   FAILURE = "FAILURE",
   SKIPPED = "SKIPPED",
