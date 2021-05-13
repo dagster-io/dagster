@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.11.9
+
+### New
+
+- In Dagit, assets can now be viewed with an `asOf` URL parameter, which shows a snapshot of the asset at the provided timestamp, including parent materializations as of that time.
+- [Dagit] Queries and Mutations now use HTTP instead of a websocket-based connection. 
+
+### Bugfixes
+
+- A regression in 0.11.8 where composites would fail to render in the right side bar in Dagit has been fixed.
+- `A dependency conflict in `make dev_install` has been fixed.
+- [dagster-python-client] `reload_repository_location` and `submit_pipeline_execution` have been fixed - the underlying GraphQL queries had a missing inline fragment case. 
+
+### Community Contributions
+
+- AWS S3 resources now support named profiles (thanks @deveshi!)
+- The Dagit ingress path is now configurable in our Helm charts (thanks @orf!)
+- Dagstermill’s use of temporary files is now supported across operating systems (thanks @slamer59!)
+- Deploying with Helm documentation has been updated to reflect the correct name for “dagster-user-deployments” (thanks @hebo-yang!)
+- Deploying with Helm documentation has been updated to suggest naming your release “dagster” (thanks @orf!)
+- Solids documentation has been updated to remove a typo (thanks @dwallace0723!)
+- Schedules documentation has been updated to remove a typo (thanks @gdoron!)
+
 ## 0.11.8
 
 ### New
