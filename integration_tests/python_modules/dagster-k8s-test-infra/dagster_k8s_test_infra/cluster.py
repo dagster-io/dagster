@@ -43,7 +43,7 @@ class ClusterConfig(namedtuple("_ClusterConfig", "name kubeconfig_file")):
 def define_cluster_provider_fixture(additional_kind_images=None):
     @pytest.fixture(scope="session")
     def _cluster_provider(request):
-        from .kind import kind_cluster_exists, kind_cluster, kind_load_images
+        from .kind import kind_cluster, kind_load_images
 
         if IS_BUILDKITE:
             print("Installing ECR credentials...")
@@ -61,10 +61,8 @@ def define_cluster_provider_fixture(additional_kind_images=None):
             # overhead of cluster setup and teardown
             should_cleanup = True if IS_BUILDKITE else not request.config.getoption("--no-cleanup")
 
-            existing_cluster = kind_cluster_exists(cluster_name)
-
             with kind_cluster(cluster_name, should_cleanup=should_cleanup) as cluster_config:
-                if not IS_BUILDKITE and not existing_cluster:
+                if not IS_BUILDKITE:
                     docker_image = get_test_project_docker_image()
                     try:
                         client = docker.from_env()
