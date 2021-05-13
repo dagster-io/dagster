@@ -71,29 +71,26 @@ def sensor_B(_context):
 
 
 # start_cursor_sensors_marker
-def build_run_key(filename, mtime):
-    return f"{filename}:{str(mtime)}"
-
-
-def parse_run_key(run_key):
-    parts = run_key.split(":")
-    return parts[0], float(parts[1])
-
-
 @sensor(pipeline_name="log_file_pipeline")
 def my_directory_sensor_cursor(context):
-    last_mtime = parse_run_key(context.last_run_key)[1] if context.last_run_key else None
+    last_mtime = float(context.cursor) if context.cursor else 0
 
+    max_mtime = last_mtime
     for filename in os.listdir(MY_DIRECTORY):
         filepath = os.path.join(MY_DIRECTORY, filename)
         if os.path.isfile(filepath):
             fstats = os.stat(filepath)
             file_mtime = fstats.st_mtime
-            if file_mtime > last_mtime:
-                # the run key should include mtime if we want to kick off new runs based on file modifications
-                run_key = build_run_key(filename, file_mtime)
-                run_config = ({"solids": {"process_file": {"config": {"filename": filename}}}},)
-                yield RunRequest(run_key=run_key, run_config=run_config)
+            if file_mtime <= last_mtime:
+                continue
+
+            # the run key should include mtime if we want to kick off new runs based on file modifications
+            run_key = f"{filename}:{str(file_mtime)}"
+            run_config = {"solids": {"process_file": {"config": {"filename": filename}}}}
+            yield RunRequest(run_key=run_key, run_config=run_config)
+            max_mtime = max(max_mtime, file_mtime)
+
+    context.update_cursor(max_mtime)
 
 
 # end_cursor_sensors_marker
@@ -124,16 +121,20 @@ from dagster import AssetKey
 @sensor(pipeline_name="my_pipeline")
 def my_asset_sensor(context):
     events = context.instance.events_for_asset_key(
-        AssetKey("my_table"), after_cursor=context.last_run_key, ascending=False, limit=1
+        AssetKey("my_table"), after_cursor=context.cursor, ascending=False, limit=1
     )
-    if events:
-        record_id, event = events[0]  # take the most recent materialization
-        yield RunRequest(
-            run_key=str(record_id), run_config={}, tags={"source_pipeline": event.pipeline_name}
-        )
+    if not events:
+        return
+
+    record_id, event = events[0]  # take the most recent materialization
+    yield RunRequest(
+        run_key=str(record_id), run_config={}, tags={"source_pipeline": event.pipeline_name}
+    )
+    context.update_cursor(str(record_id))
 
 
 # end_asset_sensors_marker
+
 
 # start_s3_sensors_marker
 from dagster_aws.s3.sensor import get_s3_keys

@@ -9,12 +9,13 @@ Sensors allow you to instigate runs based on any external state change.
 
 ## Relevant APIs
 
-| Name                                    | Description                                                                                                                                                                                                |
-| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| <PyObject object="sensor" decorator />  | The decorator used to define a sensor. The decorated function is called the `evaluation_fn`. The decorator returns a <PyObject object="SensorDefinition" />                                                |
-| <PyObject object="RunRequest" />        | The sensor evaluation function can yield one or more run requests. Each run request creates a pipeline run.                                                                                                |
-| <PyObject object="SkipReason" />        | If a sensor evaluation doesn't yield any run requests, it can instead yield a skip reason to log why the evaluation was skipped or why there were no events to be processed.                               |
-| <PyObject object="SensorDefinition"  /> | Class for sensors. You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="sensor" decorator /> which returns a <PyObject object="SensorDefinition"  /> |
+| Name                                          | Description                                                                                                                                                                                                |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject object="sensor" decorator />        | The decorator used to define a sensor. The decorated function is called the `evaluation_fn`. The decorator returns a <PyObject object="SensorDefinition" />                                                |
+| <PyObject object="RunRequest" />              | The sensor evaluation function can yield one or more run requests. Each run request creates a pipeline run.                                                                                                |
+| <PyObject object="SkipReason" />              | If a sensor evaluation doesn't yield any run requests, it can instead yield a skip reason to log why the evaluation was skipped or why there were no events to be processed.                               |
+| <PyObject object="SensorDefinition"  />       | Class for sensors. You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="sensor" decorator /> which returns a <PyObject object="SensorDefinition"  /> |
+| <PyObject object="SensorExecutionContext"  /> | The context object passed to a sensor evaluation function.                                                                                                                                                 |
 
 ## Overview
 
@@ -102,37 +103,37 @@ Run keys allow you to write sensor evaluation functions that declaratively descr
 
 When writing a sensor that deals with high-volume events, it might not be feasible to `yield` a <PyObject object="RunRequest"/> during every sensor evaluation. For example, you may have an `s3` storage bucket that contains thousands of files.
 
-When writing a sensor for such event sources, you can use run keys to maintain a cursor that limits the number of yielded run requests for previously processed events. The sensor API provides the last evaluated run key to serve as this cursor:
+When writing a sensor for such event sources, you can maintain a cursor that limits the number of yielded run requests for previously processed events. The sensor context, provided to every sensor evaluation function, has a `cursor` property and a `update_cursor` method for sensors to track state across evaluations.
 
-- `last_run_key`: A cursor field on <PyObject object="SensorExecutionContext"/> that returns the run key of the last run requested by a previous sensor evaluation.
+- `cursor`: A cursor field on <PyObject object="SensorExecutionContext"/> that returns the last persisted cursor value from a previous evaluation.
+- `update_cursor`: A method on <PyObject object="SensorExecutionContext"/> that takes a string to persist and make available to future evaluations.
 
-Here is an example of our directory file sensor using `last_run_key` as a cursor for updated files.
+Here is a somewhat contrived example of our directory file sensor using a cursor for updated files.
 
 ```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_cursor_sensors_marker endbefore=end_cursor_sensors_marker
-def build_run_key(filename, mtime):
-    return f"{filename}:{str(mtime)}"
-
-
-def parse_run_key(run_key):
-    parts = run_key.split(":")
-    return parts[0], float(parts[1])
-
-
 @sensor(pipeline_name="log_file_pipeline")
 def my_directory_sensor_cursor(context):
-    last_mtime = parse_run_key(context.last_run_key)[1] if context.last_run_key else None
+    last_mtime = float(context.cursor) if context.cursor else 0
 
+    max_mtime = last_mtime
     for filename in os.listdir(MY_DIRECTORY):
         filepath = os.path.join(MY_DIRECTORY, filename)
         if os.path.isfile(filepath):
             fstats = os.stat(filepath)
             file_mtime = fstats.st_mtime
-            if file_mtime > last_mtime:
-                # the run key should include mtime if we want to kick off new runs based on file modifications
-                run_key = build_run_key(filename, file_mtime)
-                run_config = ({"solids": {"process_file": {"config": {"filename": filename}}}},)
-                yield RunRequest(run_key=run_key, run_config=run_config)
+            if file_mtime <= last_mtime:
+                continue
+
+            # the run key should include mtime if we want to kick off new runs based on file modifications
+            run_key = f"{filename}:{str(file_mtime)}"
+            run_config = {"solids": {"process_file": {"config": {"filename": filename}}}}
+            yield RunRequest(run_key=run_key, run_config=run_config)
+            max_mtime = max(max_mtime, file_mtime)
+
+    context.update_cursor(max_mtime)
 ```
+
+For sensors that consume multiple event streams, you may need to serialize and deserialize a more complex data structure in and out of the cursor string to keep track of the sensor's progress over the multiple streams.
 
 ## Evaluation Interval
 
@@ -238,13 +239,16 @@ from dagster import AssetKey
 @sensor(pipeline_name="my_pipeline")
 def my_asset_sensor(context):
     events = context.instance.events_for_asset_key(
-        AssetKey("my_table"), after_cursor=context.last_run_key, ascending=False, limit=1
+        AssetKey("my_table"), after_cursor=context.cursor, ascending=False, limit=1
     )
-    if events:
-        record_id, event = events[0]  # take the most recent materialization
-        yield RunRequest(
-            run_key=str(record_id), run_config={}, tags={"source_pipeline": event.pipeline_name}
-        )
+    if not events:
+        return
+
+    record_id, event = events[0]  # take the most recent materialization
+    yield RunRequest(
+        run_key=str(record_id), run_config={}, tags={"source_pipeline": event.pipeline_name}
+    )
+    context.update_cursor(str(record_id))
 ```
 
 ### Pipeline failure sensor
