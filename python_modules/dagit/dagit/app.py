@@ -209,20 +209,14 @@ def instantiate_app_with_views(
                 make rebuild_dagit"""
             )
 
-    def error_redirect(_path):
-        return index_view()
-
     bp.add_url_rule("/", "index_view", index_view)
+    bp.add_url_rule("/<path:path>", "catch_all", index_view)
+
     bp.context_processor(lambda: {"app_path_prefix": app_path_prefix})
 
     app.app_protocol = lambda environ_path_info: "graphql-ws"
     app.register_blueprint(bp)
-    app.register_error_handler(404, error_redirect)
-
-    # if the user asked for a path prefix, handle the naked domain just in case they are not
-    # filtering inbound traffic elsewhere and redirect to the path prefix.
-    if app_path_prefix:
-        app.add_url_rule("/", "force-path-prefix", lambda: redirect(app_path_prefix, 301))
+    app.register_error_handler(404, lambda path: redirect(app_path_prefix or "/", 301))
 
     CORS(app)
     return app

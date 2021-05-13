@@ -66,12 +66,12 @@ def test_smoke_app(gen_instance):
             assert len(data["errors"]) == 1
             assert "must not have a sub selection" in data["errors"][0]["message"]
 
-            # Missing routes return the index.html file of the Dagit react app, so the user
+            # Missing routes redirect to the index.html file of the Dagit react app, so the user
             # gets our UI when they navigate to "synthetic" react router URLs.
             result = client.get("static/foo/bar")
-            assert result.status_code == 200
-            assert "You need to enable JavaScript to run this app." in result.data.decode("utf-8")
+            assert result.status_code == 301
+            assert result.headers["Location"] == "http://localhost/"
 
             result = client.get("pipelines/foo")
-            assert result.status_code == 200
-            assert "You need to enable JavaScript to run this app." in result.data.decode("utf-8")
+            assert result.status_code == 301
+            assert result.headers["Location"] == "http://localhost/"
