@@ -297,5 +297,6 @@ class Workspace(IWorkspace):
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
-        self._cleanup_locations()
+        with self._lock:
+            self._cleanup_locations()
         self._stack.close()
