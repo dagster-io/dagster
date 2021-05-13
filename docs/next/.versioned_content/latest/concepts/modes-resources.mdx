@@ -9,11 +9,11 @@ Resources provide a way to manage dependencies to external APIs. Together with m
 
 ## Relevant APIs
 
-| Name                                     | Description                                                                                                                                                                                                                 |
-| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| <PyObject object="resource" decorator /> | The decorator used to define resources. The decorated function is called a `resource_fn`. The decorator returns a <PyObject object="ResourceDefinition" />.                                                                 |
-| <PyObject object="ResourceDefinition" /> | Class for resource definitions. You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="resource" decorator /> which returns a <PyObject object="ResourceDefinition" />. |
-| <PyObject object="ModeDefinition"     /> | Class used to define a pipeline mode.                                                                                                                                                                                       |
+| Name                                     | Description                                                                                                                                                                                                        |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| <PyObject object="resource" decorator /> | The decorator used to define resources. The decorated function is called a `resource_fn`. The decorator returns a <PyObject object="ResourceDefinition" />.                                                        |
+| <PyObject object="ResourceDefinition" /> | Base class for solids. You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="resource" decorator /> which returns a <PyObject object="ResourceDefinition" />. |
+| <PyObject object="ModeDefinition"     /> | Base class used to define a pipeline mode.                                                                                                                                                                         |
 
 ## Overview
 

@@ -34,7 +34,7 @@ from dagster import pipeline, solid
 
 
 @solid
-def download_cereals():
+def download_cereals(_):
     response = requests.get("https://docs.dagster.io/assets/cereal.csv")
     lines = response.text.split("\n")
     return [row for row in csv.DictReader(lines)]
@@ -51,7 +51,7 @@ def serial_pipeline():
     find_sugariest(download_cereals())
 ```
 
-You'll see that we've modified our existing `download_cereals` solid to return an output, in this case the data frame representing the cereals dataset. We no longer log from this solid, so we no longer need the context argument here.
+You'll see that we've modified our existing `download_cereals` solid to return an output, in this case the data frame representing the cereals dataset.
 
 We've defined our new solid, `find_sugariest`, to take a user-defined input, `cereals`, in addition to the system-provided <PyObject module="dagster" object="SolidExecutionContext"
 displayText="context" /> object.
