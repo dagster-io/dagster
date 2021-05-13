@@ -1,5 +1,3 @@
-from datetime import timedelta
-
 from dagster import DagsterInvariantViolationError, check
 from dagster_pandas.constraints import (
     CategoricalColumnConstraint,
