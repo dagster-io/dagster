@@ -116,7 +116,15 @@ const SingleRepoSummary: React.FC<{fullWidth: boolean; repoAddress: RepoAddress}
           <Tooltip
             inheritDarkTheme={false}
             content={
-              <Reloading>{reloading ? 'Reloading…' : `Reload location ${location}`}</Reloading>
+              <Reloading>
+                {reloading ? (
+                  'Reloading…'
+                ) : (
+                  <>
+                    Reload location <strong>{repoAddress.location}</strong>
+                  </>
+                )}
+              </Reloading>
             }
           >
             {reloading ? (

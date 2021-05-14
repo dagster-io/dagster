@@ -35,7 +35,17 @@ export const RepositoryLink: React.FC<{repoAddress: RepoAddress}> = ({repoAddres
             e.keyCode === 82 && e.altKey && featureEnabled(FeatureFlag.LeftNav)
           }
         >
-          <ReloadTooltip content={reloading ? 'Reloading…' : `Reload location ${location}`}>
+          <ReloadTooltip
+            content={
+              reloading ? (
+                'Reloading…'
+              ) : (
+                <>
+                  Reload location <strong>{location}</strong>
+                </>
+              )
+            }
+          >
             {reloading ? (
               <Spinner purpose="body-text" />
             ) : (
