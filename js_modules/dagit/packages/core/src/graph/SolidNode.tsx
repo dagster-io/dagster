@@ -242,7 +242,9 @@ export class SolidNode extends React.Component<ISolidNodeProps> {
           />
         ))}
 
-        {configField && <SolidConfigPort x={x + width - 33} y={y - 13} minified={minified} />}
+        {configField && configField.configType.key !== 'Any' ? (
+          <SolidConfigPort x={x + width - 33} y={y - 13} minified={minified} />
+        ) : null}
 
         {tags.length > 0 && (
           <SolidTags x={x} y={y + height} width={width + 5} minified={minified} tags={tags} />
