@@ -1,10 +1,10 @@
 import * as React from 'react';
 
-import {Permissions} from './Permissions';
+import {PermissionsFromJSON} from './Permissions';
 
 export type AppContextValue = {
   basePath: string;
-  permissions: Permissions;
+  permissions: PermissionsFromJSON;
   rootServerURI: string;
   websocketURI: string;
 };

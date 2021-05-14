@@ -5,7 +5,7 @@ import {App} from '@dagit/core/app/App';
 import {AppCache} from '@dagit/core/app/AppCache';
 import {AppProvider} from '@dagit/core/app/AppProvider';
 import {AppTopNav} from '@dagit/core/app/AppTopNav';
-import {Permissions, PERMISSIONS_ALLOW_ALL} from '@dagit/core/app/Permissions';
+import {PermissionsFromJSON, PERMISSIONS_ALLOW_ALL} from '@dagit/core/app/Permissions';
 import * as React from 'react';
 import ReactDOM from 'react-dom';
 
@@ -15,11 +15,7 @@ const pathPrefix = extractPathPrefix();
 
 const permissionsElement = document.getElementById('permissions');
 
-interface PermissionsJson {
-  permissions: Permissions;
-}
-
-const identity: PermissionsJson = permissionsElement
+const identity: {permissions: PermissionsFromJSON} = permissionsElement
   ? JSON.parse(permissionsElement.textContent || '')
   : {
       permissions: {},

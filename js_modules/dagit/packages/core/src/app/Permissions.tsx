@@ -2,7 +2,7 @@ import * as React from 'react';
 
 import {AppContext} from '../app/AppContext';
 
-export type Permissions = {
+export type PermissionsFromJSON = {
   launch_pipeline_execution?: boolean;
   launch_pipeline_reexecution?: boolean;
   reconcile_scheduler_state?: boolean;
@@ -19,7 +19,7 @@ export type Permissions = {
   cancel_partition_backfill?: boolean;
 };
 
-export const PERMISSIONS_ALLOW_ALL: Permissions = {
+export const PERMISSIONS_ALLOW_ALL: PermissionsFromJSON = {
   launch_pipeline_execution: true,
   launch_pipeline_reexecution: true,
   reconcile_scheduler_state: true,
