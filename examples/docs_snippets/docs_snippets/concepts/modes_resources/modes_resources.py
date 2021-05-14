@@ -15,6 +15,18 @@ def cereal_fetcher(init_context):
 
 # end_resource_example
 
+# start_solid_with_resources_example
+
+CREATE_TABLE_1_QUERY = "create table_1 as select * from table_0"
+
+
+@solid(required_resource_keys={"database"})
+def solid_requires_resources(context):
+    context.resources.database.execute_query(CREATE_TABLE_1_QUERY)
+
+
+# end_solid_with_resources_example
+
 resource_a = ResourceDefinition.hardcoded_resource(1)
 resource_b = ResourceDefinition.hardcoded_resource(2)
 
@@ -32,7 +44,7 @@ mode_def_c = ModeDefinition("c_mode", resource_defs={"a": resource_a})
 
 
 @solid(required_resource_keys={"a"})
-def basic_solid(_):
+def basic_solid():
     pass
 
 

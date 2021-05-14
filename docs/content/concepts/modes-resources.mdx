@@ -43,6 +43,19 @@ def cereal_fetcher(init_context):
     return ExternalCerealFetcher()
 ```
 
+## Accessing Resources in Solids
+
+Solids use resource keys to access resources, like so:
+
+```python file=/concepts/modes_resources/modes_resources.py startafter=start_solid_with_resources_example endbefore=end_solid_with_resources_example
+CREATE_TABLE_1_QUERY = "create table_1 as select * from table_0"
+
+
+@solid(required_resource_keys={"database"})
+def solid_requires_resources(context):
+    context.resources.database.execute_query(CREATE_TABLE_1_QUERY)
+```
+
 ## Defining a Mode
 
 To define a mode, construct a <PyObject module="dagster" object="ModeDefinition" displayText="ModeDefinition"/>. Each resource definition provided to the mode should be mapped to a unique key.
