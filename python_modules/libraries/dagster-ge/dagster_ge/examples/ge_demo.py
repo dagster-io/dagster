@@ -5,17 +5,17 @@ from pandas import read_csv
 
 
 @solid
-def read_in_datafile(_, csv_path):
+def read_in_datafile(csv_path):
     return read_csv(csv_path)
 
 
 @solid(input_defs=[InputDefinition(name="df")])
-def process_payroll(_, df):
+def process_payroll(df):
     return len(df)
 
 
 @solid(input_defs=[InputDefinition(name="numrows"), InputDefinition(name="expectation")])
-def postprocess_payroll(_, numrows, expectation):
+def postprocess_payroll(numrows, expectation):
     if expectation["success"]:
         return numrows
     else:

@@ -9,5 +9,5 @@ class EvenType:
 
 
 @solid
-def double_even(_, even_num: EvenType) -> EvenType:
+def double_even(even_num: EvenType) -> EvenType:
     return EvenType(even_num.num * 2)

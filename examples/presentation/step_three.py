@@ -8,7 +8,7 @@ from dagster import Field, pipeline, solid
 
 
 @solid
-def load_cereals(_):
+def load_cereals():
     path_to_csv = os.path.join(os.path.dirname(__file__), "data/cereal.csv")
     return pandas.read_csv(path_to_csv)
 
@@ -67,7 +67,7 @@ def filter_below_cutoff(context, cereals, cutoff):
 
 
 @solid
-def write_sugariest(_, cereals):
+def write_sugariest(cereals):
     cereals.to_csv("/tmp/top_quartile.csv")
 
 

@@ -32,7 +32,7 @@ def test_basic_even_type():
 
     # start_test_basic_even_type_with_annotations
     @solid
-    def double_even(_, num: EvenDagsterType) -> EvenDagsterType:
+    def double_even(num: EvenDagsterType) -> EvenDagsterType:
         # These type annotations are a shorthand for constructing InputDefinitions
         # and OutputDefinitions, and are not mypy compliant
         return num  # at runtime this is a python int
@@ -58,7 +58,7 @@ def test_basic_even_type_no_annotations():
         input_defs=[InputDefinition("num", EvenDagsterType)],
         output_defs=[OutputDefinition(EvenDagsterType)],
     )
-    def double_even(_, num):
+    def double_even(num):
         return num
 
     # end_test_basic_even_type_no_annotations
@@ -83,7 +83,7 @@ def test_python_object_dagster_type():
 
     # start_use_object_type
     @solid
-    def double_even(_, even_num: EvenDagsterType) -> EvenDagsterType:
+    def double_even(even_num: EvenDagsterType) -> EvenDagsterType:
         # These type annotations are a shorthand for constructing InputDefinitions
         # and OutputDefinitions, and are not mypy compliant
         return EvenType(even_num.num * 2)
@@ -110,7 +110,7 @@ def test_even_type_loader():
     # end_type_loader
 
     @solid
-    def double_even(_, even_num: EvenDagsterType) -> EvenDagsterType:
+    def double_even(even_num: EvenDagsterType) -> EvenDagsterType:
         return EvenType(even_num.num * 2)
 
     # start_via_config
@@ -151,7 +151,7 @@ def test_even_type_materialization_config():
     EvenDagsterType = PythonObjectDagsterType(EvenType, materializer=save_to_file_materialization)
 
     @solid
-    def double_even(_, even_num: EvenDagsterType) -> EvenDagsterType:
+    def double_even(even_num: EvenDagsterType) -> EvenDagsterType:
         return EvenType(even_num.num * 2)
 
     with safe_tempfile_path() as path:
@@ -183,7 +183,7 @@ def test_mypy_compliance():
         EvenDagsterType = PythonObjectDagsterType(EvenType)
 
     @solid
-    def double_even(_, even_num: EvenDagsterType) -> EvenDagsterType:
+    def double_even(even_num: EvenDagsterType) -> EvenDagsterType:
         return EvenType(even_num.num * 2)
 
     # end_mypy
@@ -192,11 +192,11 @@ def test_mypy_compliance():
 
 def test_nothing_type():
     @solid(output_defs=[OutputDefinition(Nothing, "cleanup_done")])
-    def do_cleanup(_):
+    def do_cleanup():
         pass
 
     @solid(input_defs=[InputDefinition("on_cleanup_done", Nothing)])
-    def after_cleanup(_):  # Argument not required for Nothing types
+    def after_cleanup():  # Argument not required for Nothing types
         return "worked"
 
     @pipeline
@@ -249,18 +249,18 @@ def test_nothing_fanin_actually_test():
 
 def test_nothing_fanin_empty_body_for_guide():
     @solid(output_defs=[OutputDefinition(Nothing)])
-    def start_first_pipeline_section(_):
+    def start_first_pipeline_section():
         pass
 
     @solid(
         input_defs=[InputDefinition("first_section_done", Nothing)],
         output_defs=[OutputDefinition(dagster_type=Nothing)],
     )
-    def perform_clean_up(_):
+    def perform_clean_up():
         pass
 
     @solid(input_defs=[InputDefinition("on_cleanup_tasks_done", Nothing)])
-    def start_next_pipeline_section(_):
+    def start_next_pipeline_section():
         pass
 
     @pipeline
@@ -287,7 +287,7 @@ def test_usable_as_dagster_type():
 
     # end_usable_as
     @solid
-    def double_even(_, even_num: EvenType) -> EvenType:
+    def double_even(even_num: EvenType) -> EvenType:
         return EvenType(even_num.num * 2)
 
     assert execute_solid(double_even, input_values={"even_num": EvenType(2)}).success
@@ -308,7 +308,7 @@ def test_make_usable_as_dagster_type():
     make_python_type_usable_as_dagster_type(EvenType, EvenDagsterType)
 
     @solid
-    def double_even(_, even_num: EvenType) -> EvenType:
+    def double_even(even_num: EvenType) -> EvenType:
         return EvenType(even_num.num * 2)
 
     # end_make_usable

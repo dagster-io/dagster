@@ -4,7 +4,7 @@ from dagster import InputDefinition, composite_solid, pipeline, repository, soli
 
 
 @solid
-def my_solid(_):
+def my_solid():
     pass
 
 
@@ -15,12 +15,12 @@ def return_one(context):
 
 # start_composite_solid_example_marker
 @solid
-def add_one(_, number: int):
+def add_one(number: int):
     return number + 1
 
 
 @solid
-def multiply_by_three(_, number: int):
+def multiply_by_three(number: int):
     return number * 3
 
 

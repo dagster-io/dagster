@@ -31,7 +31,7 @@ def test_unzip_file_handle():
         write_zip_file_to_disk(zip_file_name, "some_archive_member", data)
 
         @solid
-        def to_zip_file_handle(_):
+        def to_zip_file_handle():
             return LocalFileHandle(zip_file_name)
 
         @pipeline(mode_defs=[ModeDefinition(resource_defs={"file_manager": local_file_manager})])

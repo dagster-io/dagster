@@ -15,12 +15,12 @@ from dagster import InputDefinition, Nothing, pipeline, solid
 
 
 @solid
-def create_table_1(_context) -> Nothing:
+def create_table_1() -> Nothing:
     get_database_connection().execute("create table_1 as select * from some_source_table")
 
 
 @solid(input_defs=[InputDefinition("start", Nothing)])
-def create_table_2(_context):
+def create_table_2():
     get_database_connection().execute("create table_2 as select * from table_1")
 
 

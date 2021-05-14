@@ -115,7 +115,7 @@ def alias_config_pipeline():
 
 
 @solid(input_defs=[InputDefinition("notebook", dagster_type=FileHandle)])
-def load_notebook(_, notebook):
+def load_notebook(notebook):
     return os.path.exists(notebook.path_desc)
 
 
@@ -337,7 +337,7 @@ reimport = test_nb_solid(
 
 
 @solid
-def lister(_):
+def lister():
     return [1, 2, 3]
 
 

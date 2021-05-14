@@ -19,7 +19,7 @@ ShapeConstrainedTripDataFrame = create_dagster_pandas_dataframe_type(
         )
     ]
 )
-def load_shape_constrained_trip_dataframe(_) -> DataFrame:
+def load_shape_constrained_trip_dataframe() -> DataFrame:
     return read_csv(
         script_relative_path("./ebike_trips.csv"),
         parse_dates=["start_time", "end_time"],

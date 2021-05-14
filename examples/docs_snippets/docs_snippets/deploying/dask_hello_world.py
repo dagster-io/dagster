@@ -3,7 +3,7 @@ from dagster_dask import dask_executor
 
 
 @solid
-def hello_world(_):
+def hello_world():
     return "Hello, World!"
 
 

@@ -15,12 +15,12 @@ def read_dataframe_from_table(**_kwargs):
 
 # solids_start_marker
 @solid(output_defs=[OutputDefinition(metadata={"schema": "some_schema", "table": "some_table"})])
-def solid1(_):
+def solid1():
     """Return a Pandas DataFrame"""
 
 
 @solid(output_defs=[OutputDefinition(metadata={"schema": "other_schema", "table": "other_table"})])
-def solid2(_, _input_dataframe):
+def solid2(_input_dataframe):
     """Return a Pandas DataFrame"""
 
 

@@ -3,12 +3,12 @@ from dagster import ModeDefinition, OutputDefinition, fs_io_manager, mem_io_mana
 
 
 @solid(output_defs=[OutputDefinition(io_manager_key="fs")])
-def solid1(_):
+def solid1():
     return 1
 
 
 @solid(output_defs=[OutputDefinition(io_manager_key="mem")])
-def solid2(_, a):
+def solid2(a):
     return a + 1
 
 

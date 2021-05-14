@@ -24,7 +24,7 @@ def local_parquet_store(_):
 
 
 @solid
-def make_people(_):
+def make_people():
     schema = StructType([StructField("name", StringType()), StructField("age", IntegerType())])
     rows = [Row(name="Thom", age=51), Row(name="Jonny", age=48), Row(name="Nigel", age=49)]
     spark = SparkSession.builder.getOrCreate()
@@ -32,7 +32,7 @@ def make_people(_):
 
 
 @solid
-def filter_over_50(_, people):
+def filter_over_50(people):
     return people.filter(people["age"] > 50)
 
 

@@ -68,12 +68,12 @@ from dagster import ModeDefinition, fs_io_manager, pipeline, solid
 
 
 @solid
-def solid1(_):
+def solid1():
     return 1
 
 
 @solid
-def solid2(_, a):
+def solid2(a):
     return a + 1
 
 
@@ -93,12 +93,12 @@ from dagster import ModeDefinition, OutputDefinition, fs_io_manager, mem_io_mana
 
 
 @solid(output_defs=[OutputDefinition(io_manager_key="fs")])
-def solid1(_):
+def solid1():
     return 1
 
 
 @solid(output_defs=[OutputDefinition(io_manager_key="mem")])
-def solid2(_, a):
+def solid2(a):
     return a + 1
 
 
@@ -212,12 +212,12 @@ For example, if your pipeline produces DataFrames to populate tables in a data w
 
 ```python file=/concepts/io_management/metadata.py startafter=solids_start_marker endbefore=solids_end_marker
 @solid(output_defs=[OutputDefinition(metadata={"schema": "some_schema", "table": "some_table"})])
-def solid1(_):
+def solid1():
     """Return a Pandas DataFrame"""
 
 
 @solid(output_defs=[OutputDefinition(metadata={"schema": "other_schema", "table": "other_table"})])
-def solid2(_, _input_dataframe):
+def solid2(_input_dataframe):
     """Return a Pandas DataFrame"""
 ```
 

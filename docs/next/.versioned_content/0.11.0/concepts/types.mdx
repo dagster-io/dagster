@@ -49,7 +49,7 @@ Once created, types can be attached to solid <PyObject module="dagster" object="
     input_defs=[InputDefinition("num", EvenDagsterType)],
     output_defs=[OutputDefinition(EvenDagsterType)],
 )
-def double_even(_, num):
+def double_even(num):
     return num
 ```
 
@@ -70,8 +70,8 @@ In this example, the defined solid will end up with a DagsterType named "MyClass
 class MyClass:
     pass
 
-
-def my_solid(_) -> MyClass:
+@solid
+def my_solid() -> MyClass:
     return MyClass()
 ```
 
@@ -134,7 +134,7 @@ outputs of the solid compute function are integers, and the type check function 
     input_defs=[InputDefinition("num", EvenDagsterType)],
     output_defs=[OutputDefinition(EvenDagsterType)],
 )
-def double_even_with_annotations(_, num: int) -> int:
+def double_even_with_annotations(num: int) -> int:
     return num
 ```
 
@@ -172,7 +172,7 @@ class EvenType:
 
 
 @solid
-def double_even(_, even_num: EvenType) -> EvenType:
+def double_even(even_num: EvenType) -> EvenType:
     return EvenType(even_num.num * 2)
 ```
 
@@ -194,7 +194,7 @@ make_python_type_usable_as_dagster_type(EvenType, EvenDagsterType)
 
 
 @solid
-def double_even(_, even_num: EvenType) -> EvenType:
+def double_even(even_num: EvenType) -> EvenType:
     return EvenType(even_num.num * 2)
 ```
 

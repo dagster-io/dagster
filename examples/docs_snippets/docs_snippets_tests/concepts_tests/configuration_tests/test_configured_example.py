@@ -18,7 +18,7 @@ def test_config_map_example():
 
 def execute_pipeline_with_resource_def(resource_def, run_config=None):
     @solid(required_resource_keys={"key"})
-    def a_solid(_):
+    def a_solid():
         pass
 
     @pipeline(mode_defs=[ModeDefinition(resource_defs={"key": resource_def})])

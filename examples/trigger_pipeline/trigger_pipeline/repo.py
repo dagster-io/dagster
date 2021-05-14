@@ -2,17 +2,17 @@ from dagster import pipeline, repository, solid
 
 
 @solid
-def add_one(_context, num: int) -> int:
+def add_one(num: int) -> int:
     return num + 1
 
 
 @solid
-def add_two(_context, num: int) -> int:
+def add_two(num: int) -> int:
     return num + 2
 
 
 @solid
-def subtract(_context, left: int, right: int) -> int:
+def subtract(left: int, right: int) -> int:
     return left - right
 
 

@@ -34,12 +34,12 @@ slack_resource_mock = mock.MagicMock()
 
 
 @solid
-def a(_):
+def a():
     pass
 
 
 @solid
-def b(_):
+def b():
     raise Exception()
 
 

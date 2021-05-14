@@ -10,7 +10,7 @@ celery_mode_defs = [
 
 
 @solid
-def not_much(_):
+def not_much():
     return
 
 

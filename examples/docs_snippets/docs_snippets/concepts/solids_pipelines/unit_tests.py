@@ -17,19 +17,19 @@ from dagster import (
 @solid(
     input_defs=[InputDefinition(name="num", dagster_type=int, default_value=1)],
 )
-def add_one(_, num: int) -> int:
+def add_one(num: int) -> int:
     return num + 1
 
 
 @solid(
     input_defs=[InputDefinition(name="num", dagster_type=int, default_value=1)],
 )
-def add_two(_, num: int) -> int:
+def add_two(num: int) -> int:
     return num + 2
 
 
 @solid
-def subtract(_, left: int, right: int) -> int:
+def subtract(left: int, right: int) -> int:
     return left - right
 
 
@@ -42,7 +42,7 @@ def do_math():
     input_defs=[InputDefinition(name="input_num", dagster_type=int)],
     output_defs=[OutputDefinition(name="a_num", dagster_type=int)],
 )
-def emit_events_solid(_, input_num):
+def emit_events_solid(input_num):
     a_num = input_num + 1
     yield ExpectationResult(
         success=a_num > 0, label="positive", description="A num must be positive"

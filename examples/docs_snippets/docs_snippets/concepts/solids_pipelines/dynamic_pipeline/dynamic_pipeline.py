@@ -25,13 +25,13 @@ def files_in_directory(context):
 
 
 @solid
-def process_file(_, path: str) -> int:
+def process_file(path: str) -> int:
     # simple example of calculating size
     return os.path.getsize(path)
 
 
 @solid
-def summarize_directory(_, sizes: List[int]) -> int:
+def summarize_directory(sizes: List[int]) -> int:
     # simple example of totalling sizes
     return sum(sizes)
 

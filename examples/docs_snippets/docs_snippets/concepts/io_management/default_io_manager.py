@@ -2,12 +2,12 @@ from dagster import ModeDefinition, fs_io_manager, pipeline, solid
 
 
 @solid
-def solid1(_):
+def solid1():
     return 1
 
 
 @solid
-def solid2(_, a):
+def solid2(a):
     return a + 1
 
 

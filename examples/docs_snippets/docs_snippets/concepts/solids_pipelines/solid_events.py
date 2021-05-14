@@ -117,7 +117,7 @@ def my_metadata_expectation_solid(context, df):
 
 
 @solid
-def my_failure_solid(_):
+def my_failure_solid():
     path = "/path/to/files"
     my_files = get_files(path)
     if len(my_files) == 0:
@@ -137,7 +137,7 @@ def my_failure_solid(_):
 
 
 @solid
-def my_failure_metadata_solid(_):
+def my_failure_metadata_solid():
     path = "/path/to/files"
     my_files = get_files(path)
     if len(my_files) == 0:
@@ -157,7 +157,7 @@ def my_failure_metadata_solid(_):
 
 
 @solid
-def my_retry_solid(_):
+def my_retry_solid():
     try:
         result = flaky_operation()
     except:

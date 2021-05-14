@@ -31,7 +31,7 @@ date_partition_set = PartitionSetDefinition(
 
 
 @solid
-def my_solid(_):
+def my_solid():
     pass
 
 

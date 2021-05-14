@@ -41,12 +41,12 @@ def my_io_manager(_):
 
 
 @solid(output_defs=[OutputDefinition(io_manager_key="my_io_manager")])
-def solid1(_):
+def solid1():
     """Do stuff"""
 
 
 @solid(input_defs=[InputDefinition("dataframe", root_manager_key="my_root_input_manager")])
-def solid2(_, dataframe):
+def solid2(dataframe):
     """Do stuff"""
 
 

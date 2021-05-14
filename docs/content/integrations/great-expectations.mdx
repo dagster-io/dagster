@@ -22,7 +22,7 @@ The GE validations will happen inside the solids created above. Each of the soli
 
 ```python file=../../ge_example/ge_example/ge_demo.py startafter=start_ge_demo_marker_solid endbefore=end_ge_demo_marker_solid
 @solid
-def postprocess_payroll(_, numrows, expectation):
+def postprocess_payroll(numrows, expectation):
     if expectation["success"]:
         return numrows
     else:

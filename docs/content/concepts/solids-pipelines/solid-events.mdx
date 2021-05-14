@@ -189,7 +189,7 @@ on its own, but would still cause problems if the execution were to continue.
 
 ```python file=/concepts/solids_pipelines/solid_events.py startafter=start_failure_solid endbefore=end_failure_solid
 @solid
-def my_failure_solid(_):
+def my_failure_solid():
     path = "/path/to/files"
     my_files = get_files(path)
     if len(my_files) == 0:
@@ -209,7 +209,7 @@ As is the case with many Dagster-provided classes, you can attach a list <PyObje
 
 ```python file=/concepts/solids_pipelines/solid_events.py startafter=start_failure_metadata_solid endbefore=end_failure_metadata_solid
 @solid
-def my_failure_metadata_solid(_):
+def my_failure_metadata_solid():
     path = "/path/to/files"
     my_files = get_files(path)
     if len(my_files) == 0:
@@ -235,7 +235,7 @@ You can configure the number of retries to be attempted with the `max_retries` p
 
 ```python file=/concepts/solids_pipelines/solid_events.py startafter=start_retry_solid endbefore=end_retry_solid
 @solid
-def my_retry_solid(_):
+def my_retry_solid():
     try:
         result = flaky_operation()
     except:

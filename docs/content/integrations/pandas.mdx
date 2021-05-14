@@ -36,7 +36,7 @@ Once our custom data type is defined, we can use it as the type declaration for 
 
 ```python file=/legacy/dagster_pandas_guide/core_trip_pipeline.py startafter=start_core_trip_pipeline_marker_1 endbefore=end_core_trip_pipeline_marker_1
 @solid(output_defs=[OutputDefinition(name="trip_dataframe", dagster_type=TripDataFrame)])
-def load_trip_dataframe(_) -> DataFrame:
+def load_trip_dataframe() -> DataFrame:
     return read_csv(
         script_relative_path("./ebike_trips.csv"),
         parse_dates=["start_time", "end_time"],

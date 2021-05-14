@@ -3,12 +3,12 @@ from dagster import solid, EventMetadataEntry
 
 
 @solid
-def solid1(_):
+def solid1():
     return []
 
 
 @solid
-def solid2(_, _a):
+def solid2(_a):
     return []
 
 

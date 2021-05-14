@@ -14,12 +14,12 @@ def read_dataframe_from_table(**_kwargs):
 
 
 @solid
-def solid1(_):
+def solid1():
     """Return a Pandas DataFrame"""
 
 
 @solid
-def solid2(_, _input_dataframe):
+def solid2(_input_dataframe):
     """Return a Pandas DataFrame"""
 
 

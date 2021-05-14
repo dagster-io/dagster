@@ -6,14 +6,14 @@ from dagster import pipeline, solid
 
 # start_complex_pipeline_marker_0
 @solid
-def download_cereals(_):
+def download_cereals():
     response = requests.get("https://docs.dagster.io/assets/cereal.csv")
     lines = response.text.split("\n")
     return [row for row in csv.DictReader(lines)]
 
 
 @solid
-def find_highest_calorie_cereal(_, cereals):
+def find_highest_calorie_cereal(cereals):
     sorted_cereals = list(
         sorted(cereals, key=lambda cereal: cereal["calories"])
     )
@@ -21,7 +21,7 @@ def find_highest_calorie_cereal(_, cereals):
 
 
 @solid
-def find_highest_protein_cereal(_, cereals):
+def find_highest_protein_cereal(cereals):
     sorted_cereals = list(
         sorted(cereals, key=lambda cereal: cereal["protein"])
     )

@@ -37,12 +37,12 @@ In this example, the `add_one` solid depends on the `return_one` solid's output.
 
 ```python file=/concepts/solids_pipelines/composite_solids.py startafter=start_composite_solid_example_marker endbefore=end_composite_solid_example_marker
 @solid
-def add_one(_, number: int):
+def add_one(number: int):
     return number + 1
 
 
 @solid
-def multiply_by_three(_, number: int):
+def multiply_by_three(number: int):
     return number * 3
 
 

@@ -57,7 +57,7 @@ def test_hook_resource():
 
 def test_failure_hook_solid_exception():
     @solid
-    def failed_solid(_):
+    def failed_solid():
         raise Exception("my failure")
 
     @my_failure_hook

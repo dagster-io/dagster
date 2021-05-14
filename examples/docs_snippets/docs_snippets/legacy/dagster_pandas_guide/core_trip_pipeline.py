@@ -24,7 +24,7 @@ TripDataFrame = create_dagster_pandas_dataframe_type(
 
 # start_core_trip_pipeline_marker_1
 @solid(output_defs=[OutputDefinition(name="trip_dataframe", dagster_type=TripDataFrame)])
-def load_trip_dataframe(_) -> DataFrame:
+def load_trip_dataframe() -> DataFrame:
     return read_csv(
         script_relative_path("./ebike_trips.csv"),
         parse_dates=["start_time", "end_time"],
