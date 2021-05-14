@@ -28,6 +28,13 @@ Input and Output Contexts
     :members:
 
 
+.. autofunction:: build_input_context
+
+.. autofunction:: build_output_context
+
+
+
+.. currentmodule:: dagster
 
 Built-in IO Managers
 ------------------------
