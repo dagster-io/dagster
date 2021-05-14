@@ -168,11 +168,41 @@ def test_datetime_column_with_tz_validation_ok():
                 PandasColumn.datetime_column("datetime_dublin", tz="Europe/Dublin"),
                 PandasColumn.datetime_column("datetime_est", tz="US/Eastern"),
                 PandasColumn.datetime_column("datetime_chatham", tz="Pacific/Chatham"),
+            ],
+        )
+        is None
+    )
+
+
+def test_datetime_column_with_min_max_constraints_ok():
+    assert (
+        validate_constraints(
+            DataFrame(
+                {
+                    "datetime": [Timestamp("2021-03-14T12:34:56")],
+                    "datetime_utc_min_max_no_tz": [Timestamp("2021-03-14T12:34:56Z")],
+                    "datetime_utc_min_max_same_tz": [Timestamp("2021-03-14T12:34:56Z")],
+                    "datetime_utc_min_max_from_different_tz": [Timestamp("2021-03-14T12:34:56Z")],
+                }
+            ),
+            pandas_columns=[
                 PandasColumn.datetime_column(
-                    "datetime_utc_with_min_max",
+                    "datetime_utc_min_max_no_tz",
                     tz="UTC",
-                    min_datetime=datetime(2021, 3, 1),
-                    max_datetime=Timestamp("2021-04-01T00:00:00Z"),
+                    min_datetime=Timestamp.min,
+                    max_datetime=Timestamp.max,
+                ),
+                PandasColumn.datetime_column(
+                    "datetime_utc_min_max_same_tz",
+                    tz="UTC",
+                    min_datetime=Timestamp("2021-01-01T00:00:00Z"),
+                    max_datetime=Timestamp("2021-12-01T00:00:00Z"),
+                ),
+                PandasColumn.datetime_column(
+                    "datetime_utc_min_max_from_different_tz",
+                    tz="UTC",
+                    min_datetime=Timestamp("2021-01-01T00:00:00Z", tz="US/Eastern"),
+                    max_datetime=Timestamp("2021-12-01T00:00:00Z"),
                 ),
             ],
         )

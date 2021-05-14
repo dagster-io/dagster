@@ -282,10 +282,10 @@ class PandasColumn:
             datetime_constraint = ColumnDTypeInSetConstraint({"datetime64[ns]"})
         else:
             datetime_constraint = ColumnDTypeInSetConstraint({f"datetime64[ns, {tz}]"})
-            # One day more/less than absolute min/max to prevent OutOfBoundsDatetime errors
-            if min_datetime == Timestamp.min:
+            # One day more/less than absolute min/max to prevent OutOfBoundsDatetime errors when converting min/max to be tz aware
+            if min_datetime.replace(tzinfo=None) == Timestamp.min:
                 min_datetime = Timestamp("1677-09-22 00:12:43.145225Z")
-            if max_datetime == Timestamp.max:
+            if max_datetime.replace(tzinfo=None) == Timestamp.max:
                 max_datetime = Timestamp("2262-04-10 23:47:16.854775807Z")
             # Convert bounds to same tz
             if Timestamp(min_datetime).tz is None:
