@@ -1,4 +1,5 @@
 import {Colors, Intent, Tag} from '@blueprintjs/core';
+import qs from 'qs';
 import querystring from 'query-string';
 import * as React from 'react';
 import {Link, useLocation} from 'react-router-dom';
@@ -123,6 +124,7 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
           message={node.message}
           materialization={node.materialization}
           eventType={eventType}
+          timestamp={node.timestamp}
         />
       );
     case 'ObjectStoreOperationEvent':
@@ -299,11 +301,13 @@ const FailureContent: React.FunctionComponent<{
     </>
   );
 };
+
 const MaterializationContent: React.FC<{
   message: string;
   materialization: LogsRowStructuredFragment_StepMaterializationEvent_materialization;
   eventType: string;
-}> = ({message, materialization, eventType}) => {
+  timestamp: string;
+}> = ({message, materialization, eventType, timestamp}) => {
   if (!materialization.assetKey) {
     return (
       <DefaultContent message={message} eventType={eventType}>
@@ -312,15 +316,14 @@ const MaterializationContent: React.FC<{
     );
   }
 
+  const asOf = qs.stringify({asOf: timestamp});
+  const to = `/instance/assets/${materialization.assetKey.path
+    .map(encodeURIComponent)
+    .join('/')}?${asOf}`;
+
   const assetDashboardLink = (
     <span style={{marginLeft: 10}}>
-      [
-      <MetadataEntryLink
-        to={`/instance/assets/${materialization.assetKey.path.map(encodeURIComponent).join('/')}`}
-      >
-        View Asset
-      </MetadataEntryLink>
-      ]
+      [<MetadataEntryLink to={to}>View Asset</MetadataEntryLink>]
     </span>
   );
 
