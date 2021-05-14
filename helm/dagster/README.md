@@ -22,6 +22,21 @@ helm install my-release . \
     --create-namespace
 ```
 
+### Installing a specific Chart version
+
+The Dagster Python version and Helm Chart version have a 1:1 correspondence, and ideally should
+only be used together when the version numbers match.
+
+On installation, we can pass the `--version` flag if a specific Chart version is required.
+
+```bash
+export VERSION=<DAGSTER_VERSION>
+helm install my-release . \
+    --namespace dagster \
+    --create-namespace \
+    --version $VERSION
+```
+
 ## Introduction
 
 [Dagster](https://github.com/dagster-io/dagster) is a Python library for building data applications. This chart will bootstrap a Dagit web server deployment on a Kubernetes cluster using the Helm package manager.

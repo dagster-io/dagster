@@ -10,6 +10,12 @@ Dagster publishes a [fully-featured Helm chart](https://github.com/dagster-io/da
 
 `kubectl` should be configured with your desired Kubernetes cluster. You should understand [the basics of Helm](https://helm.sh/docs/), and Helm 3 should be installed. If you are creating your own user code images, Docker should be installed as well.
 
+## Versioning
+
+The Dagster Helm chart is versioned with the same version numbers as the Dagster Python library, and ideally should only be used together when the version numbers match.
+
+In the following tutorial, we install the most recent version of the Dagster Helm chart. To use an older version of the Chart, a `--version` flag can be passed to `helm upgrade`.
+
 ## Deployment Architecture
 
 <!-- https://excalidraw.com/#json=4680957890134016,q6NWURUuPP_VThmbRQ89Jg -->
