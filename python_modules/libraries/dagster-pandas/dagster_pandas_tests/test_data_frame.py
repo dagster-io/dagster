@@ -38,9 +38,7 @@ def test_create_pandas_dataframe_dagster_type():
 
 def test_basic_pipeline_with_pandas_dataframe_dagster_type():
     def compute_event_metadata(dataframe):
-        return [
-            EventMetadataEntry.text(str(max(dataframe["pid"])), "max_pid", "maximum pid"),
-        ]
+        return {"max_pid": str(max(dataframe["pid"]))}
 
     BasicDF = create_dagster_pandas_dataframe_type(
         name="BasicDF",
@@ -163,6 +161,13 @@ def test_execute_summary_stats_error():
         )
 
 
+def test_execute_summary_stats_metadata_value_error():
+    with pytest.raises(DagsterInvariantViolationError):
+        assert _execute_summary_stats(
+            "foo", DataFrame({}), event_metadata_fn=lambda _: {"bad": None}
+        )
+
+
 def test_custom_dagster_dataframe_loading_ok():
     input_dataframe = DataFrame({"foo": [1, 2, 3]})
     with safe_tempfile_path() as input_csv_fp, safe_tempfile_path() as output_csv_fp:
@@ -261,3 +266,40 @@ def test_custom_dagster_dataframe_parametrizable_input():
     materialization_events = solid_result.materialization_events_during_compute
     assert len(materialization_events) == 1
     assert materialization_events[0].event_specific_data.materialization.label == "nothing"
+
+
+def test_basic_pipeline_with_pandas_dataframe_dagster_type_metadata_entries():
+    def compute_event_metadata(dataframe):
+        return [
+            EventMetadataEntry.text(str(max(dataframe["pid"])), "max_pid", "maximum pid"),
+        ]
+
+    BasicDF = create_dagster_pandas_dataframe_type(
+        name="BasicDF",
+        columns=[
+            PandasColumn.integer_column("pid", non_nullable=True),
+            PandasColumn.string_column("names"),
+        ],
+        event_metadata_fn=compute_event_metadata,
+    )
+
+    @solid(output_defs=[OutputDefinition(name="basic_dataframe", dagster_type=BasicDF)])
+    def create_dataframe(_):
+        yield Output(
+            DataFrame({"pid": [1, 2, 3], "names": ["foo", "bar", "baz"]}),
+            output_name="basic_dataframe",
+        )
+
+    @pipeline
+    def basic_pipeline():
+        return create_dataframe()
+
+    result = execute_pipeline(basic_pipeline)
+    assert result.success
+    for event in result.event_list:
+        if event.event_type_value == "STEP_OUTPUT":
+            mock_df_output_event_metadata = (
+                event.event_specific_data.type_check_data.metadata_entries
+            )
+            assert len(mock_df_output_event_metadata) == 1
+            assert any([entry.label == "max_pid" for entry in mock_df_output_event_metadata])

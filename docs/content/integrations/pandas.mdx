@@ -75,29 +75,13 @@ Aside from constraint validation, `create_dagster_pandas_dataframe_type` also ta
 
 ```python file=/legacy/dagster_pandas_guide/summary_stats_pipeline.py startafter=start_summary endbefore=end_summary
 def compute_trip_dataframe_summary_statistics(dataframe):
-    return [
-        EventMetadataEntry.text(
-            min(dataframe["start_time"]).strftime("%Y-%m-%d"),
-            "min_start_time",
-            "Date data collection started",
-        ),
-        EventMetadataEntry.text(
-            max(dataframe["end_time"]).strftime("%Y-%m-%d"),
-            "max_end_time",
-            "Date data collection ended",
-        ),
-        EventMetadataEntry.text(
-            str(dataframe["bike_id"].nunique()),
-            "num_unique_bikes",
-            "Number of unique bikes that took trips",
-        ),
-        EventMetadataEntry.text(
-            str(len(dataframe)), "n_rows", "Number of rows seen in the dataframe"
-        ),
-        EventMetadataEntry.text(
-            str(dataframe.columns), "columns", "Keys of columns seen in the dataframe"
-        ),
-    ]
+    return {
+        "min_start_time": min(dataframe["start_time"]).strftime("%Y-%m-%d"),
+        "max_end_time": max(dataframe["end_time"]).strftime("%Y-%m-%d"),
+        "num_unique_bikes": str(dataframe["bike_id"].nunique()),
+        "n_rows": len(dataframe),
+        "columns": str(dataframe.columns),
+    }
 
 
 SummaryStatsTripDataFrame = create_dagster_pandas_dataframe_type(
