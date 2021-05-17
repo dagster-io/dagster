@@ -219,7 +219,7 @@ def create_dagster_pandas_dataframe_type(
         name=name,
         type_check_fn=_dagster_type_check,
         loader=loader if loader else dataframe_loader,
-        materializer=materializer if loader else dataframe_materializer,
+        materializer=materializer if materializer else dataframe_materializer,
         description=description,
     )
 
