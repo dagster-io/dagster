@@ -47,7 +47,10 @@ function useLaunchButtonCommonState({runCount, disabled}: {runCount: number; dis
   if (websocketStatus !== WebSocket.OPEN) {
     status = LaunchButtonStatus.Disabled;
     forced = {
-      tooltip: 'The Dagit server is offline',
+      tooltip:
+        websocketStatus === WebSocket.CONNECTING
+          ? 'Connecting to Dagit server…'
+          : 'The Dagit server is offline',
       disabled: true,
       icon: 'offline',
     };
