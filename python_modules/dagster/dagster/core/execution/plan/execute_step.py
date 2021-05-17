@@ -426,7 +426,9 @@ def _get_output_asset_materializations(
     all_metadata = output.metadata_entries + io_manager_metadata_entries
 
     if asset_partitions:
-        metadata_mapping: Dict[str, List[str]] = {partition: [] for partition in asset_partitions}
+        metadata_mapping: Dict[str, List[Union[str, "EventMetadataEntry"]]] = {
+            partition: [] for partition in asset_partitions
+        }
         for entry in all_metadata:
             # if you target a given entry at a partition, only apply it to the requested partition
             # otherwise, apply it to all partitions
