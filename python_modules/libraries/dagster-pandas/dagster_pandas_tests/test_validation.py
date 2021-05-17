@@ -1,5 +1,3 @@
-from datetime import datetime
-
 import pytest
 from dagster_pandas.constraints import (
     CategoricalColumnConstraint,
