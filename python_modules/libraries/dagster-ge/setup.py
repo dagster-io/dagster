@@ -32,7 +32,7 @@ if __name__ == "__main__":
             "dagster",
             "dagster-pandas",
             "pandas",
-            "great_expectations >=0.11.9, !=0.12.8, <0.13.7",  # 0.13.7 incompatible with sqlalchemy >= 1.4.0
+            "great_expectations >=0.11.9, !=0.12.8, !=0.13.17",
         ],
         zip_safe=False,
     )
