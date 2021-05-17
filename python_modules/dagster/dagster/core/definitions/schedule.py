@@ -1,5 +1,6 @@
 from contextlib import ExitStack
 from datetime import datetime
+from typing import Any, Callable, Dict, List, Optional, Union, cast
 
 import pendulum
 from croniter import croniter
@@ -38,7 +39,7 @@ class ScheduleExecutionContext:
 
     __slots__ = ["_instance_ref", "_scheduled_execution_time", "_exit_stack", "_instance"]
 
-    def __init__(self, instance_ref, scheduled_execution_time):
+    def __init__(self, instance_ref: InstanceRef, scheduled_execution_time: Optional[datetime]):
         self._exit_stack = ExitStack()
         self._instance = None
 
@@ -54,15 +55,15 @@ class ScheduleExecutionContext:
         self._exit_stack.close()
 
     @property
-    def instance(self):
+    def instance(self) -> "DagsterInstance":
         if not self._instance:
             self._instance = self._exit_stack.enter_context(
                 DagsterInstance.from_ref(self._instance_ref)
             )
-        return self._instance
+        return cast(DagsterInstance, self._instance)
 
     @property
-    def scheduled_execution_time(self):
+    def scheduled_execution_time(self) -> Optional[datetime]:
         return self._scheduled_execution_time
 
 
@@ -122,20 +123,20 @@ class ScheduleDefinition:
 
     def __init__(
         self,
-        name,
-        cron_schedule,
-        pipeline_name,
-        run_config=None,
-        run_config_fn=None,
-        tags=None,
-        tags_fn=None,
-        solid_selection=None,
-        mode="default",
-        should_execute=None,
-        environment_vars=None,
-        execution_timezone=None,
-        execution_fn=None,
-        description=None,
+        name: str,
+        cron_schedule: str,
+        pipeline_name: str,
+        run_config: Optional[Any] = None,
+        run_config_fn: Optional[Callable[..., Any]] = None,
+        tags: Optional[Dict[str, str]] = None,
+        tags_fn: Optional[Callable[..., Optional[Dict[str, str]]]] = None,
+        solid_selection: Optional[List[Any]] = None,
+        mode: Optional[str] = "default",
+        should_execute: Optional[Callable[..., bool]] = None,
+        environment_vars: Optional[Dict[str, str]] = None,
+        execution_timezone: Optional[str] = None,
+        execution_fn: Optional[Callable[[ScheduleExecutionContext], Any]] = None,
+        description: Optional[str] = None,
     ):
 
         if not croniter.is_valid(cron_schedule):
@@ -145,7 +146,7 @@ class ScheduleDefinition:
 
         self._name = check_valid_name(name)
         self._pipeline_name = check.str_param(pipeline_name, "pipeline_name")
-        self._mode = check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME)
+        self._mode = cast(str, check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME))
         self._solid_selection = check.opt_nullable_list_param(
             solid_selection, "solid_selection", of_type=str
         )
@@ -236,44 +237,47 @@ class ScheduleDefinition:
                 )
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     @property
-    def pipeline_name(self):
+    def pipeline_name(self) -> str:
         return self._pipeline_name
 
     @property
-    def job_type(self):
+    def job_type(self) -> JobType:
         return JobType.SCHEDULE
 
     @property
-    def solid_selection(self):
+    def solid_selection(self) -> Optional[List[Any]]:
         return self._solid_selection
 
     @property
-    def mode(self):
+    def mode(self) -> str:
         return self._mode
 
     @property
-    def description(self):
+    def description(self) -> Optional[str]:
         return self._description
 
     @property
-    def cron_schedule(self):
+    def cron_schedule(self) -> str:
         return self._cron_schedule
 
     @property
-    def environment_vars(self):
+    def environment_vars(self) -> Dict[str, str]:
         return self._environment_vars
 
     @property
-    def execution_timezone(self):
+    def execution_timezone(self) -> Optional[str]:
         return self._execution_timezone
 
-    def get_execution_data(self, context):
+    def get_execution_data(
+        self, context: "ScheduleExecutionContext"
+    ) -> List[Union[RunRequest, SkipReason]]:
         check.inst_param(context, "context", ScheduleExecutionContext)
-        result = list(ensure_gen(self._execution_fn(context)))
+        execution_fn = cast(Callable[[ScheduleExecutionContext], Any], self._execution_fn)
+        result = list(ensure_gen(execution_fn(context)))
 
         if not result:
             return []
