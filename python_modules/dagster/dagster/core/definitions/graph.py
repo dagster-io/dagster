@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterable, Iterator, List, Optional,
 from dagster import check
 from dagster.core.definitions.config import ConfigMapping
 from dagster.core.definitions.definition_config_schema import IDefinitionConfigSchema
+from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import (
     DagsterType,
@@ -27,6 +28,7 @@ from .solid_container import create_execution_structure, validate_dependency_dic
 
 if TYPE_CHECKING:
     from .solid import SolidDefinition
+    from .resource import ResourceDefinition
 
 
 def _check_node_defs_arg(graph_name: str, node_defs: List[NodeDefinition]):
@@ -335,6 +337,26 @@ class GraphDefinition(NodeDefinition):
         config_or_config_fn: Any,
     ):
         check.not_implemented("@graph does not yet implement configured")
+
+    def to_job(
+        self,
+        resource_defs: Dict[str, "ResourceDefinition"],
+    ):
+        """
+        For experimenting with "job" flows
+        """
+        from .pipeline import PipelineDefinition
+
+        return PipelineDefinition(
+            solid_defs=self._solid_defs,
+            name=self.name,
+            description=self.description,
+            dependencies=self._dependencies,
+            input_mappings=self._input_mappings,
+            output_mappings=self._output_mappings,
+            config_mapping=self._config_mapping,
+            mode_defs=[ModeDefinition(resource_defs=resource_defs)],
+        )
 
 
 def _validate_in_mappings(

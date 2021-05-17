@@ -1,4 +1,4 @@
-from dagster import solid
+from dagster import execute_pipeline, resource, solid
 from dagster.core.definitions.decorators.graph import graph
 from dagster.core.definitions.graph import GraphDefinition
 from dagster.core.execution.execute import execute_in_process
@@ -42,3 +42,21 @@ def test_composite_graph():
         return add(add_one(x), emit_one())
 
     assert isinstance(add_two, GraphDefinition)
+
+
+def test_with_resources():
+    @resource
+    def a_resource(_):
+        return "a"
+
+    @solid(required_resource_keys={"a"})
+    def needs_resource(context):
+        return context.resources.a
+
+    @graph
+    def my_graph():
+        needs_resource()
+
+    # proxy for "executable/job"
+    result = execute_pipeline(my_graph.to_job(resource_defs={"a": a_resource}))
+    assert result.success
