@@ -117,6 +117,7 @@ from dagster.core.execution.results import (
     PipelineExecutionResult,
     SolidExecutionResult,
 )
+from dagster.core.execution.validate_run_config import validate_run_config
 from dagster.core.executor.base import Executor
 from dagster.core.executor.init import InitExecutorContext
 from dagster.core.instance import DagsterInstance
@@ -255,6 +256,7 @@ __all__ = [
     "default_intermediate_storage_defs",
     "execute_pipeline_iterator",
     "execute_pipeline",
+    "validate_run_config",
     "execute_solid_within_pipeline",
     "fs_intermediate_storage",
     "in_process_executor",

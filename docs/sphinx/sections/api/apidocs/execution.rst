@@ -37,6 +37,13 @@ Execution context
 
 .. autofunction:: build_solid_context
 
+Validating Execution
+--------------------
+.. currentmodule:: dagster
+
+.. autofunction:: validate_run_config
+
+
 Reconstructable pipelines
 -------------------------
 .. currentmodule:: dagster

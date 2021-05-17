@@ -212,6 +212,43 @@ class EnvironmentConfig(
             )
         )
 
+    def to_dict(self) -> Dict[str, Any]:
+
+        env_dict = {}
+
+        solid_configs = {}
+        for solid_name, solid_config in self.solids.items():
+            solid_configs[solid_name] = {
+                "config": solid_config.config,
+                "inputs": solid_config.inputs,
+                "outputs": solid_config.outputs.config,
+            }
+
+        env_dict["solids"] = solid_configs
+
+        env_dict["execution"] = (
+            {self.execution.execution_engine_name: self.execution.execution_engine_config}
+            if self.execution.execution_engine_name
+            else {}
+        )
+
+        # Backcompat: if the intermediate storage name is not the default, then intermediate storage
+        # will be used in the execution, and should be included in the config blob. This mirrors the
+        # check in StepExecutionContext.get_io_manager().
+        if self.intermediate_storage.intermediate_storage_name != "in_memory":
+            env_dict["storage"] = {
+                self.intermediate_storage.intermediate_storage_name: self.intermediate_storage.intermediate_storage_config
+            }
+
+        env_dict["resources"] = {
+            resource_name: {"config": resource_config.config}
+            for resource_name, resource_config in self.resources.items()
+        }
+
+        env_dict["loggers"] = self.loggers
+
+        return env_dict
+
 
 def run_config_storage_field_backcompat(run_config: Dict[str, Any]) -> Dict[str, Any]:
     """This method will be removed after "storage" is removed in run config.
