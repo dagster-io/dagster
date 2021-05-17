@@ -1,12 +1,12 @@
 # pylint: disable=super-init-not-called
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, NamedTuple, Optional, cast
 
 from dagster import check
 from dagster.core.definitions.dependency import Solid, SolidHandle
 from dagster.core.definitions.events import AssetMaterialization
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.pipeline import PipelineDefinition
-from dagster.core.definitions.resource import IContainsGenerator, Resources
+from dagster.core.definitions.resource import IContainsGenerator, Resources, ScopedResourcesBuilder
 from dagster.core.definitions.solid import SolidDefinition
 from dagster.core.definitions.step_launcher import StepLauncher
 from dagster.core.errors import DagsterInvalidPropertyError, DagsterInvariantViolationError
@@ -14,10 +14,11 @@ from dagster.core.execution.build_resources import build_resources
 from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.types.dagster_type import DagsterType
 from dagster.utils.forked_pdb import ForkedPdb
 
 from .compute import SolidExecutionContext
-from .system import StepExecutionContext
+from .system import StepExecutionContext, TypeCheckContext
 
 
 def _property_msg(prop_name: str, method_name: str) -> str:
@@ -182,6 +183,14 @@ class DirectSolidExecutionContext(SolidExecutionContext):
     def record_materialization(self, materialization: AssetMaterialization) -> None:
         check.inst_param(materialization, "materialization", AssetMaterialization)
         self._materializations.append(materialization)
+
+    def for_type(self, dagster_type: DagsterType) -> TypeCheckContext:
+        return TypeCheckContext(
+            self.run_id,
+            self.log,
+            ScopedResourcesBuilder(cast(NamedTuple, self.resources)._asdict()),
+            dagster_type,
+        )
 
 
 def build_solid_context(

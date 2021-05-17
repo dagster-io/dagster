@@ -8,6 +8,7 @@ from dagster.core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
     DagsterSolidInvocationError,
+    DagsterTypeCheckDidNotPass,
     user_code_error_boundary,
 )
 
@@ -22,7 +23,7 @@ def solid_invocation_result(
 
     context = _check_invocation_requirements(solid_def, context)
 
-    input_dict = _resolve_inputs(solid_def, args, kwargs)
+    input_dict = _resolve_inputs(solid_def, args, kwargs, context)
 
     outputs = _execute_and_retrieve_outputs(solid_def, context, input_dict)
 
@@ -93,7 +94,9 @@ def _check_invocation_requirements(
     )
 
 
-def _resolve_inputs(solid_def, args, kwargs):
+def _resolve_inputs(solid_def, args, kwargs, context):
+    from dagster.core.execution.plan.execute_step import do_type_check
+
     input_defs = solid_def.input_defs
 
     # Fail early if too many inputs were provided.
@@ -118,15 +121,34 @@ def _resolve_inputs(solid_def, args, kwargs):
             kwargs[input_def.name] if input_def.name in kwargs else input_def.default_value
         )
 
+    # Type check inputs
+    input_defs_by_name = {input_def.name: input_def for input_def in input_defs}
+    for input_name, val in input_dict.items():
+
+        input_def = input_defs_by_name[input_name]
+        dagster_type = input_def.dagster_type
+        type_check = do_type_check(context.for_type(dagster_type), dagster_type, val)
+        if not type_check.success:
+            raise DagsterTypeCheckDidNotPass(
+                description=(
+                    f'Type check failed for solid input "{input_def.name}" - '
+                    f'expected type "{dagster_type.display_name}". '
+                    f"Description: {type_check.description}."
+                ),
+                metadata_entries=type_check.metadata_entries,
+                dagster_type=dagster_type,
+            )
+
     return input_dict
 
 
 def _execute_and_retrieve_outputs(
     solid_def: "SolidDefinition", context: "DirectSolidExecutionContext", input_dict: Dict[str, Any]
 ) -> tuple:
+    from dagster.core.execution.plan.execute_step import do_type_check
 
     output_values = {}
-    output_names = {output_def.name for output_def in solid_def.output_defs}
+    output_defs = {output_def.name: output_def for output_def in solid_def.output_defs}
 
     for output in _core_generator(solid_def, context, input_dict):
         if not isinstance(output, AssetMaterialization):
@@ -135,12 +157,26 @@ def _execute_and_retrieve_outputs(
                     f'Solid "{solid_def.name}" returned an output "{output.output_name}" multiple '
                     "times"
                 )
-            elif output.output_name not in output_names:
+            elif output.output_name not in output_defs:
                 raise DagsterInvariantViolationError(
                     f'Solid "{solid_def.name}" returned an output "{output.output_name}" that does '
-                    f"not exist. The available outputs are {list(output_names)}"
+                    f"not exist. The available outputs are {list(output_defs)}"
                 )
             else:
+                dagster_type = output_defs[output.output_name].dagster_type
+                type_check = do_type_check(
+                    context.for_type(dagster_type), dagster_type, output.value
+                )
+                if not type_check.success:
+                    raise DagsterTypeCheckDidNotPass(
+                        description=(
+                            f'Type check failed for solid output "{output.output_name}" - '
+                            f'expected type "{dagster_type.display_name}". '
+                            f"Description: {type_check.description}."
+                        ),
+                        metadata_entries=type_check.metadata_entries,
+                        dagster_type=dagster_type,
+                    )
                 output_values[output.output_name] = output.value
         else:
             context.record_materialization(output)

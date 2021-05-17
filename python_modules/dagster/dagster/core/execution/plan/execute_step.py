@@ -134,7 +134,7 @@ def _step_output_error_checked_user_event_sequence(
                 )
 
 
-def _do_type_check(context: TypeCheckContext, dagster_type: DagsterType, value: Any) -> TypeCheck:
+def do_type_check(context: TypeCheckContext, dagster_type: DagsterType, value: Any) -> TypeCheck:
     type_check = dagster_type.type_check(context, value)
     if not isinstance(type_check, TypeCheck):
         return TypeCheck(
@@ -185,7 +185,7 @@ def _type_checked_event_sequence_for_input(
             f"Dagster type {dagster_type.display_name}"
         ),
     ):
-        type_check = _do_type_check(step_context.for_type(dagster_type), dagster_type, input_value)
+        type_check = do_type_check(step_context.for_type(dagster_type), dagster_type, input_value)
 
     yield _create_step_input_event(
         step_context, input_name, type_check=type_check, success=type_check.success
@@ -224,7 +224,7 @@ def _type_check_output(
             f"Dagster type {dagster_type.display_name}"
         ),
     ):
-        type_check = _do_type_check(step_context.for_type(dagster_type), dagster_type, output.value)
+        type_check = do_type_check(step_context.for_type(dagster_type), dagster_type, output.value)
 
     yield DagsterEvent.step_output_event(
         step_context=step_context,

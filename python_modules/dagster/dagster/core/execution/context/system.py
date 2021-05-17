@@ -288,7 +288,9 @@ class PlanExecutionContext(IPlanContext):
         return self._log_manager
 
     def for_type(self, dagster_type: DagsterType) -> "TypeCheckContext":
-        return TypeCheckContext(self, dagster_type)
+        return TypeCheckContext(
+            self.run_id, self.log, self._execution_data.scoped_resources_builder, dagster_type
+        )
 
 
 class StepExecutionContext(PlanExecutionContext, IStepContext):
@@ -515,13 +517,14 @@ class TypeCheckContext:
 
     def __init__(
         self,
-        plan_execution_context: PlanExecutionContext,
+        run_id: str,
+        log_manager: DagsterLogManager,
+        scoped_resources_builder: ScopedResourcesBuilder,
         dagster_type: DagsterType,
     ):
-        self._plan_execution_context = plan_execution_context
-        self._resources = plan_execution_context.scoped_resources_builder.build(
-            dagster_type.required_resource_keys
-        )
+        self._run_id = run_id
+        self._log = log_manager
+        self._resources = scoped_resources_builder.build(dagster_type.required_resource_keys)
 
     @property
     def resources(self) -> "Resources":
@@ -529,11 +532,11 @@ class TypeCheckContext:
 
     @property
     def run_id(self) -> str:
-        return self._plan_execution_context.run_id
+        return self._run_id
 
     @property
     def log(self) -> DagsterLogManager:
-        return self._plan_execution_context.log
+        return self._log
 
 
 class HookContext:

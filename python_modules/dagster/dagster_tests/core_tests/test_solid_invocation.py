@@ -6,6 +6,7 @@ from dagster import (
     AssetKey,
     AssetMaterialization,
     Failure,
+    InputDefinition,
     Output,
     OutputDefinition,
     RetryRequested,
@@ -22,6 +23,7 @@ from dagster.core.errors import (
     DagsterInvariantViolationError,
     DagsterSolidInvocationError,
     DagsterStepOutputNotFoundError,
+    DagsterTypeCheckDidNotPass,
 )
 from dagster.core.execution.context.invocation import build_solid_context
 
@@ -387,3 +389,23 @@ def test_yielded_asset_materialization():
     assert solid_yields_materialization(context) == 5
     materializations = context.asset_materializations
     assert len(materializations) == 2
+
+
+def test_input_type_check():
+    @solid(input_defs=[InputDefinition("x", dagster_type=int)])
+    def solid_takes_input(x):
+        return x + 1
+
+    assert solid_takes_input(5) == 6
+
+    with pytest.raises(DagsterTypeCheckDidNotPass):
+        solid_takes_input("foo")
+
+
+def test_output_type_check():
+    @solid(output_defs=[OutputDefinition(dagster_type=int)])
+    def wrong_type():
+        return "foo"
+
+    with pytest.raises(DagsterTypeCheckDidNotPass):
+        wrong_type()
