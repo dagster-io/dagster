@@ -67,6 +67,38 @@ class ScheduleExecutionContext:
         return self._scheduled_execution_time
 
 
+def build_schedule_context(
+    instance: DagsterInstance, scheduled_execution_time: Optional[datetime] = None
+) -> ScheduleExecutionContext:
+    """Builds schedule execution context using the provided parameters.
+
+    The instance provided to ``build_schedule_context`` must be persistent;
+    DagsterInstance.ephemeral() will result in an error.
+
+    Args:
+        instance (DagsterInstance): The dagster instance configured to run the schedule.
+        scheduled_execution_time (datetime): The time in which the execution was scheduled to
+            happen. May differ slightly from both the actual execution time and the time at which
+            the run config is computed.
+
+    Examples:
+
+        .. code-block:: python
+
+            context = build_schedule_context(instance)
+            daily_schedule.get_execution_data(context)
+
+    """
+
+    check.inst_param(instance, "instance", DagsterInstance)
+    return ScheduleExecutionContext(
+        instance_ref=instance.get_ref(),
+        scheduled_execution_time=check.opt_inst_param(
+            scheduled_execution_time, "scheduled_execution_time", datetime
+        ),
+    )
+
+
 class ScheduleDefinition:
     """Define a schedule that targets a pipeline
 
