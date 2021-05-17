@@ -1,4 +1,5 @@
 import pytest
+from dagster import DagsterInvalidDefinitionError
 from dagster_graphql import DagsterGraphQLClientError, InvalidOutputErrorInfo
 
 from .conftest import MockClient, python_client_test_suite
@@ -38,6 +39,62 @@ def test_preset_success(mock_client: MockClient):
         "bar", repository_location_name="baz", repository_name="quux", preset="cool_preset"
     )
     assert actual_run_id == EXPECTED_RUN_ID
+
+
+@python_client_test_suite
+def test_tags_success(mock_client: MockClient):
+    response = {
+        "launchPipelineExecution": {
+            "__typename": "LaunchPipelineRunSuccess",
+            "run": {"runId": EXPECTED_RUN_ID},
+        }
+    }
+    mock_client.mock_gql_client.execute.return_value = response
+    actual_run_id = mock_client.python_client.submit_pipeline_execution(
+        "bar",
+        repository_location_name="baz",
+        repository_name="quuz",
+        run_config={},
+        mode="default",
+        tags={"my_tag": "a", "my_other_tag": "b"},
+    )
+    assert actual_run_id == EXPECTED_RUN_ID
+
+
+@python_client_test_suite
+def test_complex_tags_success(mock_client: MockClient):
+    response = {
+        "launchPipelineExecution": {
+            "__typename": "LaunchPipelineRunSuccess",
+            "run": {"runId": EXPECTED_RUN_ID},
+        }
+    }
+    mock_client.mock_gql_client.execute.return_value = response
+    actual_run_id = mock_client.python_client.submit_pipeline_execution(
+        "bar",
+        repository_location_name="baz",
+        repository_name="quuz",
+        run_config={},
+        mode="default",
+        tags={"my_tag": {"I'm": {"a JSON-encodable": "thing"}}},
+    )
+    assert actual_run_id == EXPECTED_RUN_ID
+
+
+@python_client_test_suite
+def test_invalid_tags_failure(mock_client: MockClient):
+    class SomeWeirdObject:
+        pass
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+        mock_client.python_client.submit_pipeline_execution(
+            "bar",
+            repository_location_name="baz",
+            repository_name="quuz",
+            run_config={},
+            mode="default",
+            tags={"my_invalid_tag": SomeWeirdObject()},
+        )
 
 
 @python_client_test_suite
