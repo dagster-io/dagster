@@ -17,7 +17,10 @@ export const MetadataTable = (props: Props) => {
   return (
     <StyledTable>
       <tbody>
-        {rows.filter(Boolean).map((pair: Row) => {
+        {rows.map((pair: Row | null | undefined) => {
+          if (!pair) {
+            return null;
+          }
           const {key, value} = pair;
           return (
             <tr key={key}>

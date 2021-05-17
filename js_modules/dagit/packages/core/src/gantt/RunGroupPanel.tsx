@@ -12,10 +12,7 @@ import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
 import {Group} from '../ui/Group';
 
-import {
-  RunGroupPanelQuery,
-  RunGroupPanelQuery_runGroupOrError_RunGroup_runs,
-} from './types/RunGroupPanelQuery';
+import {RunGroupPanelQuery} from './types/RunGroupPanelQuery';
 
 function subsetTitleForRun(run: {tags: {key: string; value: string}[]}) {
   const stepsTag = run.tags.find((t) => t.key === DagsterTag.StepSelection);
@@ -70,42 +67,44 @@ export const RunGroupPanel: React.FunctionComponent<{runId: string}> = ({runId})
   return (
     <RunGroupContainer>
       {runs[0] && <RunGroupHeader>{runs[0].pipelineName}</RunGroupHeader>}
-      {runs.map((g: RunGroupPanelQuery_runGroupOrError_RunGroup_runs, idx) => (
-        <RunGroupRun key={g.runId} to={`/instance/runs/${g.runId}`} selected={g.runId === runId}>
-          {idx < runs.length - 1 && <ThinLine style={{height: 36}} />}
-          <Box padding={{top: 4}}>
-            <RunStatus status={g.status} />
-          </Box>
-
-          <div
-            style={{
-              flex: 1,
-              marginLeft: 5,
-              minWidth: 0,
-              color: Colors.DARK_GRAY5,
-            }}
-          >
-            <div style={{display: 'flex', justifyContent: 'space-between'}}>
-              <RunTitle>
-                {g.runId.split('-')[0]}
-                {idx === 0 && RootTag}
-              </RunTitle>
-              <RunTime run={g} />
-            </div>
+      {runs.map((g, idx) =>
+        g ? (
+          <RunGroupRun key={g.runId} to={`/instance/runs/${g.runId}`} selected={g.runId === runId}>
+            {idx < runs.length - 1 && <ThinLine style={{height: 36}} />}
+            <Box padding={{top: 4}}>
+              <RunStatus status={g.status} />
+            </Box>
 
             <div
               style={{
-                display: 'flex',
+                flex: 1,
+                marginLeft: 5,
+                minWidth: 0,
                 color: Colors.DARK_GRAY5,
-                justifyContent: 'space-between',
               }}
             >
-              {subsetTitleForRun(g)}
-              <RunElapsed run={g} />
+              <div style={{display: 'flex', justifyContent: 'space-between'}}>
+                <RunTitle>
+                  {g.runId.split('-')[0]}
+                  {idx === 0 && RootTag}
+                </RunTitle>
+                <RunTime run={g} />
+              </div>
+
+              <div
+                style={{
+                  display: 'flex',
+                  color: Colors.DARK_GRAY5,
+                  justifyContent: 'space-between',
+                }}
+              >
+                {subsetTitleForRun(g)}
+                <RunElapsed run={g} />
+              </div>
             </div>
-          </div>
-        </RunGroupRun>
-      ))}
+          </RunGroupRun>
+        ) : null,
+      )}
     </RunGroupContainer>
   );
 };

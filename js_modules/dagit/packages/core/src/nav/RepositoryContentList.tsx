@@ -22,6 +22,7 @@ interface RepositoryContentListProps {
 type Item = {
   to: string;
   label: string;
+  repoPath: string;
 };
 
 export const RepositoryContentList: React.FC<RepositoryContentListProps> = ({
@@ -32,7 +33,7 @@ export const RepositoryContentList: React.FC<RepositoryContentListProps> = ({
 }) => {
   const client = useApolloClient();
   const [type, setType] = React.useState<'pipelines' | 'solids'>('pipelines');
-  const [selectedSolids, setSelectedSolids] = React.useState(() => []);
+  const [selectedSolids, setSelectedSolids] = React.useState<Item[]>(() => []);
 
   const pipelineTab = tabForPipelinePathComponent(tab);
 
@@ -55,7 +56,7 @@ export const RepositoryContentList: React.FC<RepositoryContentListProps> = ({
       );
 
       const results = await Promise.all(promises);
-      const allSolids = Array.prototype.concat
+      const allSolids: Item[] = Array.prototype.concat
         .apply(
           [],
           results.map((result) => {
@@ -99,7 +100,7 @@ export const RepositoryContentList: React.FC<RepositoryContentListProps> = ({
               repoPath: buildRepoPath(repo.repository.name, repo.repositoryLocation.name),
             })),
         ],
-        [],
+        [] as Item[],
       )
       .sort((a, b) => a.label.toLocaleLowerCase().localeCompare(b.label.toLocaleLowerCase()));
   }, [pipelineTab.pathComponent, repos, tab]);

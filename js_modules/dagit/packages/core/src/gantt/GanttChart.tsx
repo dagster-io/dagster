@@ -261,8 +261,8 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
   // and sync them to our React state for display.
   React.useEffect(() => {
     const listener = (e: CustomEvent) => setHoveredTime(e.detail);
-    document.addEventListener(HIGHLIGHT_TIME_EVENT, listener);
-    return () => document.removeEventListener(HIGHLIGHT_TIME_EVENT, listener);
+    document.addEventListener(HIGHLIGHT_TIME_EVENT, listener as EventListener);
+    return () => document.removeEventListener(HIGHLIGHT_TIME_EVENT, listener as EventListener);
   });
 
   // The `layout` we receive has been laid out and the rows / "waterfall" are final,

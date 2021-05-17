@@ -6,7 +6,10 @@ import {buildRepoPath} from '../workspace/buildRepoAddress';
 import {workspacePath} from '../workspace/workspacePath';
 
 import {SearchResult, SearchResultType} from './types';
-import {SearchBootstrapQuery} from './types/SearchBootstrapQuery';
+import {
+  SearchBootstrapQuery,
+  SearchBootstrapQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation_repositories as Repository,
+} from './types/SearchBootstrapQuery';
 import {SearchSecondaryQuery} from './types/SearchSecondaryQuery';
 
 const fuseOptions = {
@@ -32,7 +35,7 @@ const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
       return accum;
     }
 
-    const repos = repoLocation.repositories;
+    const repos: Repository[] = repoLocation.repositories;
     return [
       ...accum,
       ...repos.reduce((inner, repo) => {
@@ -77,9 +80,9 @@ const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
         }));
 
         return [...inner, ...allPipelines, ...allSchedules, ...allSensors, ...allPartitionSets];
-      }, []),
+      }, [] as SearchResult[]),
     ];
-  }, []);
+  }, [] as SearchResult[]);
 
   return new Fuse(allEntries, fuseOptions);
 };
@@ -132,8 +135,8 @@ export const useRepoSearch = () => {
       if ((queryString || buildSecondary) && !secondaryQueryCalled) {
         performQuery();
       }
-      const bootstrapResults = bootstrapFuse.search(queryString);
-      const secondaryResults = secondaryFuse.search(queryString);
+      const bootstrapResults: Fuse.FuseResult<SearchResult>[] = bootstrapFuse.search(queryString);
+      const secondaryResults: Fuse.FuseResult<SearchResult>[] = secondaryFuse.search(queryString);
       return [...bootstrapResults, ...secondaryResults];
     },
     [bootstrapFuse, secondaryFuse, performQuery, secondaryQueryCalled],

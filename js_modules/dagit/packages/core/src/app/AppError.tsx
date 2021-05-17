@@ -11,9 +11,6 @@ export interface DagsterGraphQLError extends GraphQLError {
   stack_trace: string[];
   cause?: DagsterGraphQLError;
 }
-interface DagsterErrorResponse extends ErrorResponse {
-  graphQLErrors?: ReadonlyArray<DagsterGraphQLError>;
-}
 
 const ErrorToaster = Toaster.create({position: Position.TOP_RIGHT});
 
@@ -29,11 +26,13 @@ export const showGraphQLError = (error: DagsterGraphQLError, operationName?: str
 };
 
 export const AppErrorLink = () => {
-  return onError((response: DagsterErrorResponse) => {
+  return onError((response: ErrorResponse) => {
     if (response.graphQLErrors) {
       const {graphQLErrors, operation} = response;
       const {operationName} = operation;
-      graphQLErrors.forEach((error) => showGraphQLError(error, operationName));
+      graphQLErrors.forEach((error) =>
+        showGraphQLError(error as DagsterGraphQLError, operationName),
+      );
     }
     if (response.networkError) {
       ErrorToaster.show({

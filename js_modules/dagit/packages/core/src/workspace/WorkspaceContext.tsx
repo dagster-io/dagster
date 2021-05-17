@@ -158,7 +158,7 @@ const useWorkspaceState = () => {
         return {repository, repositoryLocation};
       });
       return [...accum, ...reposForLocation];
-    }, []);
+    }, [] as DagsterRepoOption[]);
 
     return {error: null, options};
   }, [data]);

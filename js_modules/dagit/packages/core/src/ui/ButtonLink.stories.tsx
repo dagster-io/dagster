@@ -3,7 +3,7 @@ import {Story, Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 
 import {Box} from './Box';
-import {ButtonLink, Props} from './ButtonLink';
+import {ButtonLink} from './ButtonLink';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -11,6 +11,7 @@ export default {
   component: ButtonLink,
 } as Meta;
 
+type Props = React.ComponentProps<typeof ButtonLink>;
 const Template: Story<Props> = (props) => <ButtonLink {...props} />;
 
 export const ColorString = Template.bind({});

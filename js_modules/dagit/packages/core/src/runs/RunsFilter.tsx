@@ -107,7 +107,7 @@ function searchSuggestionsForRuns(
 ): SuggestionProvider[] {
   const pipelineNames = repositoryOptions.reduce((accum, option) => {
     return [...accum, ...option.repository.pipelines.map((p) => p.name)];
-  }, []);
+  }, [] as string[]);
 
   const suggestions: {token: RunFilterTokenType; values: () => string[]}[] = [
     {

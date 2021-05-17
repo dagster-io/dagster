@@ -19,7 +19,7 @@ reset state in preparation for receiving messages again.)
 */
 export class DirectGraphQLSubscription<T> {
   private websocketURI: string;
-  private websocket: WebSocket;
+  private websocket: WebSocket | null = null;
   private messageQueue: T[] = [];
   private messagesReceived = false;
   private onFlushMessages: FlushCallback<T>;
@@ -74,7 +74,7 @@ export class DirectGraphQLSubscription<T> {
   close() {
     this.closed = true;
     window.removeEventListener('beforeunload', this.handleBeforeUnload);
-    this.websocket.close();
+    this.websocket?.close();
   }
 
   handleBeforeUnload = () => {
@@ -83,7 +83,7 @@ export class DirectGraphQLSubscription<T> {
 
   handleRetry = () => {
     setTimeout(() => {
-      if (this.closed || this.websocket.readyState !== WebSocket.CLOSED) {
+      if (this.closed || this.websocket?.readyState !== WebSocket.CLOSED) {
         return;
       }
       this.websocket.close();

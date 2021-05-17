@@ -195,7 +195,7 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
         .filter((v) => v.token && v.token === 'query')
         .reduce((accum, v) => {
           return [...accum, ...filterByQuery(runtimeGraph, v.value).all.map((n) => n.name)];
-        }, [])
+        }, [] as string[])
     : [];
 
   const onLaunch = async (style: ReExecutionStyle) => {

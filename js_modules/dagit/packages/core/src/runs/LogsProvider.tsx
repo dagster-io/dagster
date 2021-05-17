@@ -43,7 +43,7 @@ export class LogsProvider extends React.Component<LogsProviderProps, LogsProvide
     nodes: null,
   };
 
-  _subscription: DirectGraphQLSubscription<PipelineRunLogsSubscription>;
+  _subscription: DirectGraphQLSubscription<PipelineRunLogsSubscription> | null = null;
 
   componentDidMount() {
     this.subscribeToRun();

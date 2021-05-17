@@ -6,7 +6,10 @@ import {SharedToaster} from '../app/DomUtils';
 import {useInvalidateConfigsForRepo} from '../app/LocalStorage';
 import {PYTHON_ERROR_FRAGMENT, READ_ONLY_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 
-import {ReloadWorkspaceMutation} from './types/ReloadWorkspaceMutation';
+import {
+  ReloadWorkspaceMutation,
+  ReloadWorkspaceMutation_reloadWorkspace_RepositoryLocationConnection_nodes_RepositoryLocation_repositories as Repository,
+} from './types/ReloadWorkspaceMutation';
 
 export const useReloadWorkspace = () => {
   const apollo = useApolloClient();
@@ -48,7 +51,7 @@ export const useReloadWorkspace = () => {
         return [...accum, ...location.repositories];
       }
       return accum;
-    }, []);
+    }, [] as Repository[]);
 
     invalidateConfigs(reposToInvalidate);
     apollo.resetStore();

@@ -207,7 +207,10 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
         <Group direction="row" alignItems="center" spacing={12}>
           <strong>Run Matrix</strong>
           <RunTagsTokenizingField
-            runs={partitions.reduce((a, b) => [...a, ...b.runs], [])}
+            runs={partitions.reduce(
+              (a, b) => [...a, ...b.runs],
+              [] as {tags: {key: string; value: string}[]}[],
+            )}
             onChange={props.setRunTags}
             tokens={props.runTags}
           />

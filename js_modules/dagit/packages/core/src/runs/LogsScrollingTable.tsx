@@ -148,7 +148,7 @@ class LogsScrollingTableSized extends React.Component<ILogsScrollingTableSizedPr
   });
 
   isAtBottomOrZero = true;
-  scrollToBottomObserver: MutationObserver;
+  scrollToBottomObserver: MutationObserver | null = null;
 
   componentDidMount() {
     this.attachScrollToBottomObserver();
