@@ -197,23 +197,26 @@ def fetch_repository_location(workspace_request_context, location_name):
     )
 
     load_status = workspace_request_context.get_load_status(location_name)
+    metadata = workspace_request_context.get_location_metadata(location_name)
+
     if workspace_request_context.has_repository_location(location_name):
         return GrapheneRepositoryLocation(
-            workspace_request_context.get_repository_location(location_name),
-            load_status,
+            workspace_request_context.get_repository_location(location_name), load_status, metadata
         )
     elif workspace_request_context.has_repository_location_error(location_name):
         return GrapheneRepositoryLocationLoadFailure(
             location_name,
             workspace_request_context.get_repository_location_error(location_name),
             load_status,
+            metadata,
         )
     else:
         check.invariant(
-            load_status == WorkspaceLocationLoadStatus.LOADING,
+            workspace_request_context.get_load_status(location_name)
+            == WorkspaceLocationLoadStatus.LOADING,
             f"Location {location_name} was not in a loaded, error, or loading state",
         )
-        return GrapheneRepositoryLocationLoading(location_name)
+        return GrapheneRepositoryLocationLoading(location_name, metadata)
 
 
 @capture_error
