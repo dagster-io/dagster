@@ -4,7 +4,7 @@ from dagster import check
 from dagster.core.definitions.dependency import SolidHandle
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster.core.types.dagster_type import DagsterType
-from dagster.utils.backcompat import experimental_arg_warning, experimental_functionality_warning
+from dagster.utils.backcompat import experimental_arg_warning
 
 from .config import ConfigMapping
 from .definition_config_schema import (
@@ -115,7 +115,6 @@ class SolidDefinition(NodeDefinition):
         if is_in_composition():
             return super(SolidDefinition, self).__call__(*args, **kwargs)
         else:
-            experimental_functionality_warning("Solid invocation out of composition scope")
             if self._context_arg_provided:
                 if len(args) == 0:
                     raise DagsterInvalidInvocationError(

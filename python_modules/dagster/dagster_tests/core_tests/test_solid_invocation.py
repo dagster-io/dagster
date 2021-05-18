@@ -10,6 +10,7 @@ from dagster import (
     Output,
     OutputDefinition,
     RetryRequested,
+    build_solid_context,
     execute_solid,
     pipeline,
     resource,
@@ -24,7 +25,6 @@ from dagster.core.errors import (
     DagsterStepOutputNotFoundError,
     DagsterTypeCheckDidNotPass,
 )
-from dagster.core.execution.context.invocation import build_solid_context
 
 
 def test_solid_invocation_no_arg():

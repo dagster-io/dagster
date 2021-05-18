@@ -105,6 +105,7 @@ from dagster.core.execution.api import (
 from dagster.core.execution.context.compute import SolidExecutionContext
 from dagster.core.execution.context.init import InitResourceContext
 from dagster.core.execution.context.input import InputContext, build_input_context
+from dagster.core.execution.context.invocation import build_solid_context
 from dagster.core.execution.context.logger import InitLoggerContext
 from dagster.core.execution.context.output import OutputContext, build_output_context
 from dagster.core.execution.context.system import HookContext, TypeCheckContext
@@ -238,6 +239,7 @@ __all__ = [
     "RetryRequested",
     "SolidExecutionResult",
     "SolidExecutionContext",
+    "build_solid_context",
     "HookContext",
     "TypeCheckContext",
     "InputContext",
