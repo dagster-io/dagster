@@ -388,6 +388,10 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         # Remove once https://github.com/dagster-io/dagster/issues/2511 is resolved
         retries=2,
     ),
+    ModuleBuildSpec(
+        "python_modules/libraries/dagstermill",
+        tox_env_suffixes=["-papermill1", "-papermill2"],
+    ),
     ModuleBuildSpec("python_modules/libraries/lakehouse", upload_coverage=False),
 ]
 

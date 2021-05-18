@@ -20,7 +20,7 @@ setup(
         "boto3",
         "dagster",
         "dagster-graphql",
-        "packaging==20.9",
+        "packaging>=20.9",
         "pandas",
         "pytablereader",
         "requests",
