@@ -76,7 +76,7 @@ export const SchedulePartitionStatus: React.FC<{
               <tr key={status}>
                 <td style={{width: '100px'}}>{status}</td>
                 <td>
-                  {status == 'Failed' || status == 'Missing' ? (
+                  {status === 'Failed' || status === 'Missing' ? (
                     <Link
                       to={`${partitionUrl}?showFailuresAndGapsOnly=true`}
                       style={{color: Colors.DARK_GRAY1}}

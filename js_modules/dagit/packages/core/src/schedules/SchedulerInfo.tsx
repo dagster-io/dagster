@@ -36,13 +36,13 @@ export const SchedulerInfo: React.FunctionComponent<{
 
   if (
     schedulerOrError.__typename === 'Scheduler' &&
-    schedulerOrError.schedulerClass == 'DagsterDaemonScheduler'
+    schedulerOrError.schedulerClass === 'DagsterDaemonScheduler'
   ) {
     let healthy = false;
 
     if (daemonHealth) {
       const schedulerHealths = daemonHealth.allDaemonStatuses.filter(
-        (daemon) => daemon.daemonType == 'SCHEDULER',
+        (daemon) => daemon.daemonType === 'SCHEDULER',
       );
       if (schedulerHealths) {
         const schedulerHealth = schedulerHealths[0];

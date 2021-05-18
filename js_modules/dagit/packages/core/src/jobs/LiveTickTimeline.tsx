@@ -168,7 +168,7 @@ export const LiveTickTimeline: React.FC<{
           if (tick.status === JobTickStatus.SUCCESS && tick.runIds.length) {
             return tick.runIds;
           }
-          if (tick.status == JobTickStatus.FAILURE && tick.error?.message) {
+          if (tick.status === JobTickStatus.FAILURE && tick.error?.message) {
             return tick.error.message;
           }
           return '';

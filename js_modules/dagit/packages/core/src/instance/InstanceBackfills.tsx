@@ -89,7 +89,7 @@ export const InstanceBackfills = () => {
 
           const daemonHealths = queryData.data?.instance.daemonHealth.allDaemonStatuses || [];
           const backfillHealths = daemonHealths
-            .filter((daemon) => daemon.daemonType == 'BACKFILL')
+            .filter((daemon) => daemon.daemonType === 'BACKFILL')
             .map((daemon) => daemon.required && daemon.healthy);
           const isBackfillHealthy = backfillHealths.length && backfillHealths.every((x) => x);
 

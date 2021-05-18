@@ -16,7 +16,7 @@ const AssetLineageInfoElement: React.FC<{
   lineage_info: AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent_assetLineage;
   timestamp: string;
 }> = ({lineage_info, timestamp}) => {
-  const partition_list_label = lineage_info.partitions.length == 1 ? 'Partition' : 'Partitions';
+  const partition_list_label = lineage_info.partitions.length === 1 ? 'Partition' : 'Partitions';
   const partition_list_str = lineage_info.partitions
     .map((partition) => `"${partition}"`)
     .join(', ');

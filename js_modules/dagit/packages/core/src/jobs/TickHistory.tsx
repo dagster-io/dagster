@@ -425,7 +425,7 @@ const TickHistoryGraph: React.FC<{
           if (hoveredTick.status === JobTickStatus.SUCCESS && hoveredTick.runIds.length) {
             return hoveredTick.runIds;
           }
-          if (hoveredTick.status == JobTickStatus.FAILURE && hoveredTick.error?.message) {
+          if (hoveredTick.status === JobTickStatus.FAILURE && hoveredTick.error?.message) {
             return snippet(hoveredTick.error.message);
           }
           return '';

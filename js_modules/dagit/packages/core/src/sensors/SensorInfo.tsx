@@ -10,7 +10,7 @@ export const SensorInfo: React.FC<{
 
   if (daemonHealth) {
     const sensorHealths = daemonHealth.allDaemonStatuses.filter(
-      (daemon) => daemon.daemonType == 'SENSOR',
+      (daemon) => daemon.daemonType === 'SENSOR',
     );
     if (sensorHealths) {
       const sensorHealth = sensorHealths[0];

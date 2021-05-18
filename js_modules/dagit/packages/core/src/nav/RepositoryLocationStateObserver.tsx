@@ -53,7 +53,7 @@ export const RepositoryLocationStateObserver = ({client}: StateObserverProps) =>
           setUpdatedLocations((s) => s.filter((name) => name !== locationName));
           return;
         case LocationStateChangeEventType.LOCATION_UPDATED:
-          const matchingRepositoryLocation = locations.find((n) => n.name == locationName);
+          const matchingRepositoryLocation = locations.find((n) => n.name === locationName);
           if (
             matchingRepositoryLocation &&
             matchingRepositoryLocation?.__typename === 'RepositoryLocation' &&
@@ -84,7 +84,7 @@ export const RepositoryLocationStateObserver = ({client}: StateObserverProps) =>
         <Group padding={{vertical: 8, horizontal: 12}} direction="row" spacing={8}>
           <Icon icon="warning-sign" color={Colors.DARK_GRAY3} iconSize={14} />
           <Caption color={Colors.DARK_GRAY3}>
-            {updatedLocations.length == 1
+            {updatedLocations.length === 1
               ? `Repository location ${updatedLocations[0]} has been updated,` // Be specific when there's only one repository location updated
               : 'One or more repository locations have been updated,'}{' '}
             and new data is available.{' '}

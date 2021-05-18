@@ -16,6 +16,7 @@ module.exports = {
   },
   rules: {
     curly: 'error',
+    eqeqeq: 'error',
     'import/no-cycle': 'error',
     'import/no-default-export': 'error',
     'import/no-duplicates': 'error',

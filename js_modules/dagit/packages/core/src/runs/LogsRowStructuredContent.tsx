@@ -269,7 +269,7 @@ const FailureContent: React.FunctionComponent<{
 
     // omit the outer stack for user code errors with a cause
     // as the outer stack is just framework code
-    if (!(errorSource == ErrorSource.USER_CODE_ERROR && error.cause)) {
+    if (!(errorSource === ErrorSource.USER_CODE_ERROR && error.cause)) {
       errorStack = <span style={{color: Colors.RED3}}>{`\nStack Trace:\n${error.stack}`}</span>;
     }
 

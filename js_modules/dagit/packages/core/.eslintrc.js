@@ -22,6 +22,7 @@ module.exports = {
   },
   rules: {
     curly: 'error',
+    eqeqeq: ['error', 'always', {null: 'ignore'}],
     'graphql/required-fields': [
       'error',
       {

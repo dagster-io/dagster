@@ -224,7 +224,7 @@ const NextTickMenuItems: React.FC<{
     return <MenuItem text="No runs requested for this projected schedule tick" />;
   }
 
-  if (evaluationResult.runRequests.length == 1) {
+  if (evaluationResult.runRequests.length === 1) {
     const runRequest = evaluationResult.runRequests[0];
     const runConfigYaml = runRequest ? runRequest.runConfigYaml : '';
     return (
@@ -274,7 +274,7 @@ const NextTickDialog: React.FC<{
     selectedRunRequest,
     setSelectedRunRequest,
   ] = React.useState<ScheduleTickConfigQuery_scheduleOrError_Schedule_futureTick_evaluationResult_runRequests | null>(
-    evaluationResult && evaluationResult.runRequests && evaluationResult.runRequests.length == 1
+    evaluationResult && evaluationResult.runRequests && evaluationResult.runRequests.length === 1
       ? evaluationResult.runRequests[0]
       : null,
   );
@@ -282,7 +282,7 @@ const NextTickDialog: React.FC<{
     if (
       evaluationResult &&
       evaluationResult.runRequests &&
-      evaluationResult.runRequests.length == 1
+      evaluationResult.runRequests.length === 1
     ) {
       setSelectedRunRequest(evaluationResult.runRequests[0]);
     }

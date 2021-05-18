@@ -259,7 +259,10 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
   const onError = (data: LaunchPartitionBackfill | null | undefined) => {
     const result = data?.launchPartitionBackfill;
     let errors = <></>;
-    if (result?.__typename == 'PythonError' || result?.__typename == 'PartitionSetNotFoundError') {
+    if (
+      result?.__typename === 'PythonError' ||
+      result?.__typename === 'PartitionSetNotFoundError'
+    ) {
       errors = <PythonErrorInfo error={result} />;
     } else if (result?.__typename === 'InvalidStepError') {
       errors = <div>{`Invalid step: ${result.invalidStepKey}`}</div>;

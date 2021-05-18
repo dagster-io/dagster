@@ -71,7 +71,7 @@ export const toGraphQueryItems = (
         // and attach inputs / outputs to our result graph.
         for (const upstream of input.dependsOn) {
           let upstreamKeys = [];
-          if (step.kind == StepKind.UNRESOLVED_COLLECT) {
+          if (step.kind === StepKind.UNRESOLVED_COLLECT) {
             // If we are a collect, there may be N runtime keys fanning in to this input,
             // fetch the keys if they exist or fall back to the sigle upstream step case.
             upstreamKeys = keyExpansionMap[upstream.key] || [upstream.key];

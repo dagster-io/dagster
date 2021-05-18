@@ -118,7 +118,7 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
   const isFinalStatus = !!doneStatuses.has(run.status);
   const isFailedWithPlan =
     run.executionPlan &&
-    (run.status === PipelineRunStatus.FAILURE || run.status == PipelineRunStatus.CANCELED);
+    (run.status === PipelineRunStatus.FAILURE || run.status === PipelineRunStatus.CANCELED);
 
   const full: LaunchButtonConfiguration = {
     icon: 'repeat',

@@ -153,7 +153,7 @@ export const AppProvider: React.FC<Props> = (props) => {
     const splitLink = split(
       ({query}) => {
         const definition = getMainDefinition(query);
-        return definition.kind == 'OperationDefinition' && definition.operation == 'subscription';
+        return definition.kind === 'OperationDefinition' && definition.operation === 'subscription';
       },
       websocketLink,
       httpLink,
