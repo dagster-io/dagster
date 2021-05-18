@@ -1,6 +1,6 @@
 from contextlib import ExitStack
 from datetime import datetime
-from typing import Any, Callable, Dict, List, NamedTuple, Optional, cast
+from typing import Any, Callable, Dict, List, NamedTuple, Optional, Union, cast
 
 import pendulum
 from croniter import croniter
@@ -18,11 +18,12 @@ from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.tags import check_tags
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils import ensure_gen, merge_dicts
-from dagster.utils.backcompat import experimental_fn_warning
+from dagster.utils.backcompat import experimental_arg_warning, experimental_fn_warning
 
+from .graph import GraphDefinition
 from .mode import DEFAULT_MODE_NAME
 from .run_request import JobType, RunRequest, SkipReason
-from .target import RepoRelativeTarget
+from .target import DirectTarget, RepoRelativeTarget
 from .utils import check_valid_name
 
 
@@ -158,6 +159,7 @@ class ScheduleDefinition:
         execution_timezone (Optional[str]): Timezone in which the schedule should run. Only works
             with DagsterDaemonScheduler, and must be set when using that scheduler.
         description (Optional[str]): A human-readable description of the schedule.
+        target (Optional[GraphDefinition]): Experimental
     """
 
     __slots__ = [
@@ -176,7 +178,7 @@ class ScheduleDefinition:
         self,
         name: str,
         cron_schedule: str,
-        pipeline_name: str,
+        pipeline_name: Optional[str] = None,
         run_config: Optional[Any] = None,
         run_config_fn: Optional[Callable[..., Any]] = None,
         tags: Optional[Dict[str, str]] = None,
@@ -188,6 +190,7 @@ class ScheduleDefinition:
         execution_timezone: Optional[str] = None,
         execution_fn: Optional[Callable[[ScheduleExecutionContext], Any]] = None,
         description: Optional[str] = None,
+        job: Optional[GraphDefinition] = None,
     ):
 
         if not croniter.is_valid(cron_schedule):
@@ -197,13 +200,17 @@ class ScheduleDefinition:
 
         self._name = check_valid_name(name)
 
-        self._target = RepoRelativeTarget(
-            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
-            mode=cast(str, check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME)),
-            solid_selection=check.opt_nullable_list_param(
-                solid_selection, "solid_selection", of_type=str
-            ),
-        )
+        if job is not None:
+            experimental_arg_warning("job", "ScheduleDefinition.__init__")
+            self._target: Union[DirectTarget, RepoRelativeTarget] = DirectTarget(job)
+        else:
+            self._target = RepoRelativeTarget(
+                pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
+                mode=check.opt_str_param(mode, "mode") or DEFAULT_MODE_NAME,
+                solid_selection=check.opt_nullable_list_param(
+                    solid_selection, "solid_selection", of_type=str
+                ),
+            )
 
         self._description = check.opt_str_param(description, "description")
 
@@ -371,3 +378,12 @@ class ScheduleDefinition:
         return ScheduleExecutionData(
             run_requests=run_requests_with_schedule_tags, skip_message=skip_message
         )
+
+    def has_loadable_target(self):
+        return isinstance(self._target, DirectTarget)
+
+    def load_target(self):
+        if isinstance(self._target, DirectTarget):
+            return self._target.load()
+
+        check.failed("Target is not loadable")

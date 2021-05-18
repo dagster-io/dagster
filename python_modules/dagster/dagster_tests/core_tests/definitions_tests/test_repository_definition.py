@@ -9,8 +9,11 @@ from dagster import (
     daily_schedule,
     lambda_solid,
     repository,
+    schedule,
+    solid,
 )
 from dagster.core.definitions import sensor
+from dagster.core.definitions.decorators.graph import graph
 
 
 def create_single_node_pipeline(name, called):
@@ -198,3 +201,43 @@ def test_bad_sensor():
         @repository
         def _some_repo():
             return [foo_sensor]
+
+
+def test_direct_schedule_target():
+    @solid
+    def wow():
+        return "wow"
+
+    @graph
+    def wonder():
+        wow()
+
+    @schedule(cron_schedule="* * * * *", job=wonder)
+    def direct_schedule(_):
+        return {}
+
+    @repository
+    def test():
+        return [direct_schedule]
+
+    assert test
+
+
+def test_direct_sensor_target():
+    @solid
+    def wow():
+        return "wow"
+
+    @graph
+    def wonder():
+        wow()
+
+    @sensor(job=wonder)
+    def direct_sensor(_):
+        return {}
+
+    @repository
+    def test():
+        return [direct_sensor]
+
+    assert test

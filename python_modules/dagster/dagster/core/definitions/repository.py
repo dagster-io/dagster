@@ -286,6 +286,9 @@ class RepositoryData:
                     )
                 jobs[definition.name] = definition
                 sensors[definition.name] = definition
+                if definition.has_loadable_target():
+                    target = definition.load_target()
+                    pipelines[target.name] = target
             elif isinstance(definition, ScheduleDefinition):
                 if definition.name in jobs:
                     raise DagsterInvalidDefinitionError(
@@ -293,6 +296,9 @@ class RepositoryData:
                     )
                 jobs[definition.name] = definition
                 schedules[definition.name] = definition
+                if definition.has_loadable_target():
+                    target = definition.load_target()
+                    pipelines[target.name] = target
 
                 if isinstance(definition, PartitionScheduleDefinition):
                     partition_set_def = definition.get_partition_set()

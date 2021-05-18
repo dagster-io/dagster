@@ -8,11 +8,12 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.instance.ref import InstanceRef
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils import ensure_gen
-from dagster.utils.backcompat import experimental_fn_warning
+from dagster.utils.backcompat import experimental_arg_warning, experimental_fn_warning
 
+from .graph import GraphDefinition
 from .mode import DEFAULT_MODE_NAME
 from .run_request import JobType, RunRequest, SkipReason
-from .target import RepoRelativeTarget
+from .target import DirectTarget, RepoRelativeTarget
 from .utils import check_valid_name
 
 DEFAULT_SENSOR_DAEMON_INTERVAL = 30
@@ -126,6 +127,7 @@ class SensorDefinition:
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
+        job (Optional[PipelineDefinition]): Experimental
     """
 
     __slots__ = [
@@ -141,7 +143,7 @@ class SensorDefinition:
     def __init__(
         self,
         name: str,
-        pipeline_name: str,
+        pipeline_name: Optional[str],
         evaluation_fn: Callable[
             ["SensorExecutionContext"],
             Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
@@ -150,17 +152,22 @@ class SensorDefinition:
         mode: Optional[str] = None,
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
+        job: Optional[GraphDefinition] = None,
     ):
 
         self._name = check_valid_name(name)
 
-        self._target = RepoRelativeTarget(
-            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
-            mode=cast(str, check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME)),
-            solid_selection=check.opt_nullable_list_param(
-                solid_selection, "solid_selection", of_type=str
-            ),
-        )
+        if job is not None:
+            experimental_arg_warning("target", "SensorDefinition.__init__")
+            self._target: Union[DirectTarget, RepoRelativeTarget] = DirectTarget(job)
+        else:
+            self._target = RepoRelativeTarget(
+                pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
+                mode=check.opt_str_param(mode, "mode") or DEFAULT_MODE_NAME,
+                solid_selection=check.opt_nullable_list_param(
+                    solid_selection, "solid_selection", of_type=str
+                ),
+            )
 
         self._description = check.opt_str_param(description, "description")
         self._evaluation_fn = check.callable_param(evaluation_fn, "evaluation_fn")
@@ -223,6 +230,15 @@ class SensorDefinition:
     @property
     def minimum_interval_seconds(self) -> Optional[int]:
         return self._min_interval
+
+    def has_loadable_target(self):
+        return isinstance(self._target, DirectTarget)
+
+    def load_target(self):
+        if isinstance(self._target, DirectTarget):
+            return self._target.load()
+
+        check.failed("Target is not loadable")
 
 
 @whitelist_for_serdes
