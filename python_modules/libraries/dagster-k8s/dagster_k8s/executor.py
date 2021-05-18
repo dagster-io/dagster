@@ -54,9 +54,10 @@ class K8sStepHandler(StepHandler):
         )
         job_name = "dagster-job-%s" % (k8s_name_key)
         pod_name = "dagster-job-%s" % (k8s_name_key)
+        pipeline_origin = self.pipeline_context.reconstructable_pipeline.get_python_origin()
 
         execute_step_args = ExecuteStepArgs(
-            pipeline_origin=self.pipeline_context.reconstructable_pipeline.get_python_origin(),
+            pipeline_origin=pipeline_origin,
             pipeline_run_id=self.pipeline_context.pipeline_run.run_id,
             step_keys_to_execute=[step_context.step.key],
             instance_ref=self.pipeline_context.instance.get_ref(),
@@ -68,8 +69,15 @@ class K8sStepHandler(StepHandler):
         input_json = serialize_dagster_namedtuple(execute_step_args)
         args = ["dagster", "api", "execute_step", input_json]
 
+        job_config = self._job_config
+        if not job_config.job_image:
+            job_config = job_config.with_image(pipeline_origin.repository_origin.container_image)
+
+        if not job_config.job_image:
+            raise Exception("No image included in either executor config or the pipeline")
+
         job = construct_dagster_k8s_job(
-            self._job_config,
+            job_config,
             args,
             job_name,
             get_user_defined_k8s_config(frozentags()),

@@ -215,8 +215,10 @@ class CeleryK8sJobExecutor(Executor):
 def _submit_task_k8s_job(app, pipeline_context, step, queue, priority, known_state):
     user_defined_k8s_config = get_user_defined_k8s_config(step.tags)
 
+    pipeline_origin = pipeline_context.reconstructable_pipeline.get_python_origin()
+
     execute_step_args = ExecuteStepArgs(
-        pipeline_origin=pipeline_context.reconstructable_pipeline.get_python_origin(),
+        pipeline_origin=pipeline_origin,
         pipeline_run_id=pipeline_context.pipeline_run.run_id,
         step_keys_to_execute=[step.key],
         instance_ref=pipeline_context.instance.get_ref(),
@@ -225,10 +227,17 @@ def _submit_task_k8s_job(app, pipeline_context, step, queue, priority, known_sta
         should_verify_step=True,
     )
 
+    job_config = pipeline_context.executor.job_config
+    if not job_config.job_image:
+        job_config = job_config.with_image(pipeline_origin.repository_origin.container_image)
+
+    if not job_config.job_image:
+        raise Exception("No image included in either executor config or the pipeline")
+
     task = create_k8s_job_task(app)
     task_signature = task.si(
         execute_step_args_packed=pack_value(execute_step_args),
-        job_config_dict=pipeline_context.executor.job_config.to_dict(),
+        job_config_dict=job_config.to_dict(),
         job_namespace=pipeline_context.executor.job_namespace,
         user_defined_k8s_config_dict=user_defined_k8s_config.to_dict(),
         load_incluster_config=pipeline_context.executor.load_incluster_config,

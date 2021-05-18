@@ -171,7 +171,8 @@ class ReOriginatedExternalPipelineForTest(ExternalPipeline):
                         pointer=FileCodePointer(
                             python_file="/dagster_test/test_project/test_pipelines/repo.py",
                             fn_name="define_demo_execution_repo",
-                        )
+                        ),
+                        container_image=self._container_image,
                     )
                 ),
                 repository_name="demo_execution_repo",

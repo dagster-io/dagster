@@ -188,7 +188,6 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
 
             job_image = job_image_from_executor_config
 
-        env_vars = {"DAGSTER_CURRENT_IMAGE": job_image}
         job_config = DagsterK8sJobConfig(
             dagster_home=self.dagster_home,
             instance_config_map=self.instance_config_map,

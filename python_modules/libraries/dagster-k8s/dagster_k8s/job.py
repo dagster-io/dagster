@@ -354,6 +354,9 @@ class DagsterK8sJobConfig(
     def to_dict(self):
         return self._asdict()
 
+    def with_image(self, image):
+        return self._replace(job_image=image)
+
     @staticmethod
     def from_dict(config=None):
         check.opt_dict_param(config, "config")
