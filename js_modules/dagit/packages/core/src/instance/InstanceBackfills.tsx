@@ -1,10 +1,21 @@
-import {gql, useQuery} from '@apollo/client';
-import {Colors, Icon, NonIdealState, Popover, Button, Menu, MenuItem, Tag} from '@blueprintjs/core';
+import {gql, useQuery, useMutation} from '@apollo/client';
+import {
+  Colors,
+  Icon,
+  NonIdealState,
+  Popover,
+  Button,
+  Menu,
+  MenuItem,
+  Tag,
+  Intent,
+} from '@blueprintjs/core';
 import qs from 'qs';
 import * as React from 'react';
 import {useHistory, Link} from 'react-router-dom';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
+import {SharedToaster} from '../app/DomUtils';
 import {usePermissions} from '../app/Permissions';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
@@ -23,6 +34,7 @@ import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {BulkActionStatus, PipelineRunStatus} from '../types/globalTypes';
 import {Alert} from '../ui/Alert';
 import {Box} from '../ui/Box';
+import {ButtonLink} from '../ui/ButtonLink';
 import {CursorPaginationControls} from '../ui/CursorControls';
 import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
@@ -145,6 +157,7 @@ const INSTANCE_HEALTH_FOR_BACKFILLS_QUERY = gql`
 
 const BackfillTable = ({backfills, refetch}: {backfills: Backfill[]; refetch: () => void}) => {
   const [terminationBackfill, setTerminationBackfill] = React.useState<Backfill>();
+  const [resumeBackfill] = useMutation(RESUME_BACKFILL_MUTATION);
   const [cancelRunBackfill, setCancelRunBackfill] = React.useState<Backfill>();
   const {canCancelPartitionBackfill} = usePermissions();
 
@@ -156,6 +169,35 @@ const BackfillTable = ({backfills, refetch}: {backfills: Backfill[]; refetch: ()
       setTerminationBackfill(backfill);
     }
   }, [backfills, candidateId, canCancelPartitionBackfill]);
+
+  const resume = async (backfill: Backfill) => {
+    const {data} = await resumeBackfill({variables: {backfillId: backfill.backfillId}});
+    if (data && data.resumePartitionBackfill.__typename === 'ResumeBackfillSuccess') {
+      refetch();
+    } else {
+      const error = data.resumePartitionBackfill;
+      SharedToaster.show({
+        message: (
+          <Group direction="column" spacing={4}>
+            <div>An unexpected error occurred. This backfill was not retried.</div>
+            <ButtonLink
+              color={Colors.WHITE}
+              underline="always"
+              onClick={() => {
+                showCustomAlert({
+                  body: <PythonErrorInfo error={error} />,
+                });
+              }}
+            >
+              View error
+            </ButtonLink>
+          </Group>
+        ),
+        icon: 'error',
+        intent: Intent.DANGER,
+      });
+    }
+  };
 
   const cancelableRuns = cancelRunBackfill?.runs.filter(
     (run) => !doneStatuses.has(run?.status) && run.canTerminate,
@@ -184,6 +226,7 @@ const BackfillTable = ({backfills, refetch}: {backfills: Backfill[]; refetch: ()
               key={backfill.backfillId}
               backfill={backfill}
               onTerminateBackfill={setTerminationBackfill}
+              onResumeBackfill={resume}
             />
           ))}
         </tbody>
@@ -206,12 +249,14 @@ const BackfillTable = ({backfills, refetch}: {backfills: Backfill[]; refetch: ()
 const BackfillRow = ({
   backfill,
   onTerminateBackfill,
+  onResumeBackfill,
 }: {
   backfill: Backfill;
   onTerminateBackfill: (backfill: Backfill) => void;
+  onResumeBackfill: (backfill: Backfill) => void;
 }) => {
   const history = useHistory();
-  const {canCancelPartitionBackfill} = usePermissions();
+  const {canCancelPartitionBackfill, canLaunchPartitionBackfill} = usePermissions();
   const counts = React.useMemo(() => getProgressCounts(backfill), [backfill]);
   const runsUrl = `/instance/runs?${qs.stringify({
     q: stringFromValue([{token: 'tag', value: `dagster/backfill=${backfill.backfillId}`}]),
@@ -325,6 +370,16 @@ const BackfillRow = ({
                     />
                   ) : null}
                 </>
+              ) : null}
+              {canLaunchPartitionBackfill &&
+              backfill.status === BulkActionStatus.FAILED &&
+              backfill.partitionSet ? (
+                <MenuItem
+                  text="Resume failed backfill"
+                  title="Submits runs for all partitions in the backfill that do not have a corresponding run. Does not retry failed runs."
+                  icon="repeat"
+                  onClick={() => onResumeBackfill(backfill)}
+                />
               ) : null}
               {partitionSetBackfillUrl ? (
                 <MenuItem
@@ -520,4 +575,18 @@ const BACKFILLS_QUERY = gql`
   }
 
   ${PYTHON_ERROR_FRAGMENT}
+`;
+
+const RESUME_BACKFILL_MUTATION = gql`
+  mutation resumeBackfill($backfillId: String!) {
+    resumePartitionBackfill(backfillId: $backfillId) {
+      __typename
+      ... on ResumeBackfillSuccess {
+        backfillId
+      }
+      ... on PythonError {
+        message
+      }
+    }
+  }
 `;

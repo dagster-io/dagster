@@ -1,5 +1,6 @@
 import os
 
+from dagster.core.execution.backfill import BulkActionStatus
 from dagster.seven import get_system_temp_directory
 from dagster_graphql.client.query import LAUNCH_PARTITION_BACKFILL_MUTATION
 from dagster_graphql.test.utils import (
@@ -34,6 +35,21 @@ CANCEL_BACKFILL_MUTATION = """
   mutation($backfillId: String!) {
     cancelPartitionBackfill(backfillId: $backfillId) {
       ... on CancelBackfillSuccess {
+        __typename
+        backfillId
+      }
+      ... on PythonError {
+        message
+        stack
+      }
+    }
+  }
+"""
+
+RESUME_BACKFILL_MUTATION = """
+  mutation($backfillId: String!) {
+    resumePartitionBackfill(backfillId: $backfillId) {
+      ... on ResumeBackfillSuccess {
         __typename
         backfillId
       }
@@ -162,6 +178,56 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         assert result.data
         assert result.data["partitionBackfillOrError"]["__typename"] == "PartitionBackfill"
         assert result.data["partitionBackfillOrError"]["status"] == "CANCELED"
+
+    def test_resume_backfill(self, graphql_context):
+        repository_selector = infer_repository_selector(graphql_context)
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PARTITION_BACKFILL_MUTATION,
+            variables={
+                "backfillParams": {
+                    "selector": {
+                        "repositorySelector": repository_selector,
+                        "partitionSetName": "integer_partition",
+                    },
+                    "partitionNames": ["2", "3"],
+                }
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+        assert result.data["launchPartitionBackfill"]["__typename"] == "LaunchBackfillSuccess"
+        backfill_id = result.data["launchPartitionBackfill"]["backfillId"]
+
+        result = execute_dagster_graphql(
+            graphql_context, PARTITION_PROGRESS_QUERY, variables={"backfillId": backfill_id}
+        )
+
+        assert not result.errors
+        assert result.data
+        assert result.data["partitionBackfillOrError"]["__typename"] == "PartitionBackfill"
+        assert result.data["partitionBackfillOrError"]["status"] == "REQUESTED"
+        assert result.data["partitionBackfillOrError"]["numRequested"] == 0
+        assert result.data["partitionBackfillOrError"]["numTotal"] == 2
+
+        # manually mark as failed
+        backfill = graphql_context.instance.get_backfill(backfill_id)
+        graphql_context.instance.update_backfill(backfill.with_status(BulkActionStatus.FAILED))
+
+        result = execute_dagster_graphql(
+            graphql_context, RESUME_BACKFILL_MUTATION, variables={"backfillId": backfill_id}
+        )
+        assert result.data
+        assert result.data["resumePartitionBackfill"]["__typename"] == "ResumeBackfillSuccess"
+
+        result = execute_dagster_graphql(
+            graphql_context, PARTITION_PROGRESS_QUERY, variables={"backfillId": backfill_id}
+        )
+        assert not result.errors
+        assert result.data
+        assert result.data["partitionBackfillOrError"]["__typename"] == "PartitionBackfill"
+        assert result.data["partitionBackfillOrError"]["status"] == "REQUESTED"
 
 
 class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):

@@ -7,6 +7,7 @@ from ...implementation.execution import (
     delete_pipeline_run,
     launch_pipeline_execution,
     launch_pipeline_reexecution,
+    resume_partition_backfill,
     terminate_pipeline_execution,
     wipe_assets,
 )
@@ -23,7 +24,11 @@ from ...implementation.utils import (
     pipeline_selector_from_graphql,
 )
 from ..asset_key import GrapheneAssetKey
-from ..backfill import GrapheneCancelBackfillResult, GrapheneLaunchBackfillResult
+from ..backfill import (
+    GrapheneCancelBackfillResult,
+    GrapheneLaunchBackfillResult,
+    GrapheneResumeBackfillResult,
+)
 from ..errors import (
     GrapheneAssetNotFoundError,
     GrapheneConflictingExecutionParamsError,
@@ -230,6 +235,20 @@ class GrapheneCancelBackfillMutation(graphene.Mutation):
         return cancel_partition_backfill(graphene_info, kwargs["backfillId"])
 
 
+class GrapheneResumeBackfillMutation(graphene.Mutation):
+    Output = graphene.NonNull(GrapheneResumeBackfillResult)
+
+    class Arguments:
+        backfillId = graphene.NonNull(graphene.String)
+
+    class Meta:
+        description = "Retries a set of partition backfill runs via the run launcher configured on the instance."
+        name = "ResumeBackfillMutation"
+
+    def mutate(self, graphene_info, **kwargs):
+        return resume_partition_backfill(graphene_info, kwargs["backfillId"])
+
+
 @capture_error
 def create_execution_params_and_launch_pipeline_reexec(graphene_info, execution_params_dict):
     # refactored into a helper function here in order to wrap with @capture_error,
@@ -395,6 +414,7 @@ class GrapheneMutation(graphene.ObjectType):
     reload_workspace = GrapheneReloadWorkspaceMutation.Field()
     wipe_assets = GrapheneAssetWipeMutation.Field()
     launch_partition_backfill = GrapheneLaunchBackfillMutation.Field()
+    resume_partition_backfill = GrapheneResumeBackfillMutation.Field()
     cancel_partition_backfill = GrapheneCancelBackfillMutation.Field()
 
     class Meta:

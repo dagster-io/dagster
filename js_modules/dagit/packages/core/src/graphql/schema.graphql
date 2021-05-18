@@ -1029,6 +1029,7 @@ type Mutation {
   reloadWorkspace: ReloadWorkspaceMutationResult!
   wipeAssets(assetKeys: [AssetKeyInput!]!): AssetWipeMutationResult!
   launchPartitionBackfill(backfillParams: LaunchBackfillParams!): LaunchBackfillResult!
+  resumePartitionBackfill(backfillId: String!): ResumeBackfillResult!
   cancelPartitionBackfill(backfillId: String!): CancelBackfillResult!
 }
 
@@ -1155,6 +1156,12 @@ input LaunchBackfillParams {
 input PartitionSetSelector {
   partitionSetName: String!
   repositorySelector: RepositorySelector!
+}
+
+union ResumeBackfillResult = ResumeBackfillSuccess | PythonError
+
+type ResumeBackfillSuccess {
+  backfillId: String!
 }
 
 union CancelBackfillResult = CancelBackfillSuccess | PythonError

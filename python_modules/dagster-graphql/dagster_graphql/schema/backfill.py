@@ -55,6 +55,19 @@ class GrapheneCancelBackfillResult(graphene.Union):
         name = "CancelBackfillResult"
 
 
+class GrapheneResumeBackfillSuccess(graphene.ObjectType):
+    backfill_id = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "ResumeBackfillSuccess"
+
+
+class GrapheneResumeBackfillResult(graphene.Union):
+    class Meta:
+        types = (GrapheneResumeBackfillSuccess, GraphenePythonError)
+        name = "ResumeBackfillResult"
+
+
 class GrapheneBulkActionStatus(graphene.Enum):
     REQUESTED = "REQUESTED"
     COMPLETED = "COMPLETED"
