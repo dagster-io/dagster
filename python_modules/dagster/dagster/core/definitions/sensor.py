@@ -12,6 +12,7 @@ from dagster.utils.backcompat import experimental_fn_warning
 
 from .mode import DEFAULT_MODE_NAME
 from .run_request import JobType, RunRequest, SkipReason
+from .target import RepoRelativeTarget
 from .utils import check_valid_name
 
 DEFAULT_SENSOR_DAEMON_INTERVAL = 30
@@ -129,11 +130,9 @@ class SensorDefinition:
 
     __slots__ = [
         "_name",
-        "_pipeline_name",
+        "_target",
         "_tags_fn",
         "_run_config_fn",
-        "_mode",
-        "_solid_selection",
         "_description",
         "_evaluation_fn",
         "_min_interval",
@@ -154,11 +153,15 @@ class SensorDefinition:
     ):
 
         self._name = check_valid_name(name)
-        self._pipeline_name = check.str_param(pipeline_name, "pipeline_name")
-        self._mode = check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME)
-        self._solid_selection = check.opt_nullable_list_param(
-            solid_selection, "solid_selection", of_type=str
+
+        self._target = RepoRelativeTarget(
+            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
+            mode=check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME),
+            solid_selection=check.opt_nullable_list_param(
+                solid_selection, "solid_selection", of_type=str
+            ),
         )
+
         self._description = check.opt_str_param(description, "description")
         self._evaluation_fn = check.callable_param(evaluation_fn, "evaluation_fn")
         self._min_interval = check.opt_int_param(
@@ -171,7 +174,7 @@ class SensorDefinition:
 
     @property
     def pipeline_name(self) -> str:
-        return self._pipeline_name
+        return self._target.pipeline_name
 
     @property
     def job_type(self) -> JobType:
@@ -179,11 +182,11 @@ class SensorDefinition:
 
     @property
     def solid_selection(self) -> Optional[List[Any]]:
-        return self._solid_selection
+        return self._target.solid_selection
 
     @property
     def mode(self) -> Optional[str]:
-        return self._mode
+        return self._target.mode
 
     @property
     def description(self) -> Optional[str]:
