@@ -1,6 +1,6 @@
 import inspect
-from collections import namedtuple
 from contextlib import ExitStack
+from typing import Any, Callable, Generator, List, NamedTuple, Optional, Union, cast
 
 from dagster import check
 from dagster.core.errors import DagsterInvariantViolationError
@@ -40,7 +40,13 @@ class SensorExecutionContext:
         "_instance",
     ]
 
-    def __init__(self, instance_ref, last_completion_time, last_run_key, cursor):
+    def __init__(
+        self,
+        instance_ref: InstanceRef,
+        last_completion_time: Optional[float],
+        last_run_key: Optional[str],
+        cursor: Optional[str],
+    ):
         self._exit_stack = ExitStack()
         self._instance = None
 
@@ -60,27 +66,27 @@ class SensorExecutionContext:
         self._exit_stack.close()
 
     @property
-    def instance(self):
+    def instance(self) -> DagsterInstance:
         if not self._instance:
             self._instance = self._exit_stack.enter_context(
                 DagsterInstance.from_ref(self._instance_ref)
             )
-        return self._instance
+        return cast(DagsterInstance, self._instance)
 
     @property
-    def last_completion_time(self):
+    def last_completion_time(self) -> Optional[float]:
         return self._last_completion_time
 
     @property
-    def last_run_key(self):
+    def last_run_key(self) -> Optional[str]:
         return self._last_run_key
 
     @property
-    def cursor(self):
+    def cursor(self) -> Optional[str]:
         """The cursor value for this sensor, which was set in an earlier sensor evaluation."""
         return self._cursor
 
-    def update_cursor(self, cursor):
+    def update_cursor(self, cursor: Optional[str]) -> None:
         """Updates the cursor value for this sensor, which will be provided on the context for the
         next sensor evaluation.
 
@@ -128,13 +134,16 @@ class SensorDefinition:
 
     def __init__(
         self,
-        name,
-        pipeline_name,
-        evaluation_fn,
-        solid_selection=None,
-        mode=None,
-        minimum_interval_seconds=None,
-        description=None,
+        name: str,
+        pipeline_name: str,
+        evaluation_fn: Callable[
+            ["SensorExecutionContext"],
+            Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
+        ],
+        solid_selection: Optional[List[Any]] = None,
+        mode: Optional[str] = None,
+        minimum_interval_seconds: Optional[int] = None,
+        description: Optional[str] = None,
     ):
 
         self._name = check_valid_name(name)
@@ -150,30 +159,30 @@ class SensorDefinition:
         )
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     @property
-    def pipeline_name(self):
+    def pipeline_name(self) -> str:
         return self._pipeline_name
 
     @property
-    def job_type(self):
+    def job_type(self) -> JobType:
         return JobType.SENSOR
 
     @property
-    def solid_selection(self):
+    def solid_selection(self) -> Optional[List[Any]]:
         return self._solid_selection
 
     @property
-    def mode(self):
+    def mode(self) -> Optional[str]:
         return self._mode
 
     @property
-    def description(self):
+    def description(self) -> Optional[str]:
         return self._description
 
-    def get_execution_data(self, context):
+    def get_execution_data(self, context: "SensorExecutionContext") -> "SensorExecutionData":
         check.inst_param(context, "context", SensorExecutionContext)
         result = list(ensure_gen(self._evaluation_fn(context)))
 
@@ -193,13 +202,27 @@ class SensorDefinition:
         return SensorExecutionData(run_requests, skip_message, context.cursor)
 
     @property
-    def minimum_interval_seconds(self):
+    def minimum_interval_seconds(self) -> Optional[int]:
         return self._min_interval
 
 
 @whitelist_for_serdes
-class SensorExecutionData(namedtuple("_SensorExecutionData", "run_requests skip_message cursor")):
-    def __new__(cls, run_requests=None, skip_message=None, cursor=None):
+class SensorExecutionData(
+    NamedTuple(
+        "_SensorExecutionData",
+        [
+            ("run_requests", Optional[List[RunRequest]]),
+            ("skip_message", Optional[str]),
+            ("cursor", Optional[str]),
+        ],
+    )
+):
+    def __new__(
+        cls,
+        run_requests: Optional[List[RunRequest]] = None,
+        skip_message: Optional[str] = None,
+        cursor: Optional[str] = None,
+    ):
         check.opt_list_param(run_requests, "run_requests", RunRequest)
         check.opt_str_param(skip_message, "skip_message")
         check.opt_str_param(cursor, "cursor")
@@ -214,7 +237,10 @@ class SensorExecutionData(namedtuple("_SensorExecutionData", "run_requests skip_
         )
 
 
-def wrap_sensor_evaluation(sensor_name, result):
+def wrap_sensor_evaluation(
+    sensor_name: str,
+    result: Union[Generator[Union[SkipReason, RunRequest], None, None], SkipReason, RunRequest],
+) -> Generator[Union[SkipReason, RunRequest], None, None]:
     if inspect.isgenerator(result):
         for item in result:
             yield item
