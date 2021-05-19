@@ -116,9 +116,10 @@ def execute_query_against_remote(host, query, variables):
         raise click.UsageError(
             "Host {host} failed sanity check. It is not a dagit server.".format(host=host)
         )
-
     response = requests.post(
-        urljoin(host, "/graphql"), params={"query": query, "variables": variables}
+        urljoin(host, "/graphql"),
+        # send query and vars as post body to avoid uri length limits
+        json={"query": query, "variables": variables},
     )
     response.raise_for_status()
     str_res = response.json()
