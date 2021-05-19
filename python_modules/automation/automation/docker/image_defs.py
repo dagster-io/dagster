@@ -232,7 +232,7 @@ def list_images(images_path=None):
 
     images = []
     for image in image_folders:
-        img = DagsterDockerImage(image)
+        img = DagsterDockerImage(image, path=os.path.join(images_path, image))
         if image in CUSTOM_BUILD_CONTEXTMANAGERS:
             img = img._replace(build_cm=CUSTOM_BUILD_CONTEXTMANAGERS[image])
         images.append(img)

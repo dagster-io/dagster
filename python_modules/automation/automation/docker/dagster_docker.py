@@ -26,20 +26,24 @@ def do_nothing(_cwd):
     yield
 
 
-class DagsterDockerImage(namedtuple("_DagsterDockerImage", "image build_cm")):
+class DagsterDockerImage(namedtuple("_DagsterDockerImage", "image build_cm path")):
     """Represents a Dagster image.
 
     Properties:
         image (str): Name of the image
         build_cm (function): function that is a context manager for build (e.g. for populating a
             build cache)
+        path (Optional(str)): The path to the image's path. Defaults to docker/images/<IMAGE NAME>
     """
 
-    def __new__(cls, image, build_cm=do_nothing):
+    def __new__(cls, image, build_cm=do_nothing, path=None):
         return super(DagsterDockerImage, cls).__new__(
             cls,
             check.str_param(image, "image"),
             check.callable_param(build_cm, "build_cm"),
+            check.opt_str_param(
+                path, "path", default=os.path.join(os.path.dirname(__file__), "images", image)
+            ),
         )
 
     @property
@@ -48,11 +52,6 @@ class DagsterDockerImage(namedtuple("_DagsterDockerImage", "image build_cm")):
         with open(os.path.join(self.path, "versions.yaml"), "r") as f:
             versions = yaml.safe_load(f.read())
         return list(versions.keys())
-
-    @property
-    def path(self):
-        """Image Dockerfiles are located at docker/images/<IMAGE NAME>"""
-        return os.path.join(os.path.dirname(__file__), "images", self.image)
 
     def _get_last_updated_for_python_version(self, python_version):
         """Retrieve the last_updated timestamp for a particular python_version of this image."""
