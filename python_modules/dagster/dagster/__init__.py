@@ -77,6 +77,7 @@ from dagster.core.definitions import (
 from dagster.core.definitions.configurable import configured
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.definitions.schedule import build_schedule_context
+from dagster.core.definitions.sensor import build_sensor_context
 from dagster.core.errors import (
     DagsterConfigMappingFunctionError,
     DagsterError,
@@ -344,6 +345,7 @@ __all__ = [
     "build_schedule_context",
     "SensorDefinition",
     "SensorExecutionContext",
+    "build_sensor_context",
     "SkipReason",
     "daily_schedule",
     "hourly_schedule",

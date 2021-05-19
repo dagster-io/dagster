@@ -33,3 +33,5 @@ Sensors
 
 .. autoclass:: SensorDefinition
 .. autoclass:: SensorExecutionContext
+
+.. autofunction:: build_sensor_context

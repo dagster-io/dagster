@@ -8,6 +8,7 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.instance.ref import InstanceRef
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils import ensure_gen
+from dagster.utils.backcompat import experimental_fn_warning
 
 from .mode import DEFAULT_MODE_NAME
 from .run_request import JobType, RunRequest, SkipReason
@@ -254,3 +255,35 @@ def wrap_sensor_evaluation(
             f"{result} of type {type(result)}.  Should only return SkipReason or "
             "RunRequest objects."
         )
+
+
+def build_sensor_context(
+    instance: DagsterInstance, cursor: Optional[str] = None
+) -> SensorExecutionContext:
+    """Builds sensor execution context using the provided parameters.
+
+    The instance provided to ``build_sensor_context`` must be persistent;
+    DagsterInstance.ephemeral() will result in an error.
+
+    Args:
+        instance (DagsterInstance): The dagster instance configured to run the sensor.
+
+    Examples:
+
+        .. code-block:: python
+
+            context = build_sensor_context(instance)
+            my_sensor.get_execution_data(context)
+
+    """
+
+    experimental_fn_warning("build_sensor_context")
+
+    check.inst_param(instance, "instance", DagsterInstance)
+    check.opt_str_param(cursor, "cursor")
+    return SensorExecutionContext(
+        instance_ref=instance.get_ref(),
+        last_completion_time=None,
+        last_run_key=None,
+        cursor=cursor,
+    )
