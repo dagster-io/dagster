@@ -75,6 +75,7 @@ def test_clean_event_generator_exit():
     (see https://amir.rachum.com/blog/2017/03/03/generator-cleanup/)
     """
     from dagster.core.execution.context.init import InitResourceContext
+    from dagster.core.definitions.resource import ScopedResourcesBuilder
 
     pipeline_def = gen_basic_resource_pipeline()
     instance = DagsterInstance.ephemeral()
@@ -89,6 +90,7 @@ def test_clean_event_generator_exit():
     resource_name, resource_def = next(iter(pipeline_def.get_default_mode().resource_defs.items()))
     resource_context = InitResourceContext(
         resource_def=resource_def,
+        resources=ScopedResourcesBuilder().build(None),
         resource_config=None,
         pipeline_run=pipeline_run,
         instance=instance,

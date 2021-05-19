@@ -5,7 +5,11 @@ from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Dict, Optional, Un
 from dagster import check
 from dagster.core.definitions.config import is_callable_valid_config_arg
 from dagster.core.definitions.configurable import AnonymousConfigurableDefinition
-from dagster.core.errors import DagsterInvalidDefinitionError, DagsterUnknownResourceError
+from dagster.core.errors import (
+    DagsterInvalidDefinitionError,
+    DagsterInvalidInvocationError,
+    DagsterUnknownResourceError,
+)
 from dagster.utils.backcompat import experimental_arg_warning
 
 from ..decorator_utils import (
@@ -18,6 +22,7 @@ from .definition_config_schema import (
     IDefinitionConfigSchema,
     convert_user_facing_definition_config_schema,
 )
+from .resource_invocation import resource_invocation_result
 
 if TYPE_CHECKING:
     from dagster.core.execution.resources_init import InitResourceContext
@@ -55,13 +60,13 @@ class ResourceDefinition(AnonymousConfigurableDefinition):
 
     def __init__(
         self,
-        resource_fn: Optional[Callable[["InitResourceContext"], Any]] = None,
+        resource_fn: Callable[["InitResourceContext"], Any],
         config_schema: Optional[Union[Any, IDefinitionConfigSchema]] = None,
         description: Optional[str] = None,
         required_resource_keys: Optional[AbstractSet[str]] = None,
         version: Optional[str] = None,
     ):
-        self._resource_fn = check.opt_callable_param(resource_fn, "resource_fn")
+        self._resource_fn = check.callable_param(resource_fn, "resource_fn")
         self._config_schema = convert_user_facing_definition_config_schema(config_schema)
         self._description = check.opt_str_param(description, "description")
         self._required_resource_keys = check.opt_set_param(
@@ -72,7 +77,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition):
             experimental_arg_warning("version", "ResourceDefinition.__init__")
 
     @property
-    def resource_fn(self) -> Optional[Callable[["InitResourceContext"], Any]]:
+    def resource_fn(self) -> Callable[["InitResourceContext"], Any]:
         return self._resource_fn
 
     @property
@@ -152,10 +157,35 @@ class ResourceDefinition(AnonymousConfigurableDefinition):
             version=self.version,
         )
 
-    # This allows us to pass resource definition off as a function, so that it can inherit the
-    # metadata of the wrapped function.
     def __call__(self, *args, **kwargs):
-        return self
+        from dagster.core.execution.resources_init import InitResourceContext
+
+        if len(args) == 0 and len(kwargs) == 0:
+            raise DagsterInvalidInvocationError(
+                "Resource initialization function has context argument, but no context was provided "
+                "when invoking."
+            )
+        if len(args) + len(kwargs) > 1:
+            raise DagsterInvalidInvocationError(
+                "Initialization of resource received multiple arguments. Only a first "
+                "positional context parameter should be provided when invoking."
+            )
+
+        context_param_name = get_function_params(self.resource_fn)[0].name
+
+        if args:
+            check.opt_inst_param(args[0], context_param_name, InitResourceContext)
+            return resource_invocation_result(self, args[0])
+        else:
+            if context_param_name not in kwargs:
+                raise DagsterInvalidInvocationError(
+                    f"Resource initialization expected argument '{context_param_name}'."
+                )
+            check.opt_inst_param(
+                kwargs[context_param_name], context_param_name, InitResourceContext
+            )
+
+            return resource_invocation_result(self, kwargs[context_param_name])
 
 
 class _ResourceDecoratorCallable:

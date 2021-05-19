@@ -29,7 +29,7 @@ class _BaseRedshiftResource(abc.ABC):
         }
 
         self.autocommit = context.resource_config.get("autocommit")
-        self.log = context.log_manager
+        self.log = context.log
 
     @abc.abstractmethod
     def execute_query(self, query, fetch_results=False, cursor_factory=None, error_callback=None):

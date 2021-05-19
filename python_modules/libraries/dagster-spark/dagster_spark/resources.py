@@ -63,4 +63,4 @@ class SparkResource:
 
 @resource
 def spark_resource(context):
-    return SparkResource(context.log_manager)
+    return SparkResource(context.log)

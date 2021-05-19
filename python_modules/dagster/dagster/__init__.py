@@ -107,7 +107,7 @@ from dagster.core.execution.api import (
     reexecute_pipeline_iterator,
 )
 from dagster.core.execution.context.compute import SolidExecutionContext
-from dagster.core.execution.context.init import InitResourceContext
+from dagster.core.execution.context.init import InitResourceContext, build_init_resource_context
 from dagster.core.execution.context.input import InputContext, build_input_context
 from dagster.core.execution.context.invocation import build_solid_context
 from dagster.core.execution.context.logger import InitLoggerContext
@@ -243,6 +243,7 @@ __all__ = [
     "InitExecutorContext",
     "InitLoggerContext",
     "InitResourceContext",
+    "build_init_resource_context",
     "InitIntermediateStorageContext",
     "PipelineExecutionResult",
     "RetryRequested",
