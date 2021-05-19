@@ -1,19 +1,16 @@
 import os
-from typing import List
 
 import kubernetes
 from dagster import Field, StringSource, executor
 from dagster.core.definitions.executor import multiple_process_executor_requirements
-from dagster.core.events import DagsterEvent
-from dagster.core.execution.context.system import IStepContext
+from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.execution.plan.objects import StepFailureData
-from dagster.core.execution.plan.state import KnownExecutionState
-from dagster.core.execution.retries import RetryMode, get_retries_config
+from dagster.core.execution.retries import get_retries_config
 from dagster.core.executor.base import Executor
 from dagster.core.executor.init import InitExecutorContext
 from dagster.core.executor.step_delegating import StepDelegatingExecutor
 from dagster.core.executor.step_delegating.step_handler import StepHandler
-from dagster.grpc.types import ExecuteStepArgs
+from dagster.core.executor.step_delegating.step_handler.base import StepHandlerContext
 from dagster.serdes.serdes import serialize_dagster_namedtuple
 from dagster.utils import frozentags, merge_dicts
 from dagster_k8s.job import (
@@ -31,47 +28,35 @@ class K8sStepHandler(StepHandler):
 
     def __init__(
         self,
-        retries: RetryMode,
         job_config: DagsterK8sJobConfig,
         job_namespace: str,
     ):
-        super().__init__(retries)
+        super().__init__()
 
         self._job_config = job_config
         self._job_namespace = job_namespace
 
-    def launch_steps(
-        self,
-        step_contexts: List[IStepContext],
-        known_state: KnownExecutionState,
-    ):
-        assert len(step_contexts) == 1, "Launching multiple steps is not currently supported"
-        step_context = step_contexts[0]
+    def launch_step(self, step_handler_context: StepHandlerContext):
+        assert (
+            len(step_handler_context.execute_step_args.step_keys_to_execute) == 1
+        ), "Launching multiple steps is not currently supported"
+        step_key = step_handler_context.execute_step_args.step_keys_to_execute[0]
 
         k8s_name_key = get_k8s_job_name(
-            self.pipeline_context.plan_data.pipeline_run.run_id,
-            step_context.step.key,
+            step_handler_context.execute_step_args.pipeline_run_id,
+            step_key,
         )
         job_name = "dagster-job-%s" % (k8s_name_key)
         pod_name = "dagster-job-%s" % (k8s_name_key)
-        pipeline_origin = self.pipeline_context.reconstructable_pipeline.get_python_origin()
 
-        execute_step_args = ExecuteStepArgs(
-            pipeline_origin=pipeline_origin,
-            pipeline_run_id=self.pipeline_context.pipeline_run.run_id,
-            step_keys_to_execute=[step_context.step.key],
-            instance_ref=self.pipeline_context.instance.get_ref(),
-            retry_mode=self.retries.for_inner_plan(),
-            known_state=known_state,
-            should_verify_step=True,
-        )
-
-        input_json = serialize_dagster_namedtuple(execute_step_args)
+        input_json = serialize_dagster_namedtuple(step_handler_context.execute_step_args)
         args = ["dagster", "api", "execute_step", input_json]
 
         job_config = self._job_config
         if not job_config.job_image:
-            job_config = job_config.with_image(pipeline_origin.repository_origin.container_image)
+            job_config = job_config.with_image(
+                step_handler_context.execute_step_args.pipeline_origin.repository_origin.container_image
+            )
 
         if not job_config.job_image:
             raise Exception("No image included in either executor config or the pipeline")
@@ -88,18 +73,17 @@ class K8sStepHandler(StepHandler):
         kubernetes.client.BatchV1Api().create_namespaced_job(
             body=job, namespace=self._job_namespace
         )
+        return []
 
-    def check_step_health(
-        self,
-        step_contexts: List[IStepContext],
-        known_state: KnownExecutionState,
-    ):
-        assert len(step_contexts) == 1, "Checking multiple steps is not currently supported"
-        step_context = step_contexts[0]
+    def check_step_health(self, step_handler_context: StepHandlerContext):
+        assert (
+            len(step_handler_context.execute_step_args.step_keys_to_execute) == 1
+        ), "Launching multiple steps is not currently supported"
+        step_key = step_handler_context.execute_step_args.step_keys_to_execute[0]
 
         k8s_name_key = get_k8s_job_name(
-            self.pipeline_context.plan_data.pipeline_run.run_id,
-            step_context.step.key,
+            step_handler_context.execute_step_args.pipeline_run_id,
+            step_key,
         )
         job_name = "dagster-job-%s" % (k8s_name_key)
 
@@ -107,15 +91,20 @@ class K8sStepHandler(StepHandler):
             namespace=self._job_namespace, name=job_name
         )
         if job.status.failed:
-            step_failure_event = DagsterEvent.step_failure_event(
-                step_context=step_context,
-                step_failure_data=StepFailureData(error=None, user_failure_data=None),
+            step_failure_event = DagsterEvent(
+                event_type_value=DagsterEventType.STEP_FAILURE.value,
+                pipeline_name=step_handler_context.execute_step_args.pipeline_origin.pipeline_name,
+                step_key=step_key,
+                event_specific_data=StepFailureData(
+                    error=None,
+                    user_failure_data=None,
+                ),
             )
 
             return [step_failure_event]
         return []
 
-    def terminate_steps(self, step_keys: List[str]):
+    def terminate_step(self, step_handler_context: StepHandlerContext):
         raise NotImplementedError()
 
 
@@ -151,7 +140,6 @@ def dagster_k8s_executor(init_context: InitExecutorContext) -> Executor:
 
     return StepDelegatingExecutor(
         K8sStepHandler(
-            retries=RetryMode.DISABLED,  # Not currently supported
             job_config=job_config,
             job_namespace=exc_cfg.get("job_namespace"),
         )
