@@ -264,13 +264,6 @@ class DagsterExecutionStepExecutionError(DagsterUserCodeExecutionError):
         super(DagsterExecutionStepExecutionError, self).__init__(*args, **kwargs)
 
 
-class DagsterSolidInvocationError(DagsterUserCodeExecutionError):
-    """
-    Indicates an error occurred while executing the body of the ``compute_fn`` of a
-    :py:class:`~dagster.SolidDefinition` after it was directly invoked.
-    """
-
-
 class DagsterResourceFunctionError(DagsterUserCodeExecutionError):
     """
     Indicates an error occurred while executing the body of the ``resource_fn`` in a

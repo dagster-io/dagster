@@ -21,7 +21,6 @@ from dagster.core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvalidPropertyError,
     DagsterInvariantViolationError,
-    DagsterSolidInvocationError,
     DagsterStepOutputNotFoundError,
     DagsterTypeCheckDidNotPass,
 )
@@ -198,8 +197,8 @@ def test_failing_solid():
         raise Exception("Oh no!")
 
     with pytest.raises(
-        DagsterSolidInvocationError,
-        match='Error occurred while invoking solid "solid_fails":',
+        Exception,
+        match="Oh no!",
     ):
         solid_fails()
 
@@ -370,7 +369,7 @@ def test_solid_failure():
     def solid_fails():
         raise Failure("oops")
 
-    with pytest.raises(DagsterSolidInvocationError):
+    with pytest.raises(Failure, match="oops"):
         solid_fails()
 
 

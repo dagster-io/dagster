@@ -2,14 +2,12 @@ import inspect
 from typing import TYPE_CHECKING, Any, Dict, Generator, Optional, cast
 
 from dagster import check
-from dagster.core.definitions.events import AssetMaterialization, RetryRequested
+from dagster.core.definitions.events import AssetMaterialization
 from dagster.core.errors import (
     DagsterInvalidConfigError,
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
-    DagsterSolidInvocationError,
     DagsterTypeCheckDidNotPass,
-    user_code_error_boundary,
 )
 
 if TYPE_CHECKING:
@@ -198,14 +196,9 @@ def _core_generator(
 ) -> Generator[Any, None, None]:
     from dagster.core.execution.plan.compute import gen_from_async_gen
 
-    with user_code_error_boundary(
-        DagsterSolidInvocationError,
-        control_flow_exceptions=[RetryRequested],
-        msg_fn=lambda: f'Error occurred while invoking solid "{solid_def.name}":',
-    ):
-        compute_iterator = solid_def.compute_fn(context, input_dict)
+    compute_iterator = solid_def.compute_fn(context, input_dict)
 
-        if inspect.isasyncgen(compute_iterator):
-            compute_iterator = gen_from_async_gen(compute_iterator)
+    if inspect.isasyncgen(compute_iterator):
+        compute_iterator = gen_from_async_gen(compute_iterator)
 
-        yield from compute_iterator
+    yield from compute_iterator
