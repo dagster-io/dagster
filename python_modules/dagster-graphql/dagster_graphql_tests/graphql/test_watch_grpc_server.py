@@ -11,7 +11,7 @@ from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_cont
 
 class TestSubscribeToGrpcServerEvents(
     make_graphql_context_test_suite(
-        context_variants=[GraphQLContextVariant.readonly_sqlite_instance_deployed_grpc_env()]
+        context_variants=[GraphQLContextVariant.non_launchable_sqlite_instance_deployed_grpc_env()]
     )
 ):
     def test_grpc_server_handle_message_subscription(self, graphql_context):

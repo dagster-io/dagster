@@ -1,6 +1,6 @@
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
-from .graphql_context_test_suite import ReadonlyGraphQLContextTestMatrix
+from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix
 from .setup import csv_hello_world_solids_config
 
 RUN_CONFIG_SCHEMA_QUERY = """
@@ -104,7 +104,7 @@ query PipelineQuery(
 """
 
 
-class TestEnvironmentSchema(ReadonlyGraphQLContextTestMatrix):
+class TestEnvironmentSchema(NonLaunchableGraphQLContextTestMatrix):
     def test_successful_run_config_schema(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "multi_mode_with_resources")
         result = execute_dagster_graphql(

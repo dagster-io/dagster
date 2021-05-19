@@ -6,7 +6,7 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
-snapshots['TestComposites.test_composites[readonly_in_memory_instance_lazy_repository] 1'] = {
+snapshots['TestComposites.test_composites[non_launchable_in_memory_instance_lazy_repository] 1'] = {
     'pipelineOrError': {
         '__typename': 'Pipeline',
         'name': 'composites_pipeline',
@@ -477,7 +477,7 @@ snapshots['TestComposites.test_composites[readonly_in_memory_instance_lazy_repos
     }
 }
 
-snapshots['TestComposites.test_composites[readonly_in_memory_instance_managed_grpc_env] 1'] = {
+snapshots['TestComposites.test_composites[non_launchable_in_memory_instance_managed_grpc_env] 1'] = {
     'pipelineOrError': {
         '__typename': 'Pipeline',
         'name': 'composites_pipeline',
@@ -948,7 +948,7 @@ snapshots['TestComposites.test_composites[readonly_in_memory_instance_managed_gr
     }
 }
 
-snapshots['TestComposites.test_composites[readonly_in_memory_instance_multi_location] 1'] = {
+snapshots['TestComposites.test_composites[non_launchable_in_memory_instance_multi_location] 1'] = {
     'pipelineOrError': {
         '__typename': 'Pipeline',
         'name': 'composites_pipeline',
@@ -1419,7 +1419,7 @@ snapshots['TestComposites.test_composites[readonly_in_memory_instance_multi_loca
     }
 }
 
-snapshots['TestComposites.test_composites[readonly_postgres_instance_multi_location] 1'] = {
+snapshots['TestComposites.test_composites[non_launchable_postgres_instance_multi_location] 1'] = {
     'pipelineOrError': {
         '__typename': 'Pipeline',
         'name': 'composites_pipeline',
@@ -1890,7 +1890,7 @@ snapshots['TestComposites.test_composites[readonly_postgres_instance_multi_locat
     }
 }
 
-snapshots['TestComposites.test_composites[readonly_sqlite_instance_deployed_grpc_env] 1'] = {
+snapshots['TestComposites.test_composites[non_launchable_sqlite_instance_deployed_grpc_env] 1'] = {
     'pipelineOrError': {
         '__typename': 'Pipeline',
         'name': 'composites_pipeline',
@@ -2361,7 +2361,7 @@ snapshots['TestComposites.test_composites[readonly_sqlite_instance_deployed_grpc
     }
 }
 
-snapshots['TestComposites.test_composites[readonly_sqlite_instance_lazy_repository] 1'] = {
+snapshots['TestComposites.test_composites[non_launchable_sqlite_instance_lazy_repository] 1'] = {
     'pipelineOrError': {
         '__typename': 'Pipeline',
         'name': 'composites_pipeline',
@@ -2832,7 +2832,7 @@ snapshots['TestComposites.test_composites[readonly_sqlite_instance_lazy_reposito
     }
 }
 
-snapshots['TestComposites.test_composites[readonly_sqlite_instance_managed_grpc_env] 1'] = {
+snapshots['TestComposites.test_composites[non_launchable_sqlite_instance_managed_grpc_env] 1'] = {
     'pipelineOrError': {
         '__typename': 'Pipeline',
         'name': 'composites_pipeline',
@@ -3303,7 +3303,7 @@ snapshots['TestComposites.test_composites[readonly_sqlite_instance_managed_grpc_
     }
 }
 
-snapshots['TestComposites.test_composites[readonly_sqlite_instance_multi_location] 1'] = {
+snapshots['TestComposites.test_composites[non_launchable_sqlite_instance_multi_location] 1'] = {
     'pipelineOrError': {
         '__typename': 'Pipeline',
         'name': 'composites_pipeline',

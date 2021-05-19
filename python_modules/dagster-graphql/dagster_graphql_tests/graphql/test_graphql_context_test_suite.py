@@ -9,8 +9,8 @@ from .graphql_context_test_suite import GraphQLContextVariant, manage_graphql_co
 
 
 @pytest.mark.graphql_context_variants
-@pytest.mark.parametrize("variant", GraphQLContextVariant.all_readonly_variants())
-def test_readonly_variants(variant):
+@pytest.mark.parametrize("variant", GraphQLContextVariant.all_non_launchable_variants())
+def test_non_launchable_variants(variant):
     # Note: This mark is only run in the `tox_postgres.ini` file and not the default `tox.ini`
     # file because 3 of the variants have a postgres dependency
     assert isinstance(variant, GraphQLContextVariant)
@@ -73,23 +73,23 @@ def test_all_variants_in_variants_function():
     assert test_ids_returned_by_all_variants == variant_test_ids_declared_on_class
 
 
-def test_readonly_marks_filter():
-    readonly_test_ids = {
+def test_non_launchable_marks_filter():
+    non_launchable_test_ids = {
         var.test_id
         for var in [
-            GraphQLContextVariant.readonly_in_memory_instance_lazy_repository(),
-            GraphQLContextVariant.readonly_in_memory_instance_multi_location(),
-            GraphQLContextVariant.readonly_in_memory_instance_managed_grpc_env(),
-            GraphQLContextVariant.readonly_sqlite_instance_lazy_repository(),
-            GraphQLContextVariant.readonly_sqlite_instance_multi_location(),
-            GraphQLContextVariant.readonly_sqlite_instance_managed_grpc_env(),
-            GraphQLContextVariant.readonly_sqlite_instance_deployed_grpc_env(),
-            GraphQLContextVariant.readonly_postgres_instance_lazy_repository(),
-            GraphQLContextVariant.readonly_postgres_instance_multi_location(),
-            GraphQLContextVariant.readonly_postgres_instance_managed_grpc_env(),
+            GraphQLContextVariant.non_launchable_in_memory_instance_lazy_repository(),
+            GraphQLContextVariant.non_launchable_in_memory_instance_multi_location(),
+            GraphQLContextVariant.non_launchable_in_memory_instance_managed_grpc_env(),
+            GraphQLContextVariant.non_launchable_sqlite_instance_lazy_repository(),
+            GraphQLContextVariant.non_launchable_sqlite_instance_multi_location(),
+            GraphQLContextVariant.non_launchable_sqlite_instance_managed_grpc_env(),
+            GraphQLContextVariant.non_launchable_sqlite_instance_deployed_grpc_env(),
+            GraphQLContextVariant.non_launchable_postgres_instance_lazy_repository(),
+            GraphQLContextVariant.non_launchable_postgres_instance_multi_location(),
+            GraphQLContextVariant.non_launchable_postgres_instance_managed_grpc_env(),
         ]
     }
 
     assert {
-        var.test_id for var in GraphQLContextVariant.all_readonly_variants()
-    } == readonly_test_ids
+        var.test_id for var in GraphQLContextVariant.all_non_launchable_variants()
+    } == non_launchable_test_ids

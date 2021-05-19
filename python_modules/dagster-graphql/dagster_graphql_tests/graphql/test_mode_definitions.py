@@ -2,7 +2,7 @@ import graphql
 import pytest
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
-from .graphql_context_test_suite import ReadonlyGraphQLContextTestMatrix
+from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix
 from .utils import sync_execute_get_events
 
 MODE_QUERY = """
@@ -91,7 +91,7 @@ def test_multi_mode_successful(graphql_context):
     get_step_output(double_adder_mode_logs, "apply_to_three")
 
 
-class TestModeDefinitions(ReadonlyGraphQLContextTestMatrix):
+class TestModeDefinitions(NonLaunchableGraphQLContextTestMatrix):
     def test_query_multi_mode(self, graphql_context):
         with pytest.raises(graphql.error.base.GraphQLError):
             execute_modes_query(graphql_context, "multi_mode_with_resources", mode=None)

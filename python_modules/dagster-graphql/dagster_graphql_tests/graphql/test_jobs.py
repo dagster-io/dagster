@@ -44,7 +44,7 @@ def _create_sensor_tick(instance):
 
 class TestNextTickRepository(
     make_graphql_context_test_suite(
-        context_variants=GraphQLContextVariant.all_readonly_variants(),
+        context_variants=GraphQLContextVariant.all_non_launchable_variants(),
     )
 ):
     def test_schedule_next_tick(self, graphql_context):

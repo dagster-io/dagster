@@ -15,7 +15,7 @@ from dagster_graphql.test.utils import (
 
 from .graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
-    ReadonlyGraphQLContextTestMatrix,
+    NonLaunchableGraphQLContextTestMatrix,
 )
 
 GET_SENSORS_QUERY = """
@@ -161,7 +161,7 @@ mutation($jobOriginId: String!) {
 """
 
 
-class TestSensors(ReadonlyGraphQLContextTestMatrix):
+class TestSensors(NonLaunchableGraphQLContextTestMatrix):
     def test_get_sensors(self, graphql_context, snapshot):
         selector = infer_repository_selector(graphql_context)
         result = execute_dagster_graphql(

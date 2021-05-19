@@ -19,7 +19,7 @@ from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_cont
 
 class TestReloadWorkspace(
     make_graphql_context_test_suite(
-        context_variants=[GraphQLContextVariant.readonly_in_memory_instance_multi_location()]
+        context_variants=[GraphQLContextVariant.non_launchable_in_memory_instance_multi_location()]
     )
 ):
     def test_reload_workspace(self, graphql_context):
@@ -146,7 +146,9 @@ class TestReloadWorkspace(
 
 class TestReloadRepositoriesOutOfProcess(
     make_graphql_context_test_suite(
-        context_variants=[GraphQLContextVariant.readonly_in_memory_instance_managed_grpc_env()]
+        context_variants=[
+            GraphQLContextVariant.non_launchable_in_memory_instance_managed_grpc_env()
+        ]
     )
 ):
     def test_out_of_process_reload_location(self, graphql_context):
@@ -350,7 +352,7 @@ mutation {
 class TestReloadRepositoriesManagedGrpc(
     make_graphql_context_test_suite(
         context_variants=[
-            GraphQLContextVariant.readonly_in_memory_instance_managed_grpc_env(),
+            GraphQLContextVariant.non_launchable_in_memory_instance_managed_grpc_env(),
         ]
     )
 ):
