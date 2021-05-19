@@ -69,9 +69,9 @@ def test_smoke_app(gen_instance):
             # Missing routes redirect to the index.html file of the Dagit react app, so the user
             # gets our UI when they navigate to "synthetic" react router URLs.
             result = client.get("static/foo/bar")
-            assert result.status_code == 301
+            assert result.status_code == 200
             assert result.headers["Location"] == "http://localhost/"
 
             result = client.get("pipelines/foo")
-            assert result.status_code == 301
+            assert result.status_code == 200
             assert result.headers["Location"] == "http://localhost/"

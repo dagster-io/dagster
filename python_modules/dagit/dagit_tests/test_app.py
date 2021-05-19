@@ -88,7 +88,7 @@ def test_index_view_at_path_prefix():
         ).test_client() as client:
             # / redirects to prefixed path
             res = client.get("/")
-            assert res.status_code == 301
+            assert res.status_code == 200
 
             # index contains the path meta tag
             res = client.get("/dagster-path/")
