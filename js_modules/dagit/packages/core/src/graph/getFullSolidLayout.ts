@@ -1,7 +1,8 @@
+import memoize from 'lodash/memoize';
 // eslint-disable-next-line import/no-webpack-loader-syntax
 import LayoutWorker from 'worker-loader!../workers/dagre_layout.worker';
 
-import {asyncMemoize, memoize} from '../app/Util';
+import {asyncMemoize} from '../app/Util';
 
 import {ILayoutSolid, layoutPipeline} from './layout';
 

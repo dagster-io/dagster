@@ -15,12 +15,12 @@ import './codemirror-yaml/lint'; // Patch lint
 import './codemirror-yaml/mode'; // eslint-disable-line import/no-duplicates
 
 import {Editor} from 'codemirror';
+import debounce from 'lodash/debounce';
 import * as React from 'react';
 import {Controlled as CodeMirrorReact} from 'react-codemirror2';
 import {createGlobalStyle} from 'styled-components/macro';
 import * as yaml from 'yaml';
 
-import {debounce} from '../app/Util';
 import {FontFamily} from '../ui/styles';
 
 import {ConfigEditorHelpContext} from './ConfigEditorHelpContext';
