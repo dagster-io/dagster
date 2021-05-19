@@ -62,6 +62,10 @@ class WorkspaceRequestContext(NamedTuple):
     def repository_location_names(self) -> List[str]:
         return self.workspace_snapshot.repository_location_names
 
+    @property
+    def read_only(self) -> bool:
+        return self.process_context.read_only
+
     def repository_location_errors(self) -> List["SerializableErrorInfo"]:
         return self.workspace_snapshot.repository_location_errors
 
@@ -186,8 +190,18 @@ class WorkspaceProcessContext:
     """
 
     def __init__(
-        self, instance: DagsterInstance, workspace: Workspace, version: Optional[str] = None
+        self,
+        instance: DagsterInstance,
+        workspace: Workspace,
+        version: Optional[str] = None,
+        read_only: bool = False,
     ):
+
+        check.inst_param(instance, "instance", DagsterInstance)
+        check.inst_param(workspace, "workspace", Workspace)
+        check.opt_str_param(version, "version")
+        check.bool_param(read_only, "read_only")
+
         # lazy import for perf
         from rx.subjects import Subject
 
@@ -199,6 +213,7 @@ class WorkspaceProcessContext:
             self._location_state_events_handler
         )
 
+        self.read_only = read_only
         self.version = version
         self.set_state_subscribers()
 

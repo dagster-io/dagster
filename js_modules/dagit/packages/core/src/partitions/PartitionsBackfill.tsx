@@ -872,6 +872,9 @@ const LAUNCH_PARTITION_BACKFILL_MUTATION = gql`
         stepKey
         invalidOutputName
       }
+      ... on ReadOnlyError {
+        message
+      }
       ... on PipelineNotFoundError {
         message
       }

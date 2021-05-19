@@ -9,8 +9,10 @@ from ...implementation.fetch_schedules import (
     start_schedule,
     stop_schedule,
 )
+from ...implementation.utils import capture_error, check_read_only
 from ..errors import (
     GraphenePythonError,
+    GrapheneReadOnlyError,
     GrapheneRepositoryNotFoundError,
     GrapheneScheduleNotFoundError,
     GrapheneSchedulerNotDefinedError,
@@ -76,7 +78,7 @@ class GrapheneReconcileSchedulerStateSuccess(graphene.ObjectType):
 
 class GrapheneReconcileSchedulerStateMutationResult(graphene.Union):
     class Meta:
-        types = (GraphenePythonError, GrapheneReconcileSchedulerStateSuccess)
+        types = (GrapheneReadOnlyError, GraphenePythonError, GrapheneReconcileSchedulerStateSuccess)
         name = "ReconcileSchedulerStateMutationResult"
 
 
@@ -89,6 +91,8 @@ class GrapheneReconcileSchedulerStateMutation(graphene.Mutation):
     class Meta:
         name = "ReconcileSchedulerStateMutation"
 
+    @capture_error
+    @check_read_only
     def mutate(self, graphene_info, repository_selector):
         return reconcile_scheduler_state(
             graphene_info, RepositorySelector.from_graphql_input(repository_selector)

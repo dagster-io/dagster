@@ -272,6 +272,16 @@ class GrapheneAssetNotFoundError(graphene.ObjectType):
         self.message = f"Asset key {asset_key.to_string()} not found."
 
 
+class GrapheneReadOnlyError(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneError,)
+        name = "ReadOnlyError"
+
+    def __init__(self):
+        super().__init__()
+        self.message = "Attempted to execute a mutation in read-only mode"
+
+
 types = [
     GrapheneAssetNotFoundError,
     GrapheneConflictingExecutionParamsError,
@@ -288,6 +298,7 @@ types = [
     GraphenePipelineSnapshotNotFoundError,
     GraphenePresetNotFoundError,
     GraphenePythonError,
+    GrapheneReadOnlyError,
     GrapheneReloadNotSupported,
     GrapheneRepositoryLocationNotFound,
     GrapheneRepositoryNotFoundError,

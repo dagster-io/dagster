@@ -21,6 +21,7 @@ from ...implementation.utils import (
     ExecutionParams,
     UserFacingGraphQLError,
     capture_error,
+    check_read_only,
     pipeline_selector_from_graphql,
 )
 from ..asset_key import GrapheneAssetKey
@@ -35,6 +36,7 @@ from ..errors import (
     GraphenePipelineRunNotFoundError,
     GraphenePresetNotFoundError,
     GraphenePythonError,
+    GrapheneReadOnlyError,
     GrapheneReloadNotSupported,
     GrapheneRepositoryLocationNotFound,
 )
@@ -134,6 +136,7 @@ class GrapheneDeletePipelineRunResult(graphene.Union):
     class Meta:
         types = (
             GrapheneDeletePipelineRunSuccess,
+            GrapheneReadOnlyError,
             GraphenePythonError,
             GraphenePipelineRunNotFoundError,
         )
@@ -149,6 +152,8 @@ class GrapheneDeleteRunMutation(graphene.Mutation):
     class Meta:
         name = "DeleteRunMutation"
 
+    @capture_error
+    @check_read_only
     def mutate(self, graphene_info, **kwargs):
         run_id = kwargs["runId"]
         return delete_pipeline_run(graphene_info, run_id)
@@ -175,6 +180,7 @@ class GrapheneTerminatePipelineExecutionResult(graphene.Union):
             GrapheneTerminatePipelineExecutionSuccess,
             GrapheneTerminatePipelineExecutionFailure,
             GraphenePipelineRunNotFoundError,
+            GrapheneReadOnlyError,
             GraphenePythonError,
         )
         name = "TerminatePipelineExecutionResult"
@@ -201,6 +207,8 @@ class GrapheneLaunchPipelineExecutionMutation(graphene.Mutation):
         description = "Launch a pipeline run via the run launcher configured on the instance."
         name = "LaunchPipelineExecutionMutation"
 
+    @capture_error
+    @check_read_only
     def mutate(self, graphene_info, **kwargs):
         return create_execution_params_and_launch_pipeline_exec(
             graphene_info, kwargs["executionParams"]
@@ -217,6 +225,8 @@ class GrapheneLaunchBackfillMutation(graphene.Mutation):
         description = "Launches a set of partition backfill runs via the run launcher configured on the instance."
         name = "LaunchBackfillMutation"
 
+    @capture_error
+    @check_read_only
     def mutate(self, graphene_info, **kwargs):
         return create_and_launch_partition_backfill(graphene_info, kwargs["backfillParams"])
 
@@ -231,6 +241,8 @@ class GrapheneCancelBackfillMutation(graphene.Mutation):
         description = "Marks a partition backfill as canceled."
         name = "CancelBackfillMutation"
 
+    @capture_error
+    @check_read_only
     def mutate(self, graphene_info, **kwargs):
         return cancel_partition_backfill(graphene_info, kwargs["backfillId"])
 
@@ -269,6 +281,8 @@ class GrapheneLaunchPipelineReexecutionMutation(graphene.Mutation):
         description = "Re-launch a pipeline run via the run launcher configured on the instance"
         name = "LaunchPipelineReexecutionMutation"
 
+    @capture_error
+    @check_read_only
     def mutate(self, graphene_info, **kwargs):
         return create_execution_params_and_launch_pipeline_reexec(
             graphene_info,
@@ -299,6 +313,8 @@ class GrapheneTerminatePipelineExecutionMutation(graphene.Mutation):
     class Meta:
         name = "TerminatePipelineExecutionMutation"
 
+    @capture_error
+    @check_read_only
     def mutate(self, graphene_info, **kwargs):
         return terminate_pipeline_execution(
             graphene_info,
@@ -314,6 +330,7 @@ class GrapheneReloadRepositoryLocationMutationResult(graphene.Union):
             GrapheneReloadNotSupported,
             GrapheneRepositoryLocationNotFound,
             GrapheneRepositoryLocationLoadFailure,
+            GrapheneReadOnlyError,
         )
         name = "ReloadRepositoryLocationMutationResult"
 
@@ -327,6 +344,8 @@ class GrapheneReloadRepositoryLocationMutation(graphene.Mutation):
     class Meta:
         name = "ReloadRepositoryLocationMutation"
 
+    @capture_error
+    @check_read_only
     def mutate(self, graphene_info, **kwargs):
         location_name = kwargs["repositoryLocationName"]
 
@@ -351,6 +370,7 @@ class GrapheneReloadWorkspaceMutationResult(graphene.Union):
     class Meta:
         types = (
             GrapheneRepositoryLocationConnection,
+            GrapheneReadOnlyError,
             GraphenePythonError,
         )
         name = "ReloadWorkspaceMutationResult"
@@ -362,6 +382,8 @@ class GrapheneReloadWorkspaceMutation(graphene.Mutation):
     class Meta:
         name = "ReloadWorkspaceMutation"
 
+    @capture_error
+    @check_read_only
     def mutate(self, graphene_info, **_kwargs):
         new_context = graphene_info.context.reload_workspace()
         return fetch_repository_locations(new_context)
@@ -378,6 +400,7 @@ class GrapheneAssetWipeMutationResult(graphene.Union):
     class Meta:
         types = (
             GrapheneAssetNotFoundError,
+            GrapheneReadOnlyError,
             GraphenePythonError,
             GrapheneAssetWipeSuccess,
         )
@@ -393,6 +416,8 @@ class GrapheneAssetWipeMutation(graphene.Mutation):
     class Meta:
         name = "AssetWipeMutation"
 
+    @capture_error
+    @check_read_only
     def mutate(self, graphene_info, **kwargs):
         return wipe_assets(
             graphene_info,

@@ -11,7 +11,7 @@ import { SensorSelector, JobStatus } from "./../../types/globalTypes";
 // ====================================================
 
 export interface StartSensor_startSensor_SensorNotFoundError {
-  __typename: "SensorNotFoundError";
+  __typename: "SensorNotFoundError" | "ReadOnlyError";
 }
 
 export interface StartSensor_startSensor_Sensor_sensorState {

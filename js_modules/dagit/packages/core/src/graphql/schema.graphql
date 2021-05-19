@@ -807,11 +807,15 @@ type Schedules {
   results: [Schedule!]!
 }
 
-union SensorOrError = Sensor | SensorNotFoundError | PythonError
+union SensorOrError = Sensor | SensorNotFoundError | ReadOnlyError | PythonError
 
 type SensorNotFoundError implements Error {
   message: String!
   sensorName: String!
+}
+
+type ReadOnlyError implements Error {
+  message: String!
 }
 
 input SensorSelector {
@@ -1033,7 +1037,7 @@ type Mutation {
   cancelPartitionBackfill(backfillId: String!): CancelBackfillResult!
 }
 
-union LaunchPipelineExecutionResult = LaunchPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
+union LaunchPipelineExecutionResult = LaunchPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | ReadOnlyError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
 
 type LaunchPipelineRunSuccess {
   run: PipelineRun!
@@ -1077,9 +1081,9 @@ input ExecutionMetadata {
   parentRunId: String
 }
 
-union LaunchPipelineReexecutionResult = LaunchPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
+union LaunchPipelineReexecutionResult = LaunchPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | ReadOnlyError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
 
-union ReconcileSchedulerStateMutationResult = PythonError | ReconcileSchedulerStateSuccess
+union ReconcileSchedulerStateMutationResult = ReadOnlyError | PythonError | ReconcileSchedulerStateSuccess
 
 type ReconcileSchedulerStateSuccess {
   message: String!
@@ -1091,13 +1095,13 @@ type ScheduleStateResult {
   scheduleState: JobState!
 }
 
-union StopSensorMutationResultOrError = StopSensorMutationResult | PythonError
+union StopSensorMutationResultOrError = StopSensorMutationResult | ReadOnlyError | PythonError
 
 type StopSensorMutationResult {
   jobState: JobState
 }
 
-union TerminatePipelineExecutionResult = TerminatePipelineExecutionSuccess | TerminatePipelineExecutionFailure | PipelineRunNotFoundError | PythonError
+union TerminatePipelineExecutionResult = TerminatePipelineExecutionSuccess | TerminatePipelineExecutionFailure | PipelineRunNotFoundError | ReadOnlyError | PythonError
 
 type TerminatePipelineExecutionSuccess {
   run: PipelineRun!
@@ -1113,13 +1117,13 @@ enum TerminatePipelinePolicy {
   MARK_AS_CANCELED_IMMEDIATELY
 }
 
-union DeletePipelineRunResult = DeletePipelineRunSuccess | PythonError | PipelineRunNotFoundError
+union DeletePipelineRunResult = DeletePipelineRunSuccess | ReadOnlyError | PythonError | PipelineRunNotFoundError
 
 type DeletePipelineRunSuccess {
   runId: String!
 }
 
-union ReloadRepositoryLocationMutationResult = RepositoryLocation | ReloadNotSupported | RepositoryLocationNotFound | RepositoryLocationLoadFailure
+union ReloadRepositoryLocationMutationResult = RepositoryLocation | ReloadNotSupported | RepositoryLocationNotFound | RepositoryLocationLoadFailure | ReadOnlyError
 
 type ReloadNotSupported implements Error {
   message: String!
@@ -1129,15 +1133,15 @@ type RepositoryLocationNotFound implements Error {
   message: String!
 }
 
-union ReloadWorkspaceMutationResult = RepositoryLocationConnection | PythonError
+union ReloadWorkspaceMutationResult = RepositoryLocationConnection | ReadOnlyError | PythonError
 
-union AssetWipeMutationResult = AssetNotFoundError | PythonError | AssetWipeSuccess
+union AssetWipeMutationResult = AssetNotFoundError | ReadOnlyError | PythonError | AssetWipeSuccess
 
 type AssetWipeSuccess {
   assetKeys: [AssetKey!]!
 }
 
-union LaunchBackfillResult = LaunchBackfillSuccess | PartitionSetNotFoundError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
+union LaunchBackfillResult = LaunchBackfillSuccess | PartitionSetNotFoundError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | ReadOnlyError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
 
 type LaunchBackfillSuccess {
   backfillId: String!
@@ -1164,7 +1168,7 @@ type ResumeBackfillSuccess {
   backfillId: String!
 }
 
-union CancelBackfillResult = CancelBackfillSuccess | PythonError
+union CancelBackfillResult = CancelBackfillSuccess | ReadOnlyError | PythonError
 
 type CancelBackfillSuccess {
   backfillId: String!

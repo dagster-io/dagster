@@ -11,7 +11,7 @@ import { SensorSelector, JobType, JobStatus, PipelineRunStatus, JobTickStatus } 
 // ====================================================
 
 export interface SensorRootQuery_sensorOrError_SensorNotFoundError {
-  __typename: "SensorNotFoundError" | "PythonError";
+  __typename: "SensorNotFoundError" | "ReadOnlyError" | "PythonError";
 }
 
 export interface SensorRootQuery_sensorOrError_Sensor_nextTick {

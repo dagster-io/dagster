@@ -49,6 +49,11 @@ export interface ReloadWorkspaceMutation_reloadWorkspace_RepositoryLocationConne
   nodes: ReloadWorkspaceMutation_reloadWorkspace_RepositoryLocationConnection_nodes[];
 }
 
+export interface ReloadWorkspaceMutation_reloadWorkspace_ReadOnlyError {
+  __typename: "ReadOnlyError";
+  message: string;
+}
+
 export interface ReloadWorkspaceMutation_reloadWorkspace_PythonError_cause {
   __typename: "PythonError";
   message: string;
@@ -62,7 +67,7 @@ export interface ReloadWorkspaceMutation_reloadWorkspace_PythonError {
   cause: ReloadWorkspaceMutation_reloadWorkspace_PythonError_cause | null;
 }
 
-export type ReloadWorkspaceMutation_reloadWorkspace = ReloadWorkspaceMutation_reloadWorkspace_RepositoryLocationConnection | ReloadWorkspaceMutation_reloadWorkspace_PythonError;
+export type ReloadWorkspaceMutation_reloadWorkspace = ReloadWorkspaceMutation_reloadWorkspace_RepositoryLocationConnection | ReloadWorkspaceMutation_reloadWorkspace_ReadOnlyError | ReloadWorkspaceMutation_reloadWorkspace_PythonError;
 
 export interface ReloadWorkspaceMutation {
   reloadWorkspace: ReloadWorkspaceMutation_reloadWorkspace;

@@ -13,6 +13,7 @@ import {
   Terminate,
   Terminate_terminatePipelineExecution_PipelineRunNotFoundError,
   Terminate_terminatePipelineExecution_PythonError,
+  Terminate_terminatePipelineExecution_ReadOnlyError,
   Terminate_terminatePipelineExecution_TerminatePipelineExecutionFailure,
 } from './types/Terminate';
 
@@ -27,6 +28,7 @@ export interface Props {
 type Error =
   | Terminate_terminatePipelineExecution_TerminatePipelineExecutionFailure
   | Terminate_terminatePipelineExecution_PipelineRunNotFoundError
+  | Terminate_terminatePipelineExecution_ReadOnlyError
   | Terminate_terminatePipelineExecution_PythonError
   | undefined;
 

@@ -11,7 +11,7 @@ import { AssetKeyInput } from "./../../types/globalTypes";
 // ====================================================
 
 export interface AssetWipeMutation_wipeAssets_AssetNotFoundError {
-  __typename: "AssetNotFoundError";
+  __typename: "AssetNotFoundError" | "ReadOnlyError";
 }
 
 export interface AssetWipeMutation_wipeAssets_AssetWipeSuccess_assetKeys {

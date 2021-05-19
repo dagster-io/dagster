@@ -7,7 +7,10 @@ from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION, SUB
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 from graphql import parse
 
-from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
+from .graphql_context_test_suite import (
+    ExecutingGraphQLContextTestMatrix,
+    ReadonlyGraphQLContextTestMatrix,
+)
 from .setup import csv_hello_world_solids_config
 from .utils import sync_execute_get_run_log_data
 
@@ -490,3 +493,26 @@ def get_step_output_event(logs, step_key, output_name="result"):
             return log
 
     return None
+
+
+class TestExecutePipelineReadonlyFailure(ReadonlyGraphQLContextTestMatrix):
+    def test_start_pipeline_execution_readonly_failure(self, graphql_context):
+        assert graphql_context.read_only == True
+
+        selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "runConfigData": csv_hello_world_solids_config(),
+                    "mode": "default",
+                }
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+
+        assert result.data["launchPipelineExecution"]["__typename"] == "ReadOnlyError"

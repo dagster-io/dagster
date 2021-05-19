@@ -4,6 +4,18 @@ from collections import namedtuple
 from dagster import check
 from dagster.core.host_representation import PipelineSelector
 from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster_graphql.schema.errors import GrapheneReadOnlyError
+
+
+def check_read_only(fn):
+    def _fn(self, graphene_info, *args, **kwargs):  # pylint: disable=unused-argument
+
+        if graphene_info.context.read_only:
+            raise UserFacingGraphQLError(GrapheneReadOnlyError())
+
+        return fn(self, graphene_info, *args, **kwargs)
+
+    return _fn
 
 
 def capture_error(fn):

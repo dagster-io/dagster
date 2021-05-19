@@ -3,6 +3,7 @@ import sys
 import tempfile
 import threading
 from contextlib import contextmanager
+from typing import Optional
 
 import click
 from dagster import check
@@ -81,8 +82,14 @@ DEFAULT_DB_STATEMENT_TIMEOUT = 5000  # 5 sec
     type=click.INT,
     show_default=True,
 )
+@click.option(
+    "--read-only",
+    help="Start Dagit in read-only mode, where all mutations such as launching runs and "
+    "turning schedules on/off are turned off.",
+    is_flag=True,
+)
 @click.version_option(version=__version__, prog_name="dagit")
-def ui(host, port, path_prefix, db_statement_timeout, **kwargs):
+def ui(host, port, path_prefix, db_statement_timeout, read_only, **kwargs):
     # add the path for the cwd so imports in dynamically loaded code work correctly
     sys.path.append(os.getcwd())
 
@@ -92,7 +99,7 @@ def ui(host, port, path_prefix, db_statement_timeout, **kwargs):
     else:
         port_lookup = False
 
-    host_dagit_ui(host, port, path_prefix, db_statement_timeout, port_lookup, **kwargs)
+    host_dagit_ui(host, port, path_prefix, db_statement_timeout, port_lookup, read_only, **kwargs)
 
 
 @contextmanager
@@ -110,7 +117,9 @@ def _get_instance():
                 yield instance
 
 
-def host_dagit_ui(host, port, path_prefix, db_statement_timeout, port_lookup=True, **kwargs):
+def host_dagit_ui(
+    host, port, path_prefix, db_statement_timeout, port_lookup=True, read_only=False, **kwargs
+):
 
     with _get_instance() as instance:
         # Allow the instance components to change behavior in the context of a long running server process
@@ -120,14 +129,29 @@ def host_dagit_ui(host, port, path_prefix, db_statement_timeout, port_lookup=Tru
             if not workspace:
                 raise Exception("Unable to load workspace with cli_args: {}".format(kwargs))
 
-            host_dagit_ui_with_workspace(instance, workspace, host, port, path_prefix, port_lookup)
+            host_dagit_ui_with_workspace(
+                instance, workspace, host, port, path_prefix, port_lookup, read_only
+            )
 
 
-def host_dagit_ui_with_workspace(instance, workspace, host, port, path_prefix, port_lookup=True):
+def host_dagit_ui_with_workspace(
+    instance: DagsterInstance,
+    workspace: Workspace,
+    host: Optional[str],
+    port: int,
+    path_prefix: str,
+    port_lookup: bool = True,
+    read_only: bool = False,
+):
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(workspace, "workspace", Workspace)
+    check.opt_str_param(host, "host")
+    check.int_param(port, "port")
+    check.str_param(path_prefix, "path_prefix")
+    check.bool_param(port_lookup, "port_lookup")
+    check.bool_param(read_only, "read_only")
 
-    app = create_app_from_workspace(workspace, instance, path_prefix)
+    app = create_app_from_workspace(workspace, instance, path_prefix, read_only)
 
     start_server(instance, host, port, path_prefix, app, port_lookup)
 

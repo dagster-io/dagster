@@ -174,6 +174,18 @@ const BackfillTable = ({backfills, refetch}: {backfills: Backfill[]; refetch: ()
     const {data} = await resumeBackfill({variables: {backfillId: backfill.backfillId}});
     if (data && data.resumePartitionBackfill.__typename === 'ResumeBackfillSuccess') {
       refetch();
+    } else if (data && data.resumePartitionBackfill.__typename === 'ReadOnlyError') {
+      SharedToaster.show({
+        message: (
+          <Group direction="column" spacing={4}>
+            <div>
+              Attempted to retry the backfill in read-only mode. This backfill was not retried.
+            </div>
+          </Group>
+        ),
+        icon: 'error',
+        intent: Intent.DANGER,
+      });
     } else {
       const error = data.resumePartitionBackfill;
       SharedToaster.show({
@@ -583,6 +595,9 @@ const RESUME_BACKFILL_MUTATION = gql`
       __typename
       ... on ResumeBackfillSuccess {
         backfillId
+      }
+      ... on ReadOnlyError {
+        message
       }
       ... on PythonError {
         message

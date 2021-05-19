@@ -4,7 +4,7 @@ import * as React from 'react';
 
 import {SharedToaster} from '../app/DomUtils';
 import {useInvalidateConfigsForRepo} from '../app/LocalStorage';
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT, READ_ONLY_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 
 import {ReloadWorkspaceMutation} from './types/ReloadWorkspaceMutation';
 
@@ -21,7 +21,11 @@ export const useReloadWorkspace = () => {
     const {data} = await reload();
     setReloading(false);
 
-    if (!data || data?.reloadWorkspace.__typename === 'PythonError') {
+    if (
+      !data ||
+      data?.reloadWorkspace.__typename === 'PythonError' ||
+      data?.reloadWorkspace.__typename === 'ReadOnlyError'
+    ) {
       SharedToaster.show({
         message: 'Could not reload workspace.',
         timeout: 3000,
@@ -77,8 +81,10 @@ const RELOAD_WORKSPACE_MUTATION = gql`
           }
         }
       }
+      ...ReadOnlyErrorFragment
       ...PythonErrorFragment
     }
   }
+  ${READ_ONLY_ERROR_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
 `;

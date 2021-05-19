@@ -10,6 +10,7 @@ from .errors import (
     GraphenePipelineNotFoundError,
     GraphenePipelineRunConflict,
     GraphenePythonError,
+    GrapheneReadOnlyError,
     create_execution_params_error_types,
 )
 from .pipelines.config import GraphenePipelineConfigValidationInvalid
@@ -21,6 +22,7 @@ pipeline_execution_error_types = (
     GraphenePipelineConfigValidationInvalid,
     GraphenePipelineNotFoundError,
     GraphenePipelineRunConflict,
+    GrapheneReadOnlyError,
     GraphenePythonError,
 ) + create_execution_params_error_types
 
@@ -51,7 +53,7 @@ class GrapheneCancelBackfillSuccess(graphene.ObjectType):
 
 class GrapheneCancelBackfillResult(graphene.Union):
     class Meta:
-        types = (GrapheneCancelBackfillSuccess, GraphenePythonError)
+        types = (GrapheneCancelBackfillSuccess, GrapheneReadOnlyError, GraphenePythonError)
         name = "CancelBackfillResult"
 
 

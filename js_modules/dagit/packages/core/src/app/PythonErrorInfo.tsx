@@ -66,6 +66,12 @@ const ErrorContext: React.FC<{errorSource: ErrorSource}> = ({errorSource}) => {
   }
 };
 
+export const READ_ONLY_ERROR_FRAGMENT = gql`
+  fragment ReadOnlyErrorFragment on ReadOnlyError {
+    message
+  }
+`;
+
 export const PYTHON_ERROR_FRAGMENT = gql`
   fragment PythonErrorFragment on PythonError {
     __typename

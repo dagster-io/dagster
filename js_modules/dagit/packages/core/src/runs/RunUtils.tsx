@@ -173,6 +173,9 @@ export const DELETE_MUTATION = gql`
       ... on PythonError {
         message
       }
+      ... on ReadOnlyError {
+        message
+      }
       ... on PipelineRunNotFoundError {
         message
       }
@@ -196,6 +199,9 @@ export const TERMINATE_MUTATION = gql`
           runId
           canTerminate
         }
+      }
+      ... on ReadOnlyError {
+        message
       }
       ... on PythonError {
         message

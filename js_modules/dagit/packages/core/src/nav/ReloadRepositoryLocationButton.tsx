@@ -135,6 +135,9 @@ const RELOAD_REPOSITORY_LOCATION_MUTATION = gql`
         }
         loadStatus
       }
+      ... on ReadOnlyError {
+        message
+      }
       ... on ReloadNotSupported {
         message
       }

@@ -428,6 +428,9 @@ class Marks:
     # Backfill daemon variants
     backfill_daemon = pytest.mark.backfill_daemon
 
+    # Readonly context variant
+    read_only = pytest.mark.read_only
+
     # Common mark to all test suite tests
     graphql_context_test_suite = pytest.mark.graphql_context_test_suite
 
@@ -479,15 +482,20 @@ class GraphQLContextVariant:
     All tests managed by this system are marked with "graphql_context_test_suite".
     """
 
-    def __init__(self, marked_instance_mgr, marked_environment_mgr, test_id=None):
+    def __init__(self, marked_instance_mgr, marked_environment_mgr, read_only=False, test_id=None):
         self.marked_instance_mgr = check.inst_param(
             marked_instance_mgr, "marked_instance_mgr", MarkedManager
         )
         self.marked_environment_mgr = check.inst_param(
             marked_environment_mgr, "marked_environment_mgr", MarkedManager
         )
+        self.read_only = check.bool_param(read_only, "read_only")
         self.test_id = check.opt_str_param(test_id, "test_id")
-        self.marks = marked_instance_mgr.marks + marked_environment_mgr.marks
+        self.marks = (
+            marked_instance_mgr.marks
+            + marked_environment_mgr.marks
+            + ([Marks.read_only] if read_only else [])
+        )
 
     @property
     def instance_mgr(self):
@@ -523,6 +531,15 @@ class GraphQLContextVariant:
             InstanceManagers.sqlite_instance_with_default_run_launcher(),
             EnvironmentManagers.managed_grpc(),
             test_id="sqlite_with_default_run_launcher_managed_grpc_env",
+        )
+
+    @staticmethod
+    def sqlite_read_only_with_default_run_launcher_managed_grpc_env():
+        return GraphQLContextVariant(
+            InstanceManagers.sqlite_instance_with_default_run_launcher(),
+            EnvironmentManagers.managed_grpc(),
+            read_only=True,
+            test_id="sqlite_read_only_with_default_run_launcher_managed_grpc_env",
         )
 
     @staticmethod
@@ -647,6 +664,7 @@ class GraphQLContextVariant:
         return [
             GraphQLContextVariant.in_memory_instance_managed_grpc_env(),
             GraphQLContextVariant.sqlite_with_default_run_launcher_managed_grpc_env(),
+            GraphQLContextVariant.sqlite_read_only_with_default_run_launcher_managed_grpc_env(),
             GraphQLContextVariant.sqlite_with_default_run_launcher_deployed_grpc_env(),
             GraphQLContextVariant.sqlite_with_queued_run_coordinator_managed_grpc_env(),
             GraphQLContextVariant.postgres_with_default_run_launcher_managed_grpc_env(),
@@ -672,6 +690,13 @@ class GraphQLContextVariant:
             GraphQLContextVariant.postgres_with_default_run_launcher_managed_grpc_env(),
             GraphQLContextVariant.postgres_with_default_run_launcher_deployed_grpc_env(),
         ]
+
+    @staticmethod
+    def all_readonly_variants():
+        """
+        Return all read only variants. If you try to run any mutation these will error
+        """
+        return _variants_with_mark(GraphQLContextVariant.all_variants(), pytest.mark.read_only)
 
     @staticmethod
     def all_non_launchable_variants():
@@ -709,7 +734,7 @@ def manage_graphql_context(context_variant, recon_repo=None):
     with context_variant.instance_mgr() as instance:
         with context_variant.environment_mgr(recon_repo) as workspace:
             yield WorkspaceProcessContext(
-                instance=instance, workspace=workspace
+                instance=instance, workspace=workspace, read_only=context_variant.read_only
             ).create_request_context()
 
 
@@ -798,6 +823,11 @@ def make_graphql_context_test_suite(context_variants, recon_repo=None):
             return recon_repo
 
     return _SpecificTestSuiteBase
+
+
+ReadonlyGraphQLContextTestMatrix = make_graphql_context_test_suite(
+    context_variants=GraphQLContextVariant.all_readonly_variants()
+)
 
 
 NonLaunchableGraphQLContextTestMatrix = make_graphql_context_test_suite(
