@@ -120,6 +120,18 @@ class GraphenePipelineInitFailureEvent(graphene.ObjectType):
         name = "PipelineInitFailureEvent"
 
 
+class GrapheneAlertStartEvent(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneMessageEvent, GraphenePipelineEvent)
+        name = "AlertStartEvent"
+
+
+class GrapheneAlertSuccessEvent(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneMessageEvent, GraphenePipelineEvent)
+        name = "AlertSuccessEvent"
+
+
 class GrapheneStepEvent(graphene.Interface):
     stepKey = graphene.Field(graphene.String)
     solidHandleID = graphene.Field(graphene.String)
@@ -375,18 +387,6 @@ class GrapheneHookErroredEvent(graphene.ObjectType):
         name = "HookErroredEvent"
 
     error = graphene.NonNull(GraphenePythonError)
-
-
-class GrapheneAlertStartEvent(graphene.ObjectType):
-    class Meta:
-        interfaces = (GrapheneMessageEvent, GrapheneStepEvent)
-        name = "AlertStartEvent"
-
-
-class GrapheneAlertSuccessEvent(graphene.ObjectType):
-    class Meta:
-        interfaces = (GrapheneMessageEvent, GrapheneStepEvent)
-        name = "AlertSuccessEvent"
 
 
 class GrapheneStepMaterializationEvent(graphene.ObjectType):

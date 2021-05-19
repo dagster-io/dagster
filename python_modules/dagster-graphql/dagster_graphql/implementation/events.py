@@ -149,6 +149,8 @@ def from_dagster_event_record(event_record, pipeline_name):
         GraphenePipelineSuccessEvent,
         GrapheneStepExpectationResultEvent,
         GrapheneStepMaterializationEvent,
+        GrapheneAlertStartEvent,
+        GrapheneAlertSuccessEvent,
     )
 
     # Lots of event types. Pylint thinks there are too many branches
@@ -236,6 +238,10 @@ def from_dagster_event_record(event_record, pipeline_name):
             error=GraphenePythonError(dagster_event.pipeline_init_failure_data.error),
             **basic_params,
         )
+    elif dagster_event.event_type == DagsterEventType.ALERT_START:
+        return GrapheneAlertStartEvent(pipelineName=pipeline_name, **basic_params)
+    elif dagster_event.event_type == DagsterEventType.ALERT_SUCCESS:
+        return GrapheneAlertSuccessEvent(pipelineName=pipeline_name, **basic_params)
     elif dagster_event.event_type == DagsterEventType.HANDLED_OUTPUT:
         return GrapheneHandledOutputEvent(
             output_name=dagster_event.event_specific_data.output_name,

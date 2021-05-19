@@ -1517,7 +1517,7 @@ type HookErroredEvent implements MessageEvent & StepEvent {
   error: PythonError!
 }
 
-type AlertStartEvent implements MessageEvent & StepEvent {
+type AlertStartEvent implements MessageEvent & PipelineEvent {
   runId: String!
   message: String!
   timestamp: String!
@@ -1525,9 +1525,10 @@ type AlertStartEvent implements MessageEvent & StepEvent {
   stepKey: String
   solidHandleID: String
   eventType: DagsterEventType
+  pipelineName: String!
 }
 
-type AlertSuccessEvent implements MessageEvent & StepEvent {
+type AlertSuccessEvent implements MessageEvent & PipelineEvent {
   runId: String!
   message: String!
   timestamp: String!
@@ -1535,6 +1536,7 @@ type AlertSuccessEvent implements MessageEvent & StepEvent {
   stepKey: String
   solidHandleID: String
   eventType: DagsterEventType
+  pipelineName: String!
 }
 
 type PipelineRunLogsSubscriptionFailure {
