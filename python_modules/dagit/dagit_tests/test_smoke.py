@@ -70,8 +70,6 @@ def test_smoke_app(gen_instance):
             # gets our UI when they navigate to "synthetic" react router URLs.
             result = client.get("static/foo/bar")
             assert result.status_code == 200
-            assert result.headers["Location"] == "http://localhost/"
 
             result = client.get("pipelines/foo")
             assert result.status_code == 200
-            assert result.headers["Location"] == "http://localhost/"
