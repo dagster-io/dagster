@@ -62,3 +62,5 @@ export const usePermissions = () => {
     [permissions],
   );
 };
+
+export type PermissionSet = ReturnType<typeof usePermissions>;

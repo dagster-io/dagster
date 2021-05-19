@@ -1,6 +1,7 @@
 import * as React from 'react';
 import {Redirect, Route, RouteComponentProps, Switch} from 'react-router-dom';
 
+import {usePermissions} from '../app/Permissions';
 import {PipelineExecutionRoot} from '../execute/PipelineExecutionRoot';
 import {PipelineExecutionSetupRoot} from '../execute/PipelineExecutionSetupRoot';
 import {PipelineNav} from '../nav/PipelineNav';
@@ -17,6 +18,7 @@ interface Props {
 
 export const PipelineRoot: React.FC<Props> = (props) => {
   const {repoAddress} = props;
+  const {canLaunchPipelineExecution} = usePermissions();
   return (
     <div
       style={{
@@ -35,21 +37,30 @@ export const PipelineRoot: React.FC<Props> = (props) => {
         />
         <Route
           path="/workspace/:repoPath/pipelines/:pipelinePath/playground/setup"
-          component={(props: RouteComponentProps<{pipelinePath: string}>) => (
-            <PipelineExecutionSetupRoot
-              pipelinePath={props.match.params.pipelinePath}
-              repoAddress={repoAddress}
-            />
-          )}
+          component={(props: RouteComponentProps<{pipelinePath: string; repoPath: string}>) => {
+            const {pipelinePath, repoPath} = props.match.params;
+            if (!canLaunchPipelineExecution) {
+              return <Redirect to={`/workspace/${repoPath}/pipelines/${pipelinePath}`} />;
+            }
+            return (
+              <PipelineExecutionSetupRoot pipelinePath={pipelinePath} repoAddress={repoAddress} />
+            );
+          }}
         />
         <Route
           path="/workspace/:repoPath/pipelines/:pipelinePath/playground"
-          component={(props: RouteComponentProps<{pipelinePath: string}>) => (
-            <PipelineExecutionRoot
-              pipelinePath={props.match.params.pipelinePath}
-              repoAddress={repoAddress}
-            />
-          )}
+          component={(props: RouteComponentProps<{pipelinePath: string; repoPath: string}>) => {
+            const {pipelinePath, repoPath} = props.match.params;
+            if (!canLaunchPipelineExecution) {
+              return <Redirect to={`/workspace/${repoPath}/pipelines/${pipelinePath}`} />;
+            }
+            return (
+              <PipelineExecutionRoot
+                pipelinePath={props.match.params.pipelinePath}
+                repoAddress={repoAddress}
+              />
+            );
+          }}
         />
         <Route
           path="/workspace/:repoPath/pipelines/:pipelinePath/runs/:runId"

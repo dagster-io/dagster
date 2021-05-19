@@ -26,7 +26,7 @@ const identity: PermissionsJson = permissionsElement
     };
 
 const permissions =
-  identity.permissions === '[permissions here]' ? PERMISSIONS_ALLOW_ALL : identity.permissions;
+  identity.permissions === '[permissions_here]' ? PERMISSIONS_ALLOW_ALL : identity.permissions;
 
 const config = {
   basePath: pathPrefix,
