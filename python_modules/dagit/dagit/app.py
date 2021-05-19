@@ -190,7 +190,7 @@ def instantiate_app_with_views(
 
     index_path = os.path.join(target_dir, "./webapp/build/index.html")
 
-    def index_view():
+    def index_view(*args, **kwargs):  # pylint: disable=unused-argument
         try:
             with open(index_path) as f:
                 rendered_template = render_template_string(f.read())
@@ -216,7 +216,7 @@ def instantiate_app_with_views(
 
     app.app_protocol = lambda environ_path_info: "graphql-ws"
     app.register_blueprint(bp)
-    app.register_error_handler(404, lambda path: redirect(app_path_prefix or "/", 301))
+    app.register_error_handler(404, index_view)
 
     CORS(app)
     return app
