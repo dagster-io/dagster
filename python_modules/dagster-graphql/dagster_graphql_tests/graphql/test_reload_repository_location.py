@@ -1,5 +1,4 @@
 import sys
-import time
 from unittest import mock
 
 from dagster import file_relative_path, repository
@@ -107,10 +106,6 @@ class TestReloadWorkspace(
             assert len(failures) == 1
             assert failures[0]["name"] == "error_location"
             assert failures[0]["loadStatus"] == "LOADED"
-
-            update_timestamp = failures[0]["metadata"]["updatedTimestamp"]
-
-            assert update_timestamp <= time.time()
 
             # Add another origin without an error, reload
 
@@ -309,10 +304,6 @@ mutation ($repositoryLocationName: String!) {
         }
         isReloadSupported
         loadStatus
-        metadata {
-          containerImage
-          updatedTimestamp
-        }
       }
       ... on RepositoryLocationLoadFailure {
           name
@@ -320,10 +311,6 @@ mutation ($repositoryLocationName: String!) {
               message
           }
           loadStatus
-          metadata {
-            containerImage
-            updatedTimestamp
-          }
       }
    }
 }
@@ -340,10 +327,6 @@ mutation {
             id
             name
             loadStatus
-            metadata {
-              containerImage
-              updatedTimestamp
-            }
             repositories {
               name
             }
@@ -353,10 +336,6 @@ mutation {
             id
             name
             loadStatus
-            metadata {
-              containerImage
-              updatedTimestamp
-            }
             error {
               message
             }
@@ -387,10 +366,6 @@ class TestReloadRepositoriesManagedGrpc(
         assert result.data["reloadRepositoryLocation"]["name"] == "test"
         assert result.data["reloadRepositoryLocation"]["loadStatus"] == "LOADED"
 
-        update_timestamp = result.data["reloadRepositoryLocation"]["metadata"]["updatedTimestamp"]
-
-        assert update_timestamp <= time.time()
-
         repositories = result.data["reloadRepositoryLocation"]["repositories"]
         assert len(repositories) == 1
         assert repositories[0]["name"] == "test_repo"
@@ -405,13 +380,3 @@ class TestReloadRepositoriesManagedGrpc(
         )
 
         assert result.data["reloadRepositoryLocation"]["isReloadSupported"] is True
-
-        repeat_result = execute_dagster_graphql(
-            graphql_context, RELOAD_REPOSITORY_LOCATION_QUERY, {"repositoryLocationName": "test"}
-        )
-
-        new_update_timestamp = repeat_result.data["reloadRepositoryLocation"]["metadata"][
-            "updatedTimestamp"
-        ]
-
-        assert new_update_timestamp > update_timestamp

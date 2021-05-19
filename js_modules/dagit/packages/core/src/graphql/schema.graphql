@@ -57,17 +57,11 @@ type RepositoryLocation {
   repositories: [Repository!]!
   serverId: String
   loadStatus: RepositoryLocationLoadStatus!
-  metadata: RepositoryLocationMetadata!
 }
 
 enum RepositoryLocationLoadStatus {
   LOADING
   LOADED
-}
-
-type RepositoryLocationMetadata {
-  containerImage: String
-  updatedTimestamp: Float!
 }
 
 type Pipeline implements SolidContainer & IPipelineSnapshot {
@@ -736,14 +730,12 @@ type RepositoryLocationLoadFailure {
   id: ID!
   name: String!
   error: PythonError!
-  metadata: RepositoryLocationMetadata!
   loadStatus: RepositoryLocationLoadStatus!
 }
 
 type RepositoryLocationLoading {
   id: ID!
   name: String!
-  metadata: RepositoryLocationMetadata!
 }
 
 union PipelineOrError = Pipeline | PipelineNotFoundError | InvalidSubsetError | PythonError

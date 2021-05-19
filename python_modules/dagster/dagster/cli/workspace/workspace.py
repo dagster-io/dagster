@@ -1,12 +1,11 @@
 import sys
 import threading
-import time
 import warnings
 from abc import ABC, abstractmethod
 from collections import OrderedDict, namedtuple
 from contextlib import ExitStack
 from enum import Enum
-from typing import List, NamedTuple
+from typing import List
 
 from dagster import check
 from dagster.core.errors import DagsterInvariantViolationError, DagsterRepositoryLocationLoadError
@@ -33,7 +32,7 @@ class IWorkspace(ABC):
 class WorkspaceSnapshot(
     namedtuple(
         "WorkspaceSnapshot",
-        "location_origin_dict location_error_dict repository_locations_dict location_status_dict location_metadata_dict",
+        "location_origin_dict location_error_dict repository_locations_dict location_status_dict",
     )
 ):
     """
@@ -51,7 +50,6 @@ class WorkspaceSnapshot(
         location_error_dict,
         repository_locations_dict,
         location_status_dict,
-        location_metadata_dict,
     ):
         for location_name in location_origin_dict:
             check.invariant(
@@ -67,7 +65,6 @@ class WorkspaceSnapshot(
             location_error_dict,
             repository_locations_dict,
             location_status_dict,
-            location_metadata_dict,
         )
 
     def is_reload_supported(self, location_name):
@@ -93,25 +90,11 @@ class WorkspaceSnapshot(
         check.str_param(location_name, "location_name")
         return self.location_status_dict[location_name]
 
-    def get_location_metadata(self, location_name):
-        check.str_param(location_name, "location_name")
-        return self.location_metadata_dict[location_name]
-
 
 # For locations that are loaded asynchronously
 class WorkspaceLocationLoadStatus(Enum):
     LOADING = "LOADING"  # Waiting for location to load or update
     LOADED = "LOADED"  # Finished loading (may be an error)
-
-
-# Information that can be displayed alongside all repository locations, even while they
-# are still loading or failed to load.
-class RepositoryLocationMetadata(
-    NamedTuple(
-        "_RepositoryLocationMetadata", [("container_image", str), ("updated_timestamp", float)]
-    )
-):
-    pass
 
 
 class Workspace(IWorkspace):
@@ -149,7 +132,6 @@ class Workspace(IWorkspace):
         self._location_dict = {}
         self._location_error_dict = {}
         self._location_status_dict = {}
-        self._location_metadata_dict = {}
 
         with self._lock:
             self._load_workspace()
@@ -170,7 +152,6 @@ class Workspace(IWorkspace):
         self._location_dict = {}
         self._location_error_dict = {}
         self._location_status_dict = {}
-        self._location_metadata_dict = {}
         for origin in repository_location_origins:
             check.invariant(
                 self._location_origin_dict.get(origin.location_name) is None,
@@ -246,11 +227,9 @@ class Workspace(IWorkspace):
     def _load_location(self, location_name):
         assert self._lock.locked()
         origin = self._location_origin_dict[location_name]
-        container_image = None
         try:
             location = self.create_location_from_origin(origin)
             self._location_dict[location_name] = location
-            container_image = location.container_image
         except Exception:  # pylint: disable=broad-except
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
             self._location_error_dict[location_name] = error_info
@@ -260,10 +239,6 @@ class Workspace(IWorkspace):
                 )
             )
         self._location_status_dict[location_name] = WorkspaceLocationLoadStatus.LOADED
-        self._location_metadata_dict[location_name] = RepositoryLocationMetadata(
-            container_image=container_image,
-            updated_timestamp=time.time(),
-        )
 
     def create_snapshot(self):
         with self._lock:
@@ -272,7 +247,6 @@ class Workspace(IWorkspace):
                 self._location_error_dict.copy(),
                 self._location_dict.copy(),
                 self._location_status_dict.copy(),
-                self._location_metadata_dict.copy(),
             )
 
     @property
