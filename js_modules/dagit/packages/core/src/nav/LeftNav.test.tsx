@@ -8,26 +8,8 @@ import {LeftNav} from './LeftNav';
 
 describe('LeftNav', () => {
   const defaultMocks = {
-    RepositoryLocationsOrError: () => ({
-      __typename: 'RepositoryLocationConnection',
-    }),
     RepositoryLocationConnection: () => ({
       nodes: () => new MockList(2),
-    }),
-    RepositoryLocationOrLoadFailure: () => ({
-      __typename: 'RepositoryLocation',
-    }),
-    SchedulesOrError: () => ({
-      __typename: 'Schedules',
-    }),
-    Schedules: () => ({
-      results: () => new MockList(1),
-    }),
-    SensorsOrError: () => ({
-      __typename: 'Sensors',
-    }),
-    Sensors: () => ({
-      results: () => new MockList(1),
     }),
   };
 

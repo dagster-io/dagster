@@ -15,6 +15,9 @@ export const defaultMocks = {
   Asset: () => ({
     id: randomId,
   }),
+  ISolidDefinition: () => ({
+    __typename: 'SolidDefinition',
+  }),
   PartitionSetOrError: () => ({
     __typename: 'PartitionSetOrError',
   }),
@@ -29,6 +32,12 @@ export const defaultMocks = {
   }),
   PipelineOrError: () => ({
     __typename: 'Pipeline',
+  }),
+  PipelineRunOrError: () => ({
+    __typename: 'PipelineRun',
+  }),
+  PipelineRunStatsOrError: () => ({
+    __typename: 'PipelineRunStatsSnapshot',
   }),
   PipelineSnapshotOrError: () => ({
     __typename: 'PipelineSnapshot',
@@ -50,6 +59,9 @@ export const defaultMocks = {
     id: randomId,
     name: hyphenatedName,
   }),
+  RepositoryLocationConnection: () => ({
+    nodes: () => new MockList(1),
+  }),
   RepositoryLocationOrLoadFailure: () => ({
     __typename: 'RepositoryLocation',
   }),
@@ -59,10 +71,18 @@ export const defaultMocks = {
   Schedule: () => ({
     id: hyphenatedName,
     name: hyphenatedName,
+    results: () => new MockList(1),
+  }),
+  SchedulesOrError: () => ({
+    __typename: 'Schedules',
   }),
   Sensor: () => ({
     id: hyphenatedName,
     name: hyphenatedName,
+    results: () => new MockList(1),
+  }),
+  SensorsOrError: () => ({
+    __typename: 'Sensors',
   }),
   Solid: () => ({
     name: hyphenatedName,

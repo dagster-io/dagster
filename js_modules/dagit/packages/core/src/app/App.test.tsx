@@ -18,24 +18,11 @@ describe('App', () => {
       name: () => 'my_repository',
       pipelines: () => new MockList(1),
     }),
-    RepositoryOrError: () => ({
-      __typename: 'Repository',
-    }),
-    RepositoriesOrError: () => ({
-      __typename: 'RepositoryConnection',
-    }),
     RepositoryLocation: () => ({
       environmentPath: () => 'what then',
       id: () => 'my_location',
       name: () => 'my_location',
       repositories: () => new MockList(1),
-    }),
-    RepositoryLocationConnection: () => ({
-      nodes: () => new MockList(1),
-    }),
-    RepositoryLocationsOrError: () => ({
-      __typename: 'RepositoryLocationConnection',
-      nodes: () => new MockList(1),
     }),
     RepositoryLocationLoadFailure: () => ({
       id: () => 'failed',
@@ -43,21 +30,6 @@ describe('App', () => {
     RepositoryOrigin: () => ({
       repositoryName: () => 'my_repository',
       repositoryLocationName: () => 'my_location',
-    }),
-    RepositoryLocationOrLoadFailure: () => ({
-      __typename: 'RepositoryLocation',
-    }),
-    SchedulesOrError: () => ({
-      __typename: 'Schedules',
-    }),
-    Schedules: () => ({
-      results: () => new MockList(1),
-    }),
-    SensorsOrError: () => ({
-      __typename: 'Sensors',
-    }),
-    Sensors: () => ({
-      results: () => new MockList(1),
     }),
     SolidDefinition: () => ({
       configField: null,
@@ -77,9 +49,6 @@ describe('App', () => {
         handleID: 'foo_handle',
         __typename: 'SolidHandle',
       }),
-    }),
-    ISolidDefinition: () => ({
-      __typename: 'SolidDefinition',
     }),
   };
 

@@ -9,15 +9,6 @@ import {RepositoryPicker} from './RepositoryPicker';
 
 describe('RepositoryPicker', () => {
   const defaultMocks = {
-    RepositoryLocationOrLoadFailure: () => ({
-      __typename: 'RepositoryLocation',
-    }),
-    RepositoryLocationsOrError: () => ({
-      __typename: 'RepositoryLocationConnection',
-    }),
-    RepositoryLocationConnection: () => ({
-      nodes: () => new MockList(1),
-    }),
     RepositoryLocation: () => ({
       isReloadSupported: true,
       name: () => 'undisclosed-location',

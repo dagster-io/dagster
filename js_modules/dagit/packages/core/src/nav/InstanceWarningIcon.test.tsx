@@ -9,14 +9,8 @@ import {InstanceWarningIcon} from './InstanceWarningIcon';
 
 describe('InstanceWarningIcon', () => {
   const defaultMocks = {
-    RepositoryLocationsOrError: () => ({
-      __typename: 'RepositoryLocationConnection',
-    }),
     RepositoryLocationConnection: () => ({
       nodes: () => new MockList(2),
-    }),
-    RepositoryLocationOrLoadFailure: () => ({
-      __typename: 'RepositoryLocation',
     }),
     DaemonHealth: () => ({
       allDaemonStatuses: () => new MockList(3),
