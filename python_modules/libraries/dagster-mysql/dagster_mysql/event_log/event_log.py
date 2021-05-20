@@ -13,6 +13,7 @@ from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_d
 from dagster.utils.backcompat import experimental_class_warning
 
 from ..utils import (
+    MYSQL_POOL_RECYCLE,
     create_mysql_connection,
     mysql_alembic_config,
     mysql_config,
@@ -52,7 +53,9 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         # Default to not holding any connections open to prevent accumulating connections per DagsterInstance
         self._engine = create_engine(
-            self.mysql_url, isolation_level="AUTOCOMMIT", poolclass=db.pool.NullPool
+            self.mysql_url,
+            isolation_level="AUTOCOMMIT",
+            poolclass=db.pool.NullPool,
         )
         self._secondary_index_cache = {}
 
@@ -73,7 +76,12 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def optimize_for_dagit(self, statement_timeout):
         # When running in dagit, hold an open connection
         # https://github.com/dagster-io/dagster/issues/3719
-        self._engine = create_engine(self.mysql_url, isolation_level="AUTOCOMMIT", pool_size=1)
+        self._engine = create_engine(
+            self.mysql_url,
+            isolation_level="AUTOCOMMIT",
+            pool_size=1,
+            pool_recycle=MYSQL_POOL_RECYCLE,
+        )
 
     def upgrade(self):
         alembic_config = mysql_alembic_config(__file__)

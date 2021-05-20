@@ -8,6 +8,7 @@ from dagster.utils import utc_datetime_from_timestamp
 from dagster.utils.backcompat import experimental_class_warning
 
 from ..utils import (
+    MYSQL_POOL_RECYCLE,
     create_mysql_connection,
     mysql_alembic_config,
     mysql_config,
@@ -62,7 +63,12 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
     def optimize_for_dagit(self, statement_timeout):
         # When running in dagit, hold 1 open connection
         # https://github.com/dagster-io/dagster/issues/3719
-        self._engine = create_engine(self.mysql_url, isolation_level="AUTOCOMMIT", pool_size=1)
+        self._engine = create_engine(
+            self.mysql_url,
+            isolation_level="AUTOCOMMIT",
+            pool_size=1,
+            pool_recycle=MYSQL_POOL_RECYCLE,
+        )
 
     @property
     def inst_data(self):

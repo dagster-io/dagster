@@ -6,6 +6,7 @@ from dagster.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.utils.backcompat import experimental_class_warning
 
 from ..utils import (
+    MYSQL_POOL_RECYCLE,
     create_mysql_connection,
     mysql_alembic_config,
     mysql_config,
@@ -39,7 +40,9 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
 
         # Default to not holding any connections open to prevent accumulating connections per DagsterInstance
         self._engine = create_engine(
-            self.mysql_url, isolation_level="AUTOCOMMIT", poolclass=db.pool.NullPool
+            self.mysql_url,
+            isolation_level="AUTOCOMMIT",
+            poolclass=db.pool.NullPool,
         )
 
         table_names = retry_mysql_connection_fn(db.inspect(self._engine).get_table_names)
@@ -58,6 +61,7 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
             self.mysql_url,
             isolation_level="AUTOCOMMIT",
             pool_size=1,
+            pool_recycle=MYSQL_POOL_RECYCLE,
         )
 
     @property
