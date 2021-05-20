@@ -155,8 +155,7 @@ export const TimestampColumn: React.FC<{time: string | null}> = React.memo((prop
 
 const TimestampColumnContainer = styled.div`
   flex-shrink: 0;
-  text-align: right;
-  padding: 4px;
+  padding: 4px 4px 4px 8px;
 
   a:link,
   a:visited,

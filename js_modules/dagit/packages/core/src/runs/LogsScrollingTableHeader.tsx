@@ -9,7 +9,7 @@ const ColumnWidths = Object.assign(
   {
     eventType: 140,
     solid: 150,
-    timestamp: 100,
+    timestamp: 112,
   },
   getJSONForKey(ColumnWidthsStorageKey),
 );
@@ -132,7 +132,11 @@ export const Headers = () => {
         Event Type
       </Header>
       <HeaderContainer style={{flex: 1}}>Info</HeaderContainer>
-      <Header handleSide="left" width={widths.timestamp}>
+      <Header
+        handleSide="left"
+        width={widths.timestamp}
+        onResize={(width) => widths.onChange({...widths, timestamp: width})}
+      >
         Timestamp
       </Header>
     </HeadersContainer>
