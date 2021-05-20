@@ -20,7 +20,7 @@ requests = MockRequest()
 
 
 @solid
-def my_solid(context):
+def my_solid():
     return "hello"
 
 
@@ -41,7 +41,7 @@ def my_configurable_solid(context):
 
 
 @solid
-def my_input_solid(context, abc, xyz):
+def my_input_solid(abc, xyz):
     pass
 
 
@@ -54,7 +54,7 @@ MyDagsterType = DagsterType(type_check_fn=lambda _, value: value % 2 == 0, name=
 
 
 @solid(input_defs=[InputDefinition(name="abc", dagster_type=MyDagsterType)])
-def my_typed_input_solid(context, abc):
+def my_typed_input_solid(abc):
     pass
 
 
@@ -65,7 +65,7 @@ def my_typed_input_solid(context, abc):
 
 
 @solid
-def my_output_solid(context):
+def my_output_solid():
     return 5
 
 
@@ -80,7 +80,7 @@ def my_output_solid(context):
         OutputDefinition(name="second_output"),
     ],
 )
-def my_multi_output_solid(context):
+def my_multi_output_solid():
     yield Output(5, output_name="first_output")
     yield Output(6, output_name="second_output")
 

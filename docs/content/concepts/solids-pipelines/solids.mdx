@@ -42,11 +42,11 @@ Solids have several important properties:
 
 ## Defining a solid
 
-To define a solid, use the <PyObject object="solid" decorator /> decorator. The decorated function is called the `compute_fn` and must have `context` as the first argument. The context provides access to important properties and objects, such as [solid configuration](/concepts/solids-pipelines/solids#solid-configuration) and [resources](/concepts/modes-resources).
+To define a solid, use the <PyObject object="solid" decorator /> decorator. The decorated function is called the `compute_fn`.
 
 ```python file=/concepts/solids_pipelines/solids.py startafter=start_solid_marker endbefore=end_solid_marker
 @solid
-def my_solid(context):
+def my_solid():
     return "hello"
 ```
 
@@ -68,7 +68,7 @@ The most common way to define inputs is just to add arguments to the decorated f
 
 ```python file=/concepts/solids_pipelines/solids.py startafter=start_input_solid_marker endbefore=end_input_solid_marker
 @solid
-def my_input_solid(context, abc, xyz):
+def my_input_solid(abc, xyz):
     pass
 ```
 
@@ -84,7 +84,7 @@ MyDagsterType = DagsterType(type_check_fn=lambda _, value: value % 2 == 0, name=
 
 
 @solid(input_defs=[InputDefinition(name="abc", dagster_type=MyDagsterType)])
-def my_typed_input_solid(context, abc):
+def my_typed_input_solid(abc):
     pass
 ```
 
@@ -96,7 +96,7 @@ When you have one output, you can return the output value directly.
 
 ```python file=/concepts/solids_pipelines/solids.py startafter=start_output_solid_marker endbefore=end_output_solid_marker
 @solid
-def my_output_solid(context):
+def my_output_solid():
     return 5
 ```
 
@@ -111,7 +111,7 @@ When you have more than one output, you must `yield` an instance of the <PyObjec
         OutputDefinition(name="second_output"),
     ],
 )
-def my_multi_output_solid(context):
+def my_multi_output_solid():
     yield Output(5, output_name="first_output")
     yield Output(6, output_name="second_output")
 ```
@@ -120,7 +120,7 @@ Like inputs, outputs can also have [Dagster Types](/concepts/types).
 
 ### Solid Context
 
-The first parameter of a solids `compute_fn` is the context object, which is an instance of <PyObject object="SolidExecutionContext"/>. The context provides access to:
+When writing a solid, users can optionally provide a first parameter, `context`. When this parameter is supplied, Dagster will supply a context object to the body of the solid, which is an instance of <PyObject object="SolidExecutionContext"/>. The context provides access to:
 
 - Solid configuration (`context.solid_config`)
 - Loggers (`context.log`)
