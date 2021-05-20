@@ -1,17 +1,173 @@
 # Changelog
 
+## 0.11.10
+
+### New
+
+- Sensors can now set a string cursor using `context.update_cursor(str_value)` that is persisted across evaluations to save unnecessary computation. This persisted string value is made available on the context as `context.cursor`. Previously, we encouraged cursor-like behavior by exposing `last_run_key` on the sensor context, to keep track of the last time the sensor successfully requested a run. This, however, was not useful for avoiding unnecessary computation when the sensor evaluation did not result in a run request.
+- Dagit may now be run in `--read-only` mode, which will disable mutations in the user interface and on the server. You can use this feature to run instances of Dagit that are visible to users who you do not want to able to kick off new runs or make other changes to application state.
+- In `dagster-pandas`, the `event_metadata_fn` parameter to the function `create_dagster_pandas_dataframe_type` may now return a dictionary of `EventMetadata` values, keyed by their string labels. This should now be consistent with the parameters accepted by Dagster events, including the `TypeCheck` event.
+
+```py
+# old
+MyDataFrame = create_dagster_pandas_dataframe_type(
+    "MyDataFrame",
+    event_metadata_fn=lambda df: [
+        EventMetadataEntry.int(len(df), "number of rows"),
+        EventMetadataEntry.int(len(df.columns), "number of columns"),
+    ]
+)
+
+# new
+MyDataFrame = create_dagster_pandas_dataframe_type(
+    "MyDataFrame",
+    event_metadata_fn=lambda df: {
+        "number of rows": len(df),
+        "number of columns": len(dataframe.columns),
+    },
+)
+```
+
+- dagster-pandas’ `PandasColumn.datetime_column()` now has a new `tz` parameter, allowing you to constrain the column to a specific timezone (thanks `@mrdavidlaing`!)
+- The `DagsterGraphQLClient` now takes in an optional `transport` argument, which may be useful in cases where you need to authenticate your GQL requests:
+
+```py
+authed_client = DagsterGraphQLClient(
+    "my_dagit_url.com",
+    transport=RequestsHTTPTransport(..., auth=<some auth>),
+)
+```
+
+- Added an `ecr_public_resource` to get login credentials for the AWS ECR Public Gallery. This is useful if any of your pipelines need to push images.
+- Failed backfills may now be resumed in Dagit, by putting them back into a “requested” state. These backfill jobs should then be picked up by the backfill daemon, which will then attempt to create and submit runs for any of the outstanding requested partitions . This should help backfill jobs recover from any deployment or framework issues that occurred during the backfill prior to all the runs being launched. This will not, however, attempt to re-execute any of the individual pipeline runs that were successfully launched but resulted in a pipeline failure.
+- In the run log viewer in Dagit, links to asset materializations now include the timestamp for that materialization. This will bring you directly to the state of that asset at that specific time.
+- The Databricks step launcher now includes a `max_completion_wait_time_seconds` configuration option, which controls how long it will wait for a Databricks job to complete before exiting.
+
+### Experimental
+
+- Solids can now be invoked outside of composition. If your solid has a context argument, the `build_solid_context` function can be used to provide a context to the invocation.
+
+```py
+from dagster import build_solid_context
+
+@solid
+def basic_solid():
+    return "foo"
+
+assert basic_solid() == 5
+
+@solid
+def add_one(x):
+    return x + 1
+
+assert add_one(5) == 6
+
+@solid(required_resource_keys={"foo_resource"})
+def solid_reqs_resources(context):
+    return context.resources.foo + "bar"
+
+context = build_solid_context(resources={"foo_resource": "foo"})
+assert solid_reqs_resources(context) == "foobar"
+```
+
+- `build_schedule_context` allows you to build a `ScheduleExecutionContext` using a `DagsterInstance`. This can be used to test schedules.
+
+```py
+from dagster import build_schedule_context
+
+with DagsterInstance.get() as instance:
+    context = build_schedule_context(instance)
+    my_schedule.get_execution_data(context)
+```
+
+- `build_sensor_context` allows you to build a `SensorExecutionContext` using a `DagsterInstance`. This can be used to test sensors.
+
+```py
+
+from dagster import build_sensor_context
+
+with DagsterInstance.get() as instance:
+    context = build_sensor_context(instance)
+    my_sensor.get_execution_data(context)
+```
+
+- `build_input_context` and `build_output_context` allow you to construct `InputContext` and `OutputContext` respectively. This can be used to test IO managers.
+
+```py
+from dagster import build_input_context, build_output_context
+
+io_manager = MyIoManager()
+
+io_manager.load_input(build_input_context())
+io_manager.handle_output(build_output_context(), val)
+```
+
+- Resources can be provided to either of these functions. If you are using context manager resources, then `build_input_context`/`build_output_context` must be used as a context manager.
+
+```py
+with build_input_context(resources={"cm_resource": my_cm_resource}) as context:
+    io_manager.load_input(context)
+```
+
+- `validate_run_config` can be used to validate a run config blob against a pipeline definition & mode. If the run config is invalid for the pipeline and mode, this function will throw an error, and if correct, this function will return a dictionary representing the validated run config that Dagster uses during execution.
+
+```py
+validate_run_config(
+    {"solids": {"a": {"config": {"foo": "bar"}}}},
+    pipeline_contains_a
+) # usage for pipeline that requires config
+
+validate_run_config(
+    pipeline_no_required_config
+) # usage for pipeline that has no required config
+```
+
+- The ability to set a `RetryPolicy` has been added. This allows you to declare automatic retry behavior when exceptions occur during solid execution. You can set `retry_policy` on a solid invocation, `@solid` definition, or `@pipeline` definition.
+
+```py
+@solid(retry_policy=RetryPolicy(max_retries=3, delay=5))
+def fickle_solid(): # ...
+
+@pipeline( # set a default policy for all solids
+solid_retry_policy=RetryPolicy()
+)
+def my_pipeline(): # will use the pipelines policy by default
+    some_solid()
+
+    # solid definition takes precedance over pipeline default
+    fickle_solid()
+
+    # invocation setting takes precedance over definition
+    fickle_solid.with_retry_policy(RetryPolicy(max_retries=2))
+```
+
+### Bugfixes
+
+- Previously, asset materializations were not working in dagster-dbt for dbt >= 0.19.0. This has been fixed.
+- Previously, using the `dagster/priority` tag directly on pipeline definitions would cause an error. This has been fixed.
+- In dagster-pandas, the `create_dagster_pandas_dataframe_type()` function would, in some scenarios, not use the specified `materializer` argument when provided. This has been fixed (thanks `@drewsonne`!)
+- `dagster-graphql --remote` now sends the query and variables as post body data, avoiding uri length limit issues.
+- In the Dagit pipeline definition view, we no longer render config nubs for solids that do not need them.
+- In the run log viewer in Dagit, truncated row contents (including errors with long stack traces) now have a larger and clearer button to expand the full content in a dialog.
+- [dagster-mysql] Fixed a bug where database connections accumulated by `sqlalchemy.Engine` objects would be invalidated after 8 hours of idle time due to MySQL’s default configuration, resulting in an `sqlalchemy.exc.OperationalError` when attempting to view pages in Dagit in long-running deployments.
+
+### Documentation
+
+- In 0.11.9, context was made an optional argument on the function decorated by @solid. The solids throughout tutorials and snippets that do not need a context argument have been altered to omit that argument, and better reflect this change.
+- In a previous docs revision, a tutorial section on accessing resources within solids was removed. This has been re-added to the site.
+
 ## 0.11.9
 
 ### New
 
 - In Dagit, assets can now be viewed with an `asOf` URL parameter, which shows a snapshot of the asset at the provided timestamp, including parent materializations as of that time.
-- [Dagit] Queries and Mutations now use HTTP instead of a websocket-based connection. 
+- [Dagit] Queries and Mutations now use HTTP instead of a websocket-based connection.
 
 ### Bugfixes
 
 - A regression in 0.11.8 where composites would fail to render in the right side bar in Dagit has been fixed.
-- `A dependency conflict in `make dev_install` has been fixed.
-- [dagster-python-client] `reload_repository_location` and `submit_pipeline_execution` have been fixed - the underlying GraphQL queries had a missing inline fragment case. 
+- A dependency conflict in `make dev_install` has been fixed.
+- [dagster-python-client] `reload_repository_location` and `submit_pipeline_execution` have been fixed - the underlying GraphQL queries had a missing inline fragment case.
 
 ### Community Contributions
 
