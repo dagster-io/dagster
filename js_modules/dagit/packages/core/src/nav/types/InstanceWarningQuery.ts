@@ -24,7 +24,7 @@ export interface InstanceWarningQuery_instance_daemonHealth_allDaemonStatuses_la
 export interface InstanceWarningQuery_instance_daemonHealth_allDaemonStatuses {
   __typename: "DaemonStatus";
   id: string;
-  daemonType: string | null;
+  daemonType: string;
   required: boolean;
   healthy: boolean | null;
   lastHeartbeatErrors: InstanceWarningQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors[];

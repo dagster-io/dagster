@@ -24,7 +24,7 @@ export interface DaemonHealthFragment_allDaemonStatuses_lastHeartbeatErrors {
 export interface DaemonHealthFragment_allDaemonStatuses {
   __typename: "DaemonStatus";
   id: string;
-  daemonType: string | null;
+  daemonType: string;
   required: boolean;
   healthy: boolean | null;
   lastHeartbeatErrors: DaemonHealthFragment_allDaemonStatuses_lastHeartbeatErrors[];

@@ -11,7 +11,7 @@
 export interface QueueDaemonStatusQuery_instance_daemonHealth_daemonStatus {
   __typename: "DaemonStatus";
   id: string;
-  daemonType: string | null;
+  daemonType: string;
   healthy: boolean | null;
   required: boolean;
 }

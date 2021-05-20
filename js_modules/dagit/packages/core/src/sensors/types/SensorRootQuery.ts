@@ -120,7 +120,7 @@ export interface SensorRootQuery_instance_daemonHealth_allDaemonStatuses_lastHea
 export interface SensorRootQuery_instance_daemonHealth_allDaemonStatuses {
   __typename: "DaemonStatus";
   id: string;
-  daemonType: string | null;
+  daemonType: string;
   required: boolean;
   healthy: boolean | null;
   lastHeartbeatErrors: SensorRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors[];

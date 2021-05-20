@@ -25,7 +25,7 @@ class GrapheneRunLauncher(graphene.ObjectType):
 
 
 class GrapheneDaemonStatus(graphene.ObjectType):
-    daemonType = graphene.String()
+    daemonType = graphene.NonNull(graphene.String)
     id = graphene.NonNull(graphene.ID)
     required = graphene.NonNull(graphene.Boolean)
     healthy = graphene.Boolean()

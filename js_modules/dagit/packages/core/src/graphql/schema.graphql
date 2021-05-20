@@ -962,7 +962,7 @@ type DaemonHealth {
 }
 
 type DaemonStatus {
-  daemonType: String
+  daemonType: String!
   id: ID!
   required: Boolean!
   healthy: Boolean

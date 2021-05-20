@@ -29,7 +29,11 @@ const DaemonLabel = (props: DaemonLabelProps) => {
     case 'BACKFILL':
       return <div>Backfill</div>;
     default:
-      return <div>{daemon.daemonType}</div>;
+      return (
+        <div style={{textTransform: 'capitalize'}}>
+          {daemon.daemonType.replace(/_/g, ' ').toLowerCase()}
+        </div>
+      );
   }
 };
 
