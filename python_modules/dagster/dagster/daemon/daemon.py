@@ -1,6 +1,7 @@
 import logging
 import sys
 from abc import abstractclassmethod, abstractmethod
+from collections import deque
 from contextlib import AbstractContextManager
 
 import pendulum
@@ -44,7 +45,9 @@ class DagsterDaemon(AbstractContextManager):
 
         self._last_iteration_time = None
         self._last_heartbeat_time = None
-        self._errors = []  # (SerializableErrorInfo, timestamp) tuples
+        self._errors = deque(
+            maxlen=DAEMON_HEARTBEAT_ERROR_LIMIT
+        )  # (SerializableErrorInfo, timestamp) tuples
 
         self._first_error_logged = False
 
@@ -118,13 +121,13 @@ class DagsterDaemon(AbstractContextManager):
                 try:
                     result = check.opt_inst(next(daemon_generator), SerializableErrorInfo)
                     if result:
-                        self._errors.append((result, pendulum.now("UTC")))
+                        self._errors.appendleft((result, pendulum.now("UTC")))
                 except StopIteration:
                     break
                 except Exception:  # pylint: disable=broad-except
                     error_info = serializable_error_info_from_exc_info(sys.exc_info())
                     self._logger.error("Caught error:\n{}".format(error_info))
-                    self._errors.append((error_info, pendulum.now("UTC")))
+                    self._errors.appendleft((error_info, pendulum.now("UTC")))
                     break
                 finally:
                     try:
@@ -150,11 +153,11 @@ class DagsterDaemon(AbstractContextManager):
     ):
         error_max_time = pendulum.now("UTC").subtract(seconds=error_interval_seconds)
 
-        self._errors = self._errors[:DAEMON_HEARTBEAT_ERROR_LIMIT]
-
-        self._errors = [
-            (error, timestamp) for (error, timestamp) in self._errors if timestamp >= error_max_time
-        ]
+        while len(self._errors):
+            _earliest_error, earliest_timestamp = self._errors[-1]
+            if earliest_timestamp >= error_max_time:
+                break
+            self._errors.pop()
 
         curr_time = pendulum.now("UTC")
 
