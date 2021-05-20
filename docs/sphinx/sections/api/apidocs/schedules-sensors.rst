@@ -18,8 +18,6 @@ Schedules
 .. autoclass:: ScheduleExecutionContext
 .. autoclass:: PartitionScheduleDefinition
 
-.. currentmodule:: dagster.experimental
-
 .. autofunction:: build_schedule_context
 
 .. currentmodule:: dagster.core.scheduler

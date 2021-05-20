@@ -15,6 +15,7 @@ from dagster.core.instance.ref import InstanceRef
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.tags import check_tags
 from dagster.utils import ensure_gen, merge_dicts
+from dagster.utils.backcompat import experimental_fn_warning
 
 from .mode import DEFAULT_MODE_NAME
 from .run_request import JobType, RunRequest, SkipReason
@@ -89,6 +90,8 @@ def build_schedule_context(
             daily_schedule.get_execution_data(context)
 
     """
+
+    experimental_fn_warning("build_schedule_context")
 
     check.inst_param(instance, "instance", DagsterInstance)
     return ScheduleExecutionContext(

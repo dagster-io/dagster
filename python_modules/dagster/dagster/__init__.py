@@ -75,6 +75,7 @@ from dagster.core.definitions import (
     weekly_schedule,
 )
 from dagster.core.definitions.configurable import configured
+from dagster.core.definitions.schedule import build_schedule_context
 from dagster.core.errors import (
     DagsterConfigMappingFunctionError,
     DagsterError,
@@ -338,6 +339,7 @@ __all__ = [
     "RunRequest",
     "ScheduleDefinition",
     "ScheduleExecutionContext",
+    "build_schedule_context",
     "SensorDefinition",
     "SensorExecutionContext",
     "SkipReason",
