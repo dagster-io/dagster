@@ -7,7 +7,8 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import cleanup_test_instance, get_crash_signals
 from dagster.daemon import get_default_daemon_logger
 from dagster.daemon.backfill import execute_backfill_iteration
-from dagster.seven import IS_WINDOWS, create_pendulum_time, multiprocessing, to_timezone
+from dagster.seven import IS_WINDOWS, multiprocessing
+from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 
 from .test_backfill import instance_for_context, repos
 

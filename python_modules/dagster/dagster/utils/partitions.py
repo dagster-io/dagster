@@ -6,7 +6,7 @@ from dagster.core.definitions.partition import Partition, PartitionSetDefinition
 from dagster.core.definitions.run_request import SkipReason
 from dagster.core.definitions.schedule import ScheduleExecutionContext
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.seven import PendulumDateTime, to_timezone
+from dagster.seven.compat.pendulum import PendulumDateTime, to_timezone
 from dagster.utils.schedules import schedule_execution_time_iterator
 
 DEFAULT_MONTHLY_FORMAT = "%Y-%m"

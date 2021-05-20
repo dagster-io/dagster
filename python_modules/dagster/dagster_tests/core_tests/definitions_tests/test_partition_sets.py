@@ -3,7 +3,7 @@ import datetime
 import pendulum
 from dagster import Partition, PartitionSetDefinition, ScheduleExecutionContext, SkipReason
 from dagster.core.test_utils import instance_for_test
-from dagster.seven import create_pendulum_time
+from dagster.seven.compat.pendulum import create_pendulum_time
 from dagster.utils.partitions import date_partition_range
 
 

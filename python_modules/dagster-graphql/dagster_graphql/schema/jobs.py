@@ -16,7 +16,7 @@ from dagster.core.scheduler.job import (
 )
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from dagster.core.storage.tags import TagType, get_tag_type
-from dagster.seven import to_timezone
+from dagster.seven.compat.pendulum import to_timezone
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 from ..implementation.fetch_schedules import get_schedule_next_tick

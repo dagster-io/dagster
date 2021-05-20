@@ -16,7 +16,7 @@ from dagster.core.run_coordinator import RunCoordinator
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.telemetry import cleanup_telemetry_logger
 from dagster.serdes import ConfigurableClass
-from dagster.seven import create_pendulum_time, mock_pendulum_timezone
+from dagster.seven.compat.pendulum import create_pendulum_time, mock_pendulum_timezone
 from dagster.utils import merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
 

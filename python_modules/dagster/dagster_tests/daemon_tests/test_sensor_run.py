@@ -33,7 +33,7 @@ from dagster.daemon.controller import (
 )
 from dagster.daemon.daemon import DAEMON_HEARTBEAT_ERROR_LIMIT, SensorDaemon
 from dagster.daemon.sensor import execute_sensor_iteration, execute_sensor_iteration_loop
-from dagster.seven import create_pendulum_time, to_timezone
+from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 
 
 @solid

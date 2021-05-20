@@ -51,7 +51,7 @@ from dagster.grpc.impl import (
     get_partition_set_execution_param_data,
     get_partition_tags,
 )
-from dagster.seven import PendulumDateTime
+from dagster.seven.compat.pendulum import PendulumDateTime
 from dagster.utils import merge_dicts
 from dagster.utils.hosted_user_process import external_repo_from_def
 

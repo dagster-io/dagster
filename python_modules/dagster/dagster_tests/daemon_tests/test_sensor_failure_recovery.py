@@ -10,7 +10,8 @@ from dagster.core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster.core.test_utils import cleanup_test_instance, get_crash_signals
 from dagster.daemon import get_default_daemon_logger
 from dagster.daemon.sensor import execute_sensor_iteration
-from dagster.seven import IS_WINDOWS, create_pendulum_time, multiprocessing, to_timezone
+from dagster.seven import IS_WINDOWS, multiprocessing
+from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 
 from .test_sensor_run import instance_with_sensors, repos, wait_for_all_runs_to_start
 

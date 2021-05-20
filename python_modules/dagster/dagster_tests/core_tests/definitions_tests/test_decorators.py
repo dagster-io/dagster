@@ -33,7 +33,7 @@ from dagster.core.definitions.decorators import (
 from dagster.core.definitions.schedule import RunRequest
 from dagster.core.test_utils import instance_for_test
 from dagster.core.utility_solids import define_stub_solid
-from dagster.seven import create_pendulum_time, to_timezone
+from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 from dagster.utils.partitions import (
     DEFAULT_DATE_FORMAT,
     DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE,

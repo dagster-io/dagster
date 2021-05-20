@@ -6,7 +6,7 @@ from dagster.core.host_representation.external_data import (
 )
 from dagster.core.host_representation.handle import RepositoryHandle
 from dagster.grpc.types import ExternalScheduleExecutionArgs
-from dagster.seven import PendulumDateTime
+from dagster.seven.compat.pendulum import PendulumDateTime
 
 
 def sync_get_external_schedule_execution_data_ephemeral_grpc(
