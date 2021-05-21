@@ -20,8 +20,15 @@ def git_user():
     return subprocess.check_output(["git", "config", "--get", "user.name"]).decode("utf-8").strip()
 
 
-def git_repo_root():
-    return subprocess.check_output(["git", "rev-parse", "--show-toplevel"]).decode("utf-8").strip()
+def git_repo_root(path=None):
+    if not path:
+        path = os.getcwd()
+
+    return (
+        subprocess.check_output(["git", "rev-parse", "--show-toplevel"], cwd=path)
+        .decode("utf-8")
+        .strip()
+    )
 
 
 def git_push(tag=None, dry_run=True, cwd=None):

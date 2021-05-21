@@ -17,26 +17,28 @@ def copy_directories(paths, cwd, destination="build_cache"):
     check.invariant(os.path.exists(cwd), "Image directory does not exist")
     build_cache_dir = os.path.join(cwd, destination)
 
-    os.mkdir(build_cache_dir)
-
-    paths_to_copy = []
-    for path in paths:
-        src_path = os.path.join(DAGSTER_REPO, path)
-        check.invariant(os.path.exists(src_path), "Path for copying to image build does not exist")
-
-        _, dest_name = os.path.split(path)
-        dest_path = os.path.join(build_cache_dir, dest_name)
-
-        paths_to_copy.append((src_path, dest_path))
-
     try:
-        for src_path, dest_path in paths_to_copy:
-            print("Syncing {} to build dir {}...".format(src_path, dest_path))
-            if os.path.isdir(src_path):
-                shutil.copytree(src_path, dest_path)
-            else:
-                shutil.copy(src_path, dest_path)
-        yield
+        os.mkdir(build_cache_dir)
+
+        paths_to_copy = []
+        for path in paths:
+            src_path = os.path.join(git_repo_root(cwd), path)
+            check.invariant(
+                os.path.exists(src_path), "Path for copying to image build does not exist"
+            )
+
+            _, dest_name = os.path.split(path)
+            dest_path = os.path.join(build_cache_dir, dest_name)
+
+            paths_to_copy.append((src_path, dest_path))
+
+            for src_path, dest_path in paths_to_copy:
+                print("Syncing {} to build dir {}...".format(src_path, dest_path))
+                if os.path.isdir(src_path):
+                    shutil.copytree(src_path, dest_path)
+                else:
+                    shutil.copy(src_path, dest_path)
+            yield
 
     finally:
         shutil.rmtree(build_cache_dir)

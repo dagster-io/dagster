@@ -1,5 +1,32 @@
+import subprocess
+
 import pytest
-from automation.docker.image_defs import get_image
+from automation.docker.image_defs import copy_directories, get_image
+
+
+@pytest.fixture(name="repo")
+def repo_fixture(tmpdir):
+    root = (tmpdir / "repo").mkdir()
+    with root.as_cwd():
+        subprocess.call(["git", "init", "-q"])
+
+    return root
+
+
+def test_copy_directories(tmpdir, repo):
+    with tmpdir.as_cwd():
+        filename = "hello_world.txt"
+        (repo / filename).write("Hello, world!")
+        destination = "build_cache"
+
+        with copy_directories([filename], repo, destination=destination):
+            assert (repo / destination / filename).exists()
+        assert not (repo / destination).exists()
+
+        with pytest.raises(Exception):
+            with copy_directories(["bad file"], repo, destination=destination):
+                pass
+        assert not (repo / destination).exists()
 
 
 def test_get_image(tmpdir):
