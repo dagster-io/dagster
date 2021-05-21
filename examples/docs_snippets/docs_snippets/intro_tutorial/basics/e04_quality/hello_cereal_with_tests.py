@@ -1,7 +1,7 @@
 import csv
 import os
 
-from dagster import execute_pipeline, execute_solid, pipeline, solid
+from dagster import build_solid_context, execute_pipeline, pipeline, solid
 
 
 @solid
@@ -31,9 +31,8 @@ if __name__ == "__main__":
 
 # start_hello_cereal_with_tests_marker_0
 def test_hello_cereal_solid():
-    res = execute_solid(hello_cereal)
-    assert res.success
-    assert len(res.output_value()) == 77
+    context = build_solid_context()
+    assert hello_cereal(context) == 77
 
 
 def test_hello_cereal_pipeline():

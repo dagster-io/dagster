@@ -9,10 +9,10 @@ Dagster enables you to build testable and maintainable data applications. It pro
 
 ## Relevant APIs
 
-| Name                                    | Description                                                                                                           |
-| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| <PyObject object="execute_pipeline"  /> | A method to execute a pipeline synchronously, typically for testing pipeline execution or running standalone scripts. |
-| <PyObject object="execute_solid" />     | A method to execute a single solid in an ephemeral pipeline, intended to support unit tests.                          |
+| Name                                       | Description                                                                                                           |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| <PyObject object="execute_pipeline"     /> | A method to execute a pipeline synchronously, typically for testing pipeline execution or running standalone scripts. |
+| <PyObject object="build_solid_context"  /> | A method to construct a `SolidExecutionContext`, typically to provide to the invocation of a solid for testing.       |
 
 ## Overview
 
@@ -121,17 +121,19 @@ For more information, you can check out the [Modes](/concepts/modes-resources) a
 
 ### Testing single solid execution
 
-You can execute a single solid without writing a pipeline using <PyObject object="execute_solid" />. Using this function you will a single solid in an ephemeral pipeline. You can then then test execution properties using the <PyObject object="SolidExecutionResult" /> object that it returns.
+You can test a solid by invoking it.
 
 ```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_test_solid_marker endbefore=end_test_solid_marker
 def test_solid():
-    result = execute_solid(add_one)
+    assert add_one() == 2
+```
 
-    # return type is SolidExecutionResult
-    assert isinstance(result, SolidExecutionResult)
-    assert result.success
-    # check the solid output value
-    assert result.output_value() == 2
+If your solid requires contextual information such as resources or config, this can be provided using the <PyObject module="dagster" object="build_solid_context"/> function.
+
+```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_test_solid_context_marker endbefore=end_test_solid_context_marker
+def test_solid_with_context():
+    context = build_solid_context(resources={"foo": "bar"})
+    assert solid_requires_foo(context) == "bar"
 ```
 
 ### Testing pipeline execution with configs
