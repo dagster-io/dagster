@@ -777,6 +777,8 @@ dagsterDaemon:
 
   queuedRunCoordinator:
     enabled: false
+    module: dagster.core.run_coordinator
+    class: QueuedRunCoordinator
     config: {}
 
   # Additional environment variables to set.

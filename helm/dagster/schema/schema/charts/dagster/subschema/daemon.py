@@ -1,12 +1,14 @@
 from typing import Dict, List
 
-from pydantic import BaseModel  # pylint: disable=no-name-in-module
+from pydantic import BaseModel, Field  # pylint: disable=no-name-in-module
 
 from ...utils import kubernetes
 
 
 class QueuedRunCoordinator(BaseModel):
     enabled: bool
+    module: str
+    class_name: str = Field(alias="class")
     config: dict
 
 
