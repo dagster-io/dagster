@@ -218,11 +218,11 @@ def configured(
 
         dev_s3 = configured(s3_resource, name="dev_s3")({'bucket': 'dev'})
 
-        @configured(s3_resource):
+        @configured(s3_resource)
         def dev_s3(_):
             return {'bucket': 'dev'}
 
-        @configured(s3_resource, {'bucket_prefix', str}):
+        @configured(s3_resource, {'bucket_prefix', str})
         def dev_s3(config):
             return {'bucket': config['bucket_prefix'] + 'dev'}
     """
