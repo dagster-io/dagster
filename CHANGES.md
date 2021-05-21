@@ -64,7 +64,7 @@ assert add_one(5) == 6
 
 @solid(required_resource_keys={"foo_resource"})
 def solid_reqs_resources(context):
-    return context.resources.foo + "bar"
+    return context.resources.foo_resource + "bar"
 
 context = build_solid_context(resources={"foo_resource": "foo"})
 assert solid_reqs_resources(context) == "foobar"
@@ -134,10 +134,10 @@ solid_retry_policy=RetryPolicy()
 def my_pipeline(): # will use the pipelines policy by default
     some_solid()
 
-    # solid definition takes precedance over pipeline default
+    # solid definition takes precedence over pipeline default
     fickle_solid()
 
-    # invocation setting takes precedance over definition
+    # invocation setting takes precedence over definition
     fickle_solid.with_retry_policy(RetryPolicy(max_retries=2))
 ```
 
