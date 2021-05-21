@@ -17,6 +17,7 @@ Dagster includes a scheduler that can be used to launch runs on a fixed interval
 | <PyObject object="monthly_schedule" decorator /> | Decorator that defines a schedule that executes every month on a fixed day and time                                                                                                                                                                                       |
 | <PyObject object="schedule" decorator />         | Decorator that defines a schedule that executes according to a given cron schedule. It's important to note that schedules created using this schedule are [non-partition based schedules](/concepts/partitions-schedules-sensors/schedules#non-partition-based-schedules) |
 | <PyObject object="ScheduleExecutionContext" />   | The context passed to the schedule definition execution function                                                                                                                                                                                                          |
+| <PyObject object="build_schedule_context" />     | A function that constructs a `ScheduleExecutionContext`                                                                                                                                                                                                                   |
 | <PyObject object="ScheduleDefinition"  />        | Class for schedules. You almost never want to use initialize this class directly. Instead, you should use one of the many decorators above                                                                                                                                |
 
 ## Overview
@@ -124,6 +125,35 @@ In order for your schedule to run, it must be started. The easiest way to start 
 
 Once your schedule is started, if you're running the [dagster-daemon](/deployment/dagster-daemon) process as part of your deployment, the schedule will begin executing immediately. See the [Troubleshooting](/concepts/partitions-schedules-sensors/schedules#troubleshooting) section below if your schedule has been started but isn't submitting runs.
 
+## Testing Schedules
+
+Schedules can be tested by using `build_schedule_context` to construct a `ScheduleExecutionContext`, and passing this to the schedule's `evaluate_tick` function. The resulting run config from this function can then be validated using the <PyObject object="validate_run_config" /> function.
+
+```python file=concepts/partitions_schedules_sensors/schedules/schedule_examples.py startafter=start_test_schedule endbefore=end_test_schedule
+@hourly_schedule(
+    pipeline_name="test_pipeline",
+    start_date=datetime.datetime(2020, 1, 1),
+    execution_time=datetime.time(hour=0, minute=25),
+    execution_timezone="US/Central",
+)
+def hourly_schedule_to_test(date):
+    return {
+        "solids": {
+            "process_data_for_date": {
+                "config": {
+                    "date": date.strftime("%Y-%m-%d %H"),
+                }
+            }
+        }
+    }
+
+
+def test_hourly_schedule():
+    schedule_data = hourly_schedule_to_test.evaluate_tick(build_schedule_context())
+    for run_request in schedule_data.run_requests:
+        assert validate_run_config(pipeline_for_test, run_request.run_config)
+```
+
 ## Examples
 
 ### Hourly partition-based schedule
@@ -211,7 +241,9 @@ You might need to modify the preset's run config to include information about th
 )
 def my_modified_preset_schedule(date):
     modified_run_config = preset.run_config.copy()
-    modified_run_config["date"] = date.strftime("%Y-%m-%d")
+    modified_run_config["solids"]["process_data_for_date"]["config"]["date"] = date.strftime(
+        "%Y-%m-%d"
+    )
     return modified_run_config
 ```
 

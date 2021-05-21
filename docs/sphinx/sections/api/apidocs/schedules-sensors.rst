@@ -15,6 +15,8 @@ Schedules
 .. autodecorator:: daily_schedule
 
 .. autoclass:: ScheduleDefinition
+     :members: evaluate_tick
+
 .. autoclass:: ScheduleExecutionContext
 .. autoclass:: PartitionScheduleDefinition
 

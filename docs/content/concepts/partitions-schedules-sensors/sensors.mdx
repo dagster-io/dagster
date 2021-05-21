@@ -183,7 +183,7 @@ def my_directory_sensor_with_skip_reasons(_context):
 
 To quickly preview what an existing sensor would generate when evaluated, you can run the CLI command `dagster sensor preview my_sensor_name`.
 
-In order to unit test sensors, you can use the <PyObject object="build_sensor_context" /> function to construct a <PyObject object="SensorExecutionContext"/>. This can be passed to <PyObject object="SensorDefinition" method="get_execution_data" />, which will return all run requests yielded from the sensor. The config obtained from these can be validated using the <PyObject object="validate_run_config" /> function.
+In order to unit test sensors, you can use the <PyObject object="build_sensor_context" /> function to construct a <PyObject object="SensorExecutionContext"/>. This can be passed to <PyObject object="SensorDefinition" method="evaluate_tick" />, which will return all run requests yielded from the sensor. The config obtained from these can be validated using the <PyObject object="validate_run_config" /> function.
 
 ```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_sensor_testing endbefore=end_sensor_testing
 @sensor(pipeline_name="log_file_pipeline")
