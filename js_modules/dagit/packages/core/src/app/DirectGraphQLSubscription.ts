@@ -44,7 +44,7 @@ export class DirectGraphQLSubscription<T> {
   }
 
   open() {
-    const ws = new WebSocket(this.websocketURI);
+    const ws = new WebSocket(this.websocketURI, 'graphql-ws');
     ws.addEventListener('message', (e) => {
       this.handleEvent(JSON.parse(e.data));
     });
