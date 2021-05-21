@@ -72,8 +72,8 @@ data:
 
     {{- if and (.Values.dagsterDaemon.enabled) (.Values.dagsterDaemon.queuedRunCoordinator.enabled) }}
     run_coordinator:
-      module: dagster.core.run_coordinator
-      class: QueuedRunCoordinator
+      module: {{ .Values.dagsterDaemon.queuedRunCoordinator.module }}
+      class: {{ .Values.dagsterDaemon.queuedRunCoordinator.class }}
       config:
       {{- toYaml .Values.dagsterDaemon.queuedRunCoordinator.config | nindent 8 }}
     {{- end }}
