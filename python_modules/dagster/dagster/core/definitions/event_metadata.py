@@ -519,7 +519,7 @@ class EventMetadata:
 
     @staticmethod
     def int(value: int) -> "IntMetadataEntryData":
-        """Static constructor for a metadata entry wrapping an int as
+        """Static constructor for a metadata value wrapping an int as
         :py:class:`IntMetadataEntryData`. Can be used as the value type for the `metadata`
         parameter for supported events. For example:
 
@@ -547,6 +547,25 @@ class EventMetadata:
 
     @staticmethod
     def asset(asset_key: "AssetKey") -> "DagsterAssetMetadataEntryData":
+        """Static constructor for a metadata value referencing a Dagster asset, by key.
+
+        For example:
+
+        .. code-block:: python
+
+            @solid
+            def validate_table_solid(context, df):
+                yield AssetMaterialization(
+                    asset_key=AssetKey("my_table"),
+                    metadata={
+                        "Related asset": EventMetadata.asset(AssetKey('my_other_table')),
+                    },
+                )
+
+        Args:
+            asset_key (AssetKey): The asset key referencing the asset.
+        """
+
         from dagster.core.definitions.events import AssetKey
 
         check.inst_param(asset_key, "asset_key", AssetKey)
@@ -814,6 +833,27 @@ class EventMetadataEntry(
     def asset(
         asset_key: "AssetKey", label: str, description: Optional[str] = None
     ) -> "EventMetadataEntry":
+        """Static constructor for a metadata entry referencing a Dagster asset, by key.
+
+        For example:
+
+        .. code-block:: python
+
+            @solid
+            def validate_table_solid(context, df):
+                yield AssetMaterialization(
+                    asset_key=AssetKey("my_table"),
+                    metadata_entries=[
+                         EventMetadataEntry.asset(AssetKey('my_other_table'), "Related asset"),
+                    ],
+                )
+
+        Args:
+            asset_key (AssetKey): The asset key referencing the asset.
+            label (str): Short display label for this metadata entry.
+            description (Optional[str]): A human-readable description of this metadata entry.
+        """
+
         from dagster.core.definitions.events import AssetKey
 
         check.inst_param(asset_key, "asset_key", AssetKey)
