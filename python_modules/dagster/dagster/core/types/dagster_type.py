@@ -846,6 +846,9 @@ def resolve_dagster_type(dagster_type):
             )
         )
 
+    if BuiltinEnum.contains(dagster_type):
+        return DagsterType.from_builtin_enum(dagster_type)
+
     if is_supported_runtime_python_builtin(dagster_type):
         return remap_python_builtin_for_runtime(dagster_type)
 
@@ -860,8 +863,6 @@ def resolve_dagster_type(dagster_type):
         return PythonSet
     if isinstance(dagster_type, DagsterListApi):
         return List(Any)
-    if BuiltinEnum.contains(dagster_type):
-        return DagsterType.from_builtin_enum(dagster_type)
 
     if isinstance(dagster_type, type):
         return resolve_python_type_to_dagster_type(dagster_type)
