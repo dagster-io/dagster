@@ -48,6 +48,9 @@ dagit:
       - host: "k8s-example-user-code-1"
         port: 3030
 
+  # Deploy a separate instance of Dagit in --read-only mode (can't launch runs, disable schedules, etc.)
+  enableReadOnly: false
+
   # Additional environment variables to set.
   # A Kubernetes ConfigMap will be created with these environment variables. See:
   # https://kubernetes.io/docs/concepts/configuration/configmap/
@@ -666,6 +669,34 @@ ingress:
 
   dagit:
     # Ingress hostname for Dagit e.g. dagit.mycompany.com
+    # This variable allows customizing the route pattern in the ingress. Some
+    # ingress controllers may only support "/", whereas some may need "/*".
+    # NOTE: Dagit doesn't yet support hosting on a path, e.g. mycompany.com/dagit.
+    path: "/*"
+    # NOTE: do NOT keep trailing slash. For root configuration, set as empty string
+    # See: https://github.com/dagster-io/dagster/issues/2073
+    host: ""
+
+    # Different http paths to add to the ingress before the default dagit path
+    # Example:
+    #
+    # precedingPaths:
+    #   - path: "/*"
+    #     serviceName: "ssl-redirect"
+    #     servicePort: "use-annotation"
+    precedingPaths: []
+
+    # Different http paths to add to the ingress after the default dagit path
+    # Example:
+    #
+    # succeedingPaths:
+    #   - path: "/*"
+    #     serviceName: "ssl-redirect"
+    #     servicePort: "use-annotation"
+    succeedingPaths: []
+
+  readOnlyDagit:
+    # Ingress hostname for read only Dagit e.g. viewer.dagit.mycompany.com
     # This variable allows customizing the route pattern in the ingress. Some
     # ingress controllers may only support "/", whereas some may need "/*".
     # NOTE: Dagit doesn't yet support hosting on a path, e.g. mycompany.com/dagit.

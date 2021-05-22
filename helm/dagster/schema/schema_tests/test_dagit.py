@@ -9,10 +9,7 @@ from .helm_template import HelmTemplate
 
 @pytest.fixture(name="template")
 def helm_template() -> HelmTemplate:
-    return HelmTemplate(
-        output="templates/deployment-dagit.yaml",
-        model=models.V1Deployment
-    )
+    return HelmTemplate(output="templates/deployment-dagit.yaml", model=models.V1Deployment)
 
 
 @pytest.mark.parametrize(
@@ -21,7 +18,7 @@ def helm_template() -> HelmTemplate:
         80,
         3000,
         8080,
-    ]
+    ],
 )
 def test_dagit_port(template: HelmTemplate, service_port: int):
     helm_values = DagsterHelmValues.construct(
@@ -59,3 +56,24 @@ def test_startup_probe_enabled(template: HelmTemplate, enabled: bool):
     container = dagit.spec.template.spec.containers[0]
 
     assert (container.startup_probe is not None) == enabled
+
+
+def test_dagit_read_only_disabled(template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(dagit=Dagit.construct())
+
+    dagit_template = template.render(helm_values)
+
+    assert len(dagit_template) == 1
+    assert "--read-only" not in "".join(dagit_template[0].spec.template.spec.containers[0].command)
+
+
+def test_dagit_read_only_enabled(template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(dagit=Dagit.construct(enableReadOnly=True))
+
+    dagit_template = template.render(helm_values)
+
+    assert len(dagit_template) == 2
+    assert [
+        "--read-only" in "".join(dagit.spec.template.spec.containers[0].command)
+        for dagit in dagit_template
+    ] == [False, True]

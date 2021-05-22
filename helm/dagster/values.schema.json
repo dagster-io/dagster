@@ -311,6 +311,10 @@
                 },
                 "annotations": {
                     "$ref": "#/definitions/Annotations"
+                },
+                "enableReadOnly": {
+                    "title": "Enablereadonly",
+                    "type": "boolean"
                 }
             },
             "required": [
@@ -329,7 +333,8 @@
                 "resources",
                 "livenessProbe",
                 "startupProbe",
-                "annotations"
+                "annotations",
+                "enableReadOnly"
             ]
         },
         "UserDeployment": {
@@ -796,6 +801,9 @@
                 "dagit": {
                     "$ref": "#/definitions/DagitIngressConfiguration"
                 },
+                "readOnlyDagit": {
+                    "$ref": "#/definitions/DagitIngressConfiguration"
+                },
                 "flower": {
                     "$ref": "#/definitions/FlowerIngressConfiguration"
                 }
@@ -804,6 +812,7 @@
                 "enabled",
                 "annotations",
                 "dagit",
+                "readOnlyDagit",
                 "flower"
             ]
         },
