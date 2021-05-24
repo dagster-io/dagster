@@ -112,6 +112,13 @@ def passthrough_flags_only(solid_config, additional_flags):
     }
 
 
+def __dbt_target_path(target_path_config: str):
+    if target_path_config is None:
+        return "target"
+    else:
+        target_path_config
+
+
 @solid(
     description="A solid to invoke dbt run via CLI.",
     input_defs=[InputDefinition(name="start_after", dagster_type=Nothing)],
@@ -172,6 +179,14 @@ def passthrough_flags_only(solid_config, additional_flags):
                 "prefix the generated asset keys."
             ),
         ),
+        "target-path": Field(
+            config=StringSource,
+            is_required=False,
+            description=(
+                    "The directory path for target if different from the default `target-path` in "
+                    "your dbt project configuration file."
+            )
+        ),
     },
     tags={"kind": "dbt"},
 )
@@ -190,7 +205,8 @@ def dbt_cli_run(context) -> DbtCliOutput:
         warn_error=context.solid_config["warn-error"],
         ignore_handled_error=context.solid_config["ignore_handled_error"],
     )
-    run_results = parse_run_results(context.solid_config["project-dir"])
+    target_path = __dbt_target_path(context.solid_config["target"])
+    run_results = parse_run_results(context.solid_config["project-dir"], target_path)
     cli_output_dict = {**run_results, **cli_output}
     cli_output = DbtCliOutput.from_dict(cli_output_dict)
 
@@ -263,6 +279,14 @@ def dbt_cli_run(context) -> DbtCliOutput:
                 "be yielded when the solid executes. Default: True"
             ),
         ),
+        "target-path": Field(
+            config=StringSource,
+            is_required=False,
+            description=(
+                    "The directory path for target if different from the default `target-path` in "
+                    "your dbt project configuration file."
+            )
+        ),
     },
     tags={"kind": "dbt"},
 )
@@ -279,7 +303,8 @@ def dbt_cli_test(context) -> DbtCliOutput:
         warn_error=context.solid_config["warn-error"],
         ignore_handled_error=context.solid_config["ignore_handled_error"],
     )
-    run_results = parse_run_results(context.solid_config["project-dir"])
+    target_path = __dbt_target_path(context.solid_config["target"])
+    run_results = parse_run_results(context.solid_config["project-dir"], target_path)
     cli_output = {**run_results, **cli_output}
 
     if context.solid_config["yield_materializations"]:
