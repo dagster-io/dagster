@@ -61,7 +61,7 @@ class TestDbtCliSolids:
         self, dbt_seed, test_project_dir, dbt_config_dir, dbt_target_dir, monkeypatch
     ):  # pylint: disable=unused-argument
 
-        # specify dbt target dir
+        # Specify dbt target path
         monkeypatch.setenv("DBT_TARGET_PATH", dbt_target_dir)
 
         test_solid = configured(dbt_cli_run, name="test_solid")(
@@ -83,6 +83,24 @@ class TestDbtCliSolids:
     ):  # pylint: disable=unused-argument
         test_solid = configured(dbt_cli_test, name="test_solid")(
             {"project-dir": test_project_dir, "profiles-dir": dbt_config_dir}
+        )
+
+        result = execute_solid(test_solid)
+        assert result.success
+
+    def test_dbt_cli_test_with_extra_confg(
+        self, dbt_seed, test_project_dir, dbt_config_dir, dbt_target_dir, monkypathc
+    ):  # pylint: disable=unused-argument
+
+        # Specify dbt target path
+        monkeypatch.setenv("DBT_TARGET_PATH", dbt_target_dir)
+
+        test_solid = configured(dbt_cli_test, name="test_solid")(
+            {
+                "project-dir": test_project_dir,
+                "profiles-dir": dbt_config_dir,
+                "target-path:": dbt_target_dir,
+             }
         )
 
         result = execute_solid(test_solid)
