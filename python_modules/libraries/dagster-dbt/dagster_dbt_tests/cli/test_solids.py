@@ -89,7 +89,7 @@ class TestDbtCliSolids:
         assert result.success
 
     def test_dbt_cli_test_with_extra_confg(
-        self, dbt_seed, test_project_dir, dbt_config_dir, dbt_target_dir, monkypatch
+        self, dbt_seed, test_project_dir, dbt_config_dir, dbt_target_dir, monkeypatch
     ):  # pylint: disable=unused-argument
 
         # Specify dbt target path
@@ -99,7 +99,7 @@ class TestDbtCliSolids:
             {
                 "project-dir": test_project_dir,
                 "profiles-dir": dbt_config_dir,
-                "target-path:": dbt_target_dir,
+                "target-path": dbt_target_dir,
             }
         )
 
