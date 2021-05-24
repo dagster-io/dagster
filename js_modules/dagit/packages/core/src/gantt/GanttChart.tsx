@@ -49,6 +49,7 @@ import {GanttChartTimescale} from './GanttChartTimescale';
 import {GanttStatusPanel} from './GanttStatusPanel';
 import {OptionsContainer, OptionsDivider, OptionsSpacer} from './VizComponents';
 import {ZoomSlider} from './ZoomSlider';
+import {useGanttChartMode} from './useGanttChartMode';
 import {useViewport} from './useViewport';
 
 export {GanttChartMode} from './Constants';
@@ -92,107 +93,110 @@ interface GanttChartState {
   options: GanttChartLayoutOptions;
 }
 
-export class GanttChart extends React.Component<GanttChartProps, GanttChartState> {
-  static LoadingState: React.FunctionComponent<{runId: string}>;
+export const GanttChart: React.FC<GanttChartProps> = (props) => {
+  const {graph, onSetSelection, options, selection, toolbarActions, toolbarLeftActions} = props;
+  const [mode, setMode] = useGanttChartMode();
+  const [state, setState] = React.useState(() => ({
+    ...DEFAULT_OPTIONS,
+    ...options,
+    mode,
+  }));
 
-  _cachedLayout: GanttChartLayout | null = null;
-  _cachedLayoutParams: BuildLayoutParams | null = null;
+  const cachedLayout = React.useRef<GanttChartLayout | null>(null);
+  const cachedLayoutParams = React.useRef<BuildLayoutParams | null>(null);
+  const graphFiltered = filterByQuery(graph, selection.query);
+  const layoutParams = React.useMemo(
+    () => ({
+      nodes: state.hideUnselectedSteps ? graphFiltered.all : graph,
+      mode: state.mode,
+    }),
+    [graph, graphFiltered.all, state.hideUnselectedSteps, state.mode],
+  );
 
-  constructor(props: GanttChartProps) {
-    super(props);
-
-    this.state = {
-      options: {
-        ...DEFAULT_OPTIONS,
-        ...props.options,
-      },
-    };
-  }
-
-  getLayout = (params: BuildLayoutParams) => {
+  const layout = React.useMemo(() => {
     const names = (ns: GraphQueryItem[]) => ns.map((n) => n.name).join(',');
     if (
-      !this._cachedLayoutParams ||
-      names(this._cachedLayoutParams.nodes) !== names(params.nodes) ||
-      this._cachedLayoutParams.mode !== params.mode
+      !cachedLayoutParams.current ||
+      names(cachedLayoutParams.current.nodes) !== names(layoutParams.nodes) ||
+      cachedLayoutParams.current.mode !== layoutParams.mode
     ) {
-      this._cachedLayout = buildLayout(params);
-      this._cachedLayoutParams = params;
+      cachedLayout.current = buildLayout(layoutParams);
+      cachedLayoutParams.current = layoutParams;
     }
-    return this._cachedLayout!;
-  };
+    return cachedLayout.current!;
+  }, [layoutParams]);
 
-  updateOptions = (changes: Partial<GanttChartLayoutOptions>) => {
-    this.setState({
-      ...this.state,
-      options: {...this.state.options, ...changes},
-    });
-  };
+  const updateOptions = React.useCallback((changes: Partial<GanttChartLayoutOptions>) => {
+    setState((current) => ({...current, ...changes}));
+  }, []);
 
-  onUpdateQuery = (query: string) => {
-    this.props.onSetSelection(query || '*');
-  };
+  const onChangeMode = React.useCallback(
+    (mode: GanttChartMode) => {
+      updateOptions({mode});
+      setMode(mode);
+    },
+    [setMode, updateOptions],
+  );
 
-  onDoubleClickStep = (stepKey: string) => {
-    const query = `*${stepKey}*`;
-    this.onUpdateQuery(this.props.selection.query !== query ? query : '*');
-  };
+  const onUpdateQuery = React.useCallback(
+    (query: string) => {
+      onSetSelection(query || '*');
+    },
+    [onSetSelection],
+  );
 
-  render() {
-    const {graph, selection} = this.props;
-    const {options} = this.state;
-    const graphFiltered = filterByQuery(graph, selection.query);
+  const onDoubleClickStep = React.useCallback(
+    (stepKey: string) => {
+      const query = `*${stepKey}*`;
+      onUpdateQuery(selection.query !== query ? query : '*');
+    },
+    [onUpdateQuery, selection.query],
+  );
 
-    const layout = this.getLayout({
-      nodes: options.hideUnselectedSteps ? graphFiltered.all : graph,
-      mode: options.mode,
-    });
-
-    return (
-      <GanttChartContainer>
-        <OptionsContainer>
-          {this.props.toolbarLeftActions}
-          {this.props.toolbarLeftActions && <OptionsDivider />}
-          <GanttChartModeControl
-            value={options.mode}
-            onChange={(mode) => this.updateOptions({mode})}
-            hideTimedMode={options.hideTimedMode}
-          />
-          {options.mode === GanttChartMode.WATERFALL_TIMED && (
-            <>
-              <OptionsSpacer />
-              <div style={{width: 200}}>
-                <ZoomSlider value={options.zoom} onChange={(v) => this.updateOptions({zoom: v})} />
-              </div>
-              <OptionsSpacer />
-              <Checkbox
-                style={{marginBottom: 0}}
-                label="Hide not started steps"
-                checked={options.hideWaiting}
-                onClick={() => this.updateOptions({hideWaiting: !options.hideWaiting})}
-              />
-            </>
-          )}
-          <div style={{flex: 1}} />
-          {this.props.toolbarActions}
-        </OptionsContainer>
-        <GanttChartInner
-          {...this.props}
-          {...this.state}
-          layout={layout}
-          graph={graph}
-          onUpdateQuery={this.onUpdateQuery}
-          onDoubleClickStep={this.onDoubleClickStep}
-          onChange={() =>
-            this.updateOptions({
-              hideUnselectedSteps: !options.hideUnselectedSteps,
-            })
-          }
+  return (
+    <GanttChartContainer>
+      <OptionsContainer>
+        {toolbarLeftActions}
+        {toolbarLeftActions && <OptionsDivider />}
+        <GanttChartModeControl
+          value={state.mode}
+          onChange={onChangeMode}
+          hideTimedMode={state.hideTimedMode}
         />
-      </GanttChartContainer>
-    );
-  }
-}
+        {state.mode === GanttChartMode.WATERFALL_TIMED && (
+          <>
+            <OptionsSpacer />
+            <div style={{width: 200}}>
+              <ZoomSlider value={state.zoom} onChange={(v) => updateOptions({zoom: v})} />
+            </div>
+            <OptionsSpacer />
+            <Checkbox
+              style={{marginBottom: 0}}
+              label="Hide not started steps"
+              checked={state.hideWaiting}
+              onClick={() => updateOptions({hideWaiting: !state.hideWaiting})}
+            />
+          </>
+        )}
+        <div style={{flex: 1}} />
+        {toolbarActions}
+      </OptionsContainer>
+      <GanttChartInner
+        {...props}
+        options={{...state}}
+        layout={layout}
+        graph={graph}
+        onUpdateQuery={onUpdateQuery}
+        onDoubleClickStep={onDoubleClickStep}
+        onChange={() =>
+          updateOptions({
+            hideUnselectedSteps: !state.hideUnselectedSteps,
+          })
+        }
+      />
+    </GanttChartContainer>
+  );
+};
 
 type GanttChartInnerProps = GanttChartProps &
   GanttChartState & {
@@ -756,7 +760,7 @@ const GraphQueryInputContainer = styled.div`
   white-space: nowrap;
 `;
 
-GanttChart.LoadingState = ({runId}: {runId: string}) => (
+export const GanttChartLoadingState = ({runId}: {runId: string}) => (
   <GanttChartContainer>
     <OptionsContainer />
     <SplitPanelContainer

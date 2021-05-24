@@ -8,7 +8,7 @@ import {AppContext} from '../app/AppContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {GanttChart, GanttChartMode, QueuedState} from '../gantt/GanttChart';
+import {GanttChart, GanttChartLoadingState, GanttChartMode, QueuedState} from '../gantt/GanttChart';
 import {toGraphQueryItems} from '../gantt/toGraphQueryItems';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {FirstOrSecondPanelToggle, SplitPanelContainer} from '../ui/SplitPanelContainer';
@@ -243,7 +243,7 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
 
   const gantt = (metadata: IRunMetadataDict) => {
     if (logs.loading) {
-      return <GanttChart.LoadingState runId={runId} />;
+      return <GanttChartLoadingState runId={runId} />;
     }
 
     if (run?.status === 'QUEUED') {
