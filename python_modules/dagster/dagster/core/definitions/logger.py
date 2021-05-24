@@ -1,8 +1,16 @@
+import logging
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union
+
 from dagster import check
 from dagster.core.definitions.config import is_callable_valid_config_arg
 from dagster.core.definitions.configurable import AnonymousConfigurableDefinition
 
 from .definition_config_schema import convert_user_facing_definition_config_schema
+
+if TYPE_CHECKING:
+    from dagster.core.execution.context.logger import InitLoggerContext
+
+    InitLoggerFunction = Callable[[InitLoggerContext], logging.Logger]
 
 
 class LoggerDefinition(AnonymousConfigurableDefinition):
@@ -22,27 +30,34 @@ class LoggerDefinition(AnonymousConfigurableDefinition):
 
     def __init__(
         self,
-        logger_fn,
-        config_schema=None,
-        description=None,
+        logger_fn: "InitLoggerFunction",
+        config_schema: Any = None,
+        description: Optional[str] = None,
     ):
         self._logger_fn = check.callable_param(logger_fn, "logger_fn")
         self._config_schema = convert_user_facing_definition_config_schema(config_schema)
         self._description = check.opt_str_param(description, "description")
 
+    # This allows us to pass LoggerDefinition off as a function, so that we can use it as a bare
+    # decorator
+    def __call__(self, *args, **kwargs):
+        return self
+
     @property
-    def logger_fn(self):
+    def logger_fn(self) -> "InitLoggerFunction":
         return self._logger_fn
 
     @property
-    def config_schema(self):
+    def config_schema(self) -> Any:
         return self._config_schema
 
     @property
-    def description(self):
+    def description(self) -> Optional[str]:
         return self._description
 
-    def copy_for_configured(self, description, config_schema, _):
+    def copy_for_configured(
+        self, description: Optional[str], config_schema: Any, _
+    ) -> "LoggerDefinition":
         return LoggerDefinition(
             config_schema=config_schema,
             description=description or self.description,
@@ -50,7 +65,9 @@ class LoggerDefinition(AnonymousConfigurableDefinition):
         )
 
 
-def logger(config_schema=None, description=None):
+def logger(
+    config_schema: Any = None, description: Optional[str] = None
+) -> Union["LoggerDefinition", Callable[["InitLoggerFunction"], "LoggerDefinition"]]:
     """Define a logger.
 
     The decorated function should accept an :py:class:`InitLoggerContext` and return an instance of
@@ -67,7 +84,7 @@ def logger(config_schema=None, description=None):
     if callable(config_schema) and not is_callable_valid_config_arg(config_schema):
         return LoggerDefinition(logger_fn=config_schema)
 
-    def _wrap(logger_fn):
+    def _wrap(logger_fn: "InitLoggerFunction") -> "LoggerDefinition":
         return LoggerDefinition(
             logger_fn=logger_fn,
             config_schema=config_schema,
