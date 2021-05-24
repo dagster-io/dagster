@@ -45,7 +45,7 @@ def conn_string():
         if not IS_BUILDKITE:
             os.environ["POSTGRES_TEST_DB_DBT_HOST"] = "localhost"
 
-        os.environ["DBT_TARGET_DIR"] = "target"
+        os.environ["DBT_TARGET_PATH"] = "target"
 
         with TestPostgresInstance.docker_service_up_or_skip(
             file_relative_path(__file__, "docker-compose.yml"),
