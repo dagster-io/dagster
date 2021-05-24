@@ -13,6 +13,7 @@ from ...implementation.external import (
     fetch_repositories,
     fetch_repository,
     fetch_repository_locations,
+    fetch_workspace,
 )
 from ...implementation.fetch_assets import get_asset, get_assets
 from ...implementation.fetch_backfills import get_backfill, get_backfills
@@ -44,6 +45,7 @@ from ..external import (
     GrapheneRepositoriesOrError,
     GrapheneRepositoryLocationsOrError,
     GrapheneRepositoryOrError,
+    GrapheneWorkspaceOrError,
 )
 from ..inputs import (
     GrapheneAssetKeyInput,
@@ -87,6 +89,8 @@ class GrapheneQuery(graphene.ObjectType):
     )
 
     repositoryLocationsOrError = graphene.NonNull(GrapheneRepositoryLocationsOrError)
+
+    workspaceOrError = graphene.NonNull(GrapheneWorkspaceOrError)
 
     pipelineOrError = graphene.Field(
         graphene.NonNull(GraphenePipelineOrError), params=graphene.NonNull(GraphenePipelineSelector)
@@ -225,6 +229,9 @@ class GrapheneQuery(graphene.ObjectType):
 
     def resolve_repositoryLocationsOrError(self, graphene_info):
         return fetch_repository_locations(graphene_info.context)
+
+    def resolve_workspaceOrError(self, graphene_info):
+        return fetch_workspace(graphene_info.context)
 
     def resolve_pipelineSnapshotOrError(self, graphene_info, **kwargs):
         snapshot_id_arg = kwargs.get("snapshotId")

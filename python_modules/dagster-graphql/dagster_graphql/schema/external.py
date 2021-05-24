@@ -1,6 +1,6 @@
 import graphene
 from dagster import check
-from dagster.cli.workspace.workspace import WorkspaceLocationLoadStatus
+from dagster.cli.workspace.workspace import WorkspaceLocationEntry, WorkspaceLocationLoadStatus
 from dagster.core.host_representation import (
     ExternalRepository,
     GrpcServerRepositoryLocation,
@@ -110,6 +110,61 @@ class GrapheneRepositoryLocation(graphene.ObjectType):
     def resolve_loadStatus(self, _graphene_info):
         # Returns LOADING if the location is in the process of updating
         return GrapheneRepositoryLocationLoadStatus.from_python_status(self._load_status)
+
+
+class GrapheneRepositoryLocationOrLoadError(graphene.Union):
+    class Meta:
+        types = (
+            GrapheneRepositoryLocation,
+            GraphenePythonError,
+        )
+        name = "RepositoryLocationOrLoadErrpr"
+
+
+class GrapheneWorkspaceLocationEntry(graphene.ObjectType):
+    id = graphene.NonNull(graphene.ID)
+    name = graphene.NonNull(graphene.String)
+    locationOrLoadError = graphene.Field(GrapheneRepositoryLocationOrLoadError)
+    loadStatus = graphene.NonNull(GrapheneRepositoryLocationLoadStatus)
+    displayMetadata = non_null_list(GrapheneRepositoryMetadata)
+    updatedTimestamp = graphene.NonNull(graphene.Float)
+
+    class Meta:
+        name = "WorkspaceLocationEntry"
+
+    def __init__(self, location_entry):
+        self._location_entry = check.inst_param(
+            location_entry, "location_entry", WorkspaceLocationEntry
+        )
+        super().__init__(name=self._location_entry.origin.location_name)
+
+    def resolve_id(self, _):
+        return self.name
+
+    def resolve_locationOrLoadError(self, _):
+        if self._location_entry.repository_location:
+            return GrapheneRepositoryLocation(
+                self._location_entry.repository_location, self._location_entry.load_status
+            )
+
+        error = self._location_entry.load_error
+        return GraphenePythonError(error) if error else None
+
+    def resolve_loadStatus(self, _):
+        return GrapheneRepositoryLocationLoadStatus.from_python_status(
+            self._location_entry.load_status
+        )
+
+    def resolve_displayMetadata(self, _):
+        metadata = self._location_entry.display_metadata
+        return [
+            GrapheneRepositoryMetadata(key=key, value=value)
+            for key, value in metadata.items()
+            if value is not None
+        ]
+
+    def resolve_updatedTimestamp(self, _):
+        return self._location_entry.update_timestamp
 
 
 class GrapheneRepository(graphene.ObjectType):
@@ -233,11 +288,19 @@ class GrapheneRepositoryConnection(graphene.ObjectType):
         name = "RepositoryConnection"
 
 
+# DEPRECATED - prefer GrapheneWorkspace
 class GrapheneRepositoryLocationConnection(graphene.ObjectType):
     nodes = non_null_list(GrapheneRepositoryLocationOrLoadFailure)
 
     class Meta:
         name = "RepositoryLocationConnection"
+
+
+class GrapheneWorkspace(graphene.ObjectType):
+    locationEntries = non_null_list(GrapheneWorkspaceLocationEntry)
+
+    class Meta:
+        name = "Workspace"
 
 
 class GrapheneLocationStateChangeEvent(graphene.ObjectType):
@@ -285,6 +348,12 @@ class GrapheneRepositoryLocationsOrError(graphene.Union):
     class Meta:
         types = (GrapheneRepositoryLocationConnection, GraphenePythonError)
         name = "RepositoryLocationsOrError"
+
+
+class GrapheneWorkspaceOrError(graphene.Union):
+    class Meta:
+        types = (GrapheneWorkspace, GraphenePythonError)
+        name = "WorkspaceOrError"
 
 
 class GrapheneRepositoryOrError(graphene.Union):
