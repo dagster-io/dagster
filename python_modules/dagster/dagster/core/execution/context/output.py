@@ -10,12 +10,13 @@ if TYPE_CHECKING:
     from dagster.core.execution.context.system import StepExecutionContext
     from dagster.core.definitions.resource import Resources
     from dagster.core.types.dagster_type import DagsterType
-    from dagster.core.definitions import SolidDefinition, PipelineDefinition
+    from dagster.core.definitions import SolidDefinition, PipelineDefinition, ModeDefinition
     from dagster.core.log_manager import DagsterLogManager
     from dagster.core.system_config.objects import EnvironmentConfig
     from dagster.core.execution.plan.plan import ExecutionPlan
     from dagster.core.execution.plan.outputs import StepOutputHandle
     from dagster.core.log_manager import DagsterLogManager
+    from dagster.core.definitions.resource import ScopedResourcesBuilder
 
 RUN_ID_PLACEHOLDER = "__EPHEMERAL_RUN_ID"
 
@@ -196,9 +197,10 @@ def get_output_context(
     pipeline_def: "PipelineDefinition",
     environment_config: "EnvironmentConfig",
     step_output_handle: "StepOutputHandle",
-    run_id: Optional[str] = None,
-    log_manager: Optional["DagsterLogManager"] = None,
-    step_context: Optional["StepExecutionContext"] = None,
+    run_id: Optional[str],
+    log_manager: Optional["DagsterLogManager"],
+    step_context: Optional["StepExecutionContext"],
+    resources: Optional["Resources"],
 ) -> "OutputContext":
     """
     Args:
@@ -222,7 +224,14 @@ def get_output_context(
     io_manager_key = output_def.io_manager_key
     resource_config = environment_config.resources[io_manager_key].config
 
-    resources = build_resources_for_manager(io_manager_key, step_context) if step_context else None
+    if step_context:
+        check.invariant(
+            not resources,
+            "Expected either resources or step context to be set, but "
+            "received both. If step context is provided, resources for IO manager will be "
+            "retrieved off of that.",
+        )
+        resources = build_resources_for_manager(io_manager_key, step_context)
 
     return OutputContext(
         step_key=step_output_handle.step_key,

@@ -1,5 +1,5 @@
 from dagster import check
-from dagster.core.execution.context.system import get_output_context
+from dagster.core.execution.context.output import get_output_context
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.step import is_executable_step
 from dagster.utils.backcompat import experimental
@@ -175,11 +175,14 @@ def resolve_memoized_execution_plan(
 
                 io_manager = getattr(resources, io_manager_key)
                 context = get_output_context(
-                    execution_plan,
-                    pipeline_def,
-                    environment_config,
-                    step_output_handle,
+                    execution_plan=execution_plan,
+                    pipeline_def=pipeline_def,
+                    environment_config=environment_config,
+                    step_output_handle=step_output_handle,
+                    run_id=None,
                     log_manager=log_manager,
+                    step_context=None,
+                    resources=resources,
                 )
                 if not io_manager.has_output(context):
                     step_keys_to_execute.add(step_output_handle.step_key)

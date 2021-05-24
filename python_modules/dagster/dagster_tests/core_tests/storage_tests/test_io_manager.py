@@ -1,6 +1,7 @@
 import os
 import tempfile
 
+import mock
 import pytest
 from dagster import (
     AssetMaterialization,
@@ -21,11 +22,15 @@ from dagster import (
     resource,
     solid,
 )
+from dagster.check import CheckError
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.api import create_execution_plan, execute_plan
+from dagster.core.execution.context.output import get_output_context
+from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io_manager
 from dagster.core.storage.io_manager import IOManager, io_manager
 from dagster.core.storage.mem_io_manager import InMemoryIOManager, mem_io_manager
+from dagster.core.system_config.objects import EnvironmentConfig
 
 
 def test_io_manager_with_config():
@@ -653,3 +658,30 @@ def test_hardcoded_io_manager():
     result = execute_pipeline(basic_pipeline)
     assert result.success
     assert result.output_for_solid("basic_solid") == 5
+
+
+def test_get_output_context_with_resources():
+    @solid
+    def basic_solid():
+        pass
+
+    @pipeline
+    def basic_pipeline():
+        basic_solid()
+
+    with pytest.raises(
+        CheckError,
+        match="Expected either resources or step context to be set, but "
+        "received both. If step context is provided, resources for IO manager will be "
+        "retrieved off of that.",
+    ):
+        get_output_context(
+            execution_plan=create_execution_plan(basic_pipeline),
+            pipeline_def=basic_pipeline,
+            environment_config=EnvironmentConfig.build(basic_pipeline),
+            step_output_handle=StepOutputHandle("basic_solid", "result"),
+            run_id=None,
+            log_manager=None,
+            step_context=mock.MagicMock(),
+            resources=mock.MagicMock(),
+        )
