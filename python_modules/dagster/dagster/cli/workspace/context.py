@@ -90,8 +90,8 @@ class WorkspaceRequestContext(NamedTuple):
     def reload_repository_location(self, name: str) -> "WorkspaceRequestContext":
         # This method reloads the location on the process context, and returns a new
         # request context created from the updated process context
-        updated_process_context = self.process_context.reload_repository_location(name)
-        return updated_process_context.create_request_context()
+        self.process_context.reload_repository_location(name)
+        return self.process_context.create_request_context()
 
     def reload_workspace(self) -> "WorkspaceRequestContext":
         self.process_context.reload_workspace()
@@ -237,10 +237,6 @@ class WorkspaceProcessContext:
         return self._workspace
 
     @property
-    def repository_locations(self) -> List[RepositoryLocation]:
-        return self._workspace.repository_locations
-
-    @property
     def location_state_events(self) -> "Subject":
         return self._location_state_events
 
@@ -259,9 +255,8 @@ class WorkspaceProcessContext:
 
         self._location_state_events.on_next(event)
 
-    def reload_repository_location(self, name: str) -> "WorkspaceProcessContext":
+    def reload_repository_location(self, name: str) -> None:
         self._workspace.reload_repository_location(name)
-        return self
 
     def reload_workspace(self) -> None:
         self._workspace.reload_workspace()

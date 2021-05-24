@@ -250,8 +250,14 @@ class Workspace(IWorkspace):
             )
 
     @property
-    def repository_locations(self):
-        return list(self._location_dict.copy().values())
+    def repository_locations_count(self):
+        with self._lock:
+            return len(self._location_origin_dict)
+
+    @property
+    def repository_location_names(self):
+        with self._lock:
+            return list(self._location_origin_dict)
 
     def has_repository_location(self, location_name):
         check.str_param(location_name, "location_name")
@@ -296,7 +302,7 @@ class Workspace(IWorkspace):
         self._watch_thread_shutdown_events = {}
         self._watch_threads = {}
 
-        for location in self.repository_locations:
+        for location in self._location_dict.values():
             location.cleanup()
 
         self._location_origin_dict = OrderedDict()

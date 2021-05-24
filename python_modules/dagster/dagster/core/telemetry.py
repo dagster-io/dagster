@@ -411,7 +411,9 @@ def log_workspace_stats(instance, workspace_process_context):
         workspace_process_context, "workspace_process_context", WorkspaceProcessContext
     )
 
-    for repo_location in workspace_process_context.repository_locations:
+    request_context = workspace_process_context.create_request_context()
+
+    for repo_location in request_context.repository_locations:
         for external_repo in repo_location.get_repositories().values():
             log_external_repo_stats(instance, source="dagit", external_repo=external_repo)
 

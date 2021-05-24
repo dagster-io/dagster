@@ -8,7 +8,7 @@ def test_multi_location_error():
         [file_relative_path(__file__, "multi_location_with_error.yaml")],
     ) as cli_workspace:
         assert isinstance(cli_workspace, Workspace)
-        assert len(cli_workspace.repository_locations) == 1
+        assert cli_workspace.repository_locations_count == 2
 
         assert cli_workspace.has_repository_location("working_location")
         assert not cli_workspace.has_repository_location("broken_location")
@@ -30,7 +30,7 @@ def test_workspace_with_only_error():
         [file_relative_path(__file__, "workspace_with_only_error.yaml")]
     ) as cli_workspace:
         assert isinstance(cli_workspace, Workspace)
-        assert len(cli_workspace.repository_locations) == 0
+        assert cli_workspace.repository_locations_count == 1
         assert not cli_workspace.has_repository_location("broken_location")
 
         workspace_snapshot = cli_workspace.create_snapshot()
