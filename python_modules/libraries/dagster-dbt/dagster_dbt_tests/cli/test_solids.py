@@ -62,7 +62,7 @@ class TestDbtCliSolids:
     ):  # pylint: disable=unused-argument
 
         # specify dbt target dir
-        monkeypatch.setenv("DBT_TARGET_DIR", dbt_target_dir)
+        monkeypatch.setenv("DBT_TARGET_PATH", dbt_target_dir)
 
         test_solid = configured(dbt_cli_run, name="test_solid")(
             {
