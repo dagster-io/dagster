@@ -31,7 +31,7 @@ Likewise, invoking a solid allows us to directly retrieve the outputs of that so
 ```python file=/intro_tutorial/basics/e04_quality/hello_cereal_with_tests.py startafter=start_hello_cereal_with_tests_marker_0 endbefore=end_hello_cereal_with_tests_marker_0
 def test_hello_cereal_solid():
     context = build_solid_context()
-    assert hello_cereal(context) == 77
+    assert len(hello_cereal(context)) == 77
 
 
 def test_hello_cereal_pipeline():

@@ -32,7 +32,7 @@ if __name__ == "__main__":
 # start_hello_cereal_with_tests_marker_0
 def test_hello_cereal_solid():
     context = build_solid_context()
-    assert hello_cereal(context) == 77
+    assert len(hello_cereal(context)) == 77
 
 
 def test_hello_cereal_pipeline():
