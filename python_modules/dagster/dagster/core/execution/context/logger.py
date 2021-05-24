@@ -20,14 +20,14 @@ class InitLoggerContext(
         logger_config (Any): The configuration data provided by the environment config. The
             schema for this data is defined by ``config_schema`` on the :py:class:`LoggerDefinition`
         pipeline_def (Optional[PipelineDefinition]): The pipeline definition currently being executed.
-        logger_def (LoggerDefinition): The logger definition for the logger being constructed.
+        logger_def (Optional[LoggerDefinition]): The logger definition for the logger being constructed.
         run_id (str): The ID for this run of the pipeline.
     """
 
     def __new__(
         cls,
         logger_config: Any,
-        logger_def: LoggerDefinition,
+        logger_def: Optional[LoggerDefinition] = None,
         pipeline_def: Optional[PipelineDefinition] = None,
         run_id: Optional[str] = None,
     ):
@@ -35,6 +35,6 @@ class InitLoggerContext(
             cls,
             logger_config,
             check.opt_inst_param(pipeline_def, "pipeline_def", PipelineDefinition),
-            check.inst_param(logger_def, "logger_def", LoggerDefinition),
+            check.opt_inst_param(logger_def, "logger_def", LoggerDefinition),
             check.opt_str_param(run_id, "run_id"),
         )
