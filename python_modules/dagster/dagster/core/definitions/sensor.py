@@ -282,6 +282,7 @@ def build_sensor_context(
 
     Args:
         instance (Optional[DagsterInstance]): The dagster instance configured to run the sensor.
+        cursor (Optional[str]): A cursor value to provide to the evaluation of the sensor.
 
     Examples:
 
