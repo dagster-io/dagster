@@ -2,7 +2,6 @@ type Query {
   version: String!
   repositoriesOrError: RepositoriesOrError!
   repositoryOrError(repositorySelector: RepositorySelector!): RepositoryOrError!
-  repositoryLocationsOrError: RepositoryLocationsOrError!
   workspaceOrError: WorkspaceOrError!
   pipelineOrError(params: PipelineSelector!): PipelineOrError!
   pipelineSnapshotOrError(snapshotId: String, activePipelineSelector: PipelineSelector): PipelineSnapshotOrError!
@@ -57,12 +56,6 @@ type RepositoryLocation {
   environmentPath: String
   repositories: [Repository!]!
   serverId: String
-  loadStatus: RepositoryLocationLoadStatus!
-}
-
-enum RepositoryLocationLoadStatus {
-  LOADING
-  LOADED
 }
 
 type Pipeline implements SolidContainer & IPipelineSnapshot {
@@ -720,26 +713,6 @@ input RepositorySelector {
   repositoryLocationName: String!
 }
 
-union RepositoryLocationsOrError = RepositoryLocationConnection | PythonError
-
-type RepositoryLocationConnection {
-  nodes: [RepositoryLocationOrLoadFailure!]!
-}
-
-union RepositoryLocationOrLoadFailure = RepositoryLocation | RepositoryLocationLoadFailure | RepositoryLocationLoading
-
-type RepositoryLocationLoadFailure {
-  id: ID!
-  name: String!
-  error: PythonError!
-  loadStatus: RepositoryLocationLoadStatus!
-}
-
-type RepositoryLocationLoading {
-  id: ID!
-  name: String!
-}
-
 union WorkspaceOrError = Workspace | PythonError
 
 type Workspace {
@@ -756,6 +729,11 @@ type WorkspaceLocationEntry {
 }
 
 union RepositoryLocationOrLoadError = RepositoryLocation | PythonError
+
+enum RepositoryLocationLoadStatus {
+  LOADING
+  LOADED
+}
 
 union PipelineOrError = Pipeline | PipelineNotFoundError | InvalidSubsetError | PythonError
 
@@ -1142,7 +1120,7 @@ type DeletePipelineRunSuccess {
   runId: String!
 }
 
-union ReloadRepositoryLocationMutationResult = RepositoryLocation | ReloadNotSupported | RepositoryLocationNotFound | RepositoryLocationLoadFailure | ReadOnlyError
+union ReloadRepositoryLocationMutationResult = WorkspaceLocationEntry | ReloadNotSupported | RepositoryLocationNotFound | ReadOnlyError | PythonError
 
 type ReloadNotSupported implements Error {
   message: String!
@@ -1152,7 +1130,7 @@ type RepositoryLocationNotFound implements Error {
   message: String!
 }
 
-union ReloadWorkspaceMutationResult = RepositoryLocationConnection | ReadOnlyError | PythonError
+union ReloadWorkspaceMutationResult = Workspace | ReadOnlyError | PythonError
 
 union AssetWipeMutationResult = AssetNotFoundError | ReadOnlyError | PythonError | AssetWipeSuccess
 

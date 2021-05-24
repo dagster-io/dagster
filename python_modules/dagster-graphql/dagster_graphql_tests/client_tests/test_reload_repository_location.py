@@ -6,7 +6,12 @@ from .conftest import MockClient, python_client_test_suite
 
 @python_client_test_suite
 def test_success(mock_client: MockClient):
-    response = {"reloadRepositoryLocation": {"__typename": "RepositoryLocation"}}
+    response = {
+        "reloadRepositoryLocation": {
+            "__typename": "WorkspaceLocationEntry",
+            "locationOrLoadError": {"__typename": "RepositoryLocation"},
+        }
+    }
     mock_client.mock_gql_client.execute.return_value = response
 
     assert (
@@ -17,11 +22,14 @@ def test_success(mock_client: MockClient):
 
 @python_client_test_suite
 def test_failure_with_repo_location_load_failure(mock_client: MockClient):
-    error_type, error_msg = "RepositoryLocationLoadFailure", "some reason"
+    error_type, error_msg = "PythonError", "some reason"
     response = {
         "reloadRepositoryLocation": {
-            "__typename": error_type,
-            "error": {"message": error_msg},
+            "__typename": "WorkspaceLocationEntry",
+            "locationOrLoadError": {
+                "__typename": error_type,
+                "message": error_msg,
+            },
         }
     }
     mock_client.mock_gql_client.execute.return_value = response

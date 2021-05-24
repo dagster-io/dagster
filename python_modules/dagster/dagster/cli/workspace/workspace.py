@@ -109,7 +109,7 @@ class Workspace(IWorkspace):
 
             if origin.supports_server_watch:
                 self._start_watch_thread(origin)
-            self._load_location(origin)
+            self._location_entry_dict[origin.location_name] = self._load_location(origin)
 
     # Can be overidden in subclasses that need different logic for loading repository
     # locations from origins
@@ -185,7 +185,7 @@ class Workspace(IWorkspace):
                 )
             )
 
-        self._location_entry_dict[location_name] = WorkspaceLocationEntry(
+        return WorkspaceLocationEntry(
             origin=origin,
             repository_location=location,
             load_error=error,
@@ -235,7 +235,9 @@ class Workspace(IWorkspace):
         with self._lock:
             # Relying on GC to clean up the old location once nothing else
             # is referencing it
-            self._load_location(self._location_entry_dict[location_name].origin)
+            self._location_entry_dict[location_name] = self._load_location(
+                self._location_entry_dict[location_name].origin
+            )
 
     def reload_workspace(self):
         # Can be called from a background thread

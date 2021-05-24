@@ -250,16 +250,19 @@ class DagsterGraphQLClient:
             RELOAD_REPOSITORY_LOCATION_MUTATION,
             {"repositoryLocationName": repository_location_name},
         )
+
         query_result: Dict[str, Any] = res_data["reloadRepositoryLocation"]
         query_result_type: str = query_result["__typename"]
-        if query_result_type == "RepositoryLocation":
-            return ReloadRepositoryLocationInfo(status=ReloadRepositoryLocationStatus.SUCCESS)
-        elif query_result_type == "RepositoryLocationLoadFailure":
-            return ReloadRepositoryLocationInfo(
-                status=ReloadRepositoryLocationStatus.FAILURE,
-                failure_type=query_result_type,
-                message=query_result["error"]["message"],
-            )
+        if query_result_type == "WorkspaceLocationEntry":
+            location_or_error_type = query_result["locationOrLoadError"]["__typename"]
+            if location_or_error_type == "RepositoryLocation":
+                return ReloadRepositoryLocationInfo(status=ReloadRepositoryLocationStatus.SUCCESS)
+            else:
+                return ReloadRepositoryLocationInfo(
+                    status=ReloadRepositoryLocationStatus.FAILURE,
+                    failure_type="PythonError",
+                    message=query_result["locationOrLoadError"]["message"],
+                )
         else:
             # query_result_type is either ReloadNotSupported or RepositoryLocationNotFound
             return ReloadRepositoryLocationInfo(

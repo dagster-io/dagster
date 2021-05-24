@@ -62,16 +62,10 @@ export const defaultMocks = {
     id: randomId,
     name: hyphenatedName,
   }),
-  RepositoryLocationConnection: () => ({
-    nodes: () => new MockList(1),
-  }),
   Workspace: () => ({
     locationEntries: () => new MockList(1),
   }),
   RepositoryLocationOrLoadError: () => ({
-    __typename: 'RepositoryLocation',
-  }),
-  RepositoryLocationOrLoadFailure: () => ({
     __typename: 'RepositoryLocation',
   }),
   RepositoryLocationsOrError: () => ({

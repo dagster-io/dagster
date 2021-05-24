@@ -56,7 +56,6 @@ const ROOT_REPOSITORIES_QUERY = gql`
           locationOrLoadError {
             ... on RepositoryLocation {
               id
-              loadStatus
               isReloadSupported
               serverId
               name
