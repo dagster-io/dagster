@@ -4,7 +4,8 @@ import packaging.version
 import pendulum
 
 _IS_PENDULUM_2 = (
-    hasattr(pendulum, "__version__") and packaging.version.parse(pendulum.__version__).major == 2
+    hasattr(pendulum, "__version__")
+    and getattr(packaging.version.parse(pendulum.__version__), "major") == 2
 )
 
 

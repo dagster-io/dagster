@@ -214,7 +214,7 @@ class Workspace(IWorkspace):
         check.str_param(location_name, "location_name")
         return self.get_repository_location(location_name) != None
 
-    def get_repository_location(self, location_name):
+    def get_repository_location(self, location_name: str) -> Optional[RepositoryLocation]:
         with self._lock:
             return (
                 self._location_entry_dict.get(location_name).repository_location

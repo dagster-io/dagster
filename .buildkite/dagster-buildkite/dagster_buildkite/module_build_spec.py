@@ -139,10 +139,7 @@ class ModuleBuildSpec(
         if self.directory not in MYPY_EXCLUDES:
             tests.append(
                 StepBuilder(f":mypy: {package}")
-                .run(
-                    "pip install mypy==0.790",
-                    f"mypy --config-file mypy/config {self.directory}",
-                )
+                .run("pip install mypy==0.812", f"mypy --config-file mypy/config {self.directory}")
                 .on_integration_image(SupportedPython.V3_7)
                 .build()
             )
