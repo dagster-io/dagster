@@ -240,7 +240,11 @@ class GrpcServerRepositoryLocationOrigin(
             )
 
     def get_display_metadata(self):
-        metadata = {"host": self.host, "port": self.port, "socket": self.socket}
+        metadata = {
+            "host": self.host,
+            "port": str(self.port) if self.port else None,
+            "socket": self.socket,
+        }
         return {key: value for key, value in metadata.items() if value is not None}
 
     def create_location(self):

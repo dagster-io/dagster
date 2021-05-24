@@ -67,7 +67,7 @@ def test_basic_repository_locations():
         result_data = json.loads(result.output)
 
         nodes = result_data["data"]["repositoryLocationsOrError"]["nodes"]
-        assert len(nodes) == 2
+        assert len(nodes) == 2, str(nodes)
 
         assert nodes[0]["__typename"] == "RepositoryLocation"
         assert nodes[0]["name"] == "test_cli_location"
