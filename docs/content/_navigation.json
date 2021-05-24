@@ -384,6 +384,10 @@
           {
             "title": "Lakehouse with Pandas and PySpark (Experimental)",
             "path": "/guides/dagster/multi-type-lakehouse"
+          },
+          {
+            "title": "Re-execution",
+            "path": "/guides/dagster/re-execution"
           }
         ]
       }
