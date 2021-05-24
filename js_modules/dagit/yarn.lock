@@ -2645,6 +2645,7 @@ __metadata:
     react-router-dom: ^5.1.2
     react-test-renderer: ^17.0.2
     react-virtualized: ^9.22.3
+    remark-gfm: ^1.0.0
     source-map-explorer: ^2.5.0
     styled-components: ^5.2.1
     subscriptions-transport-ws: ^0.9.15
@@ -16646,6 +16647,13 @@ fsevents@^1.2.7:
   languageName: node
   linkType: hard
 
+"longest-streak@npm:^2.0.0":
+  version: 2.0.4
+  resolution: "longest-streak@npm:2.0.4"
+  checksum: ba5ebac14700c0a5f88a312be789b651c35bfed84bd5e2b4f04ac0898add697c36ede401d0b17dfaac0956171027b61ad49ad866ac949ae1d36f9e4ced60cbe1
+  languageName: node
+  linkType: hard
+
 "loose-envify@npm:^1.0.0, loose-envify@npm:^1.1.0, loose-envify@npm:^1.2.0, loose-envify@npm:^1.3.1, loose-envify@npm:^1.4.0":
   version: 1.4.0
   resolution: "loose-envify@npm:1.4.0"
@@ -16824,6 +16832,15 @@ fsevents@^1.2.7:
   languageName: node
   linkType: hard
 
+"markdown-table@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "markdown-table@npm:2.0.0"
+  dependencies:
+    repeat-string: ^1.0.0
+  checksum: 48492b01bc27eab584b7e07d0a0ba5eef2e94017e7c0a781e0525cd908e44a8b224120217f32e28676184c4f0f93f2c7a2178cf3341c6503dd9b0eb8f409b72f
+  languageName: node
+  linkType: hard
+
 "markdown-to-jsx@npm:^6.11.4":
   version: 6.11.4
   resolution: "markdown-to-jsx@npm:6.11.4"
@@ -16883,6 +16900,17 @@ fsevents@^1.2.7:
   languageName: node
   linkType: hard
 
+"mdast-util-find-and-replace@npm:^1.1.0":
+  version: 1.1.1
+  resolution: "mdast-util-find-and-replace@npm:1.1.1"
+  dependencies:
+    escape-string-regexp: ^4.0.0
+    unist-util-is: ^4.0.0
+    unist-util-visit-parents: ^3.0.0
+  checksum: d9f055339f4080c5eb2c000f474799e44f1856d760f86e0758a6a83197f7c36c55baadcd288f379f1adb39407d09add584e582a5be527149312370b0a49bc1b0
+  languageName: node
+  linkType: hard
+
 "mdast-util-from-markdown@npm:^0.8.0":
   version: 0.8.5
   resolution: "mdast-util-from-markdown@npm:0.8.5"
@@ -16893,6 +16921,58 @@ fsevents@^1.2.7:
     parse-entities: ^2.0.0
     unist-util-stringify-position: ^2.0.0
   checksum: 7853d3eeb47ce6ae9ed375ae0fa0cbe4588b08a2031de979ce62b8e04ebc58951be18248eddf220ad7141cfbc9a2627841b8ce1def1566c09daeda1053f49073
+  languageName: node
+  linkType: hard
+
+"mdast-util-gfm-autolink-literal@npm:^0.1.0":
+  version: 0.1.3
+  resolution: "mdast-util-gfm-autolink-literal@npm:0.1.3"
+  dependencies:
+    ccount: ^1.0.0
+    mdast-util-find-and-replace: ^1.1.0
+    micromark: ^2.11.3
+  checksum: 9c2f60014afd6bb2a3d4aa3714c40f65b6a427b2fbabe42e8a3f8209dc87197ba1a688577184fde2a65e619b7110a324fbf8006b1c6e144c411c4702c6ab5e69
+  languageName: node
+  linkType: hard
+
+"mdast-util-gfm-strikethrough@npm:^0.2.0":
+  version: 0.2.3
+  resolution: "mdast-util-gfm-strikethrough@npm:0.2.3"
+  dependencies:
+    mdast-util-to-markdown: ^0.6.0
+  checksum: 665bf20f5e43120758eb1bc737bb1e7300f539c56ec3153aec15afda9694c94afa2c118413e340fbd0a16b0d626cb166738720e53ba08b17acc667855638a027
+  languageName: node
+  linkType: hard
+
+"mdast-util-gfm-table@npm:^0.1.0":
+  version: 0.1.6
+  resolution: "mdast-util-gfm-table@npm:0.1.6"
+  dependencies:
+    markdown-table: ^2.0.0
+    mdast-util-to-markdown: ~0.6.0
+  checksum: e59f305a403dbadd1042a35aae9e8055d163d48e2686ebcee3bdd9045ff5f43ddb253b8342095894be844d8d9939af3a673c3faa627eff232b73b0b29ea14b28
+  languageName: node
+  linkType: hard
+
+"mdast-util-gfm-task-list-item@npm:^0.1.0":
+  version: 0.1.6
+  resolution: "mdast-util-gfm-task-list-item@npm:0.1.6"
+  dependencies:
+    mdast-util-to-markdown: ~0.6.0
+  checksum: cf7ed5ec3810b0d896096e8e28fc44e2ec5ff38938c6374e5d0b9db0a79610f3cf7c9e32ec55aca5516f60bc89f7531da49e8170857e8ea67d7b41f8f5ad14a6
+  languageName: node
+  linkType: hard
+
+"mdast-util-gfm@npm:^0.1.0":
+  version: 0.1.2
+  resolution: "mdast-util-gfm@npm:0.1.2"
+  dependencies:
+    mdast-util-gfm-autolink-literal: ^0.1.0
+    mdast-util-gfm-strikethrough: ^0.2.0
+    mdast-util-gfm-table: ^0.1.0
+    mdast-util-gfm-task-list-item: ^0.1.0
+    mdast-util-to-markdown: ^0.6.1
+  checksum: 2ecfc22c7ec1567782fed6cee58abc66970536ceb174938390b7f2666542d541e26f4232c4ba50e612042c2b1b242a303b24db9cb1fb2a1af6036d4f7f2129e7
   languageName: node
   linkType: hard
 
@@ -16925,6 +17005,20 @@ fsevents@^1.2.7:
     unist-util-position: ^3.0.0
     unist-util-visit: ^2.0.0
   checksum: fded0c9b69b69b15128228884cf2387ea9968402e1e3696f33b9806d41de4692ec6a0de385def6dd83be7359a72bff6ba0d5a364c52b0a228e38b5e61fd497d1
+  languageName: node
+  linkType: hard
+
+"mdast-util-to-markdown@npm:^0.6.0, mdast-util-to-markdown@npm:^0.6.1, mdast-util-to-markdown@npm:~0.6.0":
+  version: 0.6.5
+  resolution: "mdast-util-to-markdown@npm:0.6.5"
+  dependencies:
+    "@types/unist": ^2.0.0
+    longest-streak: ^2.0.0
+    mdast-util-to-string: ^2.0.0
+    parse-entities: ^2.0.0
+    repeat-string: ^1.0.0
+    zwitch: ^1.0.0
+  checksum: c5db77398cdab7bf8a3dcf81f47eaefc7ee267006f9de89c9db9e56d24194bcf1165610dbc8ae61d3f8ba2f92b351b2fc9516b4eb870b78108cc135a43f028b0
   languageName: node
   linkType: hard
 
@@ -17062,7 +17156,64 @@ fsevents@^1.2.7:
   languageName: node
   linkType: hard
 
-"micromark@npm:~2.11.0":
+"micromark-extension-gfm-autolink-literal@npm:~0.5.0":
+  version: 0.5.7
+  resolution: "micromark-extension-gfm-autolink-literal@npm:0.5.7"
+  dependencies:
+    micromark: ~2.11.3
+  checksum: 3f279daf6182775d5fd13f704c8d0290ce7e0424f911c0eda293b18fa410b1ae9664b1f5fbaf471b088a2a04d76f5fee6709bc3e911ca4e63d55a083703a619a
+  languageName: node
+  linkType: hard
+
+"micromark-extension-gfm-strikethrough@npm:~0.6.5":
+  version: 0.6.5
+  resolution: "micromark-extension-gfm-strikethrough@npm:0.6.5"
+  dependencies:
+    micromark: ~2.11.0
+  checksum: 3fe1cfa4cc74f30c2ef3b43b2d2ce002b6432b11144c7c3c5a06021a253e10352931fa863cb15f2336412d77ba1de4bd06c6b7a71825cf8aad5ade2b7ef80a00
+  languageName: node
+  linkType: hard
+
+"micromark-extension-gfm-table@npm:~0.4.0":
+  version: 0.4.3
+  resolution: "micromark-extension-gfm-table@npm:0.4.3"
+  dependencies:
+    micromark: ~2.11.0
+  checksum: 6b9345a5b2fdfd2163c1f7ee18ffbf2f92b2cab642e0b95fd9d77505c00f582be293d4114a6c2c64b53c6908d2b5e8db5af5a059b742e3397422b818e1972151
+  languageName: node
+  linkType: hard
+
+"micromark-extension-gfm-tagfilter@npm:~0.3.0":
+  version: 0.3.0
+  resolution: "micromark-extension-gfm-tagfilter@npm:0.3.0"
+  checksum: 283a4d0a3844f9a900af4dfa36091139399f44476f76e085e2113eeec473ca7d4a9621106c40ce1686fd24f196f6af957ba166e1821083d66933853ccda8e186
+  languageName: node
+  linkType: hard
+
+"micromark-extension-gfm-task-list-item@npm:~0.3.0":
+  version: 0.3.3
+  resolution: "micromark-extension-gfm-task-list-item@npm:0.3.3"
+  dependencies:
+    micromark: ~2.11.0
+  checksum: d2b9ced24811c1cce19aa5272ee68b40164f073226a6a004ac05ec8760fc8b5442055e8567efd4737c3af0ad30ed3f33383b37d1acb0af1589cee086fee4ed4a
+  languageName: node
+  linkType: hard
+
+"micromark-extension-gfm@npm:^0.3.0":
+  version: 0.3.3
+  resolution: "micromark-extension-gfm@npm:0.3.3"
+  dependencies:
+    micromark: ~2.11.0
+    micromark-extension-gfm-autolink-literal: ~0.5.0
+    micromark-extension-gfm-strikethrough: ~0.6.5
+    micromark-extension-gfm-table: ~0.4.0
+    micromark-extension-gfm-tagfilter: ~0.3.0
+    micromark-extension-gfm-task-list-item: ~0.3.0
+  checksum: 63f48b0ddd5a34d935a3f1a91bac5400df6d7f51068366758843251bfe0db2a9bb2a2c1a0f81193a7ed853bab479e3d83a9b22b73ecdbbb0e88b74c22343f385
+  languageName: node
+  linkType: hard
+
+"micromark@npm:^2.11.3, micromark@npm:~2.11.0, micromark@npm:~2.11.3":
   version: 2.11.4
   resolution: "micromark@npm:2.11.4"
   dependencies:
@@ -20846,6 +20997,16 @@ fsevents@^1.2.7:
   languageName: node
   linkType: hard
 
+"remark-gfm@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "remark-gfm@npm:1.0.0"
+  dependencies:
+    mdast-util-gfm: ^0.1.0
+    micromark-extension-gfm: ^0.3.0
+  checksum: c3f5d2e7d9ebe808297236e04c7c544b303d97749a221c95ded56f3e466099eca62b9bbda1d46431702e61edfea5de06c19c65632b59c5f89eca048858b6893b
+  languageName: node
+  linkType: hard
+
 "remark-mdx@npm:1.6.22":
   version: 1.6.22
   resolution: "remark-mdx@npm:1.6.22"
@@ -20951,7 +21112,7 @@ fsevents@^1.2.7:
   languageName: node
   linkType: hard
 
-"repeat-string@npm:^1.5.4, repeat-string@npm:^1.6.1":
+"repeat-string@npm:^1.0.0, repeat-string@npm:^1.5.4, repeat-string@npm:^1.6.1":
   version: 1.6.1
   resolution: "repeat-string@npm:1.6.1"
   checksum: 99c431ba7bef7a5d39819d562ebca89206368b45f73213677a3b562e25b5dd272d9e6a2ca8105001df14b6fc8cc71f0b10258c86e16cf8a256318fac1ddc8a77

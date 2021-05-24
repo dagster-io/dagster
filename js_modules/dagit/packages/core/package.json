@@ -39,6 +39,7 @@
     "react-codemirror2": "^7.2.1",
     "react-markdown": "^6.0.1",
     "react-virtualized": "^9.22.3",
+    "remark-gfm": "^1.0.0",
     "styled-components": "^5.2.1",
     "subscriptions-transport-ws": "^0.9.15",
     "worker-loader": "^3.0.8",
