@@ -31,7 +31,7 @@ interface StateObserverProps {
 }
 
 export const RepositoryLocationStateObserver = ({client}: StateObserverProps) => {
-  const {locations, refetch} = React.useContext(WorkspaceContext);
+  const {locationEntries, refetch} = React.useContext(WorkspaceContext);
   const [updatedLocations, setUpdatedLocations] = useState<string[]>([]);
   const [erroredLocations, setErroredLocations] = useState<string[]>([]);
   const totalMessages = updatedLocations.length + erroredLocations.length;
@@ -53,11 +53,11 @@ export const RepositoryLocationStateObserver = ({client}: StateObserverProps) =>
           setUpdatedLocations((s) => s.filter((name) => name !== locationName));
           return;
         case LocationStateChangeEventType.LOCATION_UPDATED:
-          const matchingRepositoryLocation = locations.find((n) => n.name === locationName);
+          const matchingRepositoryLocation = locationEntries.find((n) => n.name === locationName);
           if (
             matchingRepositoryLocation &&
-            matchingRepositoryLocation?.__typename === 'RepositoryLocation' &&
-            matchingRepositoryLocation.serverId !== serverId
+            matchingRepositoryLocation.locationOrLoadError?.__typename === 'RepositoryLocation' &&
+            matchingRepositoryLocation.locationOrLoadError?.serverId !== serverId
           ) {
             setUpdatedLocations((s) => [...s, locationName]);
           }
@@ -76,7 +76,7 @@ export const RepositoryLocationStateObserver = ({client}: StateObserverProps) =>
     return () => {
       subscriptionToken.close();
     };
-  }, [locations, refetch, websocketURI]);
+  }, [locationEntries, refetch, websocketURI]);
 
   return totalMessages > 0 ? (
     <Group background={Colors.GRAY5} direction="column" spacing={0}>

@@ -11,29 +11,29 @@ import {Spinner} from '../ui/Spinner';
 import {Table} from '../ui/Table';
 
 import {WorkspaceContext} from './WorkspaceContext';
-import {RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes as LocationOrError} from './types/RootRepositoriesQuery';
+import {RootRepositoriesQuery_workspaceOrError_Workspace_locationEntries as LocationOrError} from './types/RootRepositoriesQuery';
 
 const LocationStatus: React.FC<{locationOrError: LocationOrError}> = (props) => {
   const {locationOrError} = props;
   const [showDialog, setShowDialog] = React.useState(false);
 
-  if (locationOrError.__typename === 'RepositoryLocationLoading') {
-    return (
-      <Tag minimal intent="primary">
-        Loading...
-      </Tag>
-    );
-  }
-
   if (locationOrError.loadStatus === 'LOADING') {
-    return (
-      <Tag minimal intent="primary">
-        Updating...
-      </Tag>
-    );
+    if (locationOrError.locationOrLoadError) {
+      return (
+        <Tag minimal intent="primary">
+          Updating...
+        </Tag>
+      );
+    } else {
+      return (
+        <Tag minimal intent="primary">
+          Loading...
+        </Tag>
+      );
+    }
   }
 
-  if (locationOrError.__typename === 'RepositoryLocationLoadFailure') {
+  if (locationOrError.locationOrLoadError?.__typename === 'PythonError') {
     return (
       <>
         <div style={{display: 'flex', alignItems: 'start'}}>
@@ -55,7 +55,7 @@ const LocationStatus: React.FC<{locationOrError: LocationOrError}> = (props) => 
               Error loading <strong>{locationOrError.name}</strong>. Try reloading the repository
               location after resolving the issue.
             </div>
-            <PythonErrorInfo error={locationOrError.error} />
+            <PythonErrorInfo error={locationOrError.locationOrLoadError} />
           </div>
           <div className={Classes.DIALOG_FOOTER}>
             <div className={Classes.DIALOG_FOOTER_ACTIONS}>
@@ -100,13 +100,13 @@ const ReloadButton: React.FC<{
 };
 
 export const RepositoryLocationsList = () => {
-  const {locations, loading} = React.useContext(WorkspaceContext);
+  const {locationEntries, loading} = React.useContext(WorkspaceContext);
 
-  if (loading && !locations.length) {
+  if (loading && !locationEntries.length) {
     return <div style={{color: Colors.GRAY3}}>Loading…</div>;
   }
 
-  if (!locations.length) {
+  if (!locationEntries.length) {
     return <NonIdealState icon="cube" title="No repository locations!" />;
   }
 
@@ -119,7 +119,7 @@ export const RepositoryLocationsList = () => {
         </tr>
       </thead>
       <tbody>
-        {locations.map((location) => (
+        {locationEntries.map((location) => (
           <tr key={location.name}>
             <td style={{width: '30%'}}>{location.name}</td>
             <td style={{width: '20%'}}>

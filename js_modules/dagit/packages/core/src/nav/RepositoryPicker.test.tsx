@@ -9,6 +9,23 @@ import {RepositoryPicker} from './RepositoryPicker';
 
 describe('RepositoryPicker', () => {
   const defaultMocks = {
+    WorkspaceLocationEntry: () => ({
+      locationOrLoadError: {
+        __typename: 'RepositoryLocation',
+        isReloadSupported: true,
+        name: () => 'undisclosed-location',
+        repositories: () => new MockList(1),
+      },
+    }),
+    WorkspaceOrError: () => ({
+      __typename: 'Workspace',
+    }),
+    RepositoryLocationOrLoadError: () => ({
+      __typename: 'RepositoryLocation',
+      isReloadSupported: true,
+      name: () => 'undisclosed-location',
+      repositories: () => new MockList(1),
+    }),
     RepositoryLocation: () => ({
       isReloadSupported: true,
       name: () => 'undisclosed-location',

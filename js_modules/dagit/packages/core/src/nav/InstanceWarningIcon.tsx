@@ -10,15 +10,15 @@ import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {InstanceWarningQuery} from './types/InstanceWarningQuery';
 
 export const InstanceWarningIcon = React.memo(() => {
-  const {locations} = React.useContext(WorkspaceContext);
+  const {locationEntries} = React.useContext(WorkspaceContext);
 
   const {data: healthData} = useQuery<InstanceWarningQuery>(INSTANCE_WARNING_QUERY, {
     fetchPolicy: 'cache-and-network',
     pollInterval: 15 * 1000,
   });
 
-  const repoErrors = locations.filter(
-    (node) => node.__typename === 'RepositoryLocationLoadFailure',
+  const repoErrors = locationEntries.filter(
+    (locationEntry) => locationEntry.locationOrLoadError?.__typename === 'PythonError',
   );
   const daemonErrors =
     healthData?.instance.daemonHealth.allDaemonStatuses.filter(
