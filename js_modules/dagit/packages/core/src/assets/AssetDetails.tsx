@@ -50,10 +50,23 @@ export const AssetDetails: React.FC<Props> = ({assetKey, asOf}) => {
     }
 
     const latest = assetOrError.assetMaterializations[0];
-    const latestEvent = latest && latest.materializationEvent;
-    const latestRun =
-      latest && latest.runOrError.__typename === 'PipelineRun' ? latest.runOrError : null;
-    const latestAssetLineage = latestEvent && latestEvent.assetLineage;
+
+    if (!latest) {
+      return (
+        <div>
+          No materializations found at{' '}
+          <Timestamp
+            timestamp={{ms: Number(asOf)}}
+            timeFormat={{showSeconds: true, showTimezone: true}}
+          />
+          .
+        </div>
+      );
+    }
+
+    const latestEvent = latest.materializationEvent;
+    const latestRun = latest.runOrError.__typename === 'PipelineRun' ? latest.runOrError : null;
+    const latestAssetLineage = latestEvent?.assetLineage;
 
     return (
       <MetadataTable
@@ -106,7 +119,7 @@ export const AssetDetails: React.FC<Props> = ({assetKey, asOf}) => {
               'No materialization events'
             ),
           },
-          latest.partition
+          latest?.partition
             ? {
                 key: 'Latest partition',
                 value: latest ? latest.partition : 'No materialization events',
@@ -120,7 +133,7 @@ export const AssetDetails: React.FC<Props> = ({assetKey, asOf}) => {
               'No materialization events'
             ),
           },
-          latestAssetLineage.length > 0
+          latestAssetLineage?.length
             ? {
                 key: 'Latest parent assets',
                 value: (
@@ -142,7 +155,7 @@ export const AssetDetails: React.FC<Props> = ({assetKey, asOf}) => {
 
   const isPartitioned = !!(
     data?.assetOrError?.__typename === 'Asset' &&
-    data.assetOrError.assetMaterializations[0].partition
+    data?.assetOrError?.assetMaterializations[0]?.partition
   );
 
   return (
