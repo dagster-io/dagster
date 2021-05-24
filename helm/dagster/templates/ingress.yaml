@@ -43,7 +43,7 @@ spec:
           {{- end }}
           - path: {{ .Values.ingress.readOnlyDagit.path | default "/*" }}
             backend:
-              serviceName: {{ include "dagster.dagit.fullname" . }}
+              serviceName: {{ template "dagster.dagit.fullname" dict "Values" .Values "Release" .Release "dagitReadOnly" true }}
               servicePort: {{ .Values.dagit.service.port | default 80 }}
           {{- range .Values.ingress.readOnlyDagit.succeedingPaths }}
           - path: {{ .path }}

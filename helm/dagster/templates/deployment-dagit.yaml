@@ -3,6 +3,6 @@
 
 {{- if .Values.dagit.enableReadOnly -}}
 ---
-{{$data := dict "Values" .Values "Release" .Release "Chart" .Chart "Template" .Template "dagitExtraCommandArgs" "--read-only"}}
+{{$data := dict "Values" .Values "Release" .Release "Chart" .Chart "Template" .Template "dagitReadOnly" true}}
 {{- include "deployment-dagit" $data -}}
 {{- end -}}

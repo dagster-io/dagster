@@ -31,16 +31,19 @@ If release name contains chart name it will be used as a full name.
 
 {{- define "dagster.dagit.dagitCommand" -}}
 {{- $userDeployments := index .Values "dagster-user-deployments" }}
-{{- if $userDeployments.enabled }}
-dagit -h 0.0.0.0 -p {{ .Values.dagit.service.port }} -w /dagster-workspace/workspace.yaml
-{{- else -}}
 dagit -h 0.0.0.0 -p {{ .Values.dagit.service.port }}
-{{- end -}}
+{{- if $userDeployments.enabled }} -w /dagster-workspace/workspace.yaml {{- end -}}
+{{- if .dagitReadOnly }} --read-only {{- end -}}
 {{- end -}}
 
 {{- define "dagster.dagit.fullname" -}}
 {{- $name := default "dagit" .Values.dagit.nameOverride -}}
 {{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" -}}
+{{- if .dagitReadOnly -}} -read-only {{- end -}}
+{{- end -}}
+
+{{- define "dagster.dagit.componentName" -}}
+dagit {{- if .dagitReadOnly -}} -read-only {{- end -}}
 {{- end -}}
 
 {{- define "dagster.dagit.migrate" -}}
