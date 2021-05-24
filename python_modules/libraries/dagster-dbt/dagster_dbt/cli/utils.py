@@ -125,9 +125,9 @@ def extract_summary(logs: List[Dict[str, str]]):
     return dict(zip(SUMMARY_LABELS, summary))
 
 
-def parse_run_results(path: str) -> Dict[str, Any]:
+def parse_run_results(path: str, target_path: str = "target") -> Dict[str, Any]:
     """Parses the `target/run_results.json` artifact that is produced by a dbt process."""
-    run_results_path = os.path.join(path, "target", "run_results.json")
+    run_results_path = os.path.join(path, target_path, "run_results.json")
     try:
         with open(run_results_path) as file:
             return json.load(file)
