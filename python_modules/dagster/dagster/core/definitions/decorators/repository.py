@@ -4,6 +4,7 @@ from typing import Any, Callable, Optional, Union
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
 
+from ..graph import GraphDefinition
 from ..partition import PartitionSetDefinition
 from ..pipeline import PipelineDefinition
 from ..repository import VALID_REPOSITORY_DATA_DICT_KEYS, RepositoryData, RepositoryDefinition
@@ -43,6 +44,7 @@ class _Repository:
                     or isinstance(definition, PartitionSetDefinition)
                     or isinstance(definition, ScheduleDefinition)
                     or isinstance(definition, SensorDefinition)
+                    or isinstance(definition, GraphDefinition)
                 ):
                     bad_definitions.append((i, type(definition)))
             if bad_definitions:

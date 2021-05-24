@@ -2,6 +2,7 @@ from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.utils import merge_dicts
 
+from .graph import GraphDefinition
 from .partition import PartitionScheduleDefinition, PartitionSetDefinition
 from .pipeline import PipelineDefinition
 from .schedule import ScheduleDefinition
@@ -311,6 +312,12 @@ class RepositoryData:
                             "{partition_set_name}".format(partition_set_name=partition_set_def.name)
                         )
                     partition_sets[partition_set_def.name] = partition_set_def
+            elif isinstance(definition, GraphDefinition):
+                # error experience when this fails can be improved
+                coerced = definition.to_job(resource_defs={})
+                pipelines[coerced.name] = coerced
+            else:
+                check.failed(f"Unexpected repository entry {definition}")
 
         return RepositoryData(
             pipelines=pipelines,
