@@ -3,7 +3,7 @@ import * as React from 'react';
 
 import {TestProvider} from '../testing/TestProvider';
 
-import {PermissionMap, PERMISSIONS_ALLOW_ALL, usePermissions} from './Permissions';
+import {PermissionSet, PERMISSIONS_ALLOW_ALL, usePermissions} from './Permissions';
 import {Switch} from './Switch';
 import {RenderConfig, RouteConfig} from './types';
 
@@ -15,7 +15,7 @@ describe('Switch', () => {
     },
     {
       path: '/baz/:id',
-      render: (config: RenderConfig<{id: string}, PermissionMap>) => (
+      render: (config: RenderConfig<{id: string}, PermissionSet>) => (
         <div>{`Baz ${config.match.params.id}`}</div>
       ),
     },
@@ -38,7 +38,7 @@ describe('Switch', () => {
     },
     {
       path: '/gated/check',
-      isAvailable: (permissions: PermissionMap) => permissions.canReloadRepositoryLocation,
+      isAvailable: (permissions: PermissionSet) => permissions.canReloadRepositoryLocation,
       render: () => <div>Welcome check!</div>,
     },
     {
@@ -82,7 +82,7 @@ describe('Switch', () => {
   ];
 
   interface Props {
-    routes: RouteConfig<any, PermissionMap>[];
+    routes: RouteConfig<any, PermissionSet>[];
   }
 
   const Test: React.FC<Props> = ({routes}) => {
