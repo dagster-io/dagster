@@ -100,7 +100,7 @@ class TestDbtCliSolids:
                 "project-dir": test_project_dir,
                 "profiles-dir": dbt_config_dir,
                 "target-path:": dbt_target_dir,
-             }
+            }
         )
 
         result = execute_solid(test_solid)
