@@ -27,7 +27,7 @@ Dagster models data dependencies between steps in your orchestration graph and h
 
 ### Link data to computations
 
-Dagster’s Asset Manager tracks the data sets and ML models produced by your pipelines, so you can understand how your they were generated and trace issues when they don’t look how you expect.
+Dagster’s Asset Manager tracks the data sets and ML models produced by your pipelines, so you can understand how they were generated and trace issues when they don’t look how you expect.
 
 
 ### Build a self-service data platform
@@ -37,7 +37,7 @@ Dagster helps platform teams build systems for data practitioners. Pipelines are
 
 ### Avoid dependency nightmares
 
-Dagster’s repository model lets you isolate codebases, so that problems in one pipeline don’t bring down the rest. Each pipeline can have its own package dependencies and Python version. Pipelines run in isolated processes so user code issues can't bring the system down.
+Dagster’s repository model lets you isolate codebases so that problems in one pipeline don’t bring down the rest. Each pipeline can have its own package dependencies and Python version. Pipelines run in isolated processes so user code issues can't bring the system down.
 
 
 ### Debug pipelines from a rich UI
