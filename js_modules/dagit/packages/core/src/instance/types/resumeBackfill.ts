@@ -13,12 +13,17 @@ export interface resumeBackfill_resumePartitionBackfill_ResumeBackfillSuccess {
   backfillId: string;
 }
 
+export interface resumeBackfill_resumePartitionBackfill_ReadOnlyError {
+  __typename: "ReadOnlyError";
+  message: string;
+}
+
 export interface resumeBackfill_resumePartitionBackfill_PythonError {
   __typename: "PythonError";
   message: string;
 }
 
-export type resumeBackfill_resumePartitionBackfill = resumeBackfill_resumePartitionBackfill_ResumeBackfillSuccess | resumeBackfill_resumePartitionBackfill_PythonError;
+export type resumeBackfill_resumePartitionBackfill = resumeBackfill_resumePartitionBackfill_ResumeBackfillSuccess | resumeBackfill_resumePartitionBackfill_ReadOnlyError | resumeBackfill_resumePartitionBackfill_PythonError;
 
 export interface resumeBackfill {
   resumePartitionBackfill: resumeBackfill_resumePartitionBackfill;

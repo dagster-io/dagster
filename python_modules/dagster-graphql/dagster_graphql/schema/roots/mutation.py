@@ -257,6 +257,8 @@ class GrapheneResumeBackfillMutation(graphene.Mutation):
         description = "Retries a set of partition backfill runs via the run launcher configured on the instance."
         name = "ResumeBackfillMutation"
 
+    @capture_error
+    @check_read_only
     def mutate(self, graphene_info, **kwargs):
         return resume_partition_backfill(graphene_info, kwargs["backfillId"])
 

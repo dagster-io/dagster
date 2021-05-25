@@ -1181,7 +1181,7 @@ input PartitionSetSelector {
   repositorySelector: RepositorySelector!
 }
 
-union ResumeBackfillResult = ResumeBackfillSuccess | PythonError
+union ResumeBackfillResult = ResumeBackfillSuccess | ReadOnlyError | PythonError
 
 type ResumeBackfillSuccess {
   backfillId: String!
