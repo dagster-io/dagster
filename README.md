@@ -68,17 +68,17 @@ This installs two modules:
 **`hello_dagster.py`**
 
 ```python
-from dagster import execute_pipeline, pipeline, solid
+from dagster import pipeline, solid
 
 
 @solid
-def get_name(_):
-    return 'dagster'
+def get_name():
+    return "dagster"
 
 
 @solid
-def hello(context, name: str):
-    context.log.info('Hello, {name}!'.format(name=name))
+def hello(context, name):
+    context.log.info(f"Hello, {name}!")
 
 
 @pipeline
@@ -92,6 +92,8 @@ of the following methods:
 **(1) Dagster Python API**
 
 ```python
+from dagster import execute_pipeline
+
 if __name__ == "__main__":
     execute_pipeline(hello_pipeline)   # Hello, dagster!
 ```
