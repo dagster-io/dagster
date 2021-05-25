@@ -1,7 +1,7 @@
 import {MockList} from '@graphql-tools/mock';
 import faker from 'faker';
 
-const hyphenatedName = () => faker.random.words(2).replace(/ /g, '-').toLowerCase();
+export const hyphenatedName = () => faker.random.words(2).replace(/ /g, '-').toLowerCase();
 const randomId = () => faker.random.uuid();
 
 /**
@@ -14,6 +14,9 @@ const randomId = () => faker.random.uuid();
 export const defaultMocks = {
   Asset: () => ({
     id: randomId,
+  }),
+  AssetOrError: () => ({
+    __typename: 'Asset',
   }),
   ISolidDefinition: () => ({
     __typename: 'SolidDefinition',

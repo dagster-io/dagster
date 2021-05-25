@@ -39,7 +39,7 @@ export const AssetDetails: React.FC<Props> = ({assetKey, asOf}) => {
   // If the most recent materialization and the `asOf` materialization are the same, we don't
   // want to show the `Alert`.
   const showAlert = React.useMemo(() => {
-    if (loading) {
+    if (loading || !asOf) {
       return false;
     }
 
@@ -48,14 +48,14 @@ export const AssetDetails: React.FC<Props> = ({assetKey, asOf}) => {
       return false;
     }
 
-    const asOfTime = assetOrError.assetMaterializations[0];
-    const mostRecent = assetOrError.mostRecentMaterialization[0];
+    const materializationAsOfTime = assetOrError.assetMaterializations[0];
+    const mostRecentMaterialization = assetOrError.mostRecentMaterialization[0];
 
     return (
-      asOf &&
-      asOfTime &&
-      mostRecent &&
-      asOfTime.materializationEvent.timestamp !== mostRecent.materializationEvent.timestamp
+      materializationAsOfTime &&
+      mostRecentMaterialization &&
+      materializationAsOfTime.materializationEvent.timestamp !==
+        mostRecentMaterialization.materializationEvent.timestamp
     );
   }, [asOf, data?.assetOrError, loading]);
 
