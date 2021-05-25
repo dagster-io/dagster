@@ -8,6 +8,7 @@ import {Timestamp} from '../app/time/Timestamp';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {MetadataEntry} from '../runs/MetadataEntry';
 import {titleForRun} from '../runs/RunUtils';
+import {Alert} from '../ui/Alert';
 import {Box} from '../ui/Box';
 import {Group} from '../ui/Group';
 import {MetadataTable} from '../ui/MetadataTable';
@@ -33,6 +34,29 @@ export const AssetDetails: React.FC<Props> = ({assetKey, asOf}) => {
       before: asOf,
     },
   });
+
+  // If the most recent materialization and the `asOf` materialization are the same, we don't
+  // want to show the `Alert`.
+  const showAlert = React.useMemo(() => {
+    if (loading) {
+      return false;
+    }
+
+    const assetOrError = data?.assetOrError;
+    if (!assetOrError || assetOrError?.__typename !== 'Asset') {
+      return false;
+    }
+
+    const asOfTime = assetOrError.assetMaterializations[0];
+    const mostRecent = assetOrError.mostRecentMaterialization[0];
+
+    return (
+      asOf &&
+      asOfTime &&
+      mostRecent &&
+      asOfTime.materializationEvent.timestamp !== mostRecent.materializationEvent.timestamp
+    );
+  }, [asOf, data?.assetOrError, loading]);
 
   const content = () => {
     if (loading) {
@@ -159,7 +183,27 @@ export const AssetDetails: React.FC<Props> = ({assetKey, asOf}) => {
   );
 
   return (
-    <Group direction="column" spacing={8}>
+    <Group direction="column" spacing={16}>
+      {showAlert ? (
+        <Alert
+          intent="info"
+          title="This is a historical asset snapshot."
+          description={
+            <span>
+              This view represents{' '}
+              <span style={{fontWeight: 600}}>{assetKey.path[assetKey.path.length - 1]}</span> as of{' '}
+              <span style={{fontWeight: 600}}>
+                <Timestamp
+                  timestamp={{ms: Number(asOf)}}
+                  timeFormat={{showSeconds: true, showTimezone: true}}
+                />
+              </span>
+              . You can also view the <Link to={location.pathname}>latest materialization</Link> for
+              this asset.
+            </span>
+          }
+        />
+      ) : null}
       <Subheading>{isPartitioned ? 'Latest Materialized Partition' : 'Details'}</Subheading>
       {content()}
     </Group>

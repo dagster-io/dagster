@@ -5,8 +5,6 @@ import * as React from 'react';
 import {Link, Redirect, RouteComponentProps} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {Timestamp} from '../app/time/Timestamp';
-import {Alert} from '../ui/Alert';
 import {Box} from '../ui/Box';
 import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
@@ -104,26 +102,6 @@ export const AssetEntryRoot: React.FC<RouteComponentProps> = ({location, match})
           icon="th"
           description={<PathDetails>{pathDetails()}</PathDetails>}
         />
-        {asOf ? (
-          <Alert
-            intent="info"
-            title="This is a historical asset snapshot."
-            description={
-              <span>
-                This view represents{' '}
-                <span style={{fontWeight: 600}}>{currentPath[currentPath.length - 1]}</span> as of{' '}
-                <span style={{fontWeight: 600}}>
-                  <Timestamp
-                    timestamp={{ms: Number(asOf)}}
-                    timeFormat={{showSeconds: true, showTimezone: true}}
-                  />
-                </span>
-                . You can also view the <Link to={location.pathname}>latest materialization</Link>{' '}
-                for this asset.
-              </span>
-            }
-          />
-        ) : null}
         <Loading queryResult={queryResult}>
           {({assetOrError}) => {
             if (assetOrError.__typename === 'AssetNotFoundError') {
