@@ -36,7 +36,7 @@ class HelmTemplate:
                 self.name,
                 os.path.join(git_repo_root(), "helm", "dagster"),
                 "--debug",
-                *['--values', tmp_file.name],
+                *["--values", tmp_file.name],
             ]
 
             if self.output:
