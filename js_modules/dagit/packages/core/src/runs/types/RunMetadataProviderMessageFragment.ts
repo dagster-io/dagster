@@ -125,7 +125,7 @@ export interface RunMetadataProviderMessageFragment_LogsCapturedEvent {
   timestamp: string;
   stepKey: string | null;
   logKey: string;
-  stepKeys: (string | null)[] | null;
+  stepKeys: string[] | null;
   pid: number | null;
 }
 

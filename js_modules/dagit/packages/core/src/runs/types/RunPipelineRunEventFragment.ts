@@ -984,7 +984,7 @@ export interface RunPipelineRunEventFragment_LogsCapturedEvent {
   stepKey: string | null;
   eventType: DagsterEventType | null;
   logKey: string;
-  stepKeys: (string | null)[] | null;
+  stepKeys: string[] | null;
   pid: number | null;
 }
 

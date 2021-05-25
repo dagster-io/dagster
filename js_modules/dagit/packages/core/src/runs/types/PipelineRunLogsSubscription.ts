@@ -998,7 +998,7 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubs
   stepKey: string | null;
   eventType: DagsterEventType | null;
   logKey: string;
-  stepKeys: (string | null)[] | null;
+  stepKeys: string[] | null;
   pid: number | null;
 }
 

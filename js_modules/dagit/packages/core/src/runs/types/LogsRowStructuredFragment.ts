@@ -982,7 +982,7 @@ export interface LogsRowStructuredFragment_LogsCapturedEvent {
   level: LogLevel;
   stepKey: string | null;
   logKey: string;
-  stepKeys: (string | null)[] | null;
+  stepKeys: string[] | null;
 }
 
 export type LogsRowStructuredFragment = LogsRowStructuredFragment_ExecutionStepSkippedEvent | LogsRowStructuredFragment_StepMaterializationEvent | LogsRowStructuredFragment_PipelineInitFailureEvent | LogsRowStructuredFragment_PipelineFailureEvent | LogsRowStructuredFragment_ExecutionStepFailureEvent | LogsRowStructuredFragment_ExecutionStepInputEvent | LogsRowStructuredFragment_ExecutionStepOutputEvent | LogsRowStructuredFragment_StepExpectationResultEvent | LogsRowStructuredFragment_ObjectStoreOperationEvent | LogsRowStructuredFragment_HandledOutputEvent | LogsRowStructuredFragment_LoadedInputEvent | LogsRowStructuredFragment_EngineEvent | LogsRowStructuredFragment_HookErroredEvent | LogsRowStructuredFragment_LogsCapturedEvent;

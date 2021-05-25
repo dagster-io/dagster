@@ -157,7 +157,7 @@ export function extractMetadataFromLogs(
       }
       metadata.logCaptureSteps[log.logKey] = {
         logKey: log.logKey,
-        stepKeys: log.stepKeys,
+        stepKeys: log.stepKeys || [],
         pid: String(log.pid),
       };
     }

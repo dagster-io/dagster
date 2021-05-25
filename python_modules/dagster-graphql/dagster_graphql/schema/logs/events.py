@@ -395,7 +395,7 @@ class GrapheneLogsCapturedEvent(graphene.ObjectType):
         name = "LogsCapturedEvent"
 
     logKey = graphene.NonNull(graphene.String)
-    stepKeys = graphene.List(graphene.String)
+    stepKeys = graphene.List(graphene.NonNull(graphene.String))
     pid = graphene.Int()
 
 
