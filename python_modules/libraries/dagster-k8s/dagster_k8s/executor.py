@@ -13,12 +13,14 @@ from dagster.core.executor.step_delegating.step_handler import StepHandler
 from dagster.core.executor.step_delegating.step_handler.base import StepHandlerContext
 from dagster.serdes.serdes import serialize_dagster_namedtuple
 from dagster.utils import frozentags, merge_dicts
-from dagster_k8s.job import (
+
+from .job import (
     DagsterK8sJobConfig,
     construct_dagster_k8s_job,
     get_k8s_job_name,
     get_user_defined_k8s_config,
 )
+from .utils import delete_job
 
 
 class K8sStepHandler(StepHandler):
@@ -105,7 +107,19 @@ class K8sStepHandler(StepHandler):
         return []
 
     def terminate_step(self, step_handler_context: StepHandlerContext):
-        raise NotImplementedError()
+        assert (
+            len(step_handler_context.execute_step_args.step_keys_to_execute) == 1
+        ), "Launching multiple steps is not currently supported"
+        step_key = step_handler_context.execute_step_args.step_keys_to_execute[0]
+
+        k8s_name_key = get_k8s_job_name(
+            step_handler_context.execute_step_args.pipeline_run_id,
+            step_key,
+        )
+        job_name = "dagster-job-%s" % (k8s_name_key)
+
+        delete_job(job_name=job_name, namespace=self._job_namespace)
+        return []
 
 
 @executor(
