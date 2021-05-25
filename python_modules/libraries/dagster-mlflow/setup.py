@@ -28,6 +28,6 @@ if __name__ == "__main__":
             "Operating System :: OS Independent",
         ],
         packages=find_packages(exclude=["test"]),
-        install_requires=["dagster", "mlflow"],
+        install_requires=["dagster", "mlflow", "pandas"],
         zip_safe=False,
     )
