@@ -1017,10 +1017,13 @@ class DagsterInstance:
         before_cursor=None,
         after_cursor=None,
         cursor=None,
-        before_timestamp=None,
+        asof_timestamp=None,
         limit=None,
         ascending=False,
     ):
+        """
+        Get the materialization events for a given asset key.
+        """
         check.inst_param(asset_key, "asset_key", AssetKey)
 
         return self._event_storage.get_asset_events(
@@ -1029,7 +1032,7 @@ class DagsterInstance:
             before_cursor,
             after_cursor,
             limit,
-            before_timestamp=before_timestamp,
+            asof_timestamp=asof_timestamp,
             ascending=ascending,
             include_cursor=True,
             cursor=cursor,

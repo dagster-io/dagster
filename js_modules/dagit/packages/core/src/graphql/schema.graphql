@@ -424,7 +424,7 @@ enum StepKind {
 type Asset {
   id: String!
   key: AssetKey!
-  assetMaterializations(partitions: [String], beforeTimestampMillis: String, limit: Int): [AssetMaterialization!]!
+  assetMaterializations(partitions: [String], asofTimestampMillis: String, limit: Int): [AssetMaterialization!]!
   tags: [AssetTag!]!
 }
 

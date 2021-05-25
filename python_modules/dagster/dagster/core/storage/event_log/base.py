@@ -128,7 +128,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         limit: int = None,
         ascending: bool = False,
         include_cursor: bool = False,
-        before_timestamp=None,
+        asof_timestamp=None,
         cursor: int = None,  # deprecated
     ) -> Union[Iterable[EventRecord], Iterable[Tuple[int, EventRecord]]]:
         pass

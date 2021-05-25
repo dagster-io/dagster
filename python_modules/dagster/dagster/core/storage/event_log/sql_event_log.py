@@ -537,7 +537,7 @@ class SqlEventLogStorage(EventLogStorage):
         after_cursor,
         limit,
         ascending=False,
-        before_timestamp=None,
+        asof_timestamp=None,
     ):
         """ Helper function to deal with cursor/limit pagination args """
 
@@ -551,9 +551,9 @@ class SqlEventLogStorage(EventLogStorage):
                 SqlEventLogStorageTable.c.id == after_cursor
             )
             query = query.where(SqlEventLogStorageTable.c.id > after_query)
-        if before_timestamp:
+        if asof_timestamp:
             query = query.where(
-                SqlEventLogStorageTable.c.timestamp < datetime.utcfromtimestamp(before_timestamp)
+                SqlEventLogStorageTable.c.timestamp <= datetime.utcfromtimestamp(asof_timestamp)
             )
 
         if limit:
@@ -692,7 +692,7 @@ class SqlEventLogStorage(EventLogStorage):
         limit=None,
         ascending=False,
         include_cursor=False,
-        before_timestamp=None,
+        asof_timestamp=None,
         cursor=None,  # deprecated
     ):
         check.inst_param(asset_key, "asset_key", AssetKey)
@@ -718,7 +718,7 @@ class SqlEventLogStorage(EventLogStorage):
             before_cursor,
             after_cursor,
             limit,
-            before_timestamp=before_timestamp,
+            asof_timestamp=asof_timestamp,
             ascending=ascending,
         )
 

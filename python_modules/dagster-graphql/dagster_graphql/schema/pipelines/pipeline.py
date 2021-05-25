@@ -81,7 +81,7 @@ class GrapheneAsset(graphene.ObjectType):
     assetMaterializations = graphene.Field(
         non_null_list(GrapheneAssetMaterialization),
         partitions=graphene.List(graphene.String),
-        beforeTimestampMillis=graphene.String(),
+        asofTimestampMillis=graphene.String(),
         limit=graphene.Int(),
     )
     tags = non_null_list(GrapheneAssetTag)
@@ -101,13 +101,13 @@ class GrapheneAsset(graphene.ObjectType):
         from ...implementation.fetch_assets import get_asset_events
 
         try:
-            before_timestamp = (
-                int(kwargs.get("beforeTimestampMillis")) / 1000.0
-                if kwargs.get("beforeTimestampMillis")
+            asof_timestamp = (
+                int(kwargs.get("asofTimestampMillis")) / 1000.0
+                if kwargs.get("asofTimestampMillis")
                 else None
             )
         except ValueError:
-            before_timestamp = None
+            asof_timestamp = None
 
         return [
             GrapheneAssetMaterialization(event=event)
@@ -115,7 +115,7 @@ class GrapheneAsset(graphene.ObjectType):
                 graphene_info,
                 self.key,
                 kwargs.get("partitions"),
-                before_timestamp=before_timestamp,
+                asof_timestamp=asof_timestamp,
                 limit=kwargs.get("limit"),
             )
         ]
