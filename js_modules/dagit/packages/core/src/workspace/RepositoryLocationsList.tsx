@@ -4,14 +4,18 @@ import React from 'react';
 
 import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
+import {Timestamp} from '../app/time/Timestamp';
 import {useRepositoryLocationReload} from '../nav/ReloadRepositoryLocationButton';
 import {ButtonLink} from '../ui/ButtonLink';
 import {Group} from '../ui/Group';
 import {Spinner} from '../ui/Spinner';
 import {Table} from '../ui/Table';
+import {Caption} from '../ui/Text';
 
 import {WorkspaceContext} from './WorkspaceContext';
 import {RootRepositoriesQuery_workspaceOrError_Workspace_locationEntries as LocationOrError} from './types/RootRepositoriesQuery';
+
+const TIME_FORMAT = {showSeconds: true, showTimezone: true};
 
 const LocationStatus: React.FC<{locationOrError: LocationOrError}> = (props) => {
   const {locationOrError} = props;
@@ -115,15 +119,31 @@ export const RepositoryLocationsList = () => {
       <thead>
         <tr>
           <th>Repository location</th>
-          <th colSpan={2}>Status</th>
+          <th>Status</th>
+          <th colSpan={2}>Updated</th>
         </tr>
       </thead>
       <tbody>
         {locationEntries.map((location) => (
           <tr key={location.name}>
-            <td style={{width: '30%'}}>{location.name}</td>
+            <td style={{width: '30%'}}>
+              <Group direction="column" spacing={4}>
+                <div>{location.name}</div>
+                <Group direction="column" spacing={2}>
+                  {location.displayMetadata.map((metadata, idx) => (
+                    <Caption key={idx}>
+                      {`${metadata.key}: `}
+                      <span style={{color: Colors.GRAY3}}>{metadata.value}</span>
+                    </Caption>
+                  ))}
+                </Group>
+              </Group>
+            </td>
             <td style={{width: '20%'}}>
               <LocationStatus locationOrError={location} />
+            </td>
+            <td style={{width: '20%'}}>
+              <Timestamp timestamp={{unix: location.updatedTimestamp}} timeFormat={TIME_FORMAT} />
             </td>
             <td style={{width: '100%'}}>
               <ReloadButton location={location.name} />
