@@ -76,6 +76,7 @@ if __name__ == "__main__":
             "rx>=1.6,<2",  # https://github.com/dagster-io/dagster/issues/4089
             "tabulate",
             "tqdm",
+            "typing_compat",
             "sqlalchemy>=1.0",
             "toposort>=1.0",
             "watchdog>=0.8.3",
