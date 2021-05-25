@@ -17,6 +17,8 @@ if TYPE_CHECKING:
     from dagster.core.execution.plan.outputs import StepOutputHandle
     from dagster.core.log_manager import DagsterLogManager
 
+RUN_ID_PLACEHOLDER = "__EPHEMERAL_RUN_ID"
+
 
 class OutputContext:
     """
@@ -268,6 +270,7 @@ def build_output_context(
     step_key: str,
     name: str,
     metadata: Optional[Dict[str, Any]] = None,
+    run_id: Optional[str] = None,
     mapping_key: Optional[str] = None,
     config: Optional[Any] = None,
     dagster_type: Optional["DagsterType"] = None,
@@ -319,6 +322,7 @@ def build_output_context(
     step_key = check.str_param(step_key, "step_key")
     name = check.str_param(name, "name")
     metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
+    run_id = check.opt_str_param(run_id, "run_id", default=RUN_ID_PLACEHOLDER)
     mapping_key = check.opt_str_param(mapping_key, "mapping_key")
     dagster_type = check.opt_inst_param(dagster_type, "dagster_type", DagsterType)
     version = check.opt_str_param(version, "version")
@@ -329,7 +333,7 @@ def build_output_context(
         step_key=step_key,
         name=name,
         pipeline_name=None,
-        run_id=None,
+        run_id=run_id,
         metadata=metadata,
         mapping_key=mapping_key,
         config=config,

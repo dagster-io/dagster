@@ -12,6 +12,8 @@ from dagster import (
     InputDefinition,
     ModeDefinition,
     OutputDefinition,
+    build_input_context,
+    build_output_context,
     composite_solid,
     execute_pipeline,
     pipeline,
@@ -21,8 +23,6 @@ from dagster import (
 )
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.api import create_execution_plan, execute_plan
-from dagster.core.execution.context.input import InputContext
-from dagster.core.execution.context.output import OutputContext
 from dagster.core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io_manager
 from dagster.core.storage.io_manager import IOManager, io_manager
 from dagster.core.storage.mem_io_manager import InMemoryIOManager, mem_io_manager
@@ -549,14 +549,9 @@ def test_configured():
 
 def test_mem_io_manager_execution():
     mem_io_manager_instance = InMemoryIOManager()
-    output_context = OutputContext(
-        step_key="step_key", name="output_name", pipeline_name="foo", run_id="123"
-    )
+    output_context = build_output_context(step_key="step_key", name="output_name")
     mem_io_manager_instance.handle_output(output_context, 1)
-    input_context = InputContext(
-        pipeline_name="foo",
-        upstream_output=output_context,
-    )
+    input_context = build_input_context(upstream_output=output_context)
     assert mem_io_manager_instance.load_input(input_context) == 1
 
 

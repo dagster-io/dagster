@@ -1,12 +1,12 @@
 from dagster import (
     DagsterInstance,
-    InputContext,
     InputDefinition,
     Int,
     ModeDefinition,
-    OutputContext,
     OutputDefinition,
     PipelineRun,
+    build_input_context,
+    build_output_context,
     lambda_solid,
     pipeline,
     resource,
@@ -16,7 +16,6 @@ from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import execute_plan
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.plan import ExecutionPlan
-from dagster.core.log_manager import DagsterLogManager
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.utils import make_new_run_id
 from dagster_aws.s3.io_manager import PickledObjectS3IOManager, s3_pickle_io_manager
@@ -100,22 +99,12 @@ def test_s3_pickle_io_manager_execution(mock_s3_bucket):
         mock_s3_bucket.name, construct_s3_client(max_attempts=5), s3_prefix="dagster"
     )
     step_output_handle = StepOutputHandle("return_one")
-    context = InputContext(
-        pipeline_name=pipeline_def.name,
-        solid_def=pipeline_def.solid_def_named("return_one"),
-        config={},
-        metadata={},
-        upstream_output=OutputContext(
+    context = build_input_context(
+        upstream_output=build_output_context(
             step_key=step_output_handle.step_key,
             name=step_output_handle.output_name,
-            pipeline_name=pipeline_def.name,
             run_id=run_id,
-            metadata={},
-            mapping_key=None,
-            config=None,
-            solid_def=pipeline_def.solid_def_named("return_one"),
-        ),
-        log_manager=DagsterLogManager(run_id=pipeline_run.run_id, logging_tags={}, loggers=[]),
+        )
     )
     assert io_manager.load_input(context) == 1
 
@@ -130,22 +119,12 @@ def test_s3_pickle_io_manager_execution(mock_s3_bucket):
     )
 
     step_output_handle = StepOutputHandle("add_one")
-    context = InputContext(
-        pipeline_name=pipeline_def.name,
-        solid_def=pipeline_def.solid_def_named("add_one"),
-        config={},
-        metadata={},
-        upstream_output=OutputContext(
+    context = build_input_context(
+        upstream_output=build_output_context(
             step_key=step_output_handle.step_key,
             name=step_output_handle.output_name,
-            pipeline_name=pipeline_def.name,
             run_id=run_id,
-            metadata={},
-            mapping_key=None,
-            config=None,
-            solid_def=pipeline_def.solid_def_named("add_one"),
-        ),
-        log_manager=DagsterLogManager(run_id=pipeline_run.run_id, logging_tags={}, loggers=[]),
+        )
     )
 
     assert get_step_output(add_one_step_events, "add_one")
