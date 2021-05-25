@@ -126,26 +126,28 @@ export const RepositoryLocationsList = () => {
       <tbody>
         {locationEntries.map((location) => (
           <tr key={location.name}>
-            <td style={{width: '30%'}}>
+            <td style={{maxWidth: '50%'}}>
               <Group direction="column" spacing={4}>
-                <div>{location.name}</div>
-                <Group direction="column" spacing={2}>
+                <strong>{location.name}</strong>
+                <div>
                   {location.displayMetadata.map((metadata, idx) => (
-                    <Caption key={idx}>
-                      {`${metadata.key}: `}
-                      <span style={{color: Colors.GRAY3}}>{metadata.value}</span>
-                    </Caption>
+                    <div key={idx}>
+                      <Caption style={{wordBreak: 'break-word'}}>
+                        {`${metadata.key}: `}
+                        <span style={{color: Colors.GRAY3}}>{metadata.value}</span>
+                      </Caption>
+                    </div>
                   ))}
-                </Group>
+                </div>
               </Group>
             </td>
-            <td style={{width: '20%'}}>
+            <td>
               <LocationStatus locationOrError={location} />
             </td>
-            <td style={{width: '20%'}}>
+            <td style={{whiteSpace: 'nowrap'}}>
               <Timestamp timestamp={{unix: location.updatedTimestamp}} timeFormat={TIME_FORMAT} />
             </td>
-            <td style={{width: '100%'}}>
+            <td>
               <ReloadButton location={location.name} />
             </td>
           </tr>
