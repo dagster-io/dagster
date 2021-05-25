@@ -13,30 +13,38 @@ from dagster.serdes import serialize_dagster_namedtuple
 
 
 class TestStepHandler(StepHandler):
+    # This step handler waits for all processes to exit, because windows tests flake when processes
+    # are left alive when the test ends. Non-test step handlers should not keep their own state in memory.
+    processes = []  # type: ignore
+
     @property
     def name(self):
         return "TestStepHandler"
 
-    @classmethod
-    def launch_step(cls, step_handler_context):
+    def launch_step(self, step_handler_context):
         print("TestStepHandler Launching Step!")  # pylint: disable=print-call
-        subprocess.Popen(
-            [
-                "dagster",
-                "api",
-                "execute_step",
-                serialize_dagster_namedtuple(step_handler_context.execute_step_args),
-            ]
+        TestStepHandler.processes.append(
+            subprocess.Popen(
+                [
+                    "dagster",
+                    "api",
+                    "execute_step",
+                    serialize_dagster_namedtuple(step_handler_context.execute_step_args),
+                ]
+            )
         )
         return []
 
-    @classmethod
-    def check_step_health(cls, step_handler_context) -> List[DagsterEvent]:
+    def check_step_health(self, step_handler_context) -> List[DagsterEvent]:
         return []
 
-    @classmethod
-    def terminate_step(cls, step_handler_context):
+    def terminate_step(self, step_handler_context):
         raise NotImplementedError()
+
+    @classmethod
+    def wait_for_processes(cls):
+        for p in cls.processes:
+            p.wait(timeout=5)
 
 
 @executor(
@@ -79,6 +87,8 @@ def test_execute():
             instance=instance,
             run_config={"execution": {"test_step_delegating_executor": {"config": {}}}},
         )
+        TestStepHandler.wait_for_processes()
+
     assert any(
         [
             "Starting execution with step handler TestStepHandler" in event
