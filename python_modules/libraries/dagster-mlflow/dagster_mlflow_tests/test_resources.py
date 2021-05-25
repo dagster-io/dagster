@@ -1,35 +1,28 @@
 """
 Unit testing the Mlflow class
 """
+import logging
 import random
 import string
-
-from unittest.mock import MagicMock, patch, Mock
+import uuid
+from copy import deepcopy
+from typing import Any, Dict
+from unittest.mock import MagicMock, Mock, patch
 
 import mlflow
 import pandas as pd
 import pytest
-
-from dagster_mlflow.resources import MlFlow, _cleanup_on_success
-
-
-import logging
-import uuid
-from copy import deepcopy
-from typing import Any, Dict
-
-
 from dagster import (
-    ModeDefinition,
     DagsterInstance,
+    ModeDefinition,
     execute_pipeline,
     fs_io_manager,
     pipeline,
     reconstructable,
     solid,
 )
-
 from dagster_mlflow import mlflow_tracking
+from dagster_mlflow.resources import MlFlow, _cleanup_on_success
 
 
 @pytest.fixture
@@ -74,6 +67,11 @@ def context(request):
 
 
 @pytest.fixture
+def pipeline_run():
+    return MagicMock(pipeline_name="test")
+
+
+@pytest.fixture
 def basic_context(mlflow_run_config, pipeline_run):
     return MagicMock(
         resource_config=mlflow_run_config["resources"]["mlflow"]["config"],
@@ -96,37 +94,6 @@ def child_context(basic_context, mlflow_run_config):
     )
 
 
-# @pytest.fixture(params=[mlflow_tracking, mlflow_tracking_extra])
-# def testing_mode_mlflow_tracking(request):
-#     return ModeDefinition("testing_mode_mlflow_resource", resource_defs={"mlflow": request.param})
-
-
-# @pytest.fixture
-# def testing_mode_multiprocess_mlflow_tracking():
-#     return ModeDefinition(
-#         "testing_mode_mlflow_resource",
-#         resource_defs={"mlflow": mlflow_tracking},
-#         executor_defs=["multiprocess"],
-#     )
-
-
-# @pytest.fixture
-# def artifact_data():
-#     return {
-#         "science": {"experiment": "success"},
-#         "engineering": {"implementation": "issue"},
-#     }
-
-
-# @pytest.fixture
-# def log_params(request, string_maker):
-#     return {
-#         string_maker(3): string_maker(3),
-#         string_maker(request.param[0]): string_maker(request.param[1]),
-#         string_maker(request.param[1]): string_maker(request.param[0]),
-#     }
-
-
 @pytest.fixture
 def cleanup_mlflow_runs():
     yield
@@ -134,59 +101,12 @@ def cleanup_mlflow_runs():
         mlflow.end_run()
 
 
-@solid(required_resource_keys={"mlflow"})
-def dog(context):
-    mlf = context.resources.mlflow
-    mlf.set_tags({"dog": "pet"})
-
-
-@solid(required_resource_keys={"mlflow"})
-def potato(context):
-    mlf = context.resources.mlflow
-    mlf.set_tags({"potato": "food"})
-
-
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            "testing_mode_mlflow_multiprocess",
-            resource_defs={"mlflow": mlflow_tracking, "io_manager": fs_io_manager},
-        )
-    ]
-)
-def multiprocess_pipeline():
-    dog()
-    potato()
-
-
-def test_multiprocess(multiprocess_mlflow_run_config, cleanup_mlflow_runs):
-    ## Given a pipeline with the MUltiproccess executor with three solids
-    res = execute_pipeline(
-        reconstructable(multiprocess_pipeline),
-        run_config=multiprocess_mlflow_run_config,
-        instance=DagsterInstance.local_temp(),
-    )
-
-    ## Then: the pipeline was executed successfully
-    assert res.success
-
-    ## And there is only one Mlfow run for the above run
-    experiment = mlflow.get_experiment_by_name(
-        multiprocess_mlflow_run_config["resources"]["mlflow"]["config"]["experiment_name"]
-    )
-    run_df = mlflow.search_runs(
-        experiment_ids=[experiment.experiment_id],
-        filter_string=f"tags.dagster_run_id='{res.run_id}'",
-    )
-    assert run_df.shape[0] == 1
-
-
 @patch("os.environ.update")
 @patch("mlflow.set_tracking_uri")
 @patch("mlflow.get_experiment_by_name")
 @patch("mlflow.set_experiment")
 @patch("mlflow.tracking.MlflowClient")
-@pytest.mark.parametrize("Mlflow_resource_class", MlFlow)
+@pytest.mark.parametrize("Mlflow_resource_class", [MlFlow])
 def test_mlflow_constructor_basic(
     mock_mlflowclient,
     mock_set_experiment,
@@ -203,7 +123,7 @@ def test_mlflow_constructor_basic(
         ## the _setup() is called once
         mock_setup.assert_called_once()
     ## - the mlflow library methods & attributes have been added to the object
-    assert all(hasattr(mlf, attr) for attr in dir(mlflow) if attr not in ("__name__"))
+    assert all(hasattr(mlf, attr) for attr in dir(MlFlow) if attr not in ("__name__"))
 
     ## - the context associated attributes passed have been set
     assert mlf.log == context.log
@@ -235,7 +155,7 @@ def test_mlflow_constructor_basic(
     mock_mlflowclient.assert_called_once()
 
 
-@pytest.mark.parametrize("Mlflow_resource_class", MlFlow)
+@pytest.mark.parametrize("Mlflow_resource_class", [MlFlow])
 def test_mlflow_meta_not_overloading(context, Mlflow_resource_class):
     ## Given an Mlflow_resource_class
     ## And: a list of overloaded mlflow methods
@@ -246,7 +166,7 @@ def test_mlflow_meta_not_overloading(context, Mlflow_resource_class):
         assert getattr(Mlflow_resource_class, methods) != getattr(mlflow, methods)
 
 
-@pytest.mark.parametrize("Mlflow_resource_class", MlFlow)
+@pytest.mark.parametrize("Mlflow_resource_class", [MlFlow])
 def test_mlflow_meta_overloading(context, Mlflow_resource_class):
     ## Given an Mlflow_resource_class
     ## And: a list of inherited mlflow methods
@@ -254,12 +174,13 @@ def test_mlflow_meta_overloading(context, Mlflow_resource_class):
     inherited_list = [
         method for method in dir(mlflow) if method not in ["log_params", "__name__", "__doc__"]
     ]
+
     for methods in inherited_list:
         assert getattr(Mlflow_resource_class, methods) == getattr(mlflow, methods)
 
 
 @patch("mlflow.start_run")
-@pytest.mark.parametrize("Mlflow_resource_class", MlFlow)
+@pytest.mark.parametrize("Mlflow_resource_class", [MlFlow])
 def test_start_run(mock_start_run, Mlflow_resource_class, context):
 
     with patch.object(Mlflow_resource_class, "_setup"):
@@ -278,7 +199,7 @@ def test_start_run(mock_start_run, Mlflow_resource_class, context):
 
 @patch("mlflow.end_run")
 @pytest.mark.parametrize("any_error", [KeyboardInterrupt(), OSError(), RuntimeError(), None])
-@pytest.mark.parametrize("Mlflow_resource_class", MlFlow)
+@pytest.mark.parametrize("Mlflow_resource_class", [MlFlow])
 def test_cleanup_on_error(
     mock_mlflow_end_run, any_error, Mlflow_resource_class, context, cleanup_mlflow_runs
 ):
@@ -307,7 +228,7 @@ def test_cleanup_on_error(
 
 
 @patch("mlflow.set_tags")
-@pytest.mark.parametrize("Mlflow_resource_class", MlFlow)
+@pytest.mark.parametrize("Mlflow_resource_class", [MlFlow])
 def test_set_all_tags(mock_mlflow_set_tags, Mlflow_resource_class, context):
     with patch.object(Mlflow_resource_class, "_setup"):
         ## Given: a context  passed into the __init__ for MlFlow
@@ -330,7 +251,7 @@ def test_set_all_tags(mock_mlflow_set_tags, Mlflow_resource_class, context):
 @pytest.mark.parametrize(
     "experiment", [None, MagicMock(experiment_id="1"), MagicMock(experiment_id="lol")]
 )
-@pytest.mark.parametrize("Mlflow_resource_class", MlFlow)
+@pytest.mark.parametrize("Mlflow_resource_class", [MlFlow])
 def test_get_current_run_id(context, Mlflow_resource_class, experiment, run_df):
     ## Given: an initialization of the mlflow object
     mlf = Mlflow_resource_class(context)
@@ -346,7 +267,7 @@ def test_get_current_run_id(context, Mlflow_resource_class, experiment, run_df):
 
 
 @patch("atexit.unregister")
-@pytest.mark.parametrize("Mlflow_resource_class", MlFlow)
+@pytest.mark.parametrize("Mlflow_resource_class", [MlFlow])
 def test_setup(mock_atexit, Mlflow_resource_class, context):
 
     with patch.object(Mlflow_resource_class, "_setup"):
@@ -374,7 +295,7 @@ def test_setup(mock_atexit, Mlflow_resource_class, context):
 
 
 @pytest.mark.parametrize("run_id", [None, 0, "12"])
-@pytest.mark.parametrize("Mlflow_resource_class", MlFlow)
+@pytest.mark.parametrize("Mlflow_resource_class", [MlFlow])
 def test_set_active_run(Mlflow_resource_class, context, run_id):
 
     with patch.object(Mlflow_resource_class, "_setup"):
@@ -400,7 +321,7 @@ def test_set_active_run(Mlflow_resource_class, context, run_id):
         mock_start_run.assert_called_once_with(run_id=run_id, run_name=mlf.run_name, nested=False)
 
 
-@pytest.mark.parametrize("Mlflow_resource_class", MlFlow)
+@pytest.mark.parametrize("Mlflow_resource_class", [MlFlow])
 def test_set_active_run_parent_zero(Mlflow_resource_class, child_context):
     ## Given: a parent_run_id of zero
     child_context.resource_config["parent_run_id"] = 0
@@ -421,7 +342,7 @@ def test_set_active_run_parent_zero(Mlflow_resource_class, child_context):
 
 
 @patch("mlflow.log_params")
-@pytest.mark.parametrize("Mlflow_resource_class", MlFlow)
+@pytest.mark.parametrize("Mlflow_resource_class", [MlFlow])
 @pytest.mark.parametrize("num_of_params", (90, 101, 223))
 def test_log_params(mock_log_params, Mlflow_resource_class, context, num_of_params, string_maker):
     ## Given: init of MLFlowExtra
@@ -435,7 +356,7 @@ def test_log_params(mock_log_params, Mlflow_resource_class, context, num_of_para
 
 
 @pytest.mark.parametrize("chunk", (10, 100))
-@pytest.mark.parametrize("Mlflow_resource_class", MlFlow)
+@pytest.mark.parametrize("Mlflow_resource_class", [MlFlow])
 @pytest.mark.parametrize("num_of_params", (90, 200))
 def test_chunks(context, Mlflow_resource_class, num_of_params, string_maker, chunk):
     ## Given: init of MLFlowExtra
