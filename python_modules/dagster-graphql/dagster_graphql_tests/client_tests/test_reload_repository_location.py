@@ -1,6 +1,10 @@
 import pytest
 from dagster_graphql import DagsterGraphQLClientError, ReloadRepositoryLocationStatus
 
+from ..graphql.graphql_context_test_suite import (
+    GraphQLContextVariant,
+    make_graphql_context_test_suite,
+)
 from .conftest import MockClient, python_client_test_suite
 
 
@@ -80,3 +84,17 @@ def test_failure_with_query_error(mock_client: MockClient):
 
     with pytest.raises(DagsterGraphQLClientError) as _:
         mock_client.python_client.reload_repository_location("foo")
+
+
+class TestReloadRepositoryLocationWithClient(
+    make_graphql_context_test_suite(
+        context_variants=[
+            GraphQLContextVariant.non_launchable_in_memory_instance_managed_grpc_env()
+        ]
+    )
+):
+    def test_reload_location_real(self, graphql_client):
+        assert (
+            graphql_client.reload_repository_location("test").status
+            == ReloadRepositoryLocationStatus.SUCCESS
+        )
