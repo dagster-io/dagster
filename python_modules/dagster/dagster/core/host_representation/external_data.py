@@ -16,7 +16,6 @@ from dagster.core.definitions import (
     ScheduleDefinition,
 )
 from dagster.core.definitions.partition import PartitionScheduleDefinition
-from dagster.core.definitions.run_request import RunRequest, SkipReason
 from dagster.core.snap import PipelineSnapshot
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
@@ -188,28 +187,6 @@ class ExternalScheduleData(
             partition_set_name=check.opt_str_param(partition_set_name, "partition_set_name"),
             execution_timezone=check.opt_str_param(execution_timezone, "execution_timezone"),
             description=check.opt_str_param(description, "description"),
-        )
-
-
-@whitelist_for_serdes
-class ExternalScheduleExecutionData(
-    namedtuple("_ExternalScheduleExecutionData", "run_requests skip_message")
-):
-    def __new__(cls, run_requests=None, skip_message=None):
-        return super(ExternalScheduleExecutionData, cls).__new__(
-            cls,
-            run_requests=check.opt_list_param(run_requests, "run_requests", RunRequest),
-            skip_message=check.opt_str_param(skip_message, "skip_message"),
-        )
-
-    @staticmethod
-    def from_execution_data(execution_data):
-        check.opt_list_param(execution_data, "execution_data", (SkipReason, RunRequest))
-        return ExternalScheduleExecutionData(
-            run_requests=[datum for datum in execution_data if isinstance(datum, RunRequest)],
-            skip_message=execution_data[0].skip_message
-            if execution_data and isinstance(execution_data[0], SkipReason)
-            else None,
         )
 
 

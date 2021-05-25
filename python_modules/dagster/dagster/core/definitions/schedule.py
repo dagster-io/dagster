@@ -1,6 +1,6 @@
 from contextlib import ExitStack
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional, Union, cast
+from typing import Any, Callable, Dict, List, NamedTuple, Optional, cast
 
 import pendulum
 from croniter import croniter
@@ -14,6 +14,7 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.instance.ref import InstanceRef
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.tags import check_tags
+from dagster.serdes import whitelist_for_serdes
 from dagster.utils import ensure_gen, merge_dicts
 from dagster.utils.backcompat import experimental_fn_warning
 
@@ -100,6 +101,12 @@ def build_schedule_context(
             scheduled_execution_time, "scheduled_execution_time", datetime
         ),
     )
+
+
+@whitelist_for_serdes
+class ScheduleExecutionData(NamedTuple):
+    run_requests: Optional[List[RunRequest]]
+    skip_message: Optional[str]
 
 
 class ScheduleDefinition:
@@ -307,44 +314,38 @@ class ScheduleDefinition:
     def execution_timezone(self) -> Optional[str]:
         return self._execution_timezone
 
-    def get_execution_data(
-        self, context: "ScheduleExecutionContext"
-    ) -> List[Union[RunRequest, SkipReason]]:
+    def get_execution_data(self, context: "ScheduleExecutionContext") -> ScheduleExecutionData:
         check.inst_param(context, "context", ScheduleExecutionContext)
         execution_fn = cast(Callable[[ScheduleExecutionContext], Any], self._execution_fn)
         result = list(ensure_gen(execution_fn(context)))
 
-        if not result:
-            return []
-
-        if len(result) == 1:
-            check.is_list(result, of_type=(RunRequest, SkipReason))
-            data = result[0]
-
-            if isinstance(data, SkipReason):
-                return result
-            check.inst(data, RunRequest)
-            return [
-                RunRequest(
-                    run_key=data.run_key,
-                    run_config=data.run_config,
-                    tags=merge_dicts(data.tags, PipelineRun.tags_for_schedule(self)),
-                )
-            ]
-
-        check.is_list(result, of_type=RunRequest)
-
-        check.invariant(
-            not any(not data.run_key for data in result),
-            "Schedules that return multiple RunRequests must specify a run_key in each RunRequest",
-        )
+        if not result or result == [None]:
+            run_requests = []
+            skip_message = None
+        elif len(result) == 1:
+            item = result[0]
+            check.inst(item, (SkipReason, RunRequest))
+            run_requests = [item] if isinstance(item, RunRequest) else []
+            skip_message = item.skip_message if isinstance(item, SkipReason) else None
+        else:
+            check.is_list(result, of_type=RunRequest)
+            check.invariant(
+                not any(not request.run_key for request in result),
+                "Schedules that return multiple RunRequests must specify a run_key in each RunRequest",
+            )
+            run_requests = result
+            skip_message = None
 
         # clone all the run requests with the required schedule tags
-        return [
+        run_requests_with_schedule_tags = [
             RunRequest(
-                run_key=data.run_key,
-                run_config=data.run_config,
-                tags=merge_dicts(data.tags, PipelineRun.tags_for_schedule(self)),
+                run_key=request.run_key,
+                run_config=request.run_config,
+                tags=merge_dicts(request.tags, PipelineRun.tags_for_schedule(self)),
             )
-            for data in result
+            for request in run_requests
         ]
+
+        return ScheduleExecutionData(
+            run_requests=run_requests_with_schedule_tags, skip_message=skip_message
+        )

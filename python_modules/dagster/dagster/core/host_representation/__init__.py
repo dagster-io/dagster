@@ -28,7 +28,6 @@ from .external_data import (
     ExternalPresetData,
     ExternalRepositoryData,
     ExternalScheduleData,
-    ExternalScheduleExecutionData,
     ExternalScheduleExecutionErrorData,
     external_pipeline_data_from_def,
     external_repository_data_from_def,

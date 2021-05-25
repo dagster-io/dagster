@@ -14,7 +14,6 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     ScheduleDefinition,
-    SkipReason,
     build_schedule_context,
     composite_solid,
     execute_pipeline,
@@ -30,7 +29,6 @@ from dagster.core.definitions.decorators import (
     monthly_schedule,
     weekly_schedule,
 )
-from dagster.core.definitions.schedule import RunRequest
 from dagster.core.test_utils import instance_for_test
 from dagster.core.utility_solids import define_stub_solid
 from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
@@ -336,20 +334,21 @@ def test_scheduler():
         context_with_time = build_schedule_context(instance, execution_time)
 
         execution_data = echo_time_schedule.get_execution_data(context_without_time)
-        assert len(execution_data) == 1
-        assert isinstance(execution_data[0], RunRequest)
-        assert execution_data[0].run_config == {"echo_time": ""}
+        assert execution_data.run_requests
+        assert len(execution_data.run_requests) == 1
+        assert execution_data.run_requests[0].run_config == {"echo_time": ""}
 
         execution_data = echo_time_schedule.get_execution_data(context_with_time)
-        assert len(execution_data) == 1
-        assert isinstance(execution_data[0], RunRequest)
-        assert execution_data[0].run_config == {"echo_time": execution_time.isoformat()}
+        assert execution_data.run_requests
+        assert len(execution_data.run_requests) == 1
+        assert execution_data.run_requests[0].run_config == {
+            "echo_time": execution_time.isoformat()
+        }
 
         execution_data = always_skip_schedule.get_execution_data(context_with_time)
-        assert len(execution_data) == 1
-        assert isinstance(execution_data[0], SkipReason)
+        assert execution_data.skip_message
         assert (
-            execution_data[0].skip_message
+            execution_data.skip_message
             == "should_execute function for always_skip_schedule returned false."
         )
 
@@ -479,9 +478,9 @@ def test_partitions_for_hourly_schedule_decorators_without_timezone():
             )
 
             execution_data = hourly_foo_schedule.get_execution_data(context_without_time)
-            assert len(execution_data) == 1
-            assert isinstance(execution_data[0], RunRequest)
-            assert execution_data[0].run_config == {
+            assert execution_data.run_requests
+            assert len(execution_data.run_requests) == 1
+            assert execution_data.run_requests[0].run_config == {
                 "hourly_time": create_pendulum_time(
                     year=2019, month=2, day=26, hour=23, tz="UTC"
                 ).isoformat()
@@ -493,9 +492,9 @@ def test_partitions_for_hourly_schedule_decorators_without_timezone():
             context_with_valid_time = build_schedule_context(instance, valid_time)
 
             execution_data = hourly_foo_schedule.get_execution_data(context_with_valid_time)
-            assert len(execution_data) == 1
-            assert isinstance(execution_data[0], RunRequest)
-            assert execution_data[0].run_config == {
+            assert execution_data.run_requests
+            assert len(execution_data.run_requests) == 1
+            assert execution_data.run_requests[0].run_config == {
                 "hourly_time": create_pendulum_time(
                     year=2019, month=1, day=27, hour=0, tz="UTC"
                 ).isoformat()
@@ -535,9 +534,9 @@ def test_partitions_for_hourly_schedule_decorators_with_timezone():
             context_with_valid_time = build_schedule_context(instance, valid_time)
 
             execution_data = hourly_central_schedule.get_execution_data(context_with_valid_time)
-            assert len(execution_data) == 1
-            assert isinstance(execution_data[0], RunRequest)
-            assert execution_data[0].run_config == {
+            assert execution_data.run_requests
+            assert len(execution_data.run_requests) == 1
+            assert execution_data.run_requests[0].run_config == {
                 "hourly_time": create_pendulum_time(
                     year=2019, month=1, day=27, hour=0, tz="US/Central"
                 ).isoformat()
@@ -586,9 +585,9 @@ def test_partitions_for_hourly_schedule_decorators_with_timezone():
             execution_data = hourly_schedule_for_current_hour.get_execution_data(
                 context_with_valid_time
             )
-            assert len(execution_data) == 1
-            assert isinstance(execution_data[0], RunRequest)
-            assert execution_data[0].run_config == {
+            assert execution_data.run_requests
+            assert len(execution_data.run_requests) == 1
+            assert execution_data.run_requests[0].run_config == {
                 "hourly_time": create_pendulum_time(
                     year=2019, month=1, day=27, hour=1, tz="US/Central"
                 ).isoformat()
@@ -614,9 +613,9 @@ def test_partitions_for_hourly_schedule_decorators_with_timezone():
             execution_data = hourly_schedule_for_two_hours_ago.get_execution_data(
                 context_with_valid_time
             )
-            assert len(execution_data) == 1
-            assert isinstance(execution_data[0], RunRequest)
-            assert execution_data[0].run_config == {
+            assert execution_data.run_requests
+            assert len(execution_data.run_requests) == 1
+            assert execution_data.run_requests[0].run_config == {
                 "hourly_time": create_pendulum_time(
                     year=2019, month=1, day=26, hour=23, tz="US/Central"
                 ).isoformat()
@@ -654,16 +653,16 @@ def test_partitions_for_daily_schedule_decorators_without_timezone():
             context_with_valid_time = build_schedule_context(instance, valid_daily_time)
 
             execution_data = daily_foo_schedule.get_execution_data(context_with_valid_time)
-            assert len(execution_data) == 1
-            assert isinstance(execution_data[0], RunRequest)
-            assert execution_data[0].run_config == {
+            assert execution_data.run_requests
+            assert len(execution_data.run_requests) == 1
+            assert execution_data.run_requests[0].run_config == {
                 "daily_time": create_pendulum_time(year=2019, month=1, day=26, tz="UTC").isoformat()
             }
 
             execution_data = daily_foo_schedule.get_execution_data(context_without_time)
-            assert len(execution_data) == 1
-            assert isinstance(execution_data[0], RunRequest)
-            assert execution_data[0].run_config == {
+            assert execution_data.run_requests
+            assert len(execution_data.run_requests) == 1
+            assert execution_data.run_requests[0].run_config == {
                 "daily_time": create_pendulum_time(year=2019, month=2, day=26, tz="UTC").isoformat()
             }
 
@@ -683,9 +682,9 @@ def test_partitions_for_daily_schedule_decorators_without_timezone():
             context_with_valid_time = build_schedule_context(instance, valid_daily_time)
 
             execution_data = daily_same_day_foo_schedule.get_execution_data(context_with_valid_time)
-            assert len(execution_data) == 1
-            assert isinstance(execution_data[0], RunRequest)
-            assert execution_data[0].run_config == {
+            assert execution_data.run_requests
+            assert len(execution_data.run_requests) == 1
+            assert execution_data.run_requests[0].run_config == {
                 "daily_time": create_pendulum_time(year=2019, month=1, day=27, tz="UTC").isoformat()
             }
 
@@ -720,9 +719,9 @@ def test_partitions_for_daily_schedule_decorators_with_timezone():
             context_with_valid_time = build_schedule_context(instance, valid_daily_time)
 
             execution_data = daily_central_schedule.get_execution_data(context_with_valid_time)
-            assert len(execution_data) == 1
-            assert isinstance(execution_data[0], RunRequest)
-            assert execution_data[0].run_config == {
+            assert execution_data.run_requests
+            assert len(execution_data.run_requests) == 1
+            assert execution_data.run_requests[0].run_config == {
                 "daily_time": create_pendulum_time(
                     year=2019, month=1, day=26, tz="US/Central"
                 ).isoformat()
@@ -753,18 +752,18 @@ def test_partitions_for_weekly_schedule_decorators_without_timezone():
             context_with_valid_time = build_schedule_context(instance, valid_weekly_time)
 
             execution_data = weekly_foo_schedule.get_execution_data(context_with_valid_time)
-            assert len(execution_data) == 1
-            assert isinstance(execution_data[0], RunRequest)
-            assert execution_data[0].run_config == {
+            assert execution_data.run_requests
+            assert len(execution_data.run_requests) == 1
+            assert execution_data.run_requests[0].run_config == {
                 "weekly_time": create_pendulum_time(
                     year=2019, month=1, day=22, tz="UTC"
                 ).isoformat()
             }
 
             execution_data = weekly_foo_schedule.get_execution_data(context_without_time)
-            assert len(execution_data) == 1
-            assert isinstance(execution_data[0], RunRequest)
-            assert execution_data[0].run_config == {
+            assert execution_data.run_requests
+            assert len(execution_data.run_requests) == 1
+            assert execution_data.run_requests[0].run_config == {
                 "weekly_time": create_pendulum_time(
                     year=2019, month=2, day=19, tz="UTC"
                 ).isoformat()
@@ -798,9 +797,9 @@ def test_partitions_for_weekly_schedule_decorators_without_timezone():
             execution_data = weekly_foo_same_week_schedule.get_execution_data(
                 context_with_valid_time
             )
-            assert len(execution_data) == 1
-            assert isinstance(execution_data[0], RunRequest)
-            assert execution_data[0].run_config == {
+            assert execution_data.run_requests
+            assert len(execution_data.run_requests) == 1
+            assert execution_data.run_requests[0].run_config == {
                 "weekly_time": create_pendulum_time(
                     year=2019, month=1, day=29, tz="UTC"
                 ).isoformat()
@@ -831,9 +830,9 @@ def test_partitions_for_weekly_schedule_decorators_with_timezone():
             context_with_valid_time = build_schedule_context(instance, valid_weekly_time)
 
             execution_data = weekly_foo_schedule.get_execution_data(context_with_valid_time)
-            assert len(execution_data) == 1
-            assert isinstance(execution_data[0], RunRequest)
-            assert execution_data[0].run_config == {
+            assert execution_data.run_requests
+            assert len(execution_data.run_requests) == 1
+            assert execution_data.run_requests[0].run_config == {
                 "weekly_time": create_pendulum_time(
                     year=2019, month=1, day=22, tz="US/Central"
                 ).isoformat()
@@ -872,18 +871,18 @@ def test_partitions_for_monthly_schedule_decorators_without_timezone():
             context_with_valid_time = build_schedule_context(instance, valid_monthly_time)
 
             execution_data = monthly_foo_schedule.get_execution_data(context_with_valid_time)
-            assert len(execution_data) == 1
-            assert isinstance(execution_data[0], RunRequest)
-            assert execution_data[0].run_config == {
+            assert execution_data.run_requests
+            assert len(execution_data.run_requests) == 1
+            assert execution_data.run_requests[0].run_config == {
                 "monthly_time": create_pendulum_time(
                     year=2019, month=1, day=1, tz="UTC"
                 ).isoformat()
             }
 
             execution_data = monthly_foo_schedule.get_execution_data(context_without_time)
-            assert len(execution_data) == 1
-            assert isinstance(execution_data[0], RunRequest)
-            assert execution_data[0].run_config == {
+            assert execution_data.run_requests
+            assert len(execution_data.run_requests) == 1
+            assert execution_data.run_requests[0].run_config == {
                 "monthly_time": create_pendulum_time(
                     year=2019, month=1, day=1, tz="UTC"
                 ).isoformat()
@@ -917,9 +916,9 @@ def test_partitions_for_monthly_schedule_decorators_without_timezone():
             execution_data = monthly_foo_schedule_same_month.get_execution_data(
                 context_with_valid_time
             )
-            assert len(execution_data) == 1
-            assert isinstance(execution_data[0], RunRequest)
-            assert execution_data[0].run_config == {
+            assert execution_data.run_requests
+            assert len(execution_data.run_requests) == 1
+            assert execution_data.run_requests[0].run_config == {
                 "monthly_time": create_pendulum_time(
                     year=2019, month=2, day=1, tz="UTC"
                 ).isoformat()
@@ -949,9 +948,9 @@ def test_partitions_for_monthly_schedule_decorators_with_timezone():
             context_with_valid_time = build_schedule_context(instance, valid_monthly_time)
 
             execution_data = monthly_foo_schedule.get_execution_data(context_with_valid_time)
-            assert len(execution_data) == 1
-            assert isinstance(execution_data[0], RunRequest)
-            assert execution_data[0].run_config == {
+            assert execution_data.run_requests
+            assert len(execution_data.run_requests) == 1
+            assert execution_data.run_requests[0].run_config == {
                 "monthly_time": create_pendulum_time(
                     year=2019, month=1, day=1, tz="US/Central"
                 ).isoformat()
@@ -979,10 +978,7 @@ def test_partitions_outside_schedule_range():
             return {"monthly_time": monthly_time.isoformat()}
 
         execution_data = too_early.get_execution_data(context)
-        assert len(execution_data) == 1
-        skip_data = execution_data[0]
-        assert isinstance(skip_data, SkipReason)
-        assert skip_data.skip_message == (
+        assert execution_data.skip_message == (
             "Your partition (2020-12-01T00:00:00+00:00) is before the beginning of "
             "the partition set (2021-01-01T00:00:00+00:00). "
             "Verify your schedule's start_date is correct."
@@ -997,10 +993,7 @@ def test_partitions_outside_schedule_range():
             return {"monthly_time": monthly_time.isoformat()}
 
         execution_data = too_late.get_execution_data(context)
-        assert len(execution_data) == 1
-        skip_data = execution_data[0]
-        assert isinstance(skip_data, SkipReason)
-        assert skip_data.skip_message == (
+        assert execution_data.skip_message == (
             "Your partition (2020-12-01T00:00:00+00:00) is after the end of "
             "the partition set (2020-11-01T00:00:00+00:00). "
             "Verify your schedule's end_date is correct."

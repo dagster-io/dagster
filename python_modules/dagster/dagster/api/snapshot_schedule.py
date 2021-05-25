@@ -1,9 +1,7 @@
 from dagster import check
+from dagster.core.definitions.schedule import ScheduleExecutionData
 from dagster.core.errors import DagsterUserCodeProcessError
-from dagster.core.host_representation.external_data import (
-    ExternalScheduleExecutionData,
-    ExternalScheduleExecutionErrorData,
-)
+from dagster.core.host_representation.external_data import ExternalScheduleExecutionErrorData
 from dagster.core.host_representation.handle import RepositoryHandle
 from dagster.grpc.types import ExternalScheduleExecutionArgs
 from dagster.seven.compat.pendulum import PendulumDateTime
@@ -57,7 +55,7 @@ def sync_get_external_schedule_execution_data_grpc(
                 else None,
             )
         ),
-        (ExternalScheduleExecutionData, ExternalScheduleExecutionErrorData),
+        (ScheduleExecutionData, ExternalScheduleExecutionErrorData),
     )
     if isinstance(result, ExternalScheduleExecutionErrorData):
         raise DagsterUserCodeProcessError.from_error_info(result.error)

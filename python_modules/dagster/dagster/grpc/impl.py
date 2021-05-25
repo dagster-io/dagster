@@ -31,7 +31,6 @@ from dagster.core.host_representation.external_data import (
     ExternalPartitionSetExecutionParamData,
     ExternalPartitionTagsData,
     ExternalPipelineSubsetResult,
-    ExternalScheduleExecutionData,
     ExternalScheduleExecutionErrorData,
     ExternalSensorExecutionErrorData,
 )
@@ -233,9 +232,7 @@ def get_external_schedule_execution(
                 lambda: "Error occurred during the execution function for schedule "
                 "{schedule_name}".format(schedule_name=schedule_def.name),
             ):
-                return ExternalScheduleExecutionData.from_execution_data(
-                    schedule_def.get_execution_data(schedule_context)
-                )
+                return schedule_def.get_execution_data(schedule_context)
         except ScheduleExecutionError:
             return ExternalScheduleExecutionErrorData(
                 serializable_error_info_from_exc_info(sys.exc_info())

@@ -64,9 +64,9 @@ if TYPE_CHECKING:
         ExternalPartitionNamesData,
         ExternalPartitionSetExecutionParamData,
         ExternalPartitionTagsData,
-        ExternalScheduleExecutionData,
         ExternalScheduleExecutionErrorData,
     )
+    from dagster.core.definitions.schedule import ScheduleExecutionData
     from dagster.core.definitions.sensor import SensorExecutionData
     from dagster.core.host_representation.external_data import (
         ExternalSensorExecutionErrorData,
@@ -163,7 +163,7 @@ class RepositoryLocation(AbstractContextManager):
         repository_handle: RepositoryHandle,
         schedule_name: str,
         scheduled_execution_time,
-    ) -> Union["ExternalScheduleExecutionData", "ExternalScheduleExecutionErrorData"]:
+    ) -> Union["ScheduleExecutionData", "ExternalScheduleExecutionErrorData"]:
         pass
 
     @abstractmethod
@@ -373,7 +373,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
         repository_handle: RepositoryHandle,
         schedule_name: str,
         scheduled_execution_time,
-    ) -> Union["ExternalScheduleExecutionData", "ExternalScheduleExecutionErrorData"]:
+    ) -> Union["ScheduleExecutionData", "ExternalScheduleExecutionErrorData"]:
         check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(schedule_name, "schedule_name")
@@ -673,7 +673,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         repository_handle: RepositoryHandle,
         schedule_name: str,
         scheduled_execution_time: Optional[datetime.datetime],
-    ) -> "ExternalScheduleExecutionData":
+    ) -> "ScheduleExecutionData":
         check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(schedule_name, "schedule_name")
