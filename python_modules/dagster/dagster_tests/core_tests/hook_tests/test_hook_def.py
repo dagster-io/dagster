@@ -143,7 +143,8 @@ def test_hook_resource_error():
         pass
 
     with pytest.raises(
-        DagsterInvalidDefinitionError, match='Resource "resource_b" is required by hook "a_hook"'
+        DagsterInvalidDefinitionError,
+        match='Resource key "resource_b" is required by hook "a_hook"',
     ):
         PipelineDefinition(
             solid_defs=[a_solid],
