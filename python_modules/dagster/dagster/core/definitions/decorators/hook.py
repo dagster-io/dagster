@@ -36,7 +36,7 @@ class _Hook:
             required_resource_keys, "required_resource_keys"
         )
 
-    def __call__(self, fn: Callable[["HookContext", List["DagsterEvent"]], Any]) -> HookDefinition:
+    def __call__(self, fn) -> HookDefinition:
 
         check.callable_param(fn, "fn")
 
@@ -48,7 +48,7 @@ class _Hook:
         _validate_hook_fn_params(fn, expected_positionals)
 
         hook_def = HookDefinition(
-            name=self.name,
+            name=self.name or "",
             hook_fn=fn,
             required_resource_keys=self.required_resource_keys,
         )
@@ -107,10 +107,7 @@ def event_list_hook(
 def success_hook(
     name: Union[Optional[str], Callable[..., Any]] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
-) -> Union[
-    Union[HookDefinition, _Hook],
-    Callable[[Callable[["HookContext"], Any]], Union[HookDefinition, _Hook]],
-]:
+) -> Union[Union[HookDefinition, _Hook], Callable[..., Union[HookDefinition, _Hook]],]:
     """Create a hook on step success events with the specified parameters from the decorated function.
 
     Args:
@@ -134,7 +131,7 @@ def success_hook(
 
     """
 
-    def wrapper(fn: Callable[["HookContext"], Any]) -> Union[HookDefinition, _Hook]:
+    def wrapper(fn) -> Union[HookDefinition, _Hook]:
 
         check.callable_param(fn, "fn")
 
