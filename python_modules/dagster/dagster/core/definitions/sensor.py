@@ -43,7 +43,7 @@ class SensorExecutionContext:
 
     def __init__(
         self,
-        instance_ref: InstanceRef,
+        instance_ref: Optional[InstanceRef],
         last_completion_time: Optional[float],
         last_run_key: Optional[str],
         cursor: Optional[str],
@@ -51,7 +51,7 @@ class SensorExecutionContext:
         self._exit_stack = ExitStack()
         self._instance = None
 
-        self._instance_ref = check.inst_param(instance_ref, "instance_ref", InstanceRef)
+        self._instance_ref = check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
         self._last_completion_time = check.opt_float_param(
             last_completion_time, "last_completion_time"
         )
@@ -68,6 +68,12 @@ class SensorExecutionContext:
 
     @property
     def instance(self) -> DagsterInstance:
+        # self._instance_ref should only ever be None when this SensorExecutionContext was
+        # constructed under test.
+        if not self._instance_ref:
+            raise DagsterInvariantViolationError(
+                "Attempted to initialize dagster instance, but no instance reference was provided."
+            )
         if not self._instance:
             self._instance = self._exit_stack.enter_context(
                 DagsterInstance.from_ref(self._instance_ref)
@@ -258,31 +264,31 @@ def wrap_sensor_evaluation(
 
 
 def build_sensor_context(
-    instance: DagsterInstance, cursor: Optional[str] = None
+    instance: Optional[DagsterInstance] = None, cursor: Optional[str] = None
 ) -> SensorExecutionContext:
     """Builds sensor execution context using the provided parameters.
 
-    The instance provided to ``build_sensor_context`` must be persistent;
+    If provided, the dagster instance must be persistent;
     DagsterInstance.ephemeral() will result in an error.
 
     Args:
-        instance (DagsterInstance): The dagster instance configured to run the sensor.
+        instance (Optional[DagsterInstance]): The dagster instance configured to run the sensor.
 
     Examples:
 
         .. code-block:: python
 
-            context = build_sensor_context(instance)
+            context = build_sensor_context()
             my_sensor.get_execution_data(context)
 
     """
 
     experimental_fn_warning("build_sensor_context")
 
-    check.inst_param(instance, "instance", DagsterInstance)
+    check.opt_inst_param(instance, "instance", DagsterInstance)
     check.opt_str_param(cursor, "cursor")
     return SensorExecutionContext(
-        instance_ref=instance.get_ref(),
+        instance_ref=instance.get_ref() if instance else None,
         last_completion_time=None,
         last_run_key=None,
         cursor=cursor,
