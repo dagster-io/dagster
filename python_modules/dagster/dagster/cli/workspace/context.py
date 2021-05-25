@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional, Union, cast
 
 from dagster import check
 from dagster.cli.workspace.workspace import (
@@ -20,6 +20,7 @@ from dagster.core.host_representation.grpc_server_state_subscriber import (
     LocationStateSubscriber,
 )
 from dagster.core.instance import DagsterInstance
+from dagster.utils.error import SerializableErrorInfo
 
 if TYPE_CHECKING:
     from rx.subjects import Subject
@@ -30,7 +31,6 @@ if TYPE_CHECKING:
         ExternalPartitionConfigData,
         ExternalPartitionTagsData,
     )
-    from dagster.utils.error import SerializableErrorInfo
 
 
 class WorkspaceRequestContext(NamedTuple):
@@ -66,11 +66,11 @@ class WorkspaceRequestContext(NamedTuple):
     def read_only(self) -> bool:
         return self.process_context.read_only
 
-    def repository_location_errors(self) -> List["SerializableErrorInfo"]:
+    def repository_location_errors(self) -> List[SerializableErrorInfo]:
         return [entry.load_error for entry in self.workspace_snapshot.values() if entry.load_error]
 
     def get_repository_location(self, name: str) -> RepositoryLocation:
-        return self.workspace_snapshot[name].repository_location
+        return cast(RepositoryLocation, self.workspace_snapshot[name].repository_location)
 
     def get_load_status(self, name: str) -> WorkspaceLocationLoadStatus:
         return self.workspace_snapshot[name].load_status
@@ -78,11 +78,11 @@ class WorkspaceRequestContext(NamedTuple):
     def has_repository_location_error(self, name: str) -> bool:
         return self.get_repository_location_error(name) != None
 
-    def get_repository_location_error(self, name: str) -> "SerializableErrorInfo":
+    def get_repository_location_error(self, name: str) -> Optional[SerializableErrorInfo]:
         return self.workspace_snapshot[name].load_error
 
     def has_repository_location(self, name: str) -> bool:
-        return self.get_repository_location(name) != None
+        return self.workspace_snapshot[name].repository_location != None
 
     def is_reload_supported(self, name: str) -> bool:
         return self.workspace_snapshot[name].origin.is_reload_supported
