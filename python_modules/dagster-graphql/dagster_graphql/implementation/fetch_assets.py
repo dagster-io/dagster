@@ -30,14 +30,14 @@ def get_asset(graphene_info, asset_key):
     return GrapheneAsset(key=asset_key, tags=tags)
 
 
-def get_asset_events(graphene_info, asset_key, partitions=None, limit=None, asof_timestamp=None):
+def get_asset_events(graphene_info, asset_key, partitions=None, limit=None, before_timestamp=None):
     check.inst_param(asset_key, "asset_key", AssetKey)
     check.opt_int_param(limit, "limit")
     instance = graphene_info.context.instance
     events = instance.events_for_asset_key(
         asset_key,
         partitions=partitions,
-        asof_timestamp=asof_timestamp,
+        before_timestamp=before_timestamp,
         limit=limit,
     )
     return [

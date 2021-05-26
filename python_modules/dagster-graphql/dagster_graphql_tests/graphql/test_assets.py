@@ -80,7 +80,7 @@ GET_ASSET_MATERIALIZATION_TIMESTAMP = """
     query AssetQuery($assetKey: AssetKeyInput!, $asOf: String) {
         assetOrError(assetKey: $assetKey) {
             ... on Asset {
-                assetMaterializations(asofTimestampMillis: $asOf) {
+                assetMaterializations(beforeTimestampMillis: $asOf) {
                     materializationEvent {
                         timestamp
                     }

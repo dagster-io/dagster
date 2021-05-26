@@ -15,7 +15,7 @@ export const ASSET_QUERY = gql`
             timestamp
           }
         }
-        assetMaterializations(limit: $limit, asofTimestampMillis: $before) {
+        assetMaterializations(limit: $limit, beforeTimestampMillis: $before) {
           partition
           runOrError {
             ... on PipelineRun {
