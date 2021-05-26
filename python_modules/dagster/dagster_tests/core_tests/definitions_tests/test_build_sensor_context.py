@@ -14,7 +14,7 @@ def test_basic_sensor_context():
     def basic_sensor(_):
         return RunRequest(run_key=None, run_config={}, tags={})
 
-    sensor_data = basic_sensor.get_execution_data(build_sensor_context())
+    sensor_data = basic_sensor.evaluate_tick(build_sensor_context())
     assert sensor_data.run_requests[0].run_config == {}
 
 

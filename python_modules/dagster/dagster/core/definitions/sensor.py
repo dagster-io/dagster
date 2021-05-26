@@ -189,7 +189,16 @@ class SensorDefinition:
     def description(self) -> Optional[str]:
         return self._description
 
-    def get_execution_data(self, context: "SensorExecutionContext") -> "SensorExecutionData":
+    def evaluate_tick(self, context: "SensorExecutionContext") -> "SensorExecutionData":
+        """Evaluate sensor using the provided context.
+
+        Args:
+            context (SensorExecutionContext): The context with which to evaluate this sensor.
+        Returns:
+            SensorExecutionData: Contains list of run requests, or skip message if present.
+
+        """
+
         check.inst_param(context, "context", SensorExecutionContext)
         result = list(ensure_gen(self._evaluation_fn(context)))
 
@@ -279,7 +288,7 @@ def build_sensor_context(
         .. code-block:: python
 
             context = build_sensor_context()
-            my_sensor.get_execution_data(context)
+            my_sensor.evaluate_tick(context)
 
     """
 

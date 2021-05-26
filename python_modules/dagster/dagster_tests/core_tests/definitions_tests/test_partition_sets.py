@@ -30,7 +30,7 @@ def test_multirun_partition_schedule_definition():
 
     with instance_for_test() as instance:
         with ScheduleExecutionContext(instance.get_ref(), pendulum.now("UTC")) as schedule_context:
-            execution_data = multi_run_schedule.get_execution_data(schedule_context)
+            execution_data = multi_run_schedule.evaluate_tick(schedule_context)
             assert isinstance(execution_data, ScheduleExecutionData)
             assert execution_data.run_requests
             assert len(execution_data.run_requests) == 5
@@ -56,7 +56,7 @@ def test_multirun_partition_schedule_definition():
 
     with instance_for_test() as instance:
         with ScheduleExecutionContext(instance.get_ref(), pendulum.now("UTC")) as schedule_context:
-            execution_data = invalid_schedule.get_execution_data(schedule_context)
+            execution_data = invalid_schedule.evaluate_tick(schedule_context)
             assert isinstance(execution_data, ScheduleExecutionData)
             assert execution_data.skip_message
             assert (

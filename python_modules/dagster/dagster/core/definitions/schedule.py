@@ -88,7 +88,7 @@ def build_schedule_context(
         .. code-block:: python
 
             context = build_schedule_context(instance)
-            daily_schedule.get_execution_data(context)
+            daily_schedule.evaluate_tick(context)
 
     """
 
@@ -314,7 +314,16 @@ class ScheduleDefinition:
     def execution_timezone(self) -> Optional[str]:
         return self._execution_timezone
 
-    def get_execution_data(self, context: "ScheduleExecutionContext") -> ScheduleExecutionData:
+    def evaluate_tick(self, context: "ScheduleExecutionContext") -> ScheduleExecutionData:
+        """Evaluate schedule using the provided context.
+
+        Args:
+            context (ScheduleExecutionContext): The context with which to evaluate this schedule.
+        Returns:
+            ScheduleExecutionData: Contains list of run requests, or skip message if present.
+
+        """
+
         check.inst_param(context, "context", ScheduleExecutionContext)
         execution_fn = cast(Callable[[ScheduleExecutionContext], Any], self._execution_fn)
         result = list(ensure_gen(execution_fn(context)))
