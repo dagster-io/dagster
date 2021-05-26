@@ -356,7 +356,10 @@ def test_cleanup_on_success():
 
     # - a mock context containing a list of these two solids and a current solid
     mock_context = Mock()
-    mock_context.pipeline_def.solids_in_topological_order = [mock_solid_1, mock_solid_2]
+    mock_context._step_execution_context.pipeline_def.solids_in_topological_order = [
+        mock_solid_1,
+        mock_solid_2,
+    ]
     mock_context.solid = mock_solid_2
 
     # When: the cleanup function is called with the mock context
