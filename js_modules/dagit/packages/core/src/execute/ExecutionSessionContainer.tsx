@@ -460,12 +460,12 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
     tagEditorOpen,
   } = state;
 
-  const permanentTags: PipelineRunTag[] = React.useMemo(() => pipeline.tags || [], [pipeline]);
-  const sessionTags = React.useMemo(() => currentSession.tags || [], [currentSession]);
-  const allTags = React.useMemo(() => permanentTags.concat(sessionTags), [
-    permanentTags,
-    sessionTags,
-  ]);
+  const tagsFromDefinition: PipelineRunTag[] = React.useMemo(() => pipeline.tags || [], [pipeline]);
+  const tagsFromSession = React.useMemo(() => currentSession.tags || [], [currentSession]);
+  const allTags = React.useMemo(
+    () => ({fromDefinition: tagsFromDefinition, fromSession: tagsFromSession}),
+    [tagsFromDefinition, tagsFromSession],
+  );
 
   return (
     <SplitPanelContainer
@@ -510,7 +510,7 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
               onModeChange={onModeChange}
               modeName={currentSession.mode}
             />
-            {sessionTags.length ? null : (
+            {tagsFromSession.length ? null : (
               <Box margin={{left: 12}}>
                 <ShortcutHandler
                   shortcutLabel={'⌥T'}
@@ -528,8 +528,8 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
               </Box>
             )}
             <TagEditor
-              permanentTags={permanentTags}
-              editableTags={sessionTags}
+              tagsFromDefinition={tagsFromDefinition}
+              tagsFromSession={tagsFromSession}
               onChange={saveTags}
               open={tagEditorOpen}
               onRequestClose={closeTagEditor}
@@ -545,7 +545,9 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
             <SessionSettingsSpacer />
             <SecondPanelToggle axis="horizontal" container={editorSplitPanelContainer} />
           </SessionSettingsBar>
-          {allTags.length ? <TagContainer tags={allTags} onRequestEdit={openTagEditor} /> : null}
+          {allTags.fromDefinition.length || allTags.fromSession.length ? (
+            <TagContainer tags={allTags} onRequestEdit={openTagEditor} />
+          ) : null}
           {currentSession.base !== null && currentSession.needsRefresh ? (
             <Box
               padding={{vertical: 8, horizontal: 12}}

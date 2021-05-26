@@ -193,14 +193,6 @@ export class RunPreview extends React.Component<RunPreviewProps, RunPreviewState
     errorsOnly: false,
   };
 
-  shouldComponentUpdate(nextProps: RunPreviewProps, nextState: RunPreviewState) {
-    return (
-      nextProps.validation !== this.props.validation ||
-      nextProps.runConfigSchema !== this.props.runConfigSchema ||
-      nextState.errorsOnly !== this.state.errorsOnly
-    );
-  }
-
   getRootCompositeChildren = () => {
     if (!this.props.runConfigSchema) {
       return {};
