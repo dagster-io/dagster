@@ -258,7 +258,6 @@
             "title": "Dagster Daemon",
             "path": "/deployment/dagster-daemon"
           },
-
           {
             "title": "Run Launchers",
             "path": "/deployment/run-launcher"
@@ -452,6 +451,14 @@
           {
             "title": "Hooks",
             "path": "/_apidocs/hooks"
+          },
+          {
+            "title": "IO Managers",
+            "path": "/_apidocs/io-managers"
+          },
+          {
+            "title": "Dynamic Mapping & Collect",
+            "path": "/_apidocs/dynamic"
           },
           {
             "title": "Utilities",
