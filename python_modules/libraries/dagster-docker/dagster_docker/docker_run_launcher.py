@@ -92,7 +92,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
                 description="The list of environment variables names to forward to the docker container",
             ),
             "network": Field(
-                str,
+                StringSource,
                 is_required=False,
                 description="Name of the network this container to which to connect the launched container at creation time",
             ),
