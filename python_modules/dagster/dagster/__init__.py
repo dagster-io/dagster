@@ -76,7 +76,7 @@ from dagster.core.definitions import (
     weekly_schedule,
 )
 from dagster.core.definitions.configurable import configured
-from dagster.core.definitions.policy import RetryPolicy
+from dagster.core.definitions.policy import Backoff, Jitter, RetryPolicy
 from dagster.core.definitions.schedule import build_schedule_context
 from dagster.core.definitions.sensor import build_sensor_context
 from dagster.core.errors import (
@@ -218,6 +218,8 @@ __all__ = [
     "UrlMetadataEntryData",
     "make_values_resource",
     "RetryPolicy",
+    "Backoff",
+    "Jitter",
     # Decorators
     "composite_solid",
     "executor",
