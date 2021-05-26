@@ -269,11 +269,65 @@ def mlflow_tracking(context):
        the mlflow run.
     2. To use mlflow utilities inside a solid make sure to add the mlflow resource to
        that solid and then get the mlflow instance like so
-       `mlflow = context.resources.mlflow`
+       `mlf = context.resources.mlflow`
        then use as you would normally use mlflow,
-       e.g.; `mlflow.log_params(some_params)`
+       e.g.; `mlf.log_params(some_params)`
     3. Add the success and failure hooks namely `cleanup_on_success` and `cleanup_on_dagit_failure`
        to your pipeline to ensure the mlflow run is always stopped with the correct run status.
+
+
+    Examples:
+
+        .. code-block:: python
+
+            from dagster_mlflow import mlflow_tracking, cleanup_on_success, cleanup_on_dagit_failure
+
+            @solid(required_resource_keys={"mlflow"})
+            def mlflow_solid(context):
+                mlf = context.resources.mlflow
+
+                mlf.log_params(some_params)
+                mlf.tracking_client.create_registered_model(some_model_name)
+
+            @cleanup_on_success
+            @cleanup_on_dagit_failure
+            @pipeline(mode_defs=[ModeDefinition(resource_defs={"mlflow": mlflow_tracking})])
+            def mlf_pipeline():
+                mlflow_solid()
+
+            # example pipeline using an mlflow instance with s3 storage
+            result = execute_pipeline(
+                mlf_pipeline,
+                run_config = {
+                    "resources": {
+                        "mlflow": {
+                            "config": {
+                                "experiment_name": my_experiment,
+                                "mlflow_tracking_uri": http://localhost:5000,
+
+                                # if want to run a nested run, provide parent_run_id
+                                "parent_run_id": an_existing_mlflow_run_id,
+
+                                # env variables to pass to mlflow
+                                "env": {
+                                    "MLFLOW_S3_ENDPOINT_URL": my_s3_endpoint,
+                                    "AWS_ACCESS_KEY_ID": my_aws_key_id,
+                                    "AWS_SECRET_ACCESS_KEY": my_secret,
+                                },
+
+                                # env variables you want to log as mlflow tags
+                                "env_to_tag":
+                                    - DOCKER_IMAGE_TAG
+
+                                # key-value tags to add to your experiment
+                                "extra_tags":
+                                    super: experiment
+                            }
+                        }
+                    }
+                }
+            )
+
     """
     mlf = MlFlow(context)
     yield mlf
