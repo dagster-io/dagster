@@ -89,6 +89,26 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             == "hello_world_with_tags"
         )
 
+        # ensure provided tags override def tags
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "mode": "default",
+                    "executionMetadata": {
+                        "tags": [{"key": "tag_key", "value": "new_tag_value"}],
+                    },
+                },
+            },
+        )
+
+        assert not result.errors
+        assert result.data["launchPipelineExecution"]["run"]["tags"] == [
+            {"key": "tag_key", "value": "new_tag_value"}
+        ]
+
     def test_basic_start_pipeline_execution_with_non_existent_preset(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
 

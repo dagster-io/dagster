@@ -168,6 +168,7 @@ def str_to_num(context, string):
             mode="errorable_mode",
         )
     ],
+    tags={"monster": "error"},
 )
 def error_monster():
     start = emit_num.alias("start")()
