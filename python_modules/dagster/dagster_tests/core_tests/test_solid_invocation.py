@@ -6,10 +6,13 @@ from dagster import (
     AssetKey,
     AssetMaterialization,
     Failure,
+    Field,
     InputDefinition,
+    Noneable,
     Output,
     OutputDefinition,
     RetryRequested,
+    Selector,
     build_solid_context,
     execute_solid,
     pipeline,
@@ -170,6 +173,83 @@ def test_solid_invocation_with_config():
 
     result = solid_requires_config(build_solid_context(config={"foo": "bar"}))
     assert result == 5
+
+
+def test_solid_invocation_default_config():
+    @solid(config_schema={"foo": Field(str, is_required=False, default_value="bar")})
+    def solid_requires_config(context):
+        assert context.solid_config["foo"] == "bar"
+        return context.solid_config["foo"]
+
+    assert solid_requires_config(None) == "bar"
+
+    @solid(config_schema=Field(str, is_required=False, default_value="bar"))
+    def solid_requires_config_val(context):
+        assert context.solid_config == "bar"
+        return context.solid_config
+
+    assert solid_requires_config_val(None) == "bar"
+
+    @solid(
+        config_schema={
+            "foo": Field(str, is_required=False, default_value="bar"),
+            "baz": str,
+        }
+    )
+    def solid_requires_config_partial(context):
+        assert context.solid_config["foo"] == "bar"
+        assert context.solid_config["baz"] == "bar"
+        return context.solid_config["foo"] + context.solid_config["baz"]
+
+    assert solid_requires_config_partial(build_solid_context(config={"baz": "bar"})) == "barbar"
+
+
+def test_solid_invocation_dict_config():
+    @solid(config_schema=dict)
+    def solid_requires_dict(context):
+        assert context.solid_config == {"foo": "bar"}
+        return context.solid_config
+
+    assert solid_requires_dict(build_solid_context(config={"foo": "bar"})) == {"foo": "bar"}
+
+    @solid(config_schema=Noneable(dict))
+    def solid_noneable_dict(context):
+        return context.solid_config
+
+    assert solid_noneable_dict(build_solid_context()) == {}
+    assert solid_noneable_dict(None) == {}
+
+
+def test_solid_invocation_kitchen_sink_config():
+    @solid(
+        config_schema={
+            "str_field": str,
+            "int_field": int,
+            "list_int": [int],
+            "list_list_int": [[int]],
+            "dict_field": {"a_string": str},
+            "list_dict_field": [{"an_int": int}],
+            "selector_of_things": Selector(
+                {"select_list_dict_field": [{"an_int": int}], "select_int": int}
+            ),
+            "optional_list_of_optional_string": Noneable([Noneable(str)]),
+        }
+    )
+    def kitchen_sink(context):
+        return context.solid_config
+
+    solid_config_one = {
+        "str_field": "kjf",
+        "int_field": 2,
+        "list_int": [3],
+        "list_list_int": [[1], [2, 3]],
+        "dict_field": {"a_string": "kdjfkd"},
+        "list_dict_field": [{"an_int": 2}, {"an_int": 4}],
+        "selector_of_things": {"select_int": 3},
+        "optional_list_of_optional_string": ["foo", None],
+    }
+
+    assert kitchen_sink(build_solid_context(config=solid_config_one)) == solid_config_one
 
 
 def test_solid_with_inputs():
@@ -338,8 +418,6 @@ def test_output_sent_multiple_times():
         ("mode_def", None),
         ("solid_handle", None),
         ("solid", None),
-        ("has_tag", "foo"),
-        ("get_tag", "foo"),
         ("get_step_execution_context", None),
     ],
 )

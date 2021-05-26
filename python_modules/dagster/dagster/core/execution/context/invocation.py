@@ -1,5 +1,5 @@
 # pylint: disable=super-init-not-called
-from typing import Any, Dict, List, NamedTuple, Optional, cast
+from typing import AbstractSet, Any, Dict, List, NamedTuple, Optional, cast
 
 from dagster import check
 from dagster.core.definitions.dependency import Solid, SolidHandle
@@ -9,7 +9,12 @@ from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.definitions.resource import IContainsGenerator, Resources, ScopedResourcesBuilder
 from dagster.core.definitions.solid import SolidDefinition
 from dagster.core.definitions.step_launcher import StepLauncher
-from dagster.core.errors import DagsterInvalidPropertyError, DagsterInvariantViolationError
+from dagster.core.errors import (
+    DagsterInvalidConfigError,
+    DagsterInvalidInvocationError,
+    DagsterInvalidPropertyError,
+    DagsterInvariantViolationError,
+)
 from dagster.core.execution.build_resources import build_resources
 from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
@@ -177,6 +182,183 @@ class DirectSolidExecutionContext(SolidExecutionContext):
 
     def get_tag(self, key: str) -> str:
         raise DagsterInvalidPropertyError(_property_msg("get_tag", "method"))
+
+    def get_step_execution_context(self) -> StepExecutionContext:
+        raise DagsterInvalidPropertyError(_property_msg("get_step_execution_context", "methods"))
+
+    def bind(self, solid_def: SolidDefinition) -> "BoundSolidExecutionContext":
+
+        _validate_resource_requirements(self.resources, solid_def)
+
+        solid_config = _resolve_bound_config(self.solid_config, solid_def)
+
+        return BoundSolidExecutionContext(
+            solid_def,
+            solid_config,
+            self.resources,
+            self.instance,
+            self._materializations,
+            self.log,
+            self.pdb,
+        )
+
+
+def _validate_resource_requirements(resources: "Resources", solid_def: SolidDefinition) -> None:
+    """Validate correctness of resources against required resource keys"""
+
+    resources_dict = resources._asdict()  # type: ignore[attr-defined]
+
+    required_resource_keys: AbstractSet[str] = solid_def.required_resource_keys or set()
+    for resource_key in required_resource_keys:
+        if resource_key not in resources_dict:
+            raise DagsterInvalidInvocationError(
+                f'Solid "{solid_def.name}" requires resource "{resource_key}", but no resource '
+                "with that key was found on the context."
+            )
+
+
+def _resolve_bound_config(solid_config: Any, solid_def: SolidDefinition) -> Any:
+    """Validate config against config schema, and return validated config."""
+    from dagster.config.validate import process_config
+
+    solid_config = solid_config or _get_default_if_exists(solid_def)
+    config_evr = process_config(solid_def.get_config_field().config_type, solid_config)
+    if not config_evr.success:
+        raise DagsterInvalidConfigError(
+            "Error in config for solid ",
+            config_evr.errors,
+            solid_config,
+        )
+    validated_config = config_evr.value
+    mapped_config_evr = solid_def.apply_config_mapping({"config": validated_config})
+    if not mapped_config_evr.success:
+        raise DagsterInvalidConfigError(
+            "Error in config for solid ", mapped_config_evr.errors, solid_config
+        )
+    validated_config = mapped_config_evr.value.get("config", {})
+    return validated_config or {}
+
+
+def _get_default_if_exists(solid_def: SolidDefinition):
+    config_field = solid_def.get_config_field()
+    return config_field.default_value if config_field.default_provided else None
+
+
+class BoundSolidExecutionContext(SolidExecutionContext):
+    """The solid execution context that is passed to the compute function during invocation.
+
+    This context is bound to a specific solid definition, for which the resources and config have
+    been validated.
+    """
+
+    def __init__(
+        self,
+        solid_def: SolidDefinition,
+        solid_config: Any,
+        resources: "Resources",
+        instance: DagsterInstance,
+        materializations: List[AssetMaterialization],
+        log_manager: DagsterLogManager,
+        pdb: Optional[ForkedPdb],
+    ):
+        self._solid_def = solid_def
+        self._solid_config = solid_config
+        self._resources = resources
+        self._instance = instance
+        self._materializations = materializations
+        self._log = log_manager
+        self._pdb = pdb
+
+    @property
+    def asset_materializations(self) -> List[AssetMaterialization]:
+        """List of the asset materializations yielded from invocation where this context was used.
+
+        If I invoke solid `a` with context `c`, then `c.asset_materializations` will contains all
+        the asset materializations yielded in the body of `a`.
+        """
+        return list(self._materializations)
+
+    @property
+    def solid_config(self) -> Any:
+        return self._solid_config
+
+    @property
+    def resources(self) -> Resources:
+        return self._resources
+
+    @property
+    def pipeline_run(self) -> PipelineRun:
+        raise DagsterInvalidPropertyError(_property_msg("pipeline_run", "property"))
+
+    @property
+    def instance(self) -> DagsterInstance:
+        return self._instance
+
+    @property
+    def pdb(self) -> ForkedPdb:
+        """dagster.utils.forked_pdb.ForkedPdb: Gives access to pdb debugging from within the solid.
+
+        Example:
+
+        .. code-block:: python
+
+            @solid
+            def debug_solid(context):
+                context.pdb.set_trace()
+
+        """
+        if self._pdb is None:
+            self._pdb = ForkedPdb()
+
+        return self._pdb
+
+    @property
+    def step_launcher(self) -> Optional[StepLauncher]:
+        raise DagsterInvalidPropertyError(_property_msg("step_launcher", "property"))
+
+    @property
+    def run_id(self) -> str:
+        """str: Hard-coded value to indicate that we are directly invoking solid."""
+        return "EPHEMERAL"
+
+    @property
+    def run_config(self) -> dict:
+        raise DagsterInvalidPropertyError(_property_msg("run_config", "property"))
+
+    @property
+    def pipeline_def(self) -> PipelineDefinition:
+        raise DagsterInvalidPropertyError(_property_msg("pipeline_def", "property"))
+
+    @property
+    def pipeline_name(self) -> str:
+        raise DagsterInvalidPropertyError(_property_msg("pipeline_name", "property"))
+
+    @property
+    def mode_def(self) -> ModeDefinition:
+        raise DagsterInvalidPropertyError(_property_msg("mode_def", "property"))
+
+    @property
+    def log(self) -> DagsterLogManager:
+        """DagsterLogManager: A console manager constructed for this context."""
+        return self._log
+
+    @property
+    def solid_handle(self) -> SolidHandle:
+        raise DagsterInvalidPropertyError(_property_msg("solid_handle", "property"))
+
+    @property
+    def solid(self) -> Solid:
+        raise DagsterInvalidPropertyError(_property_msg("solid", "property"))
+
+    @property
+    def solid_def(self) -> SolidDefinition:
+        return self._solid_def
+
+    def has_tag(self, key: str) -> bool:
+        return key in self.solid_def.tags
+
+    def get_tag(self, key: str) -> str:
+        return self.solid_def.tags.get(key)
 
     def get_step_execution_context(self) -> StepExecutionContext:
         raise DagsterInvalidPropertyError(_property_msg("get_step_execution_context", "methods"))
