@@ -749,13 +749,13 @@ type Workspace {
 type WorkspaceLocationEntry {
   id: ID!
   name: String!
-  locationOrLoadError: RepositoryLocationOrLoadErrpr
+  locationOrLoadError: RepositoryLocationOrLoadError
   loadStatus: RepositoryLocationLoadStatus!
   displayMetadata: [RepositoryMetadata!]!
   updatedTimestamp: Float!
 }
 
-union RepositoryLocationOrLoadErrpr = RepositoryLocation | PythonError
+union RepositoryLocationOrLoadError = RepositoryLocation | PythonError
 
 union PipelineOrError = Pipeline | PipelineNotFoundError | InvalidSubsetError | PythonError
 

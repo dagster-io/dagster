@@ -118,7 +118,7 @@ class GrapheneRepositoryLocationOrLoadError(graphene.Union):
             GrapheneRepositoryLocation,
             GraphenePythonError,
         )
-        name = "RepositoryLocationOrLoadErrpr"
+        name = "RepositoryLocationOrLoadError"
 
 
 class GrapheneWorkspaceLocationEntry(graphene.ObjectType):
