@@ -190,7 +190,9 @@ class Workspace(IWorkspace):
             repository_location=location,
             load_error=error,
             load_status=WorkspaceLocationLoadStatus.LOADED,
-            display_metadata=origin.get_display_metadata() if origin else {},
+            display_metadata=location.get_display_metadata()
+            if location
+            else origin.get_display_metadata(),
             update_timestamp=time.time(),
         )
 
