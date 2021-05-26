@@ -431,7 +431,7 @@ def _check_partitions(
     expected_format,
     expected_relative_delta,
 ):
-    partitions = partition_schedule_def.get_partition_set().partition_fn()
+    partitions = partition_schedule_def.get_partition_set().get_partitions()
 
     assert len(partitions) == expected_num_partitions
 
