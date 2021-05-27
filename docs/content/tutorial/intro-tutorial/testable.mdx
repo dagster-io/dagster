@@ -13,25 +13,17 @@ Creating testable and verifiable data pipelines is one of the focuses of Dagster
 
 ## Testing the Cereal Pipeline (and its solids)
 
-Let's go back to our first solid and pipeline in [`hello_cereal.py`](/tutorial/intro-tutorial/single-solid-pipeline#executing-our-first-pipeline) and ensure they're working as expected by writing some tests. We'll use <PyObject module="dagster" object="execute_pipeline" displayText="execute_pipeline()" /> to test our pipeline, as well as invoke our solids to test them in isolation.
+Let's go back to our first solid and pipeline in [`hello_cereal.py`](/tutorial/intro-tutorial/single-solid-pipeline#executing-our-first-pipeline) and ensure they're working as expected by writing some tests. We'll use <PyObject module="dagster" object="execute_pipeline" displayText="execute_pipeline()" /> to test our pipeline, as well as <PyObject module="dagster" object="execute_solid" displayText="execute_solid()" /> to test our solid in isolation.
 
-<PyObject
-module="dagster"
-object="execute_pipeline"
-displayText="execute_pipeline()"
-/> synchronously executes a pipeline and returns a result objects (<PyObject
-module="dagster"
-object="PipelineExecutionResult"
-/>) whose methods let us investigate, in detail, the success or failure of execution,
-the outputs produced by solids, and (as we'll see later) other events associated
-with execution.
-
-Likewise, invoking a solid allows us to directly retrieve the outputs of that solid, and verify expected behavior (such as retries, failures, and asset materializations).
+These functions synchronously execute a pipeline or solid and return results objects (<PyObject
+module="dagster" object="SolidExecutionResult" /> and <PyObject module="dagster"
+object="PipelineExecutionResult" />) whose methods let us investigate, in detail, the success or failure of execution, the outputs produced by solids, and (as we'll see later) other events associated with execution.
 
 ```python file=/intro_tutorial/basics/e04_quality/hello_cereal_with_tests.py startafter=start_hello_cereal_with_tests_marker_0 endbefore=end_hello_cereal_with_tests_marker_0
 def test_hello_cereal_solid():
-    context = build_solid_context()
-    assert len(hello_cereal(context)) == 77
+    res = execute_solid(hello_cereal)
+    assert res.success
+    assert len(res.output_value()) == 77
 
 
 def test_hello_cereal_pipeline():
