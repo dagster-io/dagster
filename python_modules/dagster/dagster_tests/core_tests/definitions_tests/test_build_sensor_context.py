@@ -9,7 +9,7 @@ from dagster import (
 from dagster.core.test_utils import instance_for_test
 
 
-def test_basic_sensor_context():
+def test_build_sensor_context_no_args():
     @sensor(pipeline_name="foo_pipeline")
     def basic_sensor(_):
         return RunRequest(run_key=None, run_config={}, tags={})
@@ -18,7 +18,7 @@ def test_basic_sensor_context():
     assert sensor_data.run_requests[0].run_config == {}
 
 
-def test_instance_access():
+def test_instance_access_built_sensor():
     with pytest.raises(
         DagsterInvariantViolationError,
         match="Attempted to initialize dagster instance, but no instance reference was provided.",

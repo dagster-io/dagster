@@ -24,7 +24,7 @@ class SensorExecutionContext:
     on SensorDefinition.
 
     Attributes:
-        instance_ref (InstanceRef): The serialized instance configured to run the schedule
+        instance_ref (Optional[InstanceRef]): The serialized instance configured to run the schedule
         cursor (Optional[str]): The cursor, passed back from the last sensor evaluation via
             the cursor attribute of SkipReason and RunRequest
         last_completion_time (float): DEPRECATED The last time that the sensor was evaluated (UTC).
