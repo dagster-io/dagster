@@ -39,6 +39,7 @@ if __name__ == "__main__":
             'typing_extensions; python_version>="3.8"',
             # https://github.com/dagster-io/dagster/issues/3858
             "sqlalchemy>=1.0,<1.4.0",
+            "marshmallow-sqlalchemy<0.26.0",
         ],
         extras_require={
             "kubernetes": ["kubernetes>=3.0.0", "cryptography>=2.0.0"],
