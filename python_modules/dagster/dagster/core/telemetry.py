@@ -404,11 +404,11 @@ def log_repo_stats(instance, source, pipeline=None, repo=None):
 
 
 def log_workspace_stats(instance, workspace_process_context):
-    from dagster.cli.workspace import WorkspaceProcessContext
+    from dagster.cli.workspace import IWorkspaceProcessContext
 
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(
-        workspace_process_context, "workspace_process_context", WorkspaceProcessContext
+        workspace_process_context, "workspace_process_context", IWorkspaceProcessContext
     )
 
     request_context = workspace_process_context.create_request_context()

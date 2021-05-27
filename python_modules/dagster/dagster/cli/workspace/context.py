@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod, abstractproperty
 from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional, Union, cast
 
 from dagster import check
@@ -36,7 +37,7 @@ if TYPE_CHECKING:
 class WorkspaceRequestContext(NamedTuple):
     """
     This class is request-scoped object that stores (1) a reference to all repository locations
-    that exist on the `WorkspaceProcessContext` at the start of the request and (2) a snapshot of the
+    that exist on the `IWorkspaceProcessContext` at the start of the request and (2) a snapshot of the
     `Workspace` at the start of the request.
 
     This object is needed because a process context and the repository locations on that context can
@@ -47,7 +48,7 @@ class WorkspaceRequestContext(NamedTuple):
 
     instance: DagsterInstance
     workspace_snapshot: Dict[str, WorkspaceLocationEntry]
-    process_context: "WorkspaceProcessContext"
+    process_context: "IWorkspaceProcessContext"
     version: Optional[str] = None
 
     @property
@@ -178,7 +179,39 @@ class WorkspaceRequestContext(NamedTuple):
         )
 
 
-class WorkspaceProcessContext:
+class IWorkspaceProcessContext(ABC):
+    """
+    Class that stores process-scoped information about a dagit session.
+    In most cases, you will want to create a `WorkspaceRequestContext` to create a request-scoped
+    object.
+    """
+
+    @abstractmethod
+    def create_request_context(self) -> WorkspaceRequestContext:
+        pass
+
+    @abstractproperty
+    def read_only(self) -> bool:
+        pass
+
+    @abstractproperty
+    def version(self) -> str:
+        pass
+
+    @abstractproperty
+    def location_state_events(self) -> "Subject":
+        pass
+
+    @abstractmethod
+    def reload_repository_location(self, name: str) -> None:
+        pass
+
+    @abstractmethod
+    def reload_workspace(self) -> None:
+        pass
+
+
+class WorkspaceProcessContext(IWorkspaceProcessContext):
     """
     This class is process-scoped object that is initialized using the repository handles from a
     Workspace. The responsibility of this class is to:
@@ -214,24 +247,28 @@ class WorkspaceProcessContext:
             self._location_state_events_handler
         )
 
-        self.read_only = read_only
-        self.version = version
-        self.set_state_subscribers()
+        self._read_only = read_only
+        self._version = version
+        self._set_state_subscribers()
 
-    def set_state_subscribers(self):
+    @property
+    def read_only(self):
+        return self._read_only
+
+    @property
+    def version(self):
+        return self._version
+
+    def _set_state_subscribers(self):
         self._workspace.add_state_subscriber(self._location_state_subscriber)
 
     def create_request_context(self) -> WorkspaceRequestContext:
         return WorkspaceRequestContext(
-            instance=self.instance,
+            instance=self._instance,
             workspace_snapshot=self._workspace.create_snapshot(),
             process_context=self,
             version=self.version,
         )
-
-    @property
-    def instance(self) -> DagsterInstance:
-        return self._instance
 
     @property
     def workspace(self) -> Workspace:
@@ -261,4 +298,4 @@ class WorkspaceProcessContext:
 
     def reload_workspace(self) -> None:
         self._workspace.reload_workspace()
-        self.set_state_subscribers()
+        self._set_state_subscribers()

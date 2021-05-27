@@ -352,8 +352,8 @@ class GrapheneReloadRepositoryLocationMutation(graphene.Mutation):
             return GrapheneReloadNotSupported(location_name)
 
         # The current workspace context is a WorkspaceRequestContext, which contains a reference to the
-        # repository locations that were present in the root WorkspaceProcessContext the start of the
-        # request. Reloading a repository location modifies the WorkspaceWorkspaceProcessContext, rendeirng
+        # repository locations that were present in the root IWorkspaceProcessContext the start of the
+        # request. Reloading a repository location modifies the IWorkspaceProcessContext, rendeirng
         # our current WorkspaceRequestContext outdated. Therefore, `reload_repository_location` returns
         # an updated WorkspaceRequestContext for us to use.
         new_context = graphene_info.context.reload_repository_location(location_name)

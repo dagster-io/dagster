@@ -10,7 +10,7 @@ from dagit.permissions import get_user_permissions
 from dagster import __version__ as dagster_version
 from dagster import check
 from dagster.cli.workspace import Workspace
-from dagster.cli.workspace.context import WorkspaceProcessContext
+from dagster.cli.workspace.context import IWorkspaceProcessContext, WorkspaceProcessContext
 from dagster.core.debug import DebugRunPayload
 from dagster.core.execution.compute_logs import warn_if_compute_logs_disabled
 from dagster.core.instance import DagsterInstance
@@ -38,7 +38,7 @@ MISSING_SCHEDULER_WARNING = (
 class DagsterGraphQLView(GraphQLView):
     def __init__(self, context, **kwargs):
         super(DagsterGraphQLView, self).__init__(**kwargs)
-        self.context = check.inst_param(context, "context", WorkspaceProcessContext)
+        self.context = check.inst_param(context, "context", IWorkspaceProcessContext)
 
     def get_context(self):
         return self.context.create_request_context()
@@ -47,11 +47,11 @@ class DagsterGraphQLView(GraphQLView):
 
 
 def dagster_graphql_subscription_view(subscription_server, context):
-    context = check.inst_param(context, "context", WorkspaceProcessContext)
+    context = check.inst_param(context, "context", IWorkspaceProcessContext)
 
     def view(ws):
         # Even though this argument is named as the "request_context", we are passing it
-        # a `WorkspaceProcessContext`. This is a naming restriction from the underlying
+        # a `IWorkspaceProcessContext`. This is a naming restriction from the underlying
         # `GeventSubscriptionServer` which we reply on. If you view the implementation
         # for the DagsterSubscriptionServer, you will see that we create a request context
         # for every GraphQL request in the `on_start` method.
@@ -91,7 +91,7 @@ def notebook_view(request_args):
 
 
 def download_log_view(context):
-    context = check.inst_param(context, "context", WorkspaceProcessContext)
+    context = check.inst_param(context, "context", IWorkspaceProcessContext)
 
     def view(run_id, step_key, file_type):
         run_id = str(uuid.UUID(run_id))  # raises if not valid run_id
@@ -120,7 +120,7 @@ def download_log_view(context):
 
 
 def download_dump_view(context):
-    context = check.inst_param(context, "context", WorkspaceProcessContext)
+    context = check.inst_param(context, "context", IWorkspaceProcessContext)
 
     def view(run_id):
         run = context.instance.get_run_by_id(run_id)
@@ -139,7 +139,7 @@ def download_dump_view(context):
     return view
 
 
-def register_permissions(app, context: WorkspaceProcessContext):
+def register_permissions(app, context: IWorkspaceProcessContext):
     # TODO: This is a nasty hack because we aren't currently using Jinja templating to render the
     # static views; we should instead be injecting values into the Jinja environment and using Jinja
     # to template them in rather than using string replace

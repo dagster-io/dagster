@@ -1,6 +1,6 @@
 from typing import Dict
 
-from dagster.cli.workspace.context import WorkspaceProcessContext
+from dagster.cli.workspace.context import IWorkspaceProcessContext
 
 VIEWER_PERMISSIONS = {
     "launch_pipeline_execution": False,
@@ -37,7 +37,7 @@ EDITOR_PERMISSIONS = {
 }
 
 
-def get_user_permissions(context: WorkspaceProcessContext) -> Dict[str, bool]:
+def get_user_permissions(context: IWorkspaceProcessContext) -> Dict[str, bool]:
     if context.read_only:
         return VIEWER_PERMISSIONS
     else:
