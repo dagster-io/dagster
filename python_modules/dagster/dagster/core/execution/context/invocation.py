@@ -2,6 +2,7 @@
 from typing import AbstractSet, Any, Dict, List, NamedTuple, Optional, cast
 
 from dagster import check
+from dagster.config import Shape
 from dagster.core.definitions.dependency import Solid, SolidHandle
 from dagster.core.definitions.events import AssetMaterialization
 from dagster.core.definitions.mode import ModeDefinition
@@ -221,27 +222,26 @@ def _resolve_bound_config(solid_config: Any, solid_def: SolidDefinition) -> Any:
     """Validate config against config schema, and return validated config."""
     from dagster.config.validate import process_config
 
-    solid_config = solid_config or _get_default_if_exists(solid_def)
-    config_evr = process_config(solid_def.get_config_field().config_type, solid_config)
+    # Config processing system expects the top level config schema to be a dictionary, but solid
+    # config schema can be scalar. Thus, we wrap it in another layer of indirection.
+    outer_config_shape = Shape({"config": solid_def.get_config_field()})
+    config_evr = process_config(
+        outer_config_shape, {"config": solid_config} if solid_config else {}
+    )
     if not config_evr.success:
         raise DagsterInvalidConfigError(
             "Error in config for solid ",
             config_evr.errors,
             solid_config,
         )
-    validated_config = config_evr.value
+    validated_config = config_evr.value.get("config")
     mapped_config_evr = solid_def.apply_config_mapping({"config": validated_config})
     if not mapped_config_evr.success:
         raise DagsterInvalidConfigError(
             "Error in config for solid ", mapped_config_evr.errors, solid_config
         )
-    validated_config = mapped_config_evr.value.get("config", {})
-    return validated_config or {}
-
-
-def _get_default_if_exists(solid_def: SolidDefinition):
-    config_field = solid_def.get_config_field()
-    return config_field.default_value if config_field.default_provided else None
+    validated_config = mapped_config_evr.value.get("config")
+    return validated_config
 
 
 class BoundSolidExecutionContext(SolidExecutionContext):

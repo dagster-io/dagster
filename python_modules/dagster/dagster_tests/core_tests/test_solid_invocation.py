@@ -216,8 +216,8 @@ def test_solid_invocation_dict_config():
     def solid_noneable_dict(context):
         return context.solid_config
 
-    assert solid_noneable_dict(build_solid_context()) == {}
-    assert solid_noneable_dict(None) == {}
+    assert solid_noneable_dict(build_solid_context()) is None
+    assert solid_noneable_dict(None) is None
 
 
 def test_solid_invocation_kitchen_sink_config():
