@@ -107,7 +107,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             check.opt_str_param(kubeconfig_file, "kubeconfig_file")
             kubernetes.config.load_kube_config(kubeconfig_file)
 
-        self._batch_api = k8s_client_batch_api or kubernetes.client.BatchV1Api()
+        self._fixed_batch_api = k8s_client_batch_api
 
         self.instance_config_map = check.str_param(instance_config_map, "instance_config_map")
         self.dagster_home = check.str_param(dagster_home, "dagster_home")
@@ -122,6 +122,10 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         retries = check.opt_dict_param(retries, "retries") or {"enabled": {}}
         self.retries = RetryMode.from_config(retries)
         super().__init__()
+
+    @property
+    def _batch_api(self):
+        return self._fixed_batch_api if self._fixed_batch_api else kubernetes.client.BatchV1Api()
 
     @classmethod
     def config_type(cls):
