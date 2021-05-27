@@ -7,6 +7,7 @@ from croniter import croniter
 from dagster import check
 from dagster.core.errors import (
     DagsterInvalidDefinitionError,
+    DagsterInvariantViolationError,
     ScheduleExecutionError,
     user_code_error_boundary,
 )
@@ -31,7 +32,7 @@ class ScheduleExecutionContext:
     and ``should_execute``.
 
     Attributes:
-        instance_ref (InstanceRef): The serialized instance configured to run the schedule
+        instance_ref (Optional[InstanceRef]): The serialized instance configured to run the schedule
         scheduled_execution_time (datetime):
             The time in which the execution was scheduled to happen. May differ slightly
             from both the actual execution time and the time at which the run config is computed.
@@ -41,11 +42,13 @@ class ScheduleExecutionContext:
 
     __slots__ = ["_instance_ref", "_scheduled_execution_time", "_exit_stack", "_instance"]
 
-    def __init__(self, instance_ref: InstanceRef, scheduled_execution_time: Optional[datetime]):
+    def __init__(
+        self, instance_ref: Optional[InstanceRef], scheduled_execution_time: Optional[datetime]
+    ):
         self._exit_stack = ExitStack()
         self._instance = None
 
-        self._instance_ref = check.inst_param(instance_ref, "instance_ref", InstanceRef)
+        self._instance_ref = check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
         self._scheduled_execution_time = check.opt_inst_param(
             scheduled_execution_time, "scheduled_execution_time", datetime
         )
@@ -58,6 +61,12 @@ class ScheduleExecutionContext:
 
     @property
     def instance(self) -> "DagsterInstance":
+        # self._instance_ref should only ever be None when this SensorExecutionContext was
+        # constructed under test.
+        if not self._instance_ref:
+            raise DagsterInvariantViolationError(
+                "Attempted to initialize dagster instance, but no instance reference was provided."
+            )
         if not self._instance:
             self._instance = self._exit_stack.enter_context(
                 DagsterInstance.from_ref(self._instance_ref)
@@ -70,7 +79,7 @@ class ScheduleExecutionContext:
 
 
 def build_schedule_context(
-    instance: DagsterInstance, scheduled_execution_time: Optional[datetime] = None
+    instance: Optional[DagsterInstance] = None, scheduled_execution_time: Optional[datetime] = None
 ) -> ScheduleExecutionContext:
     """Builds schedule execution context using the provided parameters.
 
@@ -78,7 +87,7 @@ def build_schedule_context(
     DagsterInstance.ephemeral() will result in an error.
 
     Args:
-        instance (DagsterInstance): The dagster instance configured to run the schedule.
+        instance (Optional[DagsterInstance]): The dagster instance configured to run the schedule.
         scheduled_execution_time (datetime): The time in which the execution was scheduled to
             happen. May differ slightly from both the actual execution time and the time at which
             the run config is computed.
@@ -94,9 +103,9 @@ def build_schedule_context(
 
     experimental_fn_warning("build_schedule_context")
 
-    check.inst_param(instance, "instance", DagsterInstance)
+    check.opt_inst_param(instance, "instance", DagsterInstance)
     return ScheduleExecutionContext(
-        instance_ref=instance.get_ref(),
+        instance_ref=instance.get_ref() if instance else None,
         scheduled_execution_time=check.opt_inst_param(
             scheduled_execution_time, "scheduled_execution_time", datetime
         ),
