@@ -49,7 +49,6 @@ def schedule_partition_range(
     fmt,
     timezone,
     execution_time_to_partition_fn,
-    inclusive=False,
 ):
     check.inst_param(start, "start", datetime)
     check.opt_inst_param(end, "end", datetime)
@@ -57,7 +56,6 @@ def schedule_partition_range(
     check.str_param(fmt, "fmt")
     check.opt_str_param(timezone, "timezone")
     check.callable_param(execution_time_to_partition_fn, "execution_time_to_partition_fn")
-    check.opt_bool_param(inclusive, "inclusive")
 
     if end and start > end:
         raise DagsterInvariantViolationError(
@@ -70,26 +68,38 @@ def schedule_partition_range(
     def _get_schedule_range_partitions(current_time=None):
         check.opt_inst_param(current_time, "current_time", datetime)
         tz = timezone if timezone else "UTC"
+
+        _current_time = current_time if current_time else pendulum.now(tz)
+
+        # Coerce to the definition timezone
         _start = (
             to_timezone(start, tz)
             if isinstance(start, PendulumDateTime)
             else pendulum.instance(start, tz=tz)
         )
+        _current_time = (
+            to_timezone(_current_time, tz)
+            if isinstance(_current_time, PendulumDateTime)
+            else pendulum.instance(_current_time, tz=tz)
+        )
 
+        # The end partition time should be before the last partition that
+        # executes before the current time
+        end_partition_time = execution_time_to_partition_fn(_current_time)
+
+        # The partition set has an explicit end time that represents the end of the partition range
         if end:
-            _end = end
-        elif current_time:
-            _end = current_time
-        else:
-            _end = pendulum.now(tz)
+            _end = (
+                to_timezone(end, tz)
+                if isinstance(end, PendulumDateTime)
+                else pendulum.instance(end, tz=tz)
+            )
 
-        # coerce to the definition timezone
-        if isinstance(_end, PendulumDateTime):
-            _end = to_timezone(_end, tz)
-        else:
-            _end = pendulum.instance(_end, tz=tz)
+            # If the explicit end time is before the last partition time,
+            # update the end partition time
+            end_partition_time = min(_end, end_partition_time)
 
-        end_timestamp = _end.timestamp()
+        end_timestamp = end_partition_time.timestamp()
 
         partitions = []
         for next_time in schedule_execution_time_iterator(_start.timestamp(), cron_schedule, tz):
@@ -104,7 +114,7 @@ def schedule_partition_range(
 
             partitions.append(Partition(value=partition_time, name=partition_time.strftime(fmt)))
 
-        return partitions if inclusive else partitions[:-1]
+        return partitions
 
     return _get_schedule_range_partitions
 
@@ -118,7 +128,7 @@ class ScheduleType(Enum):
 
 class PartitionParams(ABC):
     @abstractmethod
-    def get_partitions(self, current_time: Optional[datetime]) -> List[Partition]:
+    def get_partitions(self, current_time: Optional[datetime] = None) -> List[Partition]:
         ...
 
 
@@ -130,7 +140,7 @@ class StaticPartitionParams(
             cls, check.list_param(partitions, "partitions", of_type=Partition)
         )
 
-    def get_partitions(self, current_time: Optional[datetime]) -> List[Partition]:
+    def get_partitions(self, current_time: Optional[datetime] = None) -> List[Partition]:
         return self.partitions
 
 
@@ -145,7 +155,6 @@ class TimeBasedPartitionParams(
             ("execution_day", Optional[int]),
             ("end", Optional[datetime]),
             ("fmt", Optional[str]),
-            ("inclusive", Optional[bool]),
             ("timezone", Optional[str]),
             ("offset", Optional[int]),
         ],
@@ -159,7 +168,6 @@ class TimeBasedPartitionParams(
         execution_day: Optional[int] = None,
         end: Optional[datetime] = None,
         fmt: Optional[str] = None,
-        inclusive: Optional[bool] = None,
         timezone: Optional[str] = None,
         offset: Optional[int] = None,
     ):
@@ -203,12 +211,11 @@ class TimeBasedPartitionParams(
             ),
             check.opt_inst_param(end, "end", datetime),
             check.opt_str_param(fmt, "fmt", default=DEFAULT_DATE_FORMAT),
-            check.opt_bool_param(inclusive, "inclusive", default=False),
             check.opt_str_param(timezone, "timezone", default="UTC"),
             check.opt_int_param(offset, "offset", default=1),
         )
 
-    def get_partitions(self, current_time: Optional[datetime]) -> List[Partition]:
+    def get_partitions(self, current_time: Optional[datetime] = None) -> List[Partition]:
         check.opt_inst_param(current_time, "current_time", datetime)
 
         partition_fn = schedule_partition_range(
@@ -218,7 +225,6 @@ class TimeBasedPartitionParams(
             fmt=self.fmt,
             timezone=self.timezone,
             execution_time_to_partition_fn=self.get_execution_time_to_partition_fn(),
-            inclusive=self.inclusive,
         )
 
         return partition_fn(current_time=current_time)
@@ -241,33 +247,21 @@ class TimeBasedPartitionParams(
 
     def get_execution_time_to_partition_fn(self) -> Callable[[datetime], datetime]:
         if self.schedule_type is ScheduleType.HOURLY:
-            minute_difference = self.execution_time.minute - self.start.minute % 60
-            return lambda d: pendulum.instance(d).subtract(
-                hours=self.offset,
-                minutes=minute_difference,
-            )
+            return lambda d: pendulum.instance(d).subtract(hours=self.offset, minutes=d.minute)
         elif self.schedule_type is ScheduleType.DAILY:
-            return (
-                lambda d: pendulum.instance(d)
-                .replace(hour=0, minute=0)
-                .subtract(
-                    days=self.offset,
-                )
+            return lambda d: pendulum.instance(d).subtract(
+                days=self.offset, hours=d.hour, minutes=d.minute
             )
         elif self.schedule_type is ScheduleType.WEEKLY:
             execution_day = cast(int, self.execution_day)
             day_difference = (execution_day - (self.start.weekday() + 1)) % 7
-            return (
-                lambda d: pendulum.instance(d)
-                .replace(hour=0, minute=0)
-                .subtract(weeks=self.offset, days=day_difference)
+            return lambda d: pendulum.instance(d).subtract(
+                weeks=self.offset, days=day_difference, hours=d.hour, minutes=d.minute
             )
         elif self.schedule_type is ScheduleType.MONTHLY:
             execution_day = cast(int, self.execution_day)
-            return (
-                lambda d: pendulum.instance(d)
-                .replace(hour=0, minute=0)
-                .subtract(months=self.offset, days=execution_day - 1)
+            return lambda d: pendulum.instance(d).subtract(
+                months=self.offset, days=execution_day - 1, hours=d.hour, minutes=d.minute
             )
         else:
             check.assert_never(self.schedule_type)
@@ -285,7 +279,7 @@ class DynamicPartitionParams(
             cls, check.callable_param(partition_fn, "partition_fn")
         )
 
-    def get_partitions(self, current_time: Optional[datetime]) -> List[Partition]:
+    def get_partitions(self, current_time: Optional[datetime] = None) -> List[Partition]:
         return self.partition_fn(current_time)
 
 

@@ -228,7 +228,6 @@ def my_schedule_definition(_):
             execution_time=execution_time,
             end=end_date,
             fmt=fmt,
-            inclusive=(partition_months_offset == 0),
             timezone=execution_timezone,
             offset=partition_months_offset,
         )
@@ -377,7 +376,6 @@ def my_schedule_definition(_):
             execution_day=execution_day_of_week,
             end=end_date,
             fmt=fmt,
-            inclusive=(partition_weeks_offset == 0),
             timezone=execution_timezone,
             offset=partition_weeks_offset,
         )
@@ -515,7 +513,6 @@ def my_schedule_definition(_):
             execution_time=execution_time,
             end=end_date,
             fmt=fmt,
-            inclusive=(partition_days_offset == 0),
             timezone=execution_timezone,
             offset=partition_days_offset,
         )
@@ -668,7 +665,6 @@ def my_schedule_definition(_):
             execution_time=execution_time,
             end=end_date,
             fmt=fmt,
-            inclusive=(partition_hours_offset == 0),
             timezone=execution_timezone,
             offset=partition_hours_offset,
         )
