@@ -1,5 +1,44 @@
 # Changelog
 
+## 0.11.11
+
+### New
+
+- [Helm] Added `dagit.enableReadOnly` . When enabled, a separate Dagit instance is deployed in `—read-only` mode. You can use this feature to serve Dagit to users who you do not want to able to kick off new runs or make other changes to application state.
+- [dagstermill] Dagstermill is now compatible with current versions of papermill (2.x). Previously we required papermill to be pinned to 1.x.
+- Added a new metadata type that links to the asset catalog, which can be invoked using `EventMetadata.asset`.
+- Added a new log event type `LOGS_CAPTURED`, which explicitly links to the captured stdout/stderr logs for a given step, as determined by the configured `ComputeLogManager` on the Dagster instance.  Previously, these links were available on the `STEP_START` event.
+- The `network` key on `DockerRunLauncher` config can now be sourced from an environment variable.
+- The Workspace section of the Status page in Dagit now shows more metadata about your workspace, including the python file, python package, and Docker image of each of your repository locations.
+- In Dagit, settings for how executions are viewed now persist across sessions.
+
+### Breaking Changes
+
+- The `get_execution_data` method of `SensorDefinition` and `ScheduleDefinition` has been renamed to `evaluate_tick`. We expect few to no users of the previous name, and are renaming to prepare for improved testing support for schedules and sensors.
+
+### Community Contributions
+
+- README has been updated to remove typos (thanks @gogi2811).
+- Configured API doc examples have been fixed (thanks @jrouly).
+
+### Experimental
+
+- Documentation on testing sensors using experimental `build_sensor_context` API. See [Testing sensors](https://docs.dagster.io/concepts/partitions-schedules-sensors/sensors#testing-sensors).
+
+### Bugfixes
+
+- Some mypy errors encountered when using the built-in Dagster types (e.g., `dagster.Int` ) as type annotations on functions decorated with `@solid` have been resolved.
+- Fixed an issue where the `K8sRunLauncher` sometimes hanged while launching a run due to holding a stale Kubernetes client.
+- Fixed an issue with direct solid invocation where default config values would not be applied.
+- Fixed a bug where resource dependencies to io managers were not being initialized during memoization.
+- Dagit can once again override pipeline tags that were set on the definition, and UI clarity around the override behavior has been improved.
+- Markdown event metadata rendering in dagit has been repaired.
+
+### Documentation
+
+- Added documentation on how to deploy Dagster infrastructure separately from user code. See [Separately Deploying Dagster infrastructure and User Code](https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment#separately-deploying-dagster-infrastructure-and-user-code).
+
+
 ## 0.11.10
 
 ### New
