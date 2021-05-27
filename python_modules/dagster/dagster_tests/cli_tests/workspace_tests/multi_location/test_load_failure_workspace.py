@@ -14,6 +14,7 @@ def test_multi_location_error():
 
         assert cli_workspace.has_repository_location("working_location")
         assert not cli_workspace.has_repository_location("broken_location")
+        assert not cli_workspace.has_repository_location("completely_unknown_location")
 
         process_context = WorkspaceProcessContext(workspace=cli_workspace, instance=instance)
         request_context = process_context.create_request_context()
@@ -21,6 +22,7 @@ def test_multi_location_error():
         assert len(request_context.repository_location_errors()) == 1
         assert not request_context.has_repository_location_error("working_location")
         assert request_context.has_repository_location_error("broken_location")
+        assert not request_context.has_repository_location("completely_unknown_location")
 
         assert (
             "No module named"

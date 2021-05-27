@@ -82,7 +82,8 @@ class WorkspaceRequestContext(NamedTuple):
         return self.workspace_snapshot[name].load_error
 
     def has_repository_location(self, name: str) -> bool:
-        return self.workspace_snapshot[name].repository_location != None
+        location_entry = self.workspace_snapshot.get(name)
+        return bool(location_entry and location_entry.repository_location != None)
 
     def is_reload_supported(self, name: str) -> bool:
         return self.workspace_snapshot[name].origin.is_reload_supported
