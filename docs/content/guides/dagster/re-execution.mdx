@@ -10,7 +10,7 @@ This guide is intended to walk through how to re-execute Dagster pipelines and w
 
 If solids fail or upstream data has changed within a pipeline execution, the pipeline may need to be re-run starting from a particular point. We call this process `re-execution`. 
 
-Imagine a machine learning pipeline with three solids, the first being the most time and resource intensive: training the model, testing the model, and building reporting datasets to understand the results. If the pipeline fails with the solid that is testing the model, after fixing the root cause it would take much more time to create a new run of the pipeline than to re-execute starting with the second step.
+Imagine a machine learning pipeline with three solids, the first being the most time and resource intensive: training the model, testing the model, and building analyses on the results. If the pipeline fails with the solid that is testing the model, after fixing the root cause it would take much more time to create a new run of the pipeline than to start again from the second step.
 
 With Dagster, the re-execution of parts of the pipeline is grouped with the original run to make it easy to trace. The original pipeline execution metadata is not overwritten, making re-execution a non-destructive operation.
 
@@ -27,19 +27,23 @@ height={2414}
 
 ### Re-execution Options
 
-There are several options for launching a re-execution. No matter which one is chosen, the re-executed run is linked to the original run, in the above example shown under `download_pipeline`.
+There are several options for launching a re-execution. No matter which one is chosen, the re-executed run is linked to the original run, in the above example this is seen under `download_pipeline`.
 
 - **All Steps**: Re-execute the pipeline run from scratch. This option is most relevant upon testing pipeline runs end to end, if there is a desire to associate different runs together.
 - **Selected Step**: Re-execute the selected step(s). This can be done independent of the step status. For different ways to select multiple steps, see below.
 - **From Selected**: Re-execute the pipeline downstream from the selected steps. If a particular step fails, this option is most relevant if there is a desire to run all downstream steps regardless of status.
 - **From Failure**: Re-execute the pipeline run, skipping steps completed successfully. This is only enabled when the pipeline has failed.
 
-[Insert demo video here]
-
 ### Selecting Steps
 
-Within Dagit, a single or multiple steps may be selected simply by clicking them with the mouse. Alternatively, the text-box can be leveraged by typing step names to be re-run, adding a `+` for every subsequent step to be selected. This is demoed in the video above.
+Within Dagit, a single or multiple steps may be selected simply by clicking them with the mouse. Alternatively, the text-box can be leveraged by typing step names to be re-run, adding a `+` for every subsequent step to be selected. This is demoed in the video below:
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/LWc8MxSN22c" frameBorder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 ## Relevant APIs
 
-[Insert docs here]
+Re-execution can be triggered via the API as well.
+
+| Name                                                                                       | Description                         |
+| ------------------------------------------------------------------------------------------ | ----------------------------------- |
+| <PyObject module="dagster" object="reexecute_pipeline" displayText="reexecute_pipeline" /> | Reexecute an existing pipeline run. |
