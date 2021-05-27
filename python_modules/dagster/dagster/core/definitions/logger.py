@@ -4,12 +4,13 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 from dagster import check
 from dagster.core.definitions.config import is_callable_valid_config_arg
 from dagster.core.definitions.configurable import AnonymousConfigurableDefinition
-from dagster.core.errors import DagsterInvalidConfigError
+from dagster.core.errors import DagsterInvalidInvocationError
 
+from ..decorator_utils import get_function_params
 from .definition_config_schema import convert_user_facing_definition_config_schema
 
 if TYPE_CHECKING:
-    from dagster.core.execution.context.logger import InitLoggerContext
+    from dagster.core.execution.context.logger import InitLoggerContext, UnboundInitLoggerContext
     from dagster.core.definitions import PipelineDefinition
 
     InitLoggerFunction = Callable[[InitLoggerContext], logging.Logger]
@@ -40,10 +41,36 @@ class LoggerDefinition(AnonymousConfigurableDefinition):
         self._config_schema = convert_user_facing_definition_config_schema(config_schema)
         self._description = check.opt_str_param(description, "description")
 
-    # This allows us to pass LoggerDefinition off as a function, so that we can use it as a bare
-    # decorator
     def __call__(self, *args, **kwargs):
-        return self
+        from dagster.core.execution.context.logger import UnboundInitLoggerContext
+        from .logger_invocation import logger_invocation_result
+
+        if len(args) == 0 and len(kwargs) == 0:
+            raise DagsterInvalidInvocationError(
+                "Logger initialization function has context argument, but no context argument was "
+                "provided when invoking."
+            )
+        if len(args) + len(kwargs) > 1:
+            raise DagsterInvalidInvocationError(
+                "Initialization of logger received multiple arguments. Only a first "
+                "positional context parameter should be provided when invoking."
+            )
+
+        context_param_name = get_function_params(self.logger_fn)[0].name
+
+        if args:
+            check.opt_inst_param(args[0], context_param_name, UnboundInitLoggerContext)
+            return logger_invocation_result(self, args[0])
+        else:
+            if context_param_name not in kwargs:
+                raise DagsterInvalidInvocationError(
+                    f"Logger initialization expected argument '{context_param_name}'."
+                )
+            check.opt_inst_param(
+                kwargs[context_param_name], context_param_name, UnboundInitLoggerContext
+            )
+
+            return logger_invocation_result(self, kwargs[context_param_name])
 
     @property
     def logger_fn(self) -> "InitLoggerFunction":
@@ -97,32 +124,12 @@ def logger(
 
 
 def build_init_logger_context(
-    logger_def: Optional["LoggerDefinition"] = None,
     logger_config: Any = None,
     pipeline_def: Optional["PipelineDefinition"] = None,
-) -> "InitLoggerContext":
-    from dagster.config.validate import validate_config
-    from dagster.core.execution.context.logger import InitLoggerContext
+) -> "UnboundInitLoggerContext":
+    from dagster.core.execution.context.logger import UnboundInitLoggerContext
     from dagster.core.definitions import PipelineDefinition
 
-    check.inst_param(logger_def, "logger_def", LoggerDefinition)
     check.opt_inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
 
-    # If logger def is provided, then we can verify config.
-    if logger_def:
-        if logger_def.config_field:
-            config_evr = validate_config(logger_def.config_field.config_type, logger_config)
-            if not config_evr.success:
-                raise DagsterInvalidConfigError(
-                    "Error in config for logger ", config_evr.errors, logger_config
-                )
-        mapped_config_evr = logger_def.apply_config_mapping({"config": logger_config})
-        if not mapped_config_evr.success:
-            raise DagsterInvalidConfigError(
-                "Error in config mapping for logger ", mapped_config_evr.errors, logger_config
-            )
-    logger_config = mapped_config_evr.value.get("config", {})
-
-    return InitLoggerContext(
-        logger_config=logger_config, pipeline_def=pipeline_def, logger_def=logger_def, run_id=None
-    )
+    return UnboundInitLoggerContext(logger_config=logger_config, pipeline_def=pipeline_def)
