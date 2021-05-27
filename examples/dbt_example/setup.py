@@ -14,7 +14,7 @@ setup(
         "dagster-postgres",
         "dagster-slack",
         "dagstermill",
-        "dbt < 0.19.0",
+        "dbt",
     ],
     author="Elementl",
     license="Apache-2.0",

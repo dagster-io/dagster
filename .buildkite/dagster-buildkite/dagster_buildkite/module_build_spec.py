@@ -102,7 +102,7 @@ class ModuleBuildSpec(
                 tox_file = "-c %s " % self.tox_file if self.tox_file else ""
                 tox_cmd = f"tox -vv {tox_file}-e {TOX_MAP[version]}{tox_env_suffix}"
 
-                cmds = extra_cmds + [f"cd {self.directory}", tox_cmd]
+                cmds = extra_cmds + [f"cd {self.directory}", "pip install -U virtualenv", tox_cmd]
 
                 if self.upload_coverage:
                     coverage = f".coverage.{label}.{version}.$BUILDKITE_BUILD_ID"

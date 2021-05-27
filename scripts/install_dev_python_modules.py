@@ -106,17 +106,7 @@ def main(quiet):
     # NOTE: These need to be installed as one long pip install command, otherwise pip will install
     # conflicting dependencies, which will break pip freeze snapshot creation during the integration
     # image build!
-
-    # pip install twice. First, without dependencies.
-    # When this completes, we'll have all of our editable projects installed but none of their
-    # pypi dependencies.
-    # If we try with dependencies on master, pip fails to find "dagster==dev" in pypi and
-    # short-circuits installation. This worked prior to https://dagster.phacility.com/D7506
-    # because the version always existed on pypi; dependency resolution was satisfied even
-    # though we weren't actually installing the version.
-    cmd = ["pip", "install", "--no-deps"] + install_targets
-    if quiet:
-        cmd.append(quiet)
+    cmd = ["pip", "install"] + install_targets
 
     # Second, install with dependencies. Now, pip will see that the editable installs already
     # exist and will use them instead of trying to find the projects on pypi.

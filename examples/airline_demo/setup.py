@@ -47,7 +47,10 @@ setup(
             "SQLAlchemy-Utils==0.33.8",
             'tensorflow; python_version < "3.9"',
         ],
-        "airflow": ["dagster_airflow", "docker-compose==1.23.2"],
+        "airflow": [
+            "dagster_airflow",
+            "docker-compose",
+        ],
     },
     include_package_data=True,
 )
