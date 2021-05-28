@@ -149,6 +149,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition):
             description=description or self.description,
             resource_fn=self.resource_fn,
             required_resource_keys=self.required_resource_keys,
+            version=self.version,
         )
 
     # This allows us to pass resource definition off as a function, so that it can inherit the
