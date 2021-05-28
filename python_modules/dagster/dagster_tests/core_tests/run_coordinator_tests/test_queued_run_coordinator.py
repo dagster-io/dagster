@@ -3,7 +3,7 @@ from dagster.check import CheckError
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
 from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.core.test_utils import create_run_for_test, instance_for_test
+from dagster.core.test_utils import create_run_for_test, environ, instance_for_test
 from dagster.utils import merge_dicts
 from dagster_tests.api_tests.utils import get_foo_external_pipeline
 
@@ -36,22 +36,28 @@ def create_run(instance, external_pipeline, **kwargs):  # pylint: disable=redefi
 
 
 def test_config():
-    with instance_for_test(
-        overrides={
-            "run_coordinator": {
-                "module": "dagster.core.run_coordinator",
-                "class": "QueuedRunCoordinator",
-                "config": {
-                    "max_concurrent_runs": 10,
-                    "tag_concurrency_limits": [
-                        {"key": "foo", "value": "bar", "limit": 3},
-                        {"key": "backfill", "limit": 2},
-                    ],
-                },
+    with environ({"MAX_RUNS": "10", "DEQUEUE_INTERVAL": "7"}):
+        with instance_for_test(
+            overrides={
+                "run_coordinator": {
+                    "module": "dagster.core.run_coordinator",
+                    "class": "QueuedRunCoordinator",
+                    "config": {
+                        "max_concurrent_runs": {
+                            "env": "MAX_RUNS",
+                        },
+                        "tag_concurrency_limits": [
+                            {"key": "foo", "value": "bar", "limit": 3},
+                            {"key": "backfill", "limit": 2},
+                        ],
+                        "dequeue_interval_seconds": {
+                            "env": "DEQUEUE_INTERVAL",
+                        },
+                    },
+                }
             }
-        }
-    ) as _:
-        pass
+        ) as _:
+            pass
 
     with pytest.raises(DagsterInvalidConfigError):
         with instance_for_test(
