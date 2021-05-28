@@ -189,7 +189,9 @@ def test_solid_with_input():
 
 
 def test_lambda_solid_definition_errors():
-    with pytest.raises(DagsterInvalidDefinitionError, match="positional vararg"):
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match=re.escape("positional vararg parameter '*args'")
+    ):
 
         @lambda_solid(input_defs=[InputDefinition(name="foo")])
         def vargs(foo, *args):
@@ -197,7 +199,9 @@ def test_lambda_solid_definition_errors():
 
 
 def test_solid_definition_errors():
-    with pytest.raises(DagsterInvalidDefinitionError, match="positional vararg"):
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match=re.escape("positional vararg parameter '*args'")
+    ):
 
         @solid(input_defs=[InputDefinition(name="foo")], output_defs=[OutputDefinition()])
         def vargs(context, foo, *args):
