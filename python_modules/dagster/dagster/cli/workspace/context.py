@@ -210,6 +210,10 @@ class IWorkspaceProcessContext(ABC):
     def reload_workspace(self) -> None:
         pass
 
+    @abstractproperty
+    def instance(self):
+        pass
+
 
 class WorkspaceProcessContext(IWorkspaceProcessContext):
     """
@@ -250,6 +254,10 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         self._read_only = read_only
         self._version = version
         self._set_state_subscribers()
+
+    @property
+    def instance(self):
+        return self._instance
 
     @property
     def read_only(self):
