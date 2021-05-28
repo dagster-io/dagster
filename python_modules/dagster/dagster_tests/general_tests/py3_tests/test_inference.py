@@ -256,6 +256,19 @@ def test_nested_kitchen_sink():
     )
 
 
+def test_infer_input_description_from_docstring_failure():
+    # docstring is invalid because has a dash instead of a colon to delimit the argument type and
+    # description
+    @solid
+    def my_solid(_arg1):
+        """
+        Args:
+            _arg1 - description of arg
+        """
+
+    assert my_solid
+
+
 def test_infer_input_description_from_docstring_rest():
     @solid
     def rest(_context, hello: str, optional: int = 5):
@@ -333,6 +346,19 @@ def test_infer_descriptions_from_docstring_google():
     assert optional_param.annotation == int
     assert optional_param.default_value == 5
     assert optional_param.description == "optional param. Defaults to 5."
+
+
+def test_infer_output_description_from_docstring_failure():
+    # docstring is invalid because has a dash instead of a colon to delimit the return type and
+    # description
+    @solid
+    def google() -> int:
+        """
+        Returns:
+            int - a number
+        """
+
+    assert google
 
 
 def test_infer_output_description_from_docstring_numpy():

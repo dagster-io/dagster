@@ -28,8 +28,11 @@ def _infer_input_description_from_docstring(fn: Callable) -> Dict[str, Optional[
 
     from docstring_parser import parse
 
-    docstring = parse(fn.__doc__)
-    return {p.arg_name: p.description for p in docstring.params}
+    try:
+        docstring = parse(fn.__doc__)
+        return {p.arg_name: p.description for p in docstring.params}
+    except Exception:  # pylint: disable=broad-except
+        return {}
 
 
 def _infer_output_description_from_docstring(fn: Callable) -> Optional[str]:
@@ -37,11 +40,14 @@ def _infer_output_description_from_docstring(fn: Callable) -> Optional[str]:
         return None
     from docstring_parser import parse
 
-    docstring = parse(fn.__doc__)
-    if docstring.returns is None:
-        return None
+    try:
+        docstring = parse(fn.__doc__)
+        if docstring.returns is None:
+            return None
 
-    return docstring.returns.description
+        return docstring.returns.description
+    except Exception:  # pylint: disable=broad-except
+        return None
 
 
 def infer_output_props(fn: Callable) -> InferredOutputProps:
