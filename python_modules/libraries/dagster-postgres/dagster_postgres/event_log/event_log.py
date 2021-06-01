@@ -251,7 +251,6 @@ def watcher_thread(
             )
             try:
                 with engine.connect() as conn:
-                    # https://github.com/dagster-io/dagster/issues/3858
                     cursor_res = conn.execute(
                         db.select([SqlEventLogStorageTable.c.event]).where(
                             SqlEventLogStorageTable.c.id == index
