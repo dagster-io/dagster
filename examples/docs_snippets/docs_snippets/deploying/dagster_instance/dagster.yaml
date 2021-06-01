@@ -217,7 +217,7 @@ event_log_storage:
 
 # this config manually sets the MySQL credentials
 event_log_storage:
-  module: dagster_mysql.event_log_storage
+  module: dagster_mysql.event_log
   class: MySQLEventLogStorage
   config:
   mysql_db:
