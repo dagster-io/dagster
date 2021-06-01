@@ -53,14 +53,14 @@ def celery_mode_defs(resources=None):
 
 
 def k8s_mode_defs(resources=None, name="default"):
-    from dagster_k8s.executor import dagster_k8s_executor
+    from dagster_k8s.executor import k8s_job_executor
 
     return [
         ModeDefinition(
             name=name,
             intermediate_storage_defs=s3_plus_default_intermediate_storage_defs,
             resource_defs=resources if resources else {"s3": s3_resource},
-            executor_defs=default_executors + [dagster_k8s_executor],
+            executor_defs=default_executors + [k8s_job_executor],
         )
     ]
 
