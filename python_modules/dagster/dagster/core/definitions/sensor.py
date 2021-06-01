@@ -156,7 +156,7 @@ class SensorDefinition:
 
         self._target = RepoRelativeTarget(
             pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
-            mode=check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME),
+            mode=cast(str, check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME)),
             solid_selection=check.opt_nullable_list_param(
                 solid_selection, "solid_selection", of_type=str
             ),
