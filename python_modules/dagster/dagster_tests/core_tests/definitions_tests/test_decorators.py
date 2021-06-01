@@ -364,6 +364,7 @@ def test_schedule_decorators_sanity():
 
     @schedule(cron_schedule="* * * * *", pipeline_name="foo_pipeline")
     def foo_schedule(context):
+        """Fake doc block"""
         return {}
 
     @monthly_schedule(
@@ -372,6 +373,7 @@ def test_schedule_decorators_sanity():
         start_date=datetime(year=2019, month=1, day=1),
     )
     def monthly_foo_schedule():
+        """Fake doc block"""
         return {}
 
     @weekly_schedule(
@@ -380,6 +382,7 @@ def test_schedule_decorators_sanity():
         start_date=datetime(year=2019, month=1, day=1),
     )
     def weekly_foo_schedule():
+        """Fake doc block"""
         return {}
 
     @daily_schedule(
@@ -387,6 +390,7 @@ def test_schedule_decorators_sanity():
         start_date=datetime(year=2019, month=1, day=1),
     )
     def daily_foo_schedule():
+        """Fake doc block"""
         return {}
 
     @hourly_schedule(
@@ -394,7 +398,15 @@ def test_schedule_decorators_sanity():
         start_date=datetime(year=2019, month=1, day=1),
     )
     def hourly_foo_schedule():
+        """Fake doc block"""
         return {}
+
+    # Ensure that schedule definition inherits properties from wrapped fxn
+    assert foo_schedule.__doc__ == """Fake doc block"""
+    assert monthly_foo_schedule.__doc__ == """Fake doc block"""
+    assert weekly_foo_schedule.__doc__ == """Fake doc block"""
+    assert hourly_foo_schedule.__doc__ == """Fake doc block"""
+    assert daily_foo_schedule.__doc__ == """Fake doc block"""
 
     assert not foo_schedule.execution_timezone
     assert not monthly_foo_schedule.execution_timezone

@@ -1,5 +1,6 @@
 import datetime
 import warnings
+from functools import update_wrapper
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, cast
 
 from dagster import check
@@ -82,7 +83,7 @@ def schedule(
 
         schedule_name = name or fn.__name__
 
-        return ScheduleDefinition(
+        schedule_def = ScheduleDefinition(
             name=schedule_name,
             cron_schedule=cron_schedule,
             pipeline_name=pipeline_name,
@@ -97,6 +98,10 @@ def schedule(
             description=description,
             job=job,
         )
+
+        update_wrapper(schedule_def, wrapped=fn)
+
+        return schedule_def
 
     return inner
 
@@ -238,7 +243,7 @@ def my_schedule_definition(_):
             partition_params=partition_params,
         )
 
-        return partition_set.create_schedule_definition(
+        schedule_def = partition_set.create_schedule_definition(
             schedule_name,
             partition_params.get_cron_schedule(),
             should_execute=should_execute,
@@ -249,6 +254,9 @@ def my_schedule_definition(_):
             execution_timezone=execution_timezone,
             description=description,
         )
+        update_wrapper(schedule_def, wrapped=fn)
+
+        return schedule_def
 
     return inner
 
@@ -384,7 +392,7 @@ def my_schedule_definition(_):
             partition_params=partition_params,
         )
 
-        return partition_set.create_schedule_definition(
+        schedule_def = partition_set.create_schedule_definition(
             schedule_name,
             partition_params.get_cron_schedule(),
             should_execute=should_execute,
@@ -395,6 +403,9 @@ def my_schedule_definition(_):
             execution_timezone=execution_timezone,
             description=description,
         )
+
+        update_wrapper(schedule_def, wrapped=fn)
+        return schedule_def
 
     return inner
 
@@ -519,7 +530,7 @@ def my_schedule_definition(_):
             partition_params=partition_params,
         )
 
-        return partition_set.create_schedule_definition(
+        schedule_def = partition_set.create_schedule_definition(
             schedule_name,
             partition_params.get_cron_schedule(),
             should_execute=should_execute,
@@ -530,6 +541,8 @@ def my_schedule_definition(_):
             execution_timezone=execution_timezone,
             description=description,
         )
+        update_wrapper(schedule_def, wrapped=fn)
+        return schedule_def
 
     return inner
 
@@ -670,7 +683,7 @@ def my_schedule_definition(_):
             partition_params=partition_params,
         )
 
-        return partition_set.create_schedule_definition(
+        schedule_def = partition_set.create_schedule_definition(
             schedule_name,
             partition_params.get_cron_schedule(),
             should_execute=should_execute,
@@ -681,5 +694,8 @@ def my_schedule_definition(_):
             execution_timezone=execution_timezone,
             description=description,
         )
+
+        update_wrapper(schedule_def, wrapped=fn)
+        return schedule_def
 
     return inner
