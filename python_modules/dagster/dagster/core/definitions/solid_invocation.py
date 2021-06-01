@@ -1,5 +1,5 @@
 import inspect
-from typing import TYPE_CHECKING, Any, Dict, Generator, Optional
+from typing import TYPE_CHECKING, Any, Dict, Generator, Optional, Union
 
 from dagster.core.definitions.events import AssetMaterialization
 from dagster.core.errors import (
@@ -10,6 +10,7 @@ from dagster.core.errors import (
 
 if TYPE_CHECKING:
     from dagster.core.definitions import SolidDefinition
+    from dagster.core.definitions.composition import PendingNodeInvocation
     from dagster.core.execution.context.invocation import (
         BoundSolidExecutionContext,
         DirectSolidExecutionContext,
@@ -17,13 +18,23 @@ if TYPE_CHECKING:
 
 
 def solid_invocation_result(
-    solid_def: "SolidDefinition", context: Optional["DirectSolidExecutionContext"], *args, **kwargs
+    solid_def_or_invocation: Union["SolidDefinition", "PendingNodeInvocation"],
+    context: Optional["DirectSolidExecutionContext"],
+    *args,
+    **kwargs,
 ) -> Any:
     from dagster.core.execution.context.invocation import build_solid_context
+    from dagster.core.definitions.composition import PendingNodeInvocation
+
+    solid_def = (
+        solid_def_or_invocation.node_def
+        if isinstance(solid_def_or_invocation, PendingNodeInvocation)
+        else solid_def_or_invocation
+    )
 
     _check_invocation_requirements(solid_def, context)
 
-    context = (context or build_solid_context()).bind(solid_def)
+    context = (context or build_solid_context()).bind(solid_def_or_invocation)
 
     input_dict = _resolve_inputs(solid_def, args, kwargs, context)
 
@@ -69,7 +80,7 @@ def _resolve_inputs(
     # Fail early if too many inputs were provided.
     if len(input_defs) < len(args) + len(kwargs):
         raise DagsterInvalidInvocationError(
-            f"Too many input arguments were provided for solid '{solid_def.name}'. This may be because "
+            f"Too many input arguments were provided for solid '{context.alias}'. This may be because "
             "an argument was provided for the context parameter, but no context parameter was defined "
             "for the solid."
         )
@@ -121,12 +132,12 @@ def _execute_and_retrieve_outputs(
         if not isinstance(output, AssetMaterialization):
             if output.output_name in output_values:
                 raise DagsterInvariantViolationError(
-                    f'Solid "{solid_def.name}" returned an output "{output.output_name}" multiple '
-                    "times"
+                    f"Solid '{context.alias}' returned an output '{output.output_name}' multiple "
+                    "times."
                 )
             elif output.output_name not in output_defs:
                 raise DagsterInvariantViolationError(
-                    f'Solid "{solid_def.name}" returned an output "{output.output_name}" that does '
+                    f'Solid "{context.alias}" returned an output "{output.output_name}" that does '
                     f"not exist. The available outputs are {list(output_defs)}"
                 )
             else:
@@ -152,7 +163,7 @@ def _execute_and_retrieve_outputs(
     for output_def in solid_def.output_defs:
         if output_def.name not in output_values and output_def.is_required:
             raise DagsterInvariantViolationError(
-                f'Solid "{solid_def.name}" did not return an output for non-optional '
+                f'Solid "{context.alias}" did not return an output for non-optional '
                 f'output "{output_def.name}"'
             )
 

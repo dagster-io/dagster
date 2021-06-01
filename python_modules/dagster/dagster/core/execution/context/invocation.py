@@ -1,10 +1,12 @@
 # pylint: disable=super-init-not-called
-from typing import AbstractSet, Any, Dict, List, NamedTuple, Optional, cast
+from typing import AbstractSet, Any, Dict, List, NamedTuple, Optional, Union, cast
 
 from dagster import check
 from dagster.config import Shape
+from dagster.core.definitions.composition import PendingNodeInvocation
 from dagster.core.definitions.dependency import Solid, SolidHandle
 from dagster.core.definitions.events import AssetMaterialization
+from dagster.core.definitions.hook import HookDefinition
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.definitions.resource import IContainsGenerator, Resources, ScopedResourcesBuilder
@@ -21,6 +23,7 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.types.dagster_type import DagsterType
+from dagster.utils import merge_dicts
 from dagster.utils.backcompat import experimental_fn_warning
 from dagster.utils.forked_pdb import ForkedPdb
 
@@ -187,20 +190,37 @@ class DirectSolidExecutionContext(SolidExecutionContext):
     def get_step_execution_context(self) -> StepExecutionContext:
         raise DagsterInvalidPropertyError(_property_msg("get_step_execution_context", "methods"))
 
-    def bind(self, solid_def: SolidDefinition) -> "BoundSolidExecutionContext":
+    def bind(
+        self, solid_def_or_invocation: Union[SolidDefinition, PendingNodeInvocation]
+    ) -> "BoundSolidExecutionContext":
+
+        solid_def = (
+            solid_def_or_invocation
+            if isinstance(solid_def_or_invocation, SolidDefinition)
+            else solid_def_or_invocation.node_def
+        )
 
         _validate_resource_requirements(self.resources, solid_def)
 
         solid_config = _resolve_bound_config(self.solid_config, solid_def)
 
         return BoundSolidExecutionContext(
-            solid_def,
-            solid_config,
-            self.resources,
-            self.instance,
-            self._materializations,
-            self.log,
-            self.pdb,
+            solid_def=solid_def,
+            solid_config=solid_config,
+            resources=self.resources,
+            instance=self.instance,
+            materializations=self._materializations,
+            log_manager=self.log,
+            pdb=self.pdb,
+            tags=solid_def_or_invocation.tags
+            if isinstance(solid_def_or_invocation, PendingNodeInvocation)
+            else None,
+            hook_defs=solid_def_or_invocation.hook_defs
+            if isinstance(solid_def_or_invocation, PendingNodeInvocation)
+            else None,
+            alias=solid_def_or_invocation.given_alias
+            if isinstance(solid_def_or_invocation, PendingNodeInvocation)
+            else None,
         )
 
 
@@ -260,6 +280,9 @@ class BoundSolidExecutionContext(SolidExecutionContext):
         materializations: List[AssetMaterialization],
         log_manager: DagsterLogManager,
         pdb: Optional[ForkedPdb],
+        tags: Optional[Dict[str, str]],
+        hook_defs: Optional[AbstractSet[HookDefinition]],
+        alias: Optional[str],
     ):
         self._solid_def = solid_def
         self._solid_config = solid_config
@@ -268,6 +291,9 @@ class BoundSolidExecutionContext(SolidExecutionContext):
         self._materializations = materializations
         self._log = log_manager
         self._pdb = pdb
+        self._tags = merge_dicts(self._solid_def.tags, tags) if tags else self._solid_def.tags
+        self._hook_defs = hook_defs
+        self._alias = alias if alias else self._solid_def.name
 
     @property
     def asset_materializations(self) -> List[AssetMaterialization]:
@@ -355,10 +381,14 @@ class BoundSolidExecutionContext(SolidExecutionContext):
         return self._solid_def
 
     def has_tag(self, key: str) -> bool:
-        return key in self.solid_def.tags
+        return key in self._tags
 
     def get_tag(self, key: str) -> str:
-        return self.solid_def.tags.get(key)
+        return self._tags.get(key)
+
+    @property
+    def alias(self) -> str:
+        return self._alias
 
     def get_step_execution_context(self) -> StepExecutionContext:
         raise DagsterInvalidPropertyError(_property_msg("get_step_execution_context", "methods"))

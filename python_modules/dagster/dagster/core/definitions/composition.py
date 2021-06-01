@@ -5,7 +5,11 @@ from typing import AbstractSet, Any, Callable, Dict, List, NamedTuple, Optional,
 from dagster import check
 from dagster.core.definitions.input import InputDefinition, InputMapping
 from dagster.core.definitions.policy import RetryPolicy
-from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster.core.errors import (
+    DagsterInvalidDefinitionError,
+    DagsterInvalidInvocationError,
+    DagsterInvariantViolationError,
+)
 from dagster.utils import frozentags
 
 from .config import ConfigMapping
@@ -20,7 +24,7 @@ from .dependency import (
 from .hook import HookDefinition
 from .inference import infer_output_props
 from .output import OutputDefinition, OutputMapping
-from .solid import NodeDefinition
+from .solid import NodeDefinition, SolidDefinition
 from .utils import check_valid_name, validate_tags
 
 _composition_stack: List["InProgressCompositionContext"] = []
@@ -73,6 +77,15 @@ def current_context() -> "InProgressCompositionContext":
 
 def is_in_composition() -> bool:
     return bool(_composition_stack)
+
+
+def assert_in_composition(solid_name: str) -> None:
+    if len(_composition_stack) < 1:
+        raise DagsterInvariantViolationError(
+            f"Attempted to call composite solid '{solid_name}' outside of a composition function. "
+            "Invoking composite solids is only valid in a function decorated with "
+            "@pipeline or @composite_solid."
+        )
 
 
 class InProgressCompositionContext:
@@ -251,8 +264,36 @@ class PendingNodeInvocation:
             current_context().add_pending_invocation(self)
 
     def __call__(self, *args, **kwargs):
+        from .solid_invocation import solid_invocation_result
+        from dagster.core.execution.context.invocation import DirectSolidExecutionContext
+
         node_name = self.given_alias if self.given_alias else self.node_def.name
 
+        # If PendingNodeInvocation is not within composition context, and underlying node definition
+        # is a solid definition, then permit it to be invoked and executed like a solid definition.
+        if not is_in_composition() and isinstance(self.node_def, SolidDefinition):
+            if self.node_def._context_arg_provided:
+                if len(args) == 0:
+                    raise DagsterInvalidInvocationError(
+                        f"Compute function of solid '{self.given_alias}' has context argument, but no context "
+                        "was provided when invoking."
+                    )
+                elif args[0] is not None and not isinstance(args[0], DirectSolidExecutionContext):
+                    raise DagsterInvalidInvocationError(
+                        f"Compute function of solid '{self.given_alias}' has context argument, but no context "
+                        "was provided when invoking."
+                    )
+                context = args[0]
+                return solid_invocation_result(self, context, *args[1:], **kwargs)
+            else:
+                if len(args) > 0 and isinstance(args[0], DirectSolidExecutionContext):
+                    raise DagsterInvalidInvocationError(
+                        f"Compute function of solid '{self.given_alias}' has no context argument, but "
+                        "context was provided when invoking."
+                    )
+                return solid_invocation_result(self, None, *args, **kwargs)
+
+        assert_in_composition(node_name)
         input_bindings = {}
 
         # handle *args
