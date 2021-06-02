@@ -1,6 +1,7 @@
 import time
-from typing import Dict, List
+from typing import Dict, List, Optional, cast
 
+import pendulum
 from dagster import check
 from dagster.core.events import DagsterEvent, EngineEventData
 from dagster.core.execution.context.system import PlanOrchestrationContext
@@ -21,11 +22,20 @@ class StepDelegatingExecutor(Executor):
         self,
         step_handler: StepHandler,
         retries: RetryMode = RetryMode.DISABLED,
-        sleep_seconds: float = 0.1,
+        sleep_seconds: Optional[float] = None,
+        check_step_health_interval_seconds: Optional[int] = None,
     ):
         self._step_handler = step_handler
         self._retries = retries
-        self._sleep_seconds = sleep_seconds
+        self._sleep_seconds = cast(
+            float, check.opt_float_param(sleep_seconds, "sleep_seconds", default=0.1)
+        )
+        self._check_step_health_interval_seconds = cast(
+            int,
+            check.opt_int_param(
+                check_step_health_interval_seconds, "check_step_health_interval_seconds", default=20
+            ),
+        )
 
     @property
     def retries(self):
@@ -68,6 +78,7 @@ class StepDelegatingExecutor(Executor):
             stopping = False
             running_steps: Dict[str, ExecutionStep] = {}
 
+            last_check_step_health_time = pendulum.now("UTC")
             while (not active_execution.is_complete and not stopping) or running_steps:
                 events = []
 
@@ -97,14 +108,19 @@ class StepDelegatingExecutor(Executor):
                 )
 
                 if not stopping:
-                    for step_key in running_steps:
-                        events.extend(
-                            self._step_handler.check_step_health(
-                                self._get_step_handler_context(
-                                    pipeline_context, [step_key], active_execution
+                    curr_time = pendulum.now("UTC")
+                    if (
+                        curr_time - last_check_step_health_time
+                    ).total_seconds() >= self._check_step_health_interval_seconds:
+                        last_check_step_health_time = curr_time
+                        for step_key in running_steps:
+                            events.extend(
+                                self._step_handler.check_step_health(
+                                    self._get_step_handler_context(
+                                        pipeline_context, [step_key], active_execution
+                                    )
                                 )
                             )
-                        )
 
                     for step in active_execution.get_steps_to_execute():
                         running_steps[step.key] = step
