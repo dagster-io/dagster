@@ -75,7 +75,7 @@ class StepDelegatingExecutor(Executor):
                     yield DagsterEvent.engine_event(
                         pipeline_context,
                         "Executor received termination signal, forwarding to steps",
-                        EngineEventData(),
+                        EngineEventData.interrupted(list(running_steps.keys())),
                     )
                     stopping = True
                     active_execution.mark_interrupted()

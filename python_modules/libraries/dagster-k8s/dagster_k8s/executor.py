@@ -3,7 +3,7 @@ import os
 import kubernetes
 from dagster import Field, StringSource, executor
 from dagster.core.definitions.executor import multiple_process_executor_requirements
-from dagster.core.events import DagsterEvent, DagsterEventType
+from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData, EventMetadataEntry
 from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.retries import get_retries_config
 from dagster.core.executor.base import Executor
@@ -13,6 +13,7 @@ from dagster.core.executor.step_delegating.step_handler import StepHandler
 from dagster.core.executor.step_delegating.step_handler.base import StepHandlerContext
 from dagster.serdes.serdes import serialize_dagster_namedtuple
 from dagster.utils import frozentags, merge_dicts
+from dagster.utils.backcompat import experimental
 
 from .job import (
     DagsterK8sJobConfig,
@@ -23,6 +24,7 @@ from .job import (
 from .utils import delete_job
 
 
+@experimental
 class K8sStepHandler(StepHandler):
     @property
     def name(self):
@@ -39,6 +41,8 @@ class K8sStepHandler(StepHandler):
         self._job_namespace = job_namespace
 
     def launch_step(self, step_handler_context: StepHandlerContext):
+        events = []
+
         assert (
             len(step_handler_context.execute_step_args.step_keys_to_execute) == 1
         ), "Launching multiple steps is not currently supported"
@@ -71,11 +75,24 @@ class K8sStepHandler(StepHandler):
             pod_name,
         )
 
+        events.append(
+            DagsterEvent(
+                event_type_value=DagsterEventType.ENGINE_EVENT.value,
+                pipeline_name=step_handler_context.execute_step_args.pipeline_origin.pipeline_name,
+                message=f"Executing step {step_key} in Kubernetes job {job_name}",
+                event_specific_data=EngineEventData(
+                    [
+                        EventMetadataEntry.text(step_key, "Step key"),
+                        EventMetadataEntry.text(job_name, "Kubernetes Job name"),
+                    ],
+                ),
+            )
+        )
         kubernetes.config.load_incluster_config()
         kubernetes.client.BatchV1Api().create_namespaced_job(
             body=job, namespace=self._job_namespace
         )
-        return []
+        return events
 
     def check_step_health(self, step_handler_context: StepHandlerContext):
         assert (
