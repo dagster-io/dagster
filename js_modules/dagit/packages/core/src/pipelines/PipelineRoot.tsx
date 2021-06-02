@@ -37,7 +37,7 @@ export const PipelineRoot: React.FC<Props> = (props) => {
         />
         <Route
           path="/workspace/:repoPath/pipelines/:pipelinePath/playground/setup"
-          component={(props: RouteComponentProps<{pipelinePath: string; repoPath: string}>) => {
+          render={(props: RouteComponentProps<{pipelinePath: string; repoPath: string}>) => {
             const {pipelinePath, repoPath} = props.match.params;
             if (!canLaunchPipelineExecution) {
               return <Redirect to={`/workspace/${repoPath}/pipelines/${pipelinePath}`} />;
@@ -49,7 +49,7 @@ export const PipelineRoot: React.FC<Props> = (props) => {
         />
         <Route
           path="/workspace/:repoPath/pipelines/:pipelinePath/playground"
-          component={(props: RouteComponentProps<{pipelinePath: string; repoPath: string}>) => {
+          render={(props: RouteComponentProps<{pipelinePath: string; repoPath: string}>) => {
             const {pipelinePath, repoPath} = props.match.params;
             if (!canLaunchPipelineExecution) {
               return <Redirect to={`/workspace/${repoPath}/pipelines/${pipelinePath}`} />;
@@ -68,10 +68,9 @@ export const PipelineRoot: React.FC<Props> = (props) => {
             <Redirect to={`/instance/runs/${props.match.params.runId}`} />
           )}
         />
-        {/* Move to `/instance`: */}
         <Route
           path="/workspace/:repoPath/pipelines/:pipelinePath/runs"
-          component={(props: RouteComponentProps<{pipelinePath: string}>) => (
+          render={(props: RouteComponentProps<{pipelinePath: string}>) => (
             <PipelineRunsRoot pipelinePath={props.match.params.pipelinePath} />
           )}
         />
