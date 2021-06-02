@@ -1,7 +1,14 @@
 import datetime
 from collections import defaultdict
 
-from dagster import PartitionSetDefinition, ScheduleExecutionContext
+from dagster import (
+    PartitionSetDefinition,
+    ScheduleExecutionContext,
+    daily_schedule,
+    hourly_schedule,
+    monthly_schedule,
+    weekly_schedule,
+)
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
 from dagster.utils.partitions import date_partition_range
 
@@ -115,6 +122,42 @@ def materialization_schedule():
     )
 
 
+@hourly_schedule(
+    pipeline_name="many_events",
+    start_date=datetime.datetime(2021, 1, 1),
+    execution_timezone=_toys_tz_info(),
+)
+def hourly_materialization_schedule():
+    return {}
+
+
+@daily_schedule(
+    pipeline_name="many_events",
+    start_date=datetime.datetime(2021, 1, 1),
+    execution_timezone=_toys_tz_info(),
+)
+def daily_materialization_schedule():
+    return {}
+
+
+@weekly_schedule(
+    pipeline_name="many_events",
+    start_date=datetime.datetime(2021, 1, 1),
+    execution_timezone=_toys_tz_info(),
+)
+def weekly_materialization_schedule():
+    return {}
+
+
+@monthly_schedule(
+    pipeline_name="many_events",
+    start_date=datetime.datetime(2021, 1, 1),
+    execution_timezone=_toys_tz_info(),
+)
+def monthly_materialization_schedule():
+    return {}
+
+
 def longitudinal_schedule():
     from .longitudinal import longitudinal_pipeline
 
@@ -157,6 +200,10 @@ def get_toys_schedules():
         backfill_test_schedule(),
         longitudinal_schedule(),
         materialization_schedule(),
+        hourly_materialization_schedule,
+        daily_materialization_schedule,
+        weekly_materialization_schedule,
+        monthly_materialization_schedule,
         ScheduleDefinition(
             name="many_events_every_min",
             cron_schedule="* * * * *",
