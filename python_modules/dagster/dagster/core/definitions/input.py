@@ -60,7 +60,7 @@ class InputDefinition:
         root_manager_key (Optional[str]): (Experimental) The resource key for the
             :py:class:`RootInputManager` used for loading this input when it is not connected to an
             upstream output.
-        metadata (Optional[Dict[str, Any]]): (Experimental) A dict of metadata for the input.
+        metadata (Optional[Dict[str, Any]]): A dict of metadata for the input.
         asset_key (Optional[Union[AssetKey, InputContext -> AssetKey]]): (Experimental) An AssetKey
             (or function that produces an AssetKey from the InputContext) which should be associated
             with this InputDefinition. Used for tracking lineage information through Dagster.
@@ -94,9 +94,6 @@ class InputDefinition:
             experimental_arg_warning("root_manager_key", "InputDefinition.__init__")
 
         self._root_manager_key = check.opt_str_param(root_manager_key, "root_manager_key")
-
-        if metadata:
-            experimental_arg_warning("metadata", "InputDefinition.__init__")
 
         self._metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
 
