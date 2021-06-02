@@ -1,3 +1,4 @@
+import re
 import string
 from collections import namedtuple
 from enum import Enum
@@ -5,12 +6,12 @@ from typing import NamedTuple, Set
 
 import pytest
 from dagster.check import CheckError, ParameterCheckError, inst_param, set_param
-from dagster.serdes.errors import SerdesClassUsageError
+from dagster.serdes.errors import DeserializationError, SerdesUsageError, SerializationError
 from dagster.serdes.serdes import (
     DefaultEnumSerializer,
     DefaultNamedTupleSerializer,
     WhitelistMap,
-    _deserialize_json_to_dagster_namedtuple,
+    _deserialize_json,
     _pack_value,
     _serialize_dagster_namedtuple,
     _unpack_value,
@@ -20,7 +21,7 @@ from dagster.serdes.serdes import (
     serialize_dagster_namedtuple,
     serialize_value,
 )
-from dagster.serdes.utils import create_snapshot_id
+from dagster.serdes.utils import hash_str
 
 
 def test_deserialize_value_ok():
@@ -29,13 +30,13 @@ def test_deserialize_value_ok():
     assert unpacked_tuple["foo"] == "bar"
 
 
-def test_deserialize_json_to_dagster_namedtuple_non_namedtuple():
-    with pytest.raises(CheckError):
+def test_deserialize_json_non_namedtuple():
+    with pytest.raises(DeserializationError, match="was not expected type"):
         deserialize_json_to_dagster_namedtuple('{"foo": "bar"}')
 
 
 @pytest.mark.parametrize("bad_obj", [1, None, False])
-def test_deserialize_json_to_dagster_namedtuple_invalid_types(bad_obj):
+def test_deserialize_json_invalid_types(bad_obj):
     with pytest.raises(ParameterCheckError):
         deserialize_json_to_dagster_namedtuple(bad_obj)
 
@@ -45,8 +46,30 @@ def test_deserialize_empty_set():
     assert frozenset() == deserialize_value(serialize_value(frozenset()))
 
 
+def test_descent_path():
+    class Foo(NamedTuple):
+        bar: int
+
+    with pytest.raises(SerializationError, match=re.escape("Descent path: <root:dict>.a.b[2].c")):
+        serialize_value({"a": {"b": [{}, {}, {"c": Foo(1)}]}})
+
+    test_map = WhitelistMap.create()
+    blank_map = WhitelistMap.create()
+
+    @_whitelist_for_serdes(whitelist_map=test_map)
+    class Fizz(NamedTuple):
+        buzz: int
+
+    ser = _serialize_dagster_namedtuple(
+        {"a": {"b": [{}, {}, {"c": Fizz(1)}]}}, whitelist_map=test_map
+    )
+
+    with pytest.raises(DeserializationError, match=re.escape("Descent path: <root:dict>.a.b[2].c")):
+        _deserialize_json(ser, whitelist_map=blank_map)
+
+
 def test_forward_compat_serdes_new_field_with_default():
-    test_map = WhitelistMap()
+    test_map = WhitelistMap.create()
 
     @_whitelist_for_serdes(whitelist_map=test_map)
     class Quux(namedtuple("_Quux", "foo bar")):
@@ -72,7 +95,7 @@ def test_forward_compat_serdes_new_field_with_default():
     klass, _ = test_map.get_tuple_entry("Quux")
     assert klass is Quux
 
-    deserialized = _deserialize_json_to_dagster_namedtuple(serialized, whitelist_map=test_map)
+    deserialized = _deserialize_json(serialized, whitelist_map=test_map)
 
     assert deserialized != quux
     assert deserialized.foo == quux.foo
@@ -81,7 +104,7 @@ def test_forward_compat_serdes_new_field_with_default():
 
 
 def test_forward_compat_serdes_new_enum_field():
-    test_map = WhitelistMap()
+    test_map = WhitelistMap.create()
 
     @_whitelist_for_serdes(whitelist_map=test_map)
     class Corge(Enum):
@@ -92,7 +115,7 @@ def test_forward_compat_serdes_new_enum_field():
 
     corge = Corge.FOO
 
-    packed = _pack_value(corge, whitelist_map=test_map)
+    packed = _pack_value(corge, whitelist_map=test_map, descent_path="")
 
     # pylint: disable=function-redefined
     @_whitelist_for_serdes(whitelist_map=test_map)
@@ -101,7 +124,7 @@ def test_forward_compat_serdes_new_enum_field():
         BAR = 2
         BAZ = 3
 
-    unpacked = _unpack_value(packed, whitelist_map=test_map)
+    unpacked = _unpack_value(packed, whitelist_map=test_map, descent_path="")
 
     assert unpacked != corge
     assert unpacked.name == corge.name
@@ -109,7 +132,7 @@ def test_forward_compat_serdes_new_enum_field():
 
 
 def test_serdes_enum_backcompat():
-    test_map = WhitelistMap()
+    test_map = WhitelistMap.create()
 
     @_whitelist_for_serdes(whitelist_map=test_map)
     class Corge(Enum):
@@ -120,7 +143,7 @@ def test_serdes_enum_backcompat():
 
     corge = Corge.FOO
 
-    packed = _pack_value(corge, whitelist_map=test_map)
+    packed = _pack_value(corge, whitelist_map=test_map, descent_path="")
 
     class CorgeBackCompatSerializer(DefaultEnumSerializer):
         @classmethod
@@ -139,14 +162,14 @@ def test_serdes_enum_backcompat():
         BAZ = 3
         FOO_FOO = 4
 
-    unpacked = _unpack_value(packed, whitelist_map=test_map)
+    unpacked = _unpack_value(packed, whitelist_map=test_map, descent_path="")
 
     assert unpacked != corge
     assert unpacked == Corge.FOO_FOO
 
 
 def test_backward_compat_serdes():
-    test_map = WhitelistMap()
+    test_map = WhitelistMap.create()
 
     @_whitelist_for_serdes(whitelist_map=test_map)
     class Quux(namedtuple("_Quux", "foo bar baz")):
@@ -163,7 +186,7 @@ def test_backward_compat_serdes():
         def __new__(cls, foo, bar):
             return super(Quux, cls).__new__(cls, foo, bar)
 
-    deserialized = _deserialize_json_to_dagster_namedtuple(serialized, whitelist_map=test_map)
+    deserialized = _deserialize_json(serialized, whitelist_map=test_map)
 
     assert deserialized != quux
     assert deserialized.foo == quux.foo
@@ -172,13 +195,13 @@ def test_backward_compat_serdes():
 
 
 def serdes_test_class(klass):
-    test_map = WhitelistMap()
+    test_map = WhitelistMap.create()
 
     return _whitelist_for_serdes(whitelist_map=test_map)(klass)
 
 
 def test_wrong_first_arg():
-    with pytest.raises(SerdesClassUsageError) as exc_info:
+    with pytest.raises(SerdesUsageError) as exc_info:
 
         @serdes_test_class
         class NotCls(namedtuple("NotCls", "field_one field_two")):
@@ -192,7 +215,7 @@ def test_wrong_first_arg():
 
 
 def test_incorrect_order():
-    with pytest.raises(SerdesClassUsageError) as exc_info:
+    with pytest.raises(SerdesUsageError) as exc_info:
 
         @serdes_test_class
         class WrongOrder(namedtuple("WrongOrder", "field_one field_two")):
@@ -208,7 +231,7 @@ def test_incorrect_order():
 
 
 def test_missing_one_parameter():
-    with pytest.raises(SerdesClassUsageError) as exc_info:
+    with pytest.raises(SerdesUsageError) as exc_info:
 
         @serdes_test_class
         class MissingFieldInNew(namedtuple("MissingFieldInNew", "field_one field_two field_three")):
@@ -225,7 +248,7 @@ def test_missing_one_parameter():
 
 
 def test_missing_many_parameters():
-    with pytest.raises(SerdesClassUsageError) as exc_info:
+    with pytest.raises(SerdesUsageError) as exc_info:
 
         @serdes_test_class
         class MissingFieldsInNew(
@@ -244,7 +267,7 @@ def test_missing_many_parameters():
 
 
 def test_extra_parameters_must_have_defaults():
-    with pytest.raises(SerdesClassUsageError) as exc_info:
+    with pytest.raises(SerdesUsageError) as exc_info:
 
         @serdes_test_class
         class OldFieldsWithoutDefaults(
@@ -292,7 +315,7 @@ def test_extra_parameters_have_working_defaults():
 
 
 def test_set():
-    test_map = WhitelistMap()
+    test_map = WhitelistMap.create()
 
     @_whitelist_for_serdes(whitelist_map=test_map)
     class HasSets(namedtuple("_HasSets", "reg_set frozen_set")):
@@ -304,22 +327,28 @@ def test_set():
     foo = HasSets({1, 2, 3, "3"}, frozenset([4, 5, 6, "6"]))
 
     serialized = _serialize_dagster_namedtuple(foo, whitelist_map=test_map)
-    foo_2 = _deserialize_json_to_dagster_namedtuple(serialized, whitelist_map=test_map)
+    foo_2 = _deserialize_json(serialized, whitelist_map=test_map)
     assert foo == foo_2
 
     # verify that set elements are serialized in a consistent order so that
     # equal objects always have a consistent serialization / snapshot ID
     big_foo = HasSets(set(string.ascii_lowercase), frozenset(string.ascii_lowercase))
 
-    assert create_snapshot_id(big_foo) == create_snapshot_id(
-        _deserialize_json_to_dagster_namedtuple(
-            _serialize_dagster_namedtuple(big_foo, whitelist_map=test_map), whitelist_map=test_map
+    snap_id = hash_str(_serialize_dagster_namedtuple(big_foo, whitelist_map=test_map))
+    roundtrip_snap_id = hash_str(
+        _serialize_dagster_namedtuple(
+            _deserialize_json(
+                _serialize_dagster_namedtuple(big_foo, whitelist_map=test_map),
+                whitelist_map=test_map,
+            ),
+            whitelist_map=test_map,
         )
     )
+    assert snap_id == roundtrip_snap_id
 
 
 def test_persistent_tuple():
-    test_map = WhitelistMap()
+    test_map = WhitelistMap.create()
 
     @_whitelist_for_serdes(whitelist_map=test_map)
     class Alphabet(namedtuple("_Alphabet", "a b c")):
@@ -328,12 +357,12 @@ def test_persistent_tuple():
 
     foo = Alphabet(a="A", b="B", c="C")
     serialized = _serialize_dagster_namedtuple(foo, whitelist_map=test_map)
-    foo_2 = _deserialize_json_to_dagster_namedtuple(serialized, whitelist_map=test_map)
+    foo_2 = _deserialize_json(serialized, whitelist_map=test_map)
     assert foo == foo_2
 
 
 def test_from_storage_dict():
-    test_map = WhitelistMap()
+    test_map = WhitelistMap.create()
 
     class CompatSerializer(DefaultNamedTupleSerializer):
         @classmethod
@@ -357,12 +386,12 @@ def test_from_storage_dict():
 
     serialized = '{"__class__": "DeprecatedAlphabet", "a": "A", "b": "B", "c": "C"}'
 
-    nt = _deserialize_json_to_dagster_namedtuple(serialized, whitelist_map=test_map)
+    nt = _deserialize_json(serialized, whitelist_map=test_map)
     assert isinstance(nt, DeprecatedAlphabet)
 
 
 def test_skip_when_empty():
-    test_map = WhitelistMap()
+    test_map = WhitelistMap.create()
 
     @_whitelist_for_serdes(whitelist_map=test_map)
     class SameSnapshotTuple(namedtuple("_Tuple", "foo")):
@@ -370,8 +399,8 @@ def test_skip_when_empty():
             return super(SameSnapshotTuple, cls).__new__(cls, foo)  # pylint: disable=bad-super-call
 
     old_tuple = SameSnapshotTuple(foo="A")
-    old_serialized = serialize_dagster_namedtuple(old_tuple)
-    old_snapshot = create_snapshot_id(old_tuple)
+    old_serialized = _serialize_dagster_namedtuple(old_tuple, whitelist_map=test_map)
+    old_snapshot = hash_str(old_serialized)
 
     # Without setting skip_when_empty, the ID changes
 
@@ -383,7 +412,9 @@ def test_skip_when_empty():
             )
 
     new_tuple_without_serializer = SameSnapshotTuple(foo="A")
-    new_snapshot_without_serializer = create_snapshot_id(new_tuple_without_serializer)
+    new_snapshot_without_serializer = hash_str(
+        _serialize_dagster_namedtuple(new_tuple_without_serializer, whitelist_map=test_map)
+    )
 
     assert new_snapshot_without_serializer != old_snapshot
 
@@ -403,11 +434,11 @@ def test_skip_when_empty():
             )
 
     new_tuple = SameSnapshotTuple(foo="A")
-    new_snapshot = create_snapshot_id(new_tuple)
+    new_snapshot = hash_str(_serialize_dagster_namedtuple(new_tuple, whitelist_map=test_map))
 
     assert old_snapshot == new_snapshot
 
-    rehydrated_tuple = deserialize_json_to_dagster_namedtuple(old_serialized)
+    rehydrated_tuple = _deserialize_json(old_serialized, whitelist_map=test_map)
     assert rehydrated_tuple.foo == "A"
     assert rehydrated_tuple.bar is None
 
@@ -417,13 +448,15 @@ def test_skip_when_empty():
 
 
 def test_to_storage_value():
-    test_map = WhitelistMap()
+    test_map = WhitelistMap.create()
 
     class MySerializer(DefaultNamedTupleSerializer):
         @classmethod
-        def value_to_storage_dict(cls, value, whitelist_map):
+        def value_to_storage_dict(cls, value, whitelist_map, descent_path):
             return DefaultNamedTupleSerializer.value_to_storage_dict(
-                SubstituteAlphabet(value.a, value.b, value.c), test_map
+                SubstituteAlphabet(value.a, value.b, value.c),
+                test_map,
+                descent_path,
             )
 
     @_whitelist_for_serdes(whitelist_map=test_map, serializer=MySerializer)
@@ -439,7 +472,7 @@ def test_to_storage_value():
     nested = DeprecatedAlphabet(None, None, "_C")
     deprecated = DeprecatedAlphabet("A", "B", nested)
     serialized = _serialize_dagster_namedtuple(deprecated, whitelist_map=test_map)
-    alphabet = _deserialize_json_to_dagster_namedtuple(serialized, whitelist_map=test_map)
+    alphabet = _deserialize_json(serialized, whitelist_map=test_map)
     assert not isinstance(alphabet, DeprecatedAlphabet)
     assert isinstance(alphabet, SubstituteAlphabet)
     assert not isinstance(alphabet.c, DeprecatedAlphabet)
@@ -447,7 +480,7 @@ def test_to_storage_value():
 
 
 def test_long_int():
-    test_map = WhitelistMap()
+    test_map = WhitelistMap.create()
 
     @_whitelist_for_serdes(whitelist_map=test_map)
     class NumHolder(NamedTuple):
@@ -455,5 +488,5 @@ def test_long_int():
 
     x = NumHolder(98765432109876543210)
     ser_x = _serialize_dagster_namedtuple(x, test_map)
-    roundtrip_x = _deserialize_json_to_dagster_namedtuple(ser_x, test_map)
+    roundtrip_x = _deserialize_json(ser_x, test_map)
     assert x.num == roundtrip_x.num
