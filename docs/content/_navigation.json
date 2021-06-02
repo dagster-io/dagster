@@ -383,6 +383,10 @@
           {
             "title": "Lakehouse with Pandas and PySpark (Experimental)",
             "path": "/guides/dagster/multi-type-lakehouse"
+          },
+          {
+            "title": "Run Attribution (Experimental)",
+            "path": "/guides/dagster/run-attribution"
           }
         ]
       }

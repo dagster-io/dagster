@@ -14,6 +14,10 @@ The <PyObject module="dagster.core.run_coordinator" object="DefaultRunCoordinato
 
 The <PyObject module="dagster.core.run_coordinator" object="QueuedRunCoordinator" /> sends runs to the [Dagster Daemon](/deployment/dagster-daemon) via a queue. The daemon pulls from the queue, and calls `launch_run` on the submitted runs. Using this run coordinator enables instance-level [limits on run concurrency](#limiting-run-concurrency), as well as custom run prioritization rules.
 
+### Custom Run Coordinators
+
+Note that one can subclass one of the `RunCoordinator`s to allow for a custom run queuing strategy when submitting to the [Daemon](/deployment/dagster-daemon) or to execute custom hooks before runs are submitted. For example, you can read HTTP headers to inject run tags for [Run Attribution](/guides/dagster/run-attribution).
+
 ## Limiting Run Concurrency
 
 Dagster offers several options for limiting the number of concurrent pipeline runs on your instance. This can be useful when:
