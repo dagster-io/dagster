@@ -28,7 +28,7 @@ setup(
         "twine==1.15.0",
         "virtualenv==16.5.0",
         "wheel==0.33.6",
-        "urllib3==1.25.9",
+        "urllib3==1.26.5",
         # resolve issue with aiohttp pin of chardet for aiohttp<=3.7.3, req'd by slackclient
         # https://github.com/dagster-io/dagster/issues/3539
         "chardet<4.0",
