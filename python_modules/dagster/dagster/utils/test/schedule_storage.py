@@ -303,7 +303,7 @@ class TestScheduleStorage:
         ticks = storage.get_job_ticks("my_schedule")
         assert len(ticks) == 1
         tick = ticks[0]
-        assert tick.tick_id == 1
+        assert tick.tick_id > 0
         assert tick.job_name == "my_schedule"
         assert tick.timestamp == current_time
         assert tick.status == JobTickStatus.FAILURE
@@ -471,12 +471,12 @@ class TestScheduleStorage:
 
         current_time = time.time()
         tick = storage.create_job_tick(self.build_sensor_tick(current_time))
-        assert tick.tick_id == 1
+        tick_id = tick.tick_id
 
         ticks = storage.get_job_ticks("my_sensor")
         assert len(ticks) == 1
         tick = ticks[0]
-        assert tick.tick_id == 1
+        assert tick.tick_id == tick_id
         assert tick.job_name == "my_sensor"
         assert tick.timestamp == current_time
         assert tick.status == JobTickStatus.STARTED
@@ -517,7 +517,7 @@ class TestScheduleStorage:
         ticks = storage.get_job_ticks("my_sensor")
         assert len(ticks) == 1
         tick = ticks[0]
-        assert tick.tick_id == 1
+        assert tick.tick_id > 0
         assert tick.job_name == "my_sensor"
         assert tick.timestamp == current_time
         assert tick.status == JobTickStatus.SUCCESS
@@ -538,7 +538,7 @@ class TestScheduleStorage:
         ticks = storage.get_job_ticks("my_sensor")
         assert len(ticks) == 1
         tick = ticks[0]
-        assert tick.tick_id == 1
+        assert tick.tick_id > 0
         assert tick.job_name == "my_sensor"
         assert tick.timestamp == current_time
         assert tick.status == JobTickStatus.SKIPPED
@@ -560,7 +560,7 @@ class TestScheduleStorage:
         ticks = storage.get_job_ticks("my_sensor")
         assert len(ticks) == 1
         tick = ticks[0]
-        assert tick.tick_id == 1
+        assert tick.tick_id > 0
         assert tick.job_name == "my_sensor"
         assert tick.timestamp == current_time
         assert tick.status == JobTickStatus.FAILURE
