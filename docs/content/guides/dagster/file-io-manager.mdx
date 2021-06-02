@@ -1,0 +1,195 @@
+---
+title: File Processing | Dagster
+description: This guide describes how to write a pipeline that invokes tools that operate on files and persists the outputs in cloud storage.
+---
+
+# File Processing
+
+<CodeReferenceLink filePath="examples/docs_snippets/docs_snippets/guides/file_io_manager.py" />
+
+This guide describes how to write a pipeline that invokes tools that operate on files and persists the created files in cloud storage.
+
+## Background
+
+Many data processing tools operate on files on a local filesystem. For example, you might have an executable that takes a path to a file as input and then writes a file as output. This is especially common in domains like bioinformatics.
+
+When composing sets of these file-based data processing steps into pipelines, you typically want the results of a step to be available as inputs to downstream steps.
+
+It's often desirable to store the results of these processing steps in cloud storage like Amazon S3. This allows the steps in the pipeline to run on separate machines and also makes the results durable and widely accessible. The ideal storage destination might also depend on the environment. For example, in local development, it might be simplest to store data on the local filesystem, while, in production, it might be preferable to store it in the cloud.
+
+When scripts operate on local files, but you want to store data in S3, you need to distinguish between two kinds of paths:
+
+- The paths that the code inside the solids operates on. These are temporary local files that should only exist within the context of a run.
+- The paths in persistent storage. After a file-producing solid completes, the temporary local file(s) it creates should be written to one of these paths. When a solid is ready to consume a file produced by an upstream solid, the data at one of these paths should be copied to a temporary local file.
+
+## A File-Processing Pipeline
+
+In this guide, we'll implement a simple two-solid pipeline where the solids operate on files, and the produced files can be stored either on the local filesystem or in S3.
+
+The broad strokes of the solution:
+
+- Your solids create files in a temporary directory, and return the temporary directory paths as outputs. This allows them to be agnostic to the storage system where the files ultimately end up (S3 vs. local FS).
+- You write two IOManagers: one for the local filesystem and one for S3. IOManagers are pluggable.
+- You write an
+
+### Solids
+
+Let's start by defining a pair of solids. The first one creates a file, and the second counts the number of characters and stores that in another file.
+
+```python file=guides/file_io_manager.py startafter=solids_start endbefore=solids_end
+import os
+import uuid
+from pathlib import Path
+
+from dagster import (
+    solid,
+    OutputDefinition,
+)
+
+
+def unique_file_path(directory):
+    return Path(directory) / str(uuid.uuid4())
+
+
+@solid(
+    required_resource_keys={"tempdir"},
+    output_defs=[OutputDefinition(metadata={"persistent_path_suffix": "some_dir/abc_file"})],
+)
+def create_file(context) -> Path:
+    tmpfile = unique_file_path(context.resources.tempdir)
+    os.system(f"echo abc > {tmpfile}")
+    return tmpfile
+
+
+@solid(
+    required_resource_keys={"tempdir"},
+    output_defs=[OutputDefinition(metadata={"persistent_path_suffix": "some_dir/count_file"})],
+)
+def count_characters(context, local_path: Path) -> Path:
+    tmpfile = unique_file_path(context.resources.tempdir)
+    os.system(f"wc -c {local_path} > {tmpfile}")
+    return tmpfile
+```
+
+You'll notice that these solids take advantage of a couple Dagster features:
+
+- We've defined an <PyObject object="OutputDefinition" /> with a metadata entry called "persistent_path_suffix". The <PyObject object="IOManager" /> we define later will use this as the location in persistent storage to store the output. It's a suffix, because the full path will depend on the IOManager we're using: when we're running in development, we want it to be inside a local directory, and when we're running in production, we want it to be inside an S3 bucket. We might also want to run it in a staging environment and put it in a different S3 bucket. Every time the solid runs, it will overwrite the data in this location.
+- We've required a resource called "tempdir", which we'll define later. Using a resource allows us to provision a temporary directory for the duration of our step and clean it up after the step completes.
+
+The solids create files in a temporary directory, and return the temporary directory paths as outputs. This allows them to be agnostic to the storage system where the files ultimately end up (S3 vs. local FS).
+
+### S3 IOManager
+
+Now let's define an <PyObject object="IOManager" />. The benefit of using IOManagers, rather than just writing to persistent storage inside the solids, is twofold:
+
+- IOManagers are pluggable. This lets us use the local filesystem in development and S3 in production.
+- They make it easy to avoid double-specifying dependencies. Once you've defined that a particular solid gets its input from the output of a particular upstream solid, the IOManager function for loading the inputs for the downstream solid will automatically have access to metadata defined on the upstream solid.
+
+Our IOManager is responsible for translating between the temporary local files that individual solids operate on and the persistent objects that they are copied to and from. Here's an IOManager that stores files in S3:
+
+```python file=guides/file_io_manager.py startafter=s3_io_manager_start endbefore=s3_io_manager_end
+import boto3
+from dagster import (
+    IOManager,
+    io_manager,
+    AssetKey,
+)
+
+
+def s3_client():
+    return boto3.resource("s3", use_ssl=True).meta.client
+
+
+class S3FileIOManager(IOManager):
+    def handle_output(self, context, obj: Path):
+        s3_client().upload_file(str(obj), "my_bucket", context.metadata["persistent_path_suffix"])
+
+    def load_input(self, context):
+        tmpfile = unique_file_path(context.resources.tempdir)
+        s3_client().download_file(
+            Bucket="my_bucket",
+            Key=context.upstream_output.metadata["persistent_path_suffix"],
+            Filename=str(tmpfile),
+        )
+        return tmpfile
+
+    def get_output_asset_key(self, context):
+        return AssetKey(["my_bucket", context.metadata["persistent_path_suffix"]])
+
+
+@io_manager(required_resource_keys={"tempdir"})
+def s3_file_io_manager(_):
+    return S3FileIOManager()
+```
+
+You'll notice a few things going on here:
+
+- The implementation of `load_input` relies on `context.upstream_output.metadata`. E.g. when loading the input to `stat_file`, which was produced by `create_file`, the IOManager needs to know where to fetch it from. The location is partially specified in the metadata of the OutputDefinition of `create_file`, so `context.upstream_output.metadata` enables accessing it.
+- Implementing `get_output_asset_key` is not required for this to work. The advantage of including it is that it will cause an entry to show up in the [Asset Catalog](/concepts/assets/asset-materializations).
+- The IOManager is fully responsible for making the ends meet between `load_input` and `handle_output`. I.e. Dagster doesn't provide a specialized mechanism for getting the object that was passed to handle_output to show up in load_input - the IOManager makes that happen. The reason Dagster doesn't provide it is that solids can execute in different processes, and there's no one-size-fits-all way to serialize data for interprocess communication or to store data in a secure place that's reachable by exactly the right readers.
+- The IOManager depends on a "tempdir" resource, which we'll show the implementation of later. This allows creating a `load_input` to copy the S3 file into a temporary directory, which will be cleaned up at the end of the step.
+
+### Local IOManager
+
+The S3 IOManager is useful in a production environment where each solid runs on a separate machine and the output files need to be widely accessible, but it may be overkill when developing the pipeline on a laptop. Here's an IOManager that persists files under a directory called "base_dir":
+
+```python file=guides/file_io_manager.py startafter=local_io_manager_start endbefore=local_io_manager_end
+import shutil
+
+
+class LocalFileIOManager(IOManager):
+    def handle_output(self, context, obj: Path):
+        persistent_path = Path("base_dir") / context.metadata["persistent_path_suffix"]
+        persistent_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(obj, persistent_path)
+
+    def load_input(self, context):
+        persistent_path = (
+            Path("base_dir") / context.upstream_output.metadata["persistent_path_suffix"]
+        )
+        tmpfile = unique_file_path(context.resources.tempdir)
+        shutil.copy(persistent_path, tmpfile)
+        return tmpfile
+
+
+@io_manager(required_resource_keys={"tempdir"})
+def local_file_io_manager(_):
+    return LocalFileIOManager()
+```
+
+### Temporary directory resource
+
+The solids and IOManagers above depend on a temporary directory where they can write files that will be cleaned up at the end of the step. Here's its implementation:
+
+```python file=guides/file_io_manager.py startafter=tempdir_start endbefore=tempdir_end
+from dagster import resource
+from tempfile import TemporaryDirectory
+
+
+@resource
+def tempdir(_):
+    with TemporaryDirectory() as tmpdir:
+        yield tmpdir
+```
+
+### Putting it all together into a pipeline
+
+Finally, we can combine the solids, resources, and IOManagers we've defined into a pipeline. It has a "prod" mode, which uses the `s3_file_io_manager`, and a "dev" mode, which uses the local_file_io_manager.
+
+```python file=guides/file_io_manager.py startafter=pipeline_start endbefore=pipeline_end
+from dagster import pipeline, ModeDefinition
+
+
+@pipeline(
+    mode_defs=[
+        ModeDefinition(
+            "prod", resource_defs={"tempdir": tempdir, "io_manager": s3_file_io_manager}
+        ),
+        ModeDefinition(
+            "dev", resource_defs={"tempdir": tempdir, "io_manager": local_file_io_manager}
+        ),
+    ]
+)
+def file_pipeline():
+    count_characters(create_file())
+```

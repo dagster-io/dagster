@@ -373,6 +373,10 @@
         "title": "Dagster Guides",
         "children": [
           {
+            "title": "File Processing",
+            "path": "/guides/dagster/file-io-manager"
+          },
+          {
             "title": "Versioning and Memoization (Experimental)",
             "path": "/guides/dagster/memoization"
           },
