@@ -8,16 +8,8 @@ import {LeftNav} from './LeftNav';
 
 describe('LeftNav', () => {
   const defaultMocks = {
-    WorkspaceOrError: () => ({
-      __typename: 'Workspace',
-    }),
     Workspace: () => ({
       locationEntries: () => new MockList(2),
-    }),
-    WorkspaceLocationEntry: () => ({
-      locationOrLoadError: {
-        __typename: 'RepositoryLocation',
-      },
     }),
   };
 
@@ -40,16 +32,13 @@ describe('LeftNav', () => {
 
     it('shows the error message when repo location errors are found', async () => {
       const mocks = {
-        ...defaultMocks,
-        WorkspaceLocationEntry: () => ({
-          locationOrLoadError: () => ({
-            __typename: 'PythonError',
-            message: () => 'error_message',
-          }),
+        RepositoryLocationOrLoadError: () => ({
+          __typename: 'PythonError',
+          message: () => 'error_message',
         }),
       };
 
-      render(<Test mocks={mocks} />);
+      render(<Test mocks={[defaultMocks, mocks]} />);
       await waitFor(() => {
         expect(screen.getByRole('link', {name: /status warnings found/i})).toBeVisible();
       });

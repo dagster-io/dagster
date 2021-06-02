@@ -24,22 +24,12 @@ describe('App', () => {
       name: () => 'my_location',
       repositories: () => new MockList(1),
     }),
-    WorkspaceOrError: () => ({
-      __typename: 'Workspace',
+    Workspace: () => ({
       locationEntries: () => new MockList(1),
     }),
     RepositoryOrigin: () => ({
       repositoryName: () => 'my_repository',
       repositoryLocationName: () => 'my_location',
-    }),
-    WorkspaceLocationEntry: () => ({
-      locationOrLoadError: {
-        __typename: 'RepositoryLocation',
-        environmentPath: () => 'what then',
-        id: () => 'my_location',
-        name: () => 'my_location',
-        repositories: () => new MockList(1),
-      },
     }),
     SolidDefinition: () => ({
       configField: null,
@@ -51,13 +41,8 @@ describe('App', () => {
       requiredResources: () => new MockList(0),
     }),
     SolidInvocationSite: () => ({
-      __typename: () => 'SolidInvocationSite',
-      pipeline: () => ({
-        __typename: 'Pipeline',
-      }),
       solidHandle: () => ({
         handleID: 'foo_handle',
-        __typename: 'SolidHandle',
       }),
     }),
   };
@@ -102,7 +87,6 @@ describe('App', () => {
 
     it('renders pipeline overview', async () => {
       const mocks = {
-        ...defaultMocks,
         Pipeline: () => ({
           name: 'foo_pipeline',
         }),
@@ -110,9 +94,6 @@ describe('App', () => {
           runs: () => new MockList(0),
           schedules: () => new MockList(0),
           sensors: () => new MockList(0),
-        }),
-        PipelineSnapshotOrError: () => ({
-          __typename: 'PipelineSnapshot',
         }),
       };
 
@@ -123,7 +104,7 @@ describe('App', () => {
               '/workspace/my_repository@my_location/pipelines/foo_pipeline/overview',
             ],
           }}
-          apolloProps={{mocks}}
+          apolloProps={{mocks: [defaultMocks, mocks]}}
         >
           <App />
         </TestProvider>,

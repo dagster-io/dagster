@@ -8,21 +8,6 @@ import {LAST_REPO_KEY, LeftNavRepositorySection, REPO_KEYS} from './LeftNavRepos
 
 describe('Repository options', () => {
   const defaultMocks = {
-    WorkspaceOrError: () => ({
-      __typename: 'Workspace',
-    }),
-    WorkspaceLocationEntry: () => ({
-      locationOrLoadError: {
-        __typename: 'RepositoryLocation',
-        name: () => 'bar',
-        repositories: () => new MockList(1),
-      },
-    }),
-    RepositoryLocationOrLoadError: () => ({
-      __typename: 'RepositoryLocation',
-      name: () => 'bar',
-      repositories: () => new MockList(1),
-    }),
     RepositoryLocation: () => ({
       name: () => 'bar',
       repositories: () => new MockList(1),
@@ -37,7 +22,6 @@ describe('Repository options', () => {
 
   it('Correctly displays the current repository state', async () => {
     const mocks = {
-      ...defaultMocks,
       Repository: () => ({
         name: () => 'foo',
         pipelines: () => new MockList(1),
@@ -50,7 +34,7 @@ describe('Repository options', () => {
 
     render(
       <TestProvider
-        apolloProps={{mocks}}
+        apolloProps={{mocks: [defaultMocks, mocks]}}
         routerProps={{initialEntries: ['/workspace/foo@bar/etc']}}
       >
         <LeftNavRepositorySection />
@@ -77,7 +61,6 @@ describe('Repository options', () => {
     const repoTwo = 'foo';
 
     const mocks = {
-      ...defaultMocks,
       Workspace: () => ({
         locationEntries: () => [
           {
@@ -112,7 +95,10 @@ describe('Repository options', () => {
 
     it('initializes with first repo option, if no localStorage', async () => {
       render(
-        <TestProvider apolloProps={{mocks}} routerProps={{initialEntries: ['/instance/runs']}}>
+        <TestProvider
+          apolloProps={{mocks: [defaultMocks, mocks]}}
+          routerProps={{initialEntries: ['/instance/runs']}}
+        >
           <LeftNavRepositorySection />
         </TestProvider>,
       );
@@ -126,7 +112,10 @@ describe('Repository options', () => {
     it('initializes with correct repo option, if `LAST_REPO_KEY` localStorage', async () => {
       window.localStorage.setItem(LAST_REPO_KEY, 'lorem:ipsum');
       render(
-        <TestProvider apolloProps={{mocks}} routerProps={{initialEntries: ['/instance/runs']}}>
+        <TestProvider
+          apolloProps={{mocks: [defaultMocks, mocks]}}
+          routerProps={{initialEntries: ['/instance/runs']}}
+        >
           <LeftNavRepositorySection />
         </TestProvider>,
       );
@@ -140,7 +129,10 @@ describe('Repository options', () => {
     it('initializes with correct repo option, if `REPO_KEYS` localStorage', async () => {
       window.localStorage.setItem(REPO_KEYS, '["foo:bar"]');
       render(
-        <TestProvider apolloProps={{mocks}} routerProps={{initialEntries: ['/instance/runs']}}>
+        <TestProvider
+          apolloProps={{mocks: [defaultMocks, mocks]}}
+          routerProps={{initialEntries: ['/instance/runs']}}
+        >
           <LeftNavRepositorySection />
         </TestProvider>,
       );
@@ -154,7 +146,10 @@ describe('Repository options', () => {
     it('initializes with first repo option, if no matching `REPO_KEYS` localStorage', async () => {
       window.localStorage.setItem(REPO_KEYS, '["hello:world"]');
       render(
-        <TestProvider apolloProps={{mocks}} routerProps={{initialEntries: ['/instance/runs']}}>
+        <TestProvider
+          apolloProps={{mocks: [defaultMocks, mocks]}}
+          routerProps={{initialEntries: ['/instance/runs']}}
+        >
           <LeftNavRepositorySection />
         </TestProvider>,
       );
@@ -168,7 +163,10 @@ describe('Repository options', () => {
     it('initializes with multiple repo option, if multiple `REPO_KEYS` localStorage', async () => {
       window.localStorage.setItem(REPO_KEYS, '["lorem:ipsum", "foo:bar"]');
       render(
-        <TestProvider apolloProps={{mocks}} routerProps={{initialEntries: ['/instance/runs']}}>
+        <TestProvider
+          apolloProps={{mocks: [defaultMocks, mocks]}}
+          routerProps={{initialEntries: ['/instance/runs']}}
+        >
           <LeftNavRepositorySection />
         </TestProvider>,
       );

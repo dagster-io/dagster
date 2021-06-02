@@ -31,7 +31,6 @@ describe('AssetDetails', () => {
 
     it('does not show alert if timestamps match', async () => {
       const mocks = {
-        ...defaultMocks,
         Asset: () => ({
           assetMaterializations: () => new MockList(1),
         }),
@@ -40,7 +39,7 @@ describe('AssetDetails', () => {
         }),
       };
       render(
-        <TestProvider apolloProps={{mocks}}>
+        <TestProvider apolloProps={{mocks: [defaultMocks, mocks]}}>
           <AssetDetails assetKey={{path: ['foo']}} asOf="123" />
         </TestProvider>,
       );
@@ -53,14 +52,13 @@ describe('AssetDetails', () => {
     it('does show alert if timestamps do not match', async () => {
       let counter = 100;
       const mocks = {
-        ...defaultMocks,
         StepMaterializationEvent: () => ({
           timestamp: () => `${counter--}`,
         }),
       };
 
       render(
-        <TestProvider apolloProps={{mocks}}>
+        <TestProvider apolloProps={{mocks: [defaultMocks, mocks]}}>
           <AssetDetails assetKey={{path: ['foo']}} asOf="99" />
         </TestProvider>,
       );
