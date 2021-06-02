@@ -137,6 +137,10 @@ The Run Worker is responsible for executing the solids in topological order. The
 
 The Run Worker jobs and pods are not automatically deleted so that users are able to inspect results. It is up to the user to delete old jobs and pods after noting their status.
 
+### Executor
+
+The [Executor](/deployment/executors) determines how the run worker will execute each step of a pipeline. Different executors offer different levels of isolation and concurrency. Common choices are <PyObject module="dagster" object="in_process_executor" /> (all steps run serially in a single process in the single pod), <PyObject module="dagster" object="multiprocess_executor" /> (multiple processes in the single pod), and kubernetes-job (each step runs in a separate pod). For the latter, you can choose between the <PyObject module="dagster_celery_k8s" object="celery_k8s_job_executor" />, and the <PyObject module="dagster_k8s" object="k8s_job_executor" /> which removes the Celery dependency. Generally, increasing isolation incurs some additional overhead per step (e.g. starting up a new Kubernetes job vs starting a new process within a pod). Different [executors](/deployment/executors) can be configured per-run in the `execution` block.
+
 ### User Code Deployment
 
 A User Code Deployment runs a gRPC server and responds to Dagit's requests for information (such as: "List all of the pipelines in each repository" or "What is the dependency structure of pipeline X?"). The user-provided image for the User Code Deployment must contain a [repository definition](/concepts/repositories-workspaces/repositories) and all of the packages needed to execute within the repository.

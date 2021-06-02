@@ -24,6 +24,73 @@ from .job import (
 from .utils import delete_job
 
 
+@executor(
+    name="k8s",
+    config_schema=merge_dicts(
+        DagsterK8sJobConfig.config_type_pipeline_run(),
+        {
+            "job_namespace": Field(
+                StringSource,
+                is_required=False,
+                default_value="default",
+            )
+        },
+        {"retries": get_retries_config()},
+    ),
+    requirements=multiple_process_executor_requirements(),
+)
+@experimental
+def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
+    """
+    Executor which launches steps as Kubernetes Jobs. This executor is experimental.
+
+    To add the Kubernetes Job executor in addition to the
+    :py:class:`~dagster.default_executors`, you should add it to the ``executor_defs`` defined on a
+    :py:class:`~dagster.ModeDefinition` as follows:
+
+    .. literalinclude:: ../../../../../../python_modules/libraries/dagster-k8s/dagster_k8s_tests/unit_tests/test_example_executor_mode_def.py
+       :start-after: start_marker
+       :end-before: end_marker
+       :language: python
+
+    Then you can configure the executor with run config (either via a :py:class:`~dagster.PresetDefinition` or the Dagit playground) as follows:
+
+    .. code-block:: YAML
+
+        execution:
+          k8s:
+            config:
+              job_namespace: 'some-namespace'
+              image_pull_policy: ...
+              image_pull_secrets: ...
+              service_account_name: ...
+              env_config_maps: ...
+              env_secrets: ...
+              job_image: ... # leave out if using userDeployments
+    """
+
+    run_launcher = init_context.instance.run_launcher
+    exc_cfg = init_context.executor_config
+    job_config = DagsterK8sJobConfig(
+        dagster_home=run_launcher.dagster_home,
+        instance_config_map=run_launcher.instance_config_map,
+        postgres_password_secret=run_launcher.postgres_password_secret,
+        job_image=exc_cfg.get("job_image") or os.getenv("DAGSTER_CURRENT_IMAGE"),
+        image_pull_policy=exc_cfg.get("image_pull_policy"),
+        image_pull_secrets=exc_cfg.get("image_pull_secrets"),
+        service_account_name=exc_cfg.get("service_account_name"),
+        env_config_maps=exc_cfg.get("env_config_maps"),
+        env_secrets=exc_cfg.get("env_secrets"),
+    )
+
+    return StepDelegatingExecutor(
+        K8sStepHandler(
+            job_config=job_config,
+            job_namespace=exc_cfg.get("job_namespace"),
+        )
+    )
+
+
 @experimental
 class K8sStepHandler(StepHandler):
     @property
@@ -137,41 +204,3 @@ class K8sStepHandler(StepHandler):
 
         delete_job(job_name=job_name, namespace=self._job_namespace)
         return []
-
-
-@executor(
-    name="k8s",
-    config_schema=merge_dicts(
-        DagsterK8sJobConfig.config_type_pipeline_run(),
-        {
-            "job_namespace": Field(
-                StringSource,
-                is_required=False,
-                default_value="default",
-            )
-        },
-        {"retries": get_retries_config()},
-    ),
-    requirements=multiple_process_executor_requirements(),
-)
-def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
-    run_launcher = init_context.instance.run_launcher
-    exc_cfg = init_context.executor_config
-    job_config = DagsterK8sJobConfig(
-        dagster_home=run_launcher.dagster_home,
-        instance_config_map=run_launcher.instance_config_map,
-        postgres_password_secret=run_launcher.postgres_password_secret,
-        job_image=exc_cfg.get("job_image") or os.getenv("DAGSTER_CURRENT_IMAGE"),
-        image_pull_policy=exc_cfg.get("image_pull_policy"),
-        image_pull_secrets=exc_cfg.get("image_pull_secrets"),
-        service_account_name=exc_cfg.get("service_account_name"),
-        env_config_maps=exc_cfg.get("env_config_maps"),
-        env_secrets=exc_cfg.get("env_secrets"),
-    )
-
-    return StepDelegatingExecutor(
-        K8sStepHandler(
-            job_config=job_config,
-            job_namespace=exc_cfg.get("job_namespace"),
-        )
-    )
