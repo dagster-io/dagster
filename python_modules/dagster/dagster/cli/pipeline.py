@@ -54,16 +54,11 @@ from tabulate import tabulate
 from .config_scaffolder import scaffold_pipeline_config
 
 
-def create_pipeline_cli_group():
-    group = click.Group(name="pipeline")
-    group.add_command(pipeline_list_command)
-    group.add_command(pipeline_print_command)
-    group.add_command(pipeline_execute_command)
-    group.add_command(pipeline_backfill_command)
-    group.add_command(pipeline_scaffold_command)
-    group.add_command(pipeline_launch_command)
-    group.add_command(pipeline_list_versions_command)
-    return group
+@click.group(name="pipeline")
+def pipeline_cli():
+    """
+    Commands for working with Dagster pipelines.
+    """
 
 
 def apply_click_params(command, *click_params):
@@ -72,7 +67,7 @@ def apply_click_params(command, *click_params):
     return command
 
 
-@click.command(
+@pipeline_cli.command(
     name="list",
     help="List the pipelines in a repository. {warning}".format(warning=WORKSPACE_TARGET_WARNING),
 )
@@ -146,7 +141,7 @@ def get_partitioned_pipeline_instructions(command_name):
     ).format(command_name=command_name, default_filename=DEFAULT_WORKSPACE_YAML_FILENAME)
 
 
-@click.command(
+@pipeline_cli.command(
     name="print",
     help="Print a pipeline.\n\n{instructions}".format(
         instructions=get_pipeline_instructions("print")
@@ -220,7 +215,7 @@ def print_solid(printer, pipeline_snapshot, solid_invocation_snap):
             printer.line(output_def_snap.name)
 
 
-@click.command(
+@pipeline_cli.command(
     name="list_versions",
     help="Display the freshness of memoized results for the given pipeline.\n\n{instructions}".format(
         instructions=get_pipeline_in_same_python_env_instructions("list_versions")
@@ -286,7 +281,7 @@ def execute_list_versions_command(instance, kwargs):
     click.echo(table_str)
 
 
-@click.command(
+@pipeline_cli.command(
     name="execute",
     help="Execute a pipeline.\n\n{instructions}".format(
         instructions=get_pipeline_in_same_python_env_instructions("execute")
@@ -548,7 +543,7 @@ def do_execute_command(
     )
 
 
-@click.command(
+@pipeline_cli.command(
     name="launch",
     help="Launch a pipeline using the run launcher configured on the Dagster instance.\n\n{instructions}".format(
         instructions=get_pipeline_instructions("launch")
@@ -637,7 +632,7 @@ def execute_launch_command(instance, kwargs):
         return instance.submit_run(pipeline_run.run_id, external_pipeline)
 
 
-@click.command(
+@pipeline_cli.command(
     name="scaffold_config",
     help="Scaffold the config for a pipeline.\n\n{instructions}".format(
         instructions=get_pipeline_in_same_python_env_instructions("scaffold_config")
@@ -781,7 +776,7 @@ def validate_partition_slice(partition_names, name, value):
     return index if is_start else index + 1
 
 
-@click.command(
+@pipeline_cli.command(
     name="backfill",
     help="Backfill a partitioned pipeline.\n\n{instructions}".format(
         instructions=get_partitioned_pipeline_instructions("backfill")
@@ -957,6 +952,3 @@ def _execute_backfill_command_at_location(cli_args, print_fn, instance, repo_loc
 
     else:
         print_fn("Aborted!")
-
-
-pipeline_cli = create_pipeline_cli_group()

@@ -14,18 +14,11 @@ from dagster.core.scheduler.job import JobStatus
 from dagster.core.scheduler.scheduler import DagsterDaemonScheduler
 
 
-def create_schedule_cli_group():
-    group = click.Group(name="schedule")
-    group.add_command(schedule_list_command)
-    group.add_command(schedule_up_command)
-    group.add_command(schedule_preview_command)
-    group.add_command(schedule_start_command)
-    group.add_command(schedule_logs_command)
-    group.add_command(schedule_stop_command)
-    group.add_command(schedule_restart_command)
-    group.add_command(schedule_wipe_command)
-    group.add_command(schedule_debug_command)
-    return group
+@click.group(name="schedule")
+def schedule_cli():
+    """
+    Commands for working with Dagster schedules.
+    """
 
 
 def print_changes(external_repository, instance, print_fn=print, preview=False):
@@ -155,8 +148,8 @@ def check_repo_and_scheduler(repository, instance):
         raise click.UsageError(no_scheduler_configured_message)
 
 
-@click.command(
-    name="preview", help="Preview changes that will be performed by `dagster schedule up"
+@schedule_cli.command(
+    name="preview", help="Preview changes that will be performed by `dagster schedule up`."
 )
 @repository_target_argument
 def schedule_preview_command(**kwargs):
@@ -171,18 +164,24 @@ def execute_preview_command(cli_args, print_fn):
             print_changes(external_repo, instance, print_fn, preview=True)
 
 
-@click.command(
-    name="up",
-    help="Updates the internal dagster representation of schedules to match the list "
-    "of ScheduleDefinitions defined in the repository. Use `dagster schedule up --preview` or "
-    "`dagster schedule preview` to preview what changes will be applied. New ScheduleDefinitions "
-    "will not start running by default when `up` is called. Use `dagster schedule start` and "
-    "`dagster schedule stop` to start and stop a schedule. If a ScheduleDefinition is deleted, the "
-    "corresponding running schedule will be stopped and deleted.",
-)
+@schedule_cli.command(name="up")
 @click.option("--preview", help="Preview changes", is_flag=True, default=False)
 @repository_target_argument
 def schedule_up_command(preview, **kwargs):
+    """
+    Update the Dagster instance's representation of schedules.
+
+    After running this command, the internal representation will match the list of
+    ScheduleDefinitions defined in the repository.
+
+    \b
+    To preview what changes will be applied, one of the following commands can be used:
+        dagster schedule up --preview
+        dagster schedule preview
+
+    Note by default, new ScheduleDefinitions in the Dagster instance will not start running until
+    they are explicitly started.
+    """
     return execute_up_command(preview, kwargs, click.echo)
 
 
@@ -201,7 +200,7 @@ def execute_up_command(preview, cli_args, print_fn):
                 raise click.UsageError(ex)
 
 
-@click.command(
+@schedule_cli.command(
     name="list",
     help="List all schedules that correspond to a repository.",
 )
@@ -287,7 +286,7 @@ def extract_schedule_name(schedule_name):
             )
 
 
-@click.command(name="start", help="Start an existing schedule")
+@schedule_cli.command(name="start", help="Start an existing schedule.")
 @click.argument("schedule_name", nargs=-1)  # , required=True)
 @click.option("--start-all", help="start all schedules", is_flag=True, default=False)
 @repository_target_argument
@@ -333,7 +332,7 @@ def execute_start_command(schedule_name, all_flag, cli_args, print_fn):
                 print_fn("Started schedule {schedule_name}".format(schedule_name=schedule_name))
 
 
-@click.command(name="stop", help="Stop an existing schedule")
+@schedule_cli.command(name="stop", help="Stop an existing schedule.")
 @click.argument("schedule_name", nargs=-1)
 @repository_target_argument
 def schedule_stop_command(schedule_name, **kwargs):
@@ -356,7 +355,7 @@ def execute_stop_command(schedule_name, cli_args, print_fn, instance=None):
             print_fn("Stopped schedule {schedule_name}".format(schedule_name=schedule_name))
 
 
-@click.command(name="logs", help="Get logs for a schedule")
+@schedule_cli.command(name="logs", help="Get logs for a schedule.")
 @click.argument("schedule_name", nargs=-1)
 @repository_target_argument
 def schedule_logs_command(schedule_name, **kwargs):
@@ -420,7 +419,7 @@ def execute_logs_command(schedule_name, cli_args, print_fn, instance=None):
             print_fn(output)
 
 
-@click.command(name="restart", help="Restart a running schedule")
+@schedule_cli.command(name="restart", help="Restart a running schedule.")
 @click.argument("schedule_name", nargs=-1)
 @click.option(
     "--restart-all-running",
@@ -481,7 +480,7 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
                 print_fn("Restarted schedule {schedule_name}".format(schedule_name=schedule_name))
 
 
-@click.command(name="wipe", help="Deletes schedule history and turns off all schedules.")
+@schedule_cli.command(name="wipe", help="Delete the schedule history and turn off all schedules.")
 @repository_target_argument
 def schedule_wipe_command(**kwargs):
     return execute_wipe_command(kwargs, click.echo)
@@ -502,7 +501,7 @@ def execute_wipe_command(cli_args, print_fn):
                 print_fn("Exiting without turning off schedules or deleting schedule history")
 
 
-@click.command(name="debug", help="Debug information about the scheduler")
+@schedule_cli.command(name="debug", help="Debug information about the scheduler.")
 def schedule_debug_command():
     return execute_debug_command(click.echo)
 
@@ -542,6 +541,3 @@ def execute_debug_command(print_fn):
         )
 
         print_fn(output)
-
-
-schedule_cli = create_schedule_cli_group()

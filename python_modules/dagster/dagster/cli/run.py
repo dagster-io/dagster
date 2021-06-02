@@ -2,15 +2,14 @@ import click
 from dagster.core.instance import DagsterInstance
 
 
-def create_run_cli_group():
-    group = click.Group(name="run")
-    group.add_command(run_list_command)
-    group.add_command(run_delete_command)
-    group.add_command(run_wipe_command)
-    return group
+@click.group(name="run")
+def run_cli():
+    """
+    Commands for working with Dagster pipeline runs.
+    """
 
 
-@click.command(name="list", help="List the runs in this dagster installation.")
+@run_cli.command(name="list", help="List the runs in the current Dagster instance.")
 @click.option("--limit", help="Only list a specified number of runs", default=None, type=int)
 def run_list_command(limit):
     with DagsterInstance.get() as instance:
@@ -19,7 +18,7 @@ def run_list_command(limit):
             click.echo("     Pipeline: {}".format(run.pipeline_name))
 
 
-@click.command(
+@run_cli.command(
     name="delete",
     help="Delete a run by id and its associated event logs. Warning: Cannot be undone",
 )
@@ -39,7 +38,7 @@ def run_delete_command(run_id):
             click.echo("Exiting without deleting run.")
 
 
-@click.command(
+@run_cli.command(
     name="wipe", help="Eliminate all run history and event logs. Warning: Cannot be undone"
 )
 def run_wipe_command():
@@ -52,6 +51,3 @@ def run_wipe_command():
         click.echo("Deleted all run history and event logs")
     else:
         click.echo("Exiting without deleting all run history and event logs")
-
-
-run_cli = create_run_cli_group()
