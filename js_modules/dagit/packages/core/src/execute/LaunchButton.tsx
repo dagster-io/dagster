@@ -12,7 +12,6 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {ShortcutHandler} from '../app/ShortcutHandler';
-import {WebsocketStatusContext} from '../app/WebsocketStatus';
 import {Box} from '../ui/Box';
 import {Spinner} from '../ui/Spinner';
 
@@ -32,7 +31,6 @@ enum LaunchButtonStatus {
 }
 
 function useLaunchButtonCommonState({runCount, disabled}: {runCount: number; disabled: boolean}) {
-  const websocketStatus = React.useContext(WebsocketStatusContext);
   const [starting, setStarting] = React.useState(false);
 
   const onConfigSelected = async (option: LaunchButtonConfiguration) => {
@@ -43,18 +41,6 @@ function useLaunchButtonCommonState({runCount, disabled}: {runCount: number; dis
 
   let forced: Partial<LaunchButtonConfiguration> = {};
   let status = disabled ? LaunchButtonStatus.Disabled : LaunchButtonStatus.Ready;
-
-  if (websocketStatus !== WebSocket.OPEN) {
-    status = LaunchButtonStatus.Disabled;
-    forced = {
-      tooltip:
-        websocketStatus === WebSocket.CONNECTING
-          ? 'Connecting to Dagit server…'
-          : 'The Dagit server is offline',
-      disabled: true,
-      icon: 'offline',
-    };
-  }
 
   if (starting) {
     status = LaunchButtonStatus.Starting;
