@@ -23,7 +23,7 @@ export const RunGroupPanel: React.FunctionComponent<{runId: string}> = ({runId})
   const queryResult = useQuery<RunGroupPanelQuery>(RUN_GROUP_PANEL_QUERY, {
     variables: {runId},
     fetchPolicy: 'cache-and-network',
-    pollInterval: 3000,
+    pollInterval: 15000, // 15s
   });
 
   const group = queryResult.data?.runGroupOrError;
