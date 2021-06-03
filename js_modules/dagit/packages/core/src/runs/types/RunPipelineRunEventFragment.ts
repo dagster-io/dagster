@@ -121,29 +121,6 @@ export interface RunPipelineRunEventFragment_StepMaterializationEvent {
   materialization: RunPipelineRunEventFragment_StepMaterializationEvent_materialization;
 }
 
-export interface RunPipelineRunEventFragment_PipelineInitFailureEvent_error_cause {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-}
-
-export interface RunPipelineRunEventFragment_PipelineInitFailureEvent_error {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-  cause: RunPipelineRunEventFragment_PipelineInitFailureEvent_error_cause | null;
-}
-
-export interface RunPipelineRunEventFragment_PipelineInitFailureEvent {
-  __typename: "PipelineInitFailureEvent";
-  message: string;
-  timestamp: string;
-  level: LogLevel;
-  stepKey: string | null;
-  eventType: DagsterEventType | null;
-  error: RunPipelineRunEventFragment_PipelineInitFailureEvent_error;
-}
-
 export interface RunPipelineRunEventFragment_PipelineFailureEvent_pipelineFailureError_cause {
   __typename: "PythonError";
   message: string;
@@ -988,4 +965,4 @@ export interface RunPipelineRunEventFragment_LogsCapturedEvent {
   pid: number | null;
 }
 
-export type RunPipelineRunEventFragment = RunPipelineRunEventFragment_ExecutionStepSkippedEvent | RunPipelineRunEventFragment_StepMaterializationEvent | RunPipelineRunEventFragment_PipelineInitFailureEvent | RunPipelineRunEventFragment_PipelineFailureEvent | RunPipelineRunEventFragment_ExecutionStepFailureEvent | RunPipelineRunEventFragment_ExecutionStepInputEvent | RunPipelineRunEventFragment_ExecutionStepOutputEvent | RunPipelineRunEventFragment_StepExpectationResultEvent | RunPipelineRunEventFragment_ObjectStoreOperationEvent | RunPipelineRunEventFragment_HandledOutputEvent | RunPipelineRunEventFragment_LoadedInputEvent | RunPipelineRunEventFragment_EngineEvent | RunPipelineRunEventFragment_HookErroredEvent | RunPipelineRunEventFragment_LogsCapturedEvent;
+export type RunPipelineRunEventFragment = RunPipelineRunEventFragment_ExecutionStepSkippedEvent | RunPipelineRunEventFragment_StepMaterializationEvent | RunPipelineRunEventFragment_PipelineFailureEvent | RunPipelineRunEventFragment_ExecutionStepFailureEvent | RunPipelineRunEventFragment_ExecutionStepInputEvent | RunPipelineRunEventFragment_ExecutionStepOutputEvent | RunPipelineRunEventFragment_StepExpectationResultEvent | RunPipelineRunEventFragment_ObjectStoreOperationEvent | RunPipelineRunEventFragment_HandledOutputEvent | RunPipelineRunEventFragment_LoadedInputEvent | RunPipelineRunEventFragment_EngineEvent | RunPipelineRunEventFragment_HookErroredEvent | RunPipelineRunEventFragment_LogsCapturedEvent;

@@ -16,7 +16,7 @@ from dagster.core.errors import (
     DagsterInvalidConfigError,
     DagsterInvariantViolationError,
 )
-from dagster.core.events import DagsterEvent, PipelineInitFailureData
+from dagster.core.events import DagsterEvent
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.executor.init import InitExecutorContext
 from dagster.core.instance import DagsterInstance
@@ -136,11 +136,20 @@ def host_mode_execution_context_event_generator(
             )
             error_info = serializable_error_info_from_exc_info(user_facing_exc_info)
 
-            yield DagsterEvent.pipeline_init_failure(
-                pipeline_name=pipeline_run.pipeline_name,
-                failure_data=PipelineInitFailureData(error=error_info),
-                log_manager=log_manager,
+            event = DagsterEvent.pipeline_failure(
+                pipeline_context_or_name=pipeline_run.pipeline_name,
+                context_msg=(
+                    f'Pipeline failure during initialization for pipeline "{pipeline_run.pipeline_name}". '
+                    "This may be due to a failure in initializing the executor or one of the loggers."
+                ),
+                error_info=error_info,
             )
+            log_manager.error(
+                event.message,
+                dagster_event=event,
+                pipeline_name=pipeline_run.pipeline_name,
+            )
+            yield event
         else:
             # pipeline teardown failure
             raise dagster_error

@@ -70,8 +70,6 @@ class InMemoryRunStorage(RunStorage):
             self._runs[run_id] = run.with_status(PipelineRunStatus.STARTED)
         elif event.event_type == DagsterEventType.PIPELINE_SUCCESS:
             self._runs[run_id] = run.with_status(PipelineRunStatus.SUCCESS)
-        elif event.event_type == DagsterEventType.PIPELINE_INIT_FAILURE:
-            self._runs[run_id] = self._runs[run_id].with_status(PipelineRunStatus.FAILURE)
         elif event.event_type == DagsterEventType.PIPELINE_FAILURE:
             self._runs[run_id] = self._runs[run_id].with_status(PipelineRunStatus.FAILURE)
         elif event.event_type == DagsterEventType.PIPELINE_ENQUEUED:

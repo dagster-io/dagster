@@ -127,10 +127,7 @@ export class LogsProviderWithSubscription extends React.Component<
           nextPipelineStatus = PipelineRunStatus.CANCELED;
         } else if (__typename === 'PipelineSuccessEvent') {
           nextPipelineStatus = PipelineRunStatus.SUCCESS;
-        } else if (
-          __typename === 'PipelineFailureEvent' ||
-          __typename === 'PipelineInitFailureEvent'
-        ) {
+        } else if (__typename === 'PipelineFailureEvent') {
           nextPipelineStatus = PipelineRunStatus.FAILURE;
         }
       }

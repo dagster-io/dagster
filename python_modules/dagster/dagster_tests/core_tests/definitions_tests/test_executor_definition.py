@@ -281,9 +281,9 @@ def test_failing_executor_initialization():
             pipeline_executor_failing, instance=instance, raise_on_error=False
         )
         assert not result.success
-        assert result.event_list[-1].event_type == DagsterEventType.PIPELINE_INIT_FAILURE
+        assert result.event_list[-1].event_type == DagsterEventType.PIPELINE_FAILURE
 
         # Ensure that error in executor fn is properly persisted.
         event_records = instance.all_logs(result.run_id)
         assert len(event_records) == 1
-        assert event_records[0].dagster_event_type == DagsterEventType.PIPELINE_INIT_FAILURE
+        assert event_records[0].dagster_event_type == DagsterEventType.PIPELINE_FAILURE

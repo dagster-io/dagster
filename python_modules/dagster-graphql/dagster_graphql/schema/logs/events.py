@@ -112,14 +112,6 @@ class GraphenePipelineFailureEvent(graphene.ObjectType):
         name = "PipelineFailureEvent"
 
 
-class GraphenePipelineInitFailureEvent(graphene.ObjectType):
-    error = graphene.NonNull(GraphenePythonError)
-
-    class Meta:
-        interfaces = (GrapheneMessageEvent, GraphenePipelineEvent)
-        name = "PipelineInitFailureEvent"
-
-
 class GrapheneAlertStartEvent(graphene.ObjectType):
     class Meta:
         interfaces = (GrapheneMessageEvent, GraphenePipelineEvent)
@@ -488,7 +480,6 @@ class GraphenePipelineRunEvent(graphene.Union):
             GrapheneExecutionStepRestartEvent,
             GrapheneLogMessageEvent,
             GraphenePipelineFailureEvent,
-            GraphenePipelineInitFailureEvent,
             GraphenePipelineStartEvent,
             GraphenePipelineEnqueuedEvent,
             GraphenePipelineDequeuedEvent,

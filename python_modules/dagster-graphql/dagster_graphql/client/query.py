@@ -172,11 +172,6 @@ fragment messageEventFragment on MessageEvent {
   level
   eventType
   ...stepEventFragment
-  ... on PipelineInitFailureEvent {
-    initError: error {
-      ...errorFragment
-    }
-  }
   ... on StepMaterializationEvent {
     materialization {
       label

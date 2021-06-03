@@ -52,11 +52,6 @@ export class Structured extends React.Component<StructuredProps, StructuredState
         title: 'Error',
         body: <PythonErrorInfo error={node.error} />,
       });
-    } else if (node.__typename === 'PipelineInitFailureEvent') {
-      showCustomAlert({
-        title: 'Error',
-        body: <PythonErrorInfo error={node.error} />,
-      });
     } else if (node.__typename === 'EngineEvent' && node.engineError) {
       showCustomAlert({
         title: 'Error',
@@ -116,11 +111,6 @@ export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
         metadataEntries {
           ...MetadataEntryFragment
         }
-      }
-    }
-    ... on PipelineInitFailureEvent {
-      error {
-        ...PythonErrorFragment
       }
     }
     ... on PipelineFailureEvent {

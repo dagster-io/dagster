@@ -27,9 +27,6 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
   const location = useLocation();
   const eventType = node.eventType as string;
   switch (node.__typename) {
-    // Errors
-    case 'PipelineInitFailureEvent':
-      return <FailureContent error={node.error} eventType={eventType} />;
     case 'ExecutionStepFailureEvent':
       return (
         <FailureContent

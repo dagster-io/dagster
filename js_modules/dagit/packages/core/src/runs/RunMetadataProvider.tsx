@@ -63,7 +63,6 @@ export interface IRunMetadataDict {
   startedPipelineAt?: number;
   exitedAt?: number;
   processId?: number;
-  initFailed?: boolean;
   globalMarkers: IMarker[];
   steps: {
     [stepKey: string]: IStepMetadata;
@@ -124,10 +123,6 @@ export function extractMetadataFromLogs(
 
     if (log.__typename === 'PipelineStartEvent') {
       metadata.startedPipelineAt = timestamp;
-    }
-    if (log.__typename === 'PipelineInitFailureEvent') {
-      metadata.initFailed = true;
-      metadata.exitedAt = timestamp;
     }
     if (
       log.__typename === 'PipelineFailureEvent' ||

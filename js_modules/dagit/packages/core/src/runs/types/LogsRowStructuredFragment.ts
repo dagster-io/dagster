@@ -121,29 +121,6 @@ export interface LogsRowStructuredFragment_StepMaterializationEvent {
   materialization: LogsRowStructuredFragment_StepMaterializationEvent_materialization;
 }
 
-export interface LogsRowStructuredFragment_PipelineInitFailureEvent_error_cause {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-}
-
-export interface LogsRowStructuredFragment_PipelineInitFailureEvent_error {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-  cause: LogsRowStructuredFragment_PipelineInitFailureEvent_error_cause | null;
-}
-
-export interface LogsRowStructuredFragment_PipelineInitFailureEvent {
-  __typename: "PipelineInitFailureEvent";
-  message: string;
-  eventType: DagsterEventType | null;
-  timestamp: string;
-  level: LogLevel;
-  stepKey: string | null;
-  error: LogsRowStructuredFragment_PipelineInitFailureEvent_error;
-}
-
 export interface LogsRowStructuredFragment_PipelineFailureEvent_pipelineFailureError_cause {
   __typename: "PythonError";
   message: string;
@@ -985,4 +962,4 @@ export interface LogsRowStructuredFragment_LogsCapturedEvent {
   stepKeys: string[] | null;
 }
 
-export type LogsRowStructuredFragment = LogsRowStructuredFragment_ExecutionStepSkippedEvent | LogsRowStructuredFragment_StepMaterializationEvent | LogsRowStructuredFragment_PipelineInitFailureEvent | LogsRowStructuredFragment_PipelineFailureEvent | LogsRowStructuredFragment_ExecutionStepFailureEvent | LogsRowStructuredFragment_ExecutionStepInputEvent | LogsRowStructuredFragment_ExecutionStepOutputEvent | LogsRowStructuredFragment_StepExpectationResultEvent | LogsRowStructuredFragment_ObjectStoreOperationEvent | LogsRowStructuredFragment_HandledOutputEvent | LogsRowStructuredFragment_LoadedInputEvent | LogsRowStructuredFragment_EngineEvent | LogsRowStructuredFragment_HookErroredEvent | LogsRowStructuredFragment_LogsCapturedEvent;
+export type LogsRowStructuredFragment = LogsRowStructuredFragment_ExecutionStepSkippedEvent | LogsRowStructuredFragment_StepMaterializationEvent | LogsRowStructuredFragment_PipelineFailureEvent | LogsRowStructuredFragment_ExecutionStepFailureEvent | LogsRowStructuredFragment_ExecutionStepInputEvent | LogsRowStructuredFragment_ExecutionStepOutputEvent | LogsRowStructuredFragment_StepExpectationResultEvent | LogsRowStructuredFragment_ObjectStoreOperationEvent | LogsRowStructuredFragment_HandledOutputEvent | LogsRowStructuredFragment_LoadedInputEvent | LogsRowStructuredFragment_EngineEvent | LogsRowStructuredFragment_HookErroredEvent | LogsRowStructuredFragment_LogsCapturedEvent;
