@@ -53,7 +53,7 @@ export class SidebarComponent extends React.Component<IPluginSidebarProps> {
               value={sql.value}
               style={{
                 height: 510,
-                margin: 0,
+                padding: 10,
                 overflow: 'scroll',
                 fontSize: '0.9em',
               }}
