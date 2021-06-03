@@ -11,7 +11,7 @@ from dagster.core.host_representation.represented import RepresentedPipeline
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import TagType, get_tag_type
 
-from ...implementation.events import construct_basic_params
+from ...implementation.events import construct_basic_params, from_event_record
 from ...implementation.fetch_assets import get_assets_for_run_id
 from ...implementation.fetch_pipelines import get_pipeline_reference_or_raise
 from ...implementation.fetch_runs import get_run_by_id, get_runs, get_stats, get_step_stats
@@ -27,7 +27,12 @@ from ..errors import (
 )
 from ..execution import GrapheneExecutionPlan
 from ..logs.compute_logs import GrapheneComputeLogs
-from ..logs.events import GraphenePipelineRunStepStats, GrapheneStepMaterializationEvent
+from ..logs.events import (
+    GraphenePipelineRunEvent,
+    GraphenePipelineRunStepStats,
+    GrapheneStepMaterializationEvent,
+)
+from ..paging import GrapheneCursor
 from ..repository_origin import GrapheneRepositoryOrigin
 from ..schedules.schedules import GrapheneSchedule
 from ..sensors import GrapheneSensor
@@ -163,6 +168,10 @@ class GraphenePipelineRun(graphene.ObjectType):
     parentRunId = graphene.Field(graphene.String)
     canTerminate = graphene.NonNull(graphene.Boolean)
     assets = non_null_list(GrapheneAsset)
+    events = graphene.Field(
+        non_null_list(GraphenePipelineRunEvent),
+        after=graphene.Argument(GrapheneCursor),
+    )
 
     class Meta:
         name = "PipelineRun"
@@ -266,6 +275,10 @@ class GraphenePipelineRun(graphene.ObjectType):
 
     def resolve_assets(self, graphene_info):
         return get_assets_for_run_id(graphene_info, self.run_id)
+
+    def resolve_events(self, graphene_info, after=-1):
+        events = graphene_info.context.instance.logs_after(self.run_id, cursor=after)
+        return [from_event_record(event, self._pipeline_run.pipeline_name) for event in events]
 
 
 class GrapheneIPipelineSnapshotMixin:
