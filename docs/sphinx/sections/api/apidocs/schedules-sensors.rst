@@ -34,7 +34,6 @@ Sensors
 .. autodecorator:: sensor
 
 .. autoclass:: SensorDefinition
-     :members: evaluate_tick
 
 .. autoclass:: SensorExecutionContext
 

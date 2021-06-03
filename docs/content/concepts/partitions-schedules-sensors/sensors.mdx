@@ -131,7 +131,7 @@ def my_directory_sensor_cursor(context):
             yield RunRequest(run_key=run_key, run_config=run_config)
             max_mtime = max(max_mtime, file_mtime)
 
-    context.update_cursor(max_mtime)
+    context.update_cursor(str(max_mtime))
 ```
 
 For sensors that consume multiple event streams, you may need to serialize and deserialize a more complex data structure in and out of the cursor string to keep track of the sensor's progress over the multiple streams.
@@ -183,9 +183,12 @@ def my_directory_sensor_with_skip_reasons(_context):
 
 To quickly preview what an existing sensor would generate when evaluated, you can run the CLI command `dagster sensor preview my_sensor_name`.
 
-In order to unit test sensors, you can use the <PyObject object="build_sensor_context" /> function to construct a <PyObject object="SensorExecutionContext"/>. This can be passed to <PyObject object="SensorDefinition" method="evaluate_tick" />, which will return all run requests yielded from the sensor. The config obtained from these can be validated using the <PyObject object="validate_run_config" /> function.
+In order to unit test sensors, you can invoke the sensor directly. This will return all the run requests yielded by the sensor. The config obtained from these can be validated using the <PyObject object="validate_run_config" /> function.
 
 ```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_sensor_testing endbefore=end_sensor_testing
+from dagster import validate_run_config
+
+
 @sensor(pipeline_name="log_file_pipeline")
 def sensor_to_test(_context):
     yield RunRequest(
@@ -195,8 +198,44 @@ def sensor_to_test(_context):
 
 
 def test_sensor():
-    sensor_data = sensor_to_test.evaluate_tick(build_sensor_context())
-    for run_request in sensor_data.run_requests:
+    for run_request in sensor_to_test(None):
+        assert validate_run_config(log_file_pipeline, run_request.run_config)
+```
+
+Notice that since we did not use the context argument in our sensor, we don't have to provide a context object. However, if we do in fact need the context object for our sensor, we can provide it via <PyObject object="build_sensor_context" />. Consider again the `my_directory_sensor_cursor` example.
+
+```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_cursor_sensors_marker endbefore=end_cursor_sensors_marker
+@sensor(pipeline_name="log_file_pipeline")
+def my_directory_sensor_cursor(context):
+    last_mtime = float(context.cursor) if context.cursor else 0
+
+    max_mtime = last_mtime
+    for filename in os.listdir(MY_DIRECTORY):
+        filepath = os.path.join(MY_DIRECTORY, filename)
+        if os.path.isfile(filepath):
+            fstats = os.stat(filepath)
+            file_mtime = fstats.st_mtime
+            if file_mtime <= last_mtime:
+                continue
+
+            # the run key should include mtime if we want to kick off new runs based on file modifications
+            run_key = f"{filename}:{str(file_mtime)}"
+            run_config = {"solids": {"process_file": {"config": {"filename": filename}}}}
+            yield RunRequest(run_key=run_key, run_config=run_config)
+            max_mtime = max(max_mtime, file_mtime)
+
+    context.update_cursor(str(max_mtime))
+```
+
+This sensor makes use of the `context` argument, and thus to invoke it, we need to provide one.
+
+```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_sensor_testing_with_context endbefore=end_sensor_testing_with_context
+from dagster import build_sensor_context
+
+
+def test_my_directory_sensor_cursor():
+    context = build_sensor_context(cursor="0")
+    for run_request in my_directory_sensor_cursor(context):
         assert validate_run_config(log_file_pipeline, run_request.run_config)
 ```
 

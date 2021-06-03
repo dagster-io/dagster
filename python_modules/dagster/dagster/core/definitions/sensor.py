@@ -4,7 +4,7 @@ from contextlib import ExitStack
 from typing import Any, Callable, Generator, List, NamedTuple, Optional, Union, cast
 
 from dagster import check
-from dagster.core.errors import DagsterInvariantViolationError
+from dagster.core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
 from dagster.core.instance import DagsterInstance
 from dagster.core.instance.ref import InstanceRef
 from dagster.serdes import whitelist_for_serdes
@@ -15,6 +15,7 @@ from dagster.utils.backcompat import (
     experimental_fn_warning,
 )
 
+from ..decorator_utils import get_function_params
 from .graph import GraphDefinition
 from .mode import DEFAULT_MODE_NAME
 from .run_request import JobType, PipelineRunReaction, RunRequest, SkipReason
@@ -139,6 +140,12 @@ class SensorDefinition:
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
         job: Optional[GraphDefinition] = None,
+        decorated_fn: Optional[
+            Callable[
+                ["SensorExecutionContext"],
+                Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
+            ]
+        ] = None,
     ):
 
         self._name = check_valid_name(name)
@@ -163,14 +170,44 @@ class SensorDefinition:
 
         self._description = check.opt_str_param(description, "description")
         self._evaluation_fn = check.callable_param(evaluation_fn, "evaluation_fn")
+        self._decorated_fn = check.opt_callable_param(decorated_fn, "decorated_fn")
         self._min_interval = check.opt_int_param(
             minimum_interval_seconds, "minimum_interval_seconds", DEFAULT_SENSOR_DAEMON_INTERVAL
         )
 
-    # This allows us to pass sensor definition off as a function, so that it can inherit the
-    # metadata of the wrapped function.
     def __call__(self, *args, **kwargs):
-        return self
+        if not self._decorated_fn:
+            raise DagsterInvalidInvocationError(
+                "Sensor invocation is only supported for sensors created via the `@sensor` "
+                "decorator."
+            )
+        if len(args) == 0 and len(kwargs) == 0:
+            raise DagsterInvalidInvocationError(
+                "Sensor decorated function has context argument, but no context argument was "
+                "provided when invoking."
+            )
+        if len(args) + len(kwargs) > 1:
+            raise DagsterInvalidInvocationError(
+                "Sensor invocation received multiple arguments. Only a first "
+                "positional context parameter should be provided when invoking."
+            )
+
+        context_param_name = get_function_params(self._decorated_fn)[0].name
+
+        if args:
+            context = check.opt_inst_param(args[0], context_param_name, SensorExecutionContext)
+        else:
+            if context_param_name not in kwargs:
+                raise DagsterInvalidInvocationError(
+                    f"Sensor invocation expected argument '{context_param_name}'."
+                )
+            context = check.opt_inst_param(
+                kwargs[context_param_name], context_param_name, SensorExecutionContext
+            )
+
+        context = context if context else build_sensor_context()
+
+        return self._decorated_fn(context)
 
     @property
     def name(self) -> str:
@@ -319,7 +356,7 @@ def build_sensor_context(
         .. code-block:: python
 
             context = build_sensor_context()
-            my_sensor.evaluate_tick(context)
+            my_sensor(context)
 
     """
 

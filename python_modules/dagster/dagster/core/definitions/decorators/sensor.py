@@ -83,6 +83,7 @@ def sensor(
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
             job=job,
+            decorated_fn=fn,
         )
 
         update_wrapper(sensor_def, wrapped=fn)

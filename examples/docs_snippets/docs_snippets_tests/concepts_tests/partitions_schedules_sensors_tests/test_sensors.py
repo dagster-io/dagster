@@ -13,6 +13,7 @@ from docs_snippets.concepts.partitions_schedules_sensors.sensors.sensors import 
     my_directory_sensor,
     sensor_A,
     sensor_B,
+    test_my_directory_sensor_cursor,
     test_sensor,
 )
 
@@ -67,7 +68,7 @@ def test_pipeline_failure_sensor_has_request():
             )
 
         context = build_sensor_context(instance)
-        requests = pipeline_failure_sensor.evaluate_tick(context)
+        requests = list(pipeline_failure_sensor(context))
         assert len(requests) == 1
 
 
@@ -80,9 +81,10 @@ def test_pipeline_failure_sensor_has_no_request():
         )
 
         context = build_sensor_context(instance)
-        requests = pipeline_failure_sensor.evaluate_tick(context)
+        requests = list(pipeline_failure_sensor(context))
         assert len(requests) == 0
 
 
 def test_sensor_testing_example():
     test_sensor()
+    test_my_directory_sensor_cursor()
