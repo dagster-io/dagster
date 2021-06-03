@@ -16,7 +16,6 @@ from dagster.core.definitions.event_metadata import EventMetadataEntry, Partitio
 from dagster.core.definitions.events import AssetLineageInfo, DynamicOutput
 from dagster.core.errors import (
     DagsterExecutionHandleOutputError,
-    DagsterExecutionStepExecutionError,
     DagsterInvariantViolationError,
     DagsterStepOutputNotFoundError,
     DagsterTypeCheckDidNotPass,
@@ -297,7 +296,11 @@ def core_dagster_event_sequence_for_step(
     input_lineage = _dedup_asset_lineage(input_lineage)
     with time_execution_scope() as timer_result:
         user_event_sequence = check.generator(
-            _user_event_sequence_for_step_compute_fn(step_context, inputs)
+            execute_core_compute(
+                step_context,
+                inputs,
+                step_context.solid_def.compute_fn,
+            )
         )
 
         # It is important for this loop to be indented within the
@@ -582,29 +585,3 @@ def _create_type_materializations(
                         )
 
                     yield DagsterEvent.asset_materialization(step_context, materialization)
-
-
-def _user_event_sequence_for_step_compute_fn(
-    step_context: StepExecutionContext, evaluated_inputs: Dict[str, Any]
-) -> Iterator[SolidOutputUnion]:
-    check.inst_param(step_context, "step_context", StepExecutionContext)
-    check.dict_param(evaluated_inputs, "evaluated_inputs", key_type=str)
-
-    gen = execute_core_compute(
-        step_context,
-        evaluated_inputs,
-        step_context.solid_def.compute_fn,
-    )
-
-    for event in iterate_with_context(
-        lambda: solid_execution_error_boundary(
-            DagsterExecutionStepExecutionError,
-            msg_fn=lambda: f'Error occurred while executing solid "{step_context.solid.name}":',
-            step_context=step_context,
-            step_key=step_context.step.key,
-            solid_def_name=step_context.solid_def.name,
-            solid_name=step_context.solid.name,
-        ),
-        gen,
-    ):
-        yield event

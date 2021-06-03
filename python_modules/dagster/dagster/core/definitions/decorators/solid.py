@@ -238,7 +238,8 @@ def solid(
     )
 
 
-def _coerce_solid_output_to_iterator(result, context, output_defs):
+def _validate_and_coerce_solid_result_to_iterator(result, context, output_defs):
+
     if isinstance(result, (AssetMaterialization, Materialization, ExpectationResult)):
         raise DagsterInvariantViolationError(
             (
@@ -250,17 +251,21 @@ def _coerce_solid_output_to_iterator(result, context, output_defs):
             )
         )
 
-    if isinstance(result, Output):
+    if inspect.isgenerator(result):
+        # this happens when a user explicitly returns a generator in the solid
+        for event in result:
+            yield event
+    elif isinstance(result, Output):
         yield result
     elif len(output_defs) == 1:
         if result is None and output_defs[0].is_required is False:
             context.log.warn(
-                'Value "None" returned for non-required output "{output_name}". '
+                'Value "None" returned for non-required output "{output_name}" of solid {solid_name}. '
                 "This value will be passed to downstream solids. For conditional execution use\n"
                 '  yield Output(value, "{output_name}")\n'
                 "when you want the downstream solids to execute, "
                 "and do not yield it when you want downstream solids to skip.".format(
-                    output_name=output_defs[0].name
+                    output_name=output_defs[0].name, solid_name=context.solid.name
                 )
             )
         yield Output(value=result, output_name=output_defs[0].name)
@@ -298,9 +303,15 @@ def _coerce_solid_output_to_iterator(result, context, output_defs):
         )
 
 
+def _coerce_solid_compute_fn_to_iterator(fn, output_defs, context, context_arg_provided, kwargs):
+    result = fn(context, **kwargs) if context_arg_provided else fn(**kwargs)
+    for event in _validate_and_coerce_solid_result_to_iterator(result, context, output_defs):
+        yield event
+
+
 async def _coerce_async_solid_to_async_gen(awaitable, context, output_defs):
     result = await awaitable
-    for event in _coerce_solid_output_to_iterator(result, context, output_defs):
+    for event in _validate_and_coerce_solid_result_to_iterator(result, context, output_defs):
         yield event
 
 
@@ -326,16 +337,23 @@ def _create_solid_compute_wrapper(
         for input_name in input_names:
             kwargs[input_name] = input_defs[input_name]
 
-        result = fn(context, **kwargs) if context_arg_provided else fn(**kwargs)
-
-        if inspect.isgenerator(result):
+        if (
+            inspect.isgeneratorfunction(fn)
+            or inspect.isasyncgenfunction(fn)
+            or inspect.iscoroutinefunction(fn)
+        ):
+            # safe to execute the function, as doing so will not immediately execute user code
+            result = fn(context, **kwargs) if context_arg_provided else fn(**kwargs)
+            if inspect.iscoroutine(result):
+                return _coerce_async_solid_to_async_gen(result, context, output_defs)
+            # already a generator
             return result
-        elif inspect.isasyncgen(result):
-            return result
-        elif inspect.iscoroutine(result):
-            return _coerce_async_solid_to_async_gen(result, context, output_defs)
         else:
-            return _coerce_solid_output_to_iterator(result, context, output_defs)
+            # we have a regular function, do not execute it before we are in an iterator
+            # (as we want all potential failures to happen inside iterators)
+            return _coerce_solid_compute_fn_to_iterator(
+                fn, output_defs, context, context_arg_provided, kwargs
+            )
 
     return compute
 
