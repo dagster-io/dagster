@@ -8,6 +8,7 @@ import {AppContext} from '../app/AppContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
+import {showLaunchError} from '../execute/showLaunchError';
 import {GanttChart, GanttChartLoadingState, GanttChartMode, QueuedState} from '../gantt/GanttChart';
 import {toGraphQueryItems} from '../gantt/toGraphQueryItems';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
@@ -216,8 +217,13 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
       repositoryLocationName: repoMatch.match.repositoryLocation.name,
       repositoryName: repoMatch.match.repository.name,
     });
-    const result = await launchPipelineReexecution({variables});
-    handleLaunchResult(basePath, run.pipeline.name, result);
+
+    try {
+      const result = await launchPipelineReexecution({variables});
+      handleLaunchResult(basePath, run.pipeline.name, result);
+    } catch (error) {
+      showLaunchError(error);
+    }
   };
 
   const onClickStep = (stepKey: string, evt: React.MouseEvent<any>) => {
