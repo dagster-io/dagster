@@ -1,13 +1,15 @@
-import {ApolloClient, gql} from '@apollo/client';
+import {ApolloClient, gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
 import {DirectGraphQLSubscription} from '../app/DirectGraphQLSubscription';
+import {useWebsocketAvailability} from '../app/useWebsocketAvailability';
 import {PipelineRunStatus} from '../types/globalTypes';
 import {TokenizingFieldValue} from '../ui/TokenizingField';
 
 import {RunFragments} from './RunFragments';
 import {PipelineRunLogsSubscription} from './types/PipelineRunLogsSubscription';
 import {PipelineRunLogsSubscriptionStatusFragment} from './types/PipelineRunLogsSubscriptionStatusFragment';
+import {RunLogsQuery} from './types/RunLogsQuery';
 import {RunPipelineRunEventFragment} from './types/RunPipelineRunEventFragment';
 
 export interface LogFilterValue extends TokenizingFieldValue {
@@ -22,8 +24,10 @@ export interface LogFilter {
   hideNonMatches: boolean;
 }
 
+type LogNode = RunPipelineRunEventFragment & {clientsideKey: string};
+
 export interface LogsProviderLogs {
-  allNodes: (RunPipelineRunEventFragment & {clientsideKey: string})[];
+  allNodes: LogNode[];
   loading: boolean;
 }
 
@@ -38,7 +42,10 @@ interface LogsProviderState {
   nodes: (RunPipelineRunEventFragment & {clientsideKey: string})[] | null;
 }
 
-export class LogsProvider extends React.Component<LogsProviderProps, LogsProviderState> {
+export class LogsProviderWithSubscription extends React.Component<
+  LogsProviderProps,
+  LogsProviderState
+> {
   state: LogsProviderState = {
     nodes: null,
   };
@@ -171,6 +178,87 @@ export class LogsProvider extends React.Component<LogsProviderProps, LogsProvide
   }
 }
 
+interface LogsProviderWithQueryProps {
+  runId: string;
+  children: (result: LogsProviderLogs) => React.ReactChild;
+}
+
+const POLL_INTERVAL = 5000;
+
+const LogsProviderWithQuery = (props: LogsProviderWithQueryProps) => {
+  const {children, runId} = props;
+  const [nodes, setNodes] = React.useState<LogNode[]>(() => []);
+  const [after, setAfter] = React.useState<number>(-1);
+
+  const {stopPolling, startPolling} = useQuery<RunLogsQuery>(RUN_LOGS_QUERY, {
+    notifyOnNetworkStatusChange: true,
+    variables: {runId, after},
+    pollInterval: POLL_INTERVAL,
+    onCompleted: (data: RunLogsQuery) => {
+      // We have to stop polling in order to update the `after` value.
+      stopPolling();
+
+      const slice = () => {
+        const count = nodes.length;
+        if (data?.pipelineRunOrError.__typename === 'PipelineRun') {
+          return data?.pipelineRunOrError.events.map((event, ii) => ({
+            ...event,
+            clientsideKey: `csk${count + ii}`,
+          }));
+        }
+        return [];
+      };
+
+      const newSlice = slice();
+      setNodes((current) => [...current, ...newSlice]);
+      setAfter((current) => current + newSlice.length);
+
+      const status =
+        data?.pipelineRunOrError.__typename === 'PipelineRun'
+          ? data?.pipelineRunOrError.status
+          : null;
+
+      if (
+        status &&
+        status !== PipelineRunStatus.FAILURE &&
+        status !== PipelineRunStatus.SUCCESS &&
+        status !== PipelineRunStatus.CANCELED
+      ) {
+        startPolling(POLL_INTERVAL);
+      }
+    },
+  });
+
+  return (
+    <>
+      {children(
+        nodes !== null && nodes.length > 0
+          ? {allNodes: nodes, loading: false}
+          : {allNodes: [], loading: true},
+      )}
+    </>
+  );
+};
+
+export const LogsProvider: React.FC<LogsProviderProps> = (props) => {
+  const {client, children, runId, websocketURI} = props;
+  const websocketAvailability = useWebsocketAvailability();
+
+  if (websocketAvailability === 'attempting-to-connect') {
+    return <>{children({allNodes: [], loading: true})}</>;
+  }
+
+  if (websocketAvailability === 'error') {
+    return <LogsProviderWithQuery runId={runId}>{children}</LogsProviderWithQuery>;
+  }
+
+  return (
+    <LogsProviderWithSubscription runId={runId} websocketURI={websocketURI} client={client}>
+      {children}
+    </LogsProviderWithSubscription>
+  );
+};
+
 const PIPELINE_RUN_LOGS_SUBSCRIPTION = gql`
   subscription PipelineRunLogsSubscription($runId: ID!, $after: Cursor) {
     pipelineRunLogs(runId: $runId, after: $after) {
@@ -200,4 +288,25 @@ const PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT = gql`
     status
     canTerminate
   }
+`;
+
+const RUN_LOGS_QUERY = gql`
+  query RunLogsQuery($runId: ID!, $after: Cursor) {
+    pipelineRunOrError(runId: $runId) {
+      ... on PipelineRun {
+        id
+        runId
+        status
+        canTerminate
+        events(after: $after) {
+          ... on MessageEvent {
+            runId
+          }
+          ...RunPipelineRunEventFragment
+          __typename
+        }
+      }
+    }
+  }
+  ${RunFragments.RunPipelineRunEventFragment}
 `;
