@@ -165,6 +165,7 @@ fragment stepEventFragment on StepEvent {
 MESSAGE_EVENT_FRAGMENTS = (
     """
 fragment messageEventFragment on MessageEvent {
+  __typename
   runId
   message
   timestamp
@@ -173,6 +174,22 @@ fragment messageEventFragment on MessageEvent {
   ...stepEventFragment
   ... on PipelineInitFailureEvent {
     initError: error {
+      ...errorFragment
+    }
+  }
+  ... on StepMaterializationEvent {
+    materialization {
+      label
+      description
+      metadataEntries {
+        __typename
+        ...metadataEntryFragment
+      }
+    }
+  }
+  ... on ExecutionStepFailureEvent {
+    stepKey
+    error {
       ...errorFragment
     }
   }
@@ -193,30 +210,9 @@ subscription subscribeTest($runId: ID!) {
         runId
       }
       messages {
-        __typename
         ...messageEventFragment
-
-        # only include here because unstable between runs
-        ... on StepMaterializationEvent {
-          materialization {
-            label
-            description
-            metadataEntries {
-              __typename
-              ...metadataEntryFragment
-            }
-          }
-        }
-
-        ... on ExecutionStepFailureEvent {
-          stepKey
-          error {
-            ...errorFragment
-          }
-        }
       }
     }
-
     ... on PipelineRunLogsSubscriptionFailure {
       missingRunId
       message
@@ -225,6 +221,22 @@ subscription subscribeTest($runId: ID!) {
 }
 
 """
+)
+
+RUN_EVENTS_QUERY = (
+    MESSAGE_EVENT_FRAGMENTS
+    + """
+query pipelineRunEvents($runId: ID!, $after: Cursor) {
+  pipelineRunOrError(runId: $runId) {
+    __typename
+    ... on PipelineRun {
+      events(after: $after) {
+        ...messageEventFragment
+      }
+    }
+  }
+}
+  """
 )
 
 LAUNCH_PIPELINE_EXECUTION_MUTATION = (
