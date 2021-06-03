@@ -8,6 +8,7 @@ import styled from 'styled-components/macro';
 import {AppContext} from '../app/AppContext';
 import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
 import {WebsocketStatusContext} from '../app/WebsocketStatus';
+import {useWebsocketAvailability} from '../app/useWebsocketAvailability';
 import {EMPTY_RUN_METADATA, IRunMetadataDict, IStepMetadata} from '../runs/RunMetadataProvider';
 import {StepSelection} from '../runs/StepSelection';
 import {Box} from '../ui/Box';
@@ -216,8 +217,9 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
 
   const {rootServerURI} = React.useContext(AppContext);
 
+  const websocketAvailability = useWebsocketAvailability();
   const websocketStatus = React.useContext(WebsocketStatusContext);
-  const websocketClosed = websocketStatus === WebSocket.CLOSED;
+  const lostWebsocket = websocketAvailability === 'success' && websocketStatus === WebSocket.CLOSED;
 
   // The slider in the UI updates `options.zoom` from 1-100. We convert that value
   // into a px-per-ms "scale", where the minimum is the value required to zoom-to-fit.
@@ -241,7 +243,7 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
   // Because renders can happen "out of band" of our update interval, we set a timer for
   // "time until the next interval after the current nowMs".
   React.useEffect(() => {
-    if (scale === 0 || websocketClosed) {
+    if (scale === 0 || lostWebsocket) {
       return;
     }
 
@@ -259,7 +261,7 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
     const timeUntilIntervalElasped = renderInterval - (now - nowMs);
     const timeout = setTimeout(() => setNowMs(now), timeUntilIntervalElasped);
     return () => clearTimeout(timeout);
-  }, [scale, metadata, nowMs, websocketClosed]);
+  }, [scale, metadata, nowMs, lostWebsocket]);
 
   // Listen for events specifying hover time (eg: a marker at a particular timestamp)
   // and sync them to our React state for display.
@@ -352,7 +354,7 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
       </div>
 
       <GraphQueryInputContainer>
-        {websocketClosed ? (
+        {lostWebsocket ? (
           <WebsocketWarning>
             <Box flex={{justifyContent: 'space-around'}} margin={{bottom: 12}}>
               <Group
