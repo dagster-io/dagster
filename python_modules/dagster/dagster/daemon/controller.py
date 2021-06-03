@@ -7,6 +7,7 @@ from contextlib import ExitStack, contextmanager
 import pendulum
 from dagster import check
 from dagster.cli.workspace.dynamic_workspace import DynamicWorkspace
+from dagster.core.definitions.sensor import DEFAULT_SENSOR_DAEMON_INTERVAL
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.instance import DagsterInstance
 from dagster.daemon.daemon import (
@@ -44,7 +45,8 @@ def _sorted_quoted(strings):
 
 def create_daemons_from_instance(instance):
     return [
-        create_daemon_of_type(daemon_type) for daemon_type in instance.get_required_daemon_types()
+        create_daemon_of_type(daemon_type, instance)
+        for daemon_type in instance.get_required_daemon_types()
     ]
 
 
@@ -255,17 +257,19 @@ class DagsterDaemonController:
         return list(self._daemons.values())
 
 
-def create_daemon_of_type(daemon_type):
+def create_daemon_of_type(daemon_type, instance):
     if daemon_type == SchedulerDaemon.daemon_type():
-        return SchedulerDaemon.create_from_instance(DagsterInstance.get())
+        return SchedulerDaemon(interval_seconds=DEFAULT_DAEMON_INTERVAL_SECONDS)
     elif daemon_type == SensorDaemon.daemon_type():
-        return SensorDaemon.create_from_instance(DagsterInstance.get())
+        return SensorDaemon(interval_seconds=DEFAULT_SENSOR_DAEMON_INTERVAL)
     elif daemon_type == QueuedRunCoordinatorDaemon.daemon_type():
-        return QueuedRunCoordinatorDaemon.create_from_instance(DagsterInstance.get())
+        return QueuedRunCoordinatorDaemon(
+            interval_seconds=instance.run_coordinator.dequeue_interval_seconds
+        )
     elif daemon_type == BackfillDaemon.daemon_type():
-        return BackfillDaemon.create_from_instance(DagsterInstance.get())
+        return BackfillDaemon(interval_seconds=DEFAULT_DAEMON_INTERVAL_SECONDS)
     else:
-        raise Exception("Unexpected daemon type {daemon_type}".format(daemon_type=daemon_type))
+        raise Exception(f"Unexpected daemon type {daemon_type}")
 
 
 def all_daemons_healthy(

@@ -7,7 +7,6 @@ from contextlib import AbstractContextManager
 import pendulum
 from dagster import DagsterInstance, check
 from dagster.cli.workspace.workspace import IWorkspace
-from dagster.core.definitions.sensor import DEFAULT_SENSOR_DAEMON_INTERVAL
 from dagster.daemon.backfill import execute_backfill_iteration
 from dagster.daemon.sensor import execute_sensor_iteration_loop
 from dagster.daemon.types import DaemonHeartbeat
@@ -209,40 +208,17 @@ class DagsterDaemon(AbstractContextManager):
 
 
 class SchedulerDaemon(DagsterDaemon):
-    def __init__(
-        self,
-        interval_seconds,
-        max_catchup_runs,
-    ):
-        super(SchedulerDaemon, self).__init__(interval_seconds)
-        self._max_catchup_runs = max_catchup_runs
-
-    @staticmethod
-    def create_from_instance(instance):
-        max_catchup_runs = instance.scheduler.max_catchup_runs
-
-        from dagster.daemon.controller import DEFAULT_DAEMON_INTERVAL_SECONDS
-
-        return SchedulerDaemon(
-            interval_seconds=DEFAULT_DAEMON_INTERVAL_SECONDS,
-            max_catchup_runs=max_catchup_runs,
-        )
-
     @classmethod
     def daemon_type(cls):
         return "SCHEDULER"
 
     def run_iteration(self, instance, workspace):
         yield from execute_scheduler_iteration(
-            instance, workspace, self._logger, self._max_catchup_runs
+            instance, workspace, self._logger, instance.scheduler.max_catchup_runs
         )
 
 
 class SensorDaemon(DagsterDaemon):
-    @staticmethod
-    def create_from_instance(_instance):
-        return SensorDaemon(interval_seconds=DEFAULT_SENSOR_DAEMON_INTERVAL)
-
     @classmethod
     def daemon_type(cls):
         return "SENSOR"
@@ -252,12 +228,6 @@ class SensorDaemon(DagsterDaemon):
 
 
 class BackfillDaemon(DagsterDaemon):
-    @staticmethod
-    def create_from_instance(_instance):
-        from dagster.daemon.controller import DEFAULT_DAEMON_INTERVAL_SECONDS
-
-        return BackfillDaemon(interval_seconds=DEFAULT_DAEMON_INTERVAL_SECONDS)
-
     @classmethod
     def daemon_type(cls):
         return "BACKFILL"

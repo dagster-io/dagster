@@ -13,7 +13,7 @@ from dagster.cli.workspace.dynamic_workspace import DynamicWorkspace
 from dagster.core.definitions.decorators.sensor import sensor
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.definitions.run_request import JobType
-from dagster.core.definitions.sensor import RunRequest, SkipReason
+from dagster.core.definitions.sensor import DEFAULT_SENSOR_DAEMON_INTERVAL, RunRequest, SkipReason
 from dagster.core.execution.api import execute_pipeline
 from dagster.core.host_representation import (
     ExternalJobOrigin,
@@ -775,7 +775,7 @@ def test_error_sensor_daemon(external_repo_context, monkeypatch):
             instance.add_job_state(
                 JobState(_get_unloadable_sensor_origin(), JobType.SENSOR, JobStatus.RUNNING)
             )
-            sensor_daemon = SensorDaemon.create_from_instance(instance)
+            sensor_daemon = SensorDaemon(interval_seconds=DEFAULT_SENSOR_DAEMON_INTERVAL)
             daemon_shutdown_event = threading.Event()
             sensor_daemon.run_loop(
                 "my_uuid",

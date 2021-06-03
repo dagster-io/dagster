@@ -82,30 +82,6 @@ class QueuedRunCoordinatorDaemon(DagsterDaemon):
     store and launches them.
     """
 
-    def __init__(
-        self,
-        interval_seconds,
-        max_concurrent_runs,
-        tag_concurrency_limits=None,
-    ):
-        super(QueuedRunCoordinatorDaemon, self).__init__(interval_seconds)
-        self._max_concurrent_runs = check.int_param(max_concurrent_runs, "max_concurrent_runs")
-        self._tag_concurrency_limits = check.opt_list_param(
-            tag_concurrency_limits,
-            "tag_concurrency_limits",
-        )
-
-    @staticmethod
-    def create_from_instance(instance):
-        max_concurrent_runs = instance.run_coordinator.max_concurrent_runs
-        tag_concurrency_limits = instance.run_coordinator.tag_concurrency_limits
-
-        return QueuedRunCoordinatorDaemon(
-            interval_seconds=instance.run_coordinator.dequeue_interval_seconds,
-            max_concurrent_runs=max_concurrent_runs,
-            tag_concurrency_limits=tag_concurrency_limits,
-        )
-
     @classmethod
     def daemon_type(cls):
         return "QUEUED_RUN_COORDINATOR"
@@ -113,14 +89,17 @@ class QueuedRunCoordinatorDaemon(DagsterDaemon):
     def run_iteration(self, instance, workspace):
         check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(workspace, "workspace", IWorkspace)
+
+        max_concurrent_runs = instance.run_coordinator.max_concurrent_runs
+        tag_concurrency_limits = instance.run_coordinator.tag_concurrency_limits
         in_progress_runs = self._get_in_progress_runs(instance)
-        max_runs_to_launch = self._max_concurrent_runs - len(in_progress_runs)
+        max_runs_to_launch = max_concurrent_runs - len(in_progress_runs)
 
         # Possibly under 0 if runs were launched without queuing
         if max_runs_to_launch <= 0:
             self._logger.info(
                 "{} runs are currently in progress. Maximum is {}, won't launch more.".format(
-                    len(in_progress_runs), self._max_concurrent_runs
+                    len(in_progress_runs), max_concurrent_runs
                 )
             )
             return
@@ -138,7 +117,7 @@ class QueuedRunCoordinatorDaemon(DagsterDaemon):
         # launch until blocked by limit rules
         num_dequeued_runs = 0
         tag_concurrency_limits_counter = _TagConcurrencyLimitsCounter(
-            self._tag_concurrency_limits, in_progress_runs
+            tag_concurrency_limits, in_progress_runs
         )
 
         for run in sorted_runs:
