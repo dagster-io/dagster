@@ -10,6 +10,7 @@ import {PageHeader} from '../ui/PageHeader';
 import {Heading} from '../ui/Text';
 import {FontFamily} from '../ui/styles';
 import {useActivePipelineForName} from '../workspace/WorkspaceContext';
+import {workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
 import {SnapshotQuery} from './types/SnapshotQuery';
 
@@ -101,7 +102,12 @@ export const SnapshotNav = (props: SnapshotNavProps) => {
         description={
           <span>
             Snapshot of{' '}
-            <Link to={`/workspace/pipelines/${explorerPath.pipelineName}`}>
+            <Link
+              to={workspacePipelinePathGuessRepo(
+                explorerPath.pipelineName,
+                explorerPath.pipelineMode,
+              )}
+            >
               {explorerPath.pipelineName}
             </Link>
           </span>

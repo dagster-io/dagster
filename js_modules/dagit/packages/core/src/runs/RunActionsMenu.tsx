@@ -8,6 +8,7 @@ import {showCustomAlert} from '../app/CustomAlertProvider';
 import {usePermissions} from '../app/Permissions';
 import {HighlightedCodeBlock} from '../ui/HighlightedCodeBlock';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
+import {workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
 import {DeletionDialog} from './DeletionDialog';
 import {RUN_FRAGMENT_FOR_REPOSITORY_MATCH} from './RunFragments';
@@ -90,11 +91,14 @@ export const RunActionsMenu: React.FC<{
                   disabled={!infoReady}
                   icon="edit"
                   target="_blank"
-                  href={`/workspace/pipelines/${run.pipelineName}/playground/setup?${qs.stringify({
-                    mode: run.mode,
-                    config: runConfigYaml,
-                    solidSelection: run.solidSelection,
-                  })}`}
+                  href={workspacePipelinePathGuessRepo(
+                    run.pipelineName,
+                    run.mode,
+                    `/playground/setup?${qs.stringify({
+                      config: runConfigYaml,
+                      solidSelection: run.solidSelection,
+                    })}`,
+                  )}
                 />
               </Tooltip>
               <Tooltip

@@ -99,6 +99,7 @@ const DAGIT_FLAGS_KEY = 'DAGIT_FLAGS';
 
 export enum FeatureFlag {
   DebugConsoleLogging = 'DebugConsoleLogging',
+  PipelineModeTuples = 'PipelineModeTuples',
   LeftNav = 'LeftNav',
 }
 

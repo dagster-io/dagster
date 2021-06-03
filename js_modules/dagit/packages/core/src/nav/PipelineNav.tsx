@@ -4,6 +4,7 @@ import React from 'react';
 import {Link, useRouteMatch} from 'react-router-dom';
 
 import {DISABLED_MESSAGE, PermissionSet, usePermissions} from '../app/Permissions';
+import {featureEnabled, FeatureFlag} from '../app/Util';
 import {
   explorerPathFromString,
   explorerPathToString,
@@ -104,7 +105,14 @@ export const PipelineNav: React.FC<Props> = (props) => {
   return (
     <Group direction="column" spacing={12} padding={{top: 20, horizontal: 20}}>
       <PageHeader
-        title={<Heading>{explorerPath.pipelineName}</Heading>}
+        title={
+          <Heading>
+            {explorerPath.pipelineName}
+            {featureEnabled(FeatureFlag.PipelineModeTuples) && (
+              <span style={{opacity: 0.5}}> : {explorerPath.pipelineMode}</span>
+            )}
+          </Heading>
+        }
         icon="diagram-tree"
         description={
           <>

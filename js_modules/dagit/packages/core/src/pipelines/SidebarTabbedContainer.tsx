@@ -105,7 +105,13 @@ export const SidebarTabbedContainer: React.FC<ISidebarTabbedContainerProps> = (p
       />
     );
   } else {
-    content = <SidebarPipelineInfo pipeline={pipeline} key={pipeline.name} />;
+    content = (
+      <SidebarPipelineInfo
+        pipeline={pipeline}
+        mode={explorerPath.pipelineMode}
+        key={pipeline.name}
+      />
+    );
   }
 
   return (

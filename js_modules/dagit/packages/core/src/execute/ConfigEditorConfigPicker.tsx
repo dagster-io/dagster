@@ -42,6 +42,7 @@ type ConfigGenerator = Preset | PartitionSet;
 interface ConfigEditorConfigPickerProps {
   base: IExecutionSession['base'];
   pipeline: Pipeline;
+  pipelineMode?: string;
   partitionSets: PartitionSet[];
   solidSelection: string[] | null;
   onSaveSession: (updates: Partial<IExecutionSession>) => void;
@@ -62,6 +63,7 @@ const PRESET_PICKER_HINT_TEXT = `Define a PresetDefinition, PartitionSetDefiniti
 export const ConfigEditorConfigPicker: React.FC<ConfigEditorConfigPickerProps> = (props) => {
   const {
     pipeline,
+    pipelineMode,
     solidSelection,
     base,
     onSaveSession,
@@ -86,8 +88,8 @@ export const ConfigEditorConfigPicker: React.FC<ConfigEditorConfigPickerProps> =
       <ConfigEditorConfigGeneratorPicker
         value={base}
         pipeline={pipeline}
-        presets={pipeline.presets}
-        partitionSets={partitionSets}
+        presets={pipeline.presets.filter((p) => !pipelineMode || p.mode === pipelineMode)}
+        partitionSets={partitionSets.filter((p) => !pipelineMode || p.mode === pipelineMode)}
         solidSelection={solidSelection}
         onSelectPreset={onSelectPreset}
         onSelectPartitionSet={onSelectPartitionSet}

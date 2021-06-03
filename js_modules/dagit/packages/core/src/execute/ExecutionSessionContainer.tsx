@@ -60,6 +60,7 @@ interface IExecutionSessionContainerProps {
   runConfigSchemaOrError?: ExecutionSessionContainerRunConfigSchemaFragment;
   currentSession: IExecutionSession;
   pipelineSelector: PipelineSelector;
+  pipelineMode?: string;
   repoAddress: RepoAddress;
 }
 
@@ -132,6 +133,7 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
     partitionSets,
     pipeline,
     pipelineSelector,
+    pipelineMode,
     repoAddress,
     runConfigSchemaOrError,
   } = props;
@@ -230,7 +232,11 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
   };
 
   const buildExecutionVariables = () => {
-    if (!currentSession || !currentSession.mode) {
+    if (!currentSession) {
+      return;
+    }
+    const mode = pipelineMode || currentSession.mode;
+    if (!mode) {
       return;
     }
     const tags = currentSession.tags || [];
@@ -248,7 +254,7 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
       executionParams: {
         runConfigData,
         selector: pipelineSelector,
-        mode: currentSession.mode,
+        mode,
         executionMetadata: {
           tags: [
             ...tags.map((tag) => ({key: tag.key, value: tag.value})),
@@ -302,7 +308,7 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
       variables: {
         runConfigData: configJSON,
         pipeline: pipelineSelector,
-        mode: currentSession.mode || 'default',
+        mode: pipelineMode || currentSession.mode || 'default',
       },
     });
 
@@ -479,6 +485,7 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
           <SessionSettingsBar>
             <ConfigEditorConfigPicker
               pipeline={pipeline}
+              pipelineMode={pipelineMode}
               partitionSets={partitionSets.results}
               base={currentSession.base}
               solidSelection={currentSession.solidSelection}
@@ -503,13 +510,19 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
               onChange={onSolidSelectionChange}
               repoAddress={repoAddress}
             />
-            <SessionSettingsSpacer />
-            <ConfigEditorModePicker
-              modes={pipeline.modes}
-              modeError={modeError}
-              onModeChange={onModeChange}
-              modeName={currentSession.mode}
-            />
+            {pipelineMode ? (
+              <span />
+            ) : (
+              <>
+                <SessionSettingsSpacer />
+                <ConfigEditorModePicker
+                  modes={pipeline.modes}
+                  modeError={modeError}
+                  onModeChange={onModeChange}
+                  modeName={currentSession.mode}
+                />
+              </>
+            )}
             {tagsFromSession.length ? null : (
               <Box margin={{left: 12}}>
                 <ShortcutHandler

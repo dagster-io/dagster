@@ -89,11 +89,16 @@ describe('App', () => {
       const mocks = {
         Pipeline: () => ({
           name: 'foo_pipeline',
+          modes: new MockList(1),
         }),
         PipelineSnapshot: () => ({
           runs: () => new MockList(0),
           schedules: () => new MockList(0),
           sensors: () => new MockList(0),
+        }),
+        Mode: () => ({
+          __typename: 'Mode',
+          name: 'default',
         }),
       };
 
@@ -101,7 +106,7 @@ describe('App', () => {
         <TestProvider
           routerProps={{
             initialEntries: [
-              '/workspace/my_repository@my_location/pipelines/foo_pipeline/overview',
+              '/workspace/my_repository@my_location/pipelines/foo_pipeline:default/overview',
             ],
           }}
           apolloProps={{mocks: [defaultMocks, mocks]}}

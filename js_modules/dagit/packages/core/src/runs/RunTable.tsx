@@ -13,6 +13,7 @@ import {Group} from '../ui/Group';
 import {Table} from '../ui/Table';
 import {TokenizingFieldValue} from '../ui/TokenizingField';
 import {FontFamily} from '../ui/styles';
+import {workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
 import {RunActionsMenu, RunBulkActionsMenu} from './RunActionsMenu';
 import {RunStatusTagWithStats} from './RunStatusTag';
@@ -251,7 +252,7 @@ const RunRow: React.FC<{
               pipelineName={run.pipelineName}
               pipelineHrefContext="no-link"
             />
-            <Link to={`/workspace/pipelines/${run.pipelineName}`}>
+            <Link to={workspacePipelinePathGuessRepo(run.pipelineName, run.mode)}>
               <Icon icon="diagram-tree" iconSize={11} style={{position: 'relative', top: '-2px'}} />
             </Link>
           </Group>
@@ -261,6 +262,7 @@ const RunRow: React.FC<{
       <td>
         <PipelineSnapshotLink
           snapshotId={run.pipelineSnapshotId || ''}
+          pipelineMode={run.mode}
           pipelineName={run.pipelineName}
         />
       </td>

@@ -28,6 +28,13 @@ export const FeatureFlagsRoot = () => {
           onChange={() => toggleFlag(FeatureFlag.DebugConsoleLogging)}
         />
       </div>
+      <div>
+        <Checkbox
+          label={'Pipeline name + mode tuples'}
+          checked={flags.includes(FeatureFlag.PipelineModeTuples)}
+          onChange={() => toggleFlag(FeatureFlag.PipelineModeTuples)}
+        />
+      </div>
     </div>
   );
 };

@@ -10,6 +10,7 @@ import {RepoAddress} from '../workspace/types';
 
 import {PipelineExplorerRegexRoot} from './PipelineExplorerRoot';
 import {PipelineOverviewRoot} from './PipelineOverviewRoot';
+import {useEnforceModeInPipelinePath} from './PipelinePathUtils';
 import {PipelineRunsRoot} from './PipelineRunsRoot';
 
 interface Props {
@@ -19,6 +20,9 @@ interface Props {
 export const PipelineRoot: React.FC<Props> = (props) => {
   const {repoAddress} = props;
   const {canLaunchPipelineExecution} = usePermissions();
+
+  useEnforceModeInPipelinePath();
+
   return (
     <div
       style={{
