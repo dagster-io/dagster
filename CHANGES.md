@@ -1,5 +1,24 @@
 # Changelog
 
+# 0.11.12
+
+### Bugfixes
+
+- `ScheduleDefinition` and `SensorDefinition` now carry over properties from functions decorated by `@sensor` and `@schedule`. Ie: docstrings.
+- Fixed a bug with configured on resources where the version set on a `ResourceDefinition` was not being passed to the `ResourceDefinition` created by the call to `configured`.
+- Previously, if an error was raised in an `IOManager` `handle_output` implementation that was a generator, it would not be wrapped `DagsterExecutionHandleOutputError`.  Now, it is wrapped.
+- Dagit will now gracefully degrade if websockets are not available. Previously launching runs and viewing the event logs would block on a websocket conection.
+
+### Experimental
+
+- Added an example of run attribution via a [custom run coordinator](https://github.com/dagster-io/dagster/tree/master/examples/run_attribution_example), which reads a user’s email from HTTP headers on the Dagster GraphQL server and attaches the email as a run tag. Custom run coordinator are also now specifiable in the Helm chart, under `queuedRunCoordinator`. See the [docs](https://docs.dagster.io/master/guides/dagster/run-attribution) for more information on setup.
+- `RetryPolicy` now supports backoff and jitter settings, to allow for modulating the `delay` as a function of attempt number and randomness.
+
+### Documentation
+
+- Added an overview section on testing schedules. Note that the `build_schedule_context` and `validate_run_config` functions are still in an experimental state. https://docs.dagster.io/master/concepts/partitions-schedules-sensors/schedules#testing-schedules
+- Added an overview section on testing partition sets. Note that the `validate_run_config` function is still in an experimental state. https://docs.dagster.io/master/concepts/partitions-schedules-sensors/partitions#experimental-testing-a-partition-set
+
 ## 0.11.11
 
 ### New
