@@ -241,7 +241,7 @@ def test_execute_on_celery_k8s_with_resource_requirements(  # pylint: disable=re
         ),
     )
 
-    pipeline_name = "resources_limit_pipeline_celery"
+    pipeline_name = "resources_limit_pipeline"
     run = create_run_for_test(
         dagster_instance,
         pipeline_name=pipeline_name,

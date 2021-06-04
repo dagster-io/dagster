@@ -132,12 +132,17 @@ class K8sStepHandler(StepHandler):
         if not job_config.job_image:
             raise Exception("No image included in either executor config or the pipeline")
 
+        user_defined_k8s_config = get_user_defined_k8s_config(
+            frozentags(step_handler_context.pipeline_run.tags)
+        )
+
         job = construct_dagster_k8s_job(
-            job_config,
-            args,
-            job_name,
-            get_user_defined_k8s_config(frozentags()),
-            pod_name,
+            job_config=job_config,
+            args=args,
+            job_name=job_name,
+            pod_name=pod_name,
+            component="step_worker",
+            user_defined_k8s_config=user_defined_k8s_config,
         )
 
         events.append(

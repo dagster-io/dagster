@@ -240,9 +240,9 @@ def resource_req_solid(context):
     context.log.info("running")
 
 
-def define_resources_limit_pipeline_celery():
+def define_resources_limit_pipeline():
     @pipeline(
-        mode_defs=celery_mode_defs(),
+        mode_defs=celery_mode_defs() + k8s_mode_defs(name="k8s"),
         tags={
             "dagster-k8s/config": {
                 "container_config": {
@@ -254,10 +254,10 @@ def define_resources_limit_pipeline_celery():
             }
         },
     )
-    def resources_limit_pipeline_celery():
+    def resources_limit_pipeline():
         resource_req_solid()
 
-    return resources_limit_pipeline_celery
+    return resources_limit_pipeline
 
 
 def define_schedules():
@@ -517,7 +517,7 @@ def define_demo_execution_repo():
                 "demo_pipeline": demo_pipeline,
                 "demo_pipeline_gcs": demo_pipeline_gcs,
                 "demo_error_pipeline": demo_error_pipeline,
-                "resources_limit_pipeline_celery": define_resources_limit_pipeline_celery,
+                "resources_limit_pipeline": define_resources_limit_pipeline,
                 "retry_pipeline": define_step_retry_pipeline,
                 "slow_pipeline": define_slow_pipeline,
                 "fan_in_fan_out_pipeline": define_fan_in_fan_out_pipeline,

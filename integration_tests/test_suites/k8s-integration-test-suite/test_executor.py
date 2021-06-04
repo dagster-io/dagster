@@ -228,3 +228,65 @@ def test_k8s_run_launcher_terminate(
         assert pipeline_run.status == PipelineRunStatus.CANCELED
 
         assert not dagster_instance_for_k8s_run_launcher.run_launcher.terminate(run_id=run.run_id)
+
+
+@pytest.mark.integration
+def test_k8s_executor_resource_requirements(
+    dagster_instance_for_k8s_run_launcher, helm_namespace_for_k8s_run_launcher, dagster_docker_image
+):
+    # sanity check that we have a K8sRunLauncher
+    check.inst(dagster_instance_for_k8s_run_launcher.run_launcher, K8sRunLauncher)
+    pods = DagsterKubernetesClient.production_client().core_api.list_namespaced_pod(
+        namespace=helm_namespace_for_k8s_run_launcher
+    )
+    celery_pod_names = [p.metadata.name for p in pods.items if "celery-workers" in p.metadata.name]
+    check.invariant(not celery_pod_names)
+
+    run_config = merge_dicts(
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
+        {
+            "execution": {
+                "k8s": {
+                    "config": {
+                        "job_namespace": helm_namespace_for_k8s_run_launcher,
+                        "job_image": dagster_docker_image,
+                        "image_pull_policy": image_pull_policy(),
+                        "env_config_maps": ["dagster-pipeline-env"]
+                        + ([TEST_AWS_CONFIGMAP_NAME] if not IS_BUILDKITE else []),
+                    }
+                }
+            },
+        },
+    )
+
+    pipeline_name = "resources_limit_pipeline"
+    tags = {"key": "value"}
+
+    with get_test_project_location_and_external_pipeline(pipeline_name) as (
+        location,
+        external_pipeline,
+    ):
+        run = create_run_for_test(
+            dagster_instance_for_k8s_run_launcher,
+            pipeline_name=pipeline_name,
+            run_config=run_config,
+            tags=tags,
+            mode="k8s",
+            pipeline_snapshot=external_pipeline.pipeline_snapshot,
+            execution_plan_snapshot=location.get_external_execution_plan(
+                external_pipeline, run_config, "k8s", None, None
+            ).execution_plan_snapshot,
+        )
+        dagster_instance_for_k8s_run_launcher.launch_run(
+            run.run_id,
+            ReOriginatedExternalPipelineForTest(external_pipeline),
+        )
+
+        result = wait_for_job_and_get_raw_logs(
+            job_name="dagster-run-%s" % run.run_id, namespace=helm_namespace_for_k8s_run_launcher
+        )
+
+        assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)
+
+        updated_run = dagster_instance_for_k8s_run_launcher.get_run_by_id(run.run_id)
+        assert updated_run.tags[DOCKER_IMAGE_TAG] == get_test_project_docker_image()
