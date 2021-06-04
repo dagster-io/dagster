@@ -3,9 +3,9 @@ from typing import Callable, Optional
 
 from dagster import check
 from dagster.config.validate import process_config
-from dagster.core.definitions.environment_configs import def_config_field
 from dagster.core.definitions.executor import ExecutorDefinition, check_cross_process_constraints
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
+from dagster.core.definitions.run_config import def_config_field
 from dagster.core.errors import (
     DagsterError,
     DagsterInvalidConfigError,

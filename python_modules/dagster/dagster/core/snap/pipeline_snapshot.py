@@ -109,9 +109,7 @@ class PipelineSnapshot(
             solid_definitions_snapshot=build_solid_definitions_snapshot(pipeline_def),
             dep_structure_snapshot=build_dep_structure_snapshot_from_icontains_solids(pipeline_def),
             mode_def_snaps=[
-                build_mode_def_snap(
-                    md, pipeline_def.get_run_config_schema(md.name).environment_type.key
-                )
+                build_mode_def_snap(md, pipeline_def.get_run_config_schema(md.name).config_type.key)
                 for md in pipeline_def.mode_definitions
             ],
             lineage_snapshot=lineage,

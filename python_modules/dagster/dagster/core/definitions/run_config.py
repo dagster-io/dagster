@@ -58,7 +58,7 @@ def def_config_field(configurable_def: ConfigurableDefinition, is_required: bool
     )
 
 
-class EnvironmentClassCreationData(NamedTuple):
+class RunConfigSchemaCreationData(NamedTuple):
     pipeline_name: str
     solids: List[Solid]
     dependency_structure: DependencyStructure
@@ -68,7 +68,7 @@ class EnvironmentClassCreationData(NamedTuple):
     required_resources: Set[str]
 
 
-def define_logger_dictionary_cls(creation_data: EnvironmentClassCreationData) -> Shape:
+def define_logger_dictionary_cls(creation_data: RunConfigSchemaCreationData) -> Shape:
     return Shape(
         {
             logger_name: def_config_field(logger_definition, is_required=False)
@@ -109,7 +109,7 @@ def define_storage_field(
         return Field(storage_selector, default_value=default_storage)
 
 
-def define_environment_cls(creation_data: EnvironmentClassCreationData):
+def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) -> ConfigType:
     intermediate_storage_field = define_storage_field(
         selector_for_named_defs(creation_data.mode_definition.intermediate_storage_defs),
         storage_names=[dfn.name for dfn in creation_data.mode_definition.intermediate_storage_defs],
@@ -459,20 +459,20 @@ def _gather_all_schemas(node_defs: List[NodeDefinition]) -> Iterator[ConfigType]
 
 
 def _gather_all_config_types(
-    node_defs: List[NodeDefinition], environment_type: ConfigType
+    node_defs: List[NodeDefinition], run_config_schema_type: ConfigType
 ) -> Iterator[ConfigType]:
     for node_def in node_defs:
         yield from iterate_node_def_config_types(node_def)
 
-    yield from iterate_config_types(environment_type)
+    yield from iterate_config_types(run_config_schema_type)
 
 
 def construct_config_type_dictionary(
-    node_defs: List[NodeDefinition], environment_type: ConfigType
+    node_defs: List[NodeDefinition], run_config_schema_type: ConfigType
 ) -> Tuple[Dict[str, ConfigType], Dict[str, ConfigType]]:
     type_dict_by_name = {t.given_name: t for t in ALL_CONFIG_BUILTINS if t.given_name}
     type_dict_by_key = {t.key: t for t in ALL_CONFIG_BUILTINS}
-    all_types = list(_gather_all_config_types(node_defs, environment_type)) + list(
+    all_types = list(_gather_all_config_types(node_defs, run_config_schema_type)) + list(
         _gather_all_schemas(node_defs)
     )
 

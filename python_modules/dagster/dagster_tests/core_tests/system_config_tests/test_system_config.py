@@ -21,9 +21,9 @@ from dagster import (
 )
 from dagster.config.config_type import ConfigTypeKind
 from dagster.config.validate import process_config
-from dagster.core.definitions import create_environment_type, create_run_config_schema
-from dagster.core.definitions.environment_configs import (
-    EnvironmentClassCreationData,
+from dagster.core.definitions import create_run_config_schema, create_run_config_schema_type
+from dagster.core.definitions.run_config import (
+    RunConfigSchemaCreationData,
     define_solid_dictionary_cls,
 )
 from dagster.core.system_config.objects import EnvironmentConfig, ResourceConfig, SolidConfig
@@ -31,7 +31,7 @@ from dagster.loggers import default_loggers
 
 
 def create_creation_data(pipeline_def):
-    return EnvironmentClassCreationData(
+    return RunConfigSchemaCreationData(
         pipeline_def.name,
         pipeline_def.solids,
         pipeline_def.dependency_structure,
@@ -98,7 +98,7 @@ def test_provided_default_on_resources_config():
     def pipeline_def():
         some_solid()
 
-    env_type = create_environment_type(pipeline_def)
+    env_type = create_run_config_schema_type(pipeline_def)
     some_resource_field = env_type.fields["resources"].config_type.fields["some_resource"]
     assert some_resource_field.is_required is False
 
@@ -183,7 +183,7 @@ def assert_has_fields(dtype, *fields):
 
 
 def test_solid_configs_defaults():
-    env_type = create_environment_type(define_test_solids_config_pipeline())
+    env_type = create_run_config_schema_type(define_test_solids_config_pipeline())
 
     solids_field = env_type.fields["solids"]
 
@@ -334,7 +334,7 @@ def test_optional_solid_with_optional_scalar_config():
         ],
     )
 
-    env_type = create_environment_type(pipeline_def)
+    env_type = create_run_config_schema_type(pipeline_def)
 
     assert env_type.fields["solids"].is_required is False
 
@@ -364,7 +364,7 @@ def test_optional_solid_with_required_scalar_config():
         ],
     )
 
-    env_type = create_environment_type(pipeline_def)
+    env_type = create_run_config_schema_type(pipeline_def)
 
     assert env_type.fields["solids"].is_required is True
 
@@ -397,7 +397,7 @@ def test_required_solid_with_required_subfield():
         ],
     )
 
-    env_type = create_environment_type(pipeline_def)
+    env_type = create_run_config_schema_type(pipeline_def)
 
     assert env_type.fields["solids"].is_required is True
     assert env_type.fields["solids"].config_type
@@ -439,7 +439,7 @@ def test_optional_solid_with_optional_subfield():
         ],
     )
 
-    env_type = create_environment_type(pipeline_def)
+    env_type = create_run_config_schema_type(pipeline_def)
     assert env_type.fields["solids"].is_required is False
     assert env_type.fields["execution"].is_required is False
 
@@ -475,7 +475,7 @@ def test_required_resource_with_required_subfield():
         ],
     )
 
-    env_type = create_environment_type(pipeline_def)
+    env_type = create_run_config_schema_type(pipeline_def)
     assert env_type.fields["solids"].is_required is False
     assert env_type.fields["execution"].is_required is False
     assert env_type.fields["resources"].is_required
@@ -502,7 +502,7 @@ def test_all_optional_field_on_single_resource():
         ],
     )
 
-    env_type = create_environment_type(pipeline_def)
+    env_type = create_run_config_schema_type(pipeline_def)
     assert env_type.fields["solids"].is_required is False
     assert env_type.fields["execution"].is_required is False
     assert env_type.fields["resources"].is_required is False
@@ -539,7 +539,7 @@ def test_optional_and_required_context():
         ],
     )
 
-    env_type = create_environment_type(pipeline_def)
+    env_type = create_run_config_schema_type(pipeline_def)
     assert env_type.fields["solids"].is_required is False
 
     assert env_type.fields["execution"].is_required is False
@@ -585,7 +585,7 @@ def test_required_inputs():
         },
     )
 
-    env_type = create_environment_type(pipeline_def)
+    env_type = create_run_config_schema_type(pipeline_def)
 
     solids_type = env_type.fields["solids"].config_type
 
@@ -621,7 +621,7 @@ def test_mix_required_inputs():
         dependencies={"add_numbers": {"right": DependencyDefinition("return_three")}},
     )
 
-    env_type = create_environment_type(pipeline_def)
+    env_type = create_run_config_schema_type(pipeline_def)
     solids_type = env_type.fields["solids"].config_type
     add_numbers_type = solids_type.fields["add_numbers"].config_type
     inputs_fields_dict = add_numbers_type.fields["inputs"].config_type.fields
@@ -633,7 +633,7 @@ def test_mix_required_inputs():
 def test_files_default_config():
     pipeline_def = PipelineDefinition(name="pipeline", solid_defs=[])
 
-    env_type = create_environment_type(pipeline_def)
+    env_type = create_run_config_schema_type(pipeline_def)
     assert "storage" in env_type.fields
 
     config_value = process_config(env_type, {})
@@ -645,7 +645,7 @@ def test_files_default_config():
 def test_storage_in_memory_config():
     pipeline_def = PipelineDefinition(name="pipeline", solid_defs=[])
 
-    env_type = create_environment_type(pipeline_def)
+    env_type = create_run_config_schema_type(pipeline_def)
     assert "storage" in env_type.fields
 
     config_value = process_config(env_type, {"intermediate_storage": {"in_memory": {}}})

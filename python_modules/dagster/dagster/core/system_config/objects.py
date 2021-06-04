@@ -9,7 +9,7 @@ from dagster.core.definitions.intermediate_storage import IntermediateStorageDef
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.definitions.resource import ResourceDefinition
-from dagster.core.definitions.run_config_schema import create_environment_type
+from dagster.core.definitions.run_config_schema import create_run_config_schema_type
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.utils import ensure_single_item
 from dagster.utils.merger import deep_merge_dicts
@@ -150,10 +150,10 @@ class EnvironmentConfig(
         check.opt_str_param(mode, "mode")
 
         mode = mode or pipeline_def.get_default_mode_name()
-        environment_type = create_environment_type(pipeline_def, mode)
+        run_config_schema_type = create_run_config_schema_type(pipeline_def, mode)
 
         config_evr = process_config(
-            environment_type, run_config_storage_field_backcompat(run_config)
+            run_config_schema_type, run_config_storage_field_backcompat(run_config)
         )
         if not config_evr.success:
             raise DagsterInvalidConfigError(

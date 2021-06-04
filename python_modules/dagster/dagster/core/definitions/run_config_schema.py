@@ -1,4 +1,4 @@
-from collections import namedtuple
+from typing import Dict, NamedTuple
 
 from dagster import check
 from dagster.config.config_type import ConfigType
@@ -6,28 +6,10 @@ from dagster.config.config_type import ConfigType
 from .pipeline import PipelineDefinition
 
 
-class RunConfigSchema(
-    namedtuple(
-        "_RunConfigSchema", "environment_type config_type_dict_by_name config_type_dict_by_key"
-    )
-):
-    def __new__(cls, environment_type, config_type_dict_by_name, config_type_dict_by_key):
-        return super(RunConfigSchema, cls).__new__(
-            cls,
-            environment_type=check.inst_param(environment_type, "environment_type", ConfigType),
-            config_type_dict_by_name=check.dict_param(
-                config_type_dict_by_name,
-                "config_type_dict_by_name",
-                key_type=str,
-                value_type=ConfigType,
-            ),
-            config_type_dict_by_key=check.dict_param(
-                config_type_dict_by_key,
-                "config_type_dict_by_key",
-                key_type=str,
-                value_type=ConfigType,
-            ),
-        )
+class RunConfigSchema(NamedTuple):
+    config_type: ConfigType
+    config_type_dict_by_name: Dict[str, ConfigType]
+    config_type_dict_by_key: Dict[str, ConfigType]
 
     def has_config_type(self, name):
         check.str_param(name, "name")
@@ -52,5 +34,5 @@ def create_run_config_schema(pipeline_def, mode=None):
     return pipeline_def.get_run_config_schema(mode)
 
 
-def create_environment_type(pipeline_def, mode=None):
-    return create_run_config_schema(pipeline_def, mode).environment_type
+def create_run_config_schema_type(pipeline_def, mode=None):
+    return create_run_config_schema(pipeline_def, mode).config_type
