@@ -17,6 +17,7 @@ from dagster_test.toys.many_events import many_events
 from dagster_test.toys.pyspark_assets.pyspark_assets_pipeline import pyspark_assets_pipeline
 from dagster_test.toys.repo import toys_repository
 from dagster_test.toys.resources import resource_pipeline
+from dagster_test.toys.retries import retry_pipeline
 from dagster_test.toys.schedules import longitudinal_schedule
 from dagster_test.toys.sleepy import sleepy_pipeline
 
@@ -208,4 +209,11 @@ def test_asset_lineage_pipeline():
                 "top_10_reviews": {"outputs": {"result": {"partitions": ["2020-01-01"]}}},
             }
         },
+    ).success
+
+
+def test_retry_pipeline():
+    assert execute_pipeline(
+        retry_pipeline,
+        run_config=retry_pipeline.get_preset("pass_after_retry").run_config,
     ).success

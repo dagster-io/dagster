@@ -228,3 +228,11 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
             StepExecutionContext: The underlying system context.
         """
         return self._step_execution_context
+
+    @property
+    def retry_number(self) -> int:
+        """
+        Which retry attempt is currently executing i.e. 0 for initial attempt, 1 for first retry, etc.
+        """
+
+        return self._step_execution_context.previous_attempt_count
