@@ -938,12 +938,22 @@ def _create_run_config_schema(
         )
     )
 
+    if mode_definition.config_mapping:
+        outer_config_type = mode_definition.config_mapping.config_schema.config_type
+    else:
+        outer_config_type = run_config_schema_type
+
+    if outer_config_type is None:
+        check.failed("Unexpected outer_config_type value of None")
+
     config_type_dict_by_name, config_type_dict_by_key = construct_config_type_dictionary(
-        pipeline_def.all_solid_defs, run_config_schema_type
+        pipeline_def.all_solid_defs,
+        outer_config_type,
     )
 
     return RunConfigSchema(
-        config_type=run_config_schema_type,
+        run_config_schema_type=run_config_schema_type,
         config_type_dict_by_name=config_type_dict_by_name,
         config_type_dict_by_key=config_type_dict_by_key,
+        config_mapping=mode_definition.config_mapping,
     )

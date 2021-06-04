@@ -18,18 +18,23 @@ class GrapheneResource(graphene.ObjectType):
         self._config_schema_snapshot = check.inst_param(
             config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnapshot
         )
-        self._resource_dep_snap = check.inst_param(
+        self._resource_def_snap = check.inst_param(
             resource_def_snap, "resource_def_snap", ResourceDefSnap
         )
         self.name = resource_def_snap.name
         self.description = resource_def_snap.description
 
     def resolve_configField(self, _graphene_info):
-        return (
-            GrapheneConfigTypeField(
-                config_schema_snapshot=self._config_schema_snapshot,
-                field_snap=self._resource_dep_snap.config_field_snap,
+        if (
+            self._resource_def_snap.config_field_snap
+            # config type may not be present if mode config mapped
+            and self._config_schema_snapshot.has_config_snap(
+                self._resource_def_snap.config_field_snap.type_key
             )
-            if self._resource_dep_snap.config_field_snap
-            else None
-        )
+        ):
+            return GrapheneConfigTypeField(
+                config_schema_snapshot=self._config_schema_snapshot,
+                field_snap=self._resource_def_snap.config_field_snap,
+            )
+
+        return None

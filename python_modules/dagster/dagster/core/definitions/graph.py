@@ -340,12 +340,28 @@ class GraphDefinition(NodeDefinition):
 
     def to_job(
         self,
-        resource_defs: Dict[str, "ResourceDefinition"],
+        resource_defs: Dict[str, "ResourceDefinition"] = None,
+        config_mapping: Union[ConfigMapping, Dict[str, Any]] = None,
     ):
         """
         For experimenting with "job" flows
         """
         from .pipeline import PipelineDefinition
+
+        if config_mapping and not isinstance(config_mapping, ConfigMapping):
+            inner_run_config = config_mapping
+            config_mapping = ConfigMapping(
+                config_fn=lambda _: inner_run_config,
+                config_schema={},
+            )
+
+        if not (config_mapping is None or isinstance(config_mapping, ConfigMapping)):
+            check.failed(f"Unexpected config_mapping value {config_mapping}")
+
+        mode = ModeDefinition(
+            resource_defs=resource_defs,
+            _config_mapping=config_mapping,
+        )
 
         return PipelineDefinition(
             solid_defs=self._solid_defs,
@@ -355,7 +371,7 @@ class GraphDefinition(NodeDefinition):
             input_mappings=self._input_mappings,
             output_mappings=self._output_mappings,
             config_mapping=self._config_mapping,
-            mode_defs=[ModeDefinition(resource_defs=resource_defs)],
+            mode_defs=[mode],
         )
 
 

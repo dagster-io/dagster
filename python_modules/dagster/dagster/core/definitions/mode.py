@@ -3,8 +3,10 @@ from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional
 from dagster import check
 from dagster.core.definitions.executor import ExecutorDefinition, default_executors
 from dagster.loggers import default_loggers
+from dagster.utils.backcompat import experimental_arg_warning
 from dagster.utils.merger import merge_dicts
 
+from .config import ConfigMapping
 from .logger import LoggerDefinition
 from .resource import ResourceDefinition
 from .utils import check_valid_name
@@ -25,6 +27,7 @@ class ModeDefinition(
             ("executor_defs", List[ExecutorDefinition]),
             ("description", Optional[str]),
             ("intermediate_storage_defs", List["IntermediateStorageDefinition"]),
+            ("config_mapping", Optional[ConfigMapping]),
         ],
     )
 ):
@@ -48,6 +51,7 @@ class ModeDefinition(
         intermediate_storage_defs (Optional[List[IntermediateStorageDefinition]]): The set of intermediate storage
             options available when executing in this mode. By default, this will be the 'in_memory'
             and 'filesystem' system storages.
+        _config_mapping (Optional[ConfigMapping]): Experimental
     """
 
     def __new__(
@@ -58,6 +62,7 @@ class ModeDefinition(
         executor_defs: Optional[List[ExecutorDefinition]] = None,
         description: Optional[str] = None,
         intermediate_storage_defs: Optional[List["IntermediateStorageDefinition"]] = None,
+        _config_mapping: Optional[ConfigMapping] = None,
     ):
         from dagster.core.storage.system_storage import default_intermediate_storage_defs
 
@@ -74,6 +79,9 @@ class ModeDefinition(
             resource_defs_with_defaults = merge_dicts(
                 {"io_manager": mem_io_manager}, resource_defs or {}
             )
+
+        if _config_mapping:
+            experimental_arg_warning("config_mapping", "ModeDefinition.__new__")
 
         return super(ModeDefinition, cls).__new__(
             cls,
@@ -98,6 +106,7 @@ class ModeDefinition(
                 of_type=ExecutorDefinition,
             ),
             description=check.opt_str_param(description, "description"),
+            config_mapping=check.opt_inst_param(_config_mapping, "config_mapping", ConfigMapping),
         )
 
     @property

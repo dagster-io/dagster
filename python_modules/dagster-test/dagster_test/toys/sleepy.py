@@ -1,24 +1,13 @@
 # pylint:disable=no-member
-
 from time import sleep
+from typing import Iterator, List
 
-from dagster import (
-    Field,
-    InputDefinition,
-    Int,
-    List,
-    Output,
-    OutputDefinition,
-    PresetDefinition,
-    pipeline,
-    solid,
-)
+from dagster import ConfigMapping, Field, Output, OutputDefinition, solid
+from dagster.core.definitions.decorators.graph import graph
 
 
-@solid(
-    input_defs=[InputDefinition("units", List[Int])], output_defs=[OutputDefinition(Int, "total")]
-)
-def sleeper(context, units):
+@solid
+def sleeper(context, units: List[int]) -> int:
     tot = 0
     for sec in units:
         context.log.info("Sleeping for {} seconds".format(sec))
@@ -29,17 +18,17 @@ def sleeper(context, units):
 
 
 @solid(
-    config_schema=Field([int], is_required=False, default_value=[1, 1, 1, 1]),
+    config_schema=[int],
     output_defs=[
-        OutputDefinition(List[Int], "out_1"),
-        OutputDefinition(List[Int], "out_2"),
-        OutputDefinition(List[Int], "out_3"),
-        OutputDefinition(List[Int], "out_4"),
+        OutputDefinition(List[int], "out_1"),
+        OutputDefinition(List[int], "out_2"),
+        OutputDefinition(List[int], "out_3"),
+        OutputDefinition(List[int], "out_4"),
     ],
 )
-def giver(context):
+def giver(context) -> Iterator[Output]:
     units = context.solid_config
-    queues = [[], [], [], []]
+    queues: List[List[int]] = [[], [], [], []]
     for i, sec in enumerate(units):
         queues[i % 4].append(sec)
 
@@ -50,14 +39,8 @@ def giver(context):
 
 
 @solid(
-    config_schema={"fail": Field(bool, is_required=False, default_value=False)},
-    input_defs=[
-        InputDefinition("in_1", Int),
-        InputDefinition("in_2", Int),
-        InputDefinition("in_3", Int),
-        InputDefinition("in_4", Int),
-    ],
-    output_defs=[OutputDefinition(Int, is_required=False)],
+    config_schema={"fail": bool},
+    output_defs=[OutputDefinition(int, is_required=False)],
 )
 def total(context, in_1, in_2, in_3, in_4):
     result = in_1 + in_2 + in_3 + in_4
@@ -72,23 +55,13 @@ def will_fail(_, i):
     raise Exception(i)
 
 
-@pipeline(
+@graph(
     description=(
         "Demo diamond-shaped pipeline that has four-path parallel structure of solids.  Execute "
         "with the `multi` preset to take advantage of multi-process parallelism."
     ),
-    preset_defs=[
-        PresetDefinition(
-            "multi",
-            {
-                "intermediate_storage": {"filesystem": {}},
-                "execution": {"multiprocess": {}},
-                "solids": {"giver": {"config": [2, 2, 2, 2]}},
-            },
-        )
-    ],
 )
-def sleepy_pipeline():
+def sleepy():
     giver_res = giver()
 
     will_fail(
@@ -99,3 +72,25 @@ def sleepy_pipeline():
             in_4=sleeper(units=giver_res.out_4),
         )
     )
+
+
+def _config(cfg):
+    return {
+        "intermediate_storage": {"filesystem": {}},
+        "execution": {"multiprocess": {}},
+        "solids": {
+            "giver": {"config": cfg["sleeps"]},
+            "total": {"config": {"fail": cfg["fail"]}},
+        },
+    }
+
+
+sleepy_pipeline = sleepy.to_job(
+    config_mapping=ConfigMapping(
+        config_schema={
+            "sleeps": Field([int], is_required=False, default_value=[1, 1, 1, 1]),
+            "fail": Field(bool, is_required=False, default_value=False),
+        },
+        config_fn=_config,
+    )
+)

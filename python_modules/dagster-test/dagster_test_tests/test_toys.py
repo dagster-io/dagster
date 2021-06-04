@@ -4,7 +4,9 @@ from dagster import (
     DagsterResourceFunctionError,
     DagsterTypeCheckDidNotPass,
     execute_pipeline,
+    reconstructable,
 )
+from dagster.core.test_utils import instance_for_test
 from dagster.utils import file_relative_path
 from dagster.utils.temp_file import get_temp_dir
 from dagster_test.toys.asset_lineage import asset_lineage_pipeline
@@ -47,8 +49,13 @@ def test_many_events_pipeline():
     assert execute_pipeline(many_events).success
 
 
+def get_sleepy():
+    return sleepy_pipeline
+
+
 def test_sleepy_pipeline():
-    assert execute_pipeline(sleepy_pipeline).success
+    with instance_for_test() as instance:
+        assert execute_pipeline(reconstructable(get_sleepy), instance=instance).success
 
 
 def test_spew_pipeline():

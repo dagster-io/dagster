@@ -468,7 +468,8 @@ def _gather_all_config_types(
 
 
 def construct_config_type_dictionary(
-    node_defs: List[NodeDefinition], run_config_schema_type: ConfigType
+    node_defs: List[NodeDefinition],
+    run_config_schema_type: ConfigType,
 ) -> Tuple[Dict[str, ConfigType], Dict[str, ConfigType]]:
     type_dict_by_name = {t.given_name: t for t in ALL_CONFIG_BUILTINS if t.given_name}
     type_dict_by_key = {t.key: t for t in ALL_CONFIG_BUILTINS}

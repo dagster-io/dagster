@@ -27,7 +27,6 @@ from dagster_airflow_tests.marks import requires_airflow_db
             "--pipeline-name",
             "resource_pipeline",
         ],
-        ["--module-name", "dagster_test.toys.sleepy", "--pipeline-name", "sleepy_pipeline"],
     ],
 )
 def test_build_dags(clean_airflow_home, cli_args):
