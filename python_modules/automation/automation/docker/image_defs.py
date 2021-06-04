@@ -32,13 +32,13 @@ def copy_directories(paths, cwd, destination="build_cache"):
 
             paths_to_copy.append((src_path, dest_path))
 
-            for src_path, dest_path in paths_to_copy:
-                print("Syncing {} to build dir {}...".format(src_path, dest_path))
-                if os.path.isdir(src_path):
-                    shutil.copytree(src_path, dest_path)
-                else:
-                    shutil.copy(src_path, dest_path)
-            yield
+        for src_path, dest_path in paths_to_copy:
+            print("Syncing {} to build dir {}...".format(src_path, dest_path))
+            if os.path.isdir(src_path):
+                shutil.copytree(src_path, dest_path)
+            else:
+                shutil.copy(src_path, dest_path)
+        yield
 
     finally:
         shutil.rmtree(build_cache_dir)
