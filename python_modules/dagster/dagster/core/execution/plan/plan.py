@@ -40,7 +40,7 @@ from dagster.core.execution.plan.handle import (
 from dagster.core.execution.retries import RetryMode, RetryState
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.mem_io_manager import mem_io_manager
-from dagster.core.system_config.objects import EnvironmentConfig
+from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.types.dagster_type import DagsterTypeKind
 from dagster.core.utils import toposort
 
@@ -90,19 +90,19 @@ class _PlanBuilder:
     def __init__(
         self,
         pipeline: IPipeline,
-        environment_config: EnvironmentConfig,
+        resolved_run_config: ResolvedRunConfig,
         step_keys_to_execute: Optional[List[str]],
         known_state,
     ):
         self.pipeline = check.inst_param(pipeline, "pipeline", IPipeline)
-        self.environment_config = check.inst_param(
-            environment_config, "environment_config", EnvironmentConfig
+        self.resolved_run_config = check.inst_param(
+            resolved_run_config, "resolved_run_config", ResolvedRunConfig
         )
         check.opt_list_param(step_keys_to_execute, "step_keys_to_execute", str)
         self.step_keys_to_execute = step_keys_to_execute
         self.mode_definition = (
-            pipeline.get_definition().get_mode_definition(environment_config.mode)
-            if environment_config.mode is not None
+            pipeline.get_definition().get_mode_definition(resolved_run_config.mode)
+            if resolved_run_config.mode is not None
             else pipeline.get_definition().get_default_mode()
         )
         self._steps: Dict[str, IExecutionStep] = OrderedDict()
@@ -148,11 +148,11 @@ class _PlanBuilder:
     def build(self) -> "ExecutionPlan":
         """Builds the execution plan"""
 
-        _check_io_manager_intermediate_storage(self.mode_definition, self.environment_config)
+        _check_io_manager_intermediate_storage(self.mode_definition, self.resolved_run_config)
         _check_persistent_storage_requirement(
             self.pipeline,
             self.mode_definition,
-            self.environment_config,
+            self.resolved_run_config,
         )
 
         pipeline_def = self.pipeline.get_definition()
@@ -181,14 +181,14 @@ class _PlanBuilder:
                 step_dict,
                 step_handles_to_execute,
                 pipeline_def,
-                self.environment_config,
+                self.resolved_run_config,
                 executable_map,
             ),
         )
 
         if self.step_keys_to_execute is not None:
             return full_plan.build_subset_plan(
-                self.step_keys_to_execute, pipeline_def, self.environment_config
+                self.step_keys_to_execute, pipeline_def, self.resolved_run_config
             )
         else:
             return full_plan
@@ -262,7 +262,7 @@ class _PlanBuilder:
             ### 2a. COMPUTE FUNCTION
             # Create and add execution plan step for the solid compute function
             if isinstance(solid.definition, SolidDefinition):
-                step_outputs = create_step_outputs(solid, handle, self.environment_config)
+                step_outputs = create_step_outputs(solid, handle, self.resolved_run_config)
 
                 if has_pending_input and has_unresolved_input:
                     check.failed("Can not have pending and unresolved step inputs")
@@ -368,7 +368,7 @@ def get_step_input_source(
     )
 
     input_handle = solid.input_handle(input_name)
-    solid_config = plan_builder.environment_config.solids.get(str(handle))
+    solid_config = plan_builder.resolved_run_config.solids.get(str(handle))
 
     input_def = solid.definition.input_def_named(input_name)
     if input_def.root_manager_key and not dependency_structure.has_deps(input_handle):
@@ -636,7 +636,7 @@ class ExecutionPlan(
         self,
         step_keys_to_execute: List[str],
         pipeline_def: PipelineDefinition,
-        environment_config: EnvironmentConfig,
+        resolved_run_config: ResolvedRunConfig,
     ) -> "ExecutionPlan":
         check.list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
         step_handles_to_execute = [StepHandle.parse_from_key(key) for key in step_keys_to_execute]
@@ -668,7 +668,7 @@ class ExecutionPlan(
                 self.step_dict,
                 step_handles_to_execute,
                 pipeline_def,
-                environment_config,
+                resolved_run_config,
                 executable_map,
             ),
         )
@@ -708,7 +708,7 @@ class ExecutionPlan(
     @staticmethod
     def build(
         pipeline: IPipeline,
-        environment_config: EnvironmentConfig,
+        resolved_run_config: ResolvedRunConfig,
         step_keys_to_execute: Optional[List[str]] = None,
         known_state=None,
     ) -> "ExecutionPlan":
@@ -721,13 +721,13 @@ class ExecutionPlan(
         ExecutionPlan object.
         """
         check.inst_param(pipeline, "pipeline", IPipeline)
-        check.inst_param(environment_config, "environment_config", EnvironmentConfig)
+        check.inst_param(resolved_run_config, "resolved_run_config", ResolvedRunConfig)
         check.opt_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
         check.opt_inst_param(known_state, "known_state", KnownExecutionState)
 
         plan_builder = _PlanBuilder(
             pipeline,
-            environment_config=environment_config,
+            resolved_run_config=resolved_run_config,
             step_keys_to_execute=step_keys_to_execute,
             known_state=known_state,
         )
@@ -905,16 +905,16 @@ def can_isolate_steps(pipeline_def: PipelineDefinition, mode_def: ModeDefinition
 def _check_persistent_storage_requirement(
     pipeline: IPipeline,
     mode_def: ModeDefinition,
-    environment_config: EnvironmentConfig,
+    resolved_run_config: ResolvedRunConfig,
 ) -> None:
     from dagster.core.execution.context_creation_pipeline import executor_def_from_config
 
     pipeline_def = pipeline.get_definition()
-    executor_def = executor_def_from_config(mode_def, environment_config)
+    executor_def = executor_def_from_config(mode_def, resolved_run_config)
     if ExecutorRequirement.PERSISTENT_OUTPUTS not in executor_def.requirements:
         return
 
-    intermediate_storage_def = environment_config.intermediate_storage_def_for_mode(mode_def)
+    intermediate_storage_def = resolved_run_config.intermediate_storage_def_for_mode(mode_def)
 
     if not (
         can_isolate_steps(pipeline_def, mode_def)
@@ -929,13 +929,13 @@ def _check_persistent_storage_requirement(
 
 
 def _check_io_manager_intermediate_storage(
-    mode_def: ModeDefinition, environment_config: EnvironmentConfig
+    mode_def: ModeDefinition, resolved_run_config: ResolvedRunConfig
 ) -> None:
     """Only one of io_manager and intermediate_storage should be set."""
     # pylint: disable=comparison-with-callable
     from dagster.core.storage.system_storage import mem_intermediate_storage
 
-    intermediate_storage_def = environment_config.intermediate_storage_def_for_mode(mode_def)
+    intermediate_storage_def = resolved_run_config.intermediate_storage_def_for_mode(mode_def)
     intermediate_storage_is_default = (
         intermediate_storage_def is None or intermediate_storage_def == mem_intermediate_storage
     )
@@ -1013,7 +1013,7 @@ def should_skip_step(execution_plan: ExecutionPlan, instance: DagsterInstance, r
 
 
 def _compute_artifacts_persisted(
-    step_dict, step_handles_to_execute, pipeline_def, environment_config, executable_map
+    step_dict, step_handles_to_execute, pipeline_def, resolved_run_config, executable_map
 ):
     """
     Check if all the border steps of the current run have non-in-memory IO managers for reexecution.
@@ -1025,10 +1025,10 @@ def _compute_artifacts_persisted(
     # intermediate storage backcomopat
     # https://github.com/dagster-io/dagster/issues/3043
 
-    mode_def = pipeline_def.get_mode_definition(environment_config.mode)
+    mode_def = pipeline_def.get_mode_definition(resolved_run_config.mode)
 
     if mode_def.get_intermediate_storage_def(
-        environment_config.intermediate_storage.intermediate_storage_name
+        resolved_run_config.intermediate_storage.intermediate_storage_name
     ).is_persistent:
         return True
 

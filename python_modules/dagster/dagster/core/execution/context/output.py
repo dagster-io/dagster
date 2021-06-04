@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from dagster.core.types.dagster_type import DagsterType
     from dagster.core.definitions import SolidDefinition, PipelineDefinition, ModeDefinition
     from dagster.core.log_manager import DagsterLogManager
-    from dagster.core.system_config.objects import EnvironmentConfig
+    from dagster.core.system_config.objects import ResolvedRunConfig
     from dagster.core.execution.plan.plan import ExecutionPlan
     from dagster.core.execution.plan.outputs import StepOutputHandle
     from dagster.core.log_manager import DagsterLogManager
@@ -195,7 +195,7 @@ class OutputContext:
 def get_output_context(
     execution_plan: "ExecutionPlan",
     pipeline_def: "PipelineDefinition",
-    environment_config: "EnvironmentConfig",
+    resolved_run_config: "ResolvedRunConfig",
     step_output_handle: "StepOutputHandle",
     run_id: Optional[str],
     log_manager: Optional["DagsterLogManager"],
@@ -210,7 +210,7 @@ def get_output_context(
 
     step = execution_plan.get_step_by_key(step_output_handle.step_key)
     # get config
-    solid_config = environment_config.solids[step.solid_handle.to_string()]
+    solid_config = resolved_run_config.solids[step.solid_handle.to_string()]
     outputs_config = solid_config.outputs
 
     if outputs_config:
@@ -222,7 +222,7 @@ def get_output_context(
     output_def = pipeline_def.get_solid(step_output.solid_handle).output_def_named(step_output.name)
 
     io_manager_key = output_def.io_manager_key
-    resource_config = environment_config.resources[io_manager_key].config
+    resource_config = resolved_run_config.resources[io_manager_key].config
 
     if step_context:
         check.invariant(
@@ -246,7 +246,7 @@ def get_output_context(
         log_manager=log_manager,
         version=(
             _step_output_version(
-                pipeline_def, execution_plan, environment_config, step_output_handle
+                pipeline_def, execution_plan, resolved_run_config, step_output_handle
             )
             if MEMOIZED_RUN_TAG in pipeline_def.tags
             else None
@@ -260,13 +260,13 @@ def get_output_context(
 def _step_output_version(
     pipeline_def: "PipelineDefinition",
     execution_plan: "ExecutionPlan",
-    environment_config: "EnvironmentConfig",
+    resolved_run_config: "ResolvedRunConfig",
     step_output_handle: "StepOutputHandle",
 ) -> Optional[str]:
     from dagster.core.execution.resolve_versions import resolve_step_output_versions
 
     step_output_versions = resolve_step_output_versions(
-        pipeline_def, execution_plan, environment_config
+        pipeline_def, execution_plan, resolved_run_config
     )
     return (
         step_output_versions[step_output_handle]

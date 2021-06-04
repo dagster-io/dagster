@@ -57,7 +57,7 @@ def composite_descent(pipeline_def, solids_config, resource_defs):
     """
     This function is responsible for constructing the dictionary
     of SolidConfig (indexed by handle) that will be passed into the
-    EnvironmentConfig. Critically this is the codepath that manages config mapping,
+    ResolvedRunConfig. Critically this is the codepath that manages config mapping,
     where the runtime calls into user-defined config mapping functions to
     produce config for child solids of composites.
 

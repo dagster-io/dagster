@@ -352,7 +352,7 @@ def _type_check_and_store_output(
 
     version = (
         resolve_step_output_versions(
-            step_context.pipeline_def, step_context.execution_plan, step_context.environment_config
+            step_context.pipeline_def, step_context.execution_plan, step_context.resolved_run_config
         ).get(step_output_handle)
         if MEMOIZED_RUN_TAG in step_context.pipeline.get_definition().tags
         else None
@@ -541,7 +541,7 @@ def _create_type_materializations(
 
     # check for output mappings at every point up the composition hierarchy
     while current_handle:
-        solid_config = step_context.environment_config.solids.get(current_handle.to_string())
+        solid_config = step_context.resolved_run_config.solids.get(current_handle.to_string())
         current_handle = current_handle.parent
 
         if solid_config is None:

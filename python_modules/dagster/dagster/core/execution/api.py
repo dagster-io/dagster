@@ -18,7 +18,7 @@ from dagster.core.execution.retries import RetryMode
 from dagster.core.instance import DagsterInstance, is_memoized_run
 from dagster.core.selector import parse_step_selection
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
-from dagster.core.system_config.objects import EnvironmentConfig
+from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.telemetry import log_repo_stats, telemetry_wrapper
 from dagster.core.utils import str_format_set
 from dagster.utils import merge_dicts
@@ -188,7 +188,7 @@ def execute_run(
     execution_plan = _get_execution_plan_from_run(pipeline, pipeline_run, instance)
 
     if is_memoized_run(pipeline_run.tags):
-        environment_config = EnvironmentConfig.build(
+        resolved_run_config = ResolvedRunConfig.build(
             pipeline.get_definition(), pipeline_run.run_config, pipeline_run.mode
         )
 
@@ -197,7 +197,7 @@ def execute_run(
             pipeline.get_definition(),
             pipeline_run.run_config,
             instance,
-            environment_config,
+            resolved_run_config,
         )
 
     output_capture: Optional[Dict[StepOutputHandle, Any]] = {}
@@ -731,11 +731,11 @@ def create_execution_plan(
     mode = check.opt_str_param(mode, "mode", default=pipeline_def.get_default_mode_name())
     check.opt_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
 
-    environment_config = EnvironmentConfig.build(pipeline_def, run_config, mode=mode)
+    resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config, mode=mode)
 
     return ExecutionPlan.build(
         pipeline,
-        environment_config,
+        resolved_run_config,
         step_keys_to_execute=step_keys_to_execute,
         known_state=known_state,
     )

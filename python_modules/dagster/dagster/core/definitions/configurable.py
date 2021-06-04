@@ -37,7 +37,7 @@ class ConfigurableDefinition(ABC):
         results against the respective config schema.
 
         Expects incoming config to be validated and have fully-resolved values (StringSource values
-        resolved, Enum types hydrated, etc.) via process_config() during EnvironmentConfig
+        resolved, Enum types hydrated, etc.) via process_config() during ResolvedRunConfig
         construction and CompositeSolid config mapping.
 
         Args:

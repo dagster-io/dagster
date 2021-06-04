@@ -11,7 +11,7 @@ from dagster.core.errors import (
     user_code_error_boundary,
 )
 from dagster.core.storage.io_manager import IOManager
-from dagster.core.system_config.objects import EnvironmentConfig
+from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils import ensure_gen
 
@@ -124,7 +124,7 @@ class StepInputSource(ABC):
         self,
         step_versions: Dict[str, Optional[str]],
         pipeline_def: PipelineDefinition,
-        environment_config: EnvironmentConfig,
+        resolved_run_config: ResolvedRunConfig,
     ) -> Optional[str]:
         """See resolve_step_versions in resolve_versions.py for explanation of step_versions"""
         raise NotImplementedError()
@@ -143,7 +143,7 @@ class FromRootInputManager(
 
         input_def = self.get_input_def(step_context.pipeline_def)
 
-        solid_config = step_context.environment_config.solids.get(str(self.solid_handle))
+        solid_config = step_context.resolved_run_config.solids.get(str(self.solid_handle))
         config_data = solid_config.inputs.get(self.input_name) if solid_config else None
 
         loader = getattr(step_context.resources, input_def.root_manager_key)
@@ -152,7 +152,7 @@ class FromRootInputManager(
             config_data,
             metadata=input_def.metadata,
             dagster_type=input_def.dagster_type,
-            resource_config=step_context.environment_config.resources[
+            resource_config=step_context.resolved_run_config.resources[
                 input_def.root_manager_key
             ].config,
             resources=build_resources_for_manager(input_def.root_manager_key, step_context),
@@ -164,7 +164,7 @@ class FromRootInputManager(
             manager_key=input_def.root_manager_key,
         )
 
-    def compute_version(self, step_versions, pipeline_def, environment_config) -> Optional[str]:
+    def compute_version(self, step_versions, pipeline_def, resolved_run_config) -> Optional[str]:
         # TODO: support versioning for root loaders
         return None
 
@@ -211,12 +211,12 @@ class FromStepOutput(
         io_manager_key = step_context.execution_plan.get_manager_key(
             self.step_output_handle, step_context.pipeline_def
         )
-        resource_config = step_context.environment_config.resources[io_manager_key].config
+        resource_config = step_context.resolved_run_config.resources[io_manager_key].config
         resources = build_resources_for_manager(io_manager_key, step_context)
 
         input_def = self.get_input_def(step_context.pipeline_def)
 
-        solid_config = step_context.environment_config.solids.get(str(self.solid_handle))
+        solid_config = step_context.resolved_run_config.solids.get(str(self.solid_handle))
         config_data = solid_config.inputs.get(self.input_name) if solid_config else None
 
         return step_context.for_input_manager(
@@ -262,7 +262,7 @@ class FromStepOutput(
         self,
         step_versions: Dict[str, Optional[str]],
         pipeline_def: PipelineDefinition,
-        environment_config: EnvironmentConfig,
+        resolved_run_config: ResolvedRunConfig,
     ) -> Optional[str]:
         if (
             self.step_output_handle.step_key not in step_versions
@@ -339,7 +339,7 @@ class FromConfig(
         ):
             dagster_type = self.get_input_def(step_context.pipeline_def).dagster_type
 
-            solid_config = step_context.environment_config.solids.get(str(self.solid_handle))
+            solid_config = step_context.resolved_run_config.solids.get(str(self.solid_handle))
             config_data = solid_config.inputs.get(self.input_name) if solid_config else None
 
             return dagster_type.loader.construct_from_config_value(step_context, config_data)
@@ -356,9 +356,9 @@ class FromConfig(
         self,
         step_versions: Dict[str, Optional[str]],
         pipeline_def: PipelineDefinition,
-        environment_config: EnvironmentConfig,
+        resolved_run_config: ResolvedRunConfig,
     ) -> Optional[str]:
-        solid_config = environment_config.solids.get(str(self.solid_handle))
+        solid_config = resolved_run_config.solids.get(str(self.solid_handle))
         config_data = solid_config.inputs.get(self.input_name) if solid_config else None
 
         solid_def = pipeline_def.get_solid(self.solid_handle)
@@ -391,7 +391,7 @@ class FromDefaultValue(
         self,
         step_versions: Dict[str, Optional[str]],
         pipeline_def: PipelineDefinition,
-        environment_config: EnvironmentConfig,
+        resolved_run_config: ResolvedRunConfig,
     ) -> Optional[str]:
         return join_and_hash(repr(self._load_value(pipeline_def)))
 
@@ -477,10 +477,10 @@ class FromMultipleSources(
             resource_keys = resource_keys.union(source.required_resource_keys(pipeline_def))
         return resource_keys
 
-    def compute_version(self, step_versions, pipeline_def, environment_config) -> Optional[str]:
+    def compute_version(self, step_versions, pipeline_def, resolved_run_config) -> Optional[str]:
         return join_and_hash(
             *[
-                inner_source.compute_version(step_versions, pipeline_def, environment_config)
+                inner_source.compute_version(step_versions, pipeline_def, resolved_run_config)
                 for inner_source in self.sources
             ]
         )

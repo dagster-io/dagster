@@ -30,16 +30,16 @@ def resolve_config_version(config_value):
         )
 
 
-def resolve_resource_versions(environment_config, pipeline_definition):
-    """Resolves the version of each resource provided within the EnvironmentConfig.
+def resolve_resource_versions(resolved_run_config, pipeline_definition):
+    """Resolves the version of each resource provided within the ResolvedRunConfig.
 
-    If `environment_config` was constructed from the mode represented by `mode_def`, then
-    `environment_config` will have an entry for each resource in the mode (even if it does not
+    If `resolved_run_config` was constructed from the mode represented by `mode_def`, then
+    `resolved_run_config` will have an entry for each resource in the mode (even if it does not
     require any configuration). For each resource, calculates a version for the run config provided
-    by `environment_config`, and joins with the corresponding version for the resource definition.
+    by `resolved_run_config`, and joins with the corresponding version for the resource definition.
 
     Args:
-        environment_config (EnvironmentConfig): Provides configuration values passed for each
+        resolved_run_config (ResolvedRunConfig): Provides configuration values passed for each
             resource.
         pipeline_definition (PipelineDefinition): Definition for pipeline that configuration is
             provided for.
@@ -48,15 +48,15 @@ def resolve_resource_versions(environment_config, pipeline_definition):
             the resolved version of the corresponding resource.
     """
 
-    mode = environment_config.mode
+    mode = resolved_run_config.mode
     mode_definition = pipeline_definition.get_mode_definition(mode)
     check.invariant(
-        set(environment_config.resources.keys()) == set(mode_definition.resource_defs.keys())
+        set(resolved_run_config.resources.keys()) == set(mode_definition.resource_defs.keys())
     )  # verify that environment config and mode_def refer to the same resources
 
     resource_versions = {}
 
-    for resource_key, resource_config in environment_config.resources.items():
+    for resource_key, resource_config in resolved_run_config.resources.items():
         resource_def_version = mode_definition.resource_defs[resource_key].version
         resource_versions[resource_key] = join_and_hash(
             resolve_config_version(resource_config.config), resource_def_version
@@ -65,7 +65,7 @@ def resolve_resource_versions(environment_config, pipeline_definition):
     return resource_versions
 
 
-def resolve_step_versions(pipeline_def, execution_plan, environment_config):
+def resolve_step_versions(pipeline_def, execution_plan, resolved_run_config):
     """Resolves the version of each step in an execution plan.
 
     Execution plan provides execution steps for analysis. It returns dict[str, str] where each key
@@ -91,7 +91,7 @@ def resolve_step_versions(pipeline_def, execution_plan, environment_config):
             If a step has no computed version, then the step key maps to None.
     """
 
-    resource_versions_by_key = resolve_resource_versions(environment_config, pipeline_def)
+    resource_versions_by_key = resolve_resource_versions(resolved_run_config, pipeline_def)
 
     step_versions = {}  # step_key (str) -> version (str)
 
@@ -104,7 +104,7 @@ def resolve_step_versions(pipeline_def, execution_plan, environment_config):
 
         input_version_dict = {
             input_name: step_input.source.compute_version(
-                step_versions, pipeline_def, environment_config
+                step_versions, pipeline_def, resolved_run_config
             )
             for input_name, step_input in step.step_input_dict.items()
         }
@@ -112,7 +112,7 @@ def resolve_step_versions(pipeline_def, execution_plan, environment_config):
 
         solid_name = str(step.solid_handle)
         solid_def_version = solid_def.version
-        solid_config_version = resolve_config_version(environment_config.solids[solid_name].config)
+        solid_config_version = resolve_config_version(resolved_run_config.solids[solid_name].config)
         hashed_resources = [
             resource_versions_by_key[resource_key]
             for resource_key in solid_def.required_resource_keys
@@ -131,8 +131,8 @@ def resolve_step_versions(pipeline_def, execution_plan, environment_config):
     return step_versions
 
 
-def resolve_step_output_versions(pipeline_def, execution_plan, environment_config):
-    step_versions = resolve_step_versions(pipeline_def, execution_plan, environment_config)
+def resolve_step_output_versions(pipeline_def, execution_plan, resolved_run_config):
+    step_versions = resolve_step_versions(pipeline_def, execution_plan, resolved_run_config)
     return {
         StepOutputHandle(step.key, output_name): join_and_hash(output_name, step_versions[step.key])
         for step in execution_plan.steps
@@ -143,7 +143,7 @@ def resolve_step_output_versions(pipeline_def, execution_plan, environment_confi
 
 @experimental
 def resolve_memoized_execution_plan(
-    execution_plan, pipeline_def, run_config, instance, environment_config
+    execution_plan, pipeline_def, run_config, instance, resolved_run_config
 ):
     """
     Returns:
@@ -151,7 +151,7 @@ def resolve_memoized_execution_plan(
     """
     from .build_resources import build_resources, initialize_console_manager
 
-    mode = environment_config.mode
+    mode = resolved_run_config.mode
     mode_def = pipeline_def.get_mode_definition(mode)
 
     step_keys_to_execute = set()
@@ -177,7 +177,7 @@ def resolve_memoized_execution_plan(
                 context = get_output_context(
                     execution_plan=execution_plan,
                     pipeline_def=pipeline_def,
-                    environment_config=environment_config,
+                    resolved_run_config=resolved_run_config,
                     step_output_handle=step_output_handle,
                     run_id=None,
                     log_manager=log_manager,
@@ -188,5 +188,5 @@ def resolve_memoized_execution_plan(
                     step_keys_to_execute.add(step_output_handle.step_key)
 
     return execution_plan.build_subset_plan(
-        list(step_keys_to_execute), pipeline_def, environment_config
+        list(step_keys_to_execute), pipeline_def, resolved_run_config
     )

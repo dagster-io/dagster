@@ -26,7 +26,7 @@ from dagster.core.executor.base import Executor
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.io_manager import IOManager
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.core.system_config.objects import EnvironmentConfig
+from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.types.dagster_type import DagsterType
 
 from .input import InputContext
@@ -133,7 +133,7 @@ class ExecutionData(NamedTuple):
     scoped_resources_builder: ScopedResourcesBuilder
     intermediate_storage: "IntermediateStorage"
     intermediate_storage_def: "IntermediateStorageDefinition"
-    environment_config: EnvironmentConfig
+    resolved_run_config: ResolvedRunConfig
     pipeline_def: PipelineDefinition
     mode_def: ModeDefinition
 
@@ -267,8 +267,8 @@ class PlanExecutionContext(IPlanContext):
         return self._execution_data.pipeline_def
 
     @property
-    def environment_config(self) -> EnvironmentConfig:
-        return self._execution_data.environment_config
+    def resolved_run_config(self) -> ResolvedRunConfig:
+        return self._execution_data.resolved_run_config
 
     @property
     def intermediate_storage_def(self) -> "IntermediateStorageDefinition":
@@ -321,7 +321,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             plan_data.pipeline.get_definition(),
             step,
             plan_data.execution_plan,
-            execution_data.environment_config,
+            execution_data.resolved_run_config,
             execution_data.intermediate_storage_def,
         )
         self._resources = execution_data.scoped_resources_builder.build(
@@ -420,7 +420,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return get_output_context(
             self.execution_plan,
             self.pipeline_def,
-            self.environment_config,
+            self.resolved_run_config,
             step_output_handle,
             self._get_source_run_id(step_output_handle),
             log_manager=self.log,
@@ -618,7 +618,7 @@ class HookContext:
 
     @property
     def solid_config(self) -> Any:
-        solid_config = self._step_execution_context.environment_config.solids.get(
+        solid_config = self._step_execution_context.resolved_run_config.solids.get(
             str(self._step_execution_context.step.solid_handle)
         )
         return solid_config.config if solid_config else None

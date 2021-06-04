@@ -30,7 +30,7 @@ from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io_manager
 from dagster.core.storage.io_manager import IOManager, io_manager
 from dagster.core.storage.mem_io_manager import InMemoryIOManager, mem_io_manager
-from dagster.core.system_config.objects import EnvironmentConfig
+from dagster.core.system_config.objects import ResolvedRunConfig
 
 
 def test_io_manager_with_config():
@@ -678,7 +678,7 @@ def test_get_output_context_with_resources():
         get_output_context(
             execution_plan=create_execution_plan(basic_pipeline),
             pipeline_def=basic_pipeline,
-            environment_config=EnvironmentConfig.build(basic_pipeline),
+            resolved_run_config=ResolvedRunConfig.build(basic_pipeline),
             step_output_handle=StepOutputHandle("basic_solid", "result"),
             run_id=None,
             log_manager=None,

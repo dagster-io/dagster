@@ -85,9 +85,9 @@ class ResourceConfig(NamedTuple):
         return ResourceConfig(config=config.get("config"))
 
 
-class EnvironmentConfig(
+class ResolvedRunConfig(
     NamedTuple(
-        "_EnvironmentConfig",
+        "_ResolvedRunConfig",
         [
             ("solids", Dict[str, SolidConfig]),
             ("execution", "ExecutionConfig"),
@@ -120,7 +120,7 @@ class EnvironmentConfig(
         if execution is None:
             execution = ExecutionConfig(None, None)
 
-        return super(EnvironmentConfig, cls).__new__(
+        return super(ResolvedRunConfig, cls).__new__(
             cls,
             solids=check.opt_dict_param(solids, "solids", key_type=str, value_type=SolidConfig),
             execution=execution,
@@ -136,9 +136,9 @@ class EnvironmentConfig(
         pipeline_def: PipelineDefinition,
         run_config: Optional[Dict[str, Any]] = None,
         mode: Optional[str] = None,
-    ) -> "EnvironmentConfig":
+    ) -> "ResolvedRunConfig":
         """This method validates a given run config against the pipeline config schema. If
-        successful, we instantiate an EnvironmentConfig object.
+        successful, we instantiate an ResolvedRunConfig object.
 
         In case the run_config is invalid, this method raises a DagsterInvalidConfigError
         """
@@ -187,7 +187,7 @@ class EnvironmentConfig(
             pipeline_def, config_value.get("solids", {}), mode_def.resource_defs
         )
 
-        return EnvironmentConfig(
+        return ResolvedRunConfig(
             solids=solid_config_dict,
             execution=ExecutionConfig.from_dict(config_mapped_execution_configs),
             intermediate_storage=IntermediateStorageConfig.from_dict(

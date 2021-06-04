@@ -2,7 +2,7 @@ from typing import Any, Dict, Optional
 
 from dagster import check
 from dagster.core.definitions import PipelineDefinition
-from dagster.core.system_config.objects import EnvironmentConfig
+from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.utils.backcompat import experimental_fn_warning
 
 
@@ -32,4 +32,4 @@ def validate_run_config(
     run_config = check.opt_dict_param(run_config, "run_config", key_type=str)
     mode = check.opt_str_param(mode, "mode", default=pipeline_def.get_default_mode_name())
 
-    return EnvironmentConfig.build(pipeline_def, run_config, mode=mode).to_dict()
+    return ResolvedRunConfig.build(pipeline_def, run_config, mode=mode).to_dict()

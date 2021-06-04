@@ -5,7 +5,7 @@ from dagster.core.definitions.dependency import Solid
 from dagster.core.execution.context.compute import AbstractComputeExecutionContext
 from dagster.core.execution.context.system import PlanExecutionContext
 from dagster.core.log_manager import DagsterLogManager
-from dagster.core.system_config.objects import EnvironmentConfig
+from dagster.core.system_config.objects import ResolvedRunConfig
 
 
 class DagstermillExecutionContext(AbstractComputeExecutionContext):
@@ -67,9 +67,9 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         return self._pipeline_context.run_config
 
     @property
-    def environment_config(self) -> EnvironmentConfig:
-        """:class:`dagster.EnvironmentConfig`: The environment_config for the context"""
-        return self._pipeline_context.environment_config
+    def resolved_run_config(self) -> ResolvedRunConfig:
+        """:class:`dagster.ResolvedRunConfig`: The resolved_run_config for the context"""
+        return self._pipeline_context.resolved_run_config
 
     @property
     def logging_tags(self) -> Dict[str, str]:
@@ -134,7 +134,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         if self._solid_config:
             return self._solid_config
 
-        solid_config = self.environment_config.solids.get(self.solid_name)
+        solid_config = self.resolved_run_config.solids.get(self.solid_name)
         return solid_config.config if solid_config else None
 
 

@@ -25,7 +25,7 @@ from dagster.core.errors import (
 )
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
-from dagster.core.system_config.objects import EnvironmentConfig
+from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.utils import str_format_list
 from dagster.serdes import ConfigurableClass
 from dagster.seven import get_current_datetime_in_utc
@@ -651,12 +651,12 @@ class DagsterInstance:
                 )
 
         if execution_plan:
-            environment_config = None
+            resolved_run_config = None
             full_execution_plan = execution_plan
         else:
-            environment_config = EnvironmentConfig.build(pipeline_def, run_config, mode)
+            resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config, mode)
             full_execution_plan = ExecutionPlan.build(
-                InMemoryPipeline(pipeline_def), environment_config
+                InMemoryPipeline(pipeline_def), resolved_run_config
             )
 
         if is_memoized_run(tags):
@@ -668,15 +668,15 @@ class DagsterInstance:
                     "pipeline runs."
                 )
 
-            if not environment_config:
-                environment_config = EnvironmentConfig.build(pipeline_def, run_config, mode)
+            if not resolved_run_config:
+                resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config, mode)
 
             subsetted_execution_plan = resolve_memoized_execution_plan(
                 full_execution_plan,
                 pipeline_def,
                 run_config,
                 self,
-                environment_config,
+                resolved_run_config,
             )  # TODO: tighter integration with existing step_keys_to_execute functionality
             step_keys_to_execute = subsetted_execution_plan.step_keys_to_execute
             if not step_keys_to_execute:
@@ -685,10 +685,10 @@ class DagsterInstance:
                     "This is because every step in the plan has already been memoized."
                 )
         elif step_keys_to_execute:
-            if not environment_config:
-                environment_config = EnvironmentConfig.build(pipeline_def, run_config, mode)
+            if not resolved_run_config:
+                resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config, mode)
             subsetted_execution_plan = full_execution_plan.build_subset_plan(
-                step_keys_to_execute, pipeline_def, environment_config
+                step_keys_to_execute, pipeline_def, resolved_run_config
             )
         else:
             subsetted_execution_plan = full_execution_plan

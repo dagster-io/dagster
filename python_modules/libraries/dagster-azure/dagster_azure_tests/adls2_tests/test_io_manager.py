@@ -17,7 +17,7 @@ from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import execute_plan
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.plan import ExecutionPlan
-from dagster.core.system_config.objects import EnvironmentConfig
+from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.utils import make_new_run_id
 from dagster_azure.adls2 import create_adls2_client
 from dagster_azure.adls2.io_manager import PickledObjectADLS2IOManager, adls2_pickle_io_manager
@@ -87,8 +87,8 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
 
     run_id = make_new_run_id()
 
-    environment_config = EnvironmentConfig.build(pipeline_def, run_config=run_config)
-    execution_plan = ExecutionPlan.build(InMemoryPipeline(pipeline_def), environment_config)
+    resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config=run_config)
+    execution_plan = ExecutionPlan.build(InMemoryPipeline(pipeline_def), resolved_run_config)
 
     assert execution_plan.get_step_by_key("return_one")
 
@@ -100,7 +100,7 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
 
     return_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(step_keys, pipeline_def, environment_config),
+            execution_plan.build_subset_plan(step_keys, pipeline_def, resolved_run_config),
             pipeline=InMemoryPipeline(pipeline_def),
             run_config=run_config,
             pipeline_run=pipeline_run,
@@ -127,7 +127,7 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
 
     add_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(["add_one"], pipeline_def, environment_config),
+            execution_plan.build_subset_plan(["add_one"], pipeline_def, resolved_run_config),
             pipeline=InMemoryPipeline(pipeline_def),
             pipeline_run=pipeline_run,
             run_config=run_config,

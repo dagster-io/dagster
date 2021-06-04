@@ -40,7 +40,7 @@ from dagster.core.host_representation.selector import PipelineSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.instance.config import is_dagster_home_set
 from dagster.core.snap import PipelineSnapshot, SolidInvocationSnap
-from dagster.core.system_config.objects import EnvironmentConfig
+from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.telemetry import log_external_repo_stats, telemetry_wrapper
 from dagster.core.utils import make_new_backfill_id
 from dagster.seven import IS_WINDOWS, JSONDecodeError, json
@@ -251,14 +251,14 @@ def execute_list_versions_command(instance, kwargs):
     pipeline = recon_pipeline_from_origin(pipeline_origin)
     run_config = get_run_config_from_file_list(config)
 
-    environment_config = EnvironmentConfig.build(pipeline.get_definition(), run_config, mode=mode)
-    execution_plan = ExecutionPlan.build(pipeline, environment_config)
+    resolved_run_config = ResolvedRunConfig.build(pipeline.get_definition(), run_config, mode=mode)
+    execution_plan = ExecutionPlan.build(pipeline, resolved_run_config)
 
     step_output_versions = resolve_step_output_versions(
-        pipeline.get_definition(), execution_plan, environment_config
+        pipeline.get_definition(), execution_plan, resolved_run_config
     )
     memoized_plan = resolve_memoized_execution_plan(
-        execution_plan, pipeline.get_definition(), run_config, instance, environment_config
+        execution_plan, pipeline.get_definition(), run_config, instance, resolved_run_config
     )
     # the step keys that we need to execute are those which do not have their inputs populated.
     step_keys_not_stored = set(memoized_plan.step_keys_to_execute)

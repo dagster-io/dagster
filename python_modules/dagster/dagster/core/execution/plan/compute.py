@@ -15,7 +15,7 @@ from dagster.core.definitions import (
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.context.compute import SolidExecutionContext
 from dagster.core.execution.context.system import StepExecutionContext
-from dagster.core.system_config.objects import EnvironmentConfig
+from dagster.core.system_config.objects import ResolvedRunConfig
 
 from .outputs import StepOutput, StepOutputProperties
 
@@ -25,7 +25,7 @@ SolidOutputUnion = Union[
 
 
 def create_step_outputs(
-    solid: Solid, handle: SolidHandle, environment_config: EnvironmentConfig
+    solid: Solid, handle: SolidHandle, resolved_run_config: ResolvedRunConfig
 ) -> List[StepOutput]:
     check.inst_param(solid, "solid", Solid)
     check.inst_param(handle, "handle", SolidHandle)
@@ -34,7 +34,7 @@ def create_step_outputs(
     config_output_names: Set[str] = set()
     current_handle = handle
     while current_handle:
-        solid_config = environment_config.solids[current_handle.to_string()]
+        solid_config = resolved_run_config.solids[current_handle.to_string()]
         current_handle = current_handle.parent
         config_output_names = config_output_names.union(solid_config.outputs.output_names)
 
