@@ -11,6 +11,8 @@ if (!(verMatch != null && verMatch.length >= 2 && parseFloat(verMatch[1]) >= 3.6
   throw new Error(`Must use Python version >= 3.6 got ${errMsg}`);
 }
 
+console.log('Downloading schema...');
+
 // https://github.com/dagster-io/dagster/issues/2623
 const result = execSync(
   `dagster-graphql --ephemeral-instance --empty-workspace -t '${getIntrospectionQuery({
@@ -23,9 +25,13 @@ const schemaJson = JSON.parse(result).data;
 
 // Write schema.graphql in the SDL format
 const sdl = printSchema(buildClientSchema(schemaJson));
+
+console.log('Generating schema.graphql...');
+
 writeFileSync('./src/graphql/schema.graphql', sdl);
 
-// Write `possibleTypes.generated.json`, used for creating a mocked schema in tests.
+// Write `possibleTypes.generated.json`, used in prod for `AppCache` and in tests for creating
+// a mocked schema.
 const possibleTypes = {};
 
 schemaJson.__schema.types.forEach((supertype: {name: string; possibleTypes: [{name: string}]}) => {
@@ -34,4 +40,15 @@ schemaJson.__schema.types.forEach((supertype: {name: string; possibleTypes: [{na
   }
 });
 
+console.log('Generating possibleTypes.generated.json...');
+
 writeFileSync('./src/graphql/possibleTypes.generated.json', JSON.stringify(possibleTypes));
+
+console.log('Generating TypeScript types...');
+
+execSync(
+  'find src -type d -name types | xargs rm -r && yarn apollo codegen:generate --includes "./src/**/*.tsx" --target typescript types --localSchemaFile ./src/graphql/schema.graphql --globalTypesFile ./src/types/globalTypes.ts && python append_generated.py',
+  {stdio: 'inherit'},
+);
+
+console.log('Done!');

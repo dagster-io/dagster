@@ -152,9 +152,7 @@
     "check-lint": "eslint src/ --ext=.tsx,.ts,.js",
     "check-prettier": "prettier --list-different \"./src/**/*.tsx\"",
     "ts": "tsc -p .",
-    "download-schema": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/DownloadSchema.ts",
-    "generate-types": "find src -type d -name types | xargs rm -r && yarn apollo codegen:generate --includes \"./src/**/*.tsx\" --target typescript types --localSchemaFile ./src/graphql/schema.graphql --globalTypesFile ./src/types/globalTypes.ts && python append_generated.py",
-    "watch-types": "apollo codegen:generate --includes \"./src/**/*.tsx\" --target typescript types --localSchemaFile ./src/graphql/schema.graphql  --globalTypesFile ./src/types/globalTypes.ts --watch",
+    "generate-graphql": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateGraphQLTypes.ts",
     "storybook": "start-storybook -p 6006 -s lib",
     "build-storybook": "build-storybook -s lib",
     "analyze": "source-map-explorer 'build/static/js/*.js'"
