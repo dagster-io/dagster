@@ -47,19 +47,20 @@ export function explorerPathFromString(path: string) {
 
 export function useStripSnapshotFromPath(params: {pipelinePath: string}) {
   const history = useHistory();
+  const {pipelinePath} = params;
 
   React.useEffect(() => {
-    const path = explorerPathFromString(params.pipelinePath);
-    if (!path.snapshotId) {
+    const {snapshotId, ...rest} = explorerPathFromString(pipelinePath);
+    if (!snapshotId) {
       return;
     }
     history.replace({
       pathname: history.location.pathname.replace(
-        `/${params.pipelinePath}/`,
-        `/${explorerPathToString({...path, snapshotId: undefined})}`,
+        new RegExp(`/${pipelinePath}/?`),
+        `/${explorerPathToString(rest)}`,
       ),
     });
-  }, [history, params]);
+  }, [history, pipelinePath]);
 }
 
 export function useEnforceModeInPipelinePath() {
@@ -70,12 +71,16 @@ export function useEnforceModeInPipelinePath() {
     '/workspace/:repoPath/pipelines/:pipelinePath',
   );
 
+  const pipelinePath = match?.params.pipelinePath;
+  const repoPath = match?.params.repoPath;
+  const urlMatch = match?.url;
+
   React.useEffect(() => {
-    if (!match) {
+    if (!pipelinePath || !repoPath || !urlMatch) {
       return;
     }
-    const repoAddress = repoAddressFromPath(match.params.repoPath);
-    const path = explorerPathFromString(match.params.pipelinePath);
+    const repoAddress = repoAddressFromPath(repoPath);
+    const path = explorerPathFromString(pipelinePath);
     if (!repoAddress || path.pipelineMode) {
       return;
     }
@@ -91,13 +96,14 @@ export function useEnforceModeInPipelinePath() {
     if (!mode) {
       return;
     }
+
     history.replace(
-      match.url.replace(
-        `/${match.params.pipelinePath}/`,
+      urlMatch.replace(
+        new RegExp(`/${pipelinePath}/?`),
         `/${explorerPathToString({...path, pipelineMode: mode})}`,
       ),
     );
-  }, [history, match, options]);
+  }, [history, pipelinePath, repoPath, urlMatch, options]);
 }
 
 export const PipelineSnapshotLink: React.FunctionComponent<{
