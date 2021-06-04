@@ -320,8 +320,6 @@ def config_map_loggers(
     in that function is tightly coupled to this one and changes in either path should be confirmed
     in the other.
     """
-    from dagster.core.definitions.logger import LoggerDefinition
-
     mode_def = pipeline_def.get_mode_definition(mode)
     logger_configs = config_value.get("loggers", {})
 
@@ -329,7 +327,9 @@ def config_map_loggers(
 
     for logger_key, logger_config in logger_configs.items():
         logger_def = mode_def.loggers.get(logger_key)
-        check.inst(logger_def, LoggerDefinition)
+        if logger_def is None:
+            check.failed(f"No logger found for key {logger_key}")
+
         logger_config_evr = logger_def.apply_config_mapping(logger_config)
         if not logger_config_evr.success:
             raise DagsterInvalidConfigError(
@@ -345,7 +345,7 @@ def config_map_loggers(
 
 def config_map_objects(
     config_value: Any,
-    defs: List[Union[IntermediateStorageDefinition, ExecutorDefinition]],
+    defs: Union[List[IntermediateStorageDefinition], List[ExecutorDefinition]],
     keyed_by: str,
     def_type: Type,
     name_of_def_type: str,

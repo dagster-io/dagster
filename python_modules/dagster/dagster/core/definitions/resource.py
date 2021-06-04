@@ -1,6 +1,6 @@
 from collections import namedtuple
 from functools import update_wrapper
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Dict, Optional, Union, cast
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Dict, Optional, Union, cast, overload
 
 from dagster import check
 from dagster.core.definitions.config import is_callable_valid_config_arg
@@ -93,7 +93,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition):
         return self._version
 
     @property
-    def required_resource_keys(self) -> Optional[AbstractSet[str]]:
+    def required_resource_keys(self) -> AbstractSet[str]:
         return self._required_resource_keys
 
     @staticmethod
@@ -237,6 +237,21 @@ class _ResourceDecoratorCallable:
         update_wrapper(resource_def, wrapped=resource_fn)
 
         return resource_def
+
+
+@overload
+def resource(config_schema=Callable[["InitResourceContext"], Any]) -> ResourceDefinition:
+    ...
+
+
+@overload
+def resource(
+    config_schema: Optional[Dict[str, Any]] = None,
+    description: Optional[str] = None,
+    required_resource_keys: Optional[AbstractSet[str]] = None,
+    version=None,
+) -> Callable[[Callable[["InitResourceContext"], Any]], "ResourceDefinition"]:
+    ...
 
 
 def resource(
