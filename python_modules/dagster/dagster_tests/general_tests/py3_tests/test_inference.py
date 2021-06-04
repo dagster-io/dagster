@@ -255,6 +255,11 @@ def test_nested_kitchen_sink():
         == "[Tuple[[Int],String,Dict[String,[String]?]]]?"
     )
 
+    assert (
+        no_execute.output_defs[0].dagster_type.typing_type
+        == Optional[List[Tuple[List[int], str, Dict[str, Optional[List[str]]]]]]
+    )
+
 
 def test_infer_input_description_from_docstring_failure():
     # docstring is invalid because has a dash instead of a colon to delimit the argument type and
@@ -421,6 +426,7 @@ def test_unregistered_type_annotation_output():
         return MyClass()
 
     assert my_solid.output_defs[0].dagster_type.display_name == "MyClass"
+    assert my_solid.output_defs[0].dagster_type.typing_type == MyClass
 
     @pipeline
     def my_pipeline():
@@ -521,6 +527,7 @@ def test_fan_in():
         downstream_solid([upstream_solid.alias("a")(), upstream_solid.alias("b")()])
 
     assert downstream_solid.input_defs[0].dagster_type.display_name == "[MyClass]"
+    assert downstream_solid.input_defs[0].dagster_type.typing_type == List[MyClass]
 
     execute_pipeline(my_pipeline)
 

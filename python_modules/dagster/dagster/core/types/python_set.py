@@ -1,3 +1,5 @@
+import typing
+
 from dagster import check
 from dagster.config.config_type import Array
 from dagster.core.types.dagster_type import DagsterTypeKind
@@ -37,6 +39,7 @@ class _TypedPythonSet(DagsterType):
             name=None,
             loader=(TypedSetLoader(item_dagster_type) if item_dagster_type.loader else None),
             type_check_fn=self.type_check_method,
+            typing_type=typing.Set[item_dagster_type.typing_type],
         )
 
     def type_check_method(self, context, value):

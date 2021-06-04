@@ -1,4 +1,5 @@
 import re
+import typing
 
 import pytest
 from dagster import (
@@ -71,6 +72,13 @@ def test_python_object_type_with_custom_type_check():
     assert Int3.unique_name == "Int3"
     assert check_dagster_type(Int3, 3).success
     assert not check_dagster_type(Int3, 5).success
+
+
+def test_tuple_union_typing_type():
+
+    UnionType = PythonObjectDagsterType(python_type=(str, int, float))
+
+    assert UnionType.typing_type == typing.Union[str, int, float]
 
 
 def test_nullable_python_object_type():

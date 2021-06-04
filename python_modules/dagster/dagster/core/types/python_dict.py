@@ -1,3 +1,5 @@
+import typing
+
 from dagster import check
 from dagster.config.field_utils import Permissive
 from dagster.core.types.dagster_type import String
@@ -52,6 +54,7 @@ class _TypedPythonDict(DagsterType):
             name=None,
             loader=(TypedDictLoader(self.value_type) if can_get_from_config else None),
             type_check_fn=self.type_check_method,
+            typing_type=typing.Dict[key_type.typing_type, value_type.typing_type],
         )
 
     def type_check_method(self, context, value):
