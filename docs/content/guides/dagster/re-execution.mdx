@@ -27,11 +27,11 @@ height={2414}
 
 ### Re-execution Options
 
-There are several options for launching a re-execution. No matter which one is chosen, the re-executed run is linked to the original run. In the above example this is seen under `download_pipeline`.
+There are several options for launching a re-execution. No matter which one you choose, the re-executed run is linked to the original run. In the above example this is seen under `download_pipeline`.
 
-- **All Steps**: Re-execute the pipeline run from scratch. This option is most relevant upon testing pipeline runs end to end, if there is a desire to associate different runs together.
+- **All Steps**: Re-execute the pipeline run from scratch. This option is most relevant upon testing pipeline runs end to end, if you'd like to associate different runs together.
 - **Selected Step**: Re-execute the selected step(s). This can be done independent of the step status. Your pipeline is likely large, and you know exactly which steps to execute. This can be done by clicking on the boxes in the gantt chart view.
-- **From Selected**: Re-execute the pipeline downstream from the selected steps. If a particular step fails, this option is most relevant if there is a desire to run all downstream steps regardless of status. You're likely just developing a single step, and want to make sure downstream steps work as expected.
+- **From Selected**: Re-execute the pipeline downstream from the selected steps. If a particular step fails, this option is most relevant if your intent is to run all downstream steps regardless of status. You're likely just developing a single step, and want to make sure downstream steps work as expected.
 - **From Failure**: Re-execute the pipeline run, skipping steps completed successfully. This is only enabled when the pipeline has failed. You have likely fixed the failed step, and want to run the step and all downstream dependencies again. Dagster will figure out the dependencies for you!
 
 ### Selecting Steps
