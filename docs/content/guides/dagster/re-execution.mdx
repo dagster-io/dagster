@@ -80,7 +80,7 @@ Although very simple, there are inputs and outputs passed between tasks. With an
 
 Upon launching the execution in Dagit, you can find the re-execution option on the top right. You will see multiple options for different types of re-execution.
 
-**** INSERT NEW SCREENSHOT OF UNREABLE PIPELINE ****
+\*\*\*\* INSERT NEW SCREENSHOT OF UNREABLE PIPELINE \*\*\*\*
 
 <Image
 alt="Dagit Re-execution"
@@ -148,7 +148,7 @@ def reexecution_api_example():
 Using Dagster's API, you can programmatically trigger both an execution and a reexecution. Upon an initial pipeline run failing, you may want to trigger a full re-execution. Similarly, you can trigger a re-execution of selected steps or from a particular point.
 
 ```python file=../../reexecution/reexecution_api_steps.py
-# Re-execution: Starting with the download_data solid and all its descendents
+# Re-execution: Starting with the "unreliable" solid and all its descendents
 reexecution_result_specific_selection = reexecute_pipeline(
     unreliable_pipeline,
     parent_run_id=pipeline_result_full.run_id,
