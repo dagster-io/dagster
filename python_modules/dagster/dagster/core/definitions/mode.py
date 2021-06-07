@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, cast
 
 from dagster import check
 from dagster.core.definitions.executor import ExecutorDefinition, default_executors
@@ -28,6 +28,7 @@ class ModeDefinition(
             ("description", Optional[str]),
             ("intermediate_storage_defs", List["IntermediateStorageDefinition"]),
             ("config_mapping", Optional[ConfigMapping]),
+            ("partitions", Optional[Callable[[], List[Any]]]),
         ],
     )
 ):
@@ -52,6 +53,7 @@ class ModeDefinition(
             options available when executing in this mode. By default, this will be the 'in_memory'
             and 'filesystem' system storages.
         _config_mapping (Optional[ConfigMapping]): Experimental
+        _partitions (Optional[Callable[[], List[Any]]]): Experimental
     """
 
     def __new__(
@@ -63,6 +65,7 @@ class ModeDefinition(
         description: Optional[str] = None,
         intermediate_storage_defs: Optional[List["IntermediateStorageDefinition"]] = None,
         _config_mapping: Optional[ConfigMapping] = None,
+        _partitions: Optional[Callable[[], List[Any]]] = None,
     ):
         from dagster.core.storage.system_storage import default_intermediate_storage_defs
 
@@ -81,7 +84,10 @@ class ModeDefinition(
             )
 
         if _config_mapping:
-            experimental_arg_warning("config_mapping", "ModeDefinition.__new__")
+            experimental_arg_warning("_config_mapping", "ModeDefinition.__new__")
+
+        if _partitions:
+            experimental_arg_warning("_partitions", "ModeDefinition.__new__")
 
         return super(ModeDefinition, cls).__new__(
             cls,
@@ -106,7 +112,8 @@ class ModeDefinition(
                 of_type=ExecutorDefinition,
             ),
             description=check.opt_str_param(description, "description"),
-            config_mapping=check.opt_inst_param(_config_mapping, "config_mapping", ConfigMapping),
+            config_mapping=check.opt_inst_param(_config_mapping, "_config_mapping", ConfigMapping),
+            partitions=check.opt_callable_param(_partitions, "_partitions"),
         )
 
     @property
@@ -120,6 +127,29 @@ class ModeDefinition(
                 return intermediate_storage_def
 
         check.failed("{} storage definition not found".format(name))
+
+    def get_partition_set_def(self, pipeline_name: str):
+        from dagster.core.definitions.partition import PartitionSetDefinition, Partition
+
+        if not self.partitions:
+            return None
+
+        def partition_fn() -> List[Partition]:
+            return [
+                Partition(partition, str(partition))
+                for partition in cast(Callable, self.partitions)()
+            ]
+
+        def run_config_fn_for_partition(partition: Partition):
+            return partition.value
+
+        return PartitionSetDefinition(
+            pipeline_name=pipeline_name,
+            name=pipeline_name + "_" + self.name + "_partition_set",
+            partition_fn=partition_fn,
+            run_config_fn_for_partition=run_config_fn_for_partition,
+            mode=self.name,
+        )
 
     @staticmethod
     def from_resources(resources, name=None):

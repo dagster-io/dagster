@@ -304,9 +304,9 @@ class PartitionSetDefinition(
         solid_selection (Optional[List[str]]): A list of solid subselection (including single
             solid names) to execute with this partition. e.g. ``['*some_solid+', 'other_solid']``
         mode (Optional[str]): The mode to apply when executing this partition. (default: 'default')
-        run_config_fn_for_partition (Callable[[Partition], [Dict]]): A
+        run_config_fn_for_partition (Callable[[Partition], [Any]]): A
             function that takes a :py:class:`~dagster.Partition` and returns the run
-            configuration that parameterizes the execution for this partition, as a dict
+            configuration that parameterizes the execution for this partition.
         tags_fn_for_partition (Callable[[Partition], Optional[dict[str, str]]]): A function that
             takes a :py:class:`~dagster.Partition` and returns a list of key value pairs that will
             be added to the generated run for this partition.
