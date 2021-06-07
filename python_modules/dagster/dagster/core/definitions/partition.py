@@ -15,7 +15,7 @@ from dagster.core.errors import (
     ScheduleExecutionError,
     user_code_error_boundary,
 )
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.tags import check_tags
 from dagster.seven.compat.pendulum import PendulumDateTime, to_timezone
 from dagster.utils import frozenlist, merge_dicts
@@ -40,25 +40,6 @@ class Partition(namedtuple("_Partition", ("value name"))):
         return super(Partition, cls).__new__(
             cls, name=check.opt_str_param(name, "name", str(value)), value=value
         )
-
-
-def last_empty_partition(context, partition_set_def):
-    check.inst_param(context, "context", ScheduleExecutionContext)
-    partition_set_def = check.inst_param(
-        partition_set_def, "partition_set_def", PartitionSetDefinition
-    )
-
-    partitions = partition_set_def.get_partitions(context.scheduled_execution_time)
-    if not partitions:
-        return None
-    selected = None
-    for partition in reversed(partitions):
-        filters = PipelineRunsFilter.for_partition(partition_set_def, partition)
-        matching = context.instance.get_runs(filters)
-        if not any(run.status == PipelineRunStatus.SUCCESS for run in matching):
-            selected = partition
-            break
-    return selected
 
 
 def schedule_partition_range(
