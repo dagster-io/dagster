@@ -9,9 +9,6 @@
 # built files and types
 /lib
 
-# GraphQL Schema - Only needed for type generation and tests
-/src/graphql/schema.graphql
-
 # misc
 .DS_Store
 .env.local
