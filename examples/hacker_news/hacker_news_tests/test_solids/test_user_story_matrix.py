@@ -24,6 +24,7 @@ def test_build_user_story_matrix(comment_stories, expected):
     comment_stories_df = DataFrame(
         comment_stories, columns=["comment_id", "story_id", "commenter_id"]
     )
-    _, _, matrix = build_user_story_matrix(comment_stories=comment_stories_df)
+    _, _, matrix_output = build_user_story_matrix(comment_stories=comment_stories_df)
 
+    matrix = matrix_output.value
     assert matrix.toarray().tolist() == expected

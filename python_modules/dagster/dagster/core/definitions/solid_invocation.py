@@ -1,30 +1,30 @@
 import inspect
-from typing import TYPE_CHECKING, Any, Dict, Generator, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
-from dagster.core.definitions.events import AssetMaterialization
-from dagster.core.errors import (
+from ...core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
     DagsterTypeCheckDidNotPass,
 )
+from .events import AssetMaterialization, ExpectationResult, Materialization, Output
 
 if TYPE_CHECKING:
-    from dagster.core.definitions import SolidDefinition
-    from dagster.core.definitions.composition import PendingNodeInvocation
-    from dagster.core.execution.context.invocation import (
+    from .solid import SolidDefinition
+    from .composition import PendingNodeInvocation
+    from ..execution.context.invocation import (
         BoundSolidExecutionContext,
-        DirectSolidExecutionContext,
+        UnboundSolidExecutionContext,
     )
 
 
 def solid_invocation_result(
     solid_def_or_invocation: Union["SolidDefinition", "PendingNodeInvocation"],
-    context: Optional["DirectSolidExecutionContext"],
+    context: Optional["UnboundSolidExecutionContext"],
     *args,
     **kwargs,
 ) -> Any:
-    from dagster.core.execution.context.invocation import build_solid_context
-    from dagster.core.definitions.composition import PendingNodeInvocation
+    from ..execution.context.invocation import build_solid_context
+    from .composition import PendingNodeInvocation
 
     solid_def = (
         solid_def_or_invocation.node_def
@@ -38,20 +38,21 @@ def solid_invocation_result(
 
     input_dict = _resolve_inputs(solid_def, args, kwargs, context)
 
-    outputs = _execute_and_retrieve_outputs(solid_def, context, input_dict)
+    result = (
+        solid_def.compute_fn.decorated_fn(context, **input_dict)
+        if solid_def.compute_fn.has_context_arg()
+        else solid_def.compute_fn.decorated_fn(**input_dict)
+    )
 
-    if len(outputs) == 1:
-        return outputs[0]
-
-    return outputs
+    return _type_check_output_wrapper(solid_def, result, context)
 
 
 def _check_invocation_requirements(
-    solid_def: "SolidDefinition", context: Optional["DirectSolidExecutionContext"]
+    solid_def: "SolidDefinition", context: Optional["UnboundSolidExecutionContext"]
 ) -> None:
     """Ensure that provided context fulfills requirements of solid definition.
 
-    If no context was provided, then construct an enpty DirectSolidExecutionContext
+    If no context was provided, then construct an enpty UnboundSolidExecutionContext
     """
 
     # Check resource requirements
@@ -120,65 +121,130 @@ def _resolve_inputs(
     return input_dict
 
 
-def _execute_and_retrieve_outputs(
-    solid_def: "SolidDefinition", context: "BoundSolidExecutionContext", input_dict: Dict[str, Any]
-) -> tuple:
-    from dagster.core.execution.plan.execute_step import do_type_check
+def _type_check_output_wrapper(
+    solid_def: "SolidDefinition", result: Any, context: "BoundSolidExecutionContext"
+) -> Any:
+    """Type checks and returns the result of a solid.
 
-    output_values = {}
+    If the solid result is itself a generator, then wrap in a fxn that will type check and yield
+    outputs.
+    """
+
+    # Async generator case
+    if inspect.isasyncgen(result):
+
+        async def to_gen(async_gen):
+            outputs_seen = set()
+            async for event in async_gen:
+                output, output_name = _type_check_output(solid_def, event, context)
+                if output_name and output_name in outputs_seen:
+                    raise DagsterInvariantViolationError(
+                        f"Invocation of solid '{context.alias}' yielded an output '{output_name}' multiple times."
+                    )
+                elif output_name:
+                    outputs_seen.add(output_name)
+                yield output
+            for output_def in solid_def.output_defs:
+                if output_def.name not in outputs_seen and output_def.is_required:
+                    raise DagsterInvariantViolationError(
+                        f"Invocation of solid '{context.alias}' did not return an output for non-optional output '{output_def.name}'"
+                    )
+
+        return to_gen(result)
+
+    # Regular generator case
+    elif inspect.isgenerator(result):
+
+        def type_check_gen(gen):
+            outputs_seen = set()
+            for event in gen:
+                output, output_name = _type_check_output(solid_def, event, context)
+                if output_name and output_name in outputs_seen:
+                    raise DagsterInvariantViolationError(
+                        f"Invocation of solid '{context.alias}' yielded an output '{output_name}' multiple times."
+                    )
+                elif output_name:
+                    outputs_seen.add(output_name)
+                yield output
+            for output_def in solid_def.output_defs:
+                if output_def.name not in outputs_seen and output_def.is_required:
+                    raise DagsterInvariantViolationError(
+                        f"Invocation of solid '{context.alias}' did not return an output for non-optional output '{output_def.name}'"
+                    )
+
+        return type_check_gen(result)
+
+    # Non-generator case
+    if isinstance(result, (AssetMaterialization, Materialization, ExpectationResult)):
+        raise DagsterInvariantViolationError(
+            (
+                f"Error in solid {solid_def.name}: If you are returning an AssetMaterialization "
+                "or an ExpectationResult from solid you must yield them to avoid "
+                "ambiguity with an implied result from returning a value."
+            )
+        )
+    output, output_name = _type_check_output(solid_def, result, context)
+    for output_def in solid_def.output_defs:
+        if output_def.name != output_name and output_def.is_required:
+            raise DagsterInvariantViolationError(
+                f"Invocation of solid '{context.alias}' did not return an output for non-optional output '{output_def.name}'"
+            )
+    return output
+
+
+def _type_check_output(
+    solid_def: "SolidDefinition", output: Any, context: "BoundSolidExecutionContext"
+) -> Any:
+    """Validates and performs core type check on a provided output.
+
+    Args:
+        solid_def (SolidDefinition): The solid whose output defs to validate the output against.
+        output (Any): The output to validate.
+        context (BoundSolidExecutionContext): Context containing resources to be used for type
+            check.
+    """
+    from ..execution.plan.execute_step import do_type_check
+
     output_defs = {output_def.name: output_def for output_def in solid_def.output_defs}
 
-    for output in _core_generator(solid_def, context, input_dict):
-        if not isinstance(output, AssetMaterialization):
-            if output.output_name in output_values:
-                raise DagsterInvariantViolationError(
-                    f"Solid '{context.alias}' returned an output '{output.output_name}' multiple "
-                    "times."
-                )
-            elif output.output_name not in output_defs:
-                raise DagsterInvariantViolationError(
-                    f'Solid "{context.alias}" returned an output "{output.output_name}" that does '
-                    f"not exist. The available outputs are {list(output_defs)}"
-                )
-            else:
-                dagster_type = output_defs[output.output_name].dagster_type
-                type_check = do_type_check(
-                    context.for_type(dagster_type), dagster_type, output.value
-                )
-                if not type_check.success:
-                    raise DagsterTypeCheckDidNotPass(
-                        description=(
-                            f'Type check failed for solid output "{output.output_name}" - '
-                            f'expected type "{dagster_type.display_name}". '
-                            f"Description: {type_check.description}."
-                        ),
-                        metadata_entries=type_check.metadata_entries,
-                        dagster_type=dagster_type,
-                    )
-                output_values[output.output_name] = output.value
-        else:
-            context.record_materialization(output)
-
-    # Check to make sure all non-optional outputs were yielded.
-    for output_def in solid_def.output_defs:
-        if output_def.name not in output_values and output_def.is_required:
+    if isinstance(output, (AssetMaterialization, Materialization, ExpectationResult)):
+        return (output, None)
+    if isinstance(output, Output):
+        if not output.output_name in output_defs:
             raise DagsterInvariantViolationError(
-                f'Solid "{context.alias}" did not return an output for non-optional '
-                f'output "{output_def.name}"'
+                f'Invocation of solid "{context.alias}" returned an output "{output.output_name}" that does '
+                f"not exist. The available outputs are {list(output_defs)}"
             )
-
-    # Explicitly preserve the ordering of output defs
-    return tuple([output_values[output_def.name] for output_def in solid_def.output_defs])
-
-
-def _core_generator(
-    solid_def: "SolidDefinition", context: "BoundSolidExecutionContext", input_dict: Dict[str, Any]
-) -> Generator[Any, None, None]:
-    from dagster.core.execution.plan.compute import gen_from_async_gen
-
-    compute_iterator = solid_def.compute_fn(context, input_dict)
-
-    if inspect.isasyncgen(compute_iterator):
-        compute_iterator = gen_from_async_gen(compute_iterator)
-
-    yield from compute_iterator
+        else:
+            dagster_type = output_defs[output.output_name].dagster_type
+            type_check = do_type_check(context.for_type(dagster_type), dagster_type, output.value)
+            if not type_check.success:
+                raise DagsterTypeCheckDidNotPass(
+                    description=(
+                        f'Type check failed for solid output "{output.output_name}" - '
+                        f'expected type "{dagster_type.display_name}". '
+                        f"Description: {type_check.description}."
+                    ),
+                    metadata_entries=type_check.metadata_entries,
+                    dagster_type=dagster_type,
+                )
+            return (output, output.output_name)
+    else:
+        if len(output_defs) > 1:
+            raise DagsterInvariantViolationError(
+                f"Solid '{context.alias}' has more than one output definition, but an output was "
+                "returned without specifying a name."
+            )
+        dagster_type = solid_def.output_defs[0].dagster_type
+        type_check = do_type_check(context.for_type(dagster_type), dagster_type, output)
+        if not type_check.success:
+            raise DagsterTypeCheckDidNotPass(
+                description=(
+                    f'Type check failed for solid output "{solid_def.output_defs[0].name}" - '
+                    f'expected type "{dagster_type.display_name}". '
+                    f"Description: {type_check.description}"
+                ),
+                metadata_entries=type_check.metadata_entries,
+                dagster_type=dagster_type,
+            )
+        return (output, solid_def.output_defs[0].name)

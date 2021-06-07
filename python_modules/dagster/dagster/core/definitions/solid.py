@@ -1,4 +1,17 @@
-from typing import Any, Callable, Dict, FrozenSet, Iterator, List, Optional, Set, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    FrozenSet,
+    Iterator,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+    cast,
+)
 
 from dagster import check
 from dagster.core.definitions.dependency import SolidHandle
@@ -18,6 +31,9 @@ from .i_solid_definition import NodeDefinition
 from .input import InputDefinition, InputMapping
 from .output import OutputDefinition, OutputMapping
 from .solid_invocation import solid_invocation_result
+
+if TYPE_CHECKING:
+    from .decorators.solid import DecoratedSolidFunction
 
 
 class SolidDefinition(NodeDefinition):
@@ -39,8 +55,8 @@ class SolidDefinition(NodeDefinition):
             optionally, an injected first argument, ``context``, a collection of information provided
             by the system.
 
-            This function must return a generator or an async generator, which must yield one
-            :py:class:`Output` for each of the solid's ``output_defs``, and additionally may
+            This function will be coerced into a generator or an async generator, which must yield
+            one :py:class:`Output` for each of the solid's ``output_defs``, and additionally may
             yield other types of Dagster events, including :py:class:`Materialization` and
             :py:class:`ExpectationResult`.
         output_defs (List[OutputDefinition]): Outputs of the solid.
@@ -54,8 +70,6 @@ class SolidDefinition(NodeDefinition):
             the criteria that `json.loads(json.dumps(value)) == value`.
         required_resource_keys (Optional[Set[str]]): Set of resources handles required by this
             solid.
-        positional_inputs (Optional[List[str]]): The positional order of the input names if it
-            differs from the order of the input definitions.
         version (Optional[str]): (Experimental) The version of the solid's compute_fn. Two solids should have
             the same version if and only if they deterministically produce the same outputs when
             provided the same inputs.
@@ -80,18 +94,22 @@ class SolidDefinition(NodeDefinition):
         self,
         name: str,
         input_defs: List[InputDefinition],
-        compute_fn: Callable[..., Any],
+        compute_fn: Union[Callable[..., Any], "DecoratedSolidFunction"],
         output_defs: List[OutputDefinition],
         config_schema: Optional[Union[Dict[str, Any], IDefinitionConfigSchema]] = None,
         description: Optional[str] = None,
         tags: Optional[Dict[str, str]] = None,
         required_resource_keys: Optional[Union[Set[str], FrozenSet[str]]] = None,
-        positional_inputs: Optional[List[str]] = None,
         version: Optional[str] = None,
-        context_arg_provided: Optional[bool] = True,
         retry_policy: Optional[RetryPolicy] = None,
     ):
-        self._compute_fn = check.callable_param(compute_fn, "compute_fn")
+        from .decorators.solid import DecoratedSolidFunction
+
+        if isinstance(compute_fn, DecoratedSolidFunction):
+            self._compute_fn: Union[Callable[..., Any], DecoratedSolidFunction] = compute_fn
+        else:
+            compute_fn = cast(Callable[..., Any], compute_fn)
+            self._compute_fn = check.callable_param(compute_fn, "compute_fn")
         self._config_schema = convert_user_facing_definition_config_schema(config_schema)
         self._required_resource_keys = frozenset(
             check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
@@ -101,7 +119,11 @@ class SolidDefinition(NodeDefinition):
             experimental_arg_warning("version", "SolidDefinition.__init__")
         self._retry_policy = check.opt_inst_param(retry_policy, "retry_policy", RetryPolicy)
 
-        self._context_arg_provided = check.bool_param(context_arg_provided, "context_arg_provided")
+        positional_inputs = (
+            self._compute_fn.positional_inputs()
+            if isinstance(self._compute_fn, DecoratedSolidFunction)
+            else None
+        )
 
         super(SolidDefinition, self).__init__(
             name=name,
@@ -114,18 +136,25 @@ class SolidDefinition(NodeDefinition):
 
     def __call__(self, *args, **kwargs) -> Any:
         from .composition import is_in_composition
-        from dagster.core.execution.context.invocation import DirectSolidExecutionContext
+        from .decorators.solid import DecoratedSolidFunction
+        from ..execution.context.invocation import UnboundSolidExecutionContext
 
         if is_in_composition():
             return super(SolidDefinition, self).__call__(*args, **kwargs)
         else:
-            if self._context_arg_provided:
+            if not isinstance(self.compute_fn, DecoratedSolidFunction):
+                raise DagsterInvalidInvocationError(
+                    "Attemped to invoke solid that was not constructed using the `@solid` "
+                    "decorator. Only solids constructed using the `@solid` decorator can be "
+                    "directly invoked."
+                )
+            if self.compute_fn.has_context_arg():
                 if len(args) == 0:
                     raise DagsterInvalidInvocationError(
                         f"Compute function of solid '{self.name}' has context argument, but no context "
                         "was provided when invoking."
                     )
-                elif args[0] is not None and not isinstance(args[0], DirectSolidExecutionContext):
+                elif args[0] is not None and not isinstance(args[0], UnboundSolidExecutionContext):
                     raise DagsterInvalidInvocationError(
                         f"Compute function of solid '{self.name}' has context argument, but no context "
                         "was provided when invoking."
@@ -133,7 +162,7 @@ class SolidDefinition(NodeDefinition):
                 context = args[0]
                 return solid_invocation_result(self, context, *args[1:], **kwargs)
             else:
-                if len(args) > 0 and isinstance(args[0], DirectSolidExecutionContext):
+                if len(args) > 0 and isinstance(args[0], UnboundSolidExecutionContext):
                     raise DagsterInvalidInvocationError(
                         f"Compute function of solid '{self.name}' has no context argument, but "
                         "context was provided when invoking."
@@ -141,7 +170,7 @@ class SolidDefinition(NodeDefinition):
                 return solid_invocation_result(self, None, *args, **kwargs)
 
     @property
-    def compute_fn(self) -> Callable[..., Any]:
+    def compute_fn(self) -> Union[Callable[..., Any], "DecoratedSolidFunction"]:
         return self._compute_fn
 
     @property
@@ -195,9 +224,7 @@ class SolidDefinition(NodeDefinition):
             description=description or self.description,
             tags=self.tags,
             required_resource_keys=self.required_resource_keys,
-            positional_inputs=self.positional_inputs,
             version=self.version,
-            context_arg_provided=self._context_arg_provided,
             retry_policy=self.retry_policy,
         )
 

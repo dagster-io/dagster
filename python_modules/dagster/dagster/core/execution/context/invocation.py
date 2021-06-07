@@ -1,11 +1,10 @@
 # pylint: disable=super-init-not-called
-from typing import AbstractSet, Any, Dict, List, NamedTuple, Optional, Union, cast
+from typing import AbstractSet, Any, Dict, NamedTuple, Optional, Union, cast
 
 from dagster import check
 from dagster.config import Shape
 from dagster.core.definitions.composition import PendingNodeInvocation
 from dagster.core.definitions.dependency import Solid, SolidHandle
-from dagster.core.definitions.events import AssetMaterialization
 from dagster.core.definitions.hook import HookDefinition
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.pipeline import PipelineDefinition
@@ -37,7 +36,7 @@ def _property_msg(prop_name: str, method_name: str) -> str:
     )
 
 
-class DirectSolidExecutionContext(SolidExecutionContext):
+class UnboundSolidExecutionContext(SolidExecutionContext):
     """The ``context`` object available as the first argument to a solid's compute function when
     being invoked directly. Can also be used as a context manager.
     """
@@ -73,8 +72,6 @@ class DirectSolidExecutionContext(SolidExecutionContext):
         self._pdb: Optional[ForkedPdb] = None
         self._cm_scope_entered = False
 
-        self._materializations: List[AssetMaterialization] = []
-
     def __enter__(self):
         self._cm_scope_entered = True
         return self
@@ -89,15 +86,6 @@ class DirectSolidExecutionContext(SolidExecutionContext):
             self._resources_cm.__exit__(None, None, None)  # pylint: disable=no-member
         if self._instance_provided and not self._cm_scope_entered:
             self._instance_cm.__exit__(None, None, None)  # pylint: disable=no-member
-
-    @property
-    def asset_materializations(self) -> List[AssetMaterialization]:
-        """List of the asset materializations yielded from invocation where this context was used.
-
-        If I invoke solid `a` with context `c`, then `c.asset_materializations` will contains all
-        the asset materializations yielded in the body of `a`.
-        """
-        return list(self._materializations)
 
     @property
     def solid_config(self) -> Any:
@@ -209,7 +197,6 @@ class DirectSolidExecutionContext(SolidExecutionContext):
             solid_config=solid_config,
             resources=self.resources,
             instance=self.instance,
-            materializations=self._materializations,
             log_manager=self.log,
             pdb=self.pdb,
             tags=solid_def_or_invocation.tags
@@ -277,7 +264,6 @@ class BoundSolidExecutionContext(SolidExecutionContext):
         solid_config: Any,
         resources: "Resources",
         instance: DagsterInstance,
-        materializations: List[AssetMaterialization],
         log_manager: DagsterLogManager,
         pdb: Optional[ForkedPdb],
         tags: Optional[Dict[str, str]],
@@ -288,21 +274,11 @@ class BoundSolidExecutionContext(SolidExecutionContext):
         self._solid_config = solid_config
         self._resources = resources
         self._instance = instance
-        self._materializations = materializations
         self._log = log_manager
         self._pdb = pdb
         self._tags = merge_dicts(self._solid_def.tags, tags) if tags else self._solid_def.tags
         self._hook_defs = hook_defs
         self._alias = alias if alias else self._solid_def.name
-
-    @property
-    def asset_materializations(self) -> List[AssetMaterialization]:
-        """List of the asset materializations yielded from invocation where this context was used.
-
-        If I invoke solid `a` with context `c`, then `c.asset_materializations` will contains all
-        the asset materializations yielded in the body of `a`.
-        """
-        return list(self._materializations)
 
     @property
     def solid_config(self) -> Any:
@@ -393,16 +369,10 @@ class BoundSolidExecutionContext(SolidExecutionContext):
     def get_step_execution_context(self) -> StepExecutionContext:
         raise DagsterInvalidPropertyError(_property_msg("get_step_execution_context", "methods"))
 
-    def record_materialization(self, materialization: AssetMaterialization) -> None:
-        check.inst_param(materialization, "materialization", AssetMaterialization)
-        self._materializations.append(materialization)
-
     def for_type(self, dagster_type: DagsterType) -> TypeCheckContext:
+        resources = cast(NamedTuple, self.resources)
         return TypeCheckContext(
-            self.run_id,
-            self.log,
-            ScopedResourcesBuilder(cast(NamedTuple, self.resources)._asdict()),
-            dagster_type,
+            self.run_id, self.log, ScopedResourcesBuilder(resources._asdict()), dagster_type
         )
 
 
@@ -410,7 +380,7 @@ def build_solid_context(
     resources: Optional[Dict[str, Any]] = None,
     config: Optional[Any] = None,
     instance: Optional[DagsterInstance] = None,
-) -> DirectSolidExecutionContext:
+) -> UnboundSolidExecutionContext:
     """Builds solid execution context from provided parameters.
 
     ``build_solid_context`` can be used as either a function or context manager. If there is a
@@ -437,7 +407,7 @@ def build_solid_context(
 
     experimental_fn_warning("build_solid_context")
 
-    return DirectSolidExecutionContext(
+    return UnboundSolidExecutionContext(
         resources_dict=check.opt_dict_param(resources, "resources", key_type=str),
         solid_config=config,
         instance=check.opt_inst_param(instance, "instance", DagsterInstance),
