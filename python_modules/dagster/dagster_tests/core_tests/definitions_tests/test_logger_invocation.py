@@ -71,6 +71,9 @@ def test_logger_with_config_defaults():
         logger_ = logging.Logger(init_context.logger_config)
         return logger_
 
+    logger_ = str_logger(None)
+    assert logger_.name == "foo"
+
     logger_ = str_logger(build_init_logger_context())
     assert logger_.name == "foo"
 

@@ -59,18 +59,26 @@ class LoggerDefinition(AnonymousConfigurableDefinition):
         context_param_name = get_function_params(self.logger_fn)[0].name
 
         if args:
-            check.opt_inst_param(args[0], context_param_name, UnboundInitLoggerContext)
-            return logger_invocation_result(self, args[0])
+            context = check.opt_inst_param(
+                args[0],
+                context_param_name,
+                UnboundInitLoggerContext,
+                default=UnboundInitLoggerContext(logger_config=None, pipeline_def=None),
+            )
+            return logger_invocation_result(self, context)
         else:
             if context_param_name not in kwargs:
                 raise DagsterInvalidInvocationError(
                     f"Logger initialization expected argument '{context_param_name}'."
                 )
-            check.opt_inst_param(
-                kwargs[context_param_name], context_param_name, UnboundInitLoggerContext
+            context = check.opt_inst_param(
+                kwargs[context_param_name],
+                context_param_name,
+                UnboundInitLoggerContext,
+                default=UnboundInitLoggerContext(logger_config=None, pipeline_def=None),
             )
 
-            return logger_invocation_result(self, kwargs[context_param_name])
+            return logger_invocation_result(self, context)
 
     @property
     def logger_fn(self) -> "InitLoggerFunction":
@@ -127,6 +135,13 @@ def build_init_logger_context(
     logger_config: Any = None,
     pipeline_def: Optional["PipelineDefinition"] = None,
 ) -> "UnboundInitLoggerContext":
+    """Builds logger initialization context from provided parameters.
+
+    Args:
+        logger_config (Any): The config to provide during initialization of logger.
+        pipeline_def (Optional[PipelineDefinition]): The pipeline definition that the logger will be
+            used with.
+    """
     from dagster.core.execution.context.logger import UnboundInitLoggerContext
     from dagster.core.definitions import PipelineDefinition
 
