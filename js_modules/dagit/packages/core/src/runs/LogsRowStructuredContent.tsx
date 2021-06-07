@@ -202,7 +202,7 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
       return <DefaultContent message={node.message} />;
     case 'LogsCapturedEvent':
       const currentQuery = querystring.parse(location.search);
-      const updatedQuery = {...currentQuery, logType: 'stdout'};
+      const updatedQuery = {...currentQuery, logType: 'stdout', logKey: node.stepKey};
       const rawLogsUrl = `${location.pathname}?${querystring.stringify(updatedQuery)}`;
       const rawLogsLink = (
         <Link to={rawLogsUrl} style={{color: 'inherit'}}>

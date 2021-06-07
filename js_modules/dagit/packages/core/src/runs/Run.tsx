@@ -156,18 +156,25 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
   const splitPanelContainer = React.createRef<SplitPanelContainer>();
 
   const {basePath} = React.useContext(AppContext);
-  const [computeLogKey, setComputeLogKey] = React.useState<string>();
+
   const [queryLogType, setQueryLogType] = useQueryPersistedState<string>({
     queryKey: 'logType',
     defaults: {logType: 'structured'},
   });
+
+  const [computeLogKey, setComputeLogKey] = useQueryPersistedState<string>({
+    queryKey: 'logKey',
+  });
+
   const logType = logTypeFromQuery(queryLogType);
   const setLogType = (lt: LogType) => setQueryLogType(LogType[lt]);
   const [computeLogUrl, setComputeLogUrl] = React.useState<string | null>(null);
+
   const stepKeysJSON = JSON.stringify(Object.keys(metadata.steps).sort());
   const stepKeys = React.useMemo(() => JSON.parse(stepKeysJSON), [stepKeysJSON]);
 
   const runtimeGraph = run?.executionPlan && toGraphQueryItems(run?.executionPlan, metadata.steps);
+
   const selectionStepKeys = React.useMemo(() => {
     return runtimeGraph && selectionQuery && selectionQuery !== '*'
       ? filterByQuery(runtimeGraph, selectionQuery).all.map((n) => n.name)
@@ -175,9 +182,10 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
   }, [runtimeGraph, selectionQuery]);
 
   React.useEffect(() => {
-    if (!stepKeys) {
+    if (!stepKeys || computeLogKey) {
       return;
     }
+
     if (metadata.logCaptureSteps) {
       const logKeys = Object.keys(metadata.logCaptureSteps);
       const selectedLogKey = logKeys.find((logKey) => {
@@ -192,7 +200,7 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
     } else if (selectionStepKeys.length === 1 && computeLogKey !== selectionStepKeys[0]) {
       setComputeLogKey(selectionStepKeys[0]);
     }
-  }, [stepKeys, computeLogKey, selectionStepKeys, metadata.logCaptureSteps]);
+  }, [stepKeys, computeLogKey, selectionStepKeys, metadata.logCaptureSteps, setComputeLogKey]);
 
   const onSetComputeLogKey = (logKey: string) => {
     setComputeLogKey(logKey);
