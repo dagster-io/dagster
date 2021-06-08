@@ -378,6 +378,7 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         extra_cmds_fn=k8s_extra_cmds_fn,
         depends_on_fn=test_image_depends_fn,
     ),
+    ModuleBuildSpec("python_modules/libraries/dagster-mlflow", upload_coverage=False),
     ModuleBuildSpec("python_modules/libraries/dagster-mysql", extra_cmds_fn=mysql_extra_cmds_fn),
     ModuleBuildSpec(
         "python_modules/libraries/dagster-postgres", extra_cmds_fn=postgres_extra_cmds_fn
