@@ -44,11 +44,7 @@ interface ConfigEditorConfigPickerProps {
   pipeline: Pipeline;
   pipelineMode?: string;
   partitionSets: PartitionSet[];
-  solidSelection: string[] | null;
   onSaveSession: (updates: Partial<IExecutionSession>) => void;
-  onCreateSession: (initial: Partial<IExecutionSession>) => void;
-  onLoading: () => void;
-  onLoaded: () => void;
   onSelectPreset: (preset: Preset) => Promise<void>;
   onSelectPartition: (
     repositorySelector: RepositorySelector,
@@ -58,13 +54,10 @@ interface ConfigEditorConfigPickerProps {
   repoAddress: RepoAddress;
 }
 
-const PRESET_PICKER_HINT_TEXT = `Define a PresetDefinition, PartitionSetDefinition, or a schedule decorator (e.g. @daily_schedule) to autofill this session...`;
-
 export const ConfigEditorConfigPicker: React.FC<ConfigEditorConfigPickerProps> = (props) => {
   const {
     pipeline,
     pipelineMode,
-    solidSelection,
     base,
     onSaveSession,
     onSelectPreset,
@@ -73,27 +66,56 @@ export const ConfigEditorConfigPicker: React.FC<ConfigEditorConfigPickerProps> =
     repoAddress,
   } = props;
 
-  const onSelectPartitionSet = (partitionSet: PartitionSet) => {
-    onSaveSession({
-      mode: partitionSet.mode,
-      base: {
-        partitionsSetName: partitionSet.name,
-        partitionName: null,
-      },
-    });
+  const {presets} = pipeline;
+
+  const configGenerators: ConfigGenerator[] = React.useMemo(() => {
+    const byName = (a: {name: string}, b: {name: string}) => a.name.localeCompare(b.name);
+    return [...presets, ...partitionSets]
+      .filter(({mode}) => !pipelineMode || mode === pipelineMode)
+      .sort(byName);
+  }, [presets, partitionSets, pipelineMode]);
+
+  const label = () => {
+    if (!base) {
+      if (presets.length && !partitionSets.length) {
+        return 'Preset';
+      }
+      if (!presets.length && partitionSets.length) {
+        return 'Partition Set';
+      }
+      return 'Preset / Partition Set';
+    }
+
+    if ('presetName' in base) {
+      return `Preset: ${base.presetName}`;
+    }
+
+    return `Partition Set: ${base.partitionsSetName}`;
+  };
+
+  const onSelect = (item: ConfigGenerator) => {
+    if (item.__typename === 'PartitionSet') {
+      onSaveSession({
+        mode: item.mode,
+        base: {
+          partitionsSetName: item.name,
+          partitionName: null,
+        },
+      });
+    } else {
+      onSelectPreset(item);
+    }
   };
 
   return (
     <PickerContainer>
-      <ConfigEditorConfigGeneratorPicker
-        value={base}
-        pipeline={pipeline}
-        presets={pipeline.presets.filter((p) => !pipelineMode || p.mode === pipelineMode)}
-        partitionSets={partitionSets.filter((p) => !pipelineMode || p.mode === pipelineMode)}
-        solidSelection={solidSelection}
-        onSelectPreset={onSelectPreset}
-        onSelectPartitionSet={onSelectPartitionSet}
-      />
+      {pipelineMode && configGenerators.length <= 1 ? null : (
+        <ConfigEditorConfigGeneratorPicker
+          label={label()}
+          configGenerators={configGenerators}
+          onSelect={onSelect}
+        />
+      )}
       {base && 'partitionsSetName' in base && (
         <>
           <div style={{width: 5}} />
@@ -225,45 +247,16 @@ const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = 
 );
 
 interface ConfigEditorConfigGeneratorPickerProps {
-  pipeline: Pipeline;
-  presets: Preset[];
-  partitionSets: PartitionSet[];
-  solidSelection: string[] | null;
-  value: IExecutionSession['base'];
-  onSelectPreset: (preset: Preset, pipeline?: Pipeline) => void;
-  onSelectPartitionSet: (partitionSet: PartitionSet, pipeline?: Pipeline) => void;
+  label: string;
+  configGenerators: ConfigGenerator[];
+  onSelect: (configGenerator: ConfigGenerator) => void;
 }
 
-const ConfigEditorConfigGeneratorPicker: React.FunctionComponent<ConfigEditorConfigGeneratorPickerProps> = React.memo(
+const ConfigEditorConfigGeneratorPicker: React.FC<ConfigEditorConfigGeneratorPickerProps> = React.memo(
   (props) => {
-    const {pipeline, presets, partitionSets, onSelectPreset, onSelectPartitionSet, value} = props;
+    const {configGenerators, label, onSelect} = props;
 
-    const byName = (a: {name: string}, b: {name: string}) => a.name.localeCompare(b.name);
-
-    const configGenerators: ConfigGenerator[] = [...presets, ...partitionSets].sort(byName);
-
-    const empty = configGenerators.length === 0;
     const select: React.RefObject<Select<ConfigGenerator>> = React.createRef();
-    const onSelect = (item: ConfigGenerator) => {
-      if (item.__typename === 'PartitionSet') {
-        onSelectPartitionSet(item, pipeline);
-      } else {
-        onSelectPreset(item, pipeline);
-      }
-    };
-
-    let emptyLabel = `Preset / Partition Set`;
-    if (presets.length && !partitionSets.length) {
-      emptyLabel = `Preset`;
-    } else if (!presets.length && partitionSets.length) {
-      emptyLabel = `Partition Set`;
-    }
-
-    const label = !value
-      ? emptyLabel
-      : 'presetName' in value
-      ? `Preset: ${value.presetName}`
-      : `Partition Set: ${value.partitionsSetName}`;
 
     return (
       <div>
@@ -274,7 +267,6 @@ const ConfigEditorConfigGeneratorPicker: React.FunctionComponent<ConfigEditorCon
         >
           <Select<ConfigGenerator>
             ref={select}
-            disabled={empty}
             items={configGenerators}
             itemPredicate={(query, configGenerator) =>
               query.length === 0 || configGenerator.name.includes(query)
@@ -328,13 +320,7 @@ const ConfigEditorConfigGeneratorPicker: React.FunctionComponent<ConfigEditorCon
             noResults={<Menu.Item disabled={true} text="No presets." />}
             onItemSelect={onSelect}
           >
-            <Button
-              disabled={empty}
-              text={label}
-              title={empty ? PRESET_PICKER_HINT_TEXT : undefined}
-              data-test-id="preset-selector-button"
-              rightIcon="caret-down"
-            />
+            <Button text={label} data-test-id="preset-selector-button" rightIcon="caret-down" />
           </Select>
         </ShortcutHandler>
       </div>
