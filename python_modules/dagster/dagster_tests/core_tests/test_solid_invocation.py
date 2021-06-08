@@ -578,3 +578,17 @@ def test_composite_solid_invocation_out_of_composition():
         "function decorated with @pipeline or @composite_solid.",
     ):
         composite()
+
+
+def test_pipeline_invocation():
+    @pipeline
+    def basic_pipeline():
+        pass
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Attempted to call pipeline "
+        "'basic_pipeline' directly. Pipelines should be invoked by using an execution API function "
+        r"\(e.g. `execute_pipeline`\).",
+    ):
+        basic_pipeline()

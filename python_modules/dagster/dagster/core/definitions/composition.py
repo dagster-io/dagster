@@ -24,6 +24,7 @@ from .dependency import (
 from .hook import HookDefinition
 from .inference import infer_output_props
 from .output import OutputDefinition, OutputMapping
+from .pipeline import PipelineDefinition
 from .solid import NodeDefinition, SolidDefinition
 from .utils import check_valid_name, validate_tags
 
@@ -79,13 +80,19 @@ def is_in_composition() -> bool:
     return bool(_composition_stack)
 
 
-def assert_in_composition(solid_name: str) -> None:
+def assert_in_composition(node_def: NodeDefinition, name: str) -> None:
     if len(_composition_stack) < 1:
-        raise DagsterInvariantViolationError(
-            f"Attempted to call composite solid '{solid_name}' outside of a composition function. "
-            "Invoking composite solids is only valid in a function decorated with "
-            "@pipeline or @composite_solid."
-        )
+        if isinstance(node_def, PipelineDefinition):
+            raise DagsterInvariantViolationError(
+                f"Attempted to call pipeline '{name}' directly. Pipelines should be invoked by "
+                "using an execution API function (e.g. `execute_pipeline`)."
+            )
+        else:
+            raise DagsterInvariantViolationError(
+                f"Attempted to call composite solid '{name}' outside of a composition function. "
+                "Invoking composite solids is only valid in a function decorated with "
+                "@pipeline or @composite_solid."
+            )
 
 
 class InProgressCompositionContext:
@@ -293,7 +300,7 @@ class PendingNodeInvocation:
                     )
                 return solid_invocation_result(self, None, *args, **kwargs)
 
-        assert_in_composition(node_name)
+        assert_in_composition(self.node_def, node_name)
         input_bindings = {}
 
         # handle *args
