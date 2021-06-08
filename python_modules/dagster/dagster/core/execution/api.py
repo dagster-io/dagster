@@ -112,7 +112,7 @@ def execute_run_iterator(
                 instance=instance,
                 run_config=pipeline_run.run_config,
                 raise_on_error=False,
-                get_executor_def_fn=None,
+                executor_defs=None,
                 output_capture=None,
             ),
         )
@@ -213,7 +213,7 @@ def execute_run(
             instance=instance,
             run_config=pipeline_run.run_config,
             raise_on_error=raise_on_error,
-            get_executor_def_fn=None,
+            executor_defs=None,
             output_capture=output_capture,
         ),
     )

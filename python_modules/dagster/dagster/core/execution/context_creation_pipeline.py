@@ -10,6 +10,7 @@ from typing import (
     Generator,
     Generic,
     Iterable,
+    List,
     NamedTuple,
     Optional,
     Type,
@@ -316,7 +317,7 @@ class PlanOrchestrationContextManager(ExecutionContextManager[PlanOrchestrationC
         instance: DagsterInstance,
         raise_on_error: Optional[bool] = False,
         output_capture: Optional[Dict["StepOutputHandle", Any]] = None,
-        get_executor_def_fn: Optional[Callable[[str], ExecutorDefinition]] = None,
+        executor_defs: Optional[List[ExecutorDefinition]] = None,
     ):
         event_generator = context_event_generator(
             pipeline,
@@ -325,7 +326,7 @@ class PlanOrchestrationContextManager(ExecutionContextManager[PlanOrchestrationC
             pipeline_run,
             instance,
             raise_on_error,
-            get_executor_def_fn,
+            executor_defs,
             output_capture,
         )
         super(PlanOrchestrationContextManager, self).__init__(event_generator)
@@ -342,10 +343,10 @@ def orchestration_context_event_generator(
     pipeline_run: PipelineRun,
     instance: DagsterInstance,
     raise_on_error: bool,
-    get_executor_def_fn: Optional[Callable[[str], ExecutorDefinition]],
+    executor_defs: Optional[List[ExecutorDefinition]],
     output_capture: Optional[Dict["StepOutputHandle", Any]],
 ) -> Generator[Union[DagsterEvent, PlanOrchestrationContext], None, None]:
-    check.invariant(get_executor_def_fn is None)
+    check.invariant(executor_defs is None)
     context_creation_data = create_context_creation_data(
         pipeline,
         execution_plan,
