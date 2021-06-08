@@ -16,8 +16,8 @@ from dagster.core.definitions import (
 )
 from dagster.core.definitions.events import AssetLineageInfo, ObjectStoreOperationType
 from dagster.core.errors import DagsterError, HookExecutionError
+from dagster.core.execution.context.hook import HookContext
 from dagster.core.execution.context.system import (
-    HookContext,
     IPlanContext,
     IStepContext,
     PlanExecutionContext,

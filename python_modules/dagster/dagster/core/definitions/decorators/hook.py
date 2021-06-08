@@ -9,7 +9,7 @@ from ..events import HookExecutionResult
 from ..hook import HookDefinition
 
 if TYPE_CHECKING:
-    from dagster.core.execution.context.system import HookContext
+    from dagster.core.execution.context.hook import HookContext
     from dagster.core.events import DagsterEvent
 
 
@@ -29,12 +29,16 @@ def _validate_hook_fn_params(fn, expected_positionals):
 
 class _Hook:
     def __init__(
-        self, name: Optional[str] = None, required_resource_keys: Optional[AbstractSet[str]] = None
+        self,
+        name: Optional[str] = None,
+        required_resource_keys: Optional[AbstractSet[str]] = None,
+        decorated_fn: Optional[Callable[..., Any]] = None,
     ):
         self.name = check.opt_str_param(name, "name")
         self.required_resource_keys = check.opt_set_param(
             required_resource_keys, "required_resource_keys"
         )
+        self.decorated_fn = check.opt_callable_param(decorated_fn, "decorated_fn")
 
     def __call__(self, fn) -> HookDefinition:
 
@@ -51,6 +55,7 @@ class _Hook:
             name=self.name or "",
             hook_fn=fn,
             required_resource_keys=self.required_resource_keys,
+            decorated_fn=self.decorated_fn or fn,
         )
         update_wrapper(cast(Callable[..., Any], hook_def), fn)
         return hook_def
@@ -59,6 +64,7 @@ class _Hook:
 def event_list_hook(
     name: Union[Optional[str], Callable[..., Any]] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
+    decorated_fn: Optional[Callable[..., Any]] = None,
 ) -> Union[HookDefinition, _Hook]:
     """Create a generic hook with the specified parameters from the decorated function.
 
@@ -101,7 +107,9 @@ def event_list_hook(
         check.invariant(required_resource_keys is None)
         return _Hook()(name)
 
-    return _Hook(name=name, required_resource_keys=required_resource_keys)
+    return _Hook(
+        name=name, required_resource_keys=required_resource_keys, decorated_fn=decorated_fn
+    )
 
 
 def success_hook(
@@ -143,7 +151,7 @@ def success_hook(
         else:
             _name = name
 
-        @event_list_hook(_name, required_resource_keys)
+        @event_list_hook(_name, required_resource_keys, decorated_fn=fn)
         def _success_hook(
             context: "HookContext", event_list: List["DagsterEvent"]
         ) -> HookExecutionResult:
@@ -205,7 +213,7 @@ def failure_hook(
         else:
             _name = name
 
-        @event_list_hook(_name, required_resource_keys)
+        @event_list_hook(_name, required_resource_keys, decorated_fn=fn)
         def _failure_hook(
             context: "HookContext", event_list: List["DagsterEvent"]
         ) -> HookExecutionResult:
