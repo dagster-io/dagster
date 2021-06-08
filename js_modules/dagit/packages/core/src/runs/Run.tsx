@@ -182,7 +182,7 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
   }, [runtimeGraph, selectionQuery]);
 
   React.useEffect(() => {
-    if (!stepKeys || computeLogKey) {
+    if (!stepKeys?.length || computeLogKey) {
       return;
     }
 
@@ -195,7 +195,7 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
         );
       });
       setComputeLogKey(selectedLogKey || logKeys[0]);
-    } else if (!computeLogKey || !stepKeys.includes(computeLogKey)) {
+    } else if (!stepKeys.includes(computeLogKey)) {
       setComputeLogKey(selectionStepKeys.length === 1 ? selectionStepKeys[0] : stepKeys[0]);
     } else if (selectionStepKeys.length === 1 && computeLogKey !== selectionStepKeys[0]) {
       setComputeLogKey(selectionStepKeys[0]);
