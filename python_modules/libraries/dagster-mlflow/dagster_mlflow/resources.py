@@ -7,11 +7,10 @@ import atexit
 import sys
 from itertools import islice
 from os import environ
-from typing import Optional
+from typing import Any, Optional
 
 import mlflow
-from dagster import Field, Noneable, Permissive, failure_hook, resource
-from dagster.core.definitions.decorators.hook import success_hook
+from dagster import Field, Noneable, Permissive, resource
 from mlflow.entities.run_status import RunStatus
 
 CONFIG_SCHEMA = {
@@ -101,7 +100,7 @@ class MlFlow(metaclass=MlflowMeta):
         to the same Mlflow run, even when multiprocess executors are used.
         """
         # Get the run id
-        run_id = self._get_current_run_id()
+        run_id = self._get_current_run_id()  # pylint: disable=no-member
         self._set_active_run(run_id=run_id)
         self._set_all_tags()
 
@@ -110,7 +109,7 @@ class MlFlow(metaclass=MlflowMeta):
         atexit.unregister(mlflow.end_run)
 
     def _get_current_run_id(
-        self, experiment: Optional[str] = None, dagster_run_id: Optional[str] = None
+        self, experiment: Optional[Any] = None, dagster_run_id: Optional[str] = None
     ):
         """Gets the run id of a specific dagster run and experiment id.
         If it doesn't exist then it returns a None.
@@ -135,7 +134,7 @@ class MlFlow(metaclass=MlflowMeta):
                 filter_string=f"tags.dagster_run_id='{dagster_run_id}'",
             )
             if not current_run_df.empty:
-                return current_run_df.run_id.values[0]
+                return current_run_df.run_id.values[0]  # pylint: disable=no-member
 
     def _set_active_run(self, run_id=None):
         """
@@ -163,9 +162,9 @@ class MlFlow(metaclass=MlflowMeta):
                 f"Starting a new mlflow run with id {run.info.run_id} "
                 f"in experiment {self.experiment_name}"
             )
-        except Exception as ex:
+        except Exception as ex:  # pylint: disable=broad-except
             run = mlflow.active_run()
-            if f"is already active" not in str(ex):
+            if "is already active" not in str(ex):
                 raise (ex)
             self.log.info(f"Run with id {run.info.run_id} is already active.")
 
@@ -225,74 +224,32 @@ class MlFlow(metaclass=MlflowMeta):
             yield {k: params[k] for k in islice(it, size)}
 
 
-@failure_hook(required_resource_keys={"mlflow"})
-def cleanup_on_dagit_failure(context):
-    """When attached to a pipeline this hook will be called when a pipeline running
-    in dagit fails. Note that this hook is only called when the failing pipeline
-    has been launched through dagit. We therefore still need the cleanup_on_error
-    method above to cover all other cases.
-    """
-
-    mlf = context.resources.mlflow
-    mlf.end_run(status=RunStatus.to_string(RunStatus.FAILED))
-
-
-@success_hook(required_resource_keys={"mlflow"})
-def cleanup_on_success(context):
-    """
-    When attached to a pipeline this hook will be called whenever a solid runs
-    successfully.
-    """
-    _cleanup_on_success(context)
-
-
-def _cleanup_on_success(context):
-    """
-    Checks if the current solid in the context is the last solid in the pipeline
-    and ends the mlflow run with a successful status when this is the case.
-    """
-    last_solid_name = context._step_execution_context.pipeline_def.solids_in_topological_order[
-        -1
-    ].name
-
-    if context.solid.name == last_solid_name:
-        context.resources.mlflow.end_run()
-
-
 @resource(config_schema=CONFIG_SCHEMA)
 def mlflow_tracking(context):
     """
+    This resource initializes an MLflow run that's used for all steps within a Dagster pipeline run.
+
     This resource provides access to all of mlflow's methods as well as the mlflow tracking client's
     methods.
 
     Usage:
 
-    1. Make sure to add the mlflow resource to the first solid in the pipeline to start
-       the mlflow run.
-    2. To use mlflow utilities inside a solid make sure to add the mlflow resource to
-       that solid and then get the mlflow instance like so
-       `mlf = context.resources.mlflow`
-       then use as you would normally use mlflow,
-       e.g.; `mlf.log_params(some_params)`
-    3. Add the success and failure hooks namely `cleanup_on_success` and `cleanup_on_dagit_failure`
-       to your pipeline to ensure the mlflow run is always stopped with the correct run status.
-
+    1. Add the mlflow resource to any solids in which you want to invoke mlflow tracking APIs.
+    2. Add the `end_mlflow_run_on_pipeline_finished` hook to your pipeline to end the MLflow run
+       when the Dagster pipeline run finished.
 
     Examples:
 
         .. code-block:: python
 
-            from dagster_mlflow import mlflow_tracking, cleanup_on_success, cleanup_on_dagit_failure
+            from dagster_mlflow import end_mlflow_run_on_pipeline_finished, mlflow_tracking
 
             @solid(required_resource_keys={"mlflow"})
             def mlflow_solid(context):
-                mlf = context.resources.mlflow
+                mlflow.log_params(some_params)
+                mlflow.tracking_client.create_registered_model(some_model_name)
 
-                mlf.log_params(some_params)
-                mlf.tracking_client.create_registered_model(some_model_name)
-
-            @cleanup_on_success
-            @cleanup_on_dagit_failure
+            @end_mlflow_run_on_pipeline_finished
             @pipeline(mode_defs=[ModeDefinition(resource_defs={"mlflow": mlflow_tracking})])
             def mlf_pipeline():
                 mlflow_solid()
@@ -305,7 +262,7 @@ def mlflow_tracking(context):
                         "mlflow": {
                             "config": {
                                 "experiment_name": my_experiment,
-                                "mlflow_tracking_uri": http://localhost:5000,
+                                "mlflow_tracking_uri": "http://localhost:5000",
 
                                 # if want to run a nested run, provide parent_run_id
                                 "parent_run_id": an_existing_mlflow_run_id,
@@ -318,12 +275,10 @@ def mlflow_tracking(context):
                                 },
 
                                 # env variables you want to log as mlflow tags
-                                "env_to_tag":
-                                    - DOCKER_IMAGE_TAG
+                                "env_to_tag": ["DOCKER_IMAGE_TAG"],
 
                                 # key-value tags to add to your experiment
-                                "extra_tags":
-                                    super: experiment
+                                "extra_tags": {"super": "experiment"},
                             }
                         }
                     }
