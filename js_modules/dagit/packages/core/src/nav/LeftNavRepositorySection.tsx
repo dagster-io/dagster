@@ -4,6 +4,7 @@ import memoize from 'lodash/memoize';
 import * as React from 'react';
 import {useRouteMatch} from 'react-router-dom';
 
+import {featureEnabled, FeatureFlag} from '../app/Util';
 import {
   DagsterRepoOption,
   getRepositoryOptionHash,
@@ -11,6 +12,7 @@ import {
 } from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
+import {FlatContentList} from './FlatContentList';
 import {JobsList} from './JobsList';
 import {RepoNavItem} from './RepoNavItem';
 import {RepoDetails} from './RepoSelector';
@@ -102,6 +104,7 @@ const useNavVisibleRepos = (
 };
 
 const LoadedRepositorySection: React.FC<{allRepos: DagsterRepoOption[]}> = ({allRepos}) => {
+  const flat = featureEnabled(FeatureFlag.PipelineModeTuples);
   const match = useRouteMatch<
     | {repoPath: string; selector: string; tab: string; rootTab: undefined}
     | {selector: undefined; tab: undefined; rootTab: string}
@@ -132,7 +135,7 @@ const LoadedRepositorySection: React.FC<{allRepos: DagsterRepoOption[]}> = ({all
     <div
       className="bp3-dark"
       style={{
-        background: `rgba(0,0,0,0.3)`,
+        background: Colors.DARK_GRAY1,
         color: Colors.WHITE,
         display: 'flex',
         flex: 1,
@@ -151,8 +154,14 @@ const LoadedRepositorySection: React.FC<{allRepos: DagsterRepoOption[]}> = ({all
       </ApolloConsumer>
       {visibleRepos.size ? (
         <div style={{display: 'flex', flex: 1, flexDirection: 'column', minHeight: 0}}>
-          <RepositoryContentList {...match?.params} repos={visibleOptions} />
-          <JobsList {...match?.params} repos={visibleOptions} />
+          {flat ? (
+            <FlatContentList {...match?.params} repos={visibleOptions} />
+          ) : (
+            <>
+              <RepositoryContentList {...match?.params} repos={visibleOptions} />
+              <JobsList {...match?.params} repos={visibleOptions} />
+            </>
+          )}
         </div>
       ) : null}
     </div>

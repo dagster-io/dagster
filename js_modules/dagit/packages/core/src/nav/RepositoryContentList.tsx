@@ -174,7 +174,7 @@ const ItemHeader = styled.div`
   color: ${Colors.LIGHT_GRAY3} !important;
 `;
 
-const Items = styled.div`
+export const Items = styled.div`
   flex: 1;
   overflow: auto;
   &::-webkit-scrollbar {
@@ -194,7 +194,7 @@ const Items = styled.div`
   }
 `;
 
-const Item = styled(Link)`
+export const Item = styled(Link)`
   font-size: 13px;
   text-overflow: ellipsis;
   overflow: hidden;
@@ -204,6 +204,8 @@ const Item = styled(Link)`
   border-bottom: 1px solid transparent;
   display: block;
   color: ${Colors.LIGHT_GRAY3} !important;
+  user-select: none;
+
   &:hover {
     text-decoration: none;
     color: ${Colors.WHITE} !important;

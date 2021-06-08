@@ -49,6 +49,7 @@ export const WorkspaceOverviewRoot = () => {
             <th>Pipelines</th>
             <th>Solids</th>
             <th>Schedules</th>
+            <th>Sensors</th>
           </tr>
         </thead>
         <tbody>
@@ -69,6 +70,9 @@ export const WorkspaceOverviewRoot = () => {
                 </td>
                 <td>
                   <Link to={workspacePath(name, location, '/schedules')}>Schedules</Link>
+                </td>
+                <td>
+                  <Link to={workspacePath(name, location, '/sensors')}>Sensors</Link>
                 </td>
               </tr>
             );
