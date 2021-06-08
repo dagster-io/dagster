@@ -78,7 +78,7 @@ def pipeline_failure_sensor(
             # * we filter the query by failure status to reduce the number of scanned rows
             # * when the daemon is down, bc we persist the cursor info, we can go back to where we
             #   left and backfill alerts for the qualified runs (up to 5 at a time) during the downtime
-            rows = context.instance.get_run_rows(
+            run_records = context.instance.get_run_records(
                 filters=PipelineRunsFilter(
                     statuses=[PipelineRunStatus.FAILURE],
                     updated_after=datetime.fromisoformat(context.cursor),
@@ -88,15 +88,15 @@ def pipeline_failure_sensor(
                 ascending=True,
             )
 
-            if len(rows) == 0:
+            if len(run_records) == 0:
                 yield SkipReason(
                     f"No qualified runs found (no runs updated after {datetime.fromisoformat(context.cursor)})"
                 )
                 return
 
-            for row in rows:
-                pipeline_run = row["run_body"]
-                update_timestamp = row["update_timestamp"]
+            for record in run_records:
+                pipeline_run = record.pipeline_run
+                update_timestamp = record.update_timestamp
                 events = context.instance.all_logs(pipeline_run.run_id, dagster_event_type)
 
                 if len(events) == 0:

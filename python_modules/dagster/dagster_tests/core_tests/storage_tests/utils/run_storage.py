@@ -542,7 +542,7 @@ class TestRunStorage:
             for run in storage.get_runs(PipelineRunsFilter(statuses=[PipelineRunStatus.SUCCESS]))
         } == set()
 
-    def test_fetch_rows_by_update_timestamp(self, storage):
+    def test_fetch_records_by_update_timestamp(self, storage):
         assert storage
         self._skip_in_memory(storage)
 
@@ -581,14 +581,14 @@ class TestRunStorage:
             ),
         )
 
-        row_two = storage.get_run_rows(
+        record_two = storage.get_run_records(
             filters=PipelineRunsFilter(run_ids=[two], updated_after=datetime(2020, 1, 1))
         )[0]
-        run_two_update_timestamp = row_two["update_timestamp"]
+        run_two_update_timestamp = record_two.update_timestamp
 
         assert [
-            row["run_body"].run_id
-            for row in storage.get_run_rows(
+            record.pipeline_run.run_id
+            for record in storage.get_run_records(
                 filters=PipelineRunsFilter(updated_after=run_two_update_timestamp),
                 order_by="update_timestamp",
                 ascending=True,
@@ -596,8 +596,8 @@ class TestRunStorage:
         ] == [three, one]
 
         assert [
-            row["run_body"].run_id
-            for row in storage.get_run_rows(
+            record.pipeline_run.run_id
+            for record in storage.get_run_records(
                 filters=PipelineRunsFilter(
                     statuses=[PipelineRunStatus.FAILURE], updated_after=run_two_update_timestamp
                 ),

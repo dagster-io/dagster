@@ -26,7 +26,7 @@ from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dag
 from dagster.seven import JSONDecodeError
 from dagster.utils import merge_dicts, utc_datetime_from_timestamp
 
-from ..pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
+from ..pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter, RunRecord
 from .base import RunStorage
 from .migration import RUN_DATA_MIGRATIONS, RUN_PARTITIONS
 from .schema import (
@@ -270,7 +270,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         rows = self.fetchall(query)
         return deserialize_json_to_dagster_namedtuple(rows[0][0]) if len(rows) else None
 
-    def get_run_rows(self, filters=None, limit=None, order_by=None, ascending=False):
+    def get_run_records(self, filters=None, limit=None, order_by=None, ascending=False):
         filters = check.opt_inst_param(
             filters, "filters", PipelineRunsFilter, default=PipelineRunsFilter()
         )
@@ -286,17 +286,17 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         rows = self.fetchall(query)
 
-        result = []
-        for row in rows:
-            r = {}
-            for col, val in row.items():
-                if col == "run_body":
-                    r[col] = deserialize_json_to_dagster_namedtuple(val)
-                else:
-                    r[col] = val
-            result.append(r)
-
-        return result
+        return [
+            RunRecord(
+                record_id=check.int_param(row["id"], "id"),
+                pipeline_run=deserialize_json_to_dagster_namedtuple(
+                    check.str_param(row["run_body"], "run_body")
+                ),
+                create_timestamp=check.inst(row["create_timestamp"], datetime),
+                update_timestamp=check.inst(row["update_timestamp"], datetime),
+            )
+            for row in rows
+        ]
 
     def get_run_tags(self):
         result = defaultdict(set)

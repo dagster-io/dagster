@@ -138,8 +138,8 @@ class InMemoryRunStorage(RunStorage):
         check.str_param(run_id, "run_id")
         return self._runs.get(run_id)
 
-    def get_run_rows(self, filters=None, limit=None, order_by=None, ascending=False):
-        raise NotImplementedError("In memory run storage does not track all columns yet.")
+    def get_run_records(self, filters=None, limit=None, order_by=None, ascending=False):
+        raise NotImplementedError("In memory run storage does not track timestamp yet.")
 
     def get_run_tags(self):
         all_tags = defaultdict(set)

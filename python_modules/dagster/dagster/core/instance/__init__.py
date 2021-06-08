@@ -22,7 +22,12 @@ from dagster.core.errors import (
     DagsterRunAlreadyExists,
     DagsterRunConflict,
 )
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.pipeline_run import (
+    PipelineRun,
+    PipelineRunStatus,
+    PipelineRunsFilter,
+    RunRecord,
+)
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.utils import str_format_list
@@ -982,14 +987,26 @@ class DagsterInstance:
     ) -> Dict[str, Dict[str, Union[Iterable[PipelineRun], int]]]:
         return self._run_storage.get_run_groups(filters=filters, cursor=cursor, limit=limit)
 
-    def get_run_rows(
+    def get_run_records(
         self,
         filters: PipelineRunsFilter = None,
         limit: int = None,
         order_by: str = None,
         ascending: bool = False,
-    ) -> List[Dict[str, Any]]:
-        return self._run_storage.get_run_rows(filters, limit, order_by, ascending)
+    ) -> List[RunRecord]:
+        """Return a list of run records stored in the run storage, sorted by the given column in given order.
+
+        Args:
+            filters (Optional[PipelineRunsFilter]): the filter by which to filter runs.
+            limit (Optional[int]): Number of results to get. Defaults to infinite.
+            order_by (Optional[str]): Name of the column to sort by. Defaults to id.
+            ascending (Optional[bool]): Sort the result in ascending order if True, descending
+                otherwise. Defaults to descending.
+
+        Returns:
+            List[RunRecord]: List of run records stored in the run storage.
+        """
+        return self._run_storage.get_run_records(filters, limit, order_by, ascending)
 
     def wipe(self):
         self._run_storage.wipe()
