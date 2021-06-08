@@ -5,6 +5,7 @@ from dagster import (
     DagsterTypeCheckDidNotPass,
     execute_pipeline,
 )
+from dagster.utils import file_relative_path
 from dagster.utils.temp_file import get_temp_dir
 from dagster_test.toys.asset_lineage import asset_lineage_pipeline
 from dagster_test.toys.composition import composition
@@ -12,7 +13,7 @@ from dagster_test.toys.dynamic import dynamic_pipeline
 from dagster_test.toys.error_monster import error_monster
 from dagster_test.toys.hammer import hammer_pipeline
 from dagster_test.toys.log_spew import log_spew
-from dagster_test.toys.longitudinal import longitudinal_pipeline
+from dagster_test.toys.longitudinal import IntentionalRandomFailure, longitudinal_pipeline
 from dagster_test.toys.many_events import many_events
 from dagster_test.toys.pyspark_assets.pyspark_assets_pipeline import pyspark_assets_pipeline
 from dagster_test.toys.repo import toys_repository
@@ -32,10 +33,14 @@ def test_dynamic_pipeline():
 
 def test_longitudinal_pipeline():
     partition_set = longitudinal_schedule().get_partition_set()
-    assert execute_pipeline(
-        longitudinal_pipeline,
-        run_config=partition_set.run_config_for_partition(partition_set.get_partitions()[0]),
-    ).success
+    try:
+        result = execute_pipeline(
+            longitudinal_pipeline,
+            run_config=partition_set.run_config_for_partition(partition_set.get_partitions()[0]),
+        )
+        assert result.success
+    except IntentionalRandomFailure:
+        pass
 
 
 def test_many_events_pipeline():
@@ -95,7 +100,9 @@ def test_pyspark_assets_pipeline():
             "resources": {
                 "source_data_dir": {
                     "config": {
-                        "dir": "python_modules/dagster-test/dagster_test/toys/pyspark_assets/asset_pipeline_files"
+                        "dir": file_relative_path(
+                            __file__, "../dagster_test/toys/pyspark_assets/asset_pipeline_files"
+                        ),
                     }
                 },
                 "savedir": {"config": {"dir": temp_dir}},
