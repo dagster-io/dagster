@@ -11,12 +11,13 @@ Solids are the functional unit of work in Dagster. A solid's responsibility is t
 
 ## Relevant APIs
 
-| Name                                   | Description                                                                                                                                                                                             |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| <PyObject object="solid" decorator />  | The decorator used to define solids. The decorated function is called the `compute_fn`. The decorator returns a <PyObject object="SolidDefinition" />                                                   |
-| <PyObject object="InputDefinition" />  | InputDefinitions define the inputs to a solid compute function. These are defined on the `input_defs` argument to the <PyObject object="solid" decorator/> decorator                                    |
-| <PyObject object="OutputDefinition" /> | OutputDefinitions define the outputs of a solid compute function. These are defined on the `output_defs` argument to the <PyObject object="solid" displayText="@solid"/> decorator                      |
-| <PyObject object="SolidDefinition"  /> | Class for solids. You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="solid" decorator /> which returns a <PyObject object="SolidDefinition"  /> |
+| Name                                       | Description                                                                                                                                                                                             |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject object="solid" decorator />      | The decorator used to define solids. The decorated function is called the `compute_fn`. The decorator returns a <PyObject object="SolidDefinition" />.                                                  |
+| <PyObject object="InputDefinition" />      | InputDefinitions define the inputs to a solid compute function. These are defined on the `input_defs` argument to the <PyObject object="solid" decorator/> decorator.                                   |
+| <PyObject object="OutputDefinition" />     | OutputDefinitions define the outputs of a solid compute function. These are defined on the `output_defs` argument to the <PyObject object="solid" displayText="@solid"/> decorator.                     |
+| <PyObject object="SolidExecutionContext"/> | An optional first argument to a solid's compute function, providing access to Dagster system information such as resources, logging, and the underlying Dagster instance.                               |
+| <PyObject object="SolidDefinition"  />     | Class for solids. You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="solid" decorator /> which returns a <PyObject object="SolidDefinition" />. |
 
 ## Overview
 
@@ -120,12 +121,7 @@ Like inputs, outputs can also have [Dagster Types](/concepts/types).
 
 ### Solid Context
 
-When writing a solid, users can optionally provide a first parameter, `context`. When this parameter is supplied, Dagster will supply a context object to the body of the solid, which is an instance of <PyObject object="SolidExecutionContext"/>. The context provides access to:
-
-- Solid configuration (`context.solid_config`)
-- Loggers (`context.log`)
-- Resources (`context.resources`)
-- The current run ID: (`context.run_id`)
+When writing a solid, users can optionally provide a first parameter, `context`. When this parameter is supplied, Dagster will supply a context object to the body of the solid. The context provides access to system information like solid configuration, loggers, resources, and the current run id. See <PyObject object="SolidExecutionContext"/> for the full list of properties accessible from the solid context.
 
 For example, to access the logger and log a info message:
 
