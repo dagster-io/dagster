@@ -15,7 +15,7 @@ config:
   {{- end }}
   image_pull_secrets: {{- toYaml $.Values.imagePullSecrets | nindent 4 }}
   service_account_name: {{ include "dagster.serviceAccountName" . }}
-  job_image: {{ include "image.name" $k8sSchedulerConfig.image }}
+  job_image: {{ include "dagster.dagsterImage.name" (list $ $k8sSchedulerConfig.image) }}
   image_pull_policy: {{ $k8sSchedulerConfig.image.pullPolicy }}
   dagster_home:
     env: DAGSTER_HOME

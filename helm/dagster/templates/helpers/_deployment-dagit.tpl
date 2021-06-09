@@ -38,7 +38,7 @@ spec:
         {{- toYaml .Values.dagit.podSecurityContext | nindent 8 }}
       initContainers:
         - name: check-db-ready
-          image: {{ include "image.name" .Values.postgresql.image | quote }}
+          image: {{ include "dagster.externalImage.name" .Values.postgresql.image | quote }}
           imagePullPolicy: {{ .Values.postgresql.image.pullPolicy }}
           command: ['sh', '-c', {{ include "dagster.postgresql.pgisready" . | squote }}]
           securityContext:
@@ -46,7 +46,7 @@ spec:
         {{- if (and $userDeployments.enabled $userDeployments.enableSubchart) }}
         {{- range $deployment := $userDeployments.deployments }}
         - name: "init-user-deployment-{{- $deployment.name -}}"
-          image: {{ include "image.name" $.Values.busybox.image | quote }}
+          image: {{ include "dagster.externalImage.name" $.Values.busybox.image | quote }}
           command: ['sh', '-c', "until nslookup {{ $deployment.name -}}; do echo waiting for user service; sleep 2; done"]
         {{- end }}
         {{- end }}
@@ -55,7 +55,7 @@ spec:
           securityContext:
             {{- toYaml .Values.dagit.securityContext | nindent 12 }}
           imagePullPolicy: {{ .Values.dagit.image.pullPolicy }}
-          image: {{ include "image.name" .Values.dagit.image | quote }}
+          image: {{ include "dagster.dagsterImage.name" (list $ .Values.dagit.image) | quote }}
           command: [
             "/bin/bash",
             "-c",

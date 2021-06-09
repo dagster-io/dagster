@@ -47,7 +47,7 @@ spec:
             {{- toYaml $celeryK8sRunLauncherConfig.securityContext | nindent 12 }}
         {{- if $.Values.rabbitmq.enabled }}
         - name: check-rabbitmq-ready
-          image: {{ include "image.name" $.Values.busybox.image | quote }}
+          image: {{ include "dagster.externalImage.name" $.Values.busybox.image | quote }}
           imagePullPolicy: {{ $.Values.busybox.image.pullPolicy | quote }}
           command: ["sh", "-c", {{ include "dagster.rabbitmq.alivenessTest" $ | quote }}]
           securityContext:
@@ -58,7 +58,7 @@ spec:
           securityContext:
             {{- toYaml $celeryK8sRunLauncherConfig.securityContext | nindent 12 }}
           imagePullPolicy: {{ $celeryK8sRunLauncherConfig.image.pullPolicy }}
-          image: {{ include "image.name" $celeryK8sRunLauncherConfig.image | quote }}
+          image: {{ include "dagster.dagsterImage.name" (list $ $celeryK8sRunLauncherConfig.image) | quote }}
           command: ["dagster-celery"]
           args: ["worker", "start", "-A", "dagster_celery_k8s.app", "-y", "{{ $.Values.global.dagsterHome }}/celery-config.yaml", "-q", "{{- $queue.name -}}"]
           env:

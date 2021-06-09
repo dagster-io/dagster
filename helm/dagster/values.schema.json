@@ -100,7 +100,14 @@
                 },
                 "tag": {
                     "title": "Tag",
-                    "type": "string"
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 },
                 "pullPolicy": {
                     "$ref": "#/definitions/PullPolicy"
@@ -108,7 +115,6 @@
             },
             "required": [
                 "repository",
-                "tag",
                 "pullPolicy"
             ]
         },
@@ -446,14 +452,10 @@
                 "deployments"
             ]
         },
-        "ImageWithRegistry": {
-            "title": "ImageWithRegistry",
+        "ExternalImage": {
+            "title": "ExternalImage",
             "type": "object",
             "properties": {
-                "registry": {
-                    "title": "Registry",
-                    "type": "string"
-                },
                 "repository": {
                     "title": "Repository",
                     "type": "string"
@@ -467,7 +469,6 @@
                 }
             },
             "required": [
-                "registry",
                 "repository",
                 "tag",
                 "pullPolicy"
@@ -491,7 +492,7 @@
             "type": "object",
             "properties": {
                 "image": {
-                    "$ref": "#/definitions/ImageWithRegistry"
+                    "$ref": "#/definitions/ExternalImage"
                 },
                 "enabled": {
                     "title": "Enabled",
@@ -573,7 +574,7 @@
                     "type": "boolean"
                 },
                 "image": {
-                    "$ref": "#/definitions/ImageWithRegistry"
+                    "$ref": "#/definitions/ExternalImage"
                 }
             },
             "required": [
@@ -589,7 +590,7 @@
                     "type": "boolean"
                 },
                 "image": {
-                    "$ref": "#/definitions/ImageWithRegistry"
+                    "$ref": "#/definitions/ExternalImage"
                 },
                 "rabbitmq": {
                     "$ref": "#/definitions/RabbitMQConfiguration"
@@ -1817,7 +1818,7 @@
             "type": "object",
             "properties": {
                 "image": {
-                    "$ref": "#/definitions/Image"
+                    "$ref": "#/definitions/ExternalImage"
                 }
             },
             "required": [

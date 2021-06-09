@@ -93,6 +93,44 @@ def test_dagit_read_only_enabled(deployment_template: HelmTemplate):
     ]
 
 
+@pytest.mark.parametrize("enable_read_only", [True, False])
+@pytest.mark.parametrize("chart_version", ["0.11.0", "0.11.1"])
+def test_dagit_default_image_tag_is_chart_version(
+    deployment_template: HelmTemplate, enable_read_only: bool, chart_version: str
+):
+    helm_values = DagsterHelmValues.construct(
+        dagit=Dagit.construct(enableReadOnly=enable_read_only)
+    )
+
+    dagit_deployments = deployment_template.render(helm_values, chart_version=chart_version)
+
+    assert len(dagit_deployments) == 1 + int(enable_read_only)
+
+    for dagit_deployment in dagit_deployments:
+        image = dagit_deployment.spec.template.spec.containers[0].image
+        _, image_tag = image.split(":")
+
+        assert image_tag == chart_version
+
+
+def test_dagit_image_tag(deployment_template: HelmTemplate):
+    repository = "repository"
+    tag = "tag"
+    helm_values = DagsterHelmValues.construct(
+        dagit=Dagit.construct(image=kubernetes.Image.construct(repository=repository, tag=tag))
+    )
+
+    dagit_deployments = deployment_template.render(helm_values)
+
+    assert len(dagit_deployments) == 1
+
+    image = dagit_deployments[0].spec.template.spec.containers[0].image
+    image_name, image_tag = image.split(":")
+
+    assert image_name == repository
+    assert image_tag == tag
+
+
 def test_dagit_service(service_template):
     helm_values = DagsterHelmValues.construct()
     dagit_template = service_template.render(helm_values)

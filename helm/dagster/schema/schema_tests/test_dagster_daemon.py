@@ -29,3 +29,37 @@ def test_startup_probe_enabled(template: HelmTemplate, enabled: bool):
     container = daemon.spec.template.spec.containers[0]
 
     assert (container.startup_probe is not None) == enabled
+
+
+@pytest.mark.parametrize("chart_version", ["0.11.0", "0.11.1"])
+def test_daemon_default_image_tag_is_chart_version(template: HelmTemplate, chart_version: str):
+    helm_values = DagsterHelmValues.construct()
+
+    daemon_deployments = template.render(helm_values, chart_version=chart_version)
+
+    assert len(daemon_deployments) == 1
+
+    image = daemon_deployments[0].spec.template.spec.containers[0].image
+    _, image_tag = image.split(":")
+
+    assert image_tag == chart_version
+
+
+def test_dagit_image(template: HelmTemplate):
+    repository = "repository"
+    tag = "tag"
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(
+            image=kubernetes.Image.construct(repository=repository, tag=tag)
+        )
+    )
+
+    daemon_deployments = template.render(helm_values)
+
+    assert len(daemon_deployments) == 1
+
+    image = daemon_deployments[0].spec.template.spec.containers[0].image
+    image_name, image_tag = image.split(":")
+
+    assert image_name == repository
+    assert image_tag == tag

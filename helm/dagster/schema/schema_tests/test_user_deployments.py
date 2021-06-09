@@ -406,3 +406,40 @@ def test_startup_probe_default_exec(template: HelmTemplate):
         "-p",
         str(deployment.port),
     ]
+
+
+@pytest.mark.parametrize("chart_version", ["0.11.0", "0.11.1"])
+def test_user_deployment_default_image_tag_is_chart_version(
+    template: HelmTemplate, chart_version: str
+):
+    helm_values = DagsterHelmValues.construct()
+
+    user_deployments = template.render(helm_values, chart_version=chart_version)
+
+    assert len(user_deployments) == 1
+
+    image = user_deployments[0].spec.template.spec.containers[0].image
+    _, image_tag = image.split(":")
+
+    assert image_tag == chart_version
+
+
+def test_user_deployment_image(template: HelmTemplate):
+    deployment = create_simple_user_deployment("foo")
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments(
+            enabled=True,
+            enableSubchart=True,
+            deployments=[deployment],
+        )
+    )
+
+    user_deployments = template.render(helm_values)
+
+    assert len(user_deployments) == 1
+
+    image = user_deployments[0].spec.template.spec.containers[0].image
+    image_name, image_tag = image.split(":")
+
+    assert image_name == deployment.image.repository
+    assert image_tag == deployment.image.tag
