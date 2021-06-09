@@ -192,6 +192,7 @@ export interface PipelineRunsFilter {
   tags?: ExecutionTag[] | null;
   statuses?: PipelineRunStatus[] | null;
   snapshotId?: string | null;
+  updatedAfter?: string | null;
 }
 
 export interface PipelineSelector {

@@ -2,6 +2,7 @@ import {gql, useLazyQuery, useQuery} from '@apollo/client';
 import Fuse from 'fuse.js';
 import * as React from 'react';
 
+import {featureEnabled, FeatureFlag} from '../app/Util';
 import {buildRepoPath} from '../workspace/buildRepoAddress';
 import {workspacePath} from '../workspace/workspacePath';
 
@@ -24,6 +25,7 @@ const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
     return new Fuse([]);
   }
 
+  const pipelineMode = featureEnabled(FeatureFlag.PipelineModeTuples);
   const {locationEntries} = data.workspaceOrError;
   const manyRepos = locationEntries.length > 1;
 
@@ -41,13 +43,24 @@ const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
         const {name: locationName} = repoLocation;
         const repoPath = buildRepoPath(name, locationName);
 
-        const allPipelines = pipelines.map((pipeline) => ({
-          key: `${repoPath}-${pipeline.name}`,
-          label: pipeline.name,
-          description: manyRepos ? `Pipeline in ${repoPath}` : 'Pipeline',
-          href: workspacePath(name, locationName, `/pipelines/${pipeline.name}`),
-          type: SearchResultType.Pipeline,
-        }));
+        const allPipelines = pipelineMode
+          ? pipelines.reduce((flat, pipeline) => {
+              const jobs = pipeline.modes.map((mode) => ({
+                key: `${repoPath}-${pipeline.name}-${mode.name}`,
+                label: `${pipeline.name} : ${mode.name}`,
+                description: manyRepos ? `Job in ${repoPath}` : 'Job',
+                href: workspacePath(name, locationName, `/pipelines/${pipeline.name}:${mode.name}`),
+                type: SearchResultType.Pipeline,
+              }));
+              return [...flat, ...jobs];
+            }, [] as SearchResult[])
+          : pipelines.map((pipeline) => ({
+              key: `${repoPath}-${pipeline.name}`,
+              label: pipeline.name,
+              description: manyRepos ? `Pipeline in ${repoPath}` : 'Pipeline',
+              href: workspacePath(name, locationName, `/pipelines/${pipeline.name}`),
+              type: SearchResultType.Pipeline,
+            }));
 
         const allSchedules = schedules.map((schedule) => ({
           key: `${repoPath}-${schedule.name}`,
@@ -162,6 +175,9 @@ const SEARCH_BOOTSTRAP_QUERY = gql`
                   name
                   pipelines {
                     id
+                    modes {
+                      name
+                    }
                     name
                   }
                   schedules {

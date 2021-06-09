@@ -1024,6 +1024,7 @@ input PipelineRunsFilter {
   tags: [ExecutionTag!]
   statuses: [PipelineRunStatus!]
   snapshotId: String
+  updatedAfter: String
 }
 
 input ExecutionTag {
@@ -1052,9 +1053,9 @@ type Sensor {
   id: ID!
   jobOriginId: String!
   name: String!
-  pipelineName: String!
+  pipelineName: String
   solidSelection: [String]
-  mode: String!
+  mode: String
   sensorState: JobState!
   minIntervalSeconds: Int!
   description: String

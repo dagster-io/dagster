@@ -16,9 +16,15 @@ export interface SearchBootstrapQuery_workspaceOrError_Workspace_locationEntries
   __typename: "PythonError";
 }
 
+export interface SearchBootstrapQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_modes {
+  __typename: "Mode";
+  name: string;
+}
+
 export interface SearchBootstrapQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines {
   __typename: "Pipeline";
   id: string;
+  modes: SearchBootstrapQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_modes[];
   name: string;
 }
 
