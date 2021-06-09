@@ -81,7 +81,7 @@ class TestGetRunStatusWithClient(ExecutingGraphQLContextTestMatrix):
 
             status = graphql_client.get_run_status(run_id)
 
-            if status == "SUCCESS":
+            if status == PipelineRunStatus.SUCCESS:
                 break
 
             time.sleep(3)
