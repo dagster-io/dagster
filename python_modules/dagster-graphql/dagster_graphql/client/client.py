@@ -46,6 +46,8 @@ class DagsterGraphQLClient:
             Defaults to None.
         transport (Optional[Transport], optional): A custom transport to use to connect to the
             GraphQL API with (e.g. for custom auth). Defaults to None.
+        use_https (bool, optional): Whether to use https in the URL connection string for the
+            GraphQL API. Defaults to False.
 
     Raises:
         :py:class:`~requests.exceptions.ConnectionError`: if the client cannot connect to the host.
@@ -56,13 +58,16 @@ class DagsterGraphQLClient:
         hostname: str,
         port_number: Optional[int] = None,
         transport: Optional[Transport] = None,
+        use_https: bool = False,
     ):
         experimental_class_warning(self.__class__.__name__)
 
         self._hostname = check.str_param(hostname, "hostname")
         self._port_number = check.opt_int_param(port_number, "port_number")
+        self._use_https = check.bool_param(use_https, "use_https")
+
         self._url = (
-            "http://"
+            ("https://" if self._use_https else "http://")
             + (f"{self._hostname}:{self._port_number}" if self._port_number else self._hostname)
             + "/graphql"
         )
