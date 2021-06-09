@@ -58,7 +58,7 @@ def my_dbt_pipeline():
 
 In the code snippet above, the config `"models"` takes a list of strings. The string `"tag:staging"` uses [dbt's node selection syntax](https://docs.getdbt.com/reference/node-selection/syntax) to filter models with the tag `"staging"`. For more details, [visit the official dbt documentation on the node selection syntax](https://docs.getdbt.com/reference/node-selection/syntax).
 
-**Example:** The solid `dbt_cli_run` is configured to run specific models similar to above except after another solid has executed. When use the `start_after` argument, which has the `InputDefinitions` of `dagster_type=Nothing`, you can assign the output from another solid so that you can still model the dependencies with another solid. See the [Order Based Dependencies](/concepts/solids-pipelines/pipelines#order-based-dependencies-nothing-dependencies) for more info.
+**Example:** Similar to the above example, the solid dbt_cli_run is specified to run after another solid has executed. In your pipeline definition, you can assign the output from an upstream solid to the `start_after` argument of your dbt solid, which will model that dependency relationship for you. See the documentation for [Order Based Dependencies](/concepts/solids-pipelines/pipelines#order-based-dependencies-nothing-dependencies) for more info.
 
 ```python file=/integrations/dbt.py startafter=start_marker_dbt_cli_run_after_another_solid endbefore=end_marker_dbt_cli_run_after_another_solid dedent=4
 from dagster import pipeline, solid
