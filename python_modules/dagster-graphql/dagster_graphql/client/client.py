@@ -1,6 +1,7 @@
 from itertools import chain
 from typing import Any, Dict, Iterable, List, Optional
 
+import requests.exceptions
 from dagster import check
 from dagster.core.definitions.utils import validate_tags
 from dagster.core.storage.pipeline_run import PipelineRunStatus
@@ -38,6 +39,16 @@ class DagsterGraphQLClient:
         client = DagsterGraphQLClient("localhost", port_number=3000)
         status = client.get_run_status(**SOME_RUN_ID**)
 
+    Args:
+        hostname (str): Hostname for the Dagster GraphQL API, like `localhost` or
+            `dagit.dagster.YOUR_ORG_HERE`.
+        port_number (Optional[int], optional): Optional port number to connect to on the host.
+            Defaults to None.
+        transport (Optional[Transport], optional): A custom transport to use to connect to the
+            GraphQL API with (e.g. for custom auth). Defaults to None.
+
+    Raises:
+        :py:class:`~requests.exceptions.ConnectionError`: if the client cannot connect to the host.
     """
 
     def __init__(
@@ -47,6 +58,7 @@ class DagsterGraphQLClient:
         transport: Optional[Transport] = None,
     ):
         experimental_class_warning(self.__class__.__name__)
+
         self._hostname = check.str_param(hostname, "hostname")
         self._port_number = check.opt_int_param(port_number, "port_number")
         self._url = (
@@ -54,20 +66,29 @@ class DagsterGraphQLClient:
             + (f"{self._hostname}:{self._port_number}" if self._port_number else self._hostname)
             + "/graphql"
         )
+
         self._transport = check.opt_inst_param(
             transport,
             "transport",
             Transport,
             default=RequestsHTTPTransport(url=self._url, use_json=True),
         )
-        self._client = Client(transport=self._transport, fetch_schema_from_transport=True)
+        try:
+            self._client = Client(transport=self._transport, fetch_schema_from_transport=True)
+        except requests.exceptions.ConnectionError as exc:
+            raise DagsterGraphQLClientError(
+                f"Error when connecting to url {self._url}. "
+                + f"Did you specify hostname: {self._hostname} "
+                + (f"and port_number: {self._port_number} " if self._port_number else "")
+                + "correctly?"
+            ) from exc
 
     def _execute(self, query: str, variables: Optional[Dict[str, Any]] = None):
         try:
             return self._client.execute(gql(query), variable_values=variables)
         except Exception as exc:  # catch generic Exception from the gql client
             raise DagsterGraphQLClientError(
-                f"Query \n{query}\n with variables \n{variables}\n failed GraphQL validation"
+                f"Exception occured during execution of query \n{query}\n with variables \n{variables}\n"
             ) from exc
 
     def _get_repo_locations_and_names_with_pipeline(self, pipeline_name: str) -> List[PipelineInfo]:
