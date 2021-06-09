@@ -107,3 +107,4 @@ deployments:
 
 serviceAccount:
   create: true
+  annotations: {}
