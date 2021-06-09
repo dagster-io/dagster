@@ -22,32 +22,50 @@ def run_list_command(limit):
     name="delete",
     help="Delete a run by id and its associated event logs. Warning: Cannot be undone",
 )
+@click.option("--force", "-f", is_flag=True, default=False, help="Skip prompt to delete run.")
 @click.argument("run_id")
-def run_delete_command(run_id):
+def run_delete_command(run_id, force):
     with DagsterInstance.get() as instance:
         if not instance.has_run(run_id):
-            click.echo(f"No run found with id {run_id}.")
+            raise click.ClickException(f"No run found with id {run_id}.")
 
-        confirmation = click.prompt(
-            f"Are you sure you want to delete run {run_id} and its event logs? Type DELETE"
-        )
-        if confirmation == "DELETE":
+        if force:
+            should_delete_run = True
+        else:
+            confirmation = click.prompt(
+                f"Are you sure you want to delete run {run_id} and its event logs? Type DELETE."
+            )
+            should_delete_run = confirmation == "DELETE"
+
+        if should_delete_run:
             instance.delete_run(run_id)
             click.echo(f"Deleted run {run_id} and its event log entries.")
         else:
-            click.echo("Exiting without deleting run.")
+            raise click.ClickException("Exiting without deleting run.")
 
 
 @run_cli.command(
-    name="wipe", help="Eliminate all run history and event logs. Warning: Cannot be undone"
+    name="wipe", help="Eliminate all run history and event logs. Warning: Cannot be undone."
 )
-def run_wipe_command():
-    confirmation = click.prompt(
-        "Are you sure you want to delete all run history and event logs? Type DELETE"
-    )
-    if confirmation == "DELETE":
+@click.option(
+    "--force",
+    "-f",
+    is_flag=True,
+    default=False,
+    help="Skip prompt to delete run history and event logs.",
+)
+def run_wipe_command(force):
+    if force:
+        should_delete_run = True
+    else:
+        confirmation = click.prompt(
+            "Are you sure you want to delete all run history and event logs? Type DELETE."
+        )
+        should_delete_run = confirmation == "DELETE"
+
+    if should_delete_run:
         with DagsterInstance.get() as instance:
             instance.wipe()
-        click.echo("Deleted all run history and event logs")
+        click.echo("Deleted all run history and event logs.")
     else:
-        click.echo("Exiting without deleting all run history and event logs")
+        raise click.ClickException("Exiting without deleting all run history and event logs.")
