@@ -124,3 +124,68 @@ def test_config_mapping_fn():
     result = execute_pipeline(job, run_config={"date": "6/4"})
     assert result.success
     assert result.result_for_solid("do_stuff").output_value() == "i am here on 6/4"
+
+
+def test_default_config():
+    @resource(config_schema=str)
+    def date(context) -> str:
+        return context.resource_config
+
+    @solid(
+        required_resource_keys={"date"},
+        config_schema={"msg": str},
+    )
+    def do_stuff(context):
+        return f"{context.solid_config['msg'] } on {context.resources.date}"
+
+    @graph
+    def needs_config():
+        do_stuff()
+
+    job = needs_config.to_job(
+        resource_defs={"date": date},
+        default_config={
+            "solids": {"do_stuff": {"config": {"msg": "i am here"}}},
+            "resources": {"date": {"config": "6/3"}},
+        },
+    )
+
+    result = execute_pipeline(job)
+    assert result.success
+    assert result.result_for_solid("do_stuff").output_value() == "i am here on 6/3"
+
+
+def test_default_config_with_mapping_fn():
+    @resource(config_schema=str)
+    def date(context) -> str:
+        return context.resource_config
+
+    @solid(
+        required_resource_keys={"date"},
+        config_schema={"msg": str},
+    )
+    def do_stuff(context):
+        return f"{context.solid_config['msg'] } on {context.resources.date}"
+
+    @graph
+    def needs_config():
+        do_stuff()
+
+    def _mapped(val):
+        return {
+            "solids": {"do_stuff": {"config": {"msg": "i am here"}}},
+            "resources": {"date": {"config": val["date"]}},
+        }
+
+    job = needs_config.to_job(
+        resource_defs={"date": date},
+        config_mapping=ConfigMapping(
+            config_schema={"date": str},  # top level has to be dict
+            config_fn=_mapped,
+        ),
+        default_config={"date": "6/4"},
+    )
+
+    result = execute_pipeline(job)
+    assert result.success
+    assert result.result_for_solid("do_stuff").output_value() == "i am here on 6/4"

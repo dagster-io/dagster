@@ -288,7 +288,9 @@ class PipelineDefinition(GraphDefinition):
             return self._cached_run_config_schemas[mode_def.name]
 
         self._cached_run_config_schemas[mode_def.name] = _create_run_config_schema(
-            self, mode_def, self._resource_requirements[mode_def.name]
+            self,
+            mode_def,
+            self._resource_requirements[mode_def.name],
         )
         return self._cached_run_config_schemas[mode_def.name]
 

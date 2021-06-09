@@ -2,6 +2,7 @@ from collections import OrderedDict
 from typing import TYPE_CHECKING, Any, Dict, Iterable, Iterator, List, Optional, Set, Tuple, Union
 
 from dagster import check
+from dagster.config import Field, Shape
 from dagster.core.definitions.config import ConfigMapping
 from dagster.core.definitions.definition_config_schema import IDefinitionConfigSchema
 from dagster.core.definitions.mode import ModeDefinition
@@ -24,6 +25,7 @@ from .dependency import (
 from .i_solid_definition import NodeDefinition
 from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer
 from .output import OutputDefinition, OutputMapping
+from .preset import PresetDefinition
 from .solid_container import create_execution_structure, validate_dependency_dict
 
 if TYPE_CHECKING:
@@ -342,6 +344,7 @@ class GraphDefinition(NodeDefinition):
         self,
         resource_defs: Dict[str, "ResourceDefinition"] = None,
         config_mapping: Union[ConfigMapping, Dict[str, Any]] = None,
+        default_config: Optional[Dict[str, Any]] = None,
     ):
         """
         For experimenting with "job" flows
@@ -358,10 +361,46 @@ class GraphDefinition(NodeDefinition):
         if not (config_mapping is None or isinstance(config_mapping, ConfigMapping)):
             check.failed(f"Unexpected config_mapping value {config_mapping}")
 
-        mode = ModeDefinition(
-            resource_defs=resource_defs,
-            _config_mapping=config_mapping,
-        )
+        presets = None
+        if default_config:
+            presets = [
+                PresetDefinition(
+                    name="default",
+                    run_config=default_config,
+                )
+            ]
+            if config_mapping:
+                inner_schema = config_mapping.config_schema.config_type
+                config_fn = config_mapping.config_fn
+            else:
+                # create a temp pipeline to calculate schema
+                inner_schema = (
+                    PipelineDefinition(
+                        solid_defs=self._solid_defs,
+                        name=self.name,
+                        description=self.description,
+                        dependencies=self._dependencies,
+                        input_mappings=self._input_mappings,
+                        output_mappings=self._output_mappings,
+                        config_mapping=self._config_mapping,
+                        mode_defs=[
+                            ModeDefinition(
+                                resource_defs=resource_defs,
+                            )
+                        ],
+                    )
+                    .get_run_config_schema("default")
+                    .run_config_schema_type
+                )
+                config_fn = lambda x: x
+
+            if not isinstance(inner_schema, Shape):
+                check.failed("Only Shape (dictionary) config_schema allowed on Job ConfigMapping")
+
+            config_mapping = ConfigMapping(
+                config_fn=config_fn,
+                config_schema=_set_default(inner_schema, default_config),
+            )
 
         return PipelineDefinition(
             solid_defs=self._solid_defs,
@@ -371,7 +410,13 @@ class GraphDefinition(NodeDefinition):
             input_mappings=self._input_mappings,
             output_mappings=self._output_mappings,
             config_mapping=self._config_mapping,
-            mode_defs=[mode],
+            mode_defs=[
+                ModeDefinition(
+                    resource_defs=resource_defs,
+                    _config_mapping=config_mapping,
+                )
+            ],
+            preset_defs=presets,
         )
 
 
@@ -589,3 +634,20 @@ def _validate_out_mappings(
                 )
             )
     return output_mappings
+
+
+def _set_default(config_shape: Shape, cfg_value: Dict[str, Any]) -> Shape:
+    """Change a config schema to set a default value"""
+    updated_fields = {}
+    for name, field in config_shape.fields.items():
+        if name in cfg_value:
+            updated_fields[name] = Field(
+                config=field.config_type,
+                default_value=cfg_value[name],
+                description=field.description,
+            )
+
+    return Shape(
+        fields=updated_fields,
+        description="run config schema with default values from default_config",
+    )
