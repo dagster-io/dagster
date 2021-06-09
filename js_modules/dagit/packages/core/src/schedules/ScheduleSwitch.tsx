@@ -64,7 +64,7 @@ export const ScheduleSwitch: React.FC<Props> = (props) => {
   if (canStartSchedule && canStopRunningSchedule) {
     return (
       <SwitchWithoutLabel
-        checked={running}
+        checked={running || toggleOnInFlight}
         large
         disabled={toggleOffInFlight || toggleOnInFlight}
         innerLabelChecked="on"
@@ -80,7 +80,7 @@ export const ScheduleSwitch: React.FC<Props> = (props) => {
   return (
     <Tooltip content={lacksPermission ? DISABLED_MESSAGE : undefined}>
       <SwitchWithoutLabel
-        checked={running}
+        checked={running || toggleOnInFlight}
         large
         disabled={disabled}
         innerLabelChecked="on"

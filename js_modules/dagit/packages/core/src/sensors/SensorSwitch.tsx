@@ -58,7 +58,7 @@ export const SensorSwitch: React.FC<Props> = (props) => {
         large
         innerLabelChecked="on"
         innerLabel="off"
-        checked={running}
+        checked={running || toggleOnInFlight}
         onChange={onChangeSwitch}
       />
     );
@@ -74,7 +74,7 @@ export const SensorSwitch: React.FC<Props> = (props) => {
         large
         innerLabelChecked="on"
         innerLabel="off"
-        checked={running}
+        checked={running || toggleOnInFlight}
         onChange={onChangeSwitch}
       />
     </Tooltip>
