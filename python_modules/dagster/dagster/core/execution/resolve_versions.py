@@ -50,9 +50,6 @@ def resolve_resource_versions(resolved_run_config, pipeline_definition):
 
     mode = resolved_run_config.mode
     mode_definition = pipeline_definition.get_mode_definition(mode)
-    check.invariant(
-        set(resolved_run_config.resources.keys()) == set(mode_definition.resource_defs.keys())
-    )  # verify that environment config and mode_def refer to the same resources
 
     resource_versions = {}
 

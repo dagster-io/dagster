@@ -8,6 +8,7 @@ from dagster import (
     Int,
     ModeDefinition,
     Output,
+    OutputDefinition,
     String,
     composite_solid,
     dagster_type_loader,
@@ -569,6 +570,44 @@ def test_step_versions_with_resources():
     step_version = join_and_hash(solid_version)
 
     assert versions["fake_solid_resources_versioned"] == step_version
+
+
+def test_step_versions_separate_io_manager():
+    mgr = io_manager_factory(VersionedInMemoryIOManager())
+
+    @solid(version="39", output_defs=[OutputDefinition(io_manager_key="fake")])
+    def solid_requires_io_manager():
+        return Output(5)
+
+    @pipeline(
+        mode_defs=[
+            ModeDefinition(
+                name="fakemode",
+                resource_defs={
+                    "fake": mgr,
+                },
+            ),
+        ]
+    )
+    def io_mgr_pipeline():
+        solid_requires_io_manager()
+
+    speculative_execution_plan = create_execution_plan(
+        io_mgr_pipeline, run_config={}, mode="fakemode"
+    )
+
+    resolved_run_config = ResolvedRunConfig.build(io_mgr_pipeline, run_config={}, mode="fakemode")
+
+    versions = resolve_step_versions(
+        io_mgr_pipeline, speculative_execution_plan, resolved_run_config
+    )
+
+    solid_def_version = fake_solid_resources_versioned.version
+    solid_config_version = resolve_config_version(None)
+    solid_resources_version = join_and_hash(*[])
+    solid_version = join_and_hash(solid_def_version, solid_config_version, solid_resources_version)
+    step_version = join_and_hash(solid_version)
+    assert versions["solid_requires_io_manager"] == step_version
 
 
 def test_step_versions_composite_solid():
