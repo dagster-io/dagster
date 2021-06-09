@@ -8,7 +8,7 @@ from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord
 from dagster.serdes import ConfigurableClass
 
-from .base import EventLogStorage, extract_asset_events_cursor
+from .base import EventLogStorage, EventsCursor, extract_asset_events_cursor
 
 
 class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
@@ -97,6 +97,40 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
     @property
     def is_persistent(self):
         return False
+
+    def get_event_rows(
+        self,
+        after_cursor=None,
+        limit=None,
+        ascending=False,
+        of_type=None,
+    ):
+        check.opt_inst_param(after_cursor, "after_cursor", EventsCursor)
+        after_id = after_cursor.id if after_cursor else None
+
+        filtered_events = []
+
+        for records in self._logs.values():
+            filtered_events += list(
+                filter(
+                    lambda r: of_type is None
+                    or (r.is_dagster_event and r.dagster_event.event_type_value == of_type.value),
+                    records,
+                )
+            )
+
+        events_with_ids = [
+            tuple([event_id, event])
+            for event_id, event in enumerate(filtered_events)
+            if after_id is None or event_id > after_id
+        ]
+
+        events_with_ids = sorted(events_with_ids, key=lambda x: x[0], reverse=not ascending)
+
+        if limit:
+            events_with_ids = events_with_ids[:limit]
+
+        return events_with_ids
 
     def has_asset_key(self, asset_key: AssetKey) -> bool:
         for records in self._logs.values():

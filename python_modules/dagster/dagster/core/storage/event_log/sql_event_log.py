@@ -18,7 +18,7 @@ from dagster.serdes.errors import DeserializationError
 from dagster.utils import datetime_as_float, utc_datetime_from_naive, utc_datetime_from_timestamp
 
 from ..pipeline_run import PipelineRunStatsSnapshot
-from .base import EventLogStorage, extract_asset_events_cursor
+from .base import EventLogStorage, EventsCursor, extract_asset_events_cursor
 from .migration import REINDEX_DATA_MIGRATIONS
 from .schema import AssetKeyTable, SecondaryIndexMigrationTable, SqlEventLogStorageTable
 
@@ -566,6 +566,53 @@ class SqlEventLogStorage(EventLogStorage):
             query = query.order_by(SqlEventLogStorageTable.c.timestamp.desc())
 
         return query
+
+    def get_event_rows(
+        self,
+        after_cursor=None,
+        limit=None,
+        ascending=False,
+        of_type=None,
+    ):
+        """Returns a list of (record_id, record)."""
+
+        check.opt_inst_param(after_cursor, "after_cursor", EventsCursor)
+        check.opt_int_param(limit, "limit")
+        check.bool_param(ascending, "ascending")
+        check.opt_inst_param(of_type, "of_type", DagsterEventType)
+
+        after_id = after_cursor.id if after_cursor else None
+
+        query = db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event])
+        if of_type:
+            query = query.where(SqlEventLogStorageTable.c.dagster_event_type == of_type.value)
+
+        query = self._add_cursor_limit_to_query(
+            query=query,
+            before_cursor=None,
+            after_cursor=after_id,
+            limit=limit,
+            ascending=ascending,
+        )
+
+        with self.index_connection() as conn:
+            results = conn.execute(query).fetchall()
+
+        records = []
+        for row_id, json_str in results:
+            try:
+                event_record = deserialize_json_to_dagster_namedtuple(json_str)
+                if not isinstance(event_record, EventRecord):
+                    logging.warning(
+                        "Could not resolve event record as EventRecord for id `{}`.".format(row_id)
+                    )
+                    continue
+                else:
+                    records.append(tuple((row_id, event_record)))
+            except seven.JSONDecodeError:
+                logging.warning("Could not parse event record id `{}`.".format(row_id))
+
+        return records
 
     def has_asset_key(self, asset_key: AssetKey) -> bool:
         check.inst_param(asset_key, "asset_key", AssetKey)

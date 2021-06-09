@@ -32,7 +32,9 @@ from dagster.core.execution.plan.handle import StepHandle
 from dagster.core.execution.plan.objects import StepFailureData, StepSuccessData
 from dagster.core.execution.stats import StepEventStatus
 from dagster.core.storage.event_log import InMemoryEventLogStorage, SqlEventLogStorage
+from dagster.core.storage.event_log.base import EventsCursor
 from dagster.core.storage.event_log.migration import REINDEX_DATA_MIGRATIONS, migrate_asset_key_data
+from dagster.core.storage.event_log.sqlite.sqlite_event_log import SqliteEventLogStorage
 from dagster.core.test_utils import instance_for_test
 from dagster.core.utils import make_new_run_id
 from dagster.loggers import colored_console_logger
@@ -951,3 +953,156 @@ class TestEventLogStorage:
         assert step_stats[0].status == StepEventStatus.FAILURE
         assert step_stats[0].end_time > step_stats[0].start_time
         assert step_stats[0].attempts == 4
+
+    def test_get_event_rows(self, storage):
+        if isinstance(storage, SqliteEventLogStorage):
+            # test sqlite in test_get_event_rows_sqlite
+            pytest.skip()
+
+        asset_key = AssetKey(["path", "to", "asset_one"])
+
+        @solid
+        def materialize_one(_):
+            yield AssetMaterialization(
+                asset_key=asset_key,
+                metadata={
+                    "text": "hello",
+                    "json": {"hello": "world"},
+                    "one_float": 1.0,
+                    "one_int": 1,
+                },
+            )
+            yield Output(1)
+
+        def _solids():
+            materialize_one()
+
+        events, _ = _synthesize_events(_solids)
+
+        for event in events:
+            storage.store_event(event)
+
+        all_records = storage.get_event_rows()
+        # all logs returned in descending order
+        assert all_records
+        min_record_num = all_records[-1][0]
+        max_record_num = min_record_num + len(all_records) - 1
+        assert [r[0] for r in all_records] == list(range(max_record_num, min_record_num - 1, -1))
+        assert _event_types([all_records[0][1]]) == [DagsterEventType.PIPELINE_SUCCESS]
+        assert _event_types([all_records[-1][1]]) == [DagsterEventType.PIPELINE_START]
+
+        # after cursor
+        assert not list(
+            filter(lambda r: r[0] <= 2, storage.get_event_rows(after_cursor=EventsCursor(id=2)))
+        )
+        assert [
+            id
+            for id, _ in storage.get_event_rows(
+                after_cursor=EventsCursor(id=min_record_num + 2), ascending=True, limit=2
+            )
+        ] == [min_record_num + 3, min_record_num + 4]
+        assert [
+            id
+            for id, _ in storage.get_event_rows(
+                after_cursor=EventsCursor(id=min_record_num + 2), ascending=False, limit=2
+            )
+        ] == [max_record_num, max_record_num - 1]
+
+        # of_type
+        filtered_records = storage.get_event_rows(of_type=DagsterEventType.PIPELINE_SUCCESS)
+        assert _event_types([r[1] for r in filtered_records]) == [DagsterEventType.PIPELINE_SUCCESS]
+
+    def test_get_event_rows_sqlite(self, storage):
+        # test for sqlite only because sqlite requires special logic to handle cross-run queries
+        if not isinstance(storage, SqliteEventLogStorage):
+            pytest.skip()
+
+        asset_key = AssetKey(["path", "to", "asset_one"])
+
+        events = []
+
+        def _append_event(event):
+            events.append(event)
+
+        @solid
+        def materialize_one(_):
+            yield AssetMaterialization(
+                asset_key=asset_key,
+                metadata={
+                    "text": "hello",
+                    "json": {"hello": "world"},
+                    "one_float": 1.0,
+                    "one_int": 1,
+                },
+            )
+            yield Output(1)
+
+        @pipeline(mode_defs=[_mode_def(_append_event)])
+        def a_pipe():
+            materialize_one()
+
+        with instance_for_test() as instance:
+            storage.register_instance(instance)
+
+            # first run
+            execute_run(
+                InMemoryPipeline(a_pipe),
+                instance.create_run_for_pipeline(
+                    a_pipe, run_id="1", run_config={"loggers": {"callback": {}, "console": {}}}
+                ),
+                instance,
+            )
+
+            for event in events:
+                storage.store_event(event)
+
+            run_records = instance.get_run_records()
+            assert len(run_records) == 1
+
+            # all logs returned in descending order
+            all_rows = storage.get_event_rows()
+            assert _event_types([all_rows[0][1]]) == [DagsterEventType.PIPELINE_SUCCESS]
+            assert _event_types([all_rows[-1][1]]) == [DagsterEventType.PIPELINE_START]
+
+            # second run
+            events = []
+            execute_run(
+                InMemoryPipeline(a_pipe),
+                instance.create_run_for_pipeline(
+                    a_pipe, run_id="2", run_config={"loggers": {"callback": {}, "console": {}}}
+                ),
+                instance,
+            )
+            run_records = instance.get_run_records()
+            assert len(run_records) == 2
+            for event in events:
+                storage.store_event(event)
+
+            # third run
+            events = []
+            execute_run(
+                InMemoryPipeline(a_pipe),
+                instance.create_run_for_pipeline(
+                    a_pipe, run_id="3", run_config={"loggers": {"callback": {}, "console": {}}}
+                ),
+                instance,
+            )
+            run_records = instance.get_run_records()
+            assert len(run_records) == 3
+            for event in events:
+                storage.store_event(event)
+
+            # of_type
+            filtered_records = storage.get_event_rows(
+                after_cursor=EventsCursor(
+                    id=0, run_updated_after=run_records[-1].update_timestamp
+                ),  # events after first run
+                of_type=DagsterEventType.PIPELINE_SUCCESS,
+                ascending=True,
+            )
+            assert len(filtered_records) == 2
+            assert _event_types([r[1] for r in filtered_records]) == [
+                DagsterEventType.PIPELINE_SUCCESS,
+                DagsterEventType.PIPELINE_SUCCESS,
+            ]
+            assert [r[1].run_id for r in filtered_records] == ["2", "3"]

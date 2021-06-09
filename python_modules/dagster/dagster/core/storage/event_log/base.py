@@ -1,6 +1,7 @@
 import warnings
 from abc import ABC, abstractmethod, abstractproperty
-from typing import Callable, Dict, Iterable, List, Optional, Tuple, Union
+from datetime import datetime
+from typing import Callable, Dict, Iterable, List, NamedTuple, Optional, Tuple, Union
 
 from dagster.core.definitions.events import AssetKey
 from dagster.core.events import DagsterEventType
@@ -12,6 +13,11 @@ from dagster.core.execution.stats import (
 )
 from dagster.core.instance import MayHaveInstanceWeakref
 from dagster.core.storage.pipeline_run import PipelineRunStatsSnapshot
+
+
+class EventsCursor(NamedTuple):
+    id: int
+    run_updated_after: Optional[datetime] = None
 
 
 class EventLogStorage(ABC, MayHaveInstanceWeakref):
@@ -101,6 +107,16 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
 
     def optimize_for_dagit(self, statement_timeout: int):
         """Allows for optimizing database connection / use in the context of a long lived dagit process"""
+
+    @abstractmethod
+    def get_event_rows(
+        self,
+        after_cursor: EventsCursor = None,
+        limit: int = None,
+        ascending: bool = False,
+        of_type: DagsterEventType = None,
+    ) -> Iterable[Tuple[int, EventRecord]]:
+        pass
 
     @abstractmethod
     def has_asset_key(self, asset_key: AssetKey) -> bool:
