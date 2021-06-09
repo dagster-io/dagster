@@ -232,6 +232,9 @@ def my_preset_schedule(_date):
 You might need to modify the preset's run config to include information about the date partition:
 
 ```python file=concepts/partitions_schedules_sensors/schedules/schedule_examples.py startafter=start_modified_preset endbefore=end_modified_preset
+import copy
+
+
 @daily_schedule(
     start_date=datetime.datetime(2020, 1, 1),
     pipeline_name="my_pipeline",
@@ -240,7 +243,7 @@ You might need to modify the preset's run config to include information about th
     tags_fn_for_date=lambda _: preset.tags,
 )
 def my_modified_preset_schedule(date):
-    modified_run_config = preset.run_config.copy()
+    modified_run_config = copy.deepcopy(preset.run_config)
     modified_run_config["solids"]["process_data_for_date"]["config"]["date"] = date.strftime(
         "%Y-%m-%d"
     )

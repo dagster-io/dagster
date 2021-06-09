@@ -1,3 +1,5 @@
+"""isort:skip_file"""
+
 import datetime
 
 from dagster import (
@@ -138,6 +140,8 @@ def my_preset_schedule(_date):
 
 # start_modified_preset
 
+import copy
+
 
 @daily_schedule(
     start_date=datetime.datetime(2020, 1, 1),
@@ -147,7 +151,7 @@ def my_preset_schedule(_date):
     tags_fn_for_date=lambda _: preset.tags,
 )
 def my_modified_preset_schedule(date):
-    modified_run_config = preset.run_config.copy()
+    modified_run_config = copy.deepcopy(preset.run_config)
     modified_run_config["solids"]["process_data_for_date"]["config"]["date"] = date.strftime(
         "%Y-%m-%d"
     )
