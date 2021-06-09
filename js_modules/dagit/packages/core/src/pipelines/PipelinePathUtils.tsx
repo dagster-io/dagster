@@ -67,9 +67,10 @@ export function useEnforceModeInPipelinePath() {
   const {options} = useRepositoryOptions();
   const history = useHistory();
 
-  const match = useRouteMatch<{repoPath: string; pipelinePath: string}>(
+  const match = useRouteMatch<{repoPath: string; pipelinePath: string}>([
     '/workspace/:repoPath/pipelines/:pipelinePath',
-  );
+    '/workspace/:repoPath/jobs/:pipelinePath',
+  ]);
 
   const pipelinePath = match?.params.pipelinePath;
   const repoPath = match?.params.repoPath;

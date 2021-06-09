@@ -89,6 +89,7 @@ export const PipelineNav: React.FC<Props> = (props) => {
   const repo = useRepository(repoAddress);
   const match = useRouteMatch<{tab?: string; selector: string}>([
     '/workspace/:repoPath/pipelines/:selector/:tab?',
+    '/workspace/:repoPath/jobs/:selector/:tab?',
   ]);
 
   const active = tabForPipelinePathComponent(match!.params.tab);

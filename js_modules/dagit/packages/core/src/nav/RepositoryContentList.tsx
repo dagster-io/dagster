@@ -24,6 +24,7 @@ type Item = {
   to: string;
   label: string;
   labelEl?: React.ReactNode;
+  labelTuple?: string;
   repoPath: string;
 };
 
@@ -91,11 +92,12 @@ export const RepositoryContentList: React.FC<RepositoryContentListProps> = ({
             to: workspacePath(
               repo.repository.name,
               repo.repositoryLocation.name,
-              `/pipelines/${pipeline.name}:${mode.name}/${
+              `/${showModeTuples ? 'jobs' : 'pipelines'}/${pipeline.name}:${mode.name}/${
                 tab === 'partitions' ? 'overview' : pipelineTab.pathComponent
               }`,
             ),
             label: showModeTuples ? `${pipeline.name}:${mode.name}` : pipeline.name,
+            labelTuple: `${pipeline.name}:${mode.name}`,
             labelEl: showModeTuples && (
               <span>
                 {pipeline.name}
@@ -150,8 +152,10 @@ export const RepositoryContentList: React.FC<RepositoryContentListProps> = ({
           <Item
             key={p.to}
             data-tooltip={p.label}
-            data-tooltip-style={p.label === selector ? SelectedItemTooltipStyle : ItemTooltipStyle}
-            className={`${p.label === selector && p.repoPath === repoPath ? 'selected' : ''}`}
+            data-tooltip-style={
+              p.labelTuple === selector ? SelectedItemTooltipStyle : ItemTooltipStyle
+            }
+            className={`${p.labelTuple === selector && p.repoPath === repoPath ? 'selected' : ''}`}
             to={p.to}
           >
             {p.labelEl || p.label}

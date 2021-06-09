@@ -18,11 +18,15 @@ export const defaultMocks = {
   ISolidDefinition: () => ({
     __typename: 'SolidDefinition',
   }),
+  Mode: () => ({
+    name: () => 'default',
+  }),
   Pipeline: () => ({
     id: randomId,
     name: hyphenatedName,
     pipelineSnapshotId: randomId,
     solids: () => new MockList(2),
+    modes: () => new MockList(1),
   }),
   Query: () => ({
     version: () => 'x.y.z',

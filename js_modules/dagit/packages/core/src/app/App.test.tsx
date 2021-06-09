@@ -89,16 +89,11 @@ describe('App', () => {
       const mocks = {
         Pipeline: () => ({
           name: 'foo_pipeline',
-          modes: new MockList(1),
         }),
         PipelineSnapshot: () => ({
           runs: () => new MockList(0),
           schedules: () => new MockList(0),
           sensors: () => new MockList(0),
-        }),
-        Mode: () => ({
-          __typename: 'Mode',
-          name: 'default',
         }),
       };
 
