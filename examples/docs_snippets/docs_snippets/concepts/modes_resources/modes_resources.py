@@ -1,3 +1,4 @@
+"""isort:skip_file"""
 # pylint: disable=unused-argument
 from dagster import ModeDefinition, ResourceDefinition, execute_pipeline, pipeline, resource, solid
 
@@ -27,6 +28,53 @@ def solid_requires_resources(context):
 
 # end_solid_with_resources_example
 
+# start_resource_testing
+@resource
+def my_resource(_):
+    return "foo"
+
+
+def test_my_resource():
+    assert my_resource(None) == "foo"
+
+
+# end_resource_testing
+
+# start_resource_testing_with_context
+@resource(required_resource_keys={"foo"}, config_schema={"bar": str})
+def my_resource_requires_context(init_context):
+    return init_context.resources.foo, init_context.resource_config["bar"]
+
+
+from dagster import build_init_resource_context
+
+
+def test_my_resource_with_context():
+    init_context = build_init_resource_context(
+        resources={"foo": "foo_str"}, config={"bar": "bar_str"}
+    )
+    assert my_resource_requires_context(init_context) == ("foo_str", "bar_str")
+
+
+# end_resource_testing_with_context
+
+# start_cm_resource_testing
+from contextlib import contextmanager
+
+
+@resource
+@contextmanager
+def my_cm_resource(_):
+    yield "foo"
+
+
+def test_cm_resource():
+    with my_cm_resource(None) as initialized_resource:
+        assert initialized_resource == "foo"
+
+
+# end_cm_resource_testing
+
 resource_a = ResourceDefinition.hardcoded_resource(1)
 resource_b = ResourceDefinition.hardcoded_resource(2)
 
@@ -44,7 +92,7 @@ mode_def_c = ModeDefinition("c_mode", resource_defs={"a": resource_a})
 
 
 @solid(required_resource_keys={"a"})
-def basic_solid():
+def basic_solid(_):
     pass
 
 
