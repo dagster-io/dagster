@@ -1,12 +1,61 @@
 # Changelog
 
+# 0.11.13
+
+### New
+
+- Added an example that demonstrates what a complete repository that takes advantage of many Dagster features might look like. Includes usage of IO Managers, modes / resources, unit tests, several cloud service integrations, and more! Check it out at [`examples/hacker_news`](https://github.com/dagster-io/dagster/tree/master/examples/hacker_news)!
+- `retry_number` is now available on `SolidExecutionContext`, allowing you to determine within a solid function how many times the solid has been previously retried.
+- Errors that are surfaced during solid execution now have clearer stack traces.
+- When using Postgres or MySQL storage, the database mutations that initialize Dagster tables on startup now happen in atomic transactions, rather than individual SQL queries.
+- The tags for Dagster-provided images in the Helm chart will now default to the current chart version.
+- Removed the `PIPELINE_INIT_FAILURE` event type. A failure that occurs during pipeline initialization will now produce a `PIPELINE_FAILURE` as with all other pipeline failures.
+
+### Bugfixes
+
+- When viewing run logs in Dagit, in the stdout/stderr log view, switching the filtered step did not work. This has been fixed. Additionally, the filtered step is now present as a URL query parameter.
+- The `get_run_status` method on the Python GraphQL client now returns a `PipelineRunStatus` enum instead of the raw string value in order to align with the mypy type annotation. Thanks to Dylan Bienstock for surfacing this bug!
+- When a docstring on a solid doesn’t match the reST, Google, or Numpydoc formats, Dagster no longer raises an error.
+- Fixed a bug where memoized runs would sometimes fail to execute when specifying a non-default IO manager key.
+
+### Experimental
+
+- Added the[`k8s_job_executor`](https://docs.dagster.io/master/_apidocs/libraries/dagster-k8s#dagster_k8s.k8s_job_executor), which executes solids in separate kubernetes jobs. With the addition of this executor, you can now choose at runtime between single pod and multi-pod isolation for solids in your run. Previously this was only configurable for the entire deployment - you could either use the K8sRunLauncher with the default executors (in_process and multiprocess) for low isolation, or you could use the CeleryK8sRunLauncher with the celery_k8s_job_executor for pod-level isolation. Now, your instance can be configured with the K8sRunLauncher and you can choose between the default executors or the k8s_job_executor.
+- The `DagsterGraphQLClient` now allows you to specify whether to use HTTP or HTTPS when connecting to the GraphQL server. In addition, error messages during query execution or connecting to dagit are now clearer. Thanks to @emily-hawkins for raising this issue!
+- Added experimental hook invocation functionality. Invoking a hook will call the underlying decorated function. For example:
+
+```
+  from dagster import build_hook_context
+
+  my_hook(build_hook_context(resources={"foo_resource": "foo"}))
+```
+
+- Resources can now be directly invoked as functions. Invoking a resource will call the underlying decorated initialization function.
+
+```
+  from dagster import build_init_resource_context
+
+  @resource(config_schema=str)
+  def my_basic_resource(init_context):
+      return init_context.resource_config
+
+  context = build_init_resource_context(config="foo")
+  assert my_basic_resource(context) == "foo"
+```
+
+- Improved the error message when a pipeline definition is incorrectly invoked as a function.
+
+### Documentation
+
+- Added a section on testing custom loggers: https://docs.dagster.io/master/concepts/logging/loggers#testing-custom-loggers
+
 # 0.11.12
 
 ### Bugfixes
 
 - `ScheduleDefinition` and `SensorDefinition` now carry over properties from functions decorated by `@sensor` and `@schedule`. Ie: docstrings.
 - Fixed a bug with configured on resources where the version set on a `ResourceDefinition` was not being passed to the `ResourceDefinition` created by the call to `configured`.
-- Previously, if an error was raised in an `IOManager` `handle_output` implementation that was a generator, it would not be wrapped `DagsterExecutionHandleOutputError`.  Now, it is wrapped.
+- Previously, if an error was raised in an `IOManager` `handle_output` implementation that was a generator, it would not be wrapped `DagsterExecutionHandleOutputError`. Now, it is wrapped.
 - Dagit will now gracefully degrade if websockets are not available. Previously launching runs and viewing the event logs would block on a websocket conection.
 
 ### Experimental
@@ -26,7 +75,7 @@
 - [Helm] Added `dagit.enableReadOnly` . When enabled, a separate Dagit instance is deployed in `—read-only` mode. You can use this feature to serve Dagit to users who you do not want to able to kick off new runs or make other changes to application state.
 - [dagstermill] Dagstermill is now compatible with current versions of papermill (2.x). Previously we required papermill to be pinned to 1.x.
 - Added a new metadata type that links to the asset catalog, which can be invoked using `EventMetadata.asset`.
-- Added a new log event type `LOGS_CAPTURED`, which explicitly links to the captured stdout/stderr logs for a given step, as determined by the configured `ComputeLogManager` on the Dagster instance.  Previously, these links were available on the `STEP_START` event.
+- Added a new log event type `LOGS_CAPTURED`, which explicitly links to the captured stdout/stderr logs for a given step, as determined by the configured `ComputeLogManager` on the Dagster instance. Previously, these links were available on the `STEP_START` event.
 - The `network` key on `DockerRunLauncher` config can now be sourced from an environment variable.
 - The Workspace section of the Status page in Dagit now shows more metadata about your workspace, including the python file, python package, and Docker image of each of your repository locations.
 - In Dagit, settings for how executions are viewed now persist across sessions.
@@ -56,7 +105,6 @@
 ### Documentation
 
 - Added documentation on how to deploy Dagster infrastructure separately from user code. See [Separately Deploying Dagster infrastructure and User Code](https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment#separately-deploying-dagster-infrastructure-and-user-code).
-
 
 ## 0.11.10
 
