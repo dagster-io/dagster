@@ -44,6 +44,10 @@ class HelmTemplate:
             ]
 
             if self.output:
+                # render all templates before filtering to surface Helm templating errors
+                # with better error messages
+                subprocess.check_output(command)
+
                 command += ["--show-only", self.output]
 
             with self._with_chart_yaml(helm_dir_path, chart_version):
