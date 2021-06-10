@@ -6,7 +6,6 @@
   "license": "MIT",
   "dependencies": {
     "@apollo/client": "^3.3.16",
-    "@types/chart.js": "^2.9.24",
     "@vx/gradient": "^0.0.192",
     "@vx/group": "^0.0.192",
     "@vx/legend": "^0.0.192",
@@ -14,7 +13,6 @@
     "@vx/responsive": "^0.0.192",
     "@vx/scale": "^0.0.192",
     "@vx/shape": "^0.0.192",
-    "ajv": "^6.10.2",
     "amator": "^1.1.0",
     "ansi-to-react": "^5.1.0",
     "apollo-link": "^1.2.14",
