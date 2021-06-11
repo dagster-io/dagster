@@ -41,14 +41,13 @@ def scope_dbt_cli_run_after_another_solid():
 
     @solid
     def do_something(context):
-        #solid logic here
+        # solid logic here
         context.log.info("Executing necessary logic before dbt run")
 
     @pipeline
     def my_dbt_pipeline():
-        run_staging_models(
-            start_after = do_something()
-        )
+        run_staging_models(start_after=do_something())
+
     # end_marker_dbt_cli_run_after_another_solid
 
 
