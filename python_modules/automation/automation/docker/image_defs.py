@@ -9,7 +9,9 @@ from dagster import check
 
 from .dagster_docker import DagsterDockerImage
 
-DAGSTER_REPO = git_repo_root()
+
+def get_dagster_repo():
+    return git_repo_root()
 
 
 @contextlib.contextmanager
@@ -49,7 +51,7 @@ def buildkite_integration_cm(cwd):
     """For the buildkite integration base image, we first copy over scala_modules into the image
     build directory.
     """
-    scala_modules_dir = os.path.join(DAGSTER_REPO, "scala_modules")
+    scala_modules_dir = os.path.join(get_dagster_repo(), "scala_modules")
     try:
         cmd = [
             "rsync",

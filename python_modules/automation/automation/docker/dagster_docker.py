@@ -3,7 +3,6 @@ import os
 from collections import namedtuple
 
 import yaml
-from dagster import __version__ as current_dagster_version
 from dagster import check
 
 from .ecr import ecr_image, get_aws_account_id, get_aws_region
@@ -106,7 +105,7 @@ class DagsterDockerImage(namedtuple("_DagsterDockerImage", "image build_cm path"
             aws_region=get_aws_region(),
         )
 
-    def _get_docker_args(self, python_version):
+    def _get_docker_args(self, dagster_version, python_version):
         """Retrieve Docker arguments from this image's versions.yaml, and update with latest Dagster
         version.
 
@@ -136,24 +135,18 @@ class DagsterDockerImage(namedtuple("_DagsterDockerImage", "image build_cm path"
                 raise Exception("Unrecognized source {}".format(source))
 
         # Set Dagster version
-        docker_args["DAGSTER_VERSION"] = current_dagster_version
+        docker_args["DAGSTER_VERSION"] = dagster_version
         return docker_args
 
     def build(self, timestamp, dagster_version, python_version):
         check.str_param(timestamp, "timestamp")
         check.str_param(python_version, "python_version")
-        check.invariant(
-            dagster_version == current_dagster_version,
-            desc="Current dagster version ({}) does not match provided arg ({})".format(
-                current_dagster_version, dagster_version
-            ),
-        )
         with self.build_cm(self.path):
             self._set_last_updated_for_python_version(timestamp, python_version)
 
             execute_docker_build(
                 self.local_image(python_version),
-                docker_args=self._get_docker_args(python_version),
+                docker_args=self._get_docker_args(dagster_version, python_version),
                 cwd=self.path,
             )
 
