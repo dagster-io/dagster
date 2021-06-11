@@ -76,7 +76,7 @@ class _Solid:
             compute_fn=fn,
             explicit_input_defs=self.input_defs,
             has_context_arg=self.has_context_arg,
-            context_required=bool(self.required_resource_keys) or bool(self.config_schema),
+            context_required=bool(self.config_schema),
             exclude_nothing=True,
         )
         compute_fn = _create_solid_compute_wrapper(

@@ -280,16 +280,13 @@ def test_any_config_field():
     assert called["yup"]
 
 
-def test_solid_no_arg():
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="'_noop' decorated function requires positional parameter 'context',",
-    ):
+def test_solid_required_resources_no_arg():
+    @solid(required_resource_keys={"foo"})
+    def _noop():
+        return
 
-        @solid(required_resource_keys={"foo"})
-        def _noop():
-            return
 
+def test_solid_config_no_arg():
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match="'_noop2' decorated function requires positional parameter 'context',",
