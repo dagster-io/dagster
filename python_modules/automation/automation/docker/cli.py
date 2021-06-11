@@ -1,7 +1,6 @@
 from typing import List
 
 import click
-from dagster import __version__ as current_dagster_version
 from dagster import check
 
 from .dagster_docker import DagsterDockerImage
@@ -31,7 +30,7 @@ def list():  # pylint: disable=redefined-builtin
 @click.option(
     "--dagster-version",
     required=True,
-    help="Version of image to build, must match current dagster version",
+    help="Version of image to build",
 )
 @click.option(
     "-t",
@@ -107,20 +106,14 @@ def push_to_registry(name: str, tags: List[str]):
 @click.option(
     "--dagster-version",
     required=True,
-    help="Version of image to push, must match current dagster version",
+    help="Version of image to push",
 )
 def push_dockerhub(name, dagster_version):
     """Used for pushing k8s images to Docker Hub. Must be logged in to Docker Hub for this to
     succeed.
     """
-    check.invariant(
-        dagster_version == current_dagster_version,
-        desc=(
-            f"Current dagster version ({current_dagster_version}) does not match provided arg "
-            f"({dagster_version})"
-        ),
-    )
-    tags = [f"dagster/{name}:{current_dagster_version}", f"dagster/{name}:latest"]
+
+    tags = [f"dagster/{name}:{dagster_version}", f"dagster/{name}:latest"]
 
     push_to_registry(name, tags)
 
@@ -130,7 +123,7 @@ def push_dockerhub(name, dagster_version):
 @click.option(
     "--dagster-version",
     required=True,
-    help="Version of image to push, must match current dagster version",
+    help="Version of image to push",
 )
 def push_ecr(name, dagster_version):
     """Used for pushing k8s images to our public ECR.
@@ -140,16 +133,8 @@ def push_ecr(name, dagster_version):
         aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/dagster
     """
 
-    check.invariant(
-        dagster_version == current_dagster_version,
-        desc=(
-            f"Current dagster version ({current_dagster_version}) does not match provided arg "
-            f"({dagster_version})"
-        ),
-    )
-
     tags = [
-        f"{AWS_ECR_REGISTRY}/{name}:{current_dagster_version}",
+        f"{AWS_ECR_REGISTRY}/{name}:{dagster_version}",
         f"{AWS_ECR_REGISTRY}/{name}:latest",
     ]
 
