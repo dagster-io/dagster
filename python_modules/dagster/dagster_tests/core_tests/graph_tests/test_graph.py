@@ -58,7 +58,9 @@ def test_with_resources():
         needs_resource()
 
     # proxy for "executable/job"
-    result = execute_pipeline(my_graph.to_job(resource_defs={"a": a_resource}))
+    my_job = my_graph.to_job(resource_defs={"a": a_resource})
+    assert my_job.name == "my_graph"
+    result = execute_pipeline(my_job)
     assert result.success
 
 
@@ -189,3 +191,16 @@ def test_default_config_with_mapping_fn():
     result = execute_pipeline(job)
     assert result.success
     assert result.result_for_solid("do_stuff").output_value() == "i am here on 6/4"
+
+
+def test_suffix():
+    emit_one, add = get_solids()
+
+    @graph
+    def get_two():
+        return add(emit_one(), emit_one())
+
+    assert isinstance(get_two, GraphDefinition)
+
+    my_job = get_two.to_job(name="get_two_prod")
+    assert my_job.name == "get_two_prod"
