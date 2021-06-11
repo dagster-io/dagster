@@ -88,8 +88,13 @@ DEFAULT_DB_STATEMENT_TIMEOUT = 5000  # 5 sec
     "turning schedules on/off are turned off.",
     is_flag=True,
 )
+@click.option(
+    "--suppress-warnings",
+    help="Filter all warnings when hosting Dagit.",
+    is_flag=True,
+)
 @click.version_option(version=__version__, prog_name="dagit")
-def ui(host, port, path_prefix, db_statement_timeout, read_only, **kwargs):
+def ui(host, port, path_prefix, db_statement_timeout, read_only, suppress_warnings, **kwargs):
     # add the path for the cwd so imports in dynamically loaded code work correctly
     sys.path.append(os.getcwd())
 
@@ -99,7 +104,16 @@ def ui(host, port, path_prefix, db_statement_timeout, read_only, **kwargs):
     else:
         port_lookup = False
 
-    host_dagit_ui(host, port, path_prefix, db_statement_timeout, port_lookup, read_only, **kwargs)
+    host_dagit_ui(
+        host,
+        port,
+        path_prefix,
+        db_statement_timeout,
+        port_lookup,
+        read_only,
+        suppress_warnings,
+        **kwargs,
+    )
 
 
 @contextmanager
@@ -118,8 +132,17 @@ def _get_instance():
 
 
 def host_dagit_ui(
-    host, port, path_prefix, db_statement_timeout, port_lookup=True, read_only=False, **kwargs
+    host,
+    port,
+    path_prefix,
+    db_statement_timeout,
+    port_lookup=True,
+    read_only=False,
+    suppress_warnings=False,
+    **kwargs,
 ):
+    if suppress_warnings:
+        os.environ["PYTHONWARNINGS"] = "ignore"
 
     with _get_instance() as instance:
         # Allow the instance components to change behavior in the context of a long running server process
