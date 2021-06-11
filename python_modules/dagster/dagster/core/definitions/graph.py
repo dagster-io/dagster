@@ -12,6 +12,7 @@ from dagster.core.types.dagster_type import (
     DagsterTypeKind,
     construct_dagster_type_dictionary,
 )
+from dagster.utils.backcompat import experimental
 from toposort import CircularDependencyError, toposort_flatten
 
 from .dependency import (
@@ -340,6 +341,7 @@ class GraphDefinition(NodeDefinition):
     ):
         check.not_implemented("@graph does not yet implement configured")
 
+    @experimental
     def to_job(
         self,
         resource_defs: Dict[str, "ResourceDefinition"] = None,
