@@ -187,7 +187,9 @@ def passthrough_flags_only(solid_config, additional_flags):
 )
 @experimental
 def dbt_cli_run(context) -> DbtCliOutput:
-    """This solid executes ``dbt run`` via the dbt CLI."""
+    """This solid executes ``dbt run`` via the dbt CLI. See the solid definition for available
+    parameters.
+    """
     from ..utils import generate_materializations
 
     cli_output = execute_cli(
@@ -289,7 +291,9 @@ def dbt_cli_run(context) -> DbtCliOutput:
 )
 @experimental
 def dbt_cli_test(context) -> DbtCliOutput:
-    """This solid executes ``dbt test`` via the dbt CLI."""
+    """This solid executes ``dbt test`` via the dbt CLI. See the solid definition for available
+    parameters.
+    """
     cli_output = execute_cli(
         context.solid_config["dbt_executable"],
         command=("test",),

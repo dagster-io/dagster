@@ -63,6 +63,7 @@ Some notes on developing in Dagster:
 - **Black/Pylint**: We use [black](https://github.com/python/black) to enforce a consistent code style, along with [pylint](https://www.pylint.org/). We test these in our CI/CD pipeline.
 - **Line Width**: We use a line width of 100.
 - **IDE**: We recommend setting up your IDE to format with black on save and check pylint, but you can always run `make black` and `make pylint` in the root Dagster directory before submitting a pull request. If you're also using VS Code, you can see what we're using for our `settings.json` [here](https://gist.github.com/natekupp/7a17a9df8d2064e5389cc84aa118a896).
+- **Docker**: Some tests require [Docker Desktop](https://www.docker.com/products/docker-desktop) to be able to run them locally.
 
 ## Developing Dagit
 
@@ -96,6 +97,8 @@ To run the Dagster documentation website locally, run the following commands:
 cd docs
 yarn --cwd next dev  # Serves the docs website on http://localhost:3001
 ```
+
+Troubleshooting tip: You may need to run `yarn --cwd next` (without the `dev` command) first to install dependencies. Also make sure that your Node version is >=12.13.0.
 
 The API documentation is generated from ReStructured Text files (`.rst`), which extracts Python docstrings from the library files. The `.rst` files can be found in the `docs/sections/api/apidocs` directory.
 
