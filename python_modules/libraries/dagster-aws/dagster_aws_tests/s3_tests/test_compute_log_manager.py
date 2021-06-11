@@ -2,6 +2,8 @@ import os
 import sys
 import tempfile
 
+import pytest
+from botocore.exceptions import ClientError
 from dagster import DagsterEventType, execute_pipeline, pipeline, solid
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher import DefaultRunLauncher
@@ -111,3 +113,42 @@ compute_logs:
         == mock_s3_bucket.name
     )
     assert instance.compute_log_manager._s3_prefix == s3_prefix  # pylint: disable=protected-access
+
+
+def test_compute_log_manager_skip_empty_upload(mock_s3_bucket):
+    @pipeline
+    def simple():
+        @solid
+        def easy(context):
+            context.log.info("easy")
+
+        easy()
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        run_store = SqliteRunStorage.from_local(temp_dir)
+        event_store = SqliteEventLogStorage(temp_dir)
+        PREFIX = "my_prefix"
+        manager = S3ComputeLogManager(
+            bucket=mock_s3_bucket.name, prefix=PREFIX, skip_empty_files=True
+        )
+        instance = DagsterInstance(
+            instance_type=InstanceType.PERSISTENT,
+            local_artifact_storage=LocalArtifactStorage(temp_dir),
+            run_storage=run_store,
+            event_storage=event_store,
+            compute_log_manager=manager,
+            run_coordinator=DefaultRunCoordinator(),
+            run_launcher=DefaultRunLauncher(),
+        )
+        result = execute_pipeline(simple, instance=instance)
+
+        stderr_object = mock_s3_bucket.Object(
+            key=f"{PREFIX}/storage/{result.run_id}/compute_logs/easy.err"
+        ).get()
+        assert stderr_object
+
+        with pytest.raises(ClientError):
+            # stdout is not uploaded because we do not print anything to stdout
+            mock_s3_bucket.Object(
+                key=f"{PREFIX}/storage/{result.run_id}/compute_logs/easy.out"
+            ).get()
