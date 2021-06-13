@@ -1,0 +1,24 @@
+[32m2021-06-13 11:23:14[0m - dagster - [34mDEBUG[0m - unreliable_pipeline - 7a058e5a-a307-4651-a754-608bd1cd83d6 - 3977 - unreliable - STEP_START - Started execution of step "unreliable".
+[32m2021-06-13 11:23:14[0m - dagster - [34mDEBUG[0m - system - 7a058e5a-a307-4651-a754-608bd1cd83d6 - unreliable - Loading file from: /Users/sarah/Documents/Github/dagster/examples/docs_snippets/docs_snippets/guides/dagster/reexecution/storage/7a058e5a-a307-4651-a754-608bd1cd83d6/unreliable_start/result
+[32m2021-06-13 11:23:14[0m - dagster - [34mDEBUG[0m - unreliable_pipeline - 7a058e5a-a307-4651-a754-608bd1cd83d6 - 3977 - unreliable - LOADED_INPUT - Loaded input "num" using input manager "io_manager", from output "result" of step "unreliable_start"
+[32m2021-06-13 11:23:14[0m - dagster - [34mDEBUG[0m - unreliable_pipeline - 7a058e5a-a307-4651-a754-608bd1cd83d6 - 3977 - unreliable - STEP_INPUT - Got input "num" of type "Any". (Type check passed).
+[32m2021-06-13 11:23:14[0m - dagster - [34mERROR[0m - [31munreliable_pipeline - 7a058e5a-a307-4651-a754-608bd1cd83d6 - 3977 - unreliable - STEP_FAILURE - Execution of step "unreliable" failed.
+
+dagster.core.errors.DagsterExecutionStepExecutionError: Error occurred while executing solid "unreliable"::
+
+Exception: blah
+
+Stack Trace:
+  File "/Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/site-packages/dagster/core/errors.py", line 187, in user_code_error_boundary
+    yield
+  File "/Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/site-packages/dagster/utils/__init__.py", line 366, in iterate_with_context
+    next_output = next(iterator)
+  File "/Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/site-packages/dagster/core/execution/plan/compute.py", line 126, in execute_core_compute
+    for step_output in _yield_compute_results(step_context, inputs, compute_fn):
+  File "/Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/site-packages/dagster/core/execution/plan/compute.py", line 92, in _yield_compute_results
+    user_event_generator = compute_fn(SolidExecutionContext(step_context), inputs)
+  File "/Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/site-packages/dagster/core/definitions/decorators/solid.py", line 321, in compute
+    result = fn(context, **kwargs) if context_arg_provided else fn(**kwargs)
+  File "/Users/sarah/Documents/Github/dagster/examples/docs_snippets/docs_snippets/guides/dagster/reexecution/pipeline/unreliable_pipeline.py", line 14, in unreliable
+    raise Exception("blah")
+[0m

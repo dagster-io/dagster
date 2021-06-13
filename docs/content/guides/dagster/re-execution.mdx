@@ -47,27 +47,27 @@ def unreliable_pipeline():
 
 Although very simple, there are inputs and outputs passed between tasks. With an IO manager, re-execution is able to handle inputs and outputs stored from the initial run.
 
-Upon launching the execution in Dagit, you can find the re-execution option on the top right. You will see multiple options for different types of re-execution.
-
-\*\*\*\* INSERT NEW SCREENSHOT OF UNREABLE PIPELINE \*\*\*\*
-
-<Image
-alt="Dagit Re-execution"
-src="/images/concepts/dagit/re-execution.png"
-width={3808}
-height={2414}
-/>
+Upon launching the execution in Dagit, you can find the re-execution option on the top right.
 
 ### Re-execution in Dagit
 
-There are several options for launching a re-execution. No matter which one you choose, the re-executed run is linked to the original run.
+Under the re-execution drop down, you will see multiple options for different types of re-execution. No matter which one you choose, the re-executed run is linked to the original run.
 
 - **All Steps**: Re-execute the pipeline run from scratch. This option is most relevant upon testing pipeline runs end to end, if you'd like to associate different runs together.
-- **Selected Step**: Re-execute the selected step(s). This can be done independent of the step status. Your pipeline is likely large, and you know exactly which steps to execute. This can be done by clicking on the boxes in the gantt chart view.
+- **Selected Step(s)**: Re-execute the selected step(s). This can be done independent of the step status. Your pipeline is likely large, and you know exactly which steps to execute. This can be done by clicking on the boxes in the gantt chart view.
 - **From Selected**: Re-execute the pipeline downstream from the selected steps. If a particular step fails, this option is most relevant if your intent is to run all downstream steps regardless of status. You're likely just developing a single step, and want to make sure downstream steps work as expected.
 - **From Failure**: Re-execute the pipeline run, skipping steps completed successfully. This is only enabled when the pipeline has failed. You have likely fixed the failed step, and want to run the step and all downstream dependencies again. Dagster will figure out the dependencies for you!
 
 In the above example, re-executing from failure would make sense as the failed task has a 50% chance of succeeding on the next run.
+
+<Image
+alt="Dagit Re-execution"
+src="/images/guides/reexecution/reexecution_options.png"
+width={3808}
+height={2414}
+/>
+
+If the entire pipeline succeeded but the underlying code changed, running specific steps to test the differences would be more relevant.
 
 ### Selecting Steps
 
@@ -97,23 +97,24 @@ from dagster import DagsterInstance, execute_pipeline, reexecute_pipeline
 from reexecution.pipeline.unreliable_pipeline import unreliable_pipeline
 
 
-instance = DagsterInstance.ephemeral()
+def reexecution():
+    instance = DagsterInstance.ephemeral()
 
-# Initial execution
-pipeline_result_full = execute_pipeline(unreliable_pipeline, instance=instance)
+    # Initial execution
+    pipeline_result_full = execute_pipeline(unreliable_pipeline, instance=instance)
 
-if not pipeline_result_full.success:
-    # Re-execution: Entire pipeline
-    reexecution_result_full = reexecute_pipeline(
-        unreliable_pipeline,
-        parent_run_id=pipeline_result_full.run_id,
-        instance=instance,
-    )
+    if not pipeline_result_full.success:
+        # Re-execution: Entire pipeline
+        reexecution_result_full = reexecute_pipeline(
+            unreliable_pipeline,
+            parent_run_id=pipeline_result_full.run_id,
+            instance=instance,
+        )
 ```
 
 Using Dagster's API, you can programmatically trigger both an execution and a reexecution. Upon an initial pipeline run failing, you may want to trigger a full re-execution. Similarly, you can trigger a re-execution of selected steps or from a particular point.
 
-```python file=/guides/dagster/reexecution/reexecution_api.py startafter=end_initial_execution_marker
+```python file=/guides/dagster/reexecution/reexecution_api.py startafter=start_partial_execution_marker endbefore=end_partial_execution_marker
 # Re-execution: Starting with the "unreliable" solid and all its descendents
 reexecution_result_specific_selection = reexecute_pipeline(
     unreliable_pipeline,
@@ -122,3 +123,5 @@ reexecution_result_specific_selection = reexecute_pipeline(
     solid_selection=['unreliable+*']
 )
 ```
+
+The `solid_selection` input is configurable, with syntax further documented in the <PyObject module="dagster" object="reexecute_pipeline" displayText="API docs" />.
