@@ -11,11 +11,7 @@ from ...implementation.execution import (
     terminate_pipeline_execution,
     wipe_assets,
 )
-from ...implementation.external import (
-    fetch_repository_location,
-    fetch_repository_locations,
-    get_full_external_pipeline_or_raise,
-)
+from ...implementation.external import fetch_workspace, get_full_external_pipeline_or_raise
 from ...implementation.utils import (
     ExecutionMetadata,
     ExecutionParams,
@@ -40,11 +36,7 @@ from ..errors import (
     GrapheneReloadNotSupported,
     GrapheneRepositoryLocationNotFound,
 )
-from ..external import (
-    GrapheneRepositoryLocation,
-    GrapheneRepositoryLocationConnection,
-    GrapheneRepositoryLocationLoadFailure,
-)
+from ..external import GrapheneWorkspace, GrapheneWorkspaceLocationEntry
 from ..inputs import GrapheneAssetKeyInput, GrapheneExecutionParams, GrapheneLaunchBackfillParams
 from ..pipelines.pipeline import GraphenePipelineRun
 from ..runs import GrapheneLaunchPipelineExecutionResult, GrapheneLaunchPipelineReexecutionResult
@@ -257,6 +249,8 @@ class GrapheneResumeBackfillMutation(graphene.Mutation):
         description = "Retries a set of partition backfill runs via the run launcher configured on the instance."
         name = "ResumeBackfillMutation"
 
+    @capture_error
+    @check_read_only
     def mutate(self, graphene_info, **kwargs):
         return resume_partition_backfill(graphene_info, kwargs["backfillId"])
 
@@ -326,11 +320,11 @@ class GrapheneTerminatePipelineExecutionMutation(graphene.Mutation):
 class GrapheneReloadRepositoryLocationMutationResult(graphene.Union):
     class Meta:
         types = (
-            GrapheneRepositoryLocation,
+            GrapheneWorkspaceLocationEntry,
             GrapheneReloadNotSupported,
             GrapheneRepositoryLocationNotFound,
-            GrapheneRepositoryLocationLoadFailure,
             GrapheneReadOnlyError,
+            GraphenePythonError,
         )
         name = "ReloadRepositoryLocationMutationResult"
 
@@ -358,18 +352,18 @@ class GrapheneReloadRepositoryLocationMutation(graphene.Mutation):
             return GrapheneReloadNotSupported(location_name)
 
         # The current workspace context is a WorkspaceRequestContext, which contains a reference to the
-        # repository locations that were present in the root WorkspaceProcessContext the start of the
-        # request. Reloading a repository location modifies the WorkspaceWorkspaceProcessContext, rendeirng
+        # repository locations that were present in the root IWorkspaceProcessContext the start of the
+        # request. Reloading a repository location modifies the IWorkspaceProcessContext, rendeirng
         # our current WorkspaceRequestContext outdated. Therefore, `reload_repository_location` returns
         # an updated WorkspaceRequestContext for us to use.
         new_context = graphene_info.context.reload_repository_location(location_name)
-        return fetch_repository_location(new_context, location_name)
+        return GrapheneWorkspaceLocationEntry(new_context.workspace_snapshot[location_name])
 
 
 class GrapheneReloadWorkspaceMutationResult(graphene.Union):
     class Meta:
         types = (
-            GrapheneRepositoryLocationConnection,
+            GrapheneWorkspace,
             GrapheneReadOnlyError,
             GraphenePythonError,
         )
@@ -386,7 +380,7 @@ class GrapheneReloadWorkspaceMutation(graphene.Mutation):
     @check_read_only
     def mutate(self, graphene_info, **_kwargs):
         new_context = graphene_info.context.reload_workspace()
-        return fetch_repository_locations(new_context)
+        return fetch_workspace(new_context)
 
 
 class GrapheneAssetWipeSuccess(graphene.ObjectType):

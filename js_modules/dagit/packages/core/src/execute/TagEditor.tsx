@@ -1,35 +1,41 @@
 import {Button, Classes, Dialog, Icon} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
+import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {PipelineRunTag} from '../app/LocalStorage';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {RunTag} from '../runs/RunTag';
+import {Box} from '../ui/Box';
+import {ButtonLink} from '../ui/ButtonLink';
 import {Group} from '../ui/Group';
 
 interface ITagEditorProps {
-  permanentTags?: PipelineRunTag[];
-  editableTags: PipelineRunTag[];
+  tagsFromDefinition?: PipelineRunTag[];
+  tagsFromSession: PipelineRunTag[];
   open: boolean;
   onChange: (tags: PipelineRunTag[]) => void;
   onRequestClose: () => void;
 }
 
 interface ITagContainerProps {
-  tags: PipelineRunTag[];
+  tags: {
+    fromDefinition?: PipelineRunTag[];
+    fromSession?: PipelineRunTag[];
+  };
   onRequestEdit: () => void;
 }
 
 export const TagEditor: React.FC<ITagEditorProps> = ({
-  permanentTags = [],
-  editableTags = [],
+  tagsFromDefinition = [],
+  tagsFromSession = [],
   open,
   onChange,
   onRequestClose,
 }) => {
   const [editState, setEditState] = React.useState(() =>
-    editableTags.length ? editableTags : [{key: '', value: ''}],
+    tagsFromSession.length ? tagsFromSession : [{key: '', value: ''}],
   );
 
   const toSave: PipelineRunTag[] = editState
@@ -52,7 +58,7 @@ export const TagEditor: React.FC<ITagEditorProps> = ({
     }
   };
 
-  const disabled = editState === editableTags || !!toError.length;
+  const disabled = editState === tagsFromSession || !!toError.length;
 
   const onTagEdit = (key: string, value: string, idx: number) => {
     setEditState((current) => [...current.slice(0, idx), {key, value}, ...current.slice(idx + 1)]);
@@ -85,43 +91,66 @@ export const TagEditor: React.FC<ITagEditorProps> = ({
         }}
       >
         <Group padding={16} spacing={16} direction="column">
-          {permanentTags.length ? (
-            <TagList>
-              {permanentTags.map((tag, idx) => (
-                <RunTag tag={tag} key={idx} />
-              ))}
-            </TagList>
+          {tagsFromDefinition.length ? (
+            <Group direction="column" spacing={8}>
+              <Box margin={{left: 2}} style={{fontSize: '13px', fontWeight: 500}}>
+                Tags from definition:
+              </Box>
+              <TagList>
+                {tagsFromDefinition.map((tag, idx) => {
+                  const {key} = tag;
+                  const anyOverride = editState.some((editable) => editable.key === key);
+                  if (anyOverride) {
+                    return (
+                      <Tooltip key={key} content="Overriden by custom tag value" placement="top">
+                        <span style={{opacity: 0.2}}>
+                          <RunTag tag={tag} key={idx} />
+                        </span>
+                      </Tooltip>
+                    );
+                  }
+                  return <RunTag tag={tag} key={key} />;
+                })}
+              </TagList>
+            </Group>
           ) : null}
-          <div>
-            {editState.map((tag, idx) => {
-              const {key, value} = tag;
-              return (
-                <div
-                  key={idx}
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    marginBottom: 10,
-                  }}
-                >
-                  <Input
-                    type="text"
-                    placeholder="Tag Key"
-                    value={key}
-                    onChange={(e) => onTagEdit(e.target.value, value, idx)}
-                  />
-                  <Input
-                    type="text"
-                    placeholder="Tag Value"
-                    value={value}
-                    onChange={(e) => onTagEdit(key, e.target.value, idx)}
-                  />
-                  <Remove onClick={() => onRemove(idx)} />
-                </div>
-              );
-            })}
-            <LinkButton onClick={addTagEntry}>+ Add another tag</LinkButton>
-          </div>
+          <Group direction="column" spacing={8}>
+            <Box margin={{left: 2}} style={{fontSize: '13px', fontWeight: 500}}>
+              Custom tags:
+            </Box>
+            <div>
+              {editState.map((tag, idx) => {
+                const {key, value} = tag;
+                return (
+                  <div
+                    key={idx}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'row',
+                      marginBottom: 8,
+                    }}
+                  >
+                    <Input
+                      type="text"
+                      placeholder="Tag Key"
+                      value={key}
+                      onChange={(e) => onTagEdit(e.target.value, value, idx)}
+                    />
+                    <Input
+                      type="text"
+                      placeholder="Tag Value"
+                      value={value}
+                      onChange={(e) => onTagEdit(key, e.target.value, idx)}
+                    />
+                    <Remove onClick={() => onRemove(idx)} />
+                  </div>
+                );
+              })}
+              <Box margin={{left: 2}}>
+                <ButtonLink onClick={addTagEntry}>+ Add custom tag</ButtonLink>
+              </Box>
+            </div>
+          </Group>
         </Group>
       </div>
       <div className={Classes.DIALOG_FOOTER}>
@@ -143,10 +172,25 @@ export const TagEditor: React.FC<ITagEditorProps> = ({
 };
 
 export const TagContainer = ({tags, onRequestEdit}: ITagContainerProps) => {
+  const {fromDefinition = [], fromSession = []} = tags;
   return (
     <Container>
       <TagList>
-        {tags.map((tag, idx) => (
+        {fromDefinition.map((tag, idx) => {
+          const {key} = tag;
+          const anyOverride = fromSession.some((sessionTag) => sessionTag.key === key);
+          if (anyOverride) {
+            return (
+              <Tooltip key={key} content="Overriden by custom tag value" placement="top">
+                <span style={{opacity: 0.2}}>
+                  <RunTag tag={tag} key={idx} />
+                </span>
+              </Tooltip>
+            );
+          }
+          return <RunTag tag={tag} key={idx} />;
+        })}
+        {fromSession.map((tag, idx) => (
           <RunTag tag={tag} key={idx} />
         ))}
       </TagList>
@@ -214,16 +258,5 @@ const Link = styled.div`
   font-size: 12px;
   &:hover {
     color: #aaa;
-  }
-`;
-const LinkButton = styled.button`
-  background: inherit;
-  border: none;
-  cursor: pointer;
-  font-size: inherit;
-  text-decoration: none;
-  color: #106ba3;
-  &:hover {
-    text-decoration: underline;
   }
 `;

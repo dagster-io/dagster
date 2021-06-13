@@ -17,14 +17,11 @@ from dagster.core.scheduler.job import JobState, JobStatus, SensorJobData
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 
-def create_sensor_cli_group():
-    group = click.Group(name="sensor")
-    group.add_command(sensor_list_command)
-    group.add_command(sensor_start_command)
-    group.add_command(sensor_stop_command)
-    group.add_command(sensor_preview_command)
-    group.add_command(sensor_cursor_command)
-    return group
+@click.group(name="sensor")
+def sensor_cli():
+    """
+    Commands for working with Dagster sensors.
+    """
 
 
 def print_changes(external_repository, instance, print_fn=print, preview=False):
@@ -114,7 +111,7 @@ def extract_sensor_name(sensor_name):
     raise click.UsageError("Missing sensor name argument")
 
 
-@click.command(
+@sensor_cli.command(
     name="list",
     help="List all sensors that correspond to a repository.",
 )
@@ -180,7 +177,7 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
                 print_fn(job_title)
 
 
-@click.command(name="start", help="Start an existing sensor")
+@sensor_cli.command(name="start", help="Start an existing sensor.")
 @click.argument("sensor_name", nargs=-1)  # , required=True)
 @click.option("--start-all", help="start all sensors", is_flag=True, default=False)
 @repository_target_argument
@@ -217,7 +214,7 @@ def execute_start_command(sensor_name, all_flag, cli_args, print_fn):
                 print_fn("Started sensor {sensor_name}".format(sensor_name=sensor_name))
 
 
-@click.command(name="stop", help="Stop an existing sensor")
+@sensor_cli.command(name="stop", help="Stop an existing sensor.")
 @click.argument("sensor_name", nargs=-1)
 @repository_target_argument
 def sensor_stop_command(sensor_name, **kwargs):
@@ -238,7 +235,7 @@ def execute_stop_command(sensor_name, cli_args, print_fn, instance=None):
             print_fn("Stopped sensor {sensor_name}".format(sensor_name=sensor_name))
 
 
-@click.command(name="preview", help="Preview an existing sensor execution")
+@sensor_cli.command(name="preview", help="Preview an existing sensor execution.")
 @click.argument("sensor_name", nargs=-1)
 @click.option(
     "--since",
@@ -322,7 +319,7 @@ def execute_preview_command(
                 raise click.UsageError(ex)
 
 
-@click.command(name="cursor", help="Set the cursor value for an existing sensor")
+@sensor_cli.command(name="cursor", help="Set the cursor value for an existing sensor.")
 @click.argument("sensor_name", nargs=-1)
 @click.option(
     "--set",
@@ -379,6 +376,3 @@ def execute_cursor_command(sensor_name, cli_args, print_fn):
                 print_fn(f'Set cursor state for sensor {external_sensor.name} to "{cursor_value}"')
             else:
                 print_fn(f"Cleared cursor state for sensor {external_sensor.name}")
-
-
-sensor_cli = create_sensor_cli_group()

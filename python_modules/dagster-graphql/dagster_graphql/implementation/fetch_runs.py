@@ -15,7 +15,7 @@ def is_config_valid(pipeline_def, run_config, mode):
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
 
     run_config_schema = create_run_config_schema(pipeline_def, mode)
-    validated_config = validate_config(run_config_schema.environment_type, run_config)
+    validated_config = validate_config(run_config_schema.config_type, run_config)
     return validated_config.success
 
 
@@ -27,7 +27,7 @@ def get_validated_config(pipeline_def, run_config, mode):
 
     run_config_schema = create_run_config_schema(pipeline_def, mode)
 
-    validated_config = validate_config(run_config_schema.environment_type, run_config)
+    validated_config = validate_config(run_config_schema.config_type, run_config)
 
     if not validated_config.success:
         raise UserFacingGraphQLError(

@@ -10,6 +10,11 @@ export const ASSET_QUERY = gql`
         key {
           path
         }
+        mostRecentMaterialization: assetMaterializations(limit: 1) {
+          materializationEvent {
+            timestamp
+          }
+        }
         assetMaterializations(limit: $limit, beforeTimestampMillis: $before) {
           partition
           runOrError {

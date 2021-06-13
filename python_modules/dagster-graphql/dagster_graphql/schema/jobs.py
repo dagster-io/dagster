@@ -4,8 +4,8 @@ import graphene
 import pendulum
 import yaml
 from dagster import check
+from dagster.core.definitions.schedule import ScheduleExecutionData
 from dagster.core.definitions.sensor import RunRequest
-from dagster.core.host_representation import ExternalScheduleExecutionData
 from dagster.core.scheduler.job import (
     JobState,
     JobStatus,
@@ -16,7 +16,7 @@ from dagster.core.scheduler.job import (
 )
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from dagster.core.storage.tags import TagType, get_tag_type
-from dagster.seven import to_timezone
+from dagster.seven.compat.pendulum import to_timezone
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 from ..implementation.fetch_schedules import get_schedule_next_tick
@@ -192,18 +192,14 @@ class GrapheneTickEvaluation(graphene.ObjectType):
         check.inst_param(
             schedule_data,
             "schedule_data",
-            (ExternalScheduleExecutionData, SerializableErrorInfo),
+            (ScheduleExecutionData, SerializableErrorInfo),
         )
         error = schedule_data if isinstance(schedule_data, SerializableErrorInfo) else None
         skip_reason = (
-            schedule_data.skip_message
-            if isinstance(schedule_data, ExternalScheduleExecutionData)
-            else None
+            schedule_data.skip_message if isinstance(schedule_data, ScheduleExecutionData) else None
         )
         self._run_requests = (
-            schedule_data.run_requests
-            if isinstance(schedule_data, ExternalScheduleExecutionData)
-            else None
+            schedule_data.run_requests if isinstance(schedule_data, ScheduleExecutionData) else None
         )
         super().__init__(skipReason=skip_reason, error=error)
 

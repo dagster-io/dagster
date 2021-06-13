@@ -1,12 +1,21 @@
 import pytest
 from dagster_graphql import DagsterGraphQLClientError, ReloadRepositoryLocationStatus
 
+from ..graphql.graphql_context_test_suite import (
+    GraphQLContextVariant,
+    make_graphql_context_test_suite,
+)
 from .conftest import MockClient, python_client_test_suite
 
 
 @python_client_test_suite
 def test_success(mock_client: MockClient):
-    response = {"reloadRepositoryLocation": {"__typename": "RepositoryLocation"}}
+    response = {
+        "reloadRepositoryLocation": {
+            "__typename": "WorkspaceLocationEntry",
+            "locationOrLoadError": {"__typename": "RepositoryLocation"},
+        }
+    }
     mock_client.mock_gql_client.execute.return_value = response
 
     assert (
@@ -17,11 +26,14 @@ def test_success(mock_client: MockClient):
 
 @python_client_test_suite
 def test_failure_with_repo_location_load_failure(mock_client: MockClient):
-    error_type, error_msg = "RepositoryLocationLoadFailure", "some reason"
+    error_type, error_msg = "PythonError", "some reason"
     response = {
         "reloadRepositoryLocation": {
-            "__typename": error_type,
-            "error": {"message": error_msg},
+            "__typename": "WorkspaceLocationEntry",
+            "locationOrLoadError": {
+                "__typename": error_type,
+                "message": error_msg,
+            },
         }
     }
     mock_client.mock_gql_client.execute.return_value = response
@@ -72,3 +84,17 @@ def test_failure_with_query_error(mock_client: MockClient):
 
     with pytest.raises(DagsterGraphQLClientError) as _:
         mock_client.python_client.reload_repository_location("foo")
+
+
+class TestReloadRepositoryLocationWithClient(
+    make_graphql_context_test_suite(
+        context_variants=[
+            GraphQLContextVariant.non_launchable_in_memory_instance_managed_grpc_env()
+        ]
+    )
+):
+    def test_reload_location_real(self, graphql_client):
+        assert (
+            graphql_client.reload_repository_location("test").status
+            == ReloadRepositoryLocationStatus.SUCCESS
+        )

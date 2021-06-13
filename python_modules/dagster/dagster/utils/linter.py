@@ -25,12 +25,18 @@ def define_dagster_checker():
             "W0003": (
                 "calling pendulum.create or pendulum.datetime",
                 "pendulum-create",
-                "Use dagster.seven.create_pendulum_time instead of pendulum.create or pendulum.datetime",
+                (
+                    "Use dagster.seven.compat.pendulum.create_pendulum_time instead of "
+                    "pendulum.create or pendulum.datetime"
+                ),
             ),
             "W0004": (
                 "calling in_tz() on a pendulum datetime",
                 "pendulum-in-tz",
-                "Use dagster.seven.to_timezone instead of calling in_tz on a pendulum datetime",
+                (
+                    "Use dagster.seven.compat.pendulum.to_timezone instead of calling in_tz on a "
+                    "pendulum datetime"
+                ),
             ),
         }
         options = ()

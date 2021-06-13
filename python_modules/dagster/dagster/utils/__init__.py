@@ -14,7 +14,19 @@ import threading
 from collections import namedtuple
 from datetime import timezone
 from enum import Enum
-from typing import TYPE_CHECKING, Generator, Generic, Iterator, Optional, Type, TypeVar, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    ContextManager,
+    Generator,
+    Generic,
+    Iterator,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 from warnings import warn
 
 import _thread as thread
@@ -356,12 +368,16 @@ def start_termination_thread(termination_event):
     int_thread.start()
 
 
+T = TypeVar("T")
+
 # Executes the next() function within an instance of the supplied context manager class
 # (leaving the context before yielding each result)
-def iterate_with_context(context, iterator):
+def iterate_with_context(
+    context_fn: Callable[[], ContextManager], iterator: Iterator[T]
+) -> Iterator[T]:
     while True:
         # Allow interrupts during user code so that we can terminate slow/hanging steps
-        with context():
+        with context_fn():
             try:
                 next_output = next(iterator)
             except StopIteration:

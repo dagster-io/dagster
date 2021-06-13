@@ -66,7 +66,7 @@ class GrapheneResumeBackfillSuccess(graphene.ObjectType):
 
 class GrapheneResumeBackfillResult(graphene.Union):
     class Meta:
-        types = (GrapheneResumeBackfillSuccess, GraphenePythonError)
+        types = (GrapheneResumeBackfillSuccess, GrapheneReadOnlyError, GraphenePythonError)
         name = "ResumeBackfillResult"
 
 

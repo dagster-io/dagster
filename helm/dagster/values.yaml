@@ -4,7 +4,6 @@
 # - We recommend using unique tags for user code images, as this will guarantee that the docker
 #   image will be consistent for the pipeline's entire execution.
 ---
-
 global:
   postgresqlSecretName: "dagster-postgresql-secret"
   # The DAGSTER_HOME env var is set by default on all nodes from this value
@@ -26,10 +25,11 @@ imagePullSecrets: []
 ####################################################################################################
 dagit:
   replicaCount: 1
-  # REQUIRED: Dagit image repository and tag to deploy
   image:
+    # When a tag is not supplied for a Dagster provided image,
+    # it will default as the Helm chart version.
     repository: "docker.io/dagster/dagster-celery-k8s"
-    tag: "latest"
+    tag: ~
     pullPolicy: Always
 
   service:
@@ -47,6 +47,9 @@ dagit:
     servers:
       - host: "k8s-example-user-code-1"
         port: 3030
+
+  # Deploy a separate instance of Dagit in --read-only mode (can't launch runs, disable schedules, etc.)
+  enableReadOnly: false
 
   # Additional environment variables to set.
   # A Kubernetes ConfigMap will be created with these environment variables. See:
@@ -143,13 +146,11 @@ computeLogManager:
   #     secretKey: ~
   #     localDir: ~
   #     prefix: ~
-
   ##  Uncomment this configuration if the GCSComputeLogManager is selected
   #   gcsComputeLogManager:
   #     bucket: ~
   #     localDir: ~
   #     prefix: ~
-
   ##  Uncomment this configuration if the S3ComputeLogManager is selected
   #   s3ComputeLogManager:
   #     bucket: ~
@@ -159,7 +160,6 @@ computeLogManager:
   #     verify: ~
   #     verifyCertPath: ~
   #     endpointUrl: ~
-
   ##  Uncomment this configuration if the CustomComputeLogManager is selected.
   ##  Using this setting requires a custom Dagit image that defines the user specified
   ##  compute log manager in an installed python module.
@@ -191,12 +191,15 @@ dagster-user-deployments:
   deployments:
     - name: "k8s-example-user-code-1"
       image:
+        # When a tag is not supplied, it will default as the Helm chart version.
         repository: "docker.io/dagster/user-code-example"
-        tag: latest
+        tag: ~
+
         # Change with caution! If you're using a fixed tag for pipeline run images, changing the
         # image pull policy to anything other than "Always" will use a cached/stale image, which is
         # almost certainly not what you want.
         pullPolicy: Always
+
       # Arguments to `dagster api grpc`.
       # Ex: "dagster api grpc -m dagster_test.test_project.test_pipelines.repo -a define_demo_execution_repo"
       # would translate to:
@@ -281,8 +284,6 @@ dagster-user-deployments:
 ####################################################################################################
 # Pipeline Run: Configuration for user code containers.
 #
-# Note: This should only be configured when userDeployments are not enabled.
-#
 # `DAGSTER_K8S_PIPELINE_RUN_IMAGE` environment variable will point to the image specified below.
 # The run config for the celery executor can set `job_image` to fetch from environment variable
 # `DAGSTER_K8S_PIPELINE_RUN_IMAGE`, so that celery workers will launch k8s jobs with said image.
@@ -290,8 +291,10 @@ dagster-user-deployments:
 ####################################################################################################
 pipelineRun:
   image:
+    # When a tag is not supplied for a Dagster provided image,
+    # it will default as the Helm chart version.
     repository: "docker.io/dagster/user-code-example"
-    tag: "latest"
+    tag: ~
     pullPolicy: Always
 
   # Additional environment variables to set.
@@ -323,8 +326,10 @@ scheduler:
       # (to call `dagster api launch_scheduled_execution`) and instance yaml
       # but does not need access to user code.
       image:
+        # When a tag is not supplied for a Dagster provided image,
+        # it will default as the Helm chart version.
         repository: "docker.io/dagster/dagster-celery-k8s"
-        tag: "latest"
+        tag: ~
         pullPolicy: Always
 
       # K8s Namespace for K8s CronJob(s) and launched K8s Job(s).
@@ -404,8 +409,10 @@ runLauncher:
     celeryK8sRunLauncher:
       # The Celery workers can be deployed with a fixed image (no user code included)
       image:
+        # When a tag is not supplied for a Dagster provided image,
+        # it will default as the Helm chart version.
         repository: "docker.io/dagster/dagster-celery-k8s"
-        tag: "latest"
+        tag: ~
         pullPolicy: Always
 
       # Support overriding the name prefix of Celery worker pods
@@ -692,6 +699,34 @@ ingress:
     #     servicePort: "use-annotation"
     succeedingPaths: []
 
+  readOnlyDagit:
+    # Ingress hostname for read only Dagit e.g. viewer.dagit.mycompany.com
+    # This variable allows customizing the route pattern in the ingress. Some
+    # ingress controllers may only support "/", whereas some may need "/*".
+    # NOTE: Dagit doesn't yet support hosting on a path, e.g. mycompany.com/dagit.
+    path: "/*"
+    # NOTE: do NOT keep trailing slash. For root configuration, set as empty string
+    # See: https://github.com/dagster-io/dagster/issues/2073
+    host: ""
+
+    # Different http paths to add to the ingress before the default dagit path
+    # Example:
+    #
+    # precedingPaths:
+    #   - path: "/*"
+    #     serviceName: "ssl-redirect"
+    #     servicePort: "use-annotation"
+    precedingPaths: []
+
+    # Different http paths to add to the ingress after the default dagit path
+    # Example:
+    #
+    # succeedingPaths:
+    #   - path: "/*"
+    #     serviceName: "ssl-redirect"
+    #     servicePort: "use-annotation"
+    succeedingPaths: []
+
   flower:
     # Ingress hostname for Flower e.g. flower.mycompany.com
     host: ""
@@ -738,14 +773,18 @@ dagsterDaemon:
   enabled: true
 
   image:
+    # When a tag is not supplied for a Dagster provided image,
+    # it will default as the Helm chart version.
     repository: "docker.io/dagster/dagster-celery-k8s"
-    tag: "latest"
+    tag: ~
     pullPolicy: Always
 
   heartbeatTolerance: 300
 
   queuedRunCoordinator:
     enabled: false
+    module: dagster.core.run_coordinator
+    class: QueuedRunCoordinator
     config: {}
 
   # Additional environment variables to set.

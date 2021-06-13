@@ -171,17 +171,14 @@ def test_mode_with_resource_deps():
 
     assert called["count"] == 1
 
-    with pytest.raises(DagsterInvalidDefinitionError) as ide:
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match=r'"a" is required by solid def requires_a'
+    ):
         PipelineDefinition(
             name="mode_with_bad_deps",
             solid_defs=[requires_a],
             mode_defs=[ModeDefinition(resource_defs={"ab": resource_a})],
         )
-
-    assert (
-        str(ide.value)
-        == 'Resource "a" is required by solid def requires_a, but is not provided by mode "default".'
-    )
 
     @solid(required_resource_keys={"a"})
     def no_deps(context):

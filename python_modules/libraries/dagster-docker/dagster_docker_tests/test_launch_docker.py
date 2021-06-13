@@ -7,7 +7,7 @@ from contextlib import contextmanager
 
 import pytest
 from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.core.test_utils import poll_for_finished_run, poll_for_step_start
+from dagster.core.test_utils import environ, poll_for_finished_run, poll_for_step_start
 from dagster.utils.test.postgres_instance import postgres_instance_for_test
 from dagster.utils.yaml_utils import merge_yamls
 from dagster_docker.docker_run_launcher import DOCKER_IMAGE_TAG
@@ -41,8 +41,9 @@ def test_launch_docker_image_on_pipeline_config():
         "env_vars": [
             "AWS_ACCESS_KEY_ID",
             "AWS_SECRET_ACCESS_KEY",
+            "DOCKER_LAUNCHER_NETWORK",
         ],
-        "network": "container:test-postgres-db-docker",
+        "network": {"env": "DOCKER_LAUNCHER_NETWORK"},
         "container_kwargs": {
             "auto_remove": True,
         },
@@ -60,37 +61,38 @@ def test_launch_docker_image_on_pipeline_config():
         ]
     )
 
-    with docker_postgres_instance(
-        overrides={
-            "run_launcher": {
-                "class": "DockerRunLauncher",
-                "module": "dagster_docker",
-                "config": launcher_config,
+    with environ({"DOCKER_LAUNCHER_NETWORK": "container:test-postgres-db-docker"}):
+        with docker_postgres_instance(
+            overrides={
+                "run_launcher": {
+                    "class": "DockerRunLauncher",
+                    "module": "dagster_docker",
+                    "config": launcher_config,
+                }
             }
-        }
-    ) as instance:
-        recon_pipeline = get_test_project_recon_pipeline("demo_pipeline", docker_image)
-        run = instance.create_run_for_pipeline(
-            pipeline_def=recon_pipeline.get_definition(),
-            run_config=run_config,
-        )
-
-        with get_test_project_external_pipeline(
-            "demo_pipeline", container_image=docker_image
-        ) as orig_pipeline:
-            external_pipeline = ReOriginatedExternalPipelineForTest(
-                orig_pipeline,
-                container_image=docker_image,
+        ) as instance:
+            recon_pipeline = get_test_project_recon_pipeline("demo_pipeline", docker_image)
+            run = instance.create_run_for_pipeline(
+                pipeline_def=recon_pipeline.get_definition(),
+                run_config=run_config,
             )
-            instance.launch_run(run.run_id, external_pipeline)
 
-            poll_for_finished_run(instance, run.run_id, timeout=60)
+            with get_test_project_external_pipeline(
+                "demo_pipeline", container_image=docker_image
+            ) as orig_pipeline:
+                external_pipeline = ReOriginatedExternalPipelineForTest(
+                    orig_pipeline,
+                    container_image=docker_image,
+                )
+                instance.launch_run(run.run_id, external_pipeline)
 
-            run = instance.get_run_by_id(run.run_id)
+                poll_for_finished_run(instance, run.run_id, timeout=60)
 
-            assert run.status == PipelineRunStatus.SUCCESS
+                run = instance.get_run_by_id(run.run_id)
 
-            assert run.tags[DOCKER_IMAGE_TAG] == docker_image
+                assert run.status == PipelineRunStatus.SUCCESS
+
+                assert run.tags[DOCKER_IMAGE_TAG] == docker_image
 
 
 def _check_event_log_contains(event_log, expected_type_and_message):

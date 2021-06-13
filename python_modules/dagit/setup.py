@@ -19,7 +19,8 @@ def get_version():
 
 if __name__ == "__main__":
     ver = get_version()
-
+    # dont pin dev installs to avoid pip dep resolver issues
+    pin = "" if ver == "dev" else f"=={ver}"
     setup(
         name="dagit",
         version=ver,
@@ -43,8 +44,8 @@ if __name__ == "__main__":
             "PyYAML",
             # cli
             "click>=7.0,<8.0",
-            "dagster=={ver}".format(ver=ver),
-            "dagster-graphql=={ver}".format(ver=ver),
+            f"dagster{pin}",
+            f"dagster-graphql{pin}",
             # server
             "flask-cors>=3.0.6",
             "Flask-GraphQL>=2.0.0",

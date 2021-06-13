@@ -266,6 +266,13 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         upload_coverage=False,
         supported_pythons=ExamplePythons,
     ),
+    ModuleBuildSpec(
+        "examples/hacker_news",
+        env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_USER", "SNOWFLAKE_PASSWORD"],
+        buildkite_label="hacker_news_example",
+        upload_coverage=False,
+        supported_pythons=ExamplePythons,
+    ),
     ModuleBuildSpec("python_modules/dagit", extra_cmds_fn=dagit_extra_cmds_fn),
     ModuleBuildSpec("python_modules/automation"),
     ModuleBuildSpec(
@@ -306,6 +313,9 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
             "-postgres_instance_managed_grpc_env",
             "-postgres_instance_deployed_grpc_env",
         ],
+    ),
+    ModuleBuildSpec(
+        "python_modules/dagster-test",
     ),
     ModuleBuildSpec(
         "python_modules/libraries/dagster-dbt",
@@ -388,6 +398,10 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         # Remove once https://github.com/dagster-io/dagster/issues/2511 is resolved
         retries=2,
     ),
+    ModuleBuildSpec(
+        "python_modules/libraries/dagstermill",
+        tox_env_suffixes=["-papermill1", "-papermill2"],
+    ),
     ModuleBuildSpec("python_modules/libraries/lakehouse", upload_coverage=False),
 ]
 
@@ -417,6 +431,7 @@ def examples_tests():
         "airline_demo",
         "dbt_example",
         "deploy_docker",
+        "hacker_news",
     ]
 
     examples_root = os.path.join(GIT_REPO_ROOT, "examples")
@@ -511,15 +526,6 @@ def pylint_steps():
     ]
 
 
-def version_equality_checks(version=SupportedPython.V3_7):
-    return [
-        StepBuilder("all versions == ?")
-        .on_integration_image(version)
-        .run("pip install -e python_modules/automation", "dagster-release version")
-        .build()
-    ]
-
-
 def schema_checks(version=SupportedPython.V3_8):
     return [
         StepBuilder("SQL schema checks")
@@ -589,7 +595,6 @@ def dagster_steps():
 
     # https://github.com/dagster-io/dagster/issues/2785
     steps += pipenv_smoke_tests()
-    steps += version_equality_checks()
     steps += docs_steps()
     steps += examples_tests()
     steps += helm_steps()

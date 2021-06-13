@@ -31,6 +31,10 @@ Execution
 
 .. autoclass:: RetryPolicy
 
+.. autoclass:: Backoff
+
+.. autoclass:: Jitter
+
 -------
 
 Composing solids

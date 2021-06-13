@@ -31,7 +31,6 @@ from dagster.core.host_representation.external_data import (
     ExternalPartitionSetExecutionParamData,
     ExternalPartitionTagsData,
     ExternalPipelineSubsetResult,
-    ExternalScheduleExecutionData,
     ExternalScheduleExecutionErrorData,
     ExternalSensorExecutionErrorData,
 )
@@ -233,9 +232,7 @@ def get_external_schedule_execution(
                 lambda: "Error occurred during the execution function for schedule "
                 "{schedule_name}".format(schedule_name=schedule_def.name),
             ):
-                return ExternalScheduleExecutionData.from_execution_data(
-                    schedule_def.get_execution_data(schedule_context)
-                )
+                return schedule_def.evaluate_tick(schedule_context)
         except ScheduleExecutionError:
             return ExternalScheduleExecutionErrorData(
                 serializable_error_info_from_exc_info(sys.exc_info())
@@ -266,7 +263,7 @@ def get_external_sensor_execution(
                 lambda: "Error occurred during the execution of evaluation_fn for sensor "
                 "{sensor_name}".format(sensor_name=sensor_def.name),
             ):
-                return sensor_def.get_execution_data(sensor_context)
+                return sensor_def.evaluate_tick(sensor_context)
         except SensorExecutionError:
             return ExternalSensorExecutionErrorData(
                 serializable_error_info_from_exc_info(sys.exc_info())

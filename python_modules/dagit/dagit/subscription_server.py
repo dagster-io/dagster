@@ -40,7 +40,7 @@ class DagsterSubscriptionServer(GeventSubscriptionServer):
         try:
             execution_result = self.execute(
                 # Even though this object is referred to as the "request_context", it is
-                # actually a WorkspaceProcessContext. This is a naming restriction from the underlying
+                # actually a IWorkspaceProcessContext. This is a naming restriction from the underlying
                 # GeventSubscriptionServer. Here, we create a new request context for every
                 # incoming GraphQL request
                 connection_context.request_context.create_request_context(),

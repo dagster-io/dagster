@@ -3,7 +3,7 @@ import datetime
 import pendulum
 from croniter import croniter
 from dagster import check
-from dagster.seven import to_timezone
+from dagster.seven.compat.pendulum import to_timezone
 
 
 def schedule_execution_time_iterator(start_timestamp, cron_schedule, execution_timezone):

@@ -31,6 +31,26 @@ def scope_dbt_cli_run_specific_models():
     # end_marker_dbt_cli_run_specific_models
 
 
+def scope_dbt_cli_run_after_another_solid():
+    # start_marker_dbt_cli_run_after_another_solid
+    from dagster import pipeline, solid
+    from dagster_dbt import dbt_cli_run
+
+    config = {"project-dir": "path/to/dbt/project", "models": ["tag:staging"]}
+    run_staging_models = dbt_cli_run.configured(config, name="run_staging_models")
+
+    @solid
+    def do_something(context):
+        # solid logic here
+        context.log.info("Executing necessary logic before dbt run")
+
+    @pipeline
+    def my_dbt_pipeline():
+        run_staging_models(start_after=do_something())
+
+    # end_marker_dbt_cli_run_after_another_solid
+
+
 def scope_dbt_rpc_resource():
     # start_marker_dbt_rpc_resource
     from dagster_dbt import dbt_rpc_resource

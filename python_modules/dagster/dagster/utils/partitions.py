@@ -6,80 +6,12 @@ from dagster.core.definitions.partition import Partition, PartitionSetDefinition
 from dagster.core.definitions.run_request import SkipReason
 from dagster.core.definitions.schedule import ScheduleExecutionContext
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.seven import PendulumDateTime, to_timezone
-from dagster.utils.schedules import schedule_execution_time_iterator
+from dagster.seven.compat.pendulum import PendulumDateTime, to_timezone
 
 DEFAULT_MONTHLY_FORMAT = "%Y-%m"
 DEFAULT_DATE_FORMAT = "%Y-%m-%d"
 DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE = "%Y-%m-%d-%H:%M"
 DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE = DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE + "%z"
-
-
-def schedule_partition_range(
-    start,
-    end,
-    cron_schedule,
-    fmt,
-    timezone,
-    execution_time_to_partition_fn,
-    inclusive=False,
-):
-    check.inst_param(start, "start", datetime.datetime)
-    check.opt_inst_param(end, "end", datetime.datetime)
-    check.str_param(cron_schedule, "cron_schedule")
-    check.str_param(fmt, "fmt")
-    check.opt_str_param(timezone, "timezone")
-    check.callable_param(execution_time_to_partition_fn, "execution_time_to_partition_fn")
-    check.opt_bool_param(inclusive, "inclusive")
-
-    if end and start > end:
-        raise DagsterInvariantViolationError(
-            'Selected date range start "{start}" is after date range end "{end}'.format(
-                start=start.strftime(fmt),
-                end=end.strftime(fmt),
-            )
-        )
-
-    def get_schedule_range_partitions(current_time=None):
-        check.opt_inst_param(current_time, "current_time", datetime.datetime)
-        tz = timezone if timezone else "UTC"
-        _start = (
-            to_timezone(start, tz)
-            if isinstance(start, PendulumDateTime)
-            else pendulum.instance(start, tz=tz)
-        )
-
-        if end:
-            _end = end
-        elif current_time:
-            _end = current_time
-        else:
-            _end = pendulum.now(tz)
-
-        # coerce to the definition timezone
-        if isinstance(_end, PendulumDateTime):
-            _end = to_timezone(_end, tz)
-        else:
-            _end = pendulum.instance(_end, tz=tz)
-
-        end_timestamp = _end.timestamp()
-
-        partitions = []
-        for next_time in schedule_execution_time_iterator(_start.timestamp(), cron_schedule, tz):
-
-            partition_time = execution_time_to_partition_fn(next_time)
-
-            if partition_time.timestamp() > end_timestamp:
-                break
-
-            if partition_time.timestamp() < _start.timestamp():
-                continue
-
-            partitions.append(Partition(value=partition_time, name=partition_time.strftime(fmt)))
-
-        return partitions if inclusive else partitions[:-1]
-
-    return get_schedule_range_partitions
 
 
 def date_partition_range(

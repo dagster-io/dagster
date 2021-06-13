@@ -33,8 +33,13 @@ If release name contains chart name it will be used as a full name.
 {{- end -}}
 
 # Image utils
-{{- define "image.name" }}
-{{- .repository -}}:{{- .tag -}}
+{{- define "dagster.dagsterImage.name" }}
+  {{- $ := index . 0 }}
+
+  {{- with index . 1 }}
+    {{- $tag := .tag | default $.Chart.Version }}
+    {{- printf "%s:%s" .repository $tag }}
+  {{- end }}
 {{- end }}
 
 {{/*

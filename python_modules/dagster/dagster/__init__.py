@@ -50,6 +50,7 @@ from dagster.core.definitions import (
     TextMetadataEntryData,
     TypeCheck,
     UrlMetadataEntryData,
+    build_init_logger_context,
     composite_solid,
     daily_schedule,
     default_executors,
@@ -75,7 +76,7 @@ from dagster.core.definitions import (
     weekly_schedule,
 )
 from dagster.core.definitions.configurable import configured
-from dagster.core.definitions.policy import RetryPolicy
+from dagster.core.definitions.policy import Backoff, Jitter, RetryPolicy
 from dagster.core.definitions.schedule import build_schedule_context
 from dagster.core.definitions.sensor import build_sensor_context
 from dagster.core.errors import (
@@ -106,12 +107,13 @@ from dagster.core.execution.api import (
     reexecute_pipeline_iterator,
 )
 from dagster.core.execution.context.compute import SolidExecutionContext
-from dagster.core.execution.context.init import InitResourceContext
+from dagster.core.execution.context.hook import HookContext, build_hook_context
+from dagster.core.execution.context.init import InitResourceContext, build_init_resource_context
 from dagster.core.execution.context.input import InputContext, build_input_context
 from dagster.core.execution.context.invocation import build_solid_context
 from dagster.core.execution.context.logger import InitLoggerContext
 from dagster.core.execution.context.output import OutputContext, build_output_context
-from dagster.core.execution.context.system import HookContext, TypeCheckContext
+from dagster.core.execution.context.system import TypeCheckContext
 from dagster.core.execution.results import (
     CompositeSolidExecutionResult,
     PipelineExecutionResult,
@@ -195,6 +197,7 @@ __all__ = [
     "IntermediateStorageDefinition",
     "JsonMetadataEntryData",
     "LoggerDefinition",
+    "build_init_logger_context",
     "MarkdownMetadataEntryData",
     "IntMetadataEntryData",
     "FloatMetadataEntryData",
@@ -216,6 +219,8 @@ __all__ = [
     "UrlMetadataEntryData",
     "make_values_resource",
     "RetryPolicy",
+    "Backoff",
+    "Jitter",
     # Decorators
     "composite_solid",
     "executor",
@@ -239,6 +244,7 @@ __all__ = [
     "InitExecutorContext",
     "InitLoggerContext",
     "InitResourceContext",
+    "build_init_resource_context",
     "InitIntermediateStorageContext",
     "PipelineExecutionResult",
     "RetryRequested",
@@ -246,6 +252,7 @@ __all__ = [
     "SolidExecutionContext",
     "build_solid_context",
     "HookContext",
+    "build_hook_context",
     "TypeCheckContext",
     "InputContext",
     "build_input_context",

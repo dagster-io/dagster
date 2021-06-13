@@ -1,8 +1,19 @@
+import logging
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union
+
 from dagster import check
 from dagster.core.definitions.config import is_callable_valid_config_arg
 from dagster.core.definitions.configurable import AnonymousConfigurableDefinition
+from dagster.core.errors import DagsterInvalidInvocationError
 
+from ..decorator_utils import get_function_params
 from .definition_config_schema import convert_user_facing_definition_config_schema
+
+if TYPE_CHECKING:
+    from dagster.core.execution.context.logger import InitLoggerContext, UnboundInitLoggerContext
+    from dagster.core.definitions import PipelineDefinition
+
+    InitLoggerFunction = Callable[[InitLoggerContext], logging.Logger]
 
 
 class LoggerDefinition(AnonymousConfigurableDefinition):
@@ -22,27 +33,68 @@ class LoggerDefinition(AnonymousConfigurableDefinition):
 
     def __init__(
         self,
-        logger_fn,
-        config_schema=None,
-        description=None,
+        logger_fn: "InitLoggerFunction",
+        config_schema: Any = None,
+        description: Optional[str] = None,
     ):
         self._logger_fn = check.callable_param(logger_fn, "logger_fn")
         self._config_schema = convert_user_facing_definition_config_schema(config_schema)
         self._description = check.opt_str_param(description, "description")
 
+    def __call__(self, *args, **kwargs):
+        from dagster.core.execution.context.logger import UnboundInitLoggerContext
+        from .logger_invocation import logger_invocation_result
+
+        if len(args) == 0 and len(kwargs) == 0:
+            raise DagsterInvalidInvocationError(
+                "Logger initialization function has context argument, but no context argument was "
+                "provided when invoking."
+            )
+        if len(args) + len(kwargs) > 1:
+            raise DagsterInvalidInvocationError(
+                "Initialization of logger received multiple arguments. Only a first "
+                "positional context parameter should be provided when invoking."
+            )
+
+        context_param_name = get_function_params(self.logger_fn)[0].name
+
+        if args:
+            context = check.opt_inst_param(
+                args[0],
+                context_param_name,
+                UnboundInitLoggerContext,
+                default=UnboundInitLoggerContext(logger_config=None, pipeline_def=None),
+            )
+            return logger_invocation_result(self, context)
+        else:
+            if context_param_name not in kwargs:
+                raise DagsterInvalidInvocationError(
+                    f"Logger initialization expected argument '{context_param_name}'."
+                )
+            context = check.opt_inst_param(
+                kwargs[context_param_name],
+                context_param_name,
+                UnboundInitLoggerContext,
+                default=UnboundInitLoggerContext(logger_config=None, pipeline_def=None),
+            )
+
+            return logger_invocation_result(self, context)
+
     @property
-    def logger_fn(self):
+    def logger_fn(self) -> "InitLoggerFunction":
         return self._logger_fn
 
     @property
-    def config_schema(self):
+    def config_schema(self) -> Any:
         return self._config_schema
 
     @property
-    def description(self):
+    def description(self) -> Optional[str]:
         return self._description
 
-    def copy_for_configured(self, description, config_schema, _):
+    def copy_for_configured(
+        self, description: Optional[str], config_schema: Any, _
+    ) -> "LoggerDefinition":
         return LoggerDefinition(
             config_schema=config_schema,
             description=description or self.description,
@@ -50,7 +102,9 @@ class LoggerDefinition(AnonymousConfigurableDefinition):
         )
 
 
-def logger(config_schema=None, description=None):
+def logger(
+    config_schema: Any = None, description: Optional[str] = None
+) -> Union["LoggerDefinition", Callable[["InitLoggerFunction"], "LoggerDefinition"]]:
     """Define a logger.
 
     The decorated function should accept an :py:class:`InitLoggerContext` and return an instance of
@@ -67,7 +121,7 @@ def logger(config_schema=None, description=None):
     if callable(config_schema) and not is_callable_valid_config_arg(config_schema):
         return LoggerDefinition(logger_fn=config_schema)
 
-    def _wrap(logger_fn):
+    def _wrap(logger_fn: "InitLoggerFunction") -> "LoggerDefinition":
         return LoggerDefinition(
             logger_fn=logger_fn,
             config_schema=config_schema,
@@ -75,3 +129,22 @@ def logger(config_schema=None, description=None):
         )
 
     return _wrap
+
+
+def build_init_logger_context(
+    logger_config: Any = None,
+    pipeline_def: Optional["PipelineDefinition"] = None,
+) -> "UnboundInitLoggerContext":
+    """Builds logger initialization context from provided parameters.
+
+    Args:
+        logger_config (Any): The config to provide during initialization of logger.
+        pipeline_def (Optional[PipelineDefinition]): The pipeline definition that the logger will be
+            used with.
+    """
+    from dagster.core.execution.context.logger import UnboundInitLoggerContext
+    from dagster.core.definitions import PipelineDefinition
+
+    check.opt_inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+
+    return UnboundInitLoggerContext(logger_config=logger_config, pipeline_def=pipeline_def)

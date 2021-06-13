@@ -16,7 +16,6 @@ from dagster.core.definitions import (
     ScheduleDefinition,
 )
 from dagster.core.definitions.partition import PartitionScheduleDefinition
-from dagster.core.definitions.run_request import RunRequest, SkipReason
 from dagster.core.snap import PipelineSnapshot
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
@@ -192,28 +191,6 @@ class ExternalScheduleData(
 
 
 @whitelist_for_serdes
-class ExternalScheduleExecutionData(
-    namedtuple("_ExternalScheduleExecutionData", "run_requests skip_message")
-):
-    def __new__(cls, run_requests=None, skip_message=None):
-        return super(ExternalScheduleExecutionData, cls).__new__(
-            cls,
-            run_requests=check.opt_list_param(run_requests, "run_requests", RunRequest),
-            skip_message=check.opt_str_param(skip_message, "skip_message"),
-        )
-
-    @staticmethod
-    def from_execution_data(execution_data):
-        check.opt_list_param(execution_data, "execution_data", (SkipReason, RunRequest))
-        return ExternalScheduleExecutionData(
-            run_requests=[datum for datum in execution_data if isinstance(datum, RunRequest)],
-            skip_message=execution_data[0].skip_message
-            if execution_data and isinstance(execution_data[0], SkipReason)
-            else None,
-        )
-
-
-@whitelist_for_serdes
 class ExternalScheduleExecutionErrorData(
     namedtuple("_ExternalScheduleExecutionErrorData", "error")
 ):
@@ -227,16 +204,23 @@ class ExternalScheduleExecutionErrorData(
 @whitelist_for_serdes
 class ExternalSensorData(
     namedtuple(
-        "_ExternalSensorData", "name pipeline_name solid_selection mode min_interval description"
+        "_ExternalSensorData",
+        "name pipeline_name solid_selection mode min_interval description",
     )
 ):
     def __new__(
-        cls, name, pipeline_name, solid_selection, mode, min_interval=None, description=None
+        cls,
+        name,
+        pipeline_name,
+        solid_selection,
+        mode,
+        min_interval=None,
+        description=None,
     ):
         return super(ExternalSensorData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
-            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
+            pipeline_name=check.opt_str_param(pipeline_name, "pipeline_name"),
             solid_selection=check.opt_nullable_list_param(solid_selection, "solid_selection", str),
             mode=check.opt_str_param(mode, "mode"),
             min_interval=check.opt_int_param(min_interval, "min_interval"),

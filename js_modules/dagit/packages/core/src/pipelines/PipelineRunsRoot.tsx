@@ -60,7 +60,7 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
       if (runs.pipelineRunsOrError.__typename !== 'PipelineRuns') {
         return undefined;
       }
-      return runs.pipelineRunsOrError.results[PAGE_SIZE]?.runId;
+      return runs.pipelineRunsOrError.results[PAGE_SIZE - 1]?.runId;
     },
     getResultArray: (data) => {
       if (!data || data.pipelineRunsOrError.__typename !== 'PipelineRuns') {

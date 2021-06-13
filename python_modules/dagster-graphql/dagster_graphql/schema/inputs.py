@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import graphene
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
 
@@ -27,6 +29,7 @@ class GraphenePipelineRunsFilter(graphene.InputObjectType):
     tags = graphene.List(graphene.NonNull(GrapheneExecutionTag))
     statuses = graphene.List(graphene.NonNull(GraphenePipelineRunStatus))
     snapshotId = graphene.Field(graphene.String)
+    updatedAfter = graphene.Field(graphene.String)
 
     class Meta:
         description = """This type represents a filter on pipeline runs.
@@ -48,12 +51,15 @@ class GraphenePipelineRunsFilter(graphene.InputObjectType):
         else:
             statuses = None
 
+        updated_after = datetime.fromisoformat(self.updatedAfter) if self.updatedAfter else None
+
         return PipelineRunsFilter(
             run_ids=self.runIds,
             pipeline_name=self.pipelineName,
             tags=tags,
             statuses=statuses,
             snapshot_id=self.snapshotId,
+            updated_after=updated_after,
         )
 
 

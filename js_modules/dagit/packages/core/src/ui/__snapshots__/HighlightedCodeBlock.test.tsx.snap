@@ -5,7 +5,10 @@ exports[`correctly renders keywords inside a comment 1`] = `
   style={
     Object {
       "backgroundColor": "transparent",
+      "fontSize": "0.9em",
+      "height": 510,
       "margin": 0,
+      "overflow": "scroll",
       "padding": 0,
     }
   }

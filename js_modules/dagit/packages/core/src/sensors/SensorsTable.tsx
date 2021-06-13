@@ -83,21 +83,23 @@ const SensorRow: React.FC<{
           <span style={{fontWeight: 500}}>
             <Link to={workspacePathFromAddress(repoAddress, `/sensors/${name}`)}>{name}</Link>
           </span>
-          <Group direction="row" spacing={4} alignItems="flex-start">
-            <Icon
-              icon="diagram-tree"
-              color={Colors.GRAY2}
-              iconSize={9}
-              style={{position: 'relative', top: '-3px'}}
-            />
-            <span style={{fontSize: '13px'}}>
-              <PipelineReference
-                pipelineName={pipelineName}
-                pipelineHrefContext={repoAddress}
-                mode={mode}
+          {pipelineName && mode !== null && (
+            <Group direction="row" spacing={4} alignItems="flex-start">
+              <Icon
+                icon="diagram-tree"
+                color={Colors.GRAY2}
+                iconSize={9}
+                style={{position: 'relative', top: '-3px'}}
               />
-            </span>
-          </Group>
+              <span style={{fontSize: '13px'}}>
+                <PipelineReference
+                  pipelineName={pipelineName}
+                  pipelineHrefContext={repoAddress}
+                  mode={mode}
+                />
+              </span>
+            </Group>
+          )}
         </Group>
       </td>
       <td>{humanizeSensorInterval(sensor.minIntervalSeconds)}</td>

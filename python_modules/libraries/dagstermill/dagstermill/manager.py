@@ -27,7 +27,7 @@ from dagster.core.execution.resources_init import (
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
-from dagster.core.system_config.objects import EnvironmentConfig
+from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.utils import make_new_run_id
 from dagster.loggers import colored_console_logger
 from dagster.serdes import unpack_value
@@ -149,13 +149,13 @@ class Manager:
         self.solid_def = solid_def
         self.pipeline = pipeline
 
-        environment_config = EnvironmentConfig.build(
+        resolved_run_config = ResolvedRunConfig.build(
             pipeline_def, run_config, mode=pipeline_run.mode
         )
 
         execution_plan = ExecutionPlan.build(
             self.pipeline,
-            environment_config,
+            resolved_run_config,
             step_keys_to_execute=pipeline_run.step_keys_to_execute,
         )
 
@@ -176,7 +176,7 @@ class Manager:
                 resource_keys_to_init=get_required_resource_keys_to_init(
                     execution_plan,
                     pipeline_def,
-                    environment_config,
+                    resolved_run_config,
                     pipeline_context.intermediate_storage_def,
                 ),
                 solid_name=solid.name,
@@ -246,10 +246,10 @@ class Manager:
         self.solid_def = solid_def
         self.pipeline = pipeline_def
 
-        environment_config = EnvironmentConfig.build(pipeline_def, run_config, mode=mode_def.name)
+        resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config, mode=mode_def.name)
 
         pipeline = InMemoryPipeline(pipeline_def)
-        execution_plan = ExecutionPlan.build(pipeline, environment_config)
+        execution_plan = ExecutionPlan.build(pipeline, resolved_run_config)
 
         with scoped_pipeline_context(
             execution_plan,
@@ -267,7 +267,7 @@ class Manager:
                 resource_keys_to_init=get_required_resource_keys_to_init(
                     execution_plan,
                     pipeline_def,
-                    environment_config,
+                    resolved_run_config,
                     pipeline_context.intermediate_storage_def,
                 ),
                 solid_name=solid_def.name,

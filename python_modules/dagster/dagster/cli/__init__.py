@@ -29,10 +29,13 @@ def create_dagster_cli():
         "new-project": new_project_cli,
     }
 
-    @click.group(commands=commands)
-    @click.version_option(version=__version__)
+    @click.group(
+        commands=commands,
+        context_settings={"max_content_width": 120, "help_option_names": ["-h", "--help"]},
+    )
+    @click.version_option(__version__, "--version", "-v")
     def group():
-        "CLI tools for working with dagster."
+        "CLI tools for working with Dagster."
 
     return group
 

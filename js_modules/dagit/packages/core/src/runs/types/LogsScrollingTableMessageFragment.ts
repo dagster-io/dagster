@@ -121,29 +121,6 @@ export interface LogsScrollingTableMessageFragment_StepMaterializationEvent {
   materialization: LogsScrollingTableMessageFragment_StepMaterializationEvent_materialization;
 }
 
-export interface LogsScrollingTableMessageFragment_PipelineInitFailureEvent_error_cause {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-}
-
-export interface LogsScrollingTableMessageFragment_PipelineInitFailureEvent_error {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-  cause: LogsScrollingTableMessageFragment_PipelineInitFailureEvent_error_cause | null;
-}
-
-export interface LogsScrollingTableMessageFragment_PipelineInitFailureEvent {
-  __typename: "PipelineInitFailureEvent";
-  message: string;
-  eventType: DagsterEventType | null;
-  timestamp: string;
-  level: LogLevel;
-  stepKey: string | null;
-  error: LogsScrollingTableMessageFragment_PipelineInitFailureEvent_error;
-}
-
 export interface LogsScrollingTableMessageFragment_PipelineFailureEvent_pipelineFailureError_cause {
   __typename: "PythonError";
   message: string;
@@ -974,4 +951,15 @@ export interface LogsScrollingTableMessageFragment_HookErroredEvent {
   error: LogsScrollingTableMessageFragment_HookErroredEvent_error;
 }
 
-export type LogsScrollingTableMessageFragment = LogsScrollingTableMessageFragment_ExecutionStepSkippedEvent | LogsScrollingTableMessageFragment_StepMaterializationEvent | LogsScrollingTableMessageFragment_PipelineInitFailureEvent | LogsScrollingTableMessageFragment_PipelineFailureEvent | LogsScrollingTableMessageFragment_ExecutionStepFailureEvent | LogsScrollingTableMessageFragment_ExecutionStepInputEvent | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent | LogsScrollingTableMessageFragment_StepExpectationResultEvent | LogsScrollingTableMessageFragment_ObjectStoreOperationEvent | LogsScrollingTableMessageFragment_HandledOutputEvent | LogsScrollingTableMessageFragment_LoadedInputEvent | LogsScrollingTableMessageFragment_EngineEvent | LogsScrollingTableMessageFragment_HookErroredEvent;
+export interface LogsScrollingTableMessageFragment_LogsCapturedEvent {
+  __typename: "LogsCapturedEvent";
+  message: string;
+  eventType: DagsterEventType | null;
+  timestamp: string;
+  level: LogLevel;
+  stepKey: string | null;
+  logKey: string;
+  stepKeys: string[] | null;
+}
+
+export type LogsScrollingTableMessageFragment = LogsScrollingTableMessageFragment_ExecutionStepSkippedEvent | LogsScrollingTableMessageFragment_StepMaterializationEvent | LogsScrollingTableMessageFragment_PipelineFailureEvent | LogsScrollingTableMessageFragment_ExecutionStepFailureEvent | LogsScrollingTableMessageFragment_ExecutionStepInputEvent | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent | LogsScrollingTableMessageFragment_StepExpectationResultEvent | LogsScrollingTableMessageFragment_ObjectStoreOperationEvent | LogsScrollingTableMessageFragment_HandledOutputEvent | LogsScrollingTableMessageFragment_LoadedInputEvent | LogsScrollingTableMessageFragment_EngineEvent | LogsScrollingTableMessageFragment_HookErroredEvent | LogsScrollingTableMessageFragment_LogsCapturedEvent;

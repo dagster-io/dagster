@@ -1,10 +1,8 @@
 import inspect
-from typing import TYPE_CHECKING, Any, Dict, Generator, Optional, cast
+from typing import TYPE_CHECKING, Any, Dict, Generator, Optional, Union
 
-from dagster import check
 from dagster.core.definitions.events import AssetMaterialization
 from dagster.core.errors import (
-    DagsterInvalidConfigError,
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
     DagsterTypeCheckDidNotPass,
@@ -12,14 +10,31 @@ from dagster.core.errors import (
 
 if TYPE_CHECKING:
     from dagster.core.definitions import SolidDefinition
-    from dagster.core.execution.context.invocation import DirectSolidExecutionContext
+    from dagster.core.definitions.composition import PendingNodeInvocation
+    from dagster.core.execution.context.invocation import (
+        BoundSolidExecutionContext,
+        DirectSolidExecutionContext,
+    )
 
 
 def solid_invocation_result(
-    solid_def: "SolidDefinition", context: Optional["DirectSolidExecutionContext"], *args, **kwargs
+    solid_def_or_invocation: Union["SolidDefinition", "PendingNodeInvocation"],
+    context: Optional["DirectSolidExecutionContext"],
+    *args,
+    **kwargs,
 ) -> Any:
+    from dagster.core.execution.context.invocation import build_solid_context
+    from dagster.core.definitions.composition import PendingNodeInvocation
 
-    context = _check_invocation_requirements(solid_def, context)
+    solid_def = (
+        solid_def_or_invocation.node_def
+        if isinstance(solid_def_or_invocation, PendingNodeInvocation)
+        else solid_def_or_invocation
+    )
+
+    _check_invocation_requirements(solid_def, context)
+
+    context = (context or build_solid_context()).bind(solid_def_or_invocation)
 
     input_dict = _resolve_inputs(solid_def, args, kwargs, context)
 
@@ -33,13 +48,11 @@ def solid_invocation_result(
 
 def _check_invocation_requirements(
     solid_def: "SolidDefinition", context: Optional["DirectSolidExecutionContext"]
-) -> "DirectSolidExecutionContext":
+) -> None:
     """Ensure that provided context fulfills requirements of solid definition.
 
     If no context was provided, then construct an enpty DirectSolidExecutionContext
     """
-    from dagster.core.execution.context.invocation import DirectSolidExecutionContext
-    from dagster.config.validate import validate_config
 
     # Check resource requirements
     if solid_def.required_resource_keys and context is None:
@@ -49,19 +62,6 @@ def _check_invocation_requirements(
             "resources."
         )
 
-    if context is not None and solid_def.required_resource_keys:
-        resources_dict = cast(  # type: ignore[attr-defined]
-            "DirectSolidExecutionContext",
-            context,
-        ).resources._asdict()
-
-        for resource_key in solid_def.required_resource_keys:
-            if resource_key not in resources_dict:
-                raise DagsterInvalidInvocationError(
-                    f'Solid "{solid_def.name}" requires resource "{resource_key}", but no resource '
-                    "with that key was found on the context."
-                )
-
     # Check config requirements
     if not context and solid_def.config_schema.as_field().is_required:
         raise DagsterInvalidInvocationError(
@@ -69,30 +69,10 @@ def _check_invocation_requirements(
             "Use the `build_solid_context` function to create a context with config."
         )
 
-    config = None
-    if solid_def.config_field:
-        solid_config = check.opt_dict_param(
-            context.solid_config if context else None, "solid_config"
-        )
-        config_evr = validate_config(solid_def.config_field.config_type, solid_config)
-        if not config_evr.success:
-            raise DagsterInvalidConfigError(
-                "Error in config for solid ", config_evr.errors, solid_config
-            )
-        mapped_config_evr = solid_def.apply_config_mapping({"config": solid_config})
-        if not mapped_config_evr.success:
-            raise DagsterInvalidConfigError(
-                "Error in config for solid ", mapped_config_evr.errors, solid_config
-            )
-        config = mapped_config_evr.value.get("config", {})
-    return (
-        context
-        if context
-        else DirectSolidExecutionContext(solid_config=config, resources_dict=None, instance=None)
-    )
 
-
-def _resolve_inputs(solid_def, args, kwargs, context):
+def _resolve_inputs(
+    solid_def: "SolidDefinition", args, kwargs, context: "BoundSolidExecutionContext"
+):
     from dagster.core.execution.plan.execute_step import do_type_check
 
     input_defs = solid_def.input_defs
@@ -100,7 +80,7 @@ def _resolve_inputs(solid_def, args, kwargs, context):
     # Fail early if too many inputs were provided.
     if len(input_defs) < len(args) + len(kwargs):
         raise DagsterInvalidInvocationError(
-            f"Too many input arguments were provided for solid '{solid_def.name}'. This may be because "
+            f"Too many input arguments were provided for solid '{context.alias}'. This may be because "
             "an argument was provided for the context parameter, but no context parameter was defined "
             "for the solid."
         )
@@ -141,7 +121,7 @@ def _resolve_inputs(solid_def, args, kwargs, context):
 
 
 def _execute_and_retrieve_outputs(
-    solid_def: "SolidDefinition", context: "DirectSolidExecutionContext", input_dict: Dict[str, Any]
+    solid_def: "SolidDefinition", context: "BoundSolidExecutionContext", input_dict: Dict[str, Any]
 ) -> tuple:
     from dagster.core.execution.plan.execute_step import do_type_check
 
@@ -152,12 +132,12 @@ def _execute_and_retrieve_outputs(
         if not isinstance(output, AssetMaterialization):
             if output.output_name in output_values:
                 raise DagsterInvariantViolationError(
-                    f'Solid "{solid_def.name}" returned an output "{output.output_name}" multiple '
-                    "times"
+                    f"Solid '{context.alias}' returned an output '{output.output_name}' multiple "
+                    "times."
                 )
             elif output.output_name not in output_defs:
                 raise DagsterInvariantViolationError(
-                    f'Solid "{solid_def.name}" returned an output "{output.output_name}" that does '
+                    f'Solid "{context.alias}" returned an output "{output.output_name}" that does '
                     f"not exist. The available outputs are {list(output_defs)}"
                 )
             else:
@@ -183,7 +163,7 @@ def _execute_and_retrieve_outputs(
     for output_def in solid_def.output_defs:
         if output_def.name not in output_values and output_def.is_required:
             raise DagsterInvariantViolationError(
-                f'Solid "{solid_def.name}" did not return an output for non-optional '
+                f'Solid "{context.alias}" did not return an output for non-optional '
                 f'output "{output_def.name}"'
             )
 
@@ -192,7 +172,7 @@ def _execute_and_retrieve_outputs(
 
 
 def _core_generator(
-    solid_def: "SolidDefinition", context: "DirectSolidExecutionContext", input_dict: Dict[str, Any]
+    solid_def: "SolidDefinition", context: "BoundSolidExecutionContext", input_dict: Dict[str, Any]
 ) -> Generator[Any, None, None]:
     from dagster.core.execution.plan.compute import gen_from_async_gen
 

@@ -1,7 +1,7 @@
 import logging
 import time
 
-from dagster import DagsterEvent, DagsterEventType, String, check
+from dagster import DagsterEvent, DagsterEventType, IntSource, String, check
 from dagster.config import Field
 from dagster.config.config_type import Array, Noneable
 from dagster.config.field_utils import Shape
@@ -47,7 +47,7 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
     @classmethod
     def config_type(cls):
         return {
-            "max_concurrent_runs": Field(config=int, is_required=False),
+            "max_concurrent_runs": Field(config=IntSource, is_required=False),
             "tag_concurrency_limits": Field(
                 config=Noneable(
                     Array(
@@ -62,7 +62,7 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
                 ),
                 is_required=False,
             ),
-            "dequeue_interval_seconds": Field(config=int, is_required=False),
+            "dequeue_interval_seconds": Field(config=IntSource, is_required=False),
         }
 
     @classmethod

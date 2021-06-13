@@ -58,6 +58,29 @@ def my_dbt_pipeline():
 
 In the code snippet above, the config `"models"` takes a list of strings. The string `"tag:staging"` uses [dbt's node selection syntax](https://docs.getdbt.com/reference/node-selection/syntax) to filter models with the tag `"staging"`. For more details, [visit the official dbt documentation on the node selection syntax](https://docs.getdbt.com/reference/node-selection/syntax).
 
+**Example:** Similar to the above example, the solid dbt_cli_run is specified to run after another solid has executed. In your pipeline definition, you can assign the output from an upstream solid to the `start_after` argument of your dbt solid, which will model that dependency relationship for you. See the documentation for [Order Based Dependencies](/concepts/solids-pipelines/pipelines#order-based-dependencies-nothing-dependencies) for more info.
+
+```python file=/integrations/dbt.py startafter=start_marker_dbt_cli_run_after_another_solid endbefore=end_marker_dbt_cli_run_after_another_solid dedent=4
+from dagster import pipeline, solid
+from dagster_dbt import dbt_cli_run
+
+config = {"project-dir": "path/to/dbt/project", "models": ["tag:staging"]}
+run_staging_models = dbt_cli_run.configured(config, name="run_staging_models")
+
+@solid
+def do_something(context):
+    # solid logic here
+    context.log.info("Executing necessary logic before dbt run")
+
+@pipeline
+def my_dbt_pipeline():
+    run_staging_models(start_after=do_something())
+```
+
+### Example pipeline project with dbt CLI solids
+
+You can find more examples under the [dbt_examples directory](https://github.com/dagster-io/dagster/tree/master/examples/dbt_example) in the dagster repo on GitHub.
+
 ## Use the dbt RPC Server in a Dagster pipeline
 
 `dagster-dbt` provides solids for running commands through the [dbt RPC server](https://docs.getdbt.com/reference/commands/rpc). By convention, these solids are named `dagster_dbt.dbt_rpc_*`.

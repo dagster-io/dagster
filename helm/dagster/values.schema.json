@@ -100,7 +100,14 @@
                 },
                 "tag": {
                     "title": "Tag",
-                    "type": "string"
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 },
                 "pullPolicy": {
                     "$ref": "#/definitions/PullPolicy"
@@ -108,7 +115,6 @@
             },
             "required": [
                 "repository",
-                "tag",
                 "pullPolicy"
             ]
         },
@@ -311,6 +317,10 @@
                 },
                 "annotations": {
                     "$ref": "#/definitions/Annotations"
+                },
+                "enableReadOnly": {
+                    "title": "Enablereadonly",
+                    "type": "boolean"
                 }
             },
             "required": [
@@ -329,7 +339,8 @@
                 "resources",
                 "livenessProbe",
                 "startupProbe",
-                "annotations"
+                "annotations",
+                "enableReadOnly"
             ]
         },
         "UserDeployment": {
@@ -441,14 +452,10 @@
                 "deployments"
             ]
         },
-        "ImageWithRegistry": {
-            "title": "ImageWithRegistry",
+        "ExternalImage": {
+            "title": "ExternalImage",
             "type": "object",
             "properties": {
-                "registry": {
-                    "title": "Registry",
-                    "type": "string"
-                },
                 "repository": {
                     "title": "Repository",
                     "type": "string"
@@ -462,7 +469,6 @@
                 }
             },
             "required": [
-                "registry",
                 "repository",
                 "tag",
                 "pullPolicy"
@@ -486,7 +492,7 @@
             "type": "object",
             "properties": {
                 "image": {
-                    "$ref": "#/definitions/ImageWithRegistry"
+                    "$ref": "#/definitions/ExternalImage"
                 },
                 "enabled": {
                     "title": "Enabled",
@@ -568,7 +574,7 @@
                     "type": "boolean"
                 },
                 "image": {
-                    "$ref": "#/definitions/ImageWithRegistry"
+                    "$ref": "#/definitions/ExternalImage"
                 }
             },
             "required": [
@@ -584,7 +590,7 @@
                     "type": "boolean"
                 },
                 "image": {
-                    "$ref": "#/definitions/ImageWithRegistry"
+                    "$ref": "#/definitions/ExternalImage"
                 },
                 "rabbitmq": {
                     "$ref": "#/definitions/RabbitMQConfiguration"
@@ -796,6 +802,9 @@
                 "dagit": {
                     "$ref": "#/definitions/DagitIngressConfiguration"
                 },
+                "readOnlyDagit": {
+                    "$ref": "#/definitions/DagitIngressConfiguration"
+                },
                 "flower": {
                     "$ref": "#/definitions/FlowerIngressConfiguration"
                 }
@@ -804,6 +813,7 @@
                 "enabled",
                 "annotations",
                 "dagit",
+                "readOnlyDagit",
                 "flower"
             ]
         },
@@ -1697,6 +1707,14 @@
                     "title": "Enabled",
                     "type": "boolean"
                 },
+                "module": {
+                    "title": "Module",
+                    "type": "string"
+                },
+                "class": {
+                    "title": "Class",
+                    "type": "string"
+                },
                 "config": {
                     "title": "Config",
                     "type": "object"
@@ -1704,6 +1722,8 @@
             },
             "required": [
                 "enabled",
+                "module",
+                "class",
                 "config"
             ]
         },
@@ -1798,7 +1818,7 @@
             "type": "object",
             "properties": {
                 "image": {
-                    "$ref": "#/definitions/Image"
+                    "$ref": "#/definitions/ExternalImage"
                 }
             },
             "required": [

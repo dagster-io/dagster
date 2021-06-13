@@ -90,7 +90,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
 
     @property
     def solid_config(self) -> Any:
-        solid_config = self._step_execution_context.environment_config.solids.get(
+        solid_config = self._step_execution_context.resolved_run_config.solids.get(
             str(self.solid_handle)
         )
         return solid_config.config if solid_config else None
@@ -228,3 +228,11 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
             StepExecutionContext: The underlying system context.
         """
         return self._step_execution_context
+
+    @property
+    def retry_number(self) -> int:
+        """
+        Which retry attempt is currently executing i.e. 0 for initial attempt, 1 for first retry, etc.
+        """
+
+        return self._step_execution_context.previous_attempt_count

@@ -21,7 +21,7 @@ from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.intermediate_storage import build_fs_intermediate_storage
-from dagster.core.system_config.objects import EnvironmentConfig
+from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.utils import merge_dicts
 
 
@@ -73,13 +73,13 @@ def test_execution_plan_reexecution():
 
     ## re-execute add_two
 
-    environment_config = EnvironmentConfig.build(
+    resolved_run_config = ResolvedRunConfig.build(
         pipeline_def,
         run_config=run_config,
     )
     execution_plan = ExecutionPlan.build(
         InMemoryPipeline(pipeline_def),
-        environment_config,
+        resolved_run_config,
     )
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline_def,
@@ -91,7 +91,7 @@ def test_execution_plan_reexecution():
     )
 
     step_events = execute_plan(
-        execution_plan.build_subset_plan(["add_two"], pipeline_def, environment_config),
+        execution_plan.build_subset_plan(["add_two"], pipeline_def, resolved_run_config),
         InMemoryPipeline(pipeline_def),
         run_config=run_config,
         pipeline_run=pipeline_run,
@@ -152,8 +152,8 @@ def test_execution_plan_reexecution_with_in_memory():
 
     ## re-execute add_two
 
-    environment_config = EnvironmentConfig.build(pipeline_def, run_config=run_config)
-    execution_plan = ExecutionPlan.build(InMemoryPipeline(pipeline_def), environment_config)
+    resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config=run_config)
+    execution_plan = ExecutionPlan.build(InMemoryPipeline(pipeline_def), resolved_run_config)
 
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline_def,
@@ -165,7 +165,7 @@ def test_execution_plan_reexecution_with_in_memory():
 
     with pytest.raises(DagsterInvariantViolationError):
         execute_plan(
-            execution_plan.build_subset_plan(["add_two"], pipeline_def, environment_config),
+            execution_plan.build_subset_plan(["add_two"], pipeline_def, resolved_run_config),
             InMemoryPipeline(pipeline_def),
             run_config=run_config,
             pipeline_run=pipeline_run,

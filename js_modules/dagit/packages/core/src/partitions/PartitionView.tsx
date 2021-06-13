@@ -4,7 +4,9 @@ import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {showCustomAlert} from '../app/CustomAlertProvider';
 import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useQueryPersistedRunFilters} from '../runs/RunsFilter';
 import {Box} from '../ui/Box';
@@ -44,6 +46,7 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
   const [blockDialog, setBlockDialog] = React.useState(false);
   const {
     loading,
+    error,
     loadingPercent,
     partitions,
     paginationProps,
@@ -51,8 +54,14 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
     setPageSize,
   } = useChunkedPartitionsQuery(partitionSet.name, runTags, repoAddress);
   const {canLaunchPartitionBackfill} = usePermissions();
-
   const onSubmit = React.useCallback(() => setBlockDialog(true), []);
+  React.useEffect(() => {
+    if (error) {
+      showCustomAlert({
+        body: <PythonErrorInfo error={error} />,
+      });
+    }
+  }, [error]);
 
   const allStepKeys = new Set<string>();
   partitions.forEach((partition) => {

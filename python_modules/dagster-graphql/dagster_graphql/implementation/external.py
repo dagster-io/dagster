@@ -1,7 +1,7 @@
 import sys
 
 from dagster import check
-from dagster.cli.workspace.context import WorkspaceLocationLoadStatus, WorkspaceRequestContext
+from dagster.cli.workspace.context import WorkspaceRequestContext
 from dagster.config.validate import validate_config_from_snap
 from dagster.core.host_representation import (
     ExternalExecutionPlan,
@@ -189,44 +189,17 @@ def fetch_repository(graphene_info, repository_selector):
     )
 
 
-def fetch_repository_location(workspace_request_context, location_name):
-    from ..schema.external import (
-        GrapheneRepositoryLocation,
-        GrapheneRepositoryLocationLoadFailure,
-        GrapheneRepositoryLocationLoading,
-    )
-
-    load_status = workspace_request_context.get_load_status(location_name)
-    if workspace_request_context.has_repository_location(location_name):
-        return GrapheneRepositoryLocation(
-            workspace_request_context.get_repository_location(location_name),
-            load_status,
-        )
-    elif workspace_request_context.has_repository_location_error(location_name):
-        return GrapheneRepositoryLocationLoadFailure(
-            location_name,
-            workspace_request_context.get_repository_location_error(location_name),
-            load_status,
-        )
-    else:
-        check.invariant(
-            load_status == WorkspaceLocationLoadStatus.LOADING,
-            f"Location {location_name} was not in a loaded, error, or loading state",
-        )
-        return GrapheneRepositoryLocationLoading(location_name)
-
-
 @capture_error
-def fetch_repository_locations(workspace_request_context):
-    from ..schema.external import GrapheneRepositoryLocationConnection
+def fetch_workspace(workspace_request_context):
+    from ..schema.external import GrapheneWorkspace, GrapheneWorkspaceLocationEntry
 
     check.inst_param(
         workspace_request_context, "workspace_request_context", WorkspaceRequestContext
     )
 
     nodes = [
-        fetch_repository_location(workspace_request_context, location_name)
-        for location_name in workspace_request_context.repository_location_names
+        GrapheneWorkspaceLocationEntry(entry)
+        for entry in workspace_request_context.workspace_snapshot.values()
     ]
 
-    return GrapheneRepositoryLocationConnection(nodes=nodes)
+    return GrapheneWorkspace(locationEntries=nodes)

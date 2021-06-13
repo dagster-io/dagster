@@ -1,6 +1,6 @@
 from dagster import SolidDefinition
 from dagster.core.definitions.dependency import Solid
-from dagster.core.system_config.objects import EnvironmentConfig
+from dagster.core.system_config.objects import ResolvedRunConfig
 from dagstermill.manager import MANAGER_FOR_NOTEBOOK_INSTANCE
 
 BARE_OUT_OF_PIPELINE_CONTEXT = MANAGER_FOR_NOTEBOOK_INSTANCE.get_context()
@@ -27,7 +27,7 @@ def test_logging_tags():
 
 
 def test_environment_config():
-    assert isinstance(BARE_OUT_OF_PIPELINE_CONTEXT.environment_config, EnvironmentConfig)
+    assert isinstance(BARE_OUT_OF_PIPELINE_CONTEXT.resolved_run_config, ResolvedRunConfig)
 
 
 def test_pipeline_def():

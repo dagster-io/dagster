@@ -27,7 +27,7 @@ Dagster models data dependencies between steps in your orchestration graph and h
 
 ### Link data to computations
 
-Dagster’s Asset Manager tracks the data sets and ML models produced by your pipelines, so you can understand how your they were generated and trace issues when they don’t look how you expect.
+Dagster’s Asset Manager tracks the data sets and ML models produced by your pipelines, so you can understand how they were generated and trace issues when they don’t look how you expect.
 
 
 ### Build a self-service data platform
@@ -37,7 +37,7 @@ Dagster helps platform teams build systems for data practitioners. Pipelines are
 
 ### Avoid dependency nightmares
 
-Dagster’s repository model lets you isolate codebases, so that problems in one pipeline don’t bring down the rest. Each pipeline can have its own package dependencies and Python version. Pipelines run in isolated processes so user code issues can't bring the system down.
+Dagster’s repository model lets you isolate codebases so that problems in one pipeline don’t bring down the rest. Each pipeline can have its own package dependencies and Python version. Pipelines run in isolated processes so user code issues can't bring the system down.
 
 
 ### Debug pipelines from a rich UI
@@ -68,17 +68,17 @@ This installs two modules:
 **`hello_dagster.py`**
 
 ```python
-from dagster import execute_pipeline, pipeline, solid
+from dagster import pipeline, solid
 
 
 @solid
-def get_name(_):
-    return 'dagster'
+def get_name():
+    return "dagster"
 
 
 @solid
-def hello(context, name: str):
-    context.log.info('Hello, {name}!'.format(name=name))
+def hello(context, name):
+    context.log.info(f"Hello, {name}!")
 
 
 @pipeline
@@ -92,6 +92,8 @@ of the following methods:
 **(1) Dagster Python API**
 
 ```python
+from dagster import execute_pipeline
+
 if __name__ == "__main__":
     execute_pipeline(hello_pipeline)   # Hello, dagster!
 ```
@@ -139,26 +141,26 @@ Dagster works with the tools and systems that you're already using with your dat
 		<tr>
 			<td align="center" style="border-right: 0px"><img style="vertical-align:middle"  src="https://user-images.githubusercontent.com/609349/57987547-a7e36b80-7a37-11e9-95ae-4c4de2618e87.png"></td>
 			<td style="border-left: 0px"> <b>Apache Airflow</b></td>
-			<td><a href="https://docs.dagster.io/_apidocs/libraries/dagster_airflow" />dagster-airflow</a><br />Allows Dagster pipelines to be scheduled and executed, either containerized or uncontainerized, as <a href="https://github.com/apache/airflow">Apache Airflow DAGs</a>.</td>
+			<td><a href="https://docs.dagster.io/_apidocs/libraries/dagster-airflow" />dagster-airflow</a><br />Allows Dagster pipelines to be scheduled and executed, either containerized or uncontainerized, as <a href="https://github.com/apache/airflow">Apache Airflow DAGs</a>.</td>
 		</tr>
 		<tr>
 			<td align="center" style="border-right: 0px"><img style="vertical-align:middle"  src="https://user-images.githubusercontent.com/609349/57987976-5ccc5700-7a3d-11e9-9fa5-1a51299b1ccb.png"></td>
 			<td style="border-left: 0px"> <b>Apache Spark</b></td>
-			<td><a href="https://docs.dagster.io/_apidocs/libraries/dagster_spark" />dagster-spark</a> &middot; <a href="https://docs.dagster.io/_apidocs/libraries/dagster_pyspark" />dagster-pyspark</a>
+			<td><a href="https://docs.dagster.io/_apidocs/libraries/dagster-spark" />dagster-spark</a> &middot; <a href="https://docs.dagster.io/_apidocs/libraries/dagster-pyspark" />dagster-pyspark</a>
 			<br />Libraries for interacting with Apache Spark and PySpark.
 			</td>
 		</tr>
 		<tr>
 			<td align="center" style="border-right: 0px"><img style="vertical-align:middle"  src="https://user-images.githubusercontent.com/609349/58348728-48f66b80-7e16-11e9-9e9f-1a0fea9a49b4.png"></td>
 			<td style="border-left: 0px"> <b>Dask</b></td>
-			<td><a href="https://docs.dagster.io/_apidocs/libraries/dagster_dask" />dagster-dask</a>
+			<td><a href="https://docs.dagster.io/_apidocs/libraries/dagster-dask" />dagster-dask</a>
 			<br />Provides a Dagster integration with Dask / Dask.Distributed.
 			</td>
 		</tr>
 		<tr>
 			<td align="center" style="border-right: 0px"><img style="vertical-align:middle" src="https://user-images.githubusercontent.com/609349/58349731-f36f8e00-7e18-11e9-8a2e-86e086caab66.png"></td>
 			<td style="border-left: 0px"> <b>Datadog</b></td>
-			<td><a href="https://docs.dagster.io/_apidocs/libraries/dagster_datadog" />dagster-datadog</a>
+			<td><a href="https://docs.dagster.io/_apidocs/libraries/dagster-datadog" />dagster-datadog</a>
 			<br />Provides a Dagster resource for publishing metrics to Datadog.
 			</td>
 		</tr>
@@ -172,14 +174,14 @@ Dagster works with the tools and systems that you're already using with your dat
 		<tr>
 			<td align="center" style="border-right: 0px"><img style="vertical-align:middle"  src="https://user-images.githubusercontent.com/609349/57988016-f431aa00-7a3d-11e9-8cb6-1309d4246b27.png"></td>
 			<td style="border-left: 0px"> <b>PagerDuty</b></td>
-			<td><a href="https://docs.dagster.io/_apidocs/libraries/dagster_pagerduty" />dagster-pagerduty</a>
+			<td><a href="https://docs.dagster.io/_apidocs/libraries/dagster-pagerduty" />dagster-pagerduty</a>
 			<br />A library for creating PagerDuty alerts from Dagster workflows.
 			</td>
 		</tr>
 		<tr>
 			<td align="center" style="border-right: 0px"><img style="vertical-align:middle" src="https://user-images.githubusercontent.com/609349/58349397-fcac2b00-7e17-11e9-900c-9ab8cf7cb64a.png"></td>
 			<td style="border-left: 0px"> <b>Snowflake</b></td>
-			<td><a href="https://docs.dagster.io/_apidocs/libraries/dagster_snowflake" />dagster-snowflake</a>
+			<td><a href="https://docs.dagster.io/_apidocs/libraries/dagster-snowflake" />dagster-snowflake</a>
 			<br />A library for interacting with the Snowflake Data Warehouse.
 			</td>
 		</tr>
@@ -190,21 +192,21 @@ Dagster works with the tools and systems that you're already using with your dat
 		<tr>
 			<td align="center" style="border-right: 0px"><img style="vertical-align:middle" src="https://user-images.githubusercontent.com/609349/57987557-c2b5e000-7a37-11e9-9310-c274481a4682.png"> </td>
 			<td style="border-left: 0px"><b>AWS</b></td>
-			<td><a href="https://docs.dagster.io/_apidocs/libraries/dagster_aws" />dagster-aws</a>
+			<td><a href="https://docs.dagster.io/_apidocs/libraries/dagster-aws" />dagster-aws</a>
 			<br />A library for interacting with Amazon Web Services. Provides integrations with Cloudwatch, S3, EMR, and Redshift.
 			</td>
 		</tr>
 		<tr>
 			<td align="center" style="border-right: 0px"><img style="vertical-align:middle" src="https://user-images.githubusercontent.com/609349/84176312-0bbb4680-aa36-11ea-9580-a70758b12161.png"> </td>
 			<td style="border-left: 0px"><b>Azure</b></td>
-			<td><a href="https://docs.dagster.io/_apidocs/libraries/dagster_azure" />dagster-azure</a>
+			<td><a href="https://docs.dagster.io/_apidocs/libraries/dagster-azure" />dagster-azure</a>
 			<br />A library for interacting with Microsoft Azure.
 			</td>
 		</tr>
 		<tr>
 			<td align="center" style="border-right: 0px"><img style="vertical-align:middle" src="https://user-images.githubusercontent.com/609349/57987566-f98bf600-7a37-11e9-81fa-b8ca1ea6cc1e.png"> </td>
 			<td style="border-left: 0px"><b>GCP</b></td>
-			<td><a href="https://docs.dagster.io/_apidocs/libraries/dagster_gcp" />dagster-gcp</a>
+			<td><a href="https://docs.dagster.io/_apidocs/libraries/dagster-gcp" />dagster-gcp</a>
 			<br />A library for interacting with Google Cloud Platform. Provides integrations with GCS, BigQuery, and Cloud Dataproc.
 			</td>
 		</tr>

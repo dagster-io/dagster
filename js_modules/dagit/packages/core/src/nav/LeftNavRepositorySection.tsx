@@ -107,6 +107,7 @@ const LoadedRepositorySection: React.FC<{allRepos: DagsterRepoOption[]}> = ({all
     | {selector: undefined; tab: undefined; rootTab: string}
   >([
     '/workspace/:repoPath/pipelines/:selector/:tab?',
+    '/workspace/:repoPath/jobs/:selector/:tab?',
     '/workspace/:repoPath/solids/:selector',
     '/workspace/:repoPath/schedules/:selector',
     '/workspace/:repoPath/sensors/:selector',

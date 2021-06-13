@@ -1,7 +1,8 @@
 import {NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
-import {Route, RouteComponentProps, Switch} from 'react-router-dom';
+import {Redirect, Route, RouteComponentProps, Switch} from 'react-router-dom';
 
+import {featureEnabled, FeatureFlag} from '../app/Util';
 import {PipelineRoot} from '../pipelines/PipelineRoot';
 import {ScheduleRoot} from '../schedules/ScheduleRoot';
 import {SensorRoot} from '../sensors/SensorRoot';
@@ -70,8 +71,17 @@ const RepoRouteContainer: React.FC<{repoPath: string}> = (props) => {
   return (
     <Switch>
       <Route
-        path="/workspace/:repoPath/pipelines/(/?.*)"
+        path="/workspace/:repoPath/jobs/(/?.*)"
         render={() => <PipelineRoot repoAddress={addressForPath} />}
+      />
+      <Route
+        path="/workspace/:repoPath/pipelines/(/?.*)"
+        render={(props: RouteComponentProps) => {
+          if (featureEnabled(FeatureFlag.PipelineModeTuples)) {
+            return <Redirect to={props.match.url.replace('/pipelines/', '/jobs/')} />;
+          }
+          return <PipelineRoot repoAddress={addressForPath} />;
+        }}
       />
       <Route
         path="/workspace/:repoPath/schedules/:scheduleName/:runTab?"
@@ -104,7 +114,7 @@ export const WorkspaceRoot = () => (
     <Switch>
       <Route path="/workspace" exact component={WorkspaceOverviewRoot} />
       <Route
-        path="/workspace/pipelines/:pipelinePath"
+        path={['/workspace/pipelines/:pipelinePath', '/workspace/jobs/:pipelinePath']}
         render={(props: RouteComponentProps<{pipelinePath: string}>) => (
           <WorkspacePipelineRoot pipelinePath={props.match.params.pipelinePath} />
         )}

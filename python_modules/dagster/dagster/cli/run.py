@@ -2,15 +2,14 @@ import click
 from dagster.core.instance import DagsterInstance
 
 
-def create_run_cli_group():
-    group = click.Group(name="run")
-    group.add_command(run_list_command)
-    group.add_command(run_delete_command)
-    group.add_command(run_wipe_command)
-    return group
+@click.group(name="run")
+def run_cli():
+    """
+    Commands for working with Dagster pipeline runs.
+    """
 
 
-@click.command(name="list", help="List the runs in this dagster installation.")
+@run_cli.command(name="list", help="List the runs in the current Dagster instance.")
 @click.option("--limit", help="Only list a specified number of runs", default=None, type=int)
 def run_list_command(limit):
     with DagsterInstance.get() as instance:
@@ -19,39 +18,54 @@ def run_list_command(limit):
             click.echo("     Pipeline: {}".format(run.pipeline_name))
 
 
-@click.command(
+@run_cli.command(
     name="delete",
     help="Delete a run by id and its associated event logs. Warning: Cannot be undone",
 )
+@click.option("--force", "-f", is_flag=True, default=False, help="Skip prompt to delete run.")
 @click.argument("run_id")
-def run_delete_command(run_id):
+def run_delete_command(run_id, force):
     with DagsterInstance.get() as instance:
         if not instance.has_run(run_id):
-            click.echo(f"No run found with id {run_id}.")
+            raise click.ClickException(f"No run found with id {run_id}.")
 
-        confirmation = click.prompt(
-            f"Are you sure you want to delete run {run_id} and its event logs? Type DELETE"
-        )
-        if confirmation == "DELETE":
+        if force:
+            should_delete_run = True
+        else:
+            confirmation = click.prompt(
+                f"Are you sure you want to delete run {run_id} and its event logs? Type DELETE."
+            )
+            should_delete_run = confirmation == "DELETE"
+
+        if should_delete_run:
             instance.delete_run(run_id)
             click.echo(f"Deleted run {run_id} and its event log entries.")
         else:
-            click.echo("Exiting without deleting run.")
+            raise click.ClickException("Exiting without deleting run.")
 
 
-@click.command(
-    name="wipe", help="Eliminate all run history and event logs. Warning: Cannot be undone"
+@run_cli.command(
+    name="wipe", help="Eliminate all run history and event logs. Warning: Cannot be undone."
 )
-def run_wipe_command():
-    confirmation = click.prompt(
-        "Are you sure you want to delete all run history and event logs? Type DELETE"
-    )
-    if confirmation == "DELETE":
+@click.option(
+    "--force",
+    "-f",
+    is_flag=True,
+    default=False,
+    help="Skip prompt to delete run history and event logs.",
+)
+def run_wipe_command(force):
+    if force:
+        should_delete_run = True
+    else:
+        confirmation = click.prompt(
+            "Are you sure you want to delete all run history and event logs? Type DELETE."
+        )
+        should_delete_run = confirmation == "DELETE"
+
+    if should_delete_run:
         with DagsterInstance.get() as instance:
             instance.wipe()
-        click.echo("Deleted all run history and event logs")
+        click.echo("Deleted all run history and event logs.")
     else:
-        click.echo("Exiting without deleting all run history and event logs")
-
-
-run_cli = create_run_cli_group()
+        raise click.ClickException("Exiting without deleting all run history and event logs.")

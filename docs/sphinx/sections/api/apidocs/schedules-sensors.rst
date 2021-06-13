@@ -15,6 +15,8 @@ Schedules
 .. autodecorator:: daily_schedule
 
 .. autoclass:: ScheduleDefinition
+     :members: evaluate_tick
+
 .. autoclass:: ScheduleExecutionContext
 .. autoclass:: PartitionScheduleDefinition
 
@@ -32,6 +34,7 @@ Sensors
 .. autodecorator:: sensor
 
 .. autoclass:: SensorDefinition
+
 .. autoclass:: SensorExecutionContext
 
 .. autofunction:: build_sensor_context

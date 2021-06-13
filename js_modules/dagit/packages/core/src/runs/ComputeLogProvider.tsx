@@ -29,8 +29,8 @@ export class ComputeLogsProvider extends React.Component<
   IComputeLogsProviderProps,
   IComputeLogsProviderState
 > {
-  _stdout: DirectGraphQLSubscription<ComputeLogsSubscription>;
-  _stderr: DirectGraphQLSubscription<ComputeLogsSubscription>;
+  _stdout: DirectGraphQLSubscription<ComputeLogsSubscription> | null = null;
+  _stderr: DirectGraphQLSubscription<ComputeLogsSubscription> | null = null;
   state: IComputeLogsProviderState = {
     stdout: null,
     stderr: null,

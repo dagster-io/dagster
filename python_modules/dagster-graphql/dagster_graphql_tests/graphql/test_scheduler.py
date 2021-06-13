@@ -8,7 +8,7 @@ from dagster.core.host_representation import (
     InProcessRepositoryLocationOrigin,
 )
 from dagster.core.scheduler.job import JobState, JobStatus, JobType, ScheduleJobData
-from dagster.seven import create_pendulum_time
+from dagster.seven.compat.pendulum import create_pendulum_time
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
     infer_repository_selector,

@@ -17,8 +17,9 @@ postgresqlSecretName: "dagster-postgresql-secret"
 deployments:
   - name: "k8s-example-user-code-1"
     image:
-      repository: "dagster/user-code-example"
-      tag: latest
+      # When a tag is not supplied, it will default as the Helm chart version.
+      repository: "docker.io/dagster/user-code-example"
+      tag: ~
       # Change with caution! If you're using a fixed tag for pipeline run images, changing the
       # image pull policy to anything other than "Always" will use a cached/stale image, which is
       # almost certainly not what you want.

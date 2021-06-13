@@ -69,7 +69,7 @@ class SnowflakeConnection:
             }
 
         self.autocommit = self.conn_args.get("autocommit", False)
-        self.log = context.log_manager
+        self.log = context.log
 
     @contextmanager
     def get_connection(self, raw_conn=True):

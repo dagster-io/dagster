@@ -9,11 +9,7 @@ from dagster.core.host_representation import (
 )
 from dagster.core.scheduler.job import JobType
 
-from ...implementation.external import (
-    fetch_repositories,
-    fetch_repository,
-    fetch_repository_locations,
-)
+from ...implementation.external import fetch_repositories, fetch_repository, fetch_workspace
 from ...implementation.fetch_assets import get_asset, get_assets
 from ...implementation.fetch_backfills import get_backfill, get_backfills
 from ...implementation.fetch_jobs import get_job_state_or_error, get_unloadable_job_states_or_error
@@ -42,8 +38,8 @@ from ...implementation.utils import pipeline_selector_from_graphql
 from ..backfill import GraphenePartitionBackfillOrError, GraphenePartitionBackfillsOrError
 from ..external import (
     GrapheneRepositoriesOrError,
-    GrapheneRepositoryLocationsOrError,
     GrapheneRepositoryOrError,
+    GrapheneWorkspaceOrError,
 )
 from ..inputs import (
     GrapheneAssetKeyInput,
@@ -86,7 +82,7 @@ class GrapheneQuery(graphene.ObjectType):
         repositorySelector=graphene.NonNull(GrapheneRepositorySelector),
     )
 
-    repositoryLocationsOrError = graphene.NonNull(GrapheneRepositoryLocationsOrError)
+    workspaceOrError = graphene.NonNull(GrapheneWorkspaceOrError)
 
     pipelineOrError = graphene.Field(
         graphene.NonNull(GraphenePipelineOrError), params=graphene.NonNull(GraphenePipelineSelector)
@@ -223,8 +219,8 @@ class GrapheneQuery(graphene.ObjectType):
             RepositorySelector.from_graphql_input(kwargs.get("repositorySelector")),
         )
 
-    def resolve_repositoryLocationsOrError(self, graphene_info):
-        return fetch_repository_locations(graphene_info.context)
+    def resolve_workspaceOrError(self, graphene_info):
+        return fetch_workspace(graphene_info.context)
 
     def resolve_pipelineSnapshotOrError(self, graphene_info, **kwargs):
         snapshot_id_arg = kwargs.get("snapshotId")

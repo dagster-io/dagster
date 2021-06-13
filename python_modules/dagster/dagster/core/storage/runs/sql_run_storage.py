@@ -26,7 +26,7 @@ from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dag
 from dagster.seven import JSONDecodeError
 from dagster.utils import merge_dicts, utc_datetime_from_timestamp
 
-from ..pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
+from ..pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter, RunRecord
 from .base import RunStorage
 from .migration import RUN_DATA_MIGRATIONS, RUN_PARTITIONS
 from .schema import (
@@ -122,7 +122,6 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             DagsterEventType.PIPELINE_START: PipelineRunStatus.STARTED,
             DagsterEventType.PIPELINE_SUCCESS: PipelineRunStatus.SUCCESS,
             DagsterEventType.PIPELINE_FAILURE: PipelineRunStatus.FAILURE,
-            DagsterEventType.PIPELINE_INIT_FAILURE: PipelineRunStatus.FAILURE,
             DagsterEventType.PIPELINE_ENQUEUED: PipelineRunStatus.QUEUED,
             DagsterEventType.PIPELINE_STARTING: PipelineRunStatus.STARTING,
             DagsterEventType.PIPELINE_CANCELING: PipelineRunStatus.CANCELING,
@@ -156,7 +155,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
     def _rows_to_runs(self, rows):
         return list(map(self._row_to_run, rows))
 
-    def _add_cursor_limit_to_query(self, query, cursor, limit):
+    def _add_cursor_limit_to_query(self, query, cursor, limit, order_by, ascending):
         """ Helper function to deal with cursor/limit pagination args """
 
         if cursor:
@@ -166,7 +165,10 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         if limit:
             query = query.limit(limit)
 
-        query = query.order_by(RunsTable.c.id.desc())
+        sorting_column = getattr(RunsTable.c, order_by) if order_by else RunsTable.c.id
+        direction = db.asc if ascending else db.desc
+        query = query.order_by(direction(sorting_column))
+
         return query
 
     def _add_filters_to_query(self, query, filters):
@@ -199,9 +201,14 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         if filters.snapshot_id:
             query = query.where(RunsTable.c.snapshot_id == filters.snapshot_id)
 
+        if filters.updated_after:
+            query = query.where(RunsTable.c.update_timestamp > filters.updated_after)
+
         return query
 
-    def _runs_query(self, filters=None, cursor=None, limit=None, columns=None):
+    def _runs_query(
+        self, filters=None, cursor=None, limit=None, columns=None, order_by=None, ascending=False
+    ):
 
         filters = check.opt_inst_param(
             filters, "filters", PipelineRunsFilter, default=PipelineRunsFilter()
@@ -209,6 +216,8 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         check.opt_str_param(cursor, "cursor")
         check.opt_int_param(limit, "limit")
         check.opt_list_param(columns, "columns")
+        check.opt_str_param(order_by, "order_by")
+        check.opt_bool_param(ascending, "ascending")
 
         if columns is None:
             columns = ["run_body"]
@@ -224,7 +233,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             base_query = db.select(base_query_columns).select_from(RunsTable)
 
         query = self._add_filters_to_query(base_query, filters)
-        query = self._add_cursor_limit_to_query(query, cursor, limit)
+        query = self._add_cursor_limit_to_query(query, cursor, limit, order_by, ascending)
 
         return query
 
@@ -260,6 +269,34 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         query = db.select([RunsTable.c.run_body]).where(RunsTable.c.run_id == run_id)
         rows = self.fetchall(query)
         return deserialize_json_to_dagster_namedtuple(rows[0][0]) if len(rows) else None
+
+    def get_run_records(self, filters=None, limit=None, order_by=None, ascending=False):
+        filters = check.opt_inst_param(
+            filters, "filters", PipelineRunsFilter, default=PipelineRunsFilter()
+        )
+        limit = check.opt_int_param(limit, "limit")
+
+        query = self._runs_query(
+            filters=filters,
+            limit=limit,
+            columns=RunsTable.columns.keys(),  # pylint: disable=no-member
+            order_by=order_by,
+            ascending=ascending,
+        )
+
+        rows = self.fetchall(query)
+
+        return [
+            RunRecord(
+                record_id=check.int_param(row["id"], "id"),
+                pipeline_run=deserialize_json_to_dagster_namedtuple(
+                    check.str_param(row["run_body"], "run_body")
+                ),
+                create_timestamp=check.inst(row["create_timestamp"], datetime),
+                update_timestamp=check.inst(row["update_timestamp"], datetime),
+            )
+            for row in rows
+        ]
 
     def get_run_tags(self):
         result = defaultdict(set)

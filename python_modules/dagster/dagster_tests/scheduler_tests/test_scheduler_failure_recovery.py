@@ -8,7 +8,8 @@ from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import PARTITION_NAME_TAG, SCHEDULED_EXECUTION_TIME_TAG
 from dagster.core.test_utils import cleanup_test_instance, get_crash_signals, get_terminate_signal
 from dagster.scheduler.scheduler import launch_scheduled_runs
-from dagster.seven import IS_WINDOWS, create_pendulum_time, multiprocessing, to_timezone
+from dagster.seven import IS_WINDOWS, multiprocessing
+from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 
 from .test_scheduler_run import (
     instance_with_schedules,

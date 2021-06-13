@@ -136,10 +136,7 @@ def test_k8s_run_launcher_with_celery_executor_fails(
 
             for event_record in event_records:
                 if event_record.dagster_event:
-                    if (
-                        event_record.dagster_event.event_type
-                        == DagsterEventType.PIPELINE_INIT_FAILURE
-                    ):
+                    if event_record.dagster_event.event_type == DagsterEventType.PIPELINE_FAILURE:
                         found_pipeline_failure = True
 
             if found_pipeline_failure:

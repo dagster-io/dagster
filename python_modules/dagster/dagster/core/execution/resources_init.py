@@ -133,6 +133,9 @@ def _core_resource_initialization_event_generator(
                     continue
 
                 resource_fn = cast(Callable[[InitResourceContext], Any], resource_def.resource_fn)
+                resources = ScopedResourcesBuilder(resource_instances).build(
+                    resource_def.required_resource_keys
+                )
                 resource_context = InitResourceContext(
                     resource_def=resource_def,
                     resource_config=resource_configs[resource_name].config,
@@ -142,8 +145,7 @@ def _core_resource_initialization_event_generator(
                         resource_name=resource_name,
                         resource_fn_name=str(resource_fn.__name__),
                     ),
-                    resource_instance_dict=resource_instances,
-                    required_resource_keys=resource_def.required_resource_keys,
+                    resources=resources,
                     instance=instance,
                     pipeline_def_for_backwards_compat=pipeline_def_for_backwards_compat,
                 )
@@ -309,7 +311,7 @@ def single_resource_event_generator(context, resource_name, resource_def):
 
 
 def get_required_resource_keys_to_init(
-    execution_plan, pipeline_def, environment_config, intermediate_storage_def
+    execution_plan, pipeline_def, resolved_run_config, intermediate_storage_def
 ):
     resource_keys = set()
 
@@ -326,7 +328,7 @@ def get_required_resource_keys_to_init(
 
         resource_keys = resource_keys.union(
             get_required_resource_keys_for_step(
-                pipeline_def, step, execution_plan, environment_config, intermediate_storage_def
+                pipeline_def, step, execution_plan, resolved_run_config, intermediate_storage_def
             )
         )
 
@@ -334,11 +336,11 @@ def get_required_resource_keys_to_init(
 
 
 def get_required_resource_keys_for_step(
-    pipeline_def, execution_step, execution_plan, environment_config, intermediate_storage_def
+    pipeline_def, execution_step, execution_plan, resolved_run_config, intermediate_storage_def
 ):
     resource_keys = set()
 
-    mode_definition = pipeline_def.get_mode_definition(environment_config.mode)
+    mode_definition = pipeline_def.get_mode_definition(resolved_run_config.mode)
 
     resource_dependencies = _resolve_resource_dependencies(mode_definition.resource_defs)
 

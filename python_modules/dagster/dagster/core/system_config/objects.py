@@ -9,7 +9,6 @@ from dagster.core.definitions.intermediate_storage import IntermediateStorageDef
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.definitions.resource import ResourceDefinition
-from dagster.core.definitions.run_config_schema import create_environment_type
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.utils import ensure_single_item
 from dagster.utils.merger import deep_merge_dicts
@@ -85,9 +84,9 @@ class ResourceConfig(NamedTuple):
         return ResourceConfig(config=config.get("config"))
 
 
-class EnvironmentConfig(
+class ResolvedRunConfig(
     NamedTuple(
-        "_EnvironmentConfig",
+        "_ResolvedRunConfig",
         [
             ("solids", Dict[str, SolidConfig]),
             ("execution", "ExecutionConfig"),
@@ -120,7 +119,7 @@ class EnvironmentConfig(
         if execution is None:
             execution = ExecutionConfig(None, None)
 
-        return super(EnvironmentConfig, cls).__new__(
+        return super(ResolvedRunConfig, cls).__new__(
             cls,
             solids=check.opt_dict_param(solids, "solids", key_type=str, value_type=SolidConfig),
             execution=execution,
@@ -136,9 +135,9 @@ class EnvironmentConfig(
         pipeline_def: PipelineDefinition,
         run_config: Optional[Dict[str, Any]] = None,
         mode: Optional[str] = None,
-    ) -> "EnvironmentConfig":
+    ) -> "ResolvedRunConfig":
         """This method validates a given run config against the pipeline config schema. If
-        successful, we instantiate an EnvironmentConfig object.
+        successful, we instantiate an ResolvedRunConfig object.
 
         In case the run_config is invalid, this method raises a DagsterInvalidConfigError
         """
@@ -150,10 +149,25 @@ class EnvironmentConfig(
         check.opt_str_param(mode, "mode")
 
         mode = mode or pipeline_def.get_default_mode_name()
-        environment_type = create_environment_type(pipeline_def, mode)
+        run_config_schema = pipeline_def.get_run_config_schema(mode)
+
+        if run_config_schema.config_mapping:
+            outer_evr = process_config(
+                run_config_schema.config_mapping.config_schema.config_type,
+                run_config,
+            )
+            if not outer_evr.success:
+                raise DagsterInvalidConfigError(
+                    f"Error in config mapping for pipeline {pipeline_def.name} mode {mode}",
+                    outer_evr.errors,
+                    run_config,
+                )
+            # add user code boundary
+            run_config = run_config_schema.config_mapping.config_fn(outer_evr.value)
 
         config_evr = process_config(
-            environment_type, run_config_storage_field_backcompat(run_config)
+            run_config_schema.run_config_schema_type,
+            run_config_storage_field_backcompat(run_config),
         )
         if not config_evr.success:
             raise DagsterInvalidConfigError(
@@ -187,7 +201,7 @@ class EnvironmentConfig(
             pipeline_def, config_value.get("solids", {}), mode_def.resource_defs
         )
 
-        return EnvironmentConfig(
+        return ResolvedRunConfig(
             solids=solid_config_dict,
             execution=ExecutionConfig.from_dict(config_mapped_execution_configs),
             intermediate_storage=IntermediateStorageConfig.from_dict(
@@ -320,8 +334,6 @@ def config_map_loggers(
     in that function is tightly coupled to this one and changes in either path should be confirmed
     in the other.
     """
-    from dagster.core.definitions.logger import LoggerDefinition
-
     mode_def = pipeline_def.get_mode_definition(mode)
     logger_configs = config_value.get("loggers", {})
 
@@ -329,7 +341,9 @@ def config_map_loggers(
 
     for logger_key, logger_config in logger_configs.items():
         logger_def = mode_def.loggers.get(logger_key)
-        check.inst(logger_def, LoggerDefinition)
+        if logger_def is None:
+            check.failed(f"No logger found for key {logger_key}")
+
         logger_config_evr = logger_def.apply_config_mapping(logger_config)
         if not logger_config_evr.success:
             raise DagsterInvalidConfigError(
@@ -345,7 +359,7 @@ def config_map_loggers(
 
 def config_map_objects(
     config_value: Any,
-    defs: List[Union[IntermediateStorageDefinition, ExecutorDefinition]],
+    defs: Union[List[IntermediateStorageDefinition], List[ExecutorDefinition]],
     keyed_by: str,
     def_type: Type,
     name_of_def_type: str,

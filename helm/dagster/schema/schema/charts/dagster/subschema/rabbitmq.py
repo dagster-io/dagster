@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field  # pylint: disable=no-name-in-module
 
-from ...utils.kubernetes import ImageWithRegistry
+from ...utils.kubernetes import ExternalImage
 
 
 class RabbitMQConfiguration(BaseModel):
@@ -14,12 +14,12 @@ class Service(BaseModel):
 
 class VolumePermissions(BaseModel):
     enabled: bool = Field(default=True, const=True)
-    image: ImageWithRegistry
+    image: ExternalImage
 
 
 class RabbitMQ(BaseModel):
     enabled: bool
-    image: ImageWithRegistry
+    image: ExternalImage
     rabbitmq: RabbitMQConfiguration
     service: Service
     volumePermissions: VolumePermissions

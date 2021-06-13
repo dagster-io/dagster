@@ -22,16 +22,17 @@ def test_event_callback_logging():
     )
     pipeline_def = pipeline.get_definition()
     with instance_for_test() as instance:
-
         pipeline_run = instance.create_run_for_pipeline(pipeline_def)
 
         instance.watch_event_logs(pipeline_run.run_id, -1, _event_callback)
 
-        execute_run(
+        res = execute_run(
             pipeline,
             pipeline_run,
             instance,
         )
+
+        assert res.success
 
         passed_before_timeout = False
         retries = 5

@@ -1,6 +1,7 @@
 from itertools import chain
 from typing import Any, Dict, Iterable, List, Optional
 
+import requests.exceptions
 from dagster import check
 from dagster.core.definitions.utils import validate_tags
 from dagster.core.storage.pipeline_run import PipelineRunStatus
@@ -38,6 +39,18 @@ class DagsterGraphQLClient:
         client = DagsterGraphQLClient("localhost", port_number=3000)
         status = client.get_run_status(**SOME_RUN_ID**)
 
+    Args:
+        hostname (str): Hostname for the Dagster GraphQL API, like `localhost` or
+            `dagit.dagster.YOUR_ORG_HERE`.
+        port_number (Optional[int], optional): Optional port number to connect to on the host.
+            Defaults to None.
+        transport (Optional[Transport], optional): A custom transport to use to connect to the
+            GraphQL API with (e.g. for custom auth). Defaults to None.
+        use_https (bool, optional): Whether to use https in the URL connection string for the
+            GraphQL API. Defaults to False.
+
+    Raises:
+        :py:class:`~requests.exceptions.ConnectionError`: if the client cannot connect to the host.
     """
 
     def __init__(
@@ -45,29 +58,42 @@ class DagsterGraphQLClient:
         hostname: str,
         port_number: Optional[int] = None,
         transport: Optional[Transport] = None,
+        use_https: bool = False,
     ):
         experimental_class_warning(self.__class__.__name__)
+
         self._hostname = check.str_param(hostname, "hostname")
         self._port_number = check.opt_int_param(port_number, "port_number")
+        self._use_https = check.bool_param(use_https, "use_https")
+
         self._url = (
-            "http://"
+            ("https://" if self._use_https else "http://")
             + (f"{self._hostname}:{self._port_number}" if self._port_number else self._hostname)
             + "/graphql"
         )
+
         self._transport = check.opt_inst_param(
             transport,
             "transport",
             Transport,
             default=RequestsHTTPTransport(url=self._url, use_json=True),
         )
-        self._client = Client(transport=self._transport, fetch_schema_from_transport=True)
+        try:
+            self._client = Client(transport=self._transport, fetch_schema_from_transport=True)
+        except requests.exceptions.ConnectionError as exc:
+            raise DagsterGraphQLClientError(
+                f"Error when connecting to url {self._url}. "
+                + f"Did you specify hostname: {self._hostname} "
+                + (f"and port_number: {self._port_number} " if self._port_number else "")
+                + "correctly?"
+            ) from exc
 
     def _execute(self, query: str, variables: Optional[Dict[str, Any]] = None):
         try:
             return self._client.execute(gql(query), variable_values=variables)
         except Exception as exc:  # catch generic Exception from the gql client
             raise DagsterGraphQLClientError(
-                f"Query \n{query}\n with variables \n{variables}\n failed GraphQL validation"
+                f"Exception occured during execution of query \n{query}\n with variables \n{variables}\n"
             ) from exc
 
     def _get_repo_locations_and_names_with_pipeline(self, pipeline_name: str) -> List[PipelineInfo]:
@@ -226,7 +252,7 @@ class DagsterGraphQLClient:
         query_result: Dict[str, Any] = res_data["pipelineRunOrError"]
         query_result_type: str = query_result["__typename"]
         if query_result_type == "PipelineRun":
-            return query_result["status"]
+            return PipelineRunStatus(query_result["status"])
         else:
             raise DagsterGraphQLClientError(query_result_type, query_result["message"])
 
@@ -250,16 +276,19 @@ class DagsterGraphQLClient:
             RELOAD_REPOSITORY_LOCATION_MUTATION,
             {"repositoryLocationName": repository_location_name},
         )
+
         query_result: Dict[str, Any] = res_data["reloadRepositoryLocation"]
         query_result_type: str = query_result["__typename"]
-        if query_result_type == "RepositoryLocation":
-            return ReloadRepositoryLocationInfo(status=ReloadRepositoryLocationStatus.SUCCESS)
-        elif query_result_type == "RepositoryLocationLoadFailure":
-            return ReloadRepositoryLocationInfo(
-                status=ReloadRepositoryLocationStatus.FAILURE,
-                failure_type=query_result_type,
-                message=query_result["error"]["message"],
-            )
+        if query_result_type == "WorkspaceLocationEntry":
+            location_or_error_type = query_result["locationOrLoadError"]["__typename"]
+            if location_or_error_type == "RepositoryLocation":
+                return ReloadRepositoryLocationInfo(status=ReloadRepositoryLocationStatus.SUCCESS)
+            else:
+                return ReloadRepositoryLocationInfo(
+                    status=ReloadRepositoryLocationStatus.FAILURE,
+                    failure_type="PythonError",
+                    message=query_result["locationOrLoadError"]["message"],
+                )
         else:
             # query_result_type is either ReloadNotSupported or RepositoryLocationNotFound
             return ReloadRepositoryLocationInfo(

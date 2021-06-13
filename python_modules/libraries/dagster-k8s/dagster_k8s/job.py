@@ -181,8 +181,6 @@ class DagsterK8sJobConfig(
     """Configuration parameters for launching Dagster Jobs on Kubernetes.
 
     Params:
-        job_image (str): The docker image to use. The Job container will be launched with this
-            image.
         dagster_home (str): The location of DAGSTER_HOME in the Job container; this is where the
             ``dagster.yaml`` file will be mounted from the instance ConfigMap specified here.
         image_pull_policy (Optional[str]): Allows the image pull policy to be overridden, e.g. to
@@ -210,6 +208,8 @@ class DagsterK8sJobConfig(
         env_secrets (Optional[List[str]]): A list of custom Secret names from which to
             draw environment variables (using ``envFrom``) for the Job. Default: ``[]``. See:
             https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables
+        job_image (Optional[str]): The docker image to use. The Job container will be launched with this
+            image. Should not be specified if using userDeployments.
 
     """
 

@@ -55,7 +55,7 @@ const INSTANCE_HEALTH_QUERY = gql`
     instance {
       ...InstanceHealthFragment
     }
-    repositoryLocationsOrError {
+    workspaceOrError {
       ...RepositoryLocationsFragment
     }
   }

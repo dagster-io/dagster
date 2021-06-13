@@ -9,10 +9,11 @@ Dagster provides the _Partition Set_ abstraction for pipelines where each run de
 
 ## Relevant APIs
 
-| Name                                         | Description                                                      |
-| -------------------------------------------- | ---------------------------------------------------------------- |
-| <PyObject object="Partition" />              | Class defining a logical slice of pipeline configuration.        |
-| <PyObject object="PartitionSetDefinition" /> | Class defining a set of <PyObject object="Partition" /> objects. |
+| Name                                         | Description                                                                                         |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| <PyObject object="Partition" />              | Class defining a logical slice of pipeline configuration.                                           |
+| <PyObject object="PartitionSetDefinition" /> | Class defining a set of <PyObject object="Partition" /> objects.                                    |
+| <PyObject object="validate_run_config" />    | A function used to verify that a run config dictionary is valid against a pipeline's config schema. |
 
 ## Overview
 
@@ -143,6 +144,20 @@ def my_repository_with_partitioned_schedule():
 For partition sets consisting of `datetime` objects, the <PyObject object="create_offset_partition_selector" /> is a useful factory function for selecting partitions derived from the execution time. For example, you might want to fire your schedule every night and select the previous day's partition. The <PyObject object="identity_partition_selector" /> is also a useful partition selector, where the selected partition's value is the schedule execution time.
 
 Dagster provides a number of decorators (<PyObject object="hourly_schedule" decorator />, <PyObject object="daily_schedule" decorator />, <PyObject object="weekly_schedule" decorator />, <PyObject object="monthly_schedule" decorator />) that produce [partitioned schedules](/concepts/partitions-schedules-sensors/schedules#partition-based-schedules). These schedule decorators construct both the partition set that defines the configuration space of a specific pipeline as well as the schedule that it runs against. See our [Schedules overview](/concepts/partitions-schedules-sensors/schedules) for more information.
+
+## (Experimental) Testing a Partition Set
+
+You can test a partition set by initializing the set of partitions, and then evaluating the run config produced by your partition set against your pipeline using the <PyObject object="validate_run_config" /> function.
+
+```python file=/concepts/partitions_schedules_sensors/partition_definition.py startafter=start_test_partition_set endbefore=end_test_partition_set
+from dagster import validate_run_config
+
+
+def test_my_partition_set():
+    for partition in date_partition_set.partition_fn():
+        run_config = date_partition_set.run_config_for_partition(partition)
+        assert validate_run_config(my_data_pipeline, run_config)
+```
 
 ## Partitions in Dagit
 

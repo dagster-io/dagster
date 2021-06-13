@@ -6,11 +6,15 @@ from dagster import (
     AssetKey,
     AssetMaterialization,
     Failure,
+    Field,
     InputDefinition,
+    Noneable,
     Output,
     OutputDefinition,
     RetryRequested,
+    Selector,
     build_solid_context,
+    composite_solid,
     execute_solid,
     pipeline,
     resource,
@@ -42,6 +46,14 @@ def test_solid_invocation_no_arg():
     ):
         basic_solid(build_solid_context())
 
+    # Ensure alias is accounted for in error message
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="Compute function of solid 'aliased_basic_solid' has no context "
+        "argument, but context was provided when invoking.",
+    ):
+        basic_solid.alias("aliased_basic_solid")(build_solid_context())
+
     with pytest.raises(
         DagsterInvalidInvocationError,
         match="Too many input arguments were provided for solid 'basic_solid'. This may be "
@@ -49,6 +61,15 @@ def test_solid_invocation_no_arg():
         "defined for the solid.",
     ):
         basic_solid(None)
+
+    # Ensure alias is accounted for in error message
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="Too many input arguments were provided for solid 'aliased_basic_solid'. This may be "
+        "because an argument was provided for the context parameter, but no context parameter was "
+        "defined for the solid.",
+    ):
+        basic_solid.alias("aliased_basic_solid")(None)
 
 
 def test_solid_invocation_none_arg():
@@ -73,6 +94,14 @@ def test_solid_invocation_with_resources():
         "context was provided when invoking.",
     ):
         solid_requires_resources()
+
+    # Ensure that alias is accounted for in error message
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="Compute function of solid 'aliased_solid_requires_resources' has context argument, but no "
+        "context was provided when invoking.",
+    ):
+        solid_requires_resources.alias("aliased_solid_requires_resources")()
 
     # Ensure that error is raised when we attempt to invoke with a None context
     with pytest.raises(
@@ -139,6 +168,14 @@ def test_solid_invocation_with_config():
     ):
         solid_requires_config()
 
+    # Ensure that alias is accounted for in error message
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="Compute function of solid 'aliased_solid_requires_config' has context argument, but no "
+        "context was provided when invoking.",
+    ):
+        solid_requires_config.alias("aliased_solid_requires_config")()
+
     # Ensure that error is raised when we attempt to invoke with a None context
     with pytest.raises(
         DagsterInvalidInvocationError,
@@ -170,6 +207,83 @@ def test_solid_invocation_with_config():
 
     result = solid_requires_config(build_solid_context(config={"foo": "bar"}))
     assert result == 5
+
+
+def test_solid_invocation_default_config():
+    @solid(config_schema={"foo": Field(str, is_required=False, default_value="bar")})
+    def solid_requires_config(context):
+        assert context.solid_config["foo"] == "bar"
+        return context.solid_config["foo"]
+
+    assert solid_requires_config(None) == "bar"
+
+    @solid(config_schema=Field(str, is_required=False, default_value="bar"))
+    def solid_requires_config_val(context):
+        assert context.solid_config == "bar"
+        return context.solid_config
+
+    assert solid_requires_config_val(None) == "bar"
+
+    @solid(
+        config_schema={
+            "foo": Field(str, is_required=False, default_value="bar"),
+            "baz": str,
+        }
+    )
+    def solid_requires_config_partial(context):
+        assert context.solid_config["foo"] == "bar"
+        assert context.solid_config["baz"] == "bar"
+        return context.solid_config["foo"] + context.solid_config["baz"]
+
+    assert solid_requires_config_partial(build_solid_context(config={"baz": "bar"})) == "barbar"
+
+
+def test_solid_invocation_dict_config():
+    @solid(config_schema=dict)
+    def solid_requires_dict(context):
+        assert context.solid_config == {"foo": "bar"}
+        return context.solid_config
+
+    assert solid_requires_dict(build_solid_context(config={"foo": "bar"})) == {"foo": "bar"}
+
+    @solid(config_schema=Noneable(dict))
+    def solid_noneable_dict(context):
+        return context.solid_config
+
+    assert solid_noneable_dict(build_solid_context()) is None
+    assert solid_noneable_dict(None) is None
+
+
+def test_solid_invocation_kitchen_sink_config():
+    @solid(
+        config_schema={
+            "str_field": str,
+            "int_field": int,
+            "list_int": [int],
+            "list_list_int": [[int]],
+            "dict_field": {"a_string": str},
+            "list_dict_field": [{"an_int": int}],
+            "selector_of_things": Selector(
+                {"select_list_dict_field": [{"an_int": int}], "select_int": int}
+            ),
+            "optional_list_of_optional_string": Noneable([Noneable(str)]),
+        }
+    )
+    def kitchen_sink(context):
+        return context.solid_config
+
+    solid_config_one = {
+        "str_field": "kjf",
+        "int_field": 2,
+        "list_int": [3],
+        "list_list_int": [[1], [2, 3]],
+        "dict_field": {"a_string": "kdjfkd"},
+        "list_dict_field": [{"an_int": 2}, {"an_int": 4}],
+        "selector_of_things": {"select_int": 3},
+        "optional_list_of_optional_string": ["foo", None],
+    }
+
+    assert kitchen_sink(build_solid_context(config=solid_config_one)) == solid_config_one
 
 
 def test_solid_with_inputs():
@@ -287,6 +401,16 @@ def test_wrong_output():
     ):
         solid_wrong_output()
 
+    # Ensure alias is accounted for in error message
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match=re.escape(
+            'Solid "aliased_solid_wrong_output" returned an output "wrong_name" that does '
+            "not exist. The available outputs are ['result']"
+        ),
+    ):
+        solid_wrong_output.alias("aliased_solid_wrong_output")()
+
 
 def test_output_not_sent():
     @solid(output_defs=[OutputDefinition(int, name="1"), OutputDefinition(int, name="2")])
@@ -307,6 +431,14 @@ def test_output_not_sent():
     ):
         solid_multiple_outputs_not_sent()
 
+    # Ensure alias is accounted for in error message
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match='Solid "aliased_solid_multiple_outputs_not_sent" did not return an output '
+        'for non-optional output "1"',
+    ):
+        solid_multiple_outputs_not_sent.alias("aliased_solid_multiple_outputs_not_sent")()
+
 
 def test_output_sent_multiple_times():
     @solid(output_defs=[OutputDefinition(int, name="1")])
@@ -322,9 +454,16 @@ def test_output_sent_multiple_times():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match='Solid "solid_yields_twice" returned an output "1" multiple times',
+        match="Solid 'solid_yields_twice' returned an output '1' multiple times",
     ):
         solid_yields_twice()
+
+    # Ensure alias is accounted for in error message
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Solid 'aliased_solid_yields_twice' returned an output '1' multiple times",
+    ):
+        solid_yields_twice.alias("aliased_solid_yields_twice")()
 
 
 @pytest.mark.parametrize(
@@ -338,8 +477,6 @@ def test_output_sent_multiple_times():
         ("mode_def", None),
         ("solid_handle", None),
         ("solid", None),
-        ("has_tag", "foo"),
-        ("get_tag", "foo"),
         ("get_step_execution_context", None),
     ],
 )
@@ -408,3 +545,50 @@ def test_output_type_check():
 
     with pytest.raises(DagsterTypeCheckDidNotPass):
         wrong_type()
+
+
+def test_pending_node_invocation():
+    @solid
+    def basic_solid_to_hook():
+        return 5
+
+    assert basic_solid_to_hook.with_hooks(set())() == 5
+
+    @solid
+    def basic_solid_with_tag(context):
+        assert context.has_tag("foo")
+        return context.get_tag("foo")
+
+    assert basic_solid_with_tag.tag({"foo": "bar"})(None) == "bar"
+
+
+def test_composite_solid_invocation_out_of_composition():
+    @solid
+    def basic_solid():
+        return 5
+
+    @composite_solid
+    def composite():
+        basic_solid()
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Attempted to call composite solid "
+        "'composite' outside of a composition function. Invoking composite solids is only valid in a "
+        "function decorated with @pipeline or @composite_solid.",
+    ):
+        composite()
+
+
+def test_pipeline_invocation():
+    @pipeline
+    def basic_pipeline():
+        pass
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Attempted to call pipeline "
+        "'basic_pipeline' directly. Pipelines should be invoked by using an execution API function "
+        r"\(e.g. `execute_pipeline`\).",
+    ):
+        basic_pipeline()

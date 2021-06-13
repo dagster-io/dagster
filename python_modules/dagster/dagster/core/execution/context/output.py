@@ -10,12 +10,15 @@ if TYPE_CHECKING:
     from dagster.core.execution.context.system import StepExecutionContext
     from dagster.core.definitions.resource import Resources
     from dagster.core.types.dagster_type import DagsterType
-    from dagster.core.definitions import SolidDefinition, PipelineDefinition
+    from dagster.core.definitions import SolidDefinition, PipelineDefinition, ModeDefinition
     from dagster.core.log_manager import DagsterLogManager
-    from dagster.core.system_config.objects import EnvironmentConfig
+    from dagster.core.system_config.objects import ResolvedRunConfig
     from dagster.core.execution.plan.plan import ExecutionPlan
     from dagster.core.execution.plan.outputs import StepOutputHandle
     from dagster.core.log_manager import DagsterLogManager
+    from dagster.core.definitions.resource import ScopedResourcesBuilder
+
+RUN_ID_PLACEHOLDER = "__EPHEMERAL_RUN_ID"
 
 
 class OutputContext:
@@ -192,11 +195,12 @@ class OutputContext:
 def get_output_context(
     execution_plan: "ExecutionPlan",
     pipeline_def: "PipelineDefinition",
-    environment_config: "EnvironmentConfig",
+    resolved_run_config: "ResolvedRunConfig",
     step_output_handle: "StepOutputHandle",
-    run_id: Optional[str] = None,
-    log_manager: Optional["DagsterLogManager"] = None,
-    step_context: Optional["StepExecutionContext"] = None,
+    run_id: Optional[str],
+    log_manager: Optional["DagsterLogManager"],
+    step_context: Optional["StepExecutionContext"],
+    resources: Optional["Resources"],
 ) -> "OutputContext":
     """
     Args:
@@ -206,7 +210,7 @@ def get_output_context(
 
     step = execution_plan.get_step_by_key(step_output_handle.step_key)
     # get config
-    solid_config = environment_config.solids[step.solid_handle.to_string()]
+    solid_config = resolved_run_config.solids[step.solid_handle.to_string()]
     outputs_config = solid_config.outputs
 
     if outputs_config:
@@ -218,9 +222,16 @@ def get_output_context(
     output_def = pipeline_def.get_solid(step_output.solid_handle).output_def_named(step_output.name)
 
     io_manager_key = output_def.io_manager_key
-    resource_config = environment_config.resources[io_manager_key].config
+    resource_config = resolved_run_config.resources[io_manager_key].config
 
-    resources = build_resources_for_manager(io_manager_key, step_context) if step_context else None
+    if step_context:
+        check.invariant(
+            not resources,
+            "Expected either resources or step context to be set, but "
+            "received both. If step context is provided, resources for IO manager will be "
+            "retrieved off of that.",
+        )
+        resources = build_resources_for_manager(io_manager_key, step_context)
 
     return OutputContext(
         step_key=step_output_handle.step_key,
@@ -235,7 +246,7 @@ def get_output_context(
         log_manager=log_manager,
         version=(
             _step_output_version(
-                pipeline_def, execution_plan, environment_config, step_output_handle
+                pipeline_def, execution_plan, resolved_run_config, step_output_handle
             )
             if MEMOIZED_RUN_TAG in pipeline_def.tags
             else None
@@ -249,13 +260,13 @@ def get_output_context(
 def _step_output_version(
     pipeline_def: "PipelineDefinition",
     execution_plan: "ExecutionPlan",
-    environment_config: "EnvironmentConfig",
+    resolved_run_config: "ResolvedRunConfig",
     step_output_handle: "StepOutputHandle",
 ) -> Optional[str]:
     from dagster.core.execution.resolve_versions import resolve_step_output_versions
 
     step_output_versions = resolve_step_output_versions(
-        pipeline_def, execution_plan, environment_config
+        pipeline_def, execution_plan, resolved_run_config
     )
     return (
         step_output_versions[step_output_handle]
@@ -268,6 +279,7 @@ def build_output_context(
     step_key: str,
     name: str,
     metadata: Optional[Dict[str, Any]] = None,
+    run_id: Optional[str] = None,
     mapping_key: Optional[str] = None,
     config: Optional[Any] = None,
     dagster_type: Optional["DagsterType"] = None,
@@ -319,6 +331,7 @@ def build_output_context(
     step_key = check.str_param(step_key, "step_key")
     name = check.str_param(name, "name")
     metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
+    run_id = check.opt_str_param(run_id, "run_id", default=RUN_ID_PLACEHOLDER)
     mapping_key = check.opt_str_param(mapping_key, "mapping_key")
     dagster_type = check.opt_inst_param(dagster_type, "dagster_type", DagsterType)
     version = check.opt_str_param(version, "version")
@@ -329,7 +342,7 @@ def build_output_context(
         step_key=step_key,
         name=name,
         pipeline_name=None,
-        run_id=None,
+        run_id=run_id,
         metadata=metadata,
         mapping_key=mapping_key,
         config=config,

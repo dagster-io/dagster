@@ -1,6 +1,7 @@
 import pytest
 import yaml
 from kubernetes.client import models
+from schema.charts.dagster.subschema.daemon import Daemon, QueuedRunCoordinator
 from schema.charts.dagster.subschema.postgresql import PostgreSQL, Service
 from schema.charts.dagster.values import DagsterHelmValues
 
@@ -52,3 +53,26 @@ def test_storage_postgres_db_config(template: HelmTemplate, storage: str):
     assert postgres_db["db_name"] == postgresql_database
     assert postgres_db["port"] == postgresql_port
     assert postgres_db["params"] == postgresql_params
+
+
+@pytest.mark.parametrize("enabled", [True, False])
+def test_run_coordinator_config(template: HelmTemplate, enabled: bool):
+    module_name = "dagster.core.run_coordinator"
+    class_name = "QueuedRunCoordinator"
+
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(
+            queuedRunCoordinator=QueuedRunCoordinator.construct(
+                enabled=enabled, module=module_name, class_name=class_name
+            )
+        )
+    )
+    configmaps = template.render(helm_values)
+    assert len(configmaps) == 1
+
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    assert ("run_coordinator" in instance) == enabled
+    if enabled:
+        assert instance["run_coordinator"]["module"] == module_name
+        assert instance["run_coordinator"]["class"] == class_name

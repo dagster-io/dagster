@@ -14,6 +14,7 @@ from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord
 from dagster.core.execution.stats import RunStepKeyStatsSnapshot, StepEventStatus
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
+from dagster.serdes.errors import DeserializationError
 from dagster.utils import datetime_as_float, utc_datetime_from_naive, utc_datetime_from_timestamp
 
 from ..pipeline_run import PipelineRunStatsSnapshot
@@ -174,7 +175,7 @@ class SqlEventLogStorage(EventLogStorage):
                 events[record_id] = check.inst_param(
                     deserialize_json_to_dagster_namedtuple(json_str), "event", EventRecord
                 )
-        except (seven.JSONDecodeError, check.CheckError) as err:
+        except (seven.JSONDecodeError, DeserializationError) as err:
             raise DagsterEventLogInvalidForRun(run_id=run_id) from err
 
         return events
@@ -248,7 +249,7 @@ class SqlEventLogStorage(EventLogStorage):
                 start_time=datetime_as_float(start_time) if start_time else None,
                 end_time=datetime_as_float(end_time) if end_time else None,
             )
-        except (seven.JSONDecodeError, check.CheckError) as err:
+        except (seven.JSONDecodeError, DeserializationError) as err:
             raise DagsterEventLogInvalidForRun(run_id=run_id) from err
 
     def get_step_stats_for_run(self, run_id, step_keys=None):
@@ -358,7 +359,7 @@ class SqlEventLogStorage(EventLogStorage):
                     expectation_results[event.step_key].append(
                         event.dagster_event.event_specific_data.expectation_result
                     )
-        except (seven.JSONDecodeError, check.CheckError) as err:
+        except (seven.JSONDecodeError, DeserializationError) as err:
             raise DagsterEventLogInvalidForRun(run_id=run_id) from err
 
         return [

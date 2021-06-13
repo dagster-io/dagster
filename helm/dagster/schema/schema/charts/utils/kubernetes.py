@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra  # pylint: disable=no-name-in-module
 
+from .utils import BaseModel as BaseModelWithNullableRequiredFields
 from .utils import SupportedKubernetes, create_definition_ref
 
 
@@ -32,21 +33,18 @@ class PullPolicy(str, Enum):
     NEVER = "Never"
 
 
-class Image(BaseModel):
+class Image(BaseModelWithNullableRequiredFields):
     repository: str
-    tag: str
+    tag: Optional[str]
     pullPolicy: PullPolicy
 
     @property
     def name(self) -> str:
-        return f"{self.repository}:{self.tag}"
+        return f"{self.repository}:{self.tag}" if self.tag else self.repository
 
 
-class ImageWithRegistry(BaseModel):
-    registry: str
-    repository: str
+class ExternalImage(Image):
     tag: str
-    pullPolicy: PullPolicy
 
 
 class Service(BaseModel):

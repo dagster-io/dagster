@@ -1,5 +1,6 @@
 import * as React from 'react';
 import ReactMarkdown from 'react-markdown';
+import gfm from 'remark-gfm';
 import styled from 'styled-components/macro';
 
 interface IDescriptionProps {
@@ -87,7 +88,9 @@ export class Description extends React.Component<IDescriptionProps, IDescription
         )}
 
         <div ref={this._container} style={{overflowX: 'auto'}}>
-          <ReactMarkdown>{removeLeadingSpaces(this.props.description)}</ReactMarkdown>
+          <ReactMarkdown plugins={[gfm]}>
+            {removeLeadingSpaces(this.props.description)}
+          </ReactMarkdown>
         </div>
       </Container>
     );

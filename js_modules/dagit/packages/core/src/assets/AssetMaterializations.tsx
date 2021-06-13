@@ -27,11 +27,12 @@ interface Props {
 }
 
 export const AssetMaterializations: React.FC<Props> = ({assetKey, asOf}) => {
+  const before = React.useMemo(() => (asOf ? `${Number(asOf) + 1}` : ''), [asOf]);
   const {data, loading} = useQuery<AssetQuery, AssetQueryVariables>(ASSET_QUERY, {
     variables: {
       assetKey: {path: assetKey.path},
       limit: 200,
-      before: asOf,
+      before,
     },
   });
 

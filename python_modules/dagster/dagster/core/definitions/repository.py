@@ -1,7 +1,10 @@
+from typing import Callable, Dict, Generic, List, Optional, Type, TypeVar, Union, cast
+
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.utils import merge_dicts
 
+from .graph import GraphDefinition
 from .partition import PartitionScheduleDefinition, PartitionSetDefinition
 from .pipeline import PipelineDefinition
 from .schedule import ScheduleDefinition
@@ -15,15 +18,21 @@ VALID_REPOSITORY_DATA_DICT_KEYS = {
     "sensors",
 }
 
+RepositoryLevelDefinition = TypeVar(
+    "RepositoryLevelDefinition", PipelineDefinition, PartitionSetDefinition, ScheduleDefinition
+)
 
-class _CacheingDefinitionIndex:
+
+class _CacheingDefinitionIndex(Generic[RepositoryLevelDefinition]):
     def __init__(
         self,
-        definition_class,
-        definition_class_name,
-        definition_kind,
-        definitions,
-        validation_fn,
+        definition_class: Type[RepositoryLevelDefinition],
+        definition_class_name: str,
+        definition_kind: str,
+        definitions: Dict[
+            str, Union[RepositoryLevelDefinition, Callable[[], RepositoryLevelDefinition]]
+        ],
+        validation_fn: Callable[[RepositoryLevelDefinition], RepositoryLevelDefinition],
     ):
 
         for key, definition in definitions.items():
@@ -38,29 +47,33 @@ class _CacheingDefinitionIndex:
                 ),
             )
 
-        self._definition_class = definition_class
+        self._definition_class: Type[RepositoryLevelDefinition] = definition_class
         self._definition_class_name = definition_class_name
         self._definition_kind = definition_kind
-        self._validation_fn = validation_fn
+        self._validation_fn: Callable[
+            [RepositoryLevelDefinition], RepositoryLevelDefinition
+        ] = validation_fn
 
-        self._definitions = definitions
-        self._definition_cache = {}
-        self._definition_names = None
-        self._all_definitions = None
+        self._definitions: Dict[
+            str, Union[RepositoryLevelDefinition, Callable[[], RepositoryLevelDefinition]]
+        ] = definitions
+        self._definition_cache: Dict[str, RepositoryLevelDefinition] = {}
+        self._definition_names: Optional[List[str]] = None
+        self._all_definitions: Optional[List[RepositoryLevelDefinition]] = None
 
-    def get_definition_names(self):
+    def get_definition_names(self) -> List[str]:
         if self._definition_names:
             return self._definition_names
 
         self._definition_names = list(self._definitions.keys())
         return self._definition_names
 
-    def has_definition(self, definition_name):
+    def has_definition(self, definition_name: str) -> bool:
         check.str_param(definition_name, "definition_name")
 
         return definition_name in self.get_definition_names()
 
-    def get_all_definitions(self):
+    def get_all_definitions(self) -> List[RepositoryLevelDefinition]:
         if self._all_definitions is not None:
             return self._all_definitions
 
@@ -72,7 +85,7 @@ class _CacheingDefinitionIndex:
         )
         return self._all_definitions
 
-    def get_definition(self, definition_name):
+    def get_definition(self, definition_name: str) -> RepositoryLevelDefinition:
         check.str_param(definition_name, "definition_name")
 
         if definition_name in self._definition_cache:
@@ -99,7 +112,7 @@ class _CacheingDefinitionIndex:
             self._definition_cache[definition_name] = self._validation_fn(definition_source)
             return definition_source
         else:
-            definition = definition_source()
+            definition = cast(Callable, definition_source)()
             check.invariant(
                 isinstance(definition, self._definition_class),
                 "Bad constructor for {definition_kind} {definition_name}: must return "
@@ -286,6 +299,9 @@ class RepositoryData:
                     )
                 jobs[definition.name] = definition
                 sensors[definition.name] = definition
+                if definition.has_loadable_target():
+                    target = definition.load_target()
+                    pipelines[target.name] = target
             elif isinstance(definition, ScheduleDefinition):
                 if definition.name in jobs:
                     raise DagsterInvalidDefinitionError(
@@ -293,6 +309,9 @@ class RepositoryData:
                     )
                 jobs[definition.name] = definition
                 schedules[definition.name] = definition
+                if definition.has_loadable_target():
+                    target = definition.load_target()
+                    pipelines[target.name] = target
 
                 if isinstance(definition, PartitionScheduleDefinition):
                     partition_set_def = definition.get_partition_set()
@@ -305,6 +324,12 @@ class RepositoryData:
                             "{partition_set_name}".format(partition_set_name=partition_set_def.name)
                         )
                     partition_sets[partition_set_def.name] = partition_set_def
+            elif isinstance(definition, GraphDefinition):
+                # error experience when this fails can be improved
+                coerced = definition.to_job(resource_defs={})
+                pipelines[coerced.name] = coerced
+            else:
+                check.failed(f"Unexpected repository entry {definition}")
 
         return RepositoryData(
             pipelines=pipelines,
@@ -538,6 +563,9 @@ class RepositoryData:
 
     def _validate_sensor(self, sensor):
         pipelines = self.get_pipeline_names()
+        if sensor.pipeline_name is None:
+            # skip validation when the sensor does not target a pipeline
+            return sensor
 
         if sensor.pipeline_name not in pipelines:
             raise DagsterInvalidDefinitionError(

@@ -9,15 +9,6 @@ import {RepositoryPicker} from './RepositoryPicker';
 
 describe('RepositoryPicker', () => {
   const defaultMocks = {
-    RepositoryLocationOrLoadFailure: () => ({
-      __typename: 'RepositoryLocation',
-    }),
-    RepositoryLocationsOrError: () => ({
-      __typename: 'RepositoryLocationConnection',
-    }),
-    RepositoryLocationConnection: () => ({
-      nodes: () => new MockList(1),
-    }),
     RepositoryLocation: () => ({
       isReloadSupported: true,
       name: () => 'undisclosed-location',
@@ -48,13 +39,12 @@ describe('RepositoryPicker', () => {
 
   it('renders the current repository and refresh button', async () => {
     const mocks = {
-      ...defaultMocks,
       Repository: () => ({
         name: () => 'foo-bar',
       }),
     };
 
-    render(<Wrapper mocks={mocks} />);
+    render(<Wrapper mocks={[defaultMocks, mocks]} />);
 
     await waitFor(() => {
       expect(screen.getByText(/foo-bar/i)).toBeVisible();

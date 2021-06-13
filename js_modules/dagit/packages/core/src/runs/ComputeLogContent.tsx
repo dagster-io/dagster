@@ -20,7 +20,7 @@ export class ComputeLogContent extends React.Component<{
   isLoading?: boolean;
   isVisible: boolean;
 }> {
-  private timeout: number;
+  private timeout: number | null = null;
   private contentContainer = React.createRef<ScrollContainer>();
 
   state = {

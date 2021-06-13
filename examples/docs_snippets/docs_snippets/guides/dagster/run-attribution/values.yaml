@@ -1,0 +1,5 @@
+queuedRunCoordinator:
+  enabled: true
+  module: run_attribution_example
+  class: CustomRunCoordinator
+  config: {}

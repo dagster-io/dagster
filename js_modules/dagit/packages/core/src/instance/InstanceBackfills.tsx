@@ -41,7 +41,7 @@ import {Loading} from '../ui/Loading';
 import {Table} from '../ui/Table';
 import {stringFromValue} from '../ui/TokenizingField';
 import {FontFamily} from '../ui/styles';
-import {workspacePath} from '../workspace/workspacePath';
+import {workspacePipelinePath} from '../workspace/workspacePath';
 
 import {BackfillTerminationDialog} from './BackfillTerminationDialog';
 import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
@@ -50,6 +50,7 @@ import {
   InstanceBackfillsQuery,
   InstanceBackfillsQueryVariables,
   InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results,
+  InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionSet,
   InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_runs,
 } from './types/InstanceBackfillsQuery';
 import {InstanceHealthForBackfillsQuery} from './types/InstanceHealthForBackfillsQuery';
@@ -275,10 +276,12 @@ const BackfillRow = ({
   })}`;
 
   const partitionSetBackfillUrl = backfill.partitionSet
-    ? workspacePath(
+    ? workspacePipelinePath(
         backfill.partitionSet.repositoryOrigin.repositoryName,
         backfill.partitionSet.repositoryOrigin.repositoryLocationName,
-        `/pipelines/${backfill.partitionSet.pipelineName}/partitions?${qs.stringify({
+        backfill.partitionSet.pipelineName,
+        backfill.partitionSet.mode,
+        `/partitions?${qs.stringify({
           partitionSet: backfill.partitionSet.name,
           q: stringFromValue([{token: 'tag', value: `dagster/backfill=${backfill.backfillId}`}]),
         })}`,
@@ -298,41 +301,7 @@ const BackfillRow = ({
       </td>
       <td>
         {backfill.partitionSet ? (
-          <Group direction={'column'} spacing={8}>
-            <Link
-              to={workspacePath(
-                backfill.partitionSet.repositoryOrigin.repositoryName,
-                backfill.partitionSet.repositoryOrigin.repositoryLocationName,
-                `/pipelines/${
-                  backfill.partitionSet.pipelineName
-                }/partitions?partitionSet=${encodeURIComponent(backfill.partitionSet.name)}`,
-              )}
-            >
-              {backfill.partitionSet.name}
-            </Link>
-            <span style={{color: Colors.DARK_GRAY3, fontSize: 12}}>
-              {backfill.partitionSet.repositoryOrigin.repositoryName}@
-              {backfill.partitionSet.repositoryOrigin.repositoryLocationName}
-            </span>
-            <Group direction="row" spacing={4} alignItems="center">
-              <Icon
-                icon="diagram-tree"
-                color={Colors.GRAY2}
-                iconSize={9}
-                style={{position: 'relative', top: '-3px'}}
-              />
-              <span style={{fontSize: '13px'}}>
-                <PipelineReference
-                  pipelineName={backfill.partitionSet.pipelineName}
-                  pipelineHrefContext={{
-                    name: backfill.partitionSet.repositoryOrigin.repositoryName,
-                    location: backfill.partitionSet.repositoryOrigin.repositoryLocationName,
-                  }}
-                  mode={backfill.partitionSet.mode}
-                />
-              </span>
-            </Group>
-          </Group>
+          <PartitionSetReference partitionSet={backfill.partitionSet} />
         ) : (
           backfill.partitionSetName
         )}
@@ -473,6 +442,45 @@ const BackfillProgress = ({backfill}: {backfill: Backfill}) => {
   );
 };
 
+const PartitionSetReference: React.FunctionComponent<{
+  partitionSet: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionSet;
+}> = ({partitionSet}) => (
+  <Group direction={'column'} spacing={8}>
+    <Link
+      to={workspacePipelinePath(
+        partitionSet.repositoryOrigin.repositoryName,
+        partitionSet.repositoryOrigin.repositoryLocationName,
+        partitionSet.pipelineName,
+        partitionSet.mode,
+        `/partitions?partitionSet=${encodeURIComponent(partitionSet.name)}`,
+      )}
+    >
+      {partitionSet.name}
+    </Link>
+    <span style={{color: Colors.DARK_GRAY3, fontSize: 12}}>
+      {partitionSet.repositoryOrigin.repositoryName}@
+      {partitionSet.repositoryOrigin.repositoryLocationName}
+    </span>
+    <Group direction="row" spacing={4} alignItems="center">
+      <Icon
+        icon="diagram-tree"
+        color={Colors.GRAY2}
+        iconSize={9}
+        style={{position: 'relative', top: '-3px'}}
+      />
+      <span style={{fontSize: '13px'}}>
+        <PipelineReference
+          pipelineName={partitionSet.pipelineName}
+          pipelineHrefContext={{
+            name: partitionSet.repositoryOrigin.repositoryName,
+            location: partitionSet.repositoryOrigin.repositoryLocationName,
+          }}
+          mode={partitionSet.mode}
+        />
+      </span>
+    </Group>
+  </Group>
+);
 const BackfillStatusTable = ({backfill}: {backfill: Backfill}) => {
   const {
     numQueued,

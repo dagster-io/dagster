@@ -548,12 +548,21 @@ def test_run_wipe_correct_delete_message():
         assert result.exit_code == 0
 
 
+@pytest.mark.parametrize("force_flag", ["--force", "-f"])
+def test_run_wipe_force(force_flag):
+    with instance_for_test():
+        runner = CliRunner()
+        result = runner.invoke(run_wipe_command, args=[force_flag])
+        assert "Deleted all run history and event logs" in result.output
+        assert result.exit_code == 0
+
+
 def test_run_wipe_incorrect_delete_message():
     with instance_for_test():
         runner = CliRunner()
         result = runner.invoke(run_wipe_command, input="WRONG\n")
         assert "Exiting without deleting all run history and event logs" in result.output
-        assert result.exit_code == 0
+        assert result.exit_code == 1
 
 
 def test_run_delete_bad_id():
@@ -561,7 +570,7 @@ def test_run_delete_bad_id():
         runner = CliRunner()
         result = runner.invoke(run_delete_command, args=["1234"], input="DELETE\n")
         assert "No run found with id 1234" in result.output
-        assert result.exit_code == 0
+        assert result.exit_code == 1
 
 
 def test_run_delete_correct_delete_message():
@@ -573,13 +582,23 @@ def test_run_delete_correct_delete_message():
         assert result.exit_code == 0
 
 
+@pytest.mark.parametrize("force_flag", ["--force", "-f"])
+def test_run_delete_force(force_flag):
+    with instance_for_test() as instance:
+        run_id = execute_pipeline(foo_pipeline, instance=instance).run_id
+        runner = CliRunner()
+        result = runner.invoke(run_delete_command, args=[force_flag, run_id])
+        assert "Deleted run" in result.output
+        assert result.exit_code == 0
+
+
 def test_run_delete_incorrect_delete_message():
     with instance_for_test() as instance:
         pipeline_result = execute_pipeline(foo_pipeline, instance=instance)
         runner = CliRunner()
         result = runner.invoke(run_delete_command, args=[pipeline_result.run_id], input="Wrong\n")
         assert "Exiting without deleting" in result.output
-        assert result.exit_code == 0
+        assert result.exit_code == 1
 
 
 def test_run_list_limit():

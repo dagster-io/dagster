@@ -1,3 +1,4 @@
+"""isort:skip_file"""
 from typing import List, Union
 
 from dagster import (
@@ -30,15 +31,27 @@ date_partition_set = PartitionSetDefinition(
 # end_def
 
 
-@solid
-def my_solid():
+@solid(config_schema={"date": str})
+def process_data_for_date(_):
     pass
 
 
 @pipeline
 def my_data_pipeline():
-    my_solid()
+    process_data_for_date()
 
+
+# start_test_partition_set
+from dagster import validate_run_config
+
+
+def test_my_partition_set():
+    for partition in date_partition_set.partition_fn():
+        run_config = date_partition_set.run_config_for_partition(partition)
+        assert validate_run_config(my_data_pipeline, run_config)
+
+
+# end_test_partition_set
 
 # start_repo_include
 @repository
@@ -52,8 +65,8 @@ def my_repository():
 # end_repo_include
 
 
-def _weekday_run_config_for_partition(_partition):
-    pass
+def _weekday_run_config_for_partition(partition):
+    return {"solids": {"process_data_for_date": {"config": {"date": partition.value}}}}
 
 
 # start_manual_partition_schedule

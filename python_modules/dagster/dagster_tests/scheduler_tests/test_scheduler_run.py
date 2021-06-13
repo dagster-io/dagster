@@ -46,7 +46,7 @@ from dagster.core.test_utils import (
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.daemon import get_default_daemon_logger
 from dagster.scheduler.scheduler import launch_scheduled_runs
-from dagster.seven import create_pendulum_time, to_timezone
+from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 from dagster.utils import merge_dicts
 from dagster.utils.partitions import DEFAULT_DATE_FORMAT
 

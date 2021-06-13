@@ -848,3 +848,35 @@ def test_root_input_manager():
 
     with pytest.raises(DagsterInvalidSubsetError):
         _invalid = _valid.get_pipeline_subset_def({"end"})
+
+
+def test_root_input_manager_missing_fails():
+    @solid(
+        input_defs=[InputDefinition("root_input", root_manager_key="missing_root_input_manager")]
+    )
+    def requires_missing_root_input_manager(root_input: int):
+        return root_input
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=r'"missing_root_input_manager" is required by unsatisfied input "root_input" of solid def requires_missing_root_input_manager',
+    ):
+
+        @pipeline
+        def _invalid():
+            requires_missing_root_input_manager()
+
+
+def test_io_manager_missing_fails():
+    @solid(output_defs=[OutputDefinition(int, "result", io_manager_key="missing_io_manager")])
+    def requires_missing_io_manager():
+        return 1
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=r'"missing_io_manager" is required by output "result" of solid def requires_missing_io_manager',
+    ):
+
+        @pipeline
+        def _invalid():
+            requires_missing_io_manager()

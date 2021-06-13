@@ -1,3 +1,4 @@
+# type: ignore[attr-defined]
 from dagster import pipeline
 from solids import example_two_solid  # pylint: disable=import-error
 

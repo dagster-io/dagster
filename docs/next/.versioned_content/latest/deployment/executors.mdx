@@ -33,6 +33,8 @@ Example executors include:
 - <PyObject module="dagster_celery_k8s" object="celery_k8s_job_executor" />:
   Executes each step within a ephemeral kubernetes pod, using celery as a
   control plane for prioritization, queuing, and so forth.
+- <PyObject module="dagster_k8s" object="k8s_job_executor" />: Executes each
+  step within an ephemeral kubernetes pod
 
 ## Custom Executors
 

@@ -3,7 +3,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {RepoAddress} from '../workspace/types';
-import {workspacePathFromAddress} from '../workspace/workspacePath';
+import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
 import {PipelineSnapshotLink} from './PipelinePathUtils';
 
@@ -20,14 +20,31 @@ export const PipelineReference: React.FC<Props> = ({
   mode,
   snapshotId,
 }) => {
+  const modeLabel =
+    mode === 'default' ? null : <span style={{color: Colors.GRAY3}}>{`: ${mode}`}</span>;
+
   const pipeline =
     pipelineHrefContext === 'repo-unknown' ? (
-      <Link to={`/workspace/pipelines/${pipelineName}`}>{pipelineName}</Link>
-    ) : pipelineHrefContext === 'no-link' ? (
-      pipelineName
-    ) : (
-      <Link to={workspacePathFromAddress(pipelineHrefContext, `/pipelines/${pipelineName}/`)}>
+      <Link to={workspacePipelinePathGuessRepo(pipelineName, mode)}>
         {pipelineName}
+        {modeLabel}
+      </Link>
+    ) : pipelineHrefContext === 'no-link' ? (
+      <>
+        {pipelineName}
+        {modeLabel}
+      </>
+    ) : (
+      <Link
+        to={workspacePipelinePath(
+          pipelineHrefContext.name,
+          pipelineHrefContext.location,
+          pipelineName,
+          mode,
+        )}
+      >
+        {pipelineName}
+        {modeLabel}
       </Link>
     );
 
@@ -35,8 +52,13 @@ export const PipelineReference: React.FC<Props> = ({
     <>
       {pipeline}
       {snapshotId && ' @ '}
-      {snapshotId && <PipelineSnapshotLink snapshotId={snapshotId} pipelineName={pipelineName} />}
-      {mode === 'default' ? null : <span style={{color: Colors.GRAY3}}>{`: ${mode}`}</span>}
+      {snapshotId && (
+        <PipelineSnapshotLink
+          snapshotId={snapshotId}
+          pipelineName={pipelineName}
+          pipelineMode={mode}
+        />
+      )}
     </>
   );
 };

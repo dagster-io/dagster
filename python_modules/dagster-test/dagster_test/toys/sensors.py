@@ -1,6 +1,11 @@
 import os
 
 from dagster import AssetKey, RunRequest, SkipReason, check, sensor
+from dagster.core.definitions.pipeline_sensor import (
+    PipelineFailureSensorContext,
+    pipeline_failure_sensor,
+)
+from slack import WebClient
 
 
 def get_directory_files(directory_name, since=None):
@@ -105,4 +110,28 @@ def get_toys_sensors():
                 },
             )
 
-    return [toy_file_sensor, toy_asset_sensor, toy_s3_sensor]
+    @pipeline_failure_sensor
+    def slack_on_pipeline_failure(context: PipelineFailureSensorContext):
+
+        base_url = "http://localhost:3000"
+
+        # TBD: support resources?
+        slack_client = WebClient(token=os.environ["SLACK_DAGSTER_ETL_BOT_TOKEN"])
+
+        run_page_url = f"{base_url}/instance/runs/{context.pipeline_run.run_id}"
+        channel = "#yuhan-test"
+        message = "\n".join(
+            [
+                f'Pipeline "{context.pipeline_run.pipeline_name}" failed.',
+                f"error: {context.failure_event.message}",
+                f"mode: {context.pipeline_run.mode}",
+                f"run_page_url: {run_page_url}",
+            ]
+        )
+
+        slack_client.chat_postMessage(
+            channel=channel,
+            blocks=[{"type": "section", "text": {"type": "mrkdwn", "text": message}}],
+        )
+
+    return [toy_file_sensor, toy_asset_sensor, toy_s3_sensor, slack_on_pipeline_failure]

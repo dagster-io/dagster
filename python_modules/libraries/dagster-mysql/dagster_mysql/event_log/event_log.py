@@ -61,17 +61,20 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         table_names = retry_mysql_connection_fn(db.inspect(self._engine).get_table_names)
 
+        # Stamp and create tables if the main table does not exist (we can't check alembic
+        # revision because alembic config may be shared with other storage classes)
         if "event_logs" not in table_names:
-            with self._connect() as conn:
-                alembic_config = mysql_alembic_config(__file__)
-                retry_mysql_creation_fn(lambda: SqlEventLogStorageMetadata.create_all(conn))
-                # This revision may be shared by any other dagster storage classes using the same DB
-                stamp_alembic_rev(alembic_config, conn)
-
+            retry_mysql_creation_fn(self._init_db)
             # mark all secondary indexes to be used
             self.reindex()
 
         super().__init__()
+
+    def _init_db(self):
+        with self._connect() as conn:
+            with conn.begin():
+                SqlEventLogStorageMetadata.create_all(conn)
+                stamp_alembic_rev(mysql_alembic_config(__file__), conn)
 
     def optimize_for_dagit(self, statement_timeout):
         # When running in dagit, hold an open connection

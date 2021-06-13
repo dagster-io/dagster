@@ -1,17 +1,15 @@
 import {gql, useQuery} from '@apollo/client';
 import {NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
-import {Redirect} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
+import {explorerPathFromString, useStripSnapshotFromPath} from '../pipelines/PipelinePathUtils';
 import {Box} from '../ui/Box';
 import {Loading} from '../ui/Loading';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
-import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {PartitionView} from './PartitionView';
 import {
@@ -26,8 +24,10 @@ interface Props {
 
 export const PipelinePartitionsRoot: React.FC<Props> = (props) => {
   const {pipelinePath, repoAddress} = props;
-  const {pipelineName, snapshotId} = explorerPathFromString(pipelinePath);
+  const {pipelineName} = explorerPathFromString(pipelinePath);
   useDocumentTitle(`Pipeline: ${pipelineName}`);
+  useStripSnapshotFromPath(props);
+
   const repositorySelector = repoAddressToSelector(repoAddress);
 
   const queryResult = useQuery<PipelinePartitionsRootQuery, PipelinePartitionsRootQueryVariables>(
@@ -40,14 +40,6 @@ export const PipelinePartitionsRoot: React.FC<Props> = (props) => {
   const [selected = undefined, setSelected] = useQueryPersistedState<string>({
     queryKey: 'partitionSet',
   });
-
-  if (snapshotId) {
-    return (
-      <Redirect
-        to={workspacePathFromAddress(repoAddress, `/pipelines/${pipelineName}/partitions`)}
-      />
-    );
-  }
 
   return (
     <Loading queryResult={queryResult}>

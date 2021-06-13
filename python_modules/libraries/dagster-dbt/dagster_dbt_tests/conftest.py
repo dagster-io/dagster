@@ -10,6 +10,7 @@ from dagster.utils.test.postgres_instance import TestPostgresInstance
 DBT_EXECUTABLE = "dbt"
 TEST_PROJECT_DIR = file_relative_path(__file__, "dagster_dbt_test_project")
 DBT_CONFIG_DIR = os.path.join(TEST_PROJECT_DIR, "dbt_config")
+TEST_DBT_TARGET_DIR = os.path.join(TEST_PROJECT_DIR, "target_test")
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
@@ -22,6 +23,11 @@ def test_project_dir():
 @pytest.fixture(scope="session")
 def dbt_config_dir():
     return DBT_CONFIG_DIR
+
+
+@pytest.fixture(scope="session")
+def dbt_target_dir():
+    return TEST_DBT_TARGET_DIR
 
 
 @pytest.fixture(scope="session")
@@ -38,6 +44,8 @@ def conn_string():
     try:
         if not IS_BUILDKITE:
             os.environ["POSTGRES_TEST_DB_DBT_HOST"] = "localhost"
+
+        os.environ["DBT_TARGET_PATH"] = "target"
 
         with TestPostgresInstance.docker_service_up_or_skip(
             file_relative_path(__file__, "docker-compose.yml"),

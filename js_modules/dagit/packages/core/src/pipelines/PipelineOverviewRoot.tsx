@@ -2,7 +2,7 @@ import {gql, useQuery} from '@apollo/client';
 import {Colors, NonIdealState, Tooltip} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
-import {Link, Redirect, RouteComponentProps} from 'react-router-dom';
+import {Link, RouteComponentProps} from 'react-router-dom';
 
 import {Timestamp} from '../app/time/Timestamp';
 import {PipelineGraph, PIPELINE_GRAPH_SOLID_FRAGMENT} from '../graph/PipelineGraph';
@@ -28,7 +28,7 @@ import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
-import {explorerPathFromString} from './PipelinePathUtils';
+import {explorerPathFromString, useStripSnapshotFromPath} from './PipelinePathUtils';
 import {OverviewJobFragment} from './types/OverviewJobFragment';
 import {
   PipelineOverviewQuery,
@@ -42,8 +42,9 @@ type Props = RouteComponentProps<{pipelinePath: string}> & {repoAddress: RepoAdd
 
 export const PipelineOverviewRoot: React.FC<Props> = (props) => {
   const {match, repoAddress} = props;
-  const {pipelineName, snapshotId} = explorerPathFromString(match.params.pipelinePath);
+  const {pipelineName} = explorerPathFromString(match.params.pipelinePath);
   useDocumentTitle(`Pipeline: ${pipelineName}`);
+  useStripSnapshotFromPath(props.match.params);
 
   const repositorySelector = repoAddressToSelector(repoAddress);
   const pipelineSelector = {
@@ -59,12 +60,6 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
       variables: {pipelineSelector, limit: 5},
     },
   );
-
-  if (snapshotId) {
-    return (
-      <Redirect to={workspacePathFromAddress(repoAddress, `/pipelines/${pipelineName}/overview`)} />
-    );
-  }
 
   return (
     <Loading queryResult={queryResult}>

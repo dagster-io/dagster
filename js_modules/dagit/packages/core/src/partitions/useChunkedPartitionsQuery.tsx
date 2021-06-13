@@ -2,6 +2,7 @@ import {gql, useApolloClient, ApolloClient} from '@apollo/client';
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
 import {QueryPersistedStateConfig, useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {DagsterTag} from '../runs/RunTag';
 import {PipelineRunStatus} from '../types/globalTypes';
@@ -45,6 +46,7 @@ interface DataState {
   partitionNames: string[];
   loading: boolean;
   loadingPercent: number;
+  error?: PythonErrorFragment;
 }
 
 const InitialDataState: DataState = {
@@ -114,7 +116,19 @@ export function useChunkedPartitionsQuery(
           namesResult.data.partitionSetOrError.partitionsOrError.results.map((r) => r.name)) ||
         [];
 
-      setDataState((state) => ({...state, partitionNames, loadingPercent: 0.05}));
+      if (
+        namesResult.data.partitionSetOrError.__typename === 'PartitionSet' &&
+        namesResult.data.partitionSetOrError.partitionsOrError.__typename === 'PythonError'
+      ) {
+        const partitionSet = namesResult.data.partitionSetOrError;
+        const error =
+          partitionSet.partitionsOrError.__typename === 'PythonError'
+            ? partitionSet.partitionsOrError
+            : undefined;
+        setDataState((state) => ({...state, error, partitionNames: []}));
+      } else {
+        setDataState((state) => ({...state, partitionNames, loadingPercent: 0.05}));
+      }
 
       // Load runs in each of these partitions incrementally, running several queries in parallel
       // to maximize the throughput we can achieve from the GraphQL interface.
@@ -208,6 +222,7 @@ export function useChunkedPartitionsQuery(
     loading,
     loadingPercent,
     partitions: assemblePartitions(dataState),
+    error: dataState.error,
     pageSize,
     setPageSize: (pageSize: number | 'all') => {
       setPaginationState({cursor: null, cursorStack: [], pageSize});
@@ -342,8 +357,12 @@ const PARTITION_SET_NAMES_QUERY = gql`
               name
             }
           }
+          ... on PythonError {
+            ...PythonErrorFragment
+          }
         }
       }
     }
   }
+  ${PYTHON_ERROR_FRAGMENT}
 `;

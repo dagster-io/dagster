@@ -1,7 +1,10 @@
 import {IconName, Tab, Tabs, Colors} from '@blueprintjs/core';
+import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import React from 'react';
 import {Link, useRouteMatch} from 'react-router-dom';
 
+import {DISABLED_MESSAGE, PermissionSet, usePermissions} from '../app/Permissions';
+import {featureEnabled, FeatureFlag} from '../app/Util';
 import {
   explorerPathFromString,
   explorerPathToString,
@@ -21,6 +24,7 @@ interface TabConfig {
   title: string;
   pathComponent: string;
   icon: IconName;
+  isAvailable?: (permissions: PermissionSet) => boolean;
 }
 
 const pipelineTabs: {[key: string]: TabConfig} = {
@@ -30,6 +34,7 @@ const pipelineTabs: {[key: string]: TabConfig} = {
     title: 'Playground',
     pathComponent: 'playground',
     icon: 'manually-entered-data',
+    isAvailable: (permissions: PermissionSet) => permissions.canLaunchPipelineExecution,
   },
   runs: {
     title: 'Runs',
@@ -69,6 +74,7 @@ const tabForKey = (repoAddress: RepoAddress, explorerPath: PipelineExplorerPath)
         repoAddress,
         `/pipelines/${explorerPathForTab}${tab.pathComponent}`,
       ),
+      isAvailable: tab.isAvailable,
     };
   };
 };
@@ -79,9 +85,11 @@ interface Props {
 
 export const PipelineNav: React.FC<Props> = (props) => {
   const {repoAddress} = props;
+  const permissions = usePermissions();
   const repo = useRepository(repoAddress);
   const match = useRouteMatch<{tab?: string; selector: string}>([
     '/workspace/:repoPath/pipelines/:selector/:tab?',
+    '/workspace/:repoPath/jobs/:selector/:tab?',
   ]);
 
   const active = tabForPipelinePathComponent(match!.params.tab);
@@ -98,7 +106,14 @@ export const PipelineNav: React.FC<Props> = (props) => {
   return (
     <Group direction="column" spacing={12} padding={{top: 20, horizontal: 20}}>
       <PageHeader
-        title={<Heading>{explorerPath.pipelineName}</Heading>}
+        title={
+          <Heading>
+            {explorerPath.pipelineName}
+            {featureEnabled(FeatureFlag.PipelineModeTuples) && (
+              <span style={{opacity: 0.5}}> : {explorerPath.pipelineMode}</span>
+            )}
+          </Heading>
+        }
         icon="diagram-tree"
         description={
           <>
@@ -110,8 +125,16 @@ export const PipelineNav: React.FC<Props> = (props) => {
       <Box border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}>
         <Tabs large={false} selectedTabId={active.title}>
           {tabs.map((tab) => {
-            const {href, text} = tab;
-            return <Tab key={text} id={text} title={<Link to={href}>{text}</Link>} />;
+            const {href, text, isAvailable} = tab;
+            const disabled = isAvailable && !isAvailable(permissions);
+            const title = disabled ? (
+              <Tooltip content={DISABLED_MESSAGE} placement="top">
+                {text}
+              </Tooltip>
+            ) : (
+              <Link to={href}>{text}</Link>
+            );
+            return <Tab key={text} id={text} title={title} disabled={disabled} />;
           })}
         </Tabs>
       </Box>

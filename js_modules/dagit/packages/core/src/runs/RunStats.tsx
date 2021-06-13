@@ -37,16 +37,16 @@ export const RunStats = ({runId}: {runId: string}) => {
   return (
     <RunStatsDetailsContainer>
       <Link
-        to={`${runPath}?logs=type:step_success`}
+        to={`${runPath}?logs=type:STEP_SUCCESS`}
       >{`${result.stats.stepsSucceeded} steps succeeded`}</Link>
-      <Link to={`${runPath}?logs=type:step_failure`}>
+      <Link to={`${runPath}?logs=type:STEP_FAILURE`}>
         {`${result.stats.stepsFailed} steps failed`}
       </Link>
       <Link
-        to={`${runPath}?logs=type:materialization`}
+        to={`${runPath}?logs=type:ASSET_MATERIALIZATION`}
       >{`${result.stats.materializations} materializations`}</Link>
       <Link
-        to={`${runPath}?logs=type:expectation`}
+        to={`${runPath}?logs=type:STEP_EXPECTATION_RESULT`}
       >{`${result.stats.expectations} expectations passed`}</Link>
     </RunStatsDetailsContainer>
   );

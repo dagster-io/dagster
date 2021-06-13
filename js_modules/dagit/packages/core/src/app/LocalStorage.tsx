@@ -99,7 +99,7 @@ export function applyCreateSession(
 
 // StorageProvider component that vends `IStorageData` via a render prop
 
-type StorageHook = [IStorageData, React.Dispatch<React.SetStateAction<IStorageData>>];
+type StorageHook = [IStorageData, (data: IStorageData) => void];
 
 let _data: IStorageData | null = null;
 let _dataNamespace = '';

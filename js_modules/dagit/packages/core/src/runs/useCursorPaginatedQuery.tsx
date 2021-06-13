@@ -31,7 +31,7 @@ export function useCursorPaginatedQuery<T, TVars extends CursorPaginationQueryVa
   pageSize: number;
   getResultArray: (result: T | undefined) => any[];
 }) {
-  const [cursorStack, setCursorStack] = React.useState<string[]>([]);
+  const [cursorStack, setCursorStack] = React.useState<string[]>(() => []);
   const [cursor, setCursor] = useQueryPersistedState<string | undefined>({queryKey: 'cursor'});
 
   const queryVars: any = {
@@ -59,7 +59,7 @@ export function useCursorPaginatedQuery<T, TVars extends CursorPaginationQueryVa
     },
     advanceCursor: () => {
       if (cursor) {
-        setCursorStack([...cursorStack, cursor]);
+        setCursorStack((current) => [...current, cursor]);
       }
       const nextCursor = queryResult.data && options.nextCursorForResult(queryResult.data);
       if (!nextCursor) {

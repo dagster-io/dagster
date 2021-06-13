@@ -7,6 +7,7 @@ from dagster import (
     OutputDefinition,
     PipelineExecutionResult,
     SolidExecutionResult,
+    build_solid_context,
     execute_pipeline,
     execute_solid,
     pipeline,
@@ -31,6 +32,11 @@ def add_two(num: int) -> int:
 @solid
 def subtract(left: int, right: int) -> int:
     return left - right
+
+
+@solid(required_resource_keys={"foo"})
+def solid_requires_foo(context):
+    return context.resources.foo
 
 
 @pipeline
@@ -74,7 +80,7 @@ def test_pipeline():
 # end_test_pipeline_marker
 
 
-# start_test_solid_marker
+# start_test_execute_solid_marker
 def test_solid():
     result = execute_solid(add_one)
 
@@ -85,7 +91,22 @@ def test_solid():
     assert result.output_value() == 2
 
 
+# end_test_execute_solid_marker
+
+# start_test_solid_marker
+def test_solid_with_invocation():
+    assert add_one() == 2
+
+
 # end_test_solid_marker
+
+# start_test_solid_context_marker
+def test_solid_with_context():
+    context = build_solid_context(resources={"foo": "bar"})
+    assert solid_requires_foo(context) == "bar"
+
+
+# end_test_solid_context_marker
 
 # start_test_pipeline_with_config
 def test_pipeline_with_config():

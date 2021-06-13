@@ -112,7 +112,7 @@ const INSTANCE_SENSORS_QUERY = gql`
     instance {
       ...InstanceHealthFragment
     }
-    repositoryLocationsOrError {
+    workspaceOrError {
       ...RepositoryLocationsFragment
     }
     repositoriesOrError {

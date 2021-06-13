@@ -10,9 +10,10 @@ from dagster.utils.backcompat import experimental
 @experimental
 def new_project_command(path: str):
     """
-    Creates a new Dagster repository and generates boilerplate code. ``dagster new-project`` is an
-    experimental command and it may generate different files in future versions, even between dot
-    releases.
+    Create a new Dagster repository and generate boilerplate code.
+
+    ``dagster new-project`` is an experimental command and it may generate different files in
+    future versions, even between dot releases.
 
     PATH: Location of the new Dagster repository in your filesystem.
     """

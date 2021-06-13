@@ -39,6 +39,8 @@ def hello_cereal(context):
     lines = response.text.split("\n")
     cereals = [row for row in csv.DictReader(lines)]
     context.log.info(f"Found {len(cereals)} cereals")
+
+    return cereals
 ```
 
 In this simple case, our solid takes no arguments except for the <PyObject module="dagster"

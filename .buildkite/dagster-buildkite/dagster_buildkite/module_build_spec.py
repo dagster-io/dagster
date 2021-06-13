@@ -102,7 +102,7 @@ class ModuleBuildSpec(
                 tox_file = "-c %s " % self.tox_file if self.tox_file else ""
                 tox_cmd = f"tox -vv {tox_file}-e {TOX_MAP[version]}{tox_env_suffix}"
 
-                cmds = extra_cmds + [f"cd {self.directory}", tox_cmd]
+                cmds = extra_cmds + [f"cd {self.directory}", "pip install -U virtualenv", tox_cmd]
 
                 if self.upload_coverage:
                     coverage = f".coverage.{label}.{version}.$BUILDKITE_BUILD_ID"
@@ -139,10 +139,7 @@ class ModuleBuildSpec(
         if self.directory not in MYPY_EXCLUDES:
             tests.append(
                 StepBuilder(f":mypy: {package}")
-                .run(
-                    "pip install mypy==0.790",
-                    f"mypy --config-file mypy/config {self.directory}",
-                )
+                .run("pip install mypy==0.812", f"mypy --config-file mypy/config {self.directory}")
                 .on_integration_image(SupportedPython.V3_7)
                 .build()
             )

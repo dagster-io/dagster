@@ -68,24 +68,26 @@ RELOAD_REPOSITORY_LOCATION_MUTATION = """
 mutation ($repositoryLocationName: String!) {
    reloadRepositoryLocation(repositoryLocationName: $repositoryLocationName) {
       __typename
-      ... on RepositoryLocation {
+      ... on WorkspaceLocationEntry {
         name
-        repositories {
-            name
+        locationOrLoadError {
+          __typename
+          ... on RepositoryLocation {
+            isReloadSupported
+            repositories {
+                name
+            }
+          }
+          ... on PythonError {
+            message
+          }
         }
-        isReloadSupported
       }
       ... on ReloadNotSupported {
         message
       }
       ... on RepositoryLocationNotFound {
         message
-      }
-      ... on RepositoryLocationLoadFailure {
-          name
-          error {
-              message
-          }
       }
    }
 }

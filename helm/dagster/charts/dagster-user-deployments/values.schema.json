@@ -35,7 +35,14 @@
                 },
                 "tag": {
                     "title": "Tag",
-                    "type": "string"
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 },
                 "pullPolicy": {
                     "$ref": "#/definitions/PullPolicy"
@@ -43,7 +50,6 @@
             },
             "required": [
                 "repository",
-                "tag",
                 "pullPolicy"
             ]
         },

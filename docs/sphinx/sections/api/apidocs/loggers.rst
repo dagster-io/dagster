@@ -26,7 +26,8 @@ Defining custom loggers
 
 .. autoclass:: InitLoggerContext
 
+.. autofunction:: build_init_logger_context
+
 Monitoring stdout and stderr
 ----------------------------
 .. currentmodule:: dagster
-

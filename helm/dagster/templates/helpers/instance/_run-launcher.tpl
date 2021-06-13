@@ -35,7 +35,7 @@ config:
   service_account_name: {{ include "dagster.serviceAccountName" . }}
 
   {{- if (hasKey $k8sRunLauncherConfig "image") }}
-  job_image: {{ include "image.name" $k8sRunLauncherConfig.image | quote }}
+  job_image: {{ include "dagster.externalImage.name" (list $ $k8sRunLauncherConfig.image) | quote }}
   image_pull_policy: {{ $k8sRunLauncherConfig.image.pullPolicy }}
   {{- end }}
   dagster_home:

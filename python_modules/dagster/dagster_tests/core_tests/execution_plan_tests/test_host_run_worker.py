@@ -74,7 +74,7 @@ def test_host_run_worker():
         run_config = {
             "solids": {"solid_that_uses_adder_resource": {"inputs": {"number": {"value": 4}}}},
             "intermediate_storage": {"filesystem": {}},
-            "execution": {"multiprocess": {}},
+            "execution": {"multiprocess": None},
         }
         execution_plan = create_execution_plan(
             pipeline_with_mode,
@@ -113,11 +113,6 @@ def test_executor(_init_context):
     return MultiprocessExecutor(max_concurrent=4, retries=RetryMode.DISABLED)
 
 
-def _custom_get_executor_def_fn(executor_name):
-    assert not executor_name
-    return test_executor
-
-
 def test_custom_executor_fn():
     _explode_pid["pid"] = os.getpid()
 
@@ -143,7 +138,7 @@ def test_custom_executor_fn():
             ExplodingTestPipeline(recon_pipeline.repository, recon_pipeline.pipeline_name),
             pipeline_run,
             instance,
-            get_executor_def_fn=_custom_get_executor_def_fn,
+            executor_defs=[test_executor],
             raise_on_error=True,
         )
 

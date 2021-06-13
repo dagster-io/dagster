@@ -18,46 +18,18 @@ describe('App', () => {
       name: () => 'my_repository',
       pipelines: () => new MockList(1),
     }),
-    RepositoryOrError: () => ({
-      __typename: 'Repository',
-    }),
-    RepositoriesOrError: () => ({
-      __typename: 'RepositoryConnection',
-    }),
     RepositoryLocation: () => ({
       environmentPath: () => 'what then',
       id: () => 'my_location',
       name: () => 'my_location',
       repositories: () => new MockList(1),
     }),
-    RepositoryLocationConnection: () => ({
-      nodes: () => new MockList(1),
-    }),
-    RepositoryLocationsOrError: () => ({
-      __typename: 'RepositoryLocationConnection',
-      nodes: () => new MockList(1),
-    }),
-    RepositoryLocationLoadFailure: () => ({
-      id: () => 'failed',
+    Workspace: () => ({
+      locationEntries: () => new MockList(1),
     }),
     RepositoryOrigin: () => ({
       repositoryName: () => 'my_repository',
       repositoryLocationName: () => 'my_location',
-    }),
-    RepositoryLocationOrLoadFailure: () => ({
-      __typename: 'RepositoryLocation',
-    }),
-    SchedulesOrError: () => ({
-      __typename: 'Schedules',
-    }),
-    Schedules: () => ({
-      results: () => new MockList(1),
-    }),
-    SensorsOrError: () => ({
-      __typename: 'Sensors',
-    }),
-    Sensors: () => ({
-      results: () => new MockList(1),
     }),
     SolidDefinition: () => ({
       configField: null,
@@ -69,17 +41,9 @@ describe('App', () => {
       requiredResources: () => new MockList(0),
     }),
     SolidInvocationSite: () => ({
-      __typename: () => 'SolidInvocationSite',
-      pipeline: () => ({
-        __typename: 'Pipeline',
-      }),
       solidHandle: () => ({
         handleID: 'foo_handle',
-        __typename: 'SolidHandle',
       }),
-    }),
-    ISolidDefinition: () => ({
-      __typename: 'SolidDefinition',
     }),
   };
 
@@ -123,7 +87,6 @@ describe('App', () => {
 
     it('renders pipeline overview', async () => {
       const mocks = {
-        ...defaultMocks,
         Pipeline: () => ({
           name: 'foo_pipeline',
         }),
@@ -132,19 +95,16 @@ describe('App', () => {
           schedules: () => new MockList(0),
           sensors: () => new MockList(0),
         }),
-        PipelineSnapshotOrError: () => ({
-          __typename: 'PipelineSnapshot',
-        }),
       };
 
       render(
         <TestProvider
           routerProps={{
             initialEntries: [
-              '/workspace/my_repository@my_location/pipelines/foo_pipeline/overview',
+              '/workspace/my_repository@my_location/pipelines/foo_pipeline:default/overview',
             ],
           }}
-          apolloProps={{mocks}}
+          apolloProps={{mocks: [defaultMocks, mocks]}}
         >
           <App />
         </TestProvider>,

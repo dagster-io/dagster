@@ -106,7 +106,7 @@ def execute_in_process(
                 pipeline_run=pipeline_run,
                 instance=execute_instance,
                 run_config=run_config,
-                get_executor_def_fn=None,
+                executor_defs=None,
                 output_capture=recorder if output_capturing_enabled else None,
             ),
         )

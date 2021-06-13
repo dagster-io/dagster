@@ -4,6 +4,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {featureEnabled, FeatureFlag} from '../app/Util';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {Group} from '../ui/Group';
 import {Table} from '../ui/Table';
@@ -12,9 +13,10 @@ import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
+import {PipelineReference} from './PipelineReference';
 import {PipelineTableFragment} from './types/PipelineTableFragment';
 
-type PipelineForTable = {pipeline: PipelineTableFragment; repoAddress: RepoAddress};
+type PipelineForTable = {pipeline: PipelineTableFragment; repoAddress: RepoAddress; mode?: string};
 
 interface Props {
   pipelines: PipelineForTable[];
@@ -24,6 +26,13 @@ interface Props {
 export const PipelineTable: React.FC<Props> = (props) => {
   const {pipelines, showRepo} = props;
 
+  let items = pipelines;
+  if (featureEnabled(FeatureFlag.PipelineModeTuples)) {
+    items = [];
+    for (const item of pipelines) {
+      items.push(...item.pipeline.modes.map((mode) => ({...item, mode: mode.name})));
+    }
+  }
   return (
     <Table>
       <thead>
@@ -35,13 +44,15 @@ export const PipelineTable: React.FC<Props> = (props) => {
         </tr>
       </thead>
       <tbody>
-        {pipelines.map(({pipeline, repoAddress}) => (
+        {items.map(({pipeline, repoAddress, mode}) => (
           <tr key={`${pipeline.name}-${repoAddressAsString(repoAddress)}`}>
             <td>
               <Group direction="column" spacing={4}>
-                <Link to={workspacePathFromAddress(repoAddress, `/pipelines/${pipeline.name}`)}>
-                  <span style={{fontWeight: 500}}>{pipeline.name}</span>
-                </Link>
+                <PipelineReference
+                  pipelineName={pipeline.name}
+                  mode={mode || pipeline.modes[0].name}
+                  pipelineHrefContext={repoAddress}
+                />
                 {showRepo ? <Caption>{repoAddressAsString(repoAddress)}</Caption> : null}
                 <Description>{pipeline.description}</Description>
               </Group>
@@ -49,14 +60,16 @@ export const PipelineTable: React.FC<Props> = (props) => {
             <td>
               {pipeline.schedules?.length ? (
                 <Group direction="column" spacing={2}>
-                  {pipeline.schedules.map((schedule) => (
-                    <Link
-                      key={schedule.name}
-                      to={workspacePathFromAddress(repoAddress, `/schedules/${schedule.name}`)}
-                    >
-                      {schedule.name}
-                    </Link>
-                  ))}
+                  {pipeline.schedules
+                    .filter((s) => !mode || s.mode === mode)
+                    .map((schedule) => (
+                      <Link
+                        key={schedule.name}
+                        to={workspacePathFromAddress(repoAddress, `/schedules/${schedule.name}`)}
+                      >
+                        {schedule.name}
+                      </Link>
+                    ))}
                 </Group>
               ) : (
                 <div style={{color: Colors.GRAY5}}>None</div>
@@ -65,14 +78,16 @@ export const PipelineTable: React.FC<Props> = (props) => {
             <td>
               {pipeline.sensors?.length ? (
                 <Group direction="column" spacing={2}>
-                  {pipeline.sensors.map((sensor) => (
-                    <Link
-                      key={sensor.name}
-                      to={workspacePathFromAddress(repoAddress, `/sensors/${sensor.name}`)}
-                    >
-                      {sensor.name}
-                    </Link>
-                  ))}
+                  {pipeline.sensors
+                    .filter((s) => !mode || s.mode === mode)
+                    .map((sensor) => (
+                      <Link
+                        key={sensor.name}
+                        to={workspacePathFromAddress(repoAddress, `/sensors/${sensor.name}`)}
+                      >
+                        {sensor.name}
+                      </Link>
+                    ))}
                 </Group>
               ) : (
                 <div style={{color: Colors.GRAY5}}>None</div>
@@ -107,18 +122,24 @@ export const PIPELINE_TABLE_FRAGMENT = gql`
     id
     description
     name
+    modes {
+      name
+    }
     runs(limit: 5) {
       id
+      mode
       runId
       status
     }
     schedules {
       id
       name
+      mode
     }
     sensors {
       id
       name
+      mode
     }
   }
 `;

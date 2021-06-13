@@ -19,6 +19,16 @@ export interface AssetQuery_assetOrError_Asset_key {
   path: string[];
 }
 
+export interface AssetQuery_assetOrError_Asset_mostRecentMaterialization_materializationEvent {
+  __typename: "StepMaterializationEvent";
+  timestamp: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_mostRecentMaterialization {
+  __typename: "AssetMaterialization";
+  materializationEvent: AssetQuery_assetOrError_Asset_mostRecentMaterialization_materializationEvent;
+}
+
 export interface AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_PipelineRunNotFoundError {
   __typename: "PipelineRunNotFoundError" | "PythonError";
 }
@@ -159,6 +169,7 @@ export interface AssetQuery_assetOrError_Asset {
   __typename: "Asset";
   id: string;
   key: AssetQuery_assetOrError_Asset_key;
+  mostRecentMaterialization: AssetQuery_assetOrError_Asset_mostRecentMaterialization[];
   assetMaterializations: AssetQuery_assetOrError_Asset_assetMaterializations[];
 }
 

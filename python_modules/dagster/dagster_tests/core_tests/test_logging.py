@@ -206,14 +206,14 @@ def test_resource_logging(capsys):
     @resource
     def foo_resource(init_context):
         def fn():
-            init_context.log_manager.info("test logging from foo resource")
+            init_context.log.info("test logging from foo resource")
 
         return fn
 
     @resource
     def bar_resource(init_context):
         def fn():
-            init_context.log_manager.info("test logging from bar resource")
+            init_context.log.info("test logging from bar resource")
 
         return fn
 

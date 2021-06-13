@@ -61,7 +61,7 @@ from .graph import GraphDefinition
 from .hook import HookDefinition
 from .input import InputDefinition, InputMapping
 from .intermediate_storage import IntermediateStorageDefinition, intermediate_storage
-from .logger import LoggerDefinition, logger
+from .logger import LoggerDefinition, build_init_logger_context, logger
 from .mode import ModeDefinition
 from .output import OutputDefinition, OutputMapping
 from .partition import Partition, PartitionScheduleDefinition, PartitionSetDefinition
@@ -75,7 +75,11 @@ from .reconstructable import (
 )
 from .repository import RepositoryDefinition
 from .resource import ResourceDefinition, make_values_resource, resource
-from .run_config_schema import RunConfigSchema, create_environment_type, create_run_config_schema
+from .run_config_schema import (
+    RunConfigSchema,
+    create_run_config_schema,
+    create_run_config_schema_type,
+)
 from .run_request import JobType, RunRequest, SkipReason
 from .schedule import ScheduleDefinition, ScheduleExecutionContext
 from .sensor import SensorDefinition, SensorExecutionContext

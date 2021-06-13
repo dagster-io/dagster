@@ -78,7 +78,7 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
             )}
           />
           <Route
-            path="/workspace/:repoPath/pipelines"
+            path={['/workspace/:repoPath/pipelines', '/workspace/:repoPath/jobs']}
             render={() => <RepositoryPipelinesList repoAddress={repoAddress} />}
           />
           <Route

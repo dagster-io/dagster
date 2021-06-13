@@ -7,11 +7,19 @@ from dagster.utils.typing_api import (
     is_closed_python_optional_type,
     is_closed_python_set_type,
     is_closed_python_tuple_type,
+    is_typing_type,
 )
 
 
 def test_closed_python_dict():
     assert is_closed_python_dict_type(typing.Dict[str, int]) is True
+
+    # Documenting current behavior -- it seems possible that this is not intended
+    assert is_closed_python_dict_type(typing.Dict[str, typing.Tuple]) is True
+    assert is_closed_python_dict_type(typing.Dict[str, typing.List]) is True
+    assert is_closed_python_dict_type(typing.Dict[str, typing.Dict]) is True
+    assert is_closed_python_dict_type(typing.Dict[str, typing.Dict[str, typing.Dict]]) is True
+    assert is_closed_python_dict_type(typing.Dict[str, typing.Optional[typing.Dict]]) is True
 
     assert is_closed_python_dict_type(dict) is False
     assert is_closed_python_dict_type(typing.Dict) is False
@@ -38,6 +46,13 @@ def test_get_inner_optional_py_3():
 def test_closed_tuple_type():
     assert is_closed_python_tuple_type(typing.Tuple[int, str]) is True
 
+    # Documenting current behavior -- it seems possible that this is not intended
+    assert is_closed_python_tuple_type(typing.Tuple[str, typing.Tuple]) is True
+    assert is_closed_python_tuple_type(typing.Tuple[str, typing.List]) is True
+    assert is_closed_python_tuple_type(typing.Tuple[str, typing.Dict]) is True
+    assert is_closed_python_tuple_type(typing.Tuple[str, typing.Dict[str, typing.Dict]]) is True
+    assert is_closed_python_tuple_type(typing.Tuple[str, typing.Optional[typing.Dict]]) is True
+
     assert is_closed_python_tuple_type(tuple) is False
     assert is_closed_python_tuple_type(typing.Tuple) is False
     assert is_closed_python_tuple_type(1) is False
@@ -59,6 +74,13 @@ def test_closed_set_type():
     assert is_closed_python_set_type(typing.Tuple) is False
     assert is_closed_python_set_type(typing.Tuple[int, str]) is False
 
+    # Documenting current behavior -- it seems possible that this is not intended
+    assert is_closed_python_set_type(typing.Set[typing.Tuple]) is True
+    assert is_closed_python_set_type(typing.Set[typing.List]) is True
+    assert is_closed_python_set_type(typing.Set[typing.Dict]) is True
+    assert is_closed_python_set_type(typing.Set[typing.Dict[str, typing.Dict]]) is True
+    assert is_closed_python_set_type(typing.Set[typing.Optional[typing.Dict]]) is True
+
 
 def test_closed_list_type():
     assert is_closed_python_list_type(typing.List[int]) is True
@@ -73,3 +95,39 @@ def test_closed_list_type():
     assert is_closed_python_list_type(typing.Dict[int, str]) is False
     assert is_closed_python_list_type(typing.Tuple) is False
     assert is_closed_python_list_type(typing.Tuple[int, str]) is False
+
+
+def test_is_typing_type():
+    assert is_typing_type("foobar") is False
+    assert is_typing_type(1) is False
+    assert is_typing_type(dict) is False
+    assert is_typing_type(int) is False
+    assert is_typing_type(list) is False
+    assert is_typing_type(None) is False
+    assert is_typing_type(set) is False
+    assert is_typing_type(tuple) is False
+    assert is_typing_type(typing.Dict) is True
+    assert is_typing_type(typing.Dict[int, str]) is True
+    assert is_typing_type(typing.Dict[str, typing.Dict[str, typing.Dict]]) is True
+    assert is_typing_type(typing.Dict[str, typing.Dict]) is True
+    assert is_typing_type(typing.Dict[str, typing.List]) is True
+    assert is_typing_type(typing.Dict[str, typing.Optional[typing.Dict]]) is True
+    assert is_typing_type(typing.Dict[str, typing.Tuple]) is True
+    assert is_typing_type(typing.List) is True
+    assert is_typing_type(typing.List[int]) is True
+    assert is_typing_type(typing.Optional) is False
+    assert is_typing_type(typing.Optional[int]) is True
+    assert is_typing_type(typing.Set) is True
+    assert is_typing_type(typing.Set[int]) is True
+    assert is_typing_type(typing.Set[typing.Dict[str, typing.Dict]]) is True
+    assert is_typing_type(typing.Set[typing.Dict]) is True
+    assert is_typing_type(typing.Set[typing.List]) is True
+    assert is_typing_type(typing.Set[typing.Optional[typing.Dict]]) is True
+    assert is_typing_type(typing.Set[typing.Tuple]) is True
+    assert is_typing_type(typing.Tuple) is True
+    assert is_typing_type(typing.Tuple[int, str]) is True
+    assert is_typing_type(typing.Tuple[str, typing.Dict[str, typing.Dict]]) is True
+    assert is_typing_type(typing.Tuple[str, typing.Dict]) is True
+    assert is_typing_type(typing.Tuple[str, typing.List]) is True
+    assert is_typing_type(typing.Tuple[str, typing.Optional[typing.Dict]]) is True
+    assert is_typing_type(typing.Tuple[str, typing.Tuple]) is True

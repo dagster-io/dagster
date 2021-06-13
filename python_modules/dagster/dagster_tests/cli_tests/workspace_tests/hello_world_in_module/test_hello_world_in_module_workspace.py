@@ -8,8 +8,8 @@ def test_load_in_process_location_hello_world_terse():
         [file_relative_path(__file__, "terse_python_module_workspace.yaml")],
     ) as workspace:
         assert isinstance(workspace, Workspace)
-        assert len(workspace.repository_locations) == 1
-        assert workspace.repository_locations[0].name == "dagster.utils.test.hello_world_repository"
+        assert workspace.repository_locations_count == 1
+        assert workspace.repository_location_names[0] == "dagster.utils.test.hello_world_repository"
 
 
 def test_load_in_process_location_hello_world_nested():
@@ -17,8 +17,8 @@ def test_load_in_process_location_hello_world_nested():
         [file_relative_path(__file__, "nested_python_module_workspace.yaml")],
     ) as workspace:
         assert isinstance(workspace, Workspace)
-        assert len(workspace.repository_locations) == 1
-        assert workspace.repository_locations[0].name == "dagster.utils.test.hello_world_repository"
+        assert workspace.repository_locations_count == 1
+        assert workspace.repository_location_names[0] == "dagster.utils.test.hello_world_repository"
 
 
 def test_load_in_process_location_hello_world_nested_with_def():
@@ -26,8 +26,8 @@ def test_load_in_process_location_hello_world_nested_with_def():
         [file_relative_path(__file__, "nested_with_def_python_module_workspace.yaml")],
     ) as workspace:
         assert isinstance(workspace, Workspace)
-        assert len(workspace.repository_locations) == 1
+        assert workspace.repository_locations_count == 1
         assert (
-            workspace.repository_locations[0].name
+            workspace.repository_location_names[0]
             == "dagster.utils.test.hello_world_repository:hello_world_repository"
         )

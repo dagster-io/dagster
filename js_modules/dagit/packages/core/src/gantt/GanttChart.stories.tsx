@@ -7,7 +7,7 @@ import {StorybookProvider} from '../testing/StorybookProvider';
 import {PipelineRunStatus} from '../types/globalTypes';
 
 import {IGanttNode} from './Constants';
-import {GanttChart} from './GanttChart';
+import {GanttChart, GanttChartLoadingState} from './GanttChart';
 
 const R1_START = 1619468000;
 const R2_START = 1619468000 + 30000;
@@ -380,7 +380,7 @@ export const EmptyStateCase = () => {
   return (
     <StorybookProvider apolloProps={{mocks: APOLLO_MOCKS}}>
       <div style={{width: '100%', height: 400}}>
-        <GanttChart.LoadingState runId={'r2'} />
+        <GanttChartLoadingState runId={'r2'} />
       </div>
     </StorybookProvider>
   );

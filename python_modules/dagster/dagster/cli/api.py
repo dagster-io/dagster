@@ -51,7 +51,15 @@ class ExecuteRunArgsLoadComplete(namedtuple("_ExecuteRunArgsLoadComplete", "")):
     pass
 
 
-@click.command(
+@click.group(name="api")
+def api_cli():
+    """
+    [INTERNAL] These commands are intended to support internal use cases. Users should generally
+    not invoke these commands interactively.
+    """
+
+
+@api_cli.command(
     name="execute_run",
     help=(
         "[INTERNAL] This is an internal utility. Users should generally not invoke this command "
@@ -165,7 +173,7 @@ def verify_step(instance, pipeline_run, retry_state, step_keys_to_execute):
     return True
 
 
-@click.command(
+@api_cli.command(
     name="execute_step",
     help=(
         "[INTERNAL] This is an internal utility. Users should generally not invoke this command "
@@ -264,7 +272,7 @@ def _schedule_tick_context(instance, stream, tick_data):
         context.write()
 
 
-@click.command(name="grpc", help="Serve the Dagster inter-process API over GRPC")
+@api_cli.command(name="grpc", help="Serve the Dagster inter-process API over GRPC")
 @click.option(
     "--port",
     "-p",
@@ -403,7 +411,7 @@ def grpc_command(
         server.serve()
 
 
-@click.command(name="grpc-health-check", help="Check the status of a dagster GRPC server")
+@api_cli.command(name="grpc-health-check", help="Check the status of a dagster GRPC server")
 @click.option(
     "--port",
     "-p",
@@ -443,7 +451,7 @@ def grpc_health_check_command(port=None, socket=None, host="localhost"):
 ###################################################################################################
 # WARNING: these cli args are encoded in cron, so are not safely changed without migration
 ###################################################################################################
-@click.command(
+@api_cli.command(
     name="launch_scheduled_execution",
     help=(
         "[INTERNAL] This is an internal utility. Users should generally not invoke this command "
@@ -632,23 +640,3 @@ def _launch_run(
         return
 
     tick_context.stream.send(ScheduledExecutionSuccess(run_id=launched_run.run_id))
-
-
-def create_api_cli_group():
-    group = click.Group(
-        name="api",
-        help=(
-            "[INTERNAL] These commands are intended to support internal use cases. Users should "
-            "generally not invoke these commands interactively."
-        ),
-    )
-
-    group.add_command(execute_run_command)
-    group.add_command(execute_step_command)
-    group.add_command(launch_scheduled_execution)
-    group.add_command(grpc_command)
-    group.add_command(grpc_health_check_command)
-    return group
-
-
-api_cli = create_api_cli_group()

@@ -50,12 +50,6 @@ describe('RunDetails', () => {
   const buildMocks = (config: MockConfig) => {
     const {status, startTime, endTime} = config;
     return {
-      PipelineRunOrError: () => ({
-        __typename: 'PipelineRun',
-      }),
-      PipelineRunStatsOrError: () => ({
-        __typename: 'PipelineRunStatsSnapshot',
-      }),
       PipelineRun: () => ({
         id: () => 'abc',
         status: () => status,

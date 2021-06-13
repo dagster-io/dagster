@@ -31,7 +31,7 @@ import {CustomAlertProvider} from './CustomAlertProvider';
 import {CustomConfirmationProvider} from './CustomConfirmationProvider';
 import {CustomTooltipProvider} from './CustomTooltipProvider';
 import {LayoutProvider} from './LayoutProvider';
-import {Permissions} from './Permissions';
+import {PermissionsFromJSON} from './Permissions';
 import {formatElapsedTime, patchCopyToRemoveZeroWidthUnderscores, debugLog} from './Util';
 import {WebsocketStatusProvider} from './WebsocketStatus';
 import {TimezoneProvider} from './time/TimezoneContext';
@@ -83,7 +83,7 @@ interface Props {
   config: {
     graphqlURI: string;
     basePath?: string;
-    permissions: Permissions;
+    permissions: PermissionsFromJSON;
     subscriptionParams?: {[key: string]: string};
     sessionToken?: string;
   };

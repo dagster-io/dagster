@@ -258,7 +258,6 @@
             "title": "Dagster Daemon",
             "path": "/deployment/dagster-daemon"
           },
-
           {
             "title": "Run Launchers",
             "path": "/deployment/run-launcher"
@@ -386,6 +385,10 @@
             "path": "/guides/dagster/multi-type-lakehouse"
           },
           {
+            "title": "Run Attribution (Experimental)",
+            "path": "/guides/dagster/run-attribution"
+          },
+          {
             "title": "Re-execution",
             "path": "/guides/dagster/re-execution"
           }
@@ -456,6 +459,14 @@
           {
             "title": "Hooks",
             "path": "/_apidocs/hooks"
+          },
+          {
+            "title": "IO Managers",
+            "path": "/_apidocs/io-managers"
+          },
+          {
+            "title": "Dynamic Mapping & Collect",
+            "path": "/_apidocs/dynamic"
           },
           {
             "title": "Utilities",

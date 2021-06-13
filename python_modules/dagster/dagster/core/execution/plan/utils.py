@@ -55,9 +55,8 @@ def solid_execution_error_boundary(error_cls, msg_fn, step_context, **kwargs):
                 # could check exc against a whitelist of exceptions
                 raise RetryRequested(
                     max_retries=policy.max_retries,
-                    # could support an enum of "delay curves" which use delay and
-                    # step_context.previous_attempt_count to calculate wait time
-                    seconds_to_wait=policy.delay,
+                    # likely to move the declarative properties on to the request (or just the whole policy)
+                    seconds_to_wait=policy.calculate_delay(step_context.previous_attempt_count + 1),
                 ) from e
 
             raise error_cls(

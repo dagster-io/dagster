@@ -12,9 +12,9 @@ from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.test_utils import instance_for_test
 from dagster.utils import file_relative_path, safe_tempfile_path
 from dagstermill import DagstermillError, define_dagstermill_solid
+from dagstermill.compat import ExecutionError
 from jupyter_client.kernelspec import NoSuchKernel
 from nbconvert.preprocessors import ExecutePreprocessor
-from papermill import PapermillExecutionError
 
 try:
     import dagster_pandas as _
@@ -166,6 +166,16 @@ def test_alias_with_config():
 
 @pytest.mark.notebook_test
 def test_reexecute_result_notebook():
+    def _strip_execution_metadata(nb):
+        cells = nb["cells"]
+        for cell in cells:
+            if "metadata" in cell:
+                if "execution" in cell["metadata"]:
+                    del cell["metadata"]["execution"]
+        nb["cells"] = cells
+
+        return nb
+
     with exec_for_test(
         "hello_world_pipeline", {"loggers": {"console": {"config": {"log_level": "ERROR"}}}}
     ) as result:
@@ -181,9 +191,11 @@ def test_reexecute_result_notebook():
             with open(result_path) as fd:
                 nb = nbformat.read(fd, as_version=4)
             ep = ExecutePreprocessor()
-            ep.preprocess(nb, {})
+            ep.preprocess(nb)
             with open(result_path) as fd:
-                assert nbformat.read(fd, as_version=4) == nb
+                expected = _strip_execution_metadata(nb)
+                actual = _strip_execution_metadata(nbformat.read(fd, as_version=4))
+                assert actual == expected
 
 
 @pytest.mark.notebook_test
@@ -225,7 +237,7 @@ def test_notebook_dag():
 
 @pytest.mark.notebook_test
 def test_error_notebook():
-    with pytest.raises(PapermillExecutionError) as exc:
+    with pytest.raises(ExecutionError) as exc:
         with exec_for_test("error_pipeline") as result:
             pass
 

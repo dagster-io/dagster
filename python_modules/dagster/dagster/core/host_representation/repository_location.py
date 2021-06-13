@@ -51,7 +51,7 @@ from dagster.grpc.impl import (
     get_partition_set_execution_param_data,
     get_partition_tags,
 )
-from dagster.seven import PendulumDateTime
+from dagster.seven.compat.pendulum import PendulumDateTime
 from dagster.utils import merge_dicts
 from dagster.utils.hosted_user_process import external_repo_from_def
 
@@ -64,9 +64,9 @@ if TYPE_CHECKING:
         ExternalPartitionNamesData,
         ExternalPartitionSetExecutionParamData,
         ExternalPartitionTagsData,
-        ExternalScheduleExecutionData,
         ExternalScheduleExecutionErrorData,
     )
+    from dagster.core.definitions.schedule import ScheduleExecutionData
     from dagster.core.definitions.sensor import SensorExecutionData
     from dagster.core.host_representation.external_data import (
         ExternalSensorExecutionErrorData,
@@ -163,7 +163,7 @@ class RepositoryLocation(AbstractContextManager):
         repository_handle: RepositoryHandle,
         schedule_name: str,
         scheduled_execution_time,
-    ) -> Union["ExternalScheduleExecutionData", "ExternalScheduleExecutionErrorData"]:
+    ) -> Union["ScheduleExecutionData", "ExternalScheduleExecutionErrorData"]:
         pass
 
     @abstractmethod
@@ -373,7 +373,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
         repository_handle: RepositoryHandle,
         schedule_name: str,
         scheduled_execution_time,
-    ) -> Union["ExternalScheduleExecutionData", "ExternalScheduleExecutionErrorData"]:
+    ) -> Union["ScheduleExecutionData", "ExternalScheduleExecutionErrorData"]:
         check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(schedule_name, "schedule_name")
@@ -673,7 +673,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         repository_handle: RepositoryHandle,
         schedule_name: str,
         scheduled_execution_time: Optional[datetime.datetime],
-    ) -> "ExternalScheduleExecutionData":
+    ) -> "ScheduleExecutionData":
         check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(schedule_name, "schedule_name")

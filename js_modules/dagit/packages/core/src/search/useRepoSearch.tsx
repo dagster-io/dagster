@@ -2,11 +2,15 @@ import {gql, useLazyQuery, useQuery} from '@apollo/client';
 import Fuse from 'fuse.js';
 import * as React from 'react';
 
+import {featureEnabled, FeatureFlag} from '../app/Util';
 import {buildRepoPath} from '../workspace/buildRepoAddress';
 import {workspacePath} from '../workspace/workspacePath';
 
 import {SearchResult, SearchResultType} from './types';
-import {SearchBootstrapQuery} from './types/SearchBootstrapQuery';
+import {
+  SearchBootstrapQuery,
+  SearchBootstrapQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories as Repository,
+} from './types/SearchBootstrapQuery';
 import {SearchSecondaryQuery} from './types/SearchSecondaryQuery';
 
 const fuseOptions = {
@@ -17,22 +21,21 @@ const fuseOptions = {
 };
 
 const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
-  if (
-    !data?.repositoryLocationsOrError ||
-    data?.repositoryLocationsOrError?.__typename !== 'RepositoryLocationConnection'
-  ) {
+  if (!data?.workspaceOrError || data?.workspaceOrError?.__typename !== 'Workspace') {
     return new Fuse([]);
   }
 
-  const {nodes} = data.repositoryLocationsOrError;
-  const manyRepos = nodes.length > 1;
+  const pipelineMode = featureEnabled(FeatureFlag.PipelineModeTuples);
+  const {locationEntries} = data.workspaceOrError;
+  const manyRepos = locationEntries.length > 1;
 
-  const allEntries = nodes.reduce((accum, repoLocation) => {
-    if (repoLocation.__typename !== 'RepositoryLocation') {
+  const allEntries = locationEntries.reduce((accum, locationEntry) => {
+    if (locationEntry.locationOrLoadError?.__typename !== 'RepositoryLocation') {
       return accum;
     }
 
-    const repos = repoLocation.repositories;
+    const repoLocation = locationEntry.locationOrLoadError;
+    const repos: Repository[] = repoLocation.repositories;
     return [
       ...accum,
       ...repos.reduce((inner, repo) => {
@@ -40,13 +43,24 @@ const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
         const {name: locationName} = repoLocation;
         const repoPath = buildRepoPath(name, locationName);
 
-        const allPipelines = pipelines.map((pipeline) => ({
-          key: `${repoPath}-${pipeline.name}`,
-          label: pipeline.name,
-          description: manyRepos ? `Pipeline in ${repoPath}` : 'Pipeline',
-          href: workspacePath(name, locationName, `/pipelines/${pipeline.name}`),
-          type: SearchResultType.Pipeline,
-        }));
+        const allPipelines = pipelineMode
+          ? pipelines.reduce((flat, pipeline) => {
+              const jobs = pipeline.modes.map((mode) => ({
+                key: `${repoPath}-${pipeline.name}-${mode.name}`,
+                label: `${pipeline.name} : ${mode.name}`,
+                description: manyRepos ? `Job in ${repoPath}` : 'Job',
+                href: workspacePath(name, locationName, `/pipelines/${pipeline.name}:${mode.name}`),
+                type: SearchResultType.Pipeline,
+              }));
+              return [...flat, ...jobs];
+            }, [] as SearchResult[])
+          : pipelines.map((pipeline) => ({
+              key: `${repoPath}-${pipeline.name}`,
+              label: pipeline.name,
+              description: manyRepos ? `Pipeline in ${repoPath}` : 'Pipeline',
+              href: workspacePath(name, locationName, `/pipelines/${pipeline.name}`),
+              type: SearchResultType.Pipeline,
+            }));
 
         const allSchedules = schedules.map((schedule) => ({
           key: `${repoPath}-${schedule.name}`,
@@ -77,9 +91,9 @@ const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
         }));
 
         return [...inner, ...allPipelines, ...allSchedules, ...allSensors, ...allPartitionSets];
-      }, []),
+      }, [] as SearchResult[]),
     ];
-  }, []);
+  }, [] as SearchResult[]);
 
   return new Fuse(allEntries, fuseOptions);
 };
@@ -132,8 +146,8 @@ export const useRepoSearch = () => {
       if ((queryString || buildSecondary) && !secondaryQueryCalled) {
         performQuery();
       }
-      const bootstrapResults = bootstrapFuse.search(queryString);
-      const secondaryResults = secondaryFuse.search(queryString);
+      const bootstrapResults: Fuse.FuseResult<SearchResult>[] = bootstrapFuse.search(queryString);
+      const secondaryResults: Fuse.FuseResult<SearchResult>[] = secondaryFuse.search(queryString);
       return [...bootstrapResults, ...secondaryResults];
     },
     [bootstrapFuse, secondaryFuse, performQuery, secondaryQueryCalled],
@@ -144,35 +158,41 @@ export const useRepoSearch = () => {
 
 const SEARCH_BOOTSTRAP_QUERY = gql`
   query SearchBootstrapQuery {
-    repositoryLocationsOrError {
+    workspaceOrError {
       __typename
-      ... on RepositoryLocationConnection {
-        nodes {
+      ... on Workspace {
+        locationEntries {
           __typename
-          ... on RepositoryLocation {
-            id
-            name
-            repositories {
+          id
+          locationOrLoadError {
+            ... on RepositoryLocation {
               id
-              ... on Repository {
+              name
+              repositories {
                 id
-                name
-                pipelines {
+                ... on Repository {
                   id
                   name
-                }
-                schedules {
-                  id
-                  name
-                }
-                sensors {
-                  id
-                  name
-                }
-                partitionSets {
-                  id
-                  name
-                  pipelineName
+                  pipelines {
+                    id
+                    modes {
+                      name
+                    }
+                    name
+                  }
+                  schedules {
+                    id
+                    name
+                  }
+                  sensors {
+                    id
+                    name
+                  }
+                  partitionSets {
+                    id
+                    name
+                    pipelineName
+                  }
                 }
               }
             }

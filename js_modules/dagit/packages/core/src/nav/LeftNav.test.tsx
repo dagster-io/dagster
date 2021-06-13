@@ -8,26 +8,8 @@ import {LeftNav} from './LeftNav';
 
 describe('LeftNav', () => {
   const defaultMocks = {
-    RepositoryLocationsOrError: () => ({
-      __typename: 'RepositoryLocationConnection',
-    }),
-    RepositoryLocationConnection: () => ({
-      nodes: () => new MockList(2),
-    }),
-    RepositoryLocationOrLoadFailure: () => ({
-      __typename: 'RepositoryLocation',
-    }),
-    SchedulesOrError: () => ({
-      __typename: 'Schedules',
-    }),
-    Schedules: () => ({
-      results: () => new MockList(1),
-    }),
-    SensorsOrError: () => ({
-      __typename: 'Sensors',
-    }),
-    Sensors: () => ({
-      results: () => new MockList(1),
+    Workspace: () => ({
+      locationEntries: () => new MockList(2),
     }),
   };
 
@@ -50,13 +32,13 @@ describe('LeftNav', () => {
 
     it('shows the error message when repo location errors are found', async () => {
       const mocks = {
-        ...defaultMocks,
-        RepositoryLocationOrLoadFailure: () => ({
-          __typename: 'RepositoryLocationLoadFailure',
+        RepositoryLocationOrLoadError: () => ({
+          __typename: 'PythonError',
+          message: () => 'error_message',
         }),
       };
 
-      render(<Test mocks={mocks} />);
+      render(<Test mocks={[defaultMocks, mocks]} />);
       await waitFor(() => {
         expect(screen.getByRole('link', {name: /status warnings found/i})).toBeVisible();
       });

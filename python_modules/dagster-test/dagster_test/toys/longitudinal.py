@@ -54,6 +54,10 @@ def combined_data_size(partition_date):
     return users_data_size(partition_date) * video_views_data_size(partition_date)
 
 
+class IntentionalRandomFailure(Exception):
+    """To distinguish from other errors"""
+
+
 def make_solid(
     name,
     asset_key=None,
@@ -76,8 +80,9 @@ def make_solid(
 
             time.sleep(sleep_time)
 
-        if error_rate and random() < error_rate:
-            raise Exception("blah")
+        rand = random()
+        if error_rate and rand < error_rate:
+            raise IntentionalRandomFailure(f"random {rand} < error rate {error_rate}")
 
         if asset_key:
             metadata = {"Data size (bytes)": data_size} if data_size_fn else None

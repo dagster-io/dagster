@@ -1,6 +1,8 @@
 import warnings
 from collections import namedtuple
+from datetime import datetime
 from enum import Enum
+from typing import NamedTuple
 
 from dagster import check
 from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
@@ -349,9 +351,19 @@ class PipelineRun(
 
 @whitelist_for_serdes
 class PipelineRunsFilter(
-    namedtuple("_PipelineRunsFilter", "run_ids pipeline_name statuses tags snapshot_id")
+    namedtuple(
+        "_PipelineRunsFilter", "run_ids pipeline_name statuses tags snapshot_id updated_after"
+    )
 ):
-    def __new__(cls, run_ids=None, pipeline_name=None, statuses=None, tags=None, snapshot_id=None):
+    def __new__(
+        cls,
+        run_ids=None,
+        pipeline_name=None,
+        statuses=None,
+        tags=None,
+        snapshot_id=None,
+        updated_after=None,
+    ):
         return super(PipelineRunsFilter, cls).__new__(
             cls,
             run_ids=check.opt_list_param(run_ids, "run_ids", of_type=str),
@@ -359,6 +371,7 @@ class PipelineRunsFilter(
             statuses=check.opt_list_param(statuses, "statuses", of_type=PipelineRunStatus),
             tags=check.opt_dict_param(tags, "tags", key_type=str, value_type=str),
             snapshot_id=check.opt_str_param(snapshot_id, "snapshot_id"),
+            updated_after=check.opt_inst_param(updated_after, "updated_after", datetime),
         )
 
     @staticmethod
@@ -376,6 +389,17 @@ class PipelineRunsFilter(
     @staticmethod
     def for_backfill(backfill_id):
         return PipelineRunsFilter(tags=PipelineRun.tags_for_backfill_id(backfill_id))
+
+
+class RunRecord(NamedTuple):
+    """Internal representation of a run record, as stored in a
+    :py:class:`~dagster.core.storage.runs.RunStorage`.
+    """
+
+    record_id: int
+    pipeline_run: PipelineRun
+    create_timestamp: datetime
+    update_timestamp: datetime
 
 
 ###################################################################################################

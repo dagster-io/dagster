@@ -12,7 +12,11 @@ from dagster.core.errors import (
     DagsterInvalidSubsetError,
     DagsterInvariantViolationError,
 )
-from dagster.core.storage.root_input_manager import IInputManagerDefinition
+from dagster.core.storage.output_manager import IOutputManagerDefinition
+from dagster.core.storage.root_input_manager import (
+    IInputManagerDefinition,
+    RootInputManagerDefinition,
+)
 from dagster.core.types.dagster_type import DagsterType, DagsterTypeKind
 from dagster.core.utils import str_format_set
 from dagster.utils.backcompat import experimental_arg_warning
@@ -284,7 +288,9 @@ class PipelineDefinition(GraphDefinition):
             return self._cached_run_config_schemas[mode_def.name]
 
         self._cached_run_config_schemas[mode_def.name] = _create_run_config_schema(
-            self, mode_def, self._resource_requirements[mode_def.name]
+            self,
+            mode_def,
+            self._resource_requirements[mode_def.name],
         )
         return self._cached_run_config_schemas[mode_def.name]
 
@@ -642,6 +648,11 @@ def _checked_resource_reqs_for_mode(
     as much context as possible about where the unsatisfied resource requirement came from.
     """
     resource_reqs: Set[str] = set()
+    mode_output_managers = set(
+        key
+        for key, resource_def in mode_def.resource_defs.items()
+        if isinstance(resource_def, IOutputManagerDefinition)
+    )
     mode_resources = set(mode_def.resource_defs.keys())
     for node_def in node_defs:
         for solid_def in node_def.iterate_solid_defs():
@@ -650,8 +661,10 @@ def _checked_resource_reqs_for_mode(
                 if required_resource not in mode_resources:
                     raise DagsterInvalidDefinitionError(
                         (
-                            f'Resource "{required_resource}" is required by solid def '
-                            f'{solid_def.name}, but is not provided by mode "{mode_def.name}".'
+                            f'Resource key "{required_resource}" is required by solid def '
+                            f'{solid_def.name}, but is not provided by mode "{mode_def.name}". '
+                            f'In mode "{mode_def.name}", provide a resource for key "{required_resource}", '
+                            f'or change "{required_resource}" to one of the provided resources keys: {sorted(mode_resources)}.'
                         )
                     )
 
@@ -659,9 +672,13 @@ def _checked_resource_reqs_for_mode(
                 resource_reqs.add(output_def.io_manager_key)
                 if output_def.io_manager_key not in mode_resources:
                     raise DagsterInvalidDefinitionError(
-                        f'IO manager "{output_def.io_manager_key}" is required by output '
-                        f'"{output_def.name}" of solid def {solid_def.name}, but is not '
-                        f'provided by mode "{mode_def.name}".'
+                        (
+                            f'IO manager key "{output_def.io_manager_key}" is required by output '
+                            f'"{output_def.name}" of solid def {solid_def.name}, but is not '
+                            f'provided by mode "{mode_def.name}". '
+                            f'In mode "{mode_def.name}", provide an IO manager for key "{output_def.io_manager_key}", '
+                            f'or change "{output_def.io_manager_key}" to one of the provided IO manager keys: {sorted(mode_output_managers)}.'
+                        )
                     )
 
     resource_reqs.update(
@@ -682,12 +699,10 @@ def _checked_resource_reqs_for_mode(
             if required_resource not in mode_resources:
                 raise DagsterInvalidDefinitionError(
                     (
-                        "Resource '{resource}' is required by intermediate storage "
-                        "'{storage_name}', but is not provided by mode '{mode_name}'."
-                    ).format(
-                        resource=required_resource,
-                        storage_name=intermediate_storage.name,
-                        mode_name=mode_def.name,
+                        f'Resource key "{required_resource}" is required by intermediate storage '
+                        f'"{intermediate_storage.name}", but is not provided by mode "{mode_def.name}". '
+                        f'In mode "{mode_def.name}", provide a resource for key "{required_resource}", '
+                        f'or change "{required_resource}" to one of the provided resources keys: {sorted(mode_resources)}.'
                     )
                 )
     for solid in solid_dict.values():
@@ -697,12 +712,10 @@ def _checked_resource_reqs_for_mode(
                 if required_resource not in mode_resources:
                     raise DagsterInvalidDefinitionError(
                         (
-                            'Resource "{resource}" is required by hook "{hook_name}", but is not '
-                            'provided by mode "{mode_name}".'
-                        ).format(
-                            resource=required_resource,
-                            hook_name=hook_def.name,
-                            mode_name=mode_def.name,
+                            f'Resource key "{required_resource}" is required by hook "{hook_def.name}", but is not '
+                            f'provided by mode "{mode_def.name}". '
+                            f'In mode "{mode_def.name}", provide a resource for key "{required_resource}", '
+                            f'or change "{required_resource}" to one of the provided resources keys: {sorted(mode_resources)}.'
                         )
                     )
 
@@ -712,12 +725,10 @@ def _checked_resource_reqs_for_mode(
             if required_resource not in mode_resources:
                 raise DagsterInvalidDefinitionError(
                     (
-                        'Resource "{resource}" is required by hook "{hook_name}", but is not '
-                        'provided by mode "{mode_name}".'
-                    ).format(
-                        resource=required_resource,
-                        hook_name=hook_def.name,
-                        mode_name=mode_def.name,
+                        f'Resource key "{required_resource}" is required by hook "{hook_def.name}", but is not '
+                        f'provided by mode "{mode_def.name}". '
+                        f'In mode "{mode_def.name}", provide a resource for key "{required_resource}", '
+                        f'or change "{required_resource}" to one of the provided resources keys: {sorted(mode_resources)}.'
                     )
                 )
 
@@ -726,8 +737,10 @@ def _checked_resource_reqs_for_mode(
             resource_reqs.add(required_resource)
             if required_resource not in mode_resources:
                 raise DagsterInvalidDefinitionError(
-                    f'Resource "{required_resource}" is required by resource at key "{resource_key}", '
-                    f'but is not provided by mode "{mode_def.name}"'
+                    f'Resource key "{required_resource}" is required by resource at key "{resource_key}", '
+                    f'but is not provided by mode "{mode_def.name}" '
+                    f'In mode "{mode_def.name}", provide a resource for key "{required_resource}", '
+                    f'or change "{required_resource}" to one of the provided resources keys: {sorted(mode_resources)}.'
                 )
 
     return resource_reqs
@@ -750,12 +763,10 @@ def _checked_type_resource_reqs_for_mode(
             if required_resource not in mode_resources:
                 raise DagsterInvalidDefinitionError(
                     (
-                        'Resource "{resource}" is required by type "{type_name}", but is not '
-                        'provided by mode "{mode_name}".'
-                    ).format(
-                        resource=required_resource,
-                        type_name=dagster_type.display_name,
-                        mode_name=mode_def.name,
+                        f'Resource key "{required_resource}" is required by type "{dagster_type.display_name}", '
+                        f'but is not provided by mode "{mode_def.name}". '
+                        f'In mode "{mode_def.name}", provide a resource for key "{required_resource}", '
+                        f'or change "{required_resource}" to one of the provided resources keys: {sorted(mode_resources)}.'
                     )
                 )
         if dagster_type.loader:
@@ -764,12 +775,10 @@ def _checked_type_resource_reqs_for_mode(
                 if required_resource not in mode_resources:
                     raise DagsterInvalidDefinitionError(
                         (
-                            'Resource "{resource}" is required by the loader on type '
-                            '"{type_name}", but is not provided by mode "{mode_name}".'
-                        ).format(
-                            resource=required_resource,
-                            type_name=dagster_type.display_name,
-                            mode_name=mode_def.name,
+                            f'Resource key "{required_resource}" is required by the loader on type '
+                            f'"{dagster_type.display_name}", but is not provided by mode "{mode_def.name}". '
+                            f'In mode "{mode_def.name}", provide a resource for key "{required_resource}", '
+                            f'or change "{required_resource}" to one of the provided resources keys: {sorted(mode_resources)}.'
                         )
                     )
         if dagster_type.materializer:
@@ -778,12 +787,10 @@ def _checked_type_resource_reqs_for_mode(
                 if required_resource not in mode_resources:
                     raise DagsterInvalidDefinitionError(
                         (
-                            'Resource "{resource}" is required by the materializer on type '
-                            '"{type_name}", but is not provided by mode "{mode_name}".'
-                        ).format(
-                            resource=required_resource,
-                            type_name=dagster_type.display_name,
-                            mode_name=mode_def.name,
+                            f'Resource key "{required_resource}" is required by the materializer on type '
+                            f'"{dagster_type.display_name}", but is not provided by mode "{mode_def.name}". '
+                            f'In mode "{mode_def.name}", provide a resource for key "{required_resource}", '
+                            f'or change "{required_resource}" to one of the provided resources keys: {sorted(mode_resources)}.'
                         )
                     )
 
@@ -802,15 +809,11 @@ def _checked_type_resource_reqs_for_mode(
                     if required_resource not in mode_resources:
                         raise DagsterInvalidDefinitionError(
                             (
-                                'Resource "{resource}" is required by the plugin "{plugin_name}"'
-                                ' on type "{type_name}" (used with storages {storages}), '
-                                'but is not provided by mode "{mode_name}".'
-                            ).format(
-                                resource=required_resource,
-                                type_name=dagster_type.display_name,
-                                plugin_name=plugin.__name__,
-                                mode_name=mode_def.name,
-                                storages=used_by_storage,
+                                f'Resource key "{required_resource}" is required by the plugin "{plugin.__name__}" '
+                                f'on type "{dagster_type.display_name}" (used with storages {used_by_storage}), '
+                                f'but is not provided by mode "{mode_def.name}". '
+                                f'In mode "{mode_def.name}", provide a resource for key "{required_resource}", '
+                                f'or change "{required_resource}" to one of the provided resources keys: {sorted(mode_resources)}.'
                             )
                         )
     return resource_reqs
@@ -822,6 +825,11 @@ def _checked_input_resource_reqs_for_mode(
     mode_def: ModeDefinition,
 ) -> Set[str]:
     resource_reqs = set()
+    mode_root_input_managers = set(
+        key
+        for key, resource_def in mode_def.resource_defs.items()
+        if isinstance(resource_def, RootInputManagerDefinition)
+    )
 
     for solid in solid_dict.values():
         for handle in solid.input_handles():
@@ -866,9 +874,11 @@ def _checked_input_resource_reqs_for_mode(
                     resource_reqs.add(input_def.root_manager_key)
                     if input_def.root_manager_key not in mode_def.resource_defs:
                         raise DagsterInvalidDefinitionError(
-                            f'Root input manager "{input_def.root_manager_key}" is required by '
-                            f'unsatisfied input "{input_def.name}" of solid {solid.name}, but is not '
-                            f'provided by mode "{mode_def.name}".'
+                            f'Root input manager key "{input_def.root_manager_key}" is required by '
+                            f'unsatisfied input "{input_def.name}" of solid def {solid.name}, but is not '
+                            f'provided by mode "{mode_def.name}". '
+                            f'In mode "{mode_def.name}", provide a root input manager for key "{input_def.root_manager_key}", '
+                            f'or change "{input_def.root_manager_key}" to one of the provided root input managers keys: {sorted(mode_root_input_managers)}.'
                         )
 
     return resource_reqs
@@ -896,10 +906,10 @@ def _create_run_config_schema(
     mode_definition: ModeDefinition,
     required_resources: Set[str],
 ) -> "RunConfigSchema":
-    from .environment_configs import (
-        EnvironmentClassCreationData,
+    from .run_config import (
+        RunConfigSchemaCreationData,
         construct_config_type_dictionary,
-        define_environment_cls,
+        define_run_config_schema_type,
     )
     from .run_config_schema import RunConfigSchema
 
@@ -918,8 +928,8 @@ def _create_run_config_schema(
     else:
         ignored_solids = []
 
-    environment_type = define_environment_cls(
-        EnvironmentClassCreationData(
+    run_config_schema_type = define_run_config_schema_type(
+        RunConfigSchemaCreationData(
             pipeline_name=pipeline_def.name,
             solids=pipeline_def.solids,
             dependency_structure=pipeline_def.dependency_structure,
@@ -930,12 +940,22 @@ def _create_run_config_schema(
         )
     )
 
+    if mode_definition.config_mapping:
+        outer_config_type = mode_definition.config_mapping.config_schema.config_type
+    else:
+        outer_config_type = run_config_schema_type
+
+    if outer_config_type is None:
+        check.failed("Unexpected outer_config_type value of None")
+
     config_type_dict_by_name, config_type_dict_by_key = construct_config_type_dictionary(
-        pipeline_def.all_solid_defs, environment_type
+        pipeline_def.all_solid_defs,
+        outer_config_type,
     )
 
     return RunConfigSchema(
-        environment_type=environment_type,
+        run_config_schema_type=run_config_schema_type,
         config_type_dict_by_name=config_type_dict_by_name,
         config_type_dict_by_key=config_type_dict_by_key,
+        config_mapping=mode_definition.config_mapping,
     )

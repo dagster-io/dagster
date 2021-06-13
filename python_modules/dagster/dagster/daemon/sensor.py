@@ -264,7 +264,35 @@ def _evaluate_sensor(
 
     assert isinstance(sensor_runtime_data, SensorExecutionData)
     if not sensor_runtime_data.run_requests:
-        if sensor_runtime_data.skip_message:
+        if sensor_runtime_data.pipeline_run_reactions:
+            for pipeline_run_reaction in sensor_runtime_data.pipeline_run_reactions:
+                origin_run_id = pipeline_run_reaction.pipeline_run.run_id
+                message = (
+                    f'Sensor "{external_sensor.name}" processed failure of run {origin_run_id}.'
+                )
+
+                if pipeline_run_reaction.error:
+                    context.logger.error(
+                        f"Got a reaction request for run {origin_run_id} but execution errorred: {pipeline_run_reaction.error}"
+                    )
+                    context.update_state(
+                        JobTickStatus.FAILURE,
+                        cursor=sensor_runtime_data.cursor,
+                        error=pipeline_run_reaction.error,
+                    )
+                else:
+                    # log to the original pipeline run
+                    instance.report_engine_event(
+                        message=message, pipeline_run=pipeline_run_reaction.pipeline_run
+                    )
+                    context.logger.info(
+                        f"Completed a reaction request for run {origin_run_id}: {message}"
+                    )
+                    context.update_state(
+                        JobTickStatus.SUCCESS,
+                        cursor=sensor_runtime_data.cursor,
+                    )
+        elif sensor_runtime_data.skip_message:
             context.logger.info(
                 f"Sensor returned false for {external_sensor.name}, skipping: "
                 f"{sensor_runtime_data.skip_message}"

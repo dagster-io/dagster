@@ -159,7 +159,7 @@ def str_to_num(context, string):
                 "errorable_resource": define_errorable_resource(),
                 "io_manager": errorable_io_manager,
             },
-        )
+        ),
     ],
     preset_defs=[
         PresetDefinition.from_pkg_resources(
@@ -168,6 +168,7 @@ def str_to_num(context, string):
             mode="errorable_mode",
         )
     ],
+    tags={"monster": "error"},
 )
 def error_monster():
     start = emit_num.alias("start")()
@@ -187,4 +188,3 @@ if __name__ == "__main__":
             "resources": {"errorable_resource": {"config": {"throw_on_resource_init": False}}},
         },
     )
-    print("Pipeline Success: ", result.success)

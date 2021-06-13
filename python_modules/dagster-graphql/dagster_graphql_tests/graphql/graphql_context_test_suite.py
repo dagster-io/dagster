@@ -1,6 +1,7 @@
 import tempfile
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
+from unittest.mock import patch
 
 import pytest
 from dagster import check, file_relative_path
@@ -26,6 +27,8 @@ from dagster.grpc.server import GrpcServerProcess
 from dagster.utils import merge_dicts
 from dagster.utils.test import FilesystemTestScheduler
 from dagster.utils.test.postgres_instance import TestPostgresInstance
+from dagster_graphql import DagsterGraphQLClient
+from dagster_graphql.test.utils import execute_dagster_graphql
 
 
 def get_main_recon_repo():
@@ -818,6 +821,20 @@ def make_graphql_context_test_suite(context_variants, recon_repo=None):
         def yield_graphql_context(self, request):
             with self.graphql_context_for_request(request) as graphql_context:
                 yield graphql_context
+
+        @pytest.fixture(name="graphql_client")
+        def yield_graphql_client(self, graphql_context):
+            class MockedGraphQLClient:
+                def execute(self, gql_query, variable_values=None):
+                    return execute_dagster_graphql(
+                        graphql_context,
+                        gql_query,
+                        variable_values,
+                    ).data
+
+            with patch("dagster_graphql.client.client.Client") as mock_client:
+                mock_client.return_value = MockedGraphQLClient()
+                yield DagsterGraphQLClient("localhost")
 
         def recon_repo(self):
             return recon_repo

@@ -32,3 +32,4 @@ class Dagit(BaseModel):
     livenessProbe: kubernetes.LivenessProbe
     startupProbe: kubernetes.StartupProbe
     annotations: kubernetes.Annotations
+    enableReadOnly: bool

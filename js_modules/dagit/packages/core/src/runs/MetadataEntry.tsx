@@ -3,6 +3,7 @@ import {Button, Classes, Colors, Dialog, Icon, Position, Tooltip} from '@bluepri
 import * as React from 'react';
 import ReactMarkdown from 'react-markdown';
 import {Link} from 'react-router-dom';
+import gfm from 'remark-gfm';
 import styled from 'styled-components/macro';
 
 import {copyValue} from '../app/DomUtils';
@@ -109,12 +110,12 @@ export const MetadataEntry: React.FC<{
       return <>{entry.text}</>;
     case 'EventMarkdownMetadataEntry':
       return expandSmallValues && entry.mdStr.length < 1000 ? (
-        <ReactMarkdown>{entry.mdStr}</ReactMarkdown>
+        <ReactMarkdown remarkPlugins={[gfm]}>{entry.mdStr}</ReactMarkdown>
       ) : (
         <MetadataEntryModalAction
           label={entry.label}
           copyContent={() => entry.mdStr}
-          content={() => <ReactMarkdown>{entry.mdStr}</ReactMarkdown>}
+          content={() => <ReactMarkdown remarkPlugins={[gfm]}>{entry.mdStr}</ReactMarkdown>}
         >
           [Show Markdown]
         </MetadataEntryModalAction>

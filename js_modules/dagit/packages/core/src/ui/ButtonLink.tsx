@@ -12,7 +12,7 @@ type Color =
 
 type Underline = 'never' | 'always' | 'hover';
 
-export interface Props {
+interface Props {
   color: Color;
   underline?: Underline;
 }

@@ -10,6 +10,12 @@ Dagster publishes a [fully-featured Helm chart](https://github.com/dagster-io/da
 
 `kubectl` should be configured with your desired Kubernetes cluster. You should understand [the basics of Helm](https://helm.sh/docs/), and Helm 3 should be installed. If you are creating your own user code images, Docker should be installed as well.
 
+## Versioning
+
+The Dagster Helm chart is versioned with the same version numbers as the Dagster Python library, and ideally should only be used together when the version numbers match.
+
+In the following tutorial, we install the most recent version of the Dagster Helm chart. To use an older version of the Chart, a `--version` flag can be passed to `helm upgrade`.
+
 ## Deployment Architecture
 
 <!-- https://excalidraw.com/#json=4680957890134016,q6NWURUuPP_VThmbRQ89Jg -->
@@ -130,6 +136,10 @@ The user can connect an external database (i.e. using a cloud provider's managed
 The Run Worker is responsible for executing the solids in topological order. The Run Worker uses the same image as the User Code Deployment at the time the run was requested. The Run Worker uses ephemeral compute, and completes once the run is finished. Events that occur during the run are written to the database, and are displayed in Dagit.
 
 The Run Worker jobs and pods are not automatically deleted so that users are able to inspect results. It is up to the user to delete old jobs and pods after noting their status.
+
+### Executor
+
+The [Executor](/deployment/executors) determines how the run worker will execute each step of a pipeline. Different executors offer different levels of isolation and concurrency. Common choices are <PyObject module="dagster" object="in_process_executor" /> (all steps run serially in a single process in the single pod), <PyObject module="dagster" object="multiprocess_executor" /> (multiple processes in the single pod), and kubernetes-job (each step runs in a separate pod). For the latter, you can choose between the <PyObject module="dagster_celery_k8s" object="celery_k8s_job_executor" />, and the <PyObject module="dagster_k8s" object="k8s_job_executor" /> which removes the Celery dependency. Generally, increasing isolation incurs some additional overhead per step (e.g. starting up a new Kubernetes job vs starting a new process within a pod). Different [executors](/deployment/executors) can be configured per-run in the `execution` block.
 
 ### User Code Deployment
 

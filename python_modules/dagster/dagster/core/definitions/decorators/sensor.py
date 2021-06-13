@@ -1,7 +1,9 @@
 import inspect
+from functools import update_wrapper
 from typing import TYPE_CHECKING, Callable, List, Optional, Union
 
 from dagster import check
+from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.definitions.sensor import RunRequest, SensorDefinition, SkipReason
 from dagster.core.errors import DagsterInvariantViolationError
 
@@ -10,12 +12,13 @@ if TYPE_CHECKING:
 
 
 def sensor(
-    pipeline_name: str,
+    pipeline_name: Optional[str] = None,
     name: Optional[str] = None,
     solid_selection: Optional[List[str]] = None,
     mode: Optional[str] = None,
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
+    job: Optional[PipelineDefinition] = None,
 ) -> Callable[
     [Callable[["SensorExecutionContext"], Union[SkipReason, RunRequest]]], SensorDefinition
 ]:
@@ -43,6 +46,7 @@ def sensor(
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
+        job (Optional[PipelineDefinition]): Experimental
     """
     check.opt_str_param(name, "name")
 
@@ -70,7 +74,7 @@ def sensor(
                     ).format(sensor_name=sensor_name, result=result, type_=type(result))
                 )
 
-        return SensorDefinition(
+        sensor_def = SensorDefinition(
             name=sensor_name,
             pipeline_name=pipeline_name,
             evaluation_fn=_wrapped_fn,
@@ -78,6 +82,12 @@ def sensor(
             mode=mode,
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
+            job=job,
+            decorated_fn=fn,
         )
+
+        update_wrapper(sensor_def, wrapped=fn)
+
+        return sensor_def
 
     return inner

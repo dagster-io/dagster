@@ -5,7 +5,9 @@ from collections import defaultdict
 
 import pytest
 from dagster import (
+    Backoff,
     DagsterEventType,
+    Jitter,
     Output,
     OutputDefinition,
     PipelineRun,
@@ -20,6 +22,7 @@ from dagster import (
     solid,
 )
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
+from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.retries import RetryMode
 from dagster.core.test_utils import instance_for_test
@@ -315,3 +318,98 @@ def test_delay():
     assert not result.success
     assert elapsed_time > delay
     assert result.result_for_solid("throws").retry_attempts == 1
+
+
+def test_policy_delay_calc():
+    empty = RetryPolicy()
+    assert empty.calculate_delay(1) == 0
+    assert empty.calculate_delay(2) == 0
+    assert empty.calculate_delay(3) == 0
+
+    one = RetryPolicy(delay=1)
+    assert one.calculate_delay(1) == 1
+    assert one.calculate_delay(2) == 1
+    assert one.calculate_delay(3) == 1
+
+    one_linear = RetryPolicy(delay=1, backoff=Backoff.LINEAR)
+    assert one_linear.calculate_delay(1) == 1
+    assert one_linear.calculate_delay(2) == 2
+    assert one_linear.calculate_delay(3) == 3
+
+    one_expo = RetryPolicy(delay=1, backoff=Backoff.EXPONENTIAL)
+    assert one_expo.calculate_delay(1) == 1
+    assert one_expo.calculate_delay(2) == 3
+    assert one_expo.calculate_delay(3) == 7
+
+    # jitter
+
+    one_linear_full = RetryPolicy(delay=1, backoff=Backoff.LINEAR, jitter=Jitter.FULL)
+    one_expo_full = RetryPolicy(delay=1, backoff=Backoff.EXPONENTIAL, jitter=Jitter.FULL)
+    one_linear_pm = RetryPolicy(delay=1, backoff=Backoff.LINEAR, jitter=Jitter.PLUS_MINUS)
+    one_expo_pm = RetryPolicy(delay=1, backoff=Backoff.EXPONENTIAL, jitter=Jitter.PLUS_MINUS)
+    one_full = RetryPolicy(delay=1, jitter=Jitter.FULL)
+    one_pm = RetryPolicy(delay=1, jitter=Jitter.PLUS_MINUS)
+
+    # test many times to navigate randomness
+    for _ in range(100):
+        assert 0 < one_linear_full.calculate_delay(2) < 2
+        assert 0 < one_linear_full.calculate_delay(3) < 3
+        assert 0 < one_expo_full.calculate_delay(2) < 3
+        assert 0 < one_expo_full.calculate_delay(3) < 7
+
+        assert 2 < one_linear_pm.calculate_delay(3) < 4
+        assert 3 < one_linear_pm.calculate_delay(4) < 5
+
+        assert 6 < one_expo_pm.calculate_delay(3) < 8
+        assert 14 < one_expo_pm.calculate_delay(4) < 16
+
+        assert 0 < one_full.calculate_delay(100) < 1
+        assert 0 < one_pm.calculate_delay(100) < 2
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+        RetryPolicy(jitter=Jitter.PLUS_MINUS)
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+        RetryPolicy(backoff=Backoff.EXPONENTIAL)
+
+
+def test_linear_backoff():
+    delay = 0.1
+    logged_times = []
+
+    @solid
+    def throws(_):
+        logged_times.append(time.time())
+        raise Exception("I fail")
+
+    @pipeline
+    def linear_backoff():
+        throws.with_retry_policy(RetryPolicy(max_retries=3, delay=delay, backoff=Backoff.LINEAR))()
+
+    execute_pipeline(linear_backoff)
+    assert len(logged_times) == 4
+    assert (logged_times[1] - logged_times[0]) > delay
+    assert (logged_times[2] - logged_times[1]) > (delay * 2)
+    assert (logged_times[3] - logged_times[2]) > (delay * 3)
+
+
+def test_expo_backoff():
+    delay = 0.1
+    logged_times = []
+
+    @solid
+    def throws(_):
+        logged_times.append(time.time())
+        raise Exception("I fail")
+
+    @pipeline
+    def expo_backoff():
+        throws.with_retry_policy(
+            RetryPolicy(max_retries=3, delay=delay, backoff=Backoff.EXPONENTIAL)
+        )()
+
+    execute_pipeline(expo_backoff)
+    assert len(logged_times) == 4
+    assert (logged_times[1] - logged_times[0]) > delay
+    assert (logged_times[2] - logged_times[1]) > (delay * 3)
+    assert (logged_times[3] - logged_times[2]) > (delay * 7)

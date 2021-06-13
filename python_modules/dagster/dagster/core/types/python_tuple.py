@@ -1,3 +1,5 @@
+import typing
+
 from dagster import check
 from dagster.config.config_type import Array, ConfigAnyInstance
 from dagster.core.types.dagster_type import DagsterTypeKind
@@ -29,11 +31,13 @@ class _TypedPythonTuple(DagsterType):
     def __init__(self, dagster_types):
         all_have_input_configs = all((dagster_type.loader for dagster_type in dagster_types))
         self.dagster_types = dagster_types
+        typing_types = tuple(t.typing_type for t in dagster_types)
         super(_TypedPythonTuple, self).__init__(
             key="TypedPythonTuple" + ".".join(map(lambda t: t.key, dagster_types)),
             name=None,
             loader=(TypedTupleDagsterTypeLoader(dagster_types) if all_have_input_configs else None),
             type_check_fn=self.type_check_method,
+            typing_type=typing.Tuple[typing_types],
         )
 
     def type_check_method(self, context, value):

@@ -1,5 +1,5 @@
 from dagster.api.snapshot_schedule import sync_get_external_schedule_execution_data_ephemeral_grpc
-from dagster.core.host_representation.external_data import ExternalScheduleExecutionData
+from dagster.core.definitions.schedule import ScheduleExecutionData
 from dagster.core.test_utils import instance_for_test
 from dagster.seven import get_current_datetime_in_utc
 
@@ -15,7 +15,7 @@ def test_external_schedule_execution_data_api_grpc():
                 "foo_schedule",
                 None,
             )
-            assert isinstance(execution_data, ExternalScheduleExecutionData)
+            assert isinstance(execution_data, ScheduleExecutionData)
             assert len(execution_data.run_requests) == 1
             to_launch = execution_data.run_requests[0]
             assert to_launch.run_config == {"fizz": "buzz"}
@@ -31,7 +31,7 @@ def test_external_schedule_execution_data_api_never_execute_grpc():
                 "foo_schedule_never_execute",
                 None,
             )
-            assert isinstance(execution_data, ExternalScheduleExecutionData)
+            assert isinstance(execution_data, ScheduleExecutionData)
             assert len(execution_data.run_requests) == 0
 
 
@@ -46,7 +46,7 @@ def test_include_execution_time_grpc():
                 execution_time,
             )
 
-            assert isinstance(execution_data, ExternalScheduleExecutionData)
+            assert isinstance(execution_data, ScheduleExecutionData)
             assert len(execution_data.run_requests) == 1
             to_launch = execution_data.run_requests[0]
             assert to_launch.run_config == {"passed_in_time": execution_time.isoformat()}

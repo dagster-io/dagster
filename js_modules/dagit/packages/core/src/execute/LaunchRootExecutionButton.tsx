@@ -10,6 +10,7 @@ import {
 } from '../runs/types/LaunchPipelineExecution';
 
 import {LaunchButton} from './LaunchButton';
+import {showLaunchError} from './showLaunchError';
 
 interface LaunchRootExecutionButtonProps {
   disabled: boolean;
@@ -36,7 +37,7 @@ export const LaunchRootExecutionButton: React.FunctionComponent<LaunchRootExecut
       const result = await launchPipelineExecution({variables});
       handleLaunchResult(basePath, props.pipelineName, result);
     } catch (error) {
-      console.error('Error launching run:', error);
+      showLaunchError(error);
     }
   };
 
