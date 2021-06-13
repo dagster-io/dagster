@@ -18,60 +18,29 @@ With Dagster, the re-execution of parts of the pipeline is grouped with the orig
 
 Consider the following pipeline which has three solids, one of which fails half of the time.
 
-```python file=../../reexecution/pipeline/unreliable_pipeline.py
-import os
-
+```python file=/guides/dagster/reexecution/pipeline/unreliable_pipeline.py
 from random import random
-from dagster import Array, Field, ModeDefinition, OutputDefinition, pipeline, solid
-from dagster.core.storage.fs_io_manager import PickledObjectFilesystemIOManager
-from dagster.core.storage.io_manager import io_manager
+from dagster import ModeDefinition, fs_io_manager, pipeline, solid
 
 
-class MyDatabaseIOManager(PickledObjectFilesystemIOManager):
-    def _get_path(self, context):
-        keys = context.get_run_scoped_output_identifier()
-
-        return os.path.join("/tmp", *keys)
-
-
-@io_manager(output_config_schema={"partitions": Field(Array(str), is_required=False)})
-def my_db_io_manager(_):
-    return MyDatabaseIOManager()
-
-
-@solid(
-    output_defs=[
-        OutputDefinition(io_manager_key="my_db_io_manager"),
-    ],
-)
+@solid()
 def unreliable_start(_):
     return 1
 
 
-@solid(
-    output_defs=[
-        OutputDefinition(io_manager_key="my_db_io_manager"),
-    ],
-)
+@solid()
 def unreliable(_, num):
     failure_rate = 0.5
     if random() < failure_rate:
         raise Exception("blah")
 
 
-@solid(
-    output_defs=[
-        OutputDefinition(io_manager_key="my_db_io_manager"),
-    ],
-)
+@solid()
 def unreliable_end(_, num):
     return
 
 
-@pipeline(
-    mode_defs=[ModeDefinition(resource_defs={"my_db_io_manager": my_db_io_manager})],
-    description="Demo pipeline of chained solids that fail with a configurable probability."
-)
+@pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})])
 def unreliable_pipeline():
     unreliable_end(unreliable(unreliable_start()))
 ```
@@ -89,7 +58,7 @@ width={3808}
 height={2414}
 />
 
-### Re-execution Options
+### Re-execution in Dagit
 
 There are several options for launching a re-execution. No matter which one you choose, the re-executed run is linked to the original run.
 
@@ -113,7 +82,7 @@ Within Dagit, a single or multiple steps may be selected simply by clicking them
   allowfullscreen
 ></iframe>
 
-## Relevant APIs
+## Re-execution using Python APIs
 
 Re-execution can be triggered via the API as well.
 
@@ -123,36 +92,32 @@ Re-execution can be triggered via the API as well.
 
 Consider the pipeline `unreliable_pipeline`, which has a solid named `unreliable`.
 
-```python file=../../reexecution/reexecution_api.py
+```python file=/guides/dagster/reexecution/reexecution_api.py endbefore=end_initial_execution_marker
 from dagster import DagsterInstance, execute_pipeline, reexecute_pipeline
 from reexecution.pipeline.unreliable_pipeline import unreliable_pipeline
 
 
-def reexecution_api_example():
-    instance = DagsterInstance.ephemeral()
-    run_config = {"intermediate_storage": {"filesystem": {}}}
+instance = DagsterInstance.ephemeral()
 
-    # Initial execution
-    pipeline_result_full = execute_pipeline(unreliable_pipeline, run_config=run_config, instance=instance)
+# Initial execution
+pipeline_result_full = execute_pipeline(unreliable_pipeline, instance=instance)
 
-    if not pipeline_result_full.success:
-        # Re-execution: Entire pipeline
-        reexecution_result_full = reexecute_pipeline(
-            unreliable_pipeline,
-            parent_run_id=pipeline_result_full.run_id,
-            run_config=run_config,
-            instance=instance,
-        )
+if not pipeline_result_full.success:
+    # Re-execution: Entire pipeline
+    reexecution_result_full = reexecute_pipeline(
+        unreliable_pipeline,
+        parent_run_id=pipeline_result_full.run_id,
+        instance=instance,
+    )
 ```
 
 Using Dagster's API, you can programmatically trigger both an execution and a reexecution. Upon an initial pipeline run failing, you may want to trigger a full re-execution. Similarly, you can trigger a re-execution of selected steps or from a particular point.
 
-```python file=../../reexecution/reexecution_api_steps.py
+```python file=/guides/dagster/reexecution/reexecution_api.py startafter=end_initial_execution_marker
 # Re-execution: Starting with the "unreliable" solid and all its descendents
 reexecution_result_specific_selection = reexecute_pipeline(
     unreliable_pipeline,
     parent_run_id=pipeline_result_full.run_id,
-    run_config=run_config,
     instance=instance,
     solid_selection=['unreliable+*']
 )
