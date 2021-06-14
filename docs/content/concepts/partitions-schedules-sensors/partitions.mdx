@@ -91,7 +91,7 @@ def my_repository():
 
 ## Creating Schedules from Partition Sets
 
-To create a schedule from a partition set, you must first define a partition selector. A partition selector is a function which takes a <PyObject object="ScheduleExecutionContext" /> and a <PyObject object="PartitionSetDefinition" /> and returns a <PyObject object="Partition" /> object or a list of <PyObject object="Partition" /> objects. Every time the schedule fires, a pipeline run will be submitted for each partition returned by this partition selector.
+To create a schedule from a partition set, you must first define a partition selector. A partition selector is a function which takes a <PyObject object="ScheduleEvaluationContext" /> and a <PyObject object="PartitionSetDefinition" /> and returns a <PyObject object="Partition" /> object or a list of <PyObject object="Partition" /> objects. Every time the schedule fires, a pipeline run will be submitted for each partition returned by this partition selector.
 
 Once you have created your partition selector, you can manually create a schedule using the method <PyObject object="PartitionSetDefinition" method="create_schedule_definition" />.
 
@@ -115,7 +115,7 @@ weekday_partition_set = PartitionSetDefinition(
 
 
 def weekday_partition_selector(
-    ctx: ScheduleExecutionContext, partition_set: PartitionSetDefinition
+    ctx: ScheduleEvaluationContext, partition_set: PartitionSetDefinition
 ) -> Union[Partition, List[Partition]]:
     """Maps a schedule execution time to the corresponding partition or list of partitions that
     should be executed at that time"""

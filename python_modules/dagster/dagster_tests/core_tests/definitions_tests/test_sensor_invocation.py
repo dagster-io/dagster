@@ -3,11 +3,19 @@ from dagster import (
     DagsterInstance,
     DagsterInvariantViolationError,
     RunRequest,
+    SensorEvaluationContext,
+    SensorExecutionContext,
     build_sensor_context,
     sensor,
 )
 from dagster.core.errors import DagsterInvalidInvocationError
 from dagster.core.test_utils import instance_for_test
+
+
+def test_sensor_context_backcompat():
+    # If an instance of SensorEvaluationContext is a SensorExecutionContext, then annotating as
+    # SensorExecutionContext and passing in a SensorEvaluationContext should pass mypy
+    assert isinstance(SensorEvaluationContext(None, None, None, None), SensorExecutionContext)
 
 
 def test_sensor_invocation_args():

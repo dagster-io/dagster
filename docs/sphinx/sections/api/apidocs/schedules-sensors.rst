@@ -16,7 +16,7 @@ Schedules
 
 .. autoclass:: ScheduleDefinition
 
-.. autoclass:: ScheduleExecutionContext
+.. autoclass:: ScheduleEvaluationContext
 .. autoclass:: PartitionScheduleDefinition
 
 .. autofunction:: build_schedule_context
@@ -34,6 +34,6 @@ Sensors
 
 .. autoclass:: SensorDefinition
 
-.. autoclass:: SensorExecutionContext
+.. autoclass:: SensorEvaluationContext
 
 .. autofunction:: build_sensor_context

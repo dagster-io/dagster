@@ -23,7 +23,7 @@ from ..storage.pipeline_run import PipelineRun
 from ..storage.tags import check_tags
 from .mode import DEFAULT_MODE_NAME
 from .run_request import RunRequest, SkipReason
-from .schedule import ScheduleDefinition, ScheduleExecutionContext
+from .schedule import ScheduleDefinition, ScheduleEvaluationContext
 from .utils import check_valid_name
 
 DEFAULT_DATE_FORMAT = "%Y-%m-%d"
@@ -436,7 +436,7 @@ class PartitionSetDefinition(
         Arguments:
             schedule_name (str): The name of the schedule.
             cron_schedule (str): A valid cron string for the schedule
-            partition_selector (Callable[ScheduleExecutionContext, PartitionSetDefinition], Union[Partition, List[Partition]]):
+            partition_selector (Callable[ScheduleEvaluationContext, PartitionSetDefinition], Union[Partition, List[Partition]]):
                 Function that determines the partition to use at a given execution time. Can return
                 either a single Partition or a list of Partitions. For time-based partition sets,
                 will likely be either `identity_partition_selector` or a selector returned by
@@ -463,7 +463,7 @@ class PartitionSetDefinition(
         check.opt_str_param(description, "description")
 
         def _execution_fn(context):
-            check.inst_param(context, "context", ScheduleExecutionContext)
+            check.inst_param(context, "context", ScheduleEvaluationContext)
             with user_code_error_boundary(
                 ScheduleExecutionError,
                 lambda: f"Error occurred during the execution of partition_selector for schedule {schedule_name}",

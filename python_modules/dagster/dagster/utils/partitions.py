@@ -4,7 +4,7 @@ import pendulum
 from dagster import check
 from dagster.core.definitions.partition import Partition, PartitionSetDefinition
 from dagster.core.definitions.run_request import SkipReason
-from dagster.core.definitions.schedule import ScheduleExecutionContext
+from dagster.core.definitions.schedule import ScheduleEvaluationContext
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.seven.compat.pendulum import PendulumDateTime, to_timezone
 
@@ -171,7 +171,7 @@ def create_offset_partition_selector(execution_time_to_partition_fn):
     check.callable_param(execution_time_to_partition_fn, "execution_time_to_partition_fn")
 
     def offset_partition_selector(context, partition_set_def):
-        check.inst_param(context, "context", ScheduleExecutionContext)
+        check.inst_param(context, "context", ScheduleEvaluationContext)
         check.inst_param(partition_set_def, "partition_set_def", PartitionSetDefinition)
 
         no_partitions_skip_reason = SkipReason(

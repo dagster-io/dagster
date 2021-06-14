@@ -4,7 +4,7 @@ from typing import List, Union
 from dagster import (
     Partition,
     PartitionSetDefinition,
-    ScheduleExecutionContext,
+    ScheduleEvaluationContext,
     pipeline,
     repository,
     solid,
@@ -87,7 +87,7 @@ weekday_partition_set = PartitionSetDefinition(
 
 
 def weekday_partition_selector(
-    ctx: ScheduleExecutionContext, partition_set: PartitionSetDefinition
+    ctx: ScheduleEvaluationContext, partition_set: PartitionSetDefinition
 ) -> Union[Partition, List[Partition]]:
     """Maps a schedule execution time to the corresponding partition or list of partitions that
     should be executed at that time"""

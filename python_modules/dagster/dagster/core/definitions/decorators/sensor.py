@@ -8,7 +8,7 @@ from dagster.core.definitions.sensor import RunRequest, SensorDefinition, SkipRe
 from dagster.core.errors import DagsterInvariantViolationError
 
 if TYPE_CHECKING:
-    from dagster.core.definitions.sensor import SensorExecutionContext
+    from dagster.core.definitions.sensor import SensorEvaluationContext
 
 
 def sensor(
@@ -20,7 +20,7 @@ def sensor(
     description: Optional[str] = None,
     job: Optional[PipelineDefinition] = None,
 ) -> Callable[
-    [Callable[["SensorExecutionContext"], Union[SkipReason, RunRequest]]], SensorDefinition
+    [Callable[["SensorEvaluationContext"], Union[SkipReason, RunRequest]]], SensorDefinition
 ]:
     """
     Creates a sensor where the decorated function is used as the sensor's evaluation function.  The
@@ -32,7 +32,7 @@ def sensor(
        requested.
     4. Return or yield nothing (skipping without providing a reason)
 
-    Takes a :py:class:`~dagster.SensorExecutionContext`.
+    Takes a :py:class:`~dagster.SensorEvaluationContext`.
 
     Args:
         pipeline_name (str): Name of the target pipeline
@@ -51,7 +51,7 @@ def sensor(
     check.opt_str_param(name, "name")
 
     def inner(
-        fn: Callable[["SensorExecutionContext"], Union[SkipReason, RunRequest]]
+        fn: Callable[["SensorEvaluationContext"], Union[SkipReason, RunRequest]]
     ) -> SensorDefinition:
         check.callable_param(fn, "fn")
         sensor_name = name or fn.__name__

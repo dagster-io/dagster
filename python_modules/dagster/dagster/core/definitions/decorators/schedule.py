@@ -24,7 +24,7 @@ from ..mode import DEFAULT_MODE_NAME
 from ..schedule import ScheduleDefinition
 
 if TYPE_CHECKING:
-    from dagster import ScheduleExecutionContext, Partition
+    from dagster import ScheduleEvaluationContext, Partition
 
 # Error messages are long
 # pylint: disable=C0301
@@ -35,20 +35,20 @@ def schedule(
     pipeline_name: Optional[str] = None,
     name: Optional[str] = None,
     tags: Optional[Dict[str, Any]] = None,
-    tags_fn: Optional[Callable[["ScheduleExecutionContext"], Optional[Dict[str, str]]]] = None,
+    tags_fn: Optional[Callable[["ScheduleEvaluationContext"], Optional[Dict[str, str]]]] = None,
     solid_selection: Optional[List[str]] = None,
     mode: Optional[str] = "default",
-    should_execute: Optional[Callable[["ScheduleExecutionContext"], bool]] = None,
+    should_execute: Optional[Callable[["ScheduleEvaluationContext"], bool]] = None,
     environment_vars: Optional[Dict[str, str]] = None,
     execution_timezone: Optional[str] = None,
     description: Optional[str] = None,
     job: Optional[PipelineDefinition] = None,
-) -> Callable[[Callable[["ScheduleExecutionContext"], Dict[str, Any]]], ScheduleDefinition]:
+) -> Callable[[Callable[["ScheduleEvaluationContext"], Dict[str, Any]]], ScheduleDefinition]:
     """Create a schedule.
 
     The decorated function will be called as the ``run_config_fn`` of the underlying
     :py:class:`~dagster.ScheduleDefinition` and should take a
-    :py:class:`~dagster.ScheduleExecutionContext` as its only argument, returning the run config
+    :py:class:`~dagster.ScheduleEvaluationContext` as its only argument, returning the run config
     for the scheduled execution.
 
     Args:
@@ -58,17 +58,17 @@ def schedule(
         name (Optional[str]): The name of the schedule to create.
         tags (Optional[Dict[str, str]]): A dictionary of tags (string key-value pairs) to attach
             to the scheduled runs.
-        tags_fn (Optional[Callable[[ScheduleExecutionContext], Optional[Dict[str, str]]]]): A function
+        tags_fn (Optional[Callable[[ScheduleEvaluationContext], Optional[Dict[str, str]]]]): A function
             that generates tags to attach to the schedules runs. Takes a
-            :py:class:`~dagster.ScheduleExecutionContext` and returns a dictionary of tags (string
+            :py:class:`~dagster.ScheduleEvaluationContext` and returns a dictionary of tags (string
             key-value pairs). You may set only one of ``tags`` and ``tags_fn``.
         solid_selection (Optional[List[str]]): A list of solid subselection (including single
             solid names) to execute when the schedule runs. e.g. ``['*some_solid+', 'other_solid']``
         mode (Optional[str]): The pipeline mode in which to execute this schedule.
             (Default: 'default')
-        should_execute (Optional[Callable[[ScheduleExecutionContext], bool]]): A function that runs at
+        should_execute (Optional[Callable[[ScheduleEvaluationContext], bool]]): A function that runs at
             schedule execution tie to determine whether a schedule should execute or skip. Takes a
-            :py:class:`~dagster.ScheduleExecutionContext` and returns a boolean (``True`` if the
+            :py:class:`~dagster.ScheduleEvaluationContext` and returns a boolean (``True`` if the
             schedule should execute). Defaults to a function that always returns ``True``.
         environment_vars (Optional[Dict[str, str]]): Any environment variables to set when executing
             the schedule.
@@ -78,7 +78,7 @@ def schedule(
         job (Optional[PipelineDefinition]): Experimental
     """
 
-    def inner(fn: Callable[["ScheduleExecutionContext"], Dict[str, Any]]) -> ScheduleDefinition:
+    def inner(fn: Callable[["ScheduleEvaluationContext"], Dict[str, Any]]) -> ScheduleDefinition:
         check.callable_param(fn, "fn")
 
         schedule_name = name or fn.__name__
@@ -115,7 +115,7 @@ def monthly_schedule(
     tags_fn_for_date: Optional[Callable[[datetime.datetime], Optional[Dict[str, str]]]] = None,
     solid_selection: Optional[List[str]] = None,
     mode: Optional[str] = "default",
-    should_execute: Optional[Callable[["ScheduleExecutionContext"], bool]] = None,
+    should_execute: Optional[Callable[["ScheduleEvaluationContext"], bool]] = None,
     environment_vars: Optional[Dict[str, str]] = None,
     end_date: Optional[datetime.datetime] = None,
     execution_timezone: Optional[str] = None,
@@ -147,9 +147,9 @@ def monthly_schedule(
             solid names) to execute when the schedule runs. e.g. ``['*some_solid+', 'other_solid']``
         mode (Optional[str]): The pipeline mode in which to execute this schedule.
             (Default: 'default')
-        should_execute (Optional[Callable[ScheduleExecutionContext, bool]]): A function that runs at
+        should_execute (Optional[Callable[ScheduleEvaluationContext, bool]]): A function that runs at
             schedule execution tie to determine whether a schedule should execute or skip. Takes a
-            :py:class:`~dagster.ScheduleExecutionContext` and returns a boolean (``True`` if the
+            :py:class:`~dagster.ScheduleEvaluationContext` and returns a boolean (``True`` if the
             schedule should execute). Defaults to a function that always returns ``True``.
         environment_vars (Optional[Dict[str, str]]): Any environment variables to set when executing
             the schedule.
@@ -273,7 +273,7 @@ def weekly_schedule(
     tags_fn_for_date: Optional[Callable[[datetime.datetime], Optional[Dict[str, str]]]] = None,
     solid_selection: Optional[List[str]] = None,
     mode: Optional[str] = "default",
-    should_execute: Optional[Callable[["ScheduleExecutionContext"], bool]] = None,
+    should_execute: Optional[Callable[["ScheduleEvaluationContext"], bool]] = None,
     environment_vars: Optional[Dict[str, str]] = None,
     end_date: Optional[datetime.datetime] = None,
     execution_timezone: Optional[str] = None,
@@ -304,9 +304,9 @@ def weekly_schedule(
             solid names) to execute when the schedule runs. e.g. ``['*some_solid+', 'other_solid']``
         mode (Optional[str]): The pipeline mode in which to execute this schedule.
             (Default: 'default')
-        should_execute (Optional[Callable[ScheduleExecutionContext, bool]]): A function that runs at
+        should_execute (Optional[Callable[ScheduleEvaluationContext, bool]]): A function that runs at
             schedule execution tie to determine whether a schedule should execute or skip. Takes a
-            :py:class:`~dagster.ScheduleExecutionContext` and returns a boolean (``True`` if the
+            :py:class:`~dagster.ScheduleEvaluationContext` and returns a boolean (``True`` if the
             schedule should execute). Defaults to a function that always returns ``True``.
         environment_vars (Optional[Dict[str, str]]): Any environment variables to set when executing
             the schedule.
@@ -424,7 +424,7 @@ def daily_schedule(
     tags_fn_for_date: Optional[Callable[[datetime.datetime], Optional[Dict[str, str]]]] = None,
     solid_selection: Optional[List[str]] = None,
     mode: Optional[str] = "default",
-    should_execute: Optional[Callable[["ScheduleExecutionContext"], bool]] = None,
+    should_execute: Optional[Callable[["ScheduleEvaluationContext"], bool]] = None,
     environment_vars: Optional[Dict[str, str]] = None,
     end_date: Optional[datetime.datetime] = None,
     execution_timezone: Optional[str] = None,
@@ -454,9 +454,9 @@ def daily_schedule(
             solid names) to execute when the schedule runs. e.g. ``['*some_solid+', 'other_solid']``
         mode (Optional[str]): The pipeline mode in which to execute this schedule.
             (Default: 'default')
-        should_execute (Optional[Callable[ScheduleExecutionContext, bool]]): A function that runs at
+        should_execute (Optional[Callable[ScheduleEvaluationContext, bool]]): A function that runs at
             schedule execution tie to determine whether a schedule should execute or skip. Takes a
-            :py:class:`~dagster.ScheduleExecutionContext` and returns a boolean (``True`` if the
+            :py:class:`~dagster.ScheduleEvaluationContext` and returns a boolean (``True`` if the
             schedule should execute). Defaults to a function that always returns ``True``.
         environment_vars (Optional[Dict[str, str]]): Any environment variables to set when executing
             the schedule.
@@ -564,7 +564,7 @@ def hourly_schedule(
     tags_fn_for_date: Optional[Callable[[datetime.datetime], Optional[Dict[str, str]]]] = None,
     solid_selection: Optional[List[str]] = None,
     mode: Optional[str] = "default",
-    should_execute: Optional[Callable[["ScheduleExecutionContext"], bool]] = None,
+    should_execute: Optional[Callable[["ScheduleEvaluationContext"], bool]] = None,
     environment_vars: Optional[Dict[str, str]] = None,
     end_date: Optional[datetime.datetime] = None,
     execution_timezone: Optional[str] = None,
@@ -596,9 +596,9 @@ def hourly_schedule(
             solid names) to execute when the schedule runs. e.g. ``['*some_solid+', 'other_solid']``
         mode (Optional[str]): The pipeline mode in which to execute this schedule.
             (Default: 'default')
-        should_execute (Optional[Callable[ScheduleExecutionContext, bool]]): A function that runs at
+        should_execute (Optional[Callable[ScheduleEvaluationContext, bool]]): A function that runs at
             schedule execution tie to determine whether a schedule should execute or skip. Takes a
-            :py:class:`~dagster.ScheduleExecutionContext` and returns a boolean (``True`` if the
+            :py:class:`~dagster.ScheduleEvaluationContext` and returns a boolean (``True`` if the
             schedule should execute). Defaults to a function that always returns ``True``.
         environment_vars (Optional[Dict[str, str]]): Any environment variables to set when executing
             the schedule.

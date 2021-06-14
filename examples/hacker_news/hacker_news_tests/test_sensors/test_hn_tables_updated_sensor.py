@@ -2,7 +2,7 @@ import tempfile
 from typing import List, Tuple
 from unittest import mock
 
-from dagster import SensorExecutionContext
+from dagster import SensorEvaluationContext
 from dagster.core.instance.ref import InstanceRef
 from hacker_news.sensors.hn_tables_updated_sensor import story_recommender_on_hn_table_update
 
@@ -26,7 +26,7 @@ def test_first_events(mock_events_for_asset_key):
     )
 
     with tempfile.TemporaryDirectory() as tmpdir_path:
-        context = SensorExecutionContext(
+        context = SensorEvaluationContext(
             instance_ref=InstanceRef.from_dir(tmpdir_path),
             last_run_key=None,
             last_completion_time=None,
@@ -44,7 +44,7 @@ def test_nothing_new(mock_events_for_asset_key):
     )
 
     with tempfile.TemporaryDirectory() as tmpdir_path:
-        context = SensorExecutionContext(
+        context = SensorEvaluationContext(
             instance_ref=InstanceRef.from_dir(tmpdir_path),
             last_run_key="1|2",
             last_completion_time=None,
@@ -61,7 +61,7 @@ def test_new_comments_old_stories(mock_events_for_asset_key):
     )
 
     with tempfile.TemporaryDirectory() as tmpdir_path:
-        context = SensorExecutionContext(
+        context = SensorEvaluationContext(
             instance_ref=InstanceRef.from_dir(tmpdir_path),
             last_run_key="1|2",
             last_completion_time=None,
@@ -79,7 +79,7 @@ def test_old_comments_new_stories(mock_events_for_asset_key):
 
     with tempfile.TemporaryDirectory() as tmpdir_path:
 
-        context = SensorExecutionContext(
+        context = SensorEvaluationContext(
             instance_ref=InstanceRef.from_dir(tmpdir_path),
             last_run_key="1|2",
             last_completion_time=None,
@@ -96,7 +96,7 @@ def test_both_new(mock_events_for_asset_key):
     )
 
     with tempfile.TemporaryDirectory() as tmpdir_path:
-        context = SensorExecutionContext(
+        context = SensorEvaluationContext(
             instance_ref=InstanceRef.from_dir(tmpdir_path),
             last_run_key="1|2",
             last_completion_time=None,

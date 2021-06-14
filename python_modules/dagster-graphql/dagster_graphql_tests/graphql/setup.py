@@ -32,7 +32,7 @@ from dagster import (
     PresetDefinition,
     PythonObjectDagsterType,
     ScheduleDefinition,
-    ScheduleExecutionContext,
+    ScheduleEvaluationContext,
     String,
     check,
     composite_solid,
@@ -890,7 +890,7 @@ def get_retry_multi_execution_params(graphql_context, should_fail, retry_id=None
 
 
 def last_empty_partition(context, partition_set_def):
-    check.inst_param(context, "context", ScheduleExecutionContext)
+    check.inst_param(context, "context", ScheduleEvaluationContext)
     partition_set_def = check.inst_param(
         partition_set_def, "partition_set_def", PartitionSetDefinition
     )

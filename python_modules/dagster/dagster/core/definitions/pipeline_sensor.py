@@ -6,7 +6,7 @@ from dagster import check
 from dagster.core.definitions.sensor import (
     PipelineRunReaction,
     SensorDefinition,
-    SensorExecutionContext,
+    SensorEvaluationContext,
     SkipReason,
 )
 from dagster.core.errors import PipelineSensorExecutionError, user_code_error_boundary
@@ -103,7 +103,7 @@ def pipeline_failure_sensor(
         else:
             sensor_name = name
 
-        def _wrapped_fn(context: SensorExecutionContext):
+        def _wrapped_fn(context: SensorEvaluationContext):
             # initiate the cursor to (most recent event id, current timestamp) when:
             # * it's the first time starting the sensor
             # * or, the cursor isn't in valid format (backcompt)
