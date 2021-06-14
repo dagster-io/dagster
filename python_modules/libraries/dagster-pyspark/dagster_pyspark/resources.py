@@ -38,14 +38,14 @@ def pyspark_resource(init_context):
 
             @solid(required_resource_keys={"pyspark"})
             def my_solid(context):
-                spark_session = context.pyspark.spark_session
+                spark_session = context.resources.pyspark.spark_session
                 dataframe = spark_session.read.json("examples/src/main/resources/people.json")
 
             my_pyspark_resource = pyspark_resource.configured(
                 {"spark_conf": {"spark.executor.memory": "2g"}}
             )
 
-            @pipeline(mode_defs=[ModeDefinition(resource_defs={"pyspark"})])
+            @pipeline(mode_defs=[ModeDefinition(resource_defs={"pyspark": my_pyspark_resource})])
             def my_pipeline():
                 my_solid()
     """
