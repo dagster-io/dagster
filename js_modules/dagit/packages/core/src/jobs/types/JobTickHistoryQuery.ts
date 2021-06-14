@@ -35,6 +35,7 @@ export interface JobTickHistoryQuery_jobStateOrError_JobState_ticks {
   timestamp: number;
   skipReason: string | null;
   runIds: string[];
+  originRunIds: string[];
   error: JobTickHistoryQuery_jobStateOrError_JobState_ticks_error | null;
 }
 

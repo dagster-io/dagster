@@ -54,12 +54,15 @@ class SensorLaunchContext:
     def update_state(self, status, **kwargs):
         skip_reason = kwargs.get("skip_reason")
         cursor = kwargs.get("cursor")
+        origin_run_id = kwargs.get("origin_run_id")
         if "skip_reason" in kwargs:
             del kwargs["skip_reason"]
 
         if "cursor" in kwargs:
             del kwargs["cursor"]
 
+        if "origin_run_id" in kwargs:
+            del kwargs["origin_run_id"]
         if kwargs:
             check.inst_param(status, "status", JobTickStatus)
 
@@ -71,6 +74,9 @@ class SensorLaunchContext:
 
         if cursor:
             self._tick = self._tick.with_cursor(cursor)
+
+        if origin_run_id:
+            self._tick = self._tick.with_origin_run(origin_run_id)
 
     def add_run(self, run_id, run_key=None):
         self._tick = self._tick.with_run(run_id, run_key)
@@ -291,6 +297,7 @@ def _evaluate_sensor(
                     context.update_state(
                         JobTickStatus.SUCCESS,
                         cursor=sensor_runtime_data.cursor,
+                        origin_run_id=origin_run_id,
                     )
         elif sensor_runtime_data.skip_message:
             context.logger.info(

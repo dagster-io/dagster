@@ -97,6 +97,7 @@ class GrapheneJobTick(graphene.ObjectType):
     error = graphene.Field(GraphenePythonError)
     skipReason = graphene.String()
     runs = non_null_list("dagster_graphql.schema.pipelines.pipeline.GraphenePipelineRun")
+    originRunIds = non_null_list(graphene.String)
 
     class Meta:
         name = "JobTick"
@@ -110,6 +111,7 @@ class GrapheneJobTick(graphene.ObjectType):
             runIds=job_tick.run_ids,
             error=job_tick.error,
             skipReason=job_tick.skip_reason,
+            originRunIds=job_tick.origin_run_ids,
         )
 
     def resolve_id(self, _):
@@ -119,6 +121,12 @@ class GrapheneJobTick(graphene.ObjectType):
         from .pipelines.pipeline import GraphenePipelineRun
 
         instance = graphene_info.context.instance
+        if self._job_tick.origin_run_ids:
+            return [
+                GraphenePipelineRun(instance.get_run_by_id(run_id))
+                for run_id in self._job_tick.origin_run_ids
+                if instance.has_run(run_id)
+            ]
         return [
             GraphenePipelineRun(instance.get_run_by_id(run_id))
             for run_id in self._job_tick.run_ids

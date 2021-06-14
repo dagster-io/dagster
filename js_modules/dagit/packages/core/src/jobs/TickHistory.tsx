@@ -26,7 +26,7 @@ import {Subheading} from '../ui/Text';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
-import {TICK_TAG_FRAGMENT, RunList, TickTag} from './JobTick';
+import {TICK_TAG_FRAGMENT, RunList, TickTag, FailedRunList} from './JobTick';
 import {LiveTickTimeline} from './LiveTickTimeline';
 import {
   JobTickHistoryQuery,
@@ -259,7 +259,11 @@ export const JobTickHistory = ({
         {selectedTick ? (
           <Box background={Colors.WHITE} padding={16} margin={{bottom: 16}}>
             {selectedTick.status === JobTickStatus.SUCCESS ? (
-              <RunList runIds={selectedTick?.runIds} />
+              selectedTick.runIds.length ? (
+                <RunList runIds={selectedTick.runIds} />
+              ) : (
+                <FailedRunList originRunIds={selectedTick.originRunIds} />
+              )
             ) : null}
             {selectedTick.status === JobTickStatus.SKIPPED ? (
               <Group direction="row" spacing={16}>
@@ -538,6 +542,7 @@ const JOB_TICK_HISTORY_QUERY = gql`
           timestamp
           skipReason
           runIds
+          originRunIds
           error {
             ...PythonErrorFragment
           }

@@ -13,7 +13,7 @@ import {RepoAddress} from '../workspace/types';
 import {SensorDetails} from './SensorDetails';
 import {SENSOR_FRAGMENT} from './SensorFragment';
 import {SensorInfo} from './SensorInfo';
-import {SensorPreviousRuns} from './SensorPreviousRuns';
+import {SensorPreviousRuns, NoTargetSensorPreviousRuns} from './SensorPreviousRuns';
 import {SensorRootQuery} from './types/SensorRootQuery';
 
 const INTERVAL = 15 * 1000;
@@ -75,11 +75,19 @@ export const SensorRoot: React.FC<{
                 showRecent={true}
                 onHighlightRunIds={(runIds: string[]) => setSelectedRunIds(runIds)}
               />
-              <SensorPreviousRuns
-                repoAddress={repoAddress}
-                sensor={sensorOrError}
-                highlightedIds={selectedRunIds}
-              />
+              {sensorOrError.pipelineName ? (
+                <SensorPreviousRuns
+                  repoAddress={repoAddress}
+                  sensor={sensorOrError}
+                  highlightedIds={selectedRunIds}
+                />
+              ) : (
+                <NoTargetSensorPreviousRuns
+                  repoAddress={repoAddress}
+                  sensor={sensorOrError}
+                  highlightedIds={selectedRunIds}
+                />
+              )}
             </Group>
           </Page>
         );
