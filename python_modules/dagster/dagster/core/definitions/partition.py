@@ -7,21 +7,23 @@ from typing import Callable, List, NamedTuple, Optional, cast
 
 import pendulum
 from dagster import check
-from dagster.core.definitions.run_request import RunRequest, SkipReason
-from dagster.core.definitions.schedule import ScheduleDefinition, ScheduleExecutionContext
-from dagster.core.errors import (
+
+from ...seven.compat.pendulum import PendulumDateTime, to_timezone
+from ...utils import frozenlist, merge_dicts
+from ...utils.schedules import schedule_execution_time_iterator
+from ..decorator_utils import get_function_params
+from ..errors import (
     DagsterInvalidDefinitionError,
+    DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
     ScheduleExecutionError,
     user_code_error_boundary,
 )
-from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.core.storage.tags import check_tags
-from dagster.seven.compat.pendulum import PendulumDateTime, to_timezone
-from dagster.utils import frozenlist, merge_dicts
-from dagster.utils.schedules import schedule_execution_time_iterator
-
+from ..storage.pipeline_run import PipelineRun
+from ..storage.tags import check_tags
 from .mode import DEFAULT_MODE_NAME
+from .run_request import RunRequest, SkipReason
+from .schedule import ScheduleDefinition, ScheduleExecutionContext
 from .utils import check_valid_name
 
 DEFAULT_DATE_FORMAT = "%Y-%m-%d"
@@ -426,6 +428,7 @@ class PartitionSetDefinition(
         environment_vars=None,
         execution_timezone=None,
         description=None,
+        decorated_fn=None,
     ):
         """Create a ScheduleDefinition from a PartitionSetDefinition.
 
@@ -539,6 +542,7 @@ class PartitionSetDefinition(
             execution_timezone=execution_timezone,
             execution_fn=_execution_fn,
             description=description,
+            decorated_fn=decorated_fn,
         )
 
 
@@ -560,6 +564,7 @@ class PartitionScheduleDefinition(ScheduleDefinition):
         execution_timezone=None,
         execution_fn=None,
         description=None,
+        decorated_fn=None,
     ):
         super(PartitionScheduleDefinition, self).__init__(
             name=check_valid_name(name),
@@ -578,6 +583,37 @@ class PartitionScheduleDefinition(ScheduleDefinition):
         self._partition_set = check.inst_param(
             partition_set, "partition_set", PartitionSetDefinition
         )
+        self._decorated_fn = check.opt_callable_param(decorated_fn, "decorated_fn")
+
+    def __call__(self, *args, **kwargs):
+        if not self._decorated_fn:
+            raise DagsterInvalidInvocationError(
+                "Only partition schedules created using one of the partition schedule decorators "
+                "can be directly invoked."
+            )
+        if len(args) == 0 and len(kwargs) == 0:
+            raise DagsterInvalidInvocationError(
+                "Schedule decorated function has date argument, but no date argument was "
+                "provided when invoking."
+            )
+        if len(args) + len(kwargs) > 1:
+            raise DagsterInvalidInvocationError(
+                "Schedule invocation received multiple arguments. Only a first "
+                "positional date parameter should be provided when invoking."
+            )
+
+        date_param_name = get_function_params(self._decorated_fn)[0].name
+
+        if args:
+            date = check.opt_inst_param(args[0], date_param_name, datetime)
+        else:
+            if date_param_name not in kwargs:
+                raise DagsterInvalidInvocationError(
+                    f"Schedule invocation expected argument '{date_param_name}'."
+                )
+            date = check.opt_inst_param(kwargs[date_param_name], date_param_name, datetime)
+
+        return self._decorated_fn(date)
 
     def get_partition_set(self):
         return self._partition_set

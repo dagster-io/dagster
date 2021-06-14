@@ -252,6 +252,7 @@ def my_schedule_definition(_):
             ),
             execution_timezone=execution_timezone,
             description=description,
+            decorated_fn=fn,
         )
         update_wrapper(schedule_def, wrapped=fn)
 
@@ -400,6 +401,7 @@ def my_schedule_definition(_):
             ),
             execution_timezone=execution_timezone,
             description=description,
+            decorated_fn=fn,
         )
 
         update_wrapper(schedule_def, wrapped=fn)
@@ -537,6 +539,7 @@ def my_schedule_definition(_):
             ),
             execution_timezone=execution_timezone,
             description=description,
+            decorated_fn=fn,
         )
         update_wrapper(schedule_def, wrapped=fn)
         return schedule_def
@@ -689,6 +692,7 @@ def my_schedule_definition(_):
             ),
             execution_timezone=execution_timezone,
             description=description,
+            decorated_fn=fn,
         )
 
         update_wrapper(schedule_def, wrapped=fn)

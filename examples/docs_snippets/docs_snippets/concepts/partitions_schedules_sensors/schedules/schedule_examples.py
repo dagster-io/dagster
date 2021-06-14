@@ -1,16 +1,15 @@
 """isort:skip_file"""
-
+# pylint: disable=reimported
 import datetime
 
 from dagster import (
     PresetDefinition,
-    build_schedule_context,
     daily_schedule,
     hourly_schedule,
     monthly_schedule,
     pipeline,
+    schedule,
     solid,
-    validate_run_config,
     weekly_schedule,
 )
 
@@ -25,12 +24,12 @@ def pipeline_for_test():
     process_data_for_date()
 
 
-# start_test_schedule
+# start_test_partition_schedule
+
+
 @hourly_schedule(
     pipeline_name="test_pipeline",
     start_date=datetime.datetime(2020, 1, 1),
-    execution_time=datetime.time(hour=0, minute=25),
-    execution_timezone="US/Central",
 )
 def hourly_schedule_to_test(date):
     return {
@@ -44,13 +43,68 @@ def hourly_schedule_to_test(date):
     }
 
 
+from dagster import validate_run_config
+
+
 def test_hourly_schedule():
-    schedule_data = hourly_schedule_to_test.evaluate_tick(build_schedule_context())
-    for run_request in schedule_data.run_requests:
-        assert validate_run_config(pipeline_for_test, run_request.run_config)
+    run_config = hourly_schedule_to_test(datetime.datetime(2020, 1, 1))
+    assert validate_run_config(pipeline_for_test, run_config)
 
 
-# end_test_schedule
+# end_test_partition_schedule
+
+
+@solid
+def basic():
+    pass
+
+
+@pipeline
+def my_pipeline_on_cron():
+    basic()
+
+
+# start_test_cron_schedule
+@schedule(cron_schedule="* * * * *", pipeline_name="my_pipeline_on_cron")
+def my_cron_schedule(_context):
+    return {}
+
+
+from dagster import validate_run_config
+
+
+def test_my_cron_schedule():
+    run_config = my_cron_schedule(None)
+    assert validate_run_config(my_pipeline_on_cron, run_config)
+
+
+# end_test_cron_schedule
+
+# start_test_cron_schedule_context
+@schedule(cron_schedule="0 1 * * *", pipeline_name="pipeline_for_test")
+def my_schedule_uses_context(context):
+    date_str = context.scheduled_execution_time.strftime("%Y-%m-%d")
+    return {
+        "solids": {
+            "process_data_for_date": {
+                "config": {
+                    "date": date_str,
+                }
+            }
+        }
+    }
+
+
+from dagster import build_schedule_context, validate_run_config
+
+
+def test_my_cron_schedule_with_context():
+    context = build_schedule_context(scheduled_execution_time=datetime.datetime(2020, 1, 1))
+    run_config = my_schedule_uses_context(context)
+    assert validate_run_config(pipeline_for_test, run_config)
+
+
+# end_test_cron_schedule_context
 
 # start_hourly_schedule
 

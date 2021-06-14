@@ -23,7 +23,7 @@ def my_daily_schedule(date):
 
 @schedule(cron_schedule="0 1 * * *", pipeline_name="my_pipeline", execution_timezone="US/Central")
 def my_schedule(_context):
-    return {"solids": {"dataset_name": "my_dataset"}}
+    return {"solids": {"process_data": {"config": {"dataset_name": "my_dataset"}}}}
 
 
 # end_non_partition_based_schedule
@@ -35,7 +35,11 @@ def my_schedule(_context):
 @schedule(cron_schedule="0 1 * * *", pipeline_name="my_pipeline", execution_timezone="US/Central")
 def my_execution_time_schedule(context):
     date = context.scheduled_execution_time.strftime("%Y-%m-%d")
-    return {"solids": {"dataset_name": "my_dataset", "execution_date": date}}
+    return {
+        "solids": {
+            "process_data": {"config": {"dataset_name": "my_dataset", "execution_date": date}}
+        }
+    }
 
 
 # end_execution_time
