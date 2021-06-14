@@ -26,8 +26,8 @@ class OutputContext:
     The context object that is available to the `handle_output` method of an :py:class:`IOManager`.
 
     Attributes:
-        step_key (str): The step_key for the compute step that produced the output.
-        name (str): The name of the output that produced the output.
+        step_key (Optional[str]): The step_key for the compute step that produced the output.
+        name (Optional[str]): The name of the output that produced the output.
         pipeline_name (Optional[str]): The name of the pipeline definition.
         run_id (Optional[str]): The id of the run that produced the output.
         metadata (Optional[Dict[str, Any]]): A dict of the metadata that is assigned to the
@@ -46,9 +46,9 @@ class OutputContext:
 
     def __init__(
         self,
-        step_key: str,
-        name: str,
-        pipeline_name: Optional[str],
+        step_key: Optional[str] = None,
+        name: Optional[str] = None,
+        pipeline_name: Optional[str] = None,
         run_id: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
         mapping_key: Optional[str] = None,
@@ -103,11 +103,11 @@ class OutputContext:
             self._resources_cm.__exit__(None, None, None)  # pylint: disable=no-member
 
     @property
-    def step_key(self) -> str:
+    def step_key(self) -> Optional[str]:
         return self._step_key
 
     @property
-    def name(self) -> str:
+    def name(self) -> Optional[str]:
         return self._name
 
     @property
@@ -185,11 +185,22 @@ class OutputContext:
             self.run_id is not None,
             "Unable to find the run scoped output identifier: run_id is None on OutputContext.",
         )
+        check.invariant(
+            self.step_key is not None,
+            "Unable to find the run scoped output identifier: step_key is None on OutputContext.",
+        )
+        check.invariant(
+            self.name is not None,
+            "Unable to find the run scoped output identifier: name is None on OutputContext.",
+        )
         run_id = cast(str, self.run_id)
-        if self.mapping_key:
-            return [run_id, self.step_key, self.name, self.mapping_key]
+        step_key = cast(str, self.step_key)
+        name = cast(str, self.name)
 
-        return [run_id, self.step_key, self.name]
+        if self.mapping_key:
+            return [run_id, step_key, name, self.mapping_key]
+
+        return [run_id, step_key, name]
 
 
 def get_output_context(
@@ -276,8 +287,8 @@ def _step_output_version(
 
 
 def build_output_context(
-    step_key: str,
-    name: str,
+    step_key: Optional[str],
+    name: Optional[str],
     metadata: Optional[Dict[str, Any]] = None,
     run_id: Optional[str] = None,
     mapping_key: Optional[str] = None,
@@ -294,8 +305,8 @@ def build_output_context(
     context manager.
 
     Args:
-        step_key (str): The step_key for the compute step that produced the output.
-        name (str): The name of the output that produced the output.
+        step_key (Optional[str]): The step_key for the compute step that produced the output.
+        name (Optional[str]): The name of the output that produced the output.
         metadata (Optional[Dict[str, Any]]): A dict of the metadata that is assigned to the
             OutputDefinition that produced the output.
         mapping_key (Optional[str]): The key that identifies a unique mapped output. None for regular outputs.
@@ -328,8 +339,8 @@ def build_output_context(
 
     experimental_fn_warning("build_output_context")
 
-    step_key = check.str_param(step_key, "step_key")
-    name = check.str_param(name, "name")
+    step_key = check.opt_str_param(step_key, "step_key")
+    name = check.opt_str_param(name, "name")
     metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
     run_id = check.opt_str_param(run_id, "run_id", default=RUN_ID_PLACEHOLDER)
     mapping_key = check.opt_str_param(mapping_key, "mapping_key")
