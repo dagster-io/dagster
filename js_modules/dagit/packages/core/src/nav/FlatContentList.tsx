@@ -75,48 +75,48 @@ export const FlatContentList: React.FC<Props> = (props) => {
           modes.forEach((mode) => {
             const modeName = mode.name;
             const tuple: [string, string] = [name, modeName];
+            const schedule = schedules.find((schedule) => schedule.mode === modeName) || null;
+            const sensor = sensors.find((sensor) => sensor.mode === modeName) || null;
             items.push({
               job: tuple,
               label: (
-                <span>
+                <Label $hasIcon={!!(schedule || sensor)}>
                   {name}
                   {modeName !== 'default' ? (
                     <span style={{color: Colors.GRAY3}}>{` : ${modeName}`}</span>
                   ) : null}
-                </span>
+                </Label>
               ),
               repoAddress: address,
-              schedule: schedules.find((schedule) => schedule.mode === modeName) || null,
-              sensor: sensors.find((sensor) => sensor.mode === modeName) || null,
+              schedule,
+              sensor,
             });
           });
         }
       }
     }
 
-    return items;
+    return items.sort((a, b) =>
+      a.job[0].toLocaleLowerCase().localeCompare(b.job[0].toLocaleLowerCase()),
+    );
   }, [loading, data, activeRepoAddresses]);
 
-  const content = () => {
-    if (jobs.length === 0) {
-      return <div />;
-    }
+  if (jobs.length === 0) {
+    return <div />;
+  }
 
-    return (
-      <Items style={{height: 'calc(100% - 128px)'}}>
-        {jobs.map((job) => (
-          <JobItem
-            key={`${job.job[0]}:${job.job[1]}`}
-            job={job}
-            repoPath={repoPath}
-            selector={selector}
-          />
-        ))}
-      </Items>
-    );
-  };
-
-  return <div>{content()}</div>;
+  return (
+    <Items style={{height: 'calc(100% - 226px)'}}>
+      {jobs.map((job) => (
+        <JobItem
+          key={`${job.job[0]}:${job.job[1]}-${repoAddressAsString(job.repoAddress)}`}
+          job={job}
+          repoPath={repoPath}
+          selector={selector}
+        />
+      ))}
+    </Items>
+  );
 };
 
 interface JobItemProps {
@@ -243,6 +243,12 @@ const NAV_QUERY = gql`
   ${PYTHON_ERROR_FRAGMENT}
   ${NAV_SCHEDULE_FRAGMENT}
   ${NAV_SENSOR_FRAGMENT}
+`;
+
+const Label = styled.div<{$hasIcon: boolean}>`
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: ${({$hasIcon}) => ($hasIcon ? '224px' : '256px')};
 `;
 
 const IconWithTooltip = styled(Tooltip)`
