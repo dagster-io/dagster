@@ -2116,11 +2116,11 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@blueprintjs/core@npm:^3.23.0, @blueprintjs/core@npm:^3.39.0, @blueprintjs/core@npm:^3.44.1":
-  version: 3.44.1
-  resolution: "@blueprintjs/core@npm:3.44.1"
+"@blueprintjs/core@npm:^3.45.0":
+  version: 3.45.0
+  resolution: "@blueprintjs/core@npm:3.45.0"
   dependencies:
-    "@blueprintjs/icons": ^3.26.0
+    "@blueprintjs/icons": ^3.26.1
     "@types/dom4": ^2.0.1
     classnames: ^2.2
     dom4: ^2.1.5
@@ -2137,55 +2137,56 @@ __metadata:
   bin:
     upgrade-blueprint-2.0.0-rename: scripts/upgrade-blueprint-2.0.0-rename.sh
     upgrade-blueprint-3.0.0-rename: scripts/upgrade-blueprint-3.0.0-rename.sh
-  checksum: 317db6773cfcf2aa90c8f00c070c7bd48720cfdc0ead98ddafaaaab30d24cc22766ff84b1cd61e2fcca47bf288abcead3eaef4330503eb23becb5a95537ec2f3
+  checksum: d896bd1ef49b5bfcd99a03decc4528711acee704268b95e37c5e3fb3f88c290478dbcff30f687f07301057531efdf2d8e5e5bd17d0d7d2897e63543ef88f2d8c
   languageName: node
   linkType: hard
 
-"@blueprintjs/icons@npm:^3.13.0, @blueprintjs/icons@npm:^3.26.0":
-  version: 3.26.0
-  resolution: "@blueprintjs/icons@npm:3.26.0"
+"@blueprintjs/icons@npm:^3.26.1":
+  version: 3.26.1
+  resolution: "@blueprintjs/icons@npm:3.26.1"
   dependencies:
     classnames: ^2.2
     tslib: ~1.13.0
-  checksum: 67bffac1ff8b84f5f2849fe3e42028997fc54074407601ce2c5b9666015db6ace91502fd74fbde049adfe147b14064b3fb0caeae26f478c1701eb3acf6e94a1c
+  checksum: cd911b588e548bbdfb6dc0649fa3395068ae5c799e8a3476a05def56544a3333531811b24e483832b67c8e1fefdedb8b2c4b2efa9279ef70432cef5faa55194e
   languageName: node
   linkType: hard
 
-"@blueprintjs/popover2@npm:0.3.0":
-  version: 0.3.0
-  resolution: "@blueprintjs/popover2@npm:0.3.0"
+"@blueprintjs/popover2@npm:0.10.1":
+  version: 0.10.1
+  resolution: "@blueprintjs/popover2@npm:0.10.1"
   dependencies:
-    "@blueprintjs/core": ^3.39.0
+    "@blueprintjs/core": ^3.45.0
     "@popperjs/core": ^2.5.4
     classnames: ^2.2
     dom4: ^2.1.5
     react-popper: ^2.2.4
+    resize-observer-polyfill: ^1.5.1
     tslib: ~1.13.0
   peerDependencies:
     react: ^16.8.0 || ^17
-  checksum: 580a58bb76d65c2948e4fe11922729b5e9205f439b125ee1331112ec0fbfead9332a5437063329d5f0546e0b0a5d47c654b109e33f6666b02f04cc1852574cc6
+  checksum: f631110c734c854abab633afc679db6a521410eef79b7f6c050426eaab721b9103cc0c76c9fddd5288d1954e76143adc79b834a6ab5ae3914e69e1d99027f855
   languageName: node
   linkType: hard
 
-"@blueprintjs/select@npm:^3.11.2":
-  version: 3.16.1
-  resolution: "@blueprintjs/select@npm:3.16.1"
+"@blueprintjs/select@npm:^3.16.4":
+  version: 3.16.4
+  resolution: "@blueprintjs/select@npm:3.16.4"
   dependencies:
-    "@blueprintjs/core": ^3.44.1
+    "@blueprintjs/core": ^3.45.0
     classnames: ^2.2
     tslib: ~1.13.0
   peerDependencies:
     react: ^15.3.0 || 16 || 17
     react-dom: ^15.3.0 || 16 || 17
-  checksum: ea42b5325cb2b7ca284380d186916973ae08698ccb95462e23205b289a78fb6baebf0bb1826b5ede52aeee46fd2f7d6908a009ecceeda83b28e1dee8b4fa9adc
+  checksum: 94c02e046d6efa7e3dd7b0a4118aa5c9836d82010bac171e3fe953c5e331214e19a2afb89119dfc3f528449a3231c7a207fc654a6724ff85d95beac33f448452
   languageName: node
   linkType: hard
 
-"@blueprintjs/table@npm:^3.8.3":
-  version: 3.8.30
-  resolution: "@blueprintjs/table@npm:3.8.30"
+"@blueprintjs/table@npm:^3.8.33":
+  version: 3.8.33
+  resolution: "@blueprintjs/table@npm:3.8.33"
   dependencies:
-    "@blueprintjs/core": ^3.44.1
+    "@blueprintjs/core": ^3.45.0
     classnames: ^2.2
     prop-types: ^15.7.2
     react-lifecycles-compat: ^3.0.4
@@ -2193,7 +2194,7 @@ __metadata:
   peerDependencies:
     react: ^15.3.0 || 16 || 17
     react-dom: ^15.3.0 || 16 || 17
-  checksum: 418b1db8c3e70b5daee124c90874f7b6834df0901be485a069b1166f9b285f308dbaff31b4dcd1a5eefd89ba85d304fb2ac8d0204d2520afdf7936ebc6fe07f9
+  checksum: d93d93665f109290db0a1446e538712c186d7019868f5752114a57489f0ca028dbca51a0222de5160df2ce37f9b2d57fd443884b4b6111bb4e6060abffd7dd82
   languageName: node
   linkType: hard
 
@@ -2444,11 +2445,11 @@ __metadata:
   resolution: "@dagit/app@workspace:packages/app"
   dependencies:
     "@babel/core": 7.12.3
-    "@blueprintjs/core": ^3.23.0
-    "@blueprintjs/icons": ^3.13.0
-    "@blueprintjs/popover2": 0.3.0
-    "@blueprintjs/select": ^3.11.2
-    "@blueprintjs/table": ^3.8.3
+    "@blueprintjs/core": ^3.45.0
+    "@blueprintjs/icons": ^3.26.1
+    "@blueprintjs/popover2": 0.10.1
+    "@blueprintjs/select": ^3.16.4
+    "@blueprintjs/table": ^3.8.33
     "@dagit/core": 1.0.0
     "@pmmmwh/react-refresh-webpack-plugin": 0.4.3
     "@svgr/webpack": 5.5.0
@@ -2540,11 +2541,11 @@ __metadata:
     "@babel/preset-react": ^7.13.13
     "@babel/preset-typescript": ^7.7.2
     "@babel/runtime": ^7.13.10
-    "@blueprintjs/core": ^3.23.0
-    "@blueprintjs/icons": ^3.13.0
-    "@blueprintjs/popover2": 0.3.0
-    "@blueprintjs/select": ^3.11.2
-    "@blueprintjs/table": ^3.8.3
+    "@blueprintjs/core": ^3.45.0
+    "@blueprintjs/icons": ^3.26.1
+    "@blueprintjs/popover2": 0.10.1
+    "@blueprintjs/select": ^3.16.4
+    "@blueprintjs/table": ^3.8.33
     "@storybook/addon-actions": ^6.2.8
     "@storybook/addon-essentials": ^6.2.8
     "@storybook/addon-links": ^6.2.8
@@ -2653,11 +2654,11 @@ __metadata:
     yaml: 2.0.0-1
     yaml-language-server: ^0.5.8
   peerDependencies:
-    "@blueprintjs/core": ^3.23.0
-    "@blueprintjs/icons": ^3.13.0
-    "@blueprintjs/popover2": 0.3.0
-    "@blueprintjs/select": ^3.11.2
-    "@blueprintjs/table": ^3.8.3
+    "@blueprintjs/core": ^3.45.0
+    "@blueprintjs/icons": ^3.26.1
+    "@blueprintjs/popover2": 0.10.1
+    "@blueprintjs/select": ^3.16.4
+    "@blueprintjs/table": ^3.8.33
     react: ^17.0.2
     react-dom: ^17.0.2
     react-router: ^5.1.2
