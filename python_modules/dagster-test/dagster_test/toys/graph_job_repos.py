@@ -7,6 +7,7 @@ from dagster import (
     SolidDefinition,
     repository,
     schedule,
+    sensor,
     solid,
 )
 from dagster.core.definitions.decorators.graph import graph
@@ -42,6 +43,20 @@ def event_tables():
 @schedule(job=event_tables, cron_schedule="0 0 * * *")
 def event_tables_schedule(_):
     return {}
+
+
+@graph
+def event_reports():
+    make_event_reports = make_solid("make_event_reports", required_resource_keys={"mode"})
+    make_event_reports()
+
+
+@sensor(job=event_reports.to_job(resource_defs={"mode": ResourceDefinition.none_resource()}))
+def event_reports_sensor():
+    pass
+
+
+event_reports_dev = event_reports.to_job(resource_defs={"mode": ResourceDefinition.none_resource()})
 
 
 @graph
@@ -111,9 +126,10 @@ process_customer_data_dump_dev = process_customer_data_dump.to_job(
 
 
 @repository
-def dev_repo():
+def graph_job_dev_repo():
     return [
         event_tables,
+        event_reports_dev,
         crm_ingest_dev,
         content_recommender_training_dev,
         process_customer_data_dump_dev,
@@ -121,9 +137,10 @@ def dev_repo():
 
 
 @repository
-def prod_repo():
+def graph_job_prod_repo():
     return [
         event_tables_schedule,
+        event_reports_sensor,
         crm_ingest_instance1_schedule,
         crm_ingest_instance2_schedule,
         content_recommender_training_prod,
