@@ -938,6 +938,7 @@ type JobTick {
   error: PythonError
   skipReason: String
   runs: [PipelineRun!]!
+  originRunIds: [String!]!
 }
 
 enum JobTickStatus {

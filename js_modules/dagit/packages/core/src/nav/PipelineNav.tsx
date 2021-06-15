@@ -100,9 +100,13 @@ export const PipelineNav: React.FC<Props> = (props) => {
     .map((x) => x.pipelineName)
     .includes(explorerPath.pipelineName);
 
-  const tabs = currentOrder
+  let tabs = currentOrder
     .filter((key) => hasPartitionSet || key !== 'partitions')
     .map(tabForKey(repoAddress, explorerPath));
+
+  if (pipelineMode) {
+    tabs = tabs.filter((t) => t.text !== 'Definition');
+  }
 
   return (
     <Group direction="column" spacing={12} padding={{top: 20, horizontal: 20}}>

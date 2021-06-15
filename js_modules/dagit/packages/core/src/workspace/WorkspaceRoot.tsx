@@ -8,6 +8,7 @@ import {ScheduleRoot} from '../schedules/ScheduleRoot';
 import {SensorRoot} from '../sensors/SensorRoot';
 import {MainContent} from '../ui/MainContent';
 
+import {GraphRoot} from './GraphRoot';
 import {WorkspaceContext} from './WorkspaceContext';
 import {WorkspaceOverviewRoot} from './WorkspaceOverviewRoot';
 import {WorkspacePipelineRoot} from './WorkspacePipelineRoot';
@@ -73,6 +74,10 @@ const RepoRouteContainer: React.FC<{repoPath: string}> = (props) => {
       <Route
         path="/workspace/:repoPath/jobs/(/?.*)"
         render={() => <PipelineRoot repoAddress={addressForPath} />}
+      />
+      <Route
+        path="/workspace/:repoPath/graphs/(/?.*)"
+        render={(props) => <GraphRoot {...props} repoAddress={addressForPath} />}
       />
       <Route
         path="/workspace/:repoPath/pipelines/(/?.*)"

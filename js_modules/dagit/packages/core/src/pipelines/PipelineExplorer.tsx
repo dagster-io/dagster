@@ -8,6 +8,7 @@ import {Route} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {filterByQuery} from '../app/GraphQueryImpl';
+import {featureEnabled, FeatureFlag} from '../app/Util';
 import {PIPELINE_GRAPH_SOLID_FRAGMENT} from '../graph/PipelineGraph';
 import {PipelineGraphContainer} from '../graph/PipelineGraphContainer';
 import {SolidNameOrPath} from '../solids/SolidNameOrPath';
@@ -126,10 +127,13 @@ export class PipelineExplorer extends React.Component<
     if (snapshotId) {
       return `/instance/snapshots/${path}`;
     }
+
+    const tab = featureEnabled(FeatureFlag.PipelineModeTuples) ? 'graphs' : 'pipelines';
+
     if (repoAddress) {
-      return workspacePathFromAddress(repoAddress, `/pipelines/${path}`);
+      return workspacePathFromAddress(repoAddress, `/${tab}/${path}`);
     }
-    return `/workspace/pipelines/${path}`;
+    return `/workspace/${tab}/${path}`;
   };
 
   render() {

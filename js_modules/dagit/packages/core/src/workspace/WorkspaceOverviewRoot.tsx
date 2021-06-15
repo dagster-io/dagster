@@ -2,6 +2,7 @@ import {NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {featureEnabled, FeatureFlag} from '../app/Util';
 import {Group} from '../ui/Group';
 import {LoadingSpinner} from '../ui/Loading';
 import {Page} from '../ui/Page';
@@ -46,7 +47,14 @@ export const WorkspaceOverviewRoot = () => {
         <thead>
           <tr>
             <th>Repository</th>
-            <th>Pipelines</th>
+            {featureEnabled(FeatureFlag.PipelineModeTuples) ? (
+              <>
+                <th>Jobs</th>
+                <th>Graphs</th>
+              </>
+            ) : (
+              <th>Pipelines</th>
+            )}
             <th>Solids</th>
             <th>Schedules</th>
             <th>Sensors</th>
@@ -62,9 +70,20 @@ export const WorkspaceOverviewRoot = () => {
             return (
               <tr key={repoString}>
                 <td style={{width: '40%'}}>{repoString}</td>
-                <td>
-                  <Link to={workspacePath(name, location, '/pipelines')}>Pipelines</Link>
-                </td>
+                {featureEnabled(FeatureFlag.PipelineModeTuples) ? (
+                  <>
+                    <td>
+                      <Link to={workspacePath(name, location, '/jobs')}>Jobs</Link>
+                    </td>
+                    <td>
+                      <Link to={workspacePath(name, location, '/graphs')}>Graphs</Link>
+                    </td>
+                  </>
+                ) : (
+                  <td>
+                    <Link to={workspacePath(name, location, '/pipelines')}>Pipelines</Link>
+                  </td>
+                )}
                 <td>
                   <Link to={workspacePath(name, location, '/solids')}>Solids</Link>
                 </td>

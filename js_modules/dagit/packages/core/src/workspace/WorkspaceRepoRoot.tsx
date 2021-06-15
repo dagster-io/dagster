@@ -2,6 +2,7 @@ import {Colors, Tab, Tabs} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link, Redirect, Route, Switch} from 'react-router-dom';
 
+import {featureEnabled, FeatureFlag} from '../app/Util';
 import {SchedulesRoot} from '../schedules/SchedulesRoot';
 import {SensorsRoot} from '../sensors/SensorsRoot';
 import {SolidsRoot} from '../solids/SolidsRoot';
@@ -10,6 +11,7 @@ import {Group} from '../ui/Group';
 import {PageHeader} from '../ui/PageHeader';
 import {Heading} from '../ui/Text';
 
+import {RepositoryGraphsList} from './RepositoryGraphsList';
 import {RepositoryPipelinesList} from './RepositoryPipelinesList';
 import {repoAddressAsString} from './repoAddressAsString';
 import {RepoAddress} from './types';
@@ -31,6 +33,11 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
     {text: 'Sensors', href: workspacePathFromAddress(repoAddress, '/sensors')},
   ];
 
+  if (featureEnabled(FeatureFlag.PipelineModeTuples)) {
+    tabs.splice(0, 1, {text: 'Jobs', href: workspacePathFromAddress(repoAddress, '/jobs')});
+    tabs.splice(1, 0, {text: 'Graphs', href: workspacePathFromAddress(repoAddress, '/graphs')});
+  }
+
   const activeTab = () => {
     switch (tab) {
       case 'schedules':
@@ -39,8 +46,14 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
         return 'Sensors';
       case 'solids':
         return 'Solids';
-      default:
+      case 'graphs':
+        return 'Graphs';
+      case 'jobs':
+        return 'Jobs';
+      case 'pipelines':
         return 'Pipelines';
+      default:
+        return featureEnabled(FeatureFlag.PipelineModeTuples) ? 'Pipelines' : 'Jobs';
     }
   };
 
@@ -77,9 +90,17 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
               <SolidsRoot name={props.match.params.name} repoAddress={repoAddress} />
             )}
           />
+          {featureEnabled(FeatureFlag.PipelineModeTuples) && (
+            <Redirect from={'/workspace/:repoPath/pipelines'} to={'/workspace/:repoPath/jobs'} />
+          )}
           <Route
             path={['/workspace/:repoPath/pipelines', '/workspace/:repoPath/jobs']}
             render={() => <RepositoryPipelinesList repoAddress={repoAddress} />}
+          />
+          <Route
+            path="/workspace/:repoPath/graphs"
+            exact
+            render={() => <RepositoryGraphsList repoAddress={repoAddress} />}
           />
           <Route
             path="/workspace/:repoPath/(.*)?"

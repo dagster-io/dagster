@@ -37,7 +37,9 @@ export const PipelineTable: React.FC<Props> = (props) => {
     <Table>
       <thead>
         <tr>
-          <th style={{width: '50%', minWidth: '400px'}}>Pipeline</th>
+          <th style={{width: '50%', minWidth: '400px'}}>
+            {featureEnabled(FeatureFlag.PipelineModeTuples) ? 'Job' : 'Pipeline'}
+          </th>
           <th>Schedules</th>
           <th>Sensors</th>
           <th style={{whiteSpace: 'nowrap'}}>Recent runs</th>
