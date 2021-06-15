@@ -130,7 +130,7 @@ from dagster.core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io_
 from dagster.core.storage.init import InitIntermediateStorageContext
 from dagster.core.storage.io_manager import IOManager, IOManagerDefinition, io_manager
 from dagster.core.storage.mem_io_manager import mem_io_manager
-from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.storage.root_input_manager import (
     RootInputManager,
     RootInputManagerDefinition,
@@ -259,6 +259,7 @@ __all__ = [
     "OutputContext",
     "build_output_context",
     "PipelineRun",
+    "PipelineRunStatus",
     "default_executors",
     "default_intermediate_storage_defs",
     "execute_pipeline_iterator",
