@@ -18,7 +18,7 @@ With Dagster, the re-execution of parts of the pipeline is grouped with the orig
 
 Consider the following pipeline which has three solids, one of which fails half of the time.
 
-```python file=/guides/dagster/reexecution/pipeline/unreliable_pipeline.py
+```python file=/guides/dagster/reexecution/unreliable_pipeline.py
 from random import random
 from dagster import ModeDefinition, fs_io_manager, pipeline, solid
 
@@ -76,7 +76,7 @@ Within Dagit, a single or multiple steps may be selected simply by clicking them
 <iframe
   width="560"
   height="315"
-  src="https://www.youtube.com/embed/LWc8MxSN22c"
+  src="https://www.youtube.com/embed/F5Egf-UMVgk"
   frameBorder="0"
   allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
   allowfullscreen
@@ -94,7 +94,7 @@ Consider the pipeline `unreliable_pipeline`, which has a solid named `unreliable
 
 ```python file=/guides/dagster/reexecution/reexecution_api.py endbefore=end_initial_execution_marker
 from dagster import DagsterInstance, execute_pipeline, reexecute_pipeline
-from reexecution.pipeline.unreliable_pipeline import unreliable_pipeline
+from reexecution.unreliable_pipeline import unreliable_pipeline
 
 
 def reexecution():

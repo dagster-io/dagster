@@ -1,5 +1,5 @@
 from dagster import DagsterInstance, execute_pipeline, reexecute_pipeline
-from reexecution.pipeline.unreliable_pipeline import unreliable_pipeline
+from reexecution.unreliable_pipeline import unreliable_pipeline
 
 
 def reexecution():
