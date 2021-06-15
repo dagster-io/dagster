@@ -8,7 +8,7 @@
 - `retry_number` is now available on `SolidExecutionContext`, allowing you to determine within a solid function how many times the solid has been previously retried.
 - Errors that are surfaced during solid execution now have clearer stack traces.
 - When using Postgres or MySQL storage, the database mutations that initialize Dagster tables on startup now happen in atomic transactions, rather than individual SQL queries.
-- The tags for Dagster-provided images in the Helm chart will now default to the current chart version.
+- For versions >=0.11.13, when specifying the `--version` flag when installing the Helm chart, the tags for Dagster-provided images in the Helm chart will now default to the current Chart version. For `--version` <0.11.13, the image tags will still need to be updated properly to use old chart version.
 - Removed the `PIPELINE_INIT_FAILURE` event type. A failure that occurs during pipeline initialization will now produce a `PIPELINE_FAILURE` as with all other pipeline failures.
 
 ### Bugfixes
