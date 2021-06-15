@@ -146,34 +146,79 @@ def my_directory_sensor_with_skip_reasons():
 
 # end_skip_sensors_marker
 
-# start_asset_sensors_marker
-from dagster import AssetKey, EventRecordsFilter, DagsterEventType
+# start_asset_sensor_marker
+from dagster import AssetKey, asset_sensor
+
+
+@asset_sensor(asset_key=AssetKey("my_table"), pipeline_name="my_pipeline")
+def my_asset_sensor(context, asset_event):
+    yield RunRequest(
+        run_key=context.cursor,
+        run_config={
+            "solids": {
+                "read_materialization": {
+                    "config": {
+                        "asset_key": asset_event.asset_key.path,
+                        "pipeline": asset_event.pipeline_name,
+                    }
+                }
+            }
+        },
+    )
+
+
+# end_asset_sensor_marker
+
+# start_multi_asset_sensor_marker
+import json
+from dagster import EventRecordsFilter, DagsterEventType
 
 
 @sensor(pipeline_name="my_pipeline")
-def my_asset_sensor(context):
-    event_records = context.instance.get_event_records(
+def multi_asset_sensor(context):
+    cursor_dict = json.loads(context.cursor) if context.cursor else {}
+    a_cursor = cursor_dict.get("a")
+    b_cursor = cursor_dict.get("b")
+
+    a_event_records = context.instance.get_event_records(
         EventRecordsFilter(
             event_type=DagsterEventType.ASSET_MATERIALIZATION,
-            asset_key=AssetKey("my_table"),
-            after_cursor=context.cursor,
+            asset_key=AssetKey("table_a"),
+            after_cursor=a_cursor,
         ),
         ascending=False,
         limit=1,
     )
-    if not event_records:
+    b_event_records = context.instance.get_event_records(
+        EventRecordsFilter(
+            event_type=DagsterEventType.ASSET_MATERIALIZATION,
+            asset_key=AssetKey("table_a"),
+            after_cursor=b_cursor,
+        ),
+        ascending=False,
+        limit=1,
+    )
+
+    if not a_event_records or not b_event_records:
         return
 
-    event_record = event_records[0]  # take the most recent record
-    yield RunRequest(
-        run_key=str(event_record.storage_id),
-        run_config={},
-        tags={"source_pipeline": event_record.event_log_entry.pipeline_name},
+    # make sure we only generate events if both table_a and table_b have been materialized since
+    # the last evaluation.
+    yield RunRequest(run_key=None)
+
+    # update the sensor cursor by combining the individual event cursors from the two separate
+    # asset event streams
+    context.update_cursor(
+        json.dumps(
+            {
+                "a": a_event_records[0].storage_id,
+                "b": b_event_records[0].storage_id,
+            }
+        )
     )
-    context.update_cursor(str(event_record.storage_id))
 
 
-# end_asset_sensors_marker
+# end_multi_asset_sensor_marker
 
 
 # start_s3_sensors_marker

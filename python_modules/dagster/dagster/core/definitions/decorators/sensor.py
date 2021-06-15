@@ -9,12 +9,14 @@ from dagster.core.errors import DagsterInvariantViolationError
 from ....seven import funcsigs
 from ...decorator_utils import get_function_params
 from ...errors import DagsterInvariantViolationError
+from ..events import AssetKey
 from ..graph import GraphDefinition
 from ..pipeline import PipelineDefinition
-from ..sensor import RunRequest, SensorDefinition, SkipReason
+from ..sensor import AssetSensorDefinition, RunRequest, SensorDefinition, SkipReason
 
 if TYPE_CHECKING:
     from ..sensor import SensorEvaluationContext
+    from ..events import AssetMaterialization
 
 
 def is_context_provided(params: List[funcsigs.Parameter]) -> bool:
@@ -99,5 +101,72 @@ def sensor(
         update_wrapper(sensor_def, wrapped=fn)
 
         return sensor_def
+
+    return inner
+
+
+def asset_sensor(
+    pipeline_name: str,
+    asset_key: AssetKey,
+    name: Optional[str] = None,
+    solid_selection: Optional[List[str]] = None,
+    mode: Optional[str] = None,
+    minimum_interval_seconds: Optional[int] = None,
+    description: Optional[str] = None,
+) -> Callable[
+    [
+        Callable[
+            [
+                "SensorEvaluationContext",
+                Union["AssetMaterialization", List["AssetMaterialization"]],
+            ],
+            Union[SkipReason, RunRequest],
+        ]
+    ],
+    AssetSensorDefinition,
+]:
+
+    check.opt_str_param(name, "name")
+
+    def inner(
+        fn: Callable[
+            [
+                "SensorEvaluationContext",
+                Union["AssetMaterialization", List["AssetMaterialization"]],
+            ],
+            Union[SkipReason, RunRequest],
+        ]
+    ) -> AssetSensorDefinition:
+        check.callable_param(fn, "fn")
+        sensor_name = name or fn.__name__
+
+        def _wrapped_fn(context, event):
+            result = fn(context, event)
+
+            if inspect.isgenerator(result):
+                for item in result:
+                    yield item
+            elif isinstance(result, (RunRequest, SkipReason)):
+                yield result
+
+            elif result is not None:
+                raise DagsterInvariantViolationError(
+                    (
+                        "Error in sensor {sensor_name}: Sensor unexpectedly returned output "
+                        "{result} of type {type_}.  Should only return SkipReason or "
+                        "RunRequest objects."
+                    ).format(sensor_name=sensor_name, result=result, type_=type(result))
+                )
+
+        return AssetSensorDefinition(
+            name=sensor_name,
+            asset_key=asset_key,
+            pipeline_name=pipeline_name,
+            asset_materialization_fn=_wrapped_fn,
+            solid_selection=solid_selection,
+            mode=mode,
+            minimum_interval_seconds=minimum_interval_seconds,
+            description=description,
+        )
 
     return inner

@@ -55,6 +55,7 @@ from dagster.core.definitions import (
     TextMetadataEntryData,
     TypeCheck,
     UrlMetadataEntryData,
+    asset_sensor,
     build_init_logger_context,
     composite_solid,
     daily_schedule,
@@ -233,6 +234,7 @@ __all__ = [
     "Backoff",
     "Jitter",
     # Decorators
+    "asset_sensor",
     "composite_solid",
     "executor",
     "graph",
