@@ -305,7 +305,7 @@ class MaterializationSerializer(DefaultNamedTupleSerializer):
 
 @whitelist_for_serdes(serializer=MaterializationSerializer)
 class Materialization(
-    namedtuple("_Materialization", "label description metadata_entries asset_key partition")
+    namedtuple("_Materialization", "label description metadata_entries asset_key partition tags")
 ):
     """Event indicating that a solid has materialized a value.
 
@@ -325,6 +325,9 @@ class Materialization(
         asset_key (Optional[str|AssetKey]): An optional parameter to identify the materialized asset
             across pipeline runs
         partition (Optional[str]): The name of the partition that was materialized.
+        tags (Optional[Dict[str, str]]): (Experimental) Tag metadata for a given asset
+            materialization.  Used for search and organization of the asset entry in the asset
+            catalog in Dagit.
     """
 
     def __new__(
@@ -334,6 +337,7 @@ class Materialization(
         metadata_entries=None,
         asset_key=None,
         partition=None,
+        tags=None,
         skip_deprecation_warning=False,
     ):
         if asset_key and isinstance(asset_key, str):
@@ -361,6 +365,7 @@ class Materialization(
             ),
             asset_key=asset_key,
             partition=check.opt_str_param(partition, "partition"),
+            tags=check.opt_dict_param(tags, "tags"),
         )
 
     @staticmethod

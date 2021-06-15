@@ -21,6 +21,7 @@ from dagster import (
     Field,
     InputDefinition,
     Int,
+    Materialization,
     ModeDefinition,
     Noneable,
     Nothing,
@@ -1181,6 +1182,33 @@ def chained_failure_pipeline():
     after_failure(conditionally_fail(always_succeed()))
 
 
+@pipeline
+def backcompat_materialization_pipeline():
+    @solid
+    def backcompat_materialize(_):
+        yield Materialization(
+            asset_key="all_types",
+            description="a materialization with all metadata types",
+            metadata_entries=[
+                EventMetadataEntry.text("text is cool", "text"),
+                EventMetadataEntry.url("https://bigty.pe/neato", "url"),
+                EventMetadataEntry.fspath("/tmp/awesome", "path"),
+                EventMetadataEntry.json({"is_dope": True}, "json"),
+                EventMetadataEntry.python_artifact(EventMetadataEntry, "python class"),
+                EventMetadataEntry.python_artifact(file_relative_path, "python function"),
+                EventMetadataEntry.float(1.2, "float"),
+                EventMetadataEntry.int(1, "int"),
+                EventMetadataEntry.float(float("nan"), "float NaN"),
+                EventMetadataEntry.int(LONG_INT, "long int"),
+                EventMetadataEntry.pipeline_run("fake_run_id", "pipeline run"),
+                EventMetadataEntry.asset(AssetKey("my_asset"), "my asset"),
+            ],
+        )
+        yield Output(None)
+
+    backcompat_materialize()
+
+
 @repository
 def empty_repo():
     return []
@@ -1225,6 +1253,7 @@ def define_pipelines():
         dynamic_pipeline,
         asset_lineage_pipeline,
         partitioned_asset_lineage_pipeline,
+        backcompat_materialization_pipeline,
     ]
 
 

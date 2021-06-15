@@ -204,6 +204,22 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'backcompat_materialize'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'backcompat_materialization_pipeline'
+                        },
+                        'solidHandle': {
+                            'handleID': 'backcompat_materialize'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'can_fail'
                 },
                 'invocations': [
