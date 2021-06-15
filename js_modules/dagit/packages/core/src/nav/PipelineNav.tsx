@@ -4,7 +4,7 @@ import React from 'react';
 import {Link, useRouteMatch} from 'react-router-dom';
 
 import {DISABLED_MESSAGE, PermissionSet, usePermissions} from '../app/Permissions';
-import {featureEnabled, FeatureFlag} from '../app/Util';
+import {FeatureFlag, useFeatureEnabled} from '../app/Util';
 import {
   explorerPathFromString,
   explorerPathToString,
@@ -86,6 +86,7 @@ interface Props {
 export const PipelineNav: React.FC<Props> = (props) => {
   const {repoAddress} = props;
   const permissions = usePermissions();
+  const pipelineMode = useFeatureEnabled(FeatureFlag.PipelineModeTuples);
   const repo = useRepository(repoAddress);
   const match = useRouteMatch<{tab?: string; selector: string}>([
     '/workspace/:repoPath/pipelines/:selector/:tab?',
@@ -109,16 +110,16 @@ export const PipelineNav: React.FC<Props> = (props) => {
         title={
           <Heading>
             {explorerPath.pipelineName}
-            {featureEnabled(FeatureFlag.PipelineModeTuples) && (
-              <span style={{opacity: 0.5}}> : {explorerPath.pipelineMode}</span>
-            )}
+            {pipelineMode && <span style={{opacity: 0.5}}> : {explorerPath.pipelineMode}</span>}
           </Heading>
         }
         icon="diagram-tree"
         description={
           <>
-            <Link to={workspacePathFromAddress(repoAddress, '/pipelines')}>Pipeline</Link> in{' '}
-            <RepositoryLink repoAddress={repoAddress} />
+            <Link to={workspacePathFromAddress(repoAddress, pipelineMode ? '/jobs' : '/pipelines')}>
+              {pipelineMode ? 'Job' : 'Pipeline'}
+            </Link>{' '}
+            in <RepositoryLink repoAddress={repoAddress} />
           </>
         }
       />

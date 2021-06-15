@@ -1,4 +1,5 @@
 import LRU from 'lru-cache';
+import * as React from 'react';
 
 import {getJSONForKey} from './LocalStorage';
 
@@ -108,6 +109,11 @@ export function getFeatureFlags(): FeatureFlag[] {
 }
 
 export const featureEnabled = (flag: FeatureFlag) => getFeatureFlags().includes(flag);
+
+export const useFeatureEnabled = (flag: FeatureFlag) => {
+  const flags = React.useMemo(() => getFeatureFlags(), []);
+  return flags.includes(flag);
+};
 
 export function setFeatureFlags(flags: FeatureFlag[]) {
   if (!(flags instanceof Array)) {
