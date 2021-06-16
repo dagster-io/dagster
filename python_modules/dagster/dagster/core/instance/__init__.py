@@ -242,6 +242,7 @@ class DagsterInstance:
         self._compute_log_manager = check.inst_param(
             compute_log_manager, "compute_log_manager", ComputeLogManager
         )
+        self._compute_log_manager.register_instance(self)
         self._scheduler = check.opt_inst_param(scheduler, "scheduler", Scheduler)
 
         self._schedule_storage = check.opt_inst_param(

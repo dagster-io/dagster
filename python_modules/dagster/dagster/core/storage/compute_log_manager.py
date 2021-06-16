@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from enum import Enum
 
 from dagster import check
+from dagster.core.instance import MayHaveInstanceWeakref
 from dagster.core.storage.pipeline_run import PipelineRun
 from rx import Observable
 
@@ -31,7 +32,7 @@ class ComputeLogFileData(namedtuple("ComputeLogFileData", "path data cursor size
         )
 
 
-class ComputeLogManager(ABC):
+class ComputeLogManager(ABC, MayHaveInstanceWeakref):
     """Abstract base class for storing unstructured compute logs (stdout/stderr) from the compute
     steps of pipeline solids."""
 
