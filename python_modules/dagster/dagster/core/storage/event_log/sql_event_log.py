@@ -18,7 +18,7 @@ from dagster.serdes.errors import DeserializationError
 from dagster.utils import datetime_as_float, utc_datetime_from_naive, utc_datetime_from_timestamp
 
 from ..pipeline_run import PipelineRunStatsSnapshot
-from .base import EventLogStorage, EventsCursor, extract_asset_events_cursor
+from .base import EventLogStorage, EventsCursor, StoredEventRecord, extract_asset_events_cursor
 from .migration import REINDEX_DATA_MIGRATIONS
 from .schema import AssetKeyTable, SecondaryIndexMigrationTable, SqlEventLogStorageTable
 
@@ -567,7 +567,7 @@ class SqlEventLogStorage(EventLogStorage):
 
         return query
 
-    def get_event_rows(
+    def get_event_records(
         self,
         after_cursor=None,
         limit=None,
@@ -598,7 +598,7 @@ class SqlEventLogStorage(EventLogStorage):
         with self.index_connection() as conn:
             results = conn.execute(query).fetchall()
 
-        records = []
+        event_records = []
         for row_id, json_str in results:
             try:
                 event_record = deserialize_json_to_dagster_namedtuple(json_str)
@@ -608,11 +608,13 @@ class SqlEventLogStorage(EventLogStorage):
                     )
                     continue
                 else:
-                    records.append(tuple((row_id, event_record)))
+                    event_records.append(
+                        StoredEventRecord(storage_id=row_id, event_log_entry=event_record)
+                    )
             except seven.JSONDecodeError:
                 logging.warning("Could not parse event record id `{}`.".format(row_id))
 
-        return records
+        return event_records
 
     def has_asset_key(self, asset_key: AssetKey) -> bool:
         check.inst_param(asset_key, "asset_key", AssetKey)

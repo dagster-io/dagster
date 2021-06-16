@@ -20,6 +20,15 @@ class EventsCursor(NamedTuple):
     run_updated_after: Optional[datetime] = None
 
 
+class StoredEventRecord(NamedTuple):
+    """Internal representation of an event record, as stored in a
+    :py:class:`~dagster.core.storage.event_log.EventLogStorage`.
+    """
+
+    storage_id: int
+    event_log_entry: EventRecord
+
+
 class EventLogStorage(ABC, MayHaveInstanceWeakref):
     """Abstract base class for storing structured event logs from pipeline runs.
 
@@ -109,13 +118,13 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         """Allows for optimizing database connection / use in the context of a long lived dagit process"""
 
     @abstractmethod
-    def get_event_rows(
+    def get_event_records(
         self,
         after_cursor: EventsCursor = None,
         limit: int = None,
         ascending: bool = False,
         of_type: DagsterEventType = None,
-    ) -> Iterable[Tuple[int, EventRecord]]:
+    ) -> Iterable[StoredEventRecord]:
         pass
 
     @abstractmethod

@@ -108,12 +108,15 @@ def pipeline_failure_sensor(
             # * it's the first time starting the sensor
             # * or, the cursor isn't in valid format (backcompt)
             if context.cursor is None or not PipelineFailureSensorCursor.is_valid(context.cursor):
-                most_recent_event_rows = context.instance.event_log_storage.get_event_rows(
+                most_recent_event_records = context.instance.event_log_storage.get_event_records(
                     ascending=False, limit=1
                 )
                 most_recent_event_id = (
-                    most_recent_event_rows[0][0] if len(most_recent_event_rows) == 1 else -1
+                    most_recent_event_records[0].storage_id
+                    if len(most_recent_event_records) == 1
+                    else -1
                 )
+
                 new_cursor = PipelineFailureSensorCursor(
                     update_timestamp=pendulum.now("UTC").isoformat(),
                     record_id=most_recent_event_id,
@@ -129,7 +132,7 @@ def pipeline_failure_sensor(
             # * when the daemon is down, bc we persist the cursor info, we can go back to where we
             #   left and backfill alerts for the qualified events (up to 5 at a time) during the downtime
             # Note: this is a cross-run query which requires extra handling in sqlite, see details in SqliteEventLogStorage.
-            event_rows = context.instance.event_log_storage.get_event_rows(
+            event_records = context.instance.event_log_storage.get_event_records(
                 after_cursor=EventsCursor(
                     id=record_id, run_updated_after=datetime.fromisoformat(update_timestamp)
                 ),
@@ -138,14 +141,17 @@ def pipeline_failure_sensor(
                 of_type=dagster_event_type,
             )
 
-            if len(event_rows) == 0:
+            if len(event_records) == 0:
                 yield SkipReason(f"No qualified events found after id={record_id}")
                 return
 
-            for record_id, event_record in event_rows:
+            for event_record in event_records:
+                event_log_entry = event_record.event_log_entry
+                storage_id = event_record.storage_id
+
                 # get run info
                 run_records = context.instance.get_run_records(
-                    filters=PipelineRunsFilter(run_ids=[event_record.run_id])
+                    filters=PipelineRunsFilter(run_ids=[event_log_entry.run_id])
                 )
                 check.invariant(len(run_records) == 1)
                 pipeline_run = run_records[0].pipeline_run
@@ -163,7 +169,7 @@ def pipeline_failure_sensor(
                             PipelineFailureSensorContext(
                                 sensor_name=sensor_name,
                                 pipeline_run=pipeline_run,
-                                failure_event=event_record.dagster_event,
+                                failure_event=event_log_entry.dagster_event,
                             )
                         )
                 except PipelineSensorExecutionError as pipeline_sensor_execution_error:
@@ -174,7 +180,7 @@ def pipeline_failure_sensor(
 
                 context.update_cursor(
                     PipelineFailureSensorCursor(
-                        record_id=record_id, update_timestamp=update_timestamp.isoformat()
+                        record_id=storage_id, update_timestamp=update_timestamp.isoformat()
                     ).to_json()
                 )
 

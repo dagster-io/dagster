@@ -11,6 +11,7 @@ import sqlalchemy as db
 from dagster import StringSource, check, seven
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord
+from dagster.core.storage.event_log.base import StoredEventRecord
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.sql import (
     check_alembic_revision,
@@ -232,7 +233,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
             self.store_asset(event)
 
-    def get_event_rows(
+    def get_event_records(
         self,
         after_cursor=None,
         limit=None,
@@ -269,7 +270,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             ascending=ascending,
         )
 
-        records = []
+        event_records = []
         for run_record in run_records:
             run_id = run_record.pipeline_run.run_id
             with self.run_connection(run_id) as conn:
@@ -286,11 +287,13 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                         )
                         continue
                     else:
-                        records.append(tuple((row_id, event_record)))
+                        event_records.append(
+                            StoredEventRecord(storage_id=row_id, event_log_entry=event_record)
+                        )
                 except seven.JSONDecodeError:
                     logging.warning("Could not parse event record id `{}`.".format(row_id))
 
-        return records
+        return event_records
 
     def delete_events(self, run_id):
         with self.run_connection(run_id) as conn:
