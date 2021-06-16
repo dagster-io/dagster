@@ -61,6 +61,40 @@ def test_describe_tasks(ecs):
     assert ecs.describe_tasks(tasks=[dagster_id], cluster="dagster") == dagster
 
 
+def test_list_tasks(ecs):
+    assert not ecs.list_tasks()["taskArns"]
+
+    ecs.register_task_definition(family="dagster", containerDefinitions=[], networkMode="bridge")
+    ecs.register_task_definition(family="other", containerDefinitions=[], networkMode="bridge")
+
+    def arn(response):
+        return response["tasks"][0]["taskArn"]
+
+    default_cluster_dagster_family = arn(ecs.run_task(taskDefinition="dagster"))
+    other_cluster_dagster_family = arn(ecs.run_task(taskDefinition="dagster", cluster="other"))
+    default_cluster_other_family = arn(ecs.run_task(taskDefinition="other"))
+    other_cluster_other_family = arn(ecs.run_task(taskDefinition="other", cluster="other"))
+
+    # List using different combinations of cluster and family filters
+    response = ecs.list_tasks()
+    assert len(response["taskArns"]) == 2
+    assert default_cluster_dagster_family in response["taskArns"]
+    assert default_cluster_other_family in response["taskArns"]
+
+    response = ecs.list_tasks(family="dagster")
+    assert len(response["taskArns"]) == 1
+    assert default_cluster_dagster_family in response["taskArns"]
+
+    response = ecs.list_tasks(cluster="other")
+    assert len(response["taskArns"]) == 2
+    assert other_cluster_dagster_family in response["taskArns"]
+    assert other_cluster_other_family in response["taskArns"]
+
+    response = ecs.list_tasks(cluster="other", family="dagster")
+    assert len(response["taskArns"]) == 1
+    assert other_cluster_dagster_family in response["taskArns"]
+
+
 def test_register_task_definition(ecs):
     response = ecs.register_task_definition(family="dagster", containerDefinitions=[])
     assert response["taskDefinition"]["family"] == "dagster"

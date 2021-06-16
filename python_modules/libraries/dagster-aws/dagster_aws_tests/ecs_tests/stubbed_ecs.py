@@ -146,6 +146,34 @@ class StubbedEcs:
         return self.client.describe_tasks(**kwargs)
 
     @stubbed
+    def list_tasks(self, **kwargs):
+        """
+        Only filtering by family and cluster is stubbed.
+        TODO: Pagination
+        """
+        cluster = self._cluster(kwargs.get("cluster"))
+        family = kwargs.get("family")
+
+        tasks = self.tasks[cluster]
+        if family:
+            tasks = [
+                task
+                for task in tasks
+                # family isn't part of task response can be infered from the arn
+                if task["taskDefinitionArn"].split("/")[-1].split(":")[0] == family
+            ]
+
+        arns = [task["taskArn"] for task in tasks]
+
+        self.stubber.add_response(
+            method="list_tasks",
+            service_response={"taskArns": arns},
+            expected_params={**kwargs},
+        )
+
+        return self.client.list_tasks(**kwargs)
+
+    @stubbed
     def register_task_definition(self, **kwargs):
         family = kwargs.get("family")
         # Revisions are 1 indexed
