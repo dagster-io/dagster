@@ -65,10 +65,20 @@ class EcsRunLauncher(RunLauncher):
         return run.run_id
 
     def can_terminate(self, run_id):
-        pass
+        if self._get_task_arn_by_run_id_tag(run_id):
+            return True
+
+        return False
 
     def terminate(self, run_id):
-        pass
+        cluster = self._task_metadata().cluster
+        arn = self._get_task_arn_by_run_id_tag(run_id)
+        status = self.ecs.describe_tasks(tasks=[arn], cluster=cluster)["tasks"][0]["lastStatus"]
+        if status == "STOPPED":
+            return False
+
+        self.ecs.stop_task(task=arn, cluster=cluster)
+        return True
 
     def _get_task_arn_by_run_id_tag(self, run_id):
         """

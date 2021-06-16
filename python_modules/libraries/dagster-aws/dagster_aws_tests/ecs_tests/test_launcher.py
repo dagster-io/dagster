@@ -82,3 +82,13 @@ def test_launching(ecs, instance, run_id, external_pipeline):
     task_arn = instance.run_launcher._get_task_arn_by_run_id_tag(run_id)
     task = ecs.describe_tasks(tasks=[task_arn])
     assert "execute_run" in task["tasks"][0]["overrides"]["containerOverrides"][0]["command"]
+
+
+def test_termination(instance, run_id, external_pipeline):
+    assert not instance.run_launcher.can_terminate(run_id)
+
+    instance.launch_run(run_id, external_pipeline)
+
+    assert instance.run_launcher.can_terminate(run_id)
+    assert instance.run_launcher.terminate(run_id)
+    assert not instance.run_launcher.terminate(run_id)
