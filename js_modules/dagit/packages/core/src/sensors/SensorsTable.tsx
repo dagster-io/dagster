@@ -84,21 +84,13 @@ const SensorRow: React.FC<{
             <Link to={workspacePathFromAddress(repoAddress, `/sensors/${name}`)}>{name}</Link>
           </span>
           {pipelineName && mode !== null && (
-            <Group direction="row" spacing={4} alignItems="flex-start">
-              <Icon
-                icon="diagram-tree"
-                color={Colors.GRAY2}
-                iconSize={9}
-                style={{position: 'relative', top: '-3px'}}
-              />
-              <span style={{fontSize: '13px'}}>
-                <PipelineReference
-                  pipelineName={pipelineName}
-                  pipelineHrefContext={repoAddress}
-                  mode={mode}
-                />
-              </span>
-            </Group>
+            <PipelineReference
+              showIcon
+              fontSize={13}
+              pipelineName={pipelineName}
+              pipelineHrefContext={repoAddress}
+              mode={mode}
+            />
           )}
         </Group>
       </td>

@@ -37,7 +37,7 @@ interface ITabInfo {
 const TabInfo: Array<ITabInfo> = [
   {
     name: 'Info',
-    icon: 'diagram-tree',
+    icon: 'data-lineage',
     key: 'info',
     link: '?',
   },
@@ -120,7 +120,7 @@ export const SidebarTabbedContainer: React.FC<ISidebarTabbedContainerProps> = (p
         {TabInfo.map(({name, icon, key, link}) => (
           <Link to={link} key={key}>
             <Tab key={key} active={key === activeTab}>
-              <Icon icon={icon} style={{marginRight: 5}} />
+              <Icon icon={icon} style={{marginRight: 8}} />
               {name}
             </Tab>
           </Link>

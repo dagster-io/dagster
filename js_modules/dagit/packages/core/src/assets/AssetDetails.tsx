@@ -110,13 +110,8 @@ export const AssetDetails: React.FC<Props> = ({assetKey, asOf}) => {
                   </Link>
                 </div>
                 <div style={{paddingLeft: 10, paddingTop: 4}}>
-                  <Icon
-                    icon="diagram-tree"
-                    color={Colors.GRAY2}
-                    iconSize={12}
-                    style={{position: 'relative', top: -2, paddingRight: 5}}
-                  />
                   <PipelineReference
+                    showIcon
                     pipelineName={latestRun.pipelineName}
                     pipelineHrefContext="repo-unknown"
                     snapshotId={latestRun.pipelineSnapshotId}

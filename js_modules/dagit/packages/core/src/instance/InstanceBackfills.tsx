@@ -1,7 +1,6 @@
 import {gql, useQuery, useMutation} from '@apollo/client';
 import {
   Colors,
-  Icon,
   NonIdealState,
   Popover,
   Button,
@@ -461,24 +460,16 @@ const PartitionSetReference: React.FunctionComponent<{
       {partitionSet.repositoryOrigin.repositoryName}@
       {partitionSet.repositoryOrigin.repositoryLocationName}
     </span>
-    <Group direction="row" spacing={4} alignItems="center">
-      <Icon
-        icon="diagram-tree"
-        color={Colors.GRAY2}
-        iconSize={9}
-        style={{position: 'relative', top: '-3px'}}
-      />
-      <span style={{fontSize: '13px'}}>
-        <PipelineReference
-          pipelineName={partitionSet.pipelineName}
-          pipelineHrefContext={{
-            name: partitionSet.repositoryOrigin.repositoryName,
-            location: partitionSet.repositoryOrigin.repositoryLocationName,
-          }}
-          mode={partitionSet.mode}
-        />
-      </span>
-    </Group>
+    <PipelineReference
+      showIcon
+      fontSize={13}
+      pipelineName={partitionSet.pipelineName}
+      pipelineHrefContext={{
+        name: partitionSet.repositoryOrigin.repositoryName,
+        location: partitionSet.repositoryOrigin.repositoryLocationName,
+      }}
+      mode={partitionSet.mode}
+    />
   </Group>
 );
 const BackfillStatusTable = ({backfill}: {backfill: Backfill}) => {
