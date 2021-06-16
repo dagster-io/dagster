@@ -8,7 +8,7 @@ from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventLogEntry
 from dagster.serdes import ConfigurableClass
 
-from .base import EventLogStorage, EventsCursor, StoredEventRecord, extract_asset_events_cursor
+from .base import EventLogRecord, EventLogStorage, EventsCursor, extract_asset_events_cursor
 
 
 class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
@@ -120,7 +120,7 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
             )
 
         event_records = [
-            StoredEventRecord(storage_id=event_id, event_log_entry=event)
+            EventLogRecord(storage_id=event_id, event_log_entry=event)
             for event_id, event in enumerate(filtered_events)
             if after_id is None or event_id > after_id
         ]

@@ -18,7 +18,7 @@ from dagster.serdes.errors import DeserializationError
 from dagster.utils import datetime_as_float, utc_datetime_from_naive, utc_datetime_from_timestamp
 
 from ..pipeline_run import PipelineRunStatsSnapshot
-from .base import EventLogStorage, EventsCursor, StoredEventRecord, extract_asset_events_cursor
+from .base import EventLogRecord, EventLogStorage, EventsCursor, extract_asset_events_cursor
 from .migration import REINDEX_DATA_MIGRATIONS
 from .schema import AssetKeyTable, SecondaryIndexMigrationTable, SqlEventLogStorageTable
 
@@ -611,7 +611,7 @@ class SqlEventLogStorage(EventLogStorage):
                     continue
                 else:
                     event_records.append(
-                        StoredEventRecord(storage_id=row_id, event_log_entry=event_record)
+                        EventLogRecord(storage_id=row_id, event_log_entry=event_record)
                     )
             except seven.JSONDecodeError:
                 logging.warning("Could not parse event record id `{}`.".format(row_id))

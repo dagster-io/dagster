@@ -20,7 +20,7 @@ class EventsCursor(NamedTuple):
     run_updated_after: Optional[datetime] = None
 
 
-class StoredEventRecord(NamedTuple):
+class EventLogRecord(NamedTuple):
     """Internal representation of an event record, as stored in a
     :py:class:`~dagster.core.storage.event_log.EventLogStorage`.
     """
@@ -124,7 +124,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         limit: int = None,
         ascending: bool = False,
         of_type: DagsterEventType = None,
-    ) -> Iterable[StoredEventRecord]:
+    ) -> Iterable[EventLogRecord]:
         pass
 
     @abstractmethod
