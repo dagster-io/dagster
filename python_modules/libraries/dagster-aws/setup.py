@@ -29,7 +29,7 @@ if __name__ == "__main__":
         ],
         packages=find_packages(exclude=["test"]),
         include_package_data=True,
-        install_requires=["boto3", "dagster", "packaging", "psycopg2-binary", "requests"],
+        install_requires=["boto3", "dagster", "packaging", "psycopg2-binary<2.9", "requests"],
         extras_require={"pyspark": ["dagster-pyspark"], "test": ["moto==1.3.16"]},
         zip_safe=False,
     )
