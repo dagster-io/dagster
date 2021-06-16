@@ -1,7 +1,7 @@
 from collections import namedtuple
 
 from dagster import check
-from dagster.core.events.log import EventRecord
+from dagster.core.events.log import EventLogEntry
 from dagster.core.snap import ExecutionPlanSnapshot, PipelineSnapshot
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.serdes import serialize_dagster_namedtuple, whitelist_for_serdes
@@ -26,7 +26,7 @@ class DebugRunPayload(
             cls,
             version=check.str_param(version, "version"),
             pipeline_run=check.inst_param(pipeline_run, "pipeline_run", PipelineRun),
-            event_list=check.list_param(event_list, "event_list", EventRecord),
+            event_list=check.list_param(event_list, "event_list", EventLogEntry),
             pipeline_snapshot=check.inst_param(
                 pipeline_snapshot, "pipeline_snapshot", PipelineSnapshot
             ),

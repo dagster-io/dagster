@@ -4,7 +4,7 @@ import graphene
 import yaml
 from dagster import check
 from dagster.core.events import StepMaterializationData
-from dagster.core.events.log import EventRecord
+from dagster.core.events.log import EventLogEntry
 from dagster.core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
 from dagster.core.host_representation.external_data import ExternalPresetData
 from dagster.core.host_representation.represented import RepresentedPipeline
@@ -61,7 +61,7 @@ class GrapheneAssetMaterialization(graphene.ObjectType):
 
     def __init__(self, event):
         super().__init__()
-        self._event = check.inst_param(event, "event", EventRecord)
+        self._event = check.inst_param(event, "event", EventLogEntry)
         check.invariant(
             isinstance(event.dagster_event.step_materialization_data, StepMaterializationData)
         )

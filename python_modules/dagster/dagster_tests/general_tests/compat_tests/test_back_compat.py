@@ -8,6 +8,8 @@ import pytest
 from dagster import AssetKey, check, execute_pipeline, file_relative_path, pipeline, solid
 from dagster.cli.debug import DebugRunPayload
 from dagster.core.errors import DagsterInstanceMigrationRequired
+from dagster.core.events import DagsterEvent
+from dagster.core.events.log import EventLogEntry
 from dagster.core.instance import DagsterInstance, InstanceRef
 from dagster.core.storage.event_log.migration import migrate_event_log_data
 from dagster.core.storage.event_log.sql_event_log import SqlEventLogStorage
@@ -385,3 +387,12 @@ def test_0_11_0_add_asset_columns():
             assert "last_run_id" in set(get_sqlite3_columns(db_path, "asset_keys"))
             assert "asset_details" in set(get_sqlite3_columns(db_path, "asset_keys"))
             instance.get_asset_tags(AssetKey("model"))
+
+
+def test_rename_event_log_entry():
+    old_event_record = """{"__class__":"EventRecord","dagster_event":{"__class__":"DagsterEvent","event_specific_data":null,"event_type_value":"PIPELINE_SUCCESS","logging_tags":{},"message":"Finished execution of pipeline.","pid":71356,"pipeline_name":"error_monster","solid_handle":null,"step_handle":null,"step_key":null,"step_kind_value":null},"error_info":null,"level":10,"message":"error_monster - 4be295b5-fcf2-47cc-8e90-cb14d3cf3ac7 - 71356 - PIPELINE_SUCCESS - Finished execution of pipeline.","pipeline_name":"error_monster","run_id":"4be295b5-fcf2-47cc-8e90-cb14d3cf3ac7","step_key":null,"timestamp":1622659924.037028,"user_message":"Finished execution of pipeline."}"""
+    event_log_entry = deserialize_json_to_dagster_namedtuple(old_event_record)
+    assert isinstance(event_log_entry, EventLogEntry)
+    dagster_event = event_log_entry.dagster_event
+    assert isinstance(dagster_event, DagsterEvent)
+    assert dagster_event.event_type_value == "PIPELINE_SUCCESS"

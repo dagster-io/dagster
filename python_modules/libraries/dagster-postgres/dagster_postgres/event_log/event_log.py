@@ -4,7 +4,7 @@ from typing import Callable, List, MutableMapping, Optional
 
 import sqlalchemy as db
 from dagster import check
-from dagster.core.events.log import EventRecord
+from dagster.core.events.log import EventLogEntry
 from dagster.core.storage.event_log import (
     AssetKeyTable,
     SqlEventLogStorage,
@@ -132,9 +132,9 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def store_event(self, event):
         """Store an event corresponding to a pipeline run.
         Args:
-            event (EventRecord): The event to store.
+            event (EventLogEntry): The event to store.
         """
-        check.inst_param(event, "event", EventRecord)
+        check.inst_param(event, "event", EventLogEntry)
         insert_event_statement = self.prepare_insert_event(event)  # from SqlEventLogStorage.py
         with self._connect() as conn:
             result = conn.execute(
@@ -153,7 +153,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             self.store_asset(event)
 
     def store_asset(self, event):
-        check.inst_param(event, "event", EventRecord)
+        check.inst_param(event, "event", EventLogEntry)
         if not event.is_dagster_event or not event.dagster_event.asset_key:
             return
 
@@ -257,7 +257,7 @@ def watcher_thread(
                             SqlEventLogStorageTable.c.id == index
                         ),
                     )
-                    dagster_event: EventRecord = deserialize_json_to_dagster_namedtuple(
+                    dagster_event: EventLogEntry = deserialize_json_to_dagster_namedtuple(
                         cursor_res.scalar()
                     )
             finally:
@@ -282,7 +282,7 @@ class PostgresEventWatcher:
         self,
         run_id: str,
         start_cursor: int,
-        callback: Callable[[EventRecord], None],
+        callback: Callable[[EventLogEntry], None],
         start_timeout=15,
     ):
         check.str_param(run_id, "run_id")
@@ -314,7 +314,7 @@ class PostgresEventWatcher:
         with self._dict_lock:
             self._handlers_dict[run_id].append(CallbackAfterCursor(start_cursor + 1, callback))
 
-    def unwatch_run(self, run_id: str, handler: Callable[[EventRecord], None]):
+    def unwatch_run(self, run_id: str, handler: Callable[[EventLogEntry], None]):
         check.str_param(run_id, "run_id")
         check.callable_param(handler, "handler")
         with self._dict_lock:

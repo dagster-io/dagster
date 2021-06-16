@@ -11,7 +11,7 @@ from dagster.core.assets import AssetDetails
 from dagster.core.definitions.events import AssetKey, AssetMaterialization
 from dagster.core.errors import DagsterEventLogInvalidForRun
 from dagster.core.events import DagsterEventType
-from dagster.core.events.log import EventRecord
+from dagster.core.events.log import EventLogEntry
 from dagster.core.execution.stats import RunStepKeyStatsSnapshot, StepEventStatus
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.serdes.errors import DeserializationError
@@ -90,7 +90,7 @@ class SqlEventLogStorage(EventLogStorage):
         )
 
     def store_asset(self, event):
-        check.inst_param(event, "event", EventRecord)
+        check.inst_param(event, "event", EventLogEntry)
         if not event.is_dagster_event or not event.dagster_event.asset_key:
             return
 
@@ -129,9 +129,9 @@ class SqlEventLogStorage(EventLogStorage):
         """Store an event corresponding to a pipeline run.
 
         Args:
-            event (EventRecord): The event to store.
+            event (EventLogEntry): The event to store.
         """
-        check.inst_param(event, "event", EventRecord)
+        check.inst_param(event, "event", EventLogEntry)
         insert_event_statement = self.prepare_insert_event(event)
         run_id = event.run_id
 
@@ -173,7 +173,7 @@ class SqlEventLogStorage(EventLogStorage):
                 json_str,
             ) in results:
                 events[record_id] = check.inst_param(
-                    deserialize_json_to_dagster_namedtuple(json_str), "event", EventRecord
+                    deserialize_json_to_dagster_namedtuple(json_str), "event", EventLogEntry
                 )
         except (seven.JSONDecodeError, DeserializationError) as err:
             raise DagsterEventLogInvalidForRun(run_id=run_id) from err
@@ -349,7 +349,7 @@ class SqlEventLogStorage(EventLogStorage):
         try:
             for (json_str,) in results:
                 event = check.inst_param(
-                    deserialize_json_to_dagster_namedtuple(json_str), "event", EventRecord
+                    deserialize_json_to_dagster_namedtuple(json_str), "event", EventLogEntry
                 )
                 if event.dagster_event.event_type == DagsterEventType.ASSET_MATERIALIZATION:
                     materializations[event.step_key].append(
@@ -461,7 +461,7 @@ class SqlEventLogStorage(EventLogStorage):
     def update_event_log_record(self, record_id, event):
         """ Utility method for migration scripts to update SQL representation of event records. """
         check.int_param(record_id, "record_id")
-        check.inst_param(event, "event", EventRecord)
+        check.inst_param(event, "event", EventLogEntry)
         dagster_event_type = None
         asset_key_str = None
         if event.is_dagster_event:
@@ -485,7 +485,7 @@ class SqlEventLogStorage(EventLogStorage):
 
     def get_event_log_table_data(self, run_id, record_id):
         """Utility method to test representation of the record in the SQL table.  Returns all of
-        the columns stored in the event log storage (as opposed to the deserialized `EventRecord`).
+        the columns stored in the event log storage (as opposed to the deserialized `EventLogEntry`).
         This allows checking that certain fields are extracted to support performant lookups (e.g.
         extracting `step_key` for fast filtering)"""
         with self.run_connection(run_id=run_id) as conn:
@@ -602,9 +602,11 @@ class SqlEventLogStorage(EventLogStorage):
         for row_id, json_str in results:
             try:
                 event_record = deserialize_json_to_dagster_namedtuple(json_str)
-                if not isinstance(event_record, EventRecord):
+                if not isinstance(event_record, EventLogEntry):
                     logging.warning(
-                        "Could not resolve event record as EventRecord for id `{}`.".format(row_id)
+                        "Could not resolve event record as EventLogEntry for id `{}`.".format(
+                            row_id
+                        )
                     )
                     continue
                 else:
@@ -779,9 +781,9 @@ class SqlEventLogStorage(EventLogStorage):
         for row_id, json_str in results:
             try:
                 event_record = deserialize_json_to_dagster_namedtuple(json_str)
-                if not isinstance(event_record, EventRecord):
+                if not isinstance(event_record, EventLogEntry):
                     logging.warning(
-                        "Could not resolve asset event record as EventRecord for id `{}`.".format(
+                        "Could not resolve asset event record as EventLogEntry for id `{}`.".format(
                             row_id
                         )
                     )
@@ -841,7 +843,7 @@ class SqlEventLogStorage(EventLogStorage):
             return event_or_materialization
 
         if (
-            not isinstance(event_or_materialization, EventRecord)
+            not isinstance(event_or_materialization, EventLogEntry)
             or not event_or_materialization.is_dagster_event
             or not event_or_materialization.dagster_event.asset_key
         ):

@@ -10,7 +10,7 @@ from contextlib import contextmanager
 import sqlalchemy as db
 from dagster import StringSource, check, seven
 from dagster.core.events import DagsterEventType
-from dagster.core.events.log import EventRecord
+from dagster.core.events.log import EventLogEntry
 from dagster.core.storage.event_log.base import StoredEventRecord
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.sql import (
@@ -217,9 +217,9 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         cross-run asset queries.
 
         Args:
-            event (EventRecord): The event to store.
+            event (EventLogEntry): The event to store.
         """
-        check.inst_param(event, "event", EventRecord)
+        check.inst_param(event, "event", EventLogEntry)
         insert_event_statement = self.prepare_insert_event(event)
         run_id = event.run_id
 
@@ -279,9 +279,9 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             for row_id, json_str in results:
                 try:
                     event_record = deserialize_json_to_dagster_namedtuple(json_str)
-                    if not isinstance(event_record, EventRecord):
+                    if not isinstance(event_record, EventLogEntry):
                         logging.warning(
-                            "Could not resolve event record as EventRecord for id `{}`.".format(
+                            "Could not resolve event record as EventLogEntry for id `{}`.".format(
                                 row_id
                             )
                         )

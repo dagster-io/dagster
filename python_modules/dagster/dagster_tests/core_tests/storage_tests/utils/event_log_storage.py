@@ -26,7 +26,7 @@ from dagster.core.events import (
     StepExpectationResultData,
     StepMaterializationData,
 )
-from dagster.core.events.log import EventRecord, construct_event_logger
+from dagster.core.events.log import EventLogEntry, construct_event_logger
 from dagster.core.execution.api import execute_run
 from dagster.core.execution.plan.handle import StepHandle
 from dagster.core.execution.plan.objects import StepFailureData, StepSuccessData
@@ -47,7 +47,7 @@ TEST_TIMEOUT = 5
 
 
 def create_test_event_log_record(message: str, run_id: str = DEFAULT_RUN_ID):
-    return EventRecord(
+    return EventLogEntry(
         None,
         message,
         "debug",
@@ -133,7 +133,7 @@ def _event_record(run_id, solid_name, timestamp, event_type, event_specific_data
     pipeline_name = "pipeline_name"
     solid_handle = SolidHandle(solid_name, None)
     step_handle = StepHandle(solid_handle)
-    return EventRecord(
+    return EventLogEntry(
         None,
         "",
         "debug",
@@ -247,7 +247,7 @@ class TestEventLogStorage:
     def test_event_log_storage_store_events_and_wipe(self, storage):
         assert len(storage.get_logs_for_run(DEFAULT_RUN_ID)) == 0
         storage.store_event(
-            EventRecord(
+            EventLogEntry(
                 None,
                 "Message2",
                 "debug",
@@ -273,7 +273,7 @@ class TestEventLogStorage:
         for run_id in runs:
             assert len(storage.get_logs_for_run(run_id)) == 0
             storage.store_event(
-                EventRecord(
+                EventLogEntry(
                     None,
                     "Message2",
                     "debug",
@@ -380,7 +380,7 @@ class TestEventLogStorage:
         launched_time = enqueued_time + 20
         start_time = launched_time + 50
         storage.store_event(
-            EventRecord(
+            EventLogEntry(
                 None,
                 "message",
                 "debug",
@@ -394,7 +394,7 @@ class TestEventLogStorage:
             )
         )
         storage.store_event(
-            EventRecord(
+            EventLogEntry(
                 None,
                 "message",
                 "debug",
@@ -408,7 +408,7 @@ class TestEventLogStorage:
             )
         )
         storage.store_event(
-            EventRecord(
+            EventLogEntry(
                 None,
                 "message",
                 "debug",
@@ -689,7 +689,7 @@ class TestEventLogStorage:
             time.sleep(0.01)
 
         assert len(event_list) == len(events)
-        assert all([isinstance(event, EventRecord) for event in event_list])
+        assert all([isinstance(event, EventLogEntry) for event in event_list])
 
     def test_event_watcher_filter_run_event(self, storage):
         if not hasattr(storage, "event_watcher"):
@@ -722,7 +722,7 @@ class TestEventLogStorage:
             time.sleep(0.01)
 
         assert len(event_list) == len(events_two)
-        assert all([isinstance(event, EventRecord) for event in event_list])
+        assert all([isinstance(event, EventLogEntry) for event in event_list])
 
     def test_event_watcher_filter_two_runs_event(self, storage):
         if not hasattr(storage, "event_watcher"):
@@ -760,13 +760,13 @@ class TestEventLogStorage:
 
         assert len(event_list_one) == len(events_one)
         assert len(event_list_two) == len(events_two)
-        assert all([isinstance(event, EventRecord) for event in event_list_one])
-        assert all([isinstance(event, EventRecord) for event in event_list_two])
+        assert all([isinstance(event, EventLogEntry) for event in event_list_one])
+        assert all([isinstance(event, EventLogEntry) for event in event_list_two])
 
     def test_correct_timezone(self, storage):
         curr_time = time.time()
 
-        event = EventRecord(
+        event = EventLogEntry(
             None,
             "Message2",
             "debug",
@@ -820,7 +820,7 @@ class TestEventLogStorage:
         events = storage.get_asset_events(asset_key)
         assert len(events) == 1
         event = events[0]
-        assert isinstance(event, EventRecord)
+        assert isinstance(event, EventLogEntry)
         assert event.dagster_event.event_type_value == DagsterEventType.ASSET_MATERIALIZATION.value
 
     def test_asset_events_error_parsing(self, storage):
@@ -858,7 +858,7 @@ class TestEventLogStorage:
                 events = storage.get_asset_events(asset_key)
                 assert len(events) == 0
                 assert len(_logs) == 1
-                assert re.match("Could not resolve asset event record as EventRecord", _logs[0])
+                assert re.match("Could not resolve asset event record as EventLogEntry", _logs[0])
 
             _logs = []  # reset logs
 

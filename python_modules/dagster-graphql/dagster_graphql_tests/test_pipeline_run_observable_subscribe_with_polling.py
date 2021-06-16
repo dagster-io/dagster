@@ -6,7 +6,7 @@ from unittest.mock import Mock
 
 import pytest
 from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData
-from dagster.core.events.log import EventRecord
+from dagster.core.events.log import EventLogEntry
 from dagster.core.storage.event_log import SqlEventLogStorage
 from dagster.core.test_utils import instance_for_test_tempdir
 from dagster_graphql.implementation.pipeline_run_storage import PipelineRunObservableSubscribe
@@ -46,7 +46,7 @@ class EventStorer:
 
     @staticmethod
     def create_event(count: int, run_id: str = RUN_ID):
-        return EventRecord(
+        return EventLogEntry(
             None,
             str(count),
             "debug",

@@ -5,7 +5,7 @@ from typing import Callable, Dict, Iterable, List, NamedTuple, Optional, Tuple, 
 
 from dagster.core.definitions.events import AssetKey
 from dagster.core.events import DagsterEventType
-from dagster.core.events.log import EventRecord
+from dagster.core.events.log import EventLogEntry
 from dagster.core.execution.stats import (
     RunStepKeyStatsSnapshot,
     build_run_stats_from_events,
@@ -26,7 +26,7 @@ class StoredEventRecord(NamedTuple):
     """
 
     storage_id: int
-    event_log_entry: EventRecord
+    event_log_entry: EventLogEntry
 
 
 class EventLogStorage(ABC, MayHaveInstanceWeakref):
@@ -47,7 +47,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         run_id: str,
         cursor: Optional[int] = -1,
         of_type: Optional[DagsterEventType] = None,
-    ) -> Iterable[EventRecord]:
+    ) -> Iterable[EventLogEntry]:
         """Get all of the logs corresponding to a run.
 
         Args:
@@ -74,11 +74,11 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         return build_run_step_stats_from_events(run_id, logs)
 
     @abstractmethod
-    def store_event(self, event: EventRecord):
+    def store_event(self, event: EventLogEntry):
         """Store an event corresponding to a pipeline run.
 
         Args:
-            event (EventRecord): The event to store.
+            event (EventLogEntry): The event to store.
         """
 
     @abstractmethod
@@ -155,7 +155,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         include_cursor: bool = False,
         before_timestamp=None,
         cursor: int = None,  # deprecated
-    ) -> Union[Iterable[EventRecord], Iterable[Tuple[int, EventRecord]]]:
+    ) -> Union[Iterable[EventLogEntry], Iterable[Tuple[int, EventLogEntry]]]:
         pass
 
     @abstractmethod

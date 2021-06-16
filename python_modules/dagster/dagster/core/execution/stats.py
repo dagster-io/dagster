@@ -5,7 +5,7 @@ from typing import Any, Dict, Iterable, List, cast
 from dagster import check
 from dagster.core.definitions import AssetMaterialization, ExpectationResult, Materialization
 from dagster.core.events import DagsterEventType, StepExpectationResultData, StepMaterializationData
-from dagster.core.events.log import EventRecord
+from dagster.core.events.log import EventLogEntry
 from dagster.core.storage.pipeline_run import PipelineRunStatsSnapshot
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils import datetime_as_float
@@ -19,7 +19,7 @@ def build_run_stats_from_events(run_id, records):
             "Invariant violation for parameter 'records'. Description: Expected iterable."
         ) from exc
     for i, record in enumerate(records):
-        check.inst_param(record, f"records[{i}]", EventRecord)
+        check.inst_param(record, f"records[{i}]", EventLogEntry)
 
     steps_succeeded = 0
     steps_failed = 0
@@ -85,7 +85,7 @@ class StepEventStatus(Enum):
 
 
 def build_run_step_stats_from_events(
-    run_id: str, records: Iterable[EventRecord]
+    run_id: str, records: Iterable[EventLogEntry]
 ) -> List["RunStepKeyStatsSnapshot"]:
     by_step_key: Dict[str, Dict[str, Any]] = defaultdict(dict)
     for event in records:

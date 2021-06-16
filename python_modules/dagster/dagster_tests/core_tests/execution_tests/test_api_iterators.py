@@ -2,7 +2,7 @@ import pytest
 from dagster import ModeDefinition, PipelineDefinition, check, resource, solid
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.events.log import EventRecord, construct_event_logger
+from dagster.core.events.log import EventLogEntry, construct_event_logger
 from dagster.core.execution.api import (
     create_execution_plan,
     execute_pipeline_iterator,
@@ -40,7 +40,7 @@ def test_execute_pipeline_iterator():
         records = []
 
         def event_callback(record):
-            assert isinstance(record, EventRecord)
+            assert isinstance(record, EventLogEntry)
             records.append(record)
 
         pipeline = PipelineDefinition(
@@ -76,7 +76,7 @@ def test_execute_run_iterator():
     records = []
 
     def event_callback(record):
-        assert isinstance(record, EventRecord)
+        assert isinstance(record, EventLogEntry)
         records.append(record)
 
     with instance_for_test() as instance:
@@ -203,7 +203,7 @@ def test_execute_run_bad_state():
     records = []
 
     def event_callback(record):
-        assert isinstance(record, EventRecord)
+        assert isinstance(record, EventLogEntry)
         records.append(record)
 
     with instance_for_test() as instance:
@@ -237,7 +237,7 @@ def test_execute_plan_iterator():
     records = []
 
     def event_callback(record):
-        assert isinstance(record, EventRecord)
+        assert isinstance(record, EventLogEntry)
         records.append(record)
 
     with instance_for_test() as instance:

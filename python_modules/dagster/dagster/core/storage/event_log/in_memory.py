@@ -5,7 +5,7 @@ from typing import Dict
 from dagster import check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.events import DagsterEventType
-from dagster.core.events.log import EventRecord
+from dagster.core.events.log import EventLogEntry
 from dagster.serdes import ConfigurableClass
 
 from .base import EventLogStorage, EventsCursor, StoredEventRecord, extract_asset_events_cursor
@@ -64,7 +64,7 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
             return self._logs[run_id][cursor:]
 
     def store_event(self, event):
-        check.inst_param(event, "event", EventRecord)
+        check.inst_param(event, "event", EventLogEntry)
         run_id = event.run_id
         self._logs[run_id].append(event)
 

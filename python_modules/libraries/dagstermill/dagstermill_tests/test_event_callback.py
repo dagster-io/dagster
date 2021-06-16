@@ -3,7 +3,7 @@ from collections import defaultdict
 
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.events import DagsterEventType
-from dagster.core.events.log import EventRecord
+from dagster.core.events.log import EventLogEntry
 from dagster.core.execution.api import execute_run
 from dagster.core.test_utils import instance_for_test
 
@@ -12,7 +12,7 @@ def test_event_callback_logging():
     events = defaultdict(list)
 
     def _event_callback(record):
-        assert isinstance(record, EventRecord)
+        assert isinstance(record, EventLogEntry)
         if record.is_dagster_event:
             events[record.dagster_event.event_type].append(record)
 
