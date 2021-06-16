@@ -287,8 +287,8 @@ def _step_output_version(
 
 
 def build_output_context(
-    step_key: Optional[str],
-    name: Optional[str],
+    step_key: Optional[str] = None,
+    name: Optional[str] = None,
     metadata: Optional[Dict[str, Any]] = None,
     run_id: Optional[str] = None,
     mapping_key: Optional[str] = None,

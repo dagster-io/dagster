@@ -52,10 +52,8 @@ def test_build_input_context_with_cm_resource():
 
 
 def test_basic_build_output_context():
-    context = build_output_context("fake_key", "fake_name")
+    context = build_output_context()
     assert isinstance(context, OutputContext)
-    assert context.step_key == "fake_key"
-    assert context.name == "fake_name"
 
 
 def test_build_output_context_with_cm_resource():
