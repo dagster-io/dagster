@@ -1,6 +1,8 @@
+import uuid
 from collections import defaultdict
 from operator import itemgetter
 
+from botocore.exceptions import ClientError
 from botocore.stub import Stubber
 
 
@@ -48,6 +50,10 @@ def stubbed(function):
     return wrapper
 
 
+class StubbedEcsError(Exception):
+    pass
+
+
 class StubbedEcs:
     """
     A class that stubs ECS responses using botocore's Stubber:
@@ -73,6 +79,7 @@ class StubbedEcs:
         self.client = boto3_client
         self.stubber = Stubber(self.client)
 
+        self.tasks = defaultdict(list)
         self.task_definitions = defaultdict(list)
         self.stub_count = 0
 
@@ -142,8 +149,79 @@ class StubbedEcs:
         )
         return self.client.register_task_definition(**kwargs)
 
+    @stubbed
+    def run_task(self, **kwargs):
+        """
+        run_task is an endpoint with complex behaviors and consequently is not
+        exhaustively stubbed.
+        """
+        try:
+            task_definition = self.describe_task_definition(
+                taskDefinition=kwargs.get("taskDefinition")
+            )["taskDefinition"]
+
+            is_awsvpc = task_definition.get("networkMode") == "awsvpc"
+            containers = task_definition.get("containerDefinitions", [])
+
+            network_configuration = kwargs.get("networkConfiguration", {})
+            vpc_configuration = network_configuration.get("awsvpcConfiguration")
+            container_overrides = kwargs.get("overrides", {}).get("containerOverrides", [])
+
+            if is_awsvpc:
+                if not network_configuration:
+                    raise StubbedEcsError
+                if not vpc_configuration:
+                    raise StubbedEcsError
+
+            cluster = self._cluster(kwargs.get("cluster"))
+            count = kwargs.get("count", 1)
+            tasks = []
+            for _ in range(count):
+                arn = self._task_arn(cluster)
+                task = {
+                    "attachments": [],
+                    "clusterArn": self._cluster_arn(cluster),
+                    "containers": containers,
+                    "lastStatus": "RUNNING",
+                    "overrides": {"containerOverrides": container_overrides},
+                    "taskArn": arn,
+                    "taskDefinitionArn": task_definition["taskDefinitionArn"],
+                }
+
+                if vpc_configuration:
+                    for subnet in vpc_configuration["subnets"]:
+                        task["attachments"].append(
+                            {
+                                "type": "ElasticNetworkInterface",
+                                "details": [{"name": "subnetId", "value": subnet}],
+                            }
+                        )
+
+                tasks.append(task)
+
+            self.stubber.add_response(
+                method="run_task",
+                service_response={"tasks": tasks},
+                expected_params={**kwargs},
+            )
+
+            self.tasks[cluster] += tasks
+        except (StubbedEcsError, ClientError):
+            self.stubber.add_client_error(method="run_task", expected_params={**kwargs})
+
+        return self.client.run_task(**kwargs)
+
     def _arn(self, resource_type, resource_id):
         return f"arn:aws:ecs:us-east-1:1234567890:{resource_type}/{resource_id}"
+
+    def _cluster(self, cluster):
+        return (cluster or "default").split("/")[-1]
+
+    def _cluster_arn(self, cluster):
+        return self._arn("cluster", self._cluster(cluster))
+
+    def _task_arn(self, cluster):
+        return self._arn("task", f"{self._cluster(cluster)}/{uuid.uuid4()})")
 
     def _task_definition_arn(self, family, revision):
         return self._arn("task-definition", f"{family}:{revision}")
