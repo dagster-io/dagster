@@ -1,7 +1,6 @@
 import LRU from 'lru-cache';
-import * as React from 'react';
 
-import {getJSONForKey} from './LocalStorage';
+import {featureEnabled, FeatureFlag} from './Flags';
 
 export const DEFAULT_RESULT_NAME = 'result';
 
@@ -96,34 +95,8 @@ export function assertUnreachable(_: never): never {
   throw new Error("Didn't expect to get here");
 }
 
-const DAGIT_FLAGS_KEY = 'DAGIT_FLAGS';
-
-export enum FeatureFlag {
-  DebugConsoleLogging = 'DebugConsoleLogging',
-  PipelineModeTuples = 'PipelineModeTuples',
-  LeftNav = 'LeftNav',
-}
-
-export function getFeatureFlags(): FeatureFlag[] {
-  return getJSONForKey(DAGIT_FLAGS_KEY) || [];
-}
-
-export const featureEnabled = (flag: FeatureFlag) => getFeatureFlags().includes(flag);
-
-export const useFeatureEnabled = (flag: FeatureFlag) => {
-  const flags = React.useMemo(() => getFeatureFlags(), []);
-  return flags.includes(flag);
-};
-
-export function setFeatureFlags(flags: FeatureFlag[]) {
-  if (!(flags instanceof Array)) {
-    throw new Error('flags must be an array');
-  }
-  localStorage.setItem(DAGIT_FLAGS_KEY, JSON.stringify(flags));
-}
-
 export function debugLog(...args: any[]) {
-  if (featureEnabled(FeatureFlag.DebugConsoleLogging)) {
+  if (featureEnabled(FeatureFlag.flagDebugConsoleLogging)) {
     console.log(...args);
   }
 }

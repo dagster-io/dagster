@@ -4,7 +4,7 @@ import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {featureEnabled, FeatureFlag} from '../app/Util';
+import {useFeatureFlags} from '../app/Flags';
 import {Box} from '../ui/Box';
 import {DagsterRepoOption} from '../workspace/WorkspaceContext';
 import {buildRepoPath} from '../workspace/buildRepoAddress';
@@ -37,6 +37,7 @@ export const RepositoryContentList: React.FC<RepositoryContentListProps> = ({
   const client = useApolloClient();
   const [type, setType] = React.useState<'pipelines' | 'solids'>('pipelines');
   const [selectedSolids, setSelectedSolids] = React.useState<Item[]>(() => []);
+  const {flagPipelineModeTuples} = useFeatureFlags();
 
   const pipelineTab = tabForPipelinePathComponent(tab);
 
@@ -83,7 +84,6 @@ export const RepositoryContentList: React.FC<RepositoryContentListProps> = ({
 
   const selectedPipelines = React.useMemo(() => {
     const items: Item[] = [];
-    const showModeTuples = featureEnabled(FeatureFlag.PipelineModeTuples);
 
     for (const repo of repos) {
       for (const pipeline of repo.repository.pipelines) {
@@ -92,13 +92,13 @@ export const RepositoryContentList: React.FC<RepositoryContentListProps> = ({
             to: workspacePath(
               repo.repository.name,
               repo.repositoryLocation.name,
-              `/${showModeTuples ? 'jobs' : 'pipelines'}/${pipeline.name}:${mode.name}/${
+              `/${flagPipelineModeTuples ? 'jobs' : 'pipelines'}/${pipeline.name}:${mode.name}/${
                 tab === 'partitions' ? 'overview' : pipelineTab.pathComponent
               }`,
             ),
-            label: showModeTuples ? `${pipeline.name}:${mode.name}` : pipeline.name,
+            label: flagPipelineModeTuples ? `${pipeline.name}:${mode.name}` : pipeline.name,
             labelTuple: `${pipeline.name}:${mode.name}`,
-            labelEl: showModeTuples && (
+            labelEl: flagPipelineModeTuples && (
               <span>
                 {pipeline.name}
                 {mode.name !== 'default' ? <span style={{opacity: 0.6}}> : {mode.name}</span> : ''}
@@ -106,14 +106,14 @@ export const RepositoryContentList: React.FC<RepositoryContentListProps> = ({
             ),
             repoPath: buildRepoPath(repo.repository.name, repo.repositoryLocation.name),
           });
-          if (!showModeTuples) {
+          if (!flagPipelineModeTuples) {
             break;
           }
         }
       }
     }
     return items;
-  }, [pipelineTab.pathComponent, repos, tab]);
+  }, [flagPipelineModeTuples, pipelineTab.pathComponent, repos, tab]);
 
   const items = type === 'pipelines' ? selectedPipelines : selectedSolids;
   const itemsSorted = React.useMemo(

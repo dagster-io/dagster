@@ -2,7 +2,7 @@ import {NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {featureEnabled, FeatureFlag} from '../app/Util';
+import {useFeatureFlags} from '../app/Flags';
 import {Group} from '../ui/Group';
 import {LoadingSpinner} from '../ui/Loading';
 import {Page} from '../ui/Page';
@@ -16,6 +16,7 @@ import {workspacePath} from './workspacePath';
 
 export const WorkspaceOverviewRoot = () => {
   const {loading, error, options} = useRepositoryOptions();
+  const {flagPipelineModeTuples} = useFeatureFlags();
 
   const content = () => {
     if (loading) {
@@ -47,7 +48,7 @@ export const WorkspaceOverviewRoot = () => {
         <thead>
           <tr>
             <th>Repository</th>
-            {featureEnabled(FeatureFlag.PipelineModeTuples) ? (
+            {flagPipelineModeTuples ? (
               <>
                 <th>Jobs</th>
                 <th>Graphs</th>
@@ -70,7 +71,7 @@ export const WorkspaceOverviewRoot = () => {
             return (
               <tr key={repoString}>
                 <td style={{width: '40%'}}>{repoString}</td>
-                {featureEnabled(FeatureFlag.PipelineModeTuples) ? (
+                {flagPipelineModeTuples ? (
                   <>
                     <td>
                       <Link to={workspacePath(name, location, '/jobs')}>Jobs</Link>

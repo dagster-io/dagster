@@ -4,7 +4,7 @@ import memoize from 'lodash/memoize';
 import * as React from 'react';
 import {useRouteMatch} from 'react-router-dom';
 
-import {featureEnabled, FeatureFlag} from '../app/Util';
+import {useFeatureFlags} from '../app/Flags';
 import {
   DagsterRepoOption,
   getRepositoryOptionHash,
@@ -104,7 +104,7 @@ const useNavVisibleRepos = (
 };
 
 const LoadedRepositorySection: React.FC<{allRepos: DagsterRepoOption[]}> = ({allRepos}) => {
-  const flat = featureEnabled(FeatureFlag.PipelineModeTuples);
+  const {flagPipelineModeTuples} = useFeatureFlags();
   const match = useRouteMatch<
     | {repoPath: string; selector: string; tab: string; rootTab: undefined}
     | {selector: undefined; tab: undefined; rootTab: string}
@@ -154,7 +154,7 @@ const LoadedRepositorySection: React.FC<{allRepos: DagsterRepoOption[]}> = ({all
       </ApolloConsumer>
       {visibleRepos.size ? (
         <div style={{display: 'flex', flex: 1, flexDirection: 'column', minHeight: 0}}>
-          {flat ? (
+          {flagPipelineModeTuples ? (
             <FlatContentList {...match?.params} repos={visibleOptions} />
           ) : (
             <>

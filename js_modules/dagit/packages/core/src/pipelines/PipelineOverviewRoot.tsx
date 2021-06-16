@@ -4,7 +4,7 @@ import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import {Link, RouteComponentProps} from 'react-router-dom';
 
-import {featureEnabled, FeatureFlag} from '../app/Util';
+import {useFeatureFlags} from '../app/Flags';
 import {Timestamp} from '../app/time/Timestamp';
 import {PipelineGraph, PIPELINE_GRAPH_SOLID_FRAGMENT} from '../graph/PipelineGraph';
 import {SVGViewport} from '../graph/SVGViewport';
@@ -46,6 +46,7 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
   const {pipelineName} = explorerPathFromString(match.params.pipelinePath);
   useDocumentTitle(`Pipeline: ${pipelineName}`);
   useStripSnapshotFromPath(props.match.params);
+  const {flagPipelineModeTuples} = useFeatureFlags();
 
   const repositorySelector = repoAddressToSelector(repoAddress);
   const pipelineSelector = {
@@ -126,7 +127,7 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
                       margin: '10px 0',
                     }}
                   >
-                    {featureEnabled(FeatureFlag.PipelineModeTuples) ? (
+                    {flagPipelineModeTuples ? (
                       <Link to={workspacePathFromAddress(repoAddress, `/graphs/${pipelineName}`)}>
                         Explore Graph Definition &gt;
                       </Link>

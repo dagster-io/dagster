@@ -5,7 +5,6 @@ import styled from 'styled-components/macro';
 
 import {usePermissions} from '../app/Permissions';
 import {ShortcutHandler} from '../app/ShortcutHandler';
-import {featureEnabled, FeatureFlag} from '../app/Util';
 import {Box} from '../ui/Box';
 import {Spinner} from '../ui/Spinner';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
@@ -31,9 +30,7 @@ export const RepositoryLink: React.FC<{repoAddress: RepoAddress}> = ({repoAddres
         <ShortcutHandler
           onShortcut={onClick}
           shortcutLabel={`⌥R`}
-          shortcutFilter={(e) =>
-            e.keyCode === 82 && e.altKey && featureEnabled(FeatureFlag.LeftNav)
-          }
+          shortcutFilter={(e) => e.code === 'KeyR' && e.altKey}
         >
           <ReloadTooltip
             content={

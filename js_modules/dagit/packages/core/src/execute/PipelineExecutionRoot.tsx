@@ -3,13 +3,13 @@ import {Query} from '@apollo/client/react/components';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
+import {useFeatureFlags} from '../app/Flags';
 import {
   IExecutionSessionChanges,
   applyChangesToSession,
   applyCreateSession,
   useStorage,
 } from '../app/LocalStorage';
-import {featureEnabled, FeatureFlag} from '../app/Util';
 import {CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT} from '../configeditor/ConfigEditorUtils';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {explorerPathFromString, useStripSnapshotFromPath} from '../pipelines/PipelinePathUtils';
@@ -44,12 +44,11 @@ export const PipelineExecutionRoot: React.FC<Props> = (props) => {
   const {pipelineName, pipelineMode} = explorerPathFromString(pipelinePath);
   useDocumentTitle(`Pipeline: ${pipelineName}:${pipelineMode}`);
   useStripSnapshotFromPath(props);
+  const {flagPipelineModeTuples} = useFeatureFlags();
 
   const [data, onSave] = useStorage(
     repoAddress.name || '',
-    featureEnabled(FeatureFlag.PipelineModeTuples)
-      ? `${pipelineName}:${pipelineMode}`
-      : pipelineName,
+    flagPipelineModeTuples ? `${pipelineName}:${pipelineMode}` : pipelineName,
   );
 
   const session = data.sessions[data.current];
@@ -154,9 +153,7 @@ export const PipelineExecutionRoot: React.FC<Props> = (props) => {
                     onSaveSession={(changes) => onSaveSession(data.current, changes)}
                     onCreateSession={(initial) => onSave(applyCreateSession(data, initial))}
                     pipeline={pipelineOrError}
-                    pipelineMode={
-                      featureEnabled(FeatureFlag.PipelineModeTuples) ? pipelineMode : undefined
-                    }
+                    pipelineMode={flagPipelineModeTuples ? pipelineMode : undefined}
                     partitionSets={partitionSetsOrError}
                     runConfigSchemaOrError={configSchemaOrError}
                     currentSession={session}

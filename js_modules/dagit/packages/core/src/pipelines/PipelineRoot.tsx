@@ -1,8 +1,8 @@
 import * as React from 'react';
 import {Redirect, Route, RouteComponentProps, Switch} from 'react-router-dom';
 
+import {useFeatureFlags} from '../app/Flags';
 import {usePermissions} from '../app/Permissions';
-import {featureEnabled, FeatureFlag} from '../app/Util';
 import {PipelineExecutionRoot} from '../execute/PipelineExecutionRoot';
 import {PipelineExecutionSetupRoot} from '../execute/PipelineExecutionSetupRoot';
 import {PipelineNav} from '../nav/PipelineNav';
@@ -21,6 +21,7 @@ interface Props {
 export const PipelineRoot: React.FC<Props> = (props) => {
   const {repoAddress} = props;
   const {canLaunchPipelineExecution} = usePermissions();
+  const {flagPipelineModeTuples} = useFeatureFlags();
 
   useEnforceModeInPipelinePath();
 
@@ -106,7 +107,7 @@ export const PipelineRoot: React.FC<Props> = (props) => {
             />
           )}
         />
-        {featureEnabled(FeatureFlag.PipelineModeTuples) ? (
+        {flagPipelineModeTuples ? (
           <Route
             path={[
               '/workspace/:repoPath/jobs/:pipelinePath',

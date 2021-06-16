@@ -2,7 +2,7 @@ import {Colors, Tab, Tabs} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link, Redirect, Route, Switch} from 'react-router-dom';
 
-import {featureEnabled, FeatureFlag} from '../app/Util';
+import {useFeatureFlags} from '../app/Flags';
 import {SchedulesRoot} from '../schedules/SchedulesRoot';
 import {SensorsRoot} from '../sensors/SensorsRoot';
 import {SolidsRoot} from '../solids/SolidsRoot';
@@ -25,6 +25,7 @@ interface Props {
 export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
   const {repoAddress, tab} = props;
   const path = repoAddressAsString(repoAddress);
+  const {flagPipelineModeTuples} = useFeatureFlags();
 
   const tabs = [
     {text: 'Pipelines', href: workspacePathFromAddress(repoAddress, '/pipelines')},
@@ -33,7 +34,7 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
     {text: 'Sensors', href: workspacePathFromAddress(repoAddress, '/sensors')},
   ];
 
-  if (featureEnabled(FeatureFlag.PipelineModeTuples)) {
+  if (flagPipelineModeTuples) {
     tabs.splice(0, 1, {text: 'Jobs', href: workspacePathFromAddress(repoAddress, '/jobs')});
     tabs.splice(1, 0, {text: 'Graphs', href: workspacePathFromAddress(repoAddress, '/graphs')});
   }
@@ -53,7 +54,7 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
       case 'pipelines':
         return 'Pipelines';
       default:
-        return featureEnabled(FeatureFlag.PipelineModeTuples) ? 'Pipelines' : 'Jobs';
+        return flagPipelineModeTuples ? 'Pipelines' : 'Jobs';
     }
   };
 
@@ -90,7 +91,7 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
               <SolidsRoot name={props.match.params.name} repoAddress={repoAddress} />
             )}
           />
-          {featureEnabled(FeatureFlag.PipelineModeTuples) && (
+          {flagPipelineModeTuples && (
             <Redirect from={'/workspace/:repoPath/pipelines'} to={'/workspace/:repoPath/jobs'} />
           )}
           <Route
