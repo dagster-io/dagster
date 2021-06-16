@@ -148,6 +148,25 @@ class StubbedEcs:
         return self.client.describe_tasks(**kwargs)
 
     @stubbed
+    def list_tags_for_resource(self, **kwargs):
+        """
+        Only task tagging is stubbed; other resources won't work.
+        """
+        arn = kwargs.get("resourceArn")
+
+        if self._task_exists(arn):
+            self.stubber.add_response(
+                method="list_tags_for_resource",
+                service_response={"tags": self.tags.get(arn, [])},
+                expected_params={**kwargs},
+            )
+        else:
+            self.stubber.add_client_error(
+                method="list_tags_for_resource", expected_params={**kwargs}
+            )
+        return self.client.list_tags_for_resource(**kwargs)
+
+    @stubbed
     def list_tasks(self, **kwargs):
         """
         Only filtering by family and cluster is stubbed.
