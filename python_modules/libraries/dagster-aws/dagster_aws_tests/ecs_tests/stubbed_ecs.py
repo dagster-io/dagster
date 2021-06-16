@@ -280,6 +280,27 @@ class StubbedEcs:
         return self.client.run_task(**kwargs)
 
     @stubbed
+    def stop_task(self, **kwargs):
+        cluster = self._cluster(kwargs.get("cluster"))
+        task = kwargs.get("task")
+        tasks = self.describe_tasks(tasks=[task], cluster=cluster)["tasks"]
+
+        if tasks:
+            stopped_task = tasks[0]
+            stopped_task["lastStatus"] = "STOPPED"
+            self.tasks[cluster].remove(tasks[0])
+            self.tasks[cluster].append(stopped_task)
+            self.stubber.add_response(
+                method="stop_task",
+                service_response={"task": stopped_task},
+                expected_params={**kwargs},
+            )
+        else:
+            self.stubber.add_client_error(method="stop_task", expected_params={**kwargs})
+
+        return self.client.stop_task(**kwargs)
+
+    @stubbed
     def tag_resource(self, **kwargs):
         """
         Only task tagging is stubbed; other resources won't work

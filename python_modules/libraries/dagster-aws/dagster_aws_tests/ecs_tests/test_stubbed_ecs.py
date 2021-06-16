@@ -198,6 +198,23 @@ def test_run_task(ecs):
     assert response["tasks"][0]["overrides"]["containerOverrides"][0]["command"] == ["ls"]
 
 
+def test_stop_task(ecs):
+    with pytest.raises(ClientError):
+        # The task doesn't exist
+        ecs.stop_task(task=ecs._task_arn("invalid"))
+
+    ecs.register_task_definition(family="bridge", containerDefinitions=[], networkMode="bridge")
+    task_arn = ecs.run_task(taskDefinition="bridge")["tasks"][0]["taskArn"]
+
+    assert ecs.describe_tasks(tasks=[task_arn])["tasks"][0]["lastStatus"] == "RUNNING"
+
+    response = ecs.stop_task(task=task_arn)
+    assert response["task"]["taskArn"] == task_arn
+    assert response["task"]["lastStatus"] == "STOPPED"
+
+    assert ecs.describe_tasks(tasks=[task_arn])["tasks"][0]["lastStatus"] == "STOPPED"
+
+
 def test_tag_resource(ecs):
     tags = [{"key": "foo", "value": "bar"}]
 
