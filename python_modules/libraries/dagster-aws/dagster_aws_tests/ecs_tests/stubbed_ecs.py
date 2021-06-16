@@ -1,4 +1,5 @@
 from collections import defaultdict
+from operator import itemgetter
 
 from botocore.stub import Stubber
 
@@ -74,6 +75,49 @@ class StubbedEcs:
 
         self.task_definitions = defaultdict(list)
         self.stub_count = 0
+
+    @stubbed
+    def describe_task_definition(self, **kwargs):
+        family = kwargs.get("taskDefinition") or ""
+        revision = None
+
+        if ":" in family:
+            # We received either an ARN or family:revision
+            family, revision = family.split(":")[-2:]
+        if "/" in family:
+            # We received an ARN
+            family = family.split("/")[-1]
+
+        task_definitions = self.task_definitions.get(family, [])
+
+        if revision:
+            # Match the exact revision
+            task_definition = next(
+                (
+                    task_definition
+                    for task_definition in task_definitions
+                    if task_definition["revision"] == int(revision)
+                ),
+                None,
+            )
+        else:
+            # Get the latest revision
+            task_definition = next(
+                iter(sorted(task_definitions, key=itemgetter("revision"), reverse=True)), None
+            )
+
+        if task_definition:
+            self.stubber.add_response(
+                method="describe_task_definition",
+                service_response={"taskDefinition": task_definition},
+                expected_params={**kwargs},
+            )
+        else:
+            self.stubber.add_client_error(
+                method="describe_task_definition", expected_params={**kwargs}
+            )
+
+        return self.client.describe_task_definition(**kwargs)
 
     @stubbed
     def register_task_definition(self, **kwargs):
