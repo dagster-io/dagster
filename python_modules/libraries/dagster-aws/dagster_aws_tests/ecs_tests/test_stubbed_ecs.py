@@ -35,6 +35,32 @@ def test_describe_task_definition(ecs):
         ecs.describe_task_definition(taskDefinition="dagster:3")
 
 
+def test_describe_tasks(ecs):
+    assert not ecs.describe_tasks(tasks=["invalid"])["tasks"]
+    assert not ecs.describe_tasks(cluster="dagster", tasks=["invalid"])["tasks"]
+
+    ecs.register_task_definition(family="bridge", containerDefinitions=[], networkMode="bridge")
+
+    default = ecs.run_task(taskDefinition="bridge")
+    default_arn = default["tasks"][0]["taskArn"]
+    default_id = default_arn.split("/")[-1]
+
+    dagster = ecs.run_task(taskDefinition="bridge", cluster="dagster")
+    dagster_arn = dagster["tasks"][0]["taskArn"]
+    dagster_id = dagster_arn.split("/")[-1]
+
+    # It uses the default cluster
+    assert ecs.describe_tasks(tasks=[default_arn]) == default
+    # It works with task ARNs
+    assert not ecs.describe_tasks(tasks=[dagster_arn])["tasks"]
+    assert ecs.describe_tasks(tasks=[dagster_arn], cluster="dagster") == dagster
+
+    # And task IDs
+    assert ecs.describe_tasks(tasks=[default_id]) == default
+    assert not ecs.describe_tasks(tasks=[dagster_id])["tasks"]
+    assert ecs.describe_tasks(tasks=[dagster_id], cluster="dagster") == dagster
+
+
 def test_register_task_definition(ecs):
     response = ecs.register_task_definition(family="dagster", containerDefinitions=[])
     assert response["taskDefinition"]["family"] == "dagster"

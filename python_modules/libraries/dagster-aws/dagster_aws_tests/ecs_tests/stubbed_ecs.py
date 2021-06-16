@@ -127,6 +127,25 @@ class StubbedEcs:
         return self.client.describe_task_definition(**kwargs)
 
     @stubbed
+    def describe_tasks(self, **kwargs):
+        cluster = self._cluster(kwargs.get("cluster"))
+        arns = kwargs.get("tasks")
+
+        for i, arn in enumerate(arns):
+            if ":" not in arn:
+                # We received just a task ID, not a full ARN
+                arns[i] = self._arn("task", f"{cluster}/{arn}")
+
+        tasks = [task for task in self.tasks[cluster] if task["taskArn"] in arns]
+
+        self.stubber.add_response(
+            method="describe_tasks",
+            service_response={"tasks": tasks},
+            expected_params={**kwargs},
+        )
+        return self.client.describe_tasks(**kwargs)
+
+    @stubbed
     def register_task_definition(self, **kwargs):
         family = kwargs.get("family")
         # Revisions are 1 indexed
