@@ -1849,11 +1849,15 @@
                 "name": {
                     "title": "Name",
                     "type": "string"
+                },
+                "annotations": {
+                    "$ref": "#/definitions/Annotations"
                 }
             },
             "required": [
                 "create",
-                "name"
+                "name",
+                "annotations"
             ]
         },
         "Global": {
