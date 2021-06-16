@@ -179,3 +179,17 @@ def test_run_task(ecs):
         overrides={"containerOverrides": [{"name": "hello_world", "command": ["ls"]}]},
     )
     assert response["tasks"][0]["overrides"]["containerOverrides"][0]["command"] == ["ls"]
+
+
+def test_tag_resource(ecs):
+    tags = [{"key": "foo", "value": "bar"}]
+
+    invalid_arn = ecs._task_arn("invalid")
+    with pytest.raises(ClientError):
+        # The task doesn't exist
+        ecs.tag_resource(resourceArn=invalid_arn, tags=tags)
+
+    ecs.register_task_definition(family="dagster", containerDefinitions=[], networkMode="bridge")
+    arn = ecs.run_task(taskDefinition="dagster")["tasks"][0]["taskArn"]
+
+    ecs.tag_resource(resourceArn=arn, tags=tags)

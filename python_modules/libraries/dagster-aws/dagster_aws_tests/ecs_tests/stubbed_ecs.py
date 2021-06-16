@@ -1,3 +1,4 @@
+import itertools
 import uuid
 from collections import defaultdict
 from operator import itemgetter
@@ -81,6 +82,7 @@ class StubbedEcs:
 
         self.tasks = defaultdict(list)
         self.task_definitions = defaultdict(list)
+        self.tags = defaultdict(list)
         self.stub_count = 0
 
     @stubbed
@@ -257,6 +259,33 @@ class StubbedEcs:
             self.stubber.add_client_error(method="run_task", expected_params={**kwargs})
 
         return self.client.run_task(**kwargs)
+
+    @stubbed
+    def tag_resource(self, **kwargs):
+        """
+        Only task tagging is stubbed; other resources won't work
+        """
+        tags = kwargs.get("tags")
+        arn = kwargs.get("resourceArn")
+
+        if self._task_exists(arn):
+            self.stubber.add_response(
+                method="tag_resource",
+                service_response={},
+                expected_params={**kwargs},
+            )
+            self.tags[arn] = tags
+        else:
+            self.stubber.add_client_error(method="tag_resource", expected_params={**kwargs})
+
+        return self.client.tag_resource(**kwargs)
+
+    def _task_exists(self, arn):
+        for task in itertools.chain.from_iterable(self.tasks.values()):
+            if task["taskArn"] == arn:
+                return True
+
+        return False
 
     def _arn(self, resource_type, resource_id):
         return f"arn:aws:ecs:us-east-1:1234567890:{resource_type}/{resource_id}"
