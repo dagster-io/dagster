@@ -3,5 +3,5 @@ from docs_snippets.guides.dagster.reexecution.unreliable_pipeline import unrelia
 
 
 def test_pipeline_compiles_and_executes():
-    result = execute_pipeline(unreliable_pipeline)
-    assert result
+    result = execute_pipeline(unreliable_pipeline, solid_selection=['unreliable_start', 'unreliable_end'])
+    assert result.success
