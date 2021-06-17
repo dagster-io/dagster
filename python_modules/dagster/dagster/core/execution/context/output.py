@@ -324,13 +324,9 @@ def build_output_context(
 
         .. code-block:: python
 
-            build_output_context(step_key, name)
+            build_output_context()
 
-            with build_output_context(
-                step_key,
-                name,
-                resources={"foo": context_manager_resource}
-            ) as context:
+            with build_output_context(resources={"foo": context_manager_resource}) as context:
                 do_something
 
     """

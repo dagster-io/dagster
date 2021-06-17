@@ -172,13 +172,9 @@ def build_input_context(
 
         .. code-block:: python
 
-            build_input_context(step_key, name)
+            build_input_context()
 
-            with build_input_context(
-                step_key,
-                name,
-                resources={"foo": context_manager_resource}
-            ) as context:
+            with build_input_context(resources={"foo": context_manager_resource}) as context:
                 do_something
     """
     from dagster.core.execution.context.output import OutputContext

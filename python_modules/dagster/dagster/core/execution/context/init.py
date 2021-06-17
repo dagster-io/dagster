@@ -217,7 +217,7 @@ def build_init_resource_context(
     ``build_init_resource_context`` can be used as either a function or context manager. If there is a
     provided resource to ``build_init_resource_context`` that is a context manager, then it must be
     used as a context manager. This function can be used to provide the context argument to the
-    `resource_fn` of a resource.
+    invocation of a resource.
 
     Args:
         resources (Optional[Dict[str, Any]]): The resources to provide to the context. These can be
@@ -230,12 +230,12 @@ def build_init_resource_context(
         .. code-block:: python
 
             context = build_init_resource_context()
-            resource_to_init.resource_fn(context)
+            resource_to_init(context)
 
             with build_init_resource_context(
                 resources={"foo": context_manager_resource}
             ) as context:
-                resource_to_init.resource_fn(context)
+                resource_to_init(context)
 
     """
     return UnboundInitResourceContext(

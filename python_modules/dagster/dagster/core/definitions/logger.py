@@ -137,10 +137,19 @@ def build_init_logger_context(
 ) -> "UnboundInitLoggerContext":
     """Builds logger initialization context from provided parameters.
 
+    This function can be used to provide the context argument to the invocation of a logger
+    definition.
+
     Args:
         logger_config (Any): The config to provide during initialization of logger.
         pipeline_def (Optional[PipelineDefinition]): The pipeline definition that the logger will be
             used with.
+
+    Examples:
+        .. code-block:: python
+
+            context = build_init_logger_context()
+            logger_to_init(context)
     """
     from dagster.core.execution.context.logger import UnboundInitLoggerContext
     from dagster.core.definitions import PipelineDefinition

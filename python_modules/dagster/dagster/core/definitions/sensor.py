@@ -344,8 +344,9 @@ def build_sensor_context(
 ) -> SensorExecutionContext:
     """Builds sensor execution context using the provided parameters.
 
-    If provided, the dagster instance must be persistent;
-    DagsterInstance.ephemeral() will result in an error.
+    This function can be used to provide a context to the invocation of a sensor definition.If
+    provided, the dagster instance must be persistent; DagsterInstance.ephemeral() will result in an
+    error.
 
     Args:
         instance (Optional[DagsterInstance]): The dagster instance configured to run the sensor.
