@@ -48,7 +48,7 @@ def helm_steps() -> List[dict]:
         supported_pythons=[SupportedPython.V3_8],
         buildkite_label="dagster-helm-schema",
         upload_coverage=False,
-        retries=2,
+        retries=4,
     ).get_tox_build_steps()
 
     return tests
