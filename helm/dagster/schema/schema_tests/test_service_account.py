@@ -88,9 +88,7 @@ def test_service_account_annotations(template: HelmTemplate):
     service_account_annotations = {"hello": "world"}
     service_account_values = DagsterHelmValues.construct(
         serviceAccount=ServiceAccount.construct(
-            name=service_account_name,
-            create=True,
-            annotations=service_account_annotations
+            name=service_account_name, create=True, annotations=service_account_annotations
         )
     )
 
