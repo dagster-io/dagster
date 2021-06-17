@@ -94,3 +94,25 @@ if __name__ == "__main__":
         run_config = yaml.safe_load(fd.read())
     result = execute_pipeline(notif_all, run_config=run_config, mode="prod")
 # end_repo_main
+
+
+# start_testing_hooks
+from dagster import build_hook_context
+
+
+@success_hook(required_resource_keys={"my_conn"})
+def my_success_hook(context):
+    context.resources.my_conn.send("foo")
+
+
+def test_my_success_hook():
+    my_conn = mock.MagicMock()
+    # construct HookContext with mocked ``my_conn`` resource.
+    context = build_hook_context(resources={"my_conn": my_conn})
+
+    my_success_hook(context)
+
+    assert my_conn.send.call_count == 1
+
+
+# end_testing_hooks

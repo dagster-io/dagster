@@ -317,6 +317,27 @@ class BoundHookContext(HookContext):
 def build_hook_context(
     resources: Optional[Dict[str, Any]] = None, mode_def: Optional[ModeDefinition] = None
 ) -> UnboundHookContext:
+    """Builds hook context from provided parameters.
+
+    ``build_hook_context`` can be used as either a function or a context manager. If there is a
+    provided resource to ``build_hook_context`` that is a context manager, then it must be used as a
+    context manager. This function can be used to provide the context argument to the invocation of
+    a hook definition.
+
+    Args:
+        resources (Optional[Dict[str, Any]]): The resources to provide to the context. These can
+            either be values or resource definitions.
+        mode_def (Optional[ModeDefinition]): The mode definition used with the context.
+
+    Examples:
+        .. code-block:: python
+
+            context = build_hook_context()
+            hook_to_invoke(context)
+
+            with build_hook_context(resources={"foo": context_manager_resource}) as context:
+                hook_to_invoke(context)
+    """
     return UnboundHookContext(
         resources=check.opt_dict_param(resources, "resources", key_type=str),
         mode_def=check.opt_inst_param(mode_def, "mode_def", ModeDefinition),

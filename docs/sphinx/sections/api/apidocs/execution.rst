@@ -215,7 +215,3 @@ Contexts
 .. autoclass:: TypeCheckContext
   :members:
   :inherited-members:
-
-.. autoclass:: HookContext
-   :members:
-   :inherited-members:
