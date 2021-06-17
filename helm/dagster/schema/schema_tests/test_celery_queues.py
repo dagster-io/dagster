@@ -8,13 +8,17 @@ from schema.charts.dagster.subschema.run_launcher import (
 )
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.charts.utils import kubernetes
-
-from .helm_template import HelmTemplate
+from schema.utils.helm_template import HelmTemplate
 
 
 @pytest.fixture(name="deployment_template")
 def deployment_helm_template() -> HelmTemplate:
-    return HelmTemplate(output="templates/deployment-celery-queues.yaml", model=models.V1Deployment)
+    return HelmTemplate(
+        helm_dir_path="helm/dagster",
+        subchart_paths=["charts/dagster-user-deployments"],
+        output="templates/deployment-celery-queues.yaml",
+        model=models.V1Deployment,
+    )
 
 
 @pytest.mark.parametrize("chart_version", ["0.11.0", "0.11.1"])

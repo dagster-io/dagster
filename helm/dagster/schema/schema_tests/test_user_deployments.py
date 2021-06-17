@@ -7,14 +7,16 @@ from kubernetes.client import models
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.charts.dagster_user_deployments.subschema.user_deployments import UserDeployments
 from schema.charts.utils import kubernetes
+from schema.utils.helm_template import HelmTemplate
 
-from .helm_template import HelmTemplate
 from .utils import create_complex_user_deployment, create_simple_user_deployment
 
 
 @pytest.fixture(name="template")
 def helm_template() -> HelmTemplate:
     return HelmTemplate(
+        helm_dir_path="helm/dagster",
+        subchart_paths=["charts/dagster-user-deployments"],
         output="charts/dagster-user-deployments/templates/deployment-user.yaml",
         model=models.V1Deployment,
     )
@@ -22,7 +24,10 @@ def helm_template() -> HelmTemplate:
 
 @pytest.fixture(name="full_template")
 def full_helm_template() -> HelmTemplate:
-    return HelmTemplate()
+    return HelmTemplate(
+        helm_dir_path="helm/dagster",
+        subchart_paths=["charts/dagster-user-deployments"],
+    )
 
 
 def assert_user_deployment_template(

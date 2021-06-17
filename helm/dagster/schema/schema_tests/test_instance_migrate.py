@@ -4,13 +4,14 @@ import pytest
 from kubernetes.client import models
 from schema.charts.dagster.subschema.migrate import Migrate
 from schema.charts.dagster.values import DagsterHelmValues
-
-from .helm_template import HelmTemplate
+from schema.utils.helm_template import HelmTemplate
 
 
 @pytest.fixture(name="template")
 def helm_template() -> HelmTemplate:
     return HelmTemplate(
+        helm_dir_path="helm/dagster",
+        subchart_paths=["charts/dagster-user-deployments"],
         output="templates/job-instance-migrate.yaml",
         model=models.V1Job,
     )

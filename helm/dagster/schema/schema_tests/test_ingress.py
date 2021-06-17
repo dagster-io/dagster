@@ -3,13 +3,17 @@ from kubernetes.client import models
 from schema.charts.dagster.subschema.dagit import Dagit
 from schema.charts.dagster.subschema.ingress import DagitIngressConfiguration, Ingress, IngressPath
 from schema.charts.dagster.values import DagsterHelmValues
-
-from .helm_template import HelmTemplate
+from schema.utils.helm_template import HelmTemplate
 
 
 @pytest.fixture(name="template")
 def helm_template() -> HelmTemplate:
-    return HelmTemplate(output="templates/ingress.yaml", model=models.ExtensionsV1beta1Ingress)
+    return HelmTemplate(
+        helm_dir_path="helm/dagster",
+        subchart_paths=["charts/dagster-user-deployments"],
+        output="templates/ingress.yaml",
+        model=models.ExtensionsV1beta1Ingress,
+    )
 
 
 def test_ingress(template: HelmTemplate):

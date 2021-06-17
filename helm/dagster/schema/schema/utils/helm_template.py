@@ -19,6 +19,8 @@ def git_repo_root():
 
 @dataclass
 class HelmTemplate:
+    helm_dir_path: str
+    subchart_paths: List[str]
     output: Optional[str] = None
     model: Optional[Any] = None
     name: str = "RELEASE-NAME"
@@ -26,7 +28,7 @@ class HelmTemplate:
 
     def render(self, values: DagsterHelmValues, chart_version: Optional[str] = None) -> List[Any]:
         with NamedTemporaryFile() as tmp_file:
-            helm_dir_path = os.path.join(git_repo_root(), "helm", "dagster")
+            helm_dir_path = os.path.join(git_repo_root(), self.helm_dir_path)
 
             values_json = json.loads(values.json(exclude_none=True, by_alias=True))
             pprint(values_json)
@@ -73,37 +75,28 @@ class HelmTemplate:
             yield
         else:
             umbrella_chart_path = os.path.join(helm_dir_path, "Chart.yaml")
-            subchart_chart_path = os.path.join(
-                helm_dir_path, "charts/dagster-user-deployments/Chart.yaml"
-            )
+            subchart_chart_paths = [
+                os.path.join(helm_dir_path, subchart_path, "Chart.yaml")
+                for subchart_path in self.subchart_paths
+            ]
 
-            _, umbrella_chart_copy_path = mkstemp()
-            _, subchart_copy_path = mkstemp()
+            chart_paths = subchart_chart_paths + [umbrella_chart_path]
+            chart_copy_paths = []
+            for chart_path in chart_paths:
+                _, chart_copy_path = mkstemp()
+                shutil.copy2(chart_path, chart_copy_path)
+                chart_copy_paths.append(chart_copy_path)
 
-            shutil.copy2(umbrella_chart_path, umbrella_chart_copy_path)
-            shutil.copy2(subchart_chart_path, subchart_copy_path)
+                with open(chart_path) as chart_file:
+                    old_chart_yaml = yaml.safe_load(chart_file)
 
-            with open(umbrella_chart_path) as umbrella_chart_file, open(
-                subchart_chart_path
-            ) as subchart_chart_file:
-                old_umbrella_chart_yaml = yaml.safe_load(umbrella_chart_file)
-                old_subchart_chart_yaml = yaml.safe_load(subchart_chart_file)
-
-            with open(umbrella_chart_path, "w") as umbrella_chart_file, open(
-                subchart_chart_path, "w"
-            ) as subchart_file:
-                new_umbrella_chart_yaml = old_umbrella_chart_yaml.copy()
-                new_subchart_chart_yaml = old_subchart_chart_yaml.copy()
-
-                new_umbrella_chart_yaml["version"] = chart_version
-                new_subchart_chart_yaml["version"] = chart_version
-
-                yaml.dump(new_umbrella_chart_yaml, umbrella_chart_file)
-                yaml.dump(new_subchart_chart_yaml, subchart_file)
+                with open(chart_path, "w") as chart_file:
+                    new_chart_yaml = old_chart_yaml.copy()
+                    new_chart_yaml["version"] = chart_version
+                    yaml.dump(new_chart_yaml, chart_file)
 
             yield
 
-            shutil.copy2(umbrella_chart_copy_path, umbrella_chart_path)
-            shutil.copy2(subchart_copy_path, subchart_chart_path)
-            os.remove(umbrella_chart_copy_path)
-            os.remove(subchart_copy_path)
+            for chart_path, chart_copy_path in zip(chart_paths, chart_copy_paths):
+                shutil.copy2(chart_copy_path, chart_path)
+                os.remove(chart_copy_path)

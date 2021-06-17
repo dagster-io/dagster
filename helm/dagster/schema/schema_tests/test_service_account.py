@@ -5,13 +5,14 @@ from kubernetes.client import models
 from schema.charts.dagster.subschema.global_ import Global
 from schema.charts.dagster.subschema.service_account import ServiceAccount
 from schema.charts.dagster.values import DagsterHelmValues
-
-from .helm_template import HelmTemplate
+from schema.utils.helm_template import HelmTemplate
 
 
 @pytest.fixture(name="template")
 def umbrella_helm_template() -> HelmTemplate:
     return HelmTemplate(
+        helm_dir_path="helm/dagster",
+        subchart_paths=["charts/dagster-user-deployments"],
         output="templates/serviceaccount.yaml",
         model=models.V1ServiceAccount,
     )
@@ -20,6 +21,8 @@ def umbrella_helm_template() -> HelmTemplate:
 @pytest.fixture(name="subchart_template")
 def subchart_helm_template() -> HelmTemplate:
     return HelmTemplate(
+        helm_dir_path="helm/dagster",
+        subchart_paths=["charts/dagster-user-deployments"],
         output="charts/dagster-user-deployments/templates/serviceaccount.yaml",
         model=models.V1ServiceAccount,
     )

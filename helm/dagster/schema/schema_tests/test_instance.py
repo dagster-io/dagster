@@ -4,13 +4,14 @@ from kubernetes.client import models
 from schema.charts.dagster.subschema.daemon import Daemon, QueuedRunCoordinator
 from schema.charts.dagster.subschema.postgresql import PostgreSQL, Service
 from schema.charts.dagster.values import DagsterHelmValues
-
-from .helm_template import HelmTemplate
+from schema.utils.helm_template import HelmTemplate
 
 
 @pytest.fixture(name="template")
 def helm_template() -> HelmTemplate:
     return HelmTemplate(
+        helm_dir_path="helm/dagster",
+        subchart_paths=["charts/dagster-user-deployments"],
         output="templates/configmap-instance.yaml",
         model=models.V1ConfigMap,
     )
