@@ -1,5 +1,32 @@
 # Changelog
 
+# 0.11.14
+
+### New
+
+* Supplying the "metadata" argument to InputDefinitions and OutputDefinitions is no longer considered experimental.
+* The "context" argument can now be omitted for solids that have required resource keys.
+* The S3ComputeLogManager now takes a boolean config argument skip_empty_files, which skips uploading empty log files to S3.  This should enable a work around of timeout errors when using the S3ComputeLogManager to persist logs to MinIO object storage.
+* The Helm subchart for user code deployments now allows for extra manifests.
+* Running `dagit` with flag `--suppress-warnings` will now ignore all warnings, such as ExperimentalWarnings.
+* PipelineRunStatus, which represents the run status, is now exported in the public API.
+
+### Bugfixes
+
+* The asset catalog now has better backwards compatibility for supporting deprecated Materialization events.  Previously, these events were causing loading errors.
+
+### Community Contributions
+
+* Improved documentation of the `dagster-dbt` library with some helpful tips and example code (thanks @makotonium!).
+* Fixed the example code in the `dagster-pyspark` documentation for providing and accessing the pyspark resource (thanks @Andrew-Crosby!).
+* Helm chart serviceaccounts now allow annotations (thanks @jrouly!).
+
+### Documentation
+
+* Added section on testing resources ([link](https://docs.dagster.io/master/concepts/modes-resources#experimental-testing-resource-initialization)).
+* Revamped IO manager testing section to use `build_input_context` and `build_output_context` APIs ([link](https://docs.dagster.io/master/concepts/io-management/io-managers#testing-an-io-manager)).
+
+
 # 0.11.13
 
 ### New
