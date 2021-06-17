@@ -5,7 +5,6 @@ from kubernetes.client import models
 from schema.charts.dagster.subschema.global_ import Global
 from schema.charts.dagster.subschema.service_account import ServiceAccount
 from schema.charts.dagster.values import DagsterHelmValues
-from schema.charts.utils.kubernetes import Annotations
 
 from .helm_template import HelmTemplate
 
