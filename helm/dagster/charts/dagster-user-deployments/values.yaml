@@ -107,6 +107,7 @@ deployments:
 
 serviceAccount:
   create: true
+  annotations: {}
 
 ####################################################################################################
 # Extra Manifests: (Optional) Create additional k8s resources within this chart
