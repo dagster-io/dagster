@@ -136,10 +136,10 @@ class ScheduleDefinition:
 
             This function must return a generator, which must yield either a single SkipReason
             or one or more RunRequest objects.
-        run_config (Optional[Dict]): The environment config that parameterizes this execution,
+        run_config (Optional[Dict]): The config that parameterizes this execution,
             as a dict.
         run_config_fn (Optional[Callable[[ScheduleExecutionContext], [Dict]]]): A function that
-            takes a ScheduleExecutionContext object and returns the environment configuration that
+            takes a ScheduleExecutionContext object and returns the run configuration that
             parameterizes this execution, as a dict. You may set only one of ``run_config``,
             ``run_config_fn``, and ``execution_fn``.
         tags (Optional[Dict[str, str]]): A dictionary of tags (string key-value pairs) to attach

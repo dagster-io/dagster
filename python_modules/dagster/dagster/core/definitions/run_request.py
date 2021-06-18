@@ -42,7 +42,7 @@ class RunRequest(namedtuple("_RunRequest", "run_key run_config tags")):
             only one run is created per run key across all sensor evaluations.  For schedules,
             ensures that one run is created per tick, across failure recoveries. Passing in a `None`
             value means that a run will always be launched per evaluation.
-        run_config (Optional[Dict]): The environment config that parameterizes the run execution to
+        run_config (Optional[Dict]): The config that parameterizes the run execution to
             be launched, as a dict.
         tags (Optional[Dict[str, str]]): A dictionary of tags (string key-value pairs) to attach
             to the launched run.

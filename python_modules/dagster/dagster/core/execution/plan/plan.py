@@ -481,7 +481,7 @@ def get_step_input_source(
         return FromDefaultValue(solid_handle=handle, input_name=input_name)
 
     # At this point we have an input that is not hooked up to
-    # the output of another solid or provided via environment config.
+    # the output of another solid or provided via run config.
 
     # We will allow this for "Nothing" type inputs and continue.
     if input_def.dagster_type.kind == DagsterTypeKind.NOTHING:
@@ -712,7 +712,7 @@ class ExecutionPlan(
         step_keys_to_execute: Optional[List[str]] = None,
         known_state=None,
     ) -> "ExecutionPlan":
-        """Here we build a new ExecutionPlan from a pipeline definition and the environment config.
+        """Here we build a new ExecutionPlan from a pipeline definition and the resolved run config.
 
         To do this, we iterate through the pipeline's solids in topological order, and hand off the
         execution steps for each solid to a companion _PlanBuilder object.

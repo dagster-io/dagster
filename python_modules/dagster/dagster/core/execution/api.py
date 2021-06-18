@@ -254,7 +254,7 @@ def execute_pipeline_iterator(
 
     Parameters:
         pipeline (Union[IPipeline, PipelineDefinition]): The pipeline to execute.
-        run_config (Optional[dict]): The environment configuration that parametrizes this run,
+        run_config (Optional[dict]): The configuration that parametrizes this run,
             as a dict.
         mode (Optional[str]): The name of the pipeline mode to use. You may not set both ``mode``
             and ``preset``.
@@ -335,7 +335,7 @@ def execute_pipeline(
 
     Parameters:
         pipeline (Union[IPipeline, PipelineDefinition]): The pipeline to execute.
-        run_config (Optional[dict]): The environment configuration that parametrizes this run,
+        run_config (Optional[dict]): The configuration that parametrizes this run,
             as a dict.
         mode (Optional[str]): The name of the pipeline mode to use. You may not set both ``mode``
             and ``preset``.
@@ -443,7 +443,7 @@ def reexecute_pipeline(
         pipeline (Union[IPipeline, PipelineDefinition]): The pipeline to execute.
         parent_run_id (str): The id of the previous run to reexecute. The run must exist in the
             instance.
-        run_config (Optional[dict]): The environment configuration that parametrizes this run,
+        run_config (Optional[dict]): The configuration that parametrizes this run,
             as a dict.
         solid_selection (Optional[List[str]]): A list of solid selection queries (including single
             solid names) to execute. For example:
@@ -548,7 +548,7 @@ def reexecute_pipeline_iterator(
         pipeline (Union[IPipeline, PipelineDefinition]): The pipeline to execute.
         parent_run_id (str): The id of the previous run to reexecute. The run must exist in the
             instance.
-        run_config (Optional[dict]): The environment configuration that parametrizes this run,
+        run_config (Optional[dict]): The configuration that parametrizes this run,
             as a dict.
         solid_selection (Optional[List[str]]): A list of solid selection queries (including single
             solid names) to execute. For example:

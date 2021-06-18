@@ -69,7 +69,7 @@ class PresetDefinition(
             name (str): The name of this preset. Must be unique in the presets defined on a given
                 pipeline.
             config_files (Optional[List[str]]): List of paths or glob patterns for yaml files
-                to load and parse as the environment config for this preset.
+                to load and parse as the run config for this preset.
             solid_selection (Optional[List[str]]): A list of solid subselection (including single
                 solid names) to execute with the preset. e.g. ``['*some_solid+', 'other_solid']``
             mode (Optional[str]): The mode to apply when executing this preset. (default:
@@ -151,7 +151,7 @@ class PresetDefinition(
             name (str): The name of this preset. Must be unique in the presets defined on a given
                 pipeline.
             pkg_resource_defs (Optional[List[(str, str)]]): List of pkg_resource modules/files to
-                load as environment config for this preset.
+                load as the run config for this preset.
             solid_selection (Optional[List[str]]): A list of solid subselection (including single
                 solid names) to execute with this partition. e.g.
                 ``['*some_solid+', 'other_solid']``
