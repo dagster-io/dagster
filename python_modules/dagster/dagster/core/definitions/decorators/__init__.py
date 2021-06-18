@@ -1,4 +1,5 @@
 from .composite_solid import composite_solid
+from .graph import graph
 from .hook import failure_hook, success_hook
 from .pipeline import pipeline
 from .repository import repository

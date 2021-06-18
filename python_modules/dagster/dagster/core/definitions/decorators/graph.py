@@ -2,6 +2,7 @@ from functools import update_wrapper
 from typing import Any, Callable, List, Optional, Union
 
 from dagster import check
+from dagster.utils.backcompat import experimental_decorator
 
 from ..graph import GraphDefinition
 from ..input import InputDefinition
@@ -64,6 +65,7 @@ class _Graph:
         return graph_def
 
 
+@experimental_decorator
 def graph(
     name: Optional[str] = None,
     description: Optional[str] = None,

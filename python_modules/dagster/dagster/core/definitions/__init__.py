@@ -3,6 +3,7 @@ from .decorators import (
     composite_solid,
     daily_schedule,
     failure_hook,
+    graph,
     hook,
     hourly_schedule,
     lambda_solid,

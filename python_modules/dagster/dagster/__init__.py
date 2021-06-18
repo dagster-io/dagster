@@ -56,6 +56,7 @@ from dagster.core.definitions import (
     default_executors,
     executor,
     failure_hook,
+    graph,
     hourly_schedule,
     in_process_executor,
     intermediate_storage,
@@ -224,6 +225,7 @@ __all__ = [
     # Decorators
     "composite_solid",
     "executor",
+    "graph",
     "intermediate_storage",
     "lambda_solid",
     "logger",

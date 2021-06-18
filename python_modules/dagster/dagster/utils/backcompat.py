@@ -105,6 +105,16 @@ def experimental_fn_warning(name, stacklevel=3):
     )
 
 
+def experimental_decorator_warning(name, stacklevel=3):
+    """Utility for warning that a decorator is experimental"""
+    warnings.warn(
+        f'"{name}" is an experimental decorator. It may break in future versions, even between dot'
+        f" releases. {EXPERIMENTAL_WARNING_HELP}",
+        ExperimentalWarning,
+        stacklevel=stacklevel,
+    )
+
+
 def experimental_class_warning(name, stacklevel=3):
     """Utility for warning that a class is experimental. Expected to be called from the class's
     __init__ method.
@@ -179,5 +189,27 @@ def experimental(fn):
     def _inner(*args, **kwargs):
         experimental_fn_warning(fn.__name__, stacklevel=3)
         return fn(*args, **kwargs)
+
+    return _inner
+
+
+def experimental_decorator(decorator):
+    """
+    Spews an "experimental" warning whenever the given decorator is invoked.
+
+    Usage:
+
+        .. code-block:: python
+
+            @experimental_decorator
+            def my_experimental_decorator(...):
+                ...
+    """
+    check.callable_param(decorator, "decorator")
+
+    @wraps(decorator)
+    def _inner(*args, **kwargs):
+        experimental_decorator_warning(decorator.__name__, stacklevel=3)
+        return decorator(*args, **kwargs)
 
     return _inner
