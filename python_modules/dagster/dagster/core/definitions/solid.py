@@ -303,6 +303,8 @@ class CompositeSolidDefinition(GraphDefinition):
         tags: Optional[Dict[str, str]] = None,
         positional_inputs: Optional[List[str]] = None,
     ):
+        _check_io_managers_on_composite_solid(name, input_mappings, output_mappings)
+
         super(CompositeSolidDefinition, self).__init__(
             name=name,
             description=description,
@@ -349,3 +351,30 @@ class CompositeSolidDefinition(GraphDefinition):
             tags=self.tags,
             positional_inputs=self.positional_inputs,
         )
+
+
+def _check_io_managers_on_composite_solid(
+    name: str,
+    input_mappings: Optional[List[InputMapping]],
+    output_mappings: Optional[List[OutputMapping]],
+):
+    # Ban root_manager_key on composite solids
+    if input_mappings:
+        for input_mapping in input_mappings:
+            input_def = input_mapping.definition
+            if input_def.root_manager_key:
+                raise DagsterInvalidDefinitionError(
+                    "Root input manager cannot be set on a composite solid: "
+                    f'root_manager_key "{input_def.root_manager_key}" '
+                    f'is set on InputDefinition "{input_def.name}" of composite solid "{name}". '
+                )
+    # Ban io_manager_key on composite solids
+    if output_mappings:
+        for output_mapping in output_mappings:
+            output_def = output_mapping.definition
+            if output_def.io_manager_key != "io_manager":
+                raise DagsterInvalidDefinitionError(
+                    "IO manager cannot be set on a composite solid: "
+                    f'io_manager_key "{output_def.io_manager_key}" '
+                    f'is set  on OutputtDefinition "{output_def.name}" of composite solid "{name}". '
+                )
