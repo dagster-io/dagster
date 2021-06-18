@@ -8,6 +8,7 @@ from .decorators import (
     hourly_schedule,
     lambda_solid,
     monthly_schedule,
+    op,
     pipeline,
     repository,
     schedule,
