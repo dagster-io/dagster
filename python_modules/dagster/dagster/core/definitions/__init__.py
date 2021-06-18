@@ -77,11 +77,7 @@ from .reconstructable import (
 )
 from .repository import RepositoryDefinition
 from .resource import ResourceDefinition, make_values_resource, resource
-from .run_config_schema import (
-    RunConfigSchema,
-    create_run_config_schema,
-    create_run_config_schema_type,
-)
+from .run_config_schema import RunConfigSchema, create_run_config_schema
 from .run_request import JobType, RunRequest, SkipReason
 from .schedule import ScheduleDefinition, ScheduleExecutionContext
 from .sensor import SensorDefinition, SensorExecutionContext
