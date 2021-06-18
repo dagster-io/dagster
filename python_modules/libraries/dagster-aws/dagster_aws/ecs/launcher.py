@@ -38,6 +38,13 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
     def from_config_value(inst_data, config_value):
         return EcsRunLauncher(inst_data=inst_data, **config_value)
 
+    def _ecs_tags(self, run_id):
+        return [{"key": "dagster/run_id", "value": run_id}]
+
+    def _run_tags(self, task_arn):
+        cluster = self._task_metadata().cluster
+        return {"ecs/task_arn": task_arn, "ecs/cluster": cluster}
+
     def launch_run(self, run, external_pipeline):
         """
         Launch a run using the same task definition as the parent process but
@@ -69,25 +76,34 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             taskDefinition=metadata.family,
             cluster=metadata.cluster,
             overrides={"containerOverrides": [{"name": metadata.container, "command": command}]},
-            networkConfiguration={"awsvpcConfiguration": {"subnets": metadata.subnets}},
+            networkConfiguration={
+                "awsvpcConfiguration": {
+                    "subnets": metadata.subnets,
+                    "assignPublicIp": "ENABLED",
+                }
+            },
+            launchType="FARGATE",
         )
 
         arn = response["tasks"][0]["taskArn"]
-        self.ecs.tag_resource(
-            resourceArn=arn, tags=[{"key": "dagster:run_id", "value": str(run.run_id)}]
-        )
+        self._instance.add_run_tags(run.run_id, self._run_tags(task_arn=arn))
+        self.ecs.tag_resource(resourceArn=arn, tags=self._ecs_tags(run.run_id))
 
         return run.run_id
 
     def can_terminate(self, run_id):
-        if self._get_task_arn_by_run_id_tag(run_id):
-            return True
+        arn = self._instance.get_run_by_id(run_id).tags.get("ecs/task_arn")
+        if arn:
+            cluster = self._task_metadata().cluster
+            status = self.ecs.describe_tasks(tasks=[arn], cluster=cluster)["tasks"][0]["lastStatus"]
+            if status != "STOPPED":
+                return True
 
         return False
 
     def terminate(self, run_id):
         cluster = self._task_metadata().cluster
-        arn = self._get_task_arn_by_run_id_tag(run_id)
+        arn = self._instance.get_run_by_id(run_id).tags.get("ecs/task_arn")
         status = self.ecs.describe_tasks(tasks=[arn], cluster=cluster)["tasks"][0]["lastStatus"]
         if status == "STOPPED":
             return False
@@ -95,30 +111,10 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         self.ecs.stop_task(task=arn, cluster=cluster)
         return True
 
-    def _get_task_arn_by_run_id_tag(self, run_id):
-        """
-        We tag each task with a key of "dagster:run_id" and a value of the
-        run_id. We can use this tag to look up running tasks.
-        TODO: Pagination
-        TODO: Expore using resourcegroupstaggingapi instead of the ecs api so
-              we can make fewer api calls;
-              https://docs.aws.amazon.com/resourcegroupstagging/latest/APIReference/overview.html
-        """
-
-        tasks = self.ecs.list_tasks(
-            family=self._task_metadata().family, cluster=self._task_metadata().cluster
-        )
-        for arn in tasks["taskArns"]:
-            tags = self.ecs.list_tags_for_resource(resourceArn=arn)["tags"]
-            for tag in tags:
-                if tag["key"] == "dagster:run_id" and tag["value"] == str(run_id):
-                    return arn
-        return None
-
     def _task_metadata(self):
         """
         ECS injects an environment variable into each Fargate task. The value
-        of this environment variable is a url that can be queries to introspect
+        of this environment variable is a url that can be queried to introspect
         information about the running task:
 
         https://docs.aws.amazon.com/AmazonECS/latest/userguide/task-metadata-endpoint-v4-fargate.html

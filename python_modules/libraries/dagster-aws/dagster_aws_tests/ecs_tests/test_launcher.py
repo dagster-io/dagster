@@ -62,25 +62,40 @@ def external_pipeline():
 
 
 @pytest.fixture
-def run_id(instance, pipeline):
-    return instance.create_run_for_pipeline(pipeline).run_id
+def run(instance, pipeline):
+    return instance.create_run_for_pipeline(pipeline)
 
 
-def test_launching(ecs, instance, run_id, external_pipeline):
-    assert not instance.run_launcher._get_task_arn_by_run_id_tag(run_id)
+def test_launching(ecs, instance, run, external_pipeline):
+    assert not run.tags
+    initial_tasks = ecs.list_tasks()["taskArns"]
 
-    instance.launch_run(run_id, external_pipeline)
+    instance.launch_run(run.run_id, external_pipeline)
 
-    task_arn = instance.run_launcher._get_task_arn_by_run_id_tag(run_id)
+    # A new task is launched
+    tasks = ecs.list_tasks()["taskArns"]
+    assert len(tasks) == len(initial_tasks) + 1
+    task_arn = list(set(tasks).difference(initial_tasks))[0]
+
+    # The run is tagged with info about the ECS task
+    assert instance.get_run_by_id(run.run_id).tags["ecs/task_arn"] == task_arn
+    assert instance.get_run_by_id(run.run_id).tags["ecs/cluster"] == ecs._cluster_arn("default")
+
+    # And the ECS task is tagged with info about the Dagster run
+    assert ecs.list_tags_for_resource(resourceArn=task_arn)["tags"][0]["key"] == "dagster/run_id"
+    assert ecs.list_tags_for_resource(resourceArn=task_arn)["tags"][0]["value"] == run.run_id
+
+    # We override the command to run our pipeline
     task = ecs.describe_tasks(tasks=[task_arn])
     assert "execute_run" in task["tasks"][0]["overrides"]["containerOverrides"][0]["command"]
 
 
-def test_termination(instance, run_id, external_pipeline):
-    assert not instance.run_launcher.can_terminate(run_id)
+def test_termination(instance, run, external_pipeline):
+    assert not instance.run_launcher.can_terminate(run.run_id)
 
-    instance.launch_run(run_id, external_pipeline)
+    instance.launch_run(run.run_id, external_pipeline)
 
-    assert instance.run_launcher.can_terminate(run_id)
-    assert instance.run_launcher.terminate(run_id)
-    assert not instance.run_launcher.terminate(run_id)
+    assert instance.run_launcher.can_terminate(run.run_id)
+    assert instance.run_launcher.terminate(run.run_id)
+    assert not instance.run_launcher.can_terminate(run.run_id)
+    assert not instance.run_launcher.terminate(run.run_id)
