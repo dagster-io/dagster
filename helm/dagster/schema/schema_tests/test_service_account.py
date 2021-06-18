@@ -59,19 +59,18 @@ def test_service_account_global_name(template: HelmTemplate):
     assert service_account_template.metadata.name == global_service_account_name
 
 
-def test_subchart_service_account_global_name(subchart_template: HelmTemplate):
-    global_service_account_name = "global-service-account-name"
-    service_account_values = DagsterHelmValues.construct(
-        global_=Global.construct(serviceAccountName=global_service_account_name),
-    )
+def test_subchart_service_account_global_name(subchart_template: HelmTemplate, capsys):
+    with pytest.raises(subprocess.CalledProcessError):
+        global_service_account_name = "global-service-account-name"
+        service_account_values = DagsterHelmValues.construct(
+            global_=Global.construct(serviceAccountName=global_service_account_name),
+        )
 
-    service_account_templates = subchart_template.render(service_account_values)
+        subchart_template.render(service_account_values)
 
-    assert len(service_account_templates) == 1
+        _, err = capsys.readouterr()
 
-    service_account_template = service_account_templates[0]
-
-    assert service_account_template.metadata.name == global_service_account_name
+        assert "Error: could not find template" in err
 
 
 def test_subchart_service_account_name(subchart_template: HelmTemplate):
