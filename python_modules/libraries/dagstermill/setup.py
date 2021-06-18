@@ -12,9 +12,12 @@ def get_version() -> str:
 
 
 if __name__ == "__main__":
+    ver = get_version()
+    # dont pin dev installs to avoid pip dep resolver issues
+    pin = "" if ver == "dev" else f"=={ver}"
     setup(
         name="dagstermill",
-        version=get_version(),
+        version=ver,
         description="run notebooks using the Dagster tools",
         author="Elementl",
         author_email="hello@elementl.com",
@@ -28,7 +31,7 @@ if __name__ == "__main__":
             "Operating System :: OS Independent",
         ],
         install_requires=[
-            "dagster",
+            f"dagster{pin}",
             # ipykernel 5.4.0 and 5.4.1 broke papermill
             # see https://github.com/dagster-io/dagster/issues/3401,
             # https://github.com/nteract/papermill/issues/519,
