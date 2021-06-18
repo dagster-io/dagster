@@ -77,9 +77,7 @@ def test_subchart_service_account_global_name(subchart_template: HelmTemplate):
 def test_subchart_service_account_name(subchart_template: HelmTemplate):
     service_account_name = "service-account-name"
     service_account_values = DagsterUserDeploymentsHelmValues.construct(
-        serviceAccount=ServiceAccount.construct(
-            name=service_account_name
-        ),
+        serviceAccount=ServiceAccount.construct(name=service_account_name),
     )
 
     service_account_templates = subchart_template.render(service_account_values)

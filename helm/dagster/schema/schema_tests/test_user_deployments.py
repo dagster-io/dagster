@@ -5,8 +5,8 @@ from typing import List
 import pytest
 from kubernetes.client import models
 from schema.charts.dagster.values import DagsterHelmValues
-from schema.charts.dagster_user_deployments.values import DagsterUserDeploymentsHelmValues
 from schema.charts.dagster_user_deployments.subschema.user_deployments import UserDeployments
+from schema.charts.dagster_user_deployments.values import DagsterUserDeploymentsHelmValues
 from schema.charts.utils import kubernetes
 from schema.utils.helm_template import HelmTemplate
 
@@ -474,4 +474,4 @@ def test_subchart_image_pull_secrets(subchart_template: HelmTemplate):
     deployment_template = deployment_templates[0]
     pod_spec = deployment_template.spec.template.spec
 
-    assert pod_spec.image_pull_secrets[0].name == image_pull_secrets[0]['name']
+    assert pod_spec.image_pull_secrets[0].name == image_pull_secrets[0]["name"]

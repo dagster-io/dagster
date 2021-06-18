@@ -2,9 +2,9 @@ from typing import List
 
 from pydantic import BaseModel, Field  # pylint: disable=no-name-in-module
 
-from .subschema.user_deployments import UserDeployment
 from ..dagster.subschema import Global, ServiceAccount
 from ..utils import kubernetes
+from .subschema.user_deployments import UserDeployment
 
 
 class DagsterUserDeploymentsHelmValues(BaseModel):
