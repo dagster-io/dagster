@@ -78,6 +78,22 @@ def test_list_tags_for_resource(ecs):
     assert ecs.list_tags_for_resource(resourceArn=arn)["tags"] == tags
 
 
+def test_list_task_definitions(ecs):
+    assert not ecs.list_task_definitions()["taskDefinitionArns"]
+
+    def arn(task_definition):
+        return task_definition["taskDefinition"]["taskDefinitionArn"]
+
+    dagster1 = arn(ecs.register_task_definition(family="dagster", containerDefinitions=[]))
+    dagster2 = arn(ecs.register_task_definition(family="dagster", containerDefinitions=[]))
+    other1 = arn(ecs.register_task_definition(family="other", containerDefinitions=[]))
+
+    assert len(ecs.list_task_definitions()["taskDefinitionArns"]) == 3
+    assert dagster1 in ecs.list_task_definitions()["taskDefinitionArns"]
+    assert dagster2 in ecs.list_task_definitions()["taskDefinitionArns"]
+    assert other1 in ecs.list_task_definitions()["taskDefinitionArns"]
+
+
 def test_list_tasks(ecs):
     assert not ecs.list_tasks()["taskArns"]
 
@@ -201,11 +217,20 @@ def test_run_task(ecs, subnet):
     # containers and overrides are included
     ecs.register_task_definition(
         family="container",
-        containerDefinitions=[{"name": "hello_world", "image": "hello_world:latest"}],
+        containerDefinitions=[
+            {
+                "name": "hello_world",
+                "image": "hello_world:latest",
+                "environment": [{"name": "FOO", "value": "bar"}],
+            }
+        ],
         networkMode="bridge",
     )
     response = ecs.run_task(taskDefinition="container")
     assert response["tasks"][0]["containers"]
+    # ECS does not expose the task definition's environment when
+    # describing tasks
+    assert "FOO" not in response
 
     response = ecs.run_task(
         taskDefinition="container",

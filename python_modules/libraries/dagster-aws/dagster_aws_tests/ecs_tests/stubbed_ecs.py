@@ -1,3 +1,4 @@
+import copy
 import itertools
 import uuid
 from collections import defaultdict
@@ -41,7 +42,7 @@ def stubbed(function):
             if not self.stub_count:
                 self.stubber.deactivate()
                 self.stubber.assert_no_pending_responses()
-            return response
+            return copy.deepcopy(response)
         except Exception as ex:
             # Exceptions should reset the stubber
             self.stub_count = 0
@@ -80,6 +81,7 @@ class StubbedEcs:
     def __init__(self, boto3_client):
         self.client = boto3_client
         self.stubber = Stubber(self.client)
+        self.meta = self.client.meta
 
         self.tasks = defaultdict(list)
         self.task_definitions = defaultdict(list)
@@ -168,6 +170,20 @@ class StubbedEcs:
         return self.client.list_tags_for_resource(**kwargs)
 
     @stubbed
+    def list_task_definitions(self, **kwargs):
+        arns = [
+            task_definition["taskDefinitionArn"]
+            for task_definition in itertools.chain.from_iterable(self.task_definitions.values())
+        ]
+
+        self.stubber.add_response(
+            method="list_task_definitions",
+            service_response={"taskDefinitionArns": arns},
+            expected_params={**kwargs},
+        )
+        return self.client.list_task_definitions(**kwargs)
+
+    @stubbed
     def list_tasks(self, **kwargs):
         """
         Only filtering by family and cluster is stubbed.
@@ -230,7 +246,11 @@ class StubbedEcs:
             )["taskDefinition"]
 
             is_awsvpc = task_definition.get("networkMode") == "awsvpc"
-            containers = task_definition.get("containerDefinitions", [])
+            containers = []
+            for container in task_definition.get("containerDefinitions", []):
+                containers.append(
+                    {key: value for key, value in container.items() if key in ["name", "image"]}
+                )
 
             network_configuration = kwargs.get("networkConfiguration", {})
             vpc_configuration = network_configuration.get("awsvpcConfiguration")
@@ -303,8 +323,8 @@ class StubbedEcs:
 
         if tasks:
             stopped_task = tasks[0]
-            stopped_task["lastStatus"] = "STOPPED"
             self.tasks[cluster].remove(tasks[0])
+            stopped_task["lastStatus"] = "STOPPED"
             self.tasks[cluster].append(stopped_task)
             self.stubber.add_response(
                 method="stop_task",
@@ -353,7 +373,7 @@ class StubbedEcs:
         return self._arn("cluster", self._cluster(cluster))
 
     def _task_arn(self, cluster):
-        return self._arn("task", f"{self._cluster(cluster)}/{uuid.uuid4()})")
+        return self._arn("task", f"{self._cluster(cluster)}/{uuid.uuid4()}")
 
     def _task_definition_arn(self, family, revision):
         return self._arn("task-definition", f"{family}:{revision}")

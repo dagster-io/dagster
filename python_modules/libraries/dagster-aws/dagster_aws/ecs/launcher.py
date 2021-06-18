@@ -1,6 +1,6 @@
 import os
 from dataclasses import dataclass
-from typing import List
+from typing import Any, Dict, List
 
 import boto3
 import requests
@@ -12,12 +12,11 @@ from dagster.utils.backcompat import experimental_class_warning
 
 @dataclass
 class TaskMetadata:
-    arn: str
-    container: str
-    family: str
     cluster: str
     subnets: List[str]
     security_groups: List[str]
+    task_definition: Dict[str, Any]
+    container_definition: Dict[str, Any]
 
 
 class EcsRunLauncher(RunLauncher, ConfigurableClass):
@@ -49,35 +48,78 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
 
     def launch_run(self, run, external_pipeline):
         """
-        Launch a run using the same task definition as the parent process but
-        overriding its command to execute `dagster api execute_run` instead.
+        Launch a run in an ECS task.
 
         Currently, Fargate is the only supported launchType and awsvpc is the
         only supported networkMode. These are the defaults that are set up by
         docker-compose when you use the Dagster ECS reference deployment.
 
-        When using the Dagster ECS reference deployment, the parent process
-        will be running in a daemon task so pipeline runs will all be part of
-        the daemon task definition family.
+        This method creates a new task definition revision for every run.
+        First, the process that calls this method finds its own task
+        definition. Next, it creates a new task definition based on its own
+        with several important overrides:
 
-        TODO: Support creating a new task definition (with custom config)
-              instead of spawning from the parent process.
+        1. The command is replaced with a call to `dagster api execute_run`
+        2. The image is overridden with the pipeline's origin's image.
         """
         metadata = self._task_metadata()
+        pipeline_origin = external_pipeline.get_python_origin()
+        image = pipeline_origin.repository_origin.container_image
 
         input_json = serialize_dagster_namedtuple(
             ExecuteRunArgs(
-                pipeline_origin=external_pipeline.get_python_origin(),
+                pipeline_origin=pipeline_origin,
                 pipeline_run_id=run.run_id,
                 instance_ref=self._instance.get_ref(),
             )
         )
         command = ["dagster", "api", "execute_run", input_json]
 
+        # Start with the current processes's tasks's definition but remove extra
+        # keys that aren't useful for creating a new task definition (status,
+        # revision, etc.)
+        expected_keys = [
+            key
+            for key in self.ecs.meta.service_model.shape_for(
+                "RegisterTaskDefinitionRequest"
+            ).members
+        ]
+        task_definition = dict(
+            (key, metadata.task_definition[key])
+            for key in expected_keys
+            if key in metadata.task_definition.keys()
+        )
+
+        # The current process might not be running in a container that has the
+        # pipeline's code installed. Inherit most of the processes's container
+        # definition (things like environment, dependencies, etc.) but replace
+        # the image with the pipeline origin's image and give it a new name.
+        # TODO: Configurable task definitions
+        container_definitions = task_definition["containerDefinitions"]
+        container_definitions.remove(metadata.container_definition)
+        container_definitions.append(
+            {**metadata.container_definition, "name": "run", "image": image}
+        )
+        task_definition = {
+            **task_definition,
+            "family": "dagster-run",
+            "containerDefinitions": container_definitions,
+        }
+
+        # Register the task overridden task definition as a revision to the
+        # "dagster-run" family.
+        # TODO: Only register the task definition if a matching one doesn't
+        # already exist. Otherwise, we risk exhausting the revisions limit
+        # (1,000,000 per family) with unnecessary revisions:
+        # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-quotas.html
+        self.ecs.register_task_definition(**task_definition)
+
+        # Run a task using the new task definition and the same network
+        # configuration as this processes's task.
         response = self.ecs.run_task(
-            taskDefinition=metadata.family,
+            taskDefinition=task_definition["family"],
             cluster=metadata.cluster,
-            overrides={"containerOverrides": [{"name": metadata.container, "command": command}]},
+            overrides={"containerOverrides": [{"name": "run", "command": command}]},
             networkConfiguration={
                 "awsvpcConfiguration": {
                     "subnets": metadata.subnets,
@@ -118,23 +160,19 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         """
         ECS injects an environment variable into each Fargate task. The value
         of this environment variable is a url that can be queried to introspect
-        information about the running task:
+        information about the current processes's running task:
 
         https://docs.aws.amazon.com/AmazonECS/latest/userguide/task-metadata-endpoint-v4-fargate.html
-
-        We use this so we can spawn new tasks using the same task definition as
-        the existing process.
         """
         container_metadata_uri = os.environ.get("ECS_CONTAINER_METADATA_URI_V4")
-        container = requests.get(container_metadata_uri).json()["Name"]
+        name = requests.get(container_metadata_uri).json()["Name"]
 
         task_metadata_uri = container_metadata_uri + "/task"
         response = requests.get(task_metadata_uri).json()
         cluster = response.get("Cluster")
-        arn = response.get("TaskARN")
-        family = response.get("Family")
+        task_arn = response.get("TaskARN")
 
-        task = self.ecs.describe_tasks(tasks=[arn], cluster=cluster)["tasks"][0]
+        task = self.ecs.describe_tasks(tasks=[task_arn], cluster=cluster)["tasks"][0]
         enis = []
         subnets = []
         for attachment in task["attachments"]:
@@ -150,11 +188,25 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             for group in eni.groups:
                 security_groups.append(group["GroupId"])
 
+        task_definition_arn = task["taskDefinitionArn"]
+        task_definition = self.ecs.describe_task_definition(taskDefinition=task_definition_arn)[
+            "taskDefinition"
+        ]
+
+        container_definition = next(
+            iter(
+                [
+                    container
+                    for container in task_definition["containerDefinitions"]
+                    if container["name"] == name
+                ]
+            )
+        )
+
         return TaskMetadata(
-            arn=arn,
-            container=container,
-            family=family,
             cluster=cluster,
             subnets=subnets,
             security_groups=security_groups,
+            task_definition=task_definition,
+            container_definition=container_definition,
         )
