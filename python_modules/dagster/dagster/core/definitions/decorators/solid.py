@@ -1,9 +1,8 @@
-import inspect
 from functools import lru_cache, update_wrapper
-from typing import Any, Callable, Dict, List, NamedTuple, Optional, Set, Union, cast
+from typing import Any, Callable, Dict, List, NamedTuple, Optional, Sequence, Set, Union, cast
 
 from dagster import check
-from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import DagsterTypeKind
 from dagster.seven import funcsigs
 
@@ -13,7 +12,6 @@ from ...decorator_utils import (
     positional_arg_name_list,
     validate_expected_params,
 )
-from ..events import AssetMaterialization, ExpectationResult, Materialization, Output
 from ..inference import infer_input_props, infer_output_props
 from ..input import InputDefinition
 from ..output import OutputDefinition
@@ -51,8 +49,8 @@ class _Solid:
     def __init__(
         self,
         name: Optional[str] = None,
-        input_defs: Optional[List[InputDefinition]] = None,
-        output_defs: Optional[List[OutputDefinition]] = None,
+        input_defs: Optional[Sequence[InputDefinition]] = None,
+        output_defs: Optional[Sequence[OutputDefinition]] = None,
         description: Optional[str] = None,
         required_resource_keys: Optional[Set[str]] = None,
         config_schema: Optional[Union[Any, Dict[str, Any]]] = None,
@@ -128,8 +126,8 @@ class _Solid:
 def solid(
     name: Union[Callable[..., Any], Optional[str]] = None,
     description: Optional[str] = None,
-    input_defs: Optional[List[InputDefinition]] = None,
-    output_defs: Optional[List[OutputDefinition]] = None,
+    input_defs: Optional[Sequence[InputDefinition]] = None,
+    output_defs: Optional[Sequence[OutputDefinition]] = None,
     config_schema: Optional[Union[Any, Dict[str, Any]]] = None,
     required_resource_keys: Optional[Set[str]] = None,
     tags: Optional[Dict[str, Any]] = None,
@@ -260,71 +258,6 @@ def solid(
         version=version,
         retry_policy=retry_policy,
     )
-
-
-def _validate_and_coerce_solid_result_to_iterator(result, context, output_defs):
-
-    if isinstance(result, (AssetMaterialization, Materialization, ExpectationResult)):
-        raise DagsterInvariantViolationError(
-            (
-                "Error in solid {solid_name}: If you are returning an AssetMaterialization "
-                "or an ExpectationResult from solid you must yield them to avoid "
-                "ambiguity with an implied result from returning a value.".format(
-                    solid_name=context.solid.name
-                )
-            )
-        )
-
-    if inspect.isgenerator(result):
-        # this happens when a user explicitly returns a generator in the solid
-        for event in result:
-            yield event
-    elif isinstance(result, Output):
-        yield result
-    elif len(output_defs) == 1:
-        if result is None and output_defs[0].is_required is False:
-            context.log.warn(
-                'Value "None" returned for non-required output "{output_name}" of solid {solid_name}. '
-                "This value will be passed to downstream solids. For conditional execution use\n"
-                '  yield Output(value, "{output_name}")\n'
-                "when you want the downstream solids to execute, "
-                "and do not yield it when you want downstream solids to skip.".format(
-                    output_name=output_defs[0].name, solid_name=context.solid.name
-                )
-            )
-        yield Output(value=result, output_name=output_defs[0].name)
-    elif result is not None:
-        if not output_defs:
-            raise DagsterInvariantViolationError(
-                (
-                    "Error in solid {solid_name}: Unexpectedly returned output {result} "
-                    "of type {type_}. Solid is explicitly defined to return no "
-                    "results."
-                ).format(solid_name=context.solid.name, result=result, type_=type(result))
-            )
-
-        raise DagsterInvariantViolationError(
-            (
-                "Error in solid {solid_name}: Solid unexpectedly returned "
-                "output {result} of type {type_}. Should "
-                "be a generator, containing or yielding "
-                "{n_results} results: {{{expected_results}}}."
-            ).format(
-                solid_name=context.solid.name,
-                result=result,
-                type_=type(result),
-                n_results=len(output_defs),
-                expected_results=", ".join(
-                    [
-                        "'{result_name}': {dagster_type}".format(
-                            result_name=output_def.name,
-                            dagster_type=output_def.dagster_type,
-                        )
-                        for output_def in output_defs
-                    ]
-                ),
-            )
-        )
 
 
 def resolve_checked_solid_fn_inputs(

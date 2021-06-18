@@ -312,3 +312,7 @@ class InputMapping(namedtuple("_InputMapping", "definition maps_to")):
     @property
     def maps_to_fan_in(self):
         return isinstance(self.maps_to, FanInInputPointer)
+
+
+class In(InputDefinition):
+    """Experimental replacement for InputDefinition, intended to decrease verbosity."""
