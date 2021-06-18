@@ -3,6 +3,7 @@ import Fuse from 'fuse.js';
 import * as React from 'react';
 
 import {featureEnabled, FeatureFlag} from '../app/Flags';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {buildRepoPath} from '../workspace/buildRepoAddress';
 import {workspacePath} from '../workspace/workspacePath';
 
@@ -160,6 +161,9 @@ const SEARCH_BOOTSTRAP_QUERY = gql`
   query SearchBootstrapQuery {
     workspaceOrError {
       __typename
+      ... on PythonError {
+        ...PythonErrorFragment
+      }
       ... on Workspace {
         locationEntries {
           __typename
@@ -201,6 +205,7 @@ const SEARCH_BOOTSTRAP_QUERY = gql`
       }
     }
   }
+  ${PYTHON_ERROR_FRAGMENT}
 `;
 
 const SEARCH_SECONDARY_QUERY = gql`

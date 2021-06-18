@@ -1,7 +1,7 @@
 import sys
 
 from dagster import check
-from dagster.cli.workspace.context import WorkspaceRequestContext
+from dagster.cli.workspace.context import IWorkspaceRequestContext
 from dagster.config.validate import validate_config_from_snap
 from dagster.core.host_representation import (
     ExternalExecutionPlan,
@@ -194,7 +194,7 @@ def fetch_workspace(workspace_request_context):
     from ..schema.external import GrapheneWorkspace, GrapheneWorkspaceLocationEntry
 
     check.inst_param(
-        workspace_request_context, "workspace_request_context", WorkspaceRequestContext
+        workspace_request_context, "workspace_request_context", IWorkspaceRequestContext
     )
 
     nodes = [
