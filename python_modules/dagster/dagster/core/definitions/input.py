@@ -3,7 +3,11 @@ from typing import Optional, Set
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
-from dagster.core.errors import DagsterError, DagsterInvalidDefinitionError
+from dagster.core.errors import (
+    DagsterError,
+    DagsterInvalidDefinitionError,
+    DagsterInvariantViolationError,
+)
 from dagster.core.types.dagster_type import (
     BuiltinScalarDagsterType,
     DagsterType,
@@ -71,7 +75,7 @@ class InputDefinition:
 
     def __init__(
         self,
-        name,
+        name=None,
         dagster_type=None,
         description=None,
         default_value=NoValueSentinel,
@@ -81,7 +85,7 @@ class InputDefinition:
         asset_partitions=None,
         # when adding new params, make sure to update combine_with_inferred below
     ):
-        self._name = check_valid_name(name)
+        self._name = check_valid_name(name) if name else None
 
         self._type_not_set = dagster_type is None
         self._dagster_type = check.inst(resolve_dagster_type(dagster_type), DagsterType)
@@ -220,6 +224,22 @@ class InputDefinition:
             default_value=inferred.default_value,
         )
 
+    @staticmethod
+    def create_from_in(inferred: InferredInputProps, inp: "In") -> "InputDefinition":
+        dagster_type = (
+            inp.dagster_type if inp.dagster_type is not NoValueSentinel else inferred.annotation
+        )
+        return InputDefinition(
+            name=inp.name,
+            dagster_type=dagster_type,
+            description=inp.description,
+            default_value=inp.default_value,
+            root_manager_key=inp.root_manager_key,
+            metadata=inp.metadata,
+            asset_key=inp.asset_key,
+            asset_partitions=inp.asset_partitions,
+        )
+
     def combine_with_inferred(self, inferred: InferredInputProps) -> "InputDefinition":
         """
         Return a new InputDefinition that merges this ones properties with those inferred from type signature.
@@ -314,5 +334,66 @@ class InputMapping(namedtuple("_InputMapping", "definition maps_to")):
         return isinstance(self.maps_to, FanInInputPointer)
 
 
-class In(InputDefinition):
+class In(
+    namedtuple(
+        "_In",
+        "name dagster_type description default_value root_manager_key metadata "
+        "asset_key asset_partitions",
+    )
+):
     """Experimental replacement for InputDefinition, intended to decrease verbosity."""
+
+    def __new__(
+        cls,
+        name=None,
+        dagster_type=NoValueSentinel,
+        description=None,
+        default_value=NoValueSentinel,
+        root_manager_key=None,
+        metadata=None,
+        asset_key=None,
+        asset_partitions=None,
+    ):
+        return super(In, cls).__new__(
+            cls,
+            name=name,
+            dagster_type=dagster_type,
+            description=description,
+            default_value=default_value,
+            root_manager_key=root_manager_key,
+            metadata=metadata,
+            asset_key=asset_key,
+            asset_partitions=asset_partitions,
+        )
+
+    def for_name(self, name: str) -> "In":
+        if self.name is not None:
+            raise DagsterInvariantViolationError(
+                "Attempted to map a name to an In, but a name was already provided for this In."
+            )
+        else:
+            return In(
+                name,
+                self.dagster_type,
+                self.description,
+                self.default_value,
+                self.root_manager_key,
+                self.metadata,
+                self.asset_key,
+                self.asset_partitions,
+            )
+
+    def to_definition(self, inferred: InferredInputProps) -> InputDefinition:
+        dagster_type = (
+            self.dagster_type if self.dagster_type is not NoValueSentinel else inferred.annotation
+        )
+        return InputDefinition(
+            name=self.name,
+            dagster_type=dagster_type,
+            description=self.description,
+            default_value=self.default_value,
+            root_manager_key=self.root_manager_key,
+            metadata=self.metadata,
+            asset_key=self.asset_key,
+            asset_partitions=self.asset_partitions,
+        )

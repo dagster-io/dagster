@@ -1,16 +1,25 @@
 from collections import namedtuple
-from typing import Any, List, NamedTuple, Optional, Set, TypeVar
+from typing import Any, Dict, List, NamedTuple, Optional, Set, TypeVar, Union
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
-from dagster.core.errors import DagsterError, DagsterInvalidDefinitionError
+from dagster.core.errors import (
+    DagsterError,
+    DagsterInvalidDefinitionError,
+    DagsterInvariantViolationError,
+)
 from dagster.core.types.dagster_type import DagsterType, resolve_dagster_type
 from dagster.utils.backcompat import experimental_arg_warning
 
 from .inference import InferredOutputProps
+from .input import NoValueSentinel
 from .utils import DEFAULT_OUTPUT, check_valid_name
 
 TOut = TypeVar("TOut", bound="OutputDefinition")
+
+
+class NoNameSentinel:
+    pass
 
 
 class OutputDefinition:
@@ -57,7 +66,11 @@ class OutputDefinition:
         asset_partitions=None,
         # make sure new parameters are updated in combine_with_inferred below
     ):
-        self._name = check_valid_name(check.opt_str_param(name, "name", DEFAULT_OUTPUT))
+        self._name = (
+            check_valid_name(check.opt_str_param(name, "name", DEFAULT_OUTPUT))
+            if name is not NoNameSentinel
+            else None
+        )
         self._type_not_set = dagster_type is None
         self._dagster_type = resolve_dagster_type(dagster_type)
         self._description = check.opt_str_param(description, "description")
@@ -281,15 +294,99 @@ class OutputMapping(namedtuple("_OutputMapping", "definition maps_from")):
         )
 
 
-class Out(OutputDefinition):
+class Out(
+    namedtuple(
+        "_Out",
+        "dagster_type name description is_required io_manager_key metadata asset_key "
+        "asset_partitions",
+    )
+):
     """Experimental replacement for OutputDefinition intended to decrease verbosity."""
+
+    def __new__(
+        cls,
+        dagster_type=NoValueSentinel,
+        name=None,
+        description=None,
+        is_required=None,
+        io_manager_key=None,
+        metadata=None,
+        asset_key=None,
+        asset_partitions=None,
+        # make sure new parameters are updated in combine_with_inferred below
+    ):
+        return super(Out, cls).__new__(
+            cls,
+            dagster_type=dagster_type,
+            name=name,
+            description=description,
+            is_required=is_required,
+            io_manager_key=io_manager_key,
+            metadata=metadata,
+            asset_key=asset_key,
+            asset_partitions=asset_partitions,
+        )
+
+    def to_definition(self, inferred: InferredOutputProps) -> "OutputDefinition":
+        dagster_type = (
+            self.dagster_type if self.dagster_type is not NoValueSentinel else inferred.annotation
+        )
+
+        return OutputDefinition(
+            dagster_type=dagster_type,
+            name=self.name,
+            description=self.description,
+            is_required=self.is_required,
+            io_manager_key=self.io_manager_key,
+            metadata=self.metadata,
+            asset_key=self.asset_key,
+            asset_partitions=self.asset_partitions,
+        )
 
 
 class MultiOut(NamedTuple("_MultiOut", [("outs", List[Out])])):
     """Experimental replacement for providing a list of output definitions, to decrease verbosity."""
 
-    def __new__(cls, outs: List[Out]):
+    def __new__(cls, outs: Union[List[Out], Dict[str, Out]]):
+        if isinstance(outs, dict):
+            if any([out.name is not None for out in outs.values()]):
+                raise DagsterInvariantViolationError(
+                    "Cannot provide name to Out if providing a dictionary of outs. The Out will "
+                    "take on the dict key as the name."
+                )
+            outs = [
+                Out(
+                    dagster_type=out.dagster_type,
+                    name=key,
+                    description=out.description,
+                    is_required=out.is_required,
+                    io_manager_key=out.io_manager_key,
+                    metadata=out.metadata,
+                    asset_key=out.asset_key,
+                    asset_partitions=out.asset_partitions,
+                )
+                for key, out in outs.items()
+            ]
         return super(MultiOut, cls).__new__(
             cls,
             check.list_param(outs, "outs", Out),
         )
+
+    def to_definition_list(self, inferred: InferredOutputProps) -> List[OutputDefinition]:
+        output_defs = []
+        for idx, out in enumerate(self.outs):
+            annotation_type = inferred.annotation.__args__[idx] if inferred.annotation else None
+            output_defs.append(
+                OutputDefinition(
+                    dagster_type=annotation_type,
+                    name=out.name,
+                    description=out.description,
+                    is_required=out.is_required,
+                    io_manager_key=out.io_manager_key,
+                    metadata=out.metadata,
+                    asset_key=out.asset_key,
+                    asset_partitions=out.asset_partitions,
+                )
+            )
+
+        return output_defs

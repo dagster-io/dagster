@@ -106,3 +106,51 @@ def test_multi_out_optional():
 
     result = execute_op_in_job(my_op)
     assert result.output_for_solid("my_op", "b") == 2
+
+
+def test_ins_dict():
+    @op
+    def upstream1():
+        return 5
+
+    @op
+    def upstream2():
+        return "6"
+
+    @op(
+        ins={
+            "a": In(metadata={"x": 1}),
+            "b": In(metadata={"y": 2}),
+        }
+    )
+    def my_op(a: int, b: str) -> int:
+        return a + int(b)
+
+    assert my_op.input_defs[0].dagster_type.typing_type == int
+    assert my_op.input_defs[1].dagster_type.typing_type == str
+
+    @graph
+    def my_graph():
+        my_op(a=upstream1(), b=upstream2())
+
+    result = execute_pipeline(my_graph.to_job())
+    assert result.success
+
+
+def test_multi_out_dict():
+    @op(out=MultiOut({"a": Out(metadata={"x": 1}), "b": Out(metadata={"y": 2})}))
+    def my_op() -> Tuple[int, str]:
+        return 1, "q"
+
+    assert len(my_op.output_defs) == 2
+
+    assert my_op.output_defs[0].metadata == {"x": 1}
+    assert my_op.output_defs[0].name == "a"
+    assert my_op.output_defs[0].dagster_type.typing_type == int
+    assert my_op.output_defs[1].metadata == {"y": 2}
+    assert my_op.output_defs[1].name == "b"
+    assert my_op.output_defs[1].dagster_type.typing_type == str
+
+    result = execute_op_in_job(my_op)
+    assert result.output_for_solid("my_op", "a") == 1
+    assert result.output_for_solid("my_op", "b") == "q"
