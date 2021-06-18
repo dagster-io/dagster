@@ -73,13 +73,9 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 Create the name of the service account to use
 */}}
 {{- define "dagsterUserDeployments.serviceAccountName" -}}
-{{- $serviceAccountName := "" }}
-
-{{- if .Values.global }}
-{{- $serviceAccountName = .Values.global.serviceAccountName }}
-{{- end }}
-
-{{- $serviceAccountName | default (printf "%s-user-deployments" (include "dagster.fullname" .)) }}
+{{- $global := .Values.global | default dict -}}
+{{- $serviceAccount := .Values.serviceAccount | default dict -}}
+{{- $global.serviceAccountName | default $serviceAccount.name | default (printf "%s-user-deployments" (include "dagster.fullname" .)) }}
 {{- end -}}
 
 {{- define "dagsterUserDeployments.postgresql.secretName" -}}

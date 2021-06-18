@@ -111,6 +111,11 @@ imagePullSecrets: []
 
 serviceAccount:
   create: true
+
+  # Specifies the name for the service account to reference in the chart. Note that setting
+  # the global service account name will override this field.
+  name: ""
+
   annotations: {}
 
 ####################################################################################################
