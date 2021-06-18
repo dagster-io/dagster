@@ -17,14 +17,16 @@ class TaskMetadata:
     family: str
     cluster: str
     subnets: List[str]
+    security_groups: List[str]
 
 
 class EcsRunLauncher(RunLauncher, ConfigurableClass):
-    def __init__(self, inst_data=None, boto3_client=boto3.client("ecs", region_name="us-east-1")):
+    def __init__(self, inst_data=None, boto3_client=boto3.client("ecs")):
         experimental_class_warning("EcsRunLauncher")
 
         self._inst_data = inst_data
         self.ecs = boto3_client
+        self.ec2 = boto3.resource("ec2")
 
     @property
     def inst_data(self):
@@ -80,6 +82,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                 "awsvpcConfiguration": {
                     "subnets": metadata.subnets,
                     "assignPublicIp": "ENABLED",
+                    "securityGroups": metadata.security_groups,
                 }
             },
             launchType="FARGATE",
@@ -132,13 +135,26 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         family = response.get("Family")
 
         task = self.ecs.describe_tasks(tasks=[arn], cluster=cluster)["tasks"][0]
+        enis = []
         subnets = []
         for attachment in task["attachments"]:
             if attachment["type"] == "ElasticNetworkInterface":
                 for detail in attachment["details"]:
                     if detail["name"] == "subnetId":
                         subnets.append(detail["value"])
+                    if detail["name"] == "networkInterfaceId":
+                        enis.append(self.ec2.NetworkInterface(detail["value"]))
+
+        security_groups = []
+        for eni in enis:
+            for group in eni.groups:
+                security_groups.append(group["GroupId"])
 
         return TaskMetadata(
-            arn=arn, container=container, family=family, cluster=cluster, subnets=subnets
+            arn=arn,
+            container=container,
+            family=family,
+            cluster=cluster,
+            subnets=subnets,
+            security_groups=security_groups,
         )

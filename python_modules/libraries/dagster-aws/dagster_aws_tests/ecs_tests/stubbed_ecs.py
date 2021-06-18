@@ -3,6 +3,7 @@ import uuid
 from collections import defaultdict
 from operator import itemgetter
 
+import boto3
 from botocore.exceptions import ClientError
 from botocore.stub import Stubber
 
@@ -258,10 +259,25 @@ class StubbedEcs:
 
                 if vpc_configuration:
                     for subnet in vpc_configuration["subnets"]:
+                        ec2 = boto3.resource("ec2", region_name=self.client.meta.region_name)
+                        subnet = ec2.Subnet(subnet)
+                        # The provided subnet doesn't exist
+                        subnet.load()
+                        network_interfaces = list(subnet.network_interfaces.all())
+                        # There's no Network Interface associated with the subnet
+                        if not network_interfaces:
+                            raise StubbedEcsError
+
                         task["attachments"].append(
                             {
                                 "type": "ElasticNetworkInterface",
-                                "details": [{"name": "subnetId", "value": subnet}],
+                                "details": [
+                                    {"name": "subnetId", "value": subnet.id},
+                                    {
+                                        "name": "networkInterfaceId",
+                                        "value": network_interfaces[0].id,
+                                    },
+                                ],
                             }
                         )
 

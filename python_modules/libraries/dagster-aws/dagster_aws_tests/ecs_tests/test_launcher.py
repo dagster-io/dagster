@@ -17,15 +17,20 @@ def task_definition(ecs):
 
 
 @pytest.fixture
-def task(ecs, task_definition):
+def task(ecs, network_interface, security_group, task_definition):
     return ecs.run_task(
         taskDefinition=task_definition["family"],
-        networkConfiguration={"awsvpcConfiguration": {"subnets": ["subnet-12345"]}},
+        networkConfiguration={
+            "awsvpcConfiguration": {
+                "subnets": [network_interface.subnet_id],
+                "securityGroups": [security_group.id],
+            },
+        },
     )["tasks"][0]
 
 
 @pytest.fixture
-def instance(ecs, task, task_definition, monkeypatch, requests_mock):
+def instance(ecs, ec2, task, task_definition, monkeypatch, requests_mock):
     container_uri = "http://metadata_host"
     monkeypatch.setenv("ECS_CONTAINER_METADATA_URI_V4", container_uri)
     container = task["containers"][0]["name"]
@@ -43,6 +48,7 @@ def instance(ecs, task, task_definition, monkeypatch, requests_mock):
     overrides = {"run_launcher": {"module": "dagster_aws.ecs", "class": "EcsRunLauncher"}}
     with instance_for_test(overrides) as instance:
         monkeypatch.setattr(instance.run_launcher, "ecs", ecs)
+        monkeypatch.setattr(instance.run_launcher, "ec2", ec2)
         yield instance
 
 
@@ -66,7 +72,7 @@ def run(instance, pipeline):
     return instance.create_run_for_pipeline(pipeline)
 
 
-def test_launching(ecs, instance, run, external_pipeline):
+def test_launching(ecs, instance, run, external_pipeline, subnet, network_interface):
     assert not run.tags
     initial_tasks = ecs.list_tasks()["taskArns"]
 
@@ -87,6 +93,8 @@ def test_launching(ecs, instance, run, external_pipeline):
 
     # We override the command to run our pipeline
     task = ecs.describe_tasks(tasks=[task_arn])
+    assert subnet.id in str(task)
+    assert network_interface.id in str(task)
     assert "execute_run" in task["tasks"][0]["overrides"]["containerOverrides"][0]["command"]
 
 

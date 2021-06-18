@@ -139,7 +139,7 @@ def test_register_task_definition(ecs):
     assert response["taskDefinition"]["networkMode"] == "bridge"
 
 
-def test_run_task(ecs):
+def test_run_task(ecs, subnet):
     with pytest.raises(ParamValidationError):
         # The task doesn't exist
         ecs.run_task()
@@ -171,16 +171,32 @@ def test_run_task(ecs):
         # It must have a networkConfiguration if networkMode is "awsvpc"
         ecs.run_task(taskDefinition="awsvpc")
 
+    # The subnet doesn't exist
+    with pytest.raises(ClientError):
+        ecs.run_task(
+            taskDefinition="awsvpc",
+            networkConfiguration={"awsvpcConfiguration": {"subnets": ["subnet-12345"]}},
+        )
+
+    #  The subnet exists but there's no network interface
+    with pytest.raises(ClientError):
+        ecs.run_task(
+            taskDefinition="awsvpc",
+            networkConfiguration={"awsvpcConfiguration": {"subnets": [subnet.id]}},
+        )
+
+    network_interface = subnet.create_network_interface()
     response = ecs.run_task(
         taskDefinition="awsvpc",
-        networkConfiguration={"awsvpcConfiguration": {"subnets": ["subnet-12345"]}},
+        networkConfiguration={"awsvpcConfiguration": {"subnets": [subnet.id]}},
     )
+
     assert len(response["tasks"]) == 1
     assert "awsvpc" in response["tasks"][0]["taskDefinitionArn"]
     attachment = response["tasks"][0]["attachments"][0]
     assert attachment["type"] == "ElasticNetworkInterface"
-    assert attachment["details"][0]["name"] == "subnetId"
-    assert attachment["details"][0]["value"] == "subnet-12345"
+    assert {"name": "subnetId", "value": subnet.id} in attachment["details"]
+    assert {"name": "networkInterfaceId", "value": network_interface.id} in attachment["details"]
 
     # containers and overrides are included
     ecs.register_task_definition(
