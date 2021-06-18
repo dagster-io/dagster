@@ -172,6 +172,11 @@ class GraphDefinition(NodeDefinition):
         return list(set(self._solid_dict.values()))
 
     @property
+    def solid_dict(self) -> Dict[str, Solid]:
+        """Dict[str, Solid]: A dict of top-level solids in the graph, keyed on solid names."""
+        return self._solid_dict
+
+    @property
     def node_defs(self) -> List[NodeDefinition]:
         """List[NodeDefinition]: List of nodes in the graph."""
         return self._node_defs

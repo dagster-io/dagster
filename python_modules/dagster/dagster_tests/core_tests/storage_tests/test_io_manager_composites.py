@@ -117,3 +117,61 @@ def test_composite_solid_upstream_output():
 
     result = execute_pipeline(my_pipeline)
     assert result.success
+
+
+def test_io_manager_config_inside_composite():
+    stored_dict = {}
+
+    @io_manager(output_config_schema={"output_suffix": str})
+    def inner_manager(_):
+        class MyHardcodedIOManager(IOManager):
+            def handle_output(self, context, obj):
+                keys = tuple(
+                    context.get_run_scoped_output_identifier() + [context.config["output_suffix"]]
+                )
+                stored_dict[keys] = obj
+
+            def load_input(self, context):
+                keys = tuple(
+                    context.upstream_output.get_run_scoped_output_identifier()
+                    + [context.upstream_output.config["output_suffix"]]
+                )
+                return stored_dict[keys]
+
+        return MyHardcodedIOManager()
+
+    @solid(output_defs=[OutputDefinition(io_manager_key="inner_manager")])
+    def my_solid(_):
+        return "hello"
+
+    @solid
+    def my_solid_takes_input(_, x):
+        assert x == "hello"
+        return x
+
+    @composite_solid
+    def my_composite_solid():
+        return my_solid_takes_input(my_solid())
+
+    @pipeline(
+        mode_defs=[ModeDefinition(name="default", resource_defs={"inner_manager": inner_manager})]
+    )
+    def my_pipeline():
+        my_composite_solid()
+
+    result = execute_pipeline(
+        my_pipeline,
+        run_config={
+            "solids": {
+                "my_composite_solid": {
+                    "solids": {"my_solid": {"outputs": {"result": {"output_suffix": "my_suffix"}}}},
+                }
+            }
+        },
+    )
+    assert result.success
+    assert result.output_for_solid("my_composite_solid.my_solid") == "hello"
+    assert (
+        stored_dict.get((result.run_id, "my_composite_solid.my_solid", "result", "my_suffix"))
+        == "hello"
+    )

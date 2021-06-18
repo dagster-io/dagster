@@ -372,3 +372,34 @@ def test_no_root_manager_composite():
         )
         def _(data):
             _ = inner_solid(data=data)
+
+
+def test_root_manager_inside_composite():
+    @root_input_manager(input_config_schema={"test": str})
+    def my_root(context):
+        return context.config["test"]
+
+    @solid(input_defs=[InputDefinition("data", dagster_type=str, root_manager_key="my_root")])
+    def inner_solid(_, data):
+        return data
+
+    @composite_solid
+    def my_composite_solid():
+        return inner_solid()
+
+    @pipeline(mode_defs=[ModeDefinition(name="default", resource_defs={"my_root": my_root})])
+    def my_pipeline():
+        my_composite_solid()
+
+    result = execute_pipeline(
+        my_pipeline,
+        run_config={
+            "solids": {
+                "my_composite_solid": {
+                    "solids": {"inner_solid": {"inputs": {"data": {"test": "hello"}}}},
+                }
+            }
+        },
+    )
+
+    assert result.output_for_solid("my_composite_solid") == "hello"
