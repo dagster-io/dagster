@@ -105,6 +105,10 @@ deployments:
     service:
       annotations: {}
 
+# Specify secrets to run containers based on images in private registries. See:
+# https://kubernetes.io/docs/concepts/containers/images/#referring-to-an-imagepullsecrets-on-a-pod
+imagePullSecrets: []
+
 serviceAccount:
   create: true
   annotations: {}
