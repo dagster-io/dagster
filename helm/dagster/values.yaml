@@ -160,6 +160,7 @@ computeLogManager:
   #     verify: ~
   #     verifyCertPath: ~
   #     endpointUrl: ~
+  #     skipEmptyFiles: ~
   ##  Uncomment this configuration if the CustomComputeLogManager is selected.
   ##  Using this setting requires a custom Dagit image that defines the user specified
   ##  compute log manager in an installed python module.

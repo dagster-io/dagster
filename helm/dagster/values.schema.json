@@ -919,8 +919,7 @@
                 "storageAccount",
                 "container",
                 "secretKey"
-            ],
-            "additionalProperties": false
+            ]
         },
         "GCSComputeLogManager": {
             "title": "GCSComputeLogManager",
@@ -968,8 +967,7 @@
             },
             "required": [
                 "bucket"
-            ],
-            "additionalProperties": false
+            ]
         },
         "S3ComputeLogManager": {
             "title": "S3ComputeLogManager",
@@ -1063,12 +1061,22 @@
                             "type": "null"
                         }
                     ]
+                },
+                "skipEmptyFiles": {
+                    "title": "Skipemptyfiles",
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
                 "bucket"
-            ],
-            "additionalProperties": false
+            ]
         },
         "ConfigurableClass": {
             "title": "ConfigurableClass",
