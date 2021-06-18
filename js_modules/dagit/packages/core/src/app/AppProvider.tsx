@@ -5,7 +5,6 @@ import '@blueprintjs/table/lib/css/table.css';
 import '@blueprintjs/popover2/lib/css/blueprint-popover2.css';
 
 import {
-  concat,
   split,
   ApolloLink,
   ApolloClient,
@@ -83,19 +82,12 @@ interface Props {
     basePath?: string;
     permissions: PermissionsFromJSON;
     subscriptionParams?: {[key: string]: string};
-    sessionToken?: string;
   };
 }
 
 export const AppProvider: React.FC<Props> = (props) => {
   const {appCache, config} = props;
-  const {
-    sessionToken = '',
-    basePath = '',
-    permissions,
-    subscriptionParams = {},
-    graphqlURI,
-  } = config;
+  const {basePath = '', permissions, subscriptionParams = {}, graphqlURI} = config;
 
   const httpGraphqlURI = graphqlURI.replace('wss://', 'https://').replace('ws://', 'http://');
 
@@ -128,23 +120,7 @@ export const AppProvider: React.FC<Props> = (props) => {
       return forward(operation);
     });
 
-    let httpLink: ApolloLink = new HttpLink({uri: httpURI});
-
-    // add an auth header to the HTTP requests made by the app
-    // note that the websocket-based subscriptions will not carry this header
-    if (sessionToken) {
-      const authMiddleware = new ApolloLink((operation, forward) => {
-        operation.setContext({
-          headers: {
-            'Dagster-Session-Token': sessionToken,
-          },
-        });
-
-        return forward(operation);
-      });
-      httpLink = concat(authMiddleware, httpLink);
-    }
-
+    const httpLink = new HttpLink({uri: httpURI});
     const websocketLink = new WebSocketLink(websocketClient);
 
     // subscriptions should use the websocket link; queries & mutations should use HTTP
@@ -161,7 +137,7 @@ export const AppProvider: React.FC<Props> = (props) => {
       cache: appCache,
       link: ApolloLink.from([logLink, AppErrorLink(), timeStartLink, splitLink]),
     });
-  }, [appCache, httpURI, sessionToken, websocketClient]);
+  }, [appCache, httpURI, websocketClient]);
 
   const appContextValue = React.useMemo(
     () => ({
