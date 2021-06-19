@@ -102,6 +102,7 @@ if __name__ == "__main__":
                 "pytest-cov==2.10.1",
                 "pytest-dependency==0.5.1",
                 "pytest-mock==3.3.1",
+                "pytest-rerunfailures==10.0",
                 "pytest-runner==5.2",
                 "pytest-xdist==2.1.0",
                 "pytest==6.1.1",
