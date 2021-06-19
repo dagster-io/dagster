@@ -12,6 +12,7 @@ import { JobStatus } from "./../../types/globalTypes";
 
 export interface NavQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_modes {
   __typename: "Mode";
+  id: string;
   name: string;
 }
 

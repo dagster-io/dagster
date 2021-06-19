@@ -175,6 +175,7 @@ const EXECUTION_SESSION_CONTAINER_PIPELINE_FRAGMENT = gql`
     id
     ...ConfigEditorGeneratorPipelineFragment
     modes {
+      id
       name
       description
     }

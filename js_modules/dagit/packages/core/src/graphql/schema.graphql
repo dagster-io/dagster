@@ -227,6 +227,7 @@ type PythonError implements Error {
 }
 
 type Mode {
+  id: String!
   name: String!
   description: String
   resources: [Resource!]!

@@ -180,6 +180,7 @@ const SEARCH_BOOTSTRAP_QUERY = gql`
                   pipelines {
                     id
                     modes {
+                      id
                       name
                     }
                     name

@@ -102,6 +102,7 @@ export const SIDEBAR_PIPELINE_INFO_FRAGMENT = gql`
     name
     description
     modes {
+      id
       name
       description
       resources {

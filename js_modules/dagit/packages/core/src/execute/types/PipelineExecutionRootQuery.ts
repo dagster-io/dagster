@@ -45,6 +45,7 @@ export interface PipelineExecutionRootQuery_pipelineOrError_Pipeline_tags {
 
 export interface PipelineExecutionRootQuery_pipelineOrError_Pipeline_modes {
   __typename: "Mode";
+  id: string;
   name: string;
   description: string | null;
 }
