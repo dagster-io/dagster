@@ -133,6 +133,11 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         arn = response["tasks"][0]["taskArn"]
         self._instance.add_run_tags(run.run_id, self._run_tags(task_arn=arn))
         self.ecs.tag_resource(resourceArn=arn, tags=self._ecs_tags(run.run_id))
+        self._instance.report_engine_event(
+            message=f"Launching run in task {arn} on cluster {metadata.cluster}",
+            pipeline_run=run,
+            cls=self.__class__,
+        )
 
         return run.run_id
 
