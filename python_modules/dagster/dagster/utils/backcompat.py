@@ -1,3 +1,4 @@
+import inspect
 import warnings
 from functools import wraps
 
@@ -170,7 +171,7 @@ def experimental_class_param_warning(param_name, class_name, stacklevel=3):
     )
 
 
-def experimental(fn):
+def experimental(callable_):
     """
     Spews an "experimental" warning whenever the given callable is called. If the argument is a
     class, this means the warning will be emitted when the class is instantiated.
@@ -182,15 +183,31 @@ def experimental(fn):
             @experimental
             def my_experimental_function(my_arg):
                 do_stuff()
+
+            @experimental
+            class MyExperimentalClass:
+                pass
     """
-    check.callable_param(fn, "fn")
+    check.callable_param(callable_, "callable_")
 
-    @wraps(fn)
-    def _inner(*args, **kwargs):
-        experimental_fn_warning(fn.__name__, stacklevel=3)
-        return fn(*args, **kwargs)
+    if inspect.isfunction(callable_):
 
-    return _inner
+        @wraps(callable_)
+        def _inner(*args, **kwargs):
+            experimental_fn_warning(callable_.__name__, stacklevel=3)
+            return callable_(*args, **kwargs)
+
+        return _inner
+
+    if inspect.isclass(callable_):
+        undecorated_init = callable_.__init__
+
+        def __init__(self, *args, **kwargs):
+            experimental_class_warning(callable_.__name__, stacklevel=3)
+            undecorated_init(self, *args, **kwargs)
+
+        callable_.__init__ = __init__
+        return callable_
 
 
 def experimental_decorator(decorator):
