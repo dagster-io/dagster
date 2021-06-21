@@ -7,7 +7,7 @@ import requests
 from dagster.core.launcher.base import RunLauncher
 from dagster.grpc.types import ExecuteRunArgs
 from dagster.serdes import ConfigurableClass, serialize_dagster_namedtuple
-from dagster.utils.backcompat import experimental_class_warning
+from dagster.utils.backcompat import experimental
 
 
 @dataclass
@@ -19,9 +19,9 @@ class TaskMetadata:
     container_definition: Dict[str, Any]
 
 
+@experimental
 class EcsRunLauncher(RunLauncher, ConfigurableClass):
     def __init__(self, inst_data=None, boto3_client=boto3.client("ecs")):
-        experimental_class_warning("EcsRunLauncher")
 
         self._inst_data = inst_data
         self.ecs = boto3_client
