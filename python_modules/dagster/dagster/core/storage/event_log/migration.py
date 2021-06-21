@@ -1,6 +1,6 @@
 import sqlalchemy as db
 from dagster import AssetKey
-from dagster.core.events.log import EventRecord
+from dagster.core.events.log import EventLogEntry
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 from tqdm import tqdm
 
@@ -82,7 +82,7 @@ def sql_asset_event_generator(conn, cursor=None, batch_size=1000):
         for (record_id, event_json) in fetched:
             cursor = record_id
             event_record = deserialize_json_to_dagster_namedtuple(event_json)
-            if not isinstance(event_record, EventRecord):
+            if not isinstance(event_record, EventLogEntry):
                 continue
             yield (record_id, event_record)
 

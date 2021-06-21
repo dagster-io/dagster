@@ -105,6 +105,10 @@ Run storage
 
 .. autoclass:: PipelineRun
 
+.. autoclass:: PipelineRunStatus
+   :members:
+   :undoc-members:
+
 .. currentmodule:: dagster.core.storage.runs
 
 .. autoclass:: RunStorage

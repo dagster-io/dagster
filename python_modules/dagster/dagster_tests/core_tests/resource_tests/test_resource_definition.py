@@ -24,7 +24,7 @@ from dagster.core.definitions import pipeline
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.definitions.resource import make_values_resource
 from dagster.core.errors import DagsterConfigMappingFunctionError, DagsterInvalidDefinitionError
-from dagster.core.events.log import EventRecord, construct_event_logger
+from dagster.core.events.log import EventLogEntry, construct_event_logger
 from dagster.core.execution.api import create_execution_plan, execute_plan, execute_run
 from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import coerce_valid_log_level
@@ -963,7 +963,7 @@ def test_single_step_resource_event_logs():
     events = []
 
     def event_callback(record):
-        assert isinstance(record, EventRecord)
+        assert isinstance(record, EventLogEntry)
         events.append(record)
 
     @solid(required_resource_keys={"a"})
@@ -999,7 +999,7 @@ def test_single_step_resource_event_logs():
         log_messages = [
             event
             for event in events
-            if isinstance(event, EventRecord) and event.level == coerce_valid_log_level("INFO")
+            if isinstance(event, EventLogEntry) and event.level == coerce_valid_log_level("INFO")
         ]
         assert len(log_messages) == 2
 

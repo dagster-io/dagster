@@ -10,9 +10,12 @@ def get_version():
 
 
 if __name__ == "__main__":
+    ver = get_version()
+    # dont pin dev installs to avoid pip dep resolver issues
+    pin = "" if ver == "dev" else f"=={ver}"
     setup(
         name="dagster-mysql",
-        version=get_version(),
+        version=ver,
         author="Elementl",
         author_email="hello@elementl.com",
         license="Apache-2.0",
@@ -32,6 +35,6 @@ if __name__ == "__main__":
             ]
         },
         include_package_data=True,
-        install_requires=["dagster", "mysql-connector-python"],
+        install_requires=[f"dagster{pin}", "mysql-connector-python"],
         zip_safe=False,
     )

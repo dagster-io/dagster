@@ -5,21 +5,22 @@ from typing import Any, Callable, Dict, List, NamedTuple, Optional, Union, cast
 import pendulum
 from croniter import croniter
 from dagster import check
-from dagster.core.definitions.target import RepoRelativeTarget
-from dagster.core.errors import (
+
+from ...serdes import whitelist_for_serdes
+from ...utils import ensure_gen, merge_dicts
+from ...utils.backcompat import experimental_arg_warning, experimental_fn_warning
+from ..decorator_utils import get_function_params
+from ..errors import (
     DagsterInvalidDefinitionError,
+    DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
     ScheduleExecutionError,
     user_code_error_boundary,
 )
-from dagster.core.instance import DagsterInstance
-from dagster.core.instance.ref import InstanceRef
-from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.core.storage.tags import check_tags
-from dagster.serdes import whitelist_for_serdes
-from dagster.utils import ensure_gen, merge_dicts
-from dagster.utils.backcompat import experimental_arg_warning, experimental_fn_warning
-
+from ..instance import DagsterInstance
+from ..instance.ref import InstanceRef
+from ..storage.pipeline_run import PipelineRun
+from ..storage.tags import check_tags
 from .graph import GraphDefinition
 from .mode import DEFAULT_MODE_NAME
 from .run_request import JobType, RunRequest, SkipReason
@@ -64,7 +65,7 @@ class ScheduleExecutionContext:
 
     @property
     def instance(self) -> "DagsterInstance":
-        # self._instance_ref should only ever be None when this SensorExecutionContext was
+        # self._instance_ref should only ever be None when this ScheduleExecutionContext was
         # constructed under test.
         if not self._instance_ref:
             raise DagsterInvariantViolationError(
@@ -215,13 +216,14 @@ class ScheduleDefinition:
             )
         elif execution_fn:
             self._execution_fn = check.opt_callable_param(execution_fn, "execution_fn")
+            self._run_config_fn = None
         else:
             if run_config_fn and run_config:
                 raise DagsterInvalidDefinitionError(
                     "Attempted to provide both run_config_fn and run_config as arguments"
                     " to ScheduleDefinition. Must provide only one of the two."
                 )
-            run_config_fn = check.opt_callable_param(
+            self._run_config_fn = check.opt_callable_param(
                 run_config_fn,
                 "run_config_fn",
                 default=lambda _context: check.opt_dict_param(run_config, "run_config"),
@@ -259,7 +261,7 @@ class ScheduleDefinition:
                     ScheduleExecutionError,
                     lambda: f"Error occurred during the execution of run_config_fn for schedule {name}",
                 ):
-                    evaluated_run_config = run_config_fn(context)
+                    evaluated_run_config = self._run_config_fn(context)
 
                 with user_code_error_boundary(
                     ScheduleExecutionError,
@@ -286,10 +288,39 @@ class ScheduleDefinition:
                     )
                 )
 
-    # This allows us to pass schedule definition off as a function, so that it can inherit the
-    # metadata of the wrapped function.
     def __call__(self, *args, **kwargs):
-        return self
+        if not self._run_config_fn:
+            raise DagsterInvalidInvocationError(
+                "Schedule invocation is only supported for schedules created via the schedule "
+                "decorators."
+            )
+        if len(args) == 0 and len(kwargs) == 0:
+            raise DagsterInvalidInvocationError(
+                "Schedule decorated function has context argument, but no context argument was "
+                "provided when invoking."
+            )
+        if len(args) + len(kwargs) > 1:
+            raise DagsterInvalidInvocationError(
+                "Schedule invocation received multiple arguments. Only a first "
+                "positional context parameter should be provided when invoking."
+            )
+
+        context_param_name = get_function_params(self._run_config_fn)[0].name
+
+        if args:
+            context = check.opt_inst_param(args[0], context_param_name, ScheduleExecutionContext)
+        else:
+            if context_param_name not in kwargs:
+                raise DagsterInvalidInvocationError(
+                    f"Schedule invocation expected argument '{context_param_name}'."
+                )
+            context = check.opt_inst_param(
+                kwargs[context_param_name], context_param_name, ScheduleExecutionContext
+            )
+
+        context = context if context else build_schedule_context()
+
+        return self._run_config_fn(context)
 
     @property
     def name(self) -> str:

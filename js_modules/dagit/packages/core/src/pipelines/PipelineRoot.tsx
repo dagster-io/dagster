@@ -1,6 +1,7 @@
 import * as React from 'react';
 import {Redirect, Route, RouteComponentProps, Switch} from 'react-router-dom';
 
+import {useFeatureFlags} from '../app/Flags';
 import {usePermissions} from '../app/Permissions';
 import {PipelineExecutionRoot} from '../execute/PipelineExecutionRoot';
 import {PipelineExecutionSetupRoot} from '../execute/PipelineExecutionSetupRoot';
@@ -20,6 +21,7 @@ interface Props {
 export const PipelineRoot: React.FC<Props> = (props) => {
   const {repoAddress} = props;
   const {canLaunchPipelineExecution} = usePermissions();
+  const {flagPipelineModeTuples} = useFeatureFlags();
 
   useEnforceModeInPipelinePath();
 
@@ -105,13 +107,25 @@ export const PipelineRoot: React.FC<Props> = (props) => {
             />
           )}
         />
-        {/* Capture solid subpath in a regex match */}
-        <Route
-          path={['/workspace/:repoPath/pipelines/(/?.*)', '/workspace/:repoPath/jobs/(/?.*)']}
-          render={(props: RouteComponentProps) => (
-            <PipelineExplorerRegexRoot {...props} repoAddress={repoAddress} />
-          )}
-        />
+        {flagPipelineModeTuples ? (
+          <Route
+            path={[
+              '/workspace/:repoPath/jobs/:pipelinePath',
+              '/workspace/:repoPath/pipelines/:pipelinePath',
+            ]}
+            render={(props: RouteComponentProps<{pipelinePath: string; repoPath: string}>) => {
+              const {pipelinePath, repoPath} = props.match.params;
+              return <Redirect to={`/workspace/${repoPath}/pipelines/${pipelinePath}/overview`} />;
+            }}
+          />
+        ) : (
+          <Route
+            path={'/workspace/:repoPath/pipelines/(/?.*)'}
+            render={(props: RouteComponentProps) => (
+              <PipelineExplorerRegexRoot {...props} repoAddress={repoAddress} />
+            )}
+          />
+        )}
       </Switch>
     </div>
   );

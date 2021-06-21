@@ -24,8 +24,8 @@ export const PageHeader = (props: Props) => {
             <Icon
               color={Colors.GRAY1}
               icon={icon}
-              iconSize={10}
-              style={{position: 'relative', top: -3}}
+              iconSize={12}
+              style={{position: 'relative', top: -2}}
             />
             <Description>{description}</Description>
           </Group>

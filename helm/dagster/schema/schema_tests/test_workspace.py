@@ -6,14 +6,16 @@ from kubernetes.client import models
 from schema.charts.dagster.subschema.dagit import Dagit, Server, Workspace
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.charts.dagster_user_deployments.subschema.user_deployments import UserDeployments
+from schema.utils.helm_template import HelmTemplate
 
-from .helm_template import HelmTemplate
 from .utils import create_simple_user_deployment
 
 
 @pytest.fixture(name="template")
 def helm_template() -> HelmTemplate:
     return HelmTemplate(
+        helm_dir_path="helm/dagster",
+        subchart_paths=["charts/dagster-user-deployments"],
         output="templates/configmap-workspace.yaml",
         model=models.V1ConfigMap,
     )

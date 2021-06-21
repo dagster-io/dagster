@@ -5,7 +5,7 @@ import {addMocksToSchema} from '@graphql-tools/mock';
 import {makeExecutableSchema} from '@graphql-tools/schema';
 import * as React from 'react';
 
-import {AppCache} from '../app/AppCache';
+import {createAppCache} from '../app/AppCache';
 
 import {defaultMocks} from './defaultMocks';
 
@@ -36,8 +36,9 @@ export const ApolloTestProvider: React.FC<Props> = (props) => {
     const withMerge = mergeResolvers([defaultMocks, ...toMerge]);
     const schema = makeExecutableSchema({typeDefs});
     const withMocks = addMocksToSchema({schema, mocks: withMerge});
+    const cache = createAppCache();
     return new ApolloClient({
-      cache: AppCache,
+      cache,
       link: new SchemaLink({schema: withMocks}),
     });
   }, [mocks, typeDefs]);

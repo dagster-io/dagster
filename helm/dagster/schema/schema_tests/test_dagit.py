@@ -3,18 +3,27 @@ from kubernetes.client import models
 from schema.charts.dagster.subschema.dagit import Dagit
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.charts.utils import kubernetes
-
-from .helm_template import HelmTemplate
+from schema.utils.helm_template import HelmTemplate
 
 
 @pytest.fixture(name="deployment_template")
 def deployment_helm_template() -> HelmTemplate:
-    return HelmTemplate(output="templates/deployment-dagit.yaml", model=models.V1Deployment)
+    return HelmTemplate(
+        helm_dir_path="helm/dagster",
+        subchart_paths=["charts/dagster-user-deployments"],
+        output="templates/deployment-dagit.yaml",
+        model=models.V1Deployment,
+    )
 
 
 @pytest.fixture(name="service_template")
 def service_helm_template() -> HelmTemplate:
-    return HelmTemplate(output="templates/service-dagit.yaml", model=models.V1Service)
+    return HelmTemplate(
+        helm_dir_path="helm/dagster",
+        subchart_paths=["charts/dagster-user-deployments"],
+        output="templates/service-dagit.yaml",
+        model=models.V1Service,
+    )
 
 
 @pytest.mark.parametrize(

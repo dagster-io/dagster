@@ -351,7 +351,8 @@ def test_async_solid():
         await asyncio.sleep(0.01)
         return "done"
 
-    assert aio_solid() == "done"
+    loop = asyncio.get_event_loop()
+    assert loop.run_until_complete(aio_solid()) == "done"
 
 
 def test_async_gen_invocation():
@@ -360,7 +361,15 @@ def test_async_gen_invocation():
         await asyncio.sleep(0.01)
         yield Output("done")
 
-    assert aio_gen() == "done"
+    async def get_results():
+        res = []
+        async for output in aio_gen():
+            res.append(output)
+        return res
+
+    loop = asyncio.get_event_loop()
+    output = loop.run_until_complete(get_results())[0]
+    assert output.value == "done"
 
 
 def test_multiple_outputs_iterator():
@@ -373,9 +382,9 @@ def test_multiple_outputs_iterator():
     result = execute_solid(solid_multiple_outputs)
     assert result.success
 
-    output_one, output_two = solid_multiple_outputs()
-    assert output_one == 1
-    assert output_two == 2
+    outputs = list(solid_multiple_outputs())
+    assert outputs[0].value == 2
+    assert outputs[1].value == 1
 
 
 def test_wrong_output():
@@ -395,24 +404,62 @@ def test_wrong_output():
     with pytest.raises(
         DagsterInvariantViolationError,
         match=re.escape(
-            'Solid "solid_wrong_output" returned an output "wrong_name" that does '
+            'Invocation of solid "solid_wrong_output" returned an output "wrong_name" that does '
             "not exist. The available outputs are ['result']"
         ),
     ):
         solid_wrong_output()
 
-    # Ensure alias is accounted for in error message
-    with pytest.raises(
-        DagsterInvariantViolationError,
-        match=re.escape(
-            'Solid "aliased_solid_wrong_output" returned an output "wrong_name" that does '
-            "not exist. The available outputs are ['result']"
-        ),
-    ):
-        solid_wrong_output.alias("aliased_solid_wrong_output")()
+
+def test_optional_output_return():
+    @solid(
+        output_defs=[
+            OutputDefinition(int, name="1", is_required=False),
+            OutputDefinition(int, name="2"),
+        ]
+    )
+    def solid_multiple_outputs_not_sent():
+        return Output(2, output_name="2")
+
+    assert solid_multiple_outputs_not_sent().value == 2
 
 
-def test_output_not_sent():
+def test_optional_output_yielded():
+    @solid(
+        output_defs=[
+            OutputDefinition(int, name="1", is_required=False),
+            OutputDefinition(int, name="2"),
+        ]
+    )
+    def solid_multiple_outputs_not_sent():
+        yield Output(2, output_name="2")
+
+    assert list(solid_multiple_outputs_not_sent())[0].value == 2
+
+
+def test_optional_output_yielded_async():
+    @solid(
+        output_defs=[
+            OutputDefinition(int, name="1", is_required=False),
+            OutputDefinition(int, name="2"),
+        ]
+    )
+    async def solid_multiple_outputs_not_sent():
+        yield Output(2, output_name="2")
+
+    async def get_results():
+        res = []
+        async for output in solid_multiple_outputs_not_sent():
+            res.append(output)
+        return res
+
+    loop = asyncio.get_event_loop()
+    output = loop.run_until_complete(get_results())[0]
+    assert output.value == 2
+
+
+def test_missing_required_output_generator():
+    # Test missing required output from a generator solid
     @solid(output_defs=[OutputDefinition(int, name="1"), OutputDefinition(int, name="2")])
     def solid_multiple_outputs_not_sent():
         yield Output(2, output_name="2")
@@ -426,18 +473,58 @@ def test_output_not_sent():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match='Solid "solid_multiple_outputs_not_sent" did not return an output '
+        match="Invocation of solid 'solid_multiple_outputs_not_sent' did not return an output "
+        "for non-optional output '1'",
+    ):
+        list(solid_multiple_outputs_not_sent())
+
+
+def test_missing_required_output_generator_async():
+    # Test missing required output from an async generator solid
+    @solid(output_defs=[OutputDefinition(int, name="1"), OutputDefinition(int, name="2")])
+    async def solid_multiple_outputs_not_sent():
+        yield Output(2, output_name="2")
+
+    with pytest.raises(
+        DagsterStepOutputNotFoundError,
+        match='Core compute for solid "solid_multiple_outputs_not_sent" did not return an output '
         'for non-optional output "1"',
     ):
-        solid_multiple_outputs_not_sent()
+        execute_solid(solid_multiple_outputs_not_sent)
 
-    # Ensure alias is accounted for in error message
+    async def get_results():
+        res = []
+        async for output in solid_multiple_outputs_not_sent():
+            res.append(output)
+        return res
+
+    loop = asyncio.get_event_loop()
     with pytest.raises(
         DagsterInvariantViolationError,
-        match='Solid "aliased_solid_multiple_outputs_not_sent" did not return an output '
+        match="Invocation of solid 'solid_multiple_outputs_not_sent' did not return an output "
+        "for non-optional output '1'",
+    ):
+        loop.run_until_complete(get_results())
+
+
+def test_missing_required_output_return():
+    @solid(output_defs=[OutputDefinition(int, name="1"), OutputDefinition(int, name="2")])
+    def solid_multiple_outputs_not_sent():
+        return Output(2, output_name="2")
+
+    with pytest.raises(
+        DagsterStepOutputNotFoundError,
+        match='Core compute for solid "solid_multiple_outputs_not_sent" did not return an output '
         'for non-optional output "1"',
     ):
-        solid_multiple_outputs_not_sent.alias("aliased_solid_multiple_outputs_not_sent")()
+        execute_solid(solid_multiple_outputs_not_sent)
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Invocation of solid 'solid_multiple_outputs_not_sent' did not return an output "
+        "for non-optional output '1'",
+    ):
+        solid_multiple_outputs_not_sent()
 
 
 def test_output_sent_multiple_times():
@@ -454,16 +541,9 @@ def test_output_sent_multiple_times():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Solid 'solid_yields_twice' returned an output '1' multiple times",
+        match="Invocation of solid 'solid_yields_twice' yielded an output '1' multiple times",
     ):
-        solid_yields_twice()
-
-    # Ensure alias is accounted for in error message
-    with pytest.raises(
-        DagsterInvariantViolationError,
-        match="Solid 'aliased_solid_yields_twice' returned an output '1' multiple times",
-    ):
-        solid_yields_twice.alias("aliased_solid_yields_twice")()
+        list(solid_yields_twice())
 
 
 @pytest.mark.parametrize(
@@ -517,13 +597,14 @@ def test_yielded_asset_materialization():
         yield Output(5)
         yield AssetMaterialization(asset_key=AssetKey(["fake2"]))
 
-    # Ensure that running without context works, and that asset
-    # materializations are just ignored in this case.
-    assert solid_yields_materialization(None) == 5
-
-    context = build_solid_context()
-    assert solid_yields_materialization(context) == 5
-    materializations = context.asset_materializations
+    events = list(solid_yields_materialization(None))
+    outputs = [event for event in events if isinstance(event, Output)]
+    assert outputs[0].value == 5
+    materializations = [
+        materialization
+        for materialization in events
+        if isinstance(materialization, AssetMaterialization)
+    ]
     assert len(materializations) == 2
 
 
@@ -534,7 +615,10 @@ def test_input_type_check():
 
     assert solid_takes_input(5) == 6
 
-    with pytest.raises(DagsterTypeCheckDidNotPass):
+    with pytest.raises(
+        DagsterTypeCheckDidNotPass,
+        match='Description: Value "foo" of python type "str" must be a int.',
+    ):
         solid_takes_input("foo")
 
 
@@ -543,7 +627,10 @@ def test_output_type_check():
     def wrong_type():
         return "foo"
 
-    with pytest.raises(DagsterTypeCheckDidNotPass):
+    with pytest.raises(
+        DagsterTypeCheckDidNotPass,
+        match='Description: Value "foo" of python type "str" must be a int.',
+    ):
         wrong_type()
 
 

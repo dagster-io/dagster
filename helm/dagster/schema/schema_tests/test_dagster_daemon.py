@@ -3,13 +3,14 @@ from kubernetes.client import models
 from schema.charts.dagster.subschema.daemon import Daemon
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.charts.utils import kubernetes
-
-from .helm_template import HelmTemplate
+from schema.utils.helm_template import HelmTemplate
 
 
 @pytest.fixture(name="template")
 def helm_template() -> HelmTemplate:
     return HelmTemplate(
+        helm_dir_path="helm/dagster",
+        subchart_paths=["charts/dagster-user-deployments"],
         output="templates/deployment-daemon.yaml",
         model=models.V1Deployment,
     )

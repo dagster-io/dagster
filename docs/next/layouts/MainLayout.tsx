@@ -516,17 +516,22 @@ const Layout = ({ children }) => {
 
   return (
     <>
+      <Sidebar
+        isMobileMenuOpen={isMobileMenuOpen}
+        closeMobileMenu={closeMobileMenu}
+      />
       <div
-        className={cx("h-screen flex overflow-hidden transition-colors", {
+        className={cx("flex transition-colors", {
           "dark bg-gray-900": isDarkMode,
           "bg-white": !isDarkMode,
         })}
       >
         <FeedbackModal isOpen={isFeedbackOpen} closeFeedback={closeFeedback} />
-        <Sidebar
-          isMobileMenuOpen={isMobileMenuOpen}
-          closeMobileMenu={closeMobileMenu}
-        />
+        {/* Placeholder spacer for navbar */}
+        <div className="relative hidden lg:flex lg:flex-shrink-0">
+          <div className="flex flex-col w-80 border-r border-gray-200 dark:border-gray-700 pt-4 pb-4 bg-gray-100 dark:bg-gray-900"></div>
+        </div>
+        {/* End placeholder spacer for navbar */}
         <div className="w-full overflow-y-scroll">
           <div className="max-w-7xl mx-auto">
             <div className="relative w-full">

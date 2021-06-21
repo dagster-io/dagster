@@ -1,6 +1,5 @@
 import {ApolloQueryResult, gql, useQuery} from '@apollo/client';
 import * as React from 'react';
-import {useRouteMatch} from 'react-router-dom';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 
@@ -131,29 +130,28 @@ export const getRepositoryOptionHash = (a: DagsterRepoOption) =>
  * in the workspace, and loading/error state for the relevant query.
  */
 const useWorkspaceState = () => {
-  const match = useRouteMatch<{repoPath: string}>(['/workspace/:repoPath']);
-  const repoPath: string | null = match?.params?.repoPath || null;
-
   const {data, loading, refetch} = useQuery<RootRepositoriesQuery>(ROOT_REPOSITORIES_QUERY, {
     fetchPolicy: 'cache-and-network',
   });
 
-  const locationEntries = React.useMemo(() => {
-    return data?.workspaceOrError.__typename === 'Workspace'
-      ? data?.workspaceOrError.locationEntries
-      : [];
-  }, [data]);
+  const workspaceOrError = data?.workspaceOrError;
+
+  const locationEntries = React.useMemo(
+    () => (workspaceOrError?.__typename === 'Workspace' ? workspaceOrError.locationEntries : []),
+    [workspaceOrError],
+  );
 
   const {options, error} = React.useMemo(() => {
     let options: DagsterRepoOption[] = [];
-    if (!data || !data.workspaceOrError) {
+    if (!workspaceOrError) {
       return {options, error: null};
     }
-    if (data.workspaceOrError.__typename === 'PythonError') {
-      return {options, error: data.workspaceOrError};
+
+    if (workspaceOrError.__typename === 'PythonError') {
+      return {options, error: workspaceOrError};
     }
 
-    options = data.workspaceOrError.locationEntries.reduce((accum, locationEntry) => {
+    options = workspaceOrError.locationEntries.reduce((accum, locationEntry) => {
       if (locationEntry.locationOrLoadError?.__typename !== 'RepositoryLocation') {
         return accum;
       }
@@ -165,15 +163,14 @@ const useWorkspaceState = () => {
     }, [] as DagsterRepoOption[]);
 
     return {error: null, options};
-  }, [data]);
+  }, [workspaceOrError]);
 
   return {
     refetch,
-    loading,
+    loading: loading && !data, // Only "loading" on initial load.
     error,
     locationEntries,
     allRepos: options,
-    repoPath,
   };
 };
 

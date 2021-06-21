@@ -253,7 +253,7 @@ const RunRow: React.FC<{
               pipelineHrefContext="no-link"
             />
             <Link to={workspacePipelinePathGuessRepo(run.pipelineName, run.mode)}>
-              <Icon icon="diagram-tree" iconSize={11} style={{position: 'relative', top: '-2px'}} />
+              <Icon icon="share" iconSize={11} style={{position: 'relative', top: '-3px'}} />
             </Link>
           </Group>
           <RunTags tags={run.tags} onSetFilter={onSetFilter} />

@@ -2,6 +2,7 @@ import {NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {useFeatureFlags} from '../app/Flags';
 import {Group} from '../ui/Group';
 import {LoadingSpinner} from '../ui/Loading';
 import {Page} from '../ui/Page';
@@ -15,6 +16,7 @@ import {workspacePath} from './workspacePath';
 
 export const WorkspaceOverviewRoot = () => {
   const {loading, error, options} = useRepositoryOptions();
+  const {flagPipelineModeTuples} = useFeatureFlags();
 
   const content = () => {
     if (loading) {
@@ -46,9 +48,17 @@ export const WorkspaceOverviewRoot = () => {
         <thead>
           <tr>
             <th>Repository</th>
-            <th>Pipelines</th>
+            {flagPipelineModeTuples ? (
+              <>
+                <th>Jobs</th>
+                <th>Graphs</th>
+              </>
+            ) : (
+              <th>Pipelines</th>
+            )}
             <th>Solids</th>
             <th>Schedules</th>
+            <th>Sensors</th>
           </tr>
         </thead>
         <tbody>
@@ -61,14 +71,28 @@ export const WorkspaceOverviewRoot = () => {
             return (
               <tr key={repoString}>
                 <td style={{width: '40%'}}>{repoString}</td>
-                <td>
-                  <Link to={workspacePath(name, location, '/pipelines')}>Pipelines</Link>
-                </td>
+                {flagPipelineModeTuples ? (
+                  <>
+                    <td>
+                      <Link to={workspacePath(name, location, '/jobs')}>Jobs</Link>
+                    </td>
+                    <td>
+                      <Link to={workspacePath(name, location, '/graphs')}>Graphs</Link>
+                    </td>
+                  </>
+                ) : (
+                  <td>
+                    <Link to={workspacePath(name, location, '/pipelines')}>Pipelines</Link>
+                  </td>
+                )}
                 <td>
                   <Link to={workspacePath(name, location, '/solids')}>Solids</Link>
                 </td>
                 <td>
                   <Link to={workspacePath(name, location, '/schedules')}>Schedules</Link>
+                </td>
+                <td>
+                  <Link to={workspacePath(name, location, '/sensors')}>Sensors</Link>
                 </td>
               </tr>
             );

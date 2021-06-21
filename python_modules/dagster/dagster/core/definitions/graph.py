@@ -1,5 +1,17 @@
 from collections import OrderedDict
-from typing import TYPE_CHECKING, Any, Dict, Iterable, Iterator, List, Optional, Set, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+)
 
 from dagster import check
 from dagster.config import Field, Shape
@@ -12,6 +24,7 @@ from dagster.core.types.dagster_type import (
     DagsterTypeKind,
     construct_dagster_type_dictionary,
 )
+from dagster.utils.backcompat import experimental
 from toposort import CircularDependencyError, toposort_flatten
 
 from .dependency import (
@@ -157,6 +170,11 @@ class GraphDefinition(NodeDefinition):
     def solids(self) -> List[Solid]:
         """List[Solid]: Top-level solids in the graph."""
         return list(set(self._solid_dict.values()))
+
+    @property
+    def solid_dict(self) -> Dict[str, Solid]:
+        """Dict[str, Solid]: A dict of top-level solids in the graph, keyed on solid names."""
+        return self._solid_dict
 
     @property
     def node_defs(self) -> List[NodeDefinition]:
@@ -340,16 +358,25 @@ class GraphDefinition(NodeDefinition):
     ):
         check.not_implemented("@graph does not yet implement configured")
 
+    @experimental
     def to_job(
         self,
-        resource_defs: Dict[str, "ResourceDefinition"] = None,
+        name: Optional[str] = None,
+        resource_defs: Optional[Dict[str, "ResourceDefinition"]] = None,
         config_mapping: Union[ConfigMapping, Dict[str, Any]] = None,
         default_config: Optional[Dict[str, Any]] = None,
+        partitions: Optional[Callable[[], List[Any]]] = None,
     ):
         """
         For experimenting with "job" flows
         """
         from .pipeline import PipelineDefinition
+
+        check.opt_callable_param(partitions, "partitions")
+        if default_config and partitions:
+            raise DagsterInvalidDefinitionError(
+                "A job can have default_config or partitions, but not both"
+            )
 
         if config_mapping and not isinstance(config_mapping, ConfigMapping):
             inner_run_config = config_mapping
@@ -360,6 +387,8 @@ class GraphDefinition(NodeDefinition):
 
         if not (config_mapping is None or isinstance(config_mapping, ConfigMapping)):
             check.failed(f"Unexpected config_mapping value {config_mapping}")
+
+        job_name = name or self.name
 
         presets = None
         if default_config:
@@ -377,7 +406,7 @@ class GraphDefinition(NodeDefinition):
                 inner_schema = (
                     PipelineDefinition(
                         solid_defs=self._solid_defs,
-                        name=self.name,
+                        name=job_name,
                         description=self.description,
                         dependencies=self._dependencies,
                         input_mappings=self._input_mappings,
@@ -404,7 +433,7 @@ class GraphDefinition(NodeDefinition):
 
         return PipelineDefinition(
             solid_defs=self._solid_defs,
-            name=self.name,
+            name=job_name,
             description=self.description,
             dependencies=self._dependencies,
             input_mappings=self._input_mappings,
@@ -414,6 +443,7 @@ class GraphDefinition(NodeDefinition):
                 ModeDefinition(
                     resource_defs=resource_defs,
                     _config_mapping=config_mapping,
+                    _partitions=partitions,
                 )
             ],
             preset_defs=presets,

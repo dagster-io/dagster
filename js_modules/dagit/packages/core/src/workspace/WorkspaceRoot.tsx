@@ -2,12 +2,13 @@ import {NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 import {Redirect, Route, RouteComponentProps, Switch} from 'react-router-dom';
 
-import {featureEnabled, FeatureFlag} from '../app/Util';
+import {useFeatureFlags} from '../app/Flags';
 import {PipelineRoot} from '../pipelines/PipelineRoot';
 import {ScheduleRoot} from '../schedules/ScheduleRoot';
 import {SensorRoot} from '../sensors/SensorRoot';
 import {MainContent} from '../ui/MainContent';
 
+import {GraphRoot} from './GraphRoot';
 import {WorkspaceContext} from './WorkspaceContext';
 import {WorkspaceOverviewRoot} from './WorkspaceOverviewRoot';
 import {WorkspacePipelineRoot} from './WorkspacePipelineRoot';
@@ -18,6 +19,7 @@ const RepoRouteContainer: React.FC<{repoPath: string}> = (props) => {
   const {repoPath} = props;
   const workspaceState = React.useContext(WorkspaceContext);
   const addressForPath = repoAddressFromPath(repoPath);
+  const {flagPipelineModeTuples} = useFeatureFlags();
 
   // A RepoAddress could not be created for this path, which means it's invalid.
   if (!addressForPath) {
@@ -75,9 +77,13 @@ const RepoRouteContainer: React.FC<{repoPath: string}> = (props) => {
         render={() => <PipelineRoot repoAddress={addressForPath} />}
       />
       <Route
+        path="/workspace/:repoPath/graphs/(/?.*)"
+        render={(props) => <GraphRoot {...props} repoAddress={addressForPath} />}
+      />
+      <Route
         path="/workspace/:repoPath/pipelines/(/?.*)"
         render={(props: RouteComponentProps) => {
-          if (featureEnabled(FeatureFlag.PipelineModeTuples)) {
+          if (flagPipelineModeTuples) {
             return <Redirect to={props.match.url.replace('/pipelines/', '/jobs/')} />;
           }
           return <PipelineRoot repoAddress={addressForPath} />;

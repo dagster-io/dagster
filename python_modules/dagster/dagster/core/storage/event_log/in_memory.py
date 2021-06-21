@@ -5,10 +5,10 @@ from typing import Dict
 from dagster import check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.events import DagsterEventType
-from dagster.core.events.log import EventRecord
+from dagster.core.events.log import EventLogEntry
 from dagster.serdes import ConfigurableClass
 
-from .base import EventLogStorage, extract_asset_events_cursor
+from .base import EventLogRecord, EventLogStorage, EventsCursor, extract_asset_events_cursor
 
 
 class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
@@ -64,7 +64,7 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
             return self._logs[run_id][cursor:]
 
     def store_event(self, event):
-        check.inst_param(event, "event", EventRecord)
+        check.inst_param(event, "event", EventLogEntry)
         run_id = event.run_id
         self._logs[run_id].append(event)
 
@@ -97,6 +97,40 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
     @property
     def is_persistent(self):
         return False
+
+    def get_event_records(
+        self,
+        after_cursor=None,
+        limit=None,
+        ascending=False,
+        of_type=None,
+    ):
+        check.opt_inst_param(after_cursor, "after_cursor", EventsCursor)
+        after_id = after_cursor.id if after_cursor else None
+
+        filtered_events = []
+
+        for records in self._logs.values():
+            filtered_events += list(
+                filter(
+                    lambda r: of_type is None
+                    or (r.is_dagster_event and r.dagster_event.event_type_value == of_type.value),
+                    records,
+                )
+            )
+
+        event_records = [
+            EventLogRecord(storage_id=event_id, event_log_entry=event)
+            for event_id, event in enumerate(filtered_events)
+            if after_id is None or event_id > after_id
+        ]
+
+        event_records = sorted(event_records, key=lambda x: x.storage_id, reverse=not ascending)
+
+        if limit:
+            event_records = event_records[:limit]
+
+        return event_records
 
     def has_asset_key(self, asset_key: AssetKey) -> bool:
         for records in self._logs.values():

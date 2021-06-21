@@ -16,6 +16,7 @@ from dagster.core.definitions import (
     Failure,
     FloatMetadataEntryData,
     HookDefinition,
+    In,
     InputDefinition,
     InputMapping,
     IntMetadataEntryData,
@@ -26,6 +27,8 @@ from dagster.core.definitions import (
     Materialization,
     ModeDefinition,
     MultiDependencyDefinition,
+    MultiOut,
+    Out,
     Output,
     OutputDefinition,
     OutputMapping,
@@ -56,6 +59,7 @@ from dagster.core.definitions import (
     default_executors,
     executor,
     failure_hook,
+    graph,
     hourly_schedule,
     in_process_executor,
     intermediate_storage,
@@ -65,6 +69,7 @@ from dagster.core.definitions import (
     monthly_schedule,
     multiple_process_executor_requirements,
     multiprocess_executor,
+    op,
     pipeline,
     reconstructable,
     repository,
@@ -130,7 +135,7 @@ from dagster.core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io_
 from dagster.core.storage.init import InitIntermediateStorageContext
 from dagster.core.storage.io_manager import IOManager, IOManagerDefinition, io_manager
 from dagster.core.storage.mem_io_manager import mem_io_manager
-from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.storage.root_input_manager import (
     RootInputManager,
     RootInputManagerDefinition,
@@ -192,6 +197,7 @@ __all__ = [
     "Failure",
     "Field",
     "HookDefinition",
+    "In",
     "InputDefinition",
     "InputMapping",
     "IntermediateStorageDefinition",
@@ -204,6 +210,8 @@ __all__ = [
     "Materialization",
     "ModeDefinition",
     "MultiDependencyDefinition",
+    "MultiOut",
+    "Out",
     "Output",
     "OutputDefinition",
     "OutputMapping",
@@ -224,9 +232,11 @@ __all__ = [
     # Decorators
     "composite_solid",
     "executor",
+    "graph",
     "intermediate_storage",
     "lambda_solid",
     "logger",
+    "op",
     "pipeline",
     "repository",
     "resource",
@@ -259,6 +269,7 @@ __all__ = [
     "OutputContext",
     "build_output_context",
     "PipelineRun",
+    "PipelineRunStatus",
     "default_executors",
     "default_intermediate_storage_defs",
     "execute_pipeline_iterator",

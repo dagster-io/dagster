@@ -7,6 +7,7 @@ import * as React from 'react';
 import {Route} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {featureEnabled, FeatureFlag, useFeatureFlags} from '../app/Flags';
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {PIPELINE_GRAPH_SOLID_FRAGMENT} from '../graph/PipelineGraph';
 import {PipelineGraphContainer} from '../graph/PipelineGraphContainer';
@@ -17,7 +18,7 @@ import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {SolidJumpBar} from './PipelineJumpComponents';
-import {PipelineExplorerPath, explorerPathToString} from './PipelinePathUtils';
+import {explorerPathToString, PipelineExplorerPath} from './PipelinePathUtils';
 import {
   SidebarTabbedContainer,
   SIDEBAR_TABBED_CONTAINER_PIPELINE_FRAGMENT,
@@ -126,10 +127,13 @@ export class PipelineExplorer extends React.Component<
     if (snapshotId) {
       return `/instance/snapshots/${path}`;
     }
+
+    const tab = featureEnabled(FeatureFlag.flagPipelineModeTuples) ? 'graphs' : 'pipelines';
+
     if (repoAddress) {
-      return workspacePathFromAddress(repoAddress, `/pipelines/${path}`);
+      return workspacePathFromAddress(repoAddress, `/${tab}/${path}`);
     }
-    return `/workspace/pipelines/${path}`;
+    return `/workspace/${tab}/${path}`;
   };
 
   render() {
@@ -352,18 +356,21 @@ const LargeDAGNotice = () => (
   </LargeDAGContainer>
 );
 
-const EmptyDAGNotice = () => (
-  <NonIdealState
-    icon="diagram-tree"
-    title="Empty pipeline"
-    description={
-      <>
-        <div>This pipeline is empty.</div>
-        <div>Solids will appear here when you add them.</div>
-      </>
-    }
-  />
-);
+const EmptyDAGNotice = () => {
+  const {flagPipelineModeTuples} = useFeatureFlags();
+  return (
+    <NonIdealState
+      icon="diagram-tree"
+      title={flagPipelineModeTuples ? 'Empty graph' : 'Empty pipeline'}
+      description={
+        <>
+          <div>This {flagPipelineModeTuples ? 'graph' : 'pipeline'} is empty.</div>
+          <div>Solids will appear here when you add them.</div>
+        </>
+      }
+    />
+  );
+};
 
 const LargeDAGContainer = styled.div`
   width: 50vw;

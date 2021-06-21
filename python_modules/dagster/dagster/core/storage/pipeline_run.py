@@ -21,6 +21,8 @@ from .tags import (
 
 @whitelist_for_serdes
 class PipelineRunStatus(Enum):
+    """The status of pipeline execution."""
+
     QUEUED = "QUEUED"
     NOT_STARTED = "NOT_STARTED"
     MANAGED = "MANAGED"
@@ -396,7 +398,7 @@ class RunRecord(NamedTuple):
     :py:class:`~dagster.core.storage.runs.RunStorage`.
     """
 
-    record_id: int
+    storage_id: int
     pipeline_run: PipelineRun
     create_timestamp: datetime
     update_timestamp: datetime

@@ -1,5 +1,5 @@
 from collections import namedtuple
-from typing import Any, Optional, Set, TypeVar
+from typing import Any, List, NamedTuple, Optional, Set, TypeVar
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
@@ -278,4 +278,18 @@ class OutputMapping(namedtuple("_OutputMapping", "definition maps_from")):
             cls,
             check.inst_param(definition, "definition", OutputDefinition),
             check.inst_param(maps_from, "maps_from", OutputPointer),
+        )
+
+
+class Out(OutputDefinition):
+    """Experimental replacement for OutputDefinition intended to decrease verbosity."""
+
+
+class MultiOut(NamedTuple("_MultiOut", [("outs", List[Out])])):
+    """Experimental replacement for providing a list of output definitions, to decrease verbosity."""
+
+    def __new__(cls, outs: List[Out]):
+        return super(MultiOut, cls).__new__(
+            cls,
+            check.list_param(outs, "outs", Out),
         )

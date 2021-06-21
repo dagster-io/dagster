@@ -3,8 +3,8 @@ import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import React from 'react';
 import {Link, useRouteMatch} from 'react-router-dom';
 
+import {useFeatureFlags} from '../app/Flags';
 import {DISABLED_MESSAGE, PermissionSet, usePermissions} from '../app/Permissions';
-import {featureEnabled, FeatureFlag} from '../app/Util';
 import {
   explorerPathFromString,
   explorerPathToString,
@@ -86,6 +86,7 @@ interface Props {
 export const PipelineNav: React.FC<Props> = (props) => {
   const {repoAddress} = props;
   const permissions = usePermissions();
+  const {flagPipelineModeTuples} = useFeatureFlags();
   const repo = useRepository(repoAddress);
   const match = useRouteMatch<{tab?: string; selector: string}>([
     '/workspace/:repoPath/pipelines/:selector/:tab?',
@@ -99,9 +100,13 @@ export const PipelineNav: React.FC<Props> = (props) => {
     .map((x) => x.pipelineName)
     .includes(explorerPath.pipelineName);
 
-  const tabs = currentOrder
+  let tabs = currentOrder
     .filter((key) => hasPartitionSet || key !== 'partitions')
     .map(tabForKey(repoAddress, explorerPath));
+
+  if (flagPipelineModeTuples) {
+    tabs = tabs.filter((t) => t.text !== 'Definition');
+  }
 
   return (
     <Group direction="column" spacing={12} padding={{top: 20, horizontal: 20}}>
@@ -109,16 +114,23 @@ export const PipelineNav: React.FC<Props> = (props) => {
         title={
           <Heading>
             {explorerPath.pipelineName}
-            {featureEnabled(FeatureFlag.PipelineModeTuples) && (
+            {flagPipelineModeTuples && (
               <span style={{opacity: 0.5}}> : {explorerPath.pipelineMode}</span>
             )}
           </Heading>
         }
-        icon="diagram-tree"
+        icon={flagPipelineModeTuples ? 'send-to-graph' : 'diagram-tree'}
         description={
           <>
-            <Link to={workspacePathFromAddress(repoAddress, '/pipelines')}>Pipeline</Link> in{' '}
-            <RepositoryLink repoAddress={repoAddress} />
+            <Link
+              to={workspacePathFromAddress(
+                repoAddress,
+                flagPipelineModeTuples ? '/jobs' : '/pipelines',
+              )}
+            >
+              {flagPipelineModeTuples ? 'Job' : 'Pipeline'}
+            </Link>{' '}
+            in <RepositoryLink repoAddress={repoAddress} />
           </>
         }
       />

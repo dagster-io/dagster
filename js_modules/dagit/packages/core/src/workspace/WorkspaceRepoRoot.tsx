@@ -2,6 +2,7 @@ import {Colors, Tab, Tabs} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link, Redirect, Route, Switch} from 'react-router-dom';
 
+import {useFeatureFlags} from '../app/Flags';
 import {SchedulesRoot} from '../schedules/SchedulesRoot';
 import {SensorsRoot} from '../sensors/SensorsRoot';
 import {SolidsRoot} from '../solids/SolidsRoot';
@@ -10,6 +11,7 @@ import {Group} from '../ui/Group';
 import {PageHeader} from '../ui/PageHeader';
 import {Heading} from '../ui/Text';
 
+import {RepositoryGraphsList} from './RepositoryGraphsList';
 import {RepositoryPipelinesList} from './RepositoryPipelinesList';
 import {repoAddressAsString} from './repoAddressAsString';
 import {RepoAddress} from './types';
@@ -23,6 +25,7 @@ interface Props {
 export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
   const {repoAddress, tab} = props;
   const path = repoAddressAsString(repoAddress);
+  const {flagPipelineModeTuples} = useFeatureFlags();
 
   const tabs = [
     {text: 'Pipelines', href: workspacePathFromAddress(repoAddress, '/pipelines')},
@@ -30,6 +33,11 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
     {text: 'Schedules', href: workspacePathFromAddress(repoAddress, '/schedules')},
     {text: 'Sensors', href: workspacePathFromAddress(repoAddress, '/sensors')},
   ];
+
+  if (flagPipelineModeTuples) {
+    tabs.splice(0, 1, {text: 'Jobs', href: workspacePathFromAddress(repoAddress, '/jobs')});
+    tabs.splice(1, 0, {text: 'Graphs', href: workspacePathFromAddress(repoAddress, '/graphs')});
+  }
 
   const activeTab = () => {
     switch (tab) {
@@ -39,8 +47,14 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
         return 'Sensors';
       case 'solids':
         return 'Solids';
-      default:
+      case 'graphs':
+        return 'Graphs';
+      case 'jobs':
+        return 'Jobs';
+      case 'pipelines':
         return 'Pipelines';
+      default:
+        return flagPipelineModeTuples ? 'Pipelines' : 'Jobs';
     }
   };
 
@@ -77,9 +91,17 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
               <SolidsRoot name={props.match.params.name} repoAddress={repoAddress} />
             )}
           />
+          {flagPipelineModeTuples && (
+            <Redirect from={'/workspace/:repoPath/pipelines'} to={'/workspace/:repoPath/jobs'} />
+          )}
           <Route
             path={['/workspace/:repoPath/pipelines', '/workspace/:repoPath/jobs']}
             render={() => <RepositoryPipelinesList repoAddress={repoAddress} />}
+          />
+          <Route
+            path="/workspace/:repoPath/graphs"
+            exact
+            render={() => <RepositoryGraphsList repoAddress={repoAddress} />}
           />
           <Route
             path="/workspace/:repoPath/(.*)?"

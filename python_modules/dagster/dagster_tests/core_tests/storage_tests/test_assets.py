@@ -16,7 +16,7 @@ from dagster import (
 from dagster.core.definitions.events import parse_asset_key_string, validate_asset_key_string
 from dagster.core.errors import DagsterInvalidAssetKey
 from dagster.core.events import DagsterEvent, StepMaterializationData
-from dagster.core.events.log import EventRecord
+from dagster.core.events.log import EventLogEntry
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster.core.run_coordinator import DefaultRunCoordinator
@@ -207,7 +207,7 @@ def test_asset_events(asset_aware_context):
         asset_events = event_log_storage.get_asset_events(AssetKey("asset_1"))
         assert len(asset_events) == 2
         for event in asset_events:
-            assert isinstance(event, EventRecord)
+            assert isinstance(event, EventLogEntry)
             assert event.is_dagster_event
             assert event.dagster_event.event_type == DagsterEventType.ASSET_MATERIALIZATION
             assert event.dagster_event.asset_key
@@ -395,7 +395,7 @@ def test_asset_materialization_tags(asset_aware_context):
 
 
 def _materialization_event_record(run_id, asset_key):
-    return EventRecord(
+    return EventLogEntry(
         None,
         "",
         "debug",

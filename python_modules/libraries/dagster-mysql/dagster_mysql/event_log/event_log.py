@@ -1,6 +1,6 @@
 import sqlalchemy as db
 from dagster import check
-from dagster.core.events.log import EventRecord
+from dagster.core.events.log import EventLogEntry
 from dagster.core.storage.event_log import (
     AssetKeyTable,
     SqlEventLogStorage,
@@ -112,7 +112,7 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         return inst
 
     def store_asset(self, event):
-        check.inst_param(event, "event", EventRecord)
+        check.inst_param(event, "event", EventLogEntry)
         if not event.is_dagster_event or not event.dagster_event.asset_key:
             return
 

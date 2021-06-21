@@ -160,7 +160,7 @@ def test_schedule_partitions():
     @repository
     def some_repo():
         return {
-            "pipelines": {"foo": lambda: create_single_node_pipeline("foo", {})},
+            "pipelines": {"foo": lambda: create_single_node_pipeline("foo", defaultdict(int))},
             "schedules": {"daily_foo": lambda: daily_foo},
         }
 
@@ -285,3 +285,25 @@ def test_sensor_no_pipeline_name():
         return [foo_system_sensor]
 
     assert foo_repo.has_sensor_def("foo")
+
+
+def test_job_with_partitions():
+    @solid
+    def ok():
+        return "sure"
+
+    @graph
+    def bare():
+        ok()
+
+    def _partitions():
+        return [{}]
+
+    @repository
+    def test():
+        return [bare.to_job(resource_defs={}, partitions=_partitions)]
+
+    assert test.get_partition_set_def("bare_default_partition_set")
+    # do it twice to make sure we don't overwrite cache on second time
+    assert test.get_partition_set_def("bare_default_partition_set")
+    assert test.get_pipeline("bare")

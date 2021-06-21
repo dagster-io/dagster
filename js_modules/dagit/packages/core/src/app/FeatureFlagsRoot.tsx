@@ -3,10 +3,10 @@ import * as React from 'react';
 
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 
-import {getFeatureFlags, setFeatureFlags, FeatureFlag} from './Util';
+import {FeatureFlag, getFeatureFlags, setFeatureFlags} from './Flags';
 
 export const FeatureFlagsRoot = () => {
-  const [flags, setFlags] = React.useState<FeatureFlag[]>(getFeatureFlags());
+  const [flags, setFlags] = React.useState<FeatureFlag[]>(() => getFeatureFlags());
 
   React.useEffect(() => {
     setFeatureFlags(flags);
@@ -24,15 +24,15 @@ export const FeatureFlagsRoot = () => {
       <div>
         <Checkbox
           label={'Debug Console Logging'}
-          checked={flags.includes(FeatureFlag.DebugConsoleLogging)}
-          onChange={() => toggleFlag(FeatureFlag.DebugConsoleLogging)}
+          checked={flags.includes(FeatureFlag.flagDebugConsoleLogging)}
+          onChange={() => toggleFlag(FeatureFlag.flagDebugConsoleLogging)}
         />
       </div>
       <div>
         <Checkbox
           label={'Pipeline name + mode tuples'}
-          checked={flags.includes(FeatureFlag.PipelineModeTuples)}
-          onChange={() => toggleFlag(FeatureFlag.PipelineModeTuples)}
+          checked={flags.includes(FeatureFlag.flagPipelineModeTuples)}
+          onChange={() => toggleFlag(FeatureFlag.flagPipelineModeTuples)}
         />
       </div>
     </div>

@@ -832,6 +832,15 @@ def _checked_input_resource_reqs_for_mode(
     )
 
     for solid in solid_dict.values():
+        if solid.is_composite:
+            # check inner solids
+            resource_reqs.update(
+                _checked_input_resource_reqs_for_mode(
+                    dependency_structure=solid.definition.dependency_structure,
+                    solid_dict=solid.definition.solid_dict,
+                    mode_def=mode_def,
+                )
+            )
         for handle in solid.input_handles():
             if dependency_structure.has_deps(handle):
                 for source_output_handle in dependency_structure.get_deps_list(handle):

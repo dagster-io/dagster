@@ -5,7 +5,7 @@ from dagster import DagsterEvent, DagsterEventType, IntSource, String, check
 from dagster.config import Field
 from dagster.config.config_type import Array, Noneable
 from dagster.config.field_utils import Shape
-from dagster.core.events.log import EventRecord
+from dagster.core.events.log import EventLogEntry
 from dagster.core.host_representation import ExternalPipeline
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
@@ -83,7 +83,7 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
             event_type_value=DagsterEventType.PIPELINE_ENQUEUED.value,
             pipeline_name=pipeline_run.pipeline_name,
         )
-        event_record = EventRecord(
+        event_record = EventLogEntry(
             message="",
             user_message="",
             level=logging.INFO,

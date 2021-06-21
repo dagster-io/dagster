@@ -4,7 +4,8 @@ import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {breakOnUnderscores, featureEnabled, FeatureFlag} from '../app/Util';
+import {useFeatureFlags} from '../app/Flags';
+import {breakOnUnderscores} from '../app/Util';
 import {ConfigTypeSchema, CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
 
 import {Description} from './Description';
@@ -28,30 +29,33 @@ interface ISidebarPipelineInfoProps {
   mode: string;
 }
 
-export const SidebarPipelineInfo: React.FC<ISidebarPipelineInfoProps> = ({pipeline, mode}) => (
-  <div>
-    <SectionInner>
-      <SidebarSubhead>Pipeline</SidebarSubhead>
-      <SidebarTitle>{breakOnUnderscores(pipeline.name)}</SidebarTitle>
-      <SidebarSubhead>Mode</SidebarSubhead>
-      {featureEnabled(FeatureFlag.PipelineModeTuples) && (
-        <SidebarModeSection
-          mode={pipeline.modes.find((m) => m.name === mode) || pipeline.modes[0]}
-        />
-      )}
-    </SectionInner>
-    <SidebarSection title={'Description'}>
-      <Description description={pipeline ? pipeline.description : NO_DESCRIPTION} />
-    </SidebarSection>
-    {!featureEnabled(FeatureFlag.PipelineModeTuples) && (
-      <SidebarSection title={'Modes'} collapsedByDefault={true}>
-        {pipeline.modes.map((mode) => (
-          <SidebarModeSection key={mode.name} mode={mode} />
-        ))}
+export const SidebarPipelineInfo: React.FC<ISidebarPipelineInfoProps> = ({pipeline, mode}) => {
+  const {flagPipelineModeTuples} = useFeatureFlags();
+  return (
+    <div>
+      <SectionInner>
+        <SidebarSubhead>Pipeline</SidebarSubhead>
+        <SidebarTitle>{breakOnUnderscores(pipeline.name)}</SidebarTitle>
+        <SidebarSubhead>Mode</SidebarSubhead>
+        {flagPipelineModeTuples && (
+          <SidebarModeSection
+            mode={pipeline.modes.find((m) => m.name === mode) || pipeline.modes[0]}
+          />
+        )}
+      </SectionInner>
+      <SidebarSection title={'Description'}>
+        <Description description={pipeline ? pipeline.description : NO_DESCRIPTION} />
       </SidebarSection>
-    )}
-  </div>
-);
+      {!flagPipelineModeTuples && (
+        <SidebarSection title={'Modes'} collapsedByDefault={true}>
+          {pipeline.modes.map((mode) => (
+            <SidebarModeSection key={mode.name} mode={mode} />
+          ))}
+        </SidebarSection>
+      )}
+    </div>
+  );
+};
 
 const SidebarModeSection: React.FunctionComponent<{mode: SidebarPipelineInfoFragment_modes}> = ({
   mode,

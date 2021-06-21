@@ -8,6 +8,7 @@ import {
   NonIdealState,
   Classes,
   Colors,
+  Icon,
 } from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
@@ -20,7 +21,9 @@ import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
 import {JobTickStatus, JobType} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
+import {Group} from '../ui/Group';
 import {Spinner} from '../ui/Spinner';
+import {Body} from '../ui/Text';
 
 import {LaunchedRunListQuery, LaunchedRunListQueryVariables} from './types/LaunchedRunListQuery';
 import {TickTagFragment} from './types/TickTagFragment';
@@ -158,6 +161,46 @@ export const RunList: React.FunctionComponent<{
   );
 };
 
+export const FailedRunList: React.FunctionComponent<{
+  originRunIds?: string[];
+}> = ({originRunIds}) => {
+  if (!originRunIds || !originRunIds.length) {
+    return null;
+  }
+  return (
+    <Group direction="column" spacing={16}>
+      <Box padding={12} border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY1}}>
+        <Body>
+          Failed Runs
+          <Tooltip content="Failed runs this tick reacted on and reported back to.">
+            <Icon
+              icon="info-sign"
+              iconSize={12}
+              color={Colors.GRAY3}
+              style={{position: 'relative', top: '-2px', marginLeft: '6px'}}
+            />
+          </Tooltip>
+        </Body>
+
+        <RunList runIds={originRunIds} />
+      </Box>
+      <Box padding={12} margin={{bottom: 8}}>
+        <Body>
+          Requested Runs
+          <Tooltip content="Runs launched by the run requests in this tick.">
+            <Icon
+              icon="info-sign"
+              iconSize={12}
+              color={Colors.GRAY3}
+              style={{position: 'relative', top: '-2px', marginLeft: '6px'}}
+            />
+          </Tooltip>
+        </Body>
+        <NonIdealState description="Sensor does not target a pipeline." />
+      </Box>
+    </Group>
+  );
+};
 const LinkButton = styled.button`
   background: inherit;
   border: none;

@@ -174,18 +174,41 @@ def test_solid_with_input():
     def hello_world(foo_to_foo):
         return foo_to_foo
 
-    pipeline = PipelineDefinition(
+    the_pipeline = PipelineDefinition(
         solid_defs=[define_stub_solid("test_value", {"foo": "bar"}), hello_world],
         name="test",
         dependencies={"hello_world": {"foo_to_foo": DependencyDefinition("test_value")}},
     )
 
-    pipeline_result = execute_pipeline(pipeline)
+    pipeline_result = execute_pipeline(the_pipeline)
 
     result = pipeline_result.result_for_solid("hello_world")
 
     assert result.success
     assert result.output_value()["foo"] == "bar"
+
+
+def test_lambda_solid_with_underscore_input():
+    # Document that it is possible for lambda_solid to take an arg that the decorator machinery
+    # would otherwise think is a context.
+    @lambda_solid()
+    def emit_input(_):
+        return _
+
+    @lambda_solid
+    def emit_five():
+        return 5
+
+    @pipeline
+    def basic_lambda_pipeline():
+        emit_input(emit_five())
+
+    pipeline_result = execute_pipeline(basic_lambda_pipeline)
+
+    result = pipeline_result.result_for_solid("emit_input")
+
+    assert result.success
+    assert result.output_value() == 5
 
 
 def test_lambda_solid_definition_errors():
@@ -280,16 +303,13 @@ def test_any_config_field():
     assert called["yup"]
 
 
-def test_solid_no_arg():
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="'_noop' decorated function requires positional parameter 'context',",
-    ):
+def test_solid_required_resources_no_arg():
+    @solid(required_resource_keys={"foo"})
+    def _noop():
+        return
 
-        @solid(required_resource_keys={"foo"})
-        def _noop():
-            return
 
+def test_solid_config_no_arg():
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match="'_noop2' decorated function requires positional parameter 'context',",

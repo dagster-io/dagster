@@ -1,10 +1,11 @@
 import warnings
 from abc import ABC, abstractmethod, abstractproperty
-from typing import Callable, Dict, Iterable, List, Optional, Tuple, Union
+from datetime import datetime
+from typing import Callable, Dict, Iterable, List, NamedTuple, Optional, Tuple, Union
 
 from dagster.core.definitions.events import AssetKey
 from dagster.core.events import DagsterEventType
-from dagster.core.events.log import EventRecord
+from dagster.core.events.log import EventLogEntry
 from dagster.core.execution.stats import (
     RunStepKeyStatsSnapshot,
     build_run_stats_from_events,
@@ -12,6 +13,20 @@ from dagster.core.execution.stats import (
 )
 from dagster.core.instance import MayHaveInstanceWeakref
 from dagster.core.storage.pipeline_run import PipelineRunStatsSnapshot
+
+
+class EventsCursor(NamedTuple):
+    id: int
+    run_updated_after: Optional[datetime] = None
+
+
+class EventLogRecord(NamedTuple):
+    """Internal representation of an event record, as stored in a
+    :py:class:`~dagster.core.storage.event_log.EventLogStorage`.
+    """
+
+    storage_id: int
+    event_log_entry: EventLogEntry
 
 
 class EventLogStorage(ABC, MayHaveInstanceWeakref):
@@ -32,7 +47,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         run_id: str,
         cursor: Optional[int] = -1,
         of_type: Optional[DagsterEventType] = None,
-    ) -> Iterable[EventRecord]:
+    ) -> Iterable[EventLogEntry]:
         """Get all of the logs corresponding to a run.
 
         Args:
@@ -59,11 +74,11 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         return build_run_step_stats_from_events(run_id, logs)
 
     @abstractmethod
-    def store_event(self, event: EventRecord):
+    def store_event(self, event: EventLogEntry):
         """Store an event corresponding to a pipeline run.
 
         Args:
-            event (EventRecord): The event to store.
+            event (EventLogEntry): The event to store.
         """
 
     @abstractmethod
@@ -103,6 +118,16 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         """Allows for optimizing database connection / use in the context of a long lived dagit process"""
 
     @abstractmethod
+    def get_event_records(
+        self,
+        after_cursor: EventsCursor = None,
+        limit: int = None,
+        ascending: bool = False,
+        of_type: DagsterEventType = None,
+    ) -> Iterable[EventLogRecord]:
+        pass
+
+    @abstractmethod
     def has_asset_key(self, asset_key: AssetKey) -> bool:
         pass
 
@@ -130,7 +155,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         include_cursor: bool = False,
         before_timestamp=None,
         cursor: int = None,  # deprecated
-    ) -> Union[Iterable[EventRecord], Iterable[Tuple[int, EventRecord]]]:
+    ) -> Union[Iterable[EventLogEntry], Iterable[Tuple[int, EventLogEntry]]]:
         pass
 
     @abstractmethod

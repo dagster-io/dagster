@@ -113,7 +113,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition):
         """A helper function that creates a ``ResourceDefinition`` with a hardcoded object.
 
         Args:
-            value (Any): A hardcoded object which helps mock the resource.
+            value (Any): The value that will be accessible via context.resources.resource_name.
             description ([Optional[str]]): The description of the resource. Defaults to None.
 
         Returns:

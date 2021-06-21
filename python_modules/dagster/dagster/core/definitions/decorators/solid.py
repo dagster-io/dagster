@@ -1,9 +1,8 @@
-import inspect
-from functools import update_wrapper, wraps
-from typing import Any, Callable, Dict, Generator, List, Optional, Set, Tuple, Union, cast
+from functools import lru_cache, update_wrapper
+from typing import Any, Callable, Dict, List, NamedTuple, Optional, Sequence, Set, Union, cast
 
 from dagster import check
-from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import DagsterTypeKind
 from dagster.seven import funcsigs
 
@@ -13,7 +12,6 @@ from ...decorator_utils import (
     positional_arg_name_list,
     validate_expected_params,
 )
-from ..events import AssetMaterialization, ExpectationResult, Materialization, Output
 from ..inference import infer_input_props, infer_output_props
 from ..input import InputDefinition
 from ..output import OutputDefinition
@@ -21,18 +19,44 @@ from ..policy import RetryPolicy
 from ..solid import SolidDefinition
 
 
+class DecoratedSolidFunction(NamedTuple):
+    """Wrapper around the decorated solid function to provide commonly used util methods"""
+
+    decorated_fn: Callable[..., Any]
+
+    @lru_cache(maxsize=1)
+    def has_context_arg(self) -> bool:
+        return is_context_provided(get_function_params(self.decorated_fn))
+
+    @lru_cache(maxsize=1)
+    def positional_inputs(self) -> List[str]:
+        params = get_function_params(self.decorated_fn)
+        input_args = params[1:] if self.has_context_arg() else params
+        return positional_arg_name_list(input_args)
+
+
+class NoContextDecoratedSolidFunction(DecoratedSolidFunction):
+    """Wrapper around a decorated solid function, when the decorator does not permit a context
+    parameter (such as lambda_solid).
+    """
+
+    @lru_cache(maxsize=1)
+    def has_context_arg(self) -> bool:
+        return False
+
+
 class _Solid:
     def __init__(
         self,
         name: Optional[str] = None,
-        input_defs: Optional[List[InputDefinition]] = None,
-        output_defs: Optional[List[OutputDefinition]] = None,
+        input_defs: Optional[Sequence[InputDefinition]] = None,
+        output_defs: Optional[Sequence[OutputDefinition]] = None,
         description: Optional[str] = None,
         required_resource_keys: Optional[Set[str]] = None,
         config_schema: Optional[Union[Any, Dict[str, Any]]] = None,
         tags: Optional[Dict[str, Any]] = None,
         version: Optional[str] = None,
-        has_context_arg: Optional[bool] = True,
+        decorator_takes_context: Optional[bool] = True,
         retry_policy: Optional[RetryPolicy] = None,
     ):
         self.name = check.opt_str_param(name, "name")
@@ -40,7 +64,9 @@ class _Solid:
         self.output_defs = check.opt_nullable_list_param(
             output_defs, "output_defs", OutputDefinition
         )
-        self.has_context_arg = check.bool_param(has_context_arg, "has_context_arg")
+        self.decorator_takes_context = check.bool_param(
+            decorator_takes_context, "decorator_takes_context"
+        )
 
         self.description = check.opt_str_param(description, "description")
 
@@ -66,21 +92,19 @@ class _Solid:
         else:
             output_defs = self.output_defs
 
-        (
-            resolved_input_defs,
-            positional_inputs,
-            context_arg_provided,
-        ) = resolve_checked_solid_fn_inputs(
+        compute_fn = (
+            DecoratedSolidFunction(decorated_fn=fn)
+            if self.decorator_takes_context
+            else NoContextDecoratedSolidFunction(decorated_fn=fn)
+        )
+
+        resolved_input_defs = resolve_checked_solid_fn_inputs(
             decorator_name="@solid",
             fn_name=self.name,
-            compute_fn=fn,
+            compute_fn=compute_fn,
             explicit_input_defs=self.input_defs,
-            has_context_arg=self.has_context_arg,
-            context_required=bool(self.required_resource_keys) or bool(self.config_schema),
+            context_required=bool(self.config_schema),
             exclude_nothing=True,
-        )
-        compute_fn = _create_solid_compute_wrapper(
-            fn, resolved_input_defs, output_defs, context_arg_provided
         )
 
         solid_def = SolidDefinition(
@@ -92,20 +116,18 @@ class _Solid:
             description=self.description or fn.__doc__,
             required_resource_keys=self.required_resource_keys,
             tags=self.tags,
-            positional_inputs=positional_inputs,
             version=self.version,
-            context_arg_provided=context_arg_provided,
             retry_policy=self.retry_policy,
         )
-        update_wrapper(solid_def, fn)
+        update_wrapper(solid_def, compute_fn.decorated_fn)
         return solid_def
 
 
 def solid(
     name: Union[Callable[..., Any], Optional[str]] = None,
     description: Optional[str] = None,
-    input_defs: Optional[List[InputDefinition]] = None,
-    output_defs: Optional[List[OutputDefinition]] = None,
+    input_defs: Optional[Sequence[InputDefinition]] = None,
+    output_defs: Optional[Sequence[OutputDefinition]] = None,
     config_schema: Optional[Union[Any, Dict[str, Any]]] = None,
     required_resource_keys: Optional[Set[str]] = None,
     tags: Optional[Dict[str, Any]] = None,
@@ -238,141 +260,32 @@ def solid(
     )
 
 
-def _validate_and_coerce_solid_result_to_iterator(result, context, output_defs):
-
-    if isinstance(result, (AssetMaterialization, Materialization, ExpectationResult)):
-        raise DagsterInvariantViolationError(
-            (
-                "Error in solid {solid_name}: If you are returning an AssetMaterialization "
-                "or an ExpectationResult from solid you must yield them to avoid "
-                "ambiguity with an implied result from returning a value.".format(
-                    solid_name=context.solid.name
-                )
-            )
-        )
-
-    if inspect.isgenerator(result):
-        # this happens when a user explicitly returns a generator in the solid
-        for event in result:
-            yield event
-    elif isinstance(result, Output):
-        yield result
-    elif len(output_defs) == 1:
-        if result is None and output_defs[0].is_required is False:
-            context.log.warn(
-                'Value "None" returned for non-required output "{output_name}" of solid {solid_name}. '
-                "This value will be passed to downstream solids. For conditional execution use\n"
-                '  yield Output(value, "{output_name}")\n'
-                "when you want the downstream solids to execute, "
-                "and do not yield it when you want downstream solids to skip.".format(
-                    output_name=output_defs[0].name, solid_name=context.solid.name
-                )
-            )
-        yield Output(value=result, output_name=output_defs[0].name)
-    elif result is not None:
-        if not output_defs:
-            raise DagsterInvariantViolationError(
-                (
-                    "Error in solid {solid_name}: Unexpectedly returned output {result} "
-                    "of type {type_}. Solid is explicitly defined to return no "
-                    "results."
-                ).format(solid_name=context.solid.name, result=result, type_=type(result))
-            )
-
-        raise DagsterInvariantViolationError(
-            (
-                "Error in solid {solid_name}: Solid unexpectedly returned "
-                "output {result} of type {type_}. Should "
-                "be a generator, containing or yielding "
-                "{n_results} results: {{{expected_results}}}."
-            ).format(
-                solid_name=context.solid.name,
-                result=result,
-                type_=type(result),
-                n_results=len(output_defs),
-                expected_results=", ".join(
-                    [
-                        "'{result_name}': {dagster_type}".format(
-                            result_name=output_def.name,
-                            dagster_type=output_def.dagster_type,
-                        )
-                        for output_def in output_defs
-                    ]
-                ),
-            )
-        )
-
-
-def _coerce_solid_compute_fn_to_iterator(fn, output_defs, context, context_arg_provided, kwargs):
-    result = fn(context, **kwargs) if context_arg_provided else fn(**kwargs)
-    for event in _validate_and_coerce_solid_result_to_iterator(result, context, output_defs):
-        yield event
-
-
-async def _coerce_async_solid_to_async_gen(awaitable, context, output_defs):
-    result = await awaitable
-    for event in _validate_and_coerce_solid_result_to_iterator(result, context, output_defs):
-        yield event
-
-
-def _create_solid_compute_wrapper(
-    fn: Callable,
-    input_defs: List[InputDefinition],
-    output_defs: List[OutputDefinition],
-    context_arg_provided: bool,
-):
-    check.callable_param(fn, "fn")
-    check.list_param(input_defs, "input_defs", of_type=InputDefinition)
-    check.list_param(output_defs, "output_defs", of_type=OutputDefinition)
-
-    input_names = [
-        input_def.name
-        for input_def in input_defs
-        if not input_def.dagster_type.kind == DagsterTypeKind.NOTHING
-    ]
-
-    @wraps(fn)
-    def compute(context, input_defs) -> Generator[Output, None, None]:
-        kwargs = {}
-        for input_name in input_names:
-            kwargs[input_name] = input_defs[input_name]
-
-        if (
-            inspect.isgeneratorfunction(fn)
-            or inspect.isasyncgenfunction(fn)
-            or inspect.iscoroutinefunction(fn)
-        ):
-            # safe to execute the function, as doing so will not immediately execute user code
-            result = fn(context, **kwargs) if context_arg_provided else fn(**kwargs)
-            if inspect.iscoroutine(result):
-                return _coerce_async_solid_to_async_gen(result, context, output_defs)
-            # already a generator
-            return result
-        else:
-            # we have a regular function, do not execute it before we are in an iterator
-            # (as we want all potential failures to happen inside iterators)
-            return _coerce_solid_compute_fn_to_iterator(
-                fn, output_defs, context, context_arg_provided, kwargs
-            )
-
-    return compute
-
-
 def resolve_checked_solid_fn_inputs(
     decorator_name: str,
     fn_name: str,
-    compute_fn: Callable[..., Any],
+    compute_fn: DecoratedSolidFunction,
     explicit_input_defs: List[InputDefinition],
-    has_context_arg: bool,
     context_required: bool,
-    exclude_nothing: bool,  # should Nothing type inputs be excluded from compute_fn args
-) -> Tuple[List[InputDefinition], List[str], bool]:
+    exclude_nothing: bool,
+) -> List[InputDefinition]:
     """
-    Validate provided input definitions and infer the remaining from the type signature of the compute_fn
-    Returns the resolved set of InputDefinitions and the positions of input names (which is used
-    during graph composition).
+    Validate provided input definitions and infer the remaining from the type signature of the compute_fn.
+    Returns the resolved set of InputDefinitions.
+
+    Args:
+        decorator_name (str): Name of the decorator that is wrapping the solid function.
+        fn_name (str): Name of the decorated function.
+        compute_fn (DecoratedSolidFunction): The decorated function, wrapped in the
+            DecoratedSolidFunction wrapper.
+        explicit_input_defs (List[InputDefinition]): The input definitions that were explicitly
+            provided in the decorator.
+        context_required (bool): True if a context argument is required due to environment
+            information being provided in the decorator (ie: resources, config).
+        exclude_nothing (bool): True if Nothing type inputs should be excluded from compute_fn
+            arguments.
     """
-    expected_positionals = ["context"] if has_context_arg else []
+
+    expected_positionals = ["context"] if context_required or compute_fn.has_context_arg() else []
 
     if exclude_nothing:
         explicit_names = set(
@@ -389,9 +302,7 @@ def resolve_checked_solid_fn_inputs(
         explicit_names = set(inp.name for inp in explicit_input_defs)
         nothing_names = set()
 
-    params = get_function_params(compute_fn)
-
-    is_context_provided = _is_context_provided(params)
+    params = get_function_params(compute_fn.decorated_fn)
 
     if context_required:
 
@@ -409,7 +320,7 @@ def resolve_checked_solid_fn_inputs(
         input_args = params[len(expected_positionals) :]
 
     else:
-        input_args = params[1:] if is_context_provided and has_context_arg else params
+        input_args = params[1:] if compute_fn.has_context_arg() else params
 
     # Validate input arguments
     used_inputs = set()
@@ -453,7 +364,7 @@ def resolve_checked_solid_fn_inputs(
 
     inferred_props = {
         inferred.name: inferred
-        for inferred in infer_input_props(compute_fn, is_context_provided and has_context_arg)
+        for inferred in infer_input_props(compute_fn.decorated_fn, compute_fn.has_context_arg())
     }
     input_defs = []
     for input_def in explicit_input_defs:
@@ -471,10 +382,10 @@ def resolve_checked_solid_fn_inputs(
         if inferred.name in inputs_to_infer
     )
 
-    return input_defs, positional_arg_name_list(input_args), is_context_provided and has_context_arg
+    return input_defs
 
 
-def _is_context_provided(params: List[funcsigs.Parameter]) -> bool:
+def is_context_provided(params: List[funcsigs.Parameter]) -> bool:
     if len(params) == 0:
         return False
     return params[0].name in get_valid_name_permutations("context")
@@ -536,12 +447,14 @@ def lambda_solid(
     if callable(name):
         check.invariant(input_defs is None)
         check.invariant(description is None)
-        return _Solid(output_defs=[output_def] if output_def else None, has_context_arg=False)(name)
+        return _Solid(
+            output_defs=[output_def] if output_def else None, decorator_takes_context=False
+        )(name)
 
     return _Solid(
         name=name,
         input_defs=input_defs,
         output_defs=[output_def] if output_def else None,
         description=description,
-        has_context_arg=False,
+        decorator_takes_context=False,
     )

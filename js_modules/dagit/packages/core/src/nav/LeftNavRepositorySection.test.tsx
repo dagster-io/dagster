@@ -64,10 +64,8 @@ describe('Repository options', () => {
       Workspace: () => ({
         locationEntries: () => [
           {
-            __typename: 'WorkspaceLocationEntry',
             name: locationOne,
             locationOrLoadError: {
-              __typename: 'RepositoryLocation',
               name: locationOne,
               repositories: () =>
                 new MockList(1, () => ({
@@ -77,10 +75,8 @@ describe('Repository options', () => {
             },
           },
           {
-            __typename: 'WorkspaceLocationEntry',
             name: locationTwo,
             locationOrLoadError: {
-              __typename: 'RepositoryLocation',
               name: locationTwo,
               repositories: () =>
                 new MockList(1, () => ({

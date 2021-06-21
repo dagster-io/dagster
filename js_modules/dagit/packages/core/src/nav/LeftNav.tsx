@@ -23,6 +23,7 @@ export const LeftNav = () => {
     '/instance/sensors',
     '/instance/config',
   ]);
+  const workspaceMatch = useRouteMatch({path: '/workspace', exact: true});
 
   return (
     <LeftNavContainer $open={nav.isOpen}>
@@ -70,6 +71,16 @@ export const LeftNav = () => {
             <Box margin={{left: 8}}>
               <InstanceWarningIcon />
             </Box>
+          </Tab>
+        </ShortcutHandler>
+        <ShortcutHandler
+          onShortcut={() => history.push('/workspace')}
+          shortcutLabel={`⌥4`}
+          shortcutFilter={(e) => e.code === 'Digit4' && e.altKey}
+        >
+          <Tab to="/workspace" className={!!workspaceMatch ? 'selected' : ''}>
+            <Icon icon="cube" iconSize={16} />
+            <TabLabel>Workspace</TabLabel>
           </Tab>
         </ShortcutHandler>
       </Box>

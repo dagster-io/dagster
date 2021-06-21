@@ -283,7 +283,7 @@ def test_infer_input_description_from_docstring_rest():
         """
         return hello + str(optional)
 
-    defs = infer_input_props(rest.compute_fn, context_arg_provided=True)
+    defs = infer_input_props(rest.compute_fn.decorated_fn, context_arg_provided=True)
     assert len(defs) == 2
 
     hello_param = defs[0]
@@ -311,7 +311,7 @@ def test_infer_descriptions_from_docstring_numpy():
         """
         return hello + str(optional)
 
-    defs = infer_input_props(good_numpy.compute_fn, context_arg_provided=True)
+    defs = infer_input_props(good_numpy.compute_fn.decorated_fn, context_arg_provided=True)
     assert len(defs) == 2
 
     hello_param = defs[0]
@@ -338,7 +338,7 @@ def test_infer_descriptions_from_docstring_google():
         """
         return hello + str(optional)
 
-    defs = infer_input_props(good_google.compute_fn, context_arg_provided=True)
+    defs = infer_input_props(good_google.compute_fn.decorated_fn, context_arg_provided=True)
     assert len(defs) == 2
 
     hello_param = defs[0]
@@ -377,7 +377,7 @@ def test_infer_output_description_from_docstring_numpy():
             a number
         """
 
-    props = infer_output_props(numpy.compute_fn)
+    props = infer_output_props(numpy.compute_fn.decorated_fn)
     assert props.description == "a number"
     assert props.annotation == int
 
@@ -389,7 +389,7 @@ def test_infer_output_description_from_docstring_rest():
         :return int: a number
         """
 
-    props = infer_output_props(rest.compute_fn)
+    props = infer_output_props(rest.compute_fn.decorated_fn)
     assert props.description == "a number"
     assert props.annotation == int
 
@@ -402,7 +402,7 @@ def test_infer_output_description_from_docstring_google():
             int: a number
         """
 
-    props = infer_output_props(google.compute_fn)
+    props = infer_output_props(google.compute_fn.decorated_fn)
 
     assert props.description == "a number"
     assert props.annotation == int

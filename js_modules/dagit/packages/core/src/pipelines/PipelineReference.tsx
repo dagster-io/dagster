@@ -1,7 +1,8 @@
-import {Colors} from '@blueprintjs/core';
+import {Colors, Icon} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {useFeatureFlags} from '../app/Flags';
 import {RepoAddress} from '../workspace/types';
 import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
@@ -12,6 +13,8 @@ interface Props {
   pipelineHrefContext: 'repo-unknown' | RepoAddress | 'no-link';
   snapshotId?: string | null;
   mode: string;
+  showIcon?: boolean;
+  fontSize?: number;
 }
 
 export const PipelineReference: React.FC<Props> = ({
@@ -19,7 +22,11 @@ export const PipelineReference: React.FC<Props> = ({
   pipelineHrefContext,
   mode,
   snapshotId,
+  showIcon,
+  fontSize,
 }) => {
+  const {flagPipelineModeTuples} = useFeatureFlags();
+
   const modeLabel =
     mode === 'default' ? null : <span style={{color: Colors.GRAY3}}>{`: ${mode}`}</span>;
 
@@ -49,7 +56,15 @@ export const PipelineReference: React.FC<Props> = ({
     );
 
   return (
-    <>
+    <span style={{fontSize: fontSize}}>
+      {showIcon && (
+        <Icon
+          color={Colors.GRAY2}
+          icon={flagPipelineModeTuples ? 'send-to-graph' : 'diagram-tree'}
+          iconSize={Math.floor((fontSize || 16) * 0.8)}
+          style={{position: 'relative', top: -2, paddingRight: 5}}
+        />
+      )}
       {pipeline}
       {snapshotId && ' @ '}
       {snapshotId && (
@@ -59,6 +74,6 @@ export const PipelineReference: React.FC<Props> = ({
           pipelineMode={mode}
         />
       )}
-    </>
+    </span>
   );
 };

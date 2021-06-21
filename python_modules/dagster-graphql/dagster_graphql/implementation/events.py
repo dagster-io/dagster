@@ -15,7 +15,7 @@ from dagster.core.definitions.event_metadata import (
     UrlMetadataEntryData,
 )
 from dagster.core.events import DagsterEventType
-from dagster.core.events.log import EventRecord
+from dagster.core.events.log import EventLogEntry
 from dagster.core.execution.plan.objects import StepFailureData
 
 
@@ -155,7 +155,7 @@ def from_dagster_event_record(event_record, pipeline_name):
 
     # Lots of event types. Pylint thinks there are too many branches
     # pylint: disable=too-many-branches
-    check.inst_param(event_record, "event_record", EventRecord)
+    check.inst_param(event_record, "event_record", EventLogEntry)
     check.param_invariant(event_record.is_dagster_event, "event_record")
     check.str_param(pipeline_name, "pipeline_name")
 
@@ -291,7 +291,7 @@ def from_dagster_event_record(event_record, pipeline_name):
 def from_event_record(event_record, pipeline_name):
     from ..schema.logs.events import GrapheneLogMessageEvent
 
-    check.inst_param(event_record, "event_record", EventRecord)
+    check.inst_param(event_record, "event_record", EventLogEntry)
     check.str_param(pipeline_name, "pipeline_name")
 
     if event_record.is_dagster_event:
@@ -303,7 +303,7 @@ def from_event_record(event_record, pipeline_name):
 def construct_basic_params(event_record):
     from ..schema.logs.log_level import GrapheneLogLevel
 
-    check.inst_param(event_record, "event_record", EventRecord)
+    check.inst_param(event_record, "event_record", EventLogEntry)
     return {
         "runId": event_record.run_id,
         "message": event_record.dagster_event.message

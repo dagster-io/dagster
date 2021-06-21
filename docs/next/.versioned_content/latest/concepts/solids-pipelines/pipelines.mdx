@@ -172,8 +172,8 @@ The simplest pipeline structure is the linear pipeline. We return one output fro
 <Image
 alt="Linear Pipeline"
 src="/images/concepts/pipelines/linear.png"
-width={991}
-height={191}
+width={1000}
+height={250}
 />
 
 ```python file=/concepts/solids_pipelines/linear_pipeline.py startafter=start_marker endbefore=end_marker
@@ -195,13 +195,13 @@ def linear_pipeline():
     add_one(add_one(add_one(return_one())))
 ```
 
-### Multiple Inputs and Outputs
+### Multiple Inputs
 
 <Image
-alt="Branching Pipeline"
-src="/images/concepts/pipelines/branch.png"
-width={996}
-height={312}
+alt="Multiple Inputs"
+src="/images/concepts/pipelines/multi-inputs.png"
+width={1000}
+height={250}
 />
 
 A single output can be passed to multiple inputs on downstream solids. In this example, the output from the first solid is passed to two different solids. The outputs of those solids are combined and passed to the final solid.
@@ -236,10 +236,10 @@ def inputs_and_outputs_pipeline():
 ### Conditional Branching
 
 <Image
-alt="branch"
-src="/images/concepts/pipelines/branch.png"
-width={996}
-height={312}
+alt="Conditional Branch"
+src="/images/concepts/pipelines/conditional.png"
+width={1000}
+height={250}
 />
 
 A solid only starts to execute once all of its inputs have been resolved. We can use this behavior to model conditional execution of solids.
@@ -284,6 +284,13 @@ def branching_pipeline():
 ```
 
 ### Fixed Fan-in Pipeline
+
+<Image
+alt="Fixed Fan-in"
+src="/images/concepts/pipelines/fixed-fan-in.png"
+width={1000}
+height={250}
+/>
 
 If you have a fixed set of solids that all return the same output type, you can collect all the outputs into a list and pass them into a single downstream solid.
 
@@ -364,13 +371,6 @@ def process_directory():
 ```
 
 ### Order-based Dependencies (Nothing dependencies)
-
-<Image
-alt="linear"
-src="/images/concepts/pipelines/linear.png"
-width={991}
-height={191}
-/>
 
 Dependencies in Dagster are primarily _data dependencies_. Using data dependencies means each input of a solid depends on the output of an upstream solid.
 

@@ -288,7 +288,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         return [
             RunRecord(
-                record_id=check.int_param(row["id"], "id"),
+                storage_id=check.int_param(row["id"], "id"),
                 pipeline_run=deserialize_json_to_dagster_namedtuple(
                     check.str_param(row["run_body"], "run_body")
                 ),

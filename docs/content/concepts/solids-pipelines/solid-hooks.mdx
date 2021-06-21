@@ -9,11 +9,12 @@ Solid hooks let you define success and failure handling policies on solids.
 
 ## Relevant APIs
 
-| Name                                                          | Description                                          |
-| ------------------------------------------------------------- | ---------------------------------------------------- |
-| <PyObject module="dagster" object="failure_hook" decorator /> | The decorator to define a callback on solid failure. |
-| <PyObject module="dagster" object="success_hook" decorator /> | The decorator to define a callback on solid success. |
-| <PyObject module="dagster" object="HookContext"  />           | The context object available to a hook function.     |
+| Name                                                          | Description                                                                                                                |
+| ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject module="dagster" object="failure_hook" decorator /> | The decorator to define a callback on solid failure.                                                                       |
+| <PyObject module="dagster" object="success_hook" decorator /> | The decorator to define a callback on solid success.                                                                       |
+| <PyObject module="dagster" object="HookContext"  />           | The context object available to a hook function.                                                                           |
+| <PyObject module="dagster" object="build_hook_context" />     | A function for building a <PyObject object="HookContext" /> outside of execution, intended to be used when testing a hook. |
 
 ## Overview
 
@@ -82,6 +83,29 @@ def selective_notif():
 ```
 
 In this case, solid "b" won't trigger any hooks, while when solid "a" fails or succeeds it will send a slack message.
+
+## (Experimental) Testing Hooks
+
+You can test the functionality of a hook by invoking the hook definition. This will run the underlying decorated function. You can construct a context to provide to the invocation using the <PyObject object="build_hook_context" /> function.
+
+```python file=/concepts/solids_pipelines/solid_hooks.py startafter=start_testing_hooks endbefore=end_testing_hooks
+from dagster import build_hook_context
+
+
+@success_hook(required_resource_keys={"my_conn"})
+def my_success_hook(context):
+    context.resources.my_conn.send("foo")
+
+
+def test_my_success_hook():
+    my_conn = mock.MagicMock()
+    # construct HookContext with mocked ``my_conn`` resource.
+    context = build_hook_context(resources={"my_conn": my_conn})
+
+    my_success_hook(context)
+
+    assert my_conn.send.call_count == 1
+```
 
 ## Examples
 
