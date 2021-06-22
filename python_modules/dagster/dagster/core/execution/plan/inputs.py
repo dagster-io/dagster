@@ -7,6 +7,7 @@ from dagster.core.definitions import InputDefinition, PipelineDefinition, SolidH
 from dagster.core.definitions.events import AssetLineageInfo
 from dagster.core.errors import (
     DagsterExecutionLoadInputError,
+    DagsterInvariantViolationError,
     DagsterTypeLoadingError,
     user_code_error_boundary,
 )
@@ -165,8 +166,9 @@ class FromRootInputManager(
         )
 
     def compute_version(self, step_versions, pipeline_def, resolved_run_config) -> Optional[str]:
-        # TODO: support versioning for root loaders
-        return None
+        raise DagsterInvariantViolationError(
+            "Root input managers are currently not supported with memoization."
+        )
 
     def required_resource_keys(self, pipeline_def: PipelineDefinition) -> Set[str]:
         input_def = self.get_input_def(pipeline_def)
