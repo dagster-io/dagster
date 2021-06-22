@@ -16,6 +16,7 @@ def reexecution():
             instance=instance,
         )
 
+
 # end_initial_execution_marker
 
 instance = DagsterInstance.ephemeral()
@@ -28,7 +29,7 @@ reexecution_result_specific_selection = reexecute_pipeline(
     unreliable_pipeline,
     parent_run_id=pipeline_result_full.run_id,
     instance=instance,
-    solid_selection=['unreliable+*']
+    solid_selection=["unreliable+*"],
 )
 
 # end_partial_execution_marker
