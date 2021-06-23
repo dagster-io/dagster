@@ -1,6 +1,6 @@
 from typing import Tuple
 
-from dagster import In, MultiOut, Out, Output, execute_pipeline, graph, op
+from dagster import In, MultiOut, Nothing, Out, Output, execute_pipeline, graph, op
 
 
 def execute_op_in_job(an_op):
@@ -167,3 +167,20 @@ def test_multi_out_dict():
     assert result.output_for_solid("my_op", "b") == "q"
 
     assert my_op() == (1, "q")
+
+
+def test_nothing_in():
+    @op(out=Out(dagster_type=Nothing))
+    def noop():
+        pass
+
+    @op(ins={"after": In(dagster_type=Nothing)})
+    def on_complete():
+        return "cool"
+
+    @graph
+    def nothing_test():
+        on_complete(noop())
+
+    result = execute_pipeline(nothing_test.to_job())
+    assert result.success

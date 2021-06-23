@@ -3,12 +3,12 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Union
 from dagster import check
 from dagster.utils.backcompat import experimental_decorator
 
-from ..inference import infer_input_props, infer_output_props
+from ..inference import infer_output_props
 from ..input import In, InputDefinition
 from ..output import MultiOut, Out, OutputDefinition
 from ..policy import RetryPolicy
 from ..solid import SolidDefinition
-from .solid import DecoratedSolidFunction, _Solid
+from .solid import _Solid
 
 
 class _Op:
@@ -61,12 +61,9 @@ class _Op:
         else:
             ins = self.ins or []
 
-        inferred_in = infer_input_props(fn, DecoratedSolidFunction(fn).has_context_arg())
         inferred_out = infer_output_props(fn)
 
-        input_defs = []
-        for inp, inferred_props in zip(ins, inferred_in):
-            input_defs.append(inp.to_definition(inferred=inferred_props))
+        input_defs = [inp.to_definition() for inp in ins]
 
         final_output_defs: Optional[Sequence[OutputDefinition]] = None
         if self.out:

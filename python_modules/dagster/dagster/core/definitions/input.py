@@ -383,10 +383,8 @@ class In(
                 self.asset_partitions,
             )
 
-    def to_definition(self, inferred: InferredInputProps) -> InputDefinition:
-        dagster_type = (
-            self.dagster_type if self.dagster_type is not NoValueSentinel else inferred.annotation
-        )
+    def to_definition(self) -> InputDefinition:
+        dagster_type = self.dagster_type if self.dagster_type is not NoValueSentinel else None
         return InputDefinition(
             name=self.name,
             dagster_type=dagster_type,
