@@ -41,6 +41,12 @@ def test_ins():
     result = execute_pipeline(my_graph.to_job())
     assert result.success
 
+    assert upstream1() == 5
+
+    assert upstream2() == "6"
+
+    assert my_op(1, "2") == 3
+
 
 def test_out():
     @op(out=Out(metadata={"x": 1}))
@@ -49,8 +55,7 @@ def test_out():
 
     assert my_op.output_defs[0].metadata == {"x": 1}
     assert my_op.output_defs[0].name == "result"
-    result = execute_op_in_job(my_op)
-    assert result.output_for_solid("my_op") == 1
+    assert my_op() == 1
 
 
 def test_multi_out():
@@ -65,9 +70,7 @@ def test_multi_out():
     assert my_op.output_defs[1].metadata == {"y": 2}
     assert my_op.output_defs[1].name == "b"
 
-    result = execute_op_in_job(my_op)
-    assert result.output_for_solid("my_op", "a") == 1
-    assert result.output_for_solid("my_op", "b") == "q"
+    assert my_op() == (1, "q")
 
 
 def test_tuple_out():
@@ -78,6 +81,8 @@ def test_tuple_out():
     assert len(my_op.output_defs) == 1
     result = execute_op_in_job(my_op)
     assert result.output_for_solid("my_op") == (1, "a")
+
+    assert my_op() == (1, "a")
 
 
 def test_multi_out_yields():
@@ -94,6 +99,8 @@ def test_multi_out_yields():
     assert result.output_for_solid("my_op", "a") == 1
     assert result.output_for_solid("my_op", "b") == 2
 
+    assert [output.value for output in my_op()] == [1, 2]
+
 
 def test_multi_out_optional():
     @op(
@@ -106,6 +113,8 @@ def test_multi_out_optional():
 
     result = execute_op_in_job(my_op)
     assert result.output_for_solid("my_op", "b") == 2
+
+    assert [output.value for output in my_op()] == [2]
 
 
 def test_ins_dict():
@@ -136,6 +145,8 @@ def test_ins_dict():
     result = execute_pipeline(my_graph.to_job())
     assert result.success
 
+    assert my_op(a=1, b="2") == 3
+
 
 def test_multi_out_dict():
     @op(out=MultiOut({"a": Out(metadata={"x": 1}), "b": Out(metadata={"y": 2})}))
@@ -154,3 +165,5 @@ def test_multi_out_dict():
     result = execute_op_in_job(my_op)
     assert result.output_for_solid("my_op", "a") == 1
     assert result.output_for_solid("my_op", "b") == "q"
+
+    assert my_op() == (1, "q")
