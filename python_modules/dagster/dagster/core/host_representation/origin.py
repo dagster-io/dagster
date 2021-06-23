@@ -5,6 +5,7 @@ from collections import namedtuple
 from contextlib import contextmanager
 from typing import Set
 
+import grpc
 from dagster import check
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.errors import DagsterInvariantViolationError
@@ -61,6 +62,13 @@ class RepositoryLocationOrigin(ABC):
     @property
     def is_reload_supported(self):
         return True
+
+    @property
+    def is_shutdown_supported(self):
+        return False
+
+    def shutdown_server(self):
+        raise NotImplementedError
 
     @abstractmethod
     def get_cli_args(self):
@@ -267,6 +275,17 @@ class GrpcServerRepositoryLocationOrigin(
             host=self.host,
             use_ssl=bool(self.use_ssl),
         )
+
+    @property
+    def is_shutdown_supported(self):
+        return True
+
+    def shutdown_server(self):
+        try:
+            self.create_client().shutdown_server()
+        except grpc._channel._InactiveRpcError:  # pylint: disable=protected-access
+            # Server already shutdown
+            pass
 
 
 @whitelist_for_serdes

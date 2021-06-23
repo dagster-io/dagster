@@ -26,6 +26,7 @@ services:
       dockerfile: ./Dockerfile_pipelines
     container_name: docker_example_pipelines
     image: docker_example_pipelines_image
+    restart: always
     environment:
       DAGSTER_POSTGRES_USER: "postgres_user"
       DAGSTER_POSTGRES_PASSWORD: "postgres_password"

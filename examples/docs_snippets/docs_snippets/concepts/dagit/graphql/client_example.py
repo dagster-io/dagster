@@ -109,3 +109,16 @@ else:
         f"{reload_info.failure_type} error: {reload_info.message}"
     )
 # end_reload_repo_location_marker
+
+# start_shutdown_repo_location_marker
+from dagster_graphql import (
+    ShutdownRepositoryLocationInfo,
+    ShutdownRepositoryLocationStatus,
+)
+
+shutdown_info: ShutdownRepositoryLocationInfo = client.shutdown_repository_location(REPO_NAME)
+if shutdown_info.status == ShutdownRepositoryLocationStatus.SUCCESS:
+    do_something_on_success()
+else:
+    raise Exception(f"Repository location shutdown failed: {shutdown_info.message}")
+# end_shutdown_repo_location_marker

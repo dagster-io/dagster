@@ -239,6 +239,10 @@ class Workspace(IWorkspace):
                 self._location_entry_dict[location_name].origin
             )
 
+    def shutdown_repository_location(self, location_name):
+        with self._lock:
+            self._location_entry_dict[location_name].origin.shutdown_server()
+
     def reload_workspace(self):
         # Can be called from a background thread
         with self._lock:

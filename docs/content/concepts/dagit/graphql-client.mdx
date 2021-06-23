@@ -39,6 +39,11 @@ Note that all GraphQL methods on the API are not yet available in Python - the `
   object="DagsterGraphQLClient"
   method="reload_repository_location"
   />
+- <PyObject
+  module="dagster_graphql"
+  object="DagsterGraphQLClient"
+  method="shutdown_repository_location"
+  />
 
 ## Using the GraphQL Client
 
@@ -134,6 +139,27 @@ try:
 except DagsterGraphQLClientError as exc:
     do_something_with_exc(exc)
     raise exc
+```
+
+### Shutting down a Repository Location Server
+
+If you're running your own gRPC server, we generally recommend updating your repository code by building a new Docker image with a new tag and redeploying your server using that new image, but sometimes you may want to restart your server without changing the image (for example, if your pipeline definitions are generated programatically from a database, and you want to restart the server and re-generate your repositories even though the underlying Python code hasn't changed). In these situations, `reload_repository_location` is insufficient, since it refreshes Dagit's information about the repositories but doesn't actually restart the server or reload the repository definition.
+
+One way to cause your server to restart and your repositories to be reloaded is to run your server in an environment like Kubernetes that automatically restarts services when they fail (or docker-compose with `restart: always` set on the service), and then use the `shutdown_repository_location` function on the GraphQL client to shut down the server. The server will then be restarted by your environment, which will be automatically detected by Dagit.
+
+Example usage:
+
+```python file=/concepts/dagit/graphql/client_example.py startafter=start_shutdown_repo_location_marker endbefore=end_shutdown_repo_location_marker
+from dagster_graphql import (
+    ShutdownRepositoryLocationInfo,
+    ShutdownRepositoryLocationStatus,
+)
+
+shutdown_info: ShutdownRepositoryLocationInfo = client.shutdown_repository_location(REPO_NAME)
+if shutdown_info.status == ShutdownRepositoryLocationStatus.SUCCESS:
+    do_something_on_success()
+else:
+    raise Exception(f"Repository location shutdown failed: {shutdown_info.message}")
 ```
 
 #### Repository Location and Repository Inference

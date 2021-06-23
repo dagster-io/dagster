@@ -109,3 +109,17 @@ query($runId: ID!) {
   }
 }
 """
+
+SHUTDOWN_REPOSITORY_LOCATION_MUTATION = """
+mutation ($repositoryLocationName: String!) {
+   shutdownRepositoryLocation(repositoryLocationName: $repositoryLocationName) {
+      __typename
+      ... on PythonError {
+        message
+      }
+      ... on RepositoryLocationNotFound {
+        message
+      }
+   }
+}
+"""

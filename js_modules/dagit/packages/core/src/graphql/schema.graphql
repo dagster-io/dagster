@@ -1397,6 +1397,7 @@ type Mutation {
   deletePipelineRun(runId: String!): DeletePipelineRunResult!
   reloadRepositoryLocation(repositoryLocationName: String!): ReloadRepositoryLocationMutationResult!
   reloadWorkspace: ReloadWorkspaceMutationResult!
+  shutdownRepositoryLocation(repositoryLocationName: String!): ShutdownRepositoryLocationMutationResult!
   wipeAssets(assetKeys: [AssetKeyInput!]!): AssetWipeMutationResult!
   launchPartitionBackfill(backfillParams: LaunchBackfillParams!): LaunchBackfillResult!
   resumePartitionBackfill(backfillId: String!): ResumeBackfillResult!
@@ -1500,6 +1501,12 @@ type RepositoryLocationNotFound implements Error {
 }
 
 union ReloadWorkspaceMutationResult = Workspace | ReadOnlyError | PythonError
+
+union ShutdownRepositoryLocationMutationResult = ShutdownRepositoryLocationSuccess | RepositoryLocationNotFound | ReadOnlyError | PythonError
+
+type ShutdownRepositoryLocationSuccess {
+  repositoryLocationName: String!
+}
 
 union AssetWipeMutationResult = AssetNotFoundError | ReadOnlyError | PythonError | AssetWipeSuccess
 
@@ -1728,6 +1735,10 @@ type ReloadRepositoryLocationMutation {
 
 type ReloadWorkspaceMutation {
   Output: ReloadWorkspaceMutationResult!
+}
+
+type ShutdownRepositoryLocationMutation {
+  Output: ShutdownRepositoryLocationMutationResult!
 }
 
 type TerminatePipelineExecutionMutation {
