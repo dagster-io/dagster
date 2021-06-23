@@ -279,6 +279,28 @@ def test_direct_sensor_target():
     assert test
 
 
+def test_target_dupe_job():
+    @solid
+    def wow():
+        return "wow"
+
+    @graph
+    def wonder():
+        wow()
+
+    w_job = wonder.to_job()
+
+    @sensor(job=w_job)
+    def direct_sensor(_):
+        return {}
+
+    @repository
+    def test():
+        return [direct_sensor, w_job]
+
+    assert test
+
+
 def test_bare_graph():
     @solid
     def ok():
