@@ -3,10 +3,12 @@ FROM python:3.7-slim as dagster
 
 # Install:
 # - dagster so we can run `dagster-daemon run`
+# - dagster-aws so we can use EcsRunLauncher
 # - dagster-postgres so we can use PostgresEventStorage,
 #   PostgresRunStorage, and PostgresScheduleStorage
 RUN pip install \
     dagster \
+    dagster-aws \
     dagster-postgres
 
 ENV DAGSTER_HOME=/opt/dagster/dagster_home/

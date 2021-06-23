@@ -8,8 +8,8 @@ run_coordinator:
   class: QueuedRunCoordinator
 
 run_launcher:
-  module: dagster.core.launcher
-  class: DefaultRunLauncher
+  module: dagster_aws.ecs
+  class: EcsRunLauncher
 
 run_storage:
   module: dagster_postgres.run_storage

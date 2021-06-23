@@ -45,6 +45,10 @@ services:
     depends_on:
       - postgresql
       - pipelines
+    # Grant the EcsRunLauncher the ability to modify task definitions and
+    # run new tasks
+    x-aws-policies:
+      - "arn:aws:iam::aws:policy/AmazonECS_FullAccess"
 
   # This service runs a gRPC server that serves information about your
   # repository. By setting DAGSTER_CURRENT_IMAGE to its own image, we tell the
@@ -55,7 +59,7 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile
-      target: user_code
+      target: pipelines
     image: "$REGISTRY_URL/deploy_ecs/pipelines"
     container_name: pipelines
     command: "dagster api grpc -h 0.0.0.0 -p 4000 -f repo.py"

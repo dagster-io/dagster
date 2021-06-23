@@ -1,6 +1,6 @@
 # Deploying to AWS ECS Using Docker Compose
 
-This directory contains annotated files for deploying Dagster to AWS ECS using Docker Compose. You can use these as a reference for configuring your own Dagster ECS deployment.
+This directory contains annotated files for deploying Dagster with an EcsRunLauncher to AWS ECS using Docker Compose. You can use these as a reference for configuring your own Dagster ECS deployment.
 
 ## Prerequisites
 
@@ -43,24 +43,6 @@ The first time you run this command, Docker will provision the necessary resourc
 One of the resources Docker creates is an AWS ELB Load Balancer. You can access Dagit on port 3000 of the Load Balancer's URL. To find the Load Balancer's URL, look for the [Load Balancer tagged with our project name](https://console.aws.amazon.com/ec2/v2/home#LoadBalancers:tag:com.docker.compose.project=dagster-ecs).
 
 Subsequent runs of this command will [execute a rolling update](https://docs.docker.com/cloud/ecs-integration/#rolling-update) of the stack.
-
-## Local Development
-
-You can run an identical stack locally for development purposes.
-
-First, [create a Docker ECS local context.](https://docs.docker.com/cloud/ecs-integration/#local-simulation)
-
-```sh
-docker context create ecs --local-simulation dagster-ecs-local
-```
-
-Next, deploy your stack to the:
-
-```sh
-docker --context dagster-ecs-local compose --project-name dagster up
-```
-
-Once running, you can access Dagit at https://localhost:3000.
 
 ## Destroying
 
