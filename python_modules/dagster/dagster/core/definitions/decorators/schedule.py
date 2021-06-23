@@ -107,7 +107,7 @@ def schedule(
 
 
 def monthly_schedule(
-    pipeline_name: str,
+    pipeline_name: Optional[str],
     start_date: datetime.datetime,
     name: Optional[str] = None,
     execution_day_of_month: int = 1,
@@ -121,6 +121,7 @@ def monthly_schedule(
     execution_timezone: Optional[str] = None,
     partition_months_offset: Optional[int] = 1,
     description: Optional[str] = None,
+    job: Optional[PipelineDefinition] = None,
 ) -> Callable[[Callable[[datetime.datetime], Dict[str, Any]]], PartitionScheduleDefinition]:
     """Create a partitioned schedule that runs monthly.
 
@@ -161,6 +162,7 @@ def monthly_schedule(
             that executes during month N will fill in the partition for month N-1.
             (Default: 1)
         description (Optional[str]): A human-readable description of the schedule.
+        job (Optional[PipelineDefinition]): Experimental
     """
     check.opt_str_param(name, "name")
     check.inst_param(start_date, "start_date", datetime.datetime)
@@ -170,7 +172,7 @@ def monthly_schedule(
     mode = check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME)
     check.opt_callable_param(should_execute, "should_execute")
     check.opt_dict_param(environment_vars, "environment_vars", key_type=str, value_type=str)
-    check.str_param(pipeline_name, "pipeline_name")
+    check.opt_str_param(pipeline_name, "pipeline_name")
     check.int_param(execution_day_of_month, "execution_day")
     check.inst_param(execution_time, "execution_time", datetime.time)
     check.opt_str_param(execution_timezone, "execution_timezone")
@@ -253,6 +255,7 @@ def my_schedule_definition(_):
             execution_timezone=execution_timezone,
             description=description,
             decorated_fn=fn,
+            job=job,
         )
         update_wrapper(schedule_def, wrapped=fn)
 
@@ -262,7 +265,7 @@ def my_schedule_definition(_):
 
 
 def weekly_schedule(
-    pipeline_name: str,
+    pipeline_name: Optional[str],
     start_date: datetime.datetime,
     name: Optional[str] = None,
     execution_day_of_week: int = 0,
@@ -276,6 +279,7 @@ def weekly_schedule(
     execution_timezone: Optional[str] = None,
     partition_weeks_offset: Optional[int] = 1,
     description: Optional[str] = None,
+    job: Optional[PipelineDefinition] = None,
 ) -> Callable[[Callable[[datetime.datetime], Dict[str, Any]]], PartitionScheduleDefinition]:
     """Create a partitioned schedule that runs daily.
 
@@ -315,6 +319,7 @@ def weekly_schedule(
             that executes during week N will fill in the partition for week N-1.
             (Default: 1)
         description (Optional[str]): A human-readable description of the schedule.
+        job (Optional[PipelineDefinition]): Experimental
     """
     check.opt_str_param(name, "name")
     check.inst_param(start_date, "start_date", datetime.datetime)
@@ -324,7 +329,7 @@ def weekly_schedule(
     mode = check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME)
     check.opt_callable_param(should_execute, "should_execute")
     check.opt_dict_param(environment_vars, "environment_vars", key_type=str, value_type=str)
-    check.str_param(pipeline_name, "pipeline_name")
+    check.opt_str_param(pipeline_name, "pipeline_name")
     check.int_param(execution_day_of_week, "execution_day_of_week")
     check.inst_param(execution_time, "execution_time", datetime.time)
     check.opt_str_param(execution_timezone, "execution_timezone")
@@ -402,6 +407,7 @@ def my_schedule_definition(_):
             execution_timezone=execution_timezone,
             description=description,
             decorated_fn=fn,
+            job=job,
         )
 
         update_wrapper(schedule_def, wrapped=fn)
@@ -411,7 +417,7 @@ def my_schedule_definition(_):
 
 
 def daily_schedule(
-    pipeline_name: str,
+    pipeline_name: Optional[str],
     start_date: datetime.datetime,
     name: Optional[str] = None,
     execution_time: datetime.time = datetime.time(0, 0),
@@ -424,6 +430,7 @@ def daily_schedule(
     execution_timezone: Optional[str] = None,
     partition_days_offset: Optional[int] = 1,
     description: Optional[str] = None,
+    job: Optional[PipelineDefinition] = None,
 ) -> Callable[[Callable[[datetime.datetime], Dict[str, Any]]], PartitionScheduleDefinition]:
     """Create a partitioned schedule that runs daily.
 
@@ -462,8 +469,9 @@ def daily_schedule(
             that executes during day N will fill in the partition for day N-1.
             (Default: 1)
         description (Optional[str]): A human-readable description of the schedule.
+        job (Optional[PipelineDefinition]): Experimental
     """
-    check.str_param(pipeline_name, "pipeline_name")
+    check.opt_str_param(pipeline_name, "pipeline_name")
     check.inst_param(start_date, "start_date", datetime.datetime)
     check.opt_str_param(name, "name")
     check.inst_param(execution_time, "execution_time", datetime.time)
@@ -540,6 +548,7 @@ def my_schedule_definition(_):
             execution_timezone=execution_timezone,
             description=description,
             decorated_fn=fn,
+            job=job,
         )
         update_wrapper(schedule_def, wrapped=fn)
         return schedule_def
@@ -548,7 +557,7 @@ def my_schedule_definition(_):
 
 
 def hourly_schedule(
-    pipeline_name: str,
+    pipeline_name: Optional[str],
     start_date: datetime.datetime,
     name: Optional[str] = None,
     execution_time: datetime.time = datetime.time(0, 0),
@@ -561,6 +570,7 @@ def hourly_schedule(
     execution_timezone: Optional[str] = None,
     partition_hours_offset: Optional[int] = 1,
     description: Optional[str] = None,
+    job: Optional[PipelineDefinition] = None,
 ) -> Callable[[Callable[[datetime.datetime], Dict[str, Any]]], PartitionScheduleDefinition]:
     """Create a partitioned schedule that runs hourly.
 
@@ -601,6 +611,7 @@ def hourly_schedule(
             that executes during hour N will fill in the partition for hour N-1.
             (Default: 1)
         description (Optional[str]): A human-readable description of the schedule.
+        job (Optional[PipelineDefinition]): Experimental
     """
     check.opt_str_param(name, "name")
     check.inst_param(start_date, "start_date", datetime.datetime)
@@ -610,7 +621,7 @@ def hourly_schedule(
     mode = check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME)
     check.opt_callable_param(should_execute, "should_execute")
     check.opt_dict_param(environment_vars, "environment_vars", key_type=str, value_type=str)
-    check.str_param(pipeline_name, "pipeline_name")
+    check.opt_str_param(pipeline_name, "pipeline_name")
     check.inst_param(execution_time, "execution_time", datetime.time)
     check.opt_str_param(execution_timezone, "execution_timezone")
     check.opt_int_param(partition_hours_offset, "partition_hours_offset")
@@ -693,6 +704,7 @@ def my_schedule_definition(_):
             execution_timezone=execution_timezone,
             description=description,
             decorated_fn=fn,
+            job=job,
         )
 
         update_wrapper(schedule_def, wrapped=fn)

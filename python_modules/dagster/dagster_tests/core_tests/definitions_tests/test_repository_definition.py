@@ -8,11 +8,14 @@ from dagster import (
     SensorDefinition,
     SolidDefinition,
     daily_schedule,
+    hourly_schedule,
     lambda_solid,
+    monthly_schedule,
     repository,
     schedule,
     sensor,
     solid,
+    weekly_schedule,
 )
 from dagster.core.definitions.decorators.graph import graph
 
@@ -217,9 +220,41 @@ def test_direct_schedule_target():
     def direct_schedule(_):
         return {}
 
+    @daily_schedule(
+        pipeline_name=None,
+        job=wonder,
+        start_date=datetime.datetime(2020, 1, 1),
+    )
+    def my_daily(_):
+        return {}
+
+    @monthly_schedule(
+        pipeline_name=None,
+        job=wonder,
+        start_date=datetime.datetime(2020, 1, 1),
+    )
+    def my_monthly(_):
+        return {}
+
+    @weekly_schedule(
+        pipeline_name=None,
+        job=wonder,
+        start_date=datetime.datetime(2020, 1, 1),
+    )
+    def my_weekly(_):
+        return {}
+
+    @hourly_schedule(
+        pipeline_name=None,
+        job=wonder,
+        start_date=datetime.datetime(2020, 1, 1),
+    )
+    def my_hourly(_):
+        return {}
+
     @repository
     def test():
-        return [direct_schedule]
+        return [direct_schedule, my_daily, my_monthly, my_weekly, my_hourly]
 
     assert test
 
