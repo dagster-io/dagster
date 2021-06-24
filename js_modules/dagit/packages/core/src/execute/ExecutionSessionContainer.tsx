@@ -6,7 +6,7 @@ import styled from 'styled-components/macro';
 import * as yaml from 'yaml';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {PipelineRunTag, IExecutionSession, IStorageData} from '../app/LocalStorage';
+import {PipelineRunTag, IExecutionSession, IStorageData, SessionBase} from '../app/LocalStorage';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {ConfigEditor} from '../configeditor/ConfigEditor';
@@ -411,12 +411,7 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
     onConfigLoaded();
   };
 
-  const onRefreshConfig = async () => {
-    const {base} = currentSession;
-    if (!base) {
-      return;
-    }
-
+  const onRefreshConfig = async (base: SessionBase) => {
     // Handle preset-based configuration.
     if ('presetName' in base) {
       const {presetName} = base;
@@ -434,6 +429,8 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
     const {partitionName, partitionsSetName} = base;
     const repositorySelector = repoAddressToSelector(repoAddress);
 
+    // It is expected that `partitionName` is set here, since we shouldn't be showing the
+    // button at all otherwise.
     if (partitionName) {
       onConfigLoading();
       await onSelectPartition(
@@ -472,6 +469,18 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
     () => ({fromDefinition: tagsFromDefinition, fromSession: tagsFromSession}),
     [tagsFromDefinition, tagsFromSession],
   );
+
+  const refreshableSessionBase = React.useMemo(() => {
+    const {base, needsRefresh} = currentSession;
+    if (
+      base &&
+      needsRefresh &&
+      ('presetName' in base || (base.partitionsSetName && base.partitionName))
+    ) {
+      return base;
+    }
+    return null;
+  }, [currentSession]);
 
   return (
     <SplitPanelContainer
@@ -561,7 +570,7 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
           {allTags.fromDefinition.length || allTags.fromSession.length ? (
             <TagContainer tags={allTags} onRequestEdit={openTagEditor} />
           ) : null}
-          {currentSession.base !== null && currentSession.needsRefresh ? (
+          {refreshableSessionBase ? (
             <Box
               padding={{vertical: 8, horizontal: 12}}
               border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY1}}
@@ -575,7 +584,7 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
                 <Button
                   small
                   intent="primary"
-                  onClick={onRefreshConfig}
+                  onClick={() => onRefreshConfig(refreshableSessionBase)}
                   disabled={state.configLoading}
                 >
                   Refresh config
