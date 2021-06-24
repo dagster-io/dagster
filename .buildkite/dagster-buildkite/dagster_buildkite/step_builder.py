@@ -63,9 +63,18 @@ class StepBuilder:
         settings["image"] = "{account_id}.dkr.ecr.us-west-2.amazonaws.com/{image}".format(
             account_id=AWS_ACCOUNT_ID, image=image
         )
-        settings["volumes"] = ["/var/run/docker.sock:/var/run/docker.sock"]
+        # Mount the Docker socket so we can run Docker inside of our container
+        # Mount /tmp from the host machine to /tmp in our container. This is
+        # useful if you need to mount a volume when running a Docker container;
+        # because it's relying on the host machine's Docker socket, it looks
+        # for a volume with a matching name on the host machine
+        settings["volumes"] = ["/var/run/docker.sock:/var/run/docker.sock", "/tmp:/tmp"]
         settings["network"] = "kind"
-        settings["environment"] = ["BUILDKITE"] + (env or [])
+        # Set PYTEST_DEBUG_TEMPROOT to our mounted /tmp volume. Any time the
+        # pytest `tmp_path` or `tmpdir` fixtures are used used, the temporary
+        # path they return will be nested under /tmp.
+        # https://github.com/pytest-dev/pytest/blob/501637547ecefa584db3793f71f1863da5ffc25f/src/_pytest/tmpdir.py#L116-L117
+        settings["environment"] = ["BUILDKITE", "PYTEST_DEBUG_TEMPROOT=/tmp"] + (env or [])
         ecr_settings = {
             "login": True,
             "no-include-email": True,
