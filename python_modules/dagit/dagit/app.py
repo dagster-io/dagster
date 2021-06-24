@@ -46,7 +46,9 @@ class DagsterGraphQLView(GraphQLView):
     format_error = staticmethod(format_error_with_stack_trace)
 
 
-def dagster_graphql_subscription_view(subscription_server, context):
+def dagster_graphql_subscription_view(
+    subscription_server: DagsterSubscriptionServer, context: IWorkspaceProcessContext
+):
     context = check.inst_param(context, "context", IWorkspaceProcessContext)
 
     def view(ws):
@@ -174,7 +176,7 @@ def register_permissions(app, context: IWorkspaceProcessContext):
 
 
 def instantiate_app_with_views(
-    context,
+    context: IWorkspaceProcessContext,
     schema,
     app_path_prefix,
     target_dir=os.path.dirname(__file__),
