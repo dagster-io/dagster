@@ -1,31 +1,76 @@
 # Changelog
 
+# 0.11.15
+
+### New
+
+- The Python GraphQL client now includes a shutdown_repository_location API call that shuts down a gRPC server. This is useful in situations where you want Kubernetes to restart your server and re-create your repository definitions, even though the underlying Python code hasn’t changed (for example, if your pipelines are loaded programatically from a database)
+- io_manager_key and root_manager_key is disallowed on composite solids’ InputDefinitions and OutputDefinitions. Instead, custom IO managers on the solids inside composite solids will be respected:
+
+  ```python
+  @solid(input*defs=[InputDefinition("data", dagster_type=str, root_manager_key="my_root")])
+  def inner_solid(*, data):
+    return data
+
+  @composite_solid
+  def my_composite():
+    return inner_solid()
+  ```
+
+- Schedules can now be directly invoked. This is intended to be used for testing. To learn more, see https://docs.dagster.io/master/concepts/partitions-schedules-sensors/schedules#testing-schedules
+
+### Bugfixes
+
+- Dagster libraries (for example, `dagster-postgres` or `dagster-graphql`) are now pinned to the same version as the core `dagster` package. This should reduce instances of issues due to backwards compatibility problems between Dagster packages.
+- Due to a recent regression, when viewing a launched run in Dagit, the Gantt chart would inaccurately show the run as queued well after it had already started running. This has been fixed, and the Gantt chart will now accurately reflect incoming logs.
+- In some cases, navigation in Dagit led to overfetching a workspace-level GraphQL query that would unexpectedly reload the entire app. The excess fetches are now limited more aggressively, and the loading state will no longer reload the app when workspace data is already available.
+- Previously, execution would fail silently when trying to use memoization with a root input manager. The error message now more clearly states that this is not supported.
+
+### Breaking Changes
+
+- Invoking a generator solid now yields a generator, and output objects are not unpacked.
+
+  ```python
+  @solid
+  def my_solid():
+    yield Output("hello")
+
+  assert isinstance(list(my_solid())[0], Output)
+  ```
+
+### Experimental
+
+- Added an experimental [`EcsRunLauncher`](https://github.com/dagster-io/dagster/commit/cb07e82a7bf9a46880359fcffd63e17f6da9bae1#diff-9bf38a50da8f0c910296ba4257fb174d34297d6844031476e9c368c07eae6fba). This creates a new ECS Task Definition and launches a new ECS Task for each run. You can use the new [ECS Reference Deployment](https://github.com/dagster-io/dagster/tree/master/examples/deploy_ecs) to experiment with the `EcsRunLauncher`. We’d love your feedback in our [#dagster-ecs](https://dagster.slack.com/archives/C014UDS8LAV) Slack channel!
+
+### Documentation
+
+- Added docs section on testing hooks. https://docs.dagster.io/master/concepts/solids-pipelines/solid-hooks#experimental-testing-hooks
+
 # 0.11.14
 
 ### New
 
-* Supplying the "metadata" argument to InputDefinitions and OutputDefinitions is no longer considered experimental.
-* The "context" argument can now be omitted for solids that have required resource keys.
-* The S3ComputeLogManager now takes a boolean config argument skip_empty_files, which skips uploading empty log files to S3.  This should enable a work around of timeout errors when using the S3ComputeLogManager to persist logs to MinIO object storage.
-* The Helm subchart for user code deployments now allows for extra manifests.
-* Running `dagit` with flag `--suppress-warnings` will now ignore all warnings, such as ExperimentalWarnings.
-* PipelineRunStatus, which represents the run status, is now exported in the public API.
+- Supplying the "metadata" argument to InputDefinitions and OutputDefinitions is no longer considered experimental.
+- The "context" argument can now be omitted for solids that have required resource keys.
+- The S3ComputeLogManager now takes a boolean config argument skip_empty_files, which skips uploading empty log files to S3. This should enable a work around of timeout errors when using the S3ComputeLogManager to persist logs to MinIO object storage.
+- The Helm subchart for user code deployments now allows for extra manifests.
+- Running `dagit` with flag `--suppress-warnings` will now ignore all warnings, such as ExperimentalWarnings.
+- PipelineRunStatus, which represents the run status, is now exported in the public API.
 
 ### Bugfixes
 
-* The asset catalog now has better backwards compatibility for supporting deprecated Materialization events.  Previously, these events were causing loading errors.
+- The asset catalog now has better backwards compatibility for supporting deprecated Materialization events. Previously, these events were causing loading errors.
 
 ### Community Contributions
 
-* Improved documentation of the `dagster-dbt` library with some helpful tips and example code (thanks @makotonium!).
-* Fixed the example code in the `dagster-pyspark` documentation for providing and accessing the pyspark resource (thanks @Andrew-Crosby!).
-* Helm chart serviceaccounts now allow annotations (thanks @jrouly!).
+- Improved documentation of the `dagster-dbt` library with some helpful tips and example code (thanks @makotonium!).
+- Fixed the example code in the `dagster-pyspark` documentation for providing and accessing the pyspark resource (thanks @Andrew-Crosby!).
+- Helm chart serviceaccounts now allow annotations (thanks @jrouly!).
 
 ### Documentation
 
-* Added section on testing resources ([link](https://docs.dagster.io/master/concepts/modes-resources#experimental-testing-resource-initialization)).
-* Revamped IO manager testing section to use `build_input_context` and `build_output_context` APIs ([link](https://docs.dagster.io/master/concepts/io-management/io-managers#testing-an-io-manager)).
-
+- Added section on testing resources ([link](https://docs.dagster.io/master/concepts/modes-resources#experimental-testing-resource-initialization)).
+- Revamped IO manager testing section to use `build_input_context` and `build_output_context` APIs ([link](https://docs.dagster.io/master/concepts/io-management/io-managers#testing-an-io-manager)).
 
 # 0.11.13
 
