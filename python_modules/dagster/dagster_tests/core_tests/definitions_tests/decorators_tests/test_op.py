@@ -30,7 +30,7 @@ def test_ins():
     def upstream2():
         return "6"
 
-    @op(ins=[In("a", metadata={"x": 1}), In("b", metadata={"y": 2})])
+    @op(ins={"a": In(metadata={"x": 1}), "b": In(metadata={"y": 2})})
     def my_op(a: int, b: str) -> int:
         return a + int(b)
 
@@ -59,7 +59,7 @@ def test_out():
 
 
 def test_multi_out():
-    @op(out=MultiOut([Out(name="a", metadata={"x": 1}), Out(name="b", metadata={"y": 2})]))
+    @op(out=MultiOut({"a": Out(metadata={"x": 1}), "b": Out(metadata={"y": 2})}))
     def my_op() -> Tuple[int, str]:
         return 1, "q"
 
@@ -86,7 +86,7 @@ def test_tuple_out():
 
 
 def test_multi_out_yields():
-    @op(out=MultiOut([Out(name="a", metadata={"x": 1}), Out(name="b", metadata={"y": 2})]))
+    @op(out=MultiOut({"a": Out(metadata={"x": 1}), "b": Out(metadata={"y": 2})}))
     def my_op():
         yield Output(output_name="a", value=1)
         yield Output(output_name="b", value=2)
@@ -103,11 +103,7 @@ def test_multi_out_yields():
 
 
 def test_multi_out_optional():
-    @op(
-        out=MultiOut(
-            [Out(name="a", metadata={"x": 1}, is_required=False), Out(name="b", metadata={"y": 2})]
-        )
-    )
+    @op(out=MultiOut({"a": Out(metadata={"x": 1}, is_required=False), "b": Out(metadata={"y": 2})}))
     def my_op():
         yield Output(output_name="b", value=2)
 

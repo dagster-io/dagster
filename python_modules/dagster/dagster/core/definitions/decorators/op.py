@@ -24,7 +24,7 @@ class _Op:
         version: Optional[str] = None,
         decorator_takes_context: Optional[bool] = True,
         retry_policy: Optional[RetryPolicy] = None,
-        ins: Optional[Union[List[In], Dict[str, In]]] = None,
+        ins: Optional[Dict[str, In]] = None,
         out: Optional[Union[Out, MultiOut]] = None,
     ):
         self.name = check.opt_str_param(name, "name")
@@ -45,7 +45,7 @@ class _Op:
         # config will be checked within SolidDefinition
         self.config_schema = config_schema
 
-        self.ins = ins
+        self.ins = check.opt_dict_param(ins, "ins", key_type=str)
         self.out = out
 
     def __call__(self, fn: Callable[..., Any]) -> SolidDefinition:
@@ -55,15 +55,9 @@ class _Op:
         if self.output_defs is not None and self.out is not None:
             check.failed("Values cannot be provided for both the 'output_defs' and 'out' arguments")
 
-        # If a dictionary of ins were provided, then construct new ins with the provided name.
-        if isinstance(self.ins, dict):
-            ins = [inp.for_name(key) for key, inp in self.ins.items()]
-        else:
-            ins = self.ins or []
-
         inferred_out = infer_output_props(fn)
 
-        input_defs = [inp.to_definition() for inp in ins]
+        input_defs = [inp.to_definition(name) for name, inp in self.ins.items()]
 
         final_output_defs: Optional[Sequence[OutputDefinition]] = None
         if self.out:
@@ -101,7 +95,7 @@ def op(
     tags: Optional[Dict[str, Any]] = None,
     version: Optional[str] = None,
     retry_policy: Optional[RetryPolicy] = None,
-    ins: Optional[Union[List[In], Dict[str, In]]] = None,
+    ins: Optional[Dict[str, In]] = None,
     out: Optional[Union[Out, MultiOut]] = None,
 ) -> Union[_Op, SolidDefinition]:
     """Op is an experimental replacement for solid, intended to decrease verbosity of core API."""

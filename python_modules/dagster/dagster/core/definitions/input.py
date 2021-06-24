@@ -3,11 +3,7 @@ from typing import Optional, Set
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
-from dagster.core.errors import (
-    DagsterError,
-    DagsterInvalidDefinitionError,
-    DagsterInvariantViolationError,
-)
+from dagster.core.errors import DagsterError, DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import (
     BuiltinScalarDagsterType,
     DagsterType,
@@ -224,22 +220,6 @@ class InputDefinition:
             default_value=inferred.default_value,
         )
 
-    @staticmethod
-    def create_from_in(inferred: InferredInputProps, inp: "In") -> "InputDefinition":
-        dagster_type = (
-            inp.dagster_type if inp.dagster_type is not NoValueSentinel else inferred.annotation
-        )
-        return InputDefinition(
-            name=inp.name,
-            dagster_type=dagster_type,
-            description=inp.description,
-            default_value=inp.default_value,
-            root_manager_key=inp.root_manager_key,
-            metadata=inp.metadata,
-            asset_key=inp.asset_key,
-            asset_partitions=inp.asset_partitions,
-        )
-
     def combine_with_inferred(self, inferred: InferredInputProps) -> "InputDefinition":
         """
         Return a new InputDefinition that merges this ones properties with those inferred from type signature.
@@ -337,7 +317,7 @@ class InputMapping(namedtuple("_InputMapping", "definition maps_to")):
 class In(
     namedtuple(
         "_In",
-        "name dagster_type description default_value root_manager_key metadata "
+        "dagster_type description default_value root_manager_key metadata "
         "asset_key asset_partitions",
     )
 ):
@@ -345,7 +325,6 @@ class In(
 
     def __new__(
         cls,
-        name=None,
         dagster_type=NoValueSentinel,
         description=None,
         default_value=NoValueSentinel,
@@ -356,7 +335,6 @@ class In(
     ):
         return super(In, cls).__new__(
             cls,
-            name=name,
             dagster_type=dagster_type,
             description=description,
             default_value=default_value,
@@ -366,27 +344,10 @@ class In(
             asset_partitions=asset_partitions,
         )
 
-    def for_name(self, name: str) -> "In":
-        if self.name is not None:
-            raise DagsterInvariantViolationError(
-                "Attempted to map a name to an In, but a name was already provided for this In."
-            )
-        else:
-            return In(
-                name,
-                self.dagster_type,
-                self.description,
-                self.default_value,
-                self.root_manager_key,
-                self.metadata,
-                self.asset_key,
-                self.asset_partitions,
-            )
-
-    def to_definition(self) -> InputDefinition:
+    def to_definition(self, name: str) -> InputDefinition:
         dagster_type = self.dagster_type if self.dagster_type is not NoValueSentinel else None
         return InputDefinition(
-            name=self.name,
+            name=name,
             dagster_type=dagster_type,
             description=self.description,
             default_value=self.default_value,

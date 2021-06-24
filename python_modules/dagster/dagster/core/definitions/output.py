@@ -1,13 +1,9 @@
 from collections import namedtuple
-from typing import Any, Dict, List, NamedTuple, Optional, Set, TypeVar, Union
+from typing import Any, Dict, List, NamedTuple, Optional, Set, TypeVar
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
-from dagster.core.errors import (
-    DagsterError,
-    DagsterInvalidDefinitionError,
-    DagsterInvariantViolationError,
-)
+from dagster.core.errors import DagsterError, DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import DagsterType, resolve_dagster_type
 from dagster.utils.backcompat import experimental_arg_warning
 
@@ -347,29 +343,23 @@ class Out(
 class MultiOut(NamedTuple("_MultiOut", [("outs", List[Out])])):
     """Experimental replacement for providing a list of output definitions, to decrease verbosity."""
 
-    def __new__(cls, outs: Union[List[Out], Dict[str, Out]]):
-        if isinstance(outs, dict):
-            if any([out.name is not None for out in outs.values()]):
-                raise DagsterInvariantViolationError(
-                    "Cannot provide name to Out if providing a dictionary of outs. The Out will "
-                    "take on the dict key as the name."
-                )
-            outs = [
-                Out(
-                    dagster_type=out.dagster_type,
-                    name=key,
-                    description=out.description,
-                    is_required=out.is_required,
-                    io_manager_key=out.io_manager_key,
-                    metadata=out.metadata,
-                    asset_key=out.asset_key,
-                    asset_partitions=out.asset_partitions,
-                )
-                for key, out in outs.items()
-            ]
+    def __new__(cls, outs: Dict[str, Out]):
+        out_list = [
+            Out(
+                dagster_type=out.dagster_type,
+                name=key,
+                description=out.description,
+                is_required=out.is_required,
+                io_manager_key=out.io_manager_key,
+                metadata=out.metadata,
+                asset_key=out.asset_key,
+                asset_partitions=out.asset_partitions,
+            )
+            for key, out in outs.items()
+        ]
         return super(MultiOut, cls).__new__(
             cls,
-            check.list_param(outs, "outs", Out),
+            check.list_param(out_list, "outs", Out),
         )
 
     def to_definition_list(self, inferred: InferredOutputProps) -> List[OutputDefinition]:
