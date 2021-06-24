@@ -501,23 +501,23 @@ class PartitionExecutionError(DagsterUserCodeExecutionError):
 
 
 class DagsterInvalidAssetKey(DagsterError):
-    """ Error raised by invalid asset key """
+    """Error raised by invalid asset key"""
 
 
 class DagsterInvalidEventMetadata(DagsterError):
-    """ Error raised by invalid event metadata parameters """
+    """Error raised by invalid event metadata parameters"""
 
 
 class HookExecutionError(DagsterUserCodeExecutionError):
-    """ Error raised during the execution of a user-defined hook. """
+    """Error raised during the execution of a user-defined hook."""
 
 
 class RunStatusSensorExecutionError(DagsterUserCodeExecutionError):
-    """ Error raised during the execution of a user-defined run status sensor. """
+    """Error raised during the execution of a user-defined run status sensor."""
 
 
 class DagsterImportError(DagsterError):
-    """ Import error raised while importing user-code. """
+    """Import error raised while importing user-code."""
 
 
 class JobError(DagsterUserCodeExecutionError):

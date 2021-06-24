@@ -159,7 +159,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         return list(map(self._row_to_run, rows))
 
     def _add_cursor_limit_to_query(self, query, cursor, limit, order_by, ascending):
-        """ Helper function to deal with cursor/limit pagination args """
+        """Helper function to deal with cursor/limit pagination args"""
 
         if cursor:
             cursor_query = db.select([RunsTable.c.id]).where(RunsTable.c.run_id == cursor)

@@ -499,7 +499,7 @@ class SqlEventLogStorage(EventLogStorage):
         return True
 
     def update_event_log_record(self, record_id, event):
-        """ Utility method for migration scripts to update SQL representation of event records. """
+        """Utility method for migration scripts to update SQL representation of event records."""
         check.int_param(record_id, "record_id")
         check.inst_param(event, "event", EventLogEntry)
         dagster_event_type = None

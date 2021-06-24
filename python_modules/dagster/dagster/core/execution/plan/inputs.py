@@ -44,7 +44,7 @@ def _get_asset_lineage_from_fns(
 class StepInputData(
     NamedTuple("_StepInputData", [("input_name", str), ("type_check_data", TypeCheckData)])
 ):
-    """"Serializable payload of information for the result of processing a step input"""
+    """ "Serializable payload of information for the result of processing a step input"""
 
     def __new__(cls, input_name: str, type_check_data: TypeCheckData):
         return super(StepInputData, cls).__new__(

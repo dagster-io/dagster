@@ -298,16 +298,16 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
     # Backfill storage
     @abstractmethod
     def get_backfills(self, status=None, cursor=None, limit=None):
-        """ Get a list of partition backfills """
+        """Get a list of partition backfills"""
 
     @abstractmethod
     def get_backfill(self, backfill_id):
-        """ Get a list of partition backfills """
+        """Get a list of partition backfills"""
 
     @abstractmethod
     def add_backfill(self, partition_backfill):
-        """ Add partition backfill to run storage """
+        """Add partition backfill to run storage"""
 
     @abstractmethod
     def update_backfill(self, partition_backfill):
-        """ Update a partition backfill in run storage """
+        """Update a partition backfill in run storage"""
