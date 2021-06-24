@@ -247,7 +247,7 @@ def mlflow_tracking(context):
             @solid(required_resource_keys={"mlflow"})
             def mlflow_solid(context):
                 mlflow.log_params(some_params)
-                mlflow.tracking_client.create_registered_model(some_model_name)
+                mlflow.tracking.MlflowClient().create_registered_model(some_model_name)
 
             @end_mlflow_run_on_pipeline_finished
             @pipeline(mode_defs=[ModeDefinition(resource_defs={"mlflow": mlflow_tracking})])
