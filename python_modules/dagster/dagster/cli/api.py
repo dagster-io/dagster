@@ -17,11 +17,7 @@ from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc import DagsterGrpcClient, DagsterGrpcServer
 from dagster.grpc.impl import core_execute_run
 from dagster.grpc.types import ExecuteRunArgs, ExecuteStepArgs
-from dagster.serdes import (
-    deserialize_json_to_dagster_namedtuple,
-    serialize_dagster_namedtuple,
-    whitelist_for_serdes,
-)
+from dagster.serdes import deserialize_as, serialize_dagster_namedtuple, whitelist_for_serdes
 from dagster.seven import nullcontext
 from dagster.utils.hosted_user_process import recon_pipeline_from_origin
 from dagster.utils.interrupts import capture_interrupts
@@ -50,7 +46,7 @@ def api_cli():
 @click.argument("input_json", type=click.STRING)
 def execute_run_command(input_json):
     with capture_interrupts():
-        args = check.inst(deserialize_json_to_dagster_namedtuple(input_json), ExecuteRunArgs)
+        args = deserialize_as(input_json, ExecuteRunArgs)
         recon_pipeline = recon_pipeline_from_origin(args.pipeline_origin)
 
         with (
@@ -165,7 +161,7 @@ def verify_step(instance, pipeline_run, retry_state, step_keys_to_execute):
 def execute_step_command(input_json):
     with capture_interrupts():
 
-        args = check.inst(deserialize_json_to_dagster_namedtuple(input_json), ExecuteStepArgs)
+        args = deserialize_as(input_json, ExecuteStepArgs)
 
         with (
             DagsterInstance.from_ref(args.instance_ref)

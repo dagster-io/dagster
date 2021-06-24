@@ -270,6 +270,11 @@ def deserialize_json_to_dagster_namedtuple(
     return dagster_namedtuple
 
 
+def deserialize_as(json_str: str, cls: type) -> tuple:
+    """Deserialize a json encoded string to a specific namedtuple class."""
+    return check.inst(deserialize_json_to_dagster_namedtuple(json_str), cls)
+
+
 def _deserialize_json(json_str: str, whitelist_map: WhitelistMap):
     value = seven.json.loads(json_str)
     return _unpack_value(value, whitelist_map=whitelist_map, descent_path=_root(value))
