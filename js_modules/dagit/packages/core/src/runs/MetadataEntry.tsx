@@ -263,7 +263,7 @@ const MetadataEntryModalContent = styled.div`
   margin-bottom: 20px;
 `;
 
-export const MetadataEntryAction = styled.a`
+const MetadataEntryAction = styled.a`
   text-decoration: underline;
   color: inherit;
   &:hover {

@@ -41,6 +41,3 @@ export const createAppCache = () =>
       }
     },
   });
-
-// todo dish: Delete this.
-export const AppCache = createAppCache();

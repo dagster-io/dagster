@@ -24,7 +24,6 @@ import {SubscriptionClient} from 'subscriptions-transport-ws';
 import {FontFamily} from '../ui/styles';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
 
-import {AppCache} from './AppCache';
 import {AppContext} from './AppContext';
 import {AppErrorLink} from './AppError';
 import {CustomAlertProvider} from './CustomAlertProvider';
@@ -78,8 +77,7 @@ const GlobalStyle = createGlobalStyle`
 `;
 
 interface Props {
-  // todo dish: Make this non-optional.
-  appCache?: InMemoryCache;
+  appCache: InMemoryCache;
   config: {
     graphqlURI: string;
     basePath?: string;
@@ -90,7 +88,7 @@ interface Props {
 }
 
 export const AppProvider: React.FC<Props> = (props) => {
-  const {appCache = AppCache, config} = props;
+  const {appCache, config} = props;
   const {
     sessionToken = '',
     basePath = '',

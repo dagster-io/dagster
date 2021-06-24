@@ -42,10 +42,7 @@ interface LogsProviderState {
   nodes: (RunPipelineRunEventFragment & {clientsideKey: string})[] | null;
 }
 
-export class LogsProviderWithSubscription extends React.Component<
-  LogsProviderProps,
-  LogsProviderState
-> {
+class LogsProviderWithSubscription extends React.Component<LogsProviderProps, LogsProviderState> {
   state: LogsProviderState = {
     nodes: null,
   };

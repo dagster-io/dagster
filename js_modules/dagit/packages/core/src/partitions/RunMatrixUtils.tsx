@@ -255,7 +255,7 @@ export const TopLabelTilted: React.FC<{label: string}> = ({label}) => {
   );
 };
 
-export const TopLabelTiltedInner = styled.div`
+const TopLabelTiltedInner = styled.div`
   position: relative;
   height: ${TITLE_HEGIHT}px;
   padding: 4px;
