@@ -1,5 +1,5 @@
 import pytest
-from dagster import execute_solid, solid
+from dagster import execute_pipeline, execute_solid, pipeline, solid
 from dagster.core.definitions.events import Output
 from dagster.core.definitions.output import OutputDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
@@ -100,3 +100,40 @@ def test_multi_output():
     assert result.output_value("numbers") == {"1": 1, "2": 2}
     assert result.output_value("letters") == {"a": "a", "b": "b", "c": "c"}
     assert result.output_value("wildcard") == "*"
+
+
+def test_multi_out_map():
+    @solid(output_defs=[DynamicOutputDefinition()])
+    def emit():
+        yield DynamicOutput(1, mapping_key="1")
+        yield DynamicOutput(2, mapping_key="2")
+        yield DynamicOutput(3, mapping_key="3")
+
+    @solid(
+        output_defs=[
+            OutputDefinition(name="a", is_required=False),
+            OutputDefinition(name="b", is_required=False),
+            OutputDefinition(name="c", is_required=False),
+        ]
+    )
+    def multiout(inp: int):
+        if inp == 1:
+            yield Output(inp, output_name="a")
+        else:
+            yield Output(inp, output_name="b")
+
+    @solid
+    def echo(a):
+        return a
+
+    @pipeline
+    def destructure():
+        a, b, c = emit().map(multiout)
+        echo.alias("echo_a")(a.collect())
+        echo.alias("echo_b")(b.collect())
+        echo.alias("echo_c")(c.collect())
+
+    result = execute_pipeline(destructure)
+    assert result.result_for_solid("echo_a").output_value() == [1]
+    assert result.result_for_solid("echo_b").output_value() == [2, 3]
+    assert result.result_for_solid("echo_c").skipped  # all fanned in inputs skipped -> solid skips
