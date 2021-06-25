@@ -101,6 +101,10 @@
             "path": "/concepts/solids-pipelines/pipelines"
           },
           {
+            "title": "Pipeline Execution",
+            "path": "/concepts/solids-pipelines/pipeline-execution"
+          },
+          {
             "title": "Composite Solids",
             "path": "/concepts/solids-pipelines/composite-solids"
           },
