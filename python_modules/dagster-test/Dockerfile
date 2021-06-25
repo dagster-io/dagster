@@ -16,7 +16,6 @@ RUN pip install \
     -e modules/dagster \
     -e modules/dagster-graphql \
     -e modules/dagster-celery[flower,redis,kubernetes] \
-    -e modules/dagster-cron \
     -e modules/dagit \
     -e modules/dagster-postgres \
     -e modules/dagster-pandas \

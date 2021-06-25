@@ -40,7 +40,6 @@ cp -R $ROOT/python_modules/dagster \
       $ROOT/python_modules/libraries/dagster-celery \
       $ROOT/python_modules/libraries/dagster-celery-k8s \
       $ROOT/python_modules/libraries/dagster-celery-docker \
-      $ROOT/python_modules/libraries/dagster-cron \
       $ROOT/python_modules/libraries/dagster-docker \
       $ROOT/python_modules/libraries/dagster-pandas \
       $ROOT/python_modules/libraries/dagster-postgres \

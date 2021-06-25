@@ -62,7 +62,6 @@ def main(quiet):
         "-e python_modules/libraries/dagster-aws[test]",
         "-e python_modules/libraries/dagster-celery",
         "-e python_modules/libraries/dagster-celery-docker",
-        "-e python_modules/libraries/dagster-cron",
         '-e "python_modules/libraries/dagster-dask[yarn,pbs,kube]"',
         "-e python_modules/libraries/dagster-datadog",
         "-e python_modules/libraries/dagster-dbt",

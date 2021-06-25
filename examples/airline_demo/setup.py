@@ -22,7 +22,6 @@ setup(
         "full": [
             "dagstermill",
             "dagster-aws",
-            "dagster-cron",
             "dagster-postgres",
             "dagster-pyspark",
             "dagster-slack",

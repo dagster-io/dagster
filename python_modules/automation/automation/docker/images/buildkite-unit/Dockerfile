@@ -25,7 +25,6 @@ RUN git clone https://github.com/dagster-io/dagster.git \
         -e python_modules/dagster-graphql \
         -e python_modules/dagit \
         -e python_modules/libraries/dagster-celery[flower,redis,kubernetes] \
-        -e python_modules/libraries/dagster-cron \
         -e python_modules/libraries/dagster-postgres \
         -e python_modules/libraries/dagster-pandas \
         -e python_modules/libraries/dagster-aws \

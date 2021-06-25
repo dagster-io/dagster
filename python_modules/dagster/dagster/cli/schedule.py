@@ -119,16 +119,6 @@ def check_repo_and_scheduler(repository, instance):
             "There are no schedules defined for repository {name}.".format(name=repository_name)
         )
 
-    no_scheduler_configured_message = (
-        "A scheduler must be configured to run schedule commands."
-        "You can resolve this error by defining a scheduler on your instance"
-        "using your dagster.yaml, located in the $DAGSTER_HOME directory.\n"
-        "For example, you can add the following lines in your dagster.yaml file:\n\n"
-        "scheduler:\n"
-        "\tmodule: dagster_cron.cron_scheduler\n"
-        "\tclass: SystemCronScheduler\n"
-    )
-
     if not os.getenv("DAGSTER_HOME"):
         raise click.UsageError(
             (
@@ -141,11 +131,7 @@ def check_repo_and_scheduler(repository, instance):
                 '\texport DAGSTER_HOME="~/dagster_home"'
                 "\n\n"
             )
-            + no_scheduler_configured_message
         )
-
-    if not instance.scheduler:
-        raise click.UsageError(no_scheduler_configured_message)
 
 
 @schedule_cli.command(

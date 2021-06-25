@@ -3,7 +3,6 @@ import os
 import random
 import string
 import sys
-import tempfile
 import time
 from contextlib import contextmanager
 
@@ -21,12 +20,10 @@ from dagster import (
     pipeline,
     repository,
     schedule,
-    seven,
     solid,
 )
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.definitions.run_request import RunRequest
-from dagster.core.errors import DagsterScheduleWipeRequired
 from dagster.core.host_representation import (
     ExternalJobOrigin,
     ExternalRepositoryOrigin,
@@ -1609,58 +1606,6 @@ def test_multi_runs_missing_run_key(external_repo_context, capfd):
                 "Schedules that return multiple RunRequests must specify a "
                 "run_key in each RunRequest" in captured.out
             )
-
-
-@pytest.mark.skipif(seven.IS_WINDOWS, reason="Cron doesn't work on windows")
-def test_run_with_hanging_cron_schedules():
-    # Verify that the system will prompt you to wipe your schedules with the SystemCronScheduler
-    # before you can switch to DagsterDaemonScheduler
-
-    with tempfile.TemporaryDirectory() as temp_dir:
-        with instance_for_test(
-            temp_dir=temp_dir,
-            overrides={"scheduler": {"module": "dagster_cron", "class": "SystemCronScheduler"}},
-        ) as cron_instance:
-            with default_repo() as external_repo:
-                cron_instance.start_schedule_and_update_storage_state(
-                    external_repo.get_external_schedule("simple_schedule")
-                )
-
-        # Can't change scheduler to DagsterDaemonScheduler, warns you to wipe
-        with pytest.raises(DagsterScheduleWipeRequired):
-            with instance_for_test(
-                temp_dir=temp_dir,
-                overrides={
-                    "scheduler": {
-                        "module": "dagster.core.scheduler",
-                        "class": "DagsterDaemonScheduler",
-                    },
-                },
-            ) as instance:
-                instance.optimize_for_dagit(statement_timeout=500)
-
-        with instance_for_test(
-            temp_dir=temp_dir,
-            overrides={
-                "scheduler": {
-                    "module": "dagster_cron",
-                    "class": "SystemCronScheduler",
-                },
-            },
-        ) as cron_instance:
-            cron_instance.wipe_all_schedules()
-
-        # After wiping, now can change the scheduler to DagsterDaemonScheduler
-        with instance_for_test(
-            temp_dir=temp_dir,
-            overrides={
-                "scheduler": {
-                    "module": "dagster.core.scheduler",
-                    "class": "DagsterDaemonScheduler",
-                },
-            },
-        ):
-            pass
 
 
 @pytest.mark.parametrize("external_repo_context", repos())

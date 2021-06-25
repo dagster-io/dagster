@@ -13,17 +13,11 @@
       </InstanceDiagramBox>
     </div>
   </div>
-  <div className="grid grid-cols-3 gap-8 justify-between">
-    <div className="col-span-3 border px-4 py-4 space-y-4">
-      <div>Daemons</div>
-      <div className="grid grid-cols-2 gap-8 justify-between">
-        <InstanceDiagramBox href="#scheduler">Scheduler</InstanceDiagramBox>
-        <InstanceDiagramBox href="#run-coordinator">
-          Run Coordinator
-        </InstanceDiagramBox>
-      </div>
-    </div>
+  <div className="grid grid-cols-2 gap-8 justify-between">
     <InstanceDiagramBox href="#run-launcher">Run Launcher</InstanceDiagramBox>
+    <InstanceDiagramBox href="#run-coordinator">
+      Run Coordinator
+    </InstanceDiagramBox>
     <InstanceDiagramBox href="#compute-log-storage">
       Compute Log Storage
     </InstanceDiagramBox>
@@ -384,36 +378,6 @@ event_log_storage:
   config:
     mysql_url:
       env: MYSQL_DB_CONN_STRING
-```
-
-### Scheduler
-
-This provides an optional scheduler which controls execution of pipeline runs at regular intervals.
-
-To configure the scheduler, set `scheduler` in your `dagster.yaml`. If you don't set `scheduler`, no Scheduler is configured by default.
-
-There are _three_ options for the Scheduler: <PyObject module="dagster.core.scheduler" object="DagsterDaemonScheduler" />, <PyObject module="dagster_cron.cron_scheduler" object="SystemCronScheduler" />, and <PyObject module="dagster_k8s" object="K8sScheduler" />. **We recommend using `DagsterDaemonScheduler`**.
-
-<Warning>
-  <PyObject module="dagster_cron.cron_scheduler" object="SystemCronScheduler" />{" "}
-  and <PyObject module="dagster_k8s" object="K8sScheduler" />
-  are deprecated and will be removed in the 0.12.0 Dagster release.
-</Warning>
-
-#### DagsterDaemonScheduler (Default)
-
-<PyObject
-module="dagster.core.scheduler"
-object="DagsterDaemonScheduler"
-/> submits runs from the dagster-daemon (long-lived) process. It periodically checks
-each running schedule for execution times that don’t have runs yet and launches them.
-
-Please also see the <Link href="/deployment/dagster-daemon">Daemon Deployment Docs</Link> for more context on deployment.
-
-```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_dagster_daemon endbefore=end_marker_dagster_daemon
-scheduler:
-  module: dagster.core.scheduler
-  class: DagsterDaemonScheduler
 ```
 
 ### Schedule Storage

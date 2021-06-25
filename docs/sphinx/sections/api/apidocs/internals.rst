@@ -203,11 +203,6 @@ Scheduling
 
 .. autoclass:: DagsterDaemonScheduler
 
-.. currentmodule:: dagster_cron.cron_scheduler
-
-.. autoclass:: SystemCronScheduler
-
-
 .. currentmodule:: dagster.core.storage.schedules
 
 .. autoclass:: ScheduleStorage
