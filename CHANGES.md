@@ -8,8 +8,8 @@
 - io_manager_key and root_manager_key is disallowed on composite solids’ InputDefinitions and OutputDefinitions. Instead, custom IO managers on the solids inside composite solids will be respected:
 
   ```python
-  @solid(input*defs=[InputDefinition("data", dagster_type=str, root_manager_key="my_root")])
-  def inner_solid(*, data):
+  @solid(input_defs=[InputDefinition("data", dagster_type=str, root_manager_key="my_root")])
+  def inner_solid(_, data):
     return data
 
   @composite_solid
