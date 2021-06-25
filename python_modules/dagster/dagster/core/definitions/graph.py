@@ -369,6 +369,7 @@ class GraphDefinition(NodeDefinition):
         default_config: Optional[Dict[str, Any]] = None,
         partitions: Optional[Callable[[], List[Any]]] = None,
         hooks: Optional[AbstractSet[HookDefinition]] = None,
+        tags: Optional[Dict[str, str]] = None,
     ):
         """
         For experimenting with "job" flows
@@ -376,6 +377,7 @@ class GraphDefinition(NodeDefinition):
         from .pipeline import PipelineDefinition
 
         hooks = check.opt_set_param(hooks, "hooks", of_type=HookDefinition)
+        tags = check.opt_dict_param(tags, "tags", key_type=str, value_type=str)
 
         check.opt_callable_param(partitions, "partitions")
         if default_config and partitions:
@@ -452,6 +454,7 @@ class GraphDefinition(NodeDefinition):
                 )
             ],
             preset_defs=presets,
+            tags=tags,
         ).with_hooks(hooks)
 
 

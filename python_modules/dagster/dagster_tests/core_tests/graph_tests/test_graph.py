@@ -307,3 +307,20 @@ def test_job_with_hooks():
 
     assert result.success
     assert entered == ["yes"]
+
+
+def test_tags_on_job():
+    @solid
+    def basic():
+        pass
+
+    @graph
+    def basic_graph():
+        basic()
+
+    tags = {"my_tag": "yes"}
+    job = basic_graph.to_job(tags=tags)
+    assert job.tags == tags
+
+    result = execute_pipeline(job)
+    assert result.success
