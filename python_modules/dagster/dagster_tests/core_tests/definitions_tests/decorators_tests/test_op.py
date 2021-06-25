@@ -1,6 +1,16 @@
 from typing import Tuple
 
-from dagster import In, MultiOut, Nothing, Out, Output, execute_pipeline, graph, op
+from dagster import (
+    In,
+    MultiOut,
+    Nothing,
+    Out,
+    Output,
+    build_op_context,
+    execute_pipeline,
+    graph,
+    op,
+)
 
 
 def execute_op_in_job(an_op):
@@ -180,3 +190,11 @@ def test_nothing_in():
 
     result = execute_pipeline(nothing_test.to_job())
     assert result.success
+
+
+def test_op_config():
+    @op(config_schema={"conf_str": str})
+    def my_op(context):
+        assert context.op_config == {"conf_str": "foo"}
+
+    my_op(build_op_context(config={"conf_str": "foo"}))

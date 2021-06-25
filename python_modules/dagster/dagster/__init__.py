@@ -115,7 +115,7 @@ from dagster.core.execution.context.compute import SolidExecutionContext
 from dagster.core.execution.context.hook import HookContext, build_hook_context
 from dagster.core.execution.context.init import InitResourceContext, build_init_resource_context
 from dagster.core.execution.context.input import InputContext, build_input_context
-from dagster.core.execution.context.invocation import build_solid_context
+from dagster.core.execution.context.invocation import build_op_context, build_solid_context
 from dagster.core.execution.context.logger import InitLoggerContext
 from dagster.core.execution.context.output import OutputContext, build_output_context
 from dagster.core.execution.context.system import TypeCheckContext
@@ -261,6 +261,7 @@ __all__ = [
     "SolidExecutionResult",
     "SolidExecutionContext",
     "build_solid_context",
+    "build_op_context",
     "HookContext",
     "build_hook_context",
     "TypeCheckContext",
