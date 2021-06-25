@@ -66,7 +66,7 @@ from .input import In, InputDefinition, InputMapping
 from .intermediate_storage import IntermediateStorageDefinition, intermediate_storage
 from .logger import LoggerDefinition, build_init_logger_context, logger
 from .mode import ModeDefinition
-from .output import DynamicOutputDefinition, MultiOut, Out, OutputDefinition, OutputMapping
+from .output import DynamicOutputDefinition, Out, OutputDefinition, OutputMapping
 from .partition import Partition, PartitionScheduleDefinition, PartitionSetDefinition
 from .pipeline import PipelineDefinition
 from .pipeline_base import IPipeline

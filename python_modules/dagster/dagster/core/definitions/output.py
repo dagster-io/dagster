@@ -1,5 +1,5 @@
 from collections import namedtuple
-from typing import Any, Dict, List, NamedTuple, Optional, Set, TypeVar
+from typing import Any, Callable, Dict, NamedTuple, Optional, Set, Type, TypeVar, Union
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
@@ -291,10 +291,17 @@ class OutputMapping(namedtuple("_OutputMapping", "definition maps_from")):
 
 
 class Out(
-    namedtuple(
+    NamedTuple(
         "_Out",
-        "dagster_type name description is_required io_manager_key metadata asset_key "
-        "asset_partitions",
+        [
+            ("dagster_type", Union[DagsterType, Type[NoValueSentinel]]),
+            ("description", Optional[str]),
+            ("is_required", Optional[bool]),
+            ("io_manager_key", Optional[str]),
+            ("metadata", Optional[Dict[str, Any]]),
+            ("asset_key", Optional[Union[AssetKey, Callable[..., AssetKey]]]),
+            ("asset_partitions", Optional[Union[Set[str], Callable[..., Set[str]]]]),
+        ],
     )
 ):
     """Experimental replacement for OutputDefinition intended to decrease verbosity."""
@@ -302,7 +309,6 @@ class Out(
     def __new__(
         cls,
         dagster_type=NoValueSentinel,
-        name=None,
         description=None,
         is_required=None,
         io_manager_key=None,
@@ -314,7 +320,6 @@ class Out(
         return super(Out, cls).__new__(
             cls,
             dagster_type=dagster_type,
-            name=name,
             description=description,
             is_required=is_required,
             io_manager_key=io_manager_key,
@@ -323,14 +328,14 @@ class Out(
             asset_partitions=asset_partitions,
         )
 
-    def to_definition(self, inferred: InferredOutputProps) -> "OutputDefinition":
+    def to_definition(self, annotation_type: type, name: Optional[str]) -> "OutputDefinition":
         dagster_type = (
-            self.dagster_type if self.dagster_type is not NoValueSentinel else inferred.annotation
+            self.dagster_type if self.dagster_type is not NoValueSentinel else annotation_type
         )
 
         return OutputDefinition(
             dagster_type=dagster_type,
-            name=self.name,
+            name=name,
             description=self.description,
             is_required=self.is_required,
             io_manager_key=self.io_manager_key,
@@ -338,45 +343,3 @@ class Out(
             asset_key=self.asset_key,
             asset_partitions=self.asset_partitions,
         )
-
-
-class MultiOut(NamedTuple("_MultiOut", [("outs", List[Out])])):
-    """Experimental replacement for providing a list of output definitions, to decrease verbosity."""
-
-    def __new__(cls, outs: Dict[str, Out]):
-        out_list = [
-            Out(
-                dagster_type=out.dagster_type,
-                name=key,
-                description=out.description,
-                is_required=out.is_required,
-                io_manager_key=out.io_manager_key,
-                metadata=out.metadata,
-                asset_key=out.asset_key,
-                asset_partitions=out.asset_partitions,
-            )
-            for key, out in outs.items()
-        ]
-        return super(MultiOut, cls).__new__(
-            cls,
-            check.list_param(out_list, "outs", Out),
-        )
-
-    def to_definition_list(self, inferred: InferredOutputProps) -> List[OutputDefinition]:
-        output_defs = []
-        for idx, out in enumerate(self.outs):
-            annotation_type = inferred.annotation.__args__[idx] if inferred.annotation else None
-            output_defs.append(
-                OutputDefinition(
-                    dagster_type=annotation_type,
-                    name=out.name,
-                    description=out.description,
-                    is_required=out.is_required,
-                    io_manager_key=out.io_manager_key,
-                    metadata=out.metadata,
-                    asset_key=out.asset_key,
-                    asset_partitions=out.asset_partitions,
-                )
-            )
-
-        return output_defs

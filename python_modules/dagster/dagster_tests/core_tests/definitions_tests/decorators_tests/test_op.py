@@ -1,8 +1,11 @@
-from typing import Tuple
+from typing import Dict, Generator, Tuple
 
+import pytest
 from dagster import (
+    DagsterInvariantViolationError,
+    DagsterType,
+    DagsterTypeCheckDidNotPass,
     In,
-    MultiOut,
     Nothing,
     Out,
     Output,
@@ -69,7 +72,7 @@ def test_out():
 
 
 def test_multi_out():
-    @op(out=MultiOut({"a": Out(metadata={"x": 1}), "b": Out(metadata={"y": 2})}))
+    @op(out={"a": Out(metadata={"x": 1}), "b": Out(metadata={"y": 2})})
     def my_op() -> Tuple[int, str]:
         return 1, "q"
 
@@ -96,7 +99,7 @@ def test_tuple_out():
 
 
 def test_multi_out_yields():
-    @op(out=MultiOut({"a": Out(metadata={"x": 1}), "b": Out(metadata={"y": 2})}))
+    @op(out={"a": Out(metadata={"x": 1}), "b": Out(metadata={"y": 2})})
     def my_op():
         yield Output(output_name="a", value=1)
         yield Output(output_name="b", value=2)
@@ -113,7 +116,7 @@ def test_multi_out_yields():
 
 
 def test_multi_out_optional():
-    @op(out=MultiOut({"a": Out(metadata={"x": 1}, is_required=False), "b": Out(metadata={"y": 2})}))
+    @op(out={"a": Out(metadata={"x": 1}, is_required=False), "b": Out(metadata={"y": 2})})
     def my_op():
         yield Output(output_name="b", value=2)
 
@@ -155,7 +158,7 @@ def test_ins_dict():
 
 
 def test_multi_out_dict():
-    @op(out=MultiOut({"a": Out(metadata={"x": 1}), "b": Out(metadata={"y": 2})}))
+    @op(out={"a": Out(metadata={"x": 1}), "b": Out(metadata={"y": 2})})
     def my_op() -> Tuple[int, str]:
         return 1, "q"
 
@@ -198,3 +201,128 @@ def test_op_config():
         assert context.op_config == {"conf_str": "foo"}
 
     my_op(build_op_context(config={"conf_str": "foo"}))
+
+
+even_type = DagsterType(
+    name="EvenDagsterType",
+    type_check_fn=lambda _, value: isinstance(value, int) and value % 2 == 0,
+)
+# Test typing override between out and annotation. Should they just match?
+def test_out_dagster_type():
+    @op(out=Out(dagster_type=even_type))
+    def basic() -> int:
+        return 6
+
+    assert basic.output_defs[0].dagster_type == even_type
+    assert basic() == 6
+
+
+def test_multiout_dagster_type():
+    @op(out={"a": Out(dagster_type=even_type), "b": Out(dagster_type=even_type)})
+    def basic_multi() -> Tuple[int, int]:
+        return 6, 6
+
+    assert basic_multi() == (6, 6)
+
+
+# Test creating a single, named op using the dictionary syntax. Document that annotation cannot be wrapped in a tuple for singleton case.
+def test_multiout_single_entry():
+    @op(out={"a": Out()})
+    def single_output_op() -> int:
+        return 5
+
+    assert single_output_op() == 5
+    result = execute_op_in_job(single_output_op)
+    assert result.output_for_solid("single_output_op", output_name="a") == 5
+
+
+def test_tuple_named_single_output():
+    # Ensure functionality in the case where you want to have a named tuple output
+    @op(out={"a": Out()})
+    def single_output_op_tuple() -> Tuple[int, int]:
+        return (5, 5)
+
+    assert single_output_op_tuple() == (5, 5)
+    assert execute_op_in_job(single_output_op_tuple).output_for_solid(
+        "single_output_op_tuple", "a"
+    ) == (5, 5)
+
+
+# Test creating a multi-out op with the incorrect annotation.
+def test_op_multiout_incorrect_annotation():
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Expected Tuple annotation for multiple outputs, but received non-tuple annotation.",
+    ):
+
+        @op(out={"a": Out(), "b": Out()})
+        def _incorrect_annotation_op() -> int:
+            pass
+
+
+def test_op_typing_annotations():
+    @op
+    def my_dict_op() -> Dict[str, int]:
+        return {"foo": 5}
+
+    assert my_dict_op() == {"foo": 5}
+
+    my_output = {"foo": 5}, ("foo",)
+
+    @op(out={"a": Out(), "b": Out()})
+    def my_dict_multiout() -> Tuple[Dict[str, int], Tuple[str]]:
+        return {"foo": 5}, ("foo",)
+
+    assert my_dict_multiout() == my_output
+    result = execute_op_in_job(my_dict_multiout)
+    assert result.output_for_solid("my_dict_multiout", "a") == my_output[0]
+    assert result.output_for_solid("my_dict_multiout", "b") == my_output[1]
+
+
+# Test simplest possible multiout case
+def test_op_multiout_base():
+    @op(out={"a": Out(), "b": Out()})
+    def basic_multiout() -> Tuple[int, str]:
+        return (5, "foo")
+
+    assert basic_multiout() == (5, "foo")
+    result = execute_op_in_job(basic_multiout)
+    assert result.output_for_solid("basic_multiout", "a") == 5
+    assert result.output_for_solid("basic_multiout", "b") == "foo"
+
+
+# Test tuple size mismatch (larger and smaller)
+def test_op_multiout_size_mismatch():
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Expected Tuple annotation to have number of entries matching the number of outputs "
+        "for more than one output. Expected 2 outputs but annotation has 3.",
+    ):
+
+        @op(out={"a": Out(), "b": Out()})
+        def _basic_multiout_wrong_annotation() -> Tuple[int, int, int]:
+            pass
+
+
+# Document what happens when someone tries to use type annotations with Output
+def test_type_annotations_with_output():
+    @op
+    def my_op_returns_output() -> Output:
+        return Output(5)
+
+    with pytest.raises(DagsterTypeCheckDidNotPass):
+        my_op_returns_output()
+
+    with pytest.raises(DagsterTypeCheckDidNotPass):
+        execute_op_in_job(my_op_returns_output)
+
+
+# Document what happens when someone tries to use type annotations with generator
+def test_type_annotations_with_generator():
+    @op
+    def my_op_yields_output() -> Generator[Output, None, None]:
+        yield Output(5)
+
+    assert list(my_op_yields_output())[0].value == 5
+    result = execute_op_in_job(my_op_yields_output)
+    assert result.output_for_solid("my_op_yields_output") == 5
