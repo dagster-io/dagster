@@ -1249,74 +1249,14 @@
             "description": "An enumeration.",
             "enum": [
                 "DagsterDaemonScheduler",
-                "K8sScheduler",
                 "CustomScheduler"
             ],
             "type": "string"
-        },
-        "K8sSchedulerConfig": {
-            "title": "K8sSchedulerConfig",
-            "type": "object",
-            "properties": {
-                "image": {
-                    "$ref": "#/definitions/Image"
-                },
-                "schedulerNamespace": {
-                    "title": "Schedulernamespace",
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ]
-                },
-                "loadInclusterConfig": {
-                    "title": "Loadinclusterconfig",
-                    "type": "boolean"
-                },
-                "kubeconfigFile": {
-                    "title": "Kubeconfigfile",
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ]
-                },
-                "envSecrets": {
-                    "title": "Envsecrets",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/SecretEnvSource"
-                    }
-                }
-            },
-            "required": [
-                "image",
-                "loadInclusterConfig",
-                "envSecrets"
-            ],
-            "additionalProperties": false
         },
         "SchedulerConfig": {
             "title": "SchedulerConfig",
             "type": "object",
             "properties": {
-                "k8sScheduler": {
-                    "title": "K8sSchedulerConfig",
-                    "anyOf": [
-                        {
-                            "$ref": "#/definitions/K8sSchedulerConfig"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ]
-                },
                 "customScheduler": {
                     "title": "ConfigurableClass",
                     "anyOf": [
@@ -1348,24 +1288,6 @@
             ],
             "additionalProperties": false,
             "allOf": [
-                {
-                    "if": {
-                        "properties": {
-                            "type": {
-                                "const": "K8sScheduler"
-                            }
-                        }
-                    },
-                    "then": {
-                        "properties": {
-                            "config": {
-                                "required": [
-                                    "k8sScheduler"
-                                ]
-                            }
-                        }
-                    }
-                },
                 {
                     "if": {
                         "properties": {

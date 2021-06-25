@@ -315,43 +315,11 @@ pipelineRun:
 scheduler:
   # Type can be one of [
   #   DagsterDaemonScheduler,
-  #   K8sScheduler (deprecated),
   #   CustomScheduler,
   #  ]
   type: DagsterDaemonScheduler
 
-  config:
-    # (deprecated) This configuration will only be used if the K8sScheduler is selected
-    k8sScheduler:
-      # Image for K8s CronJob(s) to launch K8s Job(s). This image needs access to dagster code
-      # (to call `dagster api launch_scheduled_execution`) and instance yaml
-      # but does not need access to user code.
-      image:
-        # When a tag is not supplied for a Dagster provided image,
-        # it will default as the Helm chart version.
-        repository: "docker.io/dagster/dagster-celery-k8s"
-        tag: ~
-        pullPolicy: Always
-
-      # K8s Namespace for K8s CronJob(s) and launched K8s Job(s).
-      # By default, the release namespace is used.
-      schedulerNamespace: ~
-
-      # Set to true to load kubeconfig from within cluster
-      loadInclusterConfig: true
-
-      # File to load kubeconfig from. Only set this if loadInclusterConfig is false.
-      kubeconfigFile: ~
-
-      # Additional environment variables can be retrieved and set from Secrets. See:
-      # https://kubernetes.io/docs/concepts/configuration/secret/#use-case-as-container-environment-variables
-      #
-      # Example:
-      #
-      # envSecrets:
-      #   - name: secret
-      envSecrets: []
-
+  config: {}
     ## Uncomment this configuration will only be used if the CustomScheduler is selected.
     ## Using this setting requires a custom Dagit image that defines the user specified
     ## scheduler in an installed python module.
@@ -759,9 +727,6 @@ ingress:
 #
 # By default, this daemon is included in your deployment and used to run schedules and sensors.
 # Setting `enabled` to false will stop the daemon from being included in your deployment.
-#
-# To run schedules using K8sScheduler and K8s CronJobs instead of in the daemon, set `k8sEnabled`
-# under the `scheduler` key above to true.
 #
 # Each thread in the daemon periodically sends heartbeats to indicate that it is still running.
 # Setting `heartbeatTolerance` lets you configure how long each thread can run without sending

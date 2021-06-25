@@ -52,7 +52,7 @@ def integration_steps():
         if integration_suite == os.path.join(
             "integration_tests", "test_suites", "k8s-integration-test-suite"
         ):
-            tox_env_suffixes = ["-default", "-markscheduler"]
+            tox_env_suffixes = ["-default"]
             upload_coverage = True
         elif integration_suite == os.path.join(
             "integration_tests", "test_suites", "celery-k8s-integration-test-suite"

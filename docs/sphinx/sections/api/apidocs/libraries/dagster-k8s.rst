@@ -16,8 +16,6 @@ APIs
 .. autodata:: k8s_job_executor
   :annotation: ExecutorDefinition
 
-.. autoclass:: K8sScheduler
-
 
 Python API
 ^^^^^^^^^^

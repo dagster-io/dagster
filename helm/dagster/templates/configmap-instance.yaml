@@ -14,8 +14,6 @@ data:
 
       {{- if eq $schedulerType "DagsterDaemonScheduler" }}
         {{- include "dagsterYaml.scheduler.daemon" . | indent 6 -}}
-      {{- else if eq $schedulerType "K8sScheduler" }}
-        {{- include "dagsterYaml.scheduler.k8s" . | indent 6 -}}
       {{- else if eq $schedulerType "CustomScheduler" }}
         {{- include "dagsterYaml.scheduler.custom" . | indent 6 -}}
       {{- end }}
