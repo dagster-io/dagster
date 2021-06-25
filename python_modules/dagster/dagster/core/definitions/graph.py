@@ -1,6 +1,7 @@
 from collections import OrderedDict
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Any,
     Callable,
     Dict,
@@ -17,6 +18,7 @@ from dagster import check
 from dagster.config import Field, Shape
 from dagster.core.definitions.config import ConfigMapping
 from dagster.core.definitions.definition_config_schema import IDefinitionConfigSchema
+from dagster.core.definitions.hook import HookDefinition
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import (
@@ -366,11 +368,14 @@ class GraphDefinition(NodeDefinition):
         config_mapping: Union[ConfigMapping, Dict[str, Any]] = None,
         default_config: Optional[Dict[str, Any]] = None,
         partitions: Optional[Callable[[], List[Any]]] = None,
+        hooks: Optional[AbstractSet[HookDefinition]] = None,
     ):
         """
         For experimenting with "job" flows
         """
         from .pipeline import PipelineDefinition
+
+        hooks = check.opt_set_param(hooks, "hooks", of_type=HookDefinition)
 
         check.opt_callable_param(partitions, "partitions")
         if default_config and partitions:
@@ -447,7 +452,7 @@ class GraphDefinition(NodeDefinition):
                 )
             ],
             preset_defs=presets,
-        )
+        ).with_hooks(hooks)
 
 
 def _validate_in_mappings(
