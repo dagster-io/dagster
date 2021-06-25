@@ -125,18 +125,16 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         self._job_image = check.opt_str_param(job_image, "job_image")
         self.dagster_home = check.str_param(dagster_home, "dagster_home")
         self._image_pull_policy = check.str_param(image_pull_policy, "image_pull_policy")
-        self._image_pull_secrets = check.opt_list_param(
+        self.image_pull_secrets = check.opt_list_param(
             image_pull_secrets, "image_pull_secrets", of_type=dict
         )
-        self._service_account_name = check.str_param(service_account_name, "service_account_name")
+        self.service_account_name = check.str_param(service_account_name, "service_account_name")
         self.instance_config_map = check.str_param(instance_config_map, "instance_config_map")
         self.postgres_password_secret = check.opt_str_param(
             postgres_password_secret, "postgres_password_secret"
         )
-        self._env_config_maps = check.opt_list_param(
-            env_config_maps, "env_config_maps", of_type=str
-        )
-        self._env_secrets = check.opt_list_param(env_secrets, "env_secrets", of_type=str)
+        self.env_config_maps = check.opt_list_param(env_config_maps, "env_config_maps", of_type=str)
+        self.env_secrets = check.opt_list_param(env_secrets, "env_secrets", of_type=str)
 
         super().__init__()
 
@@ -175,10 +173,10 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                 dagster_home=check.str_param(self.dagster_home, "dagster_home"),
                 image_pull_policy=check.str_param(self._image_pull_policy, "image_pull_policy"),
                 image_pull_secrets=check.opt_list_param(
-                    self._image_pull_secrets, "image_pull_secrets", of_type=dict
+                    self.image_pull_secrets, "image_pull_secrets", of_type=dict
                 ),
                 service_account_name=check.str_param(
-                    self._service_account_name, "service_account_name"
+                    self.service_account_name, "service_account_name"
                 ),
                 instance_config_map=check.str_param(
                     self.instance_config_map, "instance_config_map"
@@ -187,9 +185,9 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                     self.postgres_password_secret, "postgres_password_secret"
                 ),
                 env_config_maps=check.opt_list_param(
-                    self._env_config_maps, "env_config_maps", of_type=str
+                    self.env_config_maps, "env_config_maps", of_type=str
                 ),
-                env_secrets=check.opt_list_param(self._env_secrets, "env_secrets", of_type=str),
+                env_secrets=check.opt_list_param(self.env_secrets, "env_secrets", of_type=str),
             )
             return self._job_config
 
@@ -199,19 +197,17 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             dagster_home=check.str_param(self.dagster_home, "dagster_home"),
             image_pull_policy=check.str_param(self._image_pull_policy, "image_pull_policy"),
             image_pull_secrets=check.opt_list_param(
-                self._image_pull_secrets, "image_pull_secrets", of_type=dict
+                self.image_pull_secrets, "image_pull_secrets", of_type=dict
             ),
-            service_account_name=check.str_param(
-                self._service_account_name, "service_account_name"
-            ),
+            service_account_name=check.str_param(self.service_account_name, "service_account_name"),
             instance_config_map=check.str_param(self.instance_config_map, "instance_config_map"),
             postgres_password_secret=check.opt_str_param(
                 self.postgres_password_secret, "postgres_password_secret"
             ),
             env_config_maps=check.opt_list_param(
-                self._env_config_maps, "env_config_maps", of_type=str
+                self.env_config_maps, "env_config_maps", of_type=str
             ),
-            env_secrets=check.opt_list_param(self._env_secrets, "env_secrets", of_type=str),
+            env_secrets=check.opt_list_param(self.env_secrets, "env_secrets", of_type=str),
         )
 
     def launch_run(self, run, external_pipeline):

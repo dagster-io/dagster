@@ -19,6 +19,7 @@ from .job import (
     get_k8s_job_name,
     get_user_defined_k8s_config,
 )
+from .launcher import K8sRunLauncher
 from .utils import delete_job
 
 
@@ -65,20 +66,37 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
               env_config_maps: ...
               env_secrets: ...
               job_image: ... # leave out if using userDeployments
+
+    If used with K8sRunLauncher, values from it's config is used for omitted fields.
     """
 
     run_launcher = init_context.instance.run_launcher
     exc_cfg = init_context.executor_config
+
+    _launcher_run_config = {
+        key: getattr(run_launcher, key, None)
+        for key in DagsterK8sJobConfig.config_type_pipeline_run().keys()
+    }
+
     job_config = DagsterK8sJobConfig(
         dagster_home=run_launcher.dagster_home,
         instance_config_map=run_launcher.instance_config_map,
         postgres_password_secret=run_launcher.postgres_password_secret,
         job_image=exc_cfg.get("job_image"),
-        image_pull_policy=exc_cfg.get("image_pull_policy"),
-        image_pull_secrets=exc_cfg.get("image_pull_secrets"),
-        service_account_name=exc_cfg.get("service_account_name"),
-        env_config_maps=exc_cfg.get("env_config_maps"),
-        env_secrets=exc_cfg.get("env_secrets"),
+        image_pull_policy=exc_cfg.get("image_pull_policy")
+        or _launcher_run_config.get("image_pull_policy"),
+        image_pull_secrets=exc_cfg.get("image_pull_secrets")
+        or _launcher_run_config.get("image_pull_secrets"),
+        service_account_name=exc_cfg.get("service_account_name")
+        or _launcher_run_config.get("service_account_name"),
+        env_config_maps=list(
+            set(
+                exc_cfg.get("env_config_maps", []) + _launcher_run_config.get("env_config_maps", [])
+            )
+        ),
+        env_secrets=list(
+            set(exc_cfg.get("env_secrets", []) + _launcher_run_config.get("env_secrets", []))
+        ),
     )
 
     return StepDelegatingExecutor(
