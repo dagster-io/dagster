@@ -755,11 +755,18 @@ def _config_mapping_with_default_value(
         return x
 
     updated_fields = {}
+    field_aliases = inner_schema.field_aliases
     for name, field in inner_schema.fields.items():
         if name in default_config:
             updated_fields[name] = Field(
                 config=field.config_type,
                 default_value=default_config[name],
+                description=field.description,
+            )
+        elif name in field_aliases and field_aliases[name] in default_config:
+            updated_fields[name] = Field(
+                config=field.config_type,
+                default_value=default_config[field_aliases[name]],
                 description=field.description,
             )
 

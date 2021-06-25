@@ -8,6 +8,7 @@ from .errors import (
     create_enum_type_mismatch_error,
     create_enum_value_missing_error,
     create_field_not_defined_error,
+    create_field_substitution_collision_error,
     create_fields_not_defined_error,
     create_missing_required_field_error,
     create_missing_required_fields_error,
@@ -204,11 +205,16 @@ def _validate_shape_config(context, config_value, check_for_extra_incoming_field
     check.not_none_param(config_value, "config_value")
     check.bool_param(check_for_extra_incoming_fields, "check_for_extra_incoming_fields")
 
+    field_aliases = check.opt_dict_param(
+        context.config_type_snap.field_aliases, "field_aliases", key_type=str, value_type=str
+    )
+
     if config_value and not isinstance(config_value, dict):
         return EvaluateValueResult.for_error(create_dict_type_mismatch_error(context, config_value))
 
     field_snaps = context.config_type_snap.fields
     defined_field_names = {fs.name for fs in field_snaps}
+    defined_field_names = defined_field_names.union(set(field_aliases.values()))
 
     incoming_field_names = set(config_value.keys())
 
@@ -217,11 +223,16 @@ def _validate_shape_config(context, config_value, check_for_extra_incoming_field
     if check_for_extra_incoming_fields:
         _append_if_error(
             errors,
-            _check_for_extra_incoming_fields(context, defined_field_names, incoming_field_names),
+            _check_for_extra_incoming_fields(
+                context,
+                defined_field_names,
+                incoming_field_names,
+            ),
         )
 
     _append_if_error(
-        errors, _compute_missing_fields_error(context, field_snaps, incoming_field_names)
+        errors,
+        _compute_missing_fields_error(context, field_snaps, incoming_field_names, field_aliases),
     )
 
     # dict is well-formed. now recursively validate all incoming fields
@@ -229,8 +240,22 @@ def _validate_shape_config(context, config_value, check_for_extra_incoming_field
     field_errors = []
     for field_snap in context.config_type_snap.fields:
         name = field_snap.name
-        if name in config_value:
+        aliased_name = field_aliases.get(name)
+        if aliased_name is not None and aliased_name in config_value and name in config_value:
+            field_errors.append(
+                create_field_substitution_collision_error(
+                    context.for_field_snap(field_snap), name=name, aliased_name=aliased_name
+                )
+            )
+        elif name in config_value:
             field_evr = _validate_config(context.for_field_snap(field_snap), config_value[name])
+
+            if field_evr.errors:
+                field_errors += field_evr.errors
+        elif aliased_name is not None and aliased_name in config_value:
+            field_evr = _validate_config(
+                context.for_field_snap(field_snap), config_value[aliased_name]
+            )
 
             if field_evr.errors:
                 field_errors += field_evr.errors
@@ -275,12 +300,15 @@ def _check_for_extra_incoming_fields(context, defined_field_names, incoming_fiel
             return create_fields_not_defined_error(context, extra_fields)
 
 
-def _compute_missing_fields_error(context, field_snaps, incoming_fields):
+def _compute_missing_fields_error(context, field_snaps, incoming_fields, field_aliases):
     missing_fields = []
 
     for field_snap in field_snaps:
+
+        field_alias = field_aliases.get(field_snap.name)
         if field_snap.is_required and field_snap.name not in incoming_fields:
-            missing_fields.append(field_snap.name)
+            if field_alias is None or field_alias not in incoming_fields:
+                missing_fields.append(field_snap.name)
 
     if missing_fields:
         if len(missing_fields) == 1:

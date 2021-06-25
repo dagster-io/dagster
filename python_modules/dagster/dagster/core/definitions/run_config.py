@@ -146,6 +146,7 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
                 ),
             }
         ),
+        field_aliases={"solids": "ops"},
     )
 
 
@@ -302,13 +303,13 @@ def solid_config_field(fields: Dict[str, Optional[Field]], ignored: bool) -> Opt
     if trimmed_fields:
         if ignored:
             return Field(
-                Shape(trimmed_fields),
+                Shape(trimmed_fields, field_aliases={"solids": "ops"}),
                 is_required=False,
                 description="This solid is not present in the current solid selection, "
                 "the config values are allowed but ignored.",
             )
         else:
-            return Field(Shape(trimmed_fields))
+            return Field(Shape(trimmed_fields, field_aliases={"solids": "ops"}))
     else:
         return None
 
@@ -434,7 +435,7 @@ def define_solid_dictionary_cls(
         if solid_field:
             fields[solid.name] = solid_field
 
-    return Shape(fields)
+    return Shape(fields, field_aliases={"solids": "ops"})
 
 
 def iterate_node_def_config_types(node_def: NodeDefinition) -> Iterator[ConfigType]:

@@ -2,6 +2,7 @@ from typing import Dict, Generator, Tuple
 
 import pytest
 from dagster import (
+    DagsterInvalidConfigError,
     DagsterInvariantViolationError,
     DagsterType,
     DagsterTypeCheckDidNotPass,
@@ -201,6 +202,20 @@ def test_op_config():
 
     my_op(build_op_context(config={"conf_str": "foo"}))
 
+    @graph
+    def basic():
+        my_op()
+
+    result = execute_in_process(
+        basic, run_config={"ops": {"basic": {"ops": {"my_op": {"config": {"conf_str": "foo"}}}}}}
+    )
+    assert result.success
+
+    result = basic.to_job(
+        config={"ops": {"my_op": {"config": {"conf_str": "foo"}}}}
+    ).execute_in_process()
+    assert result.success
+
 
 even_type = DagsterType(
     name="EvenDagsterType",
@@ -322,3 +337,45 @@ def test_type_annotations_with_generator():
     assert list(my_op_yields_output())[0].value == 5
     result = execute_op_in_graph(my_op_yields_output)
     assert result.result_for_node("my_op_yields_output").output_values["result"] == 5
+
+
+def test_op_config_entry_collision():
+    @op(config_schema={"foo": str})
+    def my_op(_):
+        pass
+
+    @graph
+    def my_graph():
+        my_op()
+        my_op.alias("my_op2")()
+
+    my_job = my_graph.to_job()
+
+    with pytest.raises(DagsterInvalidConfigError, match="Received both field"):
+        my_job.execute_in_process(
+            run_config={
+                "solids": {"my_op": {"config": {"foo": "bar"}}},
+                "ops": {"my_op2": {"config": {"foo": "bar"}}},
+            }
+        )
+
+    @graph
+    def nest_collision():
+        my_graph()
+
+    my_nested_graph_job = nest_collision.to_job()
+
+    with pytest.raises(
+        DagsterInvalidConfigError,
+        match="Received both field 'solids' and field 'ops' in config. Please use one or the other.",
+    ):
+        my_nested_graph_job.execute_in_process(
+            run_config={
+                "ops": {
+                    "my_graph": {
+                        "solids": {"my_op": {"config": {"foo": "bar"}}},
+                        "ops": {"my_op2": {"config": {"foo": "bar"}}},
+                    }
+                }
+            }
+        )

@@ -63,7 +63,7 @@ def _add_hash(m, string):
     m.update(string.encode("utf-8"))
 
 
-def _compute_fields_hash(fields, description):
+def _compute_fields_hash(fields, description, field_aliases=None):
 
     m = hashlib.sha1()  # so that hexdigest is 40, not 64 bytes
     if description:
@@ -79,11 +79,19 @@ def _compute_fields_hash(fields, description):
         if field.description:
             _add_hash(m, ":description: " + field.description)
 
+    field_aliases = check.opt_dict_param(
+        field_aliases, "field_aliases", key_type=str, value_type=str
+    )
+    for field_name in sorted(list(field_aliases.keys())):
+        field_alias = field_aliases[field_name]
+        _add_hash(m, ":fieldname: " + field_name)
+        _add_hash(m, ":fieldalias: " + field_alias)
+
     return m.hexdigest()
 
 
-def _define_shape_key_hash(fields, description):
-    return "Shape." + _compute_fields_hash(fields, description)
+def _define_shape_key_hash(fields, description, field_aliases):
+    return "Shape." + _compute_fields_hash(fields, description, field_aliases=field_aliases)
 
 
 class Shape(_ConfigHasFields):
@@ -95,26 +103,39 @@ class Shape(_ConfigHasFields):
     Args:
         fields (Dict[str, Field]):
             The specification of the config dict.
+        field_aliases (Dict[str, str]):
+            Maps a string key to an alias that can be used instead of the original key. For example,
+            an entry {"solids": "ops"} means that someone could use "ops" instead of "solids" as a
+            top level string key.
     """
 
     def __new__(
         cls,
         fields,
         description=None,
+        field_aliases=None,
     ):
         return _memoize_inst_in_field_cache(
             cls,
             Shape,
-            _define_shape_key_hash(expand_fields_dict(fields), description),
+            _define_shape_key_hash(expand_fields_dict(fields), description, field_aliases),
         )
 
-    def __init__(self, fields, description=None):
+    def __init__(
+        self,
+        fields,
+        description=None,
+        field_aliases=None,
+    ):
         fields = expand_fields_dict(fields)
         super(Shape, self).__init__(
             kind=ConfigTypeKind.STRICT_SHAPE,
-            key=_define_shape_key_hash(fields, description),
+            key=_define_shape_key_hash(fields, description, field_aliases),
             description=description,
             fields=fields,
+        )
+        self.field_aliases = check.opt_dict_param(
+            field_aliases, "field_aliases", key_type=str, value_type=str
         )
 
 

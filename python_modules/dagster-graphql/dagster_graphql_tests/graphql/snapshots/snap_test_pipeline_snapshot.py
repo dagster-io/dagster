@@ -45,7 +45,7 @@ snapshots['test_fetch_snapshot_or_error_by_active_pipeline_name_success 1'] = ''
       }
     ],
     "name": "csv_hello_world",
-    "pipelineSnapshotId": "6cd0368110ea234a71289df4d4498e6c826780fd",
+    "pipelineSnapshotId": "1a44a9b29049187dac5a3e96eb6c3f35c3e0c0ff",
     "solidHandles": [
       {
         "handleID": "sum_solid"
@@ -103,7 +103,7 @@ snapshots['test_fetch_snapshot_or_error_by_snapshot_id_success 1'] = '''{
       }
     ],
     "name": "noop_pipeline",
-    "pipelineSnapshotId": "e5dd2125d98dd079cc9ca7870d1e48fa6af87b05",
+    "pipelineSnapshotId": "34346ff42ca60580e4e77f316c0b87714eb23d55",
     "solidHandles": [
       {
         "handleID": "noop_solid"
