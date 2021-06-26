@@ -6,7 +6,7 @@ import boto3
 import dagster
 import requests
 from dagster import Field, check
-from dagster.core.launcher.base import RunLauncher
+from dagster.core.launcher.base import LaunchRunContext, RunLauncher
 from dagster.grpc.types import ExecuteRunArgs
 from dagster.serdes import ConfigurableClass, serialize_dagster_namedtuple
 from dagster.utils.backcompat import experimental
@@ -81,7 +81,8 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         cluster = self._task_metadata().cluster
         return {"ecs/task_arn": task_arn, "ecs/cluster": cluster}
 
-    def launch_run(self, run, external_pipeline):
+    def launch_run(self, context: LaunchRunContext) -> None:
+
         """
         Launch a run in an ECS task.
 
@@ -89,8 +90,9 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         only supported networkMode. These are the defaults that are set up by
         docker-compose when you use the Dagster ECS reference deployment.
         """
+        run = context.pipeline_run
         metadata = self._task_metadata()
-        pipeline_origin = external_pipeline.get_python_origin()
+        pipeline_origin = run.pipeline_code_origin
         image = pipeline_origin.repository_origin.container_image
         task_definition = self._task_definition(metadata, image)["family"]
 
@@ -128,8 +130,6 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             pipeline_run=run,
             cls=self.__class__,
         )
-
-        return run.run_id
 
     def can_terminate(self, run_id):
         arn = self._instance.get_run_by_id(run_id).tags.get("ecs/task_arn")

@@ -57,7 +57,8 @@ from dagster.core.log_manager import coerce_valid_log_level
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.core.test_utils import today_at_midnight
-from dagster.core.workspace.load import location_origin_from_python_file
+from dagster.core.workspace.context import WorkspaceProcessContext
+from dagster.core.workspace.load_target import PythonFileTarget
 from dagster.experimental import DynamicOutput, DynamicOutputDefinition
 from dagster.seven import get_system_temp_directory
 from dagster.utils import file_relative_path, segfault
@@ -107,13 +108,23 @@ def create_main_recon_repo():
 
 
 @contextmanager
-def get_main_external_repo():
-    with location_origin_from_python_file(
-        python_file=file_relative_path(__file__, "setup.py"),
-        attribute=main_repo_name(),
-        working_directory=None,
-        location_name=main_repo_location_name(),
-    ).create_test_location() as location:
+def get_main_workspace(instance):
+    with WorkspaceProcessContext(
+        instance,
+        PythonFileTarget(
+            python_file=file_relative_path(__file__, "setup.py"),
+            attribute=main_repo_name(),
+            working_directory=None,
+            location_name=main_repo_location_name(),
+        ),
+    ) as workspace_process_context:
+        yield workspace_process_context.create_request_context()
+
+
+@contextmanager
+def get_main_external_repo(instance):
+    with get_main_workspace(instance) as workspace:
+        location = workspace.get_repository_location(main_repo_location_name())
         yield location.get_repository(main_repo_name())
 
 

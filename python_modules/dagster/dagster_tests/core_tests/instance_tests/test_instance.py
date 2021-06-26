@@ -16,7 +16,7 @@ from dagster.core.snap import (
     snapshot_from_execution_plan,
 )
 from dagster.core.test_utils import create_run_for_test, environ, instance_for_test
-from dagster_tests.api_tests.utils import get_foo_pipeline_handle
+from dagster_tests.api_tests.utils import get_bar_workspace
 
 
 def test_get_run_by_id():
@@ -107,17 +107,22 @@ def test_submit_run():
             }
         }
     ) as instance:
-        with get_foo_pipeline_handle() as pipeline_handle:
+        with get_bar_workspace(instance) as workspace:
+            external_pipeline = (
+                workspace.get_repository_location("bar_repo_location")
+                .get_repository("bar_repo")
+                .get_full_external_pipeline("foo")
+            )
 
             run = create_run_for_test(
                 instance=instance,
-                pipeline_name=pipeline_handle.pipeline_name,
+                pipeline_name=external_pipeline.name,
                 run_id="foo-bar",
-                external_pipeline_origin=pipeline_handle.get_external_origin(),
-                pipeline_code_origin=pipeline_handle.get_python_origin(),
+                external_pipeline_origin=external_pipeline.get_external_origin(),
+                pipeline_code_origin=external_pipeline.get_python_origin(),
             )
 
-            instance.submit_run(run.run_id, None)
+            instance.submit_run(run.run_id, workspace)
 
             assert len(instance.run_coordinator.queue()) == 1
             assert instance.run_coordinator.queue()[0].run_id == "foo-bar"

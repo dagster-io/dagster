@@ -1,9 +1,8 @@
-def test_termination(instance, pipeline, external_pipeline):
-    run = instance.create_run_for_pipeline(pipeline)
+def test_termination(instance, workspace, run):
 
     assert not instance.run_launcher.can_terminate(run.run_id)
 
-    instance.launch_run(run.run_id, external_pipeline)
+    instance.launch_run(run.run_id, workspace)
 
     assert instance.run_launcher.can_terminate(run.run_id)
     assert instance.run_launcher.terminate(run.run_id)

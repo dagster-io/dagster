@@ -3,9 +3,7 @@ import os
 
 import docker
 from dagster import Field, Permissive, StringSource, check
-from dagster.core.host_representation import ExternalPipeline
-from dagster.core.launcher.base import RunLauncher
-from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.launcher.base import LaunchRunContext, RunLauncher
 from dagster.core.storage.tags import DOCKER_IMAGE_TAG
 from dagster.grpc.types import ExecuteRunArgs
 from dagster.serdes import ConfigurableClass, serialize_dagster_namedtuple
@@ -119,11 +117,11 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
             )
         return client
 
-    def launch_run(self, run, external_pipeline):
-        check.inst_param(run, "run", PipelineRun)
-        check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
+    def launch_run(self, context: LaunchRunContext) -> None:
 
-        docker_image = external_pipeline.get_python_origin().repository_origin.container_image
+        run = context.pipeline_run
+
+        docker_image = run.pipeline_code_origin.repository_origin.container_image
 
         if not docker_image:
             docker_image = self._image
@@ -143,7 +141,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
         input_json = serialize_dagster_namedtuple(
             ExecuteRunArgs(
-                pipeline_origin=external_pipeline.get_python_origin(),
+                pipeline_origin=run.pipeline_code_origin,
                 pipeline_run_id=run.run_id,
                 instance_ref=self._instance.get_ref(),
             )
@@ -193,8 +191,6 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
         )
 
         container.start()
-
-        return run
 
     def _get_container(self, run):
         if not run or run.is_finished:

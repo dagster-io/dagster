@@ -89,7 +89,7 @@ def execute_backfill_iteration(instance, workspace, logger, debug_crash_flags=No
                 if chunk:
 
                     for _run_id in submit_backfill_runs(
-                        instance, repo_location, backfill_job, chunk
+                        instance, workspace, repo_location, backfill_job, chunk
                     ):
                         yield
 

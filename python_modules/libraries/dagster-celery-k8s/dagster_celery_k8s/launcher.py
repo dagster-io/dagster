@@ -6,9 +6,8 @@ from dagster.config.field import resolve_to_config_type
 from dagster.config.validate import process_config
 from dagster.core.events import EngineEventData
 from dagster.core.execution.retries import RetryMode
-from dagster.core.host_representation import ExternalPipeline
-from dagster.core.launcher import RunLauncher
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.core.launcher import LaunchRunContext, RunLauncher
+from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import DOCKER_IMAGE_TAG
 from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
 from dagster.utils import frozentags, merge_dicts
@@ -152,9 +151,8 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
     def inst_data(self):
         return self._inst_data
 
-    def launch_run(self, run, external_pipeline):
-        check.inst_param(run, "run", PipelineRun)
-        check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
+    def launch_run(self, context: LaunchRunContext) -> None:
+        run = context.pipeline_run
 
         job_name = get_job_name_from_run_id(run.run_id)
         pod_name = job_name
@@ -163,7 +161,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
 
         job_image_from_executor_config = exc_config.get("job_image")
 
-        pipeline_origin = external_pipeline.get_python_origin()
+        pipeline_origin = context.pipeline_run.pipeline_code_origin
         repository_origin = pipeline_origin.repository_origin
 
         job_image = repository_origin.container_image
@@ -261,7 +259,6 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             ),
             cls=self.__class__,
         )
-        return run
 
     # https://github.com/dagster-io/dagster/issues/2741
     def can_terminate(self, run_id):

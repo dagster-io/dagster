@@ -3,7 +3,6 @@ import time
 import grpc
 from dagster import Bool, Field, check, seven
 from dagster.core.errors import DagsterLaunchFailedError
-from dagster.core.host_representation.external import ExternalPipeline
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster.core.storage.pipeline_run import PipelineRun
@@ -17,7 +16,7 @@ from dagster.grpc.types import (
 from dagster.serdes import ConfigurableClass
 from dagster.utils import merge_dicts
 
-from .base import RunLauncher
+from .base import LaunchRunContext, RunLauncher
 
 
 class DefaultRunLauncher(RunLauncher, ConfigurableClass):
@@ -52,11 +51,14 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
             inst_data=inst_data, wait_for_processes=config_value.get("wait_for_processes", False)
         )
 
-    def launch_run(self, run, external_pipeline):
-        check.inst_param(run, "run", PipelineRun)
-        check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
+    def launch_run(self, context: LaunchRunContext) -> None:
+        run = context.pipeline_run
 
-        repository_location = external_pipeline.repository_handle.repository_location
+        check.inst_param(run, "run", PipelineRun)
+
+        repository_location = context.workspace.get_location(
+            run.external_pipeline_origin.external_repository_origin.repository_location_origin
+        )
 
         check.inst(
             repository_location,
@@ -83,7 +85,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
 
         res = repository_location.client.start_run(
             ExecuteExternalPipelineArgs(
-                pipeline_origin=external_pipeline.get_external_origin(),
+                pipeline_origin=run.external_pipeline_origin,
                 pipeline_run_id=run.run_id,
                 instance_ref=self._instance.get_ref(),
             )
@@ -100,8 +102,6 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
 
         if self._wait_for_processes:
             self._locations_to_wait_for.append(repository_location)
-
-        return run
 
     def _get_grpc_client_for_termination(self, run_id):
         if not self._instance:

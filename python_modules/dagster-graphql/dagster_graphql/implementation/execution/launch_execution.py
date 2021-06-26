@@ -34,7 +34,8 @@ def do_launch(graphene_info, execution_params, is_reexecuted=False):
     pipeline_run = create_valid_pipeline_run(graphene_info, external_pipeline, execution_params)
 
     return graphene_info.context.instance.submit_run(
-        pipeline_run.run_id, external_pipeline=external_pipeline
+        pipeline_run.run_id,
+        workspace=graphene_info.context,
     )
 
 

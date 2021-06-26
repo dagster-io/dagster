@@ -2,7 +2,9 @@ import glob
 import os
 
 import click
-from dagster import DagsterInvariantViolationError, check
+from dagster import DagsterInvariantViolationError
+from dagster import __version__ as dagster_version
+from dagster import check
 from dagster.cli.workspace.cli_target import (
     get_external_repository_from_kwargs,
     repository_target_argument,
@@ -144,7 +146,9 @@ def schedule_preview_command(**kwargs):
 
 def execute_preview_command(cli_args, print_fn):
     with DagsterInstance.get() as instance:
-        with get_external_repository_from_kwargs(cli_args) as external_repo:
+        with get_external_repository_from_kwargs(
+            instance, version=dagster_version, kwargs=cli_args
+        ) as external_repo:
             check_repo_and_scheduler(external_repo, instance)
 
             print_changes(external_repo, instance, print_fn, preview=True)
@@ -173,7 +177,9 @@ def schedule_up_command(preview, **kwargs):
 
 def execute_up_command(preview, cli_args, print_fn):
     with DagsterInstance.get() as instance:
-        with get_external_repository_from_kwargs(cli_args) as external_repo:
+        with get_external_repository_from_kwargs(
+            instance, version=dagster_version, kwargs=cli_args
+        ) as external_repo:
             check_repo_and_scheduler(external_repo, instance)
 
             print_changes(external_repo, instance, print_fn, preview=preview)
@@ -200,7 +206,9 @@ def schedule_list_command(running, stopped, name, **kwargs):
 
 def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, print_fn):
     with DagsterInstance.get() as instance:
-        with get_external_repository_from_kwargs(cli_args) as external_repo:
+        with get_external_repository_from_kwargs(
+            instance, version=dagster_version, kwargs=cli_args
+        ) as external_repo:
             check_repo_and_scheduler(external_repo, instance)
 
             repository_name = external_repo.name
@@ -289,7 +297,9 @@ def schedule_start_command(schedule_name, start_all, **kwargs):
 
 def execute_start_command(schedule_name, all_flag, cli_args, print_fn):
     with DagsterInstance.get() as instance:
-        with get_external_repository_from_kwargs(cli_args) as external_repo:
+        with get_external_repository_from_kwargs(
+            instance, version=dagster_version, kwargs=cli_args
+        ) as external_repo:
             check_repo_and_scheduler(external_repo, instance)
 
             repository_name = external_repo.name
@@ -328,7 +338,9 @@ def schedule_stop_command(schedule_name, **kwargs):
 
 def execute_stop_command(schedule_name, cli_args, print_fn, instance=None):
     with DagsterInstance.get() as instance:
-        with get_external_repository_from_kwargs(cli_args) as external_repo:
+        with get_external_repository_from_kwargs(
+            instance, version=dagster_version, kwargs=cli_args
+        ) as external_repo:
             check_repo_and_scheduler(external_repo, instance)
 
             try:
@@ -357,7 +369,9 @@ def schedule_logs_command(schedule_name, **kwargs):
 
 def execute_logs_command(schedule_name, cli_args, print_fn, instance=None):
     with DagsterInstance.get() as instance:
-        with get_external_repository_from_kwargs(cli_args) as external_repo:
+        with get_external_repository_from_kwargs(
+            instance, version=dagster_version, kwargs=cli_args
+        ) as external_repo:
             check_repo_and_scheduler(external_repo, instance)
 
             if isinstance(instance.scheduler, DagsterDaemonScheduler):
@@ -421,7 +435,9 @@ def schedule_restart_command(schedule_name, restart_all_running, **kwargs):
 
 def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn):
     with DagsterInstance.get() as instance:
-        with get_external_repository_from_kwargs(cli_args) as external_repo:
+        with get_external_repository_from_kwargs(
+            instance, version=dagster_version, kwargs=cli_args
+        ) as external_repo:
             check_repo_and_scheduler(external_repo, instance)
 
             repository_name = external_repo.name
@@ -474,7 +490,9 @@ def schedule_wipe_command(**kwargs):
 
 def execute_wipe_command(cli_args, print_fn):
     with DagsterInstance.get() as instance:
-        with get_external_repository_from_kwargs(cli_args) as external_repo:
+        with get_external_repository_from_kwargs(
+            instance, version=dagster_version, kwargs=cli_args
+        ) as external_repo:
             check_repo_and_scheduler(external_repo, instance)
 
             confirmation = click.prompt(

@@ -4,9 +4,8 @@ import kubernetes
 from dagster import EventMetadataEntry, Field, Noneable, StringSource, check
 from dagster.cli.api import ExecuteRunArgs
 from dagster.core.events import EngineEventData
-from dagster.core.host_representation import ExternalPipeline
-from dagster.core.launcher import RunLauncher
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.core.launcher import LaunchRunContext, RunLauncher
+from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import DOCKER_IMAGE_TAG
 from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
 from dagster.utils import frozentags, merge_dicts
@@ -214,16 +213,15 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             env_secrets=check.opt_list_param(self._env_secrets, "env_secrets", of_type=str),
         )
 
-    def launch_run(self, run, external_pipeline):
-        check.inst_param(run, "run", PipelineRun)
-        check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
+    def launch_run(self, context: LaunchRunContext) -> None:
+        run = context.pipeline_run
 
         job_name = "dagster-run-{}".format(run.run_id)
         pod_name = job_name
 
         user_defined_k8s_config = get_user_defined_k8s_config(frozentags(run.tags))
 
-        pipeline_origin = external_pipeline.get_python_origin()
+        pipeline_origin = context.pipeline_run.pipeline_code_origin
         repository_origin = pipeline_origin.repository_origin
 
         job_config = (
@@ -280,7 +278,6 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             ),
             cls=self.__class__,
         )
-        return run
 
     # https://github.com/dagster-io/dagster/issues/2741
     def can_terminate(self, run_id):

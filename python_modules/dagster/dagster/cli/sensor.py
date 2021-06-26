@@ -3,7 +3,9 @@ import sys
 
 import click
 import yaml
-from dagster import DagsterInvariantViolationError, check
+from dagster import DagsterInvariantViolationError
+from dagster import __version__ as dagster_version
+from dagster import check
 from dagster.cli.workspace.cli_target import (
     get_external_repository_from_kwargs,
     get_external_repository_from_repo_location,
@@ -125,7 +127,9 @@ def sensor_list_command(running, stopped, name, **kwargs):
 
 def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, print_fn):
     with DagsterInstance.get() as instance:
-        with get_external_repository_from_kwargs(cli_args) as external_repo:
+        with get_external_repository_from_kwargs(
+            instance, version=dagster_version, kwargs=cli_args
+        ) as external_repo:
             check_repo_and_scheduler(external_repo, instance)
             repository_name = external_repo.name
 
@@ -189,7 +193,9 @@ def sensor_start_command(sensor_name, start_all, **kwargs):
 
 def execute_start_command(sensor_name, all_flag, cli_args, print_fn):
     with DagsterInstance.get() as instance:
-        with get_external_repository_from_kwargs(cli_args) as external_repo:
+        with get_external_repository_from_kwargs(
+            instance, version=dagster_version, kwargs=cli_args
+        ) as external_repo:
             check_repo_and_scheduler(external_repo, instance)
             repository_name = external_repo.name
 
@@ -222,9 +228,11 @@ def sensor_stop_command(sensor_name, **kwargs):
     return execute_stop_command(sensor_name, kwargs, click.echo)
 
 
-def execute_stop_command(sensor_name, cli_args, print_fn, instance=None):
+def execute_stop_command(sensor_name, cli_args, print_fn):
     with DagsterInstance.get() as instance:
-        with get_external_repository_from_kwargs(cli_args) as external_repo:
+        with get_external_repository_from_kwargs(
+            instance, version=dagster_version, kwargs=cli_args
+        ) as external_repo:
             check_repo_and_scheduler(external_repo, instance)
             try:
                 external_sensor = external_repo.get_external_sensor(sensor_name)
@@ -264,7 +272,11 @@ def execute_preview_command(
     sensor_name, since, last_run_key, cursor, cli_args, print_fn, instance=None
 ):
     with DagsterInstance.get() as instance:
-        with get_repository_location_from_kwargs(cli_args) as repo_location:
+        with get_repository_location_from_kwargs(
+            instance,
+            version=dagster_version,
+            kwargs=cli_args,
+        ) as repo_location:
             try:
                 external_repo = get_external_repository_from_repo_location(
                     repo_location, cli_args.get("repository")
@@ -337,7 +349,9 @@ def sensor_cursor_command(sensor_name, **kwargs):
 
 def execute_cursor_command(sensor_name, cli_args, print_fn):
     with DagsterInstance.get() as instance:
-        with get_repository_location_from_kwargs(cli_args) as repo_location:
+        with get_repository_location_from_kwargs(
+            instance, version=dagster_version, kwargs=cli_args
+        ) as repo_location:
             if bool(cli_args.get("delete")) == bool(cli_args.get("set")):
                 # must use one of delete/set
                 raise click.UsageError("Must set cursor using `--set <value>` or use `--delete`")

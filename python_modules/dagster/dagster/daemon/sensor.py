@@ -230,6 +230,7 @@ def execute_sensor_iteration(
                 yield from _evaluate_sensor(
                     tick_context,
                     instance,
+                    workspace,
                     repo_location,
                     external_repo,
                     external_sensor,
@@ -250,6 +251,7 @@ def execute_sensor_iteration(
 def _evaluate_sensor(
     context,
     instance,
+    workspace,
     repo_location,
     external_repo,
     external_sensor,
@@ -347,7 +349,7 @@ def _evaluate_sensor(
             context.logger.info(
                 "Launching run for {sensor_name}".format(sensor_name=external_sensor.name)
             )
-            instance.submit_run(run.run_id, external_pipeline)
+            instance.submit_run(run.run_id, workspace)
             context.logger.info(
                 "Completed launch of run {run_id} for {sensor_name}".format(
                     run_id=run.run_id, sensor_name=external_sensor.name

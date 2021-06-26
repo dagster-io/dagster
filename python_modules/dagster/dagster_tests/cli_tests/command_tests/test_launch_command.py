@@ -1,7 +1,8 @@
+import click
 import pytest
 from click.testing import CliRunner
 from dagster.cli.pipeline import execute_launch_command, pipeline_launch_command
-from dagster.core.errors import DagsterRunAlreadyExists, DagsterUserCodeProcessError
+from dagster.core.errors import DagsterRunAlreadyExists
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import new_cwd
 from dagster.utils import file_relative_path
@@ -42,7 +43,7 @@ def test_launch_non_existant_file():
     with default_cli_test_instance() as instance:
         kwargs = non_existant_python_origin_target_args()
 
-        with pytest.raises(DagsterUserCodeProcessError):
+        with pytest.raises(click.UsageError, match="Error loading location"):
             run_launch(kwargs, instance)
 
 

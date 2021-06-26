@@ -18,7 +18,7 @@ def setup_instance(dagster_home, instance_config):
 
 
 @contextlib.contextmanager
-def start_daemon(timeout=30):
+def start_daemon(timeout=60):
     p = open_ipc_subprocess(["dagster-daemon", "run"])
     try:
         yield

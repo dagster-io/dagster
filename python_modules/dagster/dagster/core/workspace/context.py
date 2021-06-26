@@ -111,6 +111,8 @@ class BaseWorkspaceRequestContext(IWorkspace):
         return [entry.load_error for entry in self.workspace_snapshot.values() if entry.load_error]
 
     def get_repository_location(self, name: str) -> RepositoryLocation:
+        if not self.has_repository_location(name):
+            raise Exception(f"Location {name} not in workspace")
         return cast(RepositoryLocation, self.workspace_snapshot[name].repository_location)
 
     def get_load_status(self, name: str) -> WorkspaceLocationLoadStatus:
@@ -317,7 +319,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         self,
         instance: DagsterInstance,
         workspace_load_target: Optional[WorkspaceLoadTarget],
-        version: str,
+        version: str = "",
         read_only: bool = False,
         grpc_server_registry=None,
     ):

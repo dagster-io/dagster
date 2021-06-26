@@ -8,10 +8,6 @@ from contextlib import contextmanager
 import pytest
 from dagster import DefaultRunLauncher, file_relative_path, pipeline, repository, seven, solid
 from dagster.core.errors import DagsterLaunchFailedError
-from dagster.core.host_representation import (
-    GrpcServerRepositoryLocationOrigin,
-    ManagedGrpcPythonEnvRepositoryLocationOrigin,
-)
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import (
     environ,
@@ -21,6 +17,8 @@ from dagster.core.test_utils import (
     poll_for_step_start,
 )
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster.core.workspace import WorkspaceProcessContext
+from dagster.core.workspace.load_target import GrpcServerTarget, PythonFileTarget
 from dagster.grpc.server import GrpcServerProcess
 
 
@@ -97,7 +95,7 @@ def nope():
 
 
 @contextmanager
-def get_external_pipeline_from_grpc_server_repository(pipeline_name):
+def get_deployed_grpc_server_workspace(instance):
     loadable_target_origin = LoadableTargetOrigin(
         executable_path=sys.executable,
         attribute="nope",
@@ -106,31 +104,33 @@ def get_external_pipeline_from_grpc_server_repository(pipeline_name):
     server_process = GrpcServerProcess(loadable_target_origin=loadable_target_origin)
 
     try:
-        with server_process.create_ephemeral_client() as api_client:
-            with GrpcServerRepositoryLocationOrigin(
-                location_name="test",
-                port=api_client.port,
-                socket=api_client.socket,
-                host=api_client.host,
-            ).create_location() as repository_location:
-                yield repository_location.get_repository("nope").get_full_external_pipeline(
-                    pipeline_name
-                )
+        with server_process.create_ephemeral_client():  # shuts down when leaves this context
+            with WorkspaceProcessContext(
+                instance,
+                GrpcServerTarget(
+                    host="localhost",
+                    socket=server_process.socket,
+                    port=server_process.port,
+                    location_name="test",
+                ),
+            ) as workspace_process_context:
+                yield workspace_process_context.create_request_context()
     finally:
         server_process.wait()
 
 
 @contextmanager
-def get_external_pipeline_from_managed_grpc_python_env_repository(pipeline_name):
-    with ManagedGrpcPythonEnvRepositoryLocationOrigin(
-        loadable_target_origin=LoadableTargetOrigin(
-            executable_path=sys.executable,
-            attribute="nope",
+def get_managed_grpc_server_workspace(instance):
+    with WorkspaceProcessContext(
+        instance,
+        PythonFileTarget(
             python_file=file_relative_path(__file__, "test_default_run_launcher.py"),
+            attribute="nope",
+            working_directory=None,
+            location_name="test",
         ),
-        location_name="nope",
-    ).create_test_location() as repository_location:
-        yield repository_location.get_repository("nope").get_full_external_pipeline(pipeline_name)
+    ) as workspace_process_context:
+        yield workspace_process_context.create_request_context()
 
 
 def run_configs():
@@ -159,28 +159,37 @@ def _check_event_log_contains(event_log, expected_type_and_message):
 
 
 @pytest.mark.parametrize(
-    "get_external_pipeline",
+    "get_workspace",
     [
-        get_external_pipeline_from_grpc_server_repository,
-        get_external_pipeline_from_managed_grpc_python_env_repository,
+        get_deployed_grpc_server_workspace,
+        get_managed_grpc_server_workspace,
     ],
 )
 @pytest.mark.parametrize(
     "run_config",
     run_configs(),
 )
-def test_successful_run(get_external_pipeline, run_config):  # pylint: disable=redefined-outer-name
+def test_successful_run(get_workspace, run_config):  # pylint: disable=redefined-outer-name
     with instance_for_test() as instance:
-        pipeline_run = instance.create_run_for_pipeline(
-            pipeline_def=noop_pipeline, run_config=run_config
-        )
+        with get_workspace(instance) as workspace:
 
-        with get_external_pipeline(pipeline_run.pipeline_name) as external_pipeline:
+            external_pipeline = (
+                workspace.get_repository_location("test")
+                .get_repository("nope")
+                .get_full_external_pipeline("noop_pipeline")
+            )
+
+            pipeline_run = instance.create_run_for_pipeline(
+                pipeline_def=noop_pipeline,
+                run_config=run_config,
+                external_pipeline_origin=external_pipeline.get_external_origin(),
+                pipeline_code_origin=external_pipeline.get_python_origin(),
+            )
             run_id = pipeline_run.run_id
 
             assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
 
-            instance.launch_run(run_id=pipeline_run.run_id, external_pipeline=external_pipeline)
+            instance.launch_run(run_id=pipeline_run.run_id, workspace=workspace)
 
             pipeline_run = instance.get_run_by_id(run_id)
             assert pipeline_run
@@ -191,13 +200,13 @@ def test_successful_run(get_external_pipeline, run_config):  # pylint: disable=r
 
 
 @pytest.mark.parametrize(
-    "get_external_pipeline",
+    "get_workspace",
     [
-        get_external_pipeline_from_grpc_server_repository,
-        get_external_pipeline_from_managed_grpc_python_env_repository,
+        get_deployed_grpc_server_workspace,
+        get_managed_grpc_server_workspace,
     ],
 )
-def test_invalid_instance_run(get_external_pipeline):
+def test_invalid_instance_run(get_workspace):
     with tempfile.TemporaryDirectory() as temp_dir:
         correct_run_storage_dir = os.path.join(temp_dir, "history", "")
         wrong_run_storage_dir = os.path.join(temp_dir, "wrong", "")
@@ -213,14 +222,20 @@ def test_invalid_instance_run(get_external_pipeline):
                     }
                 },
             ) as instance:
-                pipeline_run = instance.create_run_for_pipeline(
-                    pipeline_def=noop_pipeline,
-                )
-
                 # Server won't be able to load the run from run storage
                 with environ({"RUN_STORAGE_ENV": wrong_run_storage_dir}):
-                    with get_external_pipeline(pipeline_run.pipeline_name) as external_pipeline:
+                    with get_workspace(instance) as workspace:
+                        external_pipeline = (
+                            workspace.get_repository_location("test")
+                            .get_repository("nope")
+                            .get_full_external_pipeline("noop_pipeline")
+                        )
 
+                        pipeline_run = instance.create_run_for_pipeline(
+                            pipeline_def=noop_pipeline,
+                            external_pipeline_origin=external_pipeline.get_external_origin(),
+                            pipeline_code_origin=external_pipeline.get_python_origin(),
+                        )
                         with pytest.raises(
                             DagsterLaunchFailedError,
                             match=re.escape(
@@ -229,20 +244,17 @@ def test_invalid_instance_run(get_external_pipeline):
                                 )
                             ),
                         ):
-                            instance.launch_run(
-                                run_id=pipeline_run.run_id,
-                                external_pipeline=external_pipeline,
-                            )
+                            instance.launch_run(run_id=pipeline_run.run_id, workspace=workspace)
 
                         failed_run = instance.get_run_by_id(pipeline_run.run_id)
                         assert failed_run.status == PipelineRunStatus.FAILURE
 
 
 @pytest.mark.parametrize(
-    "get_external_pipeline",
+    "get_workspace",
     [
-        get_external_pipeline_from_grpc_server_repository,
-        get_external_pipeline_from_managed_grpc_python_env_repository,
+        get_deployed_grpc_server_workspace,
+        get_managed_grpc_server_workspace,
     ],
 )
 @pytest.mark.parametrize(
@@ -253,20 +265,28 @@ def test_invalid_instance_run(get_external_pipeline):
     seven.IS_WINDOWS,
     reason="Crashy pipelines leave resources open on windows, causing filesystem contention",
 )
-def test_crashy_run(get_external_pipeline, run_config):  # pylint: disable=redefined-outer-name
+def test_crashy_run(get_workspace, run_config):  # pylint: disable=redefined-outer-name
     with instance_for_test() as instance:
-        pipeline_run = instance.create_run_for_pipeline(
-            pipeline_def=crashy_pipeline,
-            run_config=run_config,
-        )
+        with get_workspace(instance) as workspace:
 
-        with get_external_pipeline(pipeline_run.pipeline_name) as external_pipeline:
+            external_pipeline = (
+                workspace.get_repository_location("test")
+                .get_repository("nope")
+                .get_full_external_pipeline("crashy_pipeline")
+            )
+
+            pipeline_run = instance.create_run_for_pipeline(
+                pipeline_def=crashy_pipeline,
+                run_config=run_config,
+                external_pipeline_origin=external_pipeline.get_external_origin(),
+                pipeline_code_origin=external_pipeline.get_python_origin(),
+            )
 
             run_id = pipeline_run.run_id
 
             assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
 
-            instance.launch_run(pipeline_run.run_id, external_pipeline)
+            instance.launch_run(pipeline_run.run_id, workspace)
 
             failed_pipeline_run = instance.get_run_by_id(run_id)
 
@@ -292,29 +312,36 @@ def test_crashy_run(get_external_pipeline, run_config):  # pylint: disable=redef
 
 
 @pytest.mark.parametrize(
-    "get_external_pipeline",
+    "get_workspace",
     [
-        get_external_pipeline_from_grpc_server_repository,
-        get_external_pipeline_from_managed_grpc_python_env_repository,
+        get_deployed_grpc_server_workspace,
+        get_managed_grpc_server_workspace,
     ],
 )
 @pytest.mark.parametrize(
     "run_config",
     run_configs(),
 )
-def test_terminated_run(get_external_pipeline, run_config):  # pylint: disable=redefined-outer-name
+def test_terminated_run(get_workspace, run_config):  # pylint: disable=redefined-outer-name
     with instance_for_test() as instance:
-        pipeline_run = instance.create_run_for_pipeline(
-            pipeline_def=sleepy_pipeline,
-            run_config=run_config,
-        )
+        with get_workspace(instance) as workspace:
+            external_pipeline = (
+                workspace.get_repository_location("test")
+                .get_repository("nope")
+                .get_full_external_pipeline("sleepy_pipeline")
+            )
+            pipeline_run = instance.create_run_for_pipeline(
+                pipeline_def=sleepy_pipeline,
+                run_config=run_config,
+                external_pipeline_origin=external_pipeline.get_external_origin(),
+                pipeline_code_origin=external_pipeline.get_python_origin(),
+            )
 
-        with get_external_pipeline(pipeline_run.pipeline_name) as external_pipeline:
             run_id = pipeline_run.run_id
 
             assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
 
-            instance.launch_run(pipeline_run.run_id, external_pipeline)
+            instance.launch_run(pipeline_run.run_id, workspace)
 
             poll_for_step_start(instance, run_id)
 
@@ -395,10 +422,10 @@ def _message_exists(event_records, message_text):
 
 
 @pytest.mark.parametrize(
-    "get_external_pipeline",
+    "get_workspace",
     [
-        get_external_pipeline_from_grpc_server_repository,
-        get_external_pipeline_from_managed_grpc_python_env_repository,
+        get_deployed_grpc_server_workspace,
+        get_managed_grpc_server_workspace,
     ],
 )
 @pytest.mark.parametrize(
@@ -406,19 +433,28 @@ def _message_exists(event_records, message_text):
     run_configs(),
 )
 def test_single_solid_selection_execution(
-    get_external_pipeline,
+    get_workspace,
     run_config,
 ):  # pylint: disable=redefined-outer-name
     with instance_for_test() as instance:
-        pipeline_run = instance.create_run_for_pipeline(
-            pipeline_def=math_diamond, run_config=run_config, solids_to_execute={"return_one"}
-        )
-        run_id = pipeline_run.run_id
+        with get_workspace(instance) as workspace:
+            external_pipeline = (
+                workspace.get_repository_location("test")
+                .get_repository("nope")
+                .get_full_external_pipeline("math_diamond")
+            )
+            pipeline_run = instance.create_run_for_pipeline(
+                pipeline_def=math_diamond,
+                run_config=run_config,
+                solids_to_execute={"return_one"},
+                external_pipeline_origin=external_pipeline.get_external_origin(),
+                pipeline_code_origin=external_pipeline.get_python_origin(),
+            )
+            run_id = pipeline_run.run_id
 
-        assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
+            assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
 
-        with get_external_pipeline(pipeline_run.pipeline_name) as external_pipeline:
-            instance.launch_run(pipeline_run.run_id, external_pipeline)
+            instance.launch_run(pipeline_run.run_id, workspace)
             finished_pipeline_run = poll_for_finished_run(instance, run_id)
 
             event_records = instance.all_logs(run_id)
@@ -431,10 +467,10 @@ def test_single_solid_selection_execution(
 
 
 @pytest.mark.parametrize(
-    "get_external_pipeline",
+    "get_workspace",
     [
-        get_external_pipeline_from_grpc_server_repository,
-        get_external_pipeline_from_managed_grpc_python_env_repository,
+        get_deployed_grpc_server_workspace,
+        get_managed_grpc_server_workspace,
     ],
 )
 @pytest.mark.parametrize(
@@ -442,21 +478,29 @@ def test_single_solid_selection_execution(
     run_configs(),
 )
 def test_multi_solid_selection_execution(
-    get_external_pipeline,
+    get_workspace,
     run_config,
 ):  # pylint: disable=redefined-outer-name
     with instance_for_test() as instance:
-        pipeline_run = instance.create_run_for_pipeline(
-            pipeline_def=math_diamond,
-            run_config=run_config,
-            solids_to_execute={"return_one", "multiply_by_2"},
-        )
-        run_id = pipeline_run.run_id
+        with get_workspace(instance) as workspace:
+            external_pipeline = (
+                workspace.get_repository_location("test")
+                .get_repository("nope")
+                .get_full_external_pipeline("math_diamond")
+            )
 
-        assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
+            pipeline_run = instance.create_run_for_pipeline(
+                pipeline_def=math_diamond,
+                run_config=run_config,
+                solids_to_execute={"return_one", "multiply_by_2"},
+                external_pipeline_origin=external_pipeline.get_external_origin(),
+                pipeline_code_origin=external_pipeline.get_python_origin(),
+            )
+            run_id = pipeline_run.run_id
 
-        with get_external_pipeline(pipeline_run.pipeline_name) as external_pipeline:
-            instance.launch_run(pipeline_run.run_id, external_pipeline)
+            assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
+
+            instance.launch_run(pipeline_run.run_id, workspace)
             finished_pipeline_run = poll_for_finished_run(instance, run_id)
 
             event_records = instance.all_logs(run_id)
@@ -472,27 +516,35 @@ def test_multi_solid_selection_execution(
 
 
 @pytest.mark.parametrize(
-    "get_external_pipeline",
+    "get_workspace",
     [
-        get_external_pipeline_from_grpc_server_repository,
-        get_external_pipeline_from_managed_grpc_python_env_repository,
+        get_deployed_grpc_server_workspace,
+        get_managed_grpc_server_workspace,
     ],
 )
 @pytest.mark.parametrize(
     "run_config",
     run_configs(),
 )
-def test_engine_events(get_external_pipeline, run_config):  # pylint: disable=redefined-outer-name
+def test_engine_events(get_workspace, run_config):  # pylint: disable=redefined-outer-name
     with instance_for_test() as instance:
-        pipeline_run = instance.create_run_for_pipeline(
-            pipeline_def=math_diamond, run_config=run_config
-        )
-        run_id = pipeline_run.run_id
+        with get_workspace(instance) as workspace:
+            external_pipeline = (
+                workspace.get_repository_location("test")
+                .get_repository("nope")
+                .get_full_external_pipeline("math_diamond")
+            )
+            pipeline_run = instance.create_run_for_pipeline(
+                pipeline_def=math_diamond,
+                run_config=run_config,
+                external_pipeline_origin=external_pipeline.get_external_origin(),
+                pipeline_code_origin=external_pipeline.get_python_origin(),
+            )
+            run_id = pipeline_run.run_id
 
-        assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
+            assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
 
-        with get_external_pipeline(pipeline_run.pipeline_name) as external_pipeline:
-            instance.launch_run(pipeline_run.run_id, external_pipeline)
+            instance.launch_run(pipeline_run.run_id, workspace)
             finished_pipeline_run = poll_for_finished_run(instance, run_id)
 
             assert finished_pipeline_run

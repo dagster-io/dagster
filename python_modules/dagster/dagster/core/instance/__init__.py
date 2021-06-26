@@ -51,8 +51,9 @@ if TYPE_CHECKING:
     from dagster.core.events import DagsterEvent, DagsterEventType
     from dagster.core.host_representation import HistoricalPipeline
     from dagster.core.snap import PipelineSnapshot
-    from dagster.daemon.types import DaemonHeartbeat
     from dagster.core.storage.event_log.base import EventRecordsFilter, EventLogRecord
+    from dagster.core.workspace.workspace import IWorkspace
+    from dagster.daemon.types import DaemonHeartbeat
 
 
 def is_memoized_run(tags):
@@ -624,6 +625,8 @@ class DagsterInstance:
         root_run_id=None,
         parent_run_id=None,
         solid_selection=None,
+        external_pipeline_origin=None,
+        pipeline_code_origin=None,
     ):
         from dagster.core.execution.plan.plan import ExecutionPlan
         from dagster.core.snap import snapshot_from_execution_plan
@@ -717,6 +720,8 @@ class DagsterInstance:
                 pipeline_def.get_pipeline_snapshot_id(),
             ),
             parent_pipeline_snapshot=pipeline_def.get_parent_pipeline_snapshot(),
+            external_pipeline_origin=external_pipeline_origin,
+            pipeline_code_origin=pipeline_code_origin,
         )
 
     def _construct_run_with_snapshots(
@@ -1298,7 +1303,7 @@ records = instance.get_event_records(
 
     # Runs coordinator
 
-    def submit_run(self, run_id, external_pipeline):
+    def submit_run(self, run_id, workspace: "IWorkspace") -> PipelineRun:
         """Submit a pipeline run to the coordinator.
 
         This method delegates to the ``RunCoordinator``, configured on the instance, and will
@@ -1313,6 +1318,8 @@ records = instance.get_event_records(
         """
 
         from dagster.core.host_representation import ExternalPipelineOrigin
+        from dagster.core.origin import PipelinePythonOrigin
+        from dagster.core.run_coordinator import SubmitRunContext
 
         run = self.get_run_by_id(run_id)
         check.inst(
@@ -1320,10 +1327,15 @@ records = instance.get_event_records(
             ExternalPipelineOrigin,
             "External pipeline origin must be set for submitted runs",
         )
+        check.inst(
+            run.pipeline_code_origin,
+            PipelinePythonOrigin,
+            "Python origin must be set for submitted runs",
+        )
 
         try:
             submitted_run = self._run_coordinator.submit_run(
-                run, external_pipeline=external_pipeline
+                SubmitRunContext(run, workspace=workspace)
             )
         except:
             from dagster.core.events import EngineEventData
@@ -1341,7 +1353,7 @@ records = instance.get_event_records(
 
     # Run launcher
 
-    def launch_run(self, run_id, external_pipeline):
+    def launch_run(self, run_id: str, workspace: "IWorkspace"):
         """Launch a pipeline run.
 
         This method is typically called using `instance.submit_run` rather than being invoked
@@ -1354,6 +1366,8 @@ records = instance.get_event_records(
         Args:
             run_id (str): The id of the run the launch.
         """
+        from dagster.core.launcher import LaunchRunContext
+
         run = self.get_run_by_id(run_id)
 
         from dagster.core.events import EngineEventData, DagsterEvent, DagsterEventType
@@ -1380,7 +1394,7 @@ records = instance.get_event_records(
         run = self.get_run_by_id(run_id)
 
         try:
-            self._run_launcher.launch_run(run, external_pipeline=external_pipeline)
+            self._run_launcher.launch_run(LaunchRunContext(pipeline_run=run, workspace=workspace))
         except:
             error = serializable_error_info_from_exc_info(sys.exc_info())
             self.report_engine_event(

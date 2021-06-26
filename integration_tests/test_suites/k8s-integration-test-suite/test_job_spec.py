@@ -18,7 +18,7 @@ from dagster_test.test_project import (
     ReOriginatedExternalPipelineForTest,
     get_test_project_docker_image,
     get_test_project_environments_path,
-    get_test_project_external_pipeline,
+    get_test_project_workspace_and_external_pipeline,
 )
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
@@ -331,19 +331,23 @@ def test_k8s_run_launcher(
 ):
     run_config = load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml"))
     pipeline_name = "demo_pipeline"
-    run = create_run_for_test(
-        dagster_instance_for_k8s_run_launcher,
-        pipeline_name=pipeline_name,
-        run_config=run_config,
-        mode="default",
-    )
-
-    with get_test_project_external_pipeline(pipeline_name) as external_pipeline:
-
-        dagster_instance_for_k8s_run_launcher.launch_run(
-            run.run_id,
-            ReOriginatedExternalPipelineForTest(external_pipeline),
+    with get_test_project_workspace_and_external_pipeline(
+        dagster_instance_for_k8s_run_launcher, pipeline_name
+    ) as (
+        workspace,
+        external_pipeline,
+    ):
+        reoriginated_pipeline = ReOriginatedExternalPipelineForTest(external_pipeline)
+        run = create_run_for_test(
+            dagster_instance_for_k8s_run_launcher,
+            pipeline_name=pipeline_name,
+            run_config=run_config,
+            mode="default",
+            external_pipeline_origin=reoriginated_pipeline.get_external_origin(),
+            pipeline_code_origin=reoriginated_pipeline.get_python_origin(),
         )
+
+        dagster_instance_for_k8s_run_launcher.launch_run(run.run_id, workspace)
         result = wait_for_job_and_get_raw_logs(
             job_name="dagster-run-%s" % run.run_id, namespace=helm_namespace_for_k8s_run_launcher
         )
@@ -356,15 +360,23 @@ def test_failing_k8s_run_launcher(
 ):
     run_config = {"blah blah this is wrong": {}}
     pipeline_name = "demo_pipeline"
-    run = create_run_for_test(
-        dagster_instance_for_k8s_run_launcher, pipeline_name=pipeline_name, run_config=run_config
-    )
-    with get_test_project_external_pipeline(pipeline_name) as external_pipeline:
+    with get_test_project_workspace_and_external_pipeline(
+        dagster_instance_for_k8s_run_launcher, pipeline_name
+    ) as (
+        workspace,
+        external_pipeline,
+    ):
+        reoriginated_pipeline = ReOriginatedExternalPipelineForTest(external_pipeline)
 
-        dagster_instance_for_k8s_run_launcher.launch_run(
-            run.run_id,
-            ReOriginatedExternalPipelineForTest(external_pipeline),
+        run = create_run_for_test(
+            dagster_instance_for_k8s_run_launcher,
+            pipeline_name=pipeline_name,
+            run_config=run_config,
+            external_pipeline_origin=reoriginated_pipeline.get_external_origin(),
+            pipeline_code_origin=reoriginated_pipeline.get_python_origin(),
         )
+
+        dagster_instance_for_k8s_run_launcher.launch_run(run.run_id, workspace)
         result = wait_for_job_and_get_raw_logs(
             job_name="dagster-run-%s" % run.run_id, namespace=helm_namespace_for_k8s_run_launcher
         )

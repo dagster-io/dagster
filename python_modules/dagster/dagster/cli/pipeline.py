@@ -7,7 +7,9 @@ import warnings
 import click
 import pendulum
 import yaml
-from dagster import PipelineDefinition, check, execute_pipeline
+from dagster import PipelineDefinition
+from dagster import __version__ as dagster_version
+from dagster import check, execute_pipeline
 from dagster.cli.workspace.cli_target import (
     WORKSPACE_TARGET_WARNING,
     get_external_pipeline_from_external_repo,
@@ -15,7 +17,8 @@ from dagster.cli.workspace.cli_target import (
     get_external_repository_from_kwargs,
     get_external_repository_from_repo_location,
     get_pipeline_python_origin_from_kwargs,
-    get_repository_location_from_kwargs,
+    get_repository_location_from_workspace,
+    get_workspace_from_kwargs,
     pipeline_target_argument,
     python_pipeline_config_argument,
     python_pipeline_target_argument,
@@ -77,25 +80,28 @@ def pipeline_list_command(**kwargs):
 
 
 def execute_list_command(cli_args, print_fn):
-    with get_external_repository_from_kwargs(cli_args) as external_repository:
-        title = "Repository {name}".format(name=external_repository.name)
-        print_fn(title)
-        print_fn("*" * len(title))
-        first = True
-        for pipeline in external_repository.get_all_external_pipelines():
-            pipeline_title = "Pipeline: {name}".format(name=pipeline.name)
+    with DagsterInstance.get() as instance:
+        with get_external_repository_from_kwargs(
+            instance, version=dagster_version, kwargs=cli_args
+        ) as external_repository:
+            title = "Repository {name}".format(name=external_repository.name)
+            print_fn(title)
+            print_fn("*" * len(title))
+            first = True
+            for pipeline in external_repository.get_all_external_pipelines():
+                pipeline_title = "Pipeline: {name}".format(name=pipeline.name)
 
-            if not first:
-                print_fn("*" * len(pipeline_title))
-            first = False
+                if not first:
+                    print_fn("*" * len(pipeline_title))
+                first = False
 
-            print_fn(pipeline_title)
-            if pipeline.description:
-                print_fn("Description:")
-                print_fn(format_description(pipeline.description, indent=" " * 4))
-            print_fn("Solids: (Execution Order)")
-            for solid_name in pipeline.pipeline_snapshot.solid_names_in_topological_order:
-                print_fn("    " + solid_name)
+                print_fn(pipeline_title)
+                if pipeline.description:
+                    print_fn("Description:")
+                    print_fn(format_description(pipeline.description, indent=" " * 4))
+                print_fn("Solids: (Execution Order)")
+                for solid_name in pipeline.pipeline_snapshot.solid_names_in_topological_order:
+                    print_fn("    " + solid_name)
 
 
 def format_description(desc, indent):
@@ -150,12 +156,14 @@ def get_partitioned_pipeline_instructions(command_name):
 @click.option("--verbose", is_flag=True)
 @pipeline_target_argument
 def pipeline_print_command(verbose, **cli_args):
-    with DagsterInstance.get():
-        return execute_print_command(verbose, cli_args, click.echo)
+    with DagsterInstance.get() as instance:
+        return execute_print_command(instance, verbose, cli_args, click.echo)
 
 
-def execute_print_command(verbose, cli_args, print_fn):
-    with get_external_pipeline_from_kwargs(cli_args) as external_pipeline:
+def execute_print_command(instance, verbose, cli_args, print_fn):
+    with get_external_pipeline_from_kwargs(
+        instance, version=dagster_version, kwargs=cli_args
+    ) as external_pipeline:
         pipeline_snapshot = external_pipeline.pipeline_snapshot
 
         if verbose:
@@ -595,7 +603,8 @@ def execute_launch_command(instance, kwargs):
     check.inst_param(instance, "instance", DagsterInstance)
     config = get_config_from_args(kwargs)
 
-    with get_repository_location_from_kwargs(kwargs) as repo_location:
+    with get_workspace_from_kwargs(instance, version=dagster_version, kwargs=kwargs) as workspace:
+        repo_location = get_repository_location_from_workspace(workspace, kwargs.get("location"))
         external_repo = get_external_repository_from_repo_location(
             repo_location, kwargs.get("repository")
         )
@@ -630,7 +639,7 @@ def execute_launch_command(instance, kwargs):
             run_id=kwargs.get("run_id"),
         )
 
-        return instance.submit_run(pipeline_run.run_id, external_pipeline)
+        return instance.submit_run(pipeline_run.run_id, workspace)
 
 
 @pipeline_cli.command(
@@ -825,11 +834,14 @@ def pipeline_backfill_command(**kwargs):
 
 
 def execute_backfill_command(cli_args, print_fn, instance):
-    with get_repository_location_from_kwargs(cli_args) as repo_location:
-        _execute_backfill_command_at_location(cli_args, print_fn, instance, repo_location)
+    with get_workspace_from_kwargs(instance, version=dagster_version, kwargs=cli_args) as workspace:
+        repo_location = get_repository_location_from_workspace(workspace, cli_args.get("location"))
+        _execute_backfill_command_at_location(
+            cli_args, print_fn, instance, workspace, repo_location
+        )
 
 
-def _execute_backfill_command_at_location(cli_args, print_fn, instance, repo_location):
+def _execute_backfill_command_at_location(cli_args, print_fn, instance, workspace, repo_location):
     external_repo = get_external_repository_from_repo_location(
         repo_location, cli_args.get("repository")
     )
@@ -945,7 +957,7 @@ def _execute_backfill_command_at_location(cli_args, print_fn, instance, repo_loc
                 partition_data,
             )
             if pipeline_run:
-                instance.submit_run(pipeline_run.run_id, external_pipeline)
+                instance.submit_run(pipeline_run.run_id, workspace)
 
         instance.add_backfill(backfill_job.with_status(BulkActionStatus.COMPLETED))
 

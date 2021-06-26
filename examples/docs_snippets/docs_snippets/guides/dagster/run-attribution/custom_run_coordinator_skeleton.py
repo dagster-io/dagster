@@ -2,15 +2,12 @@
 
 # start_custom_run_coordinator_marker
 
-from dagster.core.host_representation import ExternalPipeline
-from dagster.core.run_coordinator import QueuedRunCoordinator
+from dagster.core.run_coordinator import QueuedRunCoordinator, SubmitRunContext
 from dagster.core.storage.pipeline_run import PipelineRun
 
 
 class CustomRunCoordinator(QueuedRunCoordinator):
-    def submit_run(
-        self, pipeline_run: PipelineRun, external_pipeline: ExternalPipeline
-    ) -> PipelineRun:
+    def submit_run(self, context: SubmitRunContext) -> PipelineRun:
         pass
 
 

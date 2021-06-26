@@ -17,8 +17,8 @@ from dagster_test.test_project import (
     get_buildkite_registry_config,
     get_test_project_docker_image,
     get_test_project_environments_path,
-    get_test_project_external_pipeline,
     get_test_project_recon_pipeline,
+    get_test_project_workspace_and_external_pipeline,
 )
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
@@ -72,19 +72,21 @@ def test_launch_docker_image_on_pipeline_config():
             }
         ) as instance:
             recon_pipeline = get_test_project_recon_pipeline("demo_pipeline", docker_image)
-            run = instance.create_run_for_pipeline(
-                pipeline_def=recon_pipeline.get_definition(),
-                run_config=run_config,
-            )
+            with get_test_project_workspace_and_external_pipeline(
+                instance, "demo_pipeline", container_image=docker_image
+            ) as (workspace, orig_pipeline):
 
-            with get_test_project_external_pipeline(
-                "demo_pipeline", container_image=docker_image
-            ) as orig_pipeline:
                 external_pipeline = ReOriginatedExternalPipelineForTest(
                     orig_pipeline,
                     container_image=docker_image,
                 )
-                instance.launch_run(run.run_id, external_pipeline)
+                run = instance.create_run_for_pipeline(
+                    pipeline_def=recon_pipeline.get_definition(),
+                    run_config=run_config,
+                    external_pipeline_origin=external_pipeline.get_external_origin(),
+                    pipeline_code_origin=external_pipeline.get_python_origin(),
+                )
+                instance.launch_run(run.run_id, workspace)
 
                 poll_for_finished_run(instance, run.run_id, timeout=60)
 
@@ -138,22 +140,24 @@ def test_terminate_launched_docker_run():
         }
     ) as instance:
         recon_pipeline = get_test_project_recon_pipeline("hanging_pipeline", docker_image)
-        run = instance.create_run_for_pipeline(
-            pipeline_def=recon_pipeline.get_definition(),
-            run_config=run_config,
-        )
-
-        run_id = run.run_id
-
-        with get_test_project_external_pipeline(
-            "hanging_pipeline", container_image=docker_image
-        ) as orig_pipeline:
-
+        with get_test_project_workspace_and_external_pipeline(
+            instance, "hanging_pipeline", container_image=docker_image
+        ) as (workspace, orig_pipeline):
             external_pipeline = ReOriginatedExternalPipelineForTest(
                 orig_pipeline,
                 container_image=docker_image,
             )
-            instance.launch_run(run_id, external_pipeline)
+
+            run = instance.create_run_for_pipeline(
+                pipeline_def=recon_pipeline.get_definition(),
+                run_config=run_config,
+                external_pipeline_origin=external_pipeline.get_external_origin(),
+                pipeline_code_origin=external_pipeline.get_python_origin(),
+            )
+
+            run_id = run.run_id
+
+            instance.launch_run(run_id, workspace)
 
             poll_for_step_start(instance, run_id)
 
@@ -208,21 +212,26 @@ def test_launch_docker_invalid_image():
         }
     ) as instance:
         recon_pipeline = get_test_project_recon_pipeline("demo_pipeline")
-        run = instance.create_run_for_pipeline(
-            pipeline_def=recon_pipeline.get_definition(),
-            run_config=run_config,
-        )
-
-        with get_test_project_external_pipeline("demo_pipeline") as orig_pipeline:
-
+        with get_test_project_workspace_and_external_pipeline(instance, "demo_pipeline") as (
+            workspace,
+            orig_pipeline,
+        ):
             external_pipeline = ReOriginatedExternalPipelineForTest(orig_pipeline)
+
+            run = instance.create_run_for_pipeline(
+                pipeline_def=recon_pipeline.get_definition(),
+                run_config=run_config,
+                external_pipeline_origin=external_pipeline.get_external_origin(),
+                pipeline_code_origin=external_pipeline.get_python_origin(),
+            )
+
             with pytest.raises(
                 Exception,
                 match=re.escape(
                     "Docker image name _invalid_format_image is not correctly formatted"
                 ),
             ):
-                instance.launch_run(run.run_id, external_pipeline)
+                instance.launch_run(run.run_id, workspace)
 
 
 def test_launch_docker_image_on_instance_config():
@@ -258,15 +267,20 @@ def test_launch_docker_image_on_instance_config():
         }
     ) as instance:
         recon_pipeline = get_test_project_recon_pipeline("demo_pipeline")
-        run = instance.create_run_for_pipeline(
-            pipeline_def=recon_pipeline.get_definition(),
-            run_config=run_config,
-        )
-
-        with get_test_project_external_pipeline("demo_pipeline") as orig_pipeline:
-
+        with get_test_project_workspace_and_external_pipeline(instance, "demo_pipeline") as (
+            workspace,
+            orig_pipeline,
+        ):
             external_pipeline = ReOriginatedExternalPipelineForTest(orig_pipeline)
-            instance.launch_run(run.run_id, external_pipeline)
+
+            run = instance.create_run_for_pipeline(
+                pipeline_def=recon_pipeline.get_definition(),
+                run_config=run_config,
+                external_pipeline_origin=external_pipeline.get_external_origin(),
+                pipeline_code_origin=external_pipeline.get_python_origin(),
+            )
+
+            instance.launch_run(run.run_id, workspace)
 
             poll_for_finished_run(instance, run.run_id, timeout=60)
 

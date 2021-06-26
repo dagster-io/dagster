@@ -4,15 +4,21 @@ from dagster.check import CheckError
 
 
 def test_default_launcher(
-    ecs, instance, pipeline, external_pipeline, subnet, network_interface, image, environment
+    ecs,
+    instance,
+    workspace,
+    run,
+    subnet,
+    network_interface,
+    image,
+    environment,
 ):
-    run = instance.create_run_for_pipeline(pipeline)
     assert not run.tags
 
     initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
     initial_tasks = ecs.list_tasks()["taskArns"]
 
-    instance.launch_run(run.run_id, external_pipeline)
+    instance.launch_run(run.run_id, workspace)
 
     # A new task definition is created
     task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
@@ -56,7 +62,9 @@ def test_default_launcher(
     assert run.run_id in str(override["command"])
 
 
-def test_launching_custom_task_definition(ecs, instance_cm, pipeline, external_pipeline):
+def test_launching_custom_task_definition(
+    ecs, instance_cm, run, workspace, pipeline, external_pipeline
+):
     container_name = "override_container"
 
     task_definition = ecs.register_task_definition(
@@ -85,12 +93,17 @@ def test_launching_custom_task_definition(ecs, instance_cm, pipeline, external_p
     with instance_cm(
         {"task_definition": task_definition_arn, "container_name": container_name}
     ) as instance:
-        run = instance.create_run_for_pipeline(pipeline)
+
+        run = instance.create_run_for_pipeline(
+            pipeline,
+            external_pipeline_origin=external_pipeline.get_external_origin(),
+            pipeline_code_origin=external_pipeline.get_python_origin(),
+        )
 
         initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
         initial_tasks = ecs.list_tasks()["taskArns"]
 
-        instance.launch_run(run.run_id, external_pipeline)
+        instance.launch_run(run.run_id, workspace)
 
         # A new task definition is not created
         assert ecs.list_task_definitions()["taskDefinitionArns"] == initial_task_definitions

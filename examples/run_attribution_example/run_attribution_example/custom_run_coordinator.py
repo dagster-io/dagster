@@ -3,8 +3,7 @@ from base64 import b64decode
 from json import JSONDecodeError, loads
 from typing import Optional
 
-from dagster.core.host_representation import ExternalPipeline
-from dagster.core.run_coordinator import QueuedRunCoordinator
+from dagster.core.run_coordinator import QueuedRunCoordinator, SubmitRunContext
 from dagster.core.storage.pipeline_run import PipelineRun
 from flask import has_request_context, request
 
@@ -30,9 +29,8 @@ class CustomRunCoordinator(QueuedRunCoordinator):
     # end_email_marker
 
     # start_submit_marker
-    def submit_run(
-        self, pipeline_run: PipelineRun, external_pipeline: ExternalPipeline
-    ) -> PipelineRun:
+    def submit_run(self, context: SubmitRunContext) -> PipelineRun:
+        pipeline_run = context.pipeline_run
         jwt_claims_header = (
             request.headers.get("X-Amzn-Oidc-Data", None) if has_request_context() else None
         )
@@ -41,6 +39,6 @@ class CustomRunCoordinator(QueuedRunCoordinator):
             self._instance.add_run_tags(pipeline_run.run_id, {"user": email})
         else:
             warnings.warn(f"Couldn't decode JWT header {jwt_claims_header}")
-        return super().submit_run(pipeline_run, external_pipeline)
+        return super().submit_run(context)
 
     # end_submit_marker

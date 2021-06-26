@@ -7,6 +7,22 @@ from dagster.core.host_representation import (
     PipelineHandle,
 )
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster.core.workspace.context import WorkspaceProcessContext
+from dagster.core.workspace.load_target import PythonFileTarget
+
+
+@contextmanager
+def get_bar_workspace(instance):
+    with WorkspaceProcessContext(
+        instance,
+        PythonFileTarget(
+            python_file=file_relative_path(__file__, "api_tests_repo.py"),
+            attribute="bar_repo",
+            working_directory=None,
+            location_name="bar_repo_location",
+        ),
+    ) as workspace_process_context:
+        yield workspace_process_context.create_request_context()
 
 
 @contextmanager

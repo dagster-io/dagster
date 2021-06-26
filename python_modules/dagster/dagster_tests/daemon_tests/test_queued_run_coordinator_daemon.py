@@ -1,19 +1,10 @@
 # pylint: disable=redefined-outer-name
 
-import sys
 from contextlib import contextmanager
 
 import pytest
-from dagster.core.code_pointer import ModuleCodePointer
-from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
-from dagster.core.host_representation.origin import (
-    ExternalPipelineOrigin,
-    ExternalRepositoryOrigin,
-    InProcessRepositoryLocationOrigin,
-)
 from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
-from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
 from dagster.core.storage.pipeline_run import IN_PROGRESS_RUN_STATUSES, PipelineRunStatus
 from dagster.core.storage.tags import PRIORITY_TAG
 from dagster.core.test_utils import create_run_for_test, instance_for_test
@@ -31,11 +22,15 @@ def instance_for_queued_run_coordinator(max_concurrent_runs=None, tag_concurrenc
         {"tag_concurrency_limits": tag_concurrency_limits} if tag_concurrency_limits else {}
     )
     overrides = {
-        "run_launcher": {"module": "dagster.core.test_utils", "class": "MockedRunLauncher"},
         "run_coordinator": {
             "module": "dagster.core.run_coordinator",
             "class": "QueuedRunCoordinator",
             "config": {**max_concurrent_runs, **tag_concurrency_limits},
+        },
+        "run_launcher": {
+            "module": "dagster.core.test_utils",
+            "class": "MockedRunLauncher",
+            "config": {"bad_run_ids": ["bad-run"]},
         },
     }
 
@@ -69,29 +64,6 @@ def create_run(instance, **kwargs):
             pipeline_name="foo",
             **kwargs,
         )
-
-
-def create_invalid_run(instance, **kwargs):
-    code_pointer = ModuleCodePointer("fake", "fake")
-    create_run_for_test(
-        instance,
-        external_pipeline_origin=ExternalPipelineOrigin(
-            ExternalRepositoryOrigin(
-                InProcessRepositoryLocationOrigin(ReconstructableRepository(code_pointer)),
-                "foo",
-            ),
-            "wrong-pipeline",
-        ),
-        pipeline_code_origin=PipelinePythonOrigin(
-            pipeline_name="foo",
-            repository_origin=RepositoryPythonOrigin(
-                sys.executable,
-                code_pointer,
-            ),
-        ),
-        pipeline_name="wrong-pipeline",
-        **kwargs,
-    )
 
 
 def get_run_ids(runs_queue):
@@ -306,10 +278,9 @@ def test_overlapping_tag_limits(workspace, daemon):
         assert get_run_ids(instance.run_launcher.queue()) == ["run-1", "run-3"]
 
 
-def test_locations_reused(instance, monkeypatch, workspace, daemon):
+def test_locations_not_created(instance, monkeypatch, workspace, daemon):
     """
-    verifies that only one repository location is created when two queued runs from the same
-    location are dequeued in the same iteration
+    Verifies that no repository location is created when runs are dequeued
     """
 
     create_run(
@@ -361,11 +332,11 @@ def test_locations_reused(instance, monkeypatch, workspace, daemon):
     list(daemon.run_iteration(instance, workspace))
 
     assert get_run_ids(instance.run_launcher.queue()) == ["queued-run", "queued-run-2"]
-    assert len(method_calls) == 1
+    assert len(method_calls) == 0
 
 
 def test_skip_error_runs(instance, workspace, daemon):
-    create_invalid_run(
+    create_run(
         instance,
         run_id="bad-run",
         status=PipelineRunStatus.QUEUED,
@@ -380,7 +351,7 @@ def test_skip_error_runs(instance, workspace, daemon):
     errors = [error for error in list(daemon.run_iteration(instance, workspace)) if error]
 
     assert len(errors) == 1
-    assert "ModuleNotFoundError" in errors[0].message
+    assert "Bad run bad-run" in errors[0].message
 
     assert get_run_ids(instance.run_launcher.queue()) == ["good-run"]
     assert instance.get_run_by_id("bad-run").status == PipelineRunStatus.FAILURE
