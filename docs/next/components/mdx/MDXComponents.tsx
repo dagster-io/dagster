@@ -307,11 +307,11 @@ export default {
       );
     }
 
-    const resolvedPath = path.resolve(
-      ".versioned_images",
-      version,
-      src.replace("/images/", "")
-    );
+    const resolvedPath = new URL(
+      path.join("versioned_images", version, src.replace("/images/", "")),
+      "https://dagster-docs-versioned-content.s3.us-west-1.amazonaws.com"
+    ).href;
+
     return (
       <div className="mx-auto">
         <Image
