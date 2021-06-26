@@ -1029,6 +1029,9 @@ class DagsterInstance:
     def watch_event_logs(self, run_id, cursor, cb):
         return self._event_storage.watch(run_id, cursor, cb)
 
+    def end_watch_event_logs(self, run_id, cb):
+        return self._event_storage.end_watch(run_id, cb)
+
     # asset storage
 
     def all_asset_keys(self):

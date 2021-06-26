@@ -1,4 +1,3 @@
-import atexit
 from abc import ABC, abstractmethod
 from collections import namedtuple
 from contextlib import contextmanager
@@ -162,6 +161,9 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref):
                 back data to the subscriber
         """
 
+    def on_unsubscribe(self, subscription):
+        pass
+
     def observable(self, run_id, key, io_type, cursor=None):
         """Return an Observable which streams back log data from the execution logs for a given
         compute step.
@@ -205,13 +207,20 @@ class ComputeLogSubscription:
         self.io_type = io_type
         self.cursor = cursor
         self.observer = None
-        atexit.register(self._clean)
 
     def __call__(self, observer):
         self.observer = observer
         self.fetch()
         if self.manager.is_watch_completed(self.run_id, self.key):
             self.complete()
+        return self
+
+    def dispose(self):
+        # called when the connection gets closed, allowing the observer to get GC'ed
+        if self.observer and callable(getattr(self.observer, "dispose", None)):
+            self.observer.dispose()
+        self.observer = None
+        self.manager.on_unsubscribe(self)
 
     def fetch(self):
         if not self.observer:
@@ -235,7 +244,3 @@ class ComputeLogSubscription:
         if not self.observer:
             return
         self.observer.on_completed()
-
-    def _clean(self):
-        self.complete()
-        self.observer = None
