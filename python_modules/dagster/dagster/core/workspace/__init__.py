@@ -1,2 +1,2 @@
 from .context import IWorkspaceProcessContext, WorkspaceProcessContext
-from .workspace import IWorkspace, Workspace, WorkspaceLocationEntry, WorkspaceLocationLoadStatus
+from .workspace import IWorkspace, WorkspaceLocationEntry, WorkspaceLocationLoadStatus

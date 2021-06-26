@@ -22,7 +22,7 @@ class TestSubscribeToGrpcServerEvents(
                 graphql_context.process_context.create_request_context().repository_locations  # pylint: disable=protected-access
             )
         )
-        graphql_context.process_context._workspace.add_state_subscriber(  # pylint: disable=protected-access
+        graphql_context.process_context.add_state_subscriber(  # pylint: disable=protected-access
             test_subscriber
         )
         location.client.shutdown_server()

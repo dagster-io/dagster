@@ -1,6 +1,5 @@
-from dagster.cli.workspace import get_workspace_from_kwargs
+from dagster.cli.workspace import get_workspace_process_context_from_kwargs
 from dagster.core.test_utils import instance_for_test
-from dagster.core.workspace import WorkspaceProcessContext
 from dagster.utils import file_relative_path
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION, SUBSCRIPTION_QUERY
 from dagster_graphql.schema import create_schema
@@ -11,18 +10,16 @@ from graphql.execution.executors.sync import SyncExecutor
 
 def test_execute_hammer_through_dagit():
     with instance_for_test() as instance:
-        with get_workspace_from_kwargs(
+        with get_workspace_process_context_from_kwargs(
+            instance,
             {
                 "python_file": file_relative_path(
                     __file__, "../../../dagster-test/dagster_test/toys/hammer.py"
                 ),
                 "attribute": "hammer_pipeline",
-            }
-        ) as workspace:
-            context = WorkspaceProcessContext(
-                workspace=workspace,
-                instance=instance,
-            ).create_request_context()
+            },
+        ) as workspace_process_context:
+            context = workspace_process_context.create_request_context()
             selector = infer_pipeline_selector(context, "hammer_pipeline")
             executor = SyncExecutor()
 

@@ -4,9 +4,9 @@ import runpy
 
 import pytest
 from click.testing import CliRunner
-from dagit.app import create_app_from_workspace
+from dagit.app import create_app_from_workspace_process_context
 from dagster.cli.pipeline import pipeline_execute_command
-from dagster.cli.workspace import get_workspace_from_kwargs
+from dagster.cli.workspace import get_workspace_process_context_from_kwargs
 from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import instance_for_test
 from dagster.utils import check_script, pushd, script_relative_path
@@ -201,8 +201,8 @@ def path_to_tutorial_file(path):
 
 def load_dagit_for_workspace_cli_args(n_pipelines=1, **kwargs):
     instance = DagsterInstance.ephemeral()
-    with get_workspace_from_kwargs(kwargs) as workspace:
-        app = create_app_from_workspace(workspace, instance)
+    with get_workspace_process_context_from_kwargs(instance, kwargs) as workspace_process_context:
+        app = create_app_from_workspace_process_context(workspace_process_context)
 
         client = app.test_client()
 

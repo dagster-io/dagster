@@ -7,7 +7,6 @@ import pytest
 from dagster import lambda_solid, pipeline, repository
 from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster.core.test_utils import instance_for_test
-from dagster.core.workspace.context import WorkspaceProcessContext
 from dagster_graphql.test.utils import define_out_of_process_workspace, main_repo_location_name
 
 
@@ -35,7 +34,7 @@ def get_repo():
 
 
 def test_can_reload_on_external_repository_error():
-    with instance_for_test():
+    with instance_for_test() as instance:
         with ExitStack() as exit_stack:
             with mock.patch(
                 # note it where the function is *used* that needs to mocked, not
@@ -47,7 +46,7 @@ def test_can_reload_on_external_repository_error():
 
                 with pytest.warns(UserWarning, match=re.escape("get_external_repo_failure")):
                     workspace = exit_stack.enter_context(
-                        define_out_of_process_workspace(__file__, "get_repo")
+                        define_out_of_process_workspace(__file__, "get_repo", instance)
                     )
 
                 assert not workspace.has_repository_location(main_repo_location_name())
@@ -59,11 +58,7 @@ def test_can_reload_on_external_repository_error():
 
 def test_reload_on_process_context():
     with instance_for_test() as instance:
-        with define_out_of_process_workspace(__file__, "get_repo") as workspace:
-
-            # Create a process context
-            process_context = WorkspaceProcessContext(workspace=workspace, instance=instance)
-
+        with define_out_of_process_workspace(__file__, "get_repo", instance) as process_context:
             request_context = process_context.create_request_context()
 
             # Save the repository name
@@ -86,11 +81,8 @@ def test_reload_on_process_context():
 
 def test_reload_on_request_context():
     with instance_for_test() as instance:
-        with define_out_of_process_workspace(__file__, "get_repo") as workspace:
-            assert workspace.repository_locations_count == 1
-
-            # Create a process context
-            process_context = WorkspaceProcessContext(workspace=workspace, instance=instance)
+        with define_out_of_process_workspace(__file__, "get_repo", instance) as process_context:
+            assert process_context.repository_locations_count == 1
 
             # Create a request context from the process context
             request_context = process_context.create_request_context()
@@ -123,11 +115,9 @@ def test_reload_on_request_context_2():
     # but calls reload from the request_context instead of on the process_context
 
     with instance_for_test() as instance:
-        with define_out_of_process_workspace(__file__, "get_repo") as workspace:
-            assert workspace.repository_locations_count == 1
+        with define_out_of_process_workspace(__file__, "get_repo", instance) as process_context:
+            assert process_context.repository_locations_count == 1
 
-            # Create a process context
-            process_context = WorkspaceProcessContext(workspace=workspace, instance=instance)
             request_context = process_context.create_request_context()
 
             # Save the repository name
@@ -154,10 +144,11 @@ def test_reload_on_request_context_2():
             assert repo_name == repo.name
 
 
-def test_handle_cleaup_by_workspace_context_exit():
-    with mock.patch.object(GrpcServerRepositoryLocation, "cleanup") as mock_method:
-        with define_out_of_process_workspace(__file__, "get_repo") as _:
-            pass
+def test_handle_cleanup_by_workspace_context_exit():
+    with instance_for_test() as instance:
+        with mock.patch.object(GrpcServerRepositoryLocation, "cleanup") as mock_method:
+            with define_out_of_process_workspace(__file__, "get_repo", instance):
+                pass
 
     assert mock_method.called
 
@@ -170,11 +161,8 @@ def test_handle_cleaup_by_gc_without_request_context():
         called["yup"] = True
 
     with instance_for_test() as instance:
-        with define_out_of_process_workspace(__file__, "get_repo") as workspace:
-            assert workspace.repository_locations_count == 1
-
-            # Create a process context
-            process_context = WorkspaceProcessContext(workspace=workspace, instance=instance)
+        with define_out_of_process_workspace(__file__, "get_repo", instance) as process_context:
+            assert process_context.repository_locations_count == 1
 
             request_context = process_context.create_request_context()
             request_context.repository_locations[0].cleanup = call_me

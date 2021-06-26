@@ -16,7 +16,7 @@ from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.core.storage.schedules.sqlite.sqlite_schedule_storage import SqliteScheduleStorage
 from dagster.core.test_utils import ExplodingRunLauncher, instance_for_test_tempdir
-from dagster.core.workspace import Workspace, WorkspaceProcessContext
+from dagster.core.workspace import WorkspaceProcessContext
 from dagster.core.workspace.load_target import (
     GrpcServerTarget,
     ModuleTarget,
@@ -323,12 +323,13 @@ class EnvironmentManagers:
     @staticmethod
     def managed_grpc():
         @contextmanager
-        def _mgr_fn(recon_repo):
+        def _mgr_fn(recon_repo, instance, read_only):
             """Goes out of process via grpc"""
             check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
 
             loadable_target_origin = recon_repo.get_python_origin().loadable_target_origin
-            with Workspace(
+            with WorkspaceProcessContext(
+                instance,
                 (
                     PythonFileTarget(
                         python_file=loadable_target_origin.python_file,
@@ -342,16 +343,17 @@ class EnvironmentManagers:
                         attribute=loadable_target_origin.attribute,
                         location_name="test",
                     )
-                )
-            ) as workspace:
-                yield workspace
+                ),
+                read_only=read_only,
+            ) as workspace_process_context:
+                yield workspace_process_context
 
         return MarkedManager(_mgr_fn, [Marks.managed_grpc_env])
 
     @staticmethod
     def deployed_grpc():
         @contextmanager
-        def _mgr_fn(recon_repo):
+        def _mgr_fn(recon_repo, instance, read_only):
             check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
 
             loadable_target_origin = recon_repo.get_python_origin().loadable_target_origin
@@ -359,13 +361,15 @@ class EnvironmentManagers:
             server_process = GrpcServerProcess(loadable_target_origin=loadable_target_origin)
             try:
                 with server_process.create_ephemeral_client() as api_client:
-                    with Workspace(
+                    with WorkspaceProcessContext(
+                        instance,
                         GrpcServerTarget(
                             port=api_client.port,
                             socket=api_client.socket,
                             host=api_client.host,
                             location_name="test",
-                        )
+                        ),
+                        read_only=read_only,
                     ) as workspace:
                         yield workspace
             finally:
@@ -376,12 +380,14 @@ class EnvironmentManagers:
     @staticmethod
     def multi_location():
         @contextmanager
-        def _mgr_fn(recon_repo):
+        def _mgr_fn(recon_repo, instance, read_only):
             """Goes out of process but same process as host process"""
             check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
 
-            with Workspace(
-                WorkspaceFileTarget(paths=[file_relative_path(__file__, "multi_location.yaml")])
+            with WorkspaceProcessContext(
+                instance,
+                WorkspaceFileTarget(paths=[file_relative_path(__file__, "multi_location.yaml")]),
+                read_only=read_only,
             ) as workspace:
                 yield workspace
 
@@ -390,17 +396,19 @@ class EnvironmentManagers:
     @staticmethod
     def lazy_repository():
         @contextmanager
-        def _mgr_fn(recon_repo):
+        def _mgr_fn(recon_repo, instance, read_only):
             """Goes out of process but same process as host process"""
             check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
 
-            with Workspace(
+            with WorkspaceProcessContext(
+                instance,
                 PythonFileTarget(
                     python_file=file_relative_path(__file__, "setup.py"),
                     attribute="test_dict_repo",
                     working_directory=None,
                     location_name="test",
-                )
+                ),
+                read_only=read_only,
             ) as workspace:
                 yield workspace
 
@@ -735,10 +743,10 @@ def _variants_without_marks(variants, marks):
 def manage_graphql_context(context_variant, recon_repo=None):
     recon_repo = recon_repo if recon_repo else get_main_recon_repo()
     with context_variant.instance_mgr() as instance:
-        with context_variant.environment_mgr(recon_repo) as workspace:
-            yield WorkspaceProcessContext(
-                instance=instance, workspace=workspace, read_only=context_variant.read_only
-            ).create_request_context()
+        with context_variant.environment_mgr(
+            recon_repo, instance, context_variant.read_only
+        ) as workspace_process_context:
+            yield workspace_process_context.create_request_context()
 
 
 class _GraphQLContextTestSuite(ABC):

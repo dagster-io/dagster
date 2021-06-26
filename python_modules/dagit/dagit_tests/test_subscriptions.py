@@ -1,5 +1,5 @@
 import gc
-from contextlib import ExitStack, contextmanager
+from contextlib import contextmanager
 from unittest import mock
 
 import objgraph
@@ -7,7 +7,7 @@ from dagit.subscription_server import DagsterSubscriptionServer
 from dagster import execute_pipeline, pipeline, solid
 from dagster.core.test_utils import instance_for_test
 from dagster.core.workspace.context import WorkspaceProcessContext
-from dagster.core.workspace.load import load_workspace_from_yaml_paths
+from dagster.core.workspace.load_target import WorkspaceFileTarget
 from dagster.utils import file_relative_path
 from dagster_graphql.schema import create_schema
 from graphql_ws.constants import GQL_CONNECTION_INIT, GQL_CONNECTION_TERMINATE, GQL_START, GQL_STOP
@@ -35,18 +35,16 @@ COMPUTE_LOG_SUBSCRIPTION = """
 
 
 @contextmanager
-def create_subscription_context(instance, workspace=None):
+def create_subscription_context(instance):
     ws = mock.Mock()
-    with ExitStack() as stack:
-        if not workspace:
-            workspace = stack.enter_context(
-                load_workspace_from_yaml_paths(
-                    [file_relative_path(__file__, "./workspace.yaml")],
-                )
-            )
-        process_context = WorkspaceProcessContext(
-            instance=instance, workspace=workspace, read_only=True, version=""
-        )
+    yaml_paths = [file_relative_path(__file__, "./workspace.yaml")]
+
+    with WorkspaceProcessContext(
+        instance=instance,
+        workspace_load_target=WorkspaceFileTarget(paths=yaml_paths),
+        read_only=True,
+        version="",
+    ) as process_context:
         yield GeventConnectionContext(ws, process_context)
 
 

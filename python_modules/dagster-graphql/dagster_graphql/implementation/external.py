@@ -8,7 +8,7 @@ from dagster.core.host_representation import (
     PipelineSelector,
     RepositorySelector,
 )
-from dagster.core.workspace.context import IWorkspaceRequestContext
+from dagster.core.workspace.context import BaseWorkspaceRequestContext
 from dagster.utils.error import serializable_error_info_from_exc_info
 from graphql.execution.base import ResolveInfo
 
@@ -194,7 +194,7 @@ def fetch_workspace(workspace_request_context):
     from ..schema.external import GrapheneWorkspace, GrapheneWorkspaceLocationEntry
 
     check.inst_param(
-        workspace_request_context, "workspace_request_context", IWorkspaceRequestContext
+        workspace_request_context, "workspace_request_context", BaseWorkspaceRequestContext
     )
 
     nodes = [

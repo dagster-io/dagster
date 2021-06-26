@@ -3,7 +3,7 @@ import json
 import pytest
 from dagit import app
 from dagster import DagsterInstance
-from dagster.cli.workspace import get_workspace_from_kwargs
+from dagster.cli.workspace import get_workspace_process_context_from_kwargs
 from dagster.core.test_utils import instance_for_test
 
 SMOKE_TEST_QUERY = """
@@ -30,12 +30,12 @@ SMOKE_TEST_QUERY = """
     [DagsterInstance.ephemeral, instance_for_test],
 )
 def test_smoke_app(gen_instance):
-    with get_workspace_from_kwargs(
-        dict(module_name="dagit_tests.toy.bar_repo", definition="bar")
-    ) as workspace:
+    with gen_instance() as instance:
+        with get_workspace_process_context_from_kwargs(
+            instance, dict(module_name="dagit_tests.toy.bar_repo", definition="bar")
+        ) as workspace_process_context:
 
-        with gen_instance() as instance:
-            flask_app = app.create_app_from_workspace(workspace, instance)
+            flask_app = app.create_app_from_workspace_process_context(workspace_process_context)
             client = flask_app.test_client()
 
             result = client.post(

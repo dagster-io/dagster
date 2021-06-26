@@ -3,10 +3,14 @@ from gzip import GzipFile
 import click
 from dagster import DagsterInstance, check
 from dagster.cli.debug import DebugRunPayload
-from dagster.core.workspace import Workspace
+from dagster.core.workspace import WorkspaceProcessContext
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 
-from .cli import DEFAULT_DAGIT_HOST, DEFAULT_DAGIT_PORT, host_dagit_ui_with_workspace
+from .cli import (
+    DEFAULT_DAGIT_HOST,
+    DEFAULT_DAGIT_PORT,
+    host_dagit_ui_with_workspace_process_context,
+)
 
 
 @click.command(
@@ -39,9 +43,8 @@ def dagit_debug_command(input_files, port):
             debug_payloads.append(debug_payload)
 
     instance = DagsterInstance.ephemeral(preload=debug_payloads)
-    host_dagit_ui_with_workspace(
-        workspace=Workspace(None),
-        instance=instance,
+    host_dagit_ui_with_workspace_process_context(
+        workspace_process_context=WorkspaceProcessContext(instance, None),
         port=port,
         port_lookup=True,
         host=DEFAULT_DAGIT_HOST,

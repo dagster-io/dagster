@@ -13,8 +13,7 @@ from dagster.core.telemetry import (
     log_workspace_stats,
 )
 from dagster.core.test_utils import instance_for_test, instance_for_test_tempdir
-from dagster.core.workspace.context import WorkspaceProcessContext
-from dagster.core.workspace.load import load_workspace_from_yaml_paths
+from dagster.core.workspace.load import load_workspace_process_context_from_yaml_paths
 from dagster.utils import file_relative_path, pushd, script_relative_path
 
 EXPECTED_KEYS = set(
@@ -151,10 +150,9 @@ def test_repo_stats(caplog):
 
 def test_log_workspace_stats(caplog):
     with instance_for_test() as instance:
-        with load_workspace_from_yaml_paths(
-            [file_relative_path(__file__, "./multi_env_telemetry_workspace.yaml")]
-        ) as workspace:
-            context = WorkspaceProcessContext(instance=instance, workspace=workspace)
+        with load_workspace_process_context_from_yaml_paths(
+            instance, [file_relative_path(__file__, "./multi_env_telemetry_workspace.yaml")]
+        ) as context:
             log_workspace_stats(instance, context)
 
             for record in caplog.records:

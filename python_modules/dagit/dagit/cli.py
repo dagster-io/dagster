@@ -7,16 +7,19 @@ from typing import Optional
 
 import click
 from dagster import check
-from dagster.cli.workspace import get_workspace_from_kwargs, workspace_target_argument
+from dagster.cli.workspace import (
+    get_workspace_process_context_from_kwargs,
+    workspace_target_argument,
+)
 from dagster.cli.workspace.cli_target import WORKSPACE_TARGET_WARNING
 from dagster.core.instance import DagsterInstance, is_dagster_home_set
 from dagster.core.telemetry import START_DAGIT_WEBSERVER, log_action
-from dagster.core.workspace import Workspace
+from dagster.core.workspace import WorkspaceProcessContext
 from dagster.utils import DEFAULT_WORKSPACE_YAML_FILENAME
 from gevent import pywsgi
 from geventwebsocket.handler import WebSocketHandler
 
-from .app import create_app_from_workspace
+from .app import create_app_from_workspace_process_context
 from .telemetry import upload_logs
 from .version import __version__
 
@@ -149,35 +152,36 @@ def host_dagit_ui(
         # Allow the instance components to change behavior in the context of a long running server process
         instance.optimize_for_dagit(db_statement_timeout)
 
-        with get_workspace_from_kwargs(kwargs) as workspace:
-            if not workspace:
-                raise Exception("Unable to load workspace with cli_args: {}".format(kwargs))
-
-            host_dagit_ui_with_workspace(
-                instance, workspace, host, port, path_prefix, port_lookup, read_only
+        with get_workspace_process_context_from_kwargs(
+            instance, kwargs
+        ) as workspace_process_context:
+            host_dagit_ui_with_workspace_process_context(
+                workspace_process_context, host, port, path_prefix, port_lookup, read_only
             )
 
 
-def host_dagit_ui_with_workspace(
-    instance: DagsterInstance,
-    workspace: Workspace,
+def host_dagit_ui_with_workspace_process_context(
+    workspace_process_context: WorkspaceProcessContext,
     host: Optional[str],
     port: int,
     path_prefix: str,
     port_lookup: bool = True,
     read_only: bool = False,
 ):
-    check.inst_param(instance, "instance", DagsterInstance)
-    check.inst_param(workspace, "workspace", Workspace)
+    check.inst_param(
+        workspace_process_context, "workspace_process_context", WorkspaceProcessContext
+    )
     check.opt_str_param(host, "host")
     check.int_param(port, "port")
     check.str_param(path_prefix, "path_prefix")
     check.bool_param(port_lookup, "port_lookup")
     check.bool_param(read_only, "read_only")
 
-    app = create_app_from_workspace(workspace, instance, path_prefix, read_only)
+    app = create_app_from_workspace_process_context(
+        workspace_process_context, path_prefix, read_only
+    )
 
-    start_server(instance, host, port, path_prefix, app, port_lookup)
+    start_server(workspace_process_context.instance, host, port, path_prefix, app, port_lookup)
 
 
 @contextmanager

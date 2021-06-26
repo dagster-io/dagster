@@ -11,10 +11,8 @@ from dagster import __version__ as dagster_version
 from dagster import check
 from dagster.core.debug import DebugRunPayload
 from dagster.core.execution.compute_logs import warn_if_compute_logs_disabled
-from dagster.core.instance import DagsterInstance
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.telemetry import log_workspace_stats
-from dagster.core.workspace import Workspace
 from dagster.core.workspace.context import IWorkspaceProcessContext, WorkspaceProcessContext
 from dagster_graphql.schema import create_schema
 from dagster_graphql.version import __version__ as dagster_graphql_version
@@ -272,13 +270,18 @@ def instantiate_app_with_views(
     return app
 
 
-def create_app_from_workspace(
-    workspace: Workspace, instance: DagsterInstance, path_prefix: str = "", read_only: bool = False
+def create_app_from_workspace_process_context(
+    workspace_process_context: WorkspaceProcessContext,
+    path_prefix: str = "",
+    read_only: bool = False,
 ):
-    check.inst_param(workspace, "workspace", Workspace)
-    check.inst_param(instance, "instance", DagsterInstance)
+    check.inst_param(
+        workspace_process_context, "workspace_process_context", WorkspaceProcessContext
+    )
     check.str_param(path_prefix, "path_prefix")
     check.bool_param(read_only, "read_only")
+
+    instance = workspace_process_context.instance
 
     if path_prefix:
         if not path_prefix.startswith("/"):
@@ -290,12 +293,8 @@ def create_app_from_workspace(
 
     print("Loading repository...")  # pylint: disable=print-call
 
-    context = WorkspaceProcessContext(
-        instance=instance, workspace=workspace, read_only=read_only, version=__version__
-    )
-
-    log_workspace_stats(instance, context)
+    log_workspace_stats(instance, workspace_process_context)
 
     schema = create_schema()
 
-    return instantiate_app_with_views(context, schema, path_prefix)
+    return instantiate_app_with_views(workspace_process_context, schema, path_prefix)

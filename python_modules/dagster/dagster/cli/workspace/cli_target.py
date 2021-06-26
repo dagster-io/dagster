@@ -11,6 +11,7 @@ from dagster.core.host_representation.external import ExternalRepository
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.host_representation.origin import ExternalRepositoryOrigin
 from dagster.core.host_representation.repository_location import RepositoryLocation
+from dagster.core.instance import DagsterInstance
 from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
 from dagster.core.workspace.load_target import (
     EmptyWorkspaceTarget,
@@ -162,10 +163,10 @@ def created_workspace_load_target(kwargs):
         _cli_load_invariant(False)
 
 
-def get_workspace_from_kwargs(kwargs):
-    from dagster.core.workspace import Workspace
+def get_workspace_process_context_from_kwargs(instance: DagsterInstance, kwargs):
+    from dagster.core.workspace import WorkspaceProcessContext
 
-    return Workspace(created_workspace_load_target(kwargs))
+    return WorkspaceProcessContext(instance, created_workspace_load_target(kwargs))
 
 
 def python_target_click_options():
