@@ -1,5 +1,6 @@
 # pylint: disable=redefined-outer-name
 
+import sys
 from contextlib import contextmanager
 
 import pytest
@@ -12,6 +13,7 @@ from dagster.core.host_representation.origin import (
     InProcessRepositoryLocationOrigin,
 )
 from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
+from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
 from dagster.core.storage.pipeline_run import IN_PROGRESS_RUN_STATUSES, PipelineRunStatus
 from dagster.core.storage.tags import PRIORITY_TAG
 from dagster.core.test_utils import create_run_for_test, instance_for_test
@@ -63,22 +65,29 @@ def create_run(instance, **kwargs):
         create_run_for_test(
             instance,
             external_pipeline_origin=pipeline_handle.get_external_origin(),
+            pipeline_code_origin=pipeline_handle.get_python_origin(),
             pipeline_name="foo",
             **kwargs,
         )
 
 
 def create_invalid_run(instance, **kwargs):
+    code_pointer = ModuleCodePointer("fake", "fake")
     create_run_for_test(
         instance,
         external_pipeline_origin=ExternalPipelineOrigin(
             ExternalRepositoryOrigin(
-                InProcessRepositoryLocationOrigin(
-                    ReconstructableRepository(ModuleCodePointer("fake", "fake"))
-                ),
+                InProcessRepositoryLocationOrigin(ReconstructableRepository(code_pointer)),
                 "foo",
             ),
             "wrong-pipeline",
+        ),
+        pipeline_code_origin=PipelinePythonOrigin(
+            pipeline_name="foo",
+            repository_origin=RepositoryPythonOrigin(
+                sys.executable,
+                code_pointer,
+            ),
         ),
         pipeline_name="wrong-pipeline",
         **kwargs,

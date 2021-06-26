@@ -65,6 +65,7 @@ def test_execute_queeud_run_on_celery_k8s(  # pylint: disable=redefined-outer-na
             run_config=run_config,
             mode="default",
             external_pipeline_origin=reoriginated_pipeline.get_external_origin(),
+            pipeline_code_origin=reoriginated_pipeline.get_python_origin(),
         )
 
         dagster_instance_for_daemon.submit_run(

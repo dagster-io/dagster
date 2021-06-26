@@ -114,6 +114,7 @@ def test_submit_run():
                 pipeline_name=pipeline_handle.pipeline_name,
                 run_id="foo-bar",
                 external_pipeline_origin=pipeline_handle.get_external_origin(),
+                pipeline_code_origin=pipeline_handle.get_python_origin(),
             )
 
             instance.submit_run(run.run_id, None)

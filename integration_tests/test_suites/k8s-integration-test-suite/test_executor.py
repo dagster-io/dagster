@@ -60,6 +60,7 @@ def test_k8s_run_launcher_default(
         location,
         external_pipeline,
     ):
+        reoriginated_pipeline = ReOriginatedExternalPipelineForTest(external_pipeline)
         run = create_run_for_test(
             dagster_instance_for_k8s_run_launcher,
             pipeline_name=pipeline_name,
@@ -70,10 +71,12 @@ def test_k8s_run_launcher_default(
             execution_plan_snapshot=location.get_external_execution_plan(
                 external_pipeline, run_config, "default", None, None
             ).execution_plan_snapshot,
+            external_pipeline_origin=reoriginated_pipeline.get_external_origin(),
+            pipeline_code_origin=reoriginated_pipeline.get_python_origin(),
         )
         dagster_instance_for_k8s_run_launcher.launch_run(
             run.run_id,
-            ReOriginatedExternalPipelineForTest(external_pipeline),
+            reoriginated_pipeline,
         )
 
         result = wait_for_job_and_get_raw_logs(
@@ -124,6 +127,9 @@ def test_k8s_run_launcher_image_from_origin(
         location,
         external_pipeline,
     ):
+        reoriginated_pipeline = ReOriginatedExternalPipelineForTest(
+            external_pipeline, container_image=dagster_docker_image
+        )
         run = create_run_for_test(
             dagster_instance_for_k8s_run_launcher,
             pipeline_name=pipeline_name,
@@ -134,13 +140,10 @@ def test_k8s_run_launcher_image_from_origin(
             execution_plan_snapshot=location.get_external_execution_plan(
                 external_pipeline, run_config, "default", None, None
             ).execution_plan_snapshot,
+            external_pipeline_origin=reoriginated_pipeline.get_external_origin(),
+            pipeline_code_origin=reoriginated_pipeline.get_python_origin(),
         )
-        dagster_instance_for_k8s_run_launcher.launch_run(
-            run.run_id,
-            ReOriginatedExternalPipelineForTest(
-                external_pipeline, container_image=dagster_docker_image
-            ),
-        )
+        dagster_instance_for_k8s_run_launcher.launch_run(run.run_id, reoriginated_pipeline)
 
         result = wait_for_job_and_get_raw_logs(
             job_name="dagster-run-%s" % run.run_id, namespace=helm_namespace_for_k8s_run_launcher
@@ -181,6 +184,7 @@ def test_k8s_run_launcher_terminate(
         location,
         external_pipeline,
     ):
+        reoriginated_pipeline = ReOriginatedExternalPipelineForTest(external_pipeline)
         run = create_run_for_test(
             dagster_instance_for_k8s_run_launcher,
             pipeline_name=pipeline_name,
@@ -191,12 +195,11 @@ def test_k8s_run_launcher_terminate(
             execution_plan_snapshot=location.get_external_execution_plan(
                 external_pipeline, run_config, "k8s", None, None
             ).execution_plan_snapshot,
+            external_pipeline_origin=reoriginated_pipeline.get_external_origin(),
+            pipeline_code_origin=reoriginated_pipeline.get_python_origin(),
         )
 
-        dagster_instance_for_k8s_run_launcher.launch_run(
-            run.run_id,
-            ReOriginatedExternalPipelineForTest(external_pipeline),
-        )
+        dagster_instance_for_k8s_run_launcher.launch_run(run.run_id, reoriginated_pipeline)
 
         wait_for_job(
             job_name="dagster-run-%s" % run.run_id, namespace=helm_namespace_for_k8s_run_launcher
@@ -266,6 +269,7 @@ def test_k8s_executor_resource_requirements(
         location,
         external_pipeline,
     ):
+        reoriginated_pipeline = ReOriginatedExternalPipelineForTest(external_pipeline)
         run = create_run_for_test(
             dagster_instance_for_k8s_run_launcher,
             pipeline_name=pipeline_name,
@@ -276,11 +280,10 @@ def test_k8s_executor_resource_requirements(
             execution_plan_snapshot=location.get_external_execution_plan(
                 external_pipeline, run_config, "k8s", None, None
             ).execution_plan_snapshot,
+            external_pipeline_origin=reoriginated_pipeline.get_external_origin(),
+            pipeline_code_origin=reoriginated_pipeline.get_python_origin(),
         )
-        dagster_instance_for_k8s_run_launcher.launch_run(
-            run.run_id,
-            ReOriginatedExternalPipelineForTest(external_pipeline),
-        )
+        dagster_instance_for_k8s_run_launcher.launch_run(run.run_id, reoriginated_pipeline)
 
         result = wait_for_job_and_get_raw_logs(
             job_name="dagster-run-%s" % run.run_id, namespace=helm_namespace_for_k8s_run_launcher

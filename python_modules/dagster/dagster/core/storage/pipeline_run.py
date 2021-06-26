@@ -5,6 +5,7 @@ from enum import Enum
 from typing import NamedTuple
 
 from dagster import check
+from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster.core.utils import make_new_run_id
 from dagster.serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
@@ -117,6 +118,7 @@ def pipeline_run_from_storage(
     solid_subset=None,
     reexecution_config=None,  # pylint: disable=unused-argument
     external_pipeline_origin=None,
+    pipeline_code_origin=None,
     **kwargs,
 ):
 
@@ -197,6 +199,7 @@ def pipeline_run_from_storage(
         pipeline_snapshot_id=pipeline_snapshot_id,
         execution_plan_snapshot_id=execution_plan_snapshot_id,
         external_pipeline_origin=external_pipeline_origin,
+        pipeline_code_origin=pipeline_code_origin,
     )
 
 
@@ -207,7 +210,8 @@ class PipelineRun(
         (
             "pipeline_name run_id run_config mode solid_selection solids_to_execute "
             "step_keys_to_execute status tags root_run_id parent_run_id "
-            "pipeline_snapshot_id execution_plan_snapshot_id external_pipeline_origin"
+            "pipeline_snapshot_id execution_plan_snapshot_id external_pipeline_origin "
+            "pipeline_code_origin"
         ),
     )
 ):
@@ -230,7 +234,12 @@ class PipelineRun(
         parent_run_id=None,
         pipeline_snapshot_id=None,
         execution_plan_snapshot_id=None,
+        # An ExternalPipelineOrigin that can be used to recreate the RepositoryLocation and
+        # ExternalPipeline that was used to submit this run
         external_pipeline_origin=None,
+        # A PipelinePythonOrigin with information about where to find the pipeline definition in
+        # code. Most run launchers will pass this origin as an argument to the run worker process.
+        pipeline_code_origin=None,
     ):
         check.invariant(
             (root_run_id is not None and parent_run_id is not None)
@@ -258,6 +267,12 @@ class PipelineRun(
                 ExternalPipelineOrigin,
                 "external_pipeline_origin is required for queued runs",
             )
+            check.inst_param(
+                pipeline_code_origin,
+                "pipeline_code_origin",
+                PipelinePythonOrigin,
+                "pipeline_code_origin is required for queued runs",
+            )
 
         return super(PipelineRun, cls).__new__(
             cls,
@@ -280,6 +295,9 @@ class PipelineRun(
             ),
             external_pipeline_origin=check.opt_inst_param(
                 external_pipeline_origin, "external_pipeline_origin", ExternalPipelineOrigin
+            ),
+            pipeline_code_origin=check.opt_inst_param(
+                pipeline_code_origin, "pipeline_code_origin", PipelinePythonOrigin
             ),
         )
 

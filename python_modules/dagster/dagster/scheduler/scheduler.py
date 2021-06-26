@@ -392,6 +392,7 @@ def _create_scheduler_run(
         execution_plan_snapshot=execution_plan_snapshot,
         parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
         external_pipeline_origin=external_pipeline.get_external_origin(),
+        pipeline_code_origin=external_pipeline.get_python_origin(),
     )
 
     if len(execution_plan_errors) > 0:

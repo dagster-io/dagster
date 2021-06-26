@@ -47,6 +47,7 @@ class TestQueuedRunCoordinator:
             {
                 "pipeline_name": "foo",
                 "external_pipeline_origin": external_pipeline.get_external_origin(),
+                "pipeline_code_origin": external_pipeline.get_python_origin(),
             },
             kwargs,
         )

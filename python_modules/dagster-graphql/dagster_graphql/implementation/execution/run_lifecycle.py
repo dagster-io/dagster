@@ -86,6 +86,7 @@ def create_valid_pipeline_run(graphene_info, external_pipeline, execution_params
         parent_run_id=execution_params.execution_metadata.parent_run_id,
         status=PipelineRunStatus.NOT_STARTED,
         external_pipeline_origin=external_pipeline.get_external_origin(),
+        pipeline_code_origin=external_pipeline.get_python_origin(),
     )
 
     # TODO: support memoized execution from dagit. https://github.com/dagster-io/dagster/issues/3322
