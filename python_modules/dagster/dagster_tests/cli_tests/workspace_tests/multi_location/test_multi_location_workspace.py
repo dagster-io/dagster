@@ -3,9 +3,9 @@ from contextlib import ExitStack
 
 import pytest
 import yaml
-from dagster.cli.workspace import Workspace
-from dagster.cli.workspace.load import load_workspace_from_yaml_paths, location_origins_from_config
 from dagster.core.host_representation import GrpcServerRepositoryLocation
+from dagster.core.workspace import Workspace
+from dagster.core.workspace.load import load_workspace_from_yaml_paths, location_origins_from_config
 from dagster.serdes import serialize_dagster_namedtuple
 from dagster.utils import file_relative_path
 

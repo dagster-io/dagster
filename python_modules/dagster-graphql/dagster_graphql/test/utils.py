@@ -1,9 +1,9 @@
 from contextlib import contextmanager
 
 from dagster import check
-from dagster.cli.workspace import Workspace, WorkspaceProcessContext
-from dagster.cli.workspace.cli_target import PythonFileTarget
 from dagster.core.instance import DagsterInstance
+from dagster.core.workspace import Workspace, WorkspaceProcessContext
+from dagster.core.workspace.load_target import PythonFileTarget
 from dagster_graphql.schema import create_schema
 from graphql import graphql
 

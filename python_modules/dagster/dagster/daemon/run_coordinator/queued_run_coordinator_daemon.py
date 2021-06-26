@@ -4,7 +4,6 @@ import time
 from collections import defaultdict
 
 from dagster import DagsterEvent, DagsterEventType, check
-from dagster.cli.workspace.workspace import IWorkspace
 from dagster.core.events.log import EventLogEntry
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import (
@@ -14,6 +13,7 @@ from dagster.core.storage.pipeline_run import (
     PipelineRunsFilter,
 )
 from dagster.core.storage.tags import PRIORITY_TAG
+from dagster.core.workspace import IWorkspace
 from dagster.daemon.daemon import DagsterDaemon
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.external import external_pipeline_from_location

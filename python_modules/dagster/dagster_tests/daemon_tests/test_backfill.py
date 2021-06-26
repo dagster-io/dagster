@@ -9,7 +9,6 @@ from contextlib import contextmanager
 import pendulum
 import pytest
 from dagster import Any, Field, pipeline, repository, solid
-from dagster.cli.workspace.dynamic_workspace import DynamicWorkspace
 from dagster.core.definitions import PartitionSetDefinition
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
@@ -23,6 +22,7 @@ from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFil
 from dagster.core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG
 from dagster.core.test_utils import instance_for_test
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster.core.workspace.dynamic_workspace import DynamicWorkspace
 from dagster.daemon import get_default_daemon_logger
 from dagster.daemon.backfill import execute_backfill_iteration
 from dagster.seven import get_system_temp_directory

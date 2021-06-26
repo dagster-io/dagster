@@ -1,6 +1,6 @@
 from typing import Dict
 
-from dagster.cli.workspace.context import IWorkspaceProcessContext
+from dagster.core.workspace.context import IWorkspaceProcessContext
 
 VIEWER_PERMISSIONS = {
     "launch_pipeline_execution": False,

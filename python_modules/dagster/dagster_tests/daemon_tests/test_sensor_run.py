@@ -9,7 +9,6 @@ from contextlib import contextmanager
 import pendulum
 import pytest
 from dagster import Any, Field, pipeline, repository, solid
-from dagster.cli.workspace.dynamic_workspace import DynamicWorkspace
 from dagster.core.definitions.decorators.sensor import sensor
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.definitions.run_request import JobType
@@ -26,6 +25,7 @@ from dagster.core.scheduler.job import JobState, JobStatus, JobTickStatus
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import instance_for_test
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster.core.workspace.dynamic_workspace import DynamicWorkspace
 from dagster.daemon import get_default_daemon_logger
 from dagster.daemon.controller import (
     DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,

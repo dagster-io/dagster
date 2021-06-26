@@ -25,7 +25,6 @@ from dagster import (
     reexecute_pipeline,
     solid,
 )
-from dagster.cli.workspace.load import location_origin_from_python_file
 from dagster.core.definitions import Solid
 from dagster.core.definitions.dependency import DependencyStructure
 from dagster.core.definitions.graph import _create_adjacency_lists
@@ -39,6 +38,7 @@ from dagster.core.utility_solids import (
     define_stub_solid,
     input_set,
 )
+from dagster.core.workspace.load import location_origin_from_python_file
 from dagster.utils.test import execute_solid_within_pipeline
 
 # protected members

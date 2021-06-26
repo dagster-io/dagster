@@ -1,10 +1,10 @@
 import pendulum
 import pytest
-from dagster.cli.workspace.dynamic_workspace import DynamicWorkspace
 from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import cleanup_test_instance, get_crash_signals
+from dagster.core.workspace.dynamic_workspace import DynamicWorkspace
 from dagster.daemon import get_default_daemon_logger
 from dagster.daemon.backfill import execute_backfill_iteration
 from dagster.seven import IS_WINDOWS, multiprocessing

@@ -50,7 +50,6 @@ from dagster import (
     usable_as_dagster_type,
     weekly_schedule,
 )
-from dagster.cli.workspace.load import location_origin_from_python_file
 from dagster.core.definitions.decorators.sensor import sensor
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.definitions.sensor import RunRequest, SkipReason
@@ -58,6 +57,7 @@ from dagster.core.log_manager import coerce_valid_log_level
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.core.test_utils import today_at_midnight
+from dagster.core.workspace.load import location_origin_from_python_file
 from dagster.experimental import DynamicOutput, DynamicOutputDefinition
 from dagster.seven import get_system_temp_directory
 from dagster.utils import file_relative_path, segfault

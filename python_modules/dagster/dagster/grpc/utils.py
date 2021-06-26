@@ -7,7 +7,7 @@ from dagster.core.definitions.reconstructable import (
 
 
 def get_loadable_targets(python_file, module_name, package_name, working_directory, attribute):
-    from dagster.cli.workspace.autodiscovery import (
+    from dagster.core.workspace.autodiscovery import (
         LoadableTarget,
         loadable_targets_from_python_file,
         loadable_targets_from_python_module,

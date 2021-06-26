@@ -1,5 +1,5 @@
 from dagster import execute_pipeline
-from dagster.cli.workspace.load import load_workspace_from_yaml_paths
+from dagster.core.workspace.load import load_workspace_from_yaml_paths
 from dagster.utils import file_relative_path
 from docs_snippets.concepts.repositories_workspaces.hello_world_repository import (
     hello_world_pipeline,

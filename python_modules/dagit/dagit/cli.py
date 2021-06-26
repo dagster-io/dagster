@@ -7,10 +7,11 @@ from typing import Optional
 
 import click
 from dagster import check
-from dagster.cli.workspace import Workspace, get_workspace_from_kwargs, workspace_target_argument
+from dagster.cli.workspace import get_workspace_from_kwargs, workspace_target_argument
 from dagster.cli.workspace.cli_target import WORKSPACE_TARGET_WARNING
 from dagster.core.instance import DagsterInstance, is_dagster_home_set
 from dagster.core.telemetry import START_DAGIT_WEBSERVER, log_action
+from dagster.core.workspace import Workspace
 from dagster.utils import DEFAULT_WORKSPACE_YAML_FILENAME
 from gevent import pywsgi
 from geventwebsocket.handler import WebSocketHandler

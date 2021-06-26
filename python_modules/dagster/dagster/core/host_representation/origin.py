@@ -203,7 +203,7 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
 
     @contextmanager
     def create_test_location(self):
-        from dagster.cli.workspace.dynamic_workspace import DynamicWorkspace
+        from dagster.core.workspace.dynamic_workspace import DynamicWorkspace
         from .grpc_server_registry import ProcessGrpcServerRegistry
 
         with ProcessGrpcServerRegistry(reload_interval=0, heartbeat_ttl=30) as grpc_server_registry:

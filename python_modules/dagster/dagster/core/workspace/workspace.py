@@ -65,7 +65,7 @@ class Workspace(IWorkspace):
 
         self._state_subscribers: List[LocationStateSubscriber] = []
 
-        from .cli_target import WorkspaceLoadTarget
+        from .load_target import WorkspaceLoadTarget
 
         self._workspace_load_target = check.opt_inst_param(
             workspace_load_target, "workspace_load_target", WorkspaceLoadTarget

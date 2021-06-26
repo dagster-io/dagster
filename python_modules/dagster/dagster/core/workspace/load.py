@@ -16,7 +16,7 @@ from .workspace import Workspace
 
 
 def load_workspace_from_yaml_paths(yaml_paths):
-    from .cli_target import WorkspaceFileTarget
+    from .load_target import WorkspaceFileTarget
 
     return Workspace(WorkspaceFileTarget(paths=yaml_paths))
 

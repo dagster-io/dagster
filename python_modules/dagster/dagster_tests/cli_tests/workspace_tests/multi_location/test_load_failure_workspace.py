@@ -1,7 +1,7 @@
-from dagster.cli.workspace import Workspace
-from dagster.cli.workspace.context import WorkspaceProcessContext
-from dagster.cli.workspace.load import load_workspace_from_yaml_paths
 from dagster.core.test_utils import instance_for_test
+from dagster.core.workspace import Workspace
+from dagster.core.workspace.context import WorkspaceProcessContext
+from dagster.core.workspace.load import load_workspace_from_yaml_paths
 from dagster.utils import file_relative_path
 
 

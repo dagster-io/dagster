@@ -5,13 +5,6 @@ from unittest.mock import patch
 
 import pytest
 from dagster import check, file_relative_path
-from dagster.cli.workspace import Workspace, WorkspaceProcessContext
-from dagster.cli.workspace.cli_target import (
-    GrpcServerTarget,
-    ModuleTarget,
-    PythonFileTarget,
-    WorkspaceFileTarget,
-)
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
@@ -23,6 +16,13 @@ from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.core.storage.schedules.sqlite.sqlite_schedule_storage import SqliteScheduleStorage
 from dagster.core.test_utils import ExplodingRunLauncher, instance_for_test_tempdir
+from dagster.core.workspace import Workspace, WorkspaceProcessContext
+from dagster.core.workspace.load_target import (
+    GrpcServerTarget,
+    ModuleTarget,
+    PythonFileTarget,
+    WorkspaceFileTarget,
+)
 from dagster.grpc.server import GrpcServerProcess
 from dagster.utils import merge_dicts
 from dagster.utils.test import FilesystemTestScheduler

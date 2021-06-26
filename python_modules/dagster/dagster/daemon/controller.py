@@ -6,10 +6,10 @@ from contextlib import ExitStack, contextmanager
 
 import pendulum
 from dagster import check
-from dagster.cli.workspace.dynamic_workspace import DynamicWorkspace
 from dagster.core.definitions.sensor import DEFAULT_SENSOR_DAEMON_INTERVAL
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.instance import DagsterInstance
+from dagster.core.workspace.dynamic_workspace import DynamicWorkspace
 from dagster.daemon.daemon import (
     BackfillDaemon,
     DagsterDaemon,

@@ -1,5 +1,5 @@
 from dagster import DagsterEventType, check
-from dagster.cli.workspace.context import WorkspaceRequestContext
+from dagster.core.workspace.context import WorkspaceRequestContext
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION, SUBSCRIPTION_QUERY
 from dagster_graphql.test.utils import execute_dagster_graphql
 

@@ -2,11 +2,6 @@ from abc import ABC, abstractmethod, abstractproperty
 from typing import TYPE_CHECKING, Dict, List, Optional, Union, cast
 
 from dagster import check
-from dagster.cli.workspace.workspace import (
-    Workspace,
-    WorkspaceLocationEntry,
-    WorkspaceLocationLoadStatus,
-)
 from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.host_representation import (
     ExternalExecutionPlan,
@@ -22,6 +17,8 @@ from dagster.core.host_representation.grpc_server_state_subscriber import (
 )
 from dagster.core.instance import DagsterInstance
 from dagster.utils.error import SerializableErrorInfo
+
+from .workspace import Workspace, WorkspaceLocationEntry, WorkspaceLocationLoadStatus
 
 if TYPE_CHECKING:
     from rx.subjects import Subject

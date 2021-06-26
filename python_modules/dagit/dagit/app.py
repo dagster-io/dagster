@@ -9,13 +9,13 @@ import werkzeug
 from dagit.permissions import get_user_permissions
 from dagster import __version__ as dagster_version
 from dagster import check
-from dagster.cli.workspace import Workspace
-from dagster.cli.workspace.context import IWorkspaceProcessContext, WorkspaceProcessContext
 from dagster.core.debug import DebugRunPayload
 from dagster.core.execution.compute_logs import warn_if_compute_logs_disabled
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.telemetry import log_workspace_stats
+from dagster.core.workspace import Workspace
+from dagster.core.workspace.context import IWorkspaceProcessContext, WorkspaceProcessContext
 from dagster_graphql.schema import create_schema
 from dagster_graphql.version import __version__ as dagster_graphql_version
 from flask import Blueprint, Flask, jsonify, redirect, render_template_string, request, send_file
