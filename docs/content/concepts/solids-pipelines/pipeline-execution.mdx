@@ -148,3 +148,53 @@ src="/images/concepts/solids-pipelines/solid-selection.png"
 width={3808}
 height={2414}
 />
+
+## Examples
+
+### Multiprocessing Execution
+
+You may want to execute solids in parallel. This can be done by a multiprocess executor, which will execute each solid in its own sub process.
+
+A multiprocess executor is available in the default mode definition, you can use that by specifying the run config:
+
+```yaml file=/concepts/solids_pipelines/multiprocessing.yaml
+execution:
+  multiprocess:
+```
+
+Note that because solids will be executed in separate processes, the values passed between solids also need to be stored in a way that they can be accessed across processes. For example, you can configure a <PyObject object="fs_io_manager" /> to be the pipeline-wide IO manager so the intermediate values can be persisted in the filesystem:
+
+```python file=/concepts/solids_pipelines/pipeline_execution.py startafter=start_parallel_pipeline_marker endbefore=end_parallel_pipeline_marker
+@pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})])
+def parallel_pipeline():
+    total(return_one(), return_one(), return_one(), return_one())
+```
+
+See the [IO Managers](/concepts/io-management/io-managers) for more details about configuring IO Managers.
+
+Besides, using a multiprocess executor will involve reconstructing the pipeline in another process, so the Python APIs will need a reconstructable instance of the pipeline. This work is handled for you when using Dagit or the Dagster CLI.
+
+Similarly, the Python APIs use an ephemeral <PyObject object="DagsterInstance" /> by default to avoid reporting test runs to the instance. When using the Python API for production runs, set the instance using `instance=DagsterInstance.get()` to use the default loading behavior configured for the instance. Again, this is handled for you when using Dagit or the Dagster CLI.
+
+So if you are executing the pipeline using the Python APIs, your execution method will look like:
+
+```python file=/concepts/solids_pipelines/pipeline_execution.py startafter=start_multiprocessing_marker endbefore=end_multiprocessing_marker
+def execute_multiprocessing():
+    from dagster import reconstructable, DagsterInstance
+
+    execute_pipeline(
+        # A ReconstructablePipeline is necessary to load the pipeline in child processes.
+        # reconstructable() is a utility function that captures where the
+        # PipelineDefinition came from.
+        reconstructable(parallel_pipeline),
+        run_config={
+            # This section controls how the run will be executed.
+            # The multiprocess executor runs each solid in its own sub process.
+            "execution": {"multiprocess": {}},
+        },
+        # The default instance for this API is an in memory ephemeral one.
+        # To allow the multiple processes to coordinate we use one here
+        # backed by a temporary directory.
+        instance=DagsterInstance.local_temp(),
+    )
+```
