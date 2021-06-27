@@ -44,7 +44,6 @@ TELEMETRY_VERSION = "0.2"
 
 # start_TELEMETRY_WHITELISTED_FUNCTIONS
 TELEMETRY_WHITELISTED_FUNCTIONS = {
-    "_launch_scheduled_executions",
     "_logged_execute_pipeline",
     "execute_execute_command",
     "execute_launch_command",
