@@ -82,13 +82,6 @@ def main(version, overwrite):
     # Version images
     version_images(version, overwrite)
 
-    # Overwite latest version
-    latest_directory = os.path.join(VERSIONED_CONTENT_DIR, "latest")
-    if os.path.isdir(latest_directory):
-        shutil.rmtree(latest_directory)
-
-    shutil.copytree(CONTENT_DIR, latest_directory)
-
     # Create master navigation file
     versioned_navigation = {}
     for (root, _, files) in os.walk(VERSIONED_CONTENT_DIR):
