@@ -1,9 +1,9 @@
 import nbformat
 from papermill.log import logger
 
-from .compat import IS_PAPERMILL_2, ExecutionError
+from .compat import ExecutionError, is_papermill_2
 
-if IS_PAPERMILL_2:
+if is_papermill_2():
     # pylint: disable=import-error,no-name-in-module
     from papermill.clientwrap import PapermillNotebookClient
     from papermill.engines import NBClientEngine  # pylint: disable=import-error

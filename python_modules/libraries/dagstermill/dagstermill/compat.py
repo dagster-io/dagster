@@ -1,11 +1,16 @@
-import packaging
 import papermill
+from packaging.version import LegacyVersion, parse
 from papermill.exceptions import PapermillExecutionError
 
-IS_PAPERMILL_2 = packaging.version.parse(papermill.__version__).major == 2
+
+def is_papermill_2():
+    version = parse(papermill.__version__)
+    if isinstance(version, LegacyVersion):
+        return False
+    return version.major == 2
 
 
-if IS_PAPERMILL_2:
+if is_papermill_2():
     from nbclient.exceptions import CellExecutionError  # pylint: disable=import-error
 
     ExecutionError = (PapermillExecutionError, CellExecutionError)
