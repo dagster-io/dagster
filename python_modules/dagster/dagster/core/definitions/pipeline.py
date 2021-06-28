@@ -30,6 +30,7 @@ from .dependency import (
     MultiDependencyDefinition,
     Solid,
     SolidHandle,
+    SolidInputHandle,
     SolidInvocation,
 )
 from .graph import GraphDefinition
@@ -823,6 +824,8 @@ def _checked_input_resource_reqs_for_mode(
     dependency_structure: DependencyStructure,
     solid_dict: Dict[str, Solid],
     mode_def: ModeDefinition,
+    outer_dependency_structure: Optional[DependencyStructure] = None,
+    outer_solid: Optional[Solid] = None,
 ) -> Set[str]:
     resource_reqs = set()
     mode_root_input_managers = set(
@@ -839,11 +842,32 @@ def _checked_input_resource_reqs_for_mode(
                     dependency_structure=solid.definition.dependency_structure,
                     solid_dict=solid.definition.solid_dict,
                     mode_def=mode_def,
+                    outer_dependency_structure=dependency_structure,
+                    outer_solid=solid,
                 )
             )
         for handle in solid.input_handles():
+            source_output_handles = None
             if dependency_structure.has_deps(handle):
-                for source_output_handle in dependency_structure.get_deps_list(handle):
+                # input is connected to outputs from the same dependency structure
+                source_output_handles = dependency_structure.get_deps_list(handle)
+            elif (
+                outer_solid
+                and outer_dependency_structure
+                and solid.container_maps_input(handle.input_name)
+            ):
+                # input is connected to outputs from outer dependency structure, e.g. first solids
+                # in a composite
+                outer_handle = SolidInputHandle(
+                    solid=outer_solid,
+                    input_def=solid.container_mapped_input(handle.input_name).definition,
+                )
+                if outer_dependency_structure.has_deps(outer_handle):
+                    source_output_handles = outer_dependency_structure.get_deps_list(outer_handle)
+
+            if source_output_handles:
+                # input is connected to source output handles within the graph
+                for source_output_handle in source_output_handles:
                     output_manager_key = source_output_handle.output_def.io_manager_key
                     output_manager_def = mode_def.resource_defs[output_manager_key]
                     if not isinstance(output_manager_def, IInputManagerDefinition):
@@ -857,6 +881,7 @@ def _checked_input_resource_reqs_for_mode(
                             f"the upstream output."
                         )
             else:
+                # input is unconnected
                 input_def = handle.input_def
                 if (
                     not input_def.dagster_type.loader
