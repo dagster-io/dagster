@@ -246,7 +246,7 @@ const StatusDot = styled.div<{
 const Items = styled.div`
   flex: 1;
   overflow-y: auto;
-  max-height: calc((100vh - 405px) / 2);
+  max-height: calc((100vh - 390px) / 2);
   &::-webkit-scrollbar {
     width: 11px;
   }

@@ -5,7 +5,6 @@ import styled from 'styled-components/macro';
 
 import {LayoutContext} from '../app/LayoutProvider';
 import {ShortcutHandler} from '../app/ShortcutHandler';
-import {DarkTimezonePicker} from '../app/time/DarkTimezonePicker';
 import {Box} from '../ui/Box';
 
 import {InstanceWarningIcon} from './InstanceWarningIcon';
@@ -85,7 +84,6 @@ export const LeftNav = () => {
         </ShortcutHandler>
       </Box>
       <LeftNavRepositorySection />
-      <DarkTimezonePicker />
     </LeftNavContainer>
   );
 };
