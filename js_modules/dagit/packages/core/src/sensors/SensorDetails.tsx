@@ -1,6 +1,7 @@
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {useFeatureFlags} from '../app/Flags';
 import {TickTag} from '../jobs/JobTick';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {PipelineReference} from '../pipelines/PipelineReference';
@@ -55,6 +56,7 @@ export const SensorDetails: React.FC<{
     pipelineName,
     sensorState: {status, ticks},
   } = sensor;
+  const {flagPipelineModeTuples} = useFeatureFlags();
 
   const timeRemaining = useCountdown({
     duration: countdownDuration,
@@ -120,7 +122,7 @@ export const SensorDetails: React.FC<{
             ),
           },
           {
-            key: 'Pipeline',
+            key: flagPipelineModeTuples ? 'Job' : 'Pipeline',
             value:
               pipelineName && sensor.mode !== null ? (
                 <PipelineReference

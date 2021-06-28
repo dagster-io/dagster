@@ -129,13 +129,13 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
                   >
                     {flagPipelineModeTuples ? (
                       <Link to={workspacePathFromAddress(repoAddress, `/graphs/${pipelineName}`)}>
-                        Explore Graph Definition &gt;
+                        Explore graph definition &#187;
                       </Link>
                     ) : (
                       <Link
                         to={workspacePathFromAddress(repoAddress, `/pipelines/${pipelineName}`)}
                       >
-                        Explore Pipeline Definition &gt;
+                        Explore pipeline definition &#187;
                       </Link>
                     )}
                   </div>
@@ -162,6 +162,8 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
                       ))}
                     </tbody>
                   </Table>
+                ) : flagPipelineModeTuples ? (
+                  'No job schedules'
                 ) : (
                   'No pipeline schedules'
                 )}
@@ -182,6 +184,8 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
                       ))}
                     </tbody>
                   </Table>
+                ) : flagPipelineModeTuples ? (
+                  'No job sensors'
                 ) : (
                   'No pipeline sensors'
                 )}
