@@ -5,19 +5,21 @@ description: Dagster provides the Partition Set abstraction for pipelines where 
 
 # Partitions
 
-Dagster provides the _Partition Set_ abstraction for pipelines where each run deals with a subset of data.
+A partitioned job is a job where each run is configured based on a "partition" from a discrete set.
 
 ## Relevant APIs
 
 | Name                                         | Description                                                                                         |
 | -------------------------------------------- | --------------------------------------------------------------------------------------------------- |
 | <PyObject object="Partition" />              | Class defining a logical slice of pipeline configuration.                                           |
-| <PyObject object="PartitionSetDefinition" /> | Class defining a set of <PyObject object="Partition" /> objects.                                    |
+| <PyObject object="PartitionsConfig" />       | Class defining a set of <PyObject object="Partition" /> objects.                                    |
 | <PyObject object="validate_run_config" />    | A function used to verify that a run config dictionary is valid against a pipeline's config schema. |
 
 ## Overview
 
-Partition sets let you define a set of logical "partitions", usually time windows, along with a scheme for building pipeline run config for a partition. Having defined a partition set, you can kick off a pipeline run or set of pipeline runs by simply selecting partitions in the set.
+A partitioned job is a job where each run is configured based on a "partition" from a discrete set. The discrete set is usually a sequence of time windows.  For example, you might write a partitioned job that fills a daily partition of a table each time it runs.
+
+Defining a partitioned job requires defining the set of partitions and defining a function that accepts a partition uses it to generates config for the job.  Having defined a partitioned job, you can kick off a pipeline run or set of pipeline runs by simply selecting partitions in the set.
 
 Partitions have two main uses:
 
@@ -26,11 +28,11 @@ Partitions have two main uses:
 
 ---
 
-## Defining a Partition Set
+## Defining a partitioned job
 
-Here's a pipeline that computes some data for a given date.
+Here's a graph that computes some data for a given date.
 
-```python file=/concepts/partitions_schedules_sensors/pipeline.py startafter=start_pipeline_marker_1 endbefore=end_pipeline_marker_1
+```python
 @solid(config_schema={"date": str})
 def process_data_for_date(context):
     date = context.solid_config["date"]
@@ -42,13 +44,13 @@ def post_slack_message(context):
     context.log.info("posting slack message")
 
 
-@pipeline
-def my_data_pipeline():
+@graph
+def my_graph():
     process_data_for_date()
     post_slack_message()
 ```
 
-The solid `process_data_for_date` takes, as config, a string `date`. This piece of config will define which date to compute data for. For example, if we wanted to compute for May 5th, 2020, we would execute the pipeline with the following config:
+The solid `process_data_for_date` takes, as config, a string `date`. This piece of config defines which date to compute data for. For example, if we wanted to compute for May 5th, 2020, we would execute the pipeline with the following config:
 
 ```python file=/concepts/partitions_schedules_sensors/config.yaml
 solids:
@@ -57,107 +59,33 @@ solids:
       date: "2020-05-05"
 ```
 
-You can define a <PyObject module="dagster" object="PartitionSetDefinition"/> that defines the full set of partitions and how to define the run config for a given partition.
+You can define a <PyObject module="dagster" object="PartitionsConfig"/> object that defines the partitioning and how to define the run config for a given partition. The most common way to do so is to use a decorator like <PyObject module="dagster" object="daily_partitions" decorator/>, which creates a partition for each day since a given start date.
 
-```python file=/concepts/partitions_schedules_sensors/partition_definition.py startafter=start_def endbefore=end_def
-def get_date_partitions():
-    """Every day in the month of May, 2020"""
-    return [Partition(f"2020-05-{str(day).zfill(2)}") for day in range(1, 32)]
+```python
+from datetime import datetime
 
-
-def run_config_for_date_partition(partition):
-    date = partition.value
-    return {"solids": {"process_data_for_date": {"config": {"date": date}}}}
-
-
-date_partition_set = PartitionSetDefinition(
-    name="date_partition_set",
-    pipeline_name="my_data_pipeline",
-    partition_fn=get_date_partitions,
-    run_config_fn_for_partition=run_config_for_date_partition,
-)
+@daily_partitions(start_date="2020-01-01", timezone="US/Pacific")
+def my_graph_partitioned_config(start: datetime, end: datetime):
+    return {"solids": {"process_data_for_date": {"config": {"date": start.strftime("%Y-%m-%d")}}}}
 ```
 
-To add the partition set to the repository and view it in Dagit, you must first include it in the repository definition.
+Then, you can construct a partitioned job by supplying the <PyObject module="dagster" object="PartitionsConfig"/> object to the config argument when constructing the job:
 
-```python file=/concepts/partitions_schedules_sensors/partition_definition.py startafter=start_repo_includ endbefore=end_repo_include
-@repository
-def my_repository():
-    return [
-        my_data_pipeline,
-        date_partition_set,
-    ]
+```python
+my_job = my_graph.to_job(config=my_graph_partitioned_config)
 ```
 
 ## Creating Schedules from Partition Sets
 
-To create a schedule from a partition set, you must first define a partition selector. A partition selector is a function which takes a <PyObject object="ScheduleExecutionContext" /> and a <PyObject object="PartitionSetDefinition" /> and returns a <PyObject object="Partition" /> object or a list of <PyObject object="Partition" /> objects. Every time the schedule fires, a pipeline run will be submitted for each partition returned by this partition selector.
+You can construct a schedule that targets a single partition for each run it launches. If you've defined a partitioned job using one of the time-based decorators like <PyObject module="dagster" object="daily_partitions" decorator/>, then you can use <PyObject module="dagster" object="schedule_from_partitions"/>:
 
-Once you have created your partition selector, you can manually create a schedule using the method <PyObject object="PartitionSetDefinition" method="create_schedule_definition" />.
-
-In the following example, we first define a static partition set with partitions representing days of the week. We then create a partition selector, which maps the schedule execution time to the appropriate partition. Finally, we create a schedule that kicks off a pipeline run for the selected partition.
-
-```python file=/concepts/partitions_schedules_sensors/partition_definition.py startafter=start_manual_partition_schedule endbefore=end_manual_partition_schedule
-weekday_partition_set = PartitionSetDefinition(
-    name="weekday_partition_set",
-    pipeline_name="my_data_pipeline",
-    partition_fn=lambda: [
-        Partition("Monday"),
-        Partition("Tuesday"),
-        Partition("Wednesday"),
-        Partition("Thursday"),
-        Partition("Friday"),
-        Partition("Saturday"),
-        Partition("Sunday"),
-    ],
-    run_config_fn_for_partition=_weekday_run_config_for_partition,
-)
-
-
-def weekday_partition_selector(
-    ctx: ScheduleExecutionContext, partition_set: PartitionSetDefinition
-) -> Union[Partition, List[Partition]]:
-    """Maps a schedule execution time to the corresponding partition or list of partitions that
-    should be executed at that time"""
-    partitions = partition_set.get_partitions(ctx.scheduled_execution_time)
-    weekday = ctx.scheduled_execution_time.weekday() if ctx.scheduled_execution_time else 0
-    return partitions[weekday]
-
-
-my_schedule = weekday_partition_set.create_schedule_definition(
-    "my_schedule",
-    "5 0 * * *",
-    partition_selector=weekday_partition_selector,
-    execution_timezone="US/Eastern",
-)
-
-
-@repository
-def my_repository_with_partitioned_schedule():
-    return [
-        my_data_pipeline,
-        weekday_partition_set,
-        my_schedule,
-    ]
+```python
+my_schedule = schedule_from_partitions(my_job)
 ```
 
-For partition sets consisting of `datetime` objects, the <PyObject object="create_offset_partition_selector" /> is a useful factory function for selecting partitions derived from the execution time. For example, you might want to fire your schedule every night and select the previous day's partition. The <PyObject object="identity_partition_selector" /> is also a useful partition selector, where the selected partition's value is the schedule execution time.
+The created schedule will trigger daily and will launch a run using the partition whose window ends at the trigger time.
 
-Dagster provides a number of decorators (<PyObject object="hourly_schedule" decorator />, <PyObject object="daily_schedule" decorator />, <PyObject object="weekly_schedule" decorator />, <PyObject object="monthly_schedule" decorator />) that produce [partitioned schedules](/concepts/partitions-schedules-sensors/schedules#partition-based-schedules). These schedule decorators construct both the partition set that defines the configuration space of a specific pipeline as well as the schedule that it runs against. See our [Schedules overview](/concepts/partitions-schedules-sensors/schedules) for more information.
-
-## (Experimental) Testing a Partition Set
-
-You can test a partition set by initializing the set of partitions, and then evaluating the run config produced by your partition set against your pipeline using the <PyObject object="validate_run_config" /> function.
-
-```python file=/concepts/partitions_schedules_sensors/partition_definition.py startafter=start_test_partition_set endbefore=end_test_partition_set
-from dagster import validate_run_config
-
-
-def test_my_partition_set():
-    for partition in date_partition_set.partition_fn():
-        run_config = date_partition_set.run_config_for_partition(partition)
-        assert validate_run_config(my_data_pipeline, run_config)
-```
+You can customize this behavior by changing the `partition_days_offset` parameter for a daily schedule. The default value of this parameter is 1. Setting the value to 0 will cause the schedule to fill a later partition - the one whose window starts at the trigger time. Increasing it above 1 will cause it to fill in an even earlier partition. A similarly-named parameter also exists for the other execution intervals.
 
 ## Partitions in Dagit
 

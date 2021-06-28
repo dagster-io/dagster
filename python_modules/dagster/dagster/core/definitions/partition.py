@@ -285,6 +285,18 @@ class DynamicPartitionParams(
         return self.partition_fn(current_time)
 
 
+class PartitionsConfig(
+    namedtuple(
+        "_PartitionSetDefinition",
+        [
+            ("partitions_fn", Callable[[], List[Partition]]),
+            ("run_config_for_partition_fn", Callable),
+        ],
+    )
+):
+    pass
+
+
 class PartitionSetDefinition(
     namedtuple(
         "_PartitionSetDefinition",

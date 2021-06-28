@@ -26,7 +26,7 @@ A _schedule_ is a definition in Dagster that is used to execute a pipeline at a 
 
 Each schedule:
 
-- Targets a single pipeline
+- Targets a single pipeline.
 - Defines a function that returns run configuration for the targeted pipeline.
 - Optionally defines tags, a mode, and a solid selection for the targeted pipeline.
 - Optionally defines a `should_execute` function, which can be used to skip some ticks.
@@ -42,30 +42,15 @@ There are two types of schedules in Dagster:
 - Partition-based
 - Non-partition-based
 
-Partition-based schedules are best when your pipeline operates on data that is partitioned by time (for example, a pipeline that fills in a daily partition of a table). Non-partition-based schedules are best when you just want to run an operation on a fixed interval (for example, a pipeline that rebuilds the same table on each execution)
+Partition-based schedules are best when your pipeline operates on data that is partitioned by time - for example, a pipeline that fills in a daily partition of a table on each run. Non-partition-based schedules are best when you just want to run an operation on a fixed interval - for example, a pipeline that rebuilds the same table on each run.
 
 ### Partition-based schedules
 
-Partition-based schedules generate an underlying <PyObject object="PartitionSetDefinition"/> to execute against. The scheduler will make sure that a run is executed for every partition in the partition set, starting from the time that the schedule is turned on.
+Partition-based schedules are schedules created for partitioned jobs. A partitioned job is a job that can operate on a discrete set of config values - usually a sequence of datetimes.
 
-For example, if we wanted to create a schedule that runs at 11:00 AM every day, we could use <PyObject object="daily_schedule" decorator />, a decorator that produces a partition-based daily schedule.
+For a discussion of how to define partition-based schedules, refer to the [partitions concept page](/concepts/partitions-schedules-sensors/partitions).
 
-```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_partition_based_schedule endbefore=end_partition_based_schedule
-@daily_schedule(
-    pipeline_name="my_pipeline",
-    start_date=datetime.datetime(2021, 1, 1),
-    execution_time=datetime.time(11, 0),
-    execution_timezone="US/Central",
-)
-def my_daily_schedule(date):
-    return {"solids": {"process_data_for_date": {"config": {"date": date.strftime("%Y-%m-%d")}}}}
-```
-
-The decorated schedule function should accept a `datetime` and return the run config for the pipeline run associated with that partition. The scheduler will ensure that the schedule function is evaluated exactly once for every partition to generate run config, which is then used to create and launch a pipeline run.
-
-Partition-based schedules require a `start_date` that indicates when the set of partitions begins. The scheduler will only kick off runs for times after both the `start_date` and the time when the schedule was turned on. You can kick off runs for times between the `start_date` and when the schedule is turned on by launching a [backfill](/concepts/partitions-schedules-sensors/backfills).
-
-By default, the partition that is used for the run will be one partition earlier than the partition that includes the current time, to capture a common ETL use case - for example, a daily schedule will fill in the previous day's partition, and a monthly schedule will fill in last month's partition. You can customize this behavior by changing the `partition_days_offset` parameter for a daily schedule. The default value of this parameter is 1, which means that the scheduler goes back one day to determine the partition. Setting the value to 0 will cause the schedule to fill in the partition that corresponds to the current day, and increasing it above 1 will cause it to fill in an even earlier partition. A similarly-named parameter also exists for the other execution intervals.
+The scheduler will only kick off runs for times after both the partitioned job's `start_date` and the time when the schedule was turned on. You can kick off runs for times between the `start_date` and when the schedule is turned on by launching a [backfill](/concepts/partitions-schedules-sensors/backfills).
 
 ### Non-partition-based schedules
 

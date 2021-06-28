@@ -369,6 +369,22 @@ class GraphDefinition(NodeDefinition):
     ):
         """
         For experimenting with "job" flows
+
+        Args:
+            config: Describes how the job is parameterized at runtime.
+                If no value is provided, then the schema for the job's run config is a standard
+                format based on its solids and resources.
+
+                If a dictionary is provided, then it must conform to the standard config schema, and
+                it will be used as the job's run config for the job whenever the job is executed.
+
+                If a ConfigMapping is provided, then the schema for the job's run config is
+                determined by the config mapping, and the ConfigMapping, which should return
+                configuration in the standard format to configure the job.
+
+                If a PartitionsConfig object is provided, then it defines a discrete set of config
+                values that can parameterize the pipeline, as well as a function for mapping those
+                values to the base config.
         """
         from .pipeline import PipelineDefinition
 
