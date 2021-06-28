@@ -1,8 +1,10 @@
-import {Colors, Tooltip} from '@blueprintjs/core';
+import {Colors} from '@blueprintjs/core';
+import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {useFeatureFlags} from '../app/Flags';
+import {useCopyToClipboard} from '../app/browser';
 import {TickTag} from '../jobs/JobTick';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {PipelineReference} from '../pipelines/PipelineReference';
@@ -37,6 +39,7 @@ export const ScheduleDetails: React.FC<{
   const {repoAddress, schedule, countdownDuration, countdownStatus, onRefresh} = props;
   const {cronSchedule, executionTimezone, futureTicks, name, partitionSet, pipelineName} = schedule;
   const {flagPipelineModeTuples} = useFeatureFlags();
+  const copyToClipboard = useCopyToClipboard();
 
   const [copyText, setCopyText] = React.useState('Click to copy');
 
@@ -63,7 +66,7 @@ export const ScheduleDetails: React.FC<{
   const latestTick = ticks.length > 0 ? ticks[0] : null;
 
   const copyId = () => {
-    navigator.clipboard.writeText(id);
+    copyToClipboard(id);
     setCopyText('Copied!');
   };
 
