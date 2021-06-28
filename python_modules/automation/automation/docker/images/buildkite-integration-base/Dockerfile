@@ -32,7 +32,7 @@ RUN apt-get update -yqq \
 ENV LANG=en_US.UTF-8 \
     LANGUAGE=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8 \
-    DOCKER_COMPOSE_VERSION=1.24.0 \
+    DOCKER_COMPOSE_VERSION=1.29.1 \
     KIND_VERSION=v0.9.0 \
     KUBECTL_VERSION=v1.20.1 \
     PYSPARK_VERSION=3.0.1 \
@@ -127,6 +127,10 @@ RUN echo "--- \033[32m:linux: Misc installs and cleanup\033[0m" \
         /var/tmp/* \
         /usr/share/doc \
         /usr/share/doc-base
+
+# Install docker compose-cli
+# https://github.com/docker/compose-cli/blob/main/INSTALL.md
+RUN curl -L https://raw.githubusercontent.com/docker/compose-cli/main/scripts/install/install_linux.sh | sh
 
 # Install Python deps
 ADD trigger_maven.py .
