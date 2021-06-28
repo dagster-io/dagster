@@ -1,14 +1,7 @@
 from typing import Dict
 
 import pytest
-from dagster import (
-    ConfigMapping,
-    DagsterInvalidDefinitionError,
-    execute_pipeline,
-    resource,
-    solid,
-    success_hook,
-)
+from dagster import ConfigMapping, DagsterInvalidDefinitionError, execute_pipeline, resource, solid
 from dagster.core.definitions.decorators.graph import graph
 from dagster.core.definitions.graph import GraphDefinition
 from dagster.core.execution.execute import execute_in_process
@@ -286,27 +279,6 @@ def test_partitions_and_default_config():
             partitions=partition_fn,
             default_config={"solids": {"my_solid": {"config": {"date": "abc"}}}},
         )
-
-
-def test_job_with_hooks():
-    entered = []
-
-    @success_hook
-    def basic_hook(_):
-        entered.append("yes")
-
-    @solid
-    def basic():
-        pass
-
-    @graph
-    def basic_graph():
-        basic()
-
-    result = execute_pipeline(basic_graph.to_job(hooks={basic_hook}))
-
-    assert result.success
-    assert entered == ["yes"]
 
 
 def test_tags_on_job():
