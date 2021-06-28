@@ -180,6 +180,7 @@ def instantiate_app_with_views(
     target_dir=os.path.dirname(__file__),
     # If you are injecting middleware that registers permissions on its own, set register_permissions_middleware to False
     register_permissions_middleware=True,
+    graphql_middleware=None,
 ):
     app = Flask(
         "dagster-ui",
@@ -208,6 +209,7 @@ def instantiate_app_with_views(
             graphiql=True,
             graphiql_template=PLAYGROUND_TEMPLATE,
             context=context,
+            middleware=graphql_middleware,
         ),
     )
 
