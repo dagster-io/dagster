@@ -13,7 +13,7 @@ import {
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {FlatContentList} from './FlatContentList';
-import {JobsList} from './JobsList';
+import {InstigationList} from './InstigationList';
 import {RepoNavItem} from './RepoNavItem';
 import {RepoDetails} from './RepoSelector';
 import {RepositoryContentList} from './RepositoryContentList';
@@ -159,7 +159,7 @@ const LoadedRepositorySection: React.FC<{allRepos: DagsterRepoOption[]}> = ({all
           ) : (
             <>
               <RepositoryContentList {...match?.params} repos={visibleOptions} />
-              <JobsList {...match?.params} repos={visibleOptions} />
+              <InstigationList {...match?.params} repos={visibleOptions} />
             </>
           )}
         </div>

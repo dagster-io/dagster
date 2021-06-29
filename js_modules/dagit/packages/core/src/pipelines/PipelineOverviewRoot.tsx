@@ -30,7 +30,7 @@ import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {explorerPathFromString, useStripSnapshotFromPath} from './PipelinePathUtils';
-import {OverviewJobFragment} from './types/OverviewJobFragment';
+import {OverviewInstigationFragment} from './types/OverviewInstigationFragment';
 import {
   PipelineOverviewQuery,
   PipelineOverviewQueryVariables,
@@ -151,11 +151,11 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
                   <Table $compact>
                     <tbody>
                       {schedules.map((schedule) => (
-                        <OverviewJob
+                        <OverviewInstigation
                           repoAddress={repoAddress}
                           name={schedule.name}
                           key={schedule.name}
-                          jobState={schedule.scheduleState}
+                          instigationState={schedule.scheduleState}
                           instigationType={InstigationType.SCHEDULE}
                           nextTick={schedule.futureTicks.results[0]}
                         />
@@ -173,11 +173,11 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
                   <Table $compact>
                     <tbody>
                       {sensors.map((sensor) => (
-                        <OverviewJob
+                        <OverviewInstigation
                           repoAddress={repoAddress}
                           name={sensor.name}
                           key={sensor.name}
-                          jobState={sensor.sensorState}
+                          instigationState={sensor.sensorState}
                           instigationType={InstigationType.SENSOR}
                           nextTick={sensor.nextTick || undefined}
                         />
@@ -246,22 +246,22 @@ const OverviewAssets = ({runs}: {runs: Run[]}) => {
   );
 };
 
-const OverviewJob = ({
+const OverviewInstigation = ({
   repoAddress,
   name,
-  jobState,
+  instigationState,
   instigationType,
   nextTick,
 }: {
   repoAddress: RepoAddress;
   name: string;
-  jobState: OverviewJobFragment;
+  instigationState: OverviewInstigationFragment;
   instigationType: InstigationType;
   nextTick?: {
     timestamp: number;
   };
 }) => {
-  const lastRun = jobState.lastRuns.length && jobState.lastRuns[0];
+  const lastRun = instigationState.lastRuns.length && instigationState.lastRuns[0];
   return (
     <tr>
       <td>
@@ -283,9 +283,9 @@ const OverviewJob = ({
             Next Tick: <Timestamp timestamp={{unix: nextTick.timestamp || 0}} />
           </div>
         ) : null}
-        {jobState.runs && (
+        {instigationState.runs && (
           <div style={{marginTop: '4px'}}>
-            {jobState.runs.map((run) => {
+            {instigationState.runs.map((run) => {
               return (
                 <div
                   style={{
@@ -359,8 +359,8 @@ const OverviewSection = ({title, children}: {title: string; children: any}) => {
   );
 };
 
-const OVERVIEW_JOB_FRAGMENT = gql`
-  fragment OverviewJobFragment on InstigationState {
+const OVERVIEW_INSTIGATION_FRAGMENT = gql`
+  fragment OverviewInstigationFragment on InstigationState {
     id
     runsCount
     lastRuns: runs(limit: 1) {
@@ -411,7 +411,7 @@ const PIPELINE_OVERVIEW_QUERY = gql`
           name
           scheduleState {
             id
-            ...OverviewJobFragment
+            ...OverviewInstigationFragment
           }
           futureTicks(limit: 1) {
             results {
@@ -424,7 +424,7 @@ const PIPELINE_OVERVIEW_QUERY = gql`
           name
           sensorState {
             id
-            ...OverviewJobFragment
+            ...OverviewInstigationFragment
           }
           nextTick {
             timestamp
@@ -443,7 +443,7 @@ const PIPELINE_OVERVIEW_QUERY = gql`
     }
   }
   ${PIPELINE_GRAPH_SOLID_FRAGMENT}
-  ${OVERVIEW_JOB_FRAGMENT}
+  ${OVERVIEW_INSTIGATION_FRAGMENT}
   ${RUN_TIME_FRAGMENT}
   ${RUN_ACTION_MENU_FRAGMENT}
 `;

@@ -4,7 +4,7 @@ import React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
-import {JOB_STATE_FRAGMENT} from '../jobs/JobUtils';
+import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
 import {REPOSITORY_INFO_FRAGMENT} from '../workspace/RepositoryInformation';
 
 import {SCHEDULER_FRAGMENT} from './SchedulerInfo';
@@ -43,7 +43,7 @@ export const SCHEDULE_FRAGMENT = gql`
       }
     }
   }
-  ${JOB_STATE_FRAGMENT}
+  ${INSTIGATION_STATE_FRAGMENT}
 `;
 
 export const REPOSITORY_SCHEDULES_FRAGMENT = gql`
@@ -97,7 +97,7 @@ export const SCHEDULES_ROOT_QUERY = gql`
   ${SCHEDULER_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
   ${REPOSITORY_SCHEDULES_FRAGMENT}
-  ${JOB_STATE_FRAGMENT}
+  ${INSTIGATION_STATE_FRAGMENT}
   ${INSTANCE_HEALTH_FRAGMENT}
 `;
 

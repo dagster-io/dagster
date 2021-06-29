@@ -20,8 +20,8 @@ import {Table} from '../ui/Table';
 import {Subheading} from '../ui/Text';
 import {RepositoryOriginInformation} from '../workspace/RepositoryInformation';
 
-import {TickTag} from './JobTick';
-import {JobRunStatus} from './JobUtils';
+import {TickTag} from './InstigationTick';
+import {InstigatedRunStatus} from './InstigationUtils';
 import {InstigationStateFragment} from './types/InstigationStateFragment';
 
 export const UnloadableSensors: React.FunctionComponent<{
@@ -176,7 +176,7 @@ const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) 
       </td>
       <td>
         <div style={{display: 'flex'}}>
-          <JobRunStatus jobState={sensorState} />
+          <InstigatedRunStatus instigationState={sensorState} />
         </div>
       </td>
     </tr>
@@ -262,7 +262,7 @@ const ScheduleStateRow: React.FunctionComponent<{
         ) : null}
       </td>
       <td>
-        <JobRunStatus jobState={scheduleState} />
+        <InstigatedRunStatus instigationState={scheduleState} />
       </td>
       <td>
         <div style={{display: 'flex'}}>&mdash;</div>

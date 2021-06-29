@@ -1,6 +1,6 @@
 import {gql} from '@apollo/client';
 
-import {JOB_STATE_FRAGMENT} from '../jobs/JobUtils';
+import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
 
 export const SENSOR_FRAGMENT = gql`
   fragment SensorFragment on Sensor {
@@ -20,5 +20,5 @@ export const SENSOR_FRAGMENT = gql`
       ...InstigationStateFragment
     }
   }
-  ${JOB_STATE_FRAGMENT}
+  ${INSTIGATION_STATE_FRAGMENT}
 `;

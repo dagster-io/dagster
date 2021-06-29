@@ -3,8 +3,8 @@ import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {TickTag} from '../jobs/JobTick';
-import {JobRunStatus} from '../jobs/JobUtils';
+import {TickTag} from '../instigation/InstigationTick';
+import {InstigatedRunStatus} from '../instigation/InstigationUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {InstigationType} from '../types/globalTypes';
 import {Group} from '../ui/Group';
@@ -104,7 +104,7 @@ const SensorRow: React.FC<{
       </td>
       <td>
         <div style={{display: 'flex'}}>
-          <JobRunStatus jobState={sensorState} />
+          <InstigatedRunStatus instigationState={sensorState} />
         </div>
       </td>
     </tr>
