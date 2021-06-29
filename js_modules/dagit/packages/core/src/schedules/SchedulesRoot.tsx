@@ -5,7 +5,7 @@ import * as React from 'react';
 
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {UnloadableSchedules} from '../jobs/UnloadableJobs';
+import {UnloadableSchedules} from '../instigation/Unloadable';
 import {InstigationType} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {Group} from '../ui/Group';

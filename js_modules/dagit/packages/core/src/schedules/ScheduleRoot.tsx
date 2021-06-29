@@ -3,7 +3,7 @@ import * as React from 'react';
 
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
-import {JobTickHistory} from '../jobs/TickHistory';
+import {TickHistory} from '../instigation/TickHistory';
 import {DagsterTag} from '../runs/RunTag';
 import {Group} from '../ui/Group';
 import {ScrollContainer} from '../ui/ListComponents';
@@ -83,7 +83,7 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
                   countdownStatus={countdownStatus}
                   onRefresh={() => onRefresh()}
                 />
-                <JobTickHistory
+                <TickHistory
                   repoAddress={repoAddress}
                   name={scheduleOrError.name}
                   onHighlightRunIds={(runIds: string[]) => setSelectedRunIds(runIds)}

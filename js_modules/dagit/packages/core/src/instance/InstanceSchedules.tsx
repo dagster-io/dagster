@@ -3,8 +3,8 @@ import {NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
-import {JOB_STATE_FRAGMENT} from '../jobs/JobUtils';
-import {UnloadableSchedules} from '../jobs/UnloadableJobs';
+import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
+import {UnloadableSchedules} from '../instigation/Unloadable';
 import {SchedulerTimezoneNote, SCHEDULE_FRAGMENT} from '../schedules/ScheduleUtils';
 import {SchedulerInfo, SCHEDULER_FRAGMENT} from '../schedules/SchedulerInfo';
 import {SchedulesTable} from '../schedules/SchedulesTable';
@@ -49,7 +49,7 @@ const AllSchedules: React.FC<{data: InstanceSchedulesQuery}> = ({data}) => {
     return <PythonErrorInfo error={unloadableInstigationStatesOrError} />;
   }
 
-  const unloadableJobs = unloadableInstigationStatesOrError.results;
+  const unloadable = unloadableInstigationStatesOrError.results;
   const withSchedules = repositoriesOrError.nodes.filter(
     (repository) => repository.schedules.length,
   );
@@ -72,7 +72,7 @@ const AllSchedules: React.FC<{data: InstanceSchedulesQuery}> = ({data}) => {
     </Group>
   ) : null;
 
-  const unloadableSchedules = unloadableJobs.filter(
+  const unloadableSchedules = unloadable.filter(
     (state) => state.instigationType === InstigationType.SCHEDULE,
   );
 
@@ -151,5 +151,5 @@ const INSTANCE_SCHEDULES_QUERY = gql`
   ${SCHEDULE_FRAGMENT}
   ${SCHEDULER_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
-  ${JOB_STATE_FRAGMENT}
+  ${INSTIGATION_STATE_FRAGMENT}
 `;

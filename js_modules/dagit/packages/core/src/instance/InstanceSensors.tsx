@@ -3,8 +3,8 @@ import {NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
-import {JOB_STATE_FRAGMENT} from '../jobs/JobUtils';
-import {UnloadableSensors} from '../jobs/UnloadableJobs';
+import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
+import {UnloadableSensors} from '../instigation/Unloadable';
 import {SENSOR_FRAGMENT} from '../sensors/SensorFragment';
 import {SensorInfo} from '../sensors/SensorInfo';
 import {SensorsTable} from '../sensors/SensorsTable';
@@ -50,7 +50,7 @@ const AllSensors: React.FC<{data: InstanceSensorsQuery}> = ({data}) => {
     return <PythonErrorInfo error={unloadableInstigationStatesOrError} />;
   }
 
-  const unloadableJobs = unloadableInstigationStatesOrError.results;
+  const unloadable = unloadableInstigationStatesOrError.results;
   const withSensors = repositoriesOrError.nodes.filter((repository) => repository.sensors.length);
 
   const sensorDefinitionsSection = withSensors.length ? (
@@ -70,7 +70,7 @@ const AllSensors: React.FC<{data: InstanceSensorsQuery}> = ({data}) => {
     </Group>
   ) : null;
 
-  const unloadableSensors = unloadableJobs.filter(
+  const unloadableSensors = unloadable.filter(
     (state) => state.instigationType === InstigationType.SENSOR,
   );
   const unloadableSensorsSection = unloadableSensors.length ? (
@@ -148,5 +148,5 @@ const INSTANCE_SENSORS_QUERY = gql`
   ${REPOSITORY_INFO_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
   ${SENSOR_FRAGMENT}
-  ${JOB_STATE_FRAGMENT}
+  ${INSTIGATION_STATE_FRAGMENT}
 `;

@@ -7,28 +7,28 @@
 import { PipelineRunStatus, InstigationStatus } from "./../../types/globalTypes";
 
 // ====================================================
-// GraphQL fragment: OverviewJobFragment
+// GraphQL fragment: OverviewInstigationFragment
 // ====================================================
 
-export interface OverviewJobFragment_lastRuns_stats_PythonError {
+export interface OverviewInstigationFragment_lastRuns_stats_PythonError {
   __typename: "PythonError";
 }
 
-export interface OverviewJobFragment_lastRuns_stats_PipelineRunStatsSnapshot {
+export interface OverviewInstigationFragment_lastRuns_stats_PipelineRunStatsSnapshot {
   __typename: "PipelineRunStatsSnapshot";
   id: string;
   endTime: number | null;
 }
 
-export type OverviewJobFragment_lastRuns_stats = OverviewJobFragment_lastRuns_stats_PythonError | OverviewJobFragment_lastRuns_stats_PipelineRunStatsSnapshot;
+export type OverviewInstigationFragment_lastRuns_stats = OverviewInstigationFragment_lastRuns_stats_PythonError | OverviewInstigationFragment_lastRuns_stats_PipelineRunStatsSnapshot;
 
-export interface OverviewJobFragment_lastRuns {
+export interface OverviewInstigationFragment_lastRuns {
   __typename: "PipelineRun";
   id: string;
-  stats: OverviewJobFragment_lastRuns_stats;
+  stats: OverviewInstigationFragment_lastRuns_stats;
 }
 
-export interface OverviewJobFragment_runs {
+export interface OverviewInstigationFragment_runs {
   __typename: "PipelineRun";
   id: string;
   runId: string;
@@ -36,11 +36,11 @@ export interface OverviewJobFragment_runs {
   status: PipelineRunStatus;
 }
 
-export interface OverviewJobFragment {
+export interface OverviewInstigationFragment {
   __typename: "InstigationState";
   id: string;
   runsCount: number;
-  lastRuns: OverviewJobFragment_lastRuns[];
-  runs: OverviewJobFragment_runs[];
+  lastRuns: OverviewInstigationFragment_lastRuns[];
+  runs: OverviewInstigationFragment_runs[];
   status: InstigationStatus;
 }

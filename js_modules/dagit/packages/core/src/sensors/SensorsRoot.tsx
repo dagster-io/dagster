@@ -6,8 +6,8 @@ import React from 'react';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
-import {JOB_STATE_FRAGMENT} from '../jobs/JobUtils';
-import {UnloadableSensors} from '../jobs/UnloadableJobs';
+import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
+import {UnloadableSensors} from '../instigation/Unloadable';
 import {InstigationType} from '../types/globalTypes';
 import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
@@ -126,7 +126,7 @@ const SENSORS_ROOT_QUERY = gql`
     }
   }
   ${PYTHON_ERROR_FRAGMENT}
-  ${JOB_STATE_FRAGMENT}
+  ${INSTIGATION_STATE_FRAGMENT}
   ${SENSOR_FRAGMENT}
   ${INSTANCE_HEALTH_FRAGMENT}
 `;

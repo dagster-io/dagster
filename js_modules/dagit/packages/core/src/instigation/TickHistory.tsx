@@ -26,7 +26,7 @@ import {Subheading} from '../ui/Text';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
-import {TICK_TAG_FRAGMENT, RunList, TickTag, FailedRunList} from './JobTick';
+import {TICK_TAG_FRAGMENT, RunList, TickTag, FailedRunList} from './InstigationTick';
 import {LiveTickTimeline} from './LiveTickTimeline';
 import {
   TickHistoryQuery,
@@ -96,7 +96,7 @@ const TABS = [
 type InstigationTick = TickHistoryQuery_instigationStateOrError_InstigationState_ticks;
 const MILLIS_PER_DAY = 86400 * 1000;
 
-export const JobTickHistory = ({
+export const TickHistory = ({
   name,
   repoAddress,
   onHighlightRunIds,

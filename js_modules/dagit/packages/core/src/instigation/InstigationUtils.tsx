@@ -11,16 +11,16 @@ import {Group} from '../ui/Group';
 import {FontFamily} from '../ui/styles';
 import {REPOSITORY_ORIGIN_FRAGMENT} from '../workspace/RepositoryInformation';
 
-import {TICK_TAG_FRAGMENT} from './JobTick';
+import {TICK_TAG_FRAGMENT} from './InstigationTick';
 import {InstigationStateFragment} from './types/InstigationStateFragment';
 
-export const JobRunStatus: React.FC<{
-  jobState: InstigationStateFragment;
-}> = ({jobState}) => {
-  if (!jobState.runs.length) {
+export const InstigatedRunStatus: React.FC<{
+  instigationState: InstigationStateFragment;
+}> = ({instigationState}) => {
+  if (!instigationState.runs.length) {
     return <span style={{color: Colors.GRAY4}}>None</span>;
   }
-  const run = jobState.runs[0];
+  const run = instigationState.runs[0];
   return (
     <Group direction="row" spacing={4} alignItems="center">
       <RunStatus status={run.status} />
@@ -31,7 +31,7 @@ export const JobRunStatus: React.FC<{
   );
 };
 
-export const JOB_STATE_FRAGMENT = gql`
+export const INSTIGATION_STATE_FRAGMENT = gql`
   fragment InstigationStateFragment on InstigationState {
     id
     name
