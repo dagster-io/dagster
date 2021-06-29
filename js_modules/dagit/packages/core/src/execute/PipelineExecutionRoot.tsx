@@ -1,5 +1,4 @@
-import {gql} from '@apollo/client';
-import {Query} from '@apollo/client/react/components';
+import {gql, useQuery} from '@apollo/client';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
@@ -23,14 +22,8 @@ import {
 import {ExecutionSessionContainerError} from './ExecutionSessionContainerError';
 import {ExecutionSessionContainerLoading} from './ExecutionSessionContainerLoading';
 import {ExecutionTabs} from './ExecutionTabs';
-import {
-  PipelineExecutionConfigSchemaQuery,
-  PipelineExecutionConfigSchemaQueryVariables,
-} from './types/PipelineExecutionConfigSchemaQuery';
-import {
-  PipelineExecutionRootQuery,
-  PipelineExecutionRootQueryVariables,
-} from './types/PipelineExecutionRootQuery';
+import {PipelineExecutionConfigSchemaQuery} from './types/PipelineExecutionConfigSchemaQuery';
+import {PipelineExecutionRootQuery} from './types/PipelineExecutionRootQuery';
 
 const ExecutionSessionContainer = React.lazy(() => import('./ExecutionSessionContainer'));
 
@@ -64,108 +57,90 @@ export const PipelineExecutionRoot: React.FC<Props> = (props) => {
 
   const {name: repositoryName, location: repositoryLocationName} = repoAddress;
 
+  const result = useQuery<PipelineExecutionRootQuery>(PIPELINE_EXECUTION_ROOT_QUERY, {
+    variables: {repositoryName, repositoryLocationName, pipelineName},
+    fetchPolicy: 'cache-and-network',
+    partialRefetch: true,
+  });
+
+  const configResult = useQuery<PipelineExecutionConfigSchemaQuery>(
+    PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY,
+    {
+      variables: {selector: pipelineSelector, mode: session?.mode},
+      fetchPolicy: 'cache-and-network',
+      partialRefetch: true,
+    },
+  );
+
+  const pipelineOrError = result?.data?.pipelineOrError;
+  const partitionSetsOrError = result?.data?.partitionSetsOrError;
+  const configSchemaOrError = configResult?.data?.runConfigSchemaOrError;
+
+  if (!pipelineOrError || !partitionSetsOrError) {
+    return <ExecutionSessionContainerLoading />;
+  }
+
+  if (
+    configSchemaOrError?.__typename === 'PipelineNotFoundError' ||
+    partitionSetsOrError.__typename === 'PipelineNotFoundError' ||
+    pipelineOrError.__typename === 'PipelineNotFoundError'
+  ) {
+    const message =
+      pipelineOrError.__typename === 'PipelineNotFoundError'
+        ? pipelineOrError.message
+        : 'No data returned from GraphQL';
+
+    return pipelineName !== '' ? (
+      <ExecutionSessionContainerError
+        icon={IconNames.FLOW_BRANCH}
+        title="Pipeline not found"
+        description={message}
+      />
+    ) : (
+      <ExecutionSessionContainerError icon={IconNames.FLOW_BRANCH} title="Select a Pipeline" />
+    );
+  }
+
+  if (pipelineOrError && pipelineOrError.__typename === 'InvalidSubsetError') {
+    throw new Error(`Should never happen because we do not request a subset`);
+  }
+
+  if (pipelineOrError && pipelineOrError.__typename === 'PythonError') {
+    return (
+      <ExecutionSessionContainerError
+        icon={IconNames.ERROR}
+        title="Python Error"
+        description={pipelineOrError.message}
+      />
+    );
+  }
+  if (partitionSetsOrError && partitionSetsOrError.__typename === 'PythonError') {
+    return (
+      <ExecutionSessionContainerError
+        icon={IconNames.ERROR}
+        title="Python Error"
+        description={partitionSetsOrError.message}
+      />
+    );
+  }
+
   return (
     <>
       <ExecutionTabs data={data} onSave={onSave} />
-      <Query<PipelineExecutionRootQuery, PipelineExecutionRootQueryVariables>
-        // never serve cached Pipeline given new vars by forcing teardown of the Query.
-        // Apollo's behaviors are sort of whacky, even with no-cache. Should just use
-        // window.fetch...
-        key={JSON.stringify({
-          repositoryName,
-          repositoryLocationName,
-          pipelineName,
-        })}
-        variables={{repositoryName, repositoryLocationName, pipelineName}}
-        query={PIPELINE_EXECUTION_ROOT_QUERY}
-        fetchPolicy="cache-and-network"
-        partialRefetch={true}
-      >
-        {(result) => (
-          <Query<PipelineExecutionConfigSchemaQuery, PipelineExecutionConfigSchemaQueryVariables>
-            key={JSON.stringify({pipelineSelector, mode: session?.mode})}
-            variables={{selector: pipelineSelector, mode: session?.mode}}
-            query={PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY}
-            fetchPolicy="cache-and-network"
-            partialRefetch={true}
-          >
-            {(configResult) => {
-              const pipelineOrError = result.data && result.data.pipelineOrError;
-              const partitionSetsOrError = result.data && result.data.partitionSetsOrError;
-              const configSchemaOrError =
-                configResult.data && configResult.data.runConfigSchemaOrError;
-
-              if (!pipelineOrError || !partitionSetsOrError) {
-                return <ExecutionSessionContainerLoading />;
-              }
-
-              if (
-                configSchemaOrError?.__typename === 'PipelineNotFoundError' ||
-                partitionSetsOrError.__typename === 'PipelineNotFoundError' ||
-                pipelineOrError.__typename === 'PipelineNotFoundError'
-              ) {
-                const message =
-                  pipelineOrError.__typename === 'PipelineNotFoundError'
-                    ? pipelineOrError.message
-                    : 'No data returned from GraphQL';
-
-                return pipelineName !== '' ? (
-                  <ExecutionSessionContainerError
-                    icon={IconNames.FLOW_BRANCH}
-                    title="Pipeline Not Found"
-                    description={message}
-                  />
-                ) : (
-                  <ExecutionSessionContainerError
-                    icon={IconNames.FLOW_BRANCH}
-                    title="Select a Pipeline"
-                  />
-                );
-              }
-
-              if (pipelineOrError && pipelineOrError.__typename === 'InvalidSubsetError') {
-                throw new Error(`Should never happen because we do not request a subset`);
-              }
-
-              if (pipelineOrError && pipelineOrError.__typename === 'PythonError') {
-                return (
-                  <ExecutionSessionContainerError
-                    icon={IconNames.ERROR}
-                    title="Python Error"
-                    description={pipelineOrError.message}
-                  />
-                );
-              }
-              if (partitionSetsOrError && partitionSetsOrError.__typename === 'PythonError') {
-                return (
-                  <ExecutionSessionContainerError
-                    icon={IconNames.ERROR}
-                    title="Python Error"
-                    description={partitionSetsOrError.message}
-                  />
-                );
-              }
-
-              return (
-                <React.Suspense fallback={<div />}>
-                  <ExecutionSessionContainer
-                    data={data}
-                    onSaveSession={(changes) => onSaveSession(data.current, changes)}
-                    onCreateSession={(initial) => onSave(applyCreateSession(data, initial))}
-                    pipeline={pipelineOrError}
-                    pipelineMode={flagPipelineModeTuples ? pipelineMode : undefined}
-                    partitionSets={partitionSetsOrError}
-                    runConfigSchemaOrError={configSchemaOrError}
-                    currentSession={session}
-                    pipelineSelector={pipelineSelector}
-                    repoAddress={repoAddress}
-                  />
-                </React.Suspense>
-              );
-            }}
-          </Query>
-        )}
-      </Query>
+      <React.Suspense fallback={<div />}>
+        <ExecutionSessionContainer
+          data={data}
+          onSaveSession={(changes) => onSaveSession(data.current, changes)}
+          onCreateSession={(initial) => onSave(applyCreateSession(data, initial))}
+          pipeline={pipelineOrError}
+          pipelineMode={flagPipelineModeTuples ? pipelineMode : undefined}
+          partitionSets={partitionSetsOrError}
+          runConfigSchemaOrError={configSchemaOrError}
+          currentSession={session}
+          pipelineSelector={pipelineSelector}
+          repoAddress={repoAddress}
+        />
+      </React.Suspense>
     </>
   );
 };
