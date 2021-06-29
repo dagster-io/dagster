@@ -11,6 +11,7 @@
     "format": "prettier --config ./.prettierrc.js --write \"../content/**/*.mdx\" --loglevel warn && remark --rc-path ./.remarkrc.js \"../content/**/*.mdx\" --output --silent"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.18.0",
     "@docsearch/react": "^3.0.0-alpha.34",
     "@headlessui/react": "^0.2.0",
     "@jsdevtools/rehype-toc": "^3.0.2",
