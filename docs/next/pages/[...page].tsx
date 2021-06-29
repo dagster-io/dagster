@@ -258,8 +258,22 @@ async function streamToString(stream: Readable): Promise<string> {
     stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf-8")));
   });
 }
+const useS3Client = () => {
+  if (process.env.VERCEL) {
+    // If the app is running on Vercel, AWS creds need to be set via env vars
+    return new S3Client({
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID_DOCS,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY_DOCS,
+      },
+      region: "us-west-1",
+    });
+  } else {
+    return new S3Client({ region: "us-west-1" });
+  }
+};
 
-const s3Client = new S3Client({ region: "us-west-1" });
+const s3Client = useS3Client();
 
 async function getVersionedContent(version: string, asPath: string) {
   // get versioned content from remote public s3 bucket
