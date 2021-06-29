@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { SensorSelector, JobStatus } from "./../../types/globalTypes";
+import { SensorSelector, InstigationStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL mutation operation: StartSensor
@@ -15,9 +15,9 @@ export interface StartSensor_startSensor_SensorNotFoundError {
 }
 
 export interface StartSensor_startSensor_Sensor_sensorState {
-  __typename: "JobState";
+  __typename: "InstigationState";
   id: string;
-  status: JobStatus;
+  status: InstigationStatus;
 }
 
 export interface StartSensor_startSensor_Sensor {

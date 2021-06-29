@@ -68,19 +68,19 @@ export enum EvaluationErrorReason {
   SELECTOR_FIELD_ERROR = "SELECTOR_FIELD_ERROR",
 }
 
-export enum JobStatus {
+export enum InstigationStatus {
   RUNNING = "RUNNING",
   STOPPED = "STOPPED",
 }
 
-export enum JobTickStatus {
+export enum InstigationTickStatus {
   FAILURE = "FAILURE",
   SKIPPED = "SKIPPED",
   STARTED = "STARTED",
   SUCCESS = "SUCCESS",
 }
 
-export enum JobType {
+export enum InstigationType {
   SCHEDULE = "SCHEDULE",
   SENSOR = "SENSOR",
 }
@@ -166,10 +166,10 @@ export interface ExecutionTag {
   value: string;
 }
 
-export interface JobSelector {
+export interface InstigationSelector {
   repositoryName: string;
   repositoryLocationName: string;
-  jobName: string;
+  name: string;
 }
 
 export interface LaunchBackfillParams {

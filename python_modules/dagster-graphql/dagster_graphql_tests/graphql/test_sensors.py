@@ -152,7 +152,7 @@ mutation($jobOriginId: String!) {
       stack
     }
     ... on StopSensorMutationResult {
-      jobState {
+      instigationState {
         status
       }
     }
@@ -221,7 +221,7 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
             variables={"jobOriginId": job_origin_id},
         )
         assert result.data
-        assert result.data["stopSensor"]["jobState"]["status"] == JobStatus.STOPPED.value
+        assert result.data["stopSensor"]["instigationState"]["status"] == JobStatus.STOPPED.value
 
 
 def test_sensor_next_ticks(graphql_context):

@@ -6,7 +6,7 @@ import {Link} from 'react-router-dom';
 import {TickTag} from '../jobs/JobTick';
 import {JobRunStatus} from '../jobs/JobUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {JobType} from '../types/globalTypes';
+import {InstigationType} from '../types/globalTypes';
 import {Group} from '../ui/Group';
 import {Table} from '../ui/Table';
 import {RepoAddress} from '../workspace/types';
@@ -97,7 +97,7 @@ const SensorRow: React.FC<{
       <td>{humanizeSensorInterval(sensor.minIntervalSeconds)}</td>
       <td>
         {latestTick ? (
-          <TickTag tick={latestTick} jobType={JobType.SENSOR} />
+          <TickTag tick={latestTick} instigationType={InstigationType.SENSOR} />
         ) : (
           <span style={{color: Colors.GRAY4}}>None</span>
         )}

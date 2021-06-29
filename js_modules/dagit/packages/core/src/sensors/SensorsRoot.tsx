@@ -8,7 +8,7 @@ import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {JOB_STATE_FRAGMENT} from '../jobs/JobUtils';
 import {UnloadableSensors} from '../jobs/UnloadableJobs';
-import {JobType} from '../types/globalTypes';
+import {InstigationType} from '../types/globalTypes';
 import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
 import {Page} from '../ui/Page';
@@ -32,7 +32,7 @@ export const SensorsRoot = (props: Props) => {
   const queryResult = useQuery<SensorsRootQuery>(SENSORS_ROOT_QUERY, {
     variables: {
       repositorySelector: repositorySelector,
-      jobType: JobType.SENSOR,
+      instigationType: InstigationType.SENSOR,
     },
     fetchPolicy: 'cache-and-network',
     pollInterval: 50 * 1000,
@@ -43,12 +43,12 @@ export const SensorsRoot = (props: Props) => {
     <Page>
       <Loading queryResult={queryResult} allowStaleData={true}>
         {(result) => {
-          const {sensorsOrError, unloadableJobStatesOrError, instance} = result;
+          const {sensorsOrError, unloadableInstigationStatesOrError, instance} = result;
           const content = () => {
             if (sensorsOrError.__typename === 'PythonError') {
               return <PythonErrorInfo error={sensorsOrError} />;
-            } else if (unloadableJobStatesOrError.__typename === 'PythonError') {
-              return <PythonErrorInfo error={unloadableJobStatesOrError} />;
+            } else if (unloadableInstigationStatesOrError.__typename === 'PythonError') {
+              return <PythonErrorInfo error={unloadableInstigationStatesOrError} />;
             } else if (sensorsOrError.__typename === 'RepositoryNotFoundError') {
               return (
                 <NonIdealState
@@ -84,7 +84,7 @@ export const SensorsRoot = (props: Props) => {
                     <SensorInfo daemonHealth={instance.daemonHealth} />
                   )}
                   <SensorsTable repoAddress={repoAddress} sensors={sensorsOrError.results} />
-                  <UnloadableSensors sensorStates={unloadableJobStatesOrError.results} />
+                  <UnloadableSensors sensorStates={unloadableInstigationStatesOrError.results} />
                 </Group>
               );
             }
@@ -98,7 +98,10 @@ export const SensorsRoot = (props: Props) => {
 };
 
 const SENSORS_ROOT_QUERY = gql`
-  query SensorsRootQuery($repositorySelector: RepositorySelector!, $jobType: JobType!) {
+  query SensorsRootQuery(
+    $repositorySelector: RepositorySelector!
+    $instigationType: InstigationType!
+  ) {
     sensorsOrError(repositorySelector: $repositorySelector) {
       __typename
       ...PythonErrorFragment
@@ -109,11 +112,11 @@ const SENSORS_ROOT_QUERY = gql`
         }
       }
     }
-    unloadableJobStatesOrError(jobType: $jobType) {
-      ... on JobStates {
+    unloadableInstigationStatesOrError(instigationType: $instigationType) {
+      ... on InstigationStates {
         results {
           id
-          ...JobStateFragment
+          ...InstigationStateFragment
         }
       }
       ...PythonErrorFragment

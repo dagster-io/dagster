@@ -11,7 +11,7 @@ import {humanCronString} from '../schedules/humanCronString';
 import {StopSchedule} from '../schedules/types/StopSchedule';
 import {displaySensorMutationErrors, STOP_SENSOR_MUTATION} from '../sensors/SensorMutations';
 import {StopSensor} from '../sensors/types/StopSensor';
-import {JobType, JobStatus} from '../types/globalTypes';
+import {InstigationType, InstigationStatus} from '../types/globalTypes';
 import {Alert} from '../ui/Alert';
 import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
@@ -22,10 +22,10 @@ import {RepositoryOriginInformation} from '../workspace/RepositoryInformation';
 
 import {TickTag} from './JobTick';
 import {JobRunStatus} from './JobUtils';
-import {JobStateFragment} from './types/JobStateFragment';
+import {InstigationStateFragment} from './types/InstigationStateFragment';
 
 export const UnloadableSensors: React.FunctionComponent<{
-  sensorStates: JobStateFragment[];
+  sensorStates: InstigationStateFragment[];
 }> = ({sensorStates}) => {
   if (!sensorStates.length) {
     return null;
@@ -55,7 +55,7 @@ export const UnloadableSensors: React.FunctionComponent<{
 };
 
 export const UnloadableSchedules: React.FunctionComponent<{
-  scheduleStates: JobStateFragment[];
+  scheduleStates: InstigationStateFragment[];
 }> = ({scheduleStates}) => {
   if (!scheduleStates.length) {
     return null;
@@ -126,7 +126,7 @@ const UnloadableScheduleInfo = () => (
   </Box>
 );
 
-const SensorStateRow = ({sensorState}: {sensorState: JobStateFragment}) => {
+const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) => {
   const {id, name, status, repositoryOrigin, ticks} = sensorState;
 
   const [stopSensor, {loading: toggleOffInFlight}] = useMutation<StopSensor>(STOP_SENSOR_MUTATION, {
@@ -135,7 +135,7 @@ const SensorStateRow = ({sensorState}: {sensorState: JobStateFragment}) => {
   const [showRepositoryOrigin, setShowRepositoryOrigin] = React.useState(false);
 
   const onChangeSwitch = () => {
-    if (status === JobStatus.RUNNING) {
+    if (status === InstigationStatus.RUNNING) {
       stopSensor({variables: {jobOriginId: id}});
     }
   };
@@ -146,11 +146,11 @@ const SensorStateRow = ({sensorState}: {sensorState: JobStateFragment}) => {
     <tr key={name}>
       <td style={{width: 60}}>
         <Switch
-          disabled={toggleOffInFlight || status === JobStatus.STOPPED}
+          disabled={toggleOffInFlight || status === InstigationStatus.STOPPED}
           large
           innerLabelChecked="on"
           innerLabel="off"
-          checked={status === JobStatus.RUNNING}
+          checked={status === InstigationStatus.RUNNING}
           onChange={onChangeSwitch}
         />
       </td>
@@ -169,7 +169,7 @@ const SensorStateRow = ({sensorState}: {sensorState: JobStateFragment}) => {
       </td>
       <td>
         {latestTick ? (
-          <TickTag tick={latestTick} jobType={JobType.SENSOR} />
+          <TickTag tick={latestTick} instigationType={InstigationType.SENSOR} />
         ) : (
           <span style={{color: Colors.GRAY4}}>None</span>
         )}
@@ -184,7 +184,7 @@ const SensorStateRow = ({sensorState}: {sensorState: JobStateFragment}) => {
 };
 
 const ScheduleStateRow: React.FunctionComponent<{
-  scheduleState: JobStateFragment;
+  scheduleState: InstigationStateFragment;
 }> = ({scheduleState}) => {
   const [stopSchedule, {loading: toggleOffInFlight}] = useMutation<StopSchedule>(
     STOP_SCHEDULE_MUTATION,
@@ -194,14 +194,14 @@ const ScheduleStateRow: React.FunctionComponent<{
   );
   const [showRepositoryOrigin, setShowRepositoryOrigin] = React.useState(false);
   const confirm = useConfirmation();
-  const {id, name, ticks, status, repositoryOrigin, jobSpecificData} = scheduleState;
+  const {id, name, ticks, status, repositoryOrigin, typeSpecificData} = scheduleState;
   const latestTick = ticks.length > 0 ? ticks[0] : null;
   const cronSchedule =
-    jobSpecificData && jobSpecificData.__typename === 'ScheduleJobData'
-      ? jobSpecificData.cronSchedule
+    typeSpecificData && typeSpecificData.__typename === 'ScheduleData'
+      ? typeSpecificData.cronSchedule
       : null;
   const onChangeSwitch = async () => {
-    if (status === JobStatus.RUNNING) {
+    if (status === InstigationStatus.RUNNING) {
       await confirm({
         title: 'Are you sure you want to stop this schedule?',
         description:
@@ -217,9 +217,9 @@ const ScheduleStateRow: React.FunctionComponent<{
     <tr key={name}>
       <td style={{width: 60}}>
         <Switch
-          checked={status === JobStatus.RUNNING}
+          checked={status === InstigationStatus.RUNNING}
           large={true}
-          disabled={status !== JobStatus.RUNNING || toggleOffInFlight}
+          disabled={status !== InstigationStatus.RUNNING || toggleOffInFlight}
           innerLabelChecked="on"
           innerLabel="off"
           onChange={onChangeSwitch}
@@ -256,7 +256,11 @@ const ScheduleStateRow: React.FunctionComponent<{
           )}
         </div>
       </td>
-      <td>{latestTick ? <TickTag tick={latestTick} jobType={JobType.SCHEDULE} /> : null}</td>
+      <td>
+        {latestTick ? (
+          <TickTag tick={latestTick} instigationType={InstigationType.SCHEDULE} />
+        ) : null}
+      </td>
       <td>
         <JobRunStatus jobState={scheduleState} />
       </td>

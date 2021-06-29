@@ -20,7 +20,7 @@ import {
   RUN_ACTION_MENU_FRAGMENT,
   RUN_TIME_FRAGMENT,
 } from '../runs/RunUtils';
-import {JobType} from '../types/globalTypes';
+import {InstigationType} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {Loading} from '../ui/Loading';
 import {Table} from '../ui/Table';
@@ -156,7 +156,7 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
                           name={schedule.name}
                           key={schedule.name}
                           jobState={schedule.scheduleState}
-                          jobType={JobType.SCHEDULE}
+                          instigationType={InstigationType.SCHEDULE}
                           nextTick={schedule.futureTicks.results[0]}
                         />
                       ))}
@@ -178,7 +178,7 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
                           name={sensor.name}
                           key={sensor.name}
                           jobState={sensor.sensorState}
-                          jobType={JobType.SENSOR}
+                          instigationType={InstigationType.SENSOR}
                           nextTick={sensor.nextTick || undefined}
                         />
                       ))}
@@ -250,13 +250,13 @@ const OverviewJob = ({
   repoAddress,
   name,
   jobState,
-  jobType,
+  instigationType,
   nextTick,
 }: {
   repoAddress: RepoAddress;
   name: string;
   jobState: OverviewJobFragment;
-  jobType: JobType;
+  instigationType: InstigationType;
   nextTick?: {
     timestamp: number;
   };
@@ -268,7 +268,7 @@ const OverviewJob = ({
         <Link
           to={workspacePathFromAddress(
             repoAddress,
-            `/${jobType === JobType.SCHEDULE ? 'schedules' : 'sensors'}/${name}`,
+            `/${instigationType === InstigationType.SCHEDULE ? 'schedules' : 'sensors'}/${name}`,
           )}
         >
           {name}
@@ -360,7 +360,7 @@ const OverviewSection = ({title, children}: {title: string; children: any}) => {
 };
 
 const OVERVIEW_JOB_FRAGMENT = gql`
-  fragment OverviewJobFragment on JobState {
+  fragment OverviewJobFragment on InstigationState {
     id
     runsCount
     lastRuns: runs(limit: 1) {

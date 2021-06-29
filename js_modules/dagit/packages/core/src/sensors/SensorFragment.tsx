@@ -17,7 +17,7 @@ export const SENSOR_FRAGMENT = gql`
     }
     sensorState {
       id
-      ...JobStateFragment
+      ...InstigationStateFragment
     }
   }
   ${JOB_STATE_FRAGMENT}

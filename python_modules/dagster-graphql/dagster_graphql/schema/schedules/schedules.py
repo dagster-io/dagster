@@ -8,7 +8,11 @@ from ..errors import (
     GrapheneRepositoryNotFoundError,
     GrapheneScheduleNotFoundError,
 )
-from ..jobs import GrapheneFutureJobTick, GrapheneFutureJobTicks, GrapheneJobState
+from ..instigation import (
+    GrapheneFutureInstigationTick,
+    GrapheneFutureInstigationTicks,
+    GrapheneInstigationState,
+)
 from ..util import non_null_list
 
 
@@ -21,13 +25,13 @@ class GrapheneSchedule(graphene.ObjectType):
     mode = graphene.NonNull(graphene.String)
     execution_timezone = graphene.Field(graphene.String)
     description = graphene.String()
-    scheduleState = graphene.NonNull(GrapheneJobState)
+    scheduleState = graphene.NonNull(GrapheneInstigationState)
     partition_set = graphene.Field("dagster_graphql.schema.partition_sets.GraphenePartitionSet")
     futureTicks = graphene.NonNull(
-        GrapheneFutureJobTicks, cursor=graphene.Float(), limit=graphene.Int()
+        GrapheneFutureInstigationTicks, cursor=graphene.Float(), limit=graphene.Int()
     )
     futureTick = graphene.NonNull(
-        GrapheneFutureJobTick, tick_timestamp=graphene.NonNull(graphene.Int)
+        GrapheneFutureInstigationTick, tick_timestamp=graphene.NonNull(graphene.Int)
     )
 
     class Meta:
@@ -54,7 +58,7 @@ class GrapheneSchedule(graphene.ObjectType):
             pipeline_name=external_schedule.pipeline_name,
             solid_selection=external_schedule.solid_selection,
             mode=external_schedule.mode,
-            scheduleState=GrapheneJobState(self._schedule_state),
+            scheduleState=GrapheneInstigationState(self._schedule_state),
             execution_timezone=(
                 self._external_schedule.execution_timezone
                 if self._external_schedule.execution_timezone
@@ -97,13 +101,14 @@ class GrapheneSchedule(graphene.ObjectType):
             tick_times.append(next(time_iter).timestamp())
 
         future_ticks = [
-            GrapheneFutureJobTick(self._schedule_state, tick_time) for tick_time in tick_times
+            GrapheneFutureInstigationTick(self._schedule_state, tick_time)
+            for tick_time in tick_times
         ]
 
-        return GrapheneFutureJobTicks(results=future_ticks, cursor=tick_times[-1] + 1)
+        return GrapheneFutureInstigationTicks(results=future_ticks, cursor=tick_times[-1] + 1)
 
     def resolve_futureTick(self, _graphene_info, tick_timestamp):
-        return GrapheneFutureJobTick(self._schedule_state, float(tick_timestamp))
+        return GrapheneFutureInstigationTick(self._schedule_state, float(tick_timestamp))
 
 
 class GrapheneScheduleOrError(graphene.Union):

@@ -12,7 +12,7 @@ from .errors import (
     GrapheneSensorNotFoundError,
 )
 from .inputs import GrapheneSensorSelector
-from .jobs import GrapheneFutureJobTick, GrapheneJobState
+from .instigation import GrapheneFutureInstigationTick, GrapheneInstigationState
 from .util import non_null_list
 
 
@@ -23,10 +23,10 @@ class GrapheneSensor(graphene.ObjectType):
     pipelineName = graphene.String()
     solidSelection = graphene.List(graphene.String)
     mode = graphene.String()
-    sensorState = graphene.NonNull(GrapheneJobState)
+    sensorState = graphene.NonNull(GrapheneInstigationState)
     minIntervalSeconds = graphene.NonNull(graphene.Int)
     description = graphene.String()
-    nextTick = graphene.Field(GrapheneFutureJobTick)
+    nextTick = graphene.Field(GrapheneFutureInstigationTick)
 
     class Meta:
         name = "Sensor"
@@ -58,7 +58,7 @@ class GrapheneSensor(graphene.ObjectType):
         return self._external_sensor.get_external_origin_id()
 
     def resolve_sensorState(self, _graphene_info):
-        return GrapheneJobState(self._sensor_state)
+        return GrapheneInstigationState(self._sensor_state)
 
     def resolve_nextTick(self, graphene_info):
         return get_sensor_next_tick(graphene_info, self._sensor_state)
@@ -104,7 +104,7 @@ class GrapheneStartSensorMutation(graphene.Mutation):
 
 
 class GrapheneStopSensorMutationResult(graphene.ObjectType):
-    jobState = graphene.Field(GrapheneJobState)
+    instigationState = graphene.Field(GrapheneInstigationState)
 
     class Meta:
         name = "StopSensorMutationResult"
@@ -113,11 +113,11 @@ class GrapheneStopSensorMutationResult(graphene.ObjectType):
         super().__init__()
         self._job_state = check.inst_param(job_state, "job_state", JobState)
 
-    def resolve_jobState(self, _graphene_info):
+    def resolve_instigationState(self, _graphene_info):
         if not self._job_state:
             return None
 
-        return GrapheneJobState(job_state=self._job_state)
+        return GrapheneInstigationState(job_state=self._job_state)
 
 
 class GrapheneStopSensorMutationResultOrError(graphene.Union):

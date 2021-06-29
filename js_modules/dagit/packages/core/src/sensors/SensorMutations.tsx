@@ -31,7 +31,7 @@ export const STOP_SENSOR_MUTATION = gql`
     stopSensor(jobOriginId: $jobOriginId) {
       __typename
       ... on StopSensorMutationResult {
-        jobState {
+        instigationState {
           id
           status
         }

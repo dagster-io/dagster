@@ -20,7 +20,7 @@ import {copyValue} from '../app/DomUtils';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunTags} from '../runs/RunTags';
-import {JobStatus} from '../types/globalTypes';
+import {InstigationStatus} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
 import {Group} from '../ui/Group';
@@ -61,7 +61,8 @@ export const SchedulesNextTicks: React.FC<{
 
     const futureTickSchedules = schedules.filter(
       (schedule) =>
-        schedule.futureTicks.results.length && schedule.scheduleState.status === JobStatus.RUNNING,
+        schedule.futureTicks.results.length &&
+        schedule.scheduleState.status === InstigationStatus.RUNNING,
     );
 
     const minMaxTimestamp = Math.min(

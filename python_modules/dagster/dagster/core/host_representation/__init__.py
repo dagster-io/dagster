@@ -52,7 +52,7 @@ from .repository_location import (
 )
 from .represented import RepresentedPipeline
 from .selector import (
-    JobSelector,
+    InstigationSelector,
     PipelineSelector,
     RepositorySelector,
     ScheduleSelector,
