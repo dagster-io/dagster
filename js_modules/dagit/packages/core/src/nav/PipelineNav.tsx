@@ -114,9 +114,9 @@ export const PipelineNav: React.FC<Props> = (props) => {
         title={
           <Heading>
             {explorerPath.pipelineName}
-            {flagPipelineModeTuples && (
+            {flagPipelineModeTuples && explorerPath.pipelineMode !== 'default' ? (
               <span style={{opacity: 0.5}}> : {explorerPath.pipelineMode}</span>
-            )}
+            ) : null}
           </Heading>
         }
         icon={flagPipelineModeTuples ? 'send-to-graph' : 'diagram-tree'}
