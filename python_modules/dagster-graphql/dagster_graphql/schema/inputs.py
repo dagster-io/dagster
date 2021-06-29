@@ -206,16 +206,16 @@ class GrapheneStepExecution(graphene.InputObjectType):
         name = "StepExecution"
 
 
-class GrapheneJobSelector(graphene.InputObjectType):
+class GrapheneInstigationSelector(graphene.InputObjectType):
     class Meta:
-        name = "JobSelector"
+        name = "InstigationSelector"
         description = (
             """This type represents the fields necessary to identify a schedule or sensor."""
         )
 
     repositoryName = graphene.NonNull(graphene.String)
     repositoryLocationName = graphene.NonNull(graphene.String)
-    jobName = graphene.NonNull(graphene.String)
+    name = graphene.NonNull(graphene.String)
 
 
 types = [
@@ -223,7 +223,7 @@ types = [
     GrapheneExecutionMetadata,
     GrapheneExecutionParams,
     GrapheneExecutionTag,
-    GrapheneJobSelector,
+    GrapheneInstigationSelector,
     GrapheneMarshalledInput,
     GrapheneMarshalledOutput,
     GrapheneLaunchBackfillParams,

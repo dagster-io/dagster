@@ -10,8 +10,8 @@ type Query {
   schedulesOrError(repositorySelector: RepositorySelector!): SchedulesOrError!
   sensorOrError(sensorSelector: SensorSelector!): SensorOrError!
   sensorsOrError(repositorySelector: RepositorySelector!): SensorsOrError!
-  jobStateOrError(jobSelector: JobSelector!): JobStateOrError!
-  unloadableJobStatesOrError(jobType: JobType): JobStatesOrError!
+  instigationStateOrError(instigationSelector: InstigationSelector!): InstigationStateOrError!
+  unloadableInstigationStatesOrError(instigationType: InstigationType): InstigationStatesOrError!
   partitionSetsOrError(repositorySelector: RepositorySelector!, pipelineName: String!): PartitionSetsOrError!
   partitionSetOrError(repositorySelector: RepositorySelector!, partitionSetName: String): PartitionSetOrError!
   pipelineRunsOrError(filter: PipelineRunsFilter, cursor: String, limit: Int): PipelineRunsOrError!
@@ -889,51 +889,51 @@ type Schedule {
   mode: String!
   executionTimezone: String
   description: String
-  scheduleState: JobState!
+  scheduleState: InstigationState!
   partitionSet: PartitionSet
-  futureTicks(cursor: Float, limit: Int): FutureJobTicks!
-  futureTick(tickTimestamp: Int!): FutureJobTick!
+  futureTicks(cursor: Float, limit: Int): FutureInstigationTicks!
+  futureTick(tickTimestamp: Int!): FutureInstigationTick!
 }
 
-type JobState {
+type InstigationState {
   id: ID!
   name: String!
-  jobType: JobType!
-  status: JobStatus!
+  instigationType: InstigationType!
+  status: InstigationStatus!
   repositoryOrigin: RepositoryOrigin!
-  jobSpecificData: JobSpecificData
+  typeSpecificData: InstigationTypeSpecificData
   runs(limit: Int): [PipelineRun!]!
   runsCount: Int!
-  ticks(dayRange: Int, dayOffset: Int, limit: Int): [JobTick!]!
-  nextTick: FutureJobTick
+  ticks(dayRange: Int, dayOffset: Int, limit: Int): [InstigationTick!]!
+  nextTick: FutureInstigationTick
   runningCount: Int!
 }
 
-enum JobType {
+enum InstigationType {
   SCHEDULE
   SENSOR
 }
 
-enum JobStatus {
+enum InstigationStatus {
   RUNNING
   STOPPED
 }
 
-union JobSpecificData = SensorJobData | ScheduleJobData
+union InstigationTypeSpecificData = SensorData | ScheduleData
 
-type SensorJobData {
+type SensorData {
   lastTickTimestamp: Float
   lastRunKey: String
 }
 
-type ScheduleJobData {
+type ScheduleData {
   cronSchedule: String!
   startTimestamp: Float
 }
 
-type JobTick {
+type InstigationTick {
   id: ID!
-  status: JobTickStatus!
+  status: InstigationTickStatus!
   timestamp: Float!
   runIds: [String!]!
   error: PythonError
@@ -942,14 +942,14 @@ type JobTick {
   originRunIds: [String!]!
 }
 
-enum JobTickStatus {
+enum InstigationTickStatus {
   STARTED
   SKIPPED
   SUCCESS
   FAILURE
 }
 
-type FutureJobTick {
+type FutureInstigationTick {
   timestamp: Float!
   evaluationResult: TickEvaluation
 }
@@ -1033,8 +1033,8 @@ type PartitionStatus {
   runStatus: PipelineRunStatus
 }
 
-type FutureJobTicks {
-  results: [FutureJobTick!]!
+type FutureInstigationTicks {
+  results: [FutureInstigationTick!]!
   cursor: Float!
 }
 
@@ -1045,10 +1045,10 @@ type Sensor {
   pipelineName: String
   solidSelection: [String]
   mode: String
-  sensorState: JobState!
+  sensorState: InstigationState!
   minIntervalSeconds: Int!
   description: String
-  nextTick: FutureJobTick
+  nextTick: FutureInstigationTick
 }
 
 type PipelinePreset {
@@ -1196,18 +1196,18 @@ type Sensors {
   results: [Sensor!]!
 }
 
-union JobStateOrError = JobState | PythonError
+union InstigationStateOrError = InstigationState | PythonError
 
-input JobSelector {
+input InstigationSelector {
   repositoryName: String!
   repositoryLocationName: String!
-  jobName: String!
+  name: String!
 }
 
-union JobStatesOrError = JobStates | PythonError
+union InstigationStatesOrError = InstigationStates | PythonError
 
-type JobStates {
-  results: [JobState!]!
+type InstigationStates {
+  results: [InstigationState!]!
 }
 
 union PartitionSetsOrError = PartitionSets | PipelineNotFoundError | PythonError
@@ -1459,13 +1459,13 @@ type ReconcileSchedulerStateSuccess {
 union ScheduleMutationResult = PythonError | ScheduleStateResult
 
 type ScheduleStateResult {
-  scheduleState: JobState!
+  scheduleState: InstigationState!
 }
 
 union StopSensorMutationResultOrError = StopSensorMutationResult | ReadOnlyError | PythonError
 
 type StopSensorMutationResult {
-  jobState: JobState
+  instigationState: InstigationState
 }
 
 union TerminatePipelineExecutionResult = TerminatePipelineExecutionSuccess | TerminatePipelineExecutionFailure | PipelineRunNotFoundError | ReadOnlyError | PythonError
@@ -1757,7 +1757,7 @@ enum ScheduleStatus {
 
 type ScheduleTick {
   tickId: String!
-  status: JobTickStatus!
+  status: InstigationTickStatus!
   timestamp: Float!
   tickSpecificData: ScheduleTickSpecificData
 }

@@ -8,7 +8,7 @@ import {useCopyToClipboard} from '../app/browser';
 import {TickTag} from '../jobs/JobTick';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {JobStatus, JobType} from '../types/globalTypes';
+import {InstigationStatus, InstigationType} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
 import {CountdownStatus, useCountdown} from '../ui/Countdown';
@@ -70,7 +70,7 @@ export const ScheduleDetails: React.FC<{
     setCopyText('Copied!');
   };
 
-  const running = status === JobStatus.RUNNING;
+  const running = status === InstigationStatus.RUNNING;
   const countdownRefreshing = countdownStatus === 'idle' || timeRemaining === 0;
   const seconds = Math.floor(timeRemaining / 1000);
 
@@ -136,7 +136,7 @@ export const ScheduleDetails: React.FC<{
                   timezone={executionTimezone}
                   timeFormat={TIME_FORMAT}
                 />
-                <TickTag tick={latestTick} jobType={JobType.SCHEDULE} />
+                <TickTag tick={latestTick} instigationType={InstigationType.SCHEDULE} />
               </Group>
             ) : (
               'Schedule has never run'

@@ -6,7 +6,7 @@ import * as React from 'react';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {UnloadableSchedules} from '../jobs/UnloadableJobs';
-import {JobType} from '../types/globalTypes';
+import {InstigationType} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
@@ -28,7 +28,7 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   const queryResult = useQuery<SchedulesRootQuery>(SCHEDULES_ROOT_QUERY, {
     variables: {
       repositorySelector: repositorySelector,
-      jobType: JobType.SCHEDULE,
+      instigationType: InstigationType.SCHEDULE,
     },
     fetchPolicy: 'cache-and-network',
     pollInterval: 50 * 1000,
@@ -39,7 +39,12 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
     <Page>
       <Loading queryResult={queryResult} allowStaleData={true}>
         {(result) => {
-          const {repositoryOrError, scheduler, unloadableJobStatesOrError, instance} = result;
+          const {
+            repositoryOrError,
+            scheduler,
+            unloadableInstigationStatesOrError,
+            instance,
+          } = result;
           let schedulesSection = null;
 
           if (repositoryOrError.__typename === 'PythonError') {
@@ -89,10 +94,10 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
             <Group direction="column" spacing={20}>
               <SchedulerInfo schedulerOrError={scheduler} daemonHealth={instance.daemonHealth} />
               {schedulesSection}
-              {unloadableJobStatesOrError.__typename === 'PythonError' ? (
-                <PythonErrorInfo error={unloadableJobStatesOrError} />
+              {unloadableInstigationStatesOrError.__typename === 'PythonError' ? (
+                <PythonErrorInfo error={unloadableInstigationStatesOrError} />
               ) : (
-                <UnloadableSchedules scheduleStates={unloadableJobStatesOrError.results} />
+                <UnloadableSchedules scheduleStates={unloadableInstigationStatesOrError.results} />
               )}
             </Group>
           );

@@ -112,7 +112,7 @@ def infer_sensor_selector(graphql_context, sensor_name):
     return selector
 
 
-def infer_job_selector(graphql_context, job_name):
+def infer_instigation_selector(graphql_context, name):
     selector = infer_repository_selector(graphql_context)
-    selector.update({"jobName": job_name})
+    selector.update({"name": name})
     return selector

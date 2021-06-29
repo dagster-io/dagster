@@ -85,7 +85,7 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
                 />
                 <JobTickHistory
                   repoAddress={repoAddress}
-                  jobName={scheduleOrError.name}
+                  name={scheduleOrError.name}
                   onHighlightRunIds={(runIds: string[]) => setSelectedRunIds(runIds)}
                 />
                 <SchedulePreviousRuns

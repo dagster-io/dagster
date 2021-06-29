@@ -5,7 +5,7 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
-import {JobStatus} from '../types/globalTypes';
+import {InstigationStatus} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {DagsterRepoOption} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
@@ -154,7 +154,7 @@ const JobItem: React.FC<JobItemProps> = (props) => {
         <Icon
           icon={whichIcon}
           iconSize={12}
-          color={status === JobStatus.RUNNING ? Colors.GREEN5 : Colors.DARK_GRAY5}
+          color={status === InstigationStatus.RUNNING ? Colors.GREEN5 : Colors.DARK_GRAY5}
           style={{display: 'block'}}
         />
       </IconWithTooltip>
