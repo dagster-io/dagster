@@ -76,8 +76,6 @@ def sleepy():
 
 def _config(cfg):
     return {
-        "intermediate_storage": {"filesystem": {}},
-        "execution": {"multiprocess": {}},
         "solids": {
             "giver": {"config": cfg["sleeps"]},
             "total": {"config": {"fail": cfg["fail"]}},
@@ -87,8 +85,6 @@ def _config(cfg):
 
 sleepy_pipeline = sleepy.to_job(
     config={
-        "intermediate_storage": {"filesystem": {}},
-        "execution": {"multiprocess": {}},
         "solids": {"giver": {"config": [2, 2, 2, 2]}},
     },
 )

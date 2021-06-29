@@ -13,10 +13,16 @@ def _filter_by_step_kind(event_list: List[DagsterEvent], kind: StepKind) -> List
 
 
 def _filter_step_events_by_handle(
-    event_list: List[DagsterEvent], ancestor_handle: SolidHandle, current_handle: SolidHandle
+    event_list: List[DagsterEvent],
+    ancestor_handle: Optional[SolidHandle],
+    current_handle: SolidHandle,
 ) -> List[DagsterEvent]:
     events = []
-    handle_with_ancestor = cast(SolidHandle, current_handle.with_ancestor(ancestor_handle))
+    if ancestor_handle:
+        handle_with_ancestor = cast(SolidHandle, current_handle.with_ancestor(ancestor_handle))
+    else:
+        handle_with_ancestor = current_handle
+
     for event in event_list:
         if event.is_step_event:
             solid_handle = cast(SolidHandle, event.solid_handle)
@@ -32,10 +38,14 @@ def _get_solid_handle_from_output(step_output_handle: StepOutputHandle) -> Optio
 
 def _filter_outputs_by_handle(
     output_dict: Dict[StepOutputHandle, Any],
-    ancestor_handle: SolidHandle,
+    ancestor_handle: Optional[SolidHandle],
     current_handle: SolidHandle,
 ):
-    handle_with_ancestor = current_handle.with_ancestor(ancestor_handle)
+    if ancestor_handle:
+        handle_with_ancestor = current_handle.with_ancestor(ancestor_handle)
+    else:
+        handle_with_ancestor = current_handle
+
     outputs = {}
     for step_output_handle, value in output_dict.items():
         handle = _get_solid_handle_from_output(step_output_handle)
@@ -56,10 +66,6 @@ class NodeExecutionResult:
 
     @abstractproperty
     def event_list(self) -> List[DagsterEvent]:
-        raise NotImplementedError()
-
-    @property
-    def handle(self) -> SolidHandle:
         raise NotImplementedError()
 
 
@@ -110,7 +116,7 @@ class InProcessGraphResult(NodeExecutionResult):
     def __init__(
         self,
         graph_def: GraphDefinition,
-        handle: SolidHandle,
+        handle: Optional[SolidHandle],
         all_events: List[DagsterEvent],
         output_capture: Optional[Dict[StepOutputHandle, Any]],
     ):
@@ -127,7 +133,11 @@ class InProcessGraphResult(NodeExecutionResult):
             if self._output_capture
             else None
         )
-        handle_with_ancestor = handle.with_ancestor(self.handle)
+        if self.handle:
+            handle_with_ancestor = handle.with_ancestor(self.handle)
+        else:
+            handle_with_ancestor = handle
+
         if not handle_with_ancestor:
             raise DagsterInvariantViolationError(f"No handle provided for solid {solid.name}")
         if isinstance(node_def, SolidDefinition):
@@ -168,7 +178,7 @@ class InProcessGraphResult(NodeExecutionResult):
         return self._event_list
 
     @property
-    def handle(self) -> SolidHandle:
+    def handle(self) -> Optional[SolidHandle]:
         return self._handle
 
     def result_for_node(self, name: str) -> NodeExecutionResult:

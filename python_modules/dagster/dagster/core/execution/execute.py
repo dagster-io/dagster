@@ -4,6 +4,7 @@ from typing import Any, Dict, Optional, Union
 from dagster import check
 from dagster.core.definitions import (
     DependencyDefinition,
+    GraphDefinition,
     LoggerDefinition,
     ModeDefinition,
     NodeDefinition,
@@ -49,8 +50,8 @@ def execute_in_process(
     resources: Optional[Dict[str, ResourceDefinition]] = None,
     loggers: Optional[Dict[str, LoggerDefinition]] = None,
     input_values: Optional[Dict[str, Any]] = None,
-    instance: DagsterInstance = None,
-    output_capturing_enabled: Optional[bool] = True,
+    instance: Optional[DagsterInstance] = None,
+    output_capturing_enabled: bool = True,
 ) -> NodeExecutionResult:
     node = check.inst_param(node, "node", NodeDefinition)
     resources = check.opt_dict_param(
@@ -83,6 +84,24 @@ def execute_in_process(
         dependencies=dependencies,
     )
 
+    return core_execute_in_process(
+        node=node,
+        ephemeral_pipeline=pipeline_def,
+        run_config=run_config,
+        instance=instance,
+        output_capturing_enabled=output_capturing_enabled,
+    )
+
+
+def core_execute_in_process(
+    node: NodeDefinition,
+    run_config: Dict[str, Any],
+    ephemeral_pipeline: PipelineDefinition,
+    instance: Optional[DagsterInstance],
+    output_capturing_enabled: bool,
+):
+    pipeline_def = ephemeral_pipeline
+    mode_def = pipeline_def.get_mode_definition()
     pipeline = InMemoryPipeline(pipeline_def)
 
     execution_plan = create_execution_plan(pipeline, run_config=run_config, mode=mode_def.name)
@@ -114,17 +133,21 @@ def execute_in_process(
 
     top_level_node_handle = SolidHandle.from_string(node.name)
 
-    event_list_for_top_lvl_node = [
-        event
-        for event in event_list
-        if event.solid_handle and event.solid_handle.is_or_descends_from(top_level_node_handle)
-    ]
-
-    if isinstance(node, SolidDefinition):
-        return InProcessSolidResult(
-            node, SolidHandle(node.name, None), event_list_for_top_lvl_node, recorder
-        )
+    if isinstance(node, GraphDefinition) and node == ephemeral_pipeline.graph:
+        event_list_for_top_lvl_node = event_list
+        handle = None
+        return InProcessGraphResult(node, handle, event_list_for_top_lvl_node, recorder)
     else:
-        return InProcessGraphResult(
-            node, SolidHandle(node.name, None), event_list_for_top_lvl_node, recorder
-        )
+        event_list_for_top_lvl_node = [
+            event
+            for event in event_list
+            if event.solid_handle and event.solid_handle.is_or_descends_from(top_level_node_handle)
+        ]
+        handle = SolidHandle(node.name, None)
+
+        if isinstance(node, SolidDefinition):
+            return InProcessSolidResult(node, handle, event_list_for_top_lvl_node, recorder)
+        elif isinstance(node, GraphDefinition):
+            return InProcessGraphResult(node, handle, event_list_for_top_lvl_node, recorder)
+
+    check.failed(f"Unexpected node type {node}")

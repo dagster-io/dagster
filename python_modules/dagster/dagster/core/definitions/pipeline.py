@@ -40,6 +40,7 @@ if TYPE_CHECKING:
     from .run_config_schema import RunConfigSchema
     from dagster.core.snap import PipelineSnapshot, ConfigSchemaSnapshot
     from dagster.core.host_representation import PipelineIndex
+    from dagster.core.instance import DagsterInstance
 
 
 class PipelineDefinition:
@@ -521,6 +522,45 @@ class PipelineDefinition:
             "using an execution API function (e.g. `execute_pipeline`)."
         )
 
+    def execute_in_process(
+        self,
+        run_config: Optional[Dict[str, Any]] = None,
+        instance: Optional["DagsterInstance"] = None,
+    ):
+        from dagster.core.definitions.executor import in_process_executor
+        from dagster.core.execution.execute import core_execute_in_process
+
+        run_config = check.opt_dict_param(run_config, "run_config")
+        check.invariant(
+            len(self._mode_definitions) == 1,
+            "execute_in_process only supported on job / single mode pipeline",
+        )
+
+        base_mode = self.get_mode_definition()
+        # create an ephemeral in process mode by replacing the executor_def and
+        # switching the default fs io_manager to in mem, if another was not set
+        in_proc_mode = ModeDefinition(
+            name="in_process",
+            executor_defs=[in_process_executor],
+            resource_defs=_swap_default_io_man(base_mode.resource_defs),
+            logger_defs=base_mode.loggers,
+            _config_mapping=base_mode.config_mapping,
+            _partitioned_config=base_mode.partitioned_config,
+        )
+
+        ephemeral_pipeline = PipelineDefinition(
+            graph_def=self._graph_def,
+            mode_defs=[in_proc_mode],
+        )
+
+        return core_execute_in_process(
+            node=self._graph_def,
+            ephemeral_pipeline=ephemeral_pipeline,
+            run_config=run_config,
+            instance=instance,
+            output_capturing_enabled=True,
+        )
+
 
 class PipelineSubsetDefinition(PipelineDefinition):
     @property
@@ -997,3 +1037,23 @@ def _create_run_config_schema(
         config_type_dict_by_key=config_type_dict_by_key,
         config_mapping=mode_definition.config_mapping,
     )
+
+
+def _swap_default_io_man(resources: Dict[str, ResourceDefinition]):
+    """
+    Used to create the user facing experience of the default io_manager
+    switching to in-memory when using execute_in_process.
+    """
+    from dagster.core.storage.mem_io_manager import mem_io_manager
+    from .graph import default_job_io_manager
+
+    if (
+        # pylint: disable=comparison-with-callable
+        resources.get("io_manager")
+        == default_job_io_manager
+    ):
+        updated_resources = dict(resources)
+        updated_resources["io_manager"] = mem_io_manager
+        return updated_resources
+
+    return resources

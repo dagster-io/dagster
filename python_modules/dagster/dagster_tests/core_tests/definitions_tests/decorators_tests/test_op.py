@@ -10,19 +10,18 @@ from dagster import (
     Out,
     Output,
     build_op_context,
-    execute_pipeline,
     graph,
     op,
 )
+from dagster.core.execution.execute import execute_in_process
 
 
-def execute_op_in_job(an_op):
+def execute_op_in_graph(an_op):
     @graph
     def my_graph():
         an_op()
 
-    result = execute_pipeline(my_graph.to_job())
-    assert result.success
+    result = execute_in_process(my_graph)
     return result
 
 
@@ -31,7 +30,7 @@ def test_op():
     def my_op():
         pass
 
-    execute_op_in_job(my_op)
+    execute_op_in_graph(my_op)
 
 
 def test_ins():
@@ -51,7 +50,7 @@ def test_ins():
     def my_graph():
         my_op(a=upstream1(), b=upstream2())
 
-    result = execute_pipeline(my_graph.to_job())
+    result = execute_in_process(my_graph)
     assert result.success
 
     assert upstream1() == 5
@@ -92,8 +91,8 @@ def test_tuple_out():
         return 1, "a"
 
     assert len(my_op.output_defs) == 1
-    result = execute_op_in_job(my_op)
-    assert result.output_for_solid("my_op") == (1, "a")
+    result = execute_op_in_graph(my_op)
+    assert result.result_for_node("my_op").output_values == {"result": (1, "a")}
 
     assert my_op() == (1, "a")
 
@@ -108,9 +107,9 @@ def test_multi_out_yields():
     assert my_op.output_defs[0].name == "a"
     assert my_op.output_defs[1].metadata == {"y": 2}
     assert my_op.output_defs[1].name == "b"
-    result = execute_op_in_job(my_op)
-    assert result.output_for_solid("my_op", "a") == 1
-    assert result.output_for_solid("my_op", "b") == 2
+    result = execute_op_in_graph(my_op)
+    assert result.result_for_node("my_op").output_values["a"] == 1
+    assert result.result_for_node("my_op").output_values["b"] == 2
 
     assert [output.value for output in my_op()] == [1, 2]
 
@@ -120,8 +119,8 @@ def test_multi_out_optional():
     def my_op():
         yield Output(output_name="b", value=2)
 
-    result = execute_op_in_job(my_op)
-    assert result.output_for_solid("my_op", "b") == 2
+    result = execute_op_in_graph(my_op)
+    assert result.result_for_node("my_op").output_values["b"] == 2
 
     assert [output.value for output in my_op()] == [2]
 
@@ -151,7 +150,7 @@ def test_ins_dict():
     def my_graph():
         my_op(a=upstream1(), b=upstream2())
 
-    result = execute_pipeline(my_graph.to_job())
+    result = execute_in_process(my_graph)
     assert result.success
 
     assert my_op(a=1, b="2") == 3
@@ -171,9 +170,9 @@ def test_multi_out_dict():
     assert my_op.output_defs[1].name == "b"
     assert my_op.output_defs[1].dagster_type.typing_type == str
 
-    result = execute_op_in_job(my_op)
-    assert result.output_for_solid("my_op", "a") == 1
-    assert result.output_for_solid("my_op", "b") == "q"
+    result = execute_op_in_graph(my_op)
+    assert result.result_for_node("my_op").output_values["a"] == 1
+    assert result.result_for_node("my_op").output_values["b"] == "q"
 
     assert my_op() == (1, "q")
 
@@ -191,7 +190,7 @@ def test_nothing_in():
     def nothing_test():
         on_complete(noop())
 
-    result = execute_pipeline(nothing_test.to_job())
+    result = execute_in_process(nothing_test)
     assert result.success
 
 
@@ -232,8 +231,8 @@ def test_multiout_single_entry():
         return 5
 
     assert single_output_op() == 5
-    result = execute_op_in_job(single_output_op)
-    assert result.output_for_solid("single_output_op", output_name="a") == 5
+    result = execute_op_in_graph(single_output_op)
+    assert result.result_for_node("single_output_op").output_values["a"] == 5
 
 
 def test_tuple_named_single_output():
@@ -243,9 +242,9 @@ def test_tuple_named_single_output():
         return (5, 5)
 
     assert single_output_op_tuple() == (5, 5)
-    assert execute_op_in_job(single_output_op_tuple).output_for_solid(
-        "single_output_op_tuple", "a"
-    ) == (5, 5)
+    assert execute_op_in_graph(single_output_op_tuple).result_for_node(
+        "single_output_op_tuple"
+    ).output_values["a"] == (5, 5)
 
 
 # Test creating a multi-out op with the incorrect annotation.
@@ -274,9 +273,9 @@ def test_op_typing_annotations():
         return {"foo": 5}, ("foo",)
 
     assert my_dict_multiout() == my_output
-    result = execute_op_in_job(my_dict_multiout)
-    assert result.output_for_solid("my_dict_multiout", "a") == my_output[0]
-    assert result.output_for_solid("my_dict_multiout", "b") == my_output[1]
+    result = execute_op_in_graph(my_dict_multiout)
+    assert result.result_for_node("my_dict_multiout").output_values["a"] == my_output[0]
+    assert result.result_for_node("my_dict_multiout").output_values["b"] == my_output[1]
 
 
 # Test simplest possible multiout case
@@ -286,9 +285,9 @@ def test_op_multiout_base():
         return (5, "foo")
 
     assert basic_multiout() == (5, "foo")
-    result = execute_op_in_job(basic_multiout)
-    assert result.output_for_solid("basic_multiout", "a") == 5
-    assert result.output_for_solid("basic_multiout", "b") == "foo"
+    result = execute_op_in_graph(basic_multiout)
+    assert result.result_for_node("basic_multiout").output_values["a"] == 5
+    assert result.result_for_node("basic_multiout").output_values["b"] == "foo"
 
 
 # Test tuple size mismatch (larger and smaller)
@@ -313,9 +312,6 @@ def test_type_annotations_with_output():
     with pytest.raises(DagsterTypeCheckDidNotPass):
         my_op_returns_output()
 
-    with pytest.raises(DagsterTypeCheckDidNotPass):
-        execute_op_in_job(my_op_returns_output)
-
 
 # Document what happens when someone tries to use type annotations with generator
 def test_type_annotations_with_generator():
@@ -324,5 +320,5 @@ def test_type_annotations_with_generator():
         yield Output(5)
 
     assert list(my_op_yields_output())[0].value == 5
-    result = execute_op_in_job(my_op_yields_output)
-    assert result.output_for_solid("my_op_yields_output") == 5
+    result = execute_op_in_graph(my_op_yields_output)
+    assert result.result_for_node("my_op_yields_output").output_values["result"] == 5
