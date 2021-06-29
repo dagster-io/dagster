@@ -11,6 +11,6 @@ Utilities
 
 .. autoclass:: ForkedPdb
 
-.. currentmodule:: dagster.utils.email
+.. currentmodule:: dagster.utils
 
 .. autofunction:: make_email_on_pipeline_failure_sensor

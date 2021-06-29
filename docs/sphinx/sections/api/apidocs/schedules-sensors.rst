@@ -37,3 +37,7 @@ Sensors
 .. autoclass:: SensorEvaluationContext
 
 .. autofunction:: build_sensor_context
+
+.. autodecorator:: pipeline_failure_sensor
+
+.. autoclass:: PipelineFailureSensorContext

@@ -70,6 +70,7 @@ from .output import MultiOut, Out, OutputDefinition, OutputMapping
 from .partition import Partition, PartitionScheduleDefinition, PartitionSetDefinition
 from .pipeline import PipelineDefinition
 from .pipeline_base import IPipeline
+from .pipeline_sensor import PipelineFailureSensorContext, pipeline_failure_sensor
 from .preset import PresetDefinition
 from .reconstructable import (
     ReconstructablePipeline,

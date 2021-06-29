@@ -10,7 +10,6 @@ from dagster.core.definitions.sensor import (
 )
 from dagster.core.errors import PipelineSensorExecutionError, user_code_error_boundary
 from dagster.core.events import DagsterEvent, DagsterEventType
-from dagster.core.storage.event_log.base import RunShardedEventsCursor
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunsFilter
 from dagster.serdes import (
     deserialize_json_to_dagster_namedtuple,
@@ -28,6 +27,14 @@ class PipelineFailureSensorContext(
         [("sensor_name", str), ("pipeline_run", PipelineRun), ("failure_event", DagsterEvent)],
     )
 ):
+    """The ``context`` object available to a decorated function of ``pipeline_failure_sensor``.
+
+    Attributes:
+        sensor_name (str): the name of the sensor.
+        pipeline_run (PipelineRun): the failed pipeline run.
+        failure_event (DagsterEvent): the pipeline failure event.
+    """
+
     def __new__(cls, sensor_name, pipeline_run, failure_event):
 
         return super(PipelineFailureSensorContext, cls).__new__(
@@ -90,6 +97,8 @@ def pipeline_failure_sensor(
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
     """
+
+    from dagster.core.storage.event_log.base import RunShardedEventsCursor
 
     dagster_event_type = DagsterEventType.PIPELINE_FAILURE
 

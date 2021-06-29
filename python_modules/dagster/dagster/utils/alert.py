@@ -1,16 +1,15 @@
 import datetime
 import smtplib
 import ssl
-from typing import Callable, List, Optional
+from typing import TYPE_CHECKING, Callable, List, Optional
 
-from dagster.core.definitions.pipeline_sensor import (
-    PipelineFailureSensorContext,
-    pipeline_failure_sensor,
-)
 from dagster.core.errors import DagsterInvalidDefinitionError
 
+if TYPE_CHECKING:
+    from dagster.core.definitions.pipeline_sensor import PipelineFailureSensorContext
 
-def _default_failure_email_body(context: PipelineFailureSensorContext) -> str:
+
+def _default_failure_email_body(context: "PipelineFailureSensorContext") -> str:
     return "<br>".join(
         [
             f"Pipeline {context.pipeline_run.pipeline_name} failed!",
@@ -21,7 +20,7 @@ def _default_failure_email_body(context: PipelineFailureSensorContext) -> str:
     )
 
 
-def _default_failure_email_subject(context: PipelineFailureSensorContext) -> str:
+def _default_failure_email_subject(context: "PipelineFailureSensorContext") -> str:
     return f"Dagster Pipeline Failed: {context.pipeline_run.pipeline_name}"
 
 
@@ -71,9 +70,9 @@ def make_email_on_pipeline_failure_sensor(
     email_from: str,
     email_password: str,
     email_to: List[str],
-    email_body_fn: Callable[[PipelineFailureSensorContext], str] = _default_failure_email_body,
+    email_body_fn: Callable[["PipelineFailureSensorContext"], str] = _default_failure_email_body,
     email_subject_fn: Callable[
-        [PipelineFailureSensorContext], str
+        ["PipelineFailureSensorContext"], str
     ] = _default_failure_email_subject,
     smtp_host: str = "smtp.gmail.com",
     smtp_type: str = "SSL",
@@ -133,6 +132,11 @@ def make_email_on_pipeline_failure_sensor(
 
 
     """
+
+    from dagster.core.definitions.pipeline_sensor import (
+        PipelineFailureSensorContext,
+        pipeline_failure_sensor,
+    )
 
     @pipeline_failure_sensor(name=name)
     def email_on_pipeline_failure(context: PipelineFailureSensorContext):
