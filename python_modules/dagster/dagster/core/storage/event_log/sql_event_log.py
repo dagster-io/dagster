@@ -2,7 +2,7 @@ import logging
 from abc import abstractmethod
 from collections import defaultdict
 from datetime import datetime
-from typing import Optional
+from typing import Iterable, Optional
 
 import pendulum
 import sqlalchemy as db
@@ -18,7 +18,13 @@ from dagster.serdes.errors import DeserializationError
 from dagster.utils import datetime_as_float, utc_datetime_from_naive, utc_datetime_from_timestamp
 
 from ..pipeline_run import PipelineRunStatsSnapshot
-from .base import EventLogRecord, EventLogStorage, EventsCursor, extract_asset_events_cursor
+from .base import (
+    EventLogRecord,
+    EventLogStorage,
+    EventRecordsFilter,
+    RunShardedEventsCursor,
+    extract_asset_events_cursor,
+)
 from .migration import REINDEX_DATA_MIGRATIONS
 from .schema import AssetKeyTable, SecondaryIndexMigrationTable, SqlEventLogStorageTable
 
@@ -531,32 +537,105 @@ class SqlEventLogStorage(EventLogStorage):
                     .values(migration_completed=datetime.now())
                 )
 
-    def _add_cursor_limit_to_query(
+    def _apply_filter_to_query(
         self,
         query,
-        before_cursor,
-        after_cursor,
-        limit,
-        ascending=False,
-        before_timestamp=None,
+        event_records_filter=None,
+        asset_details=None,
+        apply_cursor_filters=True,
     ):
-        """ Helper function to deal with cursor/limit pagination args """
+        if not event_records_filter:
+            return query
 
-        if before_cursor:
-            before_query = db.select([SqlEventLogStorageTable.c.id]).where(
-                SqlEventLogStorageTable.c.id == before_cursor
-            )
-            query = query.where(SqlEventLogStorageTable.c.id < before_query)
-        if after_cursor:
-            after_query = db.select([SqlEventLogStorageTable.c.id]).where(
-                SqlEventLogStorageTable.c.id == after_cursor
-            )
-            query = query.where(SqlEventLogStorageTable.c.id > after_query)
-        if before_timestamp:
+        if event_records_filter.event_type:
             query = query.where(
-                SqlEventLogStorageTable.c.timestamp < datetime.utcfromtimestamp(before_timestamp)
+                SqlEventLogStorageTable.c.dagster_event_type
+                == event_records_filter.event_type.value
             )
 
+        if event_records_filter.asset_key:
+            query = query.where(
+                db.or_(
+                    SqlEventLogStorageTable.c.asset_key
+                    == event_records_filter.asset_key.to_string(),
+                    SqlEventLogStorageTable.c.asset_key
+                    == event_records_filter.asset_key.to_string(legacy=True),
+                )
+            )
+
+        if event_records_filter.asset_partitions:
+            query = query.where(
+                SqlEventLogStorageTable.c.partition.in_(event_records_filter.asset_partitions)
+            )
+
+        if asset_details and asset_details.last_wipe_timestamp:
+            query = query.where(
+                SqlEventLogStorageTable.c.timestamp
+                > datetime.utcfromtimestamp(asset_details.last_wipe_timestamp)
+            )
+
+        if apply_cursor_filters:
+            # allow the run-sharded sqlite implementation to disable this cursor filtering so that
+            # it can implement its own custom cursor logic, as cursor ids are not unique across run
+            # shards
+            if event_records_filter.before_cursor is not None:
+                before_cursor_id = (
+                    event_records_filter.before_cursor.id
+                    if isinstance(event_records_filter.before_cursor, RunShardedEventsCursor)
+                    else event_records_filter.before_cursor
+                )
+                before_query = db.select([SqlEventLogStorageTable.c.id]).where(
+                    SqlEventLogStorageTable.c.id == before_cursor_id
+                )
+                query = query.where(SqlEventLogStorageTable.c.id < before_query)
+
+            if event_records_filter.after_cursor is not None:
+                after_cursor_id = (
+                    event_records_filter.after_cursor.id
+                    if isinstance(event_records_filter.after_cursor, RunShardedEventsCursor)
+                    else event_records_filter.after_cursor
+                )
+                after_query = db.select([SqlEventLogStorageTable.c.id]).where(
+                    SqlEventLogStorageTable.c.id == after_cursor_id
+                )
+                query = query.where(SqlEventLogStorageTable.c.id > after_query)
+
+        if event_records_filter.before_timestamp:
+            query = query.where(
+                SqlEventLogStorageTable.c.timestamp
+                < datetime.utcfromtimestamp(event_records_filter.before_timestamp)
+            )
+
+        if event_records_filter.after_timestamp:
+            query = query.where(
+                SqlEventLogStorageTable.c.timestamp
+                > datetime.utcfromtimestamp(event_records_filter.after_timestamp)
+            )
+
+        return query
+
+    def get_event_records(
+        self,
+        event_records_filter: Optional[EventRecordsFilter] = None,
+        limit: Optional[int] = None,
+        ascending: Optional[bool] = False,
+    ) -> Iterable[EventLogRecord]:
+        """Returns a list of (record_id, record)."""
+        check.opt_inst_param(event_records_filter, "event_records_filter", EventRecordsFilter)
+        check.opt_int_param(limit, "limit")
+        check.bool_param(ascending, "ascending")
+
+        query = db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event])
+        if event_records_filter and event_records_filter.asset_key:
+            asset_details = self._get_asset_details(event_records_filter.asset_key)
+        else:
+            asset_details = None
+
+        query = self._apply_filter_to_query(
+            query=query,
+            event_records_filter=event_records_filter,
+            asset_details=asset_details,
+        )
         if limit:
             query = query.limit(limit)
 
@@ -564,36 +643,6 @@ class SqlEventLogStorage(EventLogStorage):
             query = query.order_by(SqlEventLogStorageTable.c.timestamp.asc())
         else:
             query = query.order_by(SqlEventLogStorageTable.c.timestamp.desc())
-
-        return query
-
-    def get_event_records(
-        self,
-        after_cursor=None,
-        limit=None,
-        ascending=False,
-        of_type=None,
-    ):
-        """Returns a list of (record_id, record)."""
-
-        check.opt_inst_param(after_cursor, "after_cursor", EventsCursor)
-        check.opt_int_param(limit, "limit")
-        check.bool_param(ascending, "ascending")
-        check.opt_inst_param(of_type, "of_type", DagsterEventType)
-
-        after_id = after_cursor.id if after_cursor else None
-
-        query = db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event])
-        if of_type:
-            query = query.where(SqlEventLogStorageTable.c.dagster_event_type == of_type.value)
-
-        query = self._add_cursor_limit_to_query(
-            query=query,
-            before_cursor=None,
-            after_cursor=after_id,
-            limit=limit,
-            ascending=ascending,
-        )
 
         with self.index_connection() as conn:
             results = conn.execute(query).fetchall()
@@ -743,58 +792,31 @@ class SqlEventLogStorage(EventLogStorage):
         after_cursor=None,
         limit=None,
         ascending=False,
-        include_cursor=False,
+        include_cursor=False,  # deprecated
         before_timestamp=None,
         cursor=None,  # deprecated
     ):
         check.inst_param(asset_key, "asset_key", AssetKey)
         check.opt_list_param(partitions, "partitions", of_type=str)
-        query = db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event]).where(
-            db.or_(
-                SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
-                SqlEventLogStorageTable.c.asset_key == asset_key.to_string(legacy=True),
-            )
-        )
-        if partitions:
-            query = query.where(SqlEventLogStorageTable.c.partition.in_(partitions))
-
-        asset_details = self._get_asset_details(asset_key)
-        query = self._add_asset_wipe_filter_to_query(query, asset_details)
-
         before_cursor, after_cursor = extract_asset_events_cursor(
             cursor, before_cursor, after_cursor, ascending
         )
-
-        query = self._add_cursor_limit_to_query(
-            query,
-            before_cursor,
-            after_cursor,
-            limit,
-            before_timestamp=before_timestamp,
+        event_records = self.get_event_records(
+            EventRecordsFilter(
+                event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                asset_key=asset_key,
+                asset_partitions=partitions,
+                before_cursor=before_cursor,
+                after_cursor=after_cursor,
+                before_timestamp=before_timestamp,
+            ),
+            limit=limit,
             ascending=ascending,
         )
-
-        with self.index_connection() as conn:
-            results = conn.execute(query).fetchall()
-
-        events = []
-        for row_id, json_str in results:
-            try:
-                event_record = deserialize_json_to_dagster_namedtuple(json_str)
-                if not isinstance(event_record, EventLogEntry):
-                    logging.warning(
-                        "Could not resolve asset event record as EventLogEntry for id `{}`.".format(
-                            row_id
-                        )
-                    )
-                    continue
-                if include_cursor:
-                    events.append(tuple([row_id, event_record]))
-                else:
-                    events.append(event_record)
-            except seven.JSONDecodeError:
-                logging.warning("Could not parse asset event record id `{}`.".format(row_id))
-        return events
+        if include_cursor:
+            return [tuple([record.storage_id, record.event_log_entry]) for record in event_records]
+        else:
+            return [record.event_log_entry for record in event_records]
 
     def get_asset_run_ids(self, asset_key):
         check.inst_param(asset_key, "asset_key", AssetKey)

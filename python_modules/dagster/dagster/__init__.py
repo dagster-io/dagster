@@ -132,6 +132,7 @@ from dagster.core.executor.init import InitExecutorContext
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import DefaultRunLauncher
 from dagster.core.log_manager import DagsterLogManager
+from dagster.core.storage.event_log import EventRecordsFilter, RunShardedEventsCursor
 from dagster.core.storage.file_manager import FileHandle, LocalFileHandle, local_file_manager
 from dagster.core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io_manager
 from dagster.core.storage.init import InitIntermediateStorageContext
@@ -358,6 +359,9 @@ __all__ = [
     "local_file_manager",
     # instance
     "DagsterInstance",
+    # storage
+    "EventRecordsFilter",
+    "RunShardedEventsCursor",
     # partitions and schedules
     "Partition",
     "PartitionScheduleDefinition",

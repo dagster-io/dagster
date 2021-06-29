@@ -2,7 +2,8 @@ import os
 from collections import defaultdict
 from contextlib import contextmanager
 
-from dagster import StringSource, check
+from dagster import check
+from dagster.config.source import StringSource
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.sql import (
     check_alembic_revision,

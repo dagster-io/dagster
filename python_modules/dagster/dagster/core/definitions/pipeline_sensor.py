@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Callable, NamedTuple, Optional, Union, cast
 
 import pendulum
@@ -11,7 +10,7 @@ from dagster.core.definitions.sensor import (
 )
 from dagster.core.errors import PipelineSensorExecutionError, user_code_error_boundary
 from dagster.core.events import DagsterEvent, DagsterEventType
-from dagster.core.storage.event_log.base import EventsCursor
+from dagster.core.storage.event_log.base import RunShardedEventsCursor
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunsFilter
 from dagster.serdes import (
     deserialize_json_to_dagster_namedtuple,
@@ -133,8 +132,8 @@ def pipeline_failure_sensor(
             #   left and backfill alerts for the qualified events (up to 5 at a time) during the downtime
             # Note: this is a cross-run query which requires extra handling in sqlite, see details in SqliteEventLogStorage.
             event_records = context.instance.event_log_storage.get_event_records(
-                after_cursor=EventsCursor(
-                    id=record_id, run_updated_after=datetime.fromisoformat(update_timestamp)
+                after_cursor=RunShardedEventsCursor(
+                    id=record_id, run_updated_after=pendulum.parse(update_timestamp)
                 ),
                 ascending=True,
                 limit=5,

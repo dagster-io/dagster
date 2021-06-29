@@ -1,6 +1,4 @@
-from dagster import check
-from dagster.core.definitions.events import AssetKey
-from dagster.core.events import DagsterEventType
+from dagster import AssetKey, DagsterEventType, EventRecordsFilter, check
 
 from .utils import capture_error
 
@@ -33,19 +31,18 @@ def get_asset(graphene_info, asset_key):
 def get_asset_events(graphene_info, asset_key, partitions=None, limit=None, before_timestamp=None):
     check.inst_param(asset_key, "asset_key", AssetKey)
     check.opt_int_param(limit, "limit")
+    check.opt_float_param(before_timestamp, "before_timestamp")
     instance = graphene_info.context.instance
-    events = instance.events_for_asset_key(
-        asset_key,
-        partitions=partitions,
-        before_timestamp=before_timestamp,
+    event_records = instance.get_event_records(
+        EventRecordsFilter(
+            event_type=DagsterEventType.ASSET_MATERIALIZATION,
+            asset_key=asset_key,
+            asset_partitions=partitions,
+            before_timestamp=before_timestamp,
+        ),
         limit=limit,
     )
-    return [
-        event
-        for record_id, event in events
-        if event.is_dagster_event
-        and event.dagster_event.event_type_value == DagsterEventType.ASSET_MATERIALIZATION.value
-    ]
+    return [event_record.event_log_entry for event_record in event_records]
 
 
 def get_asset_run_ids(graphene_info, asset_key):

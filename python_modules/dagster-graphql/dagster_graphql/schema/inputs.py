@@ -1,6 +1,5 @@
-from datetime import datetime
-
 import graphene
+import pendulum
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
 
 from .pipelines.status import GraphenePipelineRunStatus
@@ -51,7 +50,7 @@ class GraphenePipelineRunsFilter(graphene.InputObjectType):
         else:
             statuses = None
 
-        updated_after = datetime.fromisoformat(self.updatedAfter) if self.updatedAfter else None
+        updated_after = pendulum.parse(self.updatedAfter) if self.updatedAfter else None
 
         return PipelineRunsFilter(
             run_ids=self.runIds,

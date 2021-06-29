@@ -8,7 +8,7 @@ import warnings
 import weakref
 from collections import defaultdict
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
 
 import yaml
 from dagster import check
@@ -52,6 +52,7 @@ if TYPE_CHECKING:
     from dagster.core.host_representation import HistoricalPipeline
     from dagster.core.snap import PipelineSnapshot
     from dagster.daemon.types import DaemonHeartbeat
+    from dagster.core.storage.event_log.base import EventRecordsFilter, EventLogRecord
 
 
 def is_memoized_run(tags):
@@ -1040,6 +1041,14 @@ class DagsterInstance:
     def has_asset_key(self, asset_key: AssetKey) -> bool:
         return self._event_storage.has_asset_key(asset_key)
 
+    def get_event_records(
+        self,
+        event_records_filter: Optional["EventRecordsFilter"] = None,
+        limit: Optional[int] = None,
+        ascending: Optional[bool] = False,
+    ) -> Iterable["EventLogRecord"]:
+        return self._event_storage.get_event_records(event_records_filter, limit, ascending)
+
     def events_for_asset_key(
         self,
         asset_key,
@@ -1052,6 +1061,24 @@ class DagsterInstance:
         ascending=False,
     ):
         check.inst_param(asset_key, "asset_key", AssetKey)
+
+        warnings.warn(
+            """
+The method `events_for_asset_key` on DagsterInstance has been deprecated as of `0.12.0` in favor of
+the method `get_event_records`. The method `get_event_records` takes in an `EventRecordsFilter`
+argument that allows for filtering by asset key and asset key partitions. The return value is a
+list of `EventLogRecord` objects, each of which contains a storage_id and an event log entry.
+
+Example:
+records = instance.get_event_records(
+    EventRecordsFilter(
+        asset_key=asset_key,
+        asset_partitions=partitions,
+        after_cursor=after_cursor,
+    ),
+)
+"""
+        )
 
         return self._event_storage.get_asset_events(
             asset_key,

@@ -1,4 +1,4 @@
-from dagster import AssetKey, RunRequest, sensor
+from dagster import AssetKey, EventRecordsFilter, RunRequest, sensor
 
 
 @sensor(pipeline_name="story_recommender", mode="prod")
@@ -9,25 +9,29 @@ def story_recommender_on_hn_table_update(context):
     else:
         last_comments_key, last_stories_key = None, None
 
-    comments_events = context.instance.events_for_asset_key(
-        AssetKey(["snowflake", "hackernews", "comments"]),
-        after_cursor=last_comments_key,
+    comments_event_records = context.instance.get_event_records(
+        EventRecordsFilter(
+            asset_key=AssetKey(["snowflake", "hackernews", "comments"]),
+            after_cursor=last_comments_key,
+        ),
         ascending=False,
         limit=1,
     )
 
-    stories_events = context.instance.events_for_asset_key(
-        AssetKey(["snowflake", "hackernews", "stories"]),
-        after_cursor=last_stories_key,
+    stories_event_records = context.instance.get_event_records(
+        EventRecordsFilter(
+            asset_key=AssetKey(["snowflake", "hackernews", "stories"]),
+            after_cursor=last_stories_key,
+        ),
         ascending=False,
         limit=1,
     )
 
-    if not comments_events or not stories_events:
+    if not comments_event_records or not stories_event_records:
         return
 
-    last_comments_record_id = comments_events[0][0]
-    last_stories_record_id = stories_events[0][0]
+    last_comments_record_id = comments_event_records[0].storage_id
+    last_stories_record_id = stories_event_records[0].storage_id
     run_key = f"{last_comments_record_id}|{last_stories_record_id}"
 
     yield RunRequest(run_key=run_key)

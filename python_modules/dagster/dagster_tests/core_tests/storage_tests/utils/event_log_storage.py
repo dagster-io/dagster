@@ -1,6 +1,7 @@
 import re
 import time
 from collections import Counter
+from contextlib import ExitStack
 
 import mock
 import pytest
@@ -32,7 +33,11 @@ from dagster.core.execution.plan.handle import StepHandle
 from dagster.core.execution.plan.objects import StepFailureData, StepSuccessData
 from dagster.core.execution.stats import StepEventStatus
 from dagster.core.storage.event_log import InMemoryEventLogStorage, SqlEventLogStorage
-from dagster.core.storage.event_log.base import EventsCursor
+from dagster.core.storage.event_log.base import (
+    EventLogRecord,
+    EventRecordsFilter,
+    RunShardedEventsCursor,
+)
 from dagster.core.storage.event_log.migration import REINDEX_DATA_MIGRATIONS, migrate_asset_key_data
 from dagster.core.storage.event_log.sqlite.sqlite_event_log import SqliteEventLogStorage
 from dagster.core.test_utils import instance_for_test
@@ -162,7 +167,7 @@ def _mode_def(event_callback):
 
 
 # This exists to create synthetic events to test the store
-def _synthesize_events(solids_fn, run_id=None, check_success=True):
+def _synthesize_events(solids_fn, run_id=None, check_success=True, instance=None):
     events = []
 
     def _append_event(event):
@@ -172,7 +177,9 @@ def _synthesize_events(solids_fn, run_id=None, check_success=True):
     def a_pipe():
         solids_fn()
 
-    with instance_for_test() as instance:
+    with ExitStack() as stack:
+        if not instance:
+            instance = stack.enter_context(instance_for_test())
         pipeline_run = instance.create_run_for_pipeline(
             a_pipe, run_id=run_id, run_config={"loggers": {"callback": {}, "console": {}}}
         )
@@ -812,16 +819,27 @@ class TestEventLogStorage:
         def _solids():
             materialize_one()
 
-        events_one, _ = _synthesize_events(_solids)
-        for event in events_one:
-            storage.store_event(event)
+        with instance_for_test() as instance:
+            storage.register_instance(instance)
+            events_one, _ = _synthesize_events(_solids, instance=instance)
 
-        assert asset_key in set(storage.all_asset_keys())
-        events = storage.get_asset_events(asset_key)
-        assert len(events) == 1
-        event = events[0]
-        assert isinstance(event, EventLogEntry)
-        assert event.dagster_event.event_type_value == DagsterEventType.ASSET_MATERIALIZATION.value
+            for event in events_one:
+                storage.store_event(event)
+
+            assert asset_key in set(storage.all_asset_keys())
+            events = storage.get_asset_events(asset_key)
+            assert len(events) == 1
+            event = events[0]
+            assert isinstance(event, EventLogEntry)
+            assert (
+                event.dagster_event.event_type_value == DagsterEventType.ASSET_MATERIALIZATION.value
+            )
+
+            records = storage.get_event_records(EventRecordsFilter(asset_key=asset_key))
+            assert len(records) == 1
+            record = records[0]
+            assert isinstance(record, EventLogRecord)
+            assert record.event_log_entry == event
 
     def test_asset_events_error_parsing(self, storage):
         if not isinstance(storage, SqlEventLogStorage):
@@ -841,36 +859,68 @@ class TestEventLogStorage:
         def _solids():
             materialize_one()
 
-        events_one, _ = _synthesize_events(_solids)
-        for event in events_one:
-            storage.store_event(event)
+        with instance_for_test() as instance:
+            storage.register_instance(instance)
+            events_one, _ = _synthesize_events(_solids, instance=instance)
+            for event in events_one:
+                storage.store_event(event)
 
-        with mock.patch(
-            "dagster.core.storage.event_log.sql_event_log.logging.warning",
-            side_effect=mock_log,
-        ):
-            with mock.patch(
-                "dagster.core.storage.event_log.sql_event_log.deserialize_json_to_dagster_namedtuple",
-                return_value="not_an_event_record",
-            ):
+            with ExitStack() as stack:
+                stack.enter_context(
+                    mock.patch(
+                        "dagster.core.storage.event_log.sql_event_log.logging.warning",
+                        side_effect=mock_log,
+                    )
+                )
+                # for generic sql-based event log storage
+                stack.enter_context(
+                    mock.patch(
+                        "dagster.core.storage.event_log.sql_event_log.deserialize_json_to_dagster_namedtuple",
+                        return_value="not_an_event_record",
+                    )
+                )
+                # for sqlite event log storage, which overrides the record fetching implementation
+                stack.enter_context(
+                    mock.patch(
+                        "dagster.core.storage.event_log.sqlite.sqlite_event_log.deserialize_json_to_dagster_namedtuple",
+                        return_value="not_an_event_record",
+                    )
+                )
 
                 assert asset_key in set(storage.all_asset_keys())
                 events = storage.get_asset_events(asset_key)
                 assert len(events) == 0
                 assert len(_logs) == 1
-                assert re.match("Could not resolve asset event record as EventLogEntry", _logs[0])
+                assert re.match("Could not resolve event record as EventLogEntry", _logs[0])
 
-            _logs = []  # reset logs
+            with ExitStack() as stack:
+                _logs = []  # reset logs
+                stack.enter_context(
+                    mock.patch(
+                        "dagster.core.storage.event_log.sql_event_log.logging.warning",
+                        side_effect=mock_log,
+                    )
+                )
 
-            with mock.patch(
-                "dagster.core.storage.event_log.sql_event_log.deserialize_json_to_dagster_namedtuple",
-                side_effect=seven.JSONDecodeError("error", "", 0),
-            ):
+                # for generic sql-based event log storage
+                stack.enter_context(
+                    mock.patch(
+                        "dagster.core.storage.event_log.sql_event_log.deserialize_json_to_dagster_namedtuple",
+                        side_effect=seven.JSONDecodeError("error", "", 0),
+                    )
+                )
+                # for sqlite event log storage, which overrides the record fetching implementation
+                stack.enter_context(
+                    mock.patch(
+                        "dagster.core.storage.event_log.sqlite.sqlite_event_log.deserialize_json_to_dagster_namedtuple",
+                        side_effect=seven.JSONDecodeError("error", "", 0),
+                    )
+                )
                 assert asset_key in set(storage.all_asset_keys())
                 events = storage.get_asset_events(asset_key)
                 assert len(events) == 0
                 assert len(_logs) == 1
-                assert re.match("Could not parse asset event record id", _logs[0])
+                assert re.match("Could not parse event record id", _logs[0])
 
     def test_secondary_index_asset_keys(self, storage):
         asset_key_one = AssetKey(["one"])
@@ -995,24 +1045,25 @@ class TestEventLogStorage:
         assert not list(
             filter(
                 lambda r: r.storage_id <= 2,
-                storage.get_event_records(after_cursor=EventsCursor(id=2)),
+                storage.get_event_records(EventRecordsFilter(after_cursor=2)),
             )
         )
         assert [
             i.storage_id
             for i in storage.get_event_records(
-                after_cursor=EventsCursor(id=min_record_num + 2), ascending=True, limit=2
+                EventRecordsFilter(after_cursor=min_record_num + 2), ascending=True, limit=2
             )
         ] == [min_record_num + 3, min_record_num + 4]
         assert [
             i.storage_id
             for i in storage.get_event_records(
-                after_cursor=EventsCursor(id=min_record_num + 2), ascending=False, limit=2
+                EventRecordsFilter(after_cursor=min_record_num + 2), ascending=False, limit=2
             )
         ] == [max_record_num, max_record_num - 1]
 
-        # of_type
-        filtered_records = storage.get_event_records(of_type=DagsterEventType.PIPELINE_SUCCESS)
+        filtered_records = storage.get_event_records(
+            EventRecordsFilter(event_type=DagsterEventType.PIPELINE_SUCCESS)
+        )
         assert _event_types([r.event_log_entry for r in filtered_records]) == [
             DagsterEventType.PIPELINE_SUCCESS
         ]
@@ -1103,10 +1154,12 @@ class TestEventLogStorage:
 
             # of_type
             filtered_records = storage.get_event_records(
-                after_cursor=EventsCursor(
-                    id=0, run_updated_after=run_records[-1].update_timestamp
-                ),  # events after first run
-                of_type=DagsterEventType.PIPELINE_SUCCESS,
+                EventRecordsFilter(
+                    event_type=DagsterEventType.PIPELINE_SUCCESS,
+                    after_cursor=RunShardedEventsCursor(
+                        id=0, run_updated_after=run_records[-1].update_timestamp
+                    ),  # events after first run
+                ),
                 ascending=True,
             )
             assert len(filtered_records) == 2
