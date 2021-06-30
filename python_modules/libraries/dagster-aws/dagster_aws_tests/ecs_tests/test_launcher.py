@@ -1,4 +1,5 @@
-# pylint: disable=redefined-outer-name, protected-access
+# pylint: disable=redefined-outer-name, protected-access, unused-argument
+import boto3
 import pytest
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation.origin import InProcessRepositoryLocationOrigin
@@ -46,7 +47,18 @@ def task(ecs, network_interface, security_group, task_definition):
 
 
 @pytest.fixture
-def instance(ecs, ec2, task, monkeypatch, requests_mock):
+def stub_aws(ecs, ec2, monkeypatch):
+    # Any call to boto3.client() will return ecs.
+    # Any call to boto3.resource() will return ec2.
+    # This only works because our launcher happens to use a client for ecs and
+    # a resource for ec2 - if that were to change or if new aws objects were to
+    # be introduced, this fixture would need to be refactored.
+    monkeypatch.setattr(boto3, "client", lambda *args, **kwargs: ecs)
+    monkeypatch.setattr(boto3, "resource", lambda *args, **kwargs: ec2)
+
+
+@pytest.fixture
+def instance(stub_aws, task, monkeypatch, requests_mock):
     container_uri = "http://metadata_host"
     monkeypatch.setenv("ECS_CONTAINER_METADATA_URI_V4", container_uri)
     container = task["containers"][0]["name"]
@@ -62,8 +74,6 @@ def instance(ecs, ec2, task, monkeypatch, requests_mock):
     )
     overrides = {"run_launcher": {"module": "dagster_aws.ecs", "class": "EcsRunLauncher"}}
     with instance_for_test(overrides) as instance:
-        monkeypatch.setattr(instance.run_launcher, "ecs", ecs)
-        monkeypatch.setattr(instance.run_launcher, "ec2", ec2)
         yield instance
 
 

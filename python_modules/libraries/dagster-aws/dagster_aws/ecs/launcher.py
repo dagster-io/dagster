@@ -21,11 +21,11 @@ class TaskMetadata:
 
 @experimental
 class EcsRunLauncher(RunLauncher, ConfigurableClass):
-    def __init__(self, inst_data=None, boto3_client=boto3.client("ecs")):
-
+    def __init__(self, inst_data=None, task_definition=None):
         self._inst_data = inst_data
-        self.ecs = boto3_client
+        self.ecs = boto3.client("ecs")
         self.ec2 = boto3.resource("ec2")
+        self.task_definition = task_definition
 
     @property
     def inst_data(self):
