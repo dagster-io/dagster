@@ -391,6 +391,10 @@
           {
             "title": "Run Attribution (Experimental)",
             "path": "/guides/dagster/run-attribution"
+          },
+          {
+            "title": "Re-execution",
+            "path": "/guides/dagster/re-execution"
           }
         ]
       }
