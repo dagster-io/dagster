@@ -5,11 +5,11 @@ import pendulum
 import pytest
 from dagster.check import CheckError
 from dagster.core.definitions.partition import (
-    DynamicPartitionParams,
+    DynamicPartitionsDefinition,
     Partition,
+    ScheduleTimeBasedPartitionsDefinition,
     ScheduleType,
-    StaticPartitionParams,
-    TimeBasedPartitionParams,
+    StaticPartitionsDefinition,
 )
 from dagster.seven.compat.pendulum import create_pendulum_time
 from dagster.utils.partitions import DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE
@@ -32,10 +32,12 @@ def assert_expected_partitions(
     argnames=["partitions"],
     argvalues=[([Partition("a_partition")],), ([Partition(x) for x in range(10)],)],
 )
-def test_static_partition_params(partitions: List[Partition]):
-    partition_params = StaticPartitionParams(partitions)
+def test_static_partitions(partitions: List[Partition]):
+    static_partitions = StaticPartitionsDefinition(partitions)
 
-    assert partition_params.get_partitions() == partitions
+    assert [(p.name, p.value) for p in static_partitions.get_partitions()] == [
+        (p.name, p.value) for p in partitions
+    ]
 
 
 @pytest.mark.parametrize(
@@ -85,7 +87,7 @@ def test_static_partition_params(partitions: List[Partition]):
         ),
     ],
 )
-def test_time_based_partition_params_invariants(
+def test_time_based_partitions_invariants(
     schedule_type: ScheduleType,
     start: datetime,
     execution_day: Optional[int],
@@ -93,7 +95,7 @@ def test_time_based_partition_params_invariants(
     error_message_regex: str,
 ):
     with pytest.raises(CheckError, match=error_message_regex):
-        TimeBasedPartitionParams(
+        ScheduleTimeBasedPartitionsDefinition(
             schedule_type=schedule_type,
             start=start,
             execution_day=execution_day,
@@ -226,7 +228,7 @@ def test_time_based_partition_params_invariants(
         ),
     ],
 )
-def test_time_partition_params_daily_partitions(
+def test_time_partitions_daily_partitions(
     start: datetime,
     execution_time: time,
     end: datetime,
@@ -235,7 +237,7 @@ def test_time_partition_params_daily_partitions(
     expected_partitions: List[str],
 ):
     with pendulum.test(current_time):
-        partition_params = TimeBasedPartitionParams(
+        partitions = ScheduleTimeBasedPartitionsDefinition(
             schedule_type=ScheduleType.DAILY,
             start=start,
             execution_time=execution_time,
@@ -243,7 +245,7 @@ def test_time_partition_params_daily_partitions(
             offset=partition_days_offset,
         )
 
-        assert_expected_partitions(partition_params.get_partitions(), expected_partitions)
+        assert_expected_partitions(partitions.get_partitions(), expected_partitions)
 
 
 @pytest.mark.parametrize(
@@ -331,7 +333,7 @@ def test_time_partition_params_daily_partitions(
         ),
     ],
 )
-def test_time_partition_params_monthly_partitions(
+def test_time_partitions_monthly_partitions(
     start: datetime,
     end: datetime,
     partition_months_offset: Optional[int],
@@ -339,7 +341,7 @@ def test_time_partition_params_monthly_partitions(
     expected_partitions: List[str],
 ):
     with pendulum.test(current_time):
-        partition_params = TimeBasedPartitionParams(
+        partitions = ScheduleTimeBasedPartitionsDefinition(
             schedule_type=ScheduleType.MONTHLY,
             start=start,
             execution_time=time(1, 20),
@@ -348,7 +350,7 @@ def test_time_partition_params_monthly_partitions(
             offset=partition_months_offset,
         )
 
-        assert_expected_partitions(partition_params.get_partitions(), expected_partitions)
+        assert_expected_partitions(partitions.get_partitions(), expected_partitions)
 
 
 @pytest.mark.parametrize(
@@ -436,7 +438,7 @@ def test_time_partition_params_monthly_partitions(
         ),
     ],
 )
-def test_time_partition_params_weekly_partitions(
+def test_time_partitions_weekly_partitions(
     start: datetime,
     end: datetime,
     partition_weeks_offset: Optional[int],
@@ -444,7 +446,7 @@ def test_time_partition_params_weekly_partitions(
     expected_partitions: List[str],
 ):
     with pendulum.test(current_time):
-        partition_params = TimeBasedPartitionParams(
+        partitions = ScheduleTimeBasedPartitionsDefinition(
             schedule_type=ScheduleType.WEEKLY,
             start=start,
             execution_time=time(1, 20),
@@ -453,7 +455,7 @@ def test_time_partition_params_weekly_partitions(
             offset=partition_weeks_offset,
         )
 
-        assert_expected_partitions(partition_params.get_partitions(), expected_partitions)
+        assert_expected_partitions(partitions.get_partitions(), expected_partitions)
 
 
 @pytest.mark.parametrize(
@@ -640,7 +642,7 @@ def test_time_partition_params_weekly_partitions(
         ),
     ],
 )
-def test_time_partition_params_hourly_partitions(
+def test_time_partitions_hourly_partitions(
     start: datetime,
     end: datetime,
     timezone: Optional[str],
@@ -649,7 +651,7 @@ def test_time_partition_params_hourly_partitions(
     expected_partitions: List[str],
 ):
     with pendulum.test(current_time):
-        partition_params = TimeBasedPartitionParams(
+        partitions = ScheduleTimeBasedPartitionsDefinition(
             schedule_type=ScheduleType.HOURLY,
             start=start,
             execution_time=time(0, 1),
@@ -659,7 +661,7 @@ def test_time_partition_params_hourly_partitions(
             offset=partition_hours_offset,
         )
 
-        assert_expected_partitions(partition_params.get_partitions(), expected_partitions)
+        assert_expected_partitions(partitions.get_partitions(), expected_partitions)
 
 
 @pytest.mark.parametrize(
@@ -670,6 +672,8 @@ def test_time_partition_params_hourly_partitions(
     ],
 )
 def test_dynamic_partitions(partition_fn: Callable[[Optional[datetime]], List[Partition]]):
-    partition_params = DynamicPartitionParams(partition_fn)
+    partitions = DynamicPartitionsDefinition(partition_fn)
 
-    assert partition_params.get_partitions() == partition_fn(None)
+    assert [(p.name, p.value) for p in partitions.get_partitions()] == [
+        (p.name, p.value) for p in partition_fn(None)
+    ]

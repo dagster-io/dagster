@@ -9,7 +9,7 @@ from contextlib import contextmanager
 import pendulum
 import pytest
 from dagster import Any, Field, pipeline, repository, solid
-from dagster.core.definitions import PartitionSetDefinition
+from dagster.core.definitions import Partition, PartitionSetDefinition
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster.core.host_representation import (
@@ -92,21 +92,21 @@ def config_pipeline():
 simple_partition_set = PartitionSetDefinition(
     name="simple_partition_set",
     pipeline_name="the_pipeline",
-    partition_fn=lambda: ["one", "two", "three"],
+    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],
     run_config_fn_for_partition=lambda _partition: {"intermediate_storage": {"filesystem": {}}},
 )
 
 conditionally_fail_partition_set = PartitionSetDefinition(
     name="conditionally_fail_partition_set",
     pipeline_name="conditional_failure_pipeline",
-    partition_fn=lambda: ["one", "two", "three"],
+    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],
     run_config_fn_for_partition=lambda _partition: {"intermediate_storage": {"filesystem": {}}},
 )
 
 partial_partition_set = PartitionSetDefinition(
     name="partial_partition_set",
     pipeline_name="partial_pipeline",
-    partition_fn=lambda: ["one", "two", "three"],
+    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],
     run_config_fn_for_partition=lambda _partition: {"intermediate_storage": {"filesystem": {}}},
 )
 
@@ -133,7 +133,7 @@ def _large_partition_config(_):
 large_partition_set = PartitionSetDefinition(
     name="large_partition_set",
     pipeline_name="config_pipeline",
-    partition_fn=lambda: ["one", "two", "three"],
+    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],
     run_config_fn_for_partition=_large_partition_config,
 )
 

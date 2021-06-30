@@ -319,7 +319,7 @@ manual_partition = PartitionSetDefinition(
     pipeline_name="two_step_pipeline",
     # selects only second step
     solid_selection=["end"],
-    partition_fn=lambda: ["one"],
+    partition_fn=lambda: [Partition("one")],
     # includes config for first step - test that it is ignored
     run_config_fn_for_partition=lambda _: {"solids": {"start": {"inputs": {"x": {"value": 4}}}}},
 )

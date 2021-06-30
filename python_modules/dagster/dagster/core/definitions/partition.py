@@ -1,9 +1,8 @@
 import inspect
 from abc import ABC, abstractmethod
-from collections import namedtuple
 from datetime import datetime, time
 from enum import Enum
-from typing import Callable, List, NamedTuple, Optional, cast
+from typing import Any, Callable, Dict, Generic, List, NamedTuple, Optional, TypeVar, Union, cast
 
 import pendulum
 from dagster import check
@@ -28,8 +27,10 @@ from .utils import check_valid_name
 
 DEFAULT_DATE_FORMAT = "%Y-%m-%d"
 
+T = TypeVar("T")
 
-class Partition(namedtuple("_Partition", ("value name"))):
+
+class Partition(Generic[T]):
     """
     Partition is the representation of a logical slice across an axis of a pipeline's work
 
@@ -38,27 +39,28 @@ class Partition(namedtuple("_Partition", ("value name"))):
         name (str): Name for this partition
     """
 
-    def __new__(cls, value=None, name=None):
-        return super(Partition, cls).__new__(
-            cls, name=check.opt_str_param(name, "name", str(value)), value=value
-        )
+    def __init__(self, value: T, name: Optional[str] = None):
+        self._value = value
+        self._name = cast(str, check.opt_str_param(name, "name", str(value)))
+
+    @property
+    def value(self) -> T:
+        return self._value
+
+    @property
+    def name(self) -> str:
+        return self._name
 
 
 def schedule_partition_range(
-    start,
-    end,
-    cron_schedule,
-    fmt,
-    timezone,
-    execution_time_to_partition_fn,
-):
-    check.inst_param(start, "start", datetime)
-    check.opt_inst_param(end, "end", datetime)
-    check.str_param(cron_schedule, "cron_schedule")
-    check.str_param(fmt, "fmt")
-    check.opt_str_param(timezone, "timezone")
-    check.callable_param(execution_time_to_partition_fn, "execution_time_to_partition_fn")
-
+    start: datetime,
+    end: Optional[datetime],
+    cron_schedule: str,
+    fmt: str,
+    timezone: Optional[str],
+    execution_time_to_partition_fn: Callable,
+    current_time: Optional[datetime],
+) -> List[Partition[datetime]]:
     if end and start > end:
         raise DagsterInvariantViolationError(
             'Selected date range start "{start}" is after date range end "{end}'.format(
@@ -67,58 +69,54 @@ def schedule_partition_range(
             )
         )
 
-    def _get_schedule_range_partitions(current_time=None):
-        check.opt_inst_param(current_time, "current_time", datetime)
-        tz = timezone if timezone else "UTC"
+    tz = timezone if timezone else "UTC"
 
-        _current_time = current_time if current_time else pendulum.now(tz)
+    _current_time = current_time if current_time else pendulum.now(tz)
 
-        # Coerce to the definition timezone
-        _start = (
-            to_timezone(start, tz)
-            if isinstance(start, PendulumDateTime)
-            else pendulum.instance(start, tz=tz)
+    # Coerce to the definition timezone
+    _start = (
+        to_timezone(start, tz)
+        if isinstance(start, PendulumDateTime)
+        else pendulum.instance(start, tz=tz)
+    )
+    _current_time = (
+        to_timezone(_current_time, tz)
+        if isinstance(_current_time, PendulumDateTime)
+        else pendulum.instance(_current_time, tz=tz)
+    )
+
+    # The end partition time should be before the last partition that
+    # executes before the current time
+    end_partition_time = execution_time_to_partition_fn(_current_time)
+
+    # The partition set has an explicit end time that represents the end of the partition range
+    if end:
+        _end = (
+            to_timezone(end, tz)
+            if isinstance(end, PendulumDateTime)
+            else pendulum.instance(end, tz=tz)
         )
-        _current_time = (
-            to_timezone(_current_time, tz)
-            if isinstance(_current_time, PendulumDateTime)
-            else pendulum.instance(_current_time, tz=tz)
-        )
 
-        # The end partition time should be before the last partition that
-        # executes before the current time
-        end_partition_time = execution_time_to_partition_fn(_current_time)
+        # If the explicit end time is before the last partition time,
+        # update the end partition time
+        end_partition_time = min(_end, end_partition_time)
 
-        # The partition set has an explicit end time that represents the end of the partition range
-        if end:
-            _end = (
-                to_timezone(end, tz)
-                if isinstance(end, PendulumDateTime)
-                else pendulum.instance(end, tz=tz)
-            )
+    end_timestamp = end_partition_time.timestamp()
 
-            # If the explicit end time is before the last partition time,
-            # update the end partition time
-            end_partition_time = min(_end, end_partition_time)
+    partitions: List[Partition[datetime]] = []
+    for next_time in schedule_execution_time_iterator(_start.timestamp(), cron_schedule, tz):
 
-        end_timestamp = end_partition_time.timestamp()
+        partition_time = execution_time_to_partition_fn(next_time)
 
-        partitions = []
-        for next_time in schedule_execution_time_iterator(_start.timestamp(), cron_schedule, tz):
+        if partition_time.timestamp() > end_timestamp:
+            break
 
-            partition_time = execution_time_to_partition_fn(next_time)
+        if partition_time.timestamp() < _start.timestamp():
+            continue
 
-            if partition_time.timestamp() > end_timestamp:
-                break
+        partitions.append(Partition(value=partition_time, name=partition_time.strftime(fmt)))
 
-            if partition_time.timestamp() < _start.timestamp():
-                continue
-
-            partitions.append(Partition(value=partition_time, name=partition_time.strftime(fmt)))
-
-        return partitions
-
-    return _get_schedule_range_partitions
+    return partitions
 
 
 class ScheduleType(Enum):
@@ -128,35 +126,33 @@ class ScheduleType(Enum):
     MONTHLY = "MONTHLY"
 
 
-class PartitionParams(ABC):
+class PartitionsDefinition(ABC, Generic[T]):
     @abstractmethod
-    def get_partitions(self, current_time: Optional[datetime] = None) -> List[Partition]:
+    def get_partitions(self, current_time: Optional[datetime] = None) -> List[Partition[T]]:
         ...
 
 
-class StaticPartitionParams(
-    PartitionParams, NamedTuple("_StaticPartitionParams", [("partitions", List[Partition])])
-):
-    def __new__(cls, partitions: List[Partition]):
-        return super(StaticPartitionParams, cls).__new__(
-            cls, check.list_param(partitions, "partitions", of_type=Partition)
-        )
+class StaticPartitionsDefinition(PartitionsDefinition[T]):  # pylint: disable=unsubscriptable-object
+    def __init__(self, partitions: List[Partition[T]]):
+        self._partitions = check.list_param(partitions, "partitions", of_type=Partition)
 
-    def get_partitions(self, current_time: Optional[datetime] = None) -> List[Partition]:
-        return self.partitions
+    def get_partitions(
+        self, current_time: Optional[datetime] = None  # pylint: disable=unused-argument
+    ) -> List[Partition[T]]:
+        return self._partitions
 
 
-class TimeBasedPartitionParams(
-    PartitionParams,
+class ScheduleTimeBasedPartitionsDefinition(
+    PartitionsDefinition[datetime],  # pylint: disable=unsubscriptable-object
     NamedTuple(
-        "_TimeBasedPartitionParams",
+        "_ScheduleTimeBasedPartitionsDefinition",
         [
             ("schedule_type", ScheduleType),
             ("start", datetime),
             ("execution_time", time),
             ("execution_day", Optional[int]),
             ("end", Optional[datetime]),
-            ("fmt", Optional[str]),
+            ("fmt", str),
             ("timezone", Optional[str]),
             ("offset", Optional[int]),
         ],
@@ -202,7 +198,7 @@ class TimeBasedPartitionParams(
                 f'schedule type "{schedule_type}"',
             )
 
-        return super(TimeBasedPartitionParams, cls).__new__(
+        return super(ScheduleTimeBasedPartitionsDefinition, cls).__new__(
             cls,
             check.inst_param(schedule_type, "schedule_type", ScheduleType),
             check.inst_param(start, "start", datetime),
@@ -212,24 +208,23 @@ class TimeBasedPartitionParams(
                 "execution_day",
             ),
             check.opt_inst_param(end, "end", datetime),
-            check.opt_str_param(fmt, "fmt", default=DEFAULT_DATE_FORMAT),
+            cast(str, check.opt_str_param(fmt, "fmt", default=DEFAULT_DATE_FORMAT)),
             check.opt_str_param(timezone, "timezone", default="UTC"),
             check.opt_int_param(offset, "offset", default=1),
         )
 
-    def get_partitions(self, current_time: Optional[datetime] = None) -> List[Partition]:
+    def get_partitions(self, current_time: Optional[datetime] = None) -> List[Partition[datetime]]:
         check.opt_inst_param(current_time, "current_time", datetime)
 
-        partition_fn = schedule_partition_range(
+        return schedule_partition_range(
             start=self.start,
             end=self.end,
             cron_schedule=self.get_cron_schedule(),
             fmt=self.fmt,
             timezone=self.timezone,
             execution_time_to_partition_fn=self.get_execution_time_to_partition_fn(),
+            current_time=current_time,
         )
-
-        return partition_fn(current_time=current_time)
 
     def get_cron_schedule(self) -> str:
         minute = self.execution_time.minute
@@ -269,15 +264,15 @@ class TimeBasedPartitionParams(
             check.assert_never(self.schedule_type)
 
 
-class DynamicPartitionParams(
-    PartitionParams,
+class DynamicPartitionsDefinition(
+    PartitionsDefinition,
     NamedTuple(
-        "_DynamicPartitionParams",
+        "_DynamicPartitionsDefinition",
         [("partition_fn", Callable[[Optional[datetime]], List[Partition]])],
     ),
 ):
     def __new__(cls, partition_fn: Callable[[Optional[datetime]], List[Partition]]):
-        return super(DynamicPartitionParams, cls).__new__(
+        return super(DynamicPartitionsDefinition, cls).__new__(
             cls, check.callable_param(partition_fn, "partition_fn")
         )
 
@@ -285,16 +280,7 @@ class DynamicPartitionParams(
         return self.partition_fn(current_time)
 
 
-class PartitionSetDefinition(
-    namedtuple(
-        "_PartitionSetDefinition",
-        (
-            "name pipeline_name partition_fn solid_selection mode "
-            "user_defined_run_config_fn_for_partition user_defined_tags_fn_for_partition "
-            "partition_params"
-        ),
-    )
-):
+class PartitionSetDefinition(Generic[T]):
     """
     Defines a partition set, representing the set of slices making up an axis of a pipeline
 
@@ -306,34 +292,38 @@ class PartitionSetDefinition(
         solid_selection (Optional[List[str]]): A list of solid subselection (including single
             solid names) to execute with this partition. e.g. ``['*some_solid+', 'other_solid']``
         mode (Optional[str]): The mode to apply when executing this partition. (default: 'default')
-        run_config_fn_for_partition (Callable[[Partition], [Any]]): A
+        run_config_fn_for_partition (Callable[[Partition], Any]): A
             function that takes a :py:class:`~dagster.Partition` and returns the run
             configuration that parameterizes the execution for this partition.
         tags_fn_for_partition (Callable[[Partition], Optional[dict[str, str]]]): A function that
             takes a :py:class:`~dagster.Partition` and returns a list of key value pairs that will
             be added to the generated run for this partition.
-        partition_params (Optional[PartitionParams]): A set of parameters used to construct the set
+        partitions_def (Optional[PartitionsDefinition]): A set of parameters used to construct the set
             of valid partition objects.
     """
 
-    def __new__(
-        cls,
-        name,
-        pipeline_name,
-        partition_fn=None,
-        solid_selection=None,
-        mode=None,
-        run_config_fn_for_partition=lambda _partition: {},
-        tags_fn_for_partition=lambda _partition: {},
-        partition_params=None,
+    def __init__(
+        self,
+        name: str,
+        pipeline_name: str,
+        partition_fn: Optional[Callable[..., Union[List[Partition[T]], List[str]]]] = None,
+        solid_selection: Optional[List[str]] = None,
+        mode: Optional[str] = None,
+        run_config_fn_for_partition: Callable[[Partition[T]], Any] = lambda _partition: {},
+        tags_fn_for_partition: Callable[
+            [Partition[T]], Optional[Dict[str, str]]
+        ] = lambda _partition: {},
+        partitions_def: Optional[
+            PartitionsDefinition[T]  # pylint: disable=unsubscriptable-object
+        ] = None,
     ):
         check.invariant(
-            partition_fn is not None or partition_params is not None,
-            "One of `partition_fn` or `partition_params` must be supplied.",
+            partition_fn is not None or partitions_def is not None,
+            "One of `partition_fn` or `partitions_def` must be supplied.",
         )
         check.invariant(
-            not (partition_fn and partition_params),
-            "Only one of `partition_fn` or `partition_params` must be supplied.",
+            not (partition_fn and partitions_def),
+            "Only one of `partition_fn` or `partitions_def` must be supplied.",
         )
 
         _wrap_partition_fn = None
@@ -341,7 +331,7 @@ class PartitionSetDefinition(
         if partition_fn is not None:
             partition_fn_param_count = len(inspect.signature(partition_fn).parameters)
 
-            def _wrap_partition(x):
+            def _wrap_partition(x: Union[str, Partition]) -> Partition:
                 if isinstance(x, Partition):
                     return x
                 if isinstance(x, str):
@@ -350,56 +340,72 @@ class PartitionSetDefinition(
                     "Expected <Partition> | <str>, received {type}".format(type=type(x))
                 )
 
-            def _wrap_partition_fn(current_time=None):
+            def _wrap_partition_fn(current_time=None) -> List[Partition]:
                 if not current_time:
                     current_time = pendulum.now("UTC")
 
                 check.callable_param(partition_fn, "partition_fn")
 
                 if partition_fn_param_count == 1:
-                    obj_list = partition_fn(current_time)
+                    obj_list = cast(
+                        Callable[..., List[Union[Partition[T], str]]],
+                        partition_fn,
+                    )(current_time)
                 else:
-                    obj_list = partition_fn()
+                    obj_list = partition_fn()  # type: ignore
 
                 return [_wrap_partition(obj) for obj in obj_list]
 
-        return super(PartitionSetDefinition, cls).__new__(
-            cls,
-            name=check_valid_name(name),
-            pipeline_name=check.opt_str_param(pipeline_name, "pipeline_name"),
-            partition_fn=_wrap_partition_fn,
-            solid_selection=check.opt_nullable_list_param(
-                solid_selection, "solid_selection", of_type=str
-            ),
-            mode=check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME),
-            user_defined_run_config_fn_for_partition=check.callable_param(
-                run_config_fn_for_partition, "run_config_fn_for_partition"
-            ),
-            user_defined_tags_fn_for_partition=check.callable_param(
-                tags_fn_for_partition, "tags_fn_for_partition"
-            ),
-            partition_params=check.opt_inst_param(
-                partition_params,
-                "partition_params",
-                PartitionParams,
-                default=DynamicPartitionParams(partition_fn=_wrap_partition_fn)
-                if partition_fn is not None
-                else None,
-            ),
+        self._name = check_valid_name(name)
+        self._pipeline_name = check.opt_str_param(pipeline_name, "pipeline_name")
+        self._partition_fn = _wrap_partition_fn
+        self._solid_selection = check.opt_nullable_list_param(
+            solid_selection, "solid_selection", of_type=str
+        )
+        self._mode = check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME)
+        self._user_defined_run_config_fn_for_partition = check.callable_param(
+            run_config_fn_for_partition, "run_config_fn_for_partition"
+        )
+        self._user_defined_tags_fn_for_partition = check.callable_param(
+            tags_fn_for_partition, "tags_fn_for_partition"
+        )
+        self._partitions_def = check.opt_inst_param(
+            partitions_def,
+            "partitions_def",
+            PartitionsDefinition,
+            default=DynamicPartitionsDefinition(partition_fn=_wrap_partition_fn)
+            if partition_fn is not None
+            else None,
         )
 
-    def run_config_for_partition(self, partition):
-        return self.user_defined_run_config_fn_for_partition(partition)
+    @property
+    def name(self):
+        return self._name
 
-    def tags_for_partition(self, partition):
-        user_tags = self.user_defined_tags_fn_for_partition(partition)
+    @property
+    def pipeline_name(self):
+        return self._pipeline_name
+
+    @property
+    def solid_selection(self):
+        return self._solid_selection
+
+    @property
+    def mode(self):
+        return self._mode
+
+    def run_config_for_partition(self, partition: Partition[T]) -> Dict[str, Any]:
+        return self._user_defined_run_config_fn_for_partition(partition)
+
+    def tags_for_partition(self, partition: Partition[T]) -> Dict[str, str]:
+        user_tags = self._user_defined_tags_fn_for_partition(partition)
         check_tags(user_tags, "user_tags")
 
         tags = merge_dicts(user_tags, PipelineRun.tags_for_partition_set(self, partition))
 
         return tags
 
-    def get_partitions(self, current_time=None):
+    def get_partitions(self, current_time: Optional[datetime] = None) -> List[Partition[T]]:
         """Return the set of known partitions.
 
         Arguments:
@@ -407,16 +413,16 @@ class PartitionSetDefinition(
                 is passed through to the ``partition_fn`` (if it accepts a parameter).  Defaults to
                 the current time in UTC.
         """
-        return self.partition_params.get_partitions(current_time)
+        return self._partitions_def.get_partitions(current_time)
 
-    def get_partition(self, name):
+    def get_partition(self, name: str) -> Partition[T]:
         for partition in self.get_partitions():
             if partition.name == name:
                 return partition
 
         check.failed("Partition name {} not found!".format(name))
 
-    def get_partition_names(self, current_time=None):
+    def get_partition_names(self, current_time: Optional[datetime] = None) -> List[str]:
         return [part.name for part in self.get_partitions(current_time)]
 
     def create_schedule_definition(
@@ -533,10 +539,10 @@ class PartitionSetDefinition(
         return PartitionScheduleDefinition(
             name=schedule_name,
             cron_schedule=cron_schedule,
-            pipeline_name=self.pipeline_name,
+            pipeline_name=self._pipeline_name,
             tags_fn=None,
-            solid_selection=self.solid_selection,
-            mode=self.mode,
+            solid_selection=self._solid_selection,
+            mode=self._mode,
             should_execute=None,
             environment_vars=environment_vars,
             partition_set=self,
