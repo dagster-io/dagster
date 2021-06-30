@@ -28,6 +28,7 @@ type PartitionSet = PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSe
 
 interface PartitionViewProps {
   pipelineName: string;
+  pipelineMode: string;
   partitionSet: PartitionSet;
   partitionSets: PartitionSet[];
   onChangePartitionSet: (set: PartitionSet) => void;
@@ -36,6 +37,7 @@ interface PartitionViewProps {
 
 export const PartitionView: React.FC<PartitionViewProps> = ({
   pipelineName,
+  pipelineMode,
   partitionSet,
   partitionSets,
   onChangePartitionSet,
@@ -73,6 +75,8 @@ export const PartitionView: React.FC<PartitionViewProps> = ({
       });
     });
   });
+
+  const partitionSetsForMode = partitionSets.filter((result) => result.mode === pipelineMode);
 
   const launchButton = () => {
     if (!canLaunchPartitionBackfill) {
@@ -122,7 +126,7 @@ export const PartitionView: React.FC<PartitionViewProps> = ({
         )}
       </Dialog>
       <PartitionPagerContainer>
-        {flagPipelineModeTuples && partitionSets.length <= 1 ? null : (
+        {flagPipelineModeTuples && partitionSetsForMode.length <= 1 ? null : (
           <>
             <PartitionSetSelector
               selected={partitionSet}

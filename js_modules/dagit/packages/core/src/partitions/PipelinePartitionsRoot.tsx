@@ -24,7 +24,7 @@ interface Props {
 
 export const PipelinePartitionsRoot: React.FC<Props> = (props) => {
   const {pipelinePath, repoAddress} = props;
-  const {pipelineName} = explorerPathFromString(pipelinePath);
+  const {pipelineMode, pipelineName} = explorerPathFromString(pipelinePath);
   useDocumentTitle(`Pipeline: ${pipelineName}`);
   useStripSnapshotFromPath(props);
 
@@ -86,6 +86,7 @@ export const PipelinePartitionsRoot: React.FC<Props> = (props) => {
               partitionSets={partitionSetsOrError.results}
               onChangePartitionSet={(x) => setSelected(x.name)}
               pipelineName={pipelineName}
+              pipelineMode={pipelineMode}
               repoAddress={repoAddress}
             />
           </Box>
@@ -110,6 +111,7 @@ const PIPELINE_PARTITIONS_ROOT_QUERY = gql`
       ... on PartitionSets {
         results {
           id
+          mode
           name
         }
       }
