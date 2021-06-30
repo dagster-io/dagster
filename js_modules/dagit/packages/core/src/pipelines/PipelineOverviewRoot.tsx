@@ -30,7 +30,7 @@ import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {explorerPathFromString, useStripSnapshotFromPath} from './PipelinePathUtils';
-import {OverviewInstigationFragment} from './types/OverviewInstigationFragment';
+import {OverviewJobFragment} from './types/OverviewJobFragment';
 import {
   PipelineOverviewQuery,
   PipelineOverviewQueryVariables,
@@ -151,11 +151,11 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
                   <Table $compact>
                     <tbody>
                       {schedules.map((schedule) => (
-                        <OverviewInstigation
+                        <OverviewJob
                           repoAddress={repoAddress}
                           name={schedule.name}
                           key={schedule.name}
-                          instigationState={schedule.scheduleState}
+                          jobState={schedule.scheduleState}
                           instigationType={InstigationType.SCHEDULE}
                           nextTick={schedule.futureTicks.results[0]}
                         />
@@ -173,11 +173,11 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
                   <Table $compact>
                     <tbody>
                       {sensors.map((sensor) => (
-                        <OverviewInstigation
+                        <OverviewJob
                           repoAddress={repoAddress}
                           name={sensor.name}
                           key={sensor.name}
-                          instigationState={sensor.sensorState}
+                          jobState={sensor.sensorState}
                           instigationType={InstigationType.SENSOR}
                           nextTick={sensor.nextTick || undefined}
                         />
@@ -246,22 +246,22 @@ const OverviewAssets = ({runs}: {runs: Run[]}) => {
   );
 };
 
-const OverviewInstigation = ({
+const OverviewJob = ({
   repoAddress,
   name,
-  instigationState,
+  jobState,
   instigationType,
   nextTick,
 }: {
   repoAddress: RepoAddress;
   name: string;
-  instigationState: OverviewInstigationFragment;
+  jobState: OverviewJobFragment;
   instigationType: InstigationType;
   nextTick?: {
     timestamp: number;
   };
 }) => {
-  const lastRun = instigationState.lastRuns.length && instigationState.lastRuns[0];
+  const lastRun = jobState.lastRuns.length && jobState.lastRuns[0];
   return (
     <tr>
       <td>
@@ -283,9 +283,9 @@ const OverviewInstigation = ({
             Next Tick: <Timestamp timestamp={{unix: nextTick.timestamp || 0}} />
           </div>
         ) : null}
-        {instigationState.runs && (
+        {jobState.runs && (
           <div style={{marginTop: '4px'}}>
-            {instigationState.runs.map((run) => {
+            {jobState.runs.map((run) => {
               return (
                 <div
                   style={{
@@ -359,8 +359,8 @@ const OverviewSection = ({title, children}: {title: string; children: any}) => {
   );
 };
 
-const OVERVIEW_INSTIGATION_FRAGMENT = gql`
-  fragment OverviewInstigationFragment on InstigationState {
+const OVERVIEW_JOB_FRAGMENT = gql`
+  fragment OverviewJobFragment on InstigationState {
     id
     runsCount
     lastRuns: runs(limit: 1) {
@@ -411,7 +411,7 @@ const PIPELINE_OVERVIEW_QUERY = gql`
           name
           scheduleState {
             id
-            ...OverviewInstigationFragment
+            ...OverviewJobFragment
           }
           futureTicks(limit: 1) {
             results {
@@ -424,7 +424,7 @@ const PIPELINE_OVERVIEW_QUERY = gql`
           name
           sensorState {
             id
-            ...OverviewInstigationFragment
+            ...OverviewJobFragment
           }
           nextTick {
             timestamp
@@ -443,7 +443,7 @@ const PIPELINE_OVERVIEW_QUERY = gql`
     }
   }
   ${PIPELINE_GRAPH_SOLID_FRAGMENT}
-  ${OVERVIEW_INSTIGATION_FRAGMENT}
+  ${OVERVIEW_JOB_FRAGMENT}
   ${RUN_TIME_FRAGMENT}
   ${RUN_ACTION_MENU_FRAGMENT}
 `;

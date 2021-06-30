@@ -3,7 +3,7 @@ import * as React from 'react';
 
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
-import {TickHistory} from '../instigation/TickHistory';
+import {JobTickHistory} from '../jobs/TickHistory';
 import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
 import {Page} from '../ui/Page';
@@ -69,7 +69,7 @@ export const SensorRoot: React.FC<{
                 countdownStatus={countdownStatus}
                 onRefresh={() => onRefresh()}
               />
-              <TickHistory
+              <JobTickHistory
                 repoAddress={repoAddress}
                 name={sensorOrError.name}
                 showRecent={true}

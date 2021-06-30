@@ -3,7 +3,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {assertUnreachable} from '../app/Util';
-import {StatusTable} from '../instigation/InstigationUtils';
+import {StatusTable} from '../jobs/JobUtils';
 import {PipelineRunStatus} from '../types/globalTypes';
 import {Group} from '../ui/Group';
 import {RepoAddress} from '../workspace/types';

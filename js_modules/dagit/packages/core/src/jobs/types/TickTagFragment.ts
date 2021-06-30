@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { InstigationTickStatus } from "../../types/globalTypes";
+import { InstigationTickStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: TickTagFragment

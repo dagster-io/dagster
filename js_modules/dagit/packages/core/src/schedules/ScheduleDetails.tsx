@@ -5,7 +5,7 @@ import {Link} from 'react-router-dom';
 
 import {useFeatureFlags} from '../app/Flags';
 import {useCopyToClipboard} from '../app/browser';
-import {TickTag} from '../instigation/InstigationTick';
+import {TickTag} from '../jobs/JobTick';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {InstigationStatus, InstigationType} from '../types/globalTypes';

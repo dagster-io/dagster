@@ -12,7 +12,7 @@ import {DagsterRepoOption} from '../workspace/WorkspaceContext';
 import {buildRepoPath} from '../workspace/buildRepoAddress';
 import {workspacePath} from '../workspace/workspacePath';
 
-import {InstigationListQuery} from './types/InstigationListQuery';
+import {JobsListQuery} from './types/JobsListQuery';
 
 type Item = {
   to: string;
@@ -22,15 +22,15 @@ type Item = {
   status: InstigationStatus;
 };
 
-interface InstigationListProps {
+interface JobsListProps {
   selector?: string;
   repos: DagsterRepoOption[];
   repoPath?: string;
 }
 
-export const InstigationList: React.FC<InstigationListProps> = ({repos, repoPath, selector}) => {
+export const JobsList: React.FC<JobsListProps> = ({repos, repoPath, selector}) => {
   const client = useApolloClient();
-  const [instigationList, setInstigationList] = React.useState<{
+  const [jobs, setJobs] = React.useState<{
     schedules: {[key: string]: Item};
     sensors: {[key: string]: Item};
   }>(() => ({
@@ -43,11 +43,11 @@ export const InstigationList: React.FC<InstigationListProps> = ({repos, repoPath
   );
 
   React.useEffect(() => {
-    const fetchInstigationList = () => {
+    const fetchJobs = () => {
       const subscriptions = repos.map((repo) => {
         return client
-          .watchQuery<InstigationListQuery>({
-            query: INSTIGATION_LIST_QUERY,
+          .watchQuery<JobsListQuery>({
+            query: JOBS_LIST_QUERY,
             variables: {
               repositorySelector: {
                 repositoryLocationName: repo.repositoryLocation.name,
@@ -103,7 +103,7 @@ export const InstigationList: React.FC<InstigationListProps> = ({repos, repoPath
                 });
               }
 
-              setInstigationList((current) => ({
+              setJobs((current) => ({
                 schedules: {...current.schedules, ...scheduleUpdates},
                 sensors: {...current.sensors, ...sensorUpdates},
               }));
@@ -114,19 +114,15 @@ export const InstigationList: React.FC<InstigationListProps> = ({repos, repoPath
       return subscriptions;
     };
 
-    const subs = fetchInstigationList();
+    const subs = fetchJobs();
 
     return () => {
       subs.forEach((s) => s.unsubscribe());
     };
   }, [client, repos]);
 
-  const schedules = Object.values(instigationList.schedules).filter(({repoPath}) =>
-    activeRepos.has(repoPath),
-  );
-  const sensors = Object.values(instigationList.sensors).filter(({repoPath}) =>
-    activeRepos.has(repoPath),
-  );
+  const schedules = Object.values(jobs.schedules).filter(({repoPath}) => activeRepos.has(repoPath));
+  const sensors = Object.values(jobs.sensors).filter(({repoPath}) => activeRepos.has(repoPath));
 
   if (!schedules.length && !sensors.length) {
     return (
@@ -311,8 +307,8 @@ const SelectedItemTooltipStyle = JSON.stringify({
   fontWeight: 600,
 });
 
-const INSTIGATION_LIST_QUERY = gql`
-  query InstigationListQuery($repositorySelector: RepositorySelector!) {
+const JOBS_LIST_QUERY = gql`
+  query JobsListQuery($repositorySelector: RepositorySelector!) {
     schedulesOrError(repositorySelector: $repositorySelector) {
       ... on Schedules {
         results {

@@ -15,8 +15,8 @@ import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {TickTag} from '../instigation/InstigationTick';
-import {InstigatedRunStatus} from '../instigation/InstigationUtils';
+import {TickTag} from '../jobs/JobTick';
+import {JobRunStatus} from '../jobs/JobUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {InstigationStatus, InstigationType} from '../types/globalTypes';
 import {Group} from '../ui/Group';
@@ -224,7 +224,7 @@ const ScheduleRow: React.FC<{
         )}
       </td>
       <td>
-        <InstigatedRunStatus instigationState={scheduleState} />
+        <JobRunStatus jobState={scheduleState} />
       </td>
       <td>
         <SchedulePartitionStatus schedule={schedule} repoAddress={repoAddress} />
