@@ -28,7 +28,7 @@ from dagster import sensor, RunRequest
 
 
 @sensor(pipeline_name="log_file_pipeline")
-def my_directory_sensor(_context):
+def my_directory_sensor():
     for filename in os.listdir(MY_DIRECTORY):
         filepath = os.path.join(MY_DIRECTORY, filename)
         if os.path.isfile(filepath):
@@ -41,12 +41,12 @@ def my_directory_sensor(_context):
 # end_directory_sensor_marker
 
 
-# start_sensor_testing_no_context
+# start_sensor_testing_no
 from dagster import validate_run_config
 
 
 @sensor(pipeline_name="log_file_pipeline")
-def sensor_to_test(_context):
+def sensor_to_test():
     yield RunRequest(
         run_key="foo",
         run_config={"solids": {"process_file": {"config": {"filename": "foo"}}}},
@@ -54,11 +54,11 @@ def sensor_to_test(_context):
 
 
 def test_sensor():
-    for run_request in sensor_to_test(None):
+    for run_request in sensor_to_test():
         assert validate_run_config(log_file_pipeline, run_request.run_config)
 
 
-# end_sensor_testing_no_context
+# end_sensor_testing_no
 
 
 def isolated_run_request():
@@ -78,12 +78,12 @@ def isolated_run_request():
 
 
 @sensor(pipeline_name="my_pipeline", minimum_interval_seconds=30)
-def sensor_A(_context):
+def sensor_A():
     yield RunRequest(run_key=None, run_config={})
 
 
 @sensor(pipeline_name="my_pipeline", minimum_interval_seconds=45)
-def sensor_B(_context):
+def sensor_B():
     yield RunRequest(run_key=None, run_config={})
 
 
@@ -115,7 +115,7 @@ def my_directory_sensor_cursor(context):
 
 # end_cursor_sensors_marker
 
-# start_sensor_testing_with_context
+# start_sensor_testing_with
 from dagster import build_sensor_context
 
 
@@ -125,12 +125,12 @@ def test_my_directory_sensor_cursor():
         assert validate_run_config(log_file_pipeline, run_request.run_config)
 
 
-# end_sensor_testing_with_context
+# end_sensor_testing_with
 
 
 # start_skip_sensors_marker
 @sensor(pipeline_name="log_file_pipeline")
-def my_directory_sensor_with_skip_reasons(_context):
+def my_directory_sensor_with_skip_reasons():
     has_files = False
     for filename in os.listdir(MY_DIRECTORY):
         filepath = os.path.join(MY_DIRECTORY, filename)

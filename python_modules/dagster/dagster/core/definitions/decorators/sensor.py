@@ -3,12 +3,19 @@ from functools import update_wrapper
 from typing import TYPE_CHECKING, Callable, List, Optional, Union
 
 from dagster import check
-from dagster.core.definitions.pipeline import PipelineDefinition
-from dagster.core.definitions.sensor import RunRequest, SensorDefinition, SkipReason
-from dagster.core.errors import DagsterInvariantViolationError
+
+from ....seven import funcsigs
+from ...decorator_utils import get_function_params
+from ...errors import DagsterInvariantViolationError
+from ..pipeline import PipelineDefinition
+from ..sensor import RunRequest, SensorDefinition, SkipReason
 
 if TYPE_CHECKING:
-    from dagster.core.definitions.sensor import SensorEvaluationContext
+    from ..sensor import SensorEvaluationContext
+
+
+def is_context_provided(params: List[funcsigs.Parameter]) -> bool:
+    return len(params) == 1
 
 
 def sensor(
@@ -57,7 +64,7 @@ def sensor(
         sensor_name = name or fn.__name__
 
         def _wrapped_fn(context):
-            result = fn(context)
+            result = fn(context) if is_context_provided(get_function_params(fn)) else fn()
 
             if inspect.isgenerator(result):
                 for item in result:
