@@ -53,18 +53,11 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         Currently, Fargate is the only supported launchType and awsvpc is the
         only supported networkMode. These are the defaults that are set up by
         docker-compose when you use the Dagster ECS reference deployment.
-
-        This method creates a new task definition revision for every run.
-        First, the process that calls this method finds its own task
-        definition. Next, it creates a new task definition based on its own
-        with several important overrides:
-
-        1. The command is replaced with a call to `dagster api execute_run`
-        2. The image is overridden with the pipeline's origin's image.
         """
         metadata = self._task_metadata()
         pipeline_origin = external_pipeline.get_python_origin()
         image = pipeline_origin.repository_origin.container_image
+        task_definition = self._task_definition(metadata, image)["family"]
 
         input_json = serialize_dagster_namedtuple(
             ExecuteRunArgs(
@@ -75,49 +68,11 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         )
         command = ["dagster", "api", "execute_run", input_json]
 
-        # Start with the current processes's tasks's definition but remove extra
-        # keys that aren't useful for creating a new task definition (status,
-        # revision, etc.)
-        expected_keys = [
-            key
-            for key in self.ecs.meta.service_model.shape_for(
-                "RegisterTaskDefinitionRequest"
-            ).members
-        ]
-        task_definition = dict(
-            (key, metadata.task_definition[key])
-            for key in expected_keys
-            if key in metadata.task_definition.keys()
-        )
+        # Run a task using the same network configuration as this processes's
+        # task.
 
-        # The current process might not be running in a container that has the
-        # pipeline's code installed. Inherit most of the processes's container
-        # definition (things like environment, dependencies, etc.) but replace
-        # the image with the pipeline origin's image and give it a new name.
-        # TODO: Configurable task definitions
-        container_definitions = task_definition["containerDefinitions"]
-        container_definitions.remove(metadata.container_definition)
-        container_definitions.append(
-            {**metadata.container_definition, "name": "run", "image": image}
-        )
-        task_definition = {
-            **task_definition,
-            "family": "dagster-run",
-            "containerDefinitions": container_definitions,
-        }
-
-        # Register the task overridden task definition as a revision to the
-        # "dagster-run" family.
-        # TODO: Only register the task definition if a matching one doesn't
-        # already exist. Otherwise, we risk exhausting the revisions limit
-        # (1,000,000 per family) with unnecessary revisions:
-        # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-quotas.html
-        self.ecs.register_task_definition(**task_definition)
-
-        # Run a task using the new task definition and the same network
-        # configuration as this processes's task.
         response = self.ecs.run_task(
-            taskDefinition=task_definition["family"],
+            taskDefinition=task_definition,
             cluster=metadata.cluster,
             overrides={"containerOverrides": [{"name": "run", "command": command}]},
             networkConfiguration={
@@ -160,6 +115,53 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
 
         self.ecs.stop_task(task=arn, cluster=cluster)
         return True
+
+    def _task_definition(self, metadata, image):
+        """
+        First, the process that calls this method finds its own task
+        definition. Next, it creates a new task definition based on its own
+        but it overrides the image with the pipeline origin's image.
+        """
+
+        # Start with the current process's task's definition but remove
+        # extra keys that aren't useful for creating a new task definition
+        # (status, revision, etc.)
+        expected_keys = [
+            key
+            for key in self.ecs.meta.service_model.shape_for(
+                "RegisterTaskDefinitionRequest"
+            ).members
+        ]
+        task_definition = dict(
+            (key, metadata.task_definition[key])
+            for key in expected_keys
+            if key in metadata.task_definition.keys()
+        )
+
+        # The current process might not be running in a container that has the
+        # pipeline's code installed. Inherit most of the process's container
+        # definition (things like environment, dependencies, etc.) but replace
+        # the image with the pipeline origin's image and give it a new name.
+        container_definitions = task_definition["containerDefinitions"]
+        container_definitions.remove(metadata.container_definition)
+        container_definitions.append(
+            {**metadata.container_definition, "name": "run", "image": image}
+        )
+        task_definition = {
+            **task_definition,
+            "family": "dagster-run",
+            "containerDefinitions": container_definitions,
+        }
+
+        # Register the task overridden task definition as a revision to the
+        # "dagster-run" family.
+        # TODO: Only register the task definition if a matching one doesn't
+        # already exist. Otherwise, we risk exhausting the revisions limit
+        # (1,000,000 per family) with unnecessary revisions:
+        # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-quotas.html
+        self.ecs.register_task_definition(**task_definition)
+
+        return task_definition
 
     def _task_metadata(self):
         """
