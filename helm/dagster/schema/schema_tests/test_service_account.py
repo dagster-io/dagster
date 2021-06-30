@@ -22,6 +22,16 @@ def umbrella_helm_template() -> HelmTemplate:
 @pytest.fixture(name="subchart_template")
 def subchart_helm_template() -> HelmTemplate:
     return HelmTemplate(
+        helm_dir_path="helm/dagster",
+        subchart_paths=["charts/dagster-user-deployments"],
+        output="charts/dagster-user-deployments/templates/serviceaccount.yaml",
+        model=models.V1ServiceAccount,
+    )
+
+
+@pytest.fixture(name="standalone_subchart_template")
+def standalone_subchart_helm_template() -> HelmTemplate:
+    return HelmTemplate(
         helm_dir_path="helm/dagster/charts/dagster-user-deployments",
         subchart_paths=[],
         output="templates/serviceaccount.yaml",
@@ -73,13 +83,13 @@ def test_subchart_service_account_global_name(subchart_template: HelmTemplate, c
         assert "Error: could not find template" in err
 
 
-def test_subchart_service_account_name(subchart_template: HelmTemplate):
+def test_subchart_service_account_name(standalone_subchart_template: HelmTemplate):
     service_account_name = "service-account-name"
     service_account_values = DagsterUserDeploymentsHelmValues.construct(
         serviceAccount=ServiceAccount.construct(name=service_account_name),
     )
 
-    service_account_templates = subchart_template.render(service_account_values)
+    service_account_templates = standalone_subchart_template.render(service_account_values)
 
     assert len(service_account_templates) == 1
 
@@ -120,7 +130,7 @@ def test_service_account_annotations(template: HelmTemplate):
     assert service_account_template.metadata.annotations == service_account_annotations
 
 
-def test_subchart_service_account_annotations(subchart_template: HelmTemplate):
+def test_subchart_service_account_annotations(standalone_subchart_template: HelmTemplate):
     service_account_name = "service-account-name"
     service_account_annotations = {"hello": "world"}
     service_account_values = DagsterUserDeploymentsHelmValues.construct(
@@ -129,7 +139,7 @@ def test_subchart_service_account_annotations(subchart_template: HelmTemplate):
         ),
     )
 
-    service_account_templates = subchart_template.render(service_account_values)
+    service_account_templates = standalone_subchart_template.render(service_account_values)
 
     assert len(service_account_templates) == 1
 
