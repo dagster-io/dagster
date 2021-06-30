@@ -31,6 +31,7 @@ export interface ExecutionSessionContainerPipelineFragment_tags {
 
 export interface ExecutionSessionContainerPipelineFragment_modes {
   __typename: "Mode";
+  id: string;
   name: string;
   description: string | null;
 }

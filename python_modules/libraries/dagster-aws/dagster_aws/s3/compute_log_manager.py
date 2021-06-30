@@ -141,6 +141,9 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
     def on_subscribe(self, subscription):
         self.local_manager.on_subscribe(subscription)
 
+    def on_unsubscribe(self, subscription):
+        self.local_manager.on_unsubscribe(subscription)
+
     def _should_download(self, run_id, key, io_type):
         local_path = self.get_local_path(run_id, key, io_type)
         if os.path.exists(local_path):

@@ -17,7 +17,7 @@ class InitLoggerContext:
     Users should not instantiate this class.
 
     Attributes:
-        logger_config (Any): The configuration data provided by the environment config. The
+        logger_config (Any): The configuration data provided by the run config. The
             schema for this data is defined by ``config_schema`` on the :py:class:`LoggerDefinition`
         pipeline_def (Optional[PipelineDefinition]): The pipeline definition currently being executed.
         logger_def (Optional[LoggerDefinition]): The logger definition for the logger being constructed.

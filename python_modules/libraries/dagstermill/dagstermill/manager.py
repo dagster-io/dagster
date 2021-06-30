@@ -194,7 +194,7 @@ class Manager:
                 use to construct the context. Specify this if you would like a context constructed
                 with specific ``resource_defs`` or ``logger_defs``. By default, an ephemeral mode
                 with a console logger will be constructed.
-            run_config(Optional[dict]): The environment config dict with which to construct
+            run_config(Optional[dict]): The config dict with which to construct
                 the context.
 
         Returns:

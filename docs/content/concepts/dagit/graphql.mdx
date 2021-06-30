@@ -116,7 +116,7 @@ The `pipelineRunsOrError` query also takes in an optional filter argument, of ty
 For example, the following query will return all failed runs:
 
     query FilteredPipelineRuns {
-      pipelineRunsOrError(filter: { status: FAILURE }) {
+      pipelineRunsOrError(filter: { statuses: [FAILURE] }) {
         __typename
         ... on PipelineRuns {
           results {

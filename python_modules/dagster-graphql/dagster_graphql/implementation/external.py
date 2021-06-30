@@ -1,7 +1,6 @@
 import sys
 
 from dagster import check
-from dagster.cli.workspace.context import IWorkspaceRequestContext
 from dagster.config.validate import validate_config_from_snap
 from dagster.core.host_representation import (
     ExternalExecutionPlan,
@@ -9,6 +8,7 @@ from dagster.core.host_representation import (
     PipelineSelector,
     RepositorySelector,
 )
+from dagster.core.workspace.context import IWorkspaceRequestContext
 from dagster.utils.error import serializable_error_info_from_exc_info
 from graphql.execution.base import ResolveInfo
 

@@ -16,8 +16,8 @@ Dagster includes a scheduler that can be used to launch runs on a fixed interval
 | <PyObject object="weekly_schedule" decorator />  | Decorator that defines a schedule that executes every week on a fixed day and time                                                                                                                                                                                        |
 | <PyObject object="monthly_schedule" decorator /> | Decorator that defines a schedule that executes every month on a fixed day and time                                                                                                                                                                                       |
 | <PyObject object="schedule" decorator />         | Decorator that defines a schedule that executes according to a given cron schedule. It's important to note that schedules created using this schedule are [non-partition based schedules](/concepts/partitions-schedules-sensors/schedules#non-partition-based-schedules) |
-| <PyObject object="ScheduleExecutionContext" />   | The context passed to the schedule definition execution function                                                                                                                                                                                                          |
-| <PyObject object="build_schedule_context" />     | A function that constructs a `ScheduleExecutionContext`                                                                                                                                                                                                                   |
+| <PyObject object="ScheduleEvaluationContext" />  | The context passed to the schedule definition execution function                                                                                                                                                                                                          |
+| <PyObject object="build_schedule_context" />     | A function that constructs a `ScheduleEvaluationContext`                                                                                                                                                                                                                  |
 | <PyObject object="ScheduleDefinition"  />        | Class for schedules. You almost never want to use initialize this class directly. Instead, you should use one of the many decorators above                                                                                                                                |
 
 ## Overview
@@ -178,7 +178,7 @@ def test_my_cron_schedule():
     assert validate_run_config(my_pipeline_on_cron, run_config)
 ```
 
-If using the context parameter in your decorated function, then `build_schedule_context` can be used to construct a `ScheduleExecutionContext` for passing through.
+If using the context parameter in your decorated function, then `build_schedule_context` can be used to construct a `ScheduleEvaluationContext` for passing through.
 
 ```python file=concepts/partitions_schedules_sensors/schedules/schedule_examples.py startafter=start_test_cron_schedule_context endbefore=end_test_cron_schedule_context
 @schedule(cron_schedule="0 1 * * *", pipeline_name="pipeline_for_test")

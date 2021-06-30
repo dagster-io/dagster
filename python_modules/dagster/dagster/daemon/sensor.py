@@ -5,7 +5,6 @@ from collections import namedtuple
 
 import pendulum
 from dagster import check, seven
-from dagster.cli.workspace.workspace import IWorkspace
 from dagster.core.definitions.run_request import JobType
 from dagster.core.definitions.sensor import SensorExecutionData
 from dagster.core.errors import DagsterError
@@ -14,6 +13,7 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import JobStatus, JobTickData, JobTickStatus, SensorJobData
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import RUN_KEY_TAG, check_tags
+from dagster.core.workspace import IWorkspace
 from dagster.utils import merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
 

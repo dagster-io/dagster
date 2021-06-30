@@ -13,7 +13,7 @@ class InitResourceContext:
     """Resource-specific initialization context.
 
     Attributes:
-        resource_config (Any): The configuration data provided by the environment config. The schema
+        resource_config (Any): The configuration data provided by the run config. The schema
             for this data is defined by the ``config_field`` argument to
             :py:class:`ResourceDefinition`.
         resource_def (ResourceDefinition): The definition of the resource currently being

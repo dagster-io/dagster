@@ -373,7 +373,11 @@ class GrapheneIPipelineSnapshotMixin:
     def resolve_modes(self, _graphene_info):
         represented_pipeline = self.get_represented_pipeline()
         return [
-            GrapheneMode(represented_pipeline.config_schema_snapshot, mode_def_snap)
+            GrapheneMode(
+                represented_pipeline.config_schema_snapshot,
+                represented_pipeline.identifying_pipeline_snapshot_id,
+                mode_def_snap,
+            )
             for mode_def_snap in sorted(
                 represented_pipeline.mode_def_snaps, key=lambda item: item.name
             )

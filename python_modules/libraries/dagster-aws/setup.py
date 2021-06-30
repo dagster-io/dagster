@@ -39,6 +39,9 @@ if __name__ == "__main__":
             "psycopg2-binary<2.9",
             "requests",
         ],
-        extras_require={"pyspark": ["dagster-pyspark"], "test": ["moto==1.3.16"]},
+        extras_require={
+            "pyspark": ["dagster-pyspark"],
+            "test": ["moto==1.3.16", "requests-mock"],
+        },
         zip_safe=False,
     )

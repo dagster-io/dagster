@@ -1,0 +1,11 @@
+mutation ($repositoryLocationName: String!) {
+   shutdownRepositoryLocation(repositoryLocationName: $repositoryLocationName) {
+      __typename
+      ... on PythonError {
+        message
+      }
+      ... on RepositoryLocationNotFound {
+        message
+      }
+   }
+}

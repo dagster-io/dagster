@@ -1,7 +1,5 @@
 import os
 import sys
-from abc import ABC, abstractmethod
-from collections import namedtuple
 from contextlib import contextmanager
 
 import click
@@ -11,21 +9,19 @@ from dagster.core.code_pointer import CodePointer
 from dagster.core.definitions.reconstructable import repository_def_from_target_def
 from dagster.core.host_representation.external import ExternalRepository
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
-from dagster.core.host_representation.origin import (
-    ExternalRepositoryOrigin,
-    GrpcServerRepositoryLocationOrigin,
-)
+from dagster.core.host_representation.origin import ExternalRepositoryOrigin
 from dagster.core.host_representation.repository_location import RepositoryLocation
 from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
+from dagster.core.workspace.load_target import (
+    EmptyWorkspaceTarget,
+    GrpcServerTarget,
+    ModuleTarget,
+    PackageTarget,
+    PythonFileTarget,
+    WorkspaceFileTarget,
+)
 from dagster.grpc.utils import get_loadable_targets
 from dagster.utils.hosted_user_process import recon_repository_from_origin
-
-from .load import (
-    location_origin_from_module_name,
-    location_origin_from_package_name,
-    location_origin_from_python_file,
-    location_origins_from_yaml_paths,
-)
 
 WORKSPACE_TARGET_WARNING = "Can only use ONE of --workspace/-w, --python-file/-f, --module-name/-m, --grpc-port, --grpc-socket."
 
@@ -65,78 +61,6 @@ WORKSPACE_CLI_ARGS = (
     "grpc_port",
     "grpc_socket",
 )
-
-
-class WorkspaceLoadTarget(ABC):
-    @abstractmethod
-    def create_origins(self):
-        """ Reloads the RepositoryLocationOrigins for this workspace."""
-
-
-class WorkspaceFileTarget(namedtuple("WorkspaceFileTarget", "paths"), WorkspaceLoadTarget):
-    def create_origins(self):
-        return location_origins_from_yaml_paths(self.paths)
-
-
-class PythonFileTarget(
-    namedtuple("PythonFileTarget", "python_file attribute working_directory location_name"),
-    WorkspaceLoadTarget,
-):
-    def create_origins(self):
-        return [
-            location_origin_from_python_file(
-                python_file=self.python_file,
-                attribute=self.attribute,
-                working_directory=self.working_directory,
-                location_name=self.location_name,
-            )
-        ]
-
-
-class ModuleTarget(
-    namedtuple("ModuleTarget", "module_name attribute location_name"), WorkspaceLoadTarget
-):
-    def create_origins(self):
-        return [
-            location_origin_from_module_name(
-                self.module_name,
-                self.attribute,
-                location_name=self.location_name,
-            )
-        ]
-
-
-class PackageTarget(
-    namedtuple("PackageTarget", "package_name attribute location_name"), WorkspaceLoadTarget
-):
-    def create_origins(self):
-        return [
-            location_origin_from_package_name(
-                self.package_name,
-                self.attribute,
-                location_name=self.location_name,
-            )
-        ]
-
-
-class GrpcServerTarget(
-    namedtuple("GrpcServerTarget", "host port socket location_name"), WorkspaceLoadTarget
-):
-    def create_origins(self):
-        return [
-            GrpcServerRepositoryLocationOrigin(
-                port=self.port,
-                socket=self.socket,
-                host=self.host,
-                location_name=self.location_name,
-            )
-        ]
-
-
-#  Utility target for graphql commands that do not require a workspace, e.g. downloading schema
-class EmptyWorkspaceTarget(namedtuple("EmptyWorkspaceTarget", ""), WorkspaceLoadTarget):
-    def create_origins(self):
-        return []
 
 
 def created_workspace_load_target(kwargs):
@@ -239,7 +163,7 @@ def created_workspace_load_target(kwargs):
 
 
 def get_workspace_from_kwargs(kwargs):
-    from .workspace import Workspace
+    from dagster.core.workspace import Workspace
 
     return Workspace(created_workspace_load_target(kwargs))
 
@@ -592,7 +516,7 @@ def get_repository_python_origin_from_kwargs(kwargs):
 def get_repository_location_from_kwargs(kwargs):
     origin = get_repository_location_origin_from_kwargs(kwargs)
     with ProcessGrpcServerRegistry(reload_interval=0, heartbeat_ttl=30) as grpc_server_registry:
-        from dagster.cli.workspace.dynamic_workspace import DynamicWorkspace
+        from dagster.core.workspace.dynamic_workspace import DynamicWorkspace
 
         with DynamicWorkspace(grpc_server_registry) as workspace:
             with workspace.get_location(origin) as location:

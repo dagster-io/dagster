@@ -5,12 +5,12 @@ import sys
 
 import pendulum
 from dagster import check
-from dagster.core.definitions import ScheduleExecutionContext
+from dagster.core.definitions import ScheduleEvaluationContext
 from dagster.core.definitions.reconstructable import (
     ReconstructablePipeline,
     ReconstructableRepository,
 )
-from dagster.core.definitions.sensor import SensorExecutionContext
+from dagster.core.definitions.sensor import SensorEvaluationContext
 from dagster.core.errors import (
     DagsterExecutionInterruptedError,
     DagsterInvalidSubsetError,
@@ -225,7 +225,7 @@ def get_external_schedule_execution(
         else None
     )
 
-    with ScheduleExecutionContext(instance_ref, scheduled_execution_time) as schedule_context:
+    with ScheduleEvaluationContext(instance_ref, scheduled_execution_time) as schedule_context:
         try:
             with user_code_error_boundary(
                 ScheduleExecutionError,
@@ -251,7 +251,7 @@ def get_external_sensor_execution(
     definition = recon_repo.get_definition()
     sensor_def = definition.get_sensor_def(sensor_name)
 
-    with SensorExecutionContext(
+    with SensorEvaluationContext(
         instance_ref,
         last_completion_time=last_completion_timestamp,
         last_run_key=last_run_key,

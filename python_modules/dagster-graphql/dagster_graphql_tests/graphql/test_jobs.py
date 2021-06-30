@@ -1,5 +1,5 @@
-from dagster.cli.workspace.dynamic_workspace import DynamicWorkspace
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
+from dagster.core.workspace.dynamic_workspace import DynamicWorkspace
 from dagster.daemon import get_default_daemon_logger
 from dagster.daemon.sensor import execute_sensor_iteration
 from dagster_graphql.test.utils import (

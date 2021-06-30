@@ -46,3 +46,5 @@ Copy this bot token and put it somewhere safe; see `Safely Storing Credentials
 
 .. autodata:: slack_on_success
   :annotation: HookDefinition
+
+.. autofunction:: make_slack_on_pipeline_failure_sensor

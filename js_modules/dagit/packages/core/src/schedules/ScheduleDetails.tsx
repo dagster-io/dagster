@@ -2,6 +2,7 @@ import {Colors, Tooltip} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {useFeatureFlags} from '../app/Flags';
 import {TickTag} from '../jobs/JobTick';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {PipelineReference} from '../pipelines/PipelineReference';
@@ -35,6 +36,7 @@ export const ScheduleDetails: React.FC<{
 }> = (props) => {
   const {repoAddress, schedule, countdownDuration, countdownStatus, onRefresh} = props;
   const {cronSchedule, executionTimezone, futureTicks, name, partitionSet, pipelineName} = schedule;
+  const {flagPipelineModeTuples} = useFeatureFlags();
 
   const [copyText, setCopyText] = React.useState('Click to copy');
 
@@ -138,7 +140,7 @@ export const ScheduleDetails: React.FC<{
             ),
           },
           {
-            key: 'Pipeline',
+            key: flagPipelineModeTuples ? 'Job' : 'Pipeline',
             value: (
               <PipelineReference
                 pipelineName={pipelineName}

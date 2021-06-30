@@ -3,7 +3,7 @@ from gzip import GzipFile
 import click
 from dagster import DagsterInstance, check
 from dagster.cli.debug import DebugRunPayload
-from dagster.cli.workspace import Workspace
+from dagster.core.workspace import Workspace
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 
 from .cli import DEFAULT_DAGIT_HOST, DEFAULT_DAGIT_PORT, host_dagit_ui_with_workspace

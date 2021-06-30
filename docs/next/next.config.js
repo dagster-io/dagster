@@ -16,7 +16,7 @@ module.exports = {
       ...redirectUrls,
     ];
   },
-  // images: {
-  //   domains: ["user-images.githubusercontent.com"],
-  // },
+  images: {
+    domains: ["dagster-docs-versioned-content.s3.us-west-1.amazonaws.com"],
+  },
 };

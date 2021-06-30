@@ -111,7 +111,7 @@ def get_toys_sensors():
             )
 
     @pipeline_failure_sensor
-    def slack_on_pipeline_failure(context: PipelineFailureSensorContext):
+    def custom_slack_on_pipeline_failure(context: PipelineFailureSensorContext):
 
         base_url = "http://localhost:3000"
 
@@ -134,4 +134,9 @@ def get_toys_sensors():
             blocks=[{"type": "section", "text": {"type": "mrkdwn", "text": message}}],
         )
 
-    return [toy_file_sensor, toy_asset_sensor, toy_s3_sensor, slack_on_pipeline_failure]
+    return [
+        toy_file_sensor,
+        toy_asset_sensor,
+        toy_s3_sensor,
+        custom_slack_on_pipeline_failure,
+    ]

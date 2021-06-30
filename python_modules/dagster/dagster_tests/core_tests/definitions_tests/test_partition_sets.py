@@ -1,7 +1,7 @@
 import datetime
 
 import pendulum
-from dagster import Partition, PartitionSetDefinition, ScheduleExecutionContext
+from dagster import Partition, PartitionSetDefinition, ScheduleEvaluationContext
 from dagster.core.definitions.schedule import ScheduleExecutionData
 from dagster.core.test_utils import instance_for_test
 from dagster.seven.compat.pendulum import create_pendulum_time
@@ -29,7 +29,7 @@ def test_multirun_partition_schedule_definition():
     )
 
     with instance_for_test() as instance:
-        with ScheduleExecutionContext(instance.get_ref(), pendulum.now("UTC")) as schedule_context:
+        with ScheduleEvaluationContext(instance.get_ref(), pendulum.now("UTC")) as schedule_context:
             execution_data = multi_run_schedule.evaluate_tick(schedule_context)
             assert isinstance(execution_data, ScheduleExecutionData)
             assert execution_data.run_requests
@@ -55,7 +55,7 @@ def test_multirun_partition_schedule_definition():
     )
 
     with instance_for_test() as instance:
-        with ScheduleExecutionContext(instance.get_ref(), pendulum.now("UTC")) as schedule_context:
+        with ScheduleEvaluationContext(instance.get_ref(), pendulum.now("UTC")) as schedule_context:
             execution_data = invalid_schedule.evaluate_tick(schedule_context)
             assert isinstance(execution_data, ScheduleExecutionData)
             assert execution_data.skip_message

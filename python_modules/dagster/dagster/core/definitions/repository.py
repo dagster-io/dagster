@@ -320,7 +320,7 @@ class RepositoryData:
         jobs = {}
         for definition in repository_definitions:
             if isinstance(definition, PipelineDefinition):
-                if definition.name in pipelines:
+                if definition.name in pipelines and pipelines[definition.name] != definition:
                     raise DagsterInvalidDefinitionError(
                         "Duplicate pipeline definition found for pipeline {pipeline_name}".format(
                             pipeline_name=definition.name

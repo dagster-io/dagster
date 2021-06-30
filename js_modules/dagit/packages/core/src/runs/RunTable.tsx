@@ -4,6 +4,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {useFeatureFlags} from '../app/Flags';
 import {usePermissions} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {PipelineSnapshotLink} from '../pipelines/PipelinePathUtils';
@@ -92,6 +93,7 @@ const initialState: State = {
 };
 
 export const RunTable = (props: RunTableProps) => {
+  const {flagPipelineModeTuples} = useFeatureFlags();
   const {runs, onSetFilter, nonIdealState, highlightedIds} = props;
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const {checkedRuns} = state;
@@ -155,7 +157,7 @@ export const RunTable = (props: RunTableProps) => {
             ) : null}
           </th>
           <th>Run ID</th>
-          <th>Pipeline</th>
+          <th>{flagPipelineModeTuples ? 'Job' : 'Pipeline'}</th>
           <th style={{width: 110, minWidth: 110}}>Snapshot ID</th>
           <th style={{width: 160}}>Timing</th>
           {props.additionalColumnHeaders}

@@ -3,7 +3,7 @@ from tempfile import TemporaryDirectory
 
 import pytest
 from dagster.check import CheckError
-from dagster.cli.workspace.load import load_workspace_from_yaml_paths
+from dagster.core.workspace.load import load_workspace_from_yaml_paths
 from dagster.utils import touch_file
 
 

@@ -9,11 +9,10 @@ from contextlib import contextmanager
 import pendulum
 import pytest
 from dagster import Any, Field, pipeline, repository, solid
-from dagster.cli.workspace.dynamic_workspace import DynamicWorkspace
 from dagster.core.definitions.decorators.sensor import sensor
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.definitions.run_request import JobType
-from dagster.core.definitions.sensor import RunRequest, SkipReason
+from dagster.core.definitions.sensor import DEFAULT_SENSOR_DAEMON_INTERVAL, RunRequest, SkipReason
 from dagster.core.execution.api import execute_pipeline
 from dagster.core.host_representation import (
     ExternalJobOrigin,
@@ -26,6 +25,7 @@ from dagster.core.scheduler.job import JobState, JobStatus, JobTickStatus
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import instance_for_test
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster.core.workspace.dynamic_workspace import DynamicWorkspace
 from dagster.daemon import get_default_daemon_logger
 from dagster.daemon.controller import (
     DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,
@@ -775,7 +775,7 @@ def test_error_sensor_daemon(external_repo_context, monkeypatch):
             instance.add_job_state(
                 JobState(_get_unloadable_sensor_origin(), JobType.SENSOR, JobStatus.RUNNING)
             )
-            sensor_daemon = SensorDaemon.create_from_instance(instance)
+            sensor_daemon = SensorDaemon(interval_seconds=DEFAULT_SENSOR_DAEMON_INTERVAL)
             daemon_shutdown_event = threading.Event()
             sensor_daemon.run_loop(
                 "my_uuid",

@@ -78,6 +78,22 @@ def test_list_tags_for_resource(ecs):
     assert ecs.list_tags_for_resource(resourceArn=arn)["tags"] == tags
 
 
+def test_list_task_definitions(ecs):
+    assert not ecs.list_task_definitions()["taskDefinitionArns"]
+
+    def arn(task_definition):
+        return task_definition["taskDefinition"]["taskDefinitionArn"]
+
+    dagster1 = arn(ecs.register_task_definition(family="dagster", containerDefinitions=[]))
+    dagster2 = arn(ecs.register_task_definition(family="dagster", containerDefinitions=[]))
+    other1 = arn(ecs.register_task_definition(family="other", containerDefinitions=[]))
+
+    assert len(ecs.list_task_definitions()["taskDefinitionArns"]) == 3
+    assert dagster1 in ecs.list_task_definitions()["taskDefinitionArns"]
+    assert dagster2 in ecs.list_task_definitions()["taskDefinitionArns"]
+    assert other1 in ecs.list_task_definitions()["taskDefinitionArns"]
+
+
 def test_list_tasks(ecs):
     assert not ecs.list_tasks()["taskArns"]
 
@@ -139,7 +155,7 @@ def test_register_task_definition(ecs):
     assert response["taskDefinition"]["networkMode"] == "bridge"
 
 
-def test_run_task(ecs):
+def test_run_task(ecs, subnet):
     with pytest.raises(ParamValidationError):
         # The task doesn't exist
         ecs.run_task()
@@ -171,25 +187,50 @@ def test_run_task(ecs):
         # It must have a networkConfiguration if networkMode is "awsvpc"
         ecs.run_task(taskDefinition="awsvpc")
 
+    # The subnet doesn't exist
+    with pytest.raises(ClientError):
+        ecs.run_task(
+            taskDefinition="awsvpc",
+            networkConfiguration={"awsvpcConfiguration": {"subnets": ["subnet-12345"]}},
+        )
+
+    #  The subnet exists but there's no network interface
+    with pytest.raises(ClientError):
+        ecs.run_task(
+            taskDefinition="awsvpc",
+            networkConfiguration={"awsvpcConfiguration": {"subnets": [subnet.id]}},
+        )
+
+    network_interface = subnet.create_network_interface()
     response = ecs.run_task(
         taskDefinition="awsvpc",
-        networkConfiguration={"awsvpcConfiguration": {"subnets": ["subnet-12345"]}},
+        networkConfiguration={"awsvpcConfiguration": {"subnets": [subnet.id]}},
     )
+
     assert len(response["tasks"]) == 1
     assert "awsvpc" in response["tasks"][0]["taskDefinitionArn"]
     attachment = response["tasks"][0]["attachments"][0]
     assert attachment["type"] == "ElasticNetworkInterface"
-    assert attachment["details"][0]["name"] == "subnetId"
-    assert attachment["details"][0]["value"] == "subnet-12345"
+    assert {"name": "subnetId", "value": subnet.id} in attachment["details"]
+    assert {"name": "networkInterfaceId", "value": network_interface.id} in attachment["details"]
 
     # containers and overrides are included
     ecs.register_task_definition(
         family="container",
-        containerDefinitions=[{"name": "hello_world", "image": "hello_world:latest"}],
+        containerDefinitions=[
+            {
+                "name": "hello_world",
+                "image": "hello_world:latest",
+                "environment": [{"name": "FOO", "value": "bar"}],
+            }
+        ],
         networkMode="bridge",
     )
     response = ecs.run_task(taskDefinition="container")
     assert response["tasks"][0]["containers"]
+    # ECS does not expose the task definition's environment when
+    # describing tasks
+    assert "FOO" not in response
 
     response = ecs.run_task(
         taskDefinition="container",

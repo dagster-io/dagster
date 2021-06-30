@@ -60,6 +60,10 @@ class AbstractComputeExecutionContext(ABC):  # pylint: disable=no-init
     def solid_config(self) -> Any:
         """The parsed config specific to this solid."""
 
+    @property
+    def op_config(self) -> Any:
+        return self.solid_config
+
 
 class SolidExecutionContext(AbstractComputeExecutionContext):
     """The ``context`` object that can be made available as the first argument to a solid's compute

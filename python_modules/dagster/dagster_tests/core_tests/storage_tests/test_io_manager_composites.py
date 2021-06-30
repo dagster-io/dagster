@@ -1,12 +1,14 @@
 import pytest
 from dagster import (
     DagsterInvalidDefinitionError,
+    DagsterType,
     InputDefinition,
     ModeDefinition,
     OutputDefinition,
     composite_solid,
     execute_pipeline,
     pipeline,
+    root_input_manager,
     solid,
 )
 from dagster.core.storage.io_manager import IOManager, io_manager
@@ -175,3 +177,59 @@ def test_io_manager_config_inside_composite():
         stored_dict.get((result.run_id, "my_composite_solid.my_solid", "result", "my_suffix"))
         == "hello"
     )
+
+
+def test_inner_inputs_connected_to_outer_dependency():
+    my_dagster_type = DagsterType(name="foo", type_check_fn=lambda _, _a: True)
+
+    @solid(input_defs=[InputDefinition("data", my_dagster_type)])
+    def inner_solid(data):
+        return data
+
+    @composite_solid(input_defs=[InputDefinition("data", my_dagster_type)])
+    def my_composite(data):
+        return inner_solid(data)
+
+    @solid
+    def top_level_solid():
+        return "from top_level_solid"
+
+    @pipeline
+    def my_pipeline():
+        # inner_solid should be connected to top_level_solid
+        my_composite(top_level_solid())
+
+    result = execute_pipeline(my_pipeline)
+    assert result.success
+    assert result.output_for_solid("my_composite.inner_solid") == "from top_level_solid"
+
+
+def test_inner_inputs_connected_to_outer_dependency_with_root_input_manager():
+    called = {}
+
+    @root_input_manager(input_config_schema={"test": str})
+    def my_root(_):
+        # should not reach
+        called["my_root"] = True
+
+    @solid(input_defs=[InputDefinition("data", dagster_type=str, root_manager_key="my_root")])
+    def inner_solid(_, data):
+        return data
+
+    @composite_solid
+    def my_composite(data: str):
+        return inner_solid(data)
+
+    @solid
+    def top_level_solid():
+        return "from top_level_solid"
+
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"my_root": my_root})])
+    def my_pipeline():
+        # inner_solid should be connected to top_level_solid
+        my_composite(top_level_solid())
+
+    result = execute_pipeline(my_pipeline)
+    assert result.success
+    assert result.output_for_solid("my_composite.inner_solid") == "from top_level_solid"
+    assert "my_root" not in called

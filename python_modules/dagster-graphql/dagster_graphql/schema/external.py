@@ -1,12 +1,12 @@
 import graphene
 from dagster import check
-from dagster.cli.workspace.workspace import WorkspaceLocationEntry, WorkspaceLocationLoadStatus
 from dagster.core.host_representation import (
     ExternalRepository,
     GrpcServerRepositoryLocation,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
     RepositoryLocation,
 )
+from dagster.core.workspace import WorkspaceLocationEntry, WorkspaceLocationLoadStatus
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
 
 from .errors import GraphenePythonError, GrapheneRepositoryNotFoundError

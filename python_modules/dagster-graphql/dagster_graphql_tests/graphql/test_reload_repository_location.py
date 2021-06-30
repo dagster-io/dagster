@@ -2,13 +2,13 @@ import sys
 from unittest import mock
 
 from dagster import file_relative_path, repository
-from dagster.cli.workspace.load import location_origins_from_yaml_paths
 from dagster.core.code_pointer import CodePointer
 from dagster.core.host_representation import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
     external_repository_data_from_def,
 )
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster.core.workspace.load import location_origins_from_yaml_paths
 from dagster.grpc.types import ListRepositoriesResponse
 from dagster_graphql.test.utils import execute_dagster_graphql
 
@@ -102,7 +102,7 @@ class TestReloadWorkspace(
 
         # simulate removing all the origins
         with mock.patch(
-            "dagster.cli.workspace.cli_target.location_origins_from_yaml_paths",
+            "dagster.core.workspace.load_target.location_origins_from_yaml_paths",
         ) as origins_mock:
 
             # simulate removing an origin, reload

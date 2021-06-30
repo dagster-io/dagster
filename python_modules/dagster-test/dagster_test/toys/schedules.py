@@ -3,7 +3,7 @@ from collections import defaultdict
 
 from dagster import (
     PartitionSetDefinition,
-    ScheduleExecutionContext,
+    ScheduleEvaluationContext,
     daily_schedule,
     hourly_schedule,
     monthly_schedule,
@@ -28,7 +28,9 @@ def _fetch_runs_by_partition(instance, partition_set_def, status_filters=None):
 
 
 def backfilling_partition_selector(
-    context: ScheduleExecutionContext, partition_set_def: PartitionSetDefinition, retry_failed=False
+    context: ScheduleEvaluationContext,
+    partition_set_def: PartitionSetDefinition,
+    retry_failed=False,
 ):
     status_filters = [PipelineRunStatus.SUCCESS] if retry_failed else None
     runs_by_partition = _fetch_runs_by_partition(

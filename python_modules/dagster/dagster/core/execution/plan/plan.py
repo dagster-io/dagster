@@ -371,8 +371,15 @@ def get_step_input_source(
     solid_config = plan_builder.resolved_run_config.solids.get(str(handle))
 
     input_def = solid.definition.input_def_named(input_name)
-    if input_def.root_manager_key and not dependency_structure.has_deps(input_handle):
-        return FromRootInputManager(solid_handle=handle, input_name=input_name)
+
+    if (
+        input_def.root_manager_key
+        # input is unconnected inside the current dependency structure
+        and not dependency_structure.has_deps(input_handle)
+    ):
+        #  make sure input is unconnected in the outer dependency structure too
+        if not solid.container_maps_input(input_handle.input_name):
+            return FromRootInputManager(solid_handle=handle, input_name=input_name)
 
     if dependency_structure.has_direct_dep(input_handle):
         solid_output_handle = dependency_structure.get_direct_dep(input_handle)
@@ -481,7 +488,7 @@ def get_step_input_source(
         return FromDefaultValue(solid_handle=handle, input_name=input_name)
 
     # At this point we have an input that is not hooked up to
-    # the output of another solid or provided via environment config.
+    # the output of another solid or provided via run config.
 
     # We will allow this for "Nothing" type inputs and continue.
     if input_def.dagster_type.kind == DagsterTypeKind.NOTHING:
@@ -712,7 +719,7 @@ class ExecutionPlan(
         step_keys_to_execute: Optional[List[str]] = None,
         known_state=None,
     ) -> "ExecutionPlan":
-        """Here we build a new ExecutionPlan from a pipeline definition and the environment config.
+        """Here we build a new ExecutionPlan from a pipeline definition and the resolved run config.
 
         To do this, we iterate through the pipeline's solids in topological order, and hand off the
         execution steps for each solid to a companion _PlanBuilder object.

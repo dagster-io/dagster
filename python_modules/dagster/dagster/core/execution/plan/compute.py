@@ -32,7 +32,7 @@ def create_step_outputs(
     check.inst_param(solid, "solid", Solid)
     check.inst_param(handle, "handle", SolidHandle)
 
-    # the environment config has the solid output name configured
+    # the run config has the solid output name configured
     config_output_names: Set[str] = set()
     current_handle = handle
     while current_handle:

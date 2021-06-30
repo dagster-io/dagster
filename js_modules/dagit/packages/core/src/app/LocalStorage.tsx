@@ -18,11 +18,15 @@ export interface PipelineRunTag {
   value: string;
 }
 
+export type SessionBase =
+  | {presetName: string}
+  | {partitionsSetName: string; partitionName: string | null};
+
 export interface IExecutionSession {
   key: string;
   name: string;
   runConfigYaml: string;
-  base: {presetName: string} | {partitionsSetName: string; partitionName: string | null} | null;
+  base: SessionBase | null;
   mode: string | null;
   needsRefresh: boolean;
   solidSelection: string[] | null;

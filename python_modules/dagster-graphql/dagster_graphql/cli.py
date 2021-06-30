@@ -5,9 +5,9 @@ import requests
 from dagster import check, seven
 from dagster.cli.workspace import workspace_target_argument
 from dagster.cli.workspace.cli_target import WORKSPACE_TARGET_WARNING, get_workspace_from_kwargs
-from dagster.cli.workspace.context import WorkspaceProcessContext
-from dagster.cli.workspace.workspace import Workspace
 from dagster.core.instance import DagsterInstance
+from dagster.core.workspace import Workspace
+from dagster.core.workspace.context import WorkspaceProcessContext
 from dagster.utils import DEFAULT_WORKSPACE_YAML_FILENAME
 from dagster.utils.log import get_stack_trace_array
 from graphql import graphql

@@ -279,3 +279,20 @@ def test_partitions_and_default_config():
             partitions=partition_fn,
             default_config={"solids": {"my_solid": {"config": {"date": "abc"}}}},
         )
+
+
+def test_tags_on_job():
+    @solid
+    def basic():
+        pass
+
+    @graph
+    def basic_graph():
+        basic()
+
+    tags = {"my_tag": "yes"}
+    job = basic_graph.to_job(tags=tags)
+    assert job.tags == tags
+
+    result = execute_pipeline(job)
+    assert result.success

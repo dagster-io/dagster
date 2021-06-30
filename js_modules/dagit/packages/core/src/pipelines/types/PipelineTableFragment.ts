@@ -12,6 +12,7 @@ import { PipelineRunStatus } from "./../../types/globalTypes";
 
 export interface PipelineTableFragment_modes {
   __typename: "Mode";
+  id: string;
   name: string;
 }
 

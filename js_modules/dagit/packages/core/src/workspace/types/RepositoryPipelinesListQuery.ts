@@ -16,6 +16,7 @@ export interface RepositoryPipelinesListQuery_repositoryOrError_PythonError {
 
 export interface RepositoryPipelinesListQuery_repositoryOrError_Repository_pipelines_modes {
   __typename: "Mode";
+  id: string;
   name: string;
 }
 

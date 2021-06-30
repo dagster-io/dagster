@@ -5,9 +5,9 @@ import pytest
 import yaml
 from dagster import seven
 from dagster.check import CheckError
-from dagster.cli.workspace.load import location_origins_from_config
 from dagster.core.host_representation import GrpcServerRepositoryLocationOrigin
 from dagster.core.test_utils import environ
+from dagster.core.workspace.load import location_origins_from_config
 from dagster.grpc.server import GrpcServerProcess
 from dagster.utils import file_relative_path
 

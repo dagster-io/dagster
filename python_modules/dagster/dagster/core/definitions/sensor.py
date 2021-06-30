@@ -25,7 +25,7 @@ from .utils import check_valid_name
 DEFAULT_SENSOR_DAEMON_INTERVAL = 30
 
 
-class SensorExecutionContext:
+class SensorEvaluationContext:
     """Sensor execution context.
 
     An instance of this class is made available as the first argument to the evaluation function
@@ -67,7 +67,7 @@ class SensorExecutionContext:
 
     @property
     def instance(self) -> DagsterInstance:
-        # self._instance_ref should only ever be None when this SensorExecutionContext was
+        # self._instance_ref should only ever be None when this SensorEvaluationContext was
         # constructed under test.
         if not self._instance_ref:
             raise DagsterInvariantViolationError(
@@ -105,14 +105,18 @@ class SensorExecutionContext:
         self._cursor = check.opt_str_param(cursor, "cursor")
 
 
+# Preserve SensorExecutionContext for backcompat so type annotations don't break.
+SensorExecutionContext = SensorEvaluationContext
+
+
 class SensorDefinition:
     """Define a sensor that initiates a set of runs based on some external state
 
     Args:
         name (str): The name of the sensor to create.
-        evaluation_fn (Callable[[SensorExecutionContext]]): The core evaluation function for the
+        evaluation_fn (Callable[[SensorEvaluationContext]]): The core evaluation function for the
             sensor, which is run at an interval to determine whether a run should be launched or
-            not. Takes a :py:class:`~dagster.SensorExecutionContext`.
+            not. Takes a :py:class:`~dagster.SensorEvaluationContext`.
 
             This function must return a generator, which must yield either a single SkipReason
             or one or more RunRequest objects.
@@ -131,7 +135,7 @@ class SensorDefinition:
         self,
         name: str,
         evaluation_fn: Callable[
-            ["SensorExecutionContext"],
+            ["SensorEvaluationContext"],
             Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
         ],
         pipeline_name: Optional[str] = None,
@@ -142,7 +146,7 @@ class SensorDefinition:
         job: Optional[GraphDefinition] = None,
         decorated_fn: Optional[
             Callable[
-                ["SensorExecutionContext"],
+                ["SensorEvaluationContext"],
                 Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
             ]
         ] = None,
@@ -195,14 +199,14 @@ class SensorDefinition:
         context_param_name = get_function_params(self._decorated_fn)[0].name
 
         if args:
-            context = check.opt_inst_param(args[0], context_param_name, SensorExecutionContext)
+            context = check.opt_inst_param(args[0], context_param_name, SensorEvaluationContext)
         else:
             if context_param_name not in kwargs:
                 raise DagsterInvalidInvocationError(
                     f"Sensor invocation expected argument '{context_param_name}'."
                 )
             context = check.opt_inst_param(
-                kwargs[context_param_name], context_param_name, SensorExecutionContext
+                kwargs[context_param_name], context_param_name, SensorEvaluationContext
             )
 
         context = context if context else build_sensor_context()
@@ -233,17 +237,17 @@ class SensorDefinition:
     def description(self) -> Optional[str]:
         return self._description
 
-    def evaluate_tick(self, context: "SensorExecutionContext") -> "SensorExecutionData":
+    def evaluate_tick(self, context: "SensorEvaluationContext") -> "SensorExecutionData":
         """Evaluate sensor using the provided context.
 
         Args:
-            context (SensorExecutionContext): The context with which to evaluate this sensor.
+            context (SensorEvaluationContext): The context with which to evaluate this sensor.
         Returns:
             SensorExecutionData: Contains list of run requests, or skip message if present.
 
         """
 
-        check.inst_param(context, "context", SensorExecutionContext)
+        check.inst_param(context, "context", SensorEvaluationContext)
         result = list(ensure_gen(self._evaluation_fn(context)))
 
         if not result or result == [None]:
@@ -341,7 +345,7 @@ def wrap_sensor_evaluation(
 
 def build_sensor_context(
     instance: Optional[DagsterInstance] = None, cursor: Optional[str] = None
-) -> SensorExecutionContext:
+) -> SensorEvaluationContext:
     """Builds sensor execution context using the provided parameters.
 
     This function can be used to provide a context to the invocation of a sensor definition.If
@@ -365,7 +369,7 @@ def build_sensor_context(
 
     check.opt_inst_param(instance, "instance", DagsterInstance)
     check.opt_str_param(cursor, "cursor")
-    return SensorExecutionContext(
+    return SensorEvaluationContext(
         instance_ref=instance.get_ref() if instance else None,
         last_completion_time=None,
         last_run_key=None,

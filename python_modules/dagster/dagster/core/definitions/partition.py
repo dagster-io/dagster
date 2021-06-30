@@ -23,7 +23,7 @@ from ..storage.pipeline_run import PipelineRun
 from ..storage.tags import check_tags
 from .mode import DEFAULT_MODE_NAME
 from .run_request import RunRequest, SkipReason
-from .schedule import ScheduleDefinition, ScheduleExecutionContext
+from .schedule import ScheduleDefinition, ScheduleEvaluationContext
 from .utils import check_valid_name
 
 DEFAULT_DATE_FORMAT = "%Y-%m-%d"
@@ -366,7 +366,7 @@ class PartitionSetDefinition(
         return super(PartitionSetDefinition, cls).__new__(
             cls,
             name=check_valid_name(name),
-            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
+            pipeline_name=check.opt_str_param(pipeline_name, "pipeline_name"),
             partition_fn=_wrap_partition_fn,
             solid_selection=check.opt_nullable_list_param(
                 solid_selection, "solid_selection", of_type=str
@@ -429,13 +429,14 @@ class PartitionSetDefinition(
         execution_timezone=None,
         description=None,
         decorated_fn=None,
+        job=None,
     ):
         """Create a ScheduleDefinition from a PartitionSetDefinition.
 
         Arguments:
             schedule_name (str): The name of the schedule.
             cron_schedule (str): A valid cron string for the schedule
-            partition_selector (Callable[ScheduleExecutionContext, PartitionSetDefinition], Union[Partition, List[Partition]]):
+            partition_selector (Callable[ScheduleEvaluationContext, PartitionSetDefinition], Union[Partition, List[Partition]]):
                 Function that determines the partition to use at a given execution time. Can return
                 either a single Partition or a list of Partitions. For time-based partition sets,
                 will likely be either `identity_partition_selector` or a selector returned by
@@ -462,7 +463,7 @@ class PartitionSetDefinition(
         check.opt_str_param(description, "description")
 
         def _execution_fn(context):
-            check.inst_param(context, "context", ScheduleExecutionContext)
+            check.inst_param(context, "context", ScheduleEvaluationContext)
             with user_code_error_boundary(
                 ScheduleExecutionError,
                 lambda: f"Error occurred during the execution of partition_selector for schedule {schedule_name}",
@@ -543,6 +544,7 @@ class PartitionSetDefinition(
             execution_fn=_execution_fn,
             description=description,
             decorated_fn=decorated_fn,
+            job=job,
         )
 
 
@@ -565,6 +567,7 @@ class PartitionScheduleDefinition(ScheduleDefinition):
         execution_fn=None,
         description=None,
         decorated_fn=None,
+        job=None,
     ):
         super(PartitionScheduleDefinition, self).__init__(
             name=check_valid_name(name),
@@ -579,6 +582,7 @@ class PartitionScheduleDefinition(ScheduleDefinition):
             execution_timezone=execution_timezone,
             execution_fn=execution_fn,
             description=description,
+            job=job,
         )
         self._partition_set = check.inst_param(
             partition_set, "partition_set", PartitionSetDefinition

@@ -6,6 +6,8 @@ from .client import (
     InvalidOutputErrorInfo,
     ReloadRepositoryLocationInfo,
     ReloadRepositoryLocationStatus,
+    ShutdownRepositoryLocationInfo,
+    ShutdownRepositoryLocationStatus,
 )
 from .version import __version__
 
@@ -17,4 +19,6 @@ __all__ = [
     "InvalidOutputErrorInfo",
     "ReloadRepositoryLocationInfo",
     "ReloadRepositoryLocationStatus",
+    "ShutdownRepositoryLocationInfo",
+    "ShutdownRepositoryLocationStatus",
 ]

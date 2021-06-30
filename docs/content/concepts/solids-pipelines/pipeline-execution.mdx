@@ -1,0 +1,200 @@
+---
+title: Pipeline Execution | Dagster
+description: Here you should include one short sentence about the concept you are describing on the page.
+---
+
+# Execution
+
+Dagster provides several different ways to execute pipelines.
+
+## Relevant APIs
+
+| Name                                                   | Description                                                                             |
+| ------------------------------------------------------ | --------------------------------------------------------------------------------------- |
+| <PyObject module="dagster" object="execute_pipeline"/> | A method to execute a pipeline synchronously, typically for running scripts or testing. |
+
+## Overview
+
+There are several different ways to execute pipelines. This page explains different ways to do one-off execution of pipelines: [Dagit](#dagit), [Dagster CLI](#dagster-cli), or [Python APIs](#python-apis).
+
+You can also launch pipelines in other ways:
+
+- [Schedules](/concepts/partitions-schedules-sensors/schedules) can be used to launch runs on a fixed interval.
+- [Sensors](/concepts/partitions-schedules-sensors/sensors) allow you to launch runs based on external state changes.
+
+---
+
+## Executing a Pipeline
+
+```python file=/concepts/solids_pipelines/pipeline_execution.py startafter=start_pipeline_marker endbefore=end_pipeline_marker
+from dagster import pipeline, solid
+
+
+@solid
+def return_one():
+    return 1
+
+
+@solid
+def add_two(i: int):
+    return i + 2
+
+
+@solid
+def multi_three(i: int):
+    return i * 3
+
+
+@pipeline
+def my_pipeline():
+    multi_three(add_two(return_one()))
+```
+
+### Dagit
+
+Dagster comes with a web-based interface for viewing and interacting with pipelines and other Dagster objects.
+
+To view your pipeline in Dagit, you can use the [`dagit`](/\_apidocs/cli#dagit) command:
+
+```bash
+dagit -f my_pipeline.py
+```
+
+Then navigate to <http://localhost:3000> to start using Dagit:
+
+<Image
+alt="pipeline-def"
+src="/images/concepts/solids-pipelines/pipeline-def.png"
+width={3808}
+height={2414}
+/>
+
+Click on the "Playground" tab, then press the "Launch Execution" button to execute the pipeline. You will then see Dagit launches a pipeline run:
+
+<Image
+alt="pipeline-run"
+src="/images/concepts/solids-pipelines/pipeline-run.png"
+width={3808}
+height={2414}
+/>
+
+Dagit Playground also offers a configuration editor to let you interactively build up the configuration. See details in [Dagit](/concepts/dagit/dagit#playground).
+
+### Dagster CLI
+
+The dagster CLI includes both [`dagster pipeline execute`](/\_apidocs/cli#dagster-pipeline-execute) for direct execution and [`dagster pipeline launch`](https://docs.dagster.io/\_apidocs/cli#dagster-pipeline-launch) for launching runs asynchronously using the [run launcher](/deployment/run-launcher) on your instance.
+
+To execute your pipeline directly, you can simply run:
+
+```bash
+dagster pipeline execute -f my_pipeline.py
+```
+
+### Python APIs
+
+Dagster includes Python APIs for execution that are useful when writing tests or scripts.
+
+<PyObject module="dagster" object="execute_pipeline" /> executes a pipeline and returns
+a <PyObject module="dagster" object="PipelineExecutionResult" />.
+
+```python file=/concepts/solids_pipelines/pipeline_execution.py startafter=start_execute_marker endbefore=end_execute_marker
+from dagster import execute_pipeline
+
+if __name__ == "__main__":
+    result = execute_pipeline(my_pipeline)
+```
+
+You can find the full API documentation in [Execution API](/\_apidocs/execution) and learn more about the testing use cases in [Testing](/concepts/testing).
+
+## Executing Pipeline Subset
+
+Dagster supports ways to run a subset of a pipeline, called Solid Selection.
+
+### Solid Selection Syntax
+
+To specify solid selection, Dagster supports a simple query syntax.
+
+It works as follows:
+
+- A query includes a list of clauses.
+- A clause can be a solid name, in which case that solid is selected.
+- A clause can be a solid name preceded by `*`, in which case that solid and all of its ancestors (upstream dependencies) are selected.
+- A clause can be a solid name followed by `*`, in which case that solid and all of its descendents (downstream dependencies) are selected.
+- A clause can be a solid name followed by any number of `+`s, in which case that solid and descendents up to that many hops away are selected.
+- A clause can be a solid name preceded by any number of `+`s, in which case that solid and ancestors up to that many hops away are selected.
+
+**Clause examples**
+
+- `some_solid`: select "some_solid" itself
+- `*some_solid`: select "some_solid" and all ancestors (upstream dependencies).
+- `some_solid*`: select "some_solid" and all descendants (downstream dependencies).
+- `*some_solid*`: select "some_solid" and all of its ancestors and descendants.
+- `+some_solid`: select "some_solid" and its direct parents.
+- `some_solid+++`: select "some_solid" and its children, its children's children, and its children's children's children.
+
+### Specifying Solid Selection
+
+You can use this selection syntax in the `solid_selection` argument to the <PyObject module="dagster" object="execute_pipeline" />:
+
+```python file=/concepts/solids_pipelines/pipeline_execution.py startafter=start_solid_selection_marker endbefore=end_solid_selection_marker
+execute_pipeline(my_pipeline, solid_selection=["*add_two"])
+```
+
+Similarly, you can specify the same solid selection in Dagit Playground:
+
+<Image
+alt="solid-selection"
+src="/images/concepts/solids-pipelines/solid-selection.png"
+width={3808}
+height={2414}
+/>
+
+## Examples
+
+### Multiprocessing Execution
+
+You may want to execute solids in parallel. This can be done by a multiprocess executor, which will execute each solid in its own sub process.
+
+A multiprocess executor is available in the default mode definition, you can use that by specifying the run config:
+
+```yaml file=/concepts/solids_pipelines/multiprocessing.yaml
+execution:
+  multiprocess:
+```
+
+Note that because solids will be executed in separate processes, the values passed between solids also need to be stored in a way that they can be accessed across processes. For example, you can configure a <PyObject object="fs_io_manager" /> to be the pipeline-wide IO manager so the intermediate values can be persisted in the filesystem:
+
+```python file=/concepts/solids_pipelines/pipeline_execution.py startafter=start_parallel_pipeline_marker endbefore=end_parallel_pipeline_marker
+@pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})])
+def parallel_pipeline():
+    total(return_one(), return_one(), return_one(), return_one())
+```
+
+See the [IO Managers](/concepts/io-management/io-managers) for more details about configuring IO Managers.
+
+Besides, using a multiprocess executor will involve reconstructing the pipeline in another process, so the Python APIs will need a reconstructable instance of the pipeline. This work is handled for you when using Dagit or the Dagster CLI.
+
+Similarly, the Python APIs use an ephemeral <PyObject object="DagsterInstance" /> by default to avoid reporting test runs to the instance. When using the Python API for production runs, set the instance using `instance=DagsterInstance.get()` to use the default loading behavior configured for the instance. Again, this is handled for you when using Dagit or the Dagster CLI.
+
+So if you are executing the pipeline using the Python APIs, your execution method will look like:
+
+```python file=/concepts/solids_pipelines/pipeline_execution.py startafter=start_multiprocessing_marker endbefore=end_multiprocessing_marker
+def execute_multiprocessing():
+    from dagster import reconstructable, DagsterInstance
+
+    execute_pipeline(
+        # A ReconstructablePipeline is necessary to load the pipeline in child processes.
+        # reconstructable() is a utility function that captures where the
+        # PipelineDefinition came from.
+        reconstructable(parallel_pipeline),
+        run_config={
+            # This section controls how the run will be executed.
+            # The multiprocess executor runs each solid in its own sub process.
+            "execution": {"multiprocess": {}},
+        },
+        # The default instance for this API is an in memory ephemeral one.
+        # To allow the multiple processes to coordinate we use one here
+        # backed by a temporary directory.
+        instance=DagsterInstance.local_temp(),
+    )
+```

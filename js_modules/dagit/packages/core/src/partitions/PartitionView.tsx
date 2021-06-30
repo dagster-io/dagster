@@ -5,6 +5,7 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
+import {useFeatureFlags} from '../app/Flags';
 import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
@@ -33,13 +34,14 @@ interface PartitionViewProps {
   repoAddress: RepoAddress;
 }
 
-export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
+export const PartitionView: React.FC<PartitionViewProps> = ({
   pipelineName,
   partitionSet,
   partitionSets,
   onChangePartitionSet,
   repoAddress,
 }) => {
+  const {flagPipelineModeTuples} = useFeatureFlags();
   const [runTags, setRunTags] = useQueryPersistedRunFilters(RunTagsSupportedTokens);
   const [stepQuery = '', setStepQuery] = useQueryPersistedState<string>({queryKey: 'stepQuery'});
   const [showBackfillSetup, setShowBackfillSetup] = React.useState(false);
@@ -120,12 +122,16 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
         )}
       </Dialog>
       <PartitionPagerContainer>
-        <PartitionSetSelector
-          selected={partitionSet}
-          partitionSets={partitionSets}
-          onSelect={onChangePartitionSet}
-        />
-        <div style={{width: 10, height: 10}} />
+        {flagPipelineModeTuples && partitionSets.length <= 1 ? null : (
+          <>
+            <PartitionSetSelector
+              selected={partitionSet}
+              partitionSets={partitionSets}
+              onSelect={onChangePartitionSet}
+            />
+            <div style={{width: 10, height: 10}} />
+          </>
+        )}
         <Box flex={{justifyContent: 'space-between', alignItems: 'center'}} style={{flex: 1}}>
           {launchButton()}
           {loading && (

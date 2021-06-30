@@ -26,7 +26,7 @@ install_dev_python_modules_verbose:
 	python scripts/install_dev_python_modules.py
 
 graphql:
-	cd js_modules/dagit/; make generate-types
+	cd js_modules/dagit/; make generate-graphql
 
 sanity_check:
 #NOTE:  fails on nonPOSIX-compliant shells (e.g. CMD, powershell)

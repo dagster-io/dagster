@@ -329,6 +329,24 @@ class GrapheneReloadRepositoryLocationMutationResult(graphene.Union):
         name = "ReloadRepositoryLocationMutationResult"
 
 
+class GrapheneShutdownRepositoryLocationSuccess(graphene.ObjectType):
+    repositoryLocationName = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "ShutdownRepositoryLocationSuccess"
+
+
+class GrapheneShutdownRepositoryLocationMutationResult(graphene.Union):
+    class Meta:
+        types = (
+            GrapheneShutdownRepositoryLocationSuccess,
+            GrapheneRepositoryLocationNotFound,
+            GrapheneReadOnlyError,
+            GraphenePythonError,
+        )
+        name = "ShutdownRepositoryLocationMutationResult"
+
+
 class GrapheneReloadRepositoryLocationMutation(graphene.Mutation):
     Output = graphene.NonNull(GrapheneReloadRepositoryLocationMutationResult)
 
@@ -343,9 +361,7 @@ class GrapheneReloadRepositoryLocationMutation(graphene.Mutation):
     def mutate(self, graphene_info, **kwargs):
         location_name = kwargs["repositoryLocationName"]
 
-        if not graphene_info.context.has_repository_location(
-            location_name
-        ) and not graphene_info.context.has_repository_location_error(location_name):
+        if not graphene_info.context.has_repository_location_name(location_name):
             return GrapheneRepositoryLocationNotFound(location_name)
 
         if not graphene_info.context.is_reload_supported(location_name):
@@ -358,6 +374,30 @@ class GrapheneReloadRepositoryLocationMutation(graphene.Mutation):
         # an updated WorkspaceRequestContext for us to use.
         new_context = graphene_info.context.reload_repository_location(location_name)
         return GrapheneWorkspaceLocationEntry(new_context.workspace_snapshot[location_name])
+
+
+class GrapheneShutdownRepositoryLocationMutation(graphene.Mutation):
+    Output = graphene.NonNull(GrapheneShutdownRepositoryLocationMutationResult)
+
+    class Arguments:
+        repositoryLocationName = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "ShutdownRepositoryLocationMutation"
+
+    @capture_error
+    @check_read_only
+    def mutate(self, graphene_info, **kwargs):
+        location_name = kwargs["repositoryLocationName"]
+
+        if not graphene_info.context.has_repository_location_name(location_name):
+            return GrapheneRepositoryLocationNotFound(location_name)
+
+        if not graphene_info.context.is_shutdown_supported(location_name):
+            raise Exception(f"Location {location_name} does not support shutting down via GraphQL")
+
+        graphene_info.context.shutdown_repository_location(location_name)
+        return GrapheneShutdownRepositoryLocationSuccess(repositoryLocationName=location_name)
 
 
 class GrapheneReloadWorkspaceMutationResult(graphene.Union):
@@ -431,6 +471,7 @@ class GrapheneMutation(graphene.ObjectType):
     delete_pipeline_run = GrapheneDeleteRunMutation.Field()
     reload_repository_location = GrapheneReloadRepositoryLocationMutation.Field()
     reload_workspace = GrapheneReloadWorkspaceMutation.Field()
+    shutdown_repository_location = GrapheneShutdownRepositoryLocationMutation.Field()
     wipe_assets = GrapheneAssetWipeMutation.Field()
     launch_partition_backfill = GrapheneLaunchBackfillMutation.Field()
     resume_partition_backfill = GrapheneResumeBackfillMutation.Field()

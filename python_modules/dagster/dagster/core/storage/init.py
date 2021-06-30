@@ -30,12 +30,12 @@ class InitIntermediateStorageContext(
             constructed.
         pipeline_run (PipelineRun): The pipeline run in context.
         instance (DagsterInstance): The instance.
-        resolved_run_config (ResolvedRunConfig): The environment config.
+        resolved_run_config (ResolvedRunConfig): The run config.
         type_storage_plugin_registry (TypeStoragePluginRegistry): Registry containing custom type
             storage plugins.
         resources (Any): Resources available in context.
         intermediate_storage_config (Dict[str, Any]): The intermediate storage-specific configuration data
-            provided by the environment config. The schema for this data is defined by the
+            provided by the run config. The schema for this data is defined by the
             ``config_schema`` argument to :py:class:`IntermediateStorageDefinition`.
     """
 

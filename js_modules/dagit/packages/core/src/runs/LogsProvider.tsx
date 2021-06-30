@@ -143,7 +143,7 @@ export class LogsProviderWithSubscription extends React.Component<
     const local = this.props.client.readFragment<PipelineRunLogsSubscriptionStatusFragment>({
       fragmentName: 'PipelineRunLogsSubscriptionStatusFragment',
       fragment: PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT,
-      id: `PipelineRun.${this.props.runId}`,
+      id: `PipelineRun:${this.props.runId}`,
     });
 
     if (local) {
@@ -160,7 +160,7 @@ export class LogsProviderWithSubscription extends React.Component<
       this.props.client.writeFragment({
         fragmentName: 'PipelineRunLogsSubscriptionStatusFragment',
         fragment: PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT,
-        id: `PipelineRun.${this.props.runId}`,
+        id: `PipelineRun:${this.props.runId}`,
         data: toWrite,
       });
     }

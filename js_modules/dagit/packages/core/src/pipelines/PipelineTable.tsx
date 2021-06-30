@@ -126,6 +126,7 @@ export const PIPELINE_TABLE_FRAGMENT = gql`
     description
     name
     modes {
+      id
       name
     }
     runs(limit: 5) {

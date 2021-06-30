@@ -24,7 +24,7 @@ from ..mode import DEFAULT_MODE_NAME
 from ..schedule import ScheduleDefinition
 
 if TYPE_CHECKING:
-    from dagster import ScheduleExecutionContext, Partition
+    from dagster import ScheduleEvaluationContext, Partition
 
 # Error messages are long
 # pylint: disable=C0301
@@ -35,20 +35,20 @@ def schedule(
     pipeline_name: Optional[str] = None,
     name: Optional[str] = None,
     tags: Optional[Dict[str, Any]] = None,
-    tags_fn: Optional[Callable[["ScheduleExecutionContext"], Optional[Dict[str, str]]]] = None,
+    tags_fn: Optional[Callable[["ScheduleEvaluationContext"], Optional[Dict[str, str]]]] = None,
     solid_selection: Optional[List[str]] = None,
     mode: Optional[str] = "default",
-    should_execute: Optional[Callable[["ScheduleExecutionContext"], bool]] = None,
+    should_execute: Optional[Callable[["ScheduleEvaluationContext"], bool]] = None,
     environment_vars: Optional[Dict[str, str]] = None,
     execution_timezone: Optional[str] = None,
     description: Optional[str] = None,
     job: Optional[PipelineDefinition] = None,
-) -> Callable[[Callable[["ScheduleExecutionContext"], Dict[str, Any]]], ScheduleDefinition]:
+) -> Callable[[Callable[["ScheduleEvaluationContext"], Dict[str, Any]]], ScheduleDefinition]:
     """Create a schedule.
 
     The decorated function will be called as the ``run_config_fn`` of the underlying
     :py:class:`~dagster.ScheduleDefinition` and should take a
-    :py:class:`~dagster.ScheduleExecutionContext` as its only argument, returning the run config
+    :py:class:`~dagster.ScheduleEvaluationContext` as its only argument, returning the run config
     for the scheduled execution.
 
     Args:
@@ -58,17 +58,17 @@ def schedule(
         name (Optional[str]): The name of the schedule to create.
         tags (Optional[Dict[str, str]]): A dictionary of tags (string key-value pairs) to attach
             to the scheduled runs.
-        tags_fn (Optional[Callable[[ScheduleExecutionContext], Optional[Dict[str, str]]]]): A function
+        tags_fn (Optional[Callable[[ScheduleEvaluationContext], Optional[Dict[str, str]]]]): A function
             that generates tags to attach to the schedules runs. Takes a
-            :py:class:`~dagster.ScheduleExecutionContext` and returns a dictionary of tags (string
+            :py:class:`~dagster.ScheduleEvaluationContext` and returns a dictionary of tags (string
             key-value pairs). You may set only one of ``tags`` and ``tags_fn``.
         solid_selection (Optional[List[str]]): A list of solid subselection (including single
             solid names) to execute when the schedule runs. e.g. ``['*some_solid+', 'other_solid']``
         mode (Optional[str]): The pipeline mode in which to execute this schedule.
             (Default: 'default')
-        should_execute (Optional[Callable[[ScheduleExecutionContext], bool]]): A function that runs at
+        should_execute (Optional[Callable[[ScheduleEvaluationContext], bool]]): A function that runs at
             schedule execution tie to determine whether a schedule should execute or skip. Takes a
-            :py:class:`~dagster.ScheduleExecutionContext` and returns a boolean (``True`` if the
+            :py:class:`~dagster.ScheduleEvaluationContext` and returns a boolean (``True`` if the
             schedule should execute). Defaults to a function that always returns ``True``.
         environment_vars (Optional[Dict[str, str]]): Any environment variables to set when executing
             the schedule.
@@ -78,7 +78,7 @@ def schedule(
         job (Optional[PipelineDefinition]): Experimental
     """
 
-    def inner(fn: Callable[["ScheduleExecutionContext"], Dict[str, Any]]) -> ScheduleDefinition:
+    def inner(fn: Callable[["ScheduleEvaluationContext"], Dict[str, Any]]) -> ScheduleDefinition:
         check.callable_param(fn, "fn")
 
         schedule_name = name or fn.__name__
@@ -107,7 +107,7 @@ def schedule(
 
 
 def monthly_schedule(
-    pipeline_name: str,
+    pipeline_name: Optional[str],
     start_date: datetime.datetime,
     name: Optional[str] = None,
     execution_day_of_month: int = 1,
@@ -115,12 +115,13 @@ def monthly_schedule(
     tags_fn_for_date: Optional[Callable[[datetime.datetime], Optional[Dict[str, str]]]] = None,
     solid_selection: Optional[List[str]] = None,
     mode: Optional[str] = "default",
-    should_execute: Optional[Callable[["ScheduleExecutionContext"], bool]] = None,
+    should_execute: Optional[Callable[["ScheduleEvaluationContext"], bool]] = None,
     environment_vars: Optional[Dict[str, str]] = None,
     end_date: Optional[datetime.datetime] = None,
     execution_timezone: Optional[str] = None,
     partition_months_offset: Optional[int] = 1,
     description: Optional[str] = None,
+    job: Optional[PipelineDefinition] = None,
 ) -> Callable[[Callable[[datetime.datetime], Dict[str, Any]]], PartitionScheduleDefinition]:
     """Create a partitioned schedule that runs monthly.
 
@@ -146,9 +147,9 @@ def monthly_schedule(
             solid names) to execute when the schedule runs. e.g. ``['*some_solid+', 'other_solid']``
         mode (Optional[str]): The pipeline mode in which to execute this schedule.
             (Default: 'default')
-        should_execute (Optional[Callable[ScheduleExecutionContext, bool]]): A function that runs at
+        should_execute (Optional[Callable[ScheduleEvaluationContext, bool]]): A function that runs at
             schedule execution tie to determine whether a schedule should execute or skip. Takes a
-            :py:class:`~dagster.ScheduleExecutionContext` and returns a boolean (``True`` if the
+            :py:class:`~dagster.ScheduleEvaluationContext` and returns a boolean (``True`` if the
             schedule should execute). Defaults to a function that always returns ``True``.
         environment_vars (Optional[Dict[str, str]]): Any environment variables to set when executing
             the schedule.
@@ -161,6 +162,7 @@ def monthly_schedule(
             that executes during month N will fill in the partition for month N-1.
             (Default: 1)
         description (Optional[str]): A human-readable description of the schedule.
+        job (Optional[PipelineDefinition]): Experimental
     """
     check.opt_str_param(name, "name")
     check.inst_param(start_date, "start_date", datetime.datetime)
@@ -170,7 +172,7 @@ def monthly_schedule(
     mode = check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME)
     check.opt_callable_param(should_execute, "should_execute")
     check.opt_dict_param(environment_vars, "environment_vars", key_type=str, value_type=str)
-    check.str_param(pipeline_name, "pipeline_name")
+    check.opt_str_param(pipeline_name, "pipeline_name")
     check.int_param(execution_day_of_month, "execution_day")
     check.inst_param(execution_time, "execution_time", datetime.time)
     check.opt_str_param(execution_timezone, "execution_timezone")
@@ -253,6 +255,7 @@ def my_schedule_definition(_):
             execution_timezone=execution_timezone,
             description=description,
             decorated_fn=fn,
+            job=job,
         )
         update_wrapper(schedule_def, wrapped=fn)
 
@@ -262,7 +265,7 @@ def my_schedule_definition(_):
 
 
 def weekly_schedule(
-    pipeline_name: str,
+    pipeline_name: Optional[str],
     start_date: datetime.datetime,
     name: Optional[str] = None,
     execution_day_of_week: int = 0,
@@ -270,12 +273,13 @@ def weekly_schedule(
     tags_fn_for_date: Optional[Callable[[datetime.datetime], Optional[Dict[str, str]]]] = None,
     solid_selection: Optional[List[str]] = None,
     mode: Optional[str] = "default",
-    should_execute: Optional[Callable[["ScheduleExecutionContext"], bool]] = None,
+    should_execute: Optional[Callable[["ScheduleEvaluationContext"], bool]] = None,
     environment_vars: Optional[Dict[str, str]] = None,
     end_date: Optional[datetime.datetime] = None,
     execution_timezone: Optional[str] = None,
     partition_weeks_offset: Optional[int] = 1,
     description: Optional[str] = None,
+    job: Optional[PipelineDefinition] = None,
 ) -> Callable[[Callable[[datetime.datetime], Dict[str, Any]]], PartitionScheduleDefinition]:
     """Create a partitioned schedule that runs daily.
 
@@ -300,9 +304,9 @@ def weekly_schedule(
             solid names) to execute when the schedule runs. e.g. ``['*some_solid+', 'other_solid']``
         mode (Optional[str]): The pipeline mode in which to execute this schedule.
             (Default: 'default')
-        should_execute (Optional[Callable[ScheduleExecutionContext, bool]]): A function that runs at
+        should_execute (Optional[Callable[ScheduleEvaluationContext, bool]]): A function that runs at
             schedule execution tie to determine whether a schedule should execute or skip. Takes a
-            :py:class:`~dagster.ScheduleExecutionContext` and returns a boolean (``True`` if the
+            :py:class:`~dagster.ScheduleEvaluationContext` and returns a boolean (``True`` if the
             schedule should execute). Defaults to a function that always returns ``True``.
         environment_vars (Optional[Dict[str, str]]): Any environment variables to set when executing
             the schedule.
@@ -315,6 +319,7 @@ def weekly_schedule(
             that executes during week N will fill in the partition for week N-1.
             (Default: 1)
         description (Optional[str]): A human-readable description of the schedule.
+        job (Optional[PipelineDefinition]): Experimental
     """
     check.opt_str_param(name, "name")
     check.inst_param(start_date, "start_date", datetime.datetime)
@@ -324,7 +329,7 @@ def weekly_schedule(
     mode = check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME)
     check.opt_callable_param(should_execute, "should_execute")
     check.opt_dict_param(environment_vars, "environment_vars", key_type=str, value_type=str)
-    check.str_param(pipeline_name, "pipeline_name")
+    check.opt_str_param(pipeline_name, "pipeline_name")
     check.int_param(execution_day_of_week, "execution_day_of_week")
     check.inst_param(execution_time, "execution_time", datetime.time)
     check.opt_str_param(execution_timezone, "execution_timezone")
@@ -402,6 +407,7 @@ def my_schedule_definition(_):
             execution_timezone=execution_timezone,
             description=description,
             decorated_fn=fn,
+            job=job,
         )
 
         update_wrapper(schedule_def, wrapped=fn)
@@ -411,19 +417,20 @@ def my_schedule_definition(_):
 
 
 def daily_schedule(
-    pipeline_name: str,
+    pipeline_name: Optional[str],
     start_date: datetime.datetime,
     name: Optional[str] = None,
     execution_time: datetime.time = datetime.time(0, 0),
     tags_fn_for_date: Optional[Callable[[datetime.datetime], Optional[Dict[str, str]]]] = None,
     solid_selection: Optional[List[str]] = None,
     mode: Optional[str] = "default",
-    should_execute: Optional[Callable[["ScheduleExecutionContext"], bool]] = None,
+    should_execute: Optional[Callable[["ScheduleEvaluationContext"], bool]] = None,
     environment_vars: Optional[Dict[str, str]] = None,
     end_date: Optional[datetime.datetime] = None,
     execution_timezone: Optional[str] = None,
     partition_days_offset: Optional[int] = 1,
     description: Optional[str] = None,
+    job: Optional[PipelineDefinition] = None,
 ) -> Callable[[Callable[[datetime.datetime], Dict[str, Any]]], PartitionScheduleDefinition]:
     """Create a partitioned schedule that runs daily.
 
@@ -447,9 +454,9 @@ def daily_schedule(
             solid names) to execute when the schedule runs. e.g. ``['*some_solid+', 'other_solid']``
         mode (Optional[str]): The pipeline mode in which to execute this schedule.
             (Default: 'default')
-        should_execute (Optional[Callable[ScheduleExecutionContext, bool]]): A function that runs at
+        should_execute (Optional[Callable[ScheduleEvaluationContext, bool]]): A function that runs at
             schedule execution tie to determine whether a schedule should execute or skip. Takes a
-            :py:class:`~dagster.ScheduleExecutionContext` and returns a boolean (``True`` if the
+            :py:class:`~dagster.ScheduleEvaluationContext` and returns a boolean (``True`` if the
             schedule should execute). Defaults to a function that always returns ``True``.
         environment_vars (Optional[Dict[str, str]]): Any environment variables to set when executing
             the schedule.
@@ -462,8 +469,9 @@ def daily_schedule(
             that executes during day N will fill in the partition for day N-1.
             (Default: 1)
         description (Optional[str]): A human-readable description of the schedule.
+        job (Optional[PipelineDefinition]): Experimental
     """
-    check.str_param(pipeline_name, "pipeline_name")
+    check.opt_str_param(pipeline_name, "pipeline_name")
     check.inst_param(start_date, "start_date", datetime.datetime)
     check.opt_str_param(name, "name")
     check.inst_param(execution_time, "execution_time", datetime.time)
@@ -540,6 +548,7 @@ def my_schedule_definition(_):
             execution_timezone=execution_timezone,
             description=description,
             decorated_fn=fn,
+            job=job,
         )
         update_wrapper(schedule_def, wrapped=fn)
         return schedule_def
@@ -548,19 +557,20 @@ def my_schedule_definition(_):
 
 
 def hourly_schedule(
-    pipeline_name: str,
+    pipeline_name: Optional[str],
     start_date: datetime.datetime,
     name: Optional[str] = None,
     execution_time: datetime.time = datetime.time(0, 0),
     tags_fn_for_date: Optional[Callable[[datetime.datetime], Optional[Dict[str, str]]]] = None,
     solid_selection: Optional[List[str]] = None,
     mode: Optional[str] = "default",
-    should_execute: Optional[Callable[["ScheduleExecutionContext"], bool]] = None,
+    should_execute: Optional[Callable[["ScheduleEvaluationContext"], bool]] = None,
     environment_vars: Optional[Dict[str, str]] = None,
     end_date: Optional[datetime.datetime] = None,
     execution_timezone: Optional[str] = None,
     partition_hours_offset: Optional[int] = 1,
     description: Optional[str] = None,
+    job: Optional[PipelineDefinition] = None,
 ) -> Callable[[Callable[[datetime.datetime], Dict[str, Any]]], PartitionScheduleDefinition]:
     """Create a partitioned schedule that runs hourly.
 
@@ -586,9 +596,9 @@ def hourly_schedule(
             solid names) to execute when the schedule runs. e.g. ``['*some_solid+', 'other_solid']``
         mode (Optional[str]): The pipeline mode in which to execute this schedule.
             (Default: 'default')
-        should_execute (Optional[Callable[ScheduleExecutionContext, bool]]): A function that runs at
+        should_execute (Optional[Callable[ScheduleEvaluationContext, bool]]): A function that runs at
             schedule execution tie to determine whether a schedule should execute or skip. Takes a
-            :py:class:`~dagster.ScheduleExecutionContext` and returns a boolean (``True`` if the
+            :py:class:`~dagster.ScheduleEvaluationContext` and returns a boolean (``True`` if the
             schedule should execute). Defaults to a function that always returns ``True``.
         environment_vars (Optional[Dict[str, str]]): Any environment variables to set when executing
             the schedule.
@@ -601,6 +611,7 @@ def hourly_schedule(
             that executes during hour N will fill in the partition for hour N-1.
             (Default: 1)
         description (Optional[str]): A human-readable description of the schedule.
+        job (Optional[PipelineDefinition]): Experimental
     """
     check.opt_str_param(name, "name")
     check.inst_param(start_date, "start_date", datetime.datetime)
@@ -610,7 +621,7 @@ def hourly_schedule(
     mode = check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME)
     check.opt_callable_param(should_execute, "should_execute")
     check.opt_dict_param(environment_vars, "environment_vars", key_type=str, value_type=str)
-    check.str_param(pipeline_name, "pipeline_name")
+    check.opt_str_param(pipeline_name, "pipeline_name")
     check.inst_param(execution_time, "execution_time", datetime.time)
     check.opt_str_param(execution_timezone, "execution_timezone")
     check.opt_int_param(partition_hours_offset, "partition_hours_offset")
@@ -693,6 +704,7 @@ def my_schedule_definition(_):
             execution_timezone=execution_timezone,
             description=description,
             decorated_fn=fn,
+            job=job,
         )
 
         update_wrapper(schedule_def, wrapped=fn)

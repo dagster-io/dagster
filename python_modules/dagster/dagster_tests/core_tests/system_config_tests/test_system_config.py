@@ -21,7 +21,7 @@ from dagster import (
 )
 from dagster.config.config_type import ConfigTypeKind
 from dagster.config.validate import process_config
-from dagster.core.definitions import create_run_config_schema, create_run_config_schema_type
+from dagster.core.definitions import create_run_config_schema
 from dagster.core.definitions.run_config import (
     RunConfigSchemaCreationData,
     define_solid_dictionary_cls,
@@ -40,6 +40,11 @@ def create_creation_data(pipeline_def):
         ignored_solids=[],
         required_resources=set(),
     )
+
+
+def create_run_config_schema_type(pipeline_def):
+    schema = create_run_config_schema(pipeline_def=pipeline_def, mode=None)
+    return schema.config_type
 
 
 def test_all_types_provided():

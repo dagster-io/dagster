@@ -18,7 +18,7 @@ from dagster import (
     solid,
 )
 from dagster.config.validate import process_config, validate_config
-from dagster.core.definitions import create_run_config_schema_type
+from dagster.core.definitions import create_run_config_schema
 from dagster_gcp import (
     bigquery_resource,
     bq_create_dataset,
@@ -125,7 +125,7 @@ def test_bad_config():
     def test_config_pipeline():
         bq_solid_for_queries(["SELECT 1"]).alias("test")()
 
-    env_type = create_run_config_schema_type(test_config_pipeline)
+    env_type = create_run_config_schema(test_config_pipeline).config_type
     for config_fragment, error_message in configs_and_expected_errors:
         config = {"solids": {"test": {"config": {"query_job_config": config_fragment}}}}
         result = validate_config(env_type, config)

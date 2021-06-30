@@ -218,6 +218,7 @@ const NAV_QUERY = gql`
                   id
                   name
                   modes {
+                    id
                     name
                   }
                   schedules {

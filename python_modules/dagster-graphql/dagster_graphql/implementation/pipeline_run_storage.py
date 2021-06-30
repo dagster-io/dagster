@@ -14,6 +14,15 @@ class PipelineRunObservableSubscribe:
 
         cursor = len(events) + int(self.after_cursor)
         self.instance.watch_event_logs(self.run_id, cursor, self.handle_new_event)
+        return self
+
+    def dispose(self):
+        # called when the connection gets closed, allowing the observer to get GC'ed
+        if self.observer and callable(getattr(self.observer, "dispose", None)):
+            self.observer.dispose()
+        self.observer = None
+        self.instance.end_watch_event_logs(self.run_id, self.handle_new_event)
 
     def handle_new_event(self, new_event):
-        self.observer.on_next([new_event])
+        if self.observer:
+            self.observer.on_next([new_event])

@@ -5,9 +5,9 @@ from unittest import mock
 
 import pytest
 from dagster import lambda_solid, pipeline, repository
-from dagster.cli.workspace.context import WorkspaceProcessContext
 from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster.core.test_utils import instance_for_test
+from dagster.core.workspace.context import WorkspaceProcessContext
 from dagster_graphql.test.utils import define_out_of_process_workspace, main_repo_location_name
 
 

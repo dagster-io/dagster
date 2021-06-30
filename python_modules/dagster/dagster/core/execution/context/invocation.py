@@ -376,6 +376,39 @@ class BoundSolidExecutionContext(SolidExecutionContext):
         )
 
 
+def build_op_context(
+    resources: Optional[Dict[str, Any]] = None,
+    config: Optional[Any] = None,
+    instance: Optional[DagsterInstance] = None,
+) -> SolidExecutionContext:
+    """Builds op execution context from provided parameters.
+
+    ``op`` is currently built on top of `solid`, and thus this function creates a `SolidExecutionContext`.
+    ``build_op_context`` can be used as either a function or context manager. If there is a
+    provided resource that is a context manager, then ``build_op_context`` must be used as a
+    context manager. This function can be used to provide the context argument when directly
+    invoking a op.
+
+    Args:
+        resources (Optional[Dict[str, Any]]): The resources to provide to the context. These can be
+            either values or resource definitions.
+        config (Optional[Any]): The op config to provide to the context.
+        instance (Optional[DagsterInstance]): The dagster instance configured for the context.
+            Defaults to DagsterInstance.ephemeral().
+
+    Examples:
+        .. code-block:: python
+
+            context = build_op_context()
+            op_to_invoke(context)
+
+            with build_op_context(resources={"foo": context_manager_resource}) as context:
+                op_to_invoke(context)
+    """
+
+    return build_solid_context(resources=resources, config=config, instance=instance)
+
+
 def build_solid_context(
     resources: Optional[Dict[str, Any]] = None,
     config: Optional[Any] = None,
