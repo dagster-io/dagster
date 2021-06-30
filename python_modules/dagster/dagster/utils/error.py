@@ -16,6 +16,9 @@ class SerializableErrorInfo(namedtuple("SerializableErrorInfo", "message stack c
     ):
         return super().__new__(cls, message, stack, cls_name, cause)
 
+    def __str__(self):
+        return self.to_string()
+
     def to_string(self):
         stack_str = "\nStack Trace:\n" + "".join(self.stack) if self.stack else ""
         cause_str = (
