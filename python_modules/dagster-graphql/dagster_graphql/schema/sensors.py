@@ -55,7 +55,7 @@ class GrapheneSensor(graphene.ObjectType):
         )
 
     def resolve_id(self, _):
-        return f"{self.name}:{self.pipelineName}" if self.pipelineName else self.name
+        return self._external_sensor.get_external_origin_id()
 
     def resolve_sensorState(self, _graphene_info):
         return GrapheneJobState(self._sensor_state)

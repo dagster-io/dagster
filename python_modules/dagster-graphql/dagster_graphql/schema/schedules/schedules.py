@@ -64,7 +64,7 @@ class GrapheneSchedule(graphene.ObjectType):
         )
 
     def resolve_id(self, _):
-        return "%s:%s" % (self.name, self.pipeline_name)
+        return self._external_schedule.get_external_origin_id()
 
     def resolve_partition_set(self, graphene_info):
         from ..partition_sets import GraphenePartitionSet
