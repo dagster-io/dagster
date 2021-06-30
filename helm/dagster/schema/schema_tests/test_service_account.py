@@ -83,7 +83,7 @@ def test_subchart_service_account_global_name(subchart_template: HelmTemplate, c
         assert "Error: could not find template" in err
 
 
-def test_subchart_service_account_name(standalone_subchart_template: HelmTemplate):
+def test_standalone_subchart_service_account_name(standalone_subchart_template: HelmTemplate):
     service_account_name = "service-account-name"
     service_account_values = DagsterUserDeploymentsHelmValues.construct(
         serviceAccount=ServiceAccount.construct(name=service_account_name),
@@ -130,7 +130,7 @@ def test_service_account_annotations(template: HelmTemplate):
     assert service_account_template.metadata.annotations == service_account_annotations
 
 
-def test_subchart_service_account_annotations(standalone_subchart_template: HelmTemplate):
+def test_standalone_subchart_service_account_annotations(standalone_subchart_template: HelmTemplate):
     service_account_name = "service-account-name"
     service_account_annotations = {"hello": "world"}
     service_account_values = DagsterUserDeploymentsHelmValues.construct(
