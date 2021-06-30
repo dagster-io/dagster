@@ -1,16 +1,11 @@
-from typing import Dict
-
-import pytest
-from dagster import (
-    ConfigMapping,
-    DagsterInvalidDefinitionError,
-    execute_pipeline,
-    logger,
-    resource,
-    solid,
-)
+from dagster import ConfigMapping, execute_pipeline, logger, resource, solid
 from dagster.core.definitions.decorators.graph import graph
 from dagster.core.definitions.graph import GraphDefinition
+from dagster.core.definitions.partition import (
+    Partition,
+    PartitionedConfig,
+    StaticPartitionsDefinition,
+)
 from dagster.core.execution.execute import execute_in_process
 
 
@@ -74,35 +69,6 @@ def test_with_resources():
     assert result.success
 
 
-def test_config_mapping_val():
-    @resource(config_schema=str)
-    def date(context) -> str:
-        return context.resource_config
-
-    @solid(
-        required_resource_keys={"date"},
-        config_schema={"msg": str},
-    )
-    def do_stuff(context):
-        return f"{context.solid_config['msg'] } on {context.resources.date}"
-
-    @graph
-    def needs_config():
-        do_stuff()
-
-    job = needs_config.to_job(
-        resource_defs={"date": date},
-        config_mapping={
-            "solids": {"do_stuff": {"config": {"msg": "i am here"}}},
-            "resources": {"date": {"config": "6/3"}},
-        },
-    )
-
-    result = execute_pipeline(job)
-    assert result.success
-    assert result.result_for_solid("do_stuff").output_value() == "i am here on 6/3"
-
-
 def test_config_mapping_fn():
     @resource(config_schema=str)
     def date(context) -> str:
@@ -127,7 +93,7 @@ def test_config_mapping_fn():
 
     job = needs_config.to_job(
         resource_defs={"date": date},
-        config_mapping=ConfigMapping(
+        config=ConfigMapping(
             config_schema={"date": str},  # top level has to be dict
             config_fn=_mapped,
         ),
@@ -156,7 +122,7 @@ def test_default_config():
 
     job = needs_config.to_job(
         resource_defs={"date": date},
-        default_config={
+        config={
             "solids": {"do_stuff": {"config": {"msg": "i am here"}}},
             "resources": {"date": {"config": "6/3"}},
         },
@@ -165,42 +131,6 @@ def test_default_config():
     result = execute_pipeline(job)
     assert result.success
     assert result.result_for_solid("do_stuff").output_value() == "i am here on 6/3"
-
-
-def test_default_config_with_mapping_fn():
-    @resource(config_schema=str)
-    def date(context) -> str:
-        return context.resource_config
-
-    @solid(
-        required_resource_keys={"date"},
-        config_schema={"msg": str},
-    )
-    def do_stuff(context):
-        return f"{context.solid_config['msg'] } on {context.resources.date}"
-
-    @graph
-    def needs_config():
-        do_stuff()
-
-    def _mapped(val):
-        return {
-            "solids": {"do_stuff": {"config": {"msg": "i am here"}}},
-            "resources": {"date": {"config": val["date"]}},
-        }
-
-    job = needs_config.to_job(
-        resource_defs={"date": date},
-        config_mapping=ConfigMapping(
-            config_schema={"date": str},  # top level has to be dict
-            config_fn=_mapped,
-        ),
-        default_config={"date": "6/4"},
-    )
-
-    result = execute_pipeline(job)
-    assert result.success
-    assert result.result_for_solid("do_stuff").output_value() == "i am here on 6/4"
 
 
 def test_suffix():
@@ -225,67 +155,26 @@ def test_partitions():
     def my_graph():
         my_solid()
 
-    def config_fn(date_str: str):
-        return {"solids": {"my_solid": {"config": {"date": date_str}}}}
+    def config_fn(partition: Partition):
+        return {"solids": {"my_solid": {"config": {"date": partition.value}}}}
 
-    def partition_fn():
-        return ["2020-02-25", "2020-02-26"]
-
-    job = my_graph.to_job(config_mapping=ConfigMapping(config_fn), partitions=partition_fn)
+    job = my_graph.to_job(
+        config=PartitionedConfig(
+            run_config_for_partition_fn=config_fn,
+            partitions_def=StaticPartitionsDefinition(
+                [Partition("2020-02-25"), Partition("2020-02-26")]
+            ),
+        ),
+    )
     mode = job.mode_definitions[0]
     partition_set = mode.get_partition_set_def("my_graph")
     partitions = partition_set.get_partitions()
     assert len(partitions) == 2
     assert partitions[0].value == "2020-02-25"
     assert partitions[0].name == "2020-02-25"
-    assert partition_set.run_config_for_partition(partitions[0]) == "2020-02-25"
-
-
-def test_non_str_partitions():
-    @solid(config_schema={"date": str})
-    def my_solid(_):
-        pass
-
-    @graph
-    def my_graph():
-        my_solid()
-
-    def config_fn(date_blob: Dict[str, str]):
-        return {"solids": {"my_solid": {"config": {"date": date_blob["date"]}}}}
-
-    def partition_fn():
-        return [{"date": "2020-02-25"}, {"date": "2020-02-26"}]
-
-    job = my_graph.to_job(config_mapping=ConfigMapping(config_fn), partitions=partition_fn)
-    mode = job.mode_definitions[0]
-    partition_set = mode.get_partition_set_def("my_graph")
-    partitions = partition_set.get_partitions()
-    assert len(partitions) == 2
-    assert partitions[0].value == {"date": "2020-02-25"}
-    assert partitions[0].name == str({"date": "2020-02-25"})
-    assert partition_set.run_config_for_partition(partitions[0]) == {"date": "2020-02-25"}
-
-
-def test_partitions_and_default_config():
-    @solid(config_schema={"date": str})
-    def my_solid(_):
-        pass
-
-    @graph
-    def my_graph():
-        my_solid()
-
-    def partition_fn():
-        return []
-
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="A job can have default_config or partitions, but not both",
-    ):
-        my_graph.to_job(
-            partitions=partition_fn,
-            default_config={"solids": {"my_solid": {"config": {"date": "abc"}}}},
-        )
+    assert partition_set.run_config_for_partition(partitions[0]) == {
+        "solids": {"my_solid": {"config": {"date": "2020-02-25"}}}
+    }
 
 
 def test_tags_on_job():

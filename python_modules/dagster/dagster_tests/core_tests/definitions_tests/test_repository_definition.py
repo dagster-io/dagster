@@ -18,6 +18,11 @@ from dagster import (
     weekly_schedule,
 )
 from dagster.core.definitions.decorators.graph import graph
+from dagster.core.definitions.partition import (
+    Partition,
+    PartitionedConfig,
+    StaticPartitionsDefinition,
+)
 
 
 def create_single_node_pipeline(name, called):
@@ -353,12 +358,17 @@ def test_job_with_partitions():
     def bare():
         ok()
 
-    def _partitions():
-        return [{}]
-
     @repository
     def test():
-        return [bare.to_job(resource_defs={}, partitions=_partitions)]
+        return [
+            bare.to_job(
+                resource_defs={},
+                config=PartitionedConfig(
+                    partitions_def=StaticPartitionsDefinition([Partition("abc")]),
+                    run_config_for_partition_fn=lambda _: {},
+                ),
+            )
+        ]
 
     assert test.get_partition_set_def("bare_default_partition_set")
     # do it twice to make sure we don't overwrite cache on second time

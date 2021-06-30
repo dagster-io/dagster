@@ -1,20 +1,9 @@
 from collections import OrderedDict
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
-    Optional,
-    Set,
-    Tuple,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Dict, Iterable, Iterator, List, Optional, Set, Tuple, Union
 
 from dagster import check
 from dagster.config import Field, Shape
+from dagster.config.config_type import ConfigType
 from dagster.core.definitions.config import ConfigMapping
 from dagster.core.definitions.definition_config_schema import IDefinitionConfigSchema
 from dagster.core.definitions.mode import ModeDefinition
@@ -45,6 +34,7 @@ from .solid_container import create_execution_structure, validate_dependency_dic
 if TYPE_CHECKING:
     from .resource import ResourceDefinition
     from .solid import SolidDefinition
+    from .partition import PartitionedConfig
 
 
 def _check_node_defs_arg(graph_name: str, node_defs: List[NodeDefinition]):
@@ -376,73 +366,58 @@ class GraphDefinition(NodeDefinition):
         self,
         name: Optional[str] = None,
         resource_defs: Optional[Dict[str, "ResourceDefinition"]] = None,
-        config_mapping: Union[ConfigMapping, Dict[str, Any]] = None,
-        default_config: Optional[Dict[str, Any]] = None,
-        partitions: Optional[Callable[[], List[Any]]] = None,
+        config: Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"] = None,
         tags: Optional[Dict[str, str]] = None,
         logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
     ):
         """
         For experimenting with "job" flows
+
+        Args:
+            config: Describes how the job is parameterized at runtime.
+                If no value is provided, then the schema for the job's run config is a standard
+                format based on its solids and resources.
+
+                If a dictionary is provided, then it must conform to the standard config schema, and
+                it will be used as the job's run config for the job whenever the job is executed.
+                The values provided will be viewable and editable in the Dagit playground, so be
+                careful with secrets.
+
+                If a ConfigMapping object is provided, then the schema for the job's run config is
+                determined by the config mapping, and the ConfigMapping, which should return
+                configuration in the standard format to configure the job.
+
+                If a PartitionedConfig object is provided, then it defines a discrete set of config
+                values that can parameterize the pipeline, as well as a function for mapping those
+                values to the base config. The values provided will be viewable and editable in the
+                Dagit playground, so be careful with secrets.
         """
         from .pipeline import PipelineDefinition
+        from .partition import PartitionedConfig
 
         tags = check.opt_dict_param(tags, "tags", key_type=str, value_type=str)
+        presets = []
+        config_mapping = None
+        partitioned_config = None
 
-        check.opt_callable_param(partitions, "partitions")
-        if default_config and partitions:
-            raise DagsterInvalidDefinitionError(
-                "A job can have default_config or partitions, but not both"
+        if isinstance(config, ConfigMapping):
+            config_mapping = config
+        elif isinstance(config, PartitionedConfig):
+            partitioned_config = config
+        elif isinstance(config, dict):
+            presets = [PresetDefinition(name="default", run_config=config)]
+            # Using config mapping here is a trick to make it so that the preset will be used even
+            # when no config is supplied for the job.
+            config_mapping = _config_mapping_with_default_value(
+                self._get_config_schema(resource_defs), config
             )
-
-        if config_mapping and not isinstance(config_mapping, ConfigMapping):
-            inner_run_config = config_mapping
-            config_mapping = ConfigMapping(
-                config_fn=lambda _: inner_run_config,
-                config_schema={},
+        elif config is not None:
+            check.failed(
+                f"config param must be a ConfigMapping, a PartitionedConfig, or a dictionary, but "
+                f"is an object of type {type(config)}"
             )
-
-        if not (config_mapping is None or isinstance(config_mapping, ConfigMapping)):
-            check.failed(f"Unexpected config_mapping value {config_mapping}")
 
         job_name = name or self.name
-
-        presets = None
-        if default_config:
-            presets = [
-                PresetDefinition(
-                    name="default",
-                    run_config=default_config,
-                )
-            ]
-            if config_mapping:
-                inner_schema = config_mapping.config_schema.config_type
-                config_fn = config_mapping.config_fn
-            else:
-                # create a temp pipeline to calculate schema
-                inner_schema = (
-                    PipelineDefinition(
-                        name=job_name,
-                        graph_def=self,
-                        mode_defs=[
-                            ModeDefinition(
-                                resource_defs=resource_defs,
-                                logger_defs=logger_defs,
-                            )
-                        ],
-                    )
-                    .get_run_config_schema("default")
-                    .run_config_schema_type
-                )
-                config_fn = lambda x: x
-
-            if not isinstance(inner_schema, Shape):
-                check.failed("Only Shape (dictionary) config_schema allowed on Job ConfigMapping")
-
-            config_mapping = ConfigMapping(
-                config_fn=config_fn,
-                config_schema=_set_default(inner_schema, default_config),
-            )
 
         return PipelineDefinition(
             name=job_name,
@@ -452,11 +427,26 @@ class GraphDefinition(NodeDefinition):
                     resource_defs=resource_defs,
                     logger_defs=logger_defs,
                     _config_mapping=config_mapping,
-                    _partitions=partitions,
+                    _partitioned_config=partitioned_config,
                 )
             ],
             preset_defs=presets,
             tags=tags,
+        )
+
+    def _get_config_schema(
+        self, resource_defs: Optional[Dict[str, "ResourceDefinition"]]
+    ) -> ConfigType:
+        from .pipeline import PipelineDefinition
+
+        return (
+            PipelineDefinition(
+                name=self.name,
+                graph_def=self,
+                mode_defs=[ModeDefinition(resource_defs=resource_defs)],
+            )
+            .get_run_config_schema("default")
+            .run_config_schema_type
         )
 
 
@@ -676,18 +666,29 @@ def _validate_out_mappings(
     return output_mappings
 
 
-def _set_default(config_shape: Shape, cfg_value: Dict[str, Any]) -> Shape:
-    """Change a config schema to set a default value"""
+def _config_mapping_with_default_value(
+    inner_schema: ConfigType,
+    default_config: Dict[str, Any],
+) -> ConfigMapping:
+    if not isinstance(inner_schema, Shape):
+        check.failed("Only Shape (dictionary) config_schema allowed on Job ConfigMapping")
+
+    def config_fn(x):
+        return x
+
     updated_fields = {}
-    for name, field in config_shape.fields.items():
-        if name in cfg_value:
+    for name, field in inner_schema.fields.items():
+        if name in default_config:
             updated_fields[name] = Field(
                 config=field.config_type,
-                default_value=cfg_value[name],
+                default_value=default_config[name],
                 description=field.description,
             )
 
-    return Shape(
-        fields=updated_fields,
-        description="run config schema with default values from default_config",
+    return ConfigMapping(
+        config_fn=config_fn,
+        config_schema=Shape(
+            fields=updated_fields,
+            description="run config schema with default values from default_config",
+        ),
     )

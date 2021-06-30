@@ -121,7 +121,7 @@ def process_customer_data_dump():
 
 
 process_customer_data_dump_dev = process_customer_data_dump.to_job(
-    default_config={"solids": {"process_customer": {"config": {"customer_id": "test_customer"}}}}
+    config={"solids": {"process_customer": {"config": {"customer_id": "test_customer"}}}}
 )
 
 
