@@ -147,11 +147,11 @@ load_from:
       executable_path: venvs/path/to/ml_tensorflow/bin/python
 ```
 
-#### Identify repository locations
+#### Identifying repository locations
 
 The example above also illustrates the `location_name` key. Each repository location in a workspace has a unique name that is displayed in Dagit, and is also used to disambiguate definitions with the same name across multiple repository locations. Dagster will supply a default name for each location based on its workspace entry if a custom one is not supplied.
 
-Renaming a repository location (or changing its workspace configuration if you're using the default name) may cause parts of the Dagster system that rely on that name to need to be re-configured. For example, you may need to restart any schedules in that repository location, since those schedules were marked as started using the previous repository location name. You can avoid this situation by giving each of your locations a unique name as soon as you add them to the workspace.
+When you start a schedule or a sensor, a serialized representation of the entry in your `workspace.yaml` file is stored in a database, and the `dagster-daemon` process uses this serialized representation to identify and load your schedule or sensor. This means that if you rename a repository location or change its configuration in your `workspace.yaml`, you must also stop and restart any running schedules or sensors in that repository location. You can do this within Dagit from the Status page under Schedules or Sensors.
 
 #### Repository locations in Dagit
 
