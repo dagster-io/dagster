@@ -20,6 +20,7 @@ Consider the following pipeline which has three solids, one of which fails half 
 
 ```python file=/guides/dagster/reexecution/unreliable_pipeline.py
 from random import random
+
 from dagster import ModeDefinition, fs_io_manager, pipeline, solid
 
 
@@ -120,7 +121,7 @@ reexecution_result_specific_selection = reexecute_pipeline(
     unreliable_pipeline,
     parent_run_id=pipeline_result_full.run_id,
     instance=instance,
-    solid_selection=['unreliable+*']
+    solid_selection=["unreliable+*"],
 )
 ```
 
