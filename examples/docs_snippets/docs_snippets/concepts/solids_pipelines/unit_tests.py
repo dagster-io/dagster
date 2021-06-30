@@ -1,3 +1,4 @@
+"""isort:skip_file"""
 from dagster import (
     AssetMaterialization,
     DagsterEventType,
@@ -7,7 +8,6 @@ from dagster import (
     OutputDefinition,
     PipelineExecutionResult,
     SolidExecutionResult,
-    build_solid_context,
     execute_pipeline,
     execute_solid,
     pipeline,
@@ -32,11 +32,6 @@ def add_two(num: int) -> int:
 @solid
 def subtract(left: int, right: int) -> int:
     return left - right
-
-
-@solid(required_resource_keys={"foo"})
-def solid_requires_foo(context):
-    return context.resources.foo
 
 
 @pipeline
@@ -93,20 +88,69 @@ def test_solid():
 
 # end_test_execute_solid_marker
 
+# start_invocation_solid_marker
+@solid
+def my_solid_to_test():
+    return 5
+
+
+# end_invocation_solid_marker
+
 # start_test_solid_marker
 def test_solid_with_invocation():
-    assert add_one() == 2
+    assert my_solid_to_test() == 5
 
 
 # end_test_solid_marker
 
+# start_invocation_solid_inputs_marker
+@solid
+def my_solid_with_inputs(x, y):
+    return x + y
+
+
+# end_invocation_solid_inputs_marker
+
+# start_test_solid_with_inputs_marker
+def test_inputs_solid_with_invocation():
+    assert my_solid_with_inputs(5, 6) == 11
+
+
+# end_test_solid_with_inputs_marker
+
+# start_solid_requires_foo_marker
+@solid(required_resource_keys={"foo"})
+def solid_requires_foo(context):
+    return f"found {context.resources.foo}"
+
+
+# end_solid_requires_foo_marker
+
 # start_test_solid_context_marker
+from dagster import build_solid_context
+
+
 def test_solid_with_context():
     context = build_solid_context(resources={"foo": "bar"})
-    assert solid_requires_foo(context) == "bar"
+    assert solid_requires_foo(context) == "found bar"
 
 
 # end_test_solid_context_marker
+
+from dagster import resource
+
+# start_test_resource_def_marker
+@resource(config_schema={"my_str": str})
+def my_foo_resource(context):
+    return context.resource_config["my_str"]
+
+
+def test_solid_resource_def():
+    context = build_solid_context(resources={"foo": my_foo_resource.configured({"my_str": "bar"})})
+    assert solid_requires_foo(context) == "found bar"
+
+
+# end_test_resource_def_marker
 
 # start_test_pipeline_with_config
 def test_pipeline_with_config():
