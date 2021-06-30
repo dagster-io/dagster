@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { InstigationTickStatus } from "./../../types/globalTypes";
+import { JobTickStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: TickTagFragment
@@ -24,9 +24,9 @@ export interface TickTagFragment_error {
 }
 
 export interface TickTagFragment {
-  __typename: "InstigationTick";
+  __typename: "JobTick";
   id: string;
-  status: InstigationTickStatus;
+  status: JobTickStatus;
   timestamp: number;
   skipReason: string | null;
   runIds: string[];

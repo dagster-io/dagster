@@ -8,7 +8,7 @@ import {UnloadableSensors} from '../jobs/UnloadableJobs';
 import {SENSOR_FRAGMENT} from '../sensors/SensorFragment';
 import {SensorInfo} from '../sensors/SensorInfo';
 import {SensorsTable} from '../sensors/SensorsTable';
-import {InstigationType} from '../types/globalTypes';
+import {JobType} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
@@ -41,16 +41,16 @@ export const InstanceSensors = React.memo(() => {
 });
 
 const AllSensors: React.FC<{data: InstanceSensorsQuery}> = ({data}) => {
-  const {instance, repositoriesOrError, unloadableInstigationStatesOrError} = data;
+  const {instance, repositoriesOrError, unloadableJobStatesOrError} = data;
 
   if (repositoriesOrError.__typename === 'PythonError') {
     return <PythonErrorInfo error={repositoriesOrError} />;
   }
-  if (unloadableInstigationStatesOrError.__typename === 'PythonError') {
-    return <PythonErrorInfo error={unloadableInstigationStatesOrError} />;
+  if (unloadableJobStatesOrError.__typename === 'PythonError') {
+    return <PythonErrorInfo error={unloadableJobStatesOrError} />;
   }
 
-  const unloadableJobs = unloadableInstigationStatesOrError.results;
+  const unloadableJobs = unloadableJobStatesOrError.results;
   const withSensors = repositoriesOrError.nodes.filter((repository) => repository.sensors.length);
 
   const sensorDefinitionsSection = withSensors.length ? (
@@ -70,9 +70,7 @@ const AllSensors: React.FC<{data: InstanceSensorsQuery}> = ({data}) => {
     </Group>
   ) : null;
 
-  const unloadableSensors = unloadableJobs.filter(
-    (state) => state.instigationType === InstigationType.SENSOR,
-  );
+  const unloadableSensors = unloadableJobs.filter((state) => state.jobType === JobType.SENSOR);
   const unloadableSensorsSection = unloadableSensors.length ? (
     <UnloadableSensors sensorStates={unloadableSensors} />
   ) : null;
@@ -132,11 +130,11 @@ const INSTANCE_SENSORS_QUERY = gql`
       }
       ...PythonErrorFragment
     }
-    unloadableInstigationStatesOrError {
-      ... on InstigationStates {
+    unloadableJobStatesOrError {
+      ... on JobStates {
         results {
           id
-          ...InstigationStateFragment
+          ...JobStateFragment
         }
       }
       ...PythonErrorFragment

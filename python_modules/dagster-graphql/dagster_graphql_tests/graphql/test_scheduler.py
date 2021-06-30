@@ -89,8 +89,8 @@ query getSchedule($scheduleSelector: ScheduleSelector!, $ticksAfter: Float) {
 
 GET_UNLOADABLE_QUERY = """
 query getUnloadableSchedules {
-  unloadableInstigationStatesOrError(instigationType: SCHEDULE) {
-    ... on InstigationStates {
+  unloadableJobStatesOrError(jobType: SCHEDULE) {
+    ... on JobStates {
       results {
         id
         name
@@ -178,12 +178,12 @@ def default_execution_params():
     }
 
 
-def _get_unloadable_schedule_origin(name):
+def _get_unloadable_schedule_origin(job_name):
     working_directory = os.path.dirname(__file__)
     recon_repo = ReconstructableRepository.for_file(__file__, "doesnt_exist", working_directory)
     return ExternalRepositoryOrigin(
         InProcessRepositoryLocationOrigin(recon_repo), "fake_repository"
-    ).get_job_origin(name)
+    ).get_job_origin(job_name)
 
 
 def test_get_schedule_definitions_for_repository(graphql_context):
@@ -434,8 +434,5 @@ def test_get_unloadable_job(graphql_context):
         )
 
     result = execute_dagster_graphql(graphql_context, GET_UNLOADABLE_QUERY)
-    assert len(result.data["unloadableInstigationStatesOrError"]["results"]) == 1
-    assert (
-        result.data["unloadableInstigationStatesOrError"]["results"][0]["name"]
-        == "unloadable_running"
-    )
+    assert len(result.data["unloadableJobStatesOrError"]["results"]) == 1
+    assert result.data["unloadableJobStatesOrError"]["results"][0]["name"] == "unloadable_running"

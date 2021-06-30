@@ -3,7 +3,7 @@ import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 
 import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
-import {InstigationStatus} from '../types/globalTypes';
+import {JobStatus} from '../types/globalTypes';
 import {SwitchWithoutLabel} from '../ui/SwitchWithoutLabel';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -48,7 +48,7 @@ export const ScheduleSwitch: React.FC<Props> = (props) => {
   };
 
   const onStatusChange = () => {
-    if (status === InstigationStatus.RUNNING) {
+    if (status === JobStatus.RUNNING) {
       stopSchedule({
         variables: {scheduleOriginId: id},
       });
@@ -59,7 +59,7 @@ export const ScheduleSwitch: React.FC<Props> = (props) => {
     }
   };
 
-  const running = status === InstigationStatus.RUNNING;
+  const running = status === JobStatus.RUNNING;
 
   if (canStartSchedule && canStopRunningSchedule) {
     return (

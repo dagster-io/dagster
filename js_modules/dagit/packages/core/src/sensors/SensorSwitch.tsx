@@ -3,7 +3,7 @@ import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 
 import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
-import {InstigationStatus} from '../types/globalTypes';
+import {JobStatus} from '../types/globalTypes';
 import {SwitchWithoutLabel} from '../ui/SwitchWithoutLabel';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -42,14 +42,14 @@ export const SensorSwitch: React.FC<Props> = (props) => {
   });
 
   const onChangeSwitch = () => {
-    if (status === InstigationStatus.RUNNING) {
+    if (status === JobStatus.RUNNING) {
       stopSensor({variables: {jobOriginId}});
     } else {
       startSensor({variables: {sensorSelector}});
     }
   };
 
-  const running = status === InstigationStatus.RUNNING;
+  const running = status === JobStatus.RUNNING;
 
   if (canStartSensor && canStopSensor) {
     return (

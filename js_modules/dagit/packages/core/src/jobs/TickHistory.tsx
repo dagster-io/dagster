@@ -17,7 +17,7 @@ import {Line, ChartComponentProps} from 'react-chartjs-2';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {InstigationTickStatus, InstigationType} from '../types/globalTypes';
+import {JobTickStatus, JobType} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
 import {Group} from '../ui/Group';
@@ -29,39 +29,39 @@ import {RepoAddress} from '../workspace/types';
 import {TICK_TAG_FRAGMENT, RunList, TickTag, FailedRunList} from './JobTick';
 import {LiveTickTimeline} from './LiveTickTimeline';
 import {
-  TickHistoryQuery,
-  TickHistoryQuery_instigationStateOrError_InstigationState_ticks,
-} from './types/TickHistoryQuery';
+  JobTickHistoryQuery,
+  JobTickHistoryQuery_jobStateOrError_JobState_ticks,
+} from './types/JobTickHistoryQuery';
 
 import 'chartjs-plugin-zoom';
 
 const MIN_ZOOM_RANGE = 30 * 60 * 1000; // 30 minutes
 
 const COLOR_MAP = {
-  [InstigationTickStatus.SUCCESS]: Colors.BLUE3,
-  [InstigationTickStatus.FAILURE]: Colors.RED3,
-  [InstigationTickStatus.STARTED]: Colors.GRAY3,
-  [InstigationTickStatus.SKIPPED]: Colors.GOLD3,
+  [JobTickStatus.SUCCESS]: Colors.BLUE3,
+  [JobTickStatus.FAILURE]: Colors.RED3,
+  [JobTickStatus.STARTED]: Colors.GRAY3,
+  [JobTickStatus.SKIPPED]: Colors.GOLD3,
 };
 
 interface ShownStatusState {
-  [InstigationTickStatus.SUCCESS]: boolean;
-  [InstigationTickStatus.FAILURE]: boolean;
-  [InstigationTickStatus.STARTED]: boolean;
-  [InstigationTickStatus.SKIPPED]: boolean;
+  [JobTickStatus.SUCCESS]: boolean;
+  [JobTickStatus.FAILURE]: boolean;
+  [JobTickStatus.STARTED]: boolean;
+  [JobTickStatus.SKIPPED]: boolean;
 }
 
 const DEFAULT_SHOWN_STATUS_STATE = {
-  [InstigationTickStatus.SUCCESS]: true,
-  [InstigationTickStatus.FAILURE]: true,
-  [InstigationTickStatus.STARTED]: true,
-  [InstigationTickStatus.SKIPPED]: true,
+  [JobTickStatus.SUCCESS]: true,
+  [JobTickStatus.FAILURE]: true,
+  [JobTickStatus.STARTED]: true,
+  [JobTickStatus.SKIPPED]: true,
 };
 const STATUS_TEXT_MAP = {
-  [InstigationTickStatus.SUCCESS]: 'Requested',
-  [InstigationTickStatus.FAILURE]: 'Failed',
-  [InstigationTickStatus.STARTED]: 'Started',
-  [InstigationTickStatus.SKIPPED]: 'Skipped',
+  [JobTickStatus.SUCCESS]: 'Requested',
+  [JobTickStatus.FAILURE]: 'Failed',
+  [JobTickStatus.STARTED]: 'Started',
+  [JobTickStatus.SKIPPED]: 'Skipped',
 };
 
 const TABS = [
@@ -93,16 +93,16 @@ const TABS = [
   {id: 'all', label: 'All'},
 ];
 
-type InstigationTick = TickHistoryQuery_instigationStateOrError_InstigationState_ticks;
+type JobTick = JobTickHistoryQuery_jobStateOrError_JobState_ticks;
 const MILLIS_PER_DAY = 86400 * 1000;
 
 export const JobTickHistory = ({
-  name,
+  jobName,
   repoAddress,
   onHighlightRunIds,
   showRecent,
 }: {
-  name: string;
+  jobName: string;
   repoAddress: RepoAddress;
   onHighlightRunIds: (runIds: string[]) => void;
   showRecent?: boolean;
@@ -113,7 +113,7 @@ export const JobTickHistory = ({
   );
   const [pollingPaused, pausePolling] = React.useState<boolean>(false);
   const [selectedTick, setSelectedTick] = React.useState<
-    TickHistoryQuery_instigationStateOrError_InstigationState_ticks | undefined
+    JobTickHistoryQuery_jobStateOrError_JobState_ticks | undefined
   >();
   React.useEffect(() => {
     if (!showRecent && selectedTab === 'recent') {
@@ -121,11 +121,11 @@ export const JobTickHistory = ({
     }
   }, [selectedTab, showRecent]);
   const selectedRange = TABS.find((x) => x.id === selectedTab)?.range;
-  const {data} = useQuery<TickHistoryQuery>(JOB_TICK_HISTORY_QUERY, {
+  const {data} = useQuery<JobTickHistoryQuery>(JOB_TICK_HISTORY_QUERY, {
     variables: {
-      instigationSelector: {
+      jobSelector: {
         ...repoAddressToSelector(repoAddress),
-        name,
+        jobName,
       },
       dayRange: selectedRange,
       limit: selectedTab === 'recent' ? 15 : undefined,
@@ -163,17 +163,17 @@ export const JobTickHistory = ({
     );
   }
 
-  if (data.instigationStateOrError.__typename === 'PythonError') {
-    return <PythonErrorInfo error={data.instigationStateOrError} />;
+  if (data.jobStateOrError.__typename === 'PythonError') {
+    return <PythonErrorInfo error={data.jobStateOrError} />;
   }
 
-  const {ticks, nextTick, instigationType} = data.instigationStateOrError;
+  const {ticks, nextTick, jobType} = data.jobStateOrError;
   const displayedTicks = ticks.filter((tick) =>
-    tick.status === InstigationTickStatus.SKIPPED
-      ? instigationType === InstigationType.SCHEDULE && shownStates[tick.status]
+    tick.status === JobTickStatus.SKIPPED
+      ? jobType === JobType.SCHEDULE && shownStates[tick.status]
       : shownStates[tick.status],
   );
-  const StatusFilter = ({status}: {status: InstigationTickStatus}) => (
+  const StatusFilter = ({status}: {status: JobTickStatus}) => (
     <Checkbox
       label={STATUS_TEXT_MAP[status]}
       checked={shownStates[status]}
@@ -181,19 +181,19 @@ export const JobTickHistory = ({
       onClick={() => setShownStates({...shownStates, [status]: !shownStates[status]})}
     />
   );
-  const onTickClick = (tick?: InstigationTick) => {
+  const onTickClick = (tick?: JobTick) => {
     setSelectedTick(tick);
     if (!tick) {
       return;
     }
-    if (tick.error && tick.status === InstigationTickStatus.FAILURE) {
+    if (tick.error && tick.status === JobTickStatus.FAILURE) {
       showCustomAlert({
         title: 'Python Error',
         body: <PythonErrorInfo error={tick.error} />,
       });
     }
   };
-  const onTickHover = (tick?: InstigationTick) => {
+  const onTickHover = (tick?: JobTick) => {
     if (!tick) {
       pausePolling(false);
     }
@@ -219,10 +219,10 @@ export const JobTickHistory = ({
         <>
           <Box flex={{justifyContent: 'flex-end'}}>
             <Group direction="row" spacing={16}>
-              <StatusFilter status={InstigationTickStatus.SUCCESS} />
-              <StatusFilter status={InstigationTickStatus.FAILURE} />
-              {instigationType === InstigationType.SCHEDULE ? (
-                <StatusFilter status={InstigationTickStatus.SKIPPED} />
+              <StatusFilter status={JobTickStatus.SUCCESS} />
+              <StatusFilter status={JobTickStatus.FAILURE} />
+              {jobType === JobType.SCHEDULE ? (
+                <StatusFilter status={JobTickStatus.SKIPPED} />
               ) : null}
             </Group>
           </Box>
@@ -247,26 +247,25 @@ export const JobTickHistory = ({
       <Dialog
         isOpen={
           selectedTick &&
-          (selectedTick.status === InstigationTickStatus.SUCCESS ||
-            selectedTick.status === InstigationTickStatus.SKIPPED)
+          (selectedTick.status === JobTickStatus.SUCCESS ||
+            selectedTick.status === JobTickStatus.SKIPPED)
         }
         onClose={() => setSelectedTick(undefined)}
         style={{
-          width:
-            selectedTick && selectedTick.status === InstigationTickStatus.SUCCESS ? '90vw' : '50vw',
+          width: selectedTick && selectedTick.status === JobTickStatus.SUCCESS ? '90vw' : '50vw',
         }}
         title={selectedTick ? <TimestampDisplay timestamp={selectedTick.timestamp} /> : null}
       >
         {selectedTick ? (
           <Box background={Colors.WHITE} padding={16} margin={{bottom: 16}}>
-            {selectedTick.status === InstigationTickStatus.SUCCESS ? (
+            {selectedTick.status === JobTickStatus.SUCCESS ? (
               selectedTick.runIds.length ? (
                 <RunList runIds={selectedTick.runIds} />
               ) : (
                 <FailedRunList originRunIds={selectedTick.originRunIds} />
               )
             ) : null}
-            {selectedTick.status === InstigationTickStatus.SKIPPED ? (
+            {selectedTick.status === JobTickStatus.SKIPPED ? (
               <Group direction="row" spacing={16}>
                 <TickTag tick={selectedTick} />
                 <span>{selectedTick.skipReason || 'No skip reason provided'}</span>
@@ -292,15 +291,15 @@ interface Bounds {
 }
 
 const TickHistoryGraph: React.FC<{
-  ticks: InstigationTick[];
-  selectedTick?: InstigationTick;
-  onSelectTick: (tick: InstigationTick) => void;
-  onHoverTick: (tick?: InstigationTick) => void;
+  ticks: JobTick[];
+  selectedTick?: JobTick;
+  onSelectTick: (tick: JobTick) => void;
+  onHoverTick: (tick?: JobTick) => void;
   selectedTab: string;
   maxBounds?: Bounds;
 }> = ({ticks, selectedTick, onSelectTick, onHoverTick, selectedTab, maxBounds}) => {
   const [bounds, setBounds] = React.useState<Bounds | null>(null);
-  const [hoveredTick, setHoveredTick] = React.useState<InstigationTick | undefined>();
+  const [hoveredTick, setHoveredTick] = React.useState<JobTick | undefined>();
   React.useEffect(() => {
     setBounds(null);
   }, [selectedTab]);
@@ -424,13 +423,13 @@ const TickHistoryGraph: React.FC<{
           if (!hoveredTick) {
             return '';
           }
-          if (hoveredTick.status === InstigationTickStatus.SKIPPED && hoveredTick.skipReason) {
+          if (hoveredTick.status === JobTickStatus.SKIPPED && hoveredTick.skipReason) {
             return snippet(hoveredTick.skipReason);
           }
-          if (hoveredTick.status === InstigationTickStatus.SUCCESS && hoveredTick.runIds.length) {
+          if (hoveredTick.status === JobTickStatus.SUCCESS && hoveredTick.runIds.length) {
             return hoveredTick.runIds;
           }
-          if (hoveredTick.status === InstigationTickStatus.FAILURE && hoveredTick.error?.message) {
+          if (hoveredTick.status === JobTickStatus.FAILURE && hoveredTick.error?.message) {
             return snippet(hoveredTick.error.message);
           }
           return '';
@@ -528,12 +527,12 @@ const TickHistoryGraph: React.FC<{
 };
 
 const JOB_TICK_HISTORY_QUERY = gql`
-  query TickHistoryQuery($instigationSelector: InstigationSelector!, $dayRange: Int, $limit: Int) {
-    instigationStateOrError(instigationSelector: $instigationSelector) {
+  query JobTickHistoryQuery($jobSelector: JobSelector!, $dayRange: Int, $limit: Int) {
+    jobStateOrError(jobSelector: $jobSelector) {
       __typename
-      ... on InstigationState {
+      ... on JobState {
         id
-        instigationType
+        jobType
         nextTick {
           timestamp
         }

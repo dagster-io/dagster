@@ -71,7 +71,7 @@ export const SensorRoot: React.FC<{
               />
               <JobTickHistory
                 repoAddress={repoAddress}
-                name={sensorOrError.name}
+                jobName={sensorOrError.name}
                 showRecent={true}
                 onHighlightRunIds={(runIds: string[]) => setSelectedRunIds(runIds)}
               />

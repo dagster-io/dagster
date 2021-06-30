@@ -4,7 +4,7 @@ import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {InstigationStatus, InstigationType} from '../types/globalTypes';
+import {JobStatus, JobType} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {Group} from '../ui/Group';
 import {BorderSetting} from '../ui/types';
@@ -18,8 +18,8 @@ type Item = {
   to: string;
   label: string;
   repoPath: string;
-  instigationType: InstigationType;
-  status: InstigationStatus;
+  jobType: JobType;
+  status: JobStatus;
 };
 
 interface JobsListProps {
@@ -75,7 +75,7 @@ export const JobsList: React.FC<JobsListProps> = ({repos, repoPath, selector}) =
                       scheduleState.repositoryOrigin.repositoryName,
                       scheduleState.repositoryOrigin.repositoryLocationName,
                     ),
-                    instigationType: InstigationType.SCHEDULE,
+                    jobType: JobType.SCHEDULE,
                     status: scheduleState.status,
                   };
                 });
@@ -97,7 +97,7 @@ export const JobsList: React.FC<JobsListProps> = ({repos, repoPath, selector}) =
                       sensorState.repositoryOrigin.repositoryName,
                       sensorState.repositoryOrigin.repositoryLocationName,
                     ),
-                    instigationType: InstigationType.SENSOR,
+                    jobType: JobType.SENSOR,
                     status: sensorState.status,
                   };
                 });
@@ -183,8 +183,7 @@ export const JobsList: React.FC<JobsListProps> = ({repos, repoPath, selector}) =
           const border: BorderSetting | null = isSelected
             ? {side: 'left', width: 4, color: isSelected ? Colors.COBALT3 : Colors.GRAY3}
             : null;
-          const icon =
-            p.instigationType === InstigationType.SCHEDULE ? 'time' : 'automatic-updates';
+          const icon = p.jobType === JobType.SCHEDULE ? 'time' : 'automatic-updates';
 
           return (
             <Item key={p.to} className={`${isSelected ? 'selected' : ''}`} to={p.to}>
@@ -206,7 +205,7 @@ export const JobsList: React.FC<JobsListProps> = ({repos, repoPath, selector}) =
                     {p.label}
                   </Label>
                 </Box>
-                {p.status === InstigationStatus.RUNNING ? (
+                {p.status === JobStatus.RUNNING ? (
                   <Box margin={{left: 4}}>
                     <StatusDot size={9} />
                   </Box>

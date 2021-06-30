@@ -25,7 +25,7 @@ def types():
         GrapheneInstance,
         GrapheneRunLauncher,
     )
-    from .instigation import types as instigation_types
+    from .jobs import types as jobs_types
     from .metadata import GrapheneMetadataItemDefinition
     from .paging import GrapheneCursor
     from .partition_sets import types as partition_sets_types
@@ -52,7 +52,7 @@ def types():
         + external_types
         + inputs_types
         + [GrapheneDaemonHealth, GrapheneDaemonStatus, GrapheneInstance, GrapheneRunLauncher]
-        + instigation_types
+        + jobs_types
         + [GrapheneMetadataItemDefinition]
         + [GrapheneCursor]
         + partition_sets_types

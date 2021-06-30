@@ -48,7 +48,7 @@ export interface ScheduleTickConfigQuery_scheduleOrError_Schedule_futureTick_eva
 }
 
 export interface ScheduleTickConfigQuery_scheduleOrError_Schedule_futureTick {
-  __typename: "FutureInstigationTick";
+  __typename: "FutureJobTick";
   evaluationResult: ScheduleTickConfigQuery_scheduleOrError_Schedule_futureTick_evaluationResult | null;
 }
 

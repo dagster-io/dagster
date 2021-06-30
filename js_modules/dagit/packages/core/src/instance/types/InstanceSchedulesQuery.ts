@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunStatus, InstigationType, InstigationStatus, InstigationTickStatus } from "./../../types/globalTypes";
+import { PipelineRunStatus, JobType, JobStatus, JobTickStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: InstanceSchedulesQuery
@@ -95,17 +95,17 @@ export interface InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection
   repositoryLocationMetadata: InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_repositoryOrigin_repositoryLocationMetadata[];
 }
 
-export interface InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_typeSpecificData_SensorData {
-  __typename: "SensorData";
+export interface InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_jobSpecificData_SensorJobData {
+  __typename: "SensorJobData";
   lastRunKey: string | null;
 }
 
-export interface InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_typeSpecificData_ScheduleData {
-  __typename: "ScheduleData";
+export interface InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_jobSpecificData_ScheduleJobData {
+  __typename: "ScheduleJobData";
   cronSchedule: string;
 }
 
-export type InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_typeSpecificData = InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_typeSpecificData_SensorData | InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_typeSpecificData_ScheduleData;
+export type InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_jobSpecificData = InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_jobSpecificData_SensorJobData | InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_jobSpecificData_ScheduleJobData;
 
 export interface InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_runs {
   __typename: "PipelineRun";
@@ -128,9 +128,9 @@ export interface InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection
 }
 
 export interface InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks {
-  __typename: "InstigationTick";
+  __typename: "JobTick";
   id: string;
-  status: InstigationTickStatus;
+  status: JobTickStatus;
   timestamp: number;
   skipReason: string | null;
   runIds: string[];
@@ -138,25 +138,25 @@ export interface InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection
 }
 
 export interface InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState {
-  __typename: "InstigationState";
+  __typename: "JobState";
   id: string;
   name: string;
-  instigationType: InstigationType;
-  status: InstigationStatus;
+  jobType: JobType;
+  status: JobStatus;
   repositoryOrigin: InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_repositoryOrigin;
-  typeSpecificData: InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_typeSpecificData | null;
+  jobSpecificData: InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_jobSpecificData | null;
   runs: InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_runs[];
   ticks: InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks[];
   runningCount: number;
 }
 
 export interface InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_futureTicks_results {
-  __typename: "FutureInstigationTick";
+  __typename: "FutureJobTick";
   timestamp: number;
 }
 
 export interface InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_futureTicks {
-  __typename: "FutureInstigationTicks";
+  __typename: "FutureJobTicks";
   results: InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_futureTicks_results[];
 }
 
@@ -229,98 +229,98 @@ export interface InstanceSchedulesQuery_scheduler_PythonError {
 
 export type InstanceSchedulesQuery_scheduler = InstanceSchedulesQuery_scheduler_SchedulerNotDefinedError | InstanceSchedulesQuery_scheduler_Scheduler | InstanceSchedulesQuery_scheduler_PythonError;
 
-export interface InstanceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_repositoryOrigin_repositoryLocationMetadata {
+export interface InstanceSchedulesQuery_unloadableJobStatesOrError_JobStates_results_repositoryOrigin_repositoryLocationMetadata {
   __typename: "RepositoryMetadata";
   key: string;
   value: string;
 }
 
-export interface InstanceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_repositoryOrigin {
+export interface InstanceSchedulesQuery_unloadableJobStatesOrError_JobStates_results_repositoryOrigin {
   __typename: "RepositoryOrigin";
   id: string;
   repositoryLocationName: string;
   repositoryName: string;
-  repositoryLocationMetadata: InstanceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_repositoryOrigin_repositoryLocationMetadata[];
+  repositoryLocationMetadata: InstanceSchedulesQuery_unloadableJobStatesOrError_JobStates_results_repositoryOrigin_repositoryLocationMetadata[];
 }
 
-export interface InstanceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_typeSpecificData_SensorData {
-  __typename: "SensorData";
+export interface InstanceSchedulesQuery_unloadableJobStatesOrError_JobStates_results_jobSpecificData_SensorJobData {
+  __typename: "SensorJobData";
   lastRunKey: string | null;
 }
 
-export interface InstanceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_typeSpecificData_ScheduleData {
-  __typename: "ScheduleData";
+export interface InstanceSchedulesQuery_unloadableJobStatesOrError_JobStates_results_jobSpecificData_ScheduleJobData {
+  __typename: "ScheduleJobData";
   cronSchedule: string;
 }
 
-export type InstanceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_typeSpecificData = InstanceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_typeSpecificData_SensorData | InstanceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_typeSpecificData_ScheduleData;
+export type InstanceSchedulesQuery_unloadableJobStatesOrError_JobStates_results_jobSpecificData = InstanceSchedulesQuery_unloadableJobStatesOrError_JobStates_results_jobSpecificData_SensorJobData | InstanceSchedulesQuery_unloadableJobStatesOrError_JobStates_results_jobSpecificData_ScheduleJobData;
 
-export interface InstanceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_runs {
+export interface InstanceSchedulesQuery_unloadableJobStatesOrError_JobStates_results_runs {
   __typename: "PipelineRun";
   id: string;
   runId: string;
   status: PipelineRunStatus;
 }
 
-export interface InstanceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_cause {
+export interface InstanceSchedulesQuery_unloadableJobStatesOrError_JobStates_results_ticks_error_cause {
   __typename: "PythonError";
   message: string;
   stack: string[];
 }
 
-export interface InstanceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error {
+export interface InstanceSchedulesQuery_unloadableJobStatesOrError_JobStates_results_ticks_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: InstanceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_cause | null;
+  cause: InstanceSchedulesQuery_unloadableJobStatesOrError_JobStates_results_ticks_error_cause | null;
 }
 
-export interface InstanceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks {
-  __typename: "InstigationTick";
+export interface InstanceSchedulesQuery_unloadableJobStatesOrError_JobStates_results_ticks {
+  __typename: "JobTick";
   id: string;
-  status: InstigationTickStatus;
+  status: JobTickStatus;
   timestamp: number;
   skipReason: string | null;
   runIds: string[];
-  error: InstanceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error | null;
+  error: InstanceSchedulesQuery_unloadableJobStatesOrError_JobStates_results_ticks_error | null;
 }
 
-export interface InstanceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results {
-  __typename: "InstigationState";
+export interface InstanceSchedulesQuery_unloadableJobStatesOrError_JobStates_results {
+  __typename: "JobState";
   id: string;
   name: string;
-  instigationType: InstigationType;
-  status: InstigationStatus;
-  repositoryOrigin: InstanceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_repositoryOrigin;
-  typeSpecificData: InstanceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_typeSpecificData | null;
-  runs: InstanceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_runs[];
-  ticks: InstanceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks[];
+  jobType: JobType;
+  status: JobStatus;
+  repositoryOrigin: InstanceSchedulesQuery_unloadableJobStatesOrError_JobStates_results_repositoryOrigin;
+  jobSpecificData: InstanceSchedulesQuery_unloadableJobStatesOrError_JobStates_results_jobSpecificData | null;
+  runs: InstanceSchedulesQuery_unloadableJobStatesOrError_JobStates_results_runs[];
+  ticks: InstanceSchedulesQuery_unloadableJobStatesOrError_JobStates_results_ticks[];
   runningCount: number;
 }
 
-export interface InstanceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates {
-  __typename: "InstigationStates";
-  results: InstanceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results[];
+export interface InstanceSchedulesQuery_unloadableJobStatesOrError_JobStates {
+  __typename: "JobStates";
+  results: InstanceSchedulesQuery_unloadableJobStatesOrError_JobStates_results[];
 }
 
-export interface InstanceSchedulesQuery_unloadableInstigationStatesOrError_PythonError_cause {
+export interface InstanceSchedulesQuery_unloadableJobStatesOrError_PythonError_cause {
   __typename: "PythonError";
   message: string;
   stack: string[];
 }
 
-export interface InstanceSchedulesQuery_unloadableInstigationStatesOrError_PythonError {
+export interface InstanceSchedulesQuery_unloadableJobStatesOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: InstanceSchedulesQuery_unloadableInstigationStatesOrError_PythonError_cause | null;
+  cause: InstanceSchedulesQuery_unloadableJobStatesOrError_PythonError_cause | null;
 }
 
-export type InstanceSchedulesQuery_unloadableInstigationStatesOrError = InstanceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates | InstanceSchedulesQuery_unloadableInstigationStatesOrError_PythonError;
+export type InstanceSchedulesQuery_unloadableJobStatesOrError = InstanceSchedulesQuery_unloadableJobStatesOrError_JobStates | InstanceSchedulesQuery_unloadableJobStatesOrError_PythonError;
 
 export interface InstanceSchedulesQuery {
   instance: InstanceSchedulesQuery_instance;
   repositoriesOrError: InstanceSchedulesQuery_repositoriesOrError;
   scheduler: InstanceSchedulesQuery_scheduler;
-  unloadableInstigationStatesOrError: InstanceSchedulesQuery_unloadableInstigationStatesOrError;
+  unloadableJobStatesOrError: InstanceSchedulesQuery_unloadableJobStatesOrError;
 }

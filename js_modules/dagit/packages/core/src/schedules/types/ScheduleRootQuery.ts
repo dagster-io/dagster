@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { ScheduleSelector, PipelineRunStatus, InstigationType, InstigationStatus, InstigationTickStatus } from "./../../types/globalTypes";
+import { ScheduleSelector, PipelineRunStatus, JobType, JobStatus, JobTickStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: ScheduleRootQuery
@@ -74,17 +74,17 @@ export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_reposi
   repositoryLocationMetadata: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_repositoryOrigin_repositoryLocationMetadata[];
 }
 
-export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_typeSpecificData_SensorData {
-  __typename: "SensorData";
+export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_jobSpecificData_SensorJobData {
+  __typename: "SensorJobData";
   lastRunKey: string | null;
 }
 
-export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_typeSpecificData_ScheduleData {
-  __typename: "ScheduleData";
+export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_jobSpecificData_ScheduleJobData {
+  __typename: "ScheduleJobData";
   cronSchedule: string;
 }
 
-export type ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_typeSpecificData = ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_typeSpecificData_SensorData | ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_typeSpecificData_ScheduleData;
+export type ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_jobSpecificData = ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_jobSpecificData_SensorJobData | ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_jobSpecificData_ScheduleJobData;
 
 export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_runs {
   __typename: "PipelineRun";
@@ -107,9 +107,9 @@ export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks_
 }
 
 export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks {
-  __typename: "InstigationTick";
+  __typename: "JobTick";
   id: string;
-  status: InstigationTickStatus;
+  status: JobTickStatus;
   timestamp: number;
   skipReason: string | null;
   runIds: string[];
@@ -117,25 +117,25 @@ export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks 
 }
 
 export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState {
-  __typename: "InstigationState";
+  __typename: "JobState";
   id: string;
   name: string;
-  instigationType: InstigationType;
-  status: InstigationStatus;
+  jobType: JobType;
+  status: JobStatus;
   repositoryOrigin: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_repositoryOrigin;
-  typeSpecificData: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_typeSpecificData | null;
+  jobSpecificData: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_jobSpecificData | null;
   runs: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_runs[];
   ticks: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks[];
   runningCount: number;
 }
 
 export interface ScheduleRootQuery_scheduleOrError_Schedule_futureTicks_results {
-  __typename: "FutureInstigationTick";
+  __typename: "FutureJobTick";
   timestamp: number;
 }
 
 export interface ScheduleRootQuery_scheduleOrError_Schedule_futureTicks {
-  __typename: "FutureInstigationTicks";
+  __typename: "FutureJobTicks";
   results: ScheduleRootQuery_scheduleOrError_Schedule_futureTicks_results[];
 }
 

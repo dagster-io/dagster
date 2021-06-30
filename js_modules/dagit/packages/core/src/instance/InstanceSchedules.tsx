@@ -8,7 +8,7 @@ import {UnloadableSchedules} from '../jobs/UnloadableJobs';
 import {SchedulerTimezoneNote, SCHEDULE_FRAGMENT} from '../schedules/ScheduleUtils';
 import {SchedulerInfo, SCHEDULER_FRAGMENT} from '../schedules/SchedulerInfo';
 import {SchedulesTable} from '../schedules/SchedulesTable';
-import {InstigationType} from '../types/globalTypes';
+import {JobType} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
@@ -40,16 +40,16 @@ export const InstanceSchedules = React.memo(() => {
 });
 
 const AllSchedules: React.FC<{data: InstanceSchedulesQuery}> = ({data}) => {
-  const {instance, scheduler, repositoriesOrError, unloadableInstigationStatesOrError} = data;
+  const {instance, scheduler, repositoriesOrError, unloadableJobStatesOrError} = data;
 
   if (repositoriesOrError.__typename === 'PythonError') {
     return <PythonErrorInfo error={repositoriesOrError} />;
   }
-  if (unloadableInstigationStatesOrError.__typename === 'PythonError') {
-    return <PythonErrorInfo error={unloadableInstigationStatesOrError} />;
+  if (unloadableJobStatesOrError.__typename === 'PythonError') {
+    return <PythonErrorInfo error={unloadableJobStatesOrError} />;
   }
 
-  const unloadableJobs = unloadableInstigationStatesOrError.results;
+  const unloadableJobs = unloadableJobStatesOrError.results;
   const withSchedules = repositoriesOrError.nodes.filter(
     (repository) => repository.schedules.length,
   );
@@ -72,9 +72,7 @@ const AllSchedules: React.FC<{data: InstanceSchedulesQuery}> = ({data}) => {
     </Group>
   ) : null;
 
-  const unloadableSchedules = unloadableJobs.filter(
-    (state) => state.instigationType === InstigationType.SCHEDULE,
-  );
+  const unloadableSchedules = unloadableJobs.filter((state) => state.jobType === JobType.SCHEDULE);
 
   const unloadableSchedulesSection = unloadableSchedules.length ? (
     <UnloadableSchedules scheduleStates={unloadableSchedules} />
@@ -135,11 +133,11 @@ const INSTANCE_SCHEDULES_QUERY = gql`
     scheduler {
       ...SchedulerFragment
     }
-    unloadableInstigationStatesOrError {
-      ... on InstigationStates {
+    unloadableJobStatesOrError {
+      ... on JobStates {
         results {
           id
-          ...InstigationStateFragment
+          ...JobStateFragment
         }
       }
       ...PythonErrorFragment

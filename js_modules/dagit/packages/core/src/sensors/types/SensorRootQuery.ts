@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { SensorSelector, InstigationType, InstigationStatus, PipelineRunStatus, InstigationTickStatus } from "./../../types/globalTypes";
+import { SensorSelector, JobType, JobStatus, PipelineRunStatus, JobTickStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: SensorRootQuery
@@ -15,7 +15,7 @@ export interface SensorRootQuery_sensorOrError_SensorNotFoundError {
 }
 
 export interface SensorRootQuery_sensorOrError_Sensor_nextTick {
-  __typename: "FutureInstigationTick";
+  __typename: "FutureJobTick";
   timestamp: number;
 }
 
@@ -33,17 +33,17 @@ export interface SensorRootQuery_sensorOrError_Sensor_sensorState_repositoryOrig
   repositoryLocationMetadata: SensorRootQuery_sensorOrError_Sensor_sensorState_repositoryOrigin_repositoryLocationMetadata[];
 }
 
-export interface SensorRootQuery_sensorOrError_Sensor_sensorState_typeSpecificData_SensorData {
-  __typename: "SensorData";
+export interface SensorRootQuery_sensorOrError_Sensor_sensorState_jobSpecificData_SensorJobData {
+  __typename: "SensorJobData";
   lastRunKey: string | null;
 }
 
-export interface SensorRootQuery_sensorOrError_Sensor_sensorState_typeSpecificData_ScheduleData {
-  __typename: "ScheduleData";
+export interface SensorRootQuery_sensorOrError_Sensor_sensorState_jobSpecificData_ScheduleJobData {
+  __typename: "ScheduleJobData";
   cronSchedule: string;
 }
 
-export type SensorRootQuery_sensorOrError_Sensor_sensorState_typeSpecificData = SensorRootQuery_sensorOrError_Sensor_sensorState_typeSpecificData_SensorData | SensorRootQuery_sensorOrError_Sensor_sensorState_typeSpecificData_ScheduleData;
+export type SensorRootQuery_sensorOrError_Sensor_sensorState_jobSpecificData = SensorRootQuery_sensorOrError_Sensor_sensorState_jobSpecificData_SensorJobData | SensorRootQuery_sensorOrError_Sensor_sensorState_jobSpecificData_ScheduleJobData;
 
 export interface SensorRootQuery_sensorOrError_Sensor_sensorState_runs {
   __typename: "PipelineRun";
@@ -66,9 +66,9 @@ export interface SensorRootQuery_sensorOrError_Sensor_sensorState_ticks_error {
 }
 
 export interface SensorRootQuery_sensorOrError_Sensor_sensorState_ticks {
-  __typename: "InstigationTick";
+  __typename: "JobTick";
   id: string;
-  status: InstigationTickStatus;
+  status: JobTickStatus;
   timestamp: number;
   skipReason: string | null;
   runIds: string[];
@@ -76,13 +76,13 @@ export interface SensorRootQuery_sensorOrError_Sensor_sensorState_ticks {
 }
 
 export interface SensorRootQuery_sensorOrError_Sensor_sensorState {
-  __typename: "InstigationState";
+  __typename: "JobState";
   id: string;
   name: string;
-  instigationType: InstigationType;
-  status: InstigationStatus;
+  jobType: JobType;
+  status: JobStatus;
   repositoryOrigin: SensorRootQuery_sensorOrError_Sensor_sensorState_repositoryOrigin;
-  typeSpecificData: SensorRootQuery_sensorOrError_Sensor_sensorState_typeSpecificData | null;
+  jobSpecificData: SensorRootQuery_sensorOrError_Sensor_sensorState_jobSpecificData | null;
   runs: SensorRootQuery_sensorOrError_Sensor_sensorState_runs[];
   ticks: SensorRootQuery_sensorOrError_Sensor_sensorState_ticks[];
   runningCount: number;

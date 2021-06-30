@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { RepositorySelector, InstigationStatus } from "./../../types/globalTypes";
+import { RepositorySelector, JobStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: JobsListQuery
@@ -22,10 +22,10 @@ export interface JobsListQuery_schedulesOrError_Schedules_results_scheduleState_
 }
 
 export interface JobsListQuery_schedulesOrError_Schedules_results_scheduleState {
-  __typename: "InstigationState";
+  __typename: "JobState";
   id: string;
   repositoryOrigin: JobsListQuery_schedulesOrError_Schedules_results_scheduleState_repositoryOrigin;
-  status: InstigationStatus;
+  status: JobStatus;
 }
 
 export interface JobsListQuery_schedulesOrError_Schedules_results {
@@ -54,10 +54,10 @@ export interface JobsListQuery_sensorsOrError_Sensors_results_sensorState_reposi
 }
 
 export interface JobsListQuery_sensorsOrError_Sensors_results_sensorState {
-  __typename: "InstigationState";
+  __typename: "JobState";
   id: string;
   repositoryOrigin: JobsListQuery_sensorsOrError_Sensors_results_sensorState_repositoryOrigin;
-  status: InstigationStatus;
+  status: JobStatus;
 }
 
 export interface JobsListQuery_sensorsOrError_Sensors_results {

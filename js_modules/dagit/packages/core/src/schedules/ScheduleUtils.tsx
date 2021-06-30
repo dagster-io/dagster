@@ -35,7 +35,7 @@ export const SCHEDULE_FRAGMENT = gql`
     }
     scheduleState {
       id
-      ...InstigationStateFragment
+      ...JobStateFragment
     }
     futureTicks(limit: 5) {
       results {
@@ -65,10 +65,7 @@ export const REPOSITORY_SCHEDULES_FRAGMENT = gql`
 `;
 
 export const SCHEDULES_ROOT_QUERY = gql`
-  query SchedulesRootQuery(
-    $repositorySelector: RepositorySelector!
-    $instigationType: InstigationType!
-  ) {
+  query SchedulesRootQuery($repositorySelector: RepositorySelector!, $jobType: JobType!) {
     repositoryOrError(repositorySelector: $repositorySelector) {
       __typename
       ... on Repository {
@@ -80,11 +77,11 @@ export const SCHEDULES_ROOT_QUERY = gql`
     scheduler {
       ...SchedulerFragment
     }
-    unloadableInstigationStatesOrError(instigationType: $instigationType) {
-      ... on InstigationStates {
+    unloadableJobStatesOrError(jobType: $jobType) {
+      ... on JobStates {
         results {
           id
-          ...InstigationStateFragment
+          ...JobStateFragment
         }
       }
       ...PythonErrorFragment

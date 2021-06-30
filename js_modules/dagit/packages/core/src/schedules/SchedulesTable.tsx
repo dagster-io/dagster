@@ -18,7 +18,7 @@ import {Link} from 'react-router-dom';
 import {TickTag} from '../jobs/JobTick';
 import {JobRunStatus} from '../jobs/JobUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {InstigationStatus, InstigationType} from '../types/globalTypes';
+import {JobStatus, JobType} from '../types/globalTypes';
 import {Group} from '../ui/Group';
 import {Table} from '../ui/Table';
 import {Code} from '../ui/Text';
@@ -106,22 +106,22 @@ export const SchedulesTable: React.FC<{
 };
 
 const errorDisplay = (
-  status: InstigationStatus,
+  status: JobStatus,
   runningScheduleCount: number,
   repoAddress: RepoAddress,
 ) => {
-  if (status === InstigationStatus.STOPPED && runningScheduleCount === 0) {
+  if (status === JobStatus.STOPPED && runningScheduleCount === 0) {
     return null;
-  } else if (status === InstigationStatus.RUNNING && runningScheduleCount === 1) {
+  } else if (status === JobStatus.RUNNING && runningScheduleCount === 1) {
     return null;
   }
 
   const errors = [];
-  if (status === InstigationStatus.RUNNING && runningScheduleCount === 0) {
+  if (status === JobStatus.RUNNING && runningScheduleCount === 0) {
     errors.push(
       'Schedule is set to be running, but either the scheduler is not configured or the scheduler is not running the schedule',
     );
-  } else if (status === InstigationStatus.STOPPED && runningScheduleCount > 0) {
+  } else if (status === JobStatus.STOPPED && runningScheduleCount > 0) {
     errors.push('Schedule is set to be stopped, but the scheduler is still running the schedule');
   }
 
@@ -207,7 +207,7 @@ const ScheduleRow: React.FC<{
         )}
       </td>
       <td>
-        {futureTicks.results.length && status === InstigationStatus.RUNNING ? (
+        {futureTicks.results.length && status === JobStatus.RUNNING ? (
           <TimestampDisplay
             timestamp={futureTicks.results[0].timestamp}
             timezone={executionTimezone}
@@ -218,7 +218,7 @@ const ScheduleRow: React.FC<{
       </td>
       <td>
         {latestTick ? (
-          <TickTag tick={latestTick} instigationType={InstigationType.SCHEDULE} />
+          <TickTag tick={latestTick} jobType={JobType.SCHEDULE} />
         ) : (
           <span style={{color: Colors.GRAY4}}>None</span>
         )}

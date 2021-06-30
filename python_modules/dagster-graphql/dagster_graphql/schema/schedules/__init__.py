@@ -18,14 +18,14 @@ from ..errors import (
     GrapheneSchedulerNotDefinedError,
 )
 from ..inputs import GrapheneRepositorySelector, GrapheneScheduleSelector
-from ..instigation import GrapheneInstigationState
+from ..jobs import GrapheneJobState
 from .schedules import (
     GrapheneSchedule,
     GrapheneScheduleOrError,
     GrapheneSchedules,
     GrapheneSchedulesOrError,
 )
-from .ticks import GrapheneInstigationTickStatus
+from .ticks import GrapheneJobTickStatus
 
 
 class GrapheneScheduleStatus(graphene.Enum):
@@ -100,7 +100,7 @@ class GrapheneReconcileSchedulerStateMutation(graphene.Mutation):
 
 
 class GrapheneScheduleStateResult(graphene.ObjectType):
-    scheduleState = graphene.NonNull(GrapheneInstigationState)
+    scheduleState = graphene.NonNull(GrapheneJobState)
 
     class Meta:
         name = "ScheduleStateResult"
@@ -148,7 +148,7 @@ def types():
 
     # Double check mutations don't appear twice
     return [
-        GrapheneInstigationTickStatus,
+        GrapheneJobTickStatus,
         GrapheneReconcileSchedulerStateMutation,
         GrapheneReconcileSchedulerStateMutationResult,
         GrapheneReconcileSchedulerStateSuccess,

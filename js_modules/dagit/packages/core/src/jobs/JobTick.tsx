@@ -18,7 +18,7 @@ import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {assertUnreachable} from '../app/Util';
 import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
-import {InstigationTickStatus, InstigationType} from '../types/globalTypes';
+import {JobTickStatus, JobType} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
 import {Group} from '../ui/Group';
@@ -30,17 +30,17 @@ import {TickTagFragment} from './types/TickTagFragment';
 
 export const TickTag: React.FunctionComponent<{
   tick: TickTagFragment;
-  instigationType?: InstigationType;
-}> = ({tick, instigationType}) => {
+  jobType?: JobType;
+}> = ({tick, jobType}) => {
   const [open, setOpen] = React.useState<boolean>(false);
   switch (tick.status) {
-    case InstigationTickStatus.STARTED:
+    case JobTickStatus.STARTED:
       return (
         <Tag minimal={true} intent={Intent.NONE}>
           Started
         </Tag>
       );
-    case InstigationTickStatus.SUCCESS:
+    case JobTickStatus.SUCCESS:
       if (!tick.runIds.length) {
         return (
           <Tag minimal={true} intent={Intent.PRIMARY}>
@@ -74,7 +74,7 @@ export const TickTag: React.FunctionComponent<{
           </Dialog>
         </>
       );
-    case InstigationTickStatus.SKIPPED:
+    case JobTickStatus.SKIPPED:
       if (!tick.skipReason) {
         return (
           <Tag minimal={true} intent={Intent.WARNING}>
@@ -94,7 +94,7 @@ export const TickTag: React.FunctionComponent<{
           </Tag>
         </Tooltip>
       );
-    case InstigationTickStatus.FAILURE:
+    case JobTickStatus.FAILURE:
       if (!tick.error) {
         return (
           <Tag minimal={true} intent={Intent.DANGER}>
@@ -107,8 +107,8 @@ export const TickTag: React.FunctionComponent<{
           <LinkButton
             onClick={() =>
               showCustomAlert({
-                title: instigationType
-                  ? instigationType === InstigationType.SCHEDULE
+                title: jobType
+                  ? jobType === JobType.SCHEDULE
                     ? 'Schedule Response'
                     : 'Sensor Response'
                   : 'Python Error',
@@ -211,7 +211,7 @@ const LinkButton = styled.button`
 `;
 
 export const TICK_TAG_FRAGMENT = gql`
-  fragment TickTagFragment on InstigationTick {
+  fragment TickTagFragment on JobTick {
     id
     status
     timestamp

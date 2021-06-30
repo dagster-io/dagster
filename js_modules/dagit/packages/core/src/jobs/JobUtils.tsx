@@ -12,10 +12,10 @@ import {FontFamily} from '../ui/styles';
 import {REPOSITORY_ORIGIN_FRAGMENT} from '../workspace/RepositoryInformation';
 
 import {TICK_TAG_FRAGMENT} from './JobTick';
-import {InstigationStateFragment} from './types/InstigationStateFragment';
+import {JobStateFragment} from './types/JobStateFragment';
 
 export const JobRunStatus: React.FC<{
-  jobState: InstigationStateFragment;
+  jobState: JobStateFragment;
 }> = ({jobState}) => {
   if (!jobState.runs.length) {
     return <span style={{color: Colors.GRAY4}}>None</span>;
@@ -32,20 +32,20 @@ export const JobRunStatus: React.FC<{
 };
 
 export const JOB_STATE_FRAGMENT = gql`
-  fragment InstigationStateFragment on InstigationState {
+  fragment JobStateFragment on JobState {
     id
     name
-    instigationType
+    jobType
     status
     repositoryOrigin {
       id
       ...RepositoryOriginFragment
     }
-    typeSpecificData {
-      ... on SensorData {
+    jobSpecificData {
+      ... on SensorJobData {
         lastRunKey
       }
-      ... on ScheduleData {
+      ... on ScheduleJobData {
         cronSchedule
       }
     }

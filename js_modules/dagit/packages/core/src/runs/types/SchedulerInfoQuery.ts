@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunStatus, InstigationType, InstigationStatus, InstigationTickStatus } from "./../../types/globalTypes";
+import { PipelineRunStatus, JobType, JobStatus, JobTickStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: SchedulerInfoQuery
@@ -114,17 +114,17 @@ export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nod
   repositoryLocationMetadata: SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_repositoryOrigin_repositoryLocationMetadata[];
 }
 
-export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_typeSpecificData_SensorData {
-  __typename: "SensorData";
+export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_jobSpecificData_SensorJobData {
+  __typename: "SensorJobData";
   lastRunKey: string | null;
 }
 
-export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_typeSpecificData_ScheduleData {
-  __typename: "ScheduleData";
+export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_jobSpecificData_ScheduleJobData {
+  __typename: "ScheduleJobData";
   cronSchedule: string;
 }
 
-export type SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_typeSpecificData = SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_typeSpecificData_SensorData | SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_typeSpecificData_ScheduleData;
+export type SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_jobSpecificData = SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_jobSpecificData_SensorJobData | SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_jobSpecificData_ScheduleJobData;
 
 export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_runs {
   __typename: "PipelineRun";
@@ -147,9 +147,9 @@ export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nod
 }
 
 export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks {
-  __typename: "InstigationTick";
+  __typename: "JobTick";
   id: string;
-  status: InstigationTickStatus;
+  status: JobTickStatus;
   timestamp: number;
   skipReason: string | null;
   runIds: string[];
@@ -157,25 +157,25 @@ export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nod
 }
 
 export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState {
-  __typename: "InstigationState";
+  __typename: "JobState";
   id: string;
   name: string;
-  instigationType: InstigationType;
-  status: InstigationStatus;
+  jobType: JobType;
+  status: JobStatus;
   repositoryOrigin: SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_repositoryOrigin;
-  typeSpecificData: SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_typeSpecificData | null;
+  jobSpecificData: SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_jobSpecificData | null;
   runs: SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_runs[];
   ticks: SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks[];
   runningCount: number;
 }
 
 export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_futureTicks_results {
-  __typename: "FutureInstigationTick";
+  __typename: "FutureJobTick";
   timestamp: number;
 }
 
 export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_futureTicks {
-  __typename: "FutureInstigationTicks";
+  __typename: "FutureJobTicks";
   results: SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_futureTicks_results[];
 }
 

@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunStatus, InstigationType, InstigationStatus, InstigationTickStatus } from "./../../types/globalTypes";
+import { PipelineRunStatus, JobType, JobStatus, JobTickStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: ScheduleFragment
@@ -49,17 +49,17 @@ export interface ScheduleFragment_scheduleState_repositoryOrigin {
   repositoryLocationMetadata: ScheduleFragment_scheduleState_repositoryOrigin_repositoryLocationMetadata[];
 }
 
-export interface ScheduleFragment_scheduleState_typeSpecificData_SensorData {
-  __typename: "SensorData";
+export interface ScheduleFragment_scheduleState_jobSpecificData_SensorJobData {
+  __typename: "SensorJobData";
   lastRunKey: string | null;
 }
 
-export interface ScheduleFragment_scheduleState_typeSpecificData_ScheduleData {
-  __typename: "ScheduleData";
+export interface ScheduleFragment_scheduleState_jobSpecificData_ScheduleJobData {
+  __typename: "ScheduleJobData";
   cronSchedule: string;
 }
 
-export type ScheduleFragment_scheduleState_typeSpecificData = ScheduleFragment_scheduleState_typeSpecificData_SensorData | ScheduleFragment_scheduleState_typeSpecificData_ScheduleData;
+export type ScheduleFragment_scheduleState_jobSpecificData = ScheduleFragment_scheduleState_jobSpecificData_SensorJobData | ScheduleFragment_scheduleState_jobSpecificData_ScheduleJobData;
 
 export interface ScheduleFragment_scheduleState_runs {
   __typename: "PipelineRun";
@@ -82,9 +82,9 @@ export interface ScheduleFragment_scheduleState_ticks_error {
 }
 
 export interface ScheduleFragment_scheduleState_ticks {
-  __typename: "InstigationTick";
+  __typename: "JobTick";
   id: string;
-  status: InstigationTickStatus;
+  status: JobTickStatus;
   timestamp: number;
   skipReason: string | null;
   runIds: string[];
@@ -92,25 +92,25 @@ export interface ScheduleFragment_scheduleState_ticks {
 }
 
 export interface ScheduleFragment_scheduleState {
-  __typename: "InstigationState";
+  __typename: "JobState";
   id: string;
   name: string;
-  instigationType: InstigationType;
-  status: InstigationStatus;
+  jobType: JobType;
+  status: JobStatus;
   repositoryOrigin: ScheduleFragment_scheduleState_repositoryOrigin;
-  typeSpecificData: ScheduleFragment_scheduleState_typeSpecificData | null;
+  jobSpecificData: ScheduleFragment_scheduleState_jobSpecificData | null;
   runs: ScheduleFragment_scheduleState_runs[];
   ticks: ScheduleFragment_scheduleState_ticks[];
   runningCount: number;
 }
 
 export interface ScheduleFragment_futureTicks_results {
-  __typename: "FutureInstigationTick";
+  __typename: "FutureJobTick";
   timestamp: number;
 }
 
 export interface ScheduleFragment_futureTicks {
-  __typename: "FutureInstigationTicks";
+  __typename: "FutureJobTicks";
   results: ScheduleFragment_futureTicks_results[];
 }
 

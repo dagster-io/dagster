@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { InstigationStatus } from "./../../types/globalTypes";
+import { JobStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: NavQuery
@@ -17,9 +17,9 @@ export interface NavQuery_workspaceOrError_Workspace_locationEntries_locationOrL
 }
 
 export interface NavQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_schedules_scheduleState {
-  __typename: "InstigationState";
+  __typename: "JobState";
   id: string;
-  status: InstigationStatus;
+  status: JobStatus;
 }
 
 export interface NavQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_schedules {
@@ -31,9 +31,9 @@ export interface NavQuery_workspaceOrError_Workspace_locationEntries_locationOrL
 }
 
 export interface NavQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_sensors_sensorState {
-  __typename: "InstigationState";
+  __typename: "JobState";
   id: string;
-  status: InstigationStatus;
+  status: JobStatus;
 }
 
 export interface NavQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_sensors {

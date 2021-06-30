@@ -4,7 +4,7 @@ import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 
 import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
-import {InstigationType} from '../types/globalTypes';
+import {JobType} from '../types/globalTypes';
 import {Spinner} from '../ui/Spinner';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -20,7 +20,7 @@ export const ReconcileButton: React.FC<{repoAddress: RepoAddress}> = ({repoAddre
       query: SCHEDULES_ROOT_QUERY,
       variables: {
         repositorySelector: repositorySelector,
-        instigationType: InstigationType.SCHEDULE,
+        jobType: JobType.SCHEDULE,
       },
     },
   ];

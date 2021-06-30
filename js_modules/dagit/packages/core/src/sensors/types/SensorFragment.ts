@@ -4,14 +4,14 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { InstigationType, InstigationStatus, PipelineRunStatus, InstigationTickStatus } from "./../../types/globalTypes";
+import { JobType, JobStatus, PipelineRunStatus, JobTickStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: SensorFragment
 // ====================================================
 
 export interface SensorFragment_nextTick {
-  __typename: "FutureInstigationTick";
+  __typename: "FutureJobTick";
   timestamp: number;
 }
 
@@ -29,17 +29,17 @@ export interface SensorFragment_sensorState_repositoryOrigin {
   repositoryLocationMetadata: SensorFragment_sensorState_repositoryOrigin_repositoryLocationMetadata[];
 }
 
-export interface SensorFragment_sensorState_typeSpecificData_SensorData {
-  __typename: "SensorData";
+export interface SensorFragment_sensorState_jobSpecificData_SensorJobData {
+  __typename: "SensorJobData";
   lastRunKey: string | null;
 }
 
-export interface SensorFragment_sensorState_typeSpecificData_ScheduleData {
-  __typename: "ScheduleData";
+export interface SensorFragment_sensorState_jobSpecificData_ScheduleJobData {
+  __typename: "ScheduleJobData";
   cronSchedule: string;
 }
 
-export type SensorFragment_sensorState_typeSpecificData = SensorFragment_sensorState_typeSpecificData_SensorData | SensorFragment_sensorState_typeSpecificData_ScheduleData;
+export type SensorFragment_sensorState_jobSpecificData = SensorFragment_sensorState_jobSpecificData_SensorJobData | SensorFragment_sensorState_jobSpecificData_ScheduleJobData;
 
 export interface SensorFragment_sensorState_runs {
   __typename: "PipelineRun";
@@ -62,9 +62,9 @@ export interface SensorFragment_sensorState_ticks_error {
 }
 
 export interface SensorFragment_sensorState_ticks {
-  __typename: "InstigationTick";
+  __typename: "JobTick";
   id: string;
-  status: InstigationTickStatus;
+  status: JobTickStatus;
   timestamp: number;
   skipReason: string | null;
   runIds: string[];
@@ -72,13 +72,13 @@ export interface SensorFragment_sensorState_ticks {
 }
 
 export interface SensorFragment_sensorState {
-  __typename: "InstigationState";
+  __typename: "JobState";
   id: string;
   name: string;
-  instigationType: InstigationType;
-  status: InstigationStatus;
+  jobType: JobType;
+  status: JobStatus;
   repositoryOrigin: SensorFragment_sensorState_repositoryOrigin;
-  typeSpecificData: SensorFragment_sensorState_typeSpecificData | null;
+  jobSpecificData: SensorFragment_sensorState_jobSpecificData | null;
   runs: SensorFragment_sensorState_runs[];
   ticks: SensorFragment_sensorState_ticks[];
   runningCount: number;

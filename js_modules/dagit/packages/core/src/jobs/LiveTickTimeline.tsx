@@ -2,30 +2,30 @@ import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import {Line, ChartComponentProps} from 'react-chartjs-2';
 
-import {InstigationTickStatus} from '../types/globalTypes';
+import {JobTickStatus} from '../types/globalTypes';
 
 import {
-  TickHistoryQuery_instigationStateOrError_InstigationState_ticks,
-  TickHistoryQuery_instigationStateOrError_InstigationState_nextTick,
-} from './types/TickHistoryQuery';
+  JobTickHistoryQuery_jobStateOrError_JobState_ticks,
+  JobTickHistoryQuery_jobStateOrError_JobState_nextTick,
+} from './types/JobTickHistoryQuery';
 
-type FutureTick = TickHistoryQuery_instigationStateOrError_InstigationState_nextTick;
-type InstigationTick = TickHistoryQuery_instigationStateOrError_InstigationState_ticks;
+type FutureTick = JobTickHistoryQuery_jobStateOrError_JobState_nextTick;
+type JobTick = JobTickHistoryQuery_jobStateOrError_JobState_ticks;
 
 const COLOR_MAP = {
-  [InstigationTickStatus.SUCCESS]: Colors.BLUE3,
-  [InstigationTickStatus.FAILURE]: Colors.RED3,
-  [InstigationTickStatus.STARTED]: Colors.GRAY3,
-  [InstigationTickStatus.SKIPPED]: Colors.GOLD3,
+  [JobTickStatus.SUCCESS]: Colors.BLUE3,
+  [JobTickStatus.FAILURE]: Colors.RED3,
+  [JobTickStatus.STARTED]: Colors.GRAY3,
+  [JobTickStatus.SKIPPED]: Colors.GOLD3,
 };
 
 const REFRESH_INTERVAL = 100;
 
 export const LiveTickTimeline: React.FC<{
-  ticks: InstigationTick[];
+  ticks: JobTick[];
   nextTick: FutureTick | null;
-  onHoverTick: (InstigationTick?: any) => void;
-  onSelectTick: (InstigationTick?: any) => void;
+  onHoverTick: (JobTick?: any) => void;
+  onSelectTick: (JobTick?: any) => void;
 }> = ({ticks, nextTick, onHoverTick, onSelectTick}) => {
   const [now, setNow] = React.useState<number>(Date.now());
   const [graphNow, setGraphNow] = React.useState<number>(Date.now());
@@ -162,16 +162,16 @@ export const LiveTickTimeline: React.FC<{
             return '';
           }
           const tick = ticks[tooltipItem.index];
-          if (tick.status === InstigationTickStatus.SKIPPED && tick.skipReason) {
+          if (tick.status === JobTickStatus.SKIPPED && tick.skipReason) {
             return tick.skipReason;
           }
-          if (tick.status === InstigationTickStatus.SUCCESS && tick.runIds.length) {
+          if (tick.status === JobTickStatus.SUCCESS && tick.runIds.length) {
             return tick.runIds;
           }
-          if (tick.status === InstigationTickStatus.SUCCESS && tick.originRunIds) {
+          if (tick.status === JobTickStatus.SUCCESS && tick.originRunIds) {
             return tick.originRunIds;
           }
-          if (tick.status === InstigationTickStatus.FAILURE && tick.error?.message) {
+          if (tick.status === JobTickStatus.FAILURE && tick.error?.message) {
             return tick.error.message;
           }
           return '';

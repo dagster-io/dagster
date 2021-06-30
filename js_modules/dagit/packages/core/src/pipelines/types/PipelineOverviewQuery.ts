@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineSelector, PipelineRunStatus, InstigationStatus } from "./../../types/globalTypes";
+import { PipelineSelector, PipelineRunStatus, JobStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: PipelineOverviewQuery
@@ -334,21 +334,21 @@ export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_
 }
 
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState {
-  __typename: "InstigationState";
+  __typename: "JobState";
   id: string;
   runsCount: number;
   lastRuns: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_lastRuns[];
   runs: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_runs[];
-  status: InstigationStatus;
+  status: JobStatus;
 }
 
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_futureTicks_results {
-  __typename: "FutureInstigationTick";
+  __typename: "FutureJobTick";
   timestamp: number;
 }
 
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_futureTicks {
-  __typename: "FutureInstigationTicks";
+  __typename: "FutureJobTicks";
   results: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_futureTicks_results[];
 }
 
@@ -387,16 +387,16 @@ export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_
 }
 
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_sensors_sensorState {
-  __typename: "InstigationState";
+  __typename: "JobState";
   id: string;
   runsCount: number;
   lastRuns: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_sensors_sensorState_lastRuns[];
   runs: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_sensors_sensorState_runs[];
-  status: InstigationStatus;
+  status: JobStatus;
 }
 
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_sensors_nextTick {
-  __typename: "FutureInstigationTick";
+  __typename: "FutureJobTick";
   timestamp: number;
 }
 
