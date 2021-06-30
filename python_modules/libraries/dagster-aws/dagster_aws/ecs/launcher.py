@@ -1,9 +1,11 @@
 import os
+import typing
 from dataclasses import dataclass
-from typing import Any, Dict, List
 
 import boto3
+import dagster
 import requests
+from dagster import Field, check
 from dagster.core.launcher.base import RunLauncher
 from dagster.grpc.types import ExecuteRunArgs
 from dagster.serdes import ConfigurableClass, serialize_dagster_namedtuple
@@ -13,19 +15,34 @@ from dagster.utils.backcompat import experimental
 @dataclass
 class TaskMetadata:
     cluster: str
-    subnets: List[str]
-    security_groups: List[str]
-    task_definition: Dict[str, Any]
-    container_definition: Dict[str, Any]
+    subnets: typing.List[str]
+    security_groups: typing.List[str]
+    task_definition: typing.Dict[str, typing.Any]
+    container_definition: typing.Dict[str, typing.Any]
 
 
 @experimental
 class EcsRunLauncher(RunLauncher, ConfigurableClass):
-    def __init__(self, inst_data=None, task_definition=None):
+    def __init__(self, inst_data=None, task_definition=None, container_name="run"):
         self._inst_data = inst_data
         self.ecs = boto3.client("ecs")
         self.ec2 = boto3.resource("ec2")
+
         self.task_definition = task_definition
+        self.container_name = container_name
+
+        if self.task_definition:
+            task_definition = self.ecs.describe_task_definition(taskDefinition=task_definition)
+            container_names = [
+                container.get("name")
+                for container in task_definition["taskDefinition"]["containerDefinitions"]
+            ]
+            check.invariant(
+                container_name in container_names,
+                f"Cannot override container '{container_name}' in task definition "
+                f"'{self.task_definition}' because the container is not defined.",
+            )
+            self.task_definition = task_definition["taskDefinition"]["taskDefinitionArn"]
 
     @property
     def inst_data(self):
@@ -33,7 +50,25 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
 
     @classmethod
     def config_type(cls):
-        return {}
+        return {
+            "task_definition": Field(
+                dagster.String,
+                is_required=False,
+                description=(
+                    "The task definition to use when launching new tasks. "
+                    "If none is provided, each run will create its own task "
+                    "definition."
+                ),
+            ),
+            "container_name": Field(
+                dagster.String,
+                is_required=False,
+                default_value="run",
+                description=(
+                    "The container name to use when launching new tasks. Defaults to 'run'."
+                ),
+            ),
+        }
 
     @staticmethod
     def from_config_value(inst_data, config_value):
@@ -74,7 +109,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         response = self.ecs.run_task(
             taskDefinition=task_definition,
             cluster=metadata.cluster,
-            overrides={"containerOverrides": [{"name": "run", "command": command}]},
+            overrides={"containerOverrides": [{"name": self.container_name, "command": command}]},
             networkConfiguration={
                 "awsvpcConfiguration": {
                     "subnets": metadata.subnets,
@@ -118,10 +153,16 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
 
     def _task_definition(self, metadata, image):
         """
+        Return the launcher's default task definition if it's configured.
+
+        Otherwise, a new task definition revision is registered for every run.
         First, the process that calls this method finds its own task
         definition. Next, it creates a new task definition based on its own
         but it overrides the image with the pipeline origin's image.
         """
+        if self.task_definition:
+            task_definition = self.ecs.describe_task_definition(taskDefinition=self.task_definition)
+            return task_definition["taskDefinition"]
 
         # Start with the current process's task's definition but remove
         # extra keys that aren't useful for creating a new task definition
@@ -145,7 +186,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         container_definitions = task_definition["containerDefinitions"]
         container_definitions.remove(metadata.container_definition)
         container_definitions.append(
-            {**metadata.container_definition, "name": "run", "image": image}
+            {**metadata.container_definition, "name": self.container_name, "image": image}
         )
         task_definition = {
             **task_definition,

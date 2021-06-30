@@ -1,4 +1,6 @@
 # pylint: disable=protected-access
+import pytest
+from dagster.check import CheckError
 
 
 def test_default_launcher(
@@ -52,3 +54,58 @@ def test_default_launcher(
     assert override["name"] == "run"
     assert "execute_run" in override["command"]
     assert run.run_id in str(override["command"])
+
+
+def test_launching_custom_task_definition(ecs, instance_cm, pipeline, external_pipeline):
+    container_name = "override_container"
+
+    task_definition = ecs.register_task_definition(
+        family="override",
+        containerDefinitions=[{"name": container_name, "image": "hello_world:latest"}],
+        networkMode="bridge",
+    )["taskDefinition"]
+    task_definition_arn = task_definition["taskDefinitionArn"]
+    family = task_definition["family"]
+
+    # The task definition doesn't exist
+    with pytest.raises(Exception), instance_cm({"task_definition": "does not exist"}):
+        pass
+
+    # The task definition doesn't include the default container name
+    with pytest.raises(CheckError), instance_cm({"task_definition": family}):
+        pass
+
+    # The task definition doesn't include the container name
+    with pytest.raises(CheckError), instance_cm(
+        {"task_definition": family, "container_name": "does not exist"}
+    ):
+        pass
+
+    # You can provide a family or a task definition ARN
+    with instance_cm(
+        {"task_definition": task_definition_arn, "container_name": container_name}
+    ) as instance:
+        run = instance.create_run_for_pipeline(pipeline)
+
+        initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
+        initial_tasks = ecs.list_tasks()["taskArns"]
+
+        instance.launch_run(run.run_id, external_pipeline)
+
+        # A new task definition is not created
+        assert ecs.list_task_definitions()["taskDefinitionArns"] == initial_task_definitions
+
+        # A new task is launched
+        tasks = ecs.list_tasks()["taskArns"]
+        assert len(tasks) == len(initial_tasks) + 1
+        task_arn = list(set(tasks).difference(initial_tasks))[0]
+        task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
+        assert task["taskDefinitionArn"] == task_definition["taskDefinitionArn"]
+
+        # We set pipeline-specific overides
+        overrides = task["overrides"]["containerOverrides"]
+        assert len(overrides) == 1
+        override = overrides[0]
+        assert override["name"] == container_name
+        assert "execute_run" in override["command"]
+        assert run.run_id in str(override["command"])
