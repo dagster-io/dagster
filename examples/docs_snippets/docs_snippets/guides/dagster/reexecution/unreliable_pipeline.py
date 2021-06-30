@@ -1,5 +1,6 @@
 from random import random
-from dagster import fs_io_manager, ModeDefinition, pipeline, solid
+
+from dagster import ModeDefinition, fs_io_manager, pipeline, solid
 
 
 @solid()
