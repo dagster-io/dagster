@@ -1,4 +1,6 @@
 # pylint: disable=redefined-outer-name, protected-access, unused-argument
+from contextlib import contextmanager
+
 import boto3
 import pytest
 from dagster.core.definitions.reconstructable import ReconstructableRepository
@@ -58,7 +60,7 @@ def stub_aws(ecs, ec2, monkeypatch):
 
 
 @pytest.fixture
-def instance(stub_aws, task, monkeypatch, requests_mock):
+def stub_ecs_metadata(task, monkeypatch, requests_mock):
     container_uri = "http://metadata_host"
     monkeypatch.setenv("ECS_CONTAINER_METADATA_URI_V4", container_uri)
     container = task["containers"][0]["name"]
@@ -72,9 +74,29 @@ def instance(stub_aws, task, monkeypatch, requests_mock):
             "TaskARN": task["taskArn"],
         },
     )
-    overrides = {"run_launcher": {"module": "dagster_aws.ecs", "class": "EcsRunLauncher"}}
-    with instance_for_test(overrides) as instance:
-        yield instance
+
+
+@pytest.fixture
+def instance_cm(stub_aws, stub_ecs_metadata):
+    @contextmanager
+    def cm(config=None):
+        overrides = {
+            "run_launcher": {
+                "module": "dagster_aws.ecs",
+                "class": "EcsRunLauncher",
+                "config": {**(config or {})},
+            }
+        }
+        with instance_for_test(overrides) as dagster_instance:
+            yield dagster_instance
+
+    return cm
+
+
+@pytest.fixture
+def instance(instance_cm):
+    with instance_cm() as dagster_instance:
+        yield dagster_instance
 
 
 @pytest.fixture
@@ -94,15 +116,12 @@ def external_pipeline(image):
         )
 
 
-@pytest.fixture
-def run(instance, pipeline):
-    return instance.create_run_for_pipeline(pipeline)
-
-
 def test_launching(
-    ecs, instance, run, external_pipeline, subnet, network_interface, image, environment
+    ecs, instance, pipeline, external_pipeline, subnet, network_interface, image, environment
 ):
+    run = instance.create_run_for_pipeline(pipeline)
     assert not run.tags
+
     initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
     initial_tasks = ecs.list_tasks()["taskArns"]
 
@@ -150,7 +169,9 @@ def test_launching(
     assert run.run_id in str(override["command"])
 
 
-def test_termination(instance, run, external_pipeline):
+def test_termination(instance, pipeline, external_pipeline):
+    run = instance.create_run_for_pipeline(pipeline)
+
     assert not instance.run_launcher.can_terminate(run.run_id)
 
     instance.launch_run(run.run_id, external_pipeline)
