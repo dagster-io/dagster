@@ -130,7 +130,9 @@ def test_service_account_annotations(template: HelmTemplate):
     assert service_account_template.metadata.annotations == service_account_annotations
 
 
-def test_standalone_subchart_service_account_annotations(standalone_subchart_template: HelmTemplate):
+def test_standalone_subchart_service_account_annotations(
+    standalone_subchart_template: HelmTemplate,
+):
     service_account_name = "service-account-name"
     service_account_annotations = {"hello": "world"}
     service_account_values = DagsterUserDeploymentsHelmValues.construct(
