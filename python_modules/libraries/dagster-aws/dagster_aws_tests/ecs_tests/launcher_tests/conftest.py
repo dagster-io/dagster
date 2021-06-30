@@ -1,13 +1,22 @@
 # pylint: disable=redefined-outer-name, unused-argument
+import warnings
 from contextlib import contextmanager
 
 import boto3
 import pytest
+from dagster import ExperimentalWarning
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation.origin import InProcessRepositoryLocationOrigin
 from dagster.core.test_utils import instance_for_test
 
 from . import repo
+
+
+@pytest.fixture(autouse=True)
+def ignore_experimental_warning():
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=ExperimentalWarning)
+        yield
 
 
 @pytest.fixture
