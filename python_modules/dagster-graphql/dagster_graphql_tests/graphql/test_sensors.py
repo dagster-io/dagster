@@ -28,7 +28,6 @@ query SensorsQuery($repositorySelector: RepositorySelector!) {
     }
     ... on Sensors {
       results {
-        id
         name
         pipelineName
         solidSelection
@@ -69,7 +68,6 @@ query SensorQuery($sensorSelector: SensorSelector!) {
       stack
     }
     ... on Sensor {
-      id
       name
       pipelineName
       solidSelection
