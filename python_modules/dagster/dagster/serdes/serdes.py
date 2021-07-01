@@ -178,15 +178,13 @@ class DefaultNamedTupleSerializer(NamedTupleSerializer):
 ###################################################################################################
 
 
-def serialize_dagster_namedtuple(nt: NamedTuple, **json_kwargs) -> str:
+def serialize_dagster_namedtuple(nt: tuple, **json_kwargs) -> str:
     """Serialize a whitelisted named tuple to a json encoded string"""
     check.tuple_param(nt, "nt")
     return _serialize_dagster_namedtuple(nt, whitelist_map=_WHITELIST_MAP, **json_kwargs)
 
 
-def _serialize_dagster_namedtuple(
-    nt: NamedTuple, whitelist_map: WhitelistMap, **json_kwargs
-) -> str:
+def _serialize_dagster_namedtuple(nt: tuple, whitelist_map: WhitelistMap, **json_kwargs) -> str:
     return seven.json.dumps(_pack_value(nt, whitelist_map, _root(nt)), **json_kwargs)
 
 

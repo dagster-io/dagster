@@ -1,10 +1,9 @@
 import hashlib
-from typing import NamedTuple
 
 from .serdes import serialize_dagster_namedtuple
 
 
-def create_snapshot_id(snapshot: NamedTuple) -> str:
+def create_snapshot_id(snapshot: tuple) -> str:
     json_rep = serialize_dagster_namedtuple(snapshot)
     return hash_str(json_rep)
 
@@ -15,6 +14,6 @@ def hash_str(in_str: str) -> str:
     return m.hexdigest()
 
 
-def serialize_pp(value: NamedTuple) -> str:
+def serialize_pp(value: tuple) -> str:
     """serialize and pretty print"""
     return serialize_dagster_namedtuple(value, indent=2, separators=(",", ": "))

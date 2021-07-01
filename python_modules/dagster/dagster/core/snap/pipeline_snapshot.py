@@ -1,4 +1,4 @@
-from collections import namedtuple
+from typing import AbstractSet, Any, Dict, List, NamedTuple, Optional, Union
 
 from dagster import Field, Permissive, Selector, Shape, check
 from dagster.config.config_type import (
@@ -15,6 +15,7 @@ from dagster.config.snap import (
     ConfigEnumValueSnap,
     ConfigFieldSnap,
     ConfigSchemaSnapshot,
+    ConfigType,
     ConfigTypeSnap,
 )
 from dagster.core.definitions.pipeline import PipelineDefinition, PipelineSubsetDefinition
@@ -36,31 +37,39 @@ from .solid import (
 )
 
 
-def create_pipeline_snapshot_id(snapshot):
+def create_pipeline_snapshot_id(snapshot: "PipelineSnapshot") -> str:
     check.inst_param(snapshot, "snapshot", PipelineSnapshot)
     return create_snapshot_id(snapshot)
 
 
 @whitelist_for_serdes
 class PipelineSnapshot(
-    namedtuple(
+    NamedTuple(
         "_PipelineSnapshot",
-        "name description tags "
-        "config_schema_snapshot dagster_type_namespace_snapshot solid_definitions_snapshot "
-        "dep_structure_snapshot mode_def_snaps lineage_snapshot",
+        [
+            ("name", str),
+            ("description", Optional[str]),
+            ("tags", Dict[str, Any]),
+            ("config_schema_snapshot", ConfigSchemaSnapshot),
+            ("dagster_type_namespace_snapshot", DagsterTypeNamespaceSnapshot),
+            ("solid_definitions_snapshot", SolidDefinitionsSnapshot),
+            ("dep_structure_snapshot", DependencyStructureSnapshot),
+            ("mode_def_snaps", List[ModeDefSnap]),
+            ("lineage_snapshot", Optional["PipelineSnapshotLineage"]),
+        ],
     )
 ):
     def __new__(
         cls,
-        name,
-        description,
-        tags,
-        config_schema_snapshot,
-        dagster_type_namespace_snapshot,
-        solid_definitions_snapshot,
-        dep_structure_snapshot,
-        mode_def_snaps,
-        lineage_snapshot=None,
+        name: str,
+        description: Optional[str],
+        tags: Optional[Dict[str, Any]],
+        config_schema_snapshot: ConfigSchemaSnapshot,
+        dagster_type_namespace_snapshot: DagsterTypeNamespaceSnapshot,
+        solid_definitions_snapshot: SolidDefinitionsSnapshot,
+        dep_structure_snapshot: DependencyStructureSnapshot,
+        mode_def_snaps: List[ModeDefSnap],
+        lineage_snapshot: Optional["PipelineSnapshotLineage"] = None,
     ):
         return super(PipelineSnapshot, cls).__new__(
             cls,
@@ -88,10 +97,11 @@ class PipelineSnapshot(
         )
 
     @classmethod
-    def from_pipeline_def(cls, pipeline_def):
+    def from_pipeline_def(cls, pipeline_def: PipelineDefinition) -> "PipelineSnapshot":
         check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
         lineage = None
         if isinstance(pipeline_def, PipelineSubsetDefinition):
+
             lineage = PipelineSnapshotLineage(
                 parent_snapshot_id=create_pipeline_snapshot_id(
                     cls.from_pipeline_def(pipeline_def.parent_pipeline_def)
@@ -117,25 +127,29 @@ class PipelineSnapshot(
             lineage_snapshot=lineage,
         )
 
-    def get_solid_def_snap(self, solid_def_name):
+    def get_solid_def_snap(self, solid_def_name: str) -> Union[SolidDefSnap, CompositeSolidDefSnap]:
         check.str_param(solid_def_name, "solid_def_name")
-        for solid_def_snap in (
-            self.solid_definitions_snapshot.solid_def_snaps
-            + self.solid_definitions_snapshot.composite_solid_def_snaps
-        ):
+        for solid_def_snap in self.solid_definitions_snapshot.solid_def_snaps:
             if solid_def_snap.name == solid_def_name:
                 return solid_def_snap
 
+        for comp_solid_def_snap in self.solid_definitions_snapshot.composite_solid_def_snaps:
+            if comp_solid_def_snap.name == solid_def_name:
+                return comp_solid_def_snap
+
         check.failed("not found")
 
-    def has_solid_name(self, solid_name):
+    def has_solid_name(self, solid_name: str) -> bool:
         check.str_param(solid_name, "solid_name")
         for solid_snap in self.dep_structure_snapshot.solid_invocation_snaps:
             if solid_snap.solid_name == solid_name:
                 return True
         return False
 
-    def get_config_type_from_solid_def_snap(self, solid_def_snap):
+    def get_config_type_from_solid_def_snap(
+        self,
+        solid_def_snap: Union[SolidDefSnap, CompositeSolidDefSnap],
+    ) -> Optional[ConfigType]:
         check.inst_param(solid_def_snap, "solid_def_snap", (SolidDefSnap, CompositeSolidDefSnap))
         if solid_def_snap.config_field_snap:
             config_type_key = solid_def_snap.config_field_snap.type_key
@@ -147,11 +161,11 @@ class PipelineSnapshot(
         return None
 
     @property
-    def solid_names(self):
+    def solid_names(self) -> List[str]:
         return [ss.solid_name for ss in self.dep_structure_snapshot.solid_invocation_snaps]
 
     @property
-    def solid_names_in_topological_order(self):
+    def solid_names_in_topological_order(self) -> List[str]:
         upstream_outputs = {}
 
         for solid_invocation_snap in self.dep_structure_snapshot.solid_invocation_snaps:
@@ -165,7 +179,7 @@ class PipelineSnapshot(
         return toposort_flatten(upstream_outputs)
 
 
-def _construct_enum_from_snap(config_type_snap):
+def _construct_enum_from_snap(config_type_snap: ConfigTypeSnap):
     check.list_param(config_type_snap.enum_values, "enum_values", ConfigEnumValueSnap)
 
     return Enum(
@@ -177,7 +191,10 @@ def _construct_enum_from_snap(config_type_snap):
     )
 
 
-def _construct_fields(config_type_snap, config_snap_map):
+def _construct_fields(
+    config_type_snap: ConfigTypeSnap,
+    config_snap_map: Dict[str, ConfigTypeSnap],
+) -> Dict[str, Field]:
     return {
         field.name: Field(
             construct_config_type_from_snap(config_snap_map[field.type_key], config_snap_map),
@@ -268,7 +285,9 @@ def _construct_noneable_from_snap(config_type_snap, config_snap_map):
     )
 
 
-def construct_config_type_from_snap(config_type_snap, config_snap_map):
+def construct_config_type_from_snap(
+    config_type_snap: ConfigTypeSnap, config_snap_map: Dict[str, ConfigTypeSnap]
+) -> ConfigType:
     check.inst_param(config_type_snap, "config_type_snap", ConfigTypeSnap)
     check.dict_param(config_snap_map, "config_snap_map", key_type=str, value_type=ConfigTypeSnap)
 
@@ -293,12 +312,21 @@ def construct_config_type_from_snap(config_type_snap, config_snap_map):
 
 @whitelist_for_serdes
 class PipelineSnapshotLineage(
-    namedtuple(
+    NamedTuple(
         "_PipelineSnapshotLineage",
-        "parent_snapshot_id solid_selection solids_to_execute",
+        [
+            ("parent_snapshot_id", str),
+            ("solid_selection", Optional[List[str]]),
+            ("solids_to_execute", Optional[AbstractSet[str]]),
+        ],
     )
 ):
-    def __new__(cls, parent_snapshot_id, solid_selection=None, solids_to_execute=None):
+    def __new__(
+        cls,
+        parent_snapshot_id: str,
+        solid_selection: Optional[List[str]] = None,
+        solids_to_execute: Optional[AbstractSet[str]] = None,
+    ):
         check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
         return super(PipelineSnapshotLineage, cls).__new__(
             cls,
