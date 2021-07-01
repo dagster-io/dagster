@@ -1,5 +1,30 @@
 # Changelog
 
+# 0.11.16
+
+🚂 \*The Gravy Train is planned to depart at: July 1, 2021**\* _4 pm EST_**
+
+### New
+
+- In Dagit, a new page has been added for user settings, including feature flags and timezone preferences. It can be accessed via the gear icon in the top right corner of the page.
+- SensorExecutionContext and ScheduleExecutionContext have been renamed to SensorEvaluationContext and ScheduleEvaluationContext, respectively. The old names will be supported until 0.12.0.
+
+### Bugfixes
+
+- When turning on a schedule in Dagit, if the schedule had an identical name and identical pipeline name to a schedule in another repository in the workspace, both schedules would incorrectly appear to be turned on, due to a client-side rendering bug. The same bug occurred for sensors. This has now been fixed.
+- The “Copy URL” button on a Run view in Dagit was inoperative for users not using Dagit in localhost or https. This has been fixed.
+- Fixed a bug in Dagit where Dagit would leak memory for each websocket connection.
+- When executing pipeline that contains composite solids, the composite solids mistakenly ignored the upstream outputs. This bug was introduced in 0.11.15, and is now fixed.
+
+### Community Contributions
+
+- Fixed a link to the Kubernetes deployment documentation. Thanks to @jrouly!
+
+### Documentation
+
+- Added documentation for pipeline execution. See [Pipeline Execution](https://docs.dagster.io/concepts/solids-pipelines/pipeline-execution).
+- Added practical guide on various ways to to re-execute Dagster pipelines. See [Re-execution in Dagster](https://docs.dagster.io/guides/dagster/re-execution).
+
 # 0.11.15
 
 ### New
@@ -754,7 +779,7 @@ The corresponding value flag `dagsterDaemon.backfill.enabled` has also been remo
     - grpc_server:
         host: localhost
         port: 4266
-        location_name: "my_grpc_server"
+        location_name: 'my_grpc_server'
         ssl: true
   ```
 
@@ -799,33 +824,33 @@ The corresponding value flag `dagsterDaemon.backfill.enabled` has also been remo
     class: MySQLRunStorage
     config:
       mysql_db:
-        username: { username }
-        password: { password }
-        hostname: { hostname }
-        db_name: { database }
-        port: { port }
+        username: {username}
+        password: {password}
+        hostname: {hostname}
+        db_name: {database}
+        port: {port}
 
   event_log_storage:
     module: dagster_mysql.event_log
     class: MySQLEventLogStorage
     config:
       mysql_db:
-        username: { username }
-        password: { password }
-        hostname: { hostname }
-        db_name: { db_name }
-        port: { port }
+        username: {username}
+        password: {password}
+        hostname: {hostname}
+        db_name: {db_name}
+        port: {port}
 
   schedule_storage:
     module: dagster_mysql.schedule_storage
     class: MySQLScheduleStorage
     config:
       mysql_db:
-        username: { username }
-        password: { password }
-        hostname: { hostname }
-        db_name: { db_name }
-        port: { port }
+        username: {username}
+        password: {password}
+        hostname: {hostname}
+        db_name: {db_name}
+        port: {port}
   ```
 
 ## 0.10.7
