@@ -8,7 +8,7 @@ from dagit.app import create_app_from_workspace_process_context
 from dagit.cli import host_dagit_ui_with_workspace_process_context, ui
 from dagster.core.instance import DagsterInstance
 from dagster.core.telemetry import START_DAGIT_WEBSERVER, UPDATE_REPO_STATS, hash_name
-from dagster.core.test_utils import instance_for_test_tempdir
+from dagster.core.test_utils import instance_for_test
 from dagster.core.workspace.load import load_workspace_process_context_from_yaml_paths
 from dagster.utils import file_relative_path
 
@@ -34,8 +34,8 @@ def test_create_app_with_multiple_workspace_files():
 
 def test_create_app_with_workspace_and_scheduler():
     with tempfile.TemporaryDirectory() as temp_dir:
-        with instance_for_test_tempdir(
-            temp_dir,
+        with instance_for_test(
+            temp_dir=temp_dir,
             overrides={
                 "scheduler": {
                     "module": "dagster.utils.test",
@@ -275,7 +275,7 @@ def test_dagit_logs(
     caplog,
 ):
     with tempfile.TemporaryDirectory() as temp_dir:
-        with instance_for_test_tempdir(temp_dir):
+        with instance_for_test(temp_dir=temp_dir):
             runner = CliRunner(env={"DAGSTER_HOME": temp_dir})
             workspace_path = file_relative_path(__file__, "telemetry_repository.yaml")
             result = runner.invoke(

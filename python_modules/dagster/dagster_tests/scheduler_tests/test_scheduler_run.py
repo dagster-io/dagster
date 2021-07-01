@@ -37,11 +37,7 @@ from dagster.core.host_representation.grpc_server_registry import ProcessGrpcSer
 from dagster.core.scheduler.job import JobState, JobStatus, JobTickStatus, JobType, ScheduleJobData
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import PARTITION_NAME_TAG, SCHEDULED_EXECUTION_TIME_TAG
-from dagster.core.test_utils import (
-    instance_for_test,
-    instance_for_test_tempdir,
-    mock_system_timezone,
-)
+from dagster.core.test_utils import instance_for_test, mock_system_timezone
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.core.workspace.dynamic_workspace import DynamicWorkspace
 from dagster.daemon import get_default_daemon_logger
@@ -1621,8 +1617,8 @@ def test_run_with_hanging_cron_schedules():
     # before you can switch to DagsterDaemonScheduler
 
     with tempfile.TemporaryDirectory() as temp_dir:
-        with instance_for_test_tempdir(
-            temp_dir,
+        with instance_for_test(
+            temp_dir=temp_dir,
             overrides={"scheduler": {"module": "dagster_cron", "class": "SystemCronScheduler"}},
         ) as cron_instance:
             with default_repo() as external_repo:
@@ -1632,8 +1628,8 @@ def test_run_with_hanging_cron_schedules():
 
         # Can't change scheduler to DagsterDaemonScheduler, warns you to wipe
         with pytest.raises(DagsterScheduleWipeRequired):
-            with instance_for_test_tempdir(
-                temp_dir,
+            with instance_for_test(
+                temp_dir=temp_dir,
                 overrides={
                     "scheduler": {
                         "module": "dagster.core.scheduler",
@@ -1643,8 +1639,8 @@ def test_run_with_hanging_cron_schedules():
             ) as instance:
                 instance.optimize_for_dagit(statement_timeout=500)
 
-        with instance_for_test_tempdir(
-            temp_dir,
+        with instance_for_test(
+            temp_dir=temp_dir,
             overrides={
                 "scheduler": {
                     "module": "dagster_cron",
@@ -1655,8 +1651,8 @@ def test_run_with_hanging_cron_schedules():
             cron_instance.wipe_all_schedules()
 
         # After wiping, now can change the scheduler to DagsterDaemonScheduler
-        with instance_for_test_tempdir(
-            temp_dir,
+        with instance_for_test(
+            temp_dir=temp_dir,
             overrides={
                 "scheduler": {
                     "module": "dagster.core.scheduler",

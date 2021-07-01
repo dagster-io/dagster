@@ -3,7 +3,7 @@ import signal
 import sys
 import tempfile
 import time
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 
 import pendulum
 import yaml
@@ -16,7 +16,6 @@ from dagster.core.run_coordinator import RunCoordinator
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.telemetry import cleanup_telemetry_logger
 from dagster.serdes import ConfigurableClass
-from dagster.seven import nullcontext
 from dagster.seven.compat.pendulum import create_pendulum_time, mock_pendulum_timezone
 from dagster.utils import merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
@@ -84,36 +83,32 @@ def environ(env):
 
 
 @contextmanager
-def instance_for_test(overrides=None, set_dagster_home=True):
-    with tempfile.TemporaryDirectory() as temp_dir:
-        with instance_for_test_tempdir(
-            temp_dir, overrides, set_dagster_home=set_dagster_home
-        ) as instance:
-            yield instance
+def instance_for_test(overrides=None, set_dagster_home=True, temp_dir=None):
+    with ExitStack() as stack:
+        if not temp_dir:
+            temp_dir = stack.enter_context(tempfile.TemporaryDirectory())
 
+        # If using the default run launcher, wait for any grpc processes that created runs
+        # during test disposal to finish, since they might also be using this instance's tempdir
+        instance_overrides = merge_dicts(
+            {
+                "run_launcher": {
+                    "class": "DefaultRunLauncher",
+                    "module": "dagster.core.launcher.default_run_launcher",
+                    "config": {
+                        "wait_for_processes": True,
+                    },
+                }
+            },
+            (overrides if overrides else {}),
+        )
 
-@contextmanager
-def instance_for_test_tempdir(temp_dir, overrides=None, set_dagster_home=True):
-    # If using the default run launcher, wait for any grpc processes that created runs
-    # during test disposal to finish, since they might also be using this instance's tempdir
-    instance_overrides = merge_dicts(
-        {
-            "run_launcher": {
-                "class": "DefaultRunLauncher",
-                "module": "dagster.core.launcher.default_run_launcher",
-                "config": {
-                    "wait_for_processes": True,
-                },
-            }
-        },
-        (overrides if overrides else {}),
-    )
+        if set_dagster_home:
+            stack.enter_context(environ({"DAGSTER_HOME": temp_dir}))
 
-    # Write any overrides to disk and set DAGSTER_HOME so that they will still apply when
-    # DagsterInstance.get() is called from a different process
-    with environ({"DAGSTER_HOME": temp_dir}) if set_dagster_home else nullcontext():
         with open(os.path.join(temp_dir, "dagster.yaml"), "w") as fd:
             yaml.dump(instance_overrides, fd, default_flow_style=False)
+
         with DagsterInstance.from_config(temp_dir) as instance:
             try:
                 yield instance

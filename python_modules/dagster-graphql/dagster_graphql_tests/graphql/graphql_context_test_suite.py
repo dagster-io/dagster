@@ -15,7 +15,7 @@ from dagster.core.storage.local_compute_log_manager import LocalComputeLogManage
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.core.storage.schedules.sqlite.sqlite_schedule_storage import SqliteScheduleStorage
-from dagster.core.test_utils import ExplodingRunLauncher, instance_for_test_tempdir
+from dagster.core.test_utils import ExplodingRunLauncher, instance_for_test
 from dagster.core.workspace import WorkspaceProcessContext
 from dagster.core.workspace.load_target import (
     GrpcServerTarget,
@@ -45,8 +45,8 @@ def graphql_postgres_instance(overrides):
             TestPostgresInstance.clean_run_storage(pg_conn_string)
             TestPostgresInstance.clean_event_log_storage(pg_conn_string)
             TestPostgresInstance.clean_schedule_storage(pg_conn_string)
-            with instance_for_test_tempdir(
-                temp_dir,
+            with instance_for_test(
+                temp_dir=temp_dir,
                 overrides=merge_dicts(
                     {
                         "run_storage": {
@@ -140,8 +140,8 @@ class InstanceManagers:
         @contextmanager
         def _non_launchable_sqlite_instance():
             with tempfile.TemporaryDirectory() as temp_dir:
-                with instance_for_test_tempdir(
-                    temp_dir,
+                with instance_for_test(
+                    temp_dir=temp_dir,
                     overrides={
                         "scheduler": {
                             "module": "dagster.utils.test",
@@ -184,8 +184,8 @@ class InstanceManagers:
         @contextmanager
         def _sqlite_instance():
             with tempfile.TemporaryDirectory() as temp_dir:
-                with instance_for_test_tempdir(
-                    temp_dir,
+                with instance_for_test(
+                    temp_dir=temp_dir,
                     overrides={
                         "scheduler": {
                             "module": "dagster.utils.test",
@@ -209,8 +209,8 @@ class InstanceManagers:
         @contextmanager
         def _sqlite_instance():
             with tempfile.TemporaryDirectory() as temp_dir:
-                with instance_for_test_tempdir(
-                    temp_dir,
+                with instance_for_test(
+                    temp_dir=temp_dir,
                     overrides={
                         "scheduler": {
                             "module": "dagster.utils.test",
@@ -234,8 +234,8 @@ class InstanceManagers:
         @contextmanager
         def _sqlite_instance_with_default_hijack():
             with tempfile.TemporaryDirectory() as temp_dir:
-                with instance_for_test_tempdir(
-                    temp_dir,
+                with instance_for_test(
+                    temp_dir=temp_dir,
                     overrides={
                         "scheduler": {
                             "module": "dagster.utils.test",

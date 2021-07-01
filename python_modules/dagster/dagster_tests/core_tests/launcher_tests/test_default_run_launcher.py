@@ -16,7 +16,6 @@ from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import (
     environ,
     instance_for_test,
-    instance_for_test_tempdir,
     poll_for_event,
     poll_for_finished_run,
     poll_for_step_start,
@@ -204,8 +203,8 @@ def test_invalid_instance_run(get_external_pipeline):
         wrong_run_storage_dir = os.path.join(temp_dir, "wrong", "")
 
         with environ({"RUN_STORAGE_ENV": correct_run_storage_dir}):
-            with instance_for_test_tempdir(
-                temp_dir,
+            with instance_for_test(
+                temp_dir=temp_dir,
                 overrides={
                     "run_storage": {
                         "module": "dagster.core.storage.runs",

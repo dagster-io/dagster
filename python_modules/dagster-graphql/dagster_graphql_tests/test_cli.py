@@ -7,7 +7,7 @@ from contextlib import contextmanager
 from click.testing import CliRunner
 from dagster import seven
 from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.core.test_utils import instance_for_test_tempdir
+from dagster.core.test_utils import instance_for_test
 from dagster.utils import file_relative_path
 from dagster_graphql.cli import ui
 
@@ -15,8 +15,8 @@ from dagster_graphql.cli import ui
 @contextmanager
 def dagster_cli_runner():
     with tempfile.TemporaryDirectory() as dagster_home_temp:
-        with instance_for_test_tempdir(
-            dagster_home_temp,
+        with instance_for_test(
+            temp_dir=dagster_home_temp,
             overrides={
                 "run_launcher": {
                     "module": "dagster.core.launcher.sync_in_memory_run_launcher",
@@ -292,8 +292,8 @@ def test_logs_in_start_execution_predefined():
 
     workspace_path = file_relative_path(__file__, "./cli_test_workspace.yaml")
     with tempfile.TemporaryDirectory() as temp_dir:
-        with instance_for_test_tempdir(
-            temp_dir,
+        with instance_for_test(
+            temp_dir=temp_dir,
             overrides={
                 "run_launcher": {
                     "module": "dagster.core.launcher.sync_in_memory_run_launcher",

@@ -8,7 +8,7 @@ import pytest
 from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData
 from dagster.core.events.log import EventLogEntry
 from dagster.core.storage.event_log import SqlEventLogStorage
-from dagster.core.test_utils import instance_for_test_tempdir
+from dagster.core.test_utils import instance_for_test
 from dagster_graphql.implementation.pipeline_run_storage import PipelineRunObservableSubscribe
 from dagster_tests.core_tests.storage_tests.test_polling_event_watcher import (
     SqlitePollingEventLogStorage,
@@ -18,8 +18,8 @@ from dagster_tests.core_tests.storage_tests.test_polling_event_watcher import (
 @contextmanager
 def create_test_instance_and_storage():
     with tempfile.TemporaryDirectory() as tmpdir_path:
-        with instance_for_test_tempdir(
-            tmpdir_path,
+        with instance_for_test(
+            temp_dir=tmpdir_path,
             overrides={
                 "event_log_storage": {
                     "module": "dagster_tests.core_tests.storage_tests.test_polling_event_watcher",

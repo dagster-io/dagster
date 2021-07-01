@@ -8,7 +8,7 @@ from collections import OrderedDict
 import pytest
 from dagster import ModeDefinition, default_executors
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
-from dagster.core.test_utils import instance_for_test_tempdir
+from dagster.core.test_utils import instance_for_test
 from dagster_celery import celery_executor
 from dagster_celery.tags import DAGSTER_CELERY_RUN_PRIORITY_TAG
 
@@ -41,7 +41,7 @@ def test_eager_priority_pipeline():
 @pytest.mark.skip
 def test_run_priority_pipeline(rabbitmq):
     with tempfile.TemporaryDirectory() as tempdir:
-        with instance_for_test_tempdir(tempdir) as instance:
+        with instance_for_test(temp_dir=tempdir) as instance:
             low_done = threading.Event()
             hi_done = threading.Event()
 

@@ -18,7 +18,7 @@ from dagster import (
     solid,
 )
 from dagster.core.errors import DagsterExecutionInterruptedError, raise_execution_interrupts
-from dagster.core.test_utils import instance_for_test_tempdir
+from dagster.core.test_utils import instance_for_test
 from dagster.utils import safe_tempfile_path, send_interrupt
 from dagster.utils.interrupts import capture_interrupts, check_captured_interrupt
 
@@ -94,7 +94,7 @@ def test_single_proc_interrupt():
 @pytest.mark.skipif(seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
 def test_interrupt_multiproc():
     with tempfile.TemporaryDirectory() as tempdir:
-        with instance_for_test_tempdir(tempdir) as instance:
+        with instance_for_test(temp_dir=tempdir) as instance:
 
             file_1 = os.path.join(tempdir, "file_1")
             file_2 = os.path.join(tempdir, "file_2")

@@ -6,7 +6,7 @@ from tempfile import TemporaryDirectory
 
 import pytest
 from dagster import check, file_relative_path
-from dagster.core.test_utils import instance_for_test_tempdir
+from dagster.core.test_utils import instance_for_test
 from dagster.utils import merge_dicts
 
 BUILDKITE = bool(os.getenv("BUILDKITE"))
@@ -22,8 +22,8 @@ def mysql_instance_for_test(dunder_file, container_name, overrides=None):
             TestMySQLInstance.clean_run_storage(mysql_conn_string)
             TestMySQLInstance.clean_event_log_storage(mysql_conn_string)
             TestMySQLInstance.clean_schedule_storage(mysql_conn_string)
-            with instance_for_test_tempdir(
-                temp_dir,
+            with instance_for_test(
+                temp_dir=temp_dir,
                 overrides=merge_dicts(
                     {
                         "run_storage": {

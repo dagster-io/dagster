@@ -15,12 +15,7 @@ from dagster.core.snap import (
     create_pipeline_snapshot_id,
     snapshot_from_execution_plan,
 )
-from dagster.core.test_utils import (
-    create_run_for_test,
-    environ,
-    instance_for_test,
-    instance_for_test_tempdir,
-)
+from dagster.core.test_utils import create_run_for_test, environ, instance_for_test
 from dagster_tests.api_tests.utils import get_foo_pipeline_handle
 
 
@@ -48,7 +43,7 @@ def do_test_single_write_read(instance):
 
 
 def test_filesystem_persist_one_run(tmpdir):
-    with instance_for_test_tempdir(str(tmpdir)) as instance:
+    with instance_for_test(temp_dir=str(tmpdir)) as instance:
         do_test_single_write_read(instance)
 
 

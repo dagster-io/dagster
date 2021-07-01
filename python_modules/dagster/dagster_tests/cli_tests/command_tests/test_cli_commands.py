@@ -24,7 +24,7 @@ from dagster.cli.pipeline import pipeline_execute_command
 from dagster.cli.run import run_delete_command, run_list_command, run_wipe_command
 from dagster.core.definitions.decorators.sensor import sensor
 from dagster.core.definitions.sensor import RunRequest
-from dagster.core.test_utils import instance_for_test, instance_for_test_tempdir
+from dagster.core.test_utils import instance_for_test
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.server import GrpcServerProcess
 from dagster.utils import file_relative_path, merge_dicts
@@ -179,8 +179,9 @@ def _default_cli_test_instance_tempdir(temp_dir, overrides=None):
             "class": "MockedRunLauncher",
         }
     }
-    with instance_for_test_tempdir(
-        temp_dir, overrides=merge_dicts(default_overrides, (overrides if overrides else {}))
+    with instance_for_test(
+        temp_dir=temp_dir,
+        overrides=merge_dicts(default_overrides, (overrides if overrides else {})),
     ) as instance:
         with mock.patch("dagster.core.instance.DagsterInstance.get") as _instance:
             _instance.return_value = instance
