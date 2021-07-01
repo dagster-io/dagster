@@ -42,8 +42,8 @@ def create_subscription_context(instance):
     with WorkspaceProcessContext(
         instance=instance,
         workspace_load_target=WorkspaceFileTarget(paths=yaml_paths),
-        read_only=True,
         version="",
+        read_only=True,
     ) as process_context:
         yield GeventConnectionContext(ws, process_context)
 

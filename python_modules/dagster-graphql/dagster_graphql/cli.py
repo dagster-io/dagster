@@ -2,6 +2,7 @@ from urllib.parse import urljoin, urlparse
 
 import click
 import requests
+from dagster import __version__ as dagster_version
 from dagster import check, seven
 from dagster.cli.workspace import workspace_target_argument
 from dagster.cli.workspace.cli_target import (
@@ -202,7 +203,7 @@ def ui(text, file, predefined, variables, remote, output, ephemeral_instance, **
     else:
         instance = DagsterInstance.ephemeral() if ephemeral_instance else DagsterInstance.get()
         with get_workspace_process_context_from_kwargs(
-            instance, kwargs
+            instance, version=__version__, kwargs=kwargs
         ) as workspace_process_context:
             execute_query_from_cli(
                 workspace_process_context,

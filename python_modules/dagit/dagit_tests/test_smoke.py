@@ -32,7 +32,9 @@ SMOKE_TEST_QUERY = """
 def test_smoke_app(gen_instance):
     with gen_instance() as instance:
         with get_workspace_process_context_from_kwargs(
-            instance, dict(module_name="dagit_tests.toy.bar_repo", definition="bar")
+            instance,
+            version="",
+            kwargs=dict(module_name="dagit_tests.toy.bar_repo", definition="bar"),
         ) as workspace_process_context:
 
             flask_app = app.create_app_from_workspace_process_context(workspace_process_context)

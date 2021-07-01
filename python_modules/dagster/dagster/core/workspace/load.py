@@ -15,11 +15,13 @@ from dagster.utils import load_yaml_from_path, merge_dicts
 from .config_schema import ensure_workspace_config
 
 
-def load_workspace_process_context_from_yaml_paths(instance: DagsterInstance, yaml_paths):
+def load_workspace_process_context_from_yaml_paths(
+    instance: DagsterInstance, yaml_paths, version=""
+):
     from .load_target import WorkspaceFileTarget
     from .context import WorkspaceProcessContext
 
-    return WorkspaceProcessContext(instance, WorkspaceFileTarget(paths=yaml_paths))
+    return WorkspaceProcessContext(instance, WorkspaceFileTarget(paths=yaml_paths), version=version)
 
 
 def location_origins_from_yaml_paths(yaml_paths):

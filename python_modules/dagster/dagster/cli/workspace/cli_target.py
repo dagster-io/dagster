@@ -163,10 +163,10 @@ def created_workspace_load_target(kwargs):
         _cli_load_invariant(False)
 
 
-def get_workspace_process_context_from_kwargs(instance: DagsterInstance, kwargs):
+def get_workspace_process_context_from_kwargs(instance: DagsterInstance, version: str, kwargs):
     from dagster.core.workspace import WorkspaceProcessContext
 
-    return WorkspaceProcessContext(instance, created_workspace_load_target(kwargs))
+    return WorkspaceProcessContext(instance, created_workspace_load_target(kwargs), version=version)
 
 
 def python_target_click_options():

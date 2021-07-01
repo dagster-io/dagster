@@ -317,7 +317,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         self,
         instance: DagsterInstance,
         workspace_load_target: Optional[WorkspaceLoadTarget],
-        version: Optional[str] = None,
+        version: str,
         read_only: bool = False,
         grpc_server_registry=None,
     ):

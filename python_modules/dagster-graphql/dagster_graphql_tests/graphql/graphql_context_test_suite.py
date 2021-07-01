@@ -344,6 +344,7 @@ class EnvironmentManagers:
                         location_name="test",
                     )
                 ),
+                version="",
                 read_only=read_only,
             ) as workspace_process_context:
                 yield workspace_process_context
@@ -369,6 +370,7 @@ class EnvironmentManagers:
                             host=api_client.host,
                             location_name="test",
                         ),
+                        version="",
                         read_only=read_only,
                     ) as workspace:
                         yield workspace
@@ -387,6 +389,7 @@ class EnvironmentManagers:
             with WorkspaceProcessContext(
                 instance,
                 WorkspaceFileTarget(paths=[file_relative_path(__file__, "multi_location.yaml")]),
+                version="",
                 read_only=read_only,
             ) as workspace:
                 yield workspace
@@ -408,6 +411,7 @@ class EnvironmentManagers:
                     working_directory=None,
                     location_name="test",
                 ),
+                version="",
                 read_only=read_only,
             ) as workspace:
                 yield workspace
