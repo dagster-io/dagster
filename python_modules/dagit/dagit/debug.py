@@ -11,6 +11,7 @@ from .cli import (
     DEFAULT_DAGIT_PORT,
     host_dagit_ui_with_workspace_process_context,
 )
+from .version import __version__
 
 
 @click.command(
@@ -44,7 +45,7 @@ def dagit_debug_command(input_files, port):
 
     instance = DagsterInstance.ephemeral(preload=debug_payloads)
     host_dagit_ui_with_workspace_process_context(
-        workspace_process_context=WorkspaceProcessContext(instance, None),
+        workspace_process_context=WorkspaceProcessContext(instance, None, version=__version__),
         port=port,
         port_lookup=True,
         host=DEFAULT_DAGIT_HOST,

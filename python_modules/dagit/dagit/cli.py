@@ -153,7 +153,9 @@ def host_dagit_ui(
         instance.optimize_for_dagit(db_statement_timeout)
 
         with get_workspace_process_context_from_kwargs(
-            instance, kwargs
+            instance,
+            version=__version__,
+            kwargs=kwargs,
         ) as workspace_process_context:
             host_dagit_ui_with_workspace_process_context(
                 workspace_process_context, host, port, path_prefix, port_lookup, read_only

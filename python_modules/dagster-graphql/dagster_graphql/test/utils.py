@@ -62,6 +62,7 @@ def define_out_of_process_workspace(python_file, fn_name, instance):
             working_directory=None,
             location_name=main_repo_location_name(),
         ),
+        version="",
     )
 
 
