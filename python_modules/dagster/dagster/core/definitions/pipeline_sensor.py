@@ -141,10 +141,6 @@ def pipeline_failure_sensor(
                 of_type=dagster_event_type,
             )
 
-            if len(event_records) == 0:
-                yield SkipReason(f"No qualified events found after id={record_id}")
-                return
-
             for event_record in event_records:
                 event_log_entry = event_record.event_log_entry
                 storage_id = event_record.storage_id
@@ -156,6 +152,18 @@ def pipeline_failure_sensor(
                 check.invariant(len(run_records) == 1)
                 pipeline_run = run_records[0].pipeline_run
                 update_timestamp = run_records[0].update_timestamp
+
+                # skip if the failed pipeline does not belong to the current repository
+                pipeline_repo_name = (
+                    pipeline_run.external_pipeline_origin.external_repository_origin.repository_name
+                )
+                if pipeline_repo_name != context.repository_name:
+                    context.update_cursor(
+                        PipelineFailureSensorCursor(
+                            record_id=storage_id, update_timestamp=update_timestamp.isoformat()
+                        ).to_json()
+                    )
+                    continue
 
                 serializable_error = None
 

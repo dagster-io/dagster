@@ -31,6 +31,7 @@ def test_first_events(mock_events_for_asset_key):
             last_run_key=None,
             last_completion_time=None,
             cursor=None,
+            repository_name=None,
         )
         requests = story_recommender_on_hn_table_update.evaluate_tick(context).run_requests
         assert len(requests) == 1
@@ -49,6 +50,7 @@ def test_nothing_new(mock_events_for_asset_key):
             last_run_key="1|2",
             last_completion_time=None,
             cursor=None,
+            repository_name=None,
         )
         requests = story_recommender_on_hn_table_update.evaluate_tick(context).run_requests
         assert len(requests) == 0
@@ -66,6 +68,7 @@ def test_new_comments_old_stories(mock_events_for_asset_key):
             last_run_key="1|2",
             last_completion_time=None,
             cursor=None,
+            repository_name=None,
         )
         requests = story_recommender_on_hn_table_update.evaluate_tick(context).run_requests
         assert len(requests) == 0
@@ -84,6 +87,7 @@ def test_old_comments_new_stories(mock_events_for_asset_key):
             last_run_key="1|2",
             last_completion_time=None,
             cursor=None,
+            repository_name=None,
         )
         requests = story_recommender_on_hn_table_update.evaluate_tick(context).run_requests
         assert len(requests) == 0
@@ -101,6 +105,7 @@ def test_both_new(mock_events_for_asset_key):
             last_run_key="1|2",
             last_completion_time=None,
             cursor=None,
+            repository_name=None,
         )
         requests = story_recommender_on_hn_table_update.evaluate_tick(context).run_requests
         assert len(requests) == 1

@@ -38,6 +38,7 @@ class SensorEvaluationContext:
         last_completion_time (float): DEPRECATED The last time that the sensor was evaluated (UTC).
         last_run_key (str): DEPRECATED The run key of the RunRequest most recently created by this
             sensor. Use the preferred `cursor` attribute instead.
+        repository_name (Optional[str]): The name of the repository that the sensor belongs to.
     """
 
     def __init__(
@@ -46,6 +47,7 @@ class SensorEvaluationContext:
         last_completion_time: Optional[float],
         last_run_key: Optional[str],
         cursor: Optional[str],
+        repository_name: Optional[str],
     ):
         self._exit_stack = ExitStack()
         self._instance = None
@@ -56,6 +58,7 @@ class SensorEvaluationContext:
         )
         self._last_run_key = check.opt_str_param(last_run_key, "last_run_key")
         self._cursor = check.opt_str_param(cursor, "cursor")
+        self._repository_name = check.opt_str_param(repository_name, "repository_name")
 
         self._instance = None
 
@@ -103,6 +106,10 @@ class SensorEvaluationContext:
             cursor (Optional[str]):
         """
         self._cursor = check.opt_str_param(cursor, "cursor")
+
+    @property
+    def repository_name(self) -> Optional[str]:
+        return self._repository_name
 
 
 # Preserve SensorExecutionContext for backcompat so type annotations don't break.
@@ -358,7 +365,9 @@ def wrap_sensor_evaluation(
 
 
 def build_sensor_context(
-    instance: Optional[DagsterInstance] = None, cursor: Optional[str] = None
+    instance: Optional[DagsterInstance] = None,
+    cursor: Optional[str] = None,
+    repository_name: Optional[str] = None,
 ) -> SensorEvaluationContext:
     """Builds sensor execution context using the provided parameters.
 
@@ -369,6 +378,7 @@ def build_sensor_context(
     Args:
         instance (Optional[DagsterInstance]): The dagster instance configured to run the sensor.
         cursor (Optional[str]): A cursor value to provide to the evaluation of the sensor.
+        repository_name (Optional[str]): The name of the repository that the sensor belongs to.
 
     Examples:
 
@@ -383,9 +393,11 @@ def build_sensor_context(
 
     check.opt_inst_param(instance, "instance", DagsterInstance)
     check.opt_str_param(cursor, "cursor")
+    check.opt_str_param(repository_name, "repository_name")
     return SensorEvaluationContext(
         instance_ref=instance.get_ref() if instance else None,
         last_completion_time=None,
         last_run_key=None,
         cursor=cursor,
+        repository_name=repository_name,
     )

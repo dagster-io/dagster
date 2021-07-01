@@ -256,6 +256,7 @@ def get_external_sensor_execution(
         last_completion_time=last_completion_timestamp,
         last_run_key=last_run_key,
         cursor=cursor,
+        repository_name=recon_repo.get_definition().name,
     ) as sensor_context:
         try:
             with user_code_error_boundary(
