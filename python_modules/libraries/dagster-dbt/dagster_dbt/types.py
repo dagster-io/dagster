@@ -52,7 +52,7 @@ class NodeResult(
         warn (Optional[Any]): The ``warn`` field from the results of the executed dbt node.
         skip (Optional[Any]): The ``skip`` field from the results of the executed dbt node.
         status (Optional[Union[str,int]]): The status of the executed dbt node (model).
-        execution_time (float): The execution duration (in seconds) of the dbt node (model).
+        execution_time (Union[float,int]): The execution duration (in seconds) of the dbt node (model).
         thread_id (str): The dbt thread identifier that executed the dbt node (model).
         step_timings (List[StepTiming]): The timings for each step in the executed dbt node
             (model).
@@ -67,7 +67,7 @@ class NodeResult(
         unique_id: Optional[str] = None,
         error: Optional[str] = None,
         status: Optional[Union[str, int]] = None,
-        execution_time: Optional[float] = None,
+        execution_time: Union[float, int] = None,
         thread_id: Optional[str] = None,
         step_timings: List[StepTiming] = None,
         table: Optional[Dict[str, Any]] = None,
@@ -82,7 +82,7 @@ class NodeResult(
             check.opt_str_param(unique_id, "unique_id"),
             check.opt_str_param(error, "error"),
             status,
-            check.opt_float_param(execution_time, "execution_time"),
+            execution_time,
             check.opt_str_param(thread_id, "thread_id"),
             step_timings,
             check.opt_dict_param(table, "table"),
@@ -112,7 +112,7 @@ class NodeResult(
             node = check.dict_elem(d, "node")
             unique_id = check.str_elem(node, "unique_id")
         error = check.opt_str_elem(d, "error")
-        execution_time = check.float_elem(d, "execution_time")
+        execution_time = d["execution_time"]
         thread_id = check.opt_str_elem(d, "thread_id")
         check.list_elem(d, "timing")
         step_timings = [
