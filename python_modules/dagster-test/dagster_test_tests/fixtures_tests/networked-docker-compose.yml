@@ -1,0 +1,17 @@
+---
+version: "3.9"
+
+services:
+  server:
+    image: python:3
+    ports:
+      - 8000:8000
+    command: python -m http.server
+    container_name: server
+    networks:
+      - network
+
+networks:
+  network:
+    driver: bridge
+    name: network
