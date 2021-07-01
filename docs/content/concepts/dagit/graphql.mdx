@@ -264,3 +264,28 @@ If you want to use a preset instead of defining the run config, use the `preset`
         }
       }
     }
+
+### Terminate a running pipeline
+
+If you want to stop execution of a pipeline that's currently running, use the `terminatePipelineExecution` mutation. The only required argument for this mutation is the ID of the run.
+
+    mutation TerminatePipeline($runId: String!) {
+      terminatePipelineExecution(runId: $runId){
+        __typename
+        ... on TerminatePipelineExecutionSuccess{
+          run {
+            runId
+          }
+        }
+        ... on TerminatePipelineExecutionFailure {
+          message
+        }
+        ... on PipelineRunNotFoundError {
+          runId
+        }
+        ... on PythonError {
+          message
+          stack
+        }
+      }
+    }
