@@ -1,0 +1,6 @@
+load_from:
+  # Each entry here corresponds to a container that exposes a gRPC server.
+  - grpc_server:
+      host: docker_example_pipelines
+      port: 4000
+      location_name: "example_pipelines"

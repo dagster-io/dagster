@@ -1,4 +1,3 @@
 load_from:
-  - python_module:
-      module_name: demo
-      attribute: demo_repo
+  # References the file copied into your Dockerfile
+  - python_file: pipelines.py
