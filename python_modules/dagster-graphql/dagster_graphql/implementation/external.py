@@ -28,8 +28,8 @@ def get_full_external_pipeline_or_raise(graphene_info, selector):
 
 
 def get_external_pipeline_or_raise(graphene_info, selector):
-    from ..schema.pipelines.pipeline_errors import GrapheneInvalidSubsetError
     from ..schema.pipelines.pipeline import GraphenePipeline
+    from ..schema.pipelines.pipeline_errors import GrapheneInvalidSubsetError
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(selector, "selector", PipelineSelector)
@@ -54,8 +54,8 @@ def get_external_pipeline_or_raise(graphene_info, selector):
 
 
 def get_subset_external_pipeline(context, selector):
-    from ..schema.pipelines.pipeline_errors import GrapheneInvalidSubsetError
     from ..schema.pipelines.pipeline import GraphenePipeline
+    from ..schema.pipelines.pipeline_errors import GrapheneInvalidSubsetError
 
     check.inst_param(selector, "selector", PipelineSelector)
 

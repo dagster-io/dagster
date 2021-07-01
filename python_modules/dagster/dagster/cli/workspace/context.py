@@ -24,14 +24,14 @@ from dagster.core.instance import DagsterInstance
 from dagster.utils.error import SerializableErrorInfo
 
 if TYPE_CHECKING:
-    from rx.subjects import Subject
     from dagster.core.host_representation import (
-        ExternalPartitionSetExecutionParamData,
+        ExternalPartitionConfigData,
         ExternalPartitionExecutionErrorData,
         ExternalPartitionNamesData,
-        ExternalPartitionConfigData,
+        ExternalPartitionSetExecutionParamData,
         ExternalPartitionTagsData,
     )
+    from rx.subjects import Subject
 
 
 class IWorkspaceRequestContext:

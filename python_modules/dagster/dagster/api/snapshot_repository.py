@@ -3,10 +3,7 @@ from dagster.serdes import deserialize_json_to_dagster_namedtuple
 
 
 def sync_get_streaming_external_repositories_data_grpc(api_client, repository_location):
-    from dagster.core.host_representation import (
-        RepositoryLocation,
-        ExternalRepositoryOrigin,
-    )
+    from dagster.core.host_representation import ExternalRepositoryOrigin, RepositoryLocation
 
     check.inst_param(repository_location, "repository_location", RepositoryLocation)
 

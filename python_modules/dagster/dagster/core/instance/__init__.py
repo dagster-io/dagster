@@ -98,7 +98,7 @@ class _EventListenerLogHandler(logging.Handler):
         super(_EventListenerLogHandler, self).__init__()
 
     def emit(self, record):
-        from dagster.core.events.log import construct_event_record, StructuredLoggerMessage
+        from dagster.core.events.log import StructuredLoggerMessage, construct_event_record
 
         try:
             event = construct_event_record(
@@ -220,14 +220,14 @@ class DagsterInstance:
         settings=None,
         ref=None,
     ):
+        from dagster.core.launcher import RunLauncher
+        from dagster.core.run_coordinator import RunCoordinator
+        from dagster.core.scheduler import Scheduler
         from dagster.core.storage.compute_log_manager import ComputeLogManager
         from dagster.core.storage.event_log import EventLogStorage
         from dagster.core.storage.root import LocalArtifactStorage
         from dagster.core.storage.runs import RunStorage
         from dagster.core.storage.schedules import ScheduleStorage
-        from dagster.core.scheduler import Scheduler
-        from dagster.core.run_coordinator import RunCoordinator
-        from dagster.core.launcher import RunLauncher
 
         self._instance_type = check.inst_param(instance_type, "instance_type", InstanceType)
         self._local_artifact_storage = check.inst_param(
@@ -291,12 +291,12 @@ class DagsterInstance:
 
     @staticmethod
     def ephemeral(tempdir=None, preload=None):
-        from dagster.core.run_coordinator import DefaultRunCoordinator
         from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
+        from dagster.core.run_coordinator import DefaultRunCoordinator
         from dagster.core.storage.event_log import InMemoryEventLogStorage
+        from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
         from dagster.core.storage.root import LocalArtifactStorage
         from dagster.core.storage.runs import InMemoryRunStorage
-        from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
 
         if tempdir is None:
             tempdir = DagsterInstance.temp_storage()
@@ -781,7 +781,7 @@ class DagsterInstance:
         )
 
     def _ensure_persisted_pipeline_snapshot(self, pipeline_snapshot, parent_pipeline_snapshot):
-        from dagster.core.snap import create_pipeline_snapshot_id, PipelineSnapshot
+        from dagster.core.snap import PipelineSnapshot, create_pipeline_snapshot_id
 
         check.inst_param(pipeline_snapshot, "pipeline_snapshot", PipelineSnapshot)
         check.opt_inst_param(parent_pipeline_snapshot, "parent_pipeline_snapshot", PipelineSnapshot)
@@ -1111,7 +1111,7 @@ class DagsterInstance:
         """
         Report a EngineEvent that occurred outside of a pipeline execution context.
         """
-        from dagster.core.events import EngineEventData, DagsterEvent, DagsterEventType
+        from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData
         from dagster.core.events.log import EventLogEntry
 
         check.class_param(cls, "cls")
@@ -1322,7 +1322,7 @@ class DagsterInstance:
         """
         run = self.get_run_by_id(run_id)
 
-        from dagster.core.events import EngineEventData, DagsterEvent, DagsterEventType
+        from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData
         from dagster.core.events.log import EventLogEntry
 
         launch_started_event = DagsterEvent(
@@ -1379,8 +1379,8 @@ class DagsterInstance:
         return 0
 
     def scheduler_debug_info(self):
-        from dagster.core.scheduler import SchedulerDebugInfo
         from dagster.core.definitions.run_request import JobType
+        from dagster.core.scheduler import SchedulerDebugInfo
         from dagster.core.scheduler.job import JobStatus
 
         errors = []
@@ -1430,8 +1430,8 @@ class DagsterInstance:
     # Schedule Storage
 
     def start_sensor(self, external_sensor):
-        from dagster.core.scheduler.job import JobState, JobStatus, SensorJobData
         from dagster.core.definitions.run_request import JobType
+        from dagster.core.scheduler.job import JobState, JobStatus, SensorJobData
 
         job_state = self.get_job_state(external_sensor.get_external_origin_id())
 
@@ -1534,7 +1534,7 @@ class DagsterInstance:
     def get_required_daemon_types(self):
         from dagster.core.run_coordinator import QueuedRunCoordinator
         from dagster.core.scheduler import DagsterDaemonScheduler
-        from dagster.daemon.daemon import SchedulerDaemon, SensorDaemon, BackfillDaemon
+        from dagster.daemon.daemon import BackfillDaemon, SchedulerDaemon, SensorDaemon
         from dagster.daemon.run_coordinator.queued_run_coordinator_daemon import (
             QueuedRunCoordinatorDaemon,
         )

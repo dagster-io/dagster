@@ -425,7 +425,7 @@ def my_io_manager(_):
 
 
 def test_set_io_manager_and_intermediate_storage():
-    from dagster import intermediate_storage, fs_intermediate_storage
+    from dagster import fs_intermediate_storage, intermediate_storage
 
     @intermediate_storage()
     def my_intermediate_storage(_):

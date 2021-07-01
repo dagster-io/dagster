@@ -3,15 +3,7 @@ import sqlite3
 from copy import deepcopy
 
 import requests
-from dagster import (
-    Field,
-    ModeDefinition,
-    String,
-    execute_pipeline,
-    pipeline,
-    resource,
-    solid,
-)
+from dagster import Field, ModeDefinition, String, execute_pipeline, pipeline, resource, solid
 
 
 class LocalSQLiteWarehouse:
@@ -82,20 +74,12 @@ def normalize_calories(context, cereals):
 # end_required_resources_marker_0
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={"warehouse": local_sqlite_warehouse_resource}
-        )
-    ]
-)
+@pipeline(mode_defs=[ModeDefinition(resource_defs={"warehouse": local_sqlite_warehouse_resource})])
 def resources_pipeline():
     normalize_calories(download_csv())
 
 
 if __name__ == "__main__":
-    run_config = {
-        "resources": {"warehouse": {"config": {"conn_str": ":memory:"}}}
-    }
+    run_config = {"resources": {"warehouse": {"config": {"conn_str": ":memory:"}}}}
     result = execute_pipeline(resources_pipeline, run_config=run_config)
     assert result.success

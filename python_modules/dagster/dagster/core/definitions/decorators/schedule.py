@@ -24,7 +24,7 @@ from ..mode import DEFAULT_MODE_NAME
 from ..schedule import ScheduleDefinition
 
 if TYPE_CHECKING:
-    from dagster import ScheduleExecutionContext, Partition
+    from dagster import Partition, ScheduleExecutionContext
 
 # Error messages are long
 # pylint: disable=C0301

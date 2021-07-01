@@ -37,6 +37,7 @@ def migrate_asset_key_data(event_log_storage, print_fn=None):
     Takes in event_log_storage, and a print_fn to keep track of progress.
     """
     from dagster.core.storage.event_log.sql_event_log import SqlEventLogStorage
+
     from .schema import AssetKeyTable, SqlEventLogStorageTable
 
     if not isinstance(event_log_storage, SqlEventLogStorage):

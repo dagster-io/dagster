@@ -3,10 +3,7 @@ import warnings
 try:
     # Centralise Azure imports here so we only need to warn in one place
     from azure.core.exceptions import ResourceNotFoundError
-    from azure.storage.blob import (
-        generate_blob_sas,
-        BlobServiceClient,
-    )
+    from azure.storage.blob import BlobServiceClient, generate_blob_sas
 except ImportError:
     msg = (
         "Could not import required Azure objects. This probably means you have an old version "

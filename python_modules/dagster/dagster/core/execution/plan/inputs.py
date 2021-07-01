@@ -21,11 +21,11 @@ from .outputs import StepOutputHandle, UnresolvedStepOutputHandle
 from .utils import build_resources_for_manager, solid_execution_error_boundary
 
 if TYPE_CHECKING:
-    from dagster.core.types.dagster_type import DagsterType
-    from dagster.core.storage.input_manager import InputManager
     from dagster.core.events import DagsterEvent
-    from dagster.core.execution.context.system import StepExecutionContext
     from dagster.core.execution.context.input import InputContext
+    from dagster.core.execution.context.system import StepExecutionContext
+    from dagster.core.storage.input_manager import InputManager
+    from dagster.core.types.dagster_type import DagsterType
 
 
 def _get_asset_lineage_from_fns(
@@ -44,7 +44,7 @@ def _get_asset_lineage_from_fns(
 class StepInputData(
     NamedTuple("_StepInputData", [("input_name", str), ("type_check_data", TypeCheckData)])
 ):
-    """"Serializable payload of information for the result of processing a step input"""
+    """ "Serializable payload of information for the result of processing a step input"""
 
     def __new__(cls, input_name: str, type_check_data: TypeCheckData):
         return super(StepInputData, cls).__new__(

@@ -8,15 +8,7 @@ from typing import Any
 import requests
 import sqlalchemy
 import sqlalchemy.ext.declarative
-from dagster import (
-    Field,
-    ModeDefinition,
-    String,
-    execute_pipeline,
-    pipeline,
-    resource,
-    solid,
-)
+from dagster import Field, ModeDefinition, String, execute_pipeline, pipeline, resource, solid
 
 
 class LocalSQLiteWarehouse:
@@ -137,9 +129,7 @@ def normalize_calories(context, cereals):
         ),
         ModeDefinition(
             name="dev",
-            resource_defs={
-                "warehouse": sqlalchemy_postgres_warehouse_resource
-            },
+            resource_defs={"warehouse": sqlalchemy_postgres_warehouse_resource},
         ),
     ]
 )
@@ -152,9 +142,7 @@ def modes_pipeline():
 
 if __name__ == "__main__":
     # start_modes_main
-    run_config = {
-        "resources": {"warehouse": {"config": {"conn_str": ":memory:"}}}
-    }
+    run_config = {"resources": {"warehouse": {"config": {"conn_str": ":memory:"}}}}
     result = execute_pipeline(
         pipeline=modes_pipeline,
         mode="unittest",

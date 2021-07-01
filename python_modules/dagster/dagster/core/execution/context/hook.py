@@ -140,8 +140,8 @@ class UnboundHookContext(HookContext):
     def __init__(
         self, resources: Dict[str, Any], mode_def: Optional[ModeDefinition]
     ):  # pylint: disable=super-init-not-called
-        from ..context_creation_pipeline import initialize_console_manager
         from ..build_resources import build_resources
+        from ..context_creation_pipeline import initialize_console_manager
 
         self._mode_def = mode_def
 

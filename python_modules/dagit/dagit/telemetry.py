@@ -70,7 +70,7 @@ def upload_logs(stop_event, raise_errors=False):
 
 
 def _upload_logs(dagster_log_dir, log_size, dagster_log_queue_dir, raise_errors):
-    """Send POST request to telemetry server with the contents of $DAGSTER_HOME/logs/ directory """
+    """Send POST request to telemetry server with the contents of $DAGSTER_HOME/logs/ directory"""
 
     try:
         # lazy import for perf

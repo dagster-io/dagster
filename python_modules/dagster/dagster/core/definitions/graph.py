@@ -42,8 +42,8 @@ from .preset import PresetDefinition
 from .solid_container import create_execution_structure, validate_dependency_dict
 
 if TYPE_CHECKING:
-    from .solid import SolidDefinition
     from .resource import ResourceDefinition
+    from .solid import SolidDefinition
 
 
 def _check_node_defs_arg(graph_name: str, node_defs: List[NodeDefinition]):

@@ -275,8 +275,8 @@ class PendingNodeInvocation:
             current_context().add_pending_invocation(self)
 
     def __call__(self, *args, **kwargs):
-        from .solid_invocation import solid_invocation_result
         from ..execution.context.invocation import UnboundSolidExecutionContext
+        from .solid_invocation import solid_invocation_result
 
         node_name = self.given_alias if self.given_alias else self.node_def.name
 

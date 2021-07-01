@@ -1,18 +1,10 @@
 import requests
-from dagster import (
-    DagsterType,
-    InputDefinition,
-    OutputDefinition,
-    pipeline,
-    solid,
-)
+from dagster import DagsterType, InputDefinition, OutputDefinition, pipeline, solid
 
 
 # start_custom_types_2_marker_0
 def is_list_of_dicts(_, value):
-    return isinstance(value, list) and all(
-        isinstance(element, dict) for element in value
-    )
+    return isinstance(value, list) and all(isinstance(element, dict) for element in value)
 
 
 SimpleDataFrame = DagsterType(

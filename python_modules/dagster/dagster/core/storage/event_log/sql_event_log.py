@@ -459,7 +459,7 @@ class SqlEventLogStorage(EventLogStorage):
         return True
 
     def update_event_log_record(self, record_id, event):
-        """ Utility method for migration scripts to update SQL representation of event records. """
+        """Utility method for migration scripts to update SQL representation of event records."""
         check.int_param(record_id, "record_id")
         check.inst_param(event, "event", EventLogEntry)
         dagster_event_type = None
@@ -540,7 +540,7 @@ class SqlEventLogStorage(EventLogStorage):
         ascending=False,
         before_timestamp=None,
     ):
-        """ Helper function to deal with cursor/limit pagination args """
+        """Helper function to deal with cursor/limit pagination args"""
 
         if before_cursor:
             before_query = db.select([SqlEventLogStorageTable.c.id]).where(

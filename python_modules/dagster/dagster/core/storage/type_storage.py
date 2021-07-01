@@ -109,7 +109,7 @@ class TypeStoragePluginRegistry:
 
 def construct_type_storage_plugin_registry(pipeline_def, intermediate_storage_def):
     # Needed to avoid circular dep
-    from dagster.core.definitions import PipelineDefinition, IntermediateStorageDefinition
+    from dagster.core.definitions import IntermediateStorageDefinition, PipelineDefinition
 
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
     check.inst_param(

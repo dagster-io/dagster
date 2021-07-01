@@ -30,13 +30,7 @@ def hello_cereal_pipeline():
     execution_timezone="US/Central",
 )
 def good_morning_schedule(date):
-    return {
-        "solids": {
-            "hello_cereal": {
-                "inputs": {"date": {"value": date.strftime("%Y-%m-%d")}}
-            }
-        }
-    }
+    return {"solids": {"hello_cereal": {"inputs": {"date": {"value": date.strftime("%Y-%m-%d")}}}}}
 
 
 # end_scheduler_marker_1
@@ -67,13 +61,7 @@ def weekday_filter(_context):
     should_execute=weekday_filter,
 )
 def good_weekday_morning_schedule(date):
-    return {
-        "solids": {
-            "hello_cereal": {
-                "inputs": {"date": {"value": date.strftime("%Y-%m-%d")}}
-            }
-        }
-    }
+    return {"solids": {"hello_cereal": {"inputs": {"date": {"value": date.strftime("%Y-%m-%d")}}}}}
 
 
 # end_scheduler_marker_4

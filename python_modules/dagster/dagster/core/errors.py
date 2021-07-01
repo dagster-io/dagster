@@ -473,7 +473,7 @@ class DagsterTypeCheckDidNotPass(DagsterError):
     """
 
     def __init__(self, description=None, metadata_entries=None, dagster_type=None):
-        from dagster import EventMetadataEntry, DagsterType
+        from dagster import DagsterType, EventMetadataEntry
 
         super(DagsterTypeCheckDidNotPass, self).__init__(description)
         self.description = check.opt_str_param(description, "description")
@@ -506,23 +506,23 @@ class PartitionExecutionError(DagsterUserCodeExecutionError):
 
 
 class DagsterInvalidAssetKey(DagsterError):
-    """ Error raised by invalid asset key """
+    """Error raised by invalid asset key"""
 
 
 class DagsterInvalidEventMetadata(DagsterError):
-    """ Error raised by invalid event metadata parameters """
+    """Error raised by invalid event metadata parameters"""
 
 
 class HookExecutionError(DagsterUserCodeExecutionError):
-    """ Error raised during the execution of a user-defined hook. """
+    """Error raised during the execution of a user-defined hook."""
 
 
 class PipelineSensorExecutionError(DagsterUserCodeExecutionError):
-    """ Error raised during the execution of a user-defined pipeline hook. """
+    """Error raised during the execution of a user-defined pipeline hook."""
 
 
 class DagsterImportError(DagsterError):
-    """ Import error raised while importing user-code. """
+    """Import error raised while importing user-code."""
 
 
 class JobError(DagsterUserCodeExecutionError):

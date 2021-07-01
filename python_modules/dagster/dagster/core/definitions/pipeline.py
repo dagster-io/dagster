@@ -40,9 +40,10 @@ from .solid import NodeDefinition
 from .utils import validate_tags
 
 if TYPE_CHECKING:
-    from .run_config_schema import RunConfigSchema
-    from dagster.core.snap import PipelineSnapshot, ConfigSchemaSnapshot
     from dagster.core.host_representation import PipelineIndex
+    from dagster.core.snap import ConfigSchemaSnapshot, PipelineSnapshot
+
+    from .run_config_schema import RunConfigSchema
 
 
 class PipelineDefinition(GraphDefinition):
@@ -414,8 +415,8 @@ class PipelineDefinition(GraphDefinition):
         return self.get_pipeline_index().pipeline_snapshot_id
 
     def get_pipeline_index(self) -> "PipelineIndex":
-        from dagster.core.snap import PipelineSnapshot
         from dagster.core.host_representation import PipelineIndex
+        from dagster.core.snap import PipelineSnapshot
 
         return PipelineIndex(
             PipelineSnapshot.from_pipeline_def(self), self.get_parent_pipeline_snapshot()

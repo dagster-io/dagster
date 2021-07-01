@@ -47,8 +47,8 @@ class UnboundSolidExecutionContext(SolidExecutionContext):
         resources_dict: Optional[Dict[str, Any]],
         instance: Optional[DagsterInstance],
     ):  # pylint: disable=super-init-not-called
-        from dagster.core.execution.context_creation_pipeline import initialize_console_manager
         from dagster.core.execution.api import ephemeral_instance_if_missing
+        from dagster.core.execution.context_creation_pipeline import initialize_console_manager
 
         self._solid_config = solid_config
 

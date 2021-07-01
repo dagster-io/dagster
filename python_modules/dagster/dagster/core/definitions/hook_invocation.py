@@ -4,8 +4,8 @@ from ..errors import DagsterInvariantViolationError
 from ..execution.context.hook import BoundHookContext, HookContext, UnboundHookContext
 
 if TYPE_CHECKING:
-    from .hook import HookDefinition
     from ..events import DagsterEvent
+    from .hook import HookDefinition
 
 
 def hook_invocation_result(

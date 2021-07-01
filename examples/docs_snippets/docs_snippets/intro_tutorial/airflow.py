@@ -11,9 +11,7 @@ def hello_cereal(context):
     with open(dataset_path, "r") as fd:
         cereals = [row for row in csv.DictReader(fd)]
 
-    context.log.info(
-        "Found {n_cereals} cereals".format(n_cereals=len(cereals))
-    )
+    context.log.info("Found {n_cereals} cereals".format(n_cereals=len(cereals)))
 
 
 @pipeline

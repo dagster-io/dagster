@@ -2,10 +2,7 @@ from dagster import repository
 
 
 def get_airline_demo_pipelines():
-    from airline_demo.pipelines import (
-        airline_demo_ingest_pipeline,
-        airline_demo_warehouse_pipeline,
-    )
+    from airline_demo.pipelines import airline_demo_ingest_pipeline, airline_demo_warehouse_pipeline
 
     return [
         airline_demo_ingest_pipeline,

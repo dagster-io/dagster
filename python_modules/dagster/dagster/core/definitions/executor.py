@@ -218,8 +218,8 @@ def in_process_executor(init_context):
     where the higher the number the higher the priority. 0 is the default and both positive
     and negative numbers can be used.
     """
-    from dagster.core.executor.init import InitExecutorContext
     from dagster.core.executor.in_process import InProcessExecutor
+    from dagster.core.executor.init import InitExecutorContext
 
     check.inst_param(init_context, "init_context", InitExecutorContext)
 

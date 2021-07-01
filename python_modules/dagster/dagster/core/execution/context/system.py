@@ -32,12 +32,13 @@ from .input import InputContext
 from .output import OutputContext, get_output_context
 
 if TYPE_CHECKING:
-    from dagster.core.definitions.intermediate_storage import IntermediateStorageDefinition
     from dagster.core.definitions.dependency import Solid, SolidHandle
-    from dagster.core.storage.intermediate_storage import IntermediateStorage
-    from dagster.core.instance import DagsterInstance
-    from dagster.core.execution.plan.plan import ExecutionPlan
+    from dagster.core.definitions.intermediate_storage import IntermediateStorageDefinition
     from dagster.core.definitions.resource import Resources
+    from dagster.core.execution.plan.plan import ExecutionPlan
+    from dagster.core.instance import DagsterInstance
+    from dagster.core.storage.intermediate_storage import IntermediateStorage
+
     from .hook import HookContext
 
 

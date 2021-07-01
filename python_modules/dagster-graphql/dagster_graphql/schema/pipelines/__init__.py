@@ -1,5 +1,4 @@
 def types():
-    from .config_result import GraphenePipelineConfigValidationResult
     from .config import (
         GrapheneEvaluationErrorReason,
         GrapheneEvaluationStack,
@@ -16,14 +15,9 @@ def types():
         GrapheneRuntimeMismatchConfigError,
         GrapheneSelectorTypeConfigError,
     )
+    from .config_result import GraphenePipelineConfigValidationResult
     from .logger import GrapheneLogger
     from .mode import GrapheneMode
-    from .pipeline_errors import GrapheneInvalidSubsetError, GrapheneConfigTypeNotFoundError
-    from .pipeline_ref import GraphenePipelineReference, GrapheneUnknownPipeline
-    from .pipeline_run_stats import (
-        GraphenePipelineRunStatsOrError,
-        GraphenePipelineRunStatsSnapshot,
-    )
     from .pipeline import (
         GrapheneAsset,
         GrapheneAssetMaterialization,
@@ -32,6 +26,12 @@ def types():
         GraphenePipelinePreset,
         GraphenePipelineRun,
         GraphenePipelineRunOrError,
+    )
+    from .pipeline_errors import GrapheneConfigTypeNotFoundError, GrapheneInvalidSubsetError
+    from .pipeline_ref import GraphenePipelineReference, GrapheneUnknownPipeline
+    from .pipeline_run_stats import (
+        GraphenePipelineRunStatsOrError,
+        GraphenePipelineRunStatsSnapshot,
     )
     from .resource import GrapheneResource
     from .snapshot import GraphenePipelineSnapshot, GraphenePipelineSnapshotOrError

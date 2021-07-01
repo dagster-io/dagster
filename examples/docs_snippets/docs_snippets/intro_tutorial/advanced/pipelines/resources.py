@@ -80,13 +80,7 @@ def normalize_calories(context, cereals):
 # end_resources_marker_1
 
 # start_resources_marker_2
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={"warehouse": local_sqlite_warehouse_resource}
-        )
-    ]
-)
+@pipeline(mode_defs=[ModeDefinition(resource_defs={"warehouse": local_sqlite_warehouse_resource})])
 def resources_pipeline():
     normalize_calories(download_csv())
 

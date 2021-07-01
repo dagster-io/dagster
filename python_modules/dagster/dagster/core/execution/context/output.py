@@ -7,16 +7,14 @@ from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 from dagster.utils.backcompat import experimental_fn_warning
 
 if TYPE_CHECKING:
+    from dagster.core.definitions import ModeDefinition, PipelineDefinition, SolidDefinition
+    from dagster.core.definitions.resource import Resources, ScopedResourcesBuilder
     from dagster.core.execution.context.system import StepExecutionContext
-    from dagster.core.definitions.resource import Resources
-    from dagster.core.types.dagster_type import DagsterType
-    from dagster.core.definitions import SolidDefinition, PipelineDefinition, ModeDefinition
+    from dagster.core.execution.plan.outputs import StepOutputHandle
+    from dagster.core.execution.plan.plan import ExecutionPlan
     from dagster.core.log_manager import DagsterLogManager
     from dagster.core.system_config.objects import ResolvedRunConfig
-    from dagster.core.execution.plan.plan import ExecutionPlan
-    from dagster.core.execution.plan.outputs import StepOutputHandle
-    from dagster.core.log_manager import DagsterLogManager
-    from dagster.core.definitions.resource import ScopedResourcesBuilder
+    from dagster.core.types.dagster_type import DagsterType
 
 RUN_ID_PLACEHOLDER = "__EPHEMERAL_RUN_ID"
 
@@ -61,7 +59,7 @@ class OutputContext:
         resources: Optional[Union["Resources", Dict[str, Any]]] = None,
         step_context: Optional["StepExecutionContext"] = None,
     ):
-        from dagster.core.definitions.resource import Resources, IContainsGenerator
+        from dagster.core.definitions.resource import IContainsGenerator, Resources
         from dagster.core.execution.build_resources import build_resources
 
         self._step_key = step_key
@@ -330,8 +328,8 @@ def build_output_context(
                 do_something
 
     """
-    from dagster.core.types.dagster_type import DagsterType
     from dagster.core.execution.context_creation_pipeline import initialize_console_manager
+    from dagster.core.types.dagster_type import DagsterType
 
     experimental_fn_warning("build_output_context")
 

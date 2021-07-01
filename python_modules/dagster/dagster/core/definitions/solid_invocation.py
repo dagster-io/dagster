@@ -9,13 +9,13 @@ from ...core.errors import (
 from .events import AssetMaterialization, ExpectationResult, Materialization, Output
 
 if TYPE_CHECKING:
-    from .solid import SolidDefinition
-    from .output import OutputDefinition
-    from .composition import PendingNodeInvocation
     from ..execution.context.invocation import (
         BoundSolidExecutionContext,
         UnboundSolidExecutionContext,
     )
+    from .composition import PendingNodeInvocation
+    from .output import OutputDefinition
+    from .solid import SolidDefinition
 
 
 def solid_invocation_result(

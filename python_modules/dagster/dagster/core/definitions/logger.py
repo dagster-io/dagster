@@ -10,8 +10,8 @@ from ..decorator_utils import get_function_params
 from .definition_config_schema import convert_user_facing_definition_config_schema
 
 if TYPE_CHECKING:
-    from dagster.core.execution.context.logger import InitLoggerContext, UnboundInitLoggerContext
     from dagster.core.definitions import PipelineDefinition
+    from dagster.core.execution.context.logger import InitLoggerContext, UnboundInitLoggerContext
 
     InitLoggerFunction = Callable[[InitLoggerContext], logging.Logger]
 
@@ -43,6 +43,7 @@ class LoggerDefinition(AnonymousConfigurableDefinition):
 
     def __call__(self, *args, **kwargs):
         from dagster.core.execution.context.logger import UnboundInitLoggerContext
+
         from .logger_invocation import logger_invocation_result
 
         if len(args) == 0 and len(kwargs) == 0:
@@ -151,8 +152,8 @@ def build_init_logger_context(
             context = build_init_logger_context()
             logger_to_init(context)
     """
-    from dagster.core.execution.context.logger import UnboundInitLoggerContext
     from dagster.core.definitions import PipelineDefinition
+    from dagster.core.execution.context.logger import UnboundInitLoggerContext
 
     check.opt_inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
 

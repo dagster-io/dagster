@@ -9,8 +9,8 @@ from dagster.core.types.dagster_type import DagsterTypeKind
 from .dependency import DependencyStructure, IDependencyDefinition, Solid, SolidInvocation
 
 if TYPE_CHECKING:
-    from .solid import NodeDefinition
     from .graph import GraphDefinition
+    from .solid import NodeDefinition
 
 
 class IContainSolids(ABC):  # pylint: disable=no-init
@@ -139,8 +139,8 @@ def create_execution_structure(
 
     as well as a dagster.core.definitions.dependency.DependencyStructure object.
     """
-    from .solid import NodeDefinition
     from .graph import GraphDefinition
+    from .solid import NodeDefinition
 
     check.list_param(solid_defs, "solid_defs", of_type=NodeDefinition)
     check.dict_param(

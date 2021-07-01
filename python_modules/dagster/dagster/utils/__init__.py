@@ -1,3 +1,4 @@
+import _thread as thread
 import contextlib
 import datetime
 import errno
@@ -29,7 +30,6 @@ from typing import (
 )
 from warnings import warn
 
-import _thread as thread
 import yaml
 from dagster import check, seven
 from dagster.core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError

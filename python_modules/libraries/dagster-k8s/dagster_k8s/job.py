@@ -2,7 +2,7 @@ import hashlib
 import json
 import random
 import string
-from collections import namedtuple, ChainMap
+from collections import ChainMap, namedtuple
 
 import kubernetes
 from dagster import Array, Field, Noneable, StringSource
@@ -56,6 +56,7 @@ DEFAULT_JOB_SPEC_CONFIG = {
     "ttl_seconds_after_finished": K8S_JOB_TTL_SECONDS_AFTER_FINISHED,
     "backoff_limit": K8S_JOB_BACKOFF_LIMIT,
 }
+
 
 class UserDefinedDagsterK8sConfig(
     namedtuple(
@@ -520,10 +521,7 @@ def construct_dagster_k8s_job(
         ),
     )
 
-    job_spec_config = ChainMap(
-        user_defined_k8s_config.job_spec_config, 
-        DEFAULT_JOB_SPEC_CONFIG
-    )
+    job_spec_config = ChainMap(user_defined_k8s_config.job_spec_config, DEFAULT_JOB_SPEC_CONFIG)
 
     job = kubernetes.client.V1Job(
         api_version="batch/v1",

@@ -63,9 +63,9 @@ class HookDefinition(
 
         """
 
-        from .pipeline import PipelineDefinition
         from ..execution.context.hook import HookContext
         from .hook_invocation import hook_invocation_result
+        from .pipeline import PipelineDefinition
 
         if len(args) > 0 and isinstance(args[0], PipelineDefinition):
             # when it decorates a pipeline, we apply this hook to all the solid invocations within

@@ -70,7 +70,7 @@ WORKSPACE_CLI_ARGS = (
 class WorkspaceLoadTarget(ABC):
     @abstractmethod
     def create_origins(self):
-        """ Reloads the RepositoryLocationOrigins for this workspace."""
+        """Reloads the RepositoryLocationOrigins for this workspace."""
 
 
 class WorkspaceFileTarget(namedtuple("WorkspaceFileTarget", "paths"), WorkspaceLoadTarget):

@@ -21,16 +21,16 @@ from dagster.core.execution.plan.objects import StepFailureData
 
 def iterate_metadata_entries(metadata_entries):
     from ..schema.logs.events import (
+        GrapheneEventAssetMetadataEntry,
         GrapheneEventFloatMetadataEntry,
         GrapheneEventIntMetadataEntry,
         GrapheneEventJsonMetadataEntry,
         GrapheneEventMarkdownMetadataEntry,
         GrapheneEventPathMetadataEntry,
+        GrapheneEventPipelineRunMetadataEntry,
         GrapheneEventPythonArtifactMetadataEntry,
         GrapheneEventTextMetadataEntry,
         GrapheneEventUrlMetadataEntry,
-        GrapheneEventPipelineRunMetadataEntry,
-        GrapheneEventAssetMetadataEntry,
     )
 
     check.list_param(metadata_entries, "metadata_entries", of_type=EventMetadataEntry)
@@ -123,6 +123,8 @@ def _to_metadata_entries(metadata_entries):
 def from_dagster_event_record(event_record, pipeline_name):
     from ..schema.errors import GraphenePythonError
     from ..schema.logs.events import (
+        GrapheneAlertStartEvent,
+        GrapheneAlertSuccessEvent,
         GrapheneEngineEvent,
         GrapheneExecutionStepFailureEvent,
         GrapheneExecutionStepInputEvent,
@@ -149,8 +151,6 @@ def from_dagster_event_record(event_record, pipeline_name):
         GraphenePipelineSuccessEvent,
         GrapheneStepExpectationResultEvent,
         GrapheneStepMaterializationEvent,
-        GrapheneAlertStartEvent,
-        GrapheneAlertSuccessEvent,
     )
 
     # Lots of event types. Pylint thinks there are too many branches

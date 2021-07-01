@@ -5,12 +5,13 @@ from dagster.core.errors import DagsterInvariantViolationError
 from dagster.utils.backcompat import experimental_fn_warning
 
 if TYPE_CHECKING:
-    from .output import OutputContext
     from dagster.core.definitions import SolidDefinition
+    from dagster.core.definitions.resource import Resources
+    from dagster.core.execution.context.system import StepExecutionContext
     from dagster.core.log_manager import DagsterLogManager
     from dagster.core.types.dagster_type import DagsterType
-    from dagster.core.execution.context.system import StepExecutionContext
-    from dagster.core.definitions.resource import Resources
+
+    from .output import OutputContext
 
 
 class InputContext:
@@ -49,7 +50,7 @@ class InputContext:
         resources: Optional[Union["Resources", Dict[str, Any]]] = None,
         step_context: Optional["StepExecutionContext"] = None,
     ):
-        from dagster.core.definitions.resource import Resources, IContainsGenerator
+        from dagster.core.definitions.resource import IContainsGenerator, Resources
         from dagster.core.execution.build_resources import build_resources
 
         self._name = name
@@ -178,8 +179,8 @@ def build_input_context(
                 do_something
     """
     from dagster.core.execution.context.output import OutputContext
-    from dagster.core.types.dagster_type import DagsterType
     from dagster.core.execution.context_creation_pipeline import initialize_console_manager
+    from dagster.core.types.dagster_type import DagsterType
 
     experimental_fn_warning("build_input_context")
 
