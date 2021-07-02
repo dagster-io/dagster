@@ -8,9 +8,11 @@ from dagster import (
     SensorDefinition,
     SolidDefinition,
     daily_schedule,
+    graph,
     hourly_schedule,
     lambda_solid,
     monthly_schedule,
+    pipeline,
     repository,
     schedule,
     sensor,
@@ -102,14 +104,11 @@ def test_dupe_solid_repo_definition():
             }
         }
 
-    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Conflicting definitions found in repository with name 'same'. Solid & Graph/CompositeSolid definition names must be unique within a repository.",
+    ):
         error_repo.get_all_pipelines()
-
-    assert str(exc_info.value) == (
-        "Duplicate solids found in repository with name 'same'. Solid definition names must be "
-        "unique within a repository. Solid is defined in pipeline 'first' and in pipeline "
-        "'second'."
-    )
 
 
 def test_non_lazy_pipeline_dict():
@@ -374,3 +373,41 @@ def test_job_with_partitions():
     # do it twice to make sure we don't overwrite cache on second time
     assert test.get_partition_set_def("bare_default_partition_set")
     assert test.get_pipeline("bare")
+
+
+def test_dupe_graph_defs():
+    @solid
+    def noop():
+        pass
+
+    @pipeline(name="foo")
+    def pipe_foo():
+        noop()
+
+    @graph(name="foo")
+    def graph_foo():
+        noop()
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        # expect to change as migrate to graph/job
+        match="Duplicate pipeline definition found for pipeline foo",
+    ):
+
+        @repository
+        def _pipe_collide():
+            return [graph_foo, pipe_foo]
+
+    @repository
+    def graph_collide():
+        return [
+            graph_foo.to_job(name="bar"),
+            pipe_foo,
+        ]
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Solid & Graph/CompositeSolid definition names must be unique within a repository",
+    ):
+
+        graph_collide.get_all_pipelines()

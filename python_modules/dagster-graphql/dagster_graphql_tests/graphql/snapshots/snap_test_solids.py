@@ -654,6 +654,22 @@ snapshots['test_query_all_solids 1'] = {
                         'solidHandle': {
                             'handleID': 'noop_solid'
                         }
+                    },
+                    {
+                        'pipeline': {
+                            'name': 'simple_job_a'
+                        },
+                        'solidHandle': {
+                            'handleID': 'noop_solid'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': 'simple_job_b'
+                        },
+                        'solidHandle': {
+                            'handleID': 'noop_solid'
+                        }
                     }
                 ]
             },

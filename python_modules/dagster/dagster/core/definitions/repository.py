@@ -549,7 +549,7 @@ class RepositoryData:
         # memoization of _all_pipelines and _all_solids short
         # circuits that
         for pipeline in self.get_all_pipelines():
-            for solid_def in pipeline.all_solid_defs:
+            for solid_def in pipeline.all_solid_defs + [pipeline.graph]:
                 if solid_def.name not in solid_defs:
                     solid_defs[solid_def.name] = solid_def
                     solid_to_pipeline[solid_def.name] = pipeline.name
@@ -560,14 +560,10 @@ class RepositoryData:
                     )
                     raise DagsterInvalidDefinitionError(
                         (
-                            "Duplicate solids found in repository with name '{solid_def_name}'. "
-                            "Solid definition names must be unique within a repository. Solid is "
-                            "defined in pipeline '{first_pipeline_name}' and in pipeline "
-                            "'{second_pipeline_name}'."
-                        ).format(
-                            solid_def_name=solid_def.name,
-                            first_pipeline_name=first_name,
-                            second_pipeline_name=second_name,
+                            f"Conflicting definitions found in repository with name '{solid_def.name}'. "
+                            "Solid & Graph/CompositeSolid definition names must be unique within a "
+                            f"repository. {solid_def.__class__.__name__} is defined in pipeline "
+                            f"'{first_name}' and in pipeline '{second_name}'."
                         )
                     )
 

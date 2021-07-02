@@ -74,6 +74,7 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   schedules: [Schedule!]!
   sensors: [Sensor!]!
   parentSnapshotId: String
+  graphName: String!
   presets: [PipelinePreset!]!
 }
 
@@ -1137,6 +1138,7 @@ type PipelineSnapshot implements IPipelineSnapshot & PipelineReference {
   schedules: [Schedule!]!
   sensors: [Sensor!]!
   parentSnapshotId: String
+  graphName: String!
 }
 
 type PipelineSnapshotNotFoundError implements Error {

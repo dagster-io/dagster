@@ -106,3 +106,8 @@ class RepresentedPipeline(ABC):
     def get_dep_structure_index(self, solid_def_name):
         check.str_param(solid_def_name, "solid_def_name")
         return self._pipeline_index.get_dep_structure_index(solid_def_name)
+
+    # Graph
+
+    def get_graph_name(self):
+        return self._pipeline_index.pipeline_snapshot.graph_def_name
