@@ -1,4 +1,4 @@
-from typing import Callable, NamedTuple, Optional, Union, cast
+from typing import Callable, List, NamedTuple, Optional, Union, cast
 
 import pendulum
 from dagster import check
@@ -80,6 +80,7 @@ def pipeline_failure_sensor(
     name: Optional[str] = None,
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
+    pipeline_selection: Optional[List[str]] = None,
 ) -> Callable[
     [Callable[[PipelineFailureSensorContext], Union[SkipReason, PipelineRunReaction]]],
     SensorDefinition,
@@ -96,6 +97,9 @@ def pipeline_failure_sensor(
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
+        pipeline_selection (Optional[List[str]]): Names of the pipelines that will be monitored by
+            this failure sensor. Defaults to None, which means the alert will be sent when any
+            pipeline in the repository fails.
     """
 
     from dagster.core.storage.event_log.base import RunShardedEventsCursor
@@ -161,11 +165,19 @@ def pipeline_failure_sensor(
                 pipeline_run = run_records[0].pipeline_run
                 update_timestamp = run_records[0].update_timestamp
 
-                # skip if the failed pipeline does not belong to the current repository
+                # skip if any of of the followings happens:
                 pipeline_repo_name = (
                     pipeline_run.external_pipeline_origin.external_repository_origin.repository_name
                 )
-                if pipeline_repo_name != context.repository_name:
+
+                if any(
+                    [
+                        # the failed pipeline does not belong to the current repository
+                        pipeline_repo_name != context.repository_name,
+                        # if pipeline is not selected
+                        pipeline_selection and pipeline_run.pipeline_name not in pipeline_selection,
+                    ]
+                ):
                     context.update_cursor(
                         PipelineFailureSensorCursor(
                             record_id=storage_id, update_timestamp=update_timestamp.isoformat()

@@ -86,7 +86,7 @@ def get_toys_sensors():
                 },
             )
 
-    @pipeline_failure_sensor
+    @pipeline_failure_sensor(pipeline_selection=["error_monster"])
     def custom_slack_on_pipeline_failure(context: PipelineFailureSensorContext):
 
         base_url = "http://localhost:3000"

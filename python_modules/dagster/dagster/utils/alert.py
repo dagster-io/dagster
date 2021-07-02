@@ -77,6 +77,7 @@ def make_email_on_pipeline_failure_sensor(
     smtp_host: str = "smtp.gmail.com",
     smtp_type: str = "SSL",
     smtp_port: Optional[int] = None,
+    pipeline_selection: Optional[List[str]] = None,
     name: Optional[str] = None,
     dagit_base_url: Optional[str] = None,
 ):
@@ -95,6 +96,9 @@ def make_email_on_pipeline_failure_sensor(
         smtp_host (str): The hostname of the SMTP server. Defaults to "smtp.gmail.com".
         smtp_type (str): The protocol; either "SSL" or "STARTTLS". Defaults to SSL.
         smtp_port (Optional[int]): The SMTP port. Defaults to 465 for SSL, 587 for STARTTLS.
+        pipeline_selection (Optional[List[str]]): Names of the pipelines that will be monitored by
+            this failure sensor. Defaults to None, which means the alert will be sent when any
+            pipeline in the repository fails.
         name: (Optional[str]): The name of the sensor. Defaults to "email_on_pipeline_failure".
         dagit_base_url: (Optional[str]): The base url of your Dagit instance. Specify this to allow
             messages to include deeplinks to the failed pipeline run.
@@ -138,7 +142,7 @@ def make_email_on_pipeline_failure_sensor(
         pipeline_failure_sensor,
     )
 
-    @pipeline_failure_sensor(name=name)
+    @pipeline_failure_sensor(name=name, pipeline_selection=pipeline_selection)
     def email_on_pipeline_failure(context: PipelineFailureSensorContext):
 
         email_body = email_body_fn(context)
