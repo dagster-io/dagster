@@ -6,11 +6,12 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from pprint import pprint
 from tempfile import NamedTemporaryFile, mkstemp
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 
 import yaml
 from kubernetes.client.api_client import ApiClient
 from schema.charts.dagster.values import DagsterHelmValues
+from schema.charts.dagster_user_deployments.values import DagsterUserDeploymentsHelmValues
 
 
 def git_repo_root():
@@ -26,7 +27,11 @@ class HelmTemplate:
     name: str = "RELEASE-NAME"
     api_client: ApiClient = ApiClient()
 
-    def render(self, values: DagsterHelmValues, chart_version: Optional[str] = None) -> List[Any]:
+    def render(
+        self,
+        values: Union[DagsterHelmValues, DagsterUserDeploymentsHelmValues],
+        chart_version: Optional[str] = None,
+    ) -> List[Any]:
         with NamedTemporaryFile() as tmp_file:
             helm_dir_path = os.path.join(git_repo_root(), self.helm_dir_path)
 

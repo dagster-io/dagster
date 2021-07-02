@@ -9,10 +9,18 @@
             "items": {
                 "$ref": "#/definitions/UserDeployment"
             }
+        },
+        "imagePullSecrets": {
+            "title": "Imagepullsecrets",
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/SecretRef"
+            }
         }
     },
     "required": [
-        "deployments"
+        "deployments",
+        "imagePullSecrets"
     ],
     "definitions": {
         "PullPolicy": {
@@ -209,6 +217,12 @@
                 "dagsterApiGrpcArgs",
                 "port"
             ]
+        },
+        "SecretRef": {
+            "title": "SecretRef",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.LocalObjectReference"
         }
     }
 }

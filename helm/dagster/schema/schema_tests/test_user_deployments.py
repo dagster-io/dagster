@@ -6,6 +6,7 @@ import pytest
 from kubernetes.client import models
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.charts.dagster_user_deployments.subschema.user_deployments import UserDeployments
+from schema.charts.dagster_user_deployments.values import DagsterUserDeploymentsHelmValues
 from schema.charts.utils import kubernetes
 from schema.utils.helm_template import HelmTemplate
 
@@ -27,6 +28,16 @@ def full_helm_template() -> HelmTemplate:
     return HelmTemplate(
         helm_dir_path="helm/dagster",
         subchart_paths=["charts/dagster-user-deployments"],
+    )
+
+
+@pytest.fixture(name="subchart_template")
+def subchart_helm_template() -> HelmTemplate:
+    return HelmTemplate(
+        helm_dir_path="helm/dagster/charts/dagster-user-deployments",
+        subchart_paths=[],
+        output="templates/deployment-user.yaml",
+        model=models.V1Deployment,
     )
 
 
@@ -448,3 +459,19 @@ def test_user_deployment_image(template: HelmTemplate):
 
     assert image_name == deployment.image.repository
     assert image_tag == deployment.image.tag
+
+
+def test_subchart_image_pull_secrets(subchart_template: HelmTemplate):
+    image_pull_secrets = [{"name": "super-duper-secret"}]
+    deployment_values = DagsterUserDeploymentsHelmValues.construct(
+        imagePullSecrets=image_pull_secrets,
+    )
+
+    deployment_templates = subchart_template.render(deployment_values)
+
+    assert len(deployment_templates) == 1
+
+    deployment_template = deployment_templates[0]
+    pod_spec = deployment_template.spec.template.spec
+
+    assert pod_spec.image_pull_secrets[0].name == image_pull_secrets[0]["name"]
