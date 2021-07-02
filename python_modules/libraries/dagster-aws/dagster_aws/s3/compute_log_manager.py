@@ -198,3 +198,6 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
             "{}.{}".format(key, extension),
         ]
         return "/".join(paths)  # s3 path delimiter
+
+    def dispose(self):
+        self.local_manager.dispose()

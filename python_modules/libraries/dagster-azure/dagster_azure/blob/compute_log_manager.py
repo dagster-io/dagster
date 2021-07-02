@@ -200,3 +200,6 @@ class AzureBlobComputeLogManager(ComputeLogManager, ConfigurableClass):
             "{}.{}".format(key, extension),
         ]
         return "/".join(paths)  # blob path delimiter
+
+    def dispose(self):
+        self.local_manager.dispose()

@@ -165,3 +165,6 @@ class GCSComputeLogManager(ComputeLogManager, ConfigurableClass):
         ]
 
         return "/".join(paths)  # path delimiter
+
+    def dispose(self):
+        self.local_manager.dispose()
