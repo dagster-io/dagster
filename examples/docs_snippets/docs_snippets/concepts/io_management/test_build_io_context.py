@@ -12,7 +12,7 @@ def test_basic_build_input_context():
 
 def test_build_input_context_with_resources():
     @resource
-    def foo_def(_):
+    def foo_def():
         return "bar_def"
 
     context = build_input_context(resources={"foo": "bar", "foo_def": foo_def})
@@ -24,7 +24,7 @@ def test_build_input_context_with_cm_resource():
     entered = []
 
     @resource
-    def cm_resource(_):
+    def cm_resource():
         try:
             yield "foo"
         finally:
@@ -60,7 +60,7 @@ def test_build_output_context_with_cm_resource():
     entered = []
 
     @resource
-    def cm_resource(_):
+    def cm_resource():
         try:
             yield "foo"
         finally:

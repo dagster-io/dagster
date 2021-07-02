@@ -44,7 +44,7 @@ def gen_basic_resource_pipeline(called=None, cleaned=None):
         cleaned = []
 
     @resource
-    def resource_a(_):
+    def resource_a():
         try:
             called.append("A")
             yield "A"

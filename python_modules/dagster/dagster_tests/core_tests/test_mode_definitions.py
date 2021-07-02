@@ -153,7 +153,7 @@ def test_mode_with_resource_deps():
     called = {"count": 0}
 
     @resource
-    def resource_a(_init_context):
+    def resource_a():
         return 1
 
     @solid(required_resource_keys={"a"})
@@ -201,7 +201,7 @@ def test_subset_with_mode_definitions():
     called = {"a": 0, "b": 0}
 
     @resource
-    def resource_a(_init_context):
+    def resource_a():
         return 1
 
     @solid(required_resource_keys={"a"})
@@ -210,7 +210,7 @@ def test_subset_with_mode_definitions():
         assert context.resources.a == 1
 
     @resource
-    def resource_b(_init_context):
+    def resource_b():
         return 2
 
     @solid(required_resource_keys={"b"})

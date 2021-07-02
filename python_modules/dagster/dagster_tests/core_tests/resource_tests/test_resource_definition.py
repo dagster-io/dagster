@@ -37,6 +37,18 @@ def define_string_resource():
     )
 
 
+def test_resource_decorator_no_context():
+    @resource
+    def _basic():
+        pass
+
+    # Document that it is possible to provide required resource keys and
+    # config schema, and still not provide a context.
+    @resource(required_resource_keys={"foo", "bar"}, config_schema={"foo": str})
+    def _reqs_resources():
+        pass
+
+
 def assert_pipeline_runs_with_resource(resource_def, resource_config, expected_resource):
     called = {}
 
@@ -624,11 +636,9 @@ def test_incorrect_resource_init_error():
     def _correct_resource(_):
         pass
 
-    with pytest.raises(DagsterInvalidDefinitionError, match="expects a single positional argument"):
-
-        @resource
-        def _incorrect_resource():
-            pass
+    @resource
+    def _correct_resource_no_context():
+        pass
 
     with pytest.raises(
         DagsterInvalidDefinitionError,

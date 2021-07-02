@@ -3,8 +3,13 @@ from collections import deque
 from typing import AbstractSet, Any, Callable, Deque, Dict, Optional, cast
 
 from dagster import check
+from dagster.core.decorator_utils import get_function_params
 from dagster.core.definitions.pipeline import PipelineDefinition
-from dagster.core.definitions.resource import ResourceDefinition, ScopedResourcesBuilder
+from dagster.core.definitions.resource import (
+    ResourceDefinition,
+    ScopedResourcesBuilder,
+    is_context_provided,
+)
 from dagster.core.errors import (
     DagsterInvariantViolationError,
     DagsterResourceFunctionError,
@@ -280,7 +285,11 @@ def single_resource_event_generator(context, resource_name, resource_def):
         with user_code_error_boundary(DagsterResourceFunctionError, msg_fn):
             try:
                 with time_execution_scope() as timer_result:
-                    resource_or_gen = resource_def.resource_fn(context)
+                    resource_or_gen = (
+                        resource_def.resource_fn(context)
+                        if is_context_provided(get_function_params(resource_def.resource_fn))
+                        else resource_def.resource_fn()
+                    )
                     # Flag for whether resource is generator. This is used to ensure that teardown
                     # occurs when resources are initialized out of execution.
                     is_gen = inspect.isgenerator(resource_or_gen)
