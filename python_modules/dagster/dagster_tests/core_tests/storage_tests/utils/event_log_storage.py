@@ -820,7 +820,9 @@ class TestEventLogStorage:
             materialize_one()
 
         with instance_for_test() as instance:
-            storage.register_instance(instance)
+            if not storage._instance:  # pylint: disable=protected-access
+                storage.register_instance(instance)
+
             events_one, _ = _synthesize_events(_solids, instance=instance)
 
             for event in events_one:
@@ -860,7 +862,8 @@ class TestEventLogStorage:
             materialize_one()
 
         with instance_for_test() as instance:
-            storage.register_instance(instance)
+            if not storage._instance:  # pylint: disable=protected-access
+                storage.register_instance(instance)
             events_one, _ = _synthesize_events(_solids, instance=instance)
             for event in events_one:
                 storage.store_event(event)
@@ -1098,7 +1101,8 @@ class TestEventLogStorage:
             materialize_one()
 
         with instance_for_test() as instance:
-            storage.register_instance(instance)
+            if not storage._instance:  # pylint: disable=protected-access
+                storage.register_instance(instance)
 
             # first run
             execute_run(
