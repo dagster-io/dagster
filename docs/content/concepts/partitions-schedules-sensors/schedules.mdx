@@ -75,11 +75,11 @@ For example, this schedule runs at 1:00 AM in US/Central time every day:
 
 ```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_non_partition_based_schedule endbefore=end_non_partition_based_schedule
 @schedule(cron_schedule="0 1 * * *", pipeline_name="my_pipeline", execution_timezone="US/Central")
-def my_schedule(_context):
+def my_schedule():
     return {"solids": {"process_data": {"config": {"dataset_name": "my_dataset"}}}}
 ```
 
-You can also access the execution time fron the passed-in context:
+You can pass a context argument to the decorated function in order to get run information, such as the scheduled execution time:
 
 ```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_execution_time endbefore=end_execution_time
 @schedule(cron_schedule="0 1 * * *", pipeline_name="my_pipeline", execution_timezone="US/Central")
@@ -166,7 +166,7 @@ Cron schedules can also be tested by directly invoking them. The invocation of t
 
 ```python file=concepts/partitions_schedules_sensors/schedules/schedule_examples.py startafter=start_test_cron_schedule endbefore=end_test_cron_schedule
 @schedule(cron_schedule="* * * * *", pipeline_name="my_pipeline_on_cron")
-def my_cron_schedule(_context):
+def my_cron_schedule():
     return {}
 
 
@@ -174,7 +174,7 @@ from dagster import validate_run_config
 
 
 def test_my_cron_schedule():
-    run_config = my_cron_schedule(None)
+    run_config = my_cron_schedule()
     assert validate_run_config(my_pipeline_on_cron, run_config)
 ```
 

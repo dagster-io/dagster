@@ -22,7 +22,7 @@ def my_daily_schedule(date):
 
 
 @schedule(cron_schedule="0 1 * * *", pipeline_name="my_pipeline", execution_timezone="US/Central")
-def my_schedule(_context):
+def my_schedule():
     return {"solids": {"process_data": {"config": {"dataset_name": "my_dataset"}}}}
 
 

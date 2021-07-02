@@ -66,7 +66,7 @@ def my_pipeline_on_cron():
 
 # start_test_cron_schedule
 @schedule(cron_schedule="* * * * *", pipeline_name="my_pipeline_on_cron")
-def my_cron_schedule(_context):
+def my_cron_schedule():
     return {}
 
 
@@ -74,7 +74,7 @@ from dagster import validate_run_config
 
 
 def test_my_cron_schedule():
-    run_config = my_cron_schedule(None)
+    run_config = my_cron_schedule()
     assert validate_run_config(my_pipeline_on_cron, run_config)
 
 

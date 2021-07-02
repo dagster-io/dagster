@@ -5,6 +5,7 @@ from typing import Any, Callable, Dict, List, NamedTuple, Optional, Union, cast
 import pendulum
 from croniter import croniter
 from dagster import check
+from dagster.seven import funcsigs
 
 from ...serdes import whitelist_for_serdes
 from ...utils import ensure_gen, merge_dicts
@@ -266,7 +267,11 @@ class ScheduleDefinition:
                     ScheduleExecutionError,
                     lambda: f"Error occurred during the execution of run_config_fn for schedule {name}",
                 ):
-                    evaluated_run_config = self._run_config_fn(context)
+                    evaluated_run_config = (
+                        self._run_config_fn(context)
+                        if is_context_provided(get_function_params(self._run_config_fn))
+                        else self._run_config_fn()
+                    )
 
                 with user_code_error_boundary(
                     ScheduleExecutionError,
@@ -299,33 +304,42 @@ class ScheduleDefinition:
                 "Schedule invocation is only supported for schedules created via the schedule "
                 "decorators."
             )
-        if len(args) == 0 and len(kwargs) == 0:
-            raise DagsterInvalidInvocationError(
-                "Schedule decorated function has context argument, but no context argument was "
-                "provided when invoking."
-            )
-        if len(args) + len(kwargs) > 1:
-            raise DagsterInvalidInvocationError(
-                "Schedule invocation received multiple arguments. Only a first "
-                "positional context parameter should be provided when invoking."
-            )
-
-        context_param_name = get_function_params(self._run_config_fn)[0].name
-
-        if args:
-            context = check.opt_inst_param(args[0], context_param_name, ScheduleEvaluationContext)
-        else:
-            if context_param_name not in kwargs:
+        if is_context_provided(get_function_params(self._run_config_fn)):
+            if len(args) == 0 and len(kwargs) == 0:
                 raise DagsterInvalidInvocationError(
-                    f"Schedule invocation expected argument '{context_param_name}'."
+                    "Schedule decorated function has context argument, but no context argument was "
+                    "provided when invoking."
                 )
-            context = check.opt_inst_param(
-                kwargs[context_param_name], context_param_name, ScheduleEvaluationContext
-            )
+            if len(args) + len(kwargs) > 1:
+                raise DagsterInvalidInvocationError(
+                    "Schedule invocation received multiple arguments. Only a first "
+                    "positional context parameter should be provided when invoking."
+                )
 
-        context = context if context else build_schedule_context()
+            context_param_name = get_function_params(self._run_config_fn)[0].name
 
-        return self._run_config_fn(context)
+            if args:
+                context = check.opt_inst_param(
+                    args[0], context_param_name, ScheduleEvaluationContext
+                )
+            else:
+                if context_param_name not in kwargs:
+                    raise DagsterInvalidInvocationError(
+                        f"Schedule invocation expected argument '{context_param_name}'."
+                    )
+                context = check.opt_inst_param(
+                    kwargs[context_param_name], context_param_name, ScheduleEvaluationContext
+                )
+
+            context = context if context else build_schedule_context()
+
+            return self._run_config_fn(context)
+        else:
+            if len(args) + len(kwargs) > 0:
+                raise DagsterInvalidInvocationError(
+                    "Decorated schedule function takes no arguments, but arguments were provided."
+                )
+            return self._run_config_fn()
 
     @property
     def name(self) -> str:
@@ -416,3 +430,7 @@ class ScheduleDefinition:
             return self._target.load()
 
         check.failed("Target is not loadable")
+
+
+def is_context_provided(params: List[funcsigs.Parameter]) -> bool:
+    return len(params) == 1

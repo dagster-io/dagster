@@ -346,7 +346,7 @@ def test_scheduler():
     @schedule(
         cron_schedule="* * * * *", pipeline_name="foo_pipeline", should_execute=lambda x: False
     )
-    def always_skip_schedule(context):
+    def always_skip_schedule():
         return {}
 
     context_without_time = build_schedule_context()
@@ -383,7 +383,7 @@ def test_schedule_decorators_sanity():
         do_nothing()
 
     @schedule(cron_schedule="* * * * *", pipeline_name="foo_pipeline")
-    def foo_schedule(context):
+    def foo_schedule():
         """Fake doc block"""
         return {}
 
@@ -439,7 +439,7 @@ def test_schedule_decorators_sanity():
         pipeline_name="foo_pipeline",
         execution_timezone="US/Central",
     )
-    def foo_schedule_timezone(context):
+    def foo_schedule_timezone():
         return {}
 
     assert foo_schedule_timezone.execution_timezone == "US/Central"

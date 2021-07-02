@@ -217,7 +217,7 @@ def test_direct_schedule_target():
         wow()
 
     @schedule(cron_schedule="* * * * *", job=wonder)
-    def direct_schedule(_):
+    def direct_schedule():
         return {}
 
     @daily_schedule(
