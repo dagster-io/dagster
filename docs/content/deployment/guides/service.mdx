@@ -18,7 +18,8 @@ pip install dagit
 To run Dagit, use a command like the following:
 
 ```shell
-DAGSTER_HOME=/opt/dagster/dagster_home dagit -h 0.0.0.0 -p 3000
+DAGSTER_HOME=/opt/dagster/dagster_home
+dagit -h 0.0.0.0 -p 3000
 ```
 
 In this configuration, Dagit will write execution logs to `$DAGSTER_HOME/logs` and listen on _0.0.0.0:3000_.
@@ -30,7 +31,8 @@ If you're using [schedules](/concepts/partitions-schedules-sensors/schedules) or
 ```shell
 pip install dagster
 
-DAGSTER_HOME=/opt/dagster/dagster_home dagster-daemon run
+DAGSTER_HOME=/opt/dagster/dagster_home
+dagster-daemon run
 ```
 
 The `dagster-daemon` process will periodically check your instance for any new runs that should be launched from your run queue or triggered by your running schedules or sensors. If you're running `dagster-daemon` in a different environment than dagit, it must also have access to your `dagster.yaml` file and be able to access the components defined on your instance, and also be able to load the [repositories](/concepts/repositories-workspaces/repositories) defined in your [workspace](/concepts/repositories-workspaces/workspaces).
