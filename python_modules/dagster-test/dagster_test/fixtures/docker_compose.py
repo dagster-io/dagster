@@ -15,13 +15,14 @@ def docker_compose_cm(test_directory):
     def docker_compose(
         docker_compose_yml=None,
         network_name=None,
+        docker_context=None,
     ):
         if not docker_compose_yml:
             docker_compose_yml = default_docker_compose_yml(test_directory)
         if not network_name:
             network_name = network_name_from_yml(docker_compose_yml)
         try:
-            docker_compose_up(docker_compose_yml)
+            docker_compose_up(docker_compose_yml, docker_context)
             if BUILDKITE:
                 # When running in a container on Buildkite, we need to first connect our container
                 # and our network and then yield a dict of container name to the container's
@@ -33,7 +34,7 @@ def docker_compose_cm(test_directory):
                 # just yield a dict of container name to "localhost".
                 yield dict((container, "localhost") for container in list_containers())
         finally:
-            docker_compose_down(docker_compose_yml)
+            docker_compose_down(docker_compose_yml, docker_context)
 
     return docker_compose
 
@@ -44,10 +45,14 @@ def docker_compose(docker_compose_cm):
         yield docker_compose
 
 
-def docker_compose_up(docker_compose_yml):
+def docker_compose_up(docker_compose_yml, context):
+    if context:
+        compose_command = ["docker", "--context", context, "compose"]
+    else:
+        compose_command = ["docker-compose"]
     subprocess.check_call(
-        [
-            "docker-compose",
+        compose_command
+        + [
             "--file",
             str(docker_compose_yml),
             "up",
@@ -56,10 +61,14 @@ def docker_compose_up(docker_compose_yml):
     )
 
 
-def docker_compose_down(docker_compose_yml):
+def docker_compose_down(docker_compose_yml, context):
+    if context:
+        compose_command = ["docker", "--context", context, "compose"]
+    else:
+        compose_command = ["docker-compose"]
     subprocess.check_call(
-        [
-            "docker-compose",
+        compose_command
+        + [
             "--file",
             str(docker_compose_yml),
             "down",

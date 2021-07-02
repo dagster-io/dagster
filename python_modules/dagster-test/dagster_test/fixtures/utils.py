@@ -19,3 +19,8 @@ def retrying_requests():
 @pytest.fixture
 def test_directory(request):
     yield os.path.dirname(request.fspath)
+
+
+@pytest.fixture
+def test_id(testrun_uid):
+    yield testrun_uid

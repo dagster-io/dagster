@@ -1,26 +1,17 @@
 # pylint: disable=redefined-outer-name,unused-argument
-import json
 import os
 import shutil
 import subprocess
 
 import pytest
-import requests
 import yaml
 from dagster import file_relative_path
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
+
+pytest_plugins = ["dagster_test.fixtures"]
 
 
 @pytest.fixture
-def session():
-    session = requests.Session()
-    session.mount("http://", HTTPAdapter(max_retries=Retry(total=7, backoff_factor=1)))
-    return session
-
-
-@pytest.fixture
-def docker_context(testrun_uid, monkeypatch, tmpdir):
+def docker_context(test_id, monkeypatch, tmpdir):
     # Docker contexts are stored in $HOME/.docker/contexts
     # Buildkite doesn't have $HOME set by default. When it's not set,
     # `docker create context` will save the context in the current directory.
@@ -34,11 +25,11 @@ def docker_context(testrun_uid, monkeypatch, tmpdir):
 
     # Use ecs --local-simulation
     # https://docs.docker.com/cloud/ecs-integration/#local-simulation
-    subprocess.call(["docker", "context", "create", "ecs", "--local-simulation", testrun_uid])
+    subprocess.call(["docker", "context", "create", "ecs", "--local-simulation", test_id])
 
-    yield
+    yield test_id
 
-    subprocess.call(["docker", "context", "rm", testrun_uid])
+    subprocess.call(["docker", "context", "rm", test_id])
 
 
 @pytest.fixture
@@ -122,95 +113,15 @@ def docker_compose(
     overridden_dockerfile,
     overridden_dagster_yaml,
     docker_context,
+    docker_compose_cm,
     monkeypatch,
-    testrun_uid,
+    test_id,
 ):
     # docker-compose.yml expects this envvar to be set so it can tag images
     monkeypatch.setenv("REGISTRY_URL", "test")
-
-    subprocess.call(
-        [
-            "docker",
-            "--context",
-            testrun_uid,
-            "compose",
-            "--project-name",
-            testrun_uid,
-            "up",
-            "--detach",
-        ]
-    )
-
-    yield
-
-    subprocess.call(
-        ["docker", "--context", testrun_uid, "compose", "--project-name", testrun_uid, "down"]
-    )
+    with docker_compose_cm(docker_context=docker_context) as docker_compose:
+        yield docker_compose
 
 
-@pytest.fixture
-def hostnames(monkeypatch, docker_compose, testrun_uid):
-    # Get a list of all running containers. We'll use this to yield a dict of
-    # container name to hostname.
-    containers = (
-        subprocess.check_output(["docker", "ps", "--format", "{{.Names}}"]).decode().splitlines()
-    )
-
-    # When running locally, we don't need to jump through
-    # any special networking hoops; we can talk to services on localhost and
-    # return early.
-    if not os.environ.get("BUILDKITE"):
-        yield dict((container, "localhost") for container in containers)
-        return
-
-    # If we're on Buildkite, we need to do our usual Docker shennanigans:
-    # https://github.com/dagster-io/dagster/blob/b16a9d78cf2fd01ca3a160ac8c04759de6c93dbd/.buildkite/dagster-buildkite/dagster_buildkite/utils.py#L71-L96
-    # Only this time, do it from within our test fixture
-
-    # Find our current container
-    current_container_id = subprocess.check_output(["cat", "/etc/hostname"]).strip().decode()
-    current_container = (
-        subprocess.check_output(
-            ["docker", "ps", "--filter", f"id={current_container_id}", "--format", "{{.Names}}"]
-        )
-        .strip()
-        .decode()
-    )
-
-    # Find the network that our `docker compose up` command created
-    network_name = (
-        subprocess.check_output(
-            [
-                "docker",
-                "network",
-                "ls",
-                "--filter",
-                f"name={testrun_uid}",
-                "--format",
-                "{{.Name}}",
-            ]
-        )
-        .strip()
-        .decode()
-    )
-
-    # Connect the two
-    subprocess.call(["docker", "network", "connect", network_name, current_container])
-
-    # Map container names to hostnames
-    hostnames = {}
-    for container in containers:
-        output = subprocess.check_output(["docker", "inspect", container])
-        networking = json.loads(output)[0]["NetworkSettings"]
-        hostname = networking["Networks"].get(network_name, {}).get("IPAddress")
-        if hostname:
-            hostnames[container] = hostname
-
-    yield hostnames
-
-    # Disconnect our container so that the network can be cleaned up.
-    subprocess.call(["docker", "network", "disconnect", network_name, current_container])
-
-
-def test_deploy(hostnames, session):
-    assert session.get(f'http://{hostnames["dagit"]}:3000/dagit_info').ok
+def test_deploy(docker_compose, retrying_requests):
+    assert retrying_requests.get(f'http://{docker_compose["dagit"]}:3000/dagit_info').ok
