@@ -235,7 +235,6 @@ def execution_context_event_generator(
     scoped_resources_builder_cm: Optional[
         Callable[..., EventGenerationManager[ScopedResourcesBuilder]]
     ] = None,
-    intermediate_storage: Optional[IntermediateStorage] = None,
     raise_on_error: Optional[bool] = False,
     output_capture: Optional[Dict["StepOutputHandle", Any]] = None,
 ) -> Generator[Union[DagsterEvent, PlanExecutionContext], None, None]:
@@ -255,9 +254,6 @@ def execution_context_event_generator(
     pipeline_run = check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
     instance = check.inst_param(instance, "instance", DagsterInstance)
 
-    intermediate_storage = check.opt_inst_param(
-        intermediate_storage, "intermediate_storage_data", IntermediateStorage
-    )
     raise_on_error = check.bool_param(raise_on_error, "raise_on_error")
 
     context_creation_data = create_context_creation_data(
@@ -289,7 +285,6 @@ def execution_context_event_generator(
 
     intermediate_storage = create_intermediate_storage(
         context_creation_data,
-        intermediate_storage,
         scoped_resources_builder,
     )
 
@@ -445,7 +440,6 @@ def _validate_plan_with_context(
 
 def create_intermediate_storage(
     context_creation_data: ContextCreationData,
-    intermediate_storage_data: Optional[IntermediateStorage],
     scoped_resources_builder: ScopedResourcesBuilder,
 ) -> IntermediateStorage:
 
@@ -455,29 +449,23 @@ def create_intermediate_storage(
         context_creation_data.intermediate_storage_def,
         context_creation_data.pipeline_run,
     )
-    intermediate_storage_data = (
-        intermediate_storage_data
-        if intermediate_storage_data
-        else construct_intermediate_storage_data(
-            InitIntermediateStorageContext(
-                pipeline_def=pipeline_def,
-                mode_def=context_creation_data.mode_def,
-                intermediate_storage_def=intermediate_storage_def,
-                intermediate_storage_config=resolved_run_config.intermediate_storage.intermediate_storage_config,
-                pipeline_run=pipeline_run,
-                instance=context_creation_data.instance,
-                resolved_run_config=resolved_run_config,
-                type_storage_plugin_registry=construct_type_storage_plugin_registry(
-                    pipeline_def, intermediate_storage_def
-                ),
-                resources=scoped_resources_builder.build(
-                    context_creation_data.intermediate_storage_def.required_resource_keys,
-                ),
-            )
+    return construct_intermediate_storage_data(
+        InitIntermediateStorageContext(
+            pipeline_def=pipeline_def,
+            mode_def=context_creation_data.mode_def,
+            intermediate_storage_def=intermediate_storage_def,
+            intermediate_storage_config=resolved_run_config.intermediate_storage.intermediate_storage_config,
+            pipeline_run=pipeline_run,
+            instance=context_creation_data.instance,
+            resolved_run_config=resolved_run_config,
+            type_storage_plugin_registry=construct_type_storage_plugin_registry(
+                pipeline_def, intermediate_storage_def
+            ),
+            resources=scoped_resources_builder.build(
+                context_creation_data.intermediate_storage_def.required_resource_keys,
+            ),
         )
     )
-
-    return intermediate_storage_data
 
 
 def create_executor(context_creation_data: ContextCreationData) -> "Executor":
