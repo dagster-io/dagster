@@ -2887,7 +2887,6 @@ __metadata:
     "@testing-library/jest-dom": ^5.11.5
     "@testing-library/react": ^11.1.0
     "@testing-library/user-event": ^12.1.10
-    "@types/chart.js": ^2.9.24
     "@types/codemirror": ^0.0.80
     "@types/color": ^3.0.0
     "@types/dagre": ^0.7.42
@@ -2927,8 +2926,9 @@ __metadata:
     babel-loader: 8.2.2
     babel-plugin-graphql-tag: ^2.5.0
     babel-plugin-macros: ^2.8.0
-    chart.js: ^2.9.3
-    chartjs-plugin-zoom: ^0.7.7
+    chart.js: ^3.4.1
+    chartjs-adapter-date-fns: ^2.0.0
+    chartjs-plugin-zoom: ^1.1.1
     child-process: ^1.0.2
     codemirror: ^5.58.2
     color: ^3.1.2
@@ -2964,7 +2964,7 @@ __metadata:
     qs: ^6.10.1
     query-string: ^6.8.3
     react: ^17.0.2
-    react-chartjs-2: ^2.9.0
+    react-chartjs-2: ^3.0.3
     react-codemirror2: ^7.2.1
     react-dom: ^17.0.2
     react-is: ^17.0.2
@@ -5645,15 +5645,6 @@ __metadata:
   version: 3.0.0
   resolution: "@types/braces@npm:3.0.0"
   checksum: 4bebd28e5b04c7e4930997017343516a2ab8fab2bcc64095da1e3b927c173f48c4bc3c75f3ef8037e9e8c7a54e0133b8705887ae52c8f9adb11dfb8d32cd9b78
-  languageName: node
-  linkType: hard
-
-"@types/chart.js@npm:^2.9.24":
-  version: 2.9.32
-  resolution: "@types/chart.js@npm:2.9.32"
-  dependencies:
-    moment: ^2.10.2
-  checksum: c7606fc1b399425cd152186d6933cd588d41dd42eca145601cc7f7b238a7f65d6a1117e59c36b3a0783d5b85b29502c83801876f2b59b760a2dd5e17e4875865
   languageName: node
   linkType: hard
 
@@ -9193,43 +9184,30 @@ __metadata:
   languageName: node
   linkType: hard
 
-"chart.js@npm:^2.9.3":
-  version: 2.9.4
-  resolution: "chart.js@npm:2.9.4"
-  dependencies:
-    chartjs-color: ^2.1.0
-    moment: ^2.10.2
-  checksum: 4551932943bc5e42d25ae5632d91878fb89e22937095a2742e23c4d0d0bde405bed6be2cb8480694ba599d6dbb9882c8bce6bac1e4667c820eb24c38416380aa
+"chart.js@npm:^3.4.1":
+  version: 3.4.1
+  resolution: "chart.js@npm:3.4.1"
+  checksum: 8b14b108fb4bc3b0c4f6c8ab4f7cd87e0f3e612d70a3b62e7f54fae13c730b44f7dc2deaf006276acbe990f5f306245ba830e570f637bf30934abe31153a9b12
   languageName: node
   linkType: hard
 
-"chartjs-color-string@npm:^0.6.0":
-  version: 0.6.0
-  resolution: "chartjs-color-string@npm:0.6.0"
-  dependencies:
-    color-name: ^1.0.0
-  checksum: 29f7ef3ebf5af1a76034da3148e1f230eee0c0f6df497ab7072ce5fb9c11ff37f5f030d2a2a5f1fd9230895d9aa294b455c5dd0f0e04f38688c69d0ccbdca7dd
+"chartjs-adapter-date-fns@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "chartjs-adapter-date-fns@npm:2.0.0"
+  peerDependencies:
+    chart.js: ^3.0.0
+  checksum: 993217aa5dbe3e380cf948d364b14b9f6f1a474b98bd9eb1eb25d4d8e3c99b612e81a8b8ab010a7369257d5cdb042981e14b16ff2cc9ad8a1743443f1ccb34ce
   languageName: node
   linkType: hard
 
-"chartjs-color@npm:^2.1.0":
-  version: 2.4.1
-  resolution: "chartjs-color@npm:2.4.1"
-  dependencies:
-    chartjs-color-string: ^0.6.0
-    color-convert: ^1.9.3
-  checksum: 850408dfcda057ef0115018d5c83b88f5539cf93bbae8389bd3c5caa405a18e1f1d89b22a26107e1559248206a4ad6243294a820d50f042c6782a1d9d09fb3de
-  languageName: node
-  linkType: hard
-
-"chartjs-plugin-zoom@npm:^0.7.7":
-  version: 0.7.7
-  resolution: "chartjs-plugin-zoom@npm:0.7.7"
+"chartjs-plugin-zoom@npm:^1.1.1":
+  version: 1.1.1
+  resolution: "chartjs-plugin-zoom@npm:1.1.1"
   dependencies:
     hammerjs: ^2.0.8
   peerDependencies:
-    chart.js: ^2.6.0
-  checksum: 471f734589d62ea0cc1e59b0fd46d7d4e3e79b511d95b4a86e4a45104c9a94316ff4385d7d5cd7be5ef35f811c82692b944cff23149ff9a35be2f1315ab9e3e6
+    chart.js: ^3.2.0
+  checksum: edfa53fa0dd9483e296dacc11d02e9c8a93125ff1ebae467a84e12c1962515c37ba6356790394c812732524691b6b48cfee5d73b66aa7858adc9cd19d240f069
   languageName: node
   linkType: hard
 
@@ -9630,7 +9608,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"color-convert@npm:^1.9.0, color-convert@npm:^1.9.1, color-convert@npm:^1.9.3":
+"color-convert@npm:^1.9.0, color-convert@npm:^1.9.1":
   version: 1.9.3
   resolution: "color-convert@npm:1.9.3"
   dependencies:
@@ -18003,7 +17981,7 @@ fsevents@^1.2.7:
   languageName: node
   linkType: hard
 
-"moment@npm:2.29.1, moment@npm:>= 2.9.0, moment@npm:^2.10.2, moment@npm:^2.22.1":
+"moment@npm:2.29.1, moment@npm:>= 2.9.0, moment@npm:^2.22.1":
   version: 2.29.1
   resolution: "moment@npm:2.29.1"
   checksum: 86729013febf7160de5b93da69273dd304d674b0224f9544b3abd09a87671ddd2cdd57598261ce57588910d63747ffd5590965e83c790d8bf327083c0e0a06e0
@@ -20738,17 +20716,15 @@ fsevents@^1.2.7:
   languageName: node
   linkType: hard
 
-"react-chartjs-2@npm:^2.9.0":
-  version: 2.11.2
-  resolution: "react-chartjs-2@npm:2.11.2"
+"react-chartjs-2@npm:^3.0.3":
+  version: 3.0.3
+  resolution: "react-chartjs-2@npm:3.0.3"
   dependencies:
     lodash: ^4.17.19
-    prop-types: ^15.7.2
   peerDependencies:
-    chart.js: ^2.3
-    react: ^0.14.0 || ^15.0.0 || ^16.0.0 || ^17.0.0
-    react-dom: ^0.14.0 || ^15.0.0 || ^16.0.0 || ^17.0.0
-  checksum: 931490ebd96c0c85414cb5e9b8c0548372ed62165096b667df817ecb4506109ad8cb55e7e27ba946b316dbf7b3cbd5242c4b1b88eb5e885f3e6d246a089a1eea
+    chart.js: ^3.1.0
+    react: ^16.8.0 || ^17.0.0
+  checksum: 5afc9d450041221b6334cfa0b895cf11b6c9042786bfdcd86564f10cbd54f05e6751da72b5de1828d5081d78db69f5b7aff7138d41c9953b2aa535dc38f89c67
   languageName: node
   linkType: hard
 

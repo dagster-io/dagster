@@ -30,29 +30,29 @@ export class PartitionGraph extends React.Component<PartitionGraphProps, Partiti
 
   chart = React.createRef<any>();
 
-  getDefaultOptions = (): Chart.ChartOptions => {
+  getDefaultOptions = () => {
     const {title, yLabel} = this.props;
     const titleOptions = title ? {display: true, text: title} : undefined;
     const scales = yLabel
       ? {
-          yAxes: [
-            {
-              scaleLabel: {display: true, labelString: yLabel},
-            },
-          ],
-          xAxes: [
-            {
-              scaleLabel: {display: true, labelString: 'Partition'},
-            },
-          ],
+          y: {
+            id: 'y',
+            title: {display: true, text: yLabel},
+          },
+          x: {
+            id: 'x',
+            title: {display: true, text: 'Partition'},
+          },
         }
       : undefined;
     return {
       title: titleOptions,
       scales,
-      legend: {
-        display: false,
-        onClick: (_e: MouseEvent, _legendItem: any) => {},
+      plugins: {
+        legend: {
+          display: false,
+          onClick: (_e: MouseEvent, _legendItem: any) => {},
+        },
       },
       onClick: this.onGraphClick,
     };
@@ -163,7 +163,7 @@ export class PartitionGraph extends React.Component<PartitionGraphProps, Partiti
     const options = this.getDefaultOptions();
     return (
       <RowContainer style={{margin: '20px 0'}}>
-        <Line data={graphData} height={100} options={options} ref={this.chart} />
+        <Line type="line" data={graphData} height={100} options={options} ref={this.chart} />
       </RowContainer>
     );
   }

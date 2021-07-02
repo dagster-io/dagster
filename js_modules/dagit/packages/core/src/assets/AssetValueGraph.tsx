@@ -1,11 +1,14 @@
 import {Colors} from '@blueprintjs/core';
+import {ActiveElement} from 'chart.js';
 import * as React from 'react';
-import {Line, ChartComponentProps} from 'react-chartjs-2';
+import {Line} from 'react-chartjs-2';
 
 import {Group} from '../ui/Group';
 import {Subheading} from '../ui/Text';
 
 import {AssetNumericHistoricalData} from './types';
+
+import 'chartjs-adapter-date-fns';
 
 export const AssetValueGraph: React.FC<{
   label: string;
@@ -25,7 +28,7 @@ export const AssetValueGraph: React.FC<{
     xHover = xHover ? labels.indexOf(xHover) : null;
   }
 
-  const graphData: ChartComponentProps['data'] = {
+  const graphData = {
     labels: labels,
     datasets: [
       {
@@ -42,7 +45,7 @@ export const AssetValueGraph: React.FC<{
     ],
   };
 
-  const options: ChartComponentProps['options'] = {
+  const options = {
     animation: {
       duration: 0,
     },
@@ -53,37 +56,38 @@ export const AssetValueGraph: React.FC<{
       },
     },
     scales: {
-      yAxes: [{scaleLabel: {display: true, labelString: 'Value'}}],
-      xAxes: [
-        props.data.xAxis === 'time'
+      x: {
+        id: 'x',
+        display: true,
+        ...(props.data.xAxis === 'time'
           ? {
               type: 'time',
-              scaleLabel: {
+              title: {
                 display: true,
-                labelString: 'Timestamp',
+                text: 'Timestamp',
               },
             }
           : {
               type: 'category',
-              scaleLabel: {
+              title: {
                 display: true,
-                labelString: 'Partition',
+                text: 'Partition',
               },
-            },
-      ],
+            }),
+      },
+      y: {id: 'y', display: true, title: {display: true, text: 'Value'}},
     },
-    legend: {
-      display: false,
-      onClick(_e: MouseEvent, _legendItem: any) {
-        // pass
+    plugins: {
+      legend: {
+        display: false,
       },
     },
-    onHover(_e, activeElements) {
+    onHover(_: MouseEvent, activeElements: ActiveElement[]) {
       if (activeElements.length === 0) {
         props.onHoverX(null);
         return;
       }
-      const itemIdx = (activeElements[0] as any)._index;
+      const itemIdx = (activeElements[0] as any).index;
       if (itemIdx === 0) {
         // ChartJS errantly selects the first item when you're moving the mouse off the line
         props.onHoverX(null);
@@ -92,11 +96,12 @@ export const AssetValueGraph: React.FC<{
       props.onHoverX(props.data.values[itemIdx].x);
     },
   };
+
   return (
     <div style={{marginTop: 30, width: props.width}}>
       <Group direction="column" spacing={12}>
         <Subheading>{props.label}</Subheading>
-        <Line data={graphData} height={100} options={options} key={props.width} />
+        <Line type="line" data={graphData} height={100} options={options} key={props.width} />
       </Group>
     </div>
   );

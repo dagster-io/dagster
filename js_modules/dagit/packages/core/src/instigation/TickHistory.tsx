@@ -9,10 +9,11 @@ import {
   Tabs,
   Tab,
 } from '@blueprintjs/core';
-import {TimeUnit} from 'chart.js';
+import {ActiveElement, Chart, TimeUnit} from 'chart.js';
+import zoomPlugin from 'chartjs-plugin-zoom';
 import moment from 'moment-timezone';
 import * as React from 'react';
-import {Line, ChartComponentProps} from 'react-chartjs-2';
+import {Line} from 'react-chartjs-2';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
@@ -33,7 +34,9 @@ import {
   TickHistoryQuery_instigationStateOrError_InstigationState_ticks,
 } from './types/TickHistoryQuery';
 
-import 'chartjs-plugin-zoom';
+import 'chartjs-adapter-date-fns';
+
+Chart.register(zoomPlugin);
 
 const MIN_ZOOM_RANGE = 30 * 60 * 1000; // 30 minutes
 
@@ -301,11 +304,14 @@ const TickHistoryGraph: React.FC<{
 }> = ({ticks, selectedTick, onSelectTick, onHoverTick, selectedTab, maxBounds}) => {
   const [bounds, setBounds] = React.useState<Bounds | null>(null);
   const [hoveredTick, setHoveredTick] = React.useState<InstigationTick | undefined>();
+  const [now] = React.useState(() => Date.now());
+
   React.useEffect(() => {
     setBounds(null);
   }, [selectedTab]);
+
   const tickData = ticks.map((tick) => ({x: 1000 * tick.timestamp, y: 0}));
-  const graphData: ChartComponentProps['data'] = {
+  const graphData = {
     labels: ['ticks'],
     datasets: [
       {
@@ -334,7 +340,6 @@ const TickHistoryGraph: React.FC<{
     const dataMin = Math.min(...tickData.map((_) => _.x));
     const dataMax = Math.max(...tickData.map((_) => _.x));
     const buffer = (dataMax - dataMin) / 25;
-    const now = Date.now();
     return {
       min: dataMax ? dataMin - buffer : now - MIN_ZOOM_RANGE,
       max: dataMax ? dataMax + buffer : now,
@@ -377,74 +382,42 @@ const TickHistoryGraph: React.FC<{
     const snipped = x.slice(0, length);
     return snipped.length < x.length - buffer ? `${snipped}...` : x;
   };
+
   const title = bounds
     ? dateFormat(bounds.min) === dateFormat(bounds.max)
       ? dateFormat(bounds.min)
       : `${dateFormat(bounds.min)} - ${dateFormat(bounds.max)}`
     : undefined;
 
-  const options: ChartComponentProps['options'] = {
-    title: {
-      display: !!title,
-      text: title,
-    },
+  const options = {
+    indexAxis: 'x',
     scales: {
-      yAxes: [{scaleLabel: {display: false}, ticks: {display: false}, gridLines: {display: false}}],
-      xAxes: [
-        {
-          type: 'time',
-          scaleLabel: {
-            display: false,
-          },
-          bounds: 'ticks',
-          gridLines: {display: true, drawBorder: true},
-          ticks: {
-            source: 'auto',
-            ...calculateBounds(),
-          },
-          time: {
-            minUnit: calculateUnit(),
-          },
+      y: {id: 'y', display: false},
+      x: {
+        id: 'x',
+        type: 'time',
+        title: {
+          display: false,
         },
-      ],
-    },
-    legend: {
-      display: false,
-    },
-    tooltips: {
-      displayColors: false,
-      callbacks: {
-        title: function (_item, _data) {
-          if (!hoveredTick) {
-            return '';
-          }
-          return moment(hoveredTick.timestamp * 1000).format('MMM D, YYYY h:mm:ss A z');
+        bounds: 'ticks',
+        grid: {display: true, drawBorder: true},
+        ticks: {
+          source: 'auto',
         },
-        label: function (_tooltipItem, _data) {
-          if (!hoveredTick) {
-            return '';
-          }
-          if (hoveredTick.status === InstigationTickStatus.SKIPPED && hoveredTick.skipReason) {
-            return snippet(hoveredTick.skipReason);
-          }
-          if (hoveredTick.status === InstigationTickStatus.SUCCESS && hoveredTick.runIds.length) {
-            return hoveredTick.runIds;
-          }
-          if (hoveredTick.status === InstigationTickStatus.FAILURE && hoveredTick.error?.message) {
-            return snippet(hoveredTick.error.message);
-          }
-          return '';
+        ...calculateBounds(),
+        time: {
+          minUnit: calculateUnit(),
         },
       },
     },
 
-    onHover: (event: MouseEvent, activeElements: any[]) => {
+    onHover: (event: MouseEvent, activeElements: ActiveElement[]) => {
       if (event?.target instanceof HTMLElement) {
         event.target.style.cursor = activeElements.length ? 'pointer' : 'default';
       }
 
-      if (activeElements.length && activeElements[0] && activeElements[0]._index < ticks.length) {
-        const tick = ticks[activeElements[0]._index];
+      if (activeElements.length && activeElements[0] && activeElements[0].index < ticks.length) {
+        const tick = ticks[activeElements[0].index];
         setHoveredTick(tick);
         onHoverTick(tick);
       } else {
@@ -452,30 +425,72 @@ const TickHistoryGraph: React.FC<{
       }
     },
 
-    onClick: (_event: MouseEvent, activeElements: any[]) => {
+    onClick: (_event: MouseEvent, activeElements: ActiveElement[]) => {
       if (!activeElements.length) {
         return;
       }
       const [item] = activeElements;
-      if (item._datasetIndex === undefined || item._index === undefined) {
+      if (item.datasetIndex === undefined || item.index === undefined) {
         return;
       }
-      const tick = ticks[item._index];
+      const tick = ticks[item.index];
       onSelectTick(tick);
     },
+
     plugins: {
-      zoom: {
-        zoom: {
-          enabled: true,
-          mode: 'x',
-          rangeMin: {
-            x: getMaxBounds().min,
+      title: {
+        display: !!title,
+        text: title,
+      },
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        displayColors: false,
+        callbacks: {
+          title: () => {
+            if (!hoveredTick) {
+              return '';
+            }
+            return moment(hoveredTick.timestamp * 1000).format('MMM D, YYYY h:mm:ss A z');
           },
-          rangeMax: {
-            x: getMaxBounds().max,
+          label: () => {
+            if (!hoveredTick) {
+              return '';
+            }
+            if (hoveredTick.status === InstigationTickStatus.SKIPPED && hoveredTick.skipReason) {
+              return snippet(hoveredTick.skipReason);
+            }
+            if (hoveredTick.status === InstigationTickStatus.SUCCESS && hoveredTick.runIds.length) {
+              return hoveredTick.runIds;
+            }
+            if (
+              hoveredTick.status === InstigationTickStatus.FAILURE &&
+              hoveredTick.error?.message
+            ) {
+              return snippet(hoveredTick.error.message);
+            }
+            return '';
+          },
+        },
+      },
+      zoom: {
+        limits: {
+          x: {
+            min: getMaxBounds().min,
+            max: getMaxBounds().max,
+          },
+        },
+        zoom: {
+          mode: 'x',
+          wheel: {
+            enabled: true,
+          },
+          pinch: {
+            enabled: true,
           },
           onZoom: ({chart}: {chart: Chart}) => {
-            const {min, max} = chart.options.scales?.xAxes?.[0].ticks || {};
+            const {min, max} = chart.scales.x;
             if (min && max) {
               const diff = max - min;
               if (diff > MIN_ZOOM_RANGE) {
@@ -491,16 +506,10 @@ const TickHistoryGraph: React.FC<{
           },
         },
         pan: {
-          rangeMin: {
-            x: getMaxBounds().min,
-          },
-          rangeMax: {
-            x: getMaxBounds().max,
-          },
           enabled: true,
           mode: 'x',
           onPan: ({chart}: {chart: Chart}) => {
-            const {min, max} = chart.options.scales?.xAxes?.[0].ticks || {};
+            const {min, max} = chart.scales.x;
             if (min && max) {
               setBounds({min, max});
             }
@@ -512,7 +521,7 @@ const TickHistoryGraph: React.FC<{
 
   return (
     <div>
-      <Line data={graphData} height={30} options={options} key="100%" />
+      <Line type="line" data={graphData} options={options} height={30} />
       <div style={{fontSize: 13, opacity: 0.5}}>
         <Box flex={{justifyContent: 'center'}} margin={{top: 8}}>
           Tip: Scroll / pinch to zoom, drag to pan, click to see tick details.
