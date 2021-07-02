@@ -87,6 +87,7 @@ def main(quiet):
         "-e integration_tests/python_modules/dagster-k8s-test-infra",
         "-r scala_modules/scripts/requirements.txt",
         "-e python_modules/libraries/dagster-azure",
+        "-e python_modules/libraries/dagster-msteams",
         "-e helm/dagster/schema[test]",
     ]
 
