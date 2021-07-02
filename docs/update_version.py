@@ -12,9 +12,9 @@ CONTENT_DIR = file_relative_path(__file__, "./content")
 IMAGE_DIR = file_relative_path(__file__, "next/public/images")
 VERSIONED_DIR = file_relative_path(__file__, "next/.versioned_content")
 
-OUTPUT_PATH = "/tmp/docs_versioned_output"
-CONTENT_OUTPUT_DIR = file_relative_path(OUTPUT_PATH, "versioned_content")
-IMAGE_OUTPUT_DIR = file_relative_path(OUTPUT_PATH, "versioned_images")
+TMP_OUTPUT_PATH = "/tmp/docs_versioned_output/"
+CONTENT_OUTPUT_DIR = os.path.join(TMP_OUTPUT_PATH, "versioned_content")
+IMAGE_OUTPUT_DIR = os.path.join(TMP_OUTPUT_PATH, "versioned_images")
 
 s3_client = boto3.resource("s3")
 bucket = s3_client.Bucket("dagster-docs-versioned-content")
@@ -43,7 +43,7 @@ def upload_files_to_s3(source_dir):
         # Upload each file using os.walk
         for filename in files:
             source_path = os.path.join(root, filename)
-            s3_path = os.path.join(re.sub("^/tmp/", "", root), filename)
+            s3_path = os.path.join(re.sub(f"^{TMP_OUTPUT_PATH}", "", root), filename)
             click.echo(f"Uploading file {source_path} to S3 path: {s3_path}")
             bucket.upload_file(source_path, s3_path)
 
@@ -77,10 +77,12 @@ def main(version, overwrite):
         else:
             raise click.ClickException("Incorrect version number: {}".format(value))
 
+    # clean up old files in tmp dir in case this is a retry
+    if os.path.isdir(TMP_OUTPUT_PATH):
+        shutil.rmtree(TMP_OUTPUT_PATH)
+
     # Create versioned content locally
     version_content_directory = os.path.join(CONTENT_OUTPUT_DIR, version)
-    if os.path.isdir(version_content_directory):
-        shutil.rmtree(version_content_directory)  # clean up tmp dir in case this is a retry
     shutil.copytree(CONTENT_DIR, version_content_directory)
     click.echo(f"✅ successfully wrote versioned content for to path: {version_content_directory}")
     # Upload versioned content to s3
@@ -89,8 +91,6 @@ def main(version, overwrite):
 
     # Create versioned images locally
     version_image_directory = os.path.join(IMAGE_OUTPUT_DIR, version)
-    if os.path.isdir(version_image_directory):
-        shutil.rmtree(version_image_directory)  # clean up tmp dir in case this is a retry
     shutil.copytree(IMAGE_DIR, version_image_directory)
     click.echo(f"✅ successfully wrote versioned images for to path: {version_image_directory}")
     # Upload versioned images to s3
@@ -104,8 +104,8 @@ def main(version, overwrite):
 
     # Create master navigation file
     # TODO yuhan: move versioned navigation to s3
-    versioned_navigation = {}
-    for (root, _, files) in os.walk(VERSIONED_DIR):
+    versioned_navigation = read_json(os.path.join(VERSIONED_DIR, "_versioned_navigation.json"))
+    for (root, _, files) in os.walk(CONTENT_OUTPUT_DIR):
         for filename in files:
             if filename == "_navigation.json":
                 curr_version = root.split("/")[-1]
@@ -115,6 +115,9 @@ def main(version, overwrite):
     write_json(
         os.path.join(VERSIONED_DIR, "_versioned_navigation.json"),
         versioned_navigation,
+    )
+    click.echo(
+        f'✅ successfully updated {os.path.join(VERSIONED_DIR, "_versioned_navigation.json")}'
     )
 
 
