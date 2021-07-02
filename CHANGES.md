@@ -2,8 +2,6 @@
 
 # 0.11.16
 
-🚂 \*The Gravy Train is planned to depart at: July 1, 2021**\* _4 pm EST_**
-
 ### New
 
 - In Dagit, a new page has been added for user settings, including feature flags and timezone preferences. It can be accessed via the gear icon in the top right corner of the page.
