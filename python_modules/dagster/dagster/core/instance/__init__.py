@@ -129,10 +129,10 @@ class MayHaveInstanceWeakref:
     """Mixin for classes that can have a weakref back to a Dagster instance."""
 
     def __init__(self):
-        self._instance_weakref: weakref.ref = None
+        self._instance_weakref: weakref.ReferenceType["DagsterInstance"] = None
 
     @property
-    def _instance(self):
+    def _instance(self) -> Optional["DagsterInstance"]:
         return (
             self._instance_weakref()
             # Backcompat with custom subclasses that don't call super().__init__()
@@ -141,7 +141,7 @@ class MayHaveInstanceWeakref:
             else None
         )
 
-    def register_instance(self, instance):
+    def register_instance(self, instance: "DagsterInstance"):
         check.inst_param(instance, "instance", DagsterInstance)
         check.invariant(
             # Backcompat with custom subclasses that don't call super().__init__()
