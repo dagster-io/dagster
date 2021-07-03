@@ -24,6 +24,8 @@ class UserDeployment(BaseModel):
     livenessProbe: Optional[kubernetes.LivenessProbe]
     startupProbe: Optional[kubernetes.StartupProbe]
     labels: Optional[Dict[str, str]]
+    volumeMounts: Optional[List[kubernetes.VolumeMount]]
+    volumes: Optional[List[kubernetes.Volume]]
 
 
 class UserDeployments(BaseModel):
