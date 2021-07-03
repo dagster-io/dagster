@@ -37,6 +37,8 @@ deployments:
       - "/example_project/example_repo/repo.py"
     port: 3030
 
+    volumeMounts: []
+
     # Additional environment variables to set.
     # A Kubernetes ConfigMap will be created with these environment variables. See:
     # https://kubernetes.io/docs/concepts/configuration/configmap/
@@ -104,6 +106,8 @@ deployments:
 
     service:
       annotations: {}
+
+volumes: []
 
 # Specify secrets to run containers based on images in private registries. See:
 # https://kubernetes.io/docs/concepts/containers/images/#referring-to-an-imagepullsecrets-on-a-pod

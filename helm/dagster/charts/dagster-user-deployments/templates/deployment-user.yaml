@@ -37,6 +37,10 @@ spec:
           securityContext: {{ $deployment.securityContext | toYaml | nindent 12 }}
           imagePullPolicy: {{ $deployment.image.pullPolicy }}
           image: {{ include "dagster.dagsterImage.name" (list $ $deployment.image) | quote }}
+          volumeMounts:
+            {{- range $volumeMount := $deployment.volumeMounts }}
+            - {{ $volumeMount | toYaml | nindent 16 }}
+            {{- end }}
           command: ["dagster"]
           args: ["api", "grpc", "-h", "0.0.0.0", "-p", "{{ $deployment.port }}", "{{- join "\",\"" $deployment.dagsterApiGrpcArgs }}"]
           env:
@@ -102,5 +106,9 @@ spec:
       nodeSelector: {{ $deployment.nodeSelector | toYaml | nindent 8 }}
       affinity: {{ $deployment.affinity | toYaml | nindent 8 }}
       tolerations: {{- $deployment.tolerations | toYaml | nindent 8 }}
+      volumes:
+        {{- range $volume := $.Values.volumes }}
+        - {{ $volume | toYaml | nindent 12 }}
+        {{- end }}
 ---
 {{ end }}
