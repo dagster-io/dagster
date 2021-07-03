@@ -65,7 +65,7 @@ def test_success_hook_on_solid_instance(mock_teams_post_message):
 
 @patch("dagster_msteams.client.TeamsClient.post_message")
 def test_failure_hook_decorator(mock_teams_post_message):
-    @teams_on_failure()
+    @teams_on_failure(dagit_base_url="http://localhost:3000/")
     @pipeline(mode_defs=[ModeDefinition(resource_defs={"msteams": msteams_resource})])
     def a_pipeline():
         pass_solid()
@@ -83,7 +83,7 @@ def test_failure_hook_decorator(mock_teams_post_message):
 
 @patch("dagster_msteams.client.TeamsClient.post_message")
 def test_success_hook_decorator(mock_teams_post_message):
-    @teams_on_success(message_fn=my_message_fn)
+    @teams_on_success(message_fn=my_message_fn, dagit_base_url="http://localhost:3000/")
     @pipeline(mode_defs=[ModeDefinition(resource_defs={"msteams": msteams_resource})])
     def a_pipeline():
         pass_solid()

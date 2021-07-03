@@ -25,7 +25,7 @@ class TeamsClient:
                 self._proxy["https"] = https_proxy
         self._headers = {"Content-Type": "application/json"}
 
-    def post_message(self, payload: Dict) -> bool:
+    def post_message(self, payload: Dict) -> bool:  # pragma: no cover
         response = post(
             self._hook_url,
             json=payload,
