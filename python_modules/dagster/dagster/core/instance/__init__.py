@@ -8,7 +8,7 @@ import warnings
 import weakref
 from collections import defaultdict
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Union, cast
 
 import yaml
 from dagster import check
@@ -133,14 +133,15 @@ class MayHaveInstanceWeakref:
         self._instance_weakref: weakref.ReferenceType["DagsterInstance"] = None
 
     @property
-    def _instance(self) -> Optional["DagsterInstance"]:
-        return (
+    def _instance(self) -> "DagsterInstance":
+        instance = (
             self._instance_weakref()
             # Backcompat with custom subclasses that don't call super().__init__()
             # in their own __init__ implementations
             if (hasattr(self, "_instance_weakref") and self._instance_weakref is not None)
             else None
         )
+        return cast("DagsterInstance", instance)
 
     def register_instance(self, instance: "DagsterInstance"):
         check.inst_param(instance, "instance", DagsterInstance)
@@ -1054,7 +1055,7 @@ class DagsterInstance:
         self,
         event_records_filter: Optional["EventRecordsFilter"] = None,
         limit: Optional[int] = None,
-        ascending: Optional[bool] = False,
+        ascending: bool = False,
     ) -> Iterable["EventLogRecord"]:
         return self._event_storage.get_event_records(event_records_filter, limit, ascending)
 

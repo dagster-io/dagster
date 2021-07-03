@@ -618,7 +618,7 @@ class SqlEventLogStorage(EventLogStorage):
         self,
         event_records_filter: Optional[EventRecordsFilter] = None,
         limit: Optional[int] = None,
-        ascending: Optional[bool] = False,
+        ascending: bool = False,
     ) -> Iterable[EventLogRecord]:
         """Returns a list of (record_id, record)."""
         check.opt_inst_param(event_records_filter, "event_records_filter", EventRecordsFilter)

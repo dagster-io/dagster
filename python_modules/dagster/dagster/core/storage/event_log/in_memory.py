@@ -108,7 +108,7 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
         self,
         event_records_filter: Optional[EventRecordsFilter] = None,
         limit: Optional[int] = None,
-        ascending: Optional[bool] = False,
+        ascending: bool = False,
     ) -> Iterable[EventLogRecord]:
         after_id = (
             (

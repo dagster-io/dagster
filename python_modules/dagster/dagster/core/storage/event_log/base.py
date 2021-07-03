@@ -194,7 +194,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         self,
         event_records_filter: Optional[EventRecordsFilter] = None,
         limit: Optional[int] = None,
-        ascending: Optional[bool] = False,
+        ascending: bool = False,
     ) -> Iterable[EventLogRecord]:
         pass
 
