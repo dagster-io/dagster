@@ -27,6 +27,40 @@ def teams_on_failure(
     message_fn: Callable[[HookContext], str] = _default_failure_message,
     dagit_base_url: Optional[str] = None,
 ):
+    """Create a hook on step failure events that will message the given MS Teams webhook URL.
+
+    Args:
+        message_fn (Optional(Callable[[HookContext], str])): Function which takes in the
+            HookContext outputs the message you want to send.
+        dagit_base_url: (Optional[str]): The base url of your Dagit instance. Specify this
+            to allow messages to include deeplinks to the specific pipeline run that triggered
+            the hook.
+
+    Examples:
+        .. code-block:: python
+
+            @teams_on_failure(dagit_base_url="http://localhost:3000")
+            @pipeline(...)
+            def my_pipeline():
+                pass
+
+        .. code-block:: python
+
+            def my_message_fn(context: HookContext) -> str:
+                return "Solid {solid_name} failed!".format(
+                    solid_name=context.solid
+                )
+
+            @solid
+            def a_solid(context):
+                pass
+
+            @pipeline(...)
+            def my_pipeline():
+                a_solid.with_hooks(hook_defs={teams_on_failure("#foo", my_message_fn)})
+
+    """
+
     @failure_hook(required_resource_keys={"msteams"})
     def _hook(context: HookContext):
         text = message_fn(context)
@@ -46,6 +80,40 @@ def teams_on_success(
     message_fn: Callable[[HookContext], str] = _default_success_message,
     dagit_base_url: Optional[str] = None,
 ):
+    """Create a hook on step success events that will message the given MS Teams webhook URL.
+
+    Args:
+        message_fn (Optional(Callable[[HookContext], str])): Function which takes in the
+            HookContext outputs the message you want to send.
+        dagit_base_url: (Optional[str]): The base url of your Dagit instance. Specify this
+            to allow messages to include deeplinks to the specific pipeline run that triggered
+            the hook.
+
+    Examples:
+        .. code-block:: python
+
+            @teams_on_success(dagit_base_url="http://localhost:3000")
+            @pipeline(...)
+            def my_pipeline():
+                pass
+
+        .. code-block:: python
+
+            def my_message_fn(context: HookContext) -> str:
+                return "Solid {solid_name} failed!".format(
+                    solid_name=context.solid
+                )
+
+            @solid
+            def a_solid(context):
+                pass
+
+            @pipeline(...)
+            def my_pipeline():
+                a_solid.with_hooks(hook_defs={teams_on_success("#foo", my_message_fn)})
+
+    """
+
     @success_hook(required_resource_keys={"msteams"})
     def _hook(context: HookContext):
         text = message_fn(context)

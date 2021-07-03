@@ -4,6 +4,9 @@ from requests import codes, exceptions, post
 
 
 class TeamsClient:
+    """MS Teams web client responsible for connecting to a channel using the webhook URL
+    and posting informaton in the form of cards."""
+
     def __init__(
         self,
         hook_url: str,
