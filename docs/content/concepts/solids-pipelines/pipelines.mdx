@@ -322,9 +322,9 @@ def fan_in_pipeline():
 
 In this example, we have 10 solids that all output the number `1`. The `sum_fan_in` solid takes all of these outputs as a list and sums them.
 
-### Dynamic Mapping & Collect <Experimental/>
+### Dynamic Mapping & Collect
 
-In most cases, the structure of a pipeline is pre-determined before execution. Dagster now has experimental support for creating pipelines where the final structure is not determined until run-time. This is useful for pipeline structures where you want to execute a separate instance of a solid for each entry in a certain output.
+In most cases, the structure of a pipeline is pre-determined before execution. Dagster also has support for creating pipelines where the final structure is not determined until run-time. This is useful for pipeline structures where you want to execute a separate instance of a solid for each entry in a certain output.
 
 In this example we have a solid `files_in_directory` that defines a <PyObject object="DynamicOutputDefinition" module="dagster.experimental"/>. We `map` over the dynamic output which will cause the downstream dependencies to be cloned for each <PyObject object="DynamicOutput"  module="dagster.experimental"/> that is yielded. The downstream copies can be identified by the `mapping_key` supplied to <PyObject object="DynamicOutput"  module="dagster.experimental"/>. Once that's all complete, we `collect` the over results of `process_file` and pass that in to `summarize_directory`.
 
@@ -332,8 +332,7 @@ In this example we have a solid `files_in_directory` that defines a <PyObject ob
 import os
 from typing import List
 
-from dagster import Field, pipeline, solid
-from dagster.experimental import DynamicOutput, DynamicOutputDefinition
+from dagster import DynamicOutput, DynamicOutputDefinition, Field, pipeline, solid
 from dagster.utils import file_relative_path
 
 

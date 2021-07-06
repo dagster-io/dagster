@@ -4,8 +4,7 @@
 import os
 from typing import List
 
-from dagster import Field, pipeline, solid
-from dagster.experimental import DynamicOutput, DynamicOutputDefinition
+from dagster import DynamicOutput, DynamicOutputDefinition, Field, pipeline, solid
 from dagster.utils import file_relative_path
 
 

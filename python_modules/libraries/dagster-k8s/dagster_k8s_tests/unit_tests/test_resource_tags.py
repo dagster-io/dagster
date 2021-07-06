@@ -1,9 +1,8 @@
 import pytest
-from dagster import pipeline, solid
+from dagster import DynamicOutput, DynamicOutputDefinition, pipeline, solid
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.plan.state import KnownExecutionState
-from dagster.experimental import DynamicOutput, DynamicOutputDefinition
 from dagster_k8s.job import (
     K8S_RESOURCE_REQUIREMENTS_KEY,
     USER_DEFINED_K8S_CONFIG_KEY,

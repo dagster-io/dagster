@@ -1,8 +1,14 @@
 import pytest
-from dagster import execute_pipeline, pipeline, reexecute_pipeline, solid
+from dagster import (
+    DynamicOutput,
+    DynamicOutputDefinition,
+    execute_pipeline,
+    pipeline,
+    reexecute_pipeline,
+    solid,
+)
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.test_utils import instance_for_test
-from dagster.experimental import DynamicOutput, DynamicOutputDefinition
 
 
 @solid

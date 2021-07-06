@@ -1,5 +1,7 @@
 import pytest
 from dagster import (
+    DynamicOutput,
+    DynamicOutputDefinition,
     Field,
     InputDefinition,
     ModeDefinition,
@@ -15,7 +17,6 @@ from dagster.core.errors import DagsterExecutionStepNotFoundError
 from dagster.core.execution.api import create_execution_plan, reexecute_pipeline
 from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.test_utils import instance_for_test
-from dagster.experimental import DynamicOutput, DynamicOutputDefinition
 from dagster.utils import merge_dicts
 
 

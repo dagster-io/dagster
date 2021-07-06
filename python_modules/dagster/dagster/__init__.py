@@ -8,6 +8,8 @@ from dagster.core.definitions import (
     CompositeSolidDefinition,
     ConfigMapping,
     DependencyDefinition,
+    DynamicOutput,
+    DynamicOutputDefinition,
     EventMetadata,
     EventMetadataEntry,
     ExecutorDefinition,
@@ -237,6 +239,8 @@ __all__ = [
     "Jitter",
     "PipelineFailureSensorContext",
     "pipeline_failure_sensor",
+    "DynamicOutput",
+    "DynamicOutputDefinition",
     # Decorators
     "asset_sensor",
     "composite_solid",

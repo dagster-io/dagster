@@ -1,10 +1,9 @@
 import re
 
 import pytest
-from dagster import DagsterInvalidDefinitionError, solid
+from dagster import DagsterInvalidDefinitionError, DynamicOutput, DynamicOutputDefinition, solid
 from dagster.core.definitions.decorators.graph import graph
 from dagster.core.execution.execute import execute_in_process
-from dagster.experimental import DynamicOutput, DynamicOutputDefinition
 
 
 def get_solids():

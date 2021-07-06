@@ -14,6 +14,8 @@ from dagster import (
     AssetMaterialization,
     Bool,
     DagsterInstance,
+    DynamicOutput,
+    DynamicOutputDefinition,
     Enum,
     EnumValue,
     EventMetadataEntry,
@@ -59,7 +61,6 @@ from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.core.test_utils import today_at_midnight
 from dagster.core.workspace.context import WorkspaceProcessContext
 from dagster.core.workspace.load_target import PythonFileTarget
-from dagster.experimental import DynamicOutput, DynamicOutputDefinition
 from dagster.seven import get_system_temp_directory
 from dagster.utils import file_relative_path, segfault
 from dagster_graphql.test.utils import (

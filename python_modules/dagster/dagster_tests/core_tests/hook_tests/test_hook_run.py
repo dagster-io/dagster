@@ -2,6 +2,8 @@ from collections import defaultdict
 
 import pytest
 from dagster import (
+    DynamicOutput,
+    DynamicOutputDefinition,
     Int,
     ModeDefinition,
     Output,
@@ -16,7 +18,6 @@ from dagster.core.definitions import failure_hook, success_hook
 from dagster.core.definitions.decorators.hook import event_list_hook
 from dagster.core.definitions.events import Failure, HookExecutionResult
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.experimental import DynamicOutput, DynamicOutputDefinition
 
 
 class SomeUserException(Exception):
