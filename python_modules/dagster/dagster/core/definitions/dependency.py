@@ -93,15 +93,9 @@ class SolidInvocation(namedtuple("Solid", "name alias tags hook_defs retry_polic
         )
 
 
-class Solid:
+class Node:
     """
-    Solid invocation within a pipeline. Defined by its name inside the pipeline.
-
-    Attributes:
-        name (str):
-            Name of the solid inside the pipeline. Must be unique per-pipeline.
-        definition (NodeDefinition):
-            Definition of the Node.
+    Node invocation within a graph. Identified by its name inside the graph.
     """
 
     def __init__(
@@ -371,10 +365,10 @@ register_serdes_tuple_fallbacks({"SolidHandle": NodeHandle})
 
 
 class SolidInputHandle(namedtuple("_SolidInputHandle", "solid input_def")):
-    def __new__(cls, solid: Solid, input_def: InputDefinition):
+    def __new__(cls, solid: Node, input_def: InputDefinition):
         return super(SolidInputHandle, cls).__new__(
             cls,
-            check.inst_param(solid, "solid", Solid),
+            check.inst_param(solid, "solid", Node),
             check.inst_param(input_def, "input_def", InputDefinition),
         )
 
@@ -407,10 +401,10 @@ class SolidInputHandle(namedtuple("_SolidInputHandle", "solid input_def")):
 
 
 class SolidOutputHandle(namedtuple("_SolidOutputHandle", "solid output_def")):
-    def __new__(cls, solid: Solid, output_def: OutputDefinition):
+    def __new__(cls, solid: Node, output_def: OutputDefinition):
         return super(SolidOutputHandle, cls).__new__(
             cls,
-            check.inst_param(solid, "solid", Solid),
+            check.inst_param(solid, "solid", Node),
             check.inst_param(output_def, "output_def", OutputDefinition),
         )
 
@@ -613,12 +607,12 @@ InputToOutputHandleDict = Dict[SolidInputHandle, DepTypeAndOutputHandles]
 
 
 def _create_handle_dict(
-    solid_dict: Dict[str, Solid],
+    solid_dict: Dict[str, Node],
     dep_dict: Dict[str, Dict[str, IDependencyDefinition]],
 ) -> InputToOutputHandleDict:
     from .composition import MappedInputPlaceholder
 
-    check.dict_param(solid_dict, "solid_dict", key_type=str, value_type=Solid)
+    check.dict_param(solid_dict, "solid_dict", key_type=str, value_type=Node)
     check.two_dim_dict_param(dep_dict, "dep_dict", value_type=IDependencyDefinition)
 
     handle_dict: InputToOutputHandleDict = {}
@@ -661,7 +655,7 @@ def _create_handle_dict(
 
 class DependencyStructure:
     @staticmethod
-    def from_definitions(solids: Dict[str, Solid], dep_dict: Dict[str, Any]):
+    def from_definitions(solids: Dict[str, Node], dep_dict: Dict[str, Any]):
         return DependencyStructure(list(dep_dict.keys()), _create_handle_dict(solids, dep_dict))
 
     def __init__(self, solid_names: List[str], handle_dict: InputToOutputHandleDict):

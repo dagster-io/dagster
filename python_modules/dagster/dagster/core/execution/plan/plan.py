@@ -17,8 +17,8 @@ from dagster.core.definitions import (
     GraphDefinition,
     IPipeline,
     InputDefinition,
+    Node,
     NodeHandle,
-    Solid,
     SolidDefinition,
     SolidOutputHandle,
 )
@@ -195,7 +195,7 @@ class _PlanBuilder:
 
     def _build_from_sorted_solids(
         self,
-        solids: List[Solid],
+        solids: List[Node],
         dependency_structure: DependencyStructure,
         parent_handle: Optional[NodeHandle] = None,
         parent_step_inputs: Optional[
@@ -346,7 +346,7 @@ class _PlanBuilder:
 
 def get_step_input_source(
     plan_builder: _PlanBuilder,
-    solid: Solid,
+    solid: Node,
     input_name: str,
     input_def: InputDefinition,
     dependency_structure: DependencyStructure,
@@ -356,7 +356,7 @@ def get_step_input_source(
     ],
 ):
     check.inst_param(plan_builder, "plan_builder", _PlanBuilder)
-    check.inst_param(solid, "solid", Solid)
+    check.inst_param(solid, "solid", Node)
     check.str_param(input_name, "input_name")
     check.inst_param(input_def, "input_def", InputDefinition)
     check.inst_param(dependency_structure, "dependency_structure", DependencyStructure)

@@ -24,8 +24,8 @@ from .dependency import (
     DynamicCollectDependencyDefinition,
     IDependencyDefinition,
     MultiDependencyDefinition,
+    Node,
     NodeHandle,
-    Solid,
     SolidInputHandle,
     SolidInvocation,
 )
@@ -615,7 +615,7 @@ class PipelineSubsetDefinition(PipelineDefinition):
         raise DagsterInvariantViolationError("Pipeline subsets may not be subset again.")
 
 
-def _dep_key_of(solid: Solid) -> SolidInvocation:
+def _dep_key_of(solid: Node) -> SolidInvocation:
     return SolidInvocation(
         name=solid.definition.name,
         alias=solid.name,
@@ -705,7 +705,7 @@ def _checked_resource_reqs_for_mode(
     mode_def: ModeDefinition,
     node_defs: List[NodeDefinition],
     dagster_type_dict: Dict[str, DagsterType],
-    solid_dict: Dict[str, Solid],
+    solid_dict: Dict[str, Node],
     pipeline_hook_defs: AbstractSet[HookDefinition],
     dependency_structure: DependencyStructure,
 ) -> Set[str]:
@@ -890,10 +890,10 @@ def _checked_type_resource_reqs_for_mode(
 
 def _checked_input_resource_reqs_for_mode(
     dependency_structure: DependencyStructure,
-    solid_dict: Dict[str, Solid],
+    solid_dict: Dict[str, Node],
     mode_def: ModeDefinition,
     outer_dependency_structure: Optional[DependencyStructure] = None,
-    outer_solid: Optional[Solid] = None,
+    outer_solid: Optional[Node] = None,
 ) -> Set[str]:
     resource_reqs = set()
     mode_root_input_managers = set(

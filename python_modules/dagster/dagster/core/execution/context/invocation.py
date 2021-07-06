@@ -4,7 +4,7 @@ from typing import AbstractSet, Any, Dict, NamedTuple, Optional, Union, cast
 from dagster import check
 from dagster.config import Shape
 from dagster.core.definitions.composition import PendingNodeInvocation
-from dagster.core.definitions.dependency import NodeHandle, Solid
+from dagster.core.definitions.dependency import Node, NodeHandle
 from dagster.core.definitions.hook import HookDefinition
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.pipeline import PipelineDefinition
@@ -161,7 +161,7 @@ class UnboundSolidExecutionContext(SolidExecutionContext):
         raise DagsterInvalidPropertyError(_property_msg("solid_handle", "property"))
 
     @property
-    def solid(self) -> Solid:
+    def solid(self) -> Node:
         raise DagsterInvalidPropertyError(_property_msg("solid", "property"))
 
     @property
@@ -348,7 +348,7 @@ class BoundSolidExecutionContext(SolidExecutionContext):
         raise DagsterInvalidPropertyError(_property_msg("solid_handle", "property"))
 
     @property
-    def solid(self) -> Solid:
+    def solid(self) -> Node:
         raise DagsterInvalidPropertyError(_property_msg("solid", "property"))
 
     @property

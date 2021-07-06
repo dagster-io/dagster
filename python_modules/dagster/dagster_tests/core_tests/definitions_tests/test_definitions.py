@@ -15,7 +15,7 @@ from dagster import (
     lambda_solid,
     solid,
 )
-from dagster.core.definitions import AssetMaterialization, Solid, create_run_config_schema
+from dagster.core.definitions import AssetMaterialization, Node, create_run_config_schema
 from dagster.core.definitions.dependency import NodeHandle, SolidOutputHandle
 from dagster.core.errors import DagsterInvalidDefinitionError
 
@@ -49,7 +49,7 @@ def test_solid_def():
 
     assert len(pipeline_def.solids[0].output_handles()) == 1
 
-    assert isinstance(pipeline_def.solid_named("solid_one"), Solid)
+    assert isinstance(pipeline_def.solid_named("solid_one"), Node)
 
     solid_one_solid = pipeline_def.solid_named("solid_one")
 

@@ -34,8 +34,8 @@ from toposort import CircularDependencyError, toposort_flatten
 from .dependency import (
     DependencyStructure,
     IDependencyDefinition,
+    Node,
     NodeHandle,
-    Solid,
     SolidInputHandle,
     SolidInvocation,
 )
@@ -84,12 +84,12 @@ def _check_node_defs_arg(graph_name: str, node_defs: List[NodeDefinition]):
 
 
 def _create_adjacency_lists(
-    solids: List[Solid],
+    solids: List[Node],
     dep_structure: DependencyStructure,
-) -> Tuple[Dict[str, Set[Solid]], Dict[str, Set[Solid]]]:
+) -> Tuple[Dict[str, Set[Node]], Dict[str, Set[Node]]]:
     visit_dict = {s.name: False for s in solids}
-    forward_edges: Dict[str, Set[Solid]] = {s.name: set() for s in solids}
-    backward_edges: Dict[str, Set[Solid]] = {s.name: set() for s in solids}
+    forward_edges: Dict[str, Set[Node]] = {s.name: set() for s in solids}
+    backward_edges: Dict[str, Set[Node]] = {s.name: set() for s in solids}
 
     def visit(solid_name):
         if visit_dict[solid_name]:
@@ -177,11 +177,11 @@ class GraphDefinition(NodeDefinition):
         return [self.solid_named(solid_name) for solid_name in order]
 
     @property
-    def solids(self) -> List[Solid]:
+    def solids(self) -> List[Node]:
         return list(set(self._solid_dict.values()))
 
     @property
-    def solid_dict(self) -> Dict[str, Solid]:
+    def solid_dict(self) -> Dict[str, Node]:
         return self._solid_dict
 
     @property
@@ -192,7 +192,7 @@ class GraphDefinition(NodeDefinition):
         check.str_param(name, "name")
         return name in self._solid_dict
 
-    def solid_named(self, name: str) -> Solid:
+    def solid_named(self, name: str) -> Node:
         check.str_param(name, "name")
         check.invariant(
             name in self._solid_dict,
@@ -201,7 +201,7 @@ class GraphDefinition(NodeDefinition):
 
         return self._solid_dict[name]
 
-    def get_solid(self, handle: NodeHandle) -> Solid:
+    def get_solid(self, handle: NodeHandle) -> Node:
         check.inst_param(handle, "handle", NodeHandle)
         current = handle
         lineage = []
@@ -515,7 +515,7 @@ class GraphDefinition(NodeDefinition):
 
 def _validate_in_mappings(
     input_mappings: List[InputMapping],
-    solid_dict: Dict[str, Solid],
+    solid_dict: Dict[str, Node],
     dependency_structure: DependencyStructure,
     name: str,
     class_name: str,
@@ -654,7 +654,7 @@ def _validate_in_mappings(
 
 def _validate_out_mappings(
     output_mappings: List[OutputMapping],
-    solid_dict: Dict[str, Solid],
+    solid_dict: Dict[str, Node],
     dependency_structure: DependencyStructure,
     name: str,
     class_name: str,

@@ -33,7 +33,7 @@ from .output import OutputContext, get_output_context
 
 if TYPE_CHECKING:
     from dagster.core.definitions.intermediate_storage import IntermediateStorageDefinition
-    from dagster.core.definitions.dependency import Solid, NodeHandle
+    from dagster.core.definitions.dependency import Node, NodeHandle
     from dagster.core.storage.intermediate_storage import IntermediateStorage
     from dagster.core.instance import DagsterInstance
     from dagster.core.execution.plan.plan import ExecutionPlan
@@ -382,7 +382,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return self._execution_data.mode_def
 
     @property
-    def solid(self) -> "Solid":
+    def solid(self) -> "Node":
         return self.pipeline_def.get_solid(self._step.solid_handle)
 
     @property

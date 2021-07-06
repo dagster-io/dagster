@@ -2,7 +2,7 @@ from abc import abstractproperty
 from typing import Any, Dict, List, Optional, cast
 
 from dagster import DagsterEvent
-from dagster.core.definitions import GraphDefinition, NodeHandle, Solid, SolidDefinition
+from dagster.core.definitions import GraphDefinition, Node, NodeHandle, SolidDefinition
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.step import StepKind
@@ -128,7 +128,7 @@ class InProcessGraphResult(NodeExecutionResult):
         self._event_list = all_events
         self._output_capture = output_capture
 
-    def _result_for_handle(self, solid: Solid, handle: NodeHandle) -> NodeExecutionResult:
+    def _result_for_handle(self, solid: Node, handle: NodeHandle) -> NodeExecutionResult:
         node_def = solid.definition
         events_for_handle = _filter_step_events_by_handle(self.event_list, self.handle, handle)
         outputs_for_handle = (

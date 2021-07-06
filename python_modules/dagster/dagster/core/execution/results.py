@@ -1,7 +1,7 @@
 from collections import defaultdict
 
 from dagster import check
-from dagster.core.definitions import GraphDefinition, NodeHandle, PipelineDefinition, Solid
+from dagster.core.definitions import GraphDefinition, Node, NodeHandle, PipelineDefinition
 from dagster.core.definitions.utils import DEFAULT_OUTPUT
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.events import DagsterEvent, DagsterEventType
@@ -198,7 +198,7 @@ class CompositeSolidExecutionResult(GraphExecutionResult):
         handle=None,
         output_capture=None,
     ):
-        check.inst_param(solid, "solid", Solid)
+        check.inst_param(solid, "solid", Node)
         check.invariant(
             solid.is_composite,
             desc="Tried to instantiate a CompositeSolidExecutionResult with a noncomposite solid",
@@ -294,7 +294,7 @@ class SolidExecutionResult:
     def __init__(
         self, solid, step_events_by_kind, reconstruct_context, pipeline_def, output_capture=None
     ):
-        check.inst_param(solid, "solid", Solid)
+        check.inst_param(solid, "solid", Node)
         check.invariant(
             not solid.is_composite,
             desc="Tried to instantiate a SolidExecutionResult with a composite solid",

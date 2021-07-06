@@ -1,7 +1,7 @@
 from typing import Any, Dict, Set
 
 from dagster import PipelineDefinition, PipelineRun, SolidDefinition, check
-from dagster.core.definitions.dependency import Solid
+from dagster.core.definitions.dependency import Node
 from dagster.core.execution.context.compute import AbstractComputeExecutionContext
 from dagster.core.execution.context.system import PlanExecutionContext
 from dagster.core.log_manager import DagsterLogManager
@@ -119,8 +119,8 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         return self.pipeline_def.solid_def_named(self.solid_name)
 
     @property
-    def solid(self) -> Solid:
-        """:class:`dagster.Solid`: The solid for the context.
+    def solid(self) -> Node:
+        """:class:`dagster.Node`: The solid for the context.
 
         In interactive contexts, this may be a dagstermill-specific shim, depending whether a
         solid definition was passed to ``dagstermill.get_context``.

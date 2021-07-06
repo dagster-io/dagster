@@ -1,5 +1,5 @@
 from dagster import SolidDefinition
-from dagster.core.definitions.dependency import Solid
+from dagster.core.definitions.dependency import Node
 from dagster.core.system_config.objects import ResolvedRunConfig
 from dagstermill.manager import MANAGER_FOR_NOTEBOOK_INSTANCE
 
@@ -45,7 +45,7 @@ def test_solid_def():
 
 
 def test_solid():
-    assert isinstance(BARE_OUT_OF_PIPELINE_CONTEXT.solid, Solid)
+    assert isinstance(BARE_OUT_OF_PIPELINE_CONTEXT.solid, Node)
 
 
 def test_log(capsys):

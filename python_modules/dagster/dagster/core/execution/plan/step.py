@@ -12,7 +12,7 @@ from .inputs import StepInput, UnresolvedCollectStepInput, UnresolvedMappedStepI
 from .outputs import StepOutput
 
 if TYPE_CHECKING:
-    from dagster.core.definitions.dependency import Solid, NodeHandle
+    from dagster.core.definitions.dependency import Node, NodeHandle
     from dagster.core.definitions.hook import HookDefinition
 
 

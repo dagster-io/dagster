@@ -16,7 +16,7 @@ from dagster.utils import check
 
 from .configurable import ConfigurableDefinition
 from .definition_config_schema import IDefinitionConfigSchema
-from .dependency import DependencyStructure, NodeHandle, Solid, SolidInputHandle
+from .dependency import DependencyStructure, Node, NodeHandle, SolidInputHandle
 from .graph import GraphDefinition
 from .logger import LoggerDefinition
 from .mode import ModeDefinition
@@ -60,11 +60,11 @@ def def_config_field(configurable_def: ConfigurableDefinition, is_required: bool
 
 class RunConfigSchemaCreationData(NamedTuple):
     pipeline_name: str
-    solids: List[Solid]
+    solids: List[Node]
     dependency_structure: DependencyStructure
     mode_definition: ModeDefinition
     logger_defs: Dict[str, LoggerDefinition]
-    ignored_solids: List[Solid]
+    ignored_solids: List[Node]
     required_resources: Set[str]
 
 
@@ -156,7 +156,7 @@ def selector_for_named_defs(named_defs) -> Selector:
 
 
 def get_inputs_field(
-    solid: Solid,
+    solid: Node,
     dependency_structure: DependencyStructure,
     resource_defs: Dict[str, ResourceDefinition],
     solid_ignored: bool,
@@ -191,14 +191,14 @@ def get_inputs_field(
 def input_has_upstream(
     dependency_structure: DependencyStructure,
     input_handle: SolidInputHandle,
-    solid: Solid,
+    solid: Node,
     input_name: str,
 ) -> bool:
     return dependency_structure.has_deps(input_handle) or solid.container_maps_input(input_name)
 
 
 def get_input_manager_input_field(
-    solid: Solid,
+    solid: Node,
     input_def: InputDefinition,
     resource_defs: Dict[str, ResourceDefinition],
 ) -> Optional[Field]:
@@ -224,7 +224,7 @@ def get_input_manager_input_field(
     return None
 
 
-def get_type_loader_input_field(solid: Solid, input_name: str, input_def: InputDefinition) -> Field:
+def get_type_loader_input_field(solid: Node, input_name: str, input_def: InputDefinition) -> Field:
     return Field(
         input_def.dagster_type.loader.schema_type,
         is_required=(
@@ -234,7 +234,7 @@ def get_type_loader_input_field(solid: Solid, input_name: str, input_def: InputD
 
 
 def get_outputs_field(
-    solid: Solid,
+    solid: Node,
     resource_defs: Dict[str, ResourceDefinition],
 ) -> Optional[Field]:
 
@@ -265,7 +265,7 @@ def get_outputs_field(
 
 
 def get_output_manager_output_field(
-    solid: Solid, output_def: OutputDefinition, resource_defs: Dict[str, ResourceDefinition]
+    solid: Node, output_def: OutputDefinition, resource_defs: Dict[str, ResourceDefinition]
 ) -> Optional[ConfigType]:
     if output_def.io_manager_key not in resource_defs:
         raise DagsterInvalidDefinitionError(
@@ -314,7 +314,7 @@ def solid_config_field(fields: Dict[str, Optional[Field]], ignored: bool) -> Opt
 
 
 def construct_leaf_solid_config(
-    solid: Solid,
+    solid: Node,
     dependency_structure: DependencyStructure,
     config_schema: Optional[IDefinitionConfigSchema],
     resource_defs: Dict[str, ResourceDefinition],
@@ -336,7 +336,7 @@ def construct_leaf_solid_config(
 
 
 def define_isolid_field(
-    solid: Solid,
+    solid: Node,
     handle: NodeHandle,
     dependency_structure: DependencyStructure,
     resource_defs: Dict[str, ResourceDefinition],
@@ -402,13 +402,13 @@ def define_isolid_field(
 
 
 def define_solid_dictionary_cls(
-    solids: List[Solid],
-    ignored_solids: Optional[List[Solid]],
+    solids: List[Node],
+    ignored_solids: Optional[List[Node]],
     dependency_structure: DependencyStructure,
     resource_defs: Dict[str, ResourceDefinition],
     parent_handle: Optional[NodeHandle] = None,
 ) -> Shape:
-    ignored_solids = check.opt_list_param(ignored_solids, "ignored_solids", of_type=Solid)
+    ignored_solids = check.opt_list_param(ignored_solids, "ignored_solids", of_type=Node)
 
     fields = {}
     for solid in solids:

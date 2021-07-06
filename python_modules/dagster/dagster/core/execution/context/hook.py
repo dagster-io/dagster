@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional, Set, Union
 
 from dagster import check
 
-from ...definitions.dependency import Solid
+from ...definitions.dependency import Node
 from ...definitions.hook import HookDefinition
 from ...definitions.mode import ModeDefinition
 from ...definitions.resource import IContainsGenerator, Resources
@@ -60,7 +60,7 @@ class HookContext:
         return self._hook_def
 
     @property
-    def solid(self) -> Solid:
+    def solid(self) -> Node:
         return self._step_execution_context.solid
 
     @property
@@ -178,7 +178,7 @@ class UnboundHookContext(HookContext):
         raise DagsterInvalidPropertyError(_property_msg("hook_def", "property"))
 
     @property
-    def solid(self) -> Solid:
+    def solid(self) -> Node:
         raise DagsterInvalidPropertyError(_property_msg("solid", "property"))
 
     @property
@@ -262,7 +262,7 @@ class BoundHookContext(HookContext):
         return self._hook_def
 
     @property
-    def solid(self) -> Solid:
+    def solid(self) -> Node:
         raise DagsterInvalidPropertyError(_property_msg("solid", "property"))
 
     @property

@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod, abstractproperty
 from typing import Any, Optional
 
 from dagster import check
-from dagster.core.definitions.dependency import NodeHandle, Solid
+from dagster.core.definitions.dependency import Node, NodeHandle
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.definitions.resource import Resources
@@ -37,7 +37,7 @@ class AbstractComputeExecutionContext(ABC):  # pylint: disable=no-init
         """The solid definition corresponding to the execution step being executed."""
 
     @abstractproperty
-    def solid(self) -> Solid:
+    def solid(self) -> Node:
         """The solid corresponding to the execution step being executed."""
 
     @abstractproperty
@@ -187,7 +187,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         return self._step_execution_context.solid_handle
 
     @property
-    def solid(self) -> Solid:
+    def solid(self) -> Node:
         """Solid: The current solid object.
 
         :meta private:
