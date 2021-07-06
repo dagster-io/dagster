@@ -33,7 +33,7 @@ from .output import OutputContext, get_output_context
 
 if TYPE_CHECKING:
     from dagster.core.definitions.intermediate_storage import IntermediateStorageDefinition
-    from dagster.core.definitions.dependency import Solid, SolidHandle
+    from dagster.core.definitions.dependency import Solid, NodeHandle
     from dagster.core.storage.intermediate_storage import IntermediateStorage
     from dagster.core.instance import DagsterInstance
     from dagster.core.execution.plan.plan import ExecutionPlan
@@ -146,7 +146,7 @@ class IStepContext(IPlanContext):
         raise NotImplementedError()
 
     @abstractproperty
-    def solid_handle(self) -> "SolidHandle":
+    def solid_handle(self) -> "NodeHandle":
         raise NotImplementedError()
 
 
@@ -220,7 +220,7 @@ class StepOrchestrationContext(PlanOrchestrationContext, IStepContext):
         return self._step
 
     @property
-    def solid_handle(self) -> "SolidHandle":
+    def solid_handle(self) -> "NodeHandle":
         return self.step.solid_handle
 
 
@@ -354,7 +354,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return self._step
 
     @property
-    def solid_handle(self) -> "SolidHandle":
+    def solid_handle(self) -> "NodeHandle":
         return self.step.solid_handle
 
     @property

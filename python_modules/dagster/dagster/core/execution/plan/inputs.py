@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod, abstractproperty
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, NamedTuple, Optional, Set, Union, cast
 
 from dagster import check
-from dagster.core.definitions import InputDefinition, PipelineDefinition, SolidHandle
+from dagster.core.definitions import InputDefinition, NodeHandle, PipelineDefinition
 from dagster.core.definitions.events import AssetLineageInfo
 from dagster.core.errors import (
     DagsterExecutionLoadInputError,
@@ -103,7 +103,7 @@ class StepInputSource(ABC):
         return pipeline_def.get_solid(self.solid_handle).input_def_named(self.input_name)
 
     @abstractproperty
-    def solid_handle(self) -> SolidHandle:
+    def solid_handle(self) -> NodeHandle:
         pass
 
     @abstractproperty
@@ -135,7 +135,7 @@ class StepInputSource(ABC):
 class FromRootInputManager(
     NamedTuple(
         "_FromRootInputManager",
-        [("solid_handle", SolidHandle), ("input_name", str)],
+        [("solid_handle", NodeHandle), ("input_name", str)],
     ),
     StepInputSource,
 ):
@@ -181,7 +181,7 @@ class FromStepOutput(
         "_FromStepOutput",
         [
             ("step_output_handle", StepOutputHandle),
-            ("solid_handle", SolidHandle),
+            ("solid_handle", NodeHandle),
             ("input_name", str),
             ("fan_in", bool),
         ],
@@ -196,7 +196,7 @@ class FromStepOutput(
             step_output_handle=check.inst_param(
                 step_output_handle, "step_output_handle", StepOutputHandle
             ),
-            solid_handle=check.inst_param(solid_handle, "solid_handle", SolidHandle),
+            solid_handle=check.inst_param(solid_handle, "solid_handle", NodeHandle),
             input_name=check.str_param(input_name, "input_name"),
             fan_in=check.bool_param(fan_in, "fan_in"),
         )
@@ -319,12 +319,12 @@ class FromStepOutput(
 
 @whitelist_for_serdes
 class FromConfig(
-    NamedTuple("_FromConfig", [("solid_handle", SolidHandle), ("input_name", str)]),
+    NamedTuple("_FromConfig", [("solid_handle", NodeHandle), ("input_name", str)]),
     StepInputSource,
 ):
     """This step input source is configuration to be passed to a type loader"""
 
-    def __new__(cls, solid_handle: SolidHandle, input_name: str):
+    def __new__(cls, solid_handle: NodeHandle, input_name: str):
         return super(FromConfig, cls).__new__(
             cls,
             solid_handle=solid_handle,
@@ -372,13 +372,13 @@ class FromConfig(
 class FromDefaultValue(
     NamedTuple(
         "_FromDefaultValue",
-        [("solid_handle", SolidHandle), ("input_name", str)],
+        [("solid_handle", NodeHandle), ("input_name", str)],
     ),
     StepInputSource,
 ):
     """This step input source is the default value declared on the InputDefinition"""
 
-    def __new__(cls, solid_handle: SolidHandle, input_name: str):
+    def __new__(cls, solid_handle: NodeHandle, input_name: str):
         return super(FromDefaultValue, cls).__new__(cls, solid_handle, input_name)
 
     def _load_value(self, pipeline_def: PipelineDefinition):
@@ -403,7 +403,7 @@ class FromMultipleSources(
     NamedTuple(
         "_FromMultipleSources",
         [
-            ("solid_handle", SolidHandle),
+            ("solid_handle", NodeHandle),
             ("input_name", str),
             ("sources", List[StepInputSource]),
         ],
@@ -412,7 +412,7 @@ class FromMultipleSources(
 ):
     """This step input is fans-in multiple sources in to a single input. The input will receive a list."""
 
-    def __new__(cls, solid_handle: SolidHandle, input_name: str, sources):
+    def __new__(cls, solid_handle: NodeHandle, input_name: str, sources):
         check.list_param(sources, "sources", StepInputSource)
         for source in sources:
             check.invariant(
@@ -510,7 +510,7 @@ class FromPendingDynamicStepOutput(
         "_FromPendingDynamicStepOutput",
         [
             ("step_output_handle", StepOutputHandle),
-            ("solid_handle", SolidHandle),
+            ("solid_handle", NodeHandle),
             ("input_name", str),
         ],
     ),
@@ -523,7 +523,7 @@ class FromPendingDynamicStepOutput(
     def __new__(
         cls,
         step_output_handle: StepOutputHandle,
-        solid_handle: SolidHandle,
+        solid_handle: NodeHandle,
         input_name: str,
     ):
         # Model the unknown mapping key from known execution step
@@ -534,7 +534,7 @@ class FromPendingDynamicStepOutput(
         return super(FromPendingDynamicStepOutput, cls).__new__(
             cls,
             step_output_handle=step_output_handle,
-            solid_handle=check.inst_param(solid_handle, "solid_handle", SolidHandle),
+            solid_handle=check.inst_param(solid_handle, "solid_handle", NodeHandle),
             input_name=check.str_param(input_name, "input_name"),
         )
 
@@ -576,7 +576,7 @@ class FromUnresolvedStepOutput(
         "_FromUnresolvedStepOutput",
         [
             ("unresolved_step_output_handle", UnresolvedStepOutputHandle),
-            ("solid_handle", SolidHandle),
+            ("solid_handle", NodeHandle),
             ("input_name", str),
         ],
     ),
@@ -589,7 +589,7 @@ class FromUnresolvedStepOutput(
     def __new__(
         cls,
         unresolved_step_output_handle: UnresolvedStepOutputHandle,
-        solid_handle: SolidHandle,
+        solid_handle: NodeHandle,
         input_name: str,
     ):
         return super(FromUnresolvedStepOutput, cls).__new__(
@@ -599,7 +599,7 @@ class FromUnresolvedStepOutput(
                 "unresolved_step_output_handle",
                 UnresolvedStepOutputHandle,
             ),
-            solid_handle=check.inst_param(solid_handle, "solid_handle", SolidHandle),
+            solid_handle=check.inst_param(solid_handle, "solid_handle", NodeHandle),
             input_name=check.str_param(input_name, "input_name"),
         )
 
@@ -636,7 +636,7 @@ class FromDynamicCollect(
         "_FromDynamicCollect",
         [
             ("source", Union[FromPendingDynamicStepOutput, FromUnresolvedStepOutput]),
-            ("solid_handle", SolidHandle),
+            ("solid_handle", NodeHandle),
             ("input_name", str),
         ],
     ),

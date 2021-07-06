@@ -8,9 +8,9 @@ from dagster.core.definitions import (
     DynamicOutput,
     ExpectationResult,
     Materialization,
+    NodeHandle,
     Output,
     Solid,
-    SolidHandle,
 )
 from dagster.core.errors import DagsterExecutionStepExecutionError, DagsterInvariantViolationError
 from dagster.core.execution.context.compute import SolidExecutionContext
@@ -27,10 +27,10 @@ SolidOutputUnion = Union[
 
 
 def create_step_outputs(
-    solid: Solid, handle: SolidHandle, resolved_run_config: ResolvedRunConfig
+    solid: Solid, handle: NodeHandle, resolved_run_config: ResolvedRunConfig
 ) -> List[StepOutput]:
     check.inst_param(solid, "solid", Solid)
-    check.inst_param(handle, "handle", SolidHandle)
+    check.inst_param(handle, "handle", NodeHandle)
 
     # the run config has the solid output name configured
     config_output_names: Set[str] = set()
@@ -56,7 +56,7 @@ def create_step_outputs(
     ]
 
 
-def _validate_event(event: Any, solid_handle: SolidHandle) -> SolidOutputUnion:
+def _validate_event(event: Any, solid_handle: NodeHandle) -> SolidOutputUnion:
     if not isinstance(
         event,
         (DynamicOutput, Output, AssetMaterialization, Materialization, ExpectationResult),

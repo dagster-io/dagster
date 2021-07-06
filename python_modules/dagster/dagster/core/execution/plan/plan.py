@@ -17,9 +17,9 @@ from dagster.core.definitions import (
     GraphDefinition,
     IPipeline,
     InputDefinition,
+    NodeHandle,
     Solid,
     SolidDefinition,
-    SolidHandle,
     SolidOutputHandle,
 )
 from dagster.core.definitions.composition import MappedInputPlaceholder
@@ -128,8 +128,8 @@ class _PlanBuilder:
         self._seen_handles.add(step.handle)
         self._steps[step.solid_handle.to_string()] = step
 
-    def get_step_by_solid_handle(self, handle: SolidHandle) -> IExecutionStep:
-        check.inst_param(handle, "handle", SolidHandle)
+    def get_step_by_solid_handle(self, handle: NodeHandle) -> IExecutionStep:
+        check.inst_param(handle, "handle", NodeHandle)
         return self._steps[handle.to_string()]
 
     def get_output_handle(
@@ -197,13 +197,13 @@ class _PlanBuilder:
         self,
         solids: List[Solid],
         dependency_structure: DependencyStructure,
-        parent_handle: Optional[SolidHandle] = None,
+        parent_handle: Optional[NodeHandle] = None,
         parent_step_inputs: Optional[
             List[Union[StepInput, UnresolvedMappedStepInput, UnresolvedCollectStepInput]]
         ] = None,
     ):
         for solid in solids:
-            handle = SolidHandle(solid.name, parent_handle)
+            handle = NodeHandle(solid.name, parent_handle)
 
             ### 1. INPUTS
             # Create and add execution plan steps for solid inputs
@@ -350,7 +350,7 @@ def get_step_input_source(
     input_name: str,
     input_def: InputDefinition,
     dependency_structure: DependencyStructure,
-    handle: SolidHandle,
+    handle: NodeHandle,
     parent_step_inputs: Optional[
         List[Union[StepInput, UnresolvedMappedStepInput, UnresolvedCollectStepInput]]
     ],
@@ -360,7 +360,7 @@ def get_step_input_source(
     check.str_param(input_name, "input_name")
     check.inst_param(input_def, "input_def", InputDefinition)
     check.inst_param(dependency_structure, "dependency_structure", DependencyStructure)
-    check.opt_inst_param(handle, "handle", SolidHandle)
+    check.opt_inst_param(handle, "handle", NodeHandle)
     check.opt_list_param(
         parent_step_inputs,
         "parent_step_inputs",

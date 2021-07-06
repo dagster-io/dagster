@@ -12,7 +12,7 @@ from dagster import (
     resource,
     solid,
 )
-from dagster.core.definitions import PresetDefinition, SolidHandle, failure_hook, success_hook
+from dagster.core.definitions import NodeHandle, PresetDefinition, failure_hook, success_hook
 from dagster.core.definitions.decorators.hook import event_list_hook
 from dagster.core.definitions.events import HookExecutionResult
 from dagster.core.definitions.policy import RetryPolicy
@@ -383,6 +383,6 @@ def test_hook_decorator():
     assert a_pipeline.description == "i am a pipeline"
     assert a_pipeline.has_mode_definition("my_mode")
     assert a_pipeline.has_preset("my_empty_preset")
-    retry_policy = a_pipeline.get_retry_policy_for_handle(SolidHandle("a_solid", parent=None))
+    retry_policy = a_pipeline.get_retry_policy_for_handle(NodeHandle("a_solid", parent=None))
     assert isinstance(retry_policy, RetryPolicy)
     assert retry_policy.max_retries == 3

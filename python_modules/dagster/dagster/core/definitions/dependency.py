@@ -18,7 +18,7 @@ from typing import (
 from dagster import check
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.serdes import whitelist_for_serdes
+from dagster.serdes import register_serdes_tuple_fallbacks, whitelist_for_serdes
 from dagster.utils import frozentags
 
 from .hook import HookDefinition
@@ -215,12 +215,19 @@ class Solid:
 
 
 @whitelist_for_serdes
-class SolidHandle(namedtuple("_SolidHandle", "name parent")):
-    def __new__(cls, name: str, parent: Optional["SolidHandle"]):
-        return super(SolidHandle, cls).__new__(
+class NodeHandle(
+    # mypy does not yet support recursive types
+    namedtuple("_NodeHandle", "name parent")
+):
+    """
+    A structured object to identify nodes in the potentially recursive graph structure.
+    """
+
+    def __new__(cls, name: str, parent: Optional["NodeHandle"]):
+        return super(NodeHandle, cls).__new__(
             cls,
             check.str_param(name, "name"),
-            check.opt_inst_param(parent, "parent", SolidHandle),
+            check.opt_inst_param(parent, "parent", NodeHandle),
         )
 
     def __str__(self):
@@ -230,7 +237,7 @@ class SolidHandle(namedtuple("_SolidHandle", "name parent")):
     def path(self) -> List[str]:
         """Return a list representation of the handle.
 
-        Inverse of SolidHandle.from_path.
+        Inverse of NodeHandle.from_path.
 
         Returns:
             List[str]:
@@ -246,20 +253,20 @@ class SolidHandle(namedtuple("_SolidHandle", "name parent")):
     def to_string(self) -> str:
         """Return a unique string representation of the handle.
 
-        Inverse of SolidHandle.from_string.
+        Inverse of NodeHandle.from_string.
         """
         return self.parent.to_string() + "." + self.name if self.parent else self.name
 
-    def is_or_descends_from(self, handle: "SolidHandle") -> bool:
+    def is_or_descends_from(self, handle: "NodeHandle") -> bool:
         """Check if the handle is or descends from another handle.
 
         Args:
-            handle (SolidHandle): The handle to check against.
+            handle (NodeHandle): The handle to check against.
 
         Returns:
             bool:
         """
-        check.inst_param(handle, "handle", SolidHandle)
+        check.inst_param(handle, "handle", NodeHandle)
 
         for idx in range(len(handle.path)):
             if idx >= len(self.path):
@@ -268,25 +275,25 @@ class SolidHandle(namedtuple("_SolidHandle", "name parent")):
                 return False
         return True
 
-    def pop(self, ancestor: "SolidHandle") -> Optional["SolidHandle"]:
+    def pop(self, ancestor: "NodeHandle") -> Optional["NodeHandle"]:
         """Return a copy of the handle with some of its ancestors pruned.
 
         Args:
-            ancestor (SolidHandle): Handle to an ancestor of the current handle.
+            ancestor (NodeHandle): Handle to an ancestor of the current handle.
 
         Returns:
-            SolidHandle:
+            NodeHandle:
 
         Example:
 
         .. code-block:: python
 
-            handle = SolidHandle('baz', SolidHandle('bar', SolidHandle('foo', None)))
-            ancestor = SolidHandle('bar', SolidHandle('foo', None))
-            assert handle.pop(ancestor) == SolidHandle('baz', None)
+            handle = NodeHandle('baz', NodeHandle('bar', NodeHandle('foo', None)))
+            ancestor = NodeHandle('bar', NodeHandle('foo', None))
+            assert handle.pop(ancestor) == NodeHandle('baz', None)
         """
 
-        check.inst_param(ancestor, "ancestor", SolidHandle)
+        check.inst_param(ancestor, "ancestor", NodeHandle)
         check.invariant(
             self.is_or_descends_from(ancestor),
             "Handle {handle} does not descend from {ancestor}".format(
@@ -294,69 +301,73 @@ class SolidHandle(namedtuple("_SolidHandle", "name parent")):
             ),
         )
 
-        return SolidHandle.from_path(self.path[len(ancestor.path) :])
+        return NodeHandle.from_path(self.path[len(ancestor.path) :])
 
-    def with_ancestor(self, ancestor: "SolidHandle") -> Optional["SolidHandle"]:
+    def with_ancestor(self, ancestor: "NodeHandle") -> Optional["NodeHandle"]:
         """Returns a copy of the handle with an ancestor grafted on.
 
         Args:
-            ancestor (SolidHandle): Handle to the new ancestor.
+            ancestor (NodeHandle): Handle to the new ancestor.
 
         Returns:
-            SolidHandle:
+            NodeHandle:
 
         Example:
 
         .. code-block:: python
 
-            handle = SolidHandle('baz', SolidHandle('bar', SolidHandle('foo', None)))
-            ancestor = SolidHandle('quux' None)
-            assert handle.with_ancestor(ancestor) == SolidHandle(
-                'baz', SolidHandle('bar', SolidHandle('foo', SolidHandle('quux', None)))
+            handle = NodeHandle('baz', NodeHandle('bar', NodeHandle('foo', None)))
+            ancestor = NodeHandle('quux' None)
+            assert handle.with_ancestor(ancestor) == NodeHandle(
+                'baz', NodeHandle('bar', NodeHandle('foo', NodeHandle('quux', None)))
             )
         """
-        check.opt_inst_param(ancestor, "ancestor", SolidHandle)
+        check.opt_inst_param(ancestor, "ancestor", NodeHandle)
 
-        return SolidHandle.from_path((ancestor.path if ancestor else []) + self.path)
+        return NodeHandle.from_path((ancestor.path if ancestor else []) + self.path)
 
     @staticmethod
-    def from_path(path: List[str]) -> Optional["SolidHandle"]:
+    def from_path(path: List[str]) -> Optional["NodeHandle"]:
         check.list_param(path, "path", of_type=str)
 
         cur = None
         while len(path) > 0:
-            cur = SolidHandle(name=path.pop(0), parent=cur)
+            cur = NodeHandle(name=path.pop(0), parent=cur)
         return cur
 
     @staticmethod
-    def from_string(handle_str: str) -> Optional["SolidHandle"]:
+    def from_string(handle_str: str) -> Optional["NodeHandle"]:
         check.str_param(handle_str, "handle_str")
 
         path = handle_str.split(".")
-        return SolidHandle.from_path(path)
+        return NodeHandle.from_path(path)
 
     @classmethod
-    def from_dict(cls, dict_repr: Dict[str, Any]) -> Optional["SolidHandle"]:
-        """This method makes it possible to load a potentially nested SolidHandle after a
-        roundtrip through json.loads(json.dumps(SolidHandle._asdict()))"""
+    def from_dict(cls, dict_repr: Dict[str, Any]) -> Optional["NodeHandle"]:
+        """This method makes it possible to load a potentially nested NodeHandle after a
+        roundtrip through json.loads(json.dumps(NodeHandle._asdict()))"""
 
         check.dict_param(dict_repr, "dict_repr", key_type=str)
         check.invariant(
-            "name" in dict_repr, "Dict representation of SolidHandle must have a 'name' key"
+            "name" in dict_repr, "Dict representation of NodeHandle must have a 'name' key"
         )
         check.invariant(
-            "parent" in dict_repr, "Dict representation of SolidHandle must have a 'parent' key"
+            "parent" in dict_repr, "Dict representation of NodeHandle must have a 'parent' key"
         )
 
         if isinstance(dict_repr["parent"], (list, tuple)):
-            dict_repr["parent"] = SolidHandle.from_dict(
+            dict_repr["parent"] = NodeHandle.from_dict(
                 {
                     "name": dict_repr["parent"][0],
                     "parent": dict_repr["parent"][1],
                 }
             )
 
-        return SolidHandle(**{k: dict_repr[k] for k in ["name", "parent"]})
+        return NodeHandle(**{k: dict_repr[k] for k in ["name", "parent"]})
+
+
+# previous name for NodeHandle was SolidHandle
+register_serdes_tuple_fallbacks({"SolidHandle": NodeHandle})
 
 
 class SolidInputHandle(namedtuple("_SolidInputHandle", "solid input_def")):

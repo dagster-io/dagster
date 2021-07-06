@@ -3,7 +3,7 @@ from collections import namedtuple
 from dagster import check
 from dagster.config.evaluate_value_result import EvaluateValueResult
 from dagster.config.validate import process_config
-from dagster.core.definitions.dependency import SolidHandle
+from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.definitions.graph import GraphDefinition
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.definitions.resource import ResourceDefinition
@@ -22,7 +22,7 @@ class SolidConfigEntry(namedtuple("_SolidConfigEntry", "handle solid_config")):
     def __new__(cls, handle, solid_config):
         return super(SolidConfigEntry, cls).__new__(
             cls,
-            check.inst_param(handle, "handle", SolidHandle),
+            check.inst_param(handle, "handle", NodeHandle),
             check.inst_param(solid_config, "solid_config", SolidConfig),
         )
 
@@ -32,7 +32,7 @@ class DescentStack(namedtuple("_DescentStack", "pipeline_def handle")):
         return super(DescentStack, cls).__new__(
             cls,
             pipeline_def=check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition),
-            handle=check.opt_inst_param(handle, "handle", SolidHandle),
+            handle=check.opt_inst_param(handle, "handle", NodeHandle),
         )
 
     @property
@@ -50,7 +50,7 @@ class DescentStack(namedtuple("_DescentStack", "pipeline_def handle")):
         return self.handle.to_string()
 
     def descend(self, solid):
-        return self._replace(handle=SolidHandle(solid.name, parent=self.handle))
+        return self._replace(handle=NodeHandle(solid.name, parent=self.handle))
 
 
 def composite_descent(pipeline_def, solids_config, resource_defs):
@@ -67,7 +67,7 @@ def composite_descent(pipeline_def, solids_config, resource_defs):
             of the run_config. Assumed to have already been validated.
 
     Returns:
-        Dict[str, SolidConfig]: A dictionary mapping string representations of SolidHandles to
+        Dict[str, SolidConfig]: A dictionary mapping string representations of NodeHandles to
             SolidConfig objects. It includes an entry for solids at every level of the
             composite tree - i.e. not just leaf solids, but composite solids as well
     """

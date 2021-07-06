@@ -12,7 +12,7 @@ from .inputs import StepInput, UnresolvedCollectStepInput, UnresolvedMappedStepI
 from .outputs import StepOutput
 
 if TYPE_CHECKING:
-    from dagster.core.definitions.dependency import Solid, SolidHandle
+    from dagster.core.definitions.dependency import Solid, NodeHandle
     from dagster.core.definitions.hook import HookDefinition
 
 
@@ -113,7 +113,7 @@ class ExecutionStep(
         )
 
     @property
-    def solid_handle(self) -> "SolidHandle":
+    def solid_handle(self) -> "NodeHandle":
         return self.handle.solid_handle
 
     @property
@@ -208,7 +208,7 @@ class UnresolvedMappedExecutionStep(
         )
 
     @property
-    def solid_handle(self) -> "SolidHandle":
+    def solid_handle(self) -> "NodeHandle":
         return self.handle.solid_handle
 
     @property
@@ -368,7 +368,7 @@ class UnresolvedCollectExecutionStep(
         )
 
     @property
-    def solid_handle(self) -> "SolidHandle":
+    def solid_handle(self) -> "NodeHandle":
         return self.handle.solid_handle
 
     @property

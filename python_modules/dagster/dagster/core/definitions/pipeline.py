@@ -24,8 +24,8 @@ from .dependency import (
     DynamicCollectDependencyDefinition,
     IDependencyDefinition,
     MultiDependencyDefinition,
+    NodeHandle,
     Solid,
-    SolidHandle,
     SolidInputHandle,
     SolidInvocation,
 )
@@ -448,7 +448,7 @@ class PipelineDefinition:
     def hook_defs(self) -> AbstractSet[HookDefinition]:
         return self._hook_defs
 
-    def get_all_hooks_for_handle(self, handle: SolidHandle) -> FrozenSet[HookDefinition]:
+    def get_all_hooks_for_handle(self, handle: NodeHandle) -> FrozenSet[HookDefinition]:
         """Gather all the hooks for the given solid from all places possibly attached with a hook.
 
         A hook can be attached to any of the following objects
@@ -456,12 +456,12 @@ class PipelineDefinition:
         * PipelineDefinition
 
         Args:
-            handle (SolidHandle): The solid's handle
+            handle (NodeHandle): The solid's handle
 
         Returns:
             FrozenSet[HookDefinition]
         """
-        check.inst_param(handle, "handle", SolidHandle)
+        check.inst_param(handle, "handle", NodeHandle)
         hook_defs: AbstractSet[HookDefinition] = set()
 
         current = handle
@@ -486,7 +486,7 @@ class PipelineDefinition:
 
         return frozenset(hook_defs)
 
-    def get_retry_policy_for_handle(self, handle: SolidHandle) -> Optional[RetryPolicy]:
+    def get_retry_policy_for_handle(self, handle: NodeHandle) -> Optional[RetryPolicy]:
         solid = self.get_solid(handle)
 
         if solid.retry_policy:

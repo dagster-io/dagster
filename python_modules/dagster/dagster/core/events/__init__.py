@@ -12,7 +12,7 @@ from dagster.core.definitions import (
     ExpectationResult,
     HookDefinition,
     Materialization,
-    SolidHandle,
+    NodeHandle,
 )
 from dagster.core.definitions.events import AssetLineageInfo, ObjectStoreOperationType
 from dagster.core.errors import DagsterError, HookExecutionError
@@ -238,7 +238,7 @@ class DagsterEvent(
             ("event_type_value", str),
             ("pipeline_name", str),
             ("step_handle", Optional[Union[StepHandle, ResolvedFromDynamicStepHandle]]),
-            ("solid_handle", Optional[SolidHandle]),
+            ("solid_handle", Optional[NodeHandle]),
             ("step_kind_value", Optional[str]),
             ("logging_tags", Optional[Dict[str, str]]),
             ("event_specific_data", Optional["EventSpecificData"]),
@@ -256,7 +256,7 @@ class DagsterEvent(
         event_type_value (str): Value for a DagsterEventType.
         pipeline_name (str)
         step_key (str)
-        solid_handle (SolidHandle)
+        solid_handle (NodeHandle)
         step_kind_value (str): Value for a StepKind.
         logging_tags (Dict[str, str])
         event_specific_data (Any): Type must correspond to event_type_value.
@@ -341,7 +341,7 @@ class DagsterEvent(
         event_type_value: str,
         pipeline_name: str,
         step_handle: Optional[Union[StepHandle, ResolvedFromDynamicStepHandle]] = None,
-        solid_handle: Optional[SolidHandle] = None,
+        solid_handle: Optional[NodeHandle] = None,
         step_kind_value: Optional[str] = None,
         logging_tags: Optional[Dict[str, str]] = None,
         event_specific_data: Optional["EventSpecificData"] = None,
@@ -370,7 +370,7 @@ class DagsterEvent(
             check.opt_inst_param(
                 step_handle, "step_handle", (StepHandle, ResolvedFromDynamicStepHandle)
             ),
-            check.opt_inst_param(solid_handle, "solid_handle", SolidHandle),
+            check.opt_inst_param(solid_handle, "solid_handle", NodeHandle),
             check.opt_str_param(step_kind_value, "step_kind_value"),
             check.opt_dict_param(logging_tags, "logging_tags"),
             _validate_event_specific_data(DagsterEventType(event_type_value), event_specific_data),
@@ -382,7 +382,7 @@ class DagsterEvent(
     @property
     def solid_name(self) -> str:
         check.invariant(self.solid_handle is not None)
-        solid_handle = cast(SolidHandle, self.solid_handle)
+        solid_handle = cast(NodeHandle, self.solid_handle)
         return solid_handle.name
 
     @property

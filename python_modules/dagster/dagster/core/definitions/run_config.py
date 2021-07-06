@@ -16,7 +16,7 @@ from dagster.utils import check
 
 from .configurable import ConfigurableDefinition
 from .definition_config_schema import IDefinitionConfigSchema
-from .dependency import DependencyStructure, Solid, SolidHandle, SolidInputHandle
+from .dependency import DependencyStructure, NodeHandle, Solid, SolidInputHandle
 from .graph import GraphDefinition
 from .logger import LoggerDefinition
 from .mode import ModeDefinition
@@ -337,7 +337,7 @@ def construct_leaf_solid_config(
 
 def define_isolid_field(
     solid: Solid,
-    handle: SolidHandle,
+    handle: NodeHandle,
     dependency_structure: DependencyStructure,
     resource_defs: Dict[str, ResourceDefinition],
     ignored: bool,
@@ -406,7 +406,7 @@ def define_solid_dictionary_cls(
     ignored_solids: Optional[List[Solid]],
     dependency_structure: DependencyStructure,
     resource_defs: Dict[str, ResourceDefinition],
-    parent_handle: Optional[SolidHandle] = None,
+    parent_handle: Optional[NodeHandle] = None,
 ) -> Shape:
     ignored_solids = check.opt_list_param(ignored_solids, "ignored_solids", of_type=Solid)
 
@@ -414,7 +414,7 @@ def define_solid_dictionary_cls(
     for solid in solids:
         solid_field = define_isolid_field(
             solid,
-            SolidHandle(solid.name, parent_handle),
+            NodeHandle(solid.name, parent_handle),
             dependency_structure,
             resource_defs,
             ignored=False,
@@ -426,7 +426,7 @@ def define_solid_dictionary_cls(
     for solid in ignored_solids:
         solid_field = define_isolid_field(
             solid,
-            SolidHandle(solid.name, parent_handle),
+            NodeHandle(solid.name, parent_handle),
             dependency_structure,
             resource_defs,
             ignored=True,

@@ -14,7 +14,7 @@ from dagster.core.definitions import (
     SolidDefinition,
 )
 from dagster.core.definitions.decorators.solid import solid
-from dagster.core.definitions.dependency import IDependencyDefinition, SolidHandle, SolidInvocation
+from dagster.core.definitions.dependency import IDependencyDefinition, NodeHandle, SolidInvocation
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.instance import DagsterInstance
@@ -141,7 +141,7 @@ def core_execute_in_process(
         )
         event_list = list(_execute_run_iterable)
 
-    top_level_node_handle = SolidHandle.from_string(node.name)
+    top_level_node_handle = NodeHandle.from_string(node.name)
 
     if isinstance(node, GraphDefinition) and node == ephemeral_pipeline.graph:
         event_list_for_top_lvl_node = event_list
@@ -153,7 +153,7 @@ def core_execute_in_process(
             for event in event_list
             if event.solid_handle and event.solid_handle.is_or_descends_from(top_level_node_handle)
         ]
-        handle = SolidHandle(node.name, None)
+        handle = NodeHandle(node.name, None)
 
         if isinstance(node, SolidDefinition):
             return InProcessSolidResult(node, handle, event_list_for_top_lvl_node, recorder)

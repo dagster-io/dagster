@@ -38,7 +38,7 @@ snapshots['test_create_execution_plan_with_dep 1'] = '''{
             "should_materialize": false
           },
           "solid_handle": {
-            "__class__": "SolidHandle",
+            "__class__": "NodeHandle",
             "name": "solid_one",
             "parent": null
           }
@@ -48,7 +48,7 @@ snapshots['test_create_execution_plan_with_dep 1'] = '''{
       "step_handle": {
         "__class__": "StepHandle",
         "solid_handle": {
-          "__class__": "SolidHandle",
+          "__class__": "NodeHandle",
           "name": "solid_one",
           "parent": null
         }
@@ -67,7 +67,7 @@ snapshots['test_create_execution_plan_with_dep 1'] = '''{
             "fan_in": false,
             "input_name": "num",
             "solid_handle": {
-              "__class__": "SolidHandle",
+              "__class__": "NodeHandle",
               "name": "solid_two",
               "parent": null
             },
@@ -106,7 +106,7 @@ snapshots['test_create_execution_plan_with_dep 1'] = '''{
             "should_materialize": false
           },
           "solid_handle": {
-            "__class__": "SolidHandle",
+            "__class__": "NodeHandle",
             "name": "solid_two",
             "parent": null
           }
@@ -116,7 +116,7 @@ snapshots['test_create_execution_plan_with_dep 1'] = '''{
       "step_handle": {
         "__class__": "StepHandle",
         "solid_handle": {
-          "__class__": "SolidHandle",
+          "__class__": "NodeHandle",
           "name": "solid_two",
           "parent": null
         }
@@ -157,7 +157,7 @@ snapshots['test_create_noop_execution_plan 1'] = '''{
             "should_materialize": false
           },
           "solid_handle": {
-            "__class__": "SolidHandle",
+            "__class__": "NodeHandle",
             "name": "noop_solid",
             "parent": null
           }
@@ -167,7 +167,7 @@ snapshots['test_create_noop_execution_plan 1'] = '''{
       "step_handle": {
         "__class__": "StepHandle",
         "solid_handle": {
-          "__class__": "SolidHandle",
+          "__class__": "NodeHandle",
           "name": "noop_solid",
           "parent": null
         }
@@ -219,7 +219,7 @@ snapshots['test_create_noop_execution_plan_with_tags 1'] = '''{
             "should_materialize": false
           },
           "solid_handle": {
-            "__class__": "SolidHandle",
+            "__class__": "NodeHandle",
             "name": "noop_solid",
             "parent": null
           }
@@ -229,7 +229,7 @@ snapshots['test_create_noop_execution_plan_with_tags 1'] = '''{
       "step_handle": {
         "__class__": "StepHandle",
         "solid_handle": {
-          "__class__": "SolidHandle",
+          "__class__": "NodeHandle",
           "name": "noop_solid",
           "parent": null
         }
@@ -268,7 +268,7 @@ snapshots['test_create_with_composite 1'] = '''{
             "fan_in": false,
             "input_name": "num_one",
             "solid_handle": {
-              "__class__": "SolidHandle",
+              "__class__": "NodeHandle",
               "name": "add",
               "parent": null
             },
@@ -297,7 +297,7 @@ snapshots['test_create_with_composite 1'] = '''{
             "fan_in": false,
             "input_name": "num_two",
             "solid_handle": {
-              "__class__": "SolidHandle",
+              "__class__": "NodeHandle",
               "name": "add",
               "parent": null
             },
@@ -336,7 +336,7 @@ snapshots['test_create_with_composite 1'] = '''{
             "should_materialize": false
           },
           "solid_handle": {
-            "__class__": "SolidHandle",
+            "__class__": "NodeHandle",
             "name": "add",
             "parent": null
           }
@@ -346,7 +346,7 @@ snapshots['test_create_with_composite 1'] = '''{
       "step_handle": {
         "__class__": "StepHandle",
         "solid_handle": {
-          "__class__": "SolidHandle",
+          "__class__": "NodeHandle",
           "name": "add",
           "parent": null
         }
@@ -365,10 +365,10 @@ snapshots['test_create_with_composite 1'] = '''{
             "fan_in": false,
             "input_name": "num",
             "solid_handle": {
-              "__class__": "SolidHandle",
+              "__class__": "NodeHandle",
               "name": "add_one",
               "parent": {
-                "__class__": "SolidHandle",
+                "__class__": "NodeHandle",
                 "name": "comp_1",
                 "parent": null
               }
@@ -408,10 +408,10 @@ snapshots['test_create_with_composite 1'] = '''{
             "should_materialize": false
           },
           "solid_handle": {
-            "__class__": "SolidHandle",
+            "__class__": "NodeHandle",
             "name": "add_one",
             "parent": {
-              "__class__": "SolidHandle",
+              "__class__": "NodeHandle",
               "name": "comp_1",
               "parent": null
             }
@@ -422,10 +422,10 @@ snapshots['test_create_with_composite 1'] = '''{
       "step_handle": {
         "__class__": "StepHandle",
         "solid_handle": {
-          "__class__": "SolidHandle",
+          "__class__": "NodeHandle",
           "name": "add_one",
           "parent": {
-            "__class__": "SolidHandle",
+            "__class__": "NodeHandle",
             "name": "comp_1",
             "parent": null
           }
@@ -454,10 +454,10 @@ snapshots['test_create_with_composite 1'] = '''{
             "should_materialize": false
           },
           "solid_handle": {
-            "__class__": "SolidHandle",
+            "__class__": "NodeHandle",
             "name": "return_one",
             "parent": {
-              "__class__": "SolidHandle",
+              "__class__": "NodeHandle",
               "name": "comp_1",
               "parent": null
             }
@@ -468,10 +468,10 @@ snapshots['test_create_with_composite 1'] = '''{
       "step_handle": {
         "__class__": "StepHandle",
         "solid_handle": {
-          "__class__": "SolidHandle",
+          "__class__": "NodeHandle",
           "name": "return_one",
           "parent": {
-            "__class__": "SolidHandle",
+            "__class__": "NodeHandle",
             "name": "comp_1",
             "parent": null
           }
@@ -491,10 +491,10 @@ snapshots['test_create_with_composite 1'] = '''{
             "fan_in": false,
             "input_name": "num",
             "solid_handle": {
-              "__class__": "SolidHandle",
+              "__class__": "NodeHandle",
               "name": "add_one",
               "parent": {
-                "__class__": "SolidHandle",
+                "__class__": "NodeHandle",
                 "name": "comp_2",
                 "parent": null
               }
@@ -534,10 +534,10 @@ snapshots['test_create_with_composite 1'] = '''{
             "should_materialize": false
           },
           "solid_handle": {
-            "__class__": "SolidHandle",
+            "__class__": "NodeHandle",
             "name": "add_one",
             "parent": {
-              "__class__": "SolidHandle",
+              "__class__": "NodeHandle",
               "name": "comp_2",
               "parent": null
             }
@@ -548,10 +548,10 @@ snapshots['test_create_with_composite 1'] = '''{
       "step_handle": {
         "__class__": "StepHandle",
         "solid_handle": {
-          "__class__": "SolidHandle",
+          "__class__": "NodeHandle",
           "name": "add_one",
           "parent": {
-            "__class__": "SolidHandle",
+            "__class__": "NodeHandle",
             "name": "comp_2",
             "parent": null
           }
@@ -580,10 +580,10 @@ snapshots['test_create_with_composite 1'] = '''{
             "should_materialize": false
           },
           "solid_handle": {
-            "__class__": "SolidHandle",
+            "__class__": "NodeHandle",
             "name": "return_one",
             "parent": {
-              "__class__": "SolidHandle",
+              "__class__": "NodeHandle",
               "name": "comp_2",
               "parent": null
             }
@@ -594,10 +594,10 @@ snapshots['test_create_with_composite 1'] = '''{
       "step_handle": {
         "__class__": "StepHandle",
         "solid_handle": {
-          "__class__": "SolidHandle",
+          "__class__": "NodeHandle",
           "name": "return_one",
           "parent": {
-            "__class__": "SolidHandle",
+            "__class__": "NodeHandle",
             "name": "comp_2",
             "parent": null
           }

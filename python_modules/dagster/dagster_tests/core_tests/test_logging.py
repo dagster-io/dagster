@@ -5,7 +5,7 @@ from contextlib import contextmanager
 
 import pytest
 from dagster import ModeDefinition, check, execute_solid, pipeline, resource, solid
-from dagster.core.definitions import SolidHandle
+from dagster.core.definitions import NodeHandle
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.logger import InitLoggerContext
 from dagster.core.execution.plan.objects import StepFailureData
@@ -114,7 +114,7 @@ def test_multiline_logging_complex():
             event_type_value="STEP_FAILURE",
             pipeline_name="error_monster",
             step_key="start.materialization.output.result.0",
-            solid_handle=SolidHandle("start", None),
+            solid_handle=NodeHandle("start", None),
             step_kind_value="MATERIALIZATION_THUNK",
             logging_tags={
                 "pipeline": "error_monster",

@@ -1,7 +1,7 @@
 from collections import namedtuple
 
 from dagster import check
-from dagster.core.definitions import SolidHandle
+from dagster.core.definitions import NodeHandle
 from dagster.core.execution.plan.inputs import (
     StepInput,
     StepInputSourceTypes,
@@ -165,7 +165,7 @@ class ExecutionStepOutputSnap(
             cls,
             check.str_param(name, "name"),
             check.str_param(dagster_type_key, "dagster_type_key"),
-            check.opt_inst_param(solid_handle, "solid_handle", SolidHandle),
+            check.opt_inst_param(solid_handle, "solid_handle", NodeHandle),
             check.opt_inst_param(properties, "properties", StepOutputProperties),
         )
 

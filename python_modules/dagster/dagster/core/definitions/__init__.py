@@ -21,8 +21,8 @@ from .decorators import (
 from .dependency import (
     DependencyDefinition,
     MultiDependencyDefinition,
+    NodeHandle,
     Solid,
-    SolidHandle,
     SolidInputHandle,
     SolidInvocation,
     SolidOutputHandle,

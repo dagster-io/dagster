@@ -1,6 +1,6 @@
 import graphene
 from dagster import check
-from dagster.core.definitions import SolidHandle
+from dagster.core.definitions import NodeHandle
 from dagster.core.host_representation import RepresentedPipeline
 from dagster.core.snap import CompositeSolidDefSnap, DependencyStructureIndex, SolidDefSnap
 
@@ -302,7 +302,7 @@ def build_solid_handles(represented_pipeline, current_dep_index, parent=None):
         solid_name, solid_def_name = solid_invocation.solid_name, solid_invocation.solid_def_name
         handle = GrapheneSolidHandle(
             solid=GrapheneSolid(represented_pipeline, solid_name, current_dep_index),
-            handle=SolidHandle(solid_name, parent.handleID if parent else None),
+            handle=NodeHandle(solid_name, parent.handleID if parent else None),
             parent=parent if parent else None,
         )
         solid_def_snap = represented_pipeline.get_solid_def_snap(solid_def_name)
@@ -519,7 +519,7 @@ class GrapheneSolidHandle(graphene.ObjectType):
     def __init__(self, handle, solid, parent):
         super().__init__()
         # FIXME this really seems wrong
-        self.handleID = check.inst_param(handle, "handle", SolidHandle)
+        self.handleID = check.inst_param(handle, "handle", NodeHandle)
         self.solid = check.inst_param(solid, "solid", GrapheneSolid)
         self.parent = check.opt_inst_param(parent, "parent", GrapheneSolidHandle)
 

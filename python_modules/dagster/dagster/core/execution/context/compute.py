@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod, abstractproperty
 from typing import Any, Optional
 
 from dagster import check
-from dagster.core.definitions.dependency import Solid, SolidHandle
+from dagster.core.definitions.dependency import NodeHandle, Solid
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.definitions.resource import Resources
@@ -179,8 +179,8 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         return self._step_execution_context.log
 
     @property
-    def solid_handle(self) -> SolidHandle:
-        """SolidHandle: The current solid's handle.
+    def solid_handle(self) -> NodeHandle:
+        """NodeHandle: The current solid's handle.
 
         :meta private:
         """

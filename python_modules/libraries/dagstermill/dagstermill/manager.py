@@ -14,7 +14,7 @@ from dagster import (
     check,
     seven,
 )
-from dagster.core.definitions.dependency import SolidHandle
+from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.definitions.events import RetryRequested
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
@@ -140,7 +140,7 @@ class Manager:
 
         pipeline_run = unpack_value(pipeline_run_dict)
 
-        solid_handle = SolidHandle.from_dict(solid_handle_kwargs)
+        solid_handle = NodeHandle.from_dict(solid_handle_kwargs)
         solid = pipeline_def.get_solid(solid_handle)
         solid_def = solid.definition
 

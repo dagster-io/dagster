@@ -34,8 +34,8 @@ from toposort import CircularDependencyError, toposort_flatten
 from .dependency import (
     DependencyStructure,
     IDependencyDefinition,
+    NodeHandle,
     Solid,
-    SolidHandle,
     SolidInputHandle,
     SolidInvocation,
 )
@@ -201,8 +201,8 @@ class GraphDefinition(NodeDefinition):
 
         return self._solid_dict[name]
 
-    def get_solid(self, handle: SolidHandle) -> Solid:
-        check.inst_param(handle, "handle", SolidHandle)
+    def get_solid(self, handle: NodeHandle) -> Solid:
+        check.inst_param(handle, "handle", NodeHandle)
         current = handle
         lineage = []
         while current:
@@ -279,17 +279,17 @@ class GraphDefinition(NodeDefinition):
         check.failed(f"Could not find output mapping {output_name}")
 
     def resolve_output_to_origin(
-        self, output_name: str, handle: SolidHandle
-    ) -> Tuple[OutputDefinition, SolidHandle]:
+        self, output_name: str, handle: NodeHandle
+    ) -> Tuple[OutputDefinition, NodeHandle]:
         check.str_param(output_name, "output_name")
-        check.inst_param(handle, "handle", SolidHandle)
+        check.inst_param(handle, "handle", NodeHandle)
 
         mapping = self.get_output_mapping(output_name)
         check.invariant(mapping, "Can only resolve outputs for valid output names")
         mapped_solid = self.solid_named(mapping.maps_from.solid_name)
         return mapped_solid.definition.resolve_output_to_origin(
             mapping.maps_from.output_name,
-            SolidHandle(mapped_solid.name, handle),
+            NodeHandle(mapped_solid.name, handle),
         )
 
     def default_value_for_input(self, input_name: str) -> Any:

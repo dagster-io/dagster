@@ -18,7 +18,7 @@ from dagster import (
     solid,
 )
 from dagster.core.definitions import ExpectationResult
-from dagster.core.definitions.dependency import SolidHandle
+from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.events import (
     DagsterEvent,
@@ -139,7 +139,7 @@ def _stats_records(run_id):
 
 def _event_record(run_id, solid_name, timestamp, event_type, event_specific_data=None):
     pipeline_name = "pipeline_name"
-    solid_handle = SolidHandle(solid_name, None)
+    solid_handle = NodeHandle(solid_name, None)
     step_handle = StepHandle(solid_handle)
     return EventLogEntry(
         None,

@@ -15,7 +15,7 @@ from typing import (
 )
 
 from dagster import check
-from dagster.core.definitions.dependency import SolidHandle
+from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster.core.types.dagster_type import DagsterType
@@ -26,7 +26,7 @@ from .definition_config_schema import (
     IDefinitionConfigSchema,
     convert_user_facing_definition_config_schema,
 )
-from .dependency import IDependencyDefinition, SolidHandle, SolidInvocation
+from .dependency import IDependencyDefinition, NodeHandle, SolidInvocation
 from .graph import GraphDefinition
 from .i_solid_definition import NodeDefinition
 from .input import InputDefinition, InputMapping
@@ -196,8 +196,8 @@ class SolidDefinition(NodeDefinition):
         yield self
 
     def resolve_output_to_origin(
-        self, output_name: str, handle: SolidHandle
-    ) -> Tuple[OutputDefinition, SolidHandle]:
+        self, output_name: str, handle: NodeHandle
+    ) -> Tuple[OutputDefinition, NodeHandle]:
         return self.output_def_named(output_name), handle
 
     def input_has_default(self, input_name: str) -> InputDefinition:
