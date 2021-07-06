@@ -40,7 +40,7 @@ The [Dagster Daemon](/deployment/dagster-daemon) runs each sensor evaluation fun
 
 ## Defining a sensor
 
-To define a sensor, use the <PyObject object="sensor" decorator /> decorator. The decorated function is called the `execution_fn` and must have `context` as the first argument. The context is a <PyObject object="SensorEvaluationContext" />
+To define a sensor, use the <PyObject object="sensor" decorator /> decorator. The decorated function is called the `execution_fn` and can optionally have a `context` as the first argument. The context is a <PyObject object="SensorEvaluationContext" />.
 
 Let's say you have a pipeline that logs a filename that is specified in the solid configuration of the `process_file` solid:
 
