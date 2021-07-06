@@ -34,6 +34,11 @@ AssetKeyTable = db.Table(
     db.Column("last_materialization", db.Text),
     db.Column("last_run_id", db.String(255)),
     db.Column("asset_details", db.Text),
+    db.Column("wipe_timestamp", db.types.TIMESTAMP),  # guarded by secondary index check
+    db.Column(
+        "last_materialization_timestamp", db.types.TIMESTAMP
+    ),  # guarded by secondary index check
+    db.Column("tags", db.TEXT),  # guarded by secondary index check
     db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
 )
 

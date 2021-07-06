@@ -90,7 +90,8 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         if should_mark_indexes:
             # mark all secondary indexes
-            self.reindex()
+            self.reindex_events()
+            self.reindex_assets()
 
     @contextmanager
     def _connect(self):

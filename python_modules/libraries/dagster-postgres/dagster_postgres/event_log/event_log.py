@@ -3,7 +3,7 @@ from collections import defaultdict
 from typing import Callable, List, MutableMapping, Optional
 
 import sqlalchemy as db
-from dagster import check
+from dagster import check, seven
 from dagster.core.events.log import EventLogEntry
 from dagster.core.storage.event_log import (
     AssetKeyTable,
@@ -11,6 +11,7 @@ from dagster.core.storage.event_log import (
     SqlEventLogStorageMetadata,
     SqlEventLogStorageTable,
 )
+from dagster.core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster.core.storage.event_log.polling_event_watcher import CallbackAfterCursor
 from dagster.core.storage.sql import create_engine, run_alembic_upgrade, stamp_alembic_rev
 from dagster.serdes import (
@@ -19,6 +20,7 @@ from dagster.serdes import (
     deserialize_json_to_dagster_namedtuple,
     serialize_dagster_namedtuple,
 )
+from dagster.utils import utc_datetime_from_timestamp
 
 from ..pynotify import await_pg_notifications
 from ..utils import (
@@ -77,7 +79,8 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         # revision because alembic config may be shared with other storage classes)
         if self.should_autocreate_tables and "event_logs" not in table_names:
             retry_pg_creation_fn(self._init_db)
-            self.reindex()
+            self.reindex_events()
+            self.reindex_assets()
 
         super().__init__()
 
@@ -158,22 +161,51 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             return
 
         materialization = event.dagster_event.step_materialization_data.materialization
-        with self.index_connection() as conn:
-            conn.execute(
-                db.dialects.postgresql.insert(AssetKeyTable)
-                .values(
-                    asset_key=event.dagster_event.asset_key.to_string(),
-                    last_materialization=serialize_dagster_namedtuple(materialization),
-                    last_run_id=event.run_id,
+        if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
+            with self.index_connection() as conn:
+                conn.execute(
+                    db.dialects.postgresql.insert(AssetKeyTable)
+                    .values(
+                        asset_key=event.dagster_event.asset_key.to_string(),
+                        last_materialization=serialize_dagster_namedtuple(materialization),
+                        last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
+                        last_run_id=event.run_id,
+                        tags=seven.json.dumps(materialization.tags)
+                        if materialization.tags
+                        else None,
+                    )
+                    .on_conflict_do_update(
+                        index_elements=[AssetKeyTable.c.asset_key],
+                        set_=dict(
+                            last_materialization=serialize_dagster_namedtuple(materialization),
+                            last_materialization_timestamp=utc_datetime_from_timestamp(
+                                event.timestamp
+                            ),
+                            last_run_id=event.run_id,
+                            tags=seven.json.dumps(materialization.tags)
+                            if materialization.tags
+                            else None,
+                        ),
+                    )
                 )
-                .on_conflict_do_update(
-                    index_elements=[AssetKeyTable.c.asset_key],
-                    set_=dict(
+
+        else:
+            with self.index_connection() as conn:
+                conn.execute(
+                    db.dialects.postgresql.insert(AssetKeyTable)
+                    .values(
+                        asset_key=event.dagster_event.asset_key.to_string(),
                         last_materialization=serialize_dagster_namedtuple(materialization),
                         last_run_id=event.run_id,
-                    ),
+                    )
+                    .on_conflict_do_update(
+                        index_elements=[AssetKeyTable.c.asset_key],
+                        set_=dict(
+                            last_materialization=serialize_dagster_namedtuple(materialization),
+                            last_run_id=event.run_id,
+                        ),
+                    )
                 )
-            )
 
     def _connect(self):
         return create_pg_connection(self._engine, __file__, "event log")

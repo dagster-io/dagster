@@ -5,7 +5,16 @@ import sqlite3
 from gzip import GzipFile
 
 import pytest
-from dagster import AssetKey, check, execute_pipeline, file_relative_path, pipeline, solid
+from dagster import (
+    AssetKey,
+    AssetMaterialization,
+    Output,
+    check,
+    execute_pipeline,
+    file_relative_path,
+    pipeline,
+    solid,
+)
 from dagster.cli.debug import DebugRunPayload
 from dagster.core.errors import DagsterInstanceMigrationRequired
 from dagster.core.events import DagsterEvent
@@ -415,3 +424,63 @@ def test_rename_event_log_entry():
     dagster_event = event_log_entry.dagster_event
     assert isinstance(dagster_event, DagsterEvent)
     assert dagster_event.event_type_value == "PIPELINE_SUCCESS"
+
+
+def test_0_12_0_extract_asset_index_cols():
+    src_dir = file_relative_path(__file__, "snapshot_0_12_0_pre_asset_index_cols/sqlite")
+
+    @solid
+    def asset_solid(_):
+        yield AssetMaterialization(
+            asset_key=AssetKey(["a"]), partition="partition_1", tags={"foo": "FOO"}
+        )
+        yield Output(1)
+
+    @pipeline
+    def asset_pipeline():
+        asset_solid()
+
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "history", "runs", "index.db")
+        assert get_current_alembic_version(db_path) == "3b529ad30626"
+        assert "last_materialization_timestamp" not in set(
+            get_sqlite3_columns(db_path, "asset_keys")
+        )
+        assert "wipe_timestamp" not in set(get_sqlite3_columns(db_path, "asset_keys"))
+        assert "tags" not in set(get_sqlite3_columns(db_path, "asset_keys"))
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            storage = instance._event_storage
+
+            # make sure that executing the pipeline works
+            execute_pipeline(asset_pipeline, instance=instance)
+            assert storage.has_asset_key(AssetKey(["a"]))
+
+            # make sure that wiping works
+            storage.wipe_asset(AssetKey(["a"]))
+            assert not storage.has_asset_key(AssetKey(["a"]))
+
+            execute_pipeline(asset_pipeline, instance=instance)
+            assert storage.has_asset_key(AssetKey(["a"]))
+            old_tags = storage.get_asset_tags(AssetKey(["a"]))
+            old_keys = storage.all_asset_keys()
+
+            instance.upgrade()
+
+            assert "last_materialization_timestamp" in set(
+                get_sqlite3_columns(db_path, "asset_keys")
+            )
+            assert "wipe_timestamp" in set(get_sqlite3_columns(db_path, "asset_keys"))
+            assert "tags" in set(get_sqlite3_columns(db_path, "asset_keys"))
+
+            assert storage.has_asset_key(AssetKey(["a"]))
+            new_tags = storage.get_asset_tags(AssetKey(["a"]))
+            new_keys = storage.all_asset_keys()
+            assert old_tags == new_tags
+            assert old_keys == new_keys
+
+            # make sure that storing assets still works
+            execute_pipeline(asset_pipeline, instance=instance)
+
+            # make sure that wiping still works
+            storage.wipe_asset(AssetKey(["a"]))
+            assert not storage.has_asset_key(AssetKey(["a"]))

@@ -38,7 +38,10 @@ from dagster.core.storage.event_log.base import (
     EventRecordsFilter,
     RunShardedEventsCursor,
 )
-from dagster.core.storage.event_log.migration import REINDEX_DATA_MIGRATIONS, migrate_asset_key_data
+from dagster.core.storage.event_log.migration import (
+    EVENT_LOG_DATA_MIGRATIONS,
+    migrate_asset_key_data,
+)
 from dagster.core.storage.event_log.sqlite.sqlite_event_log import SqliteEventLogStorage
 from dagster.core.test_utils import instance_for_test
 from dagster.core.utils import make_new_run_id
@@ -469,7 +472,7 @@ class TestEventLogStorage:
             pytest.skip("This test is for SQL-backed Event Log behavior")
 
         # test that newly initialized DBs will have the secondary indexes built
-        for name in REINDEX_DATA_MIGRATIONS.keys():
+        for name in EVENT_LOG_DATA_MIGRATIONS.keys():
             assert storage.has_secondary_index(name)
 
         # test the generic API with garbage migration names

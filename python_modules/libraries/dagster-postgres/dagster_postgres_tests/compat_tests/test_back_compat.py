@@ -280,6 +280,61 @@ def test_0_12_0_add_mode_column(hostname, conn_string):
         assert runs[0].mode == "the_mode"
 
 
+def test_0_12_0_extract_asset_index_cols(hostname, conn_string):
+    _reconstruct_from_file(
+        hostname,
+        conn_string,
+        file_relative_path(__file__, "snapshot_0_12_0_pre_asset_index_cols/postgres/pg_dump.txt"),
+    )
+
+    @solid
+    def asset_solid(_):
+        yield AssetMaterialization(
+            asset_key=AssetKey(["a"]), partition="partition_1", tags={"foo": "FOO"}
+        )
+        yield Output(1)
+
+    @pipeline
+    def asset_pipeline():
+        asset_solid()
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+                template = template_fd.read().format(hostname=hostname)
+                target_fd.write(template)
+
+        with DagsterInstance.from_config(tempdir) as instance:
+            storage = instance._event_storage
+
+            # make sure that executing the pipeline works
+            execute_pipeline(asset_pipeline, instance=instance)
+            assert storage.has_asset_key(AssetKey(["a"]))
+
+            # make sure that wiping works
+            storage.wipe_asset(AssetKey(["a"]))
+            assert not storage.has_asset_key(AssetKey(["a"]))
+
+            execute_pipeline(asset_pipeline, instance=instance)
+            assert storage.has_asset_key(AssetKey(["a"]))
+            old_tags = storage.get_asset_tags(AssetKey(["a"]))
+            old_keys = storage.all_asset_keys()
+
+            instance.upgrade()
+            assert storage.has_asset_key(AssetKey(["a"]))
+            new_tags = storage.get_asset_tags(AssetKey(["a"]))
+            new_keys = storage.all_asset_keys()
+            assert old_tags == new_tags
+            assert old_keys == new_keys
+
+            # make sure that storing assets still works
+            execute_pipeline(asset_pipeline, instance=instance)
+
+            # make sure that wiping still works
+            storage.wipe_asset(AssetKey(["a"]))
+            assert not storage.has_asset_key(AssetKey(["a"]))
+
+
 def _reconstruct_from_file(hostname, conn_string, path, username="test", password="test"):
     engine = create_engine(conn_string)
     engine.execute("drop schema public cascade;")

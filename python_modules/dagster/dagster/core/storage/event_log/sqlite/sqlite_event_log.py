@@ -89,7 +89,8 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             conn_string = self.conn_string_for_shard(INDEX_SHARD_NAME)
             engine = create_engine(conn_string, poolclass=NullPool)
             self._initdb(engine)
-            self.reindex()
+            self.reindex_events()
+            self.reindex_assets()
 
         super().__init__()
 
