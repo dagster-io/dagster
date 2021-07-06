@@ -21,6 +21,61 @@ describe('LeftNav', () => {
     );
   };
 
+  it('renders left nav without error', async () => {
+    const mocks = {
+      Repository: () => ({
+        name: () => 'my_repository',
+        pipelines: () => new MockList(1),
+      }),
+      RepositoryLocation: () => ({
+        environmentPath: () => 'what then',
+        id: () => 'my_location',
+        name: () => 'my_location',
+        repositories: () => new MockList(1),
+      }),
+      Workspace: () => ({
+        locationEntries: () => new MockList(1),
+      }),
+      RepositoryOrigin: () => ({
+        repositoryName: () => 'my_repository',
+        repositoryLocationName: () => 'my_location',
+      }),
+      SolidDefinition: () => ({
+        configField: null,
+        description: null,
+        inputDefinitions: () => new MockList(1),
+        outputDefinitions: () => new MockList(1),
+        metadata: () => [],
+        name: 'foo_solid',
+        requiredResources: () => new MockList(0),
+      }),
+      SolidInvocationSite: () => ({
+        solidHandle: () => ({
+          handleID: 'foo_handle',
+        }),
+      }),
+    };
+
+    render(
+      <TestProvider
+        apolloProps={{mocks}}
+        routerProps={{initialEntries: ['/workspace/my_repository@my_location']}}
+      >
+        <LeftNav />
+      </TestProvider>,
+    );
+
+    await waitFor(() => {
+      const instanceHeader = screen.getByText(/instance/i);
+      expect(instanceHeader).toBeVisible();
+      const [runsLink] = screen.getAllByText('Runs');
+      expect(runsLink.closest('a')).toHaveAttribute('href', '/instance/runs');
+      expect(screen.getByText('Assets').closest('a')).toHaveAttribute('href', '/instance/assets');
+      expect(screen.getByText('Status').closest('a')).toHaveAttribute('href', '/instance');
+      expect(screen.getByText('my_repository')).toBeVisible();
+    });
+  });
+
   describe('Repo location errors', () => {
     it('does not show warning icon when no errors', async () => {
       render(<Test mocks={defaultMocks} />);

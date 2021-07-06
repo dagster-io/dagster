@@ -145,7 +145,7 @@
     "prettier": "prettier --write \"./src/**/*.tsx\"",
     "find-dead-code": "yarn ts-prune | grep -Ev '/types/\\|stories.tsx'",
     "jest": "jest",
-    "jest:debug": "jest --inspect-brk --runInBand --no-cache",
+    "jest:debug": "node --inspect-brk ./node_modules/.bin/jest --runInBand --no-cache",
     "lint": "eslint src/ --ext=.tsx,.ts,.js --fix -c .eslintrc.js",
     "check-lint": "eslint src/ --ext=.tsx,.ts,.js",
     "check-prettier": "prettier --list-different \"./src/**/*.tsx\"",

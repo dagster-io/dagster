@@ -54,6 +54,7 @@ describe('PipelineRoot', () => {
     const routerProps = {
       initialEntries: [path],
     };
+
     render(
       <TestProvider apolloProps={apolloProps} routerProps={routerProps}>
         <PipelineRoot repoAddress={repoAddress} />
