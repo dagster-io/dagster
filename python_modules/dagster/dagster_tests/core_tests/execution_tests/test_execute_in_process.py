@@ -38,7 +38,7 @@ def test_execute_graph():
     def emit_three():
         return add(emit_two(), emit_one())
 
-    result = execute_in_process(emit_three, output_capturing_enabled=True)
+    result = emit_three.execute_in_process()
 
     assert result.success
 
@@ -73,7 +73,7 @@ def test_execute_graph_with_inputs():
     def add_one(x):
         return add(x, emit_one())
 
-    result = execute_in_process(add_one, input_values={"x": 5}, output_capturing_enabled=True)
+    result = add_one.execute_in_process(input_values={"x": 5})
     assert result.success
     assert result.output_values["result"] == 6
     assert result.result_for_node("emit_one").output_values["result"] == 1
@@ -92,7 +92,7 @@ def test_execute_graph_nonexistent_inputs():
             'Invalid dependencies: graph "get_two" does not have input "x". Available inputs: []'
         ),
     ):
-        execute_in_process(get_two, input_values={"x": 5})
+        get_two.execute_in_process(input_values={"x": 5})
 
     @graph
     def add_one(x):
@@ -105,7 +105,7 @@ def test_execute_graph_nonexistent_inputs():
             "Available inputs: ['x']"
         ),
     ):
-        execute_in_process(add_one, input_values={"y": 5})
+        add_one.execute_in_process(input_values={"y": 5})
 
 
 def test_execute_solid_nonexistent_inputs():

@@ -31,10 +31,11 @@ from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointe
 from .logger import LoggerDefinition
 from .output import OutputDefinition, OutputMapping
 from .preset import PresetDefinition
+from .resource import ResourceDefinition
 from .solid_container import create_execution_structure, validate_dependency_dict
 
 if TYPE_CHECKING:
-    from .resource import ResourceDefinition
+    from dagster.core.instance import DagsterInstance
     from .solid import SolidDefinition
     from .partition import PartitionedConfig
     from .executor import ExecutorDefinition
@@ -468,6 +469,27 @@ class GraphDefinition(NodeDefinition):
             )
             .get_run_config_schema("default")
             .run_config_schema_type
+        )
+
+    def execute_in_process(
+        self,
+        run_config: Optional[Dict[str, Any]] = None,
+        instance: Optional["DagsterInstance"] = None,
+        resources: Optional[Dict[str, ResourceDefinition]] = None,
+        loggers: Optional[Dict[str, LoggerDefinition]] = None,
+        input_values: Optional[Dict[str, Any]] = None,
+    ):
+        from dagster.core.execution.execute import execute_in_process
+
+        run_config = check.opt_dict_param(run_config, "run_config")
+
+        return execute_in_process(
+            node=self,
+            run_config=run_config,
+            instance=instance,
+            resources=resources,
+            loggers=loggers,
+            input_values=input_values,
         )
 
 
