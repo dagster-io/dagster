@@ -221,7 +221,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
 
         user_defined_k8s_config = get_user_defined_k8s_config(frozentags(run.tags))
 
-        pipeline_origin = context.pipeline_run.pipeline_code_origin
+        pipeline_origin = context.pipeline_code_origin
         repository_origin = pipeline_origin.repository_origin
 
         job_config = (

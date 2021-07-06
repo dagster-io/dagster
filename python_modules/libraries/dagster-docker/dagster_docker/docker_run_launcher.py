@@ -121,7 +121,9 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
         run = context.pipeline_run
 
-        docker_image = run.pipeline_code_origin.repository_origin.container_image
+        pipeline_code_origin = context.pipeline_code_origin
+
+        docker_image = pipeline_code_origin.repository_origin.container_image
 
         if not docker_image:
             docker_image = self._image
@@ -141,7 +143,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
         input_json = serialize_dagster_namedtuple(
             ExecuteRunArgs(
-                pipeline_origin=run.pipeline_code_origin,
+                pipeline_origin=pipeline_code_origin,
                 pipeline_run_id=run.run_id,
                 instance_ref=self._instance.get_ref(),
             )

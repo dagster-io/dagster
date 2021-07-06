@@ -267,12 +267,6 @@ class PipelineRun(
                 ExternalPipelineOrigin,
                 "external_pipeline_origin is required for queued runs",
             )
-            check.inst_param(
-                pipeline_code_origin,
-                "pipeline_code_origin",
-                PipelinePythonOrigin,
-                "pipeline_code_origin is required for queued runs",
-            )
 
         return super(PipelineRun, cls).__new__(
             cls,
