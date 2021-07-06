@@ -1,13 +1,12 @@
 import {gql} from '@apollo/client';
 import {Breadcrumbs, Checkbox, Colors, Icon, InputGroup, NonIdealState} from '@blueprintjs/core';
 import Color from 'color';
-import {History} from 'history';
 import * as querystring from 'query-string';
 import * as React from 'react';
 import {Route} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {featureEnabled, FeatureFlag, useFeatureFlags} from '../app/Flags';
+import {useFeatureFlags} from '../app/Flags';
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {PIPELINE_GRAPH_SOLID_FRAGMENT} from '../graph/PipelineGraph';
 import {PipelineGraphContainer} from '../graph/PipelineGraphContainer';
@@ -15,10 +14,9 @@ import {SolidNameOrPath} from '../solids/SolidNameOrPath';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {SplitPanelContainer} from '../ui/SplitPanelContainer';
 import {RepoAddress} from '../workspace/types';
-import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {SolidJumpBar} from './PipelineJumpComponents';
-import {explorerPathToString, PipelineExplorerPath} from './PipelinePathUtils';
+import {PipelineExplorerPath} from './PipelinePathUtils';
 import {
   SidebarTabbedContainer,
   SIDEBAR_TABBED_CONTAINER_PIPELINE_FRAGMENT,
@@ -31,8 +29,8 @@ export interface PipelineExplorerOptions {
 }
 
 interface PipelineExplorerProps {
-  history: History;
   explorerPath: PipelineExplorerPath;
+  onChangeExplorerPath: (path: PipelineExplorerPath, mode: 'replace' | 'push') => void;
   options: PipelineExplorerOptions;
   setOptions: (options: PipelineExplorerOptions) => void;
   pipeline: PipelineExplorerFragment;
@@ -58,18 +56,18 @@ export class PipelineExplorer extends React.Component<
   };
 
   handleQueryChange = (solidsQuery: string) => {
-    const {history, explorerPath} = this.props;
-    history.replace(this.buildPath(explorerPathToString({...explorerPath, solidsQuery})));
+    const {explorerPath, onChangeExplorerPath} = this.props;
+    onChangeExplorerPath({...explorerPath, solidsQuery}, 'replace');
   };
 
   handleAdjustPath = (fn: (solidNames: string[]) => void) => {
-    const {history, explorerPath} = this.props;
+    const {explorerPath, onChangeExplorerPath} = this.props;
     const pathSolids = [...explorerPath.pathSolids];
     const retValue = fn(pathSolids);
     if (retValue !== undefined) {
       throw new Error('handleAdjustPath function is expected to mutate the array');
     }
-    history.push(this.buildPath(explorerPathToString({...explorerPath, pathSolids})));
+    onChangeExplorerPath({...explorerPath, pathSolids}, 'push');
   };
 
   // Note: this method handles relative solid paths, eg: {path: ['..', 'OtherSolid']}.
@@ -121,21 +119,6 @@ export class PipelineExplorer extends React.Component<
     this.handleClickSolid({name: ''});
   };
 
-  buildPath = (path: string) => {
-    const {explorerPath, repoAddress} = this.props;
-    const {snapshotId} = explorerPath;
-    if (snapshotId) {
-      return `/instance/snapshots/${path}`;
-    }
-
-    const tab = featureEnabled(FeatureFlag.flagPipelineModeTuples) ? 'graphs' : 'pipelines';
-
-    if (repoAddress) {
-      return workspacePathFromAddress(repoAddress, `/${tab}/${path}`);
-    }
-    return `/workspace/${tab}/${path}`;
-  };
-
   render() {
     const {options, pipeline, explorerPath, parentHandle, selectedHandle} = this.props;
     const {highlighted} = this.state;
@@ -167,12 +150,11 @@ export class PipelineExplorer extends React.Component<
                 items={explorerPath.pathSolids.map((name, idx) => {
                   return {
                     text: name,
-                    href: this.buildPath(
-                      explorerPathToString({
-                        ...explorerPath,
-                        pathSolids: explorerPath.pathSolids.slice(0, idx + 1),
-                      }),
-                    ),
+                    onClick: () =>
+                      this.props.onChangeExplorerPath(
+                        {...explorerPath, pathSolids: explorerPath.pathSolids.slice(0, idx + 1)},
+                        'push',
+                      ),
                   };
                 })}
                 currentBreadcrumbRenderer={() => (

@@ -37,7 +37,7 @@ export const GraphRoot: React.FC<Props> = (props) => {
           icon="diagram-tree"
         />
       </div>
-      <div style={{position: 'relative', minHeight: 0, flex: 1}}>
+      <div style={{position: 'relative', minHeight: 0, flex: 1, display: 'flex'}}>
         <PipelineExplorerRegexRoot {...props} repoAddress={repoAddress} />
       </div>
     </div>

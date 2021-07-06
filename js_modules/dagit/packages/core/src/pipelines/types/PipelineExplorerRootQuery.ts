@@ -10,10 +10,6 @@ import { PipelineSelector } from "./../../types/globalTypes";
 // GraphQL query operation: PipelineExplorerRootQuery
 // ====================================================
 
-export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PythonError {
-  __typename: "PythonError";
-}
-
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
@@ -1189,7 +1185,12 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   message: string;
 }
 
-export type PipelineExplorerRootQuery_pipelineSnapshotOrError = PipelineExplorerRootQuery_pipelineSnapshotOrError_PythonError | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineNotFoundError | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshotNotFoundError;
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PythonError {
+  __typename: "PythonError";
+  message: string;
+}
+
+export type PipelineExplorerRootQuery_pipelineSnapshotOrError = PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineNotFoundError | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshotNotFoundError | PipelineExplorerRootQuery_pipelineSnapshotOrError_PythonError;
 
 export interface PipelineExplorerRootQuery {
   pipelineSnapshotOrError: PipelineExplorerRootQuery_pipelineSnapshotOrError;

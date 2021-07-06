@@ -2,6 +2,7 @@ import {ApolloQueryResult, gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PipelineSelector} from '../types/globalTypes';
 
 import {REPOSITORY_INFO_FRAGMENT} from './RepositoryInformation';
 import {buildRepoAddress} from './buildRepoAddress';
@@ -219,7 +220,7 @@ export const usePipelineSelector = (
     ...repositorySelector,
     pipelineName,
     solidSelection,
-  };
+  } as PipelineSelector;
 };
 
 export const optionToRepoAddress = (option: DagsterRepoOption) =>

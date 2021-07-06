@@ -17,7 +17,7 @@ export const TypeWithTooltip = (props: ITypeWithTooltipProps) => {
   // TODO: link to most inner type
   if (name) {
     return (
-      <Link to={{search: `?typeExplorer=${displayName}`}}>
+      <Link to={{search: `?tab=types&typeName=${displayName}`}}>
         <TypeName>{displayName}</TypeName>
       </Link>
     );

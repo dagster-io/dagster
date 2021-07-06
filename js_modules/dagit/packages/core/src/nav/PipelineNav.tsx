@@ -28,8 +28,7 @@ interface TabConfig {
 }
 
 const pipelineTabs: {[key: string]: TabConfig} = {
-  overview: {title: 'Overview', pathComponent: 'overview', icon: 'dashboard'},
-  definition: {title: 'Definition', pathComponent: '', icon: 'diagram-tree'},
+  overview: {title: 'Overview', pathComponent: '', icon: 'dashboard'},
   playground: {
     title: 'Playground',
     pathComponent: 'playground',
@@ -48,7 +47,7 @@ const pipelineTabs: {[key: string]: TabConfig} = {
   },
 };
 
-const currentOrder = ['overview', 'definition', 'playground', 'runs', 'partitions'];
+const currentOrder = ['overview', 'playground', 'runs', 'partitions'];
 
 export function tabForPipelinePathComponent(component?: string): TabConfig {
   const tabList = Object.keys(pipelineTabs);
@@ -100,13 +99,9 @@ export const PipelineNav: React.FC<Props> = (props) => {
     .map((x) => x.pipelineName)
     .includes(explorerPath.pipelineName);
 
-  let tabs = currentOrder
+  const tabs = currentOrder
     .filter((key) => hasPartitionSet || key !== 'partitions')
     .map(tabForKey(repoAddress, explorerPath));
-
-  if (flagPipelineModeTuples) {
-    tabs = tabs.filter((t) => t.text !== 'Definition');
-  }
 
   return (
     <Group direction="column" spacing={12} padding={{top: 20, horizontal: 20}}>

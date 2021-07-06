@@ -24,7 +24,7 @@ export const TypeExplorer: React.FC<ITypeExplorerProps> = (props) => {
       <SidebarSubhead />
       <SectionInner>
         <SidebarTitle>
-          <Link to="?types=true">Pipeline Types</Link> {'>'} {name}
+          <Link to="?tab=types">Pipeline Types</Link> {'>'} {name}
         </SidebarTitle>
       </SectionInner>
       <SidebarSection title={'Description'}>

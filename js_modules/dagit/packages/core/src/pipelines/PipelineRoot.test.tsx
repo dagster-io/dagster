@@ -26,6 +26,12 @@ describe('PipelineRoot', () => {
       id: () => PIPELINE_NAME,
       modes: () => new MockList(1),
     }),
+    PipelineSnapshot: () => ({
+      runs: () => new MockList(0),
+      schedules: () => new MockList(0),
+      sensors: () => new MockList(0),
+      solidHandle: null,
+    }),
     RepositoryLocation: () => ({
       id: REPO_LOCATION,
       name: REPO_LOCATION,
@@ -44,7 +50,7 @@ describe('PipelineRoot', () => {
   const pipelineName = 'pipez';
   const path = `/workspace/${repoAddressAsString(repoAddress)}/pipelines/${pipelineName}:default`;
 
-  it('renders definition by default', async () => {
+  it('renders overview by default', async () => {
     const routerProps = {
       initialEntries: [path],
     };
@@ -56,7 +62,7 @@ describe('PipelineRoot', () => {
 
     await waitFor(() => {
       const selected = screen.getByRole('tab', {selected: true});
-      expect(selected.textContent).toMatch(/definition/i);
+      expect(selected.textContent).toMatch(/overview/i);
     });
   });
 
@@ -100,7 +106,7 @@ describe('PipelineRoot', () => {
         const selected = screen.getByRole('tab', {selected: true});
 
         // Redirect to Definition, which has been highlighted in the tabs.
-        expect(selected.textContent).toMatch(/definition/i);
+        expect(selected.textContent).toMatch(/overview/i);
 
         // Render a disabled "Playground" tab.
         expect(screen.queryByRole('tab', {name: /playground/i})).toHaveAttribute(
