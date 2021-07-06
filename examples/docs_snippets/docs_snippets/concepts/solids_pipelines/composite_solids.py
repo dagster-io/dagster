@@ -1,19 +1,16 @@
+"""isort:skip_file"""
 # pylint: disable=unused-argument
+# pylint: disable=print-call
 
-from dagster import InputDefinition, composite_solid, pipeline, repository, solid
-
-
-@solid
-def my_solid():
-    pass
+# start_composite_solid_example_marker
+from dagster import InputDefinition, composite_solid, pipeline, solid
 
 
 @solid
-def return_one(context):
+def return_one():
     return 1
 
 
-# start_composite_solid_example_marker
 @solid
 def add_one(number: int):
     return number + 1
@@ -27,6 +24,11 @@ def multiply_by_three(number: int):
 @composite_solid(input_defs=[InputDefinition("number", int)])
 def add_one_times_three_solid(number):
     return multiply_by_three(add_one(number))
+
+
+@pipeline
+def my_pipeline():
+    add_one_times_three_solid(return_one())
 
 
 # end_composite_solid_example_marker
@@ -51,6 +53,12 @@ def add_n_times_m_solid(number):
 
 # end_composite_solid_config_marker
 
+
+@pipeline
+def my_pipeline_composite_config():
+    add_n_times_m_solid()
+
+
 # start_composite_mapping_marker
 
 
@@ -68,19 +76,45 @@ def add_x_multiply_by_x(number):
     return multiply_by_m(add_n(number))
 
 
+@pipeline
+def my_pipeline_config_mapping():
+    add_x_multiply_by_x(return_one())
+
+
 # end_composite_mapping_marker
 
+# start_composite_multi_output_marker
+
+from dagster import OutputDefinition
+
+
+@solid
+def echo(i):
+    print(i)
+
+
+@solid
+def one() -> int:
+    return 1
+
+
+@solid
+def hello() -> str:
+    return "hello"
+
+
+@composite_solid(output_defs=[OutputDefinition(int, "x"), OutputDefinition(str, "y")])
+def composite_multi_outputs():
+    x = one()
+    y = hello()
+    return {"x": x, "y": y}
+
 
 @pipeline
-def my_pipeline():
-    add_one_times_three_solid()
+def my_pipeline_multi_outputs():
+    x, y = composite_multi_outputs()
+    echo(x)
+    echo(y)
 
 
-@pipeline
-def my_other_pipeline():
-    add_n_times_m_solid()
-
-
-@repository
-def my_repository():
-    return [my_pipeline, my_other_pipeline]
+# end_composite_multi_output_marker
