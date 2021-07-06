@@ -143,3 +143,25 @@ def test_multi_out_map():
     assert result.result_for_solid("echo_a").output_value() == [1]
     assert result.result_for_solid("echo_b").output_value() == [2, 3]
     assert result.result_for_solid("echo_c").skipped  # all fanned in inputs skipped -> solid skips
+
+
+def test_context_mapping_key():
+    _observed = []
+
+    @solid
+    def observe_key(context, _dep=None):
+        _observed.append(context.get_mapping_key())
+
+    @solid(output_defs=[DynamicOutputDefinition()])
+    def emit():
+        yield DynamicOutput(1, mapping_key="key_1")
+        yield DynamicOutput(2, mapping_key="key_2")
+
+    @pipeline
+    def test():
+        observe_key()
+        emit().map(observe_key)
+
+    result = execute_pipeline(test)
+    assert result.success
+    assert _observed == [None, "key_1", "key_2"]

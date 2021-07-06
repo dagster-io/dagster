@@ -240,3 +240,9 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         """
 
         return self._step_execution_context.previous_attempt_count
+
+    def get_mapping_key(self) -> Optional[str]:
+        """
+        Which mapping_key this execution is for if downstream of a DynamicOutput, otherwise None.
+        """
+        return self._step_execution_context.step.get_mapping_key()
