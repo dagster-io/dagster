@@ -366,7 +366,7 @@ class PipelineRun(
 @whitelist_for_serdes
 class PipelineRunsFilter(
     namedtuple(
-        "_PipelineRunsFilter", "run_ids pipeline_name statuses tags snapshot_id updated_after"
+        "_PipelineRunsFilter", "run_ids pipeline_name statuses tags snapshot_id updated_after mode"
     )
 ):
     def __new__(
@@ -377,6 +377,7 @@ class PipelineRunsFilter(
         tags=None,
         snapshot_id=None,
         updated_after=None,
+        mode=None,
     ):
         return super(PipelineRunsFilter, cls).__new__(
             cls,
@@ -386,6 +387,7 @@ class PipelineRunsFilter(
             tags=check.opt_dict_param(tags, "tags", key_type=str, value_type=str),
             snapshot_id=check.opt_str_param(snapshot_id, "snapshot_id"),
             updated_after=check.opt_inst_param(updated_after, "updated_after", datetime),
+            mode=check.opt_str_param(mode, "mode"),
         )
 
     @staticmethod

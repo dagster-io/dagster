@@ -9,6 +9,7 @@ import pytest
 from dagster import AssetKey, AssetMaterialization, Output, execute_pipeline, pipeline, solid
 from dagster.core.errors import DagsterInstanceMigrationRequired
 from dagster.core.instance import DagsterInstance
+from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from dagster.core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster.utils import file_relative_path
 from sqlalchemy import create_engine
@@ -219,6 +220,64 @@ def test_0_11_0_add_asset_details(hostname, conn_string):
             instance.upgrade()
             storage.get_asset_tags(AssetKey(["test"]))
             storage.all_asset_keys()
+
+
+def test_0_12_0_add_mode_column(hostname, conn_string):
+    _reconstruct_from_file(
+        hostname,
+        conn_string,
+        file_relative_path(__file__, "snapshot_0_11_16_pre_add_mode_column/postgres/pg_dump.txt"),
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+                template = template_fd.read().format(hostname=hostname)
+                target_fd.write(template)
+
+        instance = DagsterInstance.from_config(tempdir)
+
+        # Ensure that you don't get a migration required exception if not trying to use the
+        # migration-required column.
+        assert len(instance.get_runs()) == 1
+
+        @solid
+        def basic():
+            pass
+
+        @pipeline
+        def noop_pipeline():
+            basic()
+
+        # Ensure that you don't get a migration required exception when running a pipeline
+        # pre-migration.
+        result = execute_pipeline(noop_pipeline, instance=instance)
+        assert result.success
+        assert len(instance.get_runs()) == 2
+
+        # Ensure that migration required exception throws, since you are trying to use the
+        # migration-required column.
+        with pytest.raises(
+            DagsterInstanceMigrationRequired,
+            match=_migration_regex("run", current_revision="7cba9eeaaf1d"),
+        ):
+            instance.get_runs(filters=PipelineRunsFilter(mode="the_mode"))
+
+        instance.upgrade()
+
+        result = execute_pipeline(noop_pipeline, instance=instance)
+        assert result.success
+        assert len(instance.get_runs()) == 3
+
+        runs = instance.get_runs(filters=PipelineRunsFilter(mode="default"))
+        assert len(runs) == 2
+        assert runs[0].mode == "default"
+        assert runs[1].mode == "default"
+
+        # Ensure historical runs have their mode filled post-data migration
+        runs = instance.get_runs(filters=PipelineRunsFilter(mode="the_mode"))
+        assert len(runs) == 1
+        assert runs[0].mode == "the_mode"
 
 
 def _reconstruct_from_file(hostname, conn_string, path, username="test", password="test"):
