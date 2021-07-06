@@ -34,6 +34,7 @@ export const PipelineTable: React.FC<Props> = (props) => {
       items.push(...item.pipeline.modes.map((mode) => ({...item, mode: mode.name})));
     }
   }
+
   return (
     <Table>
       <thead>
@@ -100,7 +101,7 @@ export const PipelineTable: React.FC<Props> = (props) => {
               <Group direction="row" spacing={4} alignItems="center">
                 {pipeline.runs.map((run) => (
                   <RunStatusWithStats
-                    key={run.runId}
+                    key={run.id}
                     runId={run.runId}
                     status={run.status}
                     size={12}
