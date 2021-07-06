@@ -372,9 +372,7 @@ class DagsterInstance:
 
         # DagsterInstance doesn't implement ConfigurableClass, but we may still sometimes want to
         # have custom subclasses of DagsterInstance. This machinery allows for those custom
-        # subclasses to receive additional keyword arguments passed through the config YAML. Note
-        # that unlike a ConfigurableClass, these additional arguments are not type checked -- the
-        # raw Python dict returned by yaml.load is just splatted into kwargs.
+        # subclasses to receive additional keyword arguments passed through the config YAML.
         klass = instance_ref.custom_instance_class or DagsterInstance
         kwargs = instance_ref.custom_instance_class_config
 

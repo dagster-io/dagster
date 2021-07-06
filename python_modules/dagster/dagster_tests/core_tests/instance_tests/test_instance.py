@@ -1,6 +1,7 @@
 import re
 
 import pytest
+import yaml
 from dagster import PipelineDefinition, check, execute_pipeline, pipeline, solid
 from dagster.config import Field
 from dagster.core.errors import (
@@ -9,13 +10,15 @@ from dagster.core.errors import (
     DagsterInvariantViolationError,
 )
 from dagster.core.execution.api import create_execution_plan
-from dagster.core.instance import DagsterInstance
+from dagster.core.instance import DagsterInstance, InstanceRef
+from dagster.core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
 from dagster.core.snap import (
     create_execution_plan_snapshot_id,
     create_pipeline_snapshot_id,
     snapshot_from_execution_plan,
 )
 from dagster.core.test_utils import create_run_for_test, environ, instance_for_test
+from dagster.serdes.config_class import ConfigurableClassData
 from dagster_tests.api_tests.utils import get_bar_workspace
 
 
@@ -205,11 +208,21 @@ class TestInstanceSubclass(DagsterInstance):
     def config_schema(cls):
         return {"foo": Field(str, is_required=True), "baz": Field(str, is_required=False)}
 
+    @staticmethod
+    def config_defaults(base_dir):
+        defaults = InstanceRef.config_defaults(base_dir)
+        defaults["run_coordinator"] = ConfigurableClassData(
+            "dagster.core.run_coordinator.queued_run_coordinator",
+            "QueuedRunCoordinator",
+            yaml.dump({}),
+        )
+        return defaults
+
 
 def test_instance_subclass():
     with instance_for_test(
         overrides={
-            "custom_instance_class": {
+            "instance_class": {
                 "module": "dagster_tests.core_tests.instance_tests.test_instance",
                 "class": "TestInstanceSubclass",
             },
@@ -225,9 +238,11 @@ def test_instance_subclass():
         assert subclass_instance.foo() == "bar"
         assert subclass_instance.baz is None
 
+        assert isinstance(subclass_instance.run_coordinator, QueuedRunCoordinator)
+
     with instance_for_test(
         overrides={
-            "custom_instance_class": {
+            "instance_class": {
                 "module": "dagster_tests.core_tests.instance_tests.test_instance",
                 "class": "TestInstanceSubclass",
             },
@@ -246,7 +261,7 @@ def test_instance_subclass():
     with pytest.raises(DagsterInvalidConfigError):
         with instance_for_test(
             overrides={
-                "custom_instance_class": {
+                "instance_class": {
                     "module": "dagster_tests.core_tests.instance_tests.test_instance",
                     "class": "TestInstanceSubclass",
                 },
