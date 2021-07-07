@@ -181,9 +181,25 @@ def return_two():
     return 2
 
 
+@solid
+def return_three():
+    return 3
+
+
+@solid
+def return_four():
+    return 4
+
+
 @pipeline(mode_defs=default_mode_defs)
 def add_pipeline():
     add_two_numbers(return_one(), return_two())
+
+
+@pipeline(mode_defs=default_mode_defs)
+def double_add_pipeline():
+    add_two_numbers.alias("add_two_numbers_1")(return_one(), return_two())
+    add_two_numbers.alias("add_two_numbers_2")(return_three(), return_four())
 
 
 @solid(input_defs=[], config_schema=Int)

@@ -138,7 +138,9 @@ def get_papermill_parameters(step_context, inputs, output_log_path):
         ), "Dagstermill solids cannot have inputs named {input_name}".format(input_name=input_name)
         dagster_type = input_def_dict[input_name].dagster_type
         parameter_value = write_value(
-            dagster_type, input_value, os.path.join(marshal_dir, "input-{}".format(input_name))
+            dagster_type,
+            input_value,
+            os.path.join(marshal_dir, f"{str(step_context.solid_handle)}-input-{input_name}"),
         )
         parameters[input_name] = parameter_value
 
@@ -170,13 +172,12 @@ def _dm_solid_compute(name, notebook_path, output_notebook=None, asset_key_prefi
         with tempfile.TemporaryDirectory() as output_notebook_dir:
             with safe_tempfile_path() as output_log_path:
 
+                prefix = str(uuid.uuid4())
                 parameterized_notebook_path = os.path.join(
-                    output_notebook_dir, "{prefix}-inter.ipynb".format(prefix=str(uuid.uuid4()))
+                    output_notebook_dir, f"{prefix}-inter.ipynb"
                 )
 
-                executed_notebook_path = os.path.join(
-                    output_notebook_dir, "{prefix}-out.ipynb".format(prefix=str(uuid.uuid4()))
-                )
+                executed_notebook_path = os.path.join(output_notebook_dir, f"{prefix}-out.ipynb")
 
                 # Scaffold the registration here
                 nb = load_notebook_node(notebook_path)
