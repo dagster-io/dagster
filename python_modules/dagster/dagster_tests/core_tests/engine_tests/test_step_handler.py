@@ -27,6 +27,5 @@ def test_step_handler_context():
             pipeline_run=run,
         )
 
-        reloaded_ctx = StepHandlerContext.deserialize(instance, ctx.serialize())
-        assert reloaded_ctx.execute_step_args == args
-        assert reloaded_ctx.pipeline_run == run
+        assert ctx.execute_step_args == args
+        assert ctx.pipeline_run == run
