@@ -1,6 +1,7 @@
 import kubernetes
-from dagster import Field, StringSource, executor
+from dagster import Field, StringSource, check, executor
 from dagster.core.definitions.executor import multiple_process_executor_requirements
+from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData, EventMetadataEntry
 from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.retries import get_retries_config
@@ -9,9 +10,11 @@ from dagster.core.executor.init import InitExecutorContext
 from dagster.core.executor.step_delegating import StepDelegatingExecutor
 from dagster.core.executor.step_delegating.step_handler import StepHandler
 from dagster.core.executor.step_delegating.step_handler.base import StepHandlerContext
+from dagster.core.types.dagster_type import Optional
 from dagster.serdes.serdes import serialize_dagster_namedtuple
 from dagster.utils import frozentags, merge_dicts
 from dagster.utils.backcompat import experimental
+from dagster_k8s.launcher import K8sRunLauncher
 
 from .job import (
     DagsterK8sJobConfig,
@@ -68,6 +71,12 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
     """
 
     run_launcher = init_context.instance.run_launcher
+    if not isinstance(run_launcher, K8sRunLauncher):
+        raise DagsterUnmetExecutorRequirementsError(
+            "This engine is only compatible with a K8sRunLauncher; configure the "
+            "K8sRunLauncher on your instance to use it.",
+        )
+
     exc_cfg = init_context.executor_config
     job_config = DagsterK8sJobConfig(
         dagster_home=run_launcher.dagster_home,
@@ -85,6 +94,8 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
         K8sStepHandler(
             job_config=job_config,
             job_namespace=exc_cfg.get("job_namespace"),
+            load_incluster_config=run_launcher.load_incluster_config,
+            kubeconfig_file=run_launcher.kubeconfig_file,
         )
     )
 
@@ -99,11 +110,29 @@ class K8sStepHandler(StepHandler):
         self,
         job_config: DagsterK8sJobConfig,
         job_namespace: str,
+        load_incluster_config: bool,
+        kubeconfig_file: Optional[str],
+        k8s_client_batch_api=None,
     ):
         super().__init__()
 
         self._job_config = job_config
         self._job_namespace = job_namespace
+        self._fixed_k8s_client_batch_api = k8s_client_batch_api
+
+        if load_incluster_config:
+            check.invariant(
+                kubeconfig_file is None,
+                "`kubeconfig_file` is set but `load_incluster_config` is True.",
+            )
+            kubernetes.config.load_incluster_config()
+        else:
+            check.opt_str_param(kubeconfig_file, "kubeconfig_file")
+            kubernetes.config.load_kube_config(kubeconfig_file)
+
+    @property
+    def _batch_api(self):
+        return self._fixed_k8s_client_batch_api or kubernetes.client.BatchV1Api()
 
     def launch_step(self, step_handler_context: StepHandlerContext):
         events = []
@@ -160,10 +189,8 @@ class K8sStepHandler(StepHandler):
             )
         )
 
-        kubernetes.config.load_incluster_config()
-        kubernetes.client.BatchV1Api().create_namespaced_job(
-            body=job, namespace=self._job_namespace
-        )
+        self._batch_api.create_namespaced_job(body=job, namespace=self._job_namespace)
+
         return events
 
     def check_step_health(self, step_handler_context: StepHandlerContext):
@@ -178,9 +205,7 @@ class K8sStepHandler(StepHandler):
         )
         job_name = "dagster-job-%s" % (k8s_name_key)
 
-        job = kubernetes.client.BatchV1Api().read_namespaced_job(
-            namespace=self._job_namespace, name=job_name
-        )
+        job = self._batch_api.read_namespaced_job(namespace=self._job_namespace, name=job_name)
         if job.status.failed:
             return [
                 DagsterEvent(

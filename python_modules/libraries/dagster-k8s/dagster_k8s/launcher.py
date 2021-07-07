@@ -108,6 +108,8 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self.job_namespace = check.str_param(job_namespace, "job_namespace")
 
+        self.load_incluster_config = load_incluster_config
+        self.kubeconfig_file = kubeconfig_file
         if load_incluster_config:
             check.invariant(
                 kubeconfig_file is None,
