@@ -18,6 +18,7 @@ class TestStepHandler(StepHandler):
     # are left alive when the test ends. Non-test step handlers should not keep their own state in memory.
     processes = []  # type: ignore
     launch_step_count = 0  # type: ignore
+    saw_baz_solid = False
     check_step_health_count = 0  # type: ignore
     terminate_step_count = 0  # type: ignore
 
@@ -26,6 +27,10 @@ class TestStepHandler(StepHandler):
         return "TestStepHandler"
 
     def launch_step(self, step_handler_context):
+        if step_handler_context.execute_step_args.step_keys_to_execute[0] == "baz_solid":
+            TestStepHandler.saw_baz_solid = True
+            assert step_handler_context.step_tags["baz_solid"] == {"foo": "bar"}
+
         TestStepHandler.launch_step_count += 1
         print("TestStepHandler Launching Step!")  # pylint: disable=print-call
         TestStepHandler.processes.append(
@@ -81,7 +86,7 @@ def bar_solid(_):
     return "bar"
 
 
-@solid
+@solid(tags={"foo": "bar"})
 def baz_solid(_, bar):
     return bar * 2
 
@@ -117,6 +122,7 @@ def test_execute():
     )
     assert any(["STEP_START" in event for event in result.event_list])
     assert result.success
+    assert TestStepHandler.saw_baz_solid
 
 
 def test_execute_intervals():

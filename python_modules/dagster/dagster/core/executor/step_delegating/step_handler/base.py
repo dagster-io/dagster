@@ -1,5 +1,5 @@
 import abc
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from dagster import DagsterEvent, DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
@@ -11,10 +11,12 @@ class StepHandlerContext:
         self,
         instance: DagsterInstance,
         execute_step_args: ExecuteStepArgs,
+        step_tags: Dict[str, Dict[str, str]],
         pipeline_run: Optional[PipelineRun] = None,
     ) -> None:
         self._instance = instance
         self._execute_step_args = execute_step_args
+        self._step_tags = step_tags
         self._pipeline_run = pipeline_run
 
     @property
@@ -29,6 +31,10 @@ class StepHandlerContext:
             self._pipeline_run = run
 
         return self._pipeline_run
+
+    @property
+    def step_tags(self) -> Dict[str, Dict[str, str]]:
+        return self._step_tags
 
     @property
     def instance(self) -> DagsterInstance:

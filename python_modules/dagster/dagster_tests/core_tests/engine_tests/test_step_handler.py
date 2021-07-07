@@ -24,6 +24,7 @@ def test_step_handler_context():
         ctx = StepHandlerContext(
             instance=instance,
             execute_step_args=args,
+            step_tags={},
             pipeline_run=run,
         )
 

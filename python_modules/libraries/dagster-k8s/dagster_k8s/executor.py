@@ -162,7 +162,7 @@ class K8sStepHandler(StepHandler):
             raise Exception("No image included in either executor config or the pipeline")
 
         user_defined_k8s_config = get_user_defined_k8s_config(
-            frozentags(step_handler_context.pipeline_run.tags)
+            frozentags(step_handler_context.step_tags[step_key])
         )
 
         job = construct_dagster_k8s_job(

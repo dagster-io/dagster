@@ -47,18 +47,19 @@ class StepDelegatingExecutor(Executor):
         return [event.dagster_event for event in events if event.is_dagster_event]
 
     def _get_step_handler_context(
-        self, pipeline_context, step_keys_to_execute, active_execution
+        self, pipeline_context, steps, active_execution
     ) -> StepHandlerContext:
         return StepHandlerContext(
             instance=pipeline_context.plan_data.instance,
             execute_step_args=ExecuteStepArgs(
                 pipeline_origin=pipeline_context.reconstructable_pipeline.get_python_origin(),
                 pipeline_run_id=pipeline_context.pipeline_run.run_id,
-                step_keys_to_execute=step_keys_to_execute,
+                step_keys_to_execute=[step.key for step in steps],
                 instance_ref=pipeline_context.plan_data.instance.get_ref(),
                 retry_mode=self.retries,
                 known_state=active_execution.get_known_state(),
             ),
+            step_tags={step.key: step.tags for step in steps},
             pipeline_run=pipeline_context.pipeline_run,
         )
 
@@ -100,12 +101,12 @@ class StepDelegatingExecutor(Executor):
                     )
                     stopping = True
                     active_execution.mark_interrupted()
-                    for step_key in running_steps:
+                    for _, step in running_steps.items():
                         events.extend(
                             self._log_new_events(
                                 self._step_handler.terminate_step(
                                     self._get_step_handler_context(
-                                        pipeline_context, [step_key], active_execution
+                                        pipeline_context, [step], active_execution
                                     )
                                 ),
                                 pipeline_context,
@@ -127,12 +128,12 @@ class StepDelegatingExecutor(Executor):
                         curr_time - last_check_step_health_time
                     ).total_seconds() >= self._check_step_health_interval_seconds:
                         last_check_step_health_time = curr_time
-                        for step_key in running_steps:
+                        for _, step in running_steps.items():
                             events.extend(
                                 self._log_new_events(
                                     self._step_handler.check_step_health(
                                         self._get_step_handler_context(
-                                            pipeline_context, [step_key], active_execution
+                                            pipeline_context, [step], active_execution
                                         )
                                     ),
                                     pipeline_context,
@@ -146,7 +147,7 @@ class StepDelegatingExecutor(Executor):
                             self._log_new_events(
                                 self._step_handler.launch_step(
                                     self._get_step_handler_context(
-                                        pipeline_context, [step.key], active_execution
+                                        pipeline_context, [step], active_execution
                                     )
                                 ),
                                 pipeline_context,
