@@ -6,16 +6,19 @@ from dagster.core.host_representation import PipelineSelector
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 
-def check_read_only(fn):
-    def _fn(self, graphene_info, *args, **kwargs):  # pylint: disable=unused-argument
-        from dagster_graphql.schema.errors import GrapheneReadOnlyError
+def check_permission(permission):
+    def decorator(fn):
+        def _fn(self, graphene_info, *args, **kwargs):  # pylint: disable=unused-argument
+            from dagster_graphql.schema.errors import GrapheneReadOnlyError
 
-        if graphene_info.context.read_only:
-            raise UserFacingGraphQLError(GrapheneReadOnlyError())
+            if not graphene_info.context.has_permission(permission):
+                raise UserFacingGraphQLError(GrapheneReadOnlyError())
 
-        return fn(self, graphene_info, *args, **kwargs)
+            return fn(self, graphene_info, *args, **kwargs)
 
-    return _fn
+        return _fn
+
+    return decorator
 
 
 def capture_error(fn):

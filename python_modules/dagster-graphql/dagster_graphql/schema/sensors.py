@@ -2,7 +2,7 @@ import graphene
 from dagster import check
 from dagster.core.host_representation import ExternalSensor, SensorSelector
 from dagster.core.scheduler.job import JobState
-from dagster_graphql.implementation.utils import capture_error, check_read_only
+from dagster_graphql.implementation.utils import capture_error, check_permission
 
 from ..implementation.fetch_sensors import get_sensor_next_tick, start_sensor, stop_sensor
 from .errors import (
@@ -98,7 +98,7 @@ class GrapheneStartSensorMutation(graphene.Mutation):
         name = "StartSensorMutation"
 
     @capture_error
-    @check_read_only
+    @check_permission("start_sensor")
     def mutate(self, graphene_info, sensor_selector):
         return start_sensor(graphene_info, SensorSelector.from_graphql_input(sensor_selector))
 
@@ -136,7 +136,7 @@ class GrapheneStopSensorMutation(graphene.Mutation):
         name = "StopSensorMutation"
 
     @capture_error
-    @check_read_only
+    @check_permission("stop_sensor")
     def mutate(self, graphene_info, job_origin_id):
         return stop_sensor(graphene_info, job_origin_id)
 

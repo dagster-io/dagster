@@ -9,7 +9,7 @@ from ...implementation.fetch_schedules import (
     start_schedule,
     stop_schedule,
 )
-from ...implementation.utils import capture_error, check_read_only
+from ...implementation.utils import capture_error, check_permission
 from ..errors import (
     GraphenePythonError,
     GrapheneReadOnlyError,
@@ -92,7 +92,7 @@ class GrapheneReconcileSchedulerStateMutation(graphene.Mutation):
         name = "ReconcileSchedulerStateMutation"
 
     @capture_error
-    @check_read_only
+    @check_permission("start_schedule")
     def mutate(self, graphene_info, repository_selector):
         return reconcile_scheduler_state(
             graphene_info, RepositorySelector.from_graphql_input(repository_selector)

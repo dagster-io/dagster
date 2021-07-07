@@ -17,7 +17,7 @@ from ...implementation.utils import (
     ExecutionParams,
     UserFacingGraphQLError,
     capture_error,
-    check_read_only,
+    check_permission,
     pipeline_selector_from_graphql,
 )
 from ..asset_key import GrapheneAssetKey
@@ -145,7 +145,7 @@ class GrapheneDeleteRunMutation(graphene.Mutation):
         name = "DeleteRunMutation"
 
     @capture_error
-    @check_read_only
+    @check_permission("delete_pipeline_run")
     def mutate(self, graphene_info, **kwargs):
         run_id = kwargs["runId"]
         return delete_pipeline_run(graphene_info, run_id)
@@ -200,7 +200,7 @@ class GrapheneLaunchPipelineExecutionMutation(graphene.Mutation):
         name = "LaunchPipelineExecutionMutation"
 
     @capture_error
-    @check_read_only
+    @check_permission("launch_pipeline_execution")
     def mutate(self, graphene_info, **kwargs):
         return create_execution_params_and_launch_pipeline_exec(
             graphene_info, kwargs["executionParams"]
@@ -218,7 +218,7 @@ class GrapheneLaunchBackfillMutation(graphene.Mutation):
         name = "LaunchBackfillMutation"
 
     @capture_error
-    @check_read_only
+    @check_permission("launch_partition_backfill")
     def mutate(self, graphene_info, **kwargs):
         return create_and_launch_partition_backfill(graphene_info, kwargs["backfillParams"])
 
@@ -234,7 +234,7 @@ class GrapheneCancelBackfillMutation(graphene.Mutation):
         name = "CancelBackfillMutation"
 
     @capture_error
-    @check_read_only
+    @check_permission("cancel_partition_backfill")
     def mutate(self, graphene_info, **kwargs):
         return cancel_partition_backfill(graphene_info, kwargs["backfillId"])
 
@@ -250,7 +250,7 @@ class GrapheneResumeBackfillMutation(graphene.Mutation):
         name = "ResumeBackfillMutation"
 
     @capture_error
-    @check_read_only
+    @check_permission("launch_partition_backfill")
     def mutate(self, graphene_info, **kwargs):
         return resume_partition_backfill(graphene_info, kwargs["backfillId"])
 
@@ -276,7 +276,7 @@ class GrapheneLaunchPipelineReexecutionMutation(graphene.Mutation):
         name = "LaunchPipelineReexecutionMutation"
 
     @capture_error
-    @check_read_only
+    @check_permission("launch_pipeline_reexecution")
     def mutate(self, graphene_info, **kwargs):
         return create_execution_params_and_launch_pipeline_reexec(
             graphene_info,
@@ -308,7 +308,7 @@ class GrapheneTerminatePipelineExecutionMutation(graphene.Mutation):
         name = "TerminatePipelineExecutionMutation"
 
     @capture_error
-    @check_read_only
+    @check_permission("terminate_pipeline_execution")
     def mutate(self, graphene_info, **kwargs):
         return terminate_pipeline_execution(
             graphene_info,
@@ -357,7 +357,7 @@ class GrapheneReloadRepositoryLocationMutation(graphene.Mutation):
         name = "ReloadRepositoryLocationMutation"
 
     @capture_error
-    @check_read_only
+    @check_permission("reload_repository_location")
     def mutate(self, graphene_info, **kwargs):
         location_name = kwargs["repositoryLocationName"]
 
@@ -386,7 +386,7 @@ class GrapheneShutdownRepositoryLocationMutation(graphene.Mutation):
         name = "ShutdownRepositoryLocationMutation"
 
     @capture_error
-    @check_read_only
+    @check_permission("reload_repository_location")
     def mutate(self, graphene_info, **kwargs):
         location_name = kwargs["repositoryLocationName"]
 
@@ -417,7 +417,7 @@ class GrapheneReloadWorkspaceMutation(graphene.Mutation):
         name = "ReloadWorkspaceMutation"
 
     @capture_error
-    @check_read_only
+    @check_permission("reload_workspace")
     def mutate(self, graphene_info, **_kwargs):
         new_context = graphene_info.context.reload_workspace()
         return fetch_workspace(new_context)
@@ -451,7 +451,7 @@ class GrapheneAssetWipeMutation(graphene.Mutation):
         name = "AssetWipeMutation"
 
     @capture_error
-    @check_read_only
+    @check_permission("wipe_assets")
     def mutate(self, graphene_info, **kwargs):
         return wipe_assets(
             graphene_info,
