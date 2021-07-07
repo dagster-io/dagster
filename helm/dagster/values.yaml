@@ -210,7 +210,7 @@ dagster-user-deployments:
       #   - "-a"
       #   - "define_demo_execution_repo"
       dagsterApiGrpcArgs:
-        - "-f"
+        - "--python-file"
         - "/example_project/example_repo/repo.py"
       port: 3030
 
@@ -319,15 +319,14 @@ scheduler:
   #  ]
   type: DagsterDaemonScheduler
 
-  config:
-    {}
-    ## Uncomment this configuration will only be used if the CustomScheduler is selected.
-    ## Using this setting requires a custom Dagit image that defines the user specified
-    ## scheduler in an installed python module.
-    # customScheduler:
-    #   module: ~
-    #   class: ~
-    #   config: {}
+  config: {}
+  ## Uncomment this configuration will only be used if the CustomScheduler is selected.
+  ## Using this setting requires a custom Dagit image that defines the user specified
+  ## scheduler in an installed python module.
+  #   customScheduler:
+  #     module: ~
+  #     class: ~
+  #     config: {}
 
 ####################################################################################################
 # Run Launcher: Configuration for run launcher

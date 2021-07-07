@@ -155,7 +155,11 @@ This component can be updated independently from other Dagster components, inclu
 
 _Skip this step if using Dagster's example User Code image [dagster/user-code-example](https://hub.docker.com/r/dagster/user-code-example)._
 
-Create a Docker image containing the Dagster repository and any dependencies needed to execute the objects in the repository. For reference, here is an example [Dockerfile](https://github.com/dagster-io/dagster/blob/master/python_modules/automation/automation/docker/images/k8s-example/Dockerfile) and the corresponding [User Code directory](https://github.com/dagster-io/dagster/tree/master/examples/deploy_k8s/example_project).
+Build a Docker image containing your Dagster repository and any dependencies needed to execute the business logic in your code.
+
+For reference, here is an example [Dockerfile](https://github.com/dagster-io/dagster/blob/master/python_modules/automation/automation/docker/images/k8s-example/Dockerfile) and the corresponding [User Code directory](https://github.com/dagster-io/dagster/tree/master/examples/deploy_k8s/example_project). Here, we install all the Dagster-related dependencies in the Dockerfile, and then copy over the directory with the implementation of the Dagster repository into the root folder. We'll need to remember the path of this repository in a [subsequent step](/deployment/guides/kubernetes/deploying-with-helm#configure-your-user-deployment) to setup the gRPC server as a deployment.
+
+For projects with many dependencies, it is recommended that you publish your Python project as a package and install that package in your Dockerfile.
 
 ### Push Docker image to registry
 
@@ -171,9 +175,9 @@ The Dagster chart repository contains the versioned charts for all Dagster relea
 
 ### Configure your User Deployment
 
-Update the `dagster-user-deployments.deployments` section of the Dagster chart's `values.yaml` to include your deployment.
+Update the `dagster-user-deployments.deployments` section of the Dagster chart's `values.yaml` to include your deployment. Here, we can specify the configuration of the Kubernetes Deployment that will create the gRPC server for Dagit and the Daemon to access the User Code. The gRPC server is created through the arguments passed to `dagsterApiGrpcArgs`, which expects a list of arguments for [`dagster api grpc`](/concepts/repositories-workspaces/workspaces#running-your-own-grpc-server).
 
-The following snippet works for Dagster's example User Code image.
+The following snippet works for Dagster's example User Code image. Since our Dockerfile contains the repository definition in a path, we specify arguments for the gRPC server to find this path under `dagsterApiGrpcArgs`.
 
 ```yaml
 dagster-user-deployments:
@@ -185,12 +189,12 @@ dagster-user-deployments:
       tag: latest
       pullPolicy: Always
     dagsterApiGrpcArgs:
-      - "-f"
+      - "--python-file"
       - "/example_project/example_repo/repo.py"
     port: 3030
 ```
 
-The `dagsterApiGrpcArgs` field expects a list of arguments for `dagster api grpc` which is run upon Deployment creation and starts the gRPC server. To find the applicable arguments, [read here](/concepts/repositories-workspaces/workspaces#running-your-own-grpc-server).
+`dagsterApiGrpcArgs` also supports loading repository definitions from a package name. To find the applicable arguments, [read here](/concepts/repositories-workspaces/workspaces#running-your-own-grpc-server).
 
 ### Install the Dagster Helm chart
 
