@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, cast
 
 import pendulum
 from dagster import check
-from dagster.core.events import DagsterEvent, EngineEventData
+from dagster.core.events import DagsterEvent, EngineEventData, log_step_event
 from dagster.core.execution.context.system import PlanOrchestrationContext
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.plan.step import ExecutionStep
@@ -62,6 +62,16 @@ class StepDelegatingExecutor(Executor):
             pipeline_run=pipeline_context.pipeline_run,
         )
 
+    def _log_new_events(self, events, pipeline_context, running_steps):
+        # Note: this could lead to duplicated events if the returned events were already logged
+        # (they shouldn't be)
+        for event in events:
+            log_step_event(
+                pipeline_context.for_step(running_steps[event.step_key]),
+                event,
+            )
+        return events
+
     def execute(self, pipeline_context: PlanOrchestrationContext, execution_plan: ExecutionPlan):
         check.inst_param(pipeline_context, "pipeline_context", PlanOrchestrationContext)
         check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
@@ -92,10 +102,14 @@ class StepDelegatingExecutor(Executor):
                     active_execution.mark_interrupted()
                     for step_key in running_steps:
                         events.extend(
-                            self._step_handler.terminate_step(
-                                self._get_step_handler_context(
-                                    pipeline_context, [step_key], active_execution
-                                )
+                            self._log_new_events(
+                                self._step_handler.terminate_step(
+                                    self._get_step_handler_context(
+                                        pipeline_context, [step_key], active_execution
+                                    )
+                                ),
+                                pipeline_context,
+                                running_steps,
                             )
                         )
                     running_steps.clear()
@@ -115,20 +129,28 @@ class StepDelegatingExecutor(Executor):
                         last_check_step_health_time = curr_time
                         for step_key in running_steps:
                             events.extend(
-                                self._step_handler.check_step_health(
-                                    self._get_step_handler_context(
-                                        pipeline_context, [step_key], active_execution
-                                    )
+                                self._log_new_events(
+                                    self._step_handler.check_step_health(
+                                        self._get_step_handler_context(
+                                            pipeline_context, [step_key], active_execution
+                                        )
+                                    ),
+                                    pipeline_context,
+                                    running_steps,
                                 )
                             )
 
                     for step in active_execution.get_steps_to_execute():
                         running_steps[step.key] = step
                         events.extend(
-                            self._step_handler.launch_step(
-                                self._get_step_handler_context(
-                                    pipeline_context, [step.key], active_execution
-                                )
+                            self._log_new_events(
+                                self._step_handler.launch_step(
+                                    self._get_step_handler_context(
+                                        pipeline_context, [step.key], active_execution
+                                    )
+                                ),
+                                pipeline_context,
+                                running_steps,
                             )
                         )
 

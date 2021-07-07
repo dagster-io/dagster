@@ -89,6 +89,18 @@ def test_k8s_run_launcher_default(
         updated_run = dagster_instance_for_k8s_run_launcher.get_run_by_id(run.run_id)
         assert updated_run.tags[DOCKER_IMAGE_TAG] == get_test_project_docker_image()
 
+        events = dagster_instance_for_k8s_run_launcher.all_logs(run.run_id)
+        assert (
+            len(
+                [
+                    event
+                    for event in events
+                    if ("Executing step" in event.message and "in Kubernetes job" in event.message)
+                ]
+            )
+            == 2
+        )
+
 
 @pytest.mark.integration
 def test_k8s_run_launcher_image_from_origin(
