@@ -236,6 +236,22 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'collect'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'eventually_successful'
+                        },
+                        'solidHandle': {
+                            'handleID': 'collect'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'conditionally_fail'
                 },
                 'invocations': [

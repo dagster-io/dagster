@@ -457,6 +457,24 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         return HookContext(self, hook_def)
 
+    def can_load(self, step_output_handle: StepOutputHandle) -> bool:
+        # Whether IO Manager can load the source
+        # FIXME https://github.com/dagster-io/dagster/issues/3511
+        # This is a stopgap which asks the instance to check the event logs to find out step skipping
+
+        from dagster.core.events import DagsterEventType
+
+        # can load from upstream in the same run
+        for record in self.instance.all_logs(self.run_id, of_type=DagsterEventType.STEP_OUTPUT):
+            if step_output_handle == record.dagster_event.event_specific_data.step_output_handle:
+                return True
+
+        # can load from a previous run
+        if self._get_source_run_id_from_logs(step_output_handle):
+            return True
+
+        return False
+
     def _get_source_run_id_from_logs(self, step_output_handle: StepOutputHandle) -> Optional[str]:
         from dagster.core.events import DagsterEventType
 

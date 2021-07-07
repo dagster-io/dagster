@@ -89,6 +89,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         assert step_did_not_run(logs, "fail_2")
         assert step_did_not_run(logs, "fail_3")
         assert step_did_not_run(logs, "reset")
+        assert step_did_not_run(logs, "collect")
 
         retry_one = execute_dagster_graphql_and_finish_runs(
             graphql_context,
@@ -116,6 +117,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         assert step_did_fail(logs, "fail_2")
         assert step_did_not_run(logs, "fail_3")
         assert step_did_not_run(logs, "reset")
+        assert step_did_not_run(logs, "collect")
 
         retry_two = execute_dagster_graphql_and_finish_runs(
             graphql_context,
@@ -144,6 +146,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         assert step_did_succeed(logs, "fail_2")
         assert step_did_fail(logs, "fail_3")
         assert step_did_not_run(logs, "reset")
+        assert step_did_not_run(logs, "collect")
 
         retry_three = execute_dagster_graphql_and_finish_runs(
             graphql_context,
@@ -172,6 +175,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         assert step_did_not_run(logs, "fail_2")
         assert step_did_succeed(logs, "fail_3")
         assert step_did_succeed(logs, "reset")
+        assert step_did_succeed(logs, "collect")
 
     def test_retry_resource_pipeline(self, graphql_context):
         context = graphql_context

@@ -439,24 +439,14 @@ class FromMultipleSources(
 
         return handles
 
-    def _step_output_handles_no_output(self, step_context):
-        # FIXME https://github.com/dagster-io/dagster/issues/3511
-        # this is a stopgap which asks the instance to check the event logs to find out step skipping
-        step_output_handles_with_output = set()
-        for event_record in step_context.instance.all_logs(step_context.run_id):
-            if event_record.dagster_event and event_record.dagster_event.is_successful_output:
-                step_output_handles_with_output.add(
-                    event_record.dagster_event.event_specific_data.step_output_handle
-                )
-        return set(self.step_output_handle_dependencies).difference(step_output_handles_with_output)
-
     def load_input_object(self, step_context):
         from dagster.core.events import DagsterEvent
 
         values = []
-
         # some upstream steps may have skipped and we allow fan-in to continue in their absence
-        source_handles_to_skip = self._step_output_handles_no_output(step_context)
+        source_handles_to_skip = list(
+            filter(lambda x: not step_context.can_load(x), self.step_output_handle_dependencies)
+        )
 
         for inner_source in self.sources:
             if (
