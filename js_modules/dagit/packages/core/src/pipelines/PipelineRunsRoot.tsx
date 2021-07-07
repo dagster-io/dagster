@@ -3,6 +3,7 @@ import {NonIdealState, Tag} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
+import {useFeatureFlags} from '../app/Flags';
 import {QueryCountdown} from '../app/QueryCountdown';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
@@ -33,17 +34,23 @@ interface Props {
 
 export const PipelineRunsRoot: React.FC<Props> = (props) => {
   const {pipelinePath} = props;
-  const {pipelineName, snapshotId} = explorerPathFromString(pipelinePath);
+  const {pipelineName, pipelineMode, snapshotId} = explorerPathFromString(pipelinePath);
 
+  const {flagPipelineModeTuples} = useFeatureFlags();
   useDocumentTitle(`Pipeline: ${pipelineName}`);
 
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters(ENABLED_FILTERS);
   const permanentTokens = React.useMemo(() => {
     return [
-      {token: 'pipeline', value: pipelineName},
+      flagPipelineModeTuples
+        ? {
+            token: 'job',
+            value: `${pipelineName}${pipelineMode === 'default' ? '' : `:${pipelineMode}`}`,
+          }
+        : {token: 'pipeline', value: pipelineName},
       snapshotId ? {token: 'snapshotId', value: snapshotId} : null,
     ].filter(Boolean) as TokenizingFieldValue[];
-  }, [pipelineName, snapshotId]);
+  }, [flagPipelineModeTuples, pipelineName, pipelineMode, snapshotId]);
 
   const allTokens = [...filterTokens, ...permanentTokens];
 

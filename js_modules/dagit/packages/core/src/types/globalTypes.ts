@@ -193,6 +193,7 @@ export interface PipelineRunsFilter {
   statuses?: PipelineRunStatus[] | null;
   snapshotId?: string | null;
   updatedAfter?: string | null;
+  mode?: string | null;
 }
 
 export interface PipelineSelector {

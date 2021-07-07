@@ -1015,6 +1015,7 @@ input PipelineRunsFilter {
   statuses: [PipelineRunStatus!]
   snapshotId: String
   updatedAfter: String
+  mode: String
 }
 
 input ExecutionTag {
