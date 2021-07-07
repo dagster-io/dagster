@@ -201,7 +201,7 @@ Install the Helm chart and create a release. Below, we've named our release `dag
 
     helm upgrade --install dagster dagster/dagster -f /path/to/values.yaml \
       --set runLauncher.type=CeleryK8sRunLauncher \
-      --set dagsterDaemon.queuedRunCoordinator.enabled=true \
+      --set dagsterDaemon.runCoordinator.enabled=true \
       --set rabbitmq.enabled=true
 
 Helm will launch several pods. You can check the status of the installation with `kubectl`. If everything worked correctly, you should see output like the following:

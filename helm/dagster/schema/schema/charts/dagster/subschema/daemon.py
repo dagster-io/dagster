@@ -56,7 +56,7 @@ class RunCoordinator(BaseModel):
 class Daemon(BaseModel):
     enabled: bool
     image: kubernetes.Image
-    queuedRunCoordinator: RunCoordinator
+    runCoordinator: RunCoordinator
     heartbeatTolerance: int
     env: Dict[str, str]
     envConfigMaps: List[kubernetes.ConfigMapEnvSource]

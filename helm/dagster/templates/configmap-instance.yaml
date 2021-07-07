@@ -68,8 +68,8 @@ data:
           port: {{ .Values.postgresql.service.port }}
           params: {{ .Values.postgresql.postgresqlParams | toYaml | nindent 12 }}
 
-    {{- if and (.Values.dagsterDaemon.enabled) (.Values.dagsterDaemon.queuedRunCoordinator.enabled) }}
-    {{- $runCoordinatorType := .Values.dagsterDaemon.queuedRunCoordinator.type }}
+    {{- if and (.Values.dagsterDaemon.enabled) (.Values.dagsterDaemon.runCoordinator.enabled) }}
+    {{- $runCoordinatorType := .Values.dagsterDaemon.runCoordinator.type }}
     run_coordinator:
       {{- if eq $runCoordinatorType "QueuedRunCoordinator" }}
         {{- include "dagsterYaml.runCoordinator.queued" . | indent 6 -}}

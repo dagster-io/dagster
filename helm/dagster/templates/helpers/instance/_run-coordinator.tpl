@@ -1,5 +1,5 @@
 {{- define "dagsterYaml.runCoordinator.queued" }}
-{{- $queuedRunCoordinatorConfig := .Values.dagsterDaemon.queuedRunCoordinator.config.queuedRunCoordinator }}
+{{- $queuedRunCoordinatorConfig := .Values.dagsterDaemon.runCoordinator.config.queuedRunCoordinator }}
 module: dagster.core.run_coordinator
 class: QueuedRunCoordinator
 {{- if not (empty (compact (values $queuedRunCoordinatorConfig))) }}
@@ -19,7 +19,7 @@ config:
 {{- end }}
 
 {{- define "dagsterYaml.runCoordinator.custom" }}
-{{- $customRunCoordinatorConfig := .Values.dagsterDaemon.queuedRunCoordinator.config.customRunCoordinator }}
+{{- $customRunCoordinatorConfig := .Values.dagsterDaemon.runCoordinator.config.customRunCoordinator }}
 module: {{ $customRunCoordinatorConfig.module | quote }}
 class: {{ $customRunCoordinatorConfig.class | quote }}
 config: {{ $customRunCoordinatorConfig.config | toYaml | nindent 2 }}

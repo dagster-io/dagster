@@ -1816,7 +1816,7 @@
                 "image": {
                     "$ref": "#/definitions/Image"
                 },
-                "queuedRunCoordinator": {
+                "runCoordinator": {
                     "$ref": "#/definitions/RunCoordinator"
                 },
                 "heartbeatTolerance": {
@@ -1875,7 +1875,7 @@
             "required": [
                 "enabled",
                 "image",
-                "queuedRunCoordinator",
+                "runCoordinator",
                 "heartbeatTolerance",
                 "env",
                 "envConfigMaps",

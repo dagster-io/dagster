@@ -89,7 +89,7 @@ def test_queued_run_coordinator_config(template: HelmTemplate, enabled: bool):
     dequeue_interval_seconds = 50
     helm_values = DagsterHelmValues.construct(
         dagsterDaemon=Daemon.construct(
-            queuedRunCoordinator=RunCoordinator.construct(
+            runCoordinator=RunCoordinator.construct(
                 enabled=enabled,
                 type=RunCoordinatorType.QUEUED,
                 config=RunCoordinatorConfig.construct(
@@ -132,7 +132,7 @@ def test_custom_run_coordinator_config(template: HelmTemplate):
     config = {"config_field_one": config_field_one, "config_field_two": config_field_two}
     helm_values = DagsterHelmValues.construct(
         dagsterDaemon=Daemon.construct(
-            queuedRunCoordinator=RunCoordinator.construct(
+            runCoordinator=RunCoordinator.construct(
                 enabled=True,
                 type=RunCoordinatorType.CUSTOM,
                 config=RunCoordinatorConfig.construct(

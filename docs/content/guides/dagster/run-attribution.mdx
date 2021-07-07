@@ -95,11 +95,15 @@ run_coordinator:
 If you're using Helm to deploy instead, you can specify the custom run coordinator in the Helm chart's `values.yaml`:
 
 ```yaml file=/guides/dagster/run-attribution/values.yaml
-queuedRunCoordinator:
-  enabled: true
-  module: run_attribution_example
-  class: CustomRunCoordinator
-  config: {}
+dagsterDaemon:
+  runCoordinator:
+    enabled: true
+    type: CustomRunCoordinator
+    config:
+      customRunCoordinator:
+        module: run_attribution_example
+        class: CustomRunCoordinator
+        config: {}
 ```
 
 Note that the flexibility of specifying `module` and `class` allows for any custom Run Coordinator to be used, as long as the relevant `module` is installed in the image that the Dagster instance is running on.

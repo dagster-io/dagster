@@ -319,7 +319,8 @@ scheduler:
   #  ]
   type: DagsterDaemonScheduler
 
-  config: {}
+  config:
+    {}
     ## Uncomment this configuration will only be used if the CustomScheduler is selected.
     ## Using this setting requires a custom Dagit image that defines the user specified
     ## scheduler in an installed python module.
@@ -732,8 +733,8 @@ ingress:
 # Setting `heartbeatTolerance` lets you configure how long each thread can run without sending
 # a heartbeat before the daemon determines that one must be hanging and restarts the process.
 #
-# Setting `enabled` in `queuedRunCoordinator` allows you to set limits on the total number of runs
-# that can execute at once.
+# Setting `config.queuedRunCoordinator.maxConcurrentRuns` in `runCoordinator` allows you to set
+# limits on the total number of runs that can execute at once.
 ####################################################################################################
 dagsterDaemon:
   enabled: true
@@ -747,7 +748,7 @@ dagsterDaemon:
 
   heartbeatTolerance: 300
 
-  queuedRunCoordinator:
+  runCoordinator:
     enabled: false
 
     # Type can be one of [
