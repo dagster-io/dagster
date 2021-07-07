@@ -116,19 +116,15 @@ export const ConfigEditorConfigPicker: React.FC<ConfigEditorConfigPickerProps> =
           onSelect={onSelect}
         />
       )}
-      {base && 'partitionsSetName' in base && (
-        <>
-          <div style={{width: 5}} />
-          <ConfigEditorPartitionPicker
-            key={base.partitionsSetName}
-            pipeline={pipeline}
-            partitionSetName={base.partitionsSetName}
-            value={base.partitionName}
-            onSelect={onSelectPartition}
-            repoAddress={repoAddress}
-          />
-        </>
-      )}
+      {base && 'partitionsSetName' in base ? (
+        <ConfigEditorPartitionPicker
+          pipeline={pipeline}
+          partitionSetName={base.partitionsSetName}
+          value={base.partitionName}
+          onSelect={onSelectPartition}
+          repoAddress={repoAddress}
+        />
+      ) : null}
     </PickerContainer>
   );
 };

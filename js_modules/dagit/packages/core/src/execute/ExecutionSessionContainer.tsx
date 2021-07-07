@@ -144,10 +144,22 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
   const {presets} = pipeline;
 
   const initialDataForMode = React.useMemo(() => {
-    const presetsForMode = presets.filter((preset) => preset.mode === pipelineMode);
-    const prepopulateConfig =
-      flagPipelineModeTuples && presetsForMode.length === 1 && partitionSets.results.length === 0;
-    return prepopulateConfig ? {runConfigYaml: presetsForMode[0].runConfigYaml} : {};
+    if (flagPipelineModeTuples) {
+      const presetsForMode = presets.filter((preset) => preset.mode === pipelineMode);
+      const partitionSetsForMode = partitionSets.results.filter(
+        (partitionSet) => partitionSet.mode === pipelineMode,
+      );
+
+      if (presetsForMode.length === 1 && partitionSetsForMode.length === 0) {
+        return {runConfigYaml: presetsForMode[0].runConfigYaml};
+      }
+
+      if (!presetsForMode.length && partitionSetsForMode.length === 1) {
+        return {base: {partitionsSetName: partitionSetsForMode[0].name, partitionName: null}};
+      }
+    }
+
+    return {};
   }, [flagPipelineModeTuples, partitionSets, pipelineMode, presets]);
 
   const [data, onSave] = useStorage(
