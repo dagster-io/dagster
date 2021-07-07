@@ -205,8 +205,6 @@ Scheduling
 
 .. autoclass:: Scheduler
 
-.. autoclass:: DagsterDaemonScheduler
-
 .. currentmodule:: dagster.core.storage.schedules
 
 .. autoclass:: ScheduleStorage

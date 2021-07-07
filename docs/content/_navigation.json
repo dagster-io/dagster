@@ -473,6 +473,10 @@
             "path": "/_apidocs/dynamic"
           },
           {
+            "title": "Experimental Core APIs",
+            "path": "/_apidocs/experimental"
+          },
+          {
             "title": "Utilities",
             "path": "/_apidocs/utilities"
           },

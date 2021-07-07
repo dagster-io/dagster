@@ -223,7 +223,7 @@ def _checked_inferred_type(inferred: Any) -> DagsterType:
 
 class DynamicOutputDefinition(OutputDefinition):
     """
-    (Experimental) Variant of :py:class:`OutputDefinition <dagster.OutputDefinition>` for an
+    Variant of :py:class:`OutputDefinition <dagster.OutputDefinition>` for an
     output that will dynamically alter the graph at runtime.
 
     When using in a composition function such as :py:func:`@pipeline <dagster.pipeline>`,
@@ -304,7 +304,28 @@ class Out(
         ],
     )
 ):
-    """Experimental replacement for OutputDefinition intended to decrease verbosity."""
+    """
+    Experimental replacement for :py:class:`OutputDefinition` intended to decrease verbosity.
+
+    Args:
+        dagster_type (Optional[Union[Type, DagsterType]]]):
+            The type of this output. Should only be set if the correct type can not
+            be inferred directly from the type signature of the decorated function.
+        description (Optional[str]): Human-readable description of the output.
+        is_required (Optional[bool]): Whether the presence of this field is required. (default: True)
+        io_manager_key (Optional[str]): The resource key of the output manager used for this output.
+            (default: "io_manager").
+        metadata (Optional[Dict[str, Any]]): A dict of the metadata for the output.
+            For example, users can provide a file path if the data object will be stored in a
+            filesystem, or provide information of a database table when it is going to load the data
+            into the table.
+        asset_key (Optional[Union[AssetKey, OutputContext -> AssetKey]]): (Experimental) An AssetKey
+            (or function that produces an AssetKey from the OutputContext) which should be associated
+            with this OutputDefinition. Used for tracking lineage information through Dagster.
+        asset_partitions (Optional[Union[Set[str], OutputContext -> Set[str]]]): (Experimental) A
+            set of partitions of the given asset_key (or a function that produces this list of
+            partitions from the OutputContext) which should be associated with this OutputDefinition.
+    """
 
     def __new__(
         cls,

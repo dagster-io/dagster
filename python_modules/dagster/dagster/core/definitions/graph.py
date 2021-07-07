@@ -39,6 +39,8 @@ if TYPE_CHECKING:
     from .solid import SolidDefinition
     from .partition import PartitionedConfig
     from .executor import ExecutorDefinition
+    from .pipeline import PipelineDefinition
+    from dagster.core.execution.execute import InProcessGraphResult
 
 
 def _check_node_defs_arg(graph_name: str, node_defs: List[NodeDefinition]):
@@ -163,40 +165,21 @@ class GraphDefinition(NodeDefinition):
 
     @property
     def solids(self) -> List[Solid]:
-        """List[Solid]: Top-level solids in the graph."""
         return list(set(self._solid_dict.values()))
 
     @property
     def solid_dict(self) -> Dict[str, Solid]:
-        """Dict[str, Solid]: A dict of top-level solids in the graph, keyed on solid names."""
         return self._solid_dict
 
     @property
     def node_defs(self) -> List[NodeDefinition]:
-        """List[NodeDefinition]: List of nodes in the graph."""
         return self._node_defs
 
     def has_solid_named(self, name: str) -> bool:
-        """Return whether or not there is a top level solid with this name in the graph.
-
-        Args:
-            name (str): Name of solid
-
-        Returns:
-            bool: True if the solid is in the graph.
-        """
         check.str_param(name, "name")
         return name in self._solid_dict
 
     def solid_named(self, name: str) -> Solid:
-        """Return the top level solid named "name". Throws if it does not exist.
-
-        Args:
-            name (str): Name of solid
-
-        Returns:
-            Solid:
-        """
         check.str_param(name, "name")
         check.invariant(
             name in self._solid_dict,
@@ -206,15 +189,6 @@ class GraphDefinition(NodeDefinition):
         return self._solid_dict[name]
 
     def get_solid(self, handle: SolidHandle) -> Solid:
-        """Return the solid contained anywhere within the graph via its handle.
-
-        Args:
-            handle (SolidHandle): The solid's handle
-
-        Returns:
-            Solid:
-
-        """
         check.inst_param(handle, "handle", SolidHandle)
         current = handle
         lineage = []
@@ -374,12 +348,19 @@ class GraphDefinition(NodeDefinition):
         tags: Optional[Dict[str, str]] = None,
         logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
         executor_def: Optional["ExecutorDefinition"] = None,
-    ):
+    ) -> "PipelineDefinition":
         """
-        For experimenting with "job" flows
+        Make this graph in to an executable Job by providing remaining components required for execution.
 
         Args:
-            config: Describes how the job is parameterized at runtime.
+            name (Optional[str]):
+                The name for the Job. Defaults to the name of the this graph.
+            resource_defs (Optional[Dict[str, ResourceDefinition]]):
+                Resources that are required by this graph for execution.
+                If not defined, `io_manager` will default to filesystem.
+            config:
+                Describes how the job is parameterized at runtime.
+
                 If no value is provided, then the schema for the job's run config is a standard
                 format based on its solids and resources.
 
@@ -388,14 +369,26 @@ class GraphDefinition(NodeDefinition):
                 The values provided will be viewable and editable in the Dagit playground, so be
                 careful with secrets.
 
-                If a ConfigMapping object is provided, then the schema for the job's run config is
+                If a :py:class:`ConfigMapping` object is provided, then the schema for the job's run config is
                 determined by the config mapping, and the ConfigMapping, which should return
                 configuration in the standard format to configure the job.
 
-                If a PartitionedConfig object is provided, then it defines a discrete set of config
+                If a :py:class:`PartitionedConfig` object is provided, then it defines a discrete set of config
                 values that can parameterize the pipeline, as well as a function for mapping those
                 values to the base config. The values provided will be viewable and editable in the
                 Dagit playground, so be careful with secrets.
+            tags (Optional[Dict[str, Any]]):
+                Arbitrary metadata for any execution of the Job.
+                Values that are not strings will be json encoded and must meet the criteria that
+                `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
+                values provided at invocation time.
+            logger_defs (Optional[Dict[str, LoggerDefinition]]):
+                A dictionary of string logger identifiers to their implementations.
+            executor_def (Optional[ExecutorDefinition]):
+                How this Job will be executed. Defaults to :py:class:`multiprocess_executor` .
+
+        Returns:
+            PipelineDefinition: The "Job" currently implemented as a single-mode pipeline
         """
         from .pipeline import PipelineDefinition
         from .partition import PartitionedConfig
@@ -476,9 +469,21 @@ class GraphDefinition(NodeDefinition):
         run_config: Optional[Dict[str, Any]] = None,
         instance: Optional["DagsterInstance"] = None,
         resources: Optional[Dict[str, ResourceDefinition]] = None,
-        loggers: Optional[Dict[str, LoggerDefinition]] = None,
-        input_values: Optional[Dict[str, Any]] = None,
-    ):
+    ) -> "InProcessGraphResult":
+        """
+        Execute this graph in-process, collecting results in-memory.
+
+        Args:
+            run_config (Optional[Dict[str, Any]]):
+                Configuration for the run.
+            instance (Optional[DagsterInstance]):
+                The instance to execute against, an ephemeral one will be used if none provided.
+            resources (Optional[Dict[str, ResourceDefinition]]):
+                The resources needed if any are required.
+
+        Returns:
+            InProcessGraphResult
+        """
         from dagster.core.execution.execute import execute_in_process
 
         run_config = check.opt_dict_param(run_config, "run_config")
@@ -488,8 +493,6 @@ class GraphDefinition(NodeDefinition):
             run_config=run_config,
             instance=instance,
             resources=resources,
-            loggers=loggers,
-            input_values=input_values,
         )
 
 

@@ -41,6 +41,7 @@ if TYPE_CHECKING:
     from dagster.core.snap import PipelineSnapshot, ConfigSchemaSnapshot
     from dagster.core.host_representation import PipelineIndex
     from dagster.core.instance import DagsterInstance
+    from dagster.core.execution.execution_results import InProcessGraphResult
 
 
 class PipelineDefinition:
@@ -526,7 +527,24 @@ class PipelineDefinition:
         self,
         run_config: Optional[Dict[str, Any]] = None,
         instance: Optional["DagsterInstance"] = None,
-    ):
+    ) -> "InProcessGraphResult":
+        """
+        (Experimental) Execute the "Job" (single mode pipeline) in-process, gathering results in-memory.
+
+        The executor_def on the Job will be ignored, and replaced with the in-process executor.
+        If using the default io_manager, it will switch from filesystem to in-memory.
+
+
+        Args:
+            run_config (Optional[Dict[str, Any]]:
+                The configuration for the run
+            instance (Optional[DagsterInstance]):
+                The instance to execute against, an ephemeral one will be used if none provided.
+
+        Returns:
+            InProcessGraphResult
+
+        """
         from dagster.core.definitions.executor import in_process_executor
         from dagster.core.execution.execute import core_execute_in_process
 

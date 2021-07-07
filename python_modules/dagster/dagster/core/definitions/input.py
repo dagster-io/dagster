@@ -321,7 +321,26 @@ class In(
         "asset_key asset_partitions",
     )
 ):
-    """Experimental replacement for InputDefinition, intended to decrease verbosity."""
+    """
+    Experimental replacement for :py:class:`InputDefinition`, intended to decrease verbosity.
+
+    Args:
+        dagster_type (Optional[Union[Type, DagsterType]]]):
+            The type of this input. Should only be set if the correct type can not
+            be inferred directly from the type signature of the decorated function.
+        description (Optional[str]): Human-readable description of the input.
+        default_value (Optional[Any]): The default value to use if no input is provided.
+        root_manager_key (Optional[str]): (Experimental) The resource key for the
+            :py:class:`RootInputManager` used for loading this input when it is not connected to an
+            upstream output.
+        metadata (Optional[Dict[str, Any]]): A dict of metadata for the input.
+        asset_key (Optional[Union[AssetKey, InputContext -> AssetKey]]): (Experimental) An AssetKey
+            (or function that produces an AssetKey from the InputContext) which should be associated
+            with this InputDefinition. Used for tracking lineage information through Dagster.
+        asset_partitions (Optional[Union[Set[str], InputContext -> Set[str]]]): (Experimental) A
+            set of partitions of the given asset_key (or a function that produces this list of
+            partitions from the InputContext) which should be associated with this InputDefinition.
+    """
 
     def __new__(
         cls,

@@ -84,6 +84,9 @@ class InProcessSolidResult(NodeExecutionResult):
 
     @property
     def output_values(self) -> Dict[str, Any]:
+        """
+        The output values for the associated op/solid, keyed by output name.
+        """
         solid_handle_as_str = str(self.handle)
         results: Dict[str, Any] = {}
         if self._output_capture:
@@ -157,6 +160,9 @@ class InProcessGraphResult(NodeExecutionResult):
 
     @property
     def output_values(self) -> Dict[str, Any]:
+        """
+        The values for any outputs that this associated graph maps.
+        """
         values = {}
 
         for output_name in self._graph_def.output_dict:
@@ -182,6 +188,10 @@ class InProcessGraphResult(NodeExecutionResult):
         return self._handle
 
     def result_for_node(self, name: str) -> NodeExecutionResult:
+        """
+        The inner result for a node within the graph.
+        """
+
         if not self._graph_def.has_solid_named(name):
             raise DagsterInvariantViolationError(
                 "Tried to get result for node '{name}' in '{container}'. No such top level "

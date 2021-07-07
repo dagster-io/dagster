@@ -118,17 +118,76 @@ class _Op:
 def op(
     name: Union[Callable[..., Any], Optional[str]] = None,
     description: Optional[str] = None,
-    input_defs: Optional[List[InputDefinition]] = None,
-    output_defs: Optional[List[OutputDefinition]] = None,
+    ins: Optional[Dict[str, In]] = None,
+    out: Optional[Union[Out, Dict[str, Out]]] = None,
     config_schema: Optional[Union[Any, Dict[str, Any]]] = None,
     required_resource_keys: Optional[Set[str]] = None,
     tags: Optional[Dict[str, Any]] = None,
     version: Optional[str] = None,
     retry_policy: Optional[RetryPolicy] = None,
-    ins: Optional[Dict[str, In]] = None,
-    out: Optional[Union[Out, Dict[str, Out]]] = None,
+    input_defs: Optional[List[InputDefinition]] = None,
+    output_defs: Optional[List[OutputDefinition]] = None,
 ) -> Union[_Op, SolidDefinition]:
-    """Op is an experimental replacement for solid, intended to decrease verbosity of core API."""
+    """
+    Op is an experimental replacement for solid, intended to decrease verbosity and have a more
+    intuitive name.
+
+    Ops are currently implemented as :py:class:`SolidDefinition` , so are likely to be called
+    solids throughout the product.
+
+    Args:
+        name (Optional[str]): Name of op. Must be unique within any :py:class:`GraphDefinition`
+            using the op.
+        description (Optional[str]): Human-readable description of this op. If not provided, and
+            the decorated function has docstring, that docstring will be used as the description.
+        ins (Optional[Dict[str, In]]):
+            Information about the inputs to the op. Information provided here will be combined
+            with what can be inferred from the function signature.
+        out (Optional[Union[Out, Dict[str, Out]]]):
+            Information about the solids outputs. Information provided here will be combined with
+            what can be inferred from the return type signature if the function does not use yield.
+        config_schema (Optional[ConfigSchema): The schema for the config. If set, Dagster will check
+            that config provided for the solid matches this schema and fail if it does not. If not
+            set, Dagster will accept any config provided for the solid.
+        required_resource_keys (Optional[Set[str]]): Set of resource handles required by this solid.
+        tags (Optional[Dict[str, Any]]): Arbitrary metadata for the op. Frameworks may
+            expect and require certain metadata to be attached to a op. Values that are not strings
+            will be json encoded and must meet the criteria that `json.loads(json.dumps(value)) == value`.
+        version (Optional[str]): (Experimental) The version of the op's compute_fn. Two ops should have
+            the same version if and only if they deterministically produce the same outputs when
+            provided the same inputs.
+        retry_policy (Optional[RetryPolicy]): The retry policy for this op.
+        input_defs (Optional[List[InputDefinition]]):
+            Preserved to ease migration from :py:class:`solid`
+        output_defs (Optional[List[OutputDefinition]]):
+            Preserved to ease migration from :py:class:`solid`
+
+    Examples:
+
+        .. code-block:: python
+
+            @op
+            def hello_world():
+                print('hello')
+
+            @op
+            def echo(in: str) -> str:
+                return in
+
+            @op(
+                ins={'in': In(str)},
+                out=Out(str)
+            )
+            def echo_2(in): # same as above
+                return in
+
+            @op(
+                out={'word': Out(), 'num': Out()}
+            )
+            def multi_out() -> Tuple[str, int]:
+                return 'cool', 4
+    """
+
     # This case is for when decorator is used bare, without arguments. e.g. @op versus @op()
     if callable(name):
         check.invariant(input_defs is None)

@@ -1,0 +1,61 @@
+Experimental Core APIs
+======================
+
+These are a set of API changes that seek to improve on the original Dagster Pipeline & Solid model in response to feedback from our users so far.
+
+
+Graph
+-----
+
+The replacement for :py:class:`composite_solid` / :py:class:`CompositeSolidDefinition` . It has a more intuitive name and there is no longer a distinction between a graph for execution (pipeline) and a graph for composition (composite solid).
+
+.. currentmodule:: dagster
+
+.. autodecorator:: graph
+
+.. currentmodule:: dagster.core.definitions.graph
+
+.. autoclass:: GraphDefinition
+    :members:
+
+Job
+---
+
+The replacement for :py:class:`pipeline` / :py:class:`PipelineDefinition`, a ``Job`` binds a ``Graph`` and the resources it needs to be executable.
+
+Jobs are created by calling :py:meth:`GraphDefinition.to_job` on a graph instance.
+
+Op
+--
+
+The replacement for :py:class:`solid`, has a more intuitive name and offers a more concise way of defining inputs & outputs.
+
+.. currentmodule:: dagster
+
+.. autodecorator:: op
+
+.. autoclass:: In
+
+.. autoclass:: Out
+
+
+Testing
+-------
+
+Explicit in-process execution APIs have been added to better facilitate testing of Graphs and Jobs.
+
+Jobs can be tested with :py:meth:`PipelineDefinition.execute_in_process`, and Graphs with :py:meth:`GraphDefinition.execute_in_process`
+
+.. currentmodule:: dagster
+.. automethod:: PipelineDefinition.execute_in_process
+
+.. currentmodule:: dagster.core.execution.execution_results
+
+.. autoclass:: InProcessGraphResult
+    :members:
+
+.. autoclass:: InProcessSolidResult
+    :members:
+
+.. autoclass:: NodeExecutionResult
+    :members:
