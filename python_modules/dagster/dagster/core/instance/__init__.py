@@ -1055,6 +1055,18 @@ class DagsterInstance:
         limit: Optional[int] = None,
         ascending: bool = False,
     ) -> Iterable["EventLogRecord"]:
+        """Return a list of event records stored in the event log storage.
+
+        Args:
+            event_records_filter (Optional[EventRecordsFilter]): the filter by which to filter event
+                records.
+            limit (Optional[int]): Number of results to get. Defaults to infinite.
+            ascending (Optional[bool]): Sort the result in ascending order if True, descending
+                otherwise. Defaults to descending.
+
+        Returns:
+            List[EventLogRecord]: List of event log records stored in the event log storage.
+        """
         return self._event_storage.get_event_records(event_records_filter, limit, ascending)
 
     def events_for_asset_key(

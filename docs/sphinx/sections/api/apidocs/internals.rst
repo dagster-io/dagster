@@ -127,7 +127,7 @@ Event log storage
 
 .. currentmodule:: dagster.core.storage.event_log
 
-.. autoclass:: EventLogFilter
+.. autoclass:: EventRecordsFilter
 
 .. autoclass:: RunShardedEventsCursor
 
