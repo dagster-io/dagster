@@ -504,6 +504,7 @@ class PipelineDefinition:
         hook_defs = check.set_param(hook_defs, "hook_defs", of_type=HookDefinition)
 
         pipeline_def = PipelineDefinition(
+            name=self.name,
             graph_def=self._graph_def,
             mode_defs=self.mode_definitions,
             preset_defs=self.preset_defs,
@@ -567,8 +568,11 @@ class PipelineDefinition:
         )
 
         ephemeral_pipeline = PipelineDefinition(
+            name=self._name,
             graph_def=self._graph_def,
             mode_defs=[in_proc_mode],
+            hook_defs=self.hook_defs,
+            tags=self.tags,
         )
 
         return core_execute_in_process(

@@ -1,4 +1,4 @@
-from dagster import ConfigMapping, graph, logger, resource, solid
+from dagster import ConfigMapping, graph, logger, resource, solid, success_hook
 from dagster.core.definitions.graph import GraphDefinition
 from dagster.core.definitions.partition import (
     Partition,
@@ -208,3 +208,26 @@ def test_logger_defs():
 
     my_job = my_graph.to_job(logger_defs={"abc": my_logger})
     assert my_job.mode_definitions[0].loggers == {"abc": my_logger}
+
+
+def test_job_with_hooks():
+    entered = []
+
+    @success_hook
+    def basic_hook(_):
+        entered.append("yes")
+
+    @solid
+    def basic_emit():
+        pass
+
+    @graph
+    def basic_hook_graph():
+        basic_emit()
+
+    job_for_hook_testing = basic_hook_graph.to_job(hooks={basic_hook})
+
+    result = job_for_hook_testing.execute_in_process()
+
+    assert result.success
+    assert entered == ["yes"]
