@@ -1,3 +1,4 @@
+from .resources import DbtCliResource, dbt_cli_resource
 from .solids import (
     dbt_cli_compile,
     dbt_cli_docs_generate,

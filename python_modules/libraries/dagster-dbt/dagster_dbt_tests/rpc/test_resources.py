@@ -17,21 +17,25 @@ def test_default_request(client, method):
     assert resp["params"] == expected["params"]
 
 
-def test_selection(client):
+def test_format_params(client):
     expected = {
         "models": "@model_1 +model_2+ model_3+",
         "select": "snapshot_1 snapshot_2 snapshot_3",
         "exclude": "model_4+",
     }
-    data = client._selection(  # pylint: disable=protected-access
-        models=["@model_1", "+model_2+", "model_3+", "model_3+"],
-        select=["snapshot_1", "snapshot_2", "snapshot_3"],
-        exclude=["model_4+"],
+    data = client._format_params(  # pylint: disable=protected-access
+        dict(
+            models=["@model_1", "+model_2+", "model_3+", "model_3+"],
+            select=["snapshot_1", "snapshot_2", "snapshot_3"],
+            exclude=["model_4+"],
+            other=None,
+        )
     )
 
     assert set(data["models"].split(" ")) == set(expected["models"].split(" "))
     assert set(data["select"].split(" ")) == set(expected["select"].split(" "))
     assert set(data["exclude"].split(" ")) == set(expected["exclude"].split(" "))
+    assert "other" not in data
 
 
 def test_status(client):
@@ -49,8 +53,9 @@ def test_status(client):
         }
         rsps.add(responses.POST, client.url, json=expected, status=202)
 
-        resp = client.status()
-        assert resp.json() == expected
+        rpc_output = client.status()
+        assert rpc_output.response_dict == expected
+        assert rpc_output.result == expected["result"]
 
 
 def test_poll(client):
@@ -69,8 +74,9 @@ def test_poll(client):
         }
         rsps.add(responses.POST, client.url, json=expected, status=202)
 
-        resp = client.poll(request_token="f86926fa-6535-4891-8d24-2cfc65d2a347")
-        assert resp.json() == expected
+        rpc_output = client.poll(request_token="f86926fa-6535-4891-8d24-2cfc65d2a347")
+        assert rpc_output.response_dict == expected
+        assert rpc_output.result == expected["result"]
 
 
 def test_dbt_rpc_resource():

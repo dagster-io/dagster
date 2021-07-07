@@ -1,52 +1,117 @@
 # pylint: disable=unused-variable
 
 
+def scope_dbt_cli_resource_config():
+    # start_marker_dbt_cli_resource_config
+    from dagster_dbt import dbt_cli_resource
+
+    my_dbt_resource = dbt_cli_resource.configured(
+        {"project_dir": "path/to/dbt/project", "profiles_dir": "path/to/dbt/profiles"}
+    )
+    # end_marker_dbt_cli_resource_config
+
+
 def scope_dbt_cli_run():
-    # start_marker_dbt_cli_run
-    from dagster import pipeline
-    from dagster_dbt import dbt_cli_run
+    # start_marker_dbt_cli_run_preconfig
+    from dagster import pipeline, solid, ModeDefinition
+    from dagster_dbt import dbt_cli_resource
 
-    config = {"project-dir": "path/to/dbt/project"}
-    run_all_models = dbt_cli_run.configured(config, name="run_dbt_project")
+    my_dbt_resource = dbt_cli_resource.configured({"project_dir": "path/to/dbt/project"})
 
-    @pipeline
+    @solid(required_resource_keys={"dbt"})
+    def run_all_models(context):
+        context.resources.dbt.run()
+
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"dbt": my_dbt_resource})])
     def my_dbt_pipeline():
         run_all_models()
 
-    # end_marker_dbt_cli_run
+    # end_marker_dbt_cli_run_preconfig
 
 
 def scope_dbt_cli_run_specific_models():
-    # start_marker_dbt_cli_run_specific_models
-    from dagster import pipeline
-    from dagster_dbt import dbt_cli_run
+    # start_marker_dbt_cli_run_specific_models_preconfig
+    from dagster import pipeline, solid, ModeDefinition
+    from dagster_dbt import dbt_cli_resource
 
-    config = {"project-dir": "path/to/dbt/project", "models": ["tag:staging"]}
-    run_staging_models = dbt_cli_run.configured(config, name="run_staging_models")
+    my_dbt_resource = dbt_cli_resource.configured(
+        {"project_dir": "path/to/dbt/project", "models": ["tag:staging"]}
+    )
 
-    @pipeline
+    @solid(required_resource_keys={"dbt"})
+    def run_models(context):
+        context.resources.dbt.run()
+
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"dbt": my_dbt_resource})])
     def my_dbt_pipeline():
-        run_staging_models()
+        run_models()
 
-    # end_marker_dbt_cli_run_specific_models
+    # end_marker_dbt_cli_run_specific_models_preconfig
+
+
+def scope_dbt_cli_run_specific_models_runtime():
+    # start_marker_dbt_cli_run_specific_models_runtime
+    from dagster import solid
+
+    @solid(required_resource_keys={"dbt"})
+    def run_models(context, some_condition: bool):
+        if some_condition:
+            context.resources.dbt.run(models=["tag:staging"])
+        else:
+            context.resources.dbt.run(models=["tag:other"])
+
+    # end_marker_dbt_cli_run_specific_models_runtime
+
+
+def scope_dbt_cli_profile_modes():
+    # start_marker_dbt_cli_profile_modes
+    from dagster import pipeline, solid, ModeDefinition
+    from dagster_dbt import dbt_cli_resource
+
+    my_dbt_resource = dbt_cli_resource.configured({"project_dir": "path/to/dbt/project"})
+
+    @solid(required_resource_keys={"dbt"})
+    def run_all_models(context):
+        context.resources.dbt.run()
+
+    @pipeline(
+        mode_defs=[
+            ModeDefinition(
+                "dev",
+                resource_defs={"dbt": my_dbt_resource.configured({"profile": "dev"})},
+            ),
+            ModeDefinition(
+                "prod",
+                resource_defs={"dbt": my_dbt_resource.configured({"profile": "prod"})},
+            ),
+        ]
+    )
+    def my_dbt_pipeline():
+        run_all_models()
+
+    # end_marker_dbt_cli_profile_modes
 
 
 def scope_dbt_cli_run_after_another_solid():
     # start_marker_dbt_cli_run_after_another_solid
-    from dagster import pipeline, solid
-    from dagster_dbt import dbt_cli_run
+    from dagster import pipeline, solid, ModeDefinition
+    from dagster_dbt import dbt_cli_resource, DbtCliOutput
 
-    config = {"project-dir": "path/to/dbt/project", "models": ["tag:staging"]}
-    run_staging_models = dbt_cli_run.configured(config, name="run_staging_models")
+    my_dbt_resource = dbt_cli_resource.configured({"project_dir": "path/to/dbt/project"})
 
-    @solid
-    def do_something(context):
-        # solid logic here
-        context.log.info("Executing necessary logic before dbt run")
+    @solid(required_resource_keys={"dbt"})
+    def run_models(context) -> DbtCliOutput:
+        return context.resources.dbt.run()
 
-    @pipeline
+    @solid(required_resource_keys={"dbt"})
+    def test_models(context, run_result: DbtCliOutput):
+        context.log.info(f"testing result of `{run_result.command}`!")
+        context.resources.dbt.test()
+
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"dbt": my_dbt_resource})])
     def my_dbt_pipeline():
-        run_staging_models(start_after=do_something())
+        run_result = run_models()
+        test_models(run_result)
 
     # end_marker_dbt_cli_run_after_another_solid
 
@@ -114,62 +179,82 @@ def scope_dbt_cli_config_profile_and_target():
     PROFILE_NAME, TARGET_NAME = "", ""
 
     # start_marker_dbt_cli_config_profile_and_target
+    from dagster import pipeline, ModeDefinition
+    from dagster_dbt import dbt_cli_resource
+
     config = {"profile": PROFILE_NAME, "target": TARGET_NAME}
 
-    from dagster_dbt import dbt_cli_run
-
-    custom_solid = dbt_cli_run.configured(config, name="custom_solid")
-    # end_marker_dbt_cli_config_profile_and_target
+    @pipeline(
+        mode_defs=[ModeDefinition(resource_defs={"dbt": dbt_cli_resource.configured(config)})]
+    )
+    def my_pipeline():
+        # ...
+        # end_marker_dbt_cli_config_profile_and_target
+        pass
 
 
 def scope_dbt_cli_config_executable():
     # start_marker_dbt_cli_config_executable
+    from dagster import pipeline, ModeDefinition
+    from dagster_dbt import dbt_cli_resource
+
     config = {"dbt_executable": "path/to/dbt/executable"}
 
-    from dagster_dbt import dbt_cli_run
-
-    custom_solid = dbt_cli_run.configured(config, name="custom_solid")
-    # end_marker_dbt_cli_config_executable
+    @pipeline(
+        mode_defs=[ModeDefinition(resource_defs={"dbt": dbt_cli_resource.configured(config)})]
+    )
+    def my_pipeline():
+        # ...
+        # end_marker_dbt_cli_config_executable
+        pass
 
 
 def scope_dbt_cli_config_select_models():
     # start_marker_dbt_cli_config_select_models
+    from dagster import pipeline, ModeDefinition
+    from dagster_dbt import dbt_cli_resource
+
     config = {"models": ["my_dbt_model+", "path.to.models", "tag:nightly"]}
 
-    from dagster_dbt import dbt_cli_run
-
-    custom_solid = dbt_cli_run.configured(config, name="custom_solid")
-    # end_marker_dbt_cli_config_select_models
+    @pipeline(
+        mode_defs=[ModeDefinition(resource_defs={"dbt": dbt_cli_resource.configured(config)})]
+    )
+    def my_pipeline():
+        # ...
+        # end_marker_dbt_cli_config_select_models
+        pass
 
 
 def scope_dbt_cli_config_exclude_models():
     # start_marker_dbt_cli_config_exclude_models
+    from dagster import pipeline, ModeDefinition
+    from dagster_dbt import dbt_cli_resource
+
     config = {"exclude": ["my_dbt_model+", "path.to.models", "tag:nightly"]}
 
-    from dagster_dbt import dbt_cli_run
-
-    custom_solid = dbt_cli_run.configured(config, name="custom_solid")
-    # end_marker_dbt_cli_config_exclude_models
+    @pipeline(
+        mode_defs=[ModeDefinition(resource_defs={"dbt": dbt_cli_resource.configured(config)})]
+    )
+    def my_pipeline():
+        # ...
+        # end_marker_dbt_cli_config_exclude_models
+        pass
 
 
 def scope_dbt_cli_config_vars():
     # start_marker_dbt_cli_config_vars
+    from dagster import pipeline, ModeDefinition
+    from dagster_dbt import dbt_cli_resource
+
     config = {"vars": {"key": "value"}}
 
-    from dagster_dbt import dbt_cli_run
-
-    custom_solid = dbt_cli_run.configured(config, name="custom_solid")
-    # end_marker_dbt_cli_config_vars
-
-
-def scope_dbt_cli_config_disable_assets():
-    # start_marker_dbt_cli_config_disable_assets
-    config = {"yield_materializations": False}
-
-    from dagster_dbt import dbt_cli_run
-
-    custom_solid = dbt_cli_run.configured(config, name="custom_solid")
-    # end_marker_dbt_cli_config_disable_assets
+    @pipeline(
+        mode_defs=[ModeDefinition(resource_defs={"dbt": dbt_cli_resource.configured(config)})]
+    )
+    def my_pipeline():
+        # ...
+        # end_marker_dbt_cli_config_vars
+        pass
 
 
 def scope_dbt_rpc_resource_example():

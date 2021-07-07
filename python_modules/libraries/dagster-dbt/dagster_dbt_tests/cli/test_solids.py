@@ -44,12 +44,7 @@ class TestDbtCliSolids:
             for event in result.step_events
             if event.event_type_value == "ASSET_MATERIALIZATION"
         ]
-        solid_materializations = [
-            materialization
-            for materialization in asset_materializations
-            if materialization.asset_key.path[0] == "dbt_run_cli_output"
-        ]
-        assert len(solid_materializations) == 1
+        assert len(asset_materializations) == 4
         table_materializations = [
             materialization
             for materialization in asset_materializations
@@ -151,7 +146,7 @@ class TestDbtCliSolids:
         assert result.success
         assert any(
             "Log macro: <<test succeded!>>" in log["message"]
-            for log in result.output_value()["logs"]
+            for log in result.output_value("dbt_cli_output").logs
         )
 
     def test_dbt_cli_snapshot_freshness(

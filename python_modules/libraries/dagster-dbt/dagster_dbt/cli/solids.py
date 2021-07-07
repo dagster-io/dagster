@@ -1,10 +1,6 @@
-from typing import Dict
-
 from dagster import (
     Array,
-    AssetMaterialization,
     Bool,
-    EventMetadataEntry,
     InputDefinition,
     Noneable,
     Nothing,
@@ -17,91 +13,16 @@ from dagster import (
 from dagster.config.field import Field
 from dagster.utils.backcompat import experimental
 
+from ..utils import generate_materializations
+from .constants import (
+    CLI_COMMON_FLAGS_CONFIG_SCHEMA,
+    CLI_COMMON_OPTIONS_CONFIG_SCHEMA,
+    DEFAULT_DBT_TARGET_PATH,
+)
 from .types import DbtCliOutput
-from .utils import execute_cli, parse_run_results
-
-DEFAULT_DBT_EXECUTABLE = "dbt"
-DEFAULT_DBT_TARGET_PATH = "target"
-
-# The following config fields correspond to flags that apply to all dbt CLI commands. For details
-# on dbt CLI flags, see
-# https://github.com/fishtown-analytics/dbt/blob/1f8e29276e910c697588c43f08bc881379fff178/core/dbt/main.py#L260-L329
-CLI_COMMON_FLAGS_CONFIG_SCHEMA = {
-    "project-dir": Field(
-        config=StringSource,
-        is_required=False,
-        description=(
-            "Which directory to look in for the dbt_project.yml file. Default is the current "
-            "working directory and its parents."
-        ),
-    ),
-    "profiles-dir": Field(
-        config=StringSource,
-        is_required=False,
-        description=(
-            "Which directory to look in for the profiles.yml file. Default = $DBT_PROFILES_DIR or "
-            "$HOME/.dbt"
-        ),
-    ),
-    "profile": Field(
-        config=StringSource,
-        is_required=False,
-        description="Which profile to load. Overrides setting in dbt_project.yml.",
-    ),
-    "target": Field(
-        config=StringSource,
-        is_required=False,
-        description="Which target to load for the given profile.",
-    ),
-    "vars": Field(
-        config=Permissive({}),
-        is_required=False,
-        description=(
-            "Supply variables to the project. This argument overrides variables defined in your "
-            "dbt_project.yml file. This argument should be a dictionary, eg. "
-            "{'my_variable': 'my_value'}"
-        ),
-    ),
-    "bypass-cache": Field(
-        config=bool,
-        is_required=False,
-        description="If set, bypass the adapter-level cache of database state",
-        default_value=False,
-    ),
-}
-
-# The following config fields correspond to options that apply to all CLI solids, but should not be
-# formatted as CLI flags.
-CLI_COMMON_OPTIONS_CONFIG_SCHEMA = {
-    "warn-error": Field(
-        config=bool,
-        is_required=False,
-        description=(
-            "If dbt would normally warn, instead raise an exception. Examples include --models "
-            "that selects nothing, deprecations, configurations with no associated models, "
-            "invalid test configurations, and missing sources/refs in tests."
-        ),
-        default_value=False,
-    ),
-    "dbt_executable": Field(
-        config=StringSource,
-        is_required=False,
-        description="Path to the dbt executable. Default is {}".format(DEFAULT_DBT_EXECUTABLE),
-        default_value=DEFAULT_DBT_EXECUTABLE,
-    ),
-    "ignore_handled_error": Field(
-        config=bool,
-        is_required=False,
-        description=(
-            "When True, will not raise an exception when the dbt CLI returns error code 1. "
-            "Default is False."
-        ),
-        default_value=False,
-    ),
-}
+from .utils import execute_cli
 
 CLI_CONFIG_SCHEMA = {**CLI_COMMON_FLAGS_CONFIG_SCHEMA, **CLI_COMMON_OPTIONS_CONFIG_SCHEMA}
-
 CLI_COMMON_FLAGS = set(CLI_COMMON_FLAGS_CONFIG_SCHEMA.keys())
 
 
@@ -116,7 +37,7 @@ def passthrough_flags_only(solid_config, additional_flags):
 @solid(
     description="A solid to invoke dbt run via CLI.",
     input_defs=[InputDefinition(name="start_after", dagster_type=Nothing)],
-    output_defs=[OutputDefinition(name="dbt_output", dagster_type=DbtCliOutput)],
+    output_defs=[OutputDefinition(name="dbt_cli_output", dagster_type=DbtCliOutput)],
     config_schema={
         **CLI_CONFIG_SCHEMA,
         "threads": Field(
@@ -173,60 +94,41 @@ def passthrough_flags_only(solid_config, additional_flags):
                 "prefix the generated asset keys."
             ),
         ),
-        "target-path": Field(
-            config=StringSource,
-            is_required=False,
-            default_value=DEFAULT_DBT_TARGET_PATH,
-            description=(
-                "The directory path for target if different from the default `target-path` in "
-                "your dbt project configuration file."
-            ),
-        ),
     },
     tags={"kind": "dbt"},
 )
 @experimental
-def dbt_cli_run(context) -> DbtCliOutput:
+def dbt_cli_run(context):
     """This solid executes ``dbt run`` via the dbt CLI. See the solid definition for available
     parameters.
     """
-    from ..utils import generate_materializations
 
     cli_output = execute_cli(
         context.solid_config["dbt_executable"],
-        command=("run",),
+        command="run",
         flags_dict=passthrough_flags_only(
             context.solid_config, ("threads", "models", "exclude", "full-refresh", "fail-fast")
         ),
         log=context.log,
         warn_error=context.solid_config["warn-error"],
         ignore_handled_error=context.solid_config["ignore_handled_error"],
+        target_path=context.solid_config["target-path"],
     )
-    run_results = parse_run_results(
-        context.solid_config["project-dir"], context.solid_config["target-path"]
-    )
-    cli_output_dict = {**run_results, **cli_output}
-    cli_output = DbtCliOutput.from_dict(cli_output_dict)
 
     if context.solid_config["yield_materializations"]:
         for materialization in generate_materializations(
-            cli_output, asset_key_prefix=context.solid_config["asset_key_prefix"]
+            cli_output,
+            asset_key_prefix=context.solid_config["asset_key_prefix"],
         ):
             yield materialization
 
-    yield AssetMaterialization(
-        asset_key="dbt_run_cli_output",
-        description="Output from the CLI execution of `dbt run`.",
-        metadata_entries=[EventMetadataEntry.json(cli_output_dict, label="CLI Output")],
-    )
-
-    yield Output(cli_output, output_name="dbt_output")
+    yield Output(cli_output, "dbt_cli_output")
 
 
 @solid(
     description="A solid to invoke dbt test via CLI.",
     input_defs=[InputDefinition(name="start_after", dagster_type=Nothing)],
-    output_defs=[OutputDefinition(name="dbt_output", dagster_type=DbtCliOutput)],
+    output_defs=[OutputDefinition(name="dbt_cli_output", dagster_type=DbtCliOutput)],
     config_schema={
         **CLI_CONFIG_SCHEMA,
         "data": Field(
@@ -268,15 +170,6 @@ def dbt_cli_run(context) -> DbtCliOutput:
             is_required=False,
             description="The dbt models to exclude.",
         ),
-        "yield_materializations": Field(
-            config=Bool,
-            is_required=False,
-            default_value=True,
-            description=(
-                "If True, materializations corresponding to the results of the dbt operation will "
-                "be yielded when the solid executes. Default: True"
-            ),
-        ),
         "target-path": Field(
             config=StringSource,
             is_required=False,
@@ -290,39 +183,29 @@ def dbt_cli_run(context) -> DbtCliOutput:
     tags={"kind": "dbt"},
 )
 @experimental
-def dbt_cli_test(context) -> DbtCliOutput:
+def dbt_cli_test(context):
     """This solid executes ``dbt test`` via the dbt CLI. See the solid definition for available
     parameters.
     """
     cli_output = execute_cli(
         context.solid_config["dbt_executable"],
-        command=("test",),
+        command="test",
         flags_dict=passthrough_flags_only(
             context.solid_config, ("data", "schema", "fail-fast", "threads", "models", "exclude")
         ),
         log=context.log,
         warn_error=context.solid_config["warn-error"],
         ignore_handled_error=context.solid_config["ignore_handled_error"],
+        target_path=context.solid_config["target-path"],
     )
-    run_results = parse_run_results(
-        context.solid_config["project-dir"], context.solid_config["target-path"]
-    )
-    cli_output = {**run_results, **cli_output}
 
-    if context.solid_config["yield_materializations"]:
-        yield AssetMaterialization(
-            asset_key="dbt_test_cli_output",
-            description="Output from the CLI execution of `dbt test`.",
-            metadata_entries=[EventMetadataEntry.json(cli_output, label="CLI Output")],
-        )
-
-    yield Output(DbtCliOutput.from_dict(cli_output), output_name="dbt_output")
+    yield Output(cli_output, "dbt_cli_output")
 
 
 @solid(
     description="A solid to invoke dbt snapshot via CLI.",
     input_defs=[InputDefinition(name="start_after", dagster_type=Nothing)],
-    output_defs=[OutputDefinition(dagster_type=Dict)],
+    output_defs=[OutputDefinition(name="dbt_cli_output", dagster_type=DbtCliOutput)],
     config_schema={
         **CLI_CONFIG_SCHEMA,
         "threads": Field(
@@ -346,44 +229,29 @@ def dbt_cli_test(context) -> DbtCliOutput:
             is_required=False,
             description="The dbt models to exclude.",
         ),
-        "yield_materializations": Field(
-            config=Bool,
-            is_required=False,
-            default_value=True,
-            description=(
-                "If True, materializations corresponding to the results of the dbt operation will "
-                "be yielded when the solid executes. Default: True"
-            ),
-        ),
     },
     tags={"kind": "dbt"},
 )
 @experimental
-def dbt_cli_snapshot(context) -> Dict:
+def dbt_cli_snapshot(context):
     """This solid executes ``dbt snapshot`` via the dbt CLI."""
     cli_output = execute_cli(
         context.solid_config["dbt_executable"],
-        command=("snapshot",),
+        command="snapshot",
         flags_dict=passthrough_flags_only(context.solid_config, ("threads", "select", "exclude")),
         log=context.log,
         warn_error=context.solid_config["warn-error"],
         ignore_handled_error=context.solid_config["ignore_handled_error"],
+        target_path=context.solid_config["target-path"],
     )
 
-    if context.solid_config["yield_materializations"]:
-        yield AssetMaterialization(
-            asset_key="dbt_snapshot_cli_output",
-            description="Output from the CLI execution of `dbt snapshot`.",
-            metadata_entries=[EventMetadataEntry.json(cli_output, label="CLI Output")],
-        )
-
-    yield Output(cli_output)
+    yield Output(cli_output, "dbt_cli_output")
 
 
 @solid(
     description="A solid to invoke dbt run-operation via CLI.",
     input_defs=[InputDefinition(name="start_after", dagster_type=Nothing)],
-    output_defs=[OutputDefinition(name="result", dagster_type=Dict)],
+    output_defs=[OutputDefinition(name="dbt_cli_output", dagster_type=DbtCliOutput)],
     config_schema={
         **CLI_CONFIG_SCHEMA,
         "macro": Field(
@@ -402,44 +270,29 @@ def dbt_cli_snapshot(context) -> Dict:
                 "eg. {'my_variable': 'my_value'}"
             ),
         ),
-        "yield_materializations": Field(
-            config=Bool,
-            is_required=False,
-            default_value=True,
-            description=(
-                "If True, materializations corresponding to the results of the dbt operation will "
-                "be yielded when the solid executes. Default: True"
-            ),
-        ),
     },
     tags={"kind": "dbt"},
 )
 @experimental
-def dbt_cli_run_operation(context) -> Dict:
+def dbt_cli_run_operation(context):
     """This solid executes ``dbt run-operation`` via the dbt CLI."""
     cli_output = execute_cli(
         context.solid_config["dbt_executable"],
-        command=("run-operation", context.solid_config["macro"]),
+        command=f"run-operation {context.solid_config['macro']}",
         flags_dict=passthrough_flags_only(context.solid_config, ("args",)),
         log=context.log,
         warn_error=context.solid_config["warn-error"],
         ignore_handled_error=context.solid_config["ignore_handled_error"],
+        target_path=context.solid_config["target-path"],
     )
 
-    if context.solid_config["yield_materializations"]:
-        yield AssetMaterialization(
-            asset_key="dbt_run_operation_cli_output",
-            description="Output from the CLI execution of `dbt run-operation`.",
-            metadata_entries=[EventMetadataEntry.json(cli_output, label="CLI Output")],
-        )
-
-    yield Output(cli_output)
+    yield Output(cli_output, "dbt_cli_output")
 
 
 @solid(
     description="A solid to invoke dbt source snapshot-freshness via CLI.",
     input_defs=[InputDefinition(name="start_after", dagster_type=Nothing)],
-    output_defs=[OutputDefinition(name="result", dagster_type=Dict)],
+    output_defs=[OutputDefinition(name="dbt_cli_output", dagster_type=DbtCliOutput)],
     config_schema={
         **CLI_CONFIG_SCHEMA,
         "select": Field(
@@ -465,44 +318,29 @@ def dbt_cli_run_operation(context) -> Dict:
                 "settings in profiles.yml."
             ),
         ),
-        "yield_materializations": Field(
-            config=Bool,
-            is_required=False,
-            default_value=True,
-            description=(
-                "If True, materializations corresponding to the results of the dbt operation will "
-                "be yielded when the solid executes. Default: True"
-            ),
-        ),
     },
     tags={"kind": "dbt"},
 )
 @experimental
-def dbt_cli_snapshot_freshness(context) -> Dict:
+def dbt_cli_snapshot_freshness(context):
     """This solid executes ``dbt source snapshot-freshness`` via the dbt CLI."""
     cli_output = execute_cli(
         context.solid_config["dbt_executable"],
-        command=("source", "snapshot-freshness"),
+        command="source snapshot-freshness",
         flags_dict=passthrough_flags_only(context.solid_config, ("select", "output", "threads")),
         log=context.log,
         warn_error=context.solid_config["warn-error"],
         ignore_handled_error=context.solid_config["ignore_handled_error"],
+        target_path=context.solid_config["target-path"],
     )
 
-    if context.solid_config["yield_materializations"]:
-        yield AssetMaterialization(
-            asset_key="dbt_source_snapshot-freshness_cli_output",
-            description="Output from the CLI execution of `dbt source snapshot-freshness`.",
-            metadata_entries=[EventMetadataEntry.json(cli_output, label="CLI Output")],
-        )
-
-    yield Output(cli_output)
+    yield Output(cli_output, "dbt_cli_output")
 
 
 @solid(
     description="A solid to invoke dbt compile via CLI.",
     input_defs=[InputDefinition(name="start_after", dagster_type=Nothing)],
-    output_defs=[OutputDefinition(name="result", dagster_type=Dict)],
+    output_defs=[OutputDefinition(name="dbt_cli_output", dagster_type=DbtCliOutput)],
     config_schema={
         **CLI_CONFIG_SCHEMA,
         "parse-only": Field(
@@ -564,24 +402,15 @@ def dbt_cli_snapshot_freshness(context) -> Dict:
             is_required=False,
             default_value=False,
         ),
-        "yield_materializations": Field(
-            config=Bool,
-            is_required=False,
-            default_value=True,
-            description=(
-                "If True, materializations corresponding to the results of the dbt operation will "
-                "be yielded when the solid executes. Default: True"
-            ),
-        ),
     },
     tags={"kind": "dbt"},
 )
 @experimental
-def dbt_cli_compile(context) -> Dict:
+def dbt_cli_compile(context):
     """This solid executes ``dbt compile`` via the dbt CLI."""
     cli_output = execute_cli(
         context.solid_config["dbt_executable"],
-        command=("compile",),
+        command="compile",
         flags_dict=passthrough_flags_only(
             context.solid_config,
             (
@@ -598,22 +427,16 @@ def dbt_cli_compile(context) -> Dict:
         log=context.log,
         warn_error=context.solid_config["warn-error"],
         ignore_handled_error=context.solid_config["ignore_handled_error"],
+        target_path=context.solid_config["target-path"],
     )
 
-    if context.solid_config["yield_materializations"]:
-        yield AssetMaterialization(
-            asset_key="dbt_compile_cli_output",
-            description="Output from the CLI execution of `dbt compile`.",
-            metadata_entries=[EventMetadataEntry.json(cli_output, label="CLI Output")],
-        )
-
-    yield Output(cli_output)
+    yield Output(cli_output, "dbt_cli_output")
 
 
 @solid(
     description="A solid to invoke dbt docs generate via CLI.",
     input_defs=[InputDefinition(name="start_after", dagster_type=Nothing)],
-    output_defs=[OutputDefinition(name="result", dagster_type=Dict)],
+    output_defs=[OutputDefinition(name="dbt_cli_output", dagster_type=DbtCliOutput)],
     config_schema={
         **CLI_CONFIG_SCHEMA,
         "threads": Field(
@@ -661,27 +484,15 @@ def dbt_cli_compile(context) -> Dict:
                 "this project."
             ),
         ),
-        "yield_materializations": Field(
-            config=Bool,
-            is_required=False,
-            default_value=True,
-            description=(
-                "If True, materializations corresponding to the results of the dbt operation will "
-                "be yielded when the solid executes. Default: True"
-            ),
-        ),
     },
     tags={"kind": "dbt"},
 )
 @experimental
-def dbt_cli_docs_generate(context) -> Dict:
+def dbt_cli_docs_generate(context):
     """This solid executes ``dbt docs generate`` via the dbt CLI."""
     cli_output = execute_cli(
         context.solid_config["dbt_executable"],
-        command=(
-            "docs",
-            "generate",
-        ),
+        command="docs generate",
         flags_dict=passthrough_flags_only(
             context.solid_config,
             (
@@ -696,22 +507,16 @@ def dbt_cli_docs_generate(context) -> Dict:
         log=context.log,
         warn_error=context.solid_config["warn-error"],
         ignore_handled_error=context.solid_config["ignore_handled_error"],
+        target_path=context.solid_config["target-path"],
     )
 
-    if context.solid_config["yield_materializations"]:
-        yield AssetMaterialization(
-            asset_key="dbt_docs_generate_cli_output",
-            description="Output from the CLI execution of `dbt docs generate`.",
-            metadata_entries=[EventMetadataEntry.json(cli_output, label="CLI Output")],
-        )
-
-    yield Output(cli_output)
+    yield Output(cli_output, "dbt_cli_output")
 
 
 @solid(
     description="A solid to invoke dbt seed via CLI.",
     input_defs=[InputDefinition(name="start_after", dagster_type=Nothing)],
-    output_defs=[OutputDefinition(name="result", dagster_type=Dict)],
+    output_defs=[OutputDefinition(name="dbt_cli_output", dagster_type=DbtCliOutput)],
     config_schema={
         **CLI_CONFIG_SCHEMA,
         "full-refresh": Field(
@@ -771,24 +576,15 @@ def dbt_cli_docs_generate(context) -> Dict:
                 "this project."
             ),
         ),
-        "yield_materializations": Field(
-            config=Bool,
-            is_required=False,
-            default_value=True,
-            description=(
-                "If True, materializations corresponding to the results of the dbt operation will "
-                "be yielded when the solid executes. Default: True"
-            ),
-        ),
     },
     tags={"kind": "dbt"},
 )
 @experimental
-def dbt_cli_seed(context) -> Dict:
+def dbt_cli_seed(context):
     """This solid executes ``dbt seed`` via the dbt CLI."""
     cli_output = execute_cli(
         context.solid_config["dbt_executable"],
-        command=("seed",),
+        command="seed",
         flags_dict=passthrough_flags_only(
             context.solid_config,
             (
@@ -805,13 +601,7 @@ def dbt_cli_seed(context) -> Dict:
         log=context.log,
         warn_error=context.solid_config["warn-error"],
         ignore_handled_error=context.solid_config["ignore_handled_error"],
+        target_path=context.solid_config["target-path"],
     )
 
-    if context.solid_config["yield_materializations"]:
-        yield AssetMaterialization(
-            asset_key="dbt_seed_cli_output",
-            description="Output from the CLI execution of `dbt seed`.",
-            metadata_entries=[EventMetadataEntry.json(cli_output, label="CLI Output")],
-        )
-
-    yield Output(cli_output)
+    yield Output(cli_output, "dbt_cli_output")

@@ -2,8 +2,10 @@ from dagster.core.utils import check_dagster_package_version
 
 from .cli import (
     DbtCliOutput,
+    DbtCliResource,
     dbt_cli_compile,
     dbt_cli_docs_generate,
+    dbt_cli_resource,
     dbt_cli_run,
     dbt_cli_run_operation,
     dbt_cli_seed,
@@ -11,6 +13,7 @@ from .cli import (
     dbt_cli_snapshot_freshness,
     dbt_cli_test,
 )
+from .dbt_resource import DbtResource
 from .errors import (
     DagsterDbtCliFatalRuntimeError,
     DagsterDbtCliHandledRuntimeError,
@@ -42,7 +45,7 @@ from .rpc import (
     dbt_rpc_test_and_wait,
     local_dbt_rpc_resource,
 )
-from .types import DbtResult, NodeResult, StepTiming
+from .types import DbtOutput
 from .version import __version__
 
 check_dagster_package_version("dagster-dbt", __version__)
@@ -55,13 +58,14 @@ __all__ = [
     "DagsterDbtCliUnexpectedOutputError",
     "DagsterDbtError",
     "DagsterDbtRpcUnexpectedPollOutputError",
+    "DbtResource",
+    "DbtOutput",
     "DbtCliOutput",
-    "DbtResult",
+    "DbtCliResource",
     "DbtRpcClient",
     "DbtRpcOutput",
-    "NodeResult",
-    "StepTiming",
     "create_dbt_rpc_run_sql_solid",
+    "dbt_cli_resource",
     "dbt_cli_compile",
     "dbt_cli_docs_generate",
     "dbt_cli_run",
