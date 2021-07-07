@@ -749,9 +749,25 @@ dagsterDaemon:
 
   queuedRunCoordinator:
     enabled: false
-    module: dagster.core.run_coordinator
-    class: QueuedRunCoordinator
-    config: {}
+
+    # Type can be one of [
+    #   QueuedRunCoordinator,
+    #   CustomRunCoordinator,
+    #  ]
+    type: QueuedRunCoordinator
+    config:
+      queuedRunCoordinator:
+        maxConcurrentRuns: ~
+        tagConcurrencyLimits: []
+        dequeueIntervalSeconds: ~
+
+    ##  Uncomment this configuration if the CustomRunCoordinator is selected.
+    ##  Using this setting requires a custom Daemon image that defines the user specified
+    ##  run coordinator in an installed python module.
+    #   customRunCoordinator:
+    #     module: ~
+    #     class: ~
+    #     config: {}
 
   # Additional environment variables to set.
   # A Kubernetes ConfigMap will be created with these environment variables. See:

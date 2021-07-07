@@ -835,8 +835,8 @@
             ],
             "type": "string"
         },
-        "_StringSource": {
-            "title": "_StringSource",
+        "Source": {
+            "title": "Source",
             "type": "object",
             "properties": {
                 "env": {
@@ -860,7 +860,7 @@
                             "type": "string"
                         },
                         {
-                            "$ref": "#/definitions/_StringSource"
+                            "$ref": "#/definitions/Source"
                         }
                     ]
                 },
@@ -871,7 +871,7 @@
                             "type": "string"
                         },
                         {
-                            "$ref": "#/definitions/_StringSource"
+                            "$ref": "#/definitions/Source"
                         }
                     ]
                 },
@@ -882,7 +882,7 @@
                             "type": "string"
                         },
                         {
-                            "$ref": "#/definitions/_StringSource"
+                            "$ref": "#/definitions/Source"
                         }
                     ]
                 },
@@ -893,7 +893,7 @@
                             "type": "string"
                         },
                         {
-                            "$ref": "#/definitions/_StringSource"
+                            "$ref": "#/definitions/Source"
                         },
                         {
                             "type": "null"
@@ -907,7 +907,7 @@
                             "type": "string"
                         },
                         {
-                            "$ref": "#/definitions/_StringSource"
+                            "$ref": "#/definitions/Source"
                         },
                         {
                             "type": "null"
@@ -932,7 +932,7 @@
                             "type": "string"
                         },
                         {
-                            "$ref": "#/definitions/_StringSource"
+                            "$ref": "#/definitions/Source"
                         }
                     ]
                 },
@@ -943,7 +943,7 @@
                             "type": "string"
                         },
                         {
-                            "$ref": "#/definitions/_StringSource"
+                            "$ref": "#/definitions/Source"
                         },
                         {
                             "type": "null"
@@ -957,7 +957,7 @@
                             "type": "string"
                         },
                         {
-                            "$ref": "#/definitions/_StringSource"
+                            "$ref": "#/definitions/Source"
                         },
                         {
                             "type": "null"
@@ -980,7 +980,7 @@
                             "type": "string"
                         },
                         {
-                            "$ref": "#/definitions/_StringSource"
+                            "$ref": "#/definitions/Source"
                         }
                     ]
                 },
@@ -991,7 +991,7 @@
                             "type": "string"
                         },
                         {
-                            "$ref": "#/definitions/_StringSource"
+                            "$ref": "#/definitions/Source"
                         },
                         {
                             "type": "null"
@@ -1005,7 +1005,7 @@
                             "type": "string"
                         },
                         {
-                            "$ref": "#/definitions/_StringSource"
+                            "$ref": "#/definitions/Source"
                         },
                         {
                             "type": "null"
@@ -1041,7 +1041,7 @@
                             "type": "string"
                         },
                         {
-                            "$ref": "#/definitions/_StringSource"
+                            "$ref": "#/definitions/Source"
                         },
                         {
                             "type": "null"
@@ -1055,7 +1055,7 @@
                             "type": "string"
                         },
                         {
-                            "$ref": "#/definitions/_StringSource"
+                            "$ref": "#/definitions/Source"
                         },
                         {
                             "type": "null"
@@ -1629,32 +1629,180 @@
                 }
             ]
         },
-        "QueuedRunCoordinator": {
-            "title": "QueuedRunCoordinator",
+        "RunCoordinatorType": {
+            "title": "RunCoordinatorType",
+            "description": "An enumeration.",
+            "enum": [
+                "QueuedRunCoordinator",
+                "CustomRunCoordinator"
+            ],
+            "type": "string"
+        },
+        "TagConcurrencyLimit": {
+            "title": "TagConcurrencyLimit",
+            "type": "object",
+            "properties": {
+                "key": {
+                    "title": "Key",
+                    "type": "string"
+                },
+                "value": {
+                    "title": "Value",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "limit": {
+                    "title": "Limit",
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "key",
+                "limit"
+            ],
+            "additionalProperties": false
+        },
+        "QueuedRunCoordinatorConfig": {
+            "title": "QueuedRunCoordinatorConfig",
+            "type": "object",
+            "properties": {
+                "maxConcurrentRuns": {
+                    "title": "Maxconcurrentruns",
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "$ref": "#/definitions/Source"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "tagConcurrencyLimits": {
+                    "title": "Tagconcurrencylimits",
+                    "items": {
+                        "$ref": "#/definitions/TagConcurrencyLimit"
+                    },
+                    "anyOf": [
+                        {
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "dequeueIntervalSeconds": {
+                    "title": "Dequeueintervalseconds",
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "$ref": "#/definitions/Source"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "additionalProperties": false
+        },
+        "RunCoordinatorConfig": {
+            "title": "RunCoordinatorConfig",
+            "type": "object",
+            "properties": {
+                "queuedRunCoordinator": {
+                    "title": "QueuedRunCoordinatorConfig",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/QueuedRunCoordinatorConfig"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "customRunCoordinator": {
+                    "title": "ConfigurableClass",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/ConfigurableClass"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            }
+        },
+        "RunCoordinator": {
+            "title": "RunCoordinator",
             "type": "object",
             "properties": {
                 "enabled": {
                     "title": "Enabled",
                     "type": "boolean"
                 },
-                "module": {
-                    "title": "Module",
-                    "type": "string"
-                },
-                "class": {
-                    "title": "Class",
-                    "type": "string"
+                "type": {
+                    "$ref": "#/definitions/RunCoordinatorType"
                 },
                 "config": {
-                    "title": "Config",
-                    "type": "object"
+                    "$ref": "#/definitions/RunCoordinatorConfig"
                 }
             },
             "required": [
                 "enabled",
-                "module",
-                "class",
+                "type",
                 "config"
+            ],
+            "additionalProperties": false,
+            "allOf": [
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "QueuedRunCoordinator"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "config": {
+                                "required": [
+                                    "queuedRunCoordinator"
+                                ]
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "CustomRunCoordinator"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "config": {
+                                "required": [
+                                    "customRunCoordinator"
+                                ]
+                            }
+                        }
+                    }
+                }
             ]
         },
         "Daemon": {
@@ -1669,7 +1817,7 @@
                     "$ref": "#/definitions/Image"
                 },
                 "queuedRunCoordinator": {
-                    "$ref": "#/definitions/QueuedRunCoordinator"
+                    "$ref": "#/definitions/RunCoordinator"
                 },
                 "heartbeatTolerance": {
                     "title": "Heartbeattolerance",

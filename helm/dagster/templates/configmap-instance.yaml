@@ -69,11 +69,13 @@ data:
           params: {{ .Values.postgresql.postgresqlParams | toYaml | nindent 12 }}
 
     {{- if and (.Values.dagsterDaemon.enabled) (.Values.dagsterDaemon.queuedRunCoordinator.enabled) }}
+    {{- $runCoordinatorType := .Values.dagsterDaemon.queuedRunCoordinator.type }}
     run_coordinator:
-      module: {{ .Values.dagsterDaemon.queuedRunCoordinator.module }}
-      class: {{ .Values.dagsterDaemon.queuedRunCoordinator.class }}
-      config:
-      {{- toYaml .Values.dagsterDaemon.queuedRunCoordinator.config | nindent 8 }}
+      {{- if eq $runCoordinatorType "QueuedRunCoordinator" }}
+        {{- include "dagsterYaml.runCoordinator.queued" . | indent 6 -}}
+      {{- else if eq $runCoordinatorType "CustomRunCoordinator" }}
+        {{- include "dagsterYaml.runCoordinator.custom" . | indent 6 -}}
+      {{- end }}
     {{- end }}
 
     {{- $computeLogManagerType := .Values.computeLogManager.type }}
