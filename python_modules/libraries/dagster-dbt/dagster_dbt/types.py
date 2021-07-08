@@ -113,6 +113,10 @@ class NodeResult(
             unique_id = check.str_elem(node, "unique_id")
         error = check.opt_str_elem(d, "error")
         execution_time = d["execution_time"]
+        # Execution time can be an int when the model is skipped
+        if isinstance(d["execution_time"], int):
+            d["execution_time"] = float(d["execution_time"])
+        execution_time = check.float_elem(d, "execution_time")
         thread_id = check.opt_str_elem(d, "thread_id")
         check.list_elem(d, "timing")
         step_timings = [
