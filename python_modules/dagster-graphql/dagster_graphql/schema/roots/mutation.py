@@ -32,9 +32,9 @@ from ..errors import (
     GraphenePipelineRunNotFoundError,
     GraphenePresetNotFoundError,
     GraphenePythonError,
-    GrapheneReadOnlyError,
     GrapheneReloadNotSupported,
     GrapheneRepositoryLocationNotFound,
+    GrapheneUnauthorizedError,
 )
 from ..external import GrapheneWorkspace, GrapheneWorkspaceLocationEntry
 from ..inputs import GrapheneAssetKeyInput, GrapheneExecutionParams, GrapheneLaunchBackfillParams
@@ -128,7 +128,7 @@ class GrapheneDeletePipelineRunResult(graphene.Union):
     class Meta:
         types = (
             GrapheneDeletePipelineRunSuccess,
-            GrapheneReadOnlyError,
+            GrapheneUnauthorizedError,
             GraphenePythonError,
             GraphenePipelineRunNotFoundError,
         )
@@ -172,7 +172,7 @@ class GrapheneTerminatePipelineExecutionResult(graphene.Union):
             GrapheneTerminatePipelineExecutionSuccess,
             GrapheneTerminatePipelineExecutionFailure,
             GraphenePipelineRunNotFoundError,
-            GrapheneReadOnlyError,
+            GrapheneUnauthorizedError,
             GraphenePythonError,
         )
         name = "TerminatePipelineExecutionResult"
@@ -323,7 +323,7 @@ class GrapheneReloadRepositoryLocationMutationResult(graphene.Union):
             GrapheneWorkspaceLocationEntry,
             GrapheneReloadNotSupported,
             GrapheneRepositoryLocationNotFound,
-            GrapheneReadOnlyError,
+            GrapheneUnauthorizedError,
             GraphenePythonError,
         )
         name = "ReloadRepositoryLocationMutationResult"
@@ -341,7 +341,7 @@ class GrapheneShutdownRepositoryLocationMutationResult(graphene.Union):
         types = (
             GrapheneShutdownRepositoryLocationSuccess,
             GrapheneRepositoryLocationNotFound,
-            GrapheneReadOnlyError,
+            GrapheneUnauthorizedError,
             GraphenePythonError,
         )
         name = "ShutdownRepositoryLocationMutationResult"
@@ -404,7 +404,7 @@ class GrapheneReloadWorkspaceMutationResult(graphene.Union):
     class Meta:
         types = (
             GrapheneWorkspace,
-            GrapheneReadOnlyError,
+            GrapheneUnauthorizedError,
             GraphenePythonError,
         )
         name = "ReloadWorkspaceMutationResult"
@@ -434,7 +434,7 @@ class GrapheneAssetWipeMutationResult(graphene.Union):
     class Meta:
         types = (
             GrapheneAssetNotFoundError,
-            GrapheneReadOnlyError,
+            GrapheneUnauthorizedError,
             GraphenePythonError,
             GrapheneAssetWipeSuccess,
         )

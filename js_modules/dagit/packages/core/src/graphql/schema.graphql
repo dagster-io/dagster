@@ -1176,14 +1176,14 @@ type Schedules {
   results: [Schedule!]!
 }
 
-union SensorOrError = Sensor | SensorNotFoundError | ReadOnlyError | PythonError
+union SensorOrError = Sensor | SensorNotFoundError | UnauthorizedError | PythonError
 
 type SensorNotFoundError implements Error {
   message: String!
   sensorName: String!
 }
 
-type ReadOnlyError implements Error {
+type UnauthorizedError implements Error {
   message: String!
 }
 
@@ -1407,7 +1407,7 @@ type Mutation {
   cancelPartitionBackfill(backfillId: String!): CancelBackfillResult!
 }
 
-union LaunchPipelineExecutionResult = LaunchPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | ReadOnlyError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
+union LaunchPipelineExecutionResult = LaunchPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | UnauthorizedError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
 
 type LaunchPipelineRunSuccess {
   run: PipelineRun!
@@ -1451,9 +1451,9 @@ input ExecutionMetadata {
   parentRunId: String
 }
 
-union LaunchPipelineReexecutionResult = LaunchPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | ReadOnlyError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
+union LaunchPipelineReexecutionResult = LaunchPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | UnauthorizedError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
 
-union ReconcileSchedulerStateMutationResult = ReadOnlyError | PythonError | ReconcileSchedulerStateSuccess
+union ReconcileSchedulerStateMutationResult = UnauthorizedError | PythonError | ReconcileSchedulerStateSuccess
 
 type ReconcileSchedulerStateSuccess {
   message: String!
@@ -1465,13 +1465,13 @@ type ScheduleStateResult {
   scheduleState: InstigationState!
 }
 
-union StopSensorMutationResultOrError = StopSensorMutationResult | ReadOnlyError | PythonError
+union StopSensorMutationResultOrError = StopSensorMutationResult | UnauthorizedError | PythonError
 
 type StopSensorMutationResult {
   instigationState: InstigationState
 }
 
-union TerminatePipelineExecutionResult = TerminatePipelineExecutionSuccess | TerminatePipelineExecutionFailure | PipelineRunNotFoundError | ReadOnlyError | PythonError
+union TerminatePipelineExecutionResult = TerminatePipelineExecutionSuccess | TerminatePipelineExecutionFailure | PipelineRunNotFoundError | UnauthorizedError | PythonError
 
 type TerminatePipelineExecutionSuccess {
   run: PipelineRun!
@@ -1487,13 +1487,13 @@ enum TerminatePipelinePolicy {
   MARK_AS_CANCELED_IMMEDIATELY
 }
 
-union DeletePipelineRunResult = DeletePipelineRunSuccess | ReadOnlyError | PythonError | PipelineRunNotFoundError
+union DeletePipelineRunResult = DeletePipelineRunSuccess | UnauthorizedError | PythonError | PipelineRunNotFoundError
 
 type DeletePipelineRunSuccess {
   runId: String!
 }
 
-union ReloadRepositoryLocationMutationResult = WorkspaceLocationEntry | ReloadNotSupported | RepositoryLocationNotFound | ReadOnlyError | PythonError
+union ReloadRepositoryLocationMutationResult = WorkspaceLocationEntry | ReloadNotSupported | RepositoryLocationNotFound | UnauthorizedError | PythonError
 
 type ReloadNotSupported implements Error {
   message: String!
@@ -1503,21 +1503,21 @@ type RepositoryLocationNotFound implements Error {
   message: String!
 }
 
-union ReloadWorkspaceMutationResult = Workspace | ReadOnlyError | PythonError
+union ReloadWorkspaceMutationResult = Workspace | UnauthorizedError | PythonError
 
-union ShutdownRepositoryLocationMutationResult = ShutdownRepositoryLocationSuccess | RepositoryLocationNotFound | ReadOnlyError | PythonError
+union ShutdownRepositoryLocationMutationResult = ShutdownRepositoryLocationSuccess | RepositoryLocationNotFound | UnauthorizedError | PythonError
 
 type ShutdownRepositoryLocationSuccess {
   repositoryLocationName: String!
 }
 
-union AssetWipeMutationResult = AssetNotFoundError | ReadOnlyError | PythonError | AssetWipeSuccess
+union AssetWipeMutationResult = AssetNotFoundError | UnauthorizedError | PythonError | AssetWipeSuccess
 
 type AssetWipeSuccess {
   assetKeys: [AssetKey!]!
 }
 
-union LaunchBackfillResult = LaunchBackfillSuccess | PartitionSetNotFoundError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | ReadOnlyError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
+union LaunchBackfillResult = LaunchBackfillSuccess | PartitionSetNotFoundError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | UnauthorizedError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
 
 type LaunchBackfillSuccess {
   backfillId: String!
@@ -1538,13 +1538,13 @@ input PartitionSetSelector {
   repositorySelector: RepositorySelector!
 }
 
-union ResumeBackfillResult = ResumeBackfillSuccess | ReadOnlyError | PythonError
+union ResumeBackfillResult = ResumeBackfillSuccess | UnauthorizedError | PythonError
 
 type ResumeBackfillSuccess {
   backfillId: String!
 }
 
-union CancelBackfillResult = CancelBackfillSuccess | ReadOnlyError | PythonError
+union CancelBackfillResult = CancelBackfillSuccess | UnauthorizedError | PythonError
 
 type CancelBackfillSuccess {
   backfillId: String!

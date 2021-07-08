@@ -10,8 +10,8 @@ import { RepositorySelector } from "./../../types/globalTypes";
 // GraphQL mutation operation: ReconcileSchedulerState
 // ====================================================
 
-export interface ReconcileSchedulerState_reconcileSchedulerState_ReadOnlyError {
-  __typename: "ReadOnlyError";
+export interface ReconcileSchedulerState_reconcileSchedulerState_UnauthorizedError {
+  __typename: "UnauthorizedError";
 }
 
 export interface ReconcileSchedulerState_reconcileSchedulerState_PythonError {
@@ -25,7 +25,7 @@ export interface ReconcileSchedulerState_reconcileSchedulerState_ReconcileSchedu
   message: string;
 }
 
-export type ReconcileSchedulerState_reconcileSchedulerState = ReconcileSchedulerState_reconcileSchedulerState_ReadOnlyError | ReconcileSchedulerState_reconcileSchedulerState_PythonError | ReconcileSchedulerState_reconcileSchedulerState_ReconcileSchedulerStateSuccess;
+export type ReconcileSchedulerState_reconcileSchedulerState = ReconcileSchedulerState_reconcileSchedulerState_UnauthorizedError | ReconcileSchedulerState_reconcileSchedulerState_PythonError | ReconcileSchedulerState_reconcileSchedulerState_ReconcileSchedulerStateSuccess;
 
 export interface ReconcileSchedulerState {
   reconcileSchedulerState: ReconcileSchedulerState_reconcileSchedulerState;

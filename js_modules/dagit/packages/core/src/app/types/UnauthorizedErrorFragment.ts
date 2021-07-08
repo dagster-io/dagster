@@ -5,10 +5,10 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL fragment: ReadOnlyErrorFragment
+// GraphQL fragment: UnauthorizedErrorFragment
 // ====================================================
 
-export interface ReadOnlyErrorFragment {
-  __typename: "ReadOnlyError";
+export interface UnauthorizedErrorFragment {
+  __typename: "UnauthorizedError";
   message: string;
 }

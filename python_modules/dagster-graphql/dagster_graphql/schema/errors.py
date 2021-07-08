@@ -273,14 +273,14 @@ class GrapheneAssetNotFoundError(graphene.ObjectType):
         self.message = f"Asset key {asset_key.to_string()} not found."
 
 
-class GrapheneReadOnlyError(graphene.ObjectType):
+class GrapheneUnauthorizedError(graphene.ObjectType):
     class Meta:
         interfaces = (GrapheneError,)
-        name = "ReadOnlyError"
+        name = "UnauthorizedError"
 
-    def __init__(self):
+    def __init__(self, message=None):
         super().__init__()
-        self.message = "Attempted to execute a mutation in read-only mode"
+        self.message = message if message else "Authorization failed"
 
 
 types = [
@@ -299,7 +299,7 @@ types = [
     GraphenePipelineSnapshotNotFoundError,
     GraphenePresetNotFoundError,
     GraphenePythonError,
-    GrapheneReadOnlyError,
+    GrapheneUnauthorizedError,
     GrapheneReloadNotSupported,
     GrapheneRepositoryLocationNotFound,
     GrapheneRepositoryNotFoundError,

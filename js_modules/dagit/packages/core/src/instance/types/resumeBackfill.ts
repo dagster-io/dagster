@@ -13,8 +13,8 @@ export interface resumeBackfill_resumePartitionBackfill_ResumeBackfillSuccess {
   backfillId: string;
 }
 
-export interface resumeBackfill_resumePartitionBackfill_ReadOnlyError {
-  __typename: "ReadOnlyError";
+export interface resumeBackfill_resumePartitionBackfill_UnauthorizedError {
+  __typename: "UnauthorizedError";
   message: string;
 }
 
@@ -23,7 +23,7 @@ export interface resumeBackfill_resumePartitionBackfill_PythonError {
   message: string;
 }
 
-export type resumeBackfill_resumePartitionBackfill = resumeBackfill_resumePartitionBackfill_ResumeBackfillSuccess | resumeBackfill_resumePartitionBackfill_ReadOnlyError | resumeBackfill_resumePartitionBackfill_PythonError;
+export type resumeBackfill_resumePartitionBackfill = resumeBackfill_resumePartitionBackfill_ResumeBackfillSuccess | resumeBackfill_resumePartitionBackfill_UnauthorizedError | resumeBackfill_resumePartitionBackfill_PythonError;
 
 export interface resumeBackfill {
   resumePartitionBackfill: resumeBackfill_resumePartitionBackfill;

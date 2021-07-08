@@ -11,7 +11,7 @@ import { SensorSelector, InstigationType, InstigationStatus, PipelineRunStatus, 
 // ====================================================
 
 export interface SensorRootQuery_sensorOrError_SensorNotFoundError {
-  __typename: "SensorNotFoundError" | "ReadOnlyError" | "PythonError";
+  __typename: "SensorNotFoundError" | "UnauthorizedError" | "PythonError";
 }
 
 export interface SensorRootQuery_sensorOrError_Sensor_nextTick {

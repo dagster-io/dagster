@@ -50,7 +50,7 @@ def test_check_permission_has_permission(fake_graphene_info):
 
 def test_check_permission_does_not_have_permission(fake_graphene_info):
     mutation = FakeOtherPermissionMutation()
-    with pytest.raises(UserFacingGraphQLError, match="GrapheneReadOnlyError"):
+    with pytest.raises(UserFacingGraphQLError, match="GrapheneUnauthorizedError"):
         mutation.mutate(fake_graphene_info)
 
 

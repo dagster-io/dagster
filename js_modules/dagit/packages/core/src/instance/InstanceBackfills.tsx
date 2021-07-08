@@ -174,7 +174,7 @@ const BackfillTable = ({backfills, refetch}: {backfills: Backfill[]; refetch: ()
     const {data} = await resumeBackfill({variables: {backfillId: backfill.backfillId}});
     if (data && data.resumePartitionBackfill.__typename === 'ResumeBackfillSuccess') {
       refetch();
-    } else if (data && data.resumePartitionBackfill.__typename === 'ReadOnlyError') {
+    } else if (data && data.resumePartitionBackfill.__typename === 'UnauthorizedError') {
       SharedToaster.show({
         message: (
           <Group direction="column" spacing={4}>
@@ -595,7 +595,7 @@ const RESUME_BACKFILL_MUTATION = gql`
       ... on ResumeBackfillSuccess {
         backfillId
       }
-      ... on ReadOnlyError {
+      ... on UnauthorizedError {
         message
       }
       ... on PythonError {

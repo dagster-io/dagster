@@ -145,7 +145,7 @@ const RELOAD_REPOSITORY_LOCATION_MUTATION = gql`
           }
         }
       }
-      ... on ReadOnlyError {
+      ... on UnauthorizedError {
         message
       }
       ... on ReloadNotSupported {

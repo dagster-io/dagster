@@ -173,7 +173,7 @@ export const DELETE_MUTATION = gql`
       ... on PythonError {
         message
       }
-      ... on ReadOnlyError {
+      ... on UnauthorizedError {
         message
       }
       ... on PipelineRunNotFoundError {
@@ -200,7 +200,7 @@ export const TERMINATE_MUTATION = gql`
           canTerminate
         }
       }
-      ... on ReadOnlyError {
+      ... on UnauthorizedError {
         message
       }
       ... on PythonError {

@@ -66,8 +66,8 @@ const ErrorContext: React.FC<{errorSource: ErrorSource}> = ({errorSource}) => {
   }
 };
 
-export const READ_ONLY_ERROR_FRAGMENT = gql`
-  fragment ReadOnlyErrorFragment on ReadOnlyError {
+export const UNAUTHORIZED_ERROR_FRAGMENT = gql`
+  fragment UnauthorizedErrorFragment on UnauthorizedError {
     message
   }
 `;

@@ -12,10 +12,10 @@ from ...implementation.fetch_schedules import (
 from ...implementation.utils import capture_error, check_permission
 from ..errors import (
     GraphenePythonError,
-    GrapheneReadOnlyError,
     GrapheneRepositoryNotFoundError,
     GrapheneScheduleNotFoundError,
     GrapheneSchedulerNotDefinedError,
+    GrapheneUnauthorizedError,
 )
 from ..inputs import GrapheneRepositorySelector, GrapheneScheduleSelector
 from ..instigation import GrapheneInstigationState
@@ -78,7 +78,11 @@ class GrapheneReconcileSchedulerStateSuccess(graphene.ObjectType):
 
 class GrapheneReconcileSchedulerStateMutationResult(graphene.Union):
     class Meta:
-        types = (GrapheneReadOnlyError, GraphenePythonError, GrapheneReconcileSchedulerStateSuccess)
+        types = (
+            GrapheneUnauthorizedError,
+            GraphenePythonError,
+            GrapheneReconcileSchedulerStateSuccess,
+        )
         name = "ReconcileSchedulerStateMutationResult"
 
 

@@ -11,7 +11,7 @@ import {
   Delete,
   Delete_deletePipelineRun_PipelineRunNotFoundError,
   Delete_deletePipelineRun_PythonError,
-  Delete_deletePipelineRun_ReadOnlyError,
+  Delete_deletePipelineRun_UnauthorizedError,
 } from './types/Delete';
 
 export interface Props {
@@ -26,7 +26,7 @@ type SelectedRuns = {[id: string]: boolean};
 
 type Error =
   | Delete_deletePipelineRun_PythonError
-  | Delete_deletePipelineRun_ReadOnlyError
+  | Delete_deletePipelineRun_UnauthorizedError
   | Delete_deletePipelineRun_PipelineRunNotFoundError
   | undefined;
 

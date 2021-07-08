@@ -49,8 +49,8 @@ export interface ReloadWorkspaceMutation_reloadWorkspace_Workspace {
   locationEntries: ReloadWorkspaceMutation_reloadWorkspace_Workspace_locationEntries[];
 }
 
-export interface ReloadWorkspaceMutation_reloadWorkspace_ReadOnlyError {
-  __typename: "ReadOnlyError";
+export interface ReloadWorkspaceMutation_reloadWorkspace_UnauthorizedError {
+  __typename: "UnauthorizedError";
   message: string;
 }
 
@@ -67,7 +67,7 @@ export interface ReloadWorkspaceMutation_reloadWorkspace_PythonError {
   cause: ReloadWorkspaceMutation_reloadWorkspace_PythonError_cause | null;
 }
 
-export type ReloadWorkspaceMutation_reloadWorkspace = ReloadWorkspaceMutation_reloadWorkspace_Workspace | ReloadWorkspaceMutation_reloadWorkspace_ReadOnlyError | ReloadWorkspaceMutation_reloadWorkspace_PythonError;
+export type ReloadWorkspaceMutation_reloadWorkspace = ReloadWorkspaceMutation_reloadWorkspace_Workspace | ReloadWorkspaceMutation_reloadWorkspace_UnauthorizedError | ReloadWorkspaceMutation_reloadWorkspace_PythonError;
 
 export interface ReloadWorkspaceMutation {
   reloadWorkspace: ReloadWorkspaceMutation_reloadWorkspace;

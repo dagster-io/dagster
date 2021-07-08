@@ -7,9 +7,9 @@ from dagster_graphql.implementation.utils import capture_error, check_permission
 from ..implementation.fetch_sensors import get_sensor_next_tick, start_sensor, stop_sensor
 from .errors import (
     GraphenePythonError,
-    GrapheneReadOnlyError,
     GrapheneRepositoryNotFoundError,
     GrapheneSensorNotFoundError,
+    GrapheneUnauthorizedError,
 )
 from .inputs import GrapheneSensorSelector
 from .instigation import GrapheneFutureInstigationTick, GrapheneInstigationState
@@ -69,7 +69,7 @@ class GrapheneSensorOrError(graphene.Union):
         types = (
             GrapheneSensor,
             GrapheneSensorNotFoundError,
-            GrapheneReadOnlyError,
+            GrapheneUnauthorizedError,
             GraphenePythonError,
         )
         name = "SensorOrError"
@@ -122,7 +122,7 @@ class GrapheneStopSensorMutationResult(graphene.ObjectType):
 
 class GrapheneStopSensorMutationResultOrError(graphene.Union):
     class Meta:
-        types = (GrapheneStopSensorMutationResult, GrapheneReadOnlyError, GraphenePythonError)
+        types = (GrapheneStopSensorMutationResult, GrapheneUnauthorizedError, GraphenePythonError)
         name = "StopSensorMutationResultOrError"
 
 
