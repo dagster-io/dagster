@@ -21,7 +21,7 @@ from .target import DirectTarget, RepoRelativeTarget
 from .utils import check_valid_name
 
 if TYPE_CHECKING:
-    from dagster.core.definitions.events import AssetMaterialization
+    from dagster.core.events.log import EventLogEntry
 
 DEFAULT_SENSOR_DAEMON_INTERVAL = 30
 
@@ -406,14 +406,37 @@ def build_sensor_context(
 
 
 class AssetSensorDefinition(SensorDefinition):
+    """Define an asset sensor that initiates a set of runs based on the materialization of a given
+    asset.
+
+    Args:
+        name (str): The name of the sensor to create.
+        asset_key (AssetKey): The asset_key this sensor monitors.
+        pipeline_name (Optional[str]): The name of the pipeline to execute when the sensor fires.
+        asset_materialization_fn (Callable[[SensorEvaluationContext, EventLogEntry], Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason]]): The core
+            evaluation function for the sensor, which is run at an interval to determine whether a
+            run should be launched or not. Takes a :py:class:`~dagster.SensorEvaluationContext` and
+            an EventLogEntry corresponding to an AssetMaterialization event.
+
+            This function must return a generator, which must yield either a single SkipReason
+            or one or more RunRequest objects.
+        solid_selection (Optional[List[str]]): A list of solid subselection (including single
+            solid names) to execute when the sensor runs. e.g. ``['*some_solid+', 'other_solid']``
+        mode (Optional[str]): The mode to apply when executing runs triggered by this sensor.
+            (default: 'default')
+        minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
+            between sensor evaluations.
+        description (Optional[str]): A human-readable description of the sensor.
+    """
+
     def __init__(
         self,
         name: str,
         asset_key: AssetKey,
         pipeline_name: str,
         asset_materialization_fn: Callable[
-            ["SensorExecutionContext", Union["AssetMaterialization", List["AssetMaterialization"]]],
-            Union[SkipReason, RunRequest],
+            ["SensorExecutionContext", "EventLogEntry"],
+            Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
         ],
         solid_selection: Optional[List[str]] = None,
         mode: Optional[str] = None,

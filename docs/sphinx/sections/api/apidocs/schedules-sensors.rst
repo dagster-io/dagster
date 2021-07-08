@@ -38,6 +38,10 @@ Sensors
 
 .. autofunction:: build_sensor_context
 
+.. autoclass:: AssetSensorDefinition
+
+.. autodecorator:: asset_sensor
+
 .. autodecorator:: pipeline_failure_sensor
 
 .. autoclass:: PipelineFailureSensorContext

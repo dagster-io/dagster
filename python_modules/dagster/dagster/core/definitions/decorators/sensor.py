@@ -1,6 +1,6 @@
 import inspect
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Callable, List, Optional, Union
+from typing import TYPE_CHECKING, Callable, Generator, List, Optional, Union
 
 from dagster import check
 from dagster.core.definitions.sensor import RunRequest, SensorDefinition, SkipReason
@@ -16,7 +16,7 @@ from ..sensor import AssetSensorDefinition, RunRequest, SensorDefinition, SkipRe
 
 if TYPE_CHECKING:
     from ..sensor import SensorEvaluationContext
-    from ..events import AssetMaterialization
+    from ...events.log import EventLogEntry
 
 
 def is_context_provided(params: List[funcsigs.Parameter]) -> bool:
@@ -32,7 +32,13 @@ def sensor(
     description: Optional[str] = None,
     job: Optional[Union[PipelineDefinition, GraphDefinition]] = None,
 ) -> Callable[
-    [Callable[["SensorEvaluationContext"], Union[SkipReason, RunRequest]]], SensorDefinition
+    [
+        Callable[
+            ["SensorEvaluationContext"],
+            Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
+        ]
+    ],
+    SensorDefinition,
 ]:
     """
     Creates a sensor where the decorated function is used as the sensor's evaluation function.  The
@@ -118,13 +124,40 @@ def asset_sensor(
         Callable[
             [
                 "SensorEvaluationContext",
-                Union["AssetMaterialization", List["AssetMaterialization"]],
+                "EventLogEntry",
             ],
-            Union[SkipReason, RunRequest],
+            Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
         ]
     ],
     AssetSensorDefinition,
 ]:
+    """
+    Creates an asset sensor where the decorated function is used as the asset sensor's evaluation
+    function.  The decorated function may:
+
+    1. Return a `RunRequest` object.
+    2. Yield multiple of `RunRequest` objects.
+    3. Return or yield a `SkipReason` object, providing a descriptive message of why no runs were
+       requested.
+    4. Return or yield nothing (skipping without providing a reason)
+
+    Takes a :py:class:`~dagster.SensorEvaluationContext` and an EventLogEntry corresponding to an
+    AssetMaterialization event.
+
+    Args:
+        pipeline_name (str): Name of the target pipeline
+        asset_key (AssetKey): The asset_key this sensor monitors.
+        name (Optional[str]): The name of the sensor. Defaults to the name of the decorated
+            function.
+        solid_selection (Optional[List[str]]): A list of solid subselection (including single
+            solid names) to execute for runs for this sensor e.g.
+            ``['*some_solid+', 'other_solid']``
+        mode (Optional[str]): The mode to apply when executing runs for this sensor.
+            (default: 'default')
+        minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
+            between sensor evaluations.
+        description (Optional[str]): A human-readable description of the sensor.
+    """
 
     check.opt_str_param(name, "name")
 
@@ -132,7 +165,7 @@ def asset_sensor(
         fn: Callable[
             [
                 "SensorEvaluationContext",
-                Union["AssetMaterialization", List["AssetMaterialization"]],
+                "EventLogEntry",
             ],
             Union[SkipReason, RunRequest],
         ]
