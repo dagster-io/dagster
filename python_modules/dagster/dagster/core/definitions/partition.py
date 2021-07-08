@@ -644,7 +644,7 @@ class PartitionedConfig(Generic[T]):
 def get_cron_schedule(
     schedule_type: ScheduleType,
     time_of_day: time = time(0, 0),
-    day_of_week: Optional[int] = None,
+    day_of_week: Optional[int] = 0,
 ) -> str:
     minute = time_of_day.minute
     hour = time_of_day.hour

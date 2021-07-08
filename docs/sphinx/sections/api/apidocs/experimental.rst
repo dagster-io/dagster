@@ -62,3 +62,18 @@ Jobs can be tested with :py:meth:`PipelineDefinition.execute_in_process`, and Gr
 
 .. autoclass:: NodeExecutionResult
     :members:
+
+Partition-Based Schedules
+---------
+
+New APIs have been added to better integrate partition-based scheduling with the job API. These new APIs replace the existing :py:meth:`daily_schedule`, :py:meth:`weekly_schedule`, :py:meth:`monthly_schedule`, and :py:meth:`hourly_schedule` decorators.
+
+.. currentmodule:: dagster
+
+.. autodecorator:: daily_partitioned_config
+
+.. autodecorator:: monthly_partitioned_config
+
+.. autodecorator:: hourly_partitioned_config
+
+.. autodecorator:: weekly_partitioned_config

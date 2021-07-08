@@ -90,3 +90,10 @@ from .sensor import (
 )
 from .solid import CompositeSolidDefinition, NodeDefinition, SolidDefinition
 from .solid_container import create_execution_structure
+from .time_window_partitions import (
+    PartitionedConfig,
+    daily_partitioned_config,
+    hourly_partitioned_config,
+    monthly_partitioned_config,
+    weekly_partitioned_config,
+)
