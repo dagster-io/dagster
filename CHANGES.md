@@ -19,17 +19,17 @@
 
 - Using the `@schedule`, `@resource`, or `@sensor` decorator no longer requires a context parameter. If you are not using the context parameter in these, you can now do this:
 
-  ```
+  ```python
   @schedule(cron_schedule="\* \* \* \* \*", pipeline_name="my_pipeline")
-    def my_schedule():
+  def my_schedule():
     return {}
 
-    @resource
-    def my_resource():
+  @resource
+  def my_resource():
     return "foo"
 
-    @sensor(pipeline_name="my_pipeline")
-    def my_sensor():
+  @sensor(pipeline_name="my_pipeline")
+  def my_sensor():
     return RunRequest(run_config={})
   ```
 
