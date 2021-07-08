@@ -3,6 +3,7 @@ Experimental Core APIs
 
 These are a set of API changes that seek to improve on the original Dagster Pipeline & Solid model in response to feedback from our users so far.
 
+A toggle is available in the Dagit settings menu (top right) to view things in terms of these new APIs.
 
 Graph
 -----

@@ -30,7 +30,7 @@ export const FeatureFlagsRoot = () => {
       </div>
       <div>
         <Checkbox
-          label={'Pipeline name + mode tuples'}
+          label={'Experimental Core APIs (Job & Graph)'}
           checked={flags.includes(FeatureFlag.flagPipelineModeTuples)}
           onChange={() => toggleFlag(FeatureFlag.flagPipelineModeTuples)}
         />

@@ -63,7 +63,7 @@ const SettingsRoot = () => {
                 ),
               },
               {
-                key: 'Pipeline name + mode tuples',
+                key: 'Experimental Core APIs (Job & Graph)',
                 value: (
                   <Switch
                     checked={flags.includes(FeatureFlag.flagPipelineModeTuples)}
