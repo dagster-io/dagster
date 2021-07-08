@@ -73,6 +73,7 @@ const ROOT_REPOSITORIES_QUERY = gql`
                 }
                 partitionSets {
                   id
+                  mode
                   pipelineName
                 }
                 ...RepositoryInfoFragment

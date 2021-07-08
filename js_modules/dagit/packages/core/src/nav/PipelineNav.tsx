@@ -94,10 +94,16 @@ export const PipelineNav: React.FC<Props> = (props) => {
 
   const active = tabForPipelinePathComponent(match!.params.tab);
   const explorerPath = explorerPathFromString(match!.params.selector);
+  const {pipelineName, pipelineMode} = explorerPath;
+  const partitionSets = repo?.repository.partitionSets || [];
 
-  const hasPartitionSet = repo?.repository.partitionSets
-    .map((x) => x.pipelineName)
-    .includes(explorerPath.pipelineName);
+  // If using pipeline:mode tuple (crag flag), check for partition sets that are for this specific
+  // pipeline:mode tuple. Otherwise, just check for a pipeline name match.
+  const hasPartitionSet = partitionSets.some(
+    (partitionSet) =>
+      partitionSet.pipelineName === pipelineName &&
+      (!flagPipelineModeTuples || partitionSet.mode === pipelineMode),
+  );
 
   const tabs = currentOrder
     .filter((key) => hasPartitionSet || key !== 'partitions')
@@ -108,9 +114,9 @@ export const PipelineNav: React.FC<Props> = (props) => {
       <PageHeader
         title={
           <Heading>
-            {explorerPath.pipelineName}
-            {flagPipelineModeTuples && explorerPath.pipelineMode !== 'default' ? (
-              <span style={{opacity: 0.5}}> : {explorerPath.pipelineMode}</span>
+            {pipelineName}
+            {flagPipelineModeTuples && pipelineMode !== 'default' ? (
+              <span style={{opacity: 0.5}}> : {pipelineMode}</span>
             ) : null}
           </Heading>
         }

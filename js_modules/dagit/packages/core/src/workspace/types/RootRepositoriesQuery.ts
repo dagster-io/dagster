@@ -33,6 +33,7 @@ export interface RootRepositoriesQuery_workspaceOrError_Workspace_locationEntrie
 export interface RootRepositoriesQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_partitionSets {
   __typename: "PartitionSet";
   id: string;
+  mode: string;
   pipelineName: string;
 }
 
