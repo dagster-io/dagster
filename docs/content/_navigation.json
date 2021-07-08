@@ -518,10 +518,6 @@
             "path": "/_apidocs/libraries/dagster-celery-k8s"
           },
           {
-            "title": "Cron (dagster-cron)",
-            "path": "/_apidocs/libraries/dagster-cron"
-          },
-          {
             "title": "Dask (dagster-dask)",
             "path": "/_apidocs/libraries/dagster-dask"
           },
