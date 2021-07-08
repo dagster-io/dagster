@@ -3,9 +3,9 @@ import {NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {explorerPathFromString, useStripSnapshotFromPath} from '../pipelines/PipelinePathUtils';
+import {useJobTitle} from '../pipelines/useJobTitle';
 import {Box} from '../ui/Box';
 import {Loading} from '../ui/Loading';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -24,8 +24,9 @@ interface Props {
 
 export const PipelinePartitionsRoot: React.FC<Props> = (props) => {
   const {pipelinePath, repoAddress} = props;
-  const {pipelineMode, pipelineName} = explorerPathFromString(pipelinePath);
-  useDocumentTitle(`Pipeline: ${pipelineName}`);
+  const explorerPath = explorerPathFromString(pipelinePath);
+  const {pipelineMode, pipelineName} = explorerPath;
+  useJobTitle(explorerPath);
   useStripSnapshotFromPath(props);
 
   const repositorySelector = repoAddressToSelector(repoAddress);

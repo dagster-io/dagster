@@ -3,8 +3,8 @@ import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
 import {useFeatureFlags} from '../app/Flags';
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {explorerPathFromString, useStripSnapshotFromPath} from '../pipelines/PipelinePathUtils';
+import {useJobTitle} from '../pipelines/useJobTitle';
 import {RepoAddress} from '../workspace/types';
 
 import {
@@ -24,10 +24,11 @@ interface Props {
 
 export const PipelineExecutionRoot: React.FC<Props> = (props) => {
   const {pipelinePath, repoAddress} = props;
-  const {pipelineName, pipelineMode} = explorerPathFromString(pipelinePath);
-  useDocumentTitle(`Pipeline: ${pipelineName}:${pipelineMode}`);
-  useStripSnapshotFromPath(props);
+  const explorerPath = explorerPathFromString(pipelinePath);
+  const {pipelineName, pipelineMode} = explorerPath;
   const {flagPipelineModeTuples} = useFeatureFlags();
+  useJobTitle(explorerPath);
+  useStripSnapshotFromPath(props);
 
   const {name: repositoryName, location: repositoryLocationName} = repoAddress;
 

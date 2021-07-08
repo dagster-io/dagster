@@ -5,7 +5,6 @@ import * as React from 'react';
 
 import {useFeatureFlags} from '../app/Flags';
 import {QueryCountdown} from '../app/QueryCountdown';
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
 import {RunsQueryRefetchContext} from '../runs/RunUtils';
 import {
@@ -24,6 +23,7 @@ import {TokenizingFieldValue} from '../ui/TokenizingField';
 
 import {explorerPathFromString} from './PipelinePathUtils';
 import {PipelineRunsRootQuery, PipelineRunsRootQueryVariables} from './types/PipelineRunsRootQuery';
+import {useJobTitle} from './useJobTitle';
 
 const PAGE_SIZE = 25;
 const ENABLED_FILTERS: RunFilterTokenType[] = ['status', 'tag'];
@@ -34,10 +34,10 @@ interface Props {
 
 export const PipelineRunsRoot: React.FC<Props> = (props) => {
   const {pipelinePath} = props;
-  const {pipelineName, pipelineMode, snapshotId} = explorerPathFromString(pipelinePath);
-
   const {flagPipelineModeTuples} = useFeatureFlags();
-  useDocumentTitle(`Pipeline: ${pipelineName}`);
+  const explorerPath = explorerPathFromString(pipelinePath);
+  const {pipelineName, pipelineMode, snapshotId} = explorerPath;
+  useJobTitle(explorerPath);
 
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters(ENABLED_FILTERS);
   const permanentTokens = React.useMemo(() => {
