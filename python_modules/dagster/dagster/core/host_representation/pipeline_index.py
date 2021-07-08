@@ -20,11 +20,6 @@ class PipelineIndex:
                 self.parent_pipeline_snapshot is not None,
                 "Can not create PipelineIndex for pipeline_snapshot with lineage without parent_pipeline_snapshot",
             )
-            parent_id = create_pipeline_snapshot_id(self.parent_pipeline_snapshot)
-            check.invariant(
-                pipeline_snapshot.lineage_snapshot.parent_snapshot_id == parent_id,
-                "Mismatch in IDs between pipeline_snapshot lineage and parent_pipeline_snapshot",
-            )
 
         self._solid_defs_snaps_index = {
             sd.name: sd
