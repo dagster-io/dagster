@@ -25,6 +25,20 @@ export const useNavigation = () => {
   return versionedNavigation[version];
 };
 
+export const latestAllPaths = () => {
+  // Master
+  return flatten(masterNavigation)
+    .filter((n: { path: any }) => n.path)
+    .map(({ path }) => path.split("/").splice(1))
+    .map((page: string[]) => {
+      return {
+        params: {
+          page: page,
+        },
+      };
+    });
+};
+
 export const allPaths = () => {
   let paths = [];
 
@@ -35,7 +49,7 @@ export const allPaths = () => {
     .map((page: string[]) => {
       return {
         params: {
-          page: page,
+          page: ["master", ...page],
         },
       };
     });
