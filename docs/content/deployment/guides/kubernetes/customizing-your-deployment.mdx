@@ -189,6 +189,20 @@ Finally, the `dagster-user-deployments` subchart can now be managed in its own r
 
     helm upgrade --install user-code dagster/dagster-user-deployments -f /path/to/values.yaml
 
+### Kubernetes Job and Pod TTL management
+
+If you use a Kubernetes distribution that supports the [TTL Controller](https://kubernetes.io/docs/concepts/workloads/controllers/ttlafterfinished/#ttl-controller), then `Completed` and `Failed` [Jobs](https://kubernetes.io/docs/concepts/workloads/controllers/job/) (and their associated [Pods](https://kubernetes.io/docs/concepts/workloads/pods/)) will be deleted after 1 day.
+
+If you do not use a Kubernetes distribution that supports the [TTL Controller](https://kubernetes.io/docs/concepts/workloads/controllers/ttlafterfinished/#ttl-controller), then you can run the following commands:
+
+Delete dagster [Jobs](https://kubernetes.io/docs/concepts/workloads/controllers/job/) older than one day
+
+    kubectl get job | grep -e dagster-run -e dagster-job | awk 'match($4,/[0-9]+d/) {print $1}' | xargs kubectl delete job
+
+Delete completed [Pods](https://kubernetes.io/docs/concepts/workloads/pods/) older than one day
+
+    kubectl get pod | grep -e dagster-run -e dagster-job | awk 'match($3,/Completed/) {print $0}' | awk 'match($5,/[0-9]+d/) {print $1}' | xargs kubectl delete pod
+
 ## Conclusion
 
 You should now be familiar with the common ways to customize your Dagster Helm deployment.
