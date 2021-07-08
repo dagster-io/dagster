@@ -39,6 +39,8 @@ The replacement for :py:class:`solid`, has a more intuitive name and offers a mo
 
 .. autoclass:: Out
 
+.. autoclass:: DynamicOut
+
 
 Testing
 -------

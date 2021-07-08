@@ -364,3 +364,26 @@ class Out(
             asset_key=self.asset_key,
             asset_partitions=self.asset_partitions,
         )
+
+
+class DynamicOut(Out):
+    """
+    Experimental replacement for :py:class:`DynamicOutputDefinition` intended to decrease verbosity.
+    Variant of :py:class:`Out` for an output that will dynamically alter the graph at runtime.
+    """
+
+    def to_definition(self, annotation_type: type, name: Optional[str]) -> "OutputDefinition":
+        dagster_type = (
+            self.dagster_type if self.dagster_type is not NoValueSentinel else annotation_type
+        )
+
+        return DynamicOutputDefinition(
+            dagster_type=dagster_type,
+            name=name,
+            description=self.description,
+            is_required=self.is_required,
+            io_manager_key=self.io_manager_key,
+            metadata=self.metadata,
+            asset_key=self.asset_key,
+            asset_partitions=self.asset_partitions,
+        )

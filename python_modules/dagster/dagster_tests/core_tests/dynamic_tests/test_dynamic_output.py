@@ -1,9 +1,11 @@
 import pytest
 from dagster import (
+    DynamicOut,
     DynamicOutput,
     DynamicOutputDefinition,
     execute_pipeline,
     execute_solid,
+    op,
     pipeline,
     solid,
 )
@@ -14,6 +16,21 @@ from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantV
 
 def test_basic():
     @solid(output_defs=[DynamicOutputDefinition()])
+    def should_work(_):
+        yield DynamicOutput(1, mapping_key="1")
+        yield DynamicOutput(2, mapping_key="2")
+
+    result = execute_solid(should_work)
+
+    assert result.success
+    assert len(result.get_output_events_for_compute()) == 2
+    assert len(result.compute_output_events_dict["result"]) == 2
+    assert result.output_values == {"result": {"1": 1, "2": 2}}
+    assert result.output_value() == {"1": 1, "2": 2}
+
+
+def test_basic_op():
+    @op(out=DynamicOut())
     def should_work(_):
         yield DynamicOutput(1, mapping_key="1")
         yield DynamicOutput(2, mapping_key="2")
