@@ -23,7 +23,6 @@ from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.types.dagster_type import DagsterType
 from dagster.utils import merge_dicts
-from dagster.utils.backcompat import experimental_fn_warning
 from dagster.utils.forked_pdb import ForkedPdb
 
 from .compute import SolidExecutionContext
@@ -437,8 +436,6 @@ def build_solid_context(
             with build_solid_context(resources={"foo": context_manager_resource}) as context:
                 solid_to_invoke(context)
     """
-
-    experimental_fn_warning("build_solid_context")
 
     return UnboundSolidExecutionContext(
         resources_dict=check.opt_dict_param(resources, "resources", key_type=str),

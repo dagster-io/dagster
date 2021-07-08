@@ -4,7 +4,6 @@ from dagster import check
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.utils import build_resources_for_manager
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
-from dagster.utils.backcompat import experimental_fn_warning
 
 if TYPE_CHECKING:
     from dagster.core.execution.context.system import StepExecutionContext
@@ -332,8 +331,6 @@ def build_output_context(
     """
     from dagster.core.types.dagster_type import DagsterType
     from dagster.core.execution.context_creation_pipeline import initialize_console_manager
-
-    experimental_fn_warning("build_output_context")
 
     step_key = check.opt_str_param(step_key, "step_key")
     name = check.opt_str_param(name, "name")

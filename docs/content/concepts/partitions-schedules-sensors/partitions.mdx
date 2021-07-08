@@ -145,7 +145,7 @@ For partition sets consisting of `datetime` objects, the <PyObject object="creat
 
 Dagster provides a number of decorators (<PyObject object="hourly_schedule" decorator />, <PyObject object="daily_schedule" decorator />, <PyObject object="weekly_schedule" decorator />, <PyObject object="monthly_schedule" decorator />) that produce [partitioned schedules](/concepts/partitions-schedules-sensors/schedules#partition-based-schedules). These schedule decorators construct both the partition set that defines the configuration space of a specific pipeline as well as the schedule that it runs against. See our [Schedules overview](/concepts/partitions-schedules-sensors/schedules) for more information.
 
-## (Experimental) Testing a Partition Set
+## Testing a Partition Set
 
 You can test a partition set by initializing the set of partitions, and then evaluating the run config produced by your partition set against your pipeline using the <PyObject object="validate_run_config" /> function.
 

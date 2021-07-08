@@ -2,7 +2,6 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Union
 
 from dagster import check
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.utils.backcompat import experimental_fn_warning
 
 if TYPE_CHECKING:
     from .output import OutputContext
@@ -180,8 +179,6 @@ def build_input_context(
     from dagster.core.execution.context.output import OutputContext
     from dagster.core.types.dagster_type import DagsterType
     from dagster.core.execution.context_creation_pipeline import initialize_console_manager
-
-    experimental_fn_warning("build_input_context")
 
     name = check.opt_str_param(name, "name")
     metadata = check.opt_dict_param(metadata, "metadata", key_type=str)

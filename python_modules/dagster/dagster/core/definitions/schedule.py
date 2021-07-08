@@ -9,7 +9,7 @@ from dagster.seven import funcsigs
 
 from ...serdes import whitelist_for_serdes
 from ...utils import ensure_gen, merge_dicts
-from ...utils.backcompat import experimental_arg_warning, experimental_fn_warning
+from ...utils.backcompat import experimental_arg_warning
 from ..decorator_utils import get_function_params
 from ..errors import (
     DagsterInvalidDefinitionError,
@@ -110,8 +110,6 @@ def build_schedule_context(
             daily_schedule.evaluate_tick(context)
 
     """
-
-    experimental_fn_warning("build_schedule_context")
 
     check.opt_inst_param(instance, "instance", DagsterInstance)
     return ScheduleEvaluationContext(

@@ -9,11 +9,7 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.instance.ref import InstanceRef
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils import ensure_gen
-from dagster.utils.backcompat import (
-    ExperimentalWarning,
-    experimental_arg_warning,
-    experimental_fn_warning,
-)
+from dagster.utils.backcompat import ExperimentalWarning, experimental_arg_warning
 
 from ..decorator_utils import get_function_params
 from .events import AssetKey
@@ -396,8 +392,6 @@ def build_sensor_context(
             my_sensor(context)
 
     """
-
-    experimental_fn_warning("build_sensor_context")
 
     check.opt_inst_param(instance, "instance", DagsterInstance)
     check.opt_str_param(cursor, "cursor")
