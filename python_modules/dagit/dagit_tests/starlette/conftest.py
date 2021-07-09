@@ -5,8 +5,13 @@ from dagster.cli.workspace.cli_target import get_workspace_process_context_from_
 
 
 @pytest.fixture(scope="session")
-def empty_app():
-    instance = DagsterInstance.ephemeral()
+def instance():
+    return DagsterInstance.ephemeral()
+
+
+@pytest.fixture(scope="session")
+# pylint: disable=redefined-outer-name
+def empty_app(instance):
     process_context = get_workspace_process_context_from_kwargs(
         instance=instance,
         version=__version__,
