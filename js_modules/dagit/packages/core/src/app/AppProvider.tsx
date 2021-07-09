@@ -78,8 +78,8 @@ const GlobalStyle = createGlobalStyle`
 interface Props {
   appCache: InMemoryCache;
   config: {
-    graphqlURI: string;
     basePath?: string;
+    origin: string;
     permissions: PermissionsFromJSON;
     subscriptionParams?: {[key: string]: string};
   };
@@ -87,17 +87,11 @@ interface Props {
 
 export const AppProvider: React.FC<Props> = (props) => {
   const {appCache, config} = props;
-  const {basePath = '', permissions, subscriptionParams = {}, graphqlURI} = config;
+  const {basePath = '', origin, permissions, subscriptionParams = {}} = config;
 
-  const httpGraphqlURI = graphqlURI.replace('wss://', 'https://').replace('ws://', 'http://');
-
-  const httpURI = httpGraphqlURI || `${document.location.origin}${basePath}/graphql`;
-
-  const websocketURI = httpURI.replace('https://', 'wss://').replace('http://', 'ws://');
-
-  // The address to the dagit server (eg: http://localhost:5000) based
-  // on our current "GRAPHQL_URI" env var. Note there is no trailing slash.
-  const rootServerURI = httpURI.replace('/graphql', '');
+  const graphqlPath = `${basePath}/graphql`;
+  const rootServerURI = `${origin}${basePath}`;
+  const websocketURI = `${rootServerURI.replace(/^http/, 'ws')}/graphql`;
 
   const websocketClient = React.useMemo(() => {
     return new SubscriptionClient(websocketURI, {
@@ -120,7 +114,7 @@ export const AppProvider: React.FC<Props> = (props) => {
       return forward(operation);
     });
 
-    const httpLink = new HttpLink({uri: httpURI});
+    const httpLink = new HttpLink({uri: graphqlPath});
     const websocketLink = new WebSocketLink(websocketClient);
 
     // subscriptions should use the websocket link; queries & mutations should use HTTP
@@ -137,7 +131,7 @@ export const AppProvider: React.FC<Props> = (props) => {
       cache: appCache,
       link: ApolloLink.from([logLink, AppErrorLink(), timeStartLink, splitLink]),
     });
-  }, [appCache, httpURI, websocketClient]);
+  }, [appCache, graphqlPath, websocketClient]);
 
   const appContextValue = React.useMemo(
     () => ({

@@ -29,7 +29,7 @@ const permissions =
 
 const config = {
   basePath: pathPrefix,
-  graphqlURI: process.env.REACT_APP_GRAPHQL_URI || '',
+  origin: process.env.REACT_APP_BACKEND_ORIGIN || document.location.origin,
   permissions,
 };
 
