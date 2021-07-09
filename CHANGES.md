@@ -1,5 +1,11 @@
 # Changelog
 
+# 0.12.1
+
+### Bugfixes
+
+- Fixes implementation issues in `@pipeline_failure_sensor` that prevented them from working.
+
 # 0.12.0 “Into The Groove”
 
 ### Major Changes
@@ -35,7 +41,7 @@
 
 - Dynamic mapping and collect features are no longer marked “experimental”. `DynamicOutputDefinition` and `DynamicOutput` can now be imported directly from `dagster`.
 - Added repository_name property on `SensorEvaluationContext`, which is name of the repository that the sensor belongs to.
-- get_mapping_key is now available on `SolidExecutionContext` , allowing for discerning which downstream branch of a `DynamicOutput` you are in.
+- `get_mapping_key` is now available on `SolidExecutionContext` , allowing for discerning which downstream branch of a `DynamicOutput` you are in.
 - When viewing a run in Dagit, you can now download its debug file directly from the run view. This can be loaded into dagit-debug.
 - [dagster-dbt] A new `dbt_cli_resource` simplifies the process of working with dbt projects in your pipelines, and allows for a wide range of potential uses. Check out the [integration guide](https://docs.dagster.io/integrations/dbt#using-dbt-with-dagster) for examples!
 
