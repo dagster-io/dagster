@@ -280,15 +280,27 @@ def test_event_log_asset_partition_migration():
 def test_mode_column_migration():
     src_dir = file_relative_path(__file__, "snapshot_0_11_16_pre_add_mode_column/sqlite")
     with copy_directory(src_dir) as test_dir:
+
+        @pipeline
+        def _test():
+            pass
+
         db_path = os.path.join(test_dir, "history", "runs.db")
         assert get_current_alembic_version(db_path) == "72686963a802"
         assert "mode" not in set(get_sqlite3_columns(db_path, "runs"))
 
-        # Make sure the schema is migrated
+        # this migration was optional, so make sure things work before migrating
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
+        assert "mode" not in set(get_sqlite3_columns(db_path, "runs"))
+        assert instance.get_run_records()
+        assert instance.create_run_for_pipeline(_test)
+
         instance.upgrade()
 
+        # Make sure the schema is migrated
         assert "mode" in set(get_sqlite3_columns(db_path, "runs"))
+        assert instance.get_run_records()
+        assert instance.create_run_for_pipeline(_test)
 
         instance._run_storage._alembic_downgrade(rev="72686963a802")
 

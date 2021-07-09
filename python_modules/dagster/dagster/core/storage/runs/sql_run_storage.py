@@ -291,10 +291,11 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         )
         limit = check.opt_int_param(limit, "limit")
 
+        # only fetch columns we use to build RunRecord
         query = self._runs_query(
             filters=filters,
             limit=limit,
-            columns=RunsTable.columns.keys(),  # pylint: disable=no-member
+            columns=["id", "run_body", "create_timestamp", "update_timestamp"],
             order_by=order_by,
             ascending=ascending,
         )
