@@ -467,19 +467,7 @@ class DagsterInstance:
     def info_str(self):
         return yaml.dump(self.info_dict(), default_flow_style=False, sort_keys=False)
 
-    @property
-    def run_storage(self):
-        return self._run_storage
-
-    @property
-    def event_log_storage(self):
-        return self._event_storage
-
-    # schedule storage
-
-    @property
-    def schedule_storage(self):
-        return self._schedule_storage
+    # scheduler
 
     @property
     def scheduler(self):
