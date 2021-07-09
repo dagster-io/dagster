@@ -10,6 +10,7 @@ def empty_app():
     process_context = get_workspace_process_context_from_kwargs(
         instance=instance,
         version=__version__,
+        read_only=False,
         kwargs={"empty_workspace": True},
     )
     return create_app(

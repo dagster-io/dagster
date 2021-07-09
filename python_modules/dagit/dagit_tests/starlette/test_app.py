@@ -26,3 +26,28 @@ def test_static_resources(empty_app):
     response = client.get("/vendor/graphql-playground/middleware.js")
     assert response.status_code == 200, response.text
     assert response.headers["content-type"] != "application/js"
+
+
+def test_graphql_get(empty_app):
+    client = TestClient(empty_app)
+    response = client.get(
+        "/graphql?query={__typename}",
+    )
+    assert response.status_code == 200, response.text
+    assert response.json() == {"data": {"__typename": "Query"}}
+
+
+def test_graphql_post(empty_app):
+    client = TestClient(empty_app)
+    response = client.post(
+        "/graphql?query={__typename}",
+    )
+    assert response.status_code == 200, response.text
+    assert response.json() == {"data": {"__typename": "Query"}}
+
+    response = client.post(
+        "/graphql",
+        json={"query": "{__typename}"},
+    )
+    assert response.status_code == 200, response.text
+    assert response.json() == {"data": {"__typename": "Query"}}
