@@ -8,8 +8,18 @@ from contextlib import contextmanager
 
 import pendulum
 import pytest
-from dagster import Any, Field, pipeline, repository, solid
-from dagster.core.definitions.decorators.sensor import sensor
+from dagster import (
+    Any,
+    AssetKey,
+    AssetMaterialization,
+    Field,
+    Output,
+    graph,
+    pipeline,
+    repository,
+    solid,
+)
+from dagster.core.definitions.decorators.sensor import asset_sensor, sensor
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.definitions.run_request import JobType
 from dagster.core.definitions.sensor import DEFAULT_SENSOR_DAEMON_INTERVAL, RunRequest, SkipReason
@@ -46,6 +56,14 @@ def the_pipeline():
     the_solid()
 
 
+@graph
+def the_graph():
+    the_solid()
+
+
+the_job = the_graph.to_job()
+
+
 @solid(config_schema=Field(Any))
 def config_solid(_):
     return 1
@@ -54,6 +72,17 @@ def config_solid(_):
 @pipeline
 def config_pipeline():
     config_solid()
+
+
+@solid
+def foo_solid():
+    yield AssetMaterialization(asset_key=AssetKey("foo"))
+    yield Output(1)
+
+
+@pipeline
+def foo_pipeline():
+    foo_solid()
 
 
 @sensor(pipeline_name="the_pipeline")
@@ -131,11 +160,23 @@ def large_sensor(_context):
         yield RunRequest(run_key=None, run_config=config, tags=tags_garbage)
 
 
+@asset_sensor(pipeline_name="the_pipeline", asset_key=AssetKey("foo"))
+def asset_foo_sensor(context, _event):
+    return RunRequest(run_key=context.cursor, run_config={})
+
+
+@asset_sensor(asset_key=AssetKey("foo"), job=the_job)
+def asset_job_sensor(context, _event):
+    return RunRequest(run_key=context.cursor, run_config={})
+
+
 @repository
 def the_repo():
     return [
         the_pipeline,
+        the_job,
         config_pipeline,
+        foo_pipeline,
         large_sensor,
         simple_sensor,
         error_sensor,
@@ -145,6 +186,8 @@ def the_repo():
         custom_interval_sensor,
         skip_cursor_sensor,
         run_cursor_sensor,
+        asset_foo_sensor,
+        asset_job_sensor,
     ]
 
 
@@ -938,3 +981,99 @@ def test_cursor_sensor(external_repo_context):
                 JobTickStatus.SUCCESS,
             )
             assert run_ticks[0].cursor == "2"
+
+
+@pytest.mark.parametrize("external_repo_context", repos())
+def test_asset_sensor(external_repo_context):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+    with instance_with_sensors(external_repo_context) as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+            foo_sensor = external_repo.get_external_sensor("asset_foo_sensor")
+            instance.start_sensor(foo_sensor)
+
+            evaluate_sensors(instance, workspace)
+
+            ticks = instance.get_job_ticks(foo_sensor.get_external_origin_id())
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                foo_sensor,
+                freeze_datetime,
+                JobTickStatus.SKIPPED,
+            )
+
+            freeze_datetime = freeze_datetime.add(seconds=60)
+        with pendulum.test(freeze_datetime):
+
+            # should generate the foo asset
+            execute_pipeline(foo_pipeline, instance=instance)
+
+            # should fire the asset sensor
+            evaluate_sensors(instance, workspace)
+            ticks = instance.get_job_ticks(foo_sensor.get_external_origin_id())
+            assert len(ticks) == 2
+            validate_tick(
+                ticks[0],
+                foo_sensor,
+                freeze_datetime,
+                JobTickStatus.SUCCESS,
+            )
+            run = instance.get_runs()[0]
+            assert run.run_config == {}
+            assert run.tags
+            assert run.tags.get("dagster/sensor_name") == "asset_foo_sensor"
+
+
+@pytest.mark.parametrize("external_repo_context", repos())
+def test_asset_job_sensor(external_repo_context):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+    with instance_with_sensors(external_repo_context) as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+            job_sensor = external_repo.get_external_sensor("asset_job_sensor")
+            instance.start_sensor(job_sensor)
+
+            evaluate_sensors(instance, workspace)
+
+            ticks = instance.get_job_ticks(job_sensor.get_external_origin_id())
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                job_sensor,
+                freeze_datetime,
+                JobTickStatus.SKIPPED,
+            )
+
+            freeze_datetime = freeze_datetime.add(seconds=60)
+        with pendulum.test(freeze_datetime):
+
+            # should generate the foo asset
+            execute_pipeline(foo_pipeline, instance=instance)
+
+            # should fire the asset sensor
+            evaluate_sensors(instance, workspace)
+            ticks = instance.get_job_ticks(job_sensor.get_external_origin_id())
+            assert len(ticks) == 2
+            validate_tick(
+                ticks[0],
+                job_sensor,
+                freeze_datetime,
+                JobTickStatus.SUCCESS,
+            )
+            run = instance.get_runs()[0]
+            assert run.run_config == {}
+            assert run.tags
+            assert run.tags.get("dagster/sensor_name") == "asset_job_sensor"

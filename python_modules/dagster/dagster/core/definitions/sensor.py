@@ -427,13 +427,14 @@ class AssetSensorDefinition(SensorDefinition):
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
+        job (Optional[Union[GraphDefinition, PipelineDefinition]]): Experimental
     """
 
     def __init__(
         self,
         name: str,
         asset_key: AssetKey,
-        pipeline_name: str,
+        pipeline_name: Optional[str],
         asset_materialization_fn: Callable[
             ["SensorExecutionContext", "EventLogEntry"],
             Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
@@ -442,6 +443,7 @@ class AssetSensorDefinition(SensorDefinition):
         mode: Optional[str] = None,
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
+        job: Optional[Union[GraphDefinition, PipelineDefinition]] = None,
     ):
         self._asset_key = check.inst_param(asset_key, "asset_key", AssetKey)
 
@@ -478,7 +480,7 @@ class AssetSensorDefinition(SensorDefinition):
 
         super(AssetSensorDefinition, self).__init__(
             name=check_valid_name(name),
-            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
+            pipeline_name=check.opt_str_param(pipeline_name, "pipeline_name"),
             evaluation_fn=_wrap_asset_fn(
                 check.callable_param(asset_materialization_fn, "asset_materialization_fn"),
             ),
@@ -490,6 +492,7 @@ class AssetSensorDefinition(SensorDefinition):
                 minimum_interval_seconds, "minimum_interval_seconds", DEFAULT_SENSOR_DAEMON_INTERVAL
             ),
             description=check.opt_str_param(description, "description"),
+            job=check.opt_inst_param(job, "job", (GraphDefinition, PipelineDefinition)),
         )
 
     @property

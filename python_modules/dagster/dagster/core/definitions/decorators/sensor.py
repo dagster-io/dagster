@@ -115,13 +115,14 @@ def sensor(
 
 
 def asset_sensor(
-    pipeline_name: str,
     asset_key: AssetKey,
+    pipeline_name: Optional[str] = None,
     name: Optional[str] = None,
     solid_selection: Optional[List[str]] = None,
     mode: Optional[str] = None,
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
+    job: Optional[Union[PipelineDefinition, GraphDefinition]] = None,
 ) -> Callable[
     [
         Callable[
@@ -148,8 +149,8 @@ def asset_sensor(
     AssetMaterialization event.
 
     Args:
-        pipeline_name (str): Name of the target pipeline
         asset_key (AssetKey): The asset_key this sensor monitors.
+        pipeline_name (Optional[str]): Name of the target pipeline
         name (Optional[str]): The name of the sensor. Defaults to the name of the decorated
             function.
         solid_selection (Optional[List[str]]): A list of solid subselection (including single
@@ -203,6 +204,7 @@ def asset_sensor(
             mode=mode,
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
+            job=job,
         )
 
     return inner
