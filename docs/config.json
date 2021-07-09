@@ -8,7 +8,7 @@
     "https://docs.dagster.io/"
   ],
   "sitemap_urls": ["https://docs.dagster.io/sitemap.xml"],
-  "stop_urls": ["_modules"],
+  "stop_urls": ["_modules", "master"],
   "strip_chars": " .,;:#¶",
   "selectors": {
     "default": {
