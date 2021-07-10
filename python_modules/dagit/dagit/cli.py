@@ -200,8 +200,8 @@ def uploading_logging_thread():
         logging_thread.join()
 
 
-def start_server(instance, host, port, path_prefix, app, port_lookup, port_lookup_attempts=0):
-    server = pywsgi.WSGIServer((host, port), app, handler_class=WebSocketHandler)
+def start_server(instance, host, port, path_prefix, app, port_lookup, port_lookup_attempts=0, **ssl_args):
+    server = pywsgi.WSGIServer((host, port), app, handler_class=WebSocketHandler, **ssl_args)
 
     click.echo(
         "Serving on http://{host}:{port}{path_prefix} in process {pid}".format(
