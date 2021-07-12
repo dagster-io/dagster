@@ -8,7 +8,6 @@ from dagstermill import define_dagstermill_solid
 
 CEREAL_DATASET_URL = "https://gist.githubusercontent.com/mgasner/bd2c0f66dff4a9f01855cfa6870b1fce/raw/2de62a57fb08da7c58d6480c987077cf91c783a1/cereal.csv"
 
-PROFILES_DIR = "~/.dbt"
 PROJECT_DIR = file_relative_path(__file__, "../dbt_example_project")
 
 
@@ -41,13 +40,13 @@ def post_plot_to_slack(context, plot_path):
 
 # start_solid_marker_0
 run_cereals_models = dbt_cli_run.configured(
-    config_or_config_fn={"project-dir": PROJECT_DIR, "profiles-dir": PROFILES_DIR},
+    config_or_config_fn={"project-dir": PROJECT_DIR},
     name="run_cereals_models",
 )
 # end_solid_marker_0
 
 test_cereals_models = dbt_cli_test.configured(
-    config_or_config_fn={"project-dir": PROJECT_DIR, "profiles-dir": PROFILES_DIR},
+    config_or_config_fn={"project-dir": PROJECT_DIR},
     name="test_cereals_models",
 )
 
