@@ -1,5 +1,4 @@
 import inspect
-import warnings
 from contextlib import ExitStack
 from typing import TYPE_CHECKING, Any, Callable, Generator, List, NamedTuple, Optional, Union, cast
 
@@ -9,7 +8,7 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.instance.ref import InstanceRef
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils import ensure_gen
-from dagster.utils.backcompat import ExperimentalWarning, experimental_arg_warning
+from dagster.utils.backcompat import experimental_arg_warning
 
 from ..decorator_utils import get_function_params
 from .events import AssetKey
@@ -163,10 +162,6 @@ class SensorDefinition:
         self._name = check_valid_name(name)
 
         if pipeline_name is None and job is None:
-            warnings.warn(
-                f'Neither pipeline_name or job is provided. Sensor "{name}" will not target a pipeline.',
-                ExperimentalWarning,
-            )
             self._target: Optional[Union[DirectTarget, RepoRelativeTarget]] = None
         elif job is not None:
             experimental_arg_warning("target", "SensorDefinition.__init__")

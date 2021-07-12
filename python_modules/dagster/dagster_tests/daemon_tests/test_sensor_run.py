@@ -16,6 +16,7 @@ from dagster import (
     Output,
     graph,
     pipeline,
+    pipeline_failure_sensor,
     repository,
     solid,
 )
@@ -83,6 +84,16 @@ def foo_solid():
 @pipeline
 def foo_pipeline():
     foo_solid()
+
+
+@solid
+def failure_solid():
+    raise Exception("womp womp")
+
+
+@pipeline
+def failure_pipeline():
+    failure_solid()
 
 
 @sensor(pipeline_name="the_pipeline")
@@ -170,6 +181,11 @@ def asset_job_sensor(context, _event):
     return RunRequest(run_key=context.cursor, run_config={})
 
 
+@pipeline_failure_sensor()
+def my_pipeline_failure_sensor(_):
+    pass
+
+
 @repository
 def the_repo():
     return [
@@ -188,6 +204,8 @@ def the_repo():
         run_cursor_sensor,
         asset_foo_sensor,
         asset_job_sensor,
+        my_pipeline_failure_sensor,
+        failure_pipeline,
     ]
 
 
@@ -284,6 +302,26 @@ def wait_for_all_runs_to_start(instance, timeout=10):
         ]
 
         if len(not_started_runs) == 0:
+            break
+
+
+def wait_for_all_runs_to_finish(instance, timeout=10):
+    start_time = time.time()
+    FINISHED_STATES = [
+        PipelineRunStatus.SUCCESS,
+        PipelineRunStatus.FAILURE,
+        PipelineRunStatus.CANCELED,
+    ]
+    while True:
+        if time.time() - start_time > timeout:
+            raise Exception("Timed out waiting for runs to start")
+        time.sleep(0.5)
+
+        not_finished_runs = [
+            run for run in instance.get_runs() if run.status not in FINISHED_STATES
+        ]
+
+        if len(not_finished_runs) == 0:
             break
 
 
@@ -1077,3 +1115,57 @@ def test_asset_job_sensor(external_repo_context):
             assert run.run_config == {}
             assert run.tags
             assert run.tags.get("dagster/sensor_name") == "asset_job_sensor"
+
+
+@pytest.mark.parametrize("external_repo_context", repos())
+def test_pipeline_failure_sensor(external_repo_context):
+    freeze_datetime = pendulum.now()
+    with instance_with_sensors(external_repo_context) as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+            failure_sensor = external_repo.get_external_sensor("my_pipeline_failure_sensor")
+            instance.start_sensor(failure_sensor)
+
+            evaluate_sensors(instance, workspace)
+
+            ticks = instance.get_job_ticks(failure_sensor.get_external_origin_id())
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                failure_sensor,
+                freeze_datetime,
+                JobTickStatus.SKIPPED,
+            )
+
+            freeze_datetime = freeze_datetime.add(seconds=60)
+            time.sleep(1)
+
+        with pendulum.test(freeze_datetime):
+            external_pipeline = external_repo.get_full_external_pipeline("failure_pipeline")
+            run = instance.create_run_for_pipeline(
+                failure_pipeline,
+                external_pipeline_origin=external_pipeline.get_external_origin(),
+                pipeline_code_origin=external_pipeline.get_python_origin(),
+            )
+            instance.submit_run(run.run_id, workspace)
+            wait_for_all_runs_to_finish(instance)
+            run = instance.get_runs()[0]
+            assert run.status == PipelineRunStatus.FAILURE
+            freeze_datetime = freeze_datetime.add(seconds=60)
+
+        with pendulum.test(freeze_datetime):
+
+            # should fire the failure sensor
+            evaluate_sensors(instance, workspace)
+
+            ticks = instance.get_job_ticks(failure_sensor.get_external_origin_id())
+            assert len(ticks) == 2
+            validate_tick(
+                ticks[0],
+                failure_sensor,
+                freeze_datetime,
+                JobTickStatus.SUCCESS,
+            )

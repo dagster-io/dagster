@@ -168,17 +168,16 @@ def pipeline_failure_sensor(
                 update_timestamp = run_records[0].update_timestamp
 
                 # skip if any of of the followings happens:
-                pipeline_repo_name = (
+                if (
+                    # the failed pipeline does not have a repository (manually executed)
+                    not pipeline_run.external_pipeline_origin
+                    or
+                    # the failed pipeline does not belong to the current repository
                     pipeline_run.external_pipeline_origin.external_repository_origin.repository_name
-                )
-
-                if any(
-                    [
-                        # the failed pipeline does not belong to the current repository
-                        pipeline_repo_name != context.repository_name,
-                        # if pipeline is not selected
-                        pipeline_selection and pipeline_run.pipeline_name not in pipeline_selection,
-                    ]
+                    != context.repository_name
+                    or
+                    # if pipeline is not selected
+                    (pipeline_selection and pipeline_run.pipeline_name not in pipeline_selection)
                 ):
                     context.update_cursor(
                         PipelineFailureSensorCursor(
