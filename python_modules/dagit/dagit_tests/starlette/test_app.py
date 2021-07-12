@@ -111,6 +111,7 @@ def test_graphql_ws_success(instance, empty_app):
 
         response = ws.receive_json()
         assert response["id"] == "1"
+
         assert response["type"] == GraphQLWS.DATA
 
         gc.collect()
@@ -119,3 +120,16 @@ def test_graphql_ws_success(instance, empty_app):
     # after exiting the context manager and closing the connection
     gc.collect()
     assert len(objgraph.by_type("PipelineRunObservableSubscribe")) == 0
+
+
+def test_download_debug_file(instance, empty_app):
+    @pipeline
+    def _test():
+        pass
+
+    result = execute_pipeline(_test, instance=instance)
+    run_id = result.run_id
+
+    response = TestClient(empty_app).get(f"/download_debug/{run_id}")
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/gzip"

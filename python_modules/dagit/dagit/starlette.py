@@ -1,3 +1,5 @@
+import gzip
+import io
 from asyncio import Queue, get_event_loop
 from enum import Enum
 from functools import partial
@@ -9,6 +11,7 @@ from dagster import DagsterInstance
 from dagster import __version__ as dagster_version
 from dagster import check
 from dagster.cli.workspace.cli_target import get_workspace_process_context_from_kwargs
+from dagster.core.debug import DebugRunPayload
 from dagster.core.workspace.context import WorkspaceProcessContext
 from dagster_graphql import __version__ as dagster_graphql_version
 from dagster_graphql.schema import create_schema
@@ -22,7 +25,13 @@ from starlette.applications import Starlette
 from starlette.concurrency import run_in_threadpool
 from starlette.datastructures import QueryParams
 from starlette.requests import Request
-from starlette.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse
+from starlette.responses import (
+    FileResponse,
+    HTMLResponse,
+    JSONResponse,
+    PlainTextResponse,
+    StreamingResponse,
+)
 from starlette.routing import Mount, Route, WebSocketRoute
 from starlette.staticfiles import StaticFiles
 from starlette.types import Receive, Scope, Send
@@ -287,6 +296,23 @@ def _disposable_and_async_gen_from_obs(obs: Observable):
     return disposable, async_gen()
 
 
+async def download_debug_file_endpoint(
+    context: WorkspaceProcessContext,
+    request: Request,
+):
+    run_id = request.path_params["run_id"]
+    run = context.instance.get_run_by_id(run_id)
+    debug_payload = DebugRunPayload.build(context.instance, run)
+
+    result = io.BytesIO()
+    with gzip.GzipFile(fileobj=result, mode="wb") as file:
+        debug_payload.write(file)
+
+    result.seek(0)  # be kind, please rewind
+
+    return StreamingResponse(result, media_type="application/gzip")
+
+
 def index_endpoint(
     base_dir: str,
     app_path_prefix: str,
@@ -365,6 +391,11 @@ def create_app(
             ),
             # specific static resources addressed at /
             *create_root_static_endpoints(base_dir),
+            # download file endpoints
+            Route(
+                "/download_debug/{run_id:str}",
+                partial(download_debug_file_endpoint, process_context),
+            ),
             Route("/{path:path}", bound_index_endpoint),
             Route("/", bound_index_endpoint),
         ],
@@ -379,4 +410,4 @@ def default_app():
         read_only=False,
         kwargs={},
     )
-    return create_app(process_context, app_path_prefix="", debug=False)
+    return create_app(process_context, app_path_prefix="", debug=True)
