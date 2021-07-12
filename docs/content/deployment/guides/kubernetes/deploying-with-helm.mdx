@@ -156,6 +156,15 @@ This component can be updated independently from other Dagster components, inclu
 
 ## Walkthrough
 
+We'll use [docker-desktop](https://docs.docker.com/desktop/kubernetes/) to set up a local k8s cluster to develop against; feel free to substitute with another k8s cluster as desired.
+
+### Configure kubectl
+
+First, configure the `kubectl` CLI to point to the local k8s cluster set up by `docker-desktop`.
+
+    $ kubectl config set-context dagster --namespace default --cluster docker-desktop --user=docker-desktop
+    $ kubectl config use-context dagster
+
 ### Build Docker image for User Code
 
 _Skip this step if using Dagster's example User Code image [dagster/user-code-example](https://hub.docker.com/r/dagster/user-code-example)._
@@ -172,34 +181,116 @@ _Skip this step if using Dagster's example User Code image._
 
 Publish the image to a registry that is accessible from the Kubernetes cluster, such as AWS ECR or DockerHub.
 
+### Set up S3 (Optional)
+
+The [dagster/user-code-example](https://hub.docker.com/r/dagster/user-code-example) uses an [S3 IO Manager](/deployment/guides/aws#using-s3-for-io-management).
+
+Therefore, if you'd like to run the pipeline in the `default` mode, you'll need an AWS S3 bucket available, and access to a pair of `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` values. This is because the IO Manager uses [boto](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html).
+
+This tutorial also has the option of using [`minio`](https://min.io/) to mock an S3 endpoint locally in K8s. Note that this option utilizes `host.docker.internal` to access a host from within Docker - this behavior has only been tested for MacOS, so may need different configuration for other platforms.
+
+#### Using AWS S3
+
+_Skip this step if you'd like to use minio for a local S3 endpoint_
+
+If using S3, create a bucket in your AWS account -- for this tutorial, we'll create a bucket called `test-bucket`. Also, keep your `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` credentials handy. Now, you can create your k8s secrets:
+
+    $ kubectl create secret generic dagster-aws-access-key-id --from-literal=AWS_ACCESS_KEY_ID=<YOUR ACCESS KEY ID>
+    $ kubectl create secret generic dagster-aws-secret-access-key --from-literal=AWS_SECRET_ACCESS_KEY=<SECRET ACCESS KEY>
+
+#### Using Local S3 - Minio
+
+_Skip this step if you're using AWS S3_
+
+First, set up minio locally:
+
+```bash
+brew install minio/stable/minio # server
+brew install minio/stable/mc    # client
+mkdir $HOME/miniodata           # Prepare a directory for data
+minio server $HOME/miniodata    # start a server with default user/pass and no TLS
+mc --insecure alias set minio http://localhost:9000 minioadmin minioadmin
+# See it work
+mc ls minio
+date > date1.txt # create a sample file
+mc cp date1.txt minio://testbucket/date1.txt
+
+export AWS_ACCESS_KEY_ID="minioadmin"
+export AWS_SECRET_ACCESS_KEY="minioadmin"
+# See the aws cli work
+aws --endpoint-url http://localhost:9000 s3 mb s3://test-bucket
+aws --endpoint-url http://localhost:9000 s3 cp date1.txt s3://test-bucket/
+```
+
+Now, create your k8s AWS secrets:
+
+    $ kubectl create secret generic dagster-aws-access-key-id --from-literal=AWS_ACCESS_KEY_ID=minioadmin
+    $ kubectl create secret generic dagster-aws-secret-access-key --from-literal=AWS_SECRET_ACCESS_KEY=minioadmin
+
 ### Add the Dagster Helm chart repository
 
 The Dagster chart repository contains the versioned charts for all Dagster releases. Add the remote url under the namespace `dagster` to install the Dagster charts.
 
-    helm repo add dagster https://dagster-io.github.io/helm
+    $ helm repo add dagster https://dagster-io.github.io/helm
 
 ### Configure your User Deployment
 
 Update the `dagster-user-deployments.deployments` section of the Dagster chart's `values.yaml` to include your deployment. Here, we can specify the configuration of the Kubernetes Deployment that will create the gRPC server for Dagit and the Daemon to access the User Code. The gRPC server is created through the arguments passed to `dagsterApiGrpcArgs`, which expects a list of arguments for [`dagster api grpc`](/concepts/repositories-workspaces/workspaces#running-your-own-grpc-server).
 
-The following snippet works for Dagster's example User Code image. Since our Dockerfile contains the repository definition in a path, we specify arguments for the gRPC server to find this path under `dagsterApiGrpcArgs`.
+To get access to the Dagster `values.yaml`, run:
+
+    $ helm show values dagster/dagster > values.yaml
+
+The following snippet works for Dagster's example User Code image. Since our Dockerfile contains the repository definition in a path, we specify arguments for the gRPC server to find this path under `dagsterApiGrpcArgs`. Note that if you haven't set up an S3 endpoint, you can only run the pipeline in `test` mode.
 
 ```yaml
 dagster-user-deployments:
   enabled: true
   deployments:
     - name: "k8s-example-user-code-1"
-    image:
-      repository: "docker.io/dagster/user-code-example"
-      tag: latest
-      pullPolicy: Always
-    dagsterApiGrpcArgs:
-      - "--python-file"
-      - "/example_project/example_repo/repo.py"
-    port: 3030
+      image:
+        repository: "docker.io/dagster/user-code-example"
+        tag: latest
+        pullPolicy: Always
+      dagsterApiGrpcArgs:
+        - "--python-file"
+        - "/example_project/example_repo/repo.py"
+      port: 3030
 ```
 
 `dagsterApiGrpcArgs` also supports loading repository definitions from a package name. To find the applicable arguments, [read here](/concepts/repositories-workspaces/workspaces#running-your-own-grpc-server).
+
+#### Running the `default` mode (Optional)
+
+You'll need a slightly different configuration to run the `default` mode as well. This is because the user code uses an AWS `S3IOManager` in the `default` mode, and therefore you'll need to provide the user code k8s pods with AWS S3 credentials.
+
+See the [set up S3](/deployment/guides/kubernetes/deploying-with-helm#set-up-s3-optional) section for setup instructions. The below snippet works for both AWS S3 and a local S3 endpoint via `minio`.
+
+```yaml
+dagster-user-deployments:
+  enabled: true
+  deployments:
+    - name: "k8s-example-user-code-1"
+      image:
+        repository: "docker.io/dagster/user-code-example"
+        tag: latest
+        pullPolicy: Always
+      dagsterApiGrpcArgs:
+        - "--python-file"
+        - "/example_project/example_repo/repo.py"
+      port: 3030
+      envSecrets:
+        - name: dagster-aws-access-key-id
+        - name: dagster-aws-secret-access-key
+
+runLauncher:
+  type: K8sRunLauncher
+  config:
+    k8sRunLauncher:
+      envSecrets:
+        - name: dagster-aws-access-key-id
+        - name: dagster-aws-secret-access-key
+```
 
 ### Install the Dagster Helm chart
 
@@ -207,7 +298,9 @@ Install the Helm chart and create a release. Below, we've named our release `dag
 
     helm upgrade --install dagster dagster/dagster -f /path/to/values.yaml
 
-Helm will launch several pods including PostgreSQL. You can check the status of the installation with `kubectl`. If everything worked correctly, you should see output like the following:
+Helm will launch several pods including PostgreSQL. You can check the status of the installation with `kubectl` - note that it might take a few minutes for the pods to move to a `Running` state.
+
+If everything worked correctly, you should see output like the following:
 
     $ kubectl get pods
     NAME                                              READY   STATUS    RESTARTS   AGE
@@ -224,15 +317,95 @@ After Helm has successfully installed all the required kubernetes resources, sta
       -o jsonpath="{.items[0].metadata.name}")
     kubectl --namespace default port-forward $DAGIT_POD_NAME 8080:80
 
-Visit <http://127.0.0.1:8080>, navigate to the [playground](http://127.0.0.1:8080/workspace/example_repo@k8s-example-user-code-1/pipelines/example_pipe/playground), select the `default` preset, and click _Launch Execution_.
+Now try running a pipeline. Visit <http://127.0.0.1:8080>, navigate to the [playground](http://127.0.0.1:8080/workspace/example_repo@k8s-example-user-code-1/pipelines/example_pipe/playground), select the `test` mode, and click _Launch Execution_.
+
+```yaml
+solids:
+  multiply_the_word:
+    config:
+      factor: 0
+    inputs:
+      word: ""
+```
 
 You can introspect the jobs that were launched with `kubectl`:
 
     $ kubectl get jobs
     NAME                                               COMPLETIONS   DURATION   AGE
-    dagster-run-c8f4e3c2-0915-4317-a168-bf8c86810fb2   1/1           4s         6s
+    dagster-run-5ee8a0b3-7ca5-44e6-97a6-8f4bd86ee630   1/1           4s         11s
 
-Within Dagit, you can watch pipeline progress live update and succeed!
+Now, you can try a full run. Using the `default` mode, provide the following config:
+
+#### Using AWS S3
+
+```yaml
+resources:
+  io_manager:
+    config:
+      s3_bucket: "test-bucket"
+solids:
+  multiply_the_word:
+    config:
+      factor: 0
+    inputs:
+      word: ""
+```
+
+#### Using minio
+
+```yaml
+# Go to the playground and prepare a configuration
+resources:
+  io_manager:
+    config:
+      s3_bucket: "test-bucket"
+  s3:
+    config:
+      # This use of host.docker.internal is unique to Mac
+      endpoint_url: http://host.docker.internal:9000
+      region_name: us-east-1
+solids:
+  multiply_the_word:
+    config:
+      factor: 0
+    inputs:
+      word: ""
+```
+
+Again, you can view the launched jobs:
+
+    $ kubectl get jobs
+    NAME                                               COMPLETIONS   DURATION   AGE
+    dagster-run-5ee8a0b3-7ca5-44e6-97a6-8f4bd86ee630   1/1           4s         11s
+    dagster-run-733baf75-fab2-4366-9542-0172fa4ebc1f   1/1           4s         100s
+
+## Debugging
+
+Some of the following commands will be useful if you'd like to debug issues with deploying on Helm:
+
+    # Get the Dagit pod's name
+    $ export DAGIT_POD_NAME=$(kubectl get pods --namespace default \
+          -l "app.kubernetes.io/name=dagster,app.kubernetes.io/instance=dagster,component=dagit" \
+          -o jsonpath="{.items[0].metadata.name}")
+
+    # Start a shell in the dagit pod
+    $ kubectl exec --stdin --tty $DAGIT_POD_NAME -- /bin/bash
+
+    # Get debug data from $RUN_ID
+    $ kubectl exec $DAGIT_POD_NAME -- dagster debug export $RUN_ID debug_info.gzip
+
+    # Get a list of recently failed runs
+    $ kubectl exec $DAGIT_POD -- dagster debug export fakename fakename.gzip
+
+    # Get debug output of a failed run - note that this information is also available in Dagit
+    $ kubectl exec $DAGIT_POD -- dagster debug export 360d7882-e631-4ac7-8632-43c75cb4d426 debug.gzip
+
+    # Extract the debug.gzip from the pod
+    $ kubectl cp $DAGIT_POD:debug.gzip debug.gzip
+
+    # List config maps
+    $ kubectl get configmap # Make note of the "user-deployments" configmap
+    $ kubectl get configmap dagster-dagster-user-deployments-$NAME
 
 ## Conclusion
 
