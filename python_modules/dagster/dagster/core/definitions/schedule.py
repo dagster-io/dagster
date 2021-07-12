@@ -130,7 +130,8 @@ class ScheduleDefinition:
     """Define a schedule that targets a pipeline
 
     Args:
-        name (str): The name of the schedule to create.
+        name (Optional[str]): The name of the schedule to create. Defaults to the pipeline name plus
+            "_schedule".
         cron_schedule (str): A valid cron string specifying when the schedule will run, e.g.,
             '45 23 * * 6' for a schedule that runs at 11:45 PM every Saturday.
         pipeline_name (str): The name of the pipeline to execute when the schedule runs.
@@ -169,8 +170,8 @@ class ScheduleDefinition:
 
     def __init__(
         self,
-        name: str,
-        cron_schedule: str,
+        name: Optional[str] = None,
+        cron_schedule: Optional[str] = None,
         pipeline_name: Optional[str] = None,
         run_config: Optional[Any] = None,
         run_config_fn: Optional[Callable[..., Any]] = None,
@@ -185,13 +186,12 @@ class ScheduleDefinition:
         description: Optional[str] = None,
         job: Optional[Union[GraphDefinition, PipelineDefinition]] = None,
     ):
+        self._cron_schedule = check.str_param(cron_schedule, "cron_schedule")
 
-        if not croniter.is_valid(cron_schedule):
+        if not croniter.is_valid(self._cron_schedule):
             raise DagsterInvalidDefinitionError(
-                f"Found invalid cron schedule '{cron_schedule}' for schedule '{name}''."
+                f"Found invalid cron schedule '{self._cron_schedule}' for schedule '{name}''."
             )
-
-        self._name = check_valid_name(name)
 
         if job is not None:
             experimental_arg_warning("job", "ScheduleDefinition.__init__")
@@ -205,9 +205,15 @@ class ScheduleDefinition:
                 ),
             )
 
+        if name:
+            self._name = check_valid_name(name)
+        elif pipeline_name:
+            self._name = pipeline_name + "_schedule"
+        elif job:
+            self._name = job.name + "_schedule"
+
         self._description = check.opt_str_param(description, "description")
 
-        self._cron_schedule = check.str_param(cron_schedule, "cron_schedule")
         self._environment_vars = check.opt_dict_param(
             environment_vars, "environment_vars", key_type=str, value_type=str
         )
