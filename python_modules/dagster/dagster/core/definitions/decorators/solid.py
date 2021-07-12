@@ -311,7 +311,7 @@ def resolve_checked_solid_fn_inputs(
             raise DagsterInvalidDefinitionError(
                 "{decorator_name} '{solid_name}' decorated function requires positional parameter "
                 "'{missing_param}', but it was not provided. '{missing_param}' is required because "
-                "either 'required_resource_keys' or 'config_schema' was specified.".format(
+                "'config_schema' was specified.".format(
                     decorator_name=decorator_name, solid_name=fn_name, missing_param=missing_param
                 )
             )
