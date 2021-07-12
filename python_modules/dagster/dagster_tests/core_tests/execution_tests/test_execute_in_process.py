@@ -1,7 +1,13 @@
 import re
 
 import pytest
-from dagster import DagsterInvalidDefinitionError, DynamicOutput, DynamicOutputDefinition, solid
+from dagster import (
+    DagsterInvalidDefinitionError,
+    DynamicOutput,
+    DynamicOutputDefinition,
+    resource,
+    solid,
+)
 from dagster.core.definitions.decorators.graph import graph
 from dagster.core.execution.execute import execute_in_process
 
@@ -139,3 +145,23 @@ def test_dynamic_output_solid():
     assert result.success
     assert result.output_values["result"]["1"] == 1
     assert result.output_values["result"]["2"] == 2
+
+
+def test_graph_with_required_resources():
+    @solid(required_resource_keys={"a"})
+    def basic_reqs(context):
+        return context.resources.a
+
+    @graph
+    def basic_graph():
+        return basic_reqs()
+
+    result = basic_graph.execute_in_process(resources={"a": "foo"})
+    assert result.output_values["result"] == "foo"
+
+    @resource
+    def basic_resource():
+        return "bar"
+
+    result = basic_graph.execute_in_process(resources={"a": basic_resource})
+    assert result.output_values["result"] == "bar"

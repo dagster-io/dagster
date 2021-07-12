@@ -19,6 +19,7 @@ from dagster.config.config_type import ConfigType
 from dagster.core.definitions.config import ConfigMapping
 from dagster.core.definitions.definition_config_schema import IDefinitionConfigSchema
 from dagster.core.definitions.mode import ModeDefinition
+from dagster.core.definitions.resource import ResourceDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.storage.io_manager import io_manager
 from dagster.core.types.dagster_type import (
@@ -44,7 +45,6 @@ from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointe
 from .logger import LoggerDefinition
 from .output import OutputDefinition, OutputMapping
 from .preset import PresetDefinition
-from .resource import ResourceDefinition
 from .solid_container import create_execution_structure, validate_dependency_dict
 
 if TYPE_CHECKING:
@@ -356,7 +356,7 @@ class GraphDefinition(NodeDefinition):
     def to_job(
         self,
         name: Optional[str] = None,
-        resource_defs: Optional[Dict[str, "ResourceDefinition"]] = None,
+        resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
         config: Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"] = None,
         tags: Optional[Dict[str, str]] = None,
         logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
@@ -463,7 +463,7 @@ class GraphDefinition(NodeDefinition):
 
     def _get_config_schema(
         self,
-        resource_defs: Optional[Dict[str, "ResourceDefinition"]],
+        resource_defs: Optional[Dict[str, ResourceDefinition]],
         executor_def: "ExecutorDefinition",
     ) -> ConfigType:
         from .pipeline import PipelineDefinition
@@ -484,7 +484,7 @@ class GraphDefinition(NodeDefinition):
         self,
         run_config: Optional[Dict[str, Any]] = None,
         instance: Optional["DagsterInstance"] = None,
-        resources: Optional[Dict[str, ResourceDefinition]] = None,
+        resources: Optional[Dict[str, Any]] = None,
     ):
         """
         Execute this graph in-process, collecting results in-memory.
@@ -494,8 +494,9 @@ class GraphDefinition(NodeDefinition):
                 Configuration for the run.
             instance (Optional[DagsterInstance]):
                 The instance to execute against, an ephemeral one will be used if none provided.
-            resources (Optional[Dict[str, ResourceDefinition]]):
-                The resources needed if any are required.
+            resources (Optional[Dict[str, Any]]):
+                The resources needed if any are required. Can provide resource instances directly,
+                or resource definitions.
 
         Returns:
             InProcessGraphResult

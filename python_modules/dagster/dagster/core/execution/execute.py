@@ -18,6 +18,7 @@ from dagster.core.definitions.dependency import IDependencyDefinition, SolidHand
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.instance import DagsterInstance
+from dagster.core.storage.io_manager import IOManager, IOManagerDefinition
 from dagster.core.storage.mem_io_manager import mem_io_manager
 from dagster.utils import merge_dicts
 
@@ -47,19 +48,28 @@ def _create_value_solid(input_name, input_value):
 def execute_in_process(
     node: NodeDefinition,
     run_config: Optional[dict] = None,
-    resources: Optional[Dict[str, ResourceDefinition]] = None,
+    resources: Optional[Dict[str, Any]] = None,
     loggers: Optional[Dict[str, LoggerDefinition]] = None,
     input_values: Optional[Dict[str, Any]] = None,
     instance: Optional[DagsterInstance] = None,
     output_capturing_enabled: bool = True,
 ) -> NodeExecutionResult:
     node = check.inst_param(node, "node", NodeDefinition)
-    resources = check.opt_dict_param(
-        resources, "resources", key_type=str, value_type=ResourceDefinition
-    )
     loggers = check.opt_dict_param(loggers, "logger", key_type=str, value_type=LoggerDefinition)
     run_config = check.opt_dict_param(run_config, "run_config", key_type=str)
     input_values = check.opt_dict_param(input_values, "input_values", key_type=str)
+    resources = check.opt_dict_param(resources, "resources", key_type=str)
+
+    resource_defs = {}
+    # Wrap instantiated resource values in a resource definition.
+    # If an instantiated IO manager is provided, wrap it in an IO manager definition.
+    for resource_key, resource in resources.items():
+        if isinstance(resource, ResourceDefinition):
+            resource_defs[resource_key] = resource
+        elif isinstance(resource, IOManager):
+            resource_defs[resource_key] = IOManagerDefinition.hardcoded_io_manager(resource)
+        else:
+            resource_defs[resource_key] = ResourceDefinition.hardcoded_resource(resource)
 
     node_defs = [node]
 
@@ -73,7 +83,7 @@ def execute_in_process(
 
     mode_def = ModeDefinition(
         "created",
-        resource_defs=merge_dicts(resources, {EPHEMERAL_IO_MANAGER_KEY: mem_io_manager}),
+        resource_defs=merge_dicts(resource_defs, {EPHEMERAL_IO_MANAGER_KEY: mem_io_manager}),
         logger_defs=loggers,
     )
 

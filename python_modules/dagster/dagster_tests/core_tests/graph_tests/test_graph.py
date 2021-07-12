@@ -33,6 +33,9 @@ def test_basic_graph():
 
     assert result.success
 
+    result = get_two.execute_in_process()
+    assert result.success
+
 
 def test_composite_graph():
     emit_one, add = get_solids()
@@ -65,6 +68,9 @@ def test_with_resources():
     my_job = my_graph.to_job(resource_defs={"a": a_resource})
     assert my_job.name == "my_graph"
     result = my_job.execute_in_process()
+    assert result.success
+
+    result = my_graph.execute_in_process(resources={"a": "foo"})
     assert result.success
 
 
