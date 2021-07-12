@@ -162,16 +162,20 @@ def created_workspace_load_target(kwargs):
         _cli_load_invariant(False)
 
 
-def get_workspace_process_context_from_kwargs(instance: DagsterInstance, version: str, kwargs):
+def get_workspace_process_context_from_kwargs(
+    instance: DagsterInstance, version: str, read_only: bool, kwargs
+):
     from dagster.core.workspace import WorkspaceProcessContext
 
-    return WorkspaceProcessContext(instance, created_workspace_load_target(kwargs), version=version)
+    return WorkspaceProcessContext(
+        instance, created_workspace_load_target(kwargs), version=version, read_only=read_only
+    )
 
 
 @contextmanager
 def get_workspace_from_kwargs(instance: DagsterInstance, version: str, kwargs):
     with get_workspace_process_context_from_kwargs(
-        instance, version, kwargs
+        instance, version, read_only=False, kwargs=kwargs
     ) as workspace_process_context:
         yield workspace_process_context.create_request_context()
 

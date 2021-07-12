@@ -202,7 +202,7 @@ def path_to_tutorial_file(path):
 def load_dagit_for_workspace_cli_args(n_pipelines=1, **kwargs):
     instance = DagsterInstance.ephemeral()
     with get_workspace_process_context_from_kwargs(
-        instance, version="", kwargs=kwargs
+        instance, version="", read_only=False, kwargs=kwargs
     ) as workspace_process_context:
         app = create_app_from_workspace_process_context(workspace_process_context)
 

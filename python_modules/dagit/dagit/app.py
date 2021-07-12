@@ -273,13 +273,11 @@ def instantiate_app_with_views(
 def create_app_from_workspace_process_context(
     workspace_process_context: WorkspaceProcessContext,
     path_prefix: str = "",
-    read_only: bool = False,
 ):
     check.inst_param(
         workspace_process_context, "workspace_process_context", WorkspaceProcessContext
     )
     check.str_param(path_prefix, "path_prefix")
-    check.bool_param(read_only, "read_only")
 
     instance = workspace_process_context.instance
 

@@ -155,10 +155,11 @@ def host_dagit_ui(
         with get_workspace_process_context_from_kwargs(
             instance,
             version=__version__,
+            read_only=read_only,
             kwargs=kwargs,
         ) as workspace_process_context:
             host_dagit_ui_with_workspace_process_context(
-                workspace_process_context, host, port, path_prefix, port_lookup, read_only
+                workspace_process_context, host, port, path_prefix, port_lookup
             )
 
 
@@ -168,7 +169,6 @@ def host_dagit_ui_with_workspace_process_context(
     port: int,
     path_prefix: str,
     port_lookup: bool = True,
-    read_only: bool = False,
 ):
     check.inst_param(
         workspace_process_context, "workspace_process_context", WorkspaceProcessContext
@@ -177,11 +177,8 @@ def host_dagit_ui_with_workspace_process_context(
     check.int_param(port, "port")
     check.str_param(path_prefix, "path_prefix")
     check.bool_param(port_lookup, "port_lookup")
-    check.bool_param(read_only, "read_only")
 
-    app = create_app_from_workspace_process_context(
-        workspace_process_context, path_prefix, read_only
-    )
+    app = create_app_from_workspace_process_context(workspace_process_context, path_prefix)
 
     start_server(workspace_process_context.instance, host, port, path_prefix, app, port_lookup)
 

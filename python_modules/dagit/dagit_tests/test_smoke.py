@@ -34,6 +34,7 @@ def test_smoke_app(gen_instance):
         with get_workspace_process_context_from_kwargs(
             instance,
             version="",
+            read_only=False,
             kwargs=dict(module_name="dagit_tests.toy.bar_repo", definition="bar"),
         ) as workspace_process_context:
 
