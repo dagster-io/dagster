@@ -1,0 +1,409 @@
+# Migrating to Ops, Graphs, and Jobs
+
+Ops, Graphs, and Jobs, are an experimental set of APIs that aim to simplify and give more accessible names to some of Dagster's core concepts. This guide describes how to migrate code that uses Pipelines, Modes, Presets, and Partition Sets to the new APIs.
+
+A detailed API reference for the new APIs can be found [here](/\_apidocs/experimental).
+
+## A simple pipeline
+
+For simple pipelines, the new APIs just have different names. Here's a pipeline containing a single solid:
+
+```python file=/guides/dagster/graph_job_op/simple_pipeline.py
+from dagster import pipeline, solid
+
+
+@solid
+def do_something():
+    ...
+
+
+@pipeline
+def do_it_all():
+    do_something()
+```
+
+And here's an equivalent <PyObject module="dagster" object="graph" /> containing a single <PyObject module="dagster" object="op" />:
+
+```python file=/guides/dagster/graph_job_op/simple_graph.py
+from dagster import graph, op
+
+
+@op
+def do_something():
+    ...
+
+
+@graph
+def do_it_all():
+    do_something()
+```
+
+Note that graphs can be built out of solids as well as ops. So you don't need to convert all your solids to ops in order to use <PyObject module="dagster" object="graph" decorator />.
+
+In both cases, you can load the pipeline / graph in Dagit with:
+
+    dagit -f <path/to/file>
+
+If you want to execute the graph in process, instead of using <PyObject module="dagster" object="execute_pipeline" />, you can invoke its <PyObject module="dagster" object="GraphDefinition" method="execute_in_process" /> method.
+
+```python file=/guides/dagster/graph_job_op/execute_simple_graph.py startafter=start_execute endbefore=end_execute
+do_it_all.execute_in_process()
+```
+
+## Resources
+
+### A pipeline with a single mode
+
+With pipelines, supplying resources involves defining a mode:
+
+```python file=/guides/dagster/graph_job_op/pipeline_with_resources.py
+from dagster import ModeDefinition, pipeline, resource, solid
+
+
+@resource
+def external_service():
+    ...
+
+
+@solid(required_resource_keys={"external_service"})
+def do_something():
+    ...
+
+
+@pipeline(mode_defs=[ModeDefinition(resource_defs={"external_service": external_service})])
+def do_it_all():
+    do_something()
+```
+
+With the new APIs, supplying resources to a graph involves building a job from it:
+
+```python file=/guides/dagster/graph_job_op/graph_with_resources.py
+from dagster import graph, op, resource
+
+
+@resource
+def external_service():
+    ...
+
+
+@op(required_resource_keys={"external_service"})
+def do_something():
+    ...
+
+
+@graph
+def do_it_all():
+    do_something()
+
+
+do_it_all_job = do_it_all.to_job(resource_defs={"external_service": external_service})
+```
+
+### A pipeline with a test mode
+
+With pipelines, if you wanted to execute a pipeline with resources for a test, you need to include a mode for those resources on the pipeline definition:
+
+```python file=/guides/dagster/graph_job_op/pipeline_mode_test.py
+from unittest.mock import MagicMock
+
+from dagster import ModeDefinition, ResourceDefinition, execute_pipeline, pipeline, resource, solid
+
+
+@resource
+def external_service():
+    ...
+
+
+@solid(required_resource_keys={"external_service"})
+def do_something():
+    ...
+
+
+@pipeline(
+    mode_defs=[
+        ModeDefinition(resource_defs={"external_service": external_service}),
+        ModeDefinition(
+            "test",
+            resource_defs={"external_service": ResourceDefinition.hardcoded_resource(MagicMock())},
+        ),
+    ]
+)
+def do_it_all():
+    do_something()
+
+
+def test_do_it_all():
+    execute_pipeline(do_it_all, mode="test")
+```
+
+This made it difficult to construct mock resources that were specific to a particular test. It also used string indirection instead of object pointers for referring to the mode (`mode="test"`), which is error-prone. With the new APIs, you can supply those resources at the time you execute the pipeline in the test:
+
+```python file=/guides/dagster/graph_job_op/graph_job_test.py
+from unittest.mock import MagicMock
+
+from dagster import ResourceDefinition, graph, op, resource
+
+
+@resource
+def external_service():
+    ...
+
+
+@op(required_resource_keys={"external_service"})
+def do_something():
+    ...
+
+
+@graph
+def do_it_all():
+    do_something()
+
+
+do_it_all_job = do_it_all.to_job(resource_defs={"external_service": external_service})
+
+
+def test_do_it_all():
+    do_it_all.execute_in_process(
+        resources={"external_service": ResourceDefinition.hardcoded_resource(MagicMock())}
+    )
+```
+
+### A pipeline with prod and dev modes
+
+It's common for pipelines to have modes corresponding to different environments - e.g. production and development. Here's a pair of resources: one for production and one for development.
+
+```python file=/guides/dagster/graph_job_op/prod_dev_resources.py
+from dagster import resource
+
+
+@resource
+def prod_external_service():
+    ...
+
+
+@resource
+def dev_external_service():
+    ...
+```
+
+And here's a pipeline that includes these resources inside a pair of modes, along with a [repository](/concepts/repositories-workspaces/repositories) for loading it from Dagit:
+
+```python file=/guides/dagster/graph_job_op/prod_dev_modes.py startafter=start endbefore=end
+@pipeline(
+    mode_defs=[
+        ModeDefinition("prod", resource_defs={"external_service": prod_external_service}),
+        ModeDefinition("dev", resource_defs={"external_service": dev_external_service}),
+    ]
+)
+def do_it_all():
+    do_something()
+
+
+@repository
+def repo():
+    return [do_it_all]
+```
+
+These modes typically correspond to different [Dagster Instances](/deployment/dagster-instance). E.g. the pipeline will be executed using the development mode on a local machine and using the production mode from a production instance deployed in the cloud. To point the instances to your repository, you would typically make a workspace yaml that looks something like this:
+
+    load_from:
+      - python_package:
+          package_name: prod_dev_modes
+          attribute: repo
+
+With this setup, both modes show up on both instances . This is awkward because, even though the production mode shows up on the development instance, it's not meant to be executed there. And vice versa with the dev mode and the production instance.
+
+With the new APIs, the convention is to include development jobs and production jobs in separate [repositories](/concepts/repositories-workspaces/repositories). Then the [workspace](/concepts/repositories-workspaces/workspaces) for the production instance can point to the repository with the production jobs, and the workspace for the development instance can point to the development jobs.
+
+```python file=/guides/dagster/graph_job_op/prod_dev_jobs.py startafter=start endbefore=end
+@graph
+def do_it_all():
+    do_something()
+
+
+@repository
+def prod_repo():
+    return [do_it_all.to_job(resource_defs={"external_service": prod_external_service})]
+
+
+@repository
+def dev_repo():
+    return [do_it_all.to_job(resource_defs={"external_service": dev_external_service})]
+```
+
+workspace.yaml for the prod instance:
+
+    load_from:
+      - python_package:
+          package_name: prod_dev_jobs
+          attribute: prod_repo
+
+workspace.yaml for the dev instance:
+
+    load_from:
+      - python_package:
+          package_name: prod_dev_jobs
+          attribute: dev_repo
+
+## Config
+
+### A pipeline with a preset
+
+With the pipeline APIs, if you want to specify config definition time (as opposed to at the time you're running the pipeline), you use a <PyObject module="dagster" object="PresetDefinition" />.
+
+```python file=/guides/dagster/graph_job_op/pipeline_with_preset.py
+from dagster import PresetDefinition, pipeline, solid
+
+
+@solid(config_schema={"param": str})
+def do_something(_):
+    ...
+
+
+@pipeline(
+    preset_defs=[
+        PresetDefinition(
+            "my_preset",
+            run_config={"solids": {"do_something": {"config": {"param": "some_val"}}}},
+        )
+    ]
+)
+def do_it_all():
+    do_something()
+```
+
+With the new APIs, you can accomplish this by supplying config when building the job.
+
+```python file=/guides/dagster/graph_job_op/graph_with_config.py
+from dagster import graph, op
+
+
+@op(config_schema={"param": str})
+def do_something(_):
+    ...
+
+
+@graph
+def do_it_all():
+    do_something()
+
+
+do_it_all_job = do_it_all.to_job(
+    config={"solids": {"do_something": {"config": {"param": "some_val"}}}}
+)
+```
+
+Unlike with presets, this config will be used, by default, any time the job is launched, not just when it's launched from the Dagit Playground. I.e. it will also be used when launching the job via a schedule, sensor, `do_it_all_job.execute_in_process` or the GraphQL API. In all these cases, it can instead be overridden with config specified at runtime.
+
+Alternatively, you can provide "partial" config via a <PyObject module="dagster" object="ConfigMapping" />.
+
+```python file=/guides/dagster/graph_job_op/graph_with_config_mapping.py startafter=start endbefore=end
+do_it_all_job = do_it_all.to_job(
+    config=ConfigMapping(
+        config_fn=lambda conf: {"solids": {"do_something": {"config": {"param": conf["arg"]}}}},
+        config_schema={"arg": str},
+    )
+)
+```
+
+Then, when running the job, you only need to supply more compact config:
+
+```python file=/guides/dagster/graph_job_op/graph_with_config_mapping.py startafter=start_execute endbefore=end_execute
+do_it_all_job.execute_in_process(run_config={"arg": "some_value"})
+```
+
+## Schedules
+
+### A pipeline with a schedule
+
+With the pipeline APIs, a schedule targets a pipeline by referencing the pipeline name in the schedule definition.
+
+```python file=/guides/dagster/graph_job_op/pipeline_with_schedule.py
+from dagster import ScheduleDefinition, pipeline, solid
+
+
+@solid
+def do_something():
+    ...
+
+
+@pipeline
+def do_it_all():
+    do_something()
+
+
+do_it_all_schedule = ScheduleDefinition(cron_schedule="0 0 * * *", pipeline_name="do_it_all")
+```
+
+With the new APIs, a schedule targets a pipeline by referencing the graph or job object.
+
+```python file=/guides/dagster/graph_job_op/graph_with_schedule.py
+from dagster import ScheduleDefinition, graph, op
+
+
+@op
+def do_something():
+    ...
+
+
+@graph
+def do_it_all():
+    do_something()
+
+
+do_it_all_schedule = ScheduleDefinition(cron_schedule="0 0 * * *", job=do_it_all)
+```
+
+This makes it easier to catch errors and makes it possible to reference the graph or job from the schedule.
+
+The same pattern works for sensors.
+
+### A pipeline with a preset and a schedule
+
+With the pipeline APIs, if you want to have the same config available for manual runs of a pipeline and used in a schedule, you need to do something like this:
+
+```python file=/guides/dagster/graph_job_op/pipeline_with_preset_and_schedule.py
+from dagster import PresetDefinition, pipeline, schedule, solid
+
+
+@solid(config_schema={"param": str})
+def do_something(_):
+    ...
+
+
+do_it_all_preset = PresetDefinition(
+    "my_preset", run_config={"solids": {"do_something": {"config": {"param": "some_val"}}}}
+)
+
+
+@pipeline(preset_defs=[do_it_all_preset])
+def do_it_all():
+    do_something()
+
+
+@schedule(cron_schedule="0 0 * * *", pipeline_name="do_it_all")
+def do_it_all_schedule():
+    return do_it_all_preset.run_config
+```
+
+With the new APIs, you can supply the config in one place (the job), and it will both show up in the Playground and be used by the schedule.
+
+```python file=/guides/dagster/graph_job_op/graph_with_config_and_schedule.py
+from dagster import ScheduleDefinition, graph, op
+
+
+@op(config_schema={"param": str})
+def do_something(_):
+    ...
+
+
+@graph
+def do_it_all():
+    do_something()
+
+
+do_it_all_schedule = ScheduleDefinition(
+    job=do_it_all.to_job(config={"solids": {"do_something": {"config": {"param": "some_val"}}}}),
+    cron_schedule="0 0 * * *",
+)
+```
