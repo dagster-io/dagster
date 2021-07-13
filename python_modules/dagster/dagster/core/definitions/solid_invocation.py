@@ -164,6 +164,15 @@ def _type_check_output_wrapper(
 
         return to_gen(result)
 
+    # Coroutine result case
+    elif inspect.iscoroutine(result):
+
+        async def type_check_coroutine(coro):
+            out = await coro
+            return _type_check_function_output(solid_def, out, context)
+
+        return type_check_coroutine(result)
+
     # Regular generator case
     elif inspect.isgenerator(result):
 
@@ -195,6 +204,14 @@ def _type_check_output_wrapper(
         return type_check_gen(result)
 
     # Non-generator case
+    return _type_check_function_output(solid_def, result, context)
+
+
+def _type_check_function_output(
+    solid_def: "SolidDefinition", result: Any, context: "BoundSolidExecutionContext"
+) -> Any:
+    """Unpacks valid outputs from solid function."""
+
     if isinstance(result, (AssetMaterialization, Materialization, ExpectationResult)):
         raise DagsterInvariantViolationError(
             (
@@ -217,6 +234,7 @@ def _type_check_output_wrapper(
             "Multiple output definitions but no Output wrapper provided is ambiguous."
         )
     received_output = None
+    output_defs = {output_def.name: output_def for output_def in solid_def.output_defs}
     if isinstance(result, Output):
         if result.output_name not in output_defs:
             raise DagsterInvariantViolationError(

@@ -679,3 +679,17 @@ def test_pipeline_invocation():
         r"\(e.g. `execute_pipeline`\).",
     ):
         basic_pipeline()
+
+
+@solid
+async def foo_async() -> str:
+    return "bar"
+
+
+def test_coroutine_asyncio_invocation():
+    async def my_coroutine_test():
+        result = await foo_async()
+        assert result == "bar"
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(my_coroutine_test())
