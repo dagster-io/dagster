@@ -26,7 +26,7 @@ def create_table_2():
 
 @pipeline
 def nothing_dependency_pipeline():
-    create_table_2(create_table_1())
+    create_table_2(start=create_table_1())
 
 
 # end_marker

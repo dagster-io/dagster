@@ -393,10 +393,12 @@ def create_table_2():
 
 @pipeline
 def nothing_dependency_pipeline():
-    create_table_2(create_table_1())
+    create_table_2(start=create_table_1())
 ```
 
 In this example, `create_table_1` returns an output of type <PyObject object="Nothing"/>, and `create_table_2` has an input of type `Nothing`. This lets us connect them in the pipeline definition so that `create_table_2` executes only after `create_table_1` successfully executes.
+
+`Nothing` type inputs do not have a corresponding parameter in the function since there is no data to pass. When connecting the dependencies, it is recommended to use keyword args to prevent mix-ups with other positional inputs.
 
 Note that in most cases, it is usually possible to pass some data dependency. In the example above, even though we probably don't want to pass the table data itself between the solids, we could pass table pointers. For example, `create_table_1` could return a `table_pointer` output of type `str` with a value of `table_1`, and this table name can be used in `create_table_2` to more accurately model the data dependency.
 
