@@ -703,6 +703,29 @@ class SqlEventLogStorage(EventLogStorage):
 
     def has_asset_key(self, asset_key: AssetKey) -> bool:
         check.inst_param(asset_key, "asset_key", AssetKey)
+        if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
+            query = (
+                db.select([AssetKeyTable.c.asset_key])
+                .where(
+                    db.or_(
+                        AssetKeyTable.c.asset_key == asset_key.to_string(),
+                        AssetKeyTable.c.asset_key == asset_key.to_string(legacy=True),
+                    )
+                )
+                .where(
+                    db.or_(
+                        AssetKeyTable.c.wipe_timestamp == None,
+                        AssetKeyTable.c.last_materialization_timestamp
+                        > AssetKeyTable.c.wipe_timestamp,
+                    )
+                )
+                .limit(1)
+            )
+            with self.index_connection() as conn:
+                row = conn.execute(query).fetchone()
+                return bool(row)
+
+        # has not migrated, need to pull asset_details to get wipe status
         query = (
             db.select([AssetKeyTable.c.asset_key, AssetKeyTable.c.asset_details])
             .where(
@@ -742,6 +765,20 @@ class SqlEventLogStorage(EventLogStorage):
             )
 
     def all_asset_keys(self):
+        if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
+            with self.index_connection() as conn:
+                results = conn.execute(
+                    db.select([AssetKeyTable.c.asset_key]).where(
+                        db.or_(
+                            AssetKeyTable.c.wipe_timestamp == None,
+                            AssetKeyTable.c.last_materialization_timestamp
+                            > AssetKeyTable.c.wipe_timestamp,
+                        )
+                    )
+                ).fetchall()
+                return list(set([AssetKey.from_db_string(result[0]) for result in results]))
+
+        # has not migrated, need to fetch the wipe_timestamp from asset_details
         with self.index_connection() as conn:
             results = conn.execute(
                 db.select([AssetKeyTable.c.asset_key, AssetKeyTable.c.asset_details])
@@ -910,8 +947,16 @@ class SqlEventLogStorage(EventLogStorage):
     def all_asset_tags(self):
         tags_by_asset_key = defaultdict(dict)
         if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
-            query = db.select([AssetKeyTable.c.asset_key, AssetKeyTable.c.tags]).where(
-                AssetKeyTable.c.tags != None
+            query = (
+                db.select([AssetKeyTable.c.asset_key, AssetKeyTable.c.tags])
+                .where(AssetKeyTable.c.tags != None)
+                .where(
+                    db.or_(
+                        AssetKeyTable.c.wipe_timestamp == None,
+                        AssetKeyTable.c.last_materialization_timestamp
+                        > AssetKeyTable.c.wipe_timestamp,
+                    )
+                )
             )
             with self.index_connection() as conn:
                 rows = conn.execute(query).fetchall()
@@ -936,8 +981,16 @@ class SqlEventLogStorage(EventLogStorage):
     def get_asset_tags(self, asset_key):
         check.inst_param(asset_key, "asset_key", AssetKey)
         if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
-            query = db.select([AssetKeyTable.c.tags]).where(
-                AssetKeyTable.c.asset_key == asset_key.to_string()
+            query = (
+                db.select([AssetKeyTable.c.tags])
+                .where(AssetKeyTable.c.asset_key == asset_key.to_string())
+                .where(
+                    db.or_(
+                        AssetKeyTable.c.wipe_timestamp == None,
+                        AssetKeyTable.c.last_materialization_timestamp
+                        > AssetKeyTable.c.wipe_timestamp,
+                    )
+                )
             )
             with self.index_connection() as conn:
                 rows = conn.execute(query).fetchall()
@@ -975,6 +1028,8 @@ class SqlEventLogStorage(EventLogStorage):
                     .values(
                         last_materialization=None,
                         last_run_id=None,
+                        last_materialization_timestamp=None,
+                        tags=None,
                         asset_details=serialize_dagster_namedtuple(
                             AssetDetails(last_wipe_timestamp=wipe_timestamp)
                         ),
@@ -996,7 +1051,7 @@ class SqlEventLogStorage(EventLogStorage):
                         last_materialization=None,
                         last_run_id=None,
                         asset_details=serialize_dagster_namedtuple(
-                            AssetDetails(last_wipe_timestamp=pendulum.now("UTC").timestamp())
+                            AssetDetails(last_wipe_timestamp=wipe_timestamp)
                         ),
                     )
                 )
