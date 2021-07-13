@@ -18,6 +18,7 @@ import {useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
+import {JobMetadata} from './JobMetadata';
 import {RepositoryLink} from './RepositoryLink';
 
 interface TabConfig {
@@ -94,7 +95,7 @@ export const PipelineNav: React.FC<Props> = (props) => {
 
   const active = tabForPipelinePathComponent(match!.params.tab);
   const explorerPath = explorerPathFromString(match!.params.selector);
-  const {pipelineName, pipelineMode} = explorerPath;
+  const {pipelineName, pipelineMode, snapshotId} = explorerPath;
   const partitionSets = repo?.repository.partitionSets || [];
 
   // If using pipeline:mode tuple (crag flag), check for partition sets that are for this specific
@@ -133,6 +134,15 @@ export const PipelineNav: React.FC<Props> = (props) => {
             </Link>{' '}
             in <RepositoryLink repoAddress={repoAddress} />
           </>
+        }
+        metadata={
+          snapshotId ? null : (
+            <JobMetadata
+              pipelineName={pipelineName}
+              pipelineMode={pipelineMode}
+              repoAddress={repoAddress}
+            />
+          )
         }
       />
       <Box border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}>

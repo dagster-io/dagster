@@ -18,12 +18,13 @@ import {StartSensor} from './types/StartSensor';
 import {StopSensor} from './types/StopSensor';
 
 interface Props {
+  large?: boolean;
   repoAddress: RepoAddress;
   sensor: SensorFragment;
 }
 
 export const SensorSwitch: React.FC<Props> = (props) => {
-  const {repoAddress, sensor} = props;
+  const {large = true, repoAddress, sensor} = props;
   const {canStartSensor, canStopSensor} = usePermissions();
 
   const {jobOriginId, name, sensorState} = sensor;
@@ -55,7 +56,7 @@ export const SensorSwitch: React.FC<Props> = (props) => {
     return (
       <SwitchWithoutLabel
         disabled={toggleOnInFlight || toggleOffInFlight}
-        large
+        large={large}
         innerLabelChecked="on"
         innerLabel="off"
         checked={running || toggleOnInFlight}
@@ -71,7 +72,7 @@ export const SensorSwitch: React.FC<Props> = (props) => {
     <Tooltip content={lacksPermission ? DISABLED_MESSAGE : undefined}>
       <SwitchWithoutLabel
         disabled={disabled}
-        large
+        large={large}
         innerLabelChecked="on"
         innerLabel="off"
         checked={running || toggleOnInFlight}

@@ -18,12 +18,13 @@ import {StartSchedule} from './types/StartSchedule';
 import {StopSchedule} from './types/StopSchedule';
 
 interface Props {
+  large?: boolean;
   repoAddress: RepoAddress;
   schedule: ScheduleFragment;
 }
 
 export const ScheduleSwitch: React.FC<Props> = (props) => {
-  const {repoAddress, schedule} = props;
+  const {large = true, repoAddress, schedule} = props;
   const {name, scheduleState} = schedule;
   const {status, id} = scheduleState;
 
@@ -65,7 +66,7 @@ export const ScheduleSwitch: React.FC<Props> = (props) => {
     return (
       <SwitchWithoutLabel
         checked={running || toggleOnInFlight}
-        large
+        large={large}
         disabled={toggleOffInFlight || toggleOnInFlight}
         innerLabelChecked="on"
         innerLabel="off"
@@ -81,7 +82,7 @@ export const ScheduleSwitch: React.FC<Props> = (props) => {
     <Tooltip content={lacksPermission ? DISABLED_MESSAGE : undefined}>
       <SwitchWithoutLabel
         checked={running || toggleOnInFlight}
-        large
+        large={large}
         disabled={disabled}
         innerLabelChecked="on"
         innerLabel="off"
