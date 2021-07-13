@@ -126,17 +126,10 @@ class GrapheneAsset(graphene.ObjectType):
         ]
 
     def resolve_tags(self, graphene_info):
-        from ...implementation.fetch_assets import get_asset_events
-
         if self._tags is not None:
             tags = self._tags
         else:
-            events = get_asset_events(graphene_info, self.key, limit=1)
-            tags = (
-                events[0].dagster_event.step_materialization_data.materialization.tags or {}
-                if events
-                else {}
-            )
+            tags = graphene_info.context.instance.get_asset_tags(self.key)
         return [GrapheneAssetTag(key=key, value=value) for key, value in tags.items()]
 
 
