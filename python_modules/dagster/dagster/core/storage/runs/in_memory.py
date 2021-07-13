@@ -3,7 +3,7 @@ from typing import List, Set, Tuple
 
 from dagster import check
 from dagster.core.errors import DagsterRunAlreadyExists, DagsterSnapshotDoesNotExist
-from dagster.core.events import DagsterEvent, DagsterEventType
+from dagster.core.events import EVENT_TYPE_TO_PIPELINE_RUN_STATUS, DagsterEvent, DagsterEventType
 from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster.core.snap import (
     ExecutionPlanSnapshot,
@@ -13,7 +13,7 @@ from dagster.core.snap import (
 )
 from dagster.utils import frozendict, merge_dicts
 
-from ..pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
+from ..pipeline_run import PipelineRun, PipelineRunsFilter
 from .base import RunStorage
 
 
@@ -67,20 +67,14 @@ class InMemoryRunStorage(RunStorage):
             return
         run = self._runs[run_id]
 
-        if event.event_type == DagsterEventType.PIPELINE_START:
-            self._runs[run_id] = run.with_status(PipelineRunStatus.STARTED)
-        elif event.event_type == DagsterEventType.PIPELINE_SUCCESS:
-            self._runs[run_id] = run.with_status(PipelineRunStatus.SUCCESS)
-        elif event.event_type == DagsterEventType.PIPELINE_FAILURE:
-            self._runs[run_id] = self._runs[run_id].with_status(PipelineRunStatus.FAILURE)
-        elif event.event_type == DagsterEventType.PIPELINE_ENQUEUED:
-            self._runs[run_id] = self._runs[run_id].with_status(PipelineRunStatus.QUEUED)
-        elif event.event_type == DagsterEventType.PIPELINE_STARTING:
-            self._runs[run_id] = self._runs[run_id].with_status(PipelineRunStatus.STARTING)
-        elif event.event_type == DagsterEventType.PIPELINE_CANCELING:
-            self._runs[run_id] = self._runs[run_id].with_status(PipelineRunStatus.CANCELING)
-        elif event.event_type == DagsterEventType.PIPELINE_CANCELED:
-            self._runs[run_id] = self._runs[run_id].with_status(PipelineRunStatus.CANCELED)
+        if event.event_type in [DagsterEventType.PIPELINE_START, DagsterEventType.PIPELINE_SUCCESS]:
+            self._runs[run_id] = run.with_status(
+                EVENT_TYPE_TO_PIPELINE_RUN_STATUS[event.event_type]
+            )
+        else:
+            self._runs[run_id] = self._runs[run_id].with_status(
+                EVENT_TYPE_TO_PIPELINE_RUN_STATUS[event.event_type]
+            )
 
     def get_runs(self, filters=None, cursor=None, limit=None):
         check.opt_inst_param(filters, "filters", PipelineRunsFilter)

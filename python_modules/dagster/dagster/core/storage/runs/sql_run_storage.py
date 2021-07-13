@@ -14,7 +14,7 @@ from dagster.core.errors import (
     DagsterRunAlreadyExists,
     DagsterSnapshotDoesNotExist,
 )
-from dagster.core.events import DagsterEvent, DagsterEventType
+from dagster.core.events import EVENT_TYPE_TO_PIPELINE_RUN_STATUS, DagsterEvent
 from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster.core.snap import (
     ExecutionPlanSnapshot,
@@ -27,7 +27,7 @@ from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dag
 from dagster.seven import JSONDecodeError
 from dagster.utils import merge_dicts, utc_datetime_from_timestamp
 
-from ..pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter, RunRecord
+from ..pipeline_run import PipelineRun, PipelineRunsFilter, RunRecord
 from .base import RunStorage
 from .migration import MODE_MIGRATION, RUN_DATA_MIGRATIONS, RUN_PARTITIONS
 from .schema import (
@@ -131,17 +131,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         check.str_param(run_id, "run_id")
         check.inst_param(event, "event", DagsterEvent)
 
-        lookup = {
-            DagsterEventType.PIPELINE_START: PipelineRunStatus.STARTED,
-            DagsterEventType.PIPELINE_SUCCESS: PipelineRunStatus.SUCCESS,
-            DagsterEventType.PIPELINE_FAILURE: PipelineRunStatus.FAILURE,
-            DagsterEventType.PIPELINE_ENQUEUED: PipelineRunStatus.QUEUED,
-            DagsterEventType.PIPELINE_STARTING: PipelineRunStatus.STARTING,
-            DagsterEventType.PIPELINE_CANCELING: PipelineRunStatus.CANCELING,
-            DagsterEventType.PIPELINE_CANCELED: PipelineRunStatus.CANCELED,
-        }
-
-        if event.event_type not in lookup:
+        if event.event_type not in EVENT_TYPE_TO_PIPELINE_RUN_STATUS:
             return
 
         run = self.get_run_by_id(run_id)
@@ -149,7 +139,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             # TODO log?
             return
 
-        new_pipeline_status = lookup[event.event_type]
+        new_pipeline_status = EVENT_TYPE_TO_PIPELINE_RUN_STATUS[event.event_type]
 
         with self.connect() as conn:
             conn.execute(
