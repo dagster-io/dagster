@@ -510,6 +510,8 @@ class PipelineDefinition:
             preset_defs=self.preset_defs,
             tags=self.tags,
             hook_defs=hook_defs | self.hook_defs,
+            description=self._description,
+            solid_retry_policy=self._solid_retry_policy,
             _parent_pipeline_def=self._parent_pipeline_def,
         )
 

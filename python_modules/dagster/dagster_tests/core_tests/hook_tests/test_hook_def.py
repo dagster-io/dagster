@@ -12,9 +12,10 @@ from dagster import (
     resource,
     solid,
 )
-from dagster.core.definitions import failure_hook, success_hook
+from dagster.core.definitions import PresetDefinition, SolidHandle, failure_hook, success_hook
 from dagster.core.definitions.decorators.hook import event_list_hook
 from dagster.core.definitions.events import HookExecutionResult
+from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.errors import DagsterInvalidDefinitionError
 
 
@@ -351,3 +352,37 @@ def foo():
 
 def test_pipelines_with_hooks_are_reconstructable():
     assert reconstructable(foo)
+
+
+def test_hook_decorator():
+    called_hook_to_solids = defaultdict(list)
+
+    @success_hook
+    def a_success_hook(context):
+        called_hook_to_solids[context.hook_def.name].append(context.solid.name)
+
+    @solid
+    def a_solid(_):
+        pass
+
+    @a_success_hook
+    @pipeline(
+        description="i am a pipeline",
+        mode_defs=[ModeDefinition(name="my_mode")],
+        solid_retry_policy=RetryPolicy(max_retries=3),
+        preset_defs=[PresetDefinition("my_empty_preset", mode="my_mode")],
+        tags={"foo": "FOO"},
+    )
+    def a_pipeline():
+        a_solid()
+
+    assert isinstance(a_pipeline, PipelineDefinition)
+    assert a_pipeline.tags
+    assert a_pipeline.tags.get("foo") == "FOO"
+    assert a_pipeline.tags.get("foo") == "FOO"
+    assert a_pipeline.description == "i am a pipeline"
+    assert a_pipeline.has_mode_definition("my_mode")
+    assert a_pipeline.has_preset("my_empty_preset")
+    retry_policy = a_pipeline.get_retry_policy_for_handle(SolidHandle("a_solid", parent=None))
+    assert isinstance(retry_policy, RetryPolicy)
+    assert retry_policy.max_retries == 3
