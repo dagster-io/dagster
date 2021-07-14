@@ -890,7 +890,7 @@ def _checked_type_resource_reqs_for_mode(
 
 def _checked_input_resource_reqs_for_mode(
     dependency_structure: DependencyStructure,
-    solid_dict: Dict[str, Node],
+    node_dict: Dict[str, Node],
     mode_def: ModeDefinition,
     outer_dependency_structure: Optional[DependencyStructure] = None,
     outer_solid: Optional[Node] = None,
@@ -902,19 +902,19 @@ def _checked_input_resource_reqs_for_mode(
         if isinstance(resource_def, RootInputManagerDefinition)
     )
 
-    for solid in solid_dict.values():
-        if solid.is_composite:
+    for node in node_dict.values():
+        if node.is_graph:
             # check inner solids
             resource_reqs.update(
                 _checked_input_resource_reqs_for_mode(
-                    dependency_structure=solid.definition.dependency_structure,
-                    solid_dict=solid.definition.solid_dict,
+                    dependency_structure=node.definition.dependency_structure,
+                    node_dict=node.definition.node_dict,
                     mode_def=mode_def,
                     outer_dependency_structure=dependency_structure,
-                    outer_solid=solid,
+                    outer_solid=node,
                 )
             )
-        for handle in solid.input_handles():
+        for handle in node.input_handles():
             source_output_handles = None
             if dependency_structure.has_deps(handle):
                 # input is connected to outputs from the same dependency structure
@@ -922,13 +922,13 @@ def _checked_input_resource_reqs_for_mode(
             elif (
                 outer_solid
                 and outer_dependency_structure
-                and solid.container_maps_input(handle.input_name)
+                and node.container_maps_input(handle.input_name)
             ):
                 # input is connected to outputs from outer dependency structure, e.g. first solids
                 # in a composite
                 outer_handle = SolidInputHandle(
                     solid=outer_solid,
-                    input_def=solid.container_mapped_input(handle.input_name).definition,
+                    input_def=node.container_mapped_input(handle.input_name).definition,
                 )
                 if outer_dependency_structure.has_deps(outer_handle):
                     source_output_handles = outer_dependency_structure.get_deps_list(outer_handle)
@@ -940,7 +940,7 @@ def _checked_input_resource_reqs_for_mode(
                     output_manager_def = mode_def.resource_defs[output_manager_key]
                     if not isinstance(output_manager_def, IInputManagerDefinition):
                         raise DagsterInvalidDefinitionError(
-                            f'Input "{handle.input_def.name}" of solid "{solid.name}" is '
+                            f'Input "{handle.input_def.name}" of solid "{node.name}" is '
                             f'connected to output "{source_output_handle.output_def.name}" '
                             f'of solid "{source_output_handle.solid.name}". In mode '
                             f'"{mode_def.name}", that output does not have an output '
@@ -963,7 +963,7 @@ def _checked_input_resource_reqs_for_mode(
                         "Possible solutions are:\n"
                         '  * add a dagster_type_loader for the type "{dagster_type}"\n'
                         '  * connect "{input_name}" to the output of another solid\n'.format(
-                            solid_name=solid.name,
+                            solid_name=node.name,
                             input_name=input_def.name,
                             dagster_type=input_def.dagster_type.display_name,
                         )
@@ -977,7 +977,7 @@ def _checked_input_resource_reqs_for_mode(
                     if input_def.root_manager_key not in mode_def.resource_defs:
                         raise DagsterInvalidDefinitionError(
                             f'Root input manager key "{input_def.root_manager_key}" is required by '
-                            f'unsatisfied input "{input_def.name}" of solid def {solid.name}, but is not '
+                            f'unsatisfied input "{input_def.name}" of solid {node.name}, but is not '
                             f'provided by mode "{mode_def.name}". '
                             f'In mode "{mode_def.name}", provide a root input manager for key "{input_def.root_manager_key}", '
                             f'or change "{input_def.root_manager_key}" to one of the provided root input managers keys: {sorted(mode_root_input_managers)}.'

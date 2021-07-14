@@ -102,7 +102,7 @@ class GraphExecutionResult:
 
         events_by_kind = defaultdict(list)
 
-        if solid.is_composite:
+        if solid.is_graph:
             events = []
             for event in self.event_list:
                 if event.is_step_event:
@@ -200,7 +200,7 @@ class CompositeSolidExecutionResult(GraphExecutionResult):
     ):
         check.inst_param(solid, "solid", Node)
         check.invariant(
-            solid.is_composite,
+            solid.is_graph,
             desc="Tried to instantiate a CompositeSolidExecutionResult with a noncomposite solid",
         )
         self.solid = solid
@@ -296,7 +296,7 @@ class SolidExecutionResult:
     ):
         check.inst_param(solid, "solid", Node)
         check.invariant(
-            not solid.is_composite,
+            not solid.is_graph,
             desc="Tried to instantiate a SolidExecutionResult with a composite solid",
         )
         self.solid = solid

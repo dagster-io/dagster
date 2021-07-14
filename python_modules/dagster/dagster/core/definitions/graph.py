@@ -124,8 +124,6 @@ class GraphDefinition(NodeDefinition):
         **kwargs,
     ):
         self._node_defs = _check_node_defs_arg(name, node_defs)
-        # TODO: backcompat for now
-        self._solid_defs = self._node_defs
         self._dagster_type_dict = construct_dagster_type_dictionary(self._node_defs)
         self._dependencies = validate_dependency_dict(dependencies)
         self._dependency_structure, self._solid_dict = create_execution_structure(
@@ -181,7 +179,7 @@ class GraphDefinition(NodeDefinition):
         return list(set(self._solid_dict.values()))
 
     @property
-    def solid_dict(self) -> Dict[str, Node]:
+    def node_dict(self) -> Dict[str, Node]:
         return self._solid_dict
 
     @property

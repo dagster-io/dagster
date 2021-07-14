@@ -160,7 +160,7 @@ class Node:
         return self.definition.output_def_named(name)
 
     @property
-    def is_composite(self) -> bool:
+    def is_graph(self) -> bool:
         from .graph import GraphDefinition
 
         return isinstance(self.definition, GraphDefinition)

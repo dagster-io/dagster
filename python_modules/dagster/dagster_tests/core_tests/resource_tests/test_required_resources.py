@@ -859,7 +859,7 @@ def test_root_input_manager_missing_fails():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=r'"missing_root_input_manager" is required by unsatisfied input "root_input" of solid def requires_missing_root_input_manager',
+        match=r'"missing_root_input_manager" is required by unsatisfied input "root_input" of solid requires_missing_root_input_manager',
     ):
 
         @pipeline
