@@ -1,3 +1,4 @@
+from dagster.core.definitions.pipeline_sensor import RunStatusSensorCursor
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 from dagster.utils.error import SerializableErrorInfo
 
@@ -18,3 +19,11 @@ def test_heartbeat_backcompat():
     assert heartbeat.daemon_type == "SCHEDULER"
     assert heartbeat.errors == []
     assert heartbeat.timestamp == 1612453213.775866
+
+
+def test_run_status_sensor_cursor_backcompat():
+    old_cursor = '{"__class__": "PipelineSensorCursor", "record_id": 20585, "update_timestamp": "2021-07-22T00:22:29.914776+00:00"}'
+    assert RunStatusSensorCursor.is_valid(old_cursor)
+    cursor = deserialize_json_to_dagster_namedtuple(old_cursor)
+    assert isinstance(cursor, RunStatusSensorCursor)
+    assert cursor.record_id == 20585

@@ -517,8 +517,8 @@ class HookExecutionError(DagsterUserCodeExecutionError):
     """ Error raised during the execution of a user-defined hook. """
 
 
-class PipelineSensorExecutionError(DagsterUserCodeExecutionError):
-    """ Error raised during the execution of a user-defined pipeline hook. """
+class RunStatusSensorExecutionError(DagsterUserCodeExecutionError):
+    """ Error raised during the execution of a user-defined run status sensor. """
 
 
 class DagsterImportError(DagsterError):
