@@ -362,7 +362,7 @@ def define_isolid_field(
             ignored,
         )
 
-    graph_def = check.inst(solid.definition, GraphDefinition)
+    graph_def = solid.definition.ensure_graph_def()
 
     if graph_def.has_config_mapping:
         # has_config_mapping covers cases 2 & 4 from above (only config mapped composite solids can

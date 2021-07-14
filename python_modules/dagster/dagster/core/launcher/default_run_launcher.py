@@ -14,7 +14,7 @@ from dagster.grpc.types import (
     ExecuteExternalPipelineArgs,
     StartRunResult,
 )
-from dagster.serdes import ConfigurableClass, deserialize_json_to_dagster_namedtuple
+from dagster.serdes import ConfigurableClass, deserialize_as, deserialize_json_to_dagster_namedtuple
 from dagster.utils import merge_dicts
 
 from .base import LaunchRunContext, RunLauncher
@@ -84,19 +84,16 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
             },
         )
 
-        res = check.inst(
-            deserialize_json_to_dagster_namedtuple(
-                repository_location.client.start_run(
-                    ExecuteExternalPipelineArgs(
-                        pipeline_origin=run.external_pipeline_origin,
-                        pipeline_run_id=run.run_id,
-                        instance_ref=self._instance.get_ref(),
-                    )
-                ),
+        res = deserialize_as(
+            repository_location.client.start_run(
+                ExecuteExternalPipelineArgs(
+                    pipeline_origin=run.external_pipeline_origin,
+                    pipeline_run_id=run.run_id,
+                    instance_ref=self._instance.get_ref(),
+                )
             ),
             StartRunResult,
         )
-
         if not res.success:
             raise (
                 DagsterLaunchFailedError(

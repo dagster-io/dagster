@@ -358,14 +358,13 @@ class PartitionSetDefinition(Generic[T]):
         self._user_defined_tags_fn_for_partition = check.callable_param(
             tags_fn_for_partition, "tags_fn_for_partition"
         )
-        self._partitions_def = check.opt_inst_param(
-            partitions_def,
-            "partitions_def",
-            PartitionsDefinition,
-            default=DynamicPartitionsDefinition(partition_fn=_wrap_partition_fn)
-            if partition_fn is not None
-            else None,
-        )
+        check.opt_inst_param(partitions_def, "partitions_def", PartitionsDefinition)
+        if partitions_def is not None:
+            self._partitions_def = partitions_def
+        else:
+            if partition_fn is None:
+                check.failed("One of `partition_fn` or `partitions_def` must be supplied.")
+            self._partitions_def = DynamicPartitionsDefinition(partition_fn=_wrap_partition_fn)
 
     @property
     def name(self):

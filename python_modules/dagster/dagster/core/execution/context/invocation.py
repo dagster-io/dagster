@@ -184,7 +184,7 @@ class UnboundSolidExecutionContext(SolidExecutionContext):
         solid_def = (
             solid_def_or_invocation
             if isinstance(solid_def_or_invocation, SolidDefinition)
-            else solid_def_or_invocation.node_def
+            else solid_def_or_invocation.node_def.ensure_solid_def()
         )
 
         _validate_resource_requirements(self.resources, solid_def)

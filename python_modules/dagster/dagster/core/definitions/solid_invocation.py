@@ -1,11 +1,13 @@
 import inspect
 from typing import TYPE_CHECKING, Any, Optional, Union
 
-from ...core.errors import (
+from dagster import check
+from dagster.core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
     DagsterTypeCheckDidNotPass,
 )
+
 from .events import AssetMaterialization, ExpectationResult, Materialization, Output
 
 if TYPE_CHECKING:
@@ -24,11 +26,12 @@ def solid_invocation_result(
     *args,
     **kwargs,
 ) -> Any:
-    from ..execution.context.invocation import build_solid_context
+    from dagster.core.execution.context.invocation import build_solid_context
+    from dagster.core.definitions.decorators.solid import DecoratedSolidFunction
     from .composition import PendingNodeInvocation
 
     solid_def = (
-        solid_def_or_invocation.node_def
+        solid_def_or_invocation.node_def.ensure_solid_def()
         if isinstance(solid_def_or_invocation, PendingNodeInvocation)
         else solid_def_or_invocation
     )
@@ -39,10 +42,14 @@ def solid_invocation_result(
 
     input_dict = _resolve_inputs(solid_def, args, kwargs, context)
 
+    compute_fn = solid_def.compute_fn
+    if not isinstance(compute_fn, DecoratedSolidFunction):
+        check.failed("solid invocation only works with decorated solid fns")
+
     result = (
-        solid_def.compute_fn.decorated_fn(context, **input_dict)
-        if solid_def.compute_fn.has_context_arg()
-        else solid_def.compute_fn.decorated_fn(**input_dict)
+        compute_fn.decorated_fn(context, **input_dict)
+        if compute_fn.has_context_arg()
+        else compute_fn.decorated_fn(**input_dict)
     )
 
     return _type_check_output_wrapper(solid_def, result, context)

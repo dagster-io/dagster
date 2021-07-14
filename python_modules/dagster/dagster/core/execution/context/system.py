@@ -346,7 +346,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         elif len(step_launcher_resources) == 1:
             self._step_launcher = step_launcher_resources[0]
 
-        self._step_exception = None
+        self._step_exception: Optional[BaseException] = None
         self._step_output_capture: Dict[StepOutputHandle, Any] = {}
 
     @property
@@ -371,7 +371,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     @property
     def solid_def(self) -> SolidDefinition:
-        return self.solid.definition
+        return self.solid.definition.ensure_solid_def()
 
     @property
     def pipeline_def(self) -> PipelineDefinition:
@@ -479,7 +479,11 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         from dagster.core.events import DagsterEventType
 
         # walk through event logs to find the right run_id based on the run lineage
-        _, runs = self.instance.get_run_group(self.run_id)
+        run_group = self.instance.get_run_group(self.run_id)
+        if run_group is None:
+            check.failed(f"Failed to load run group {self.run_id}")
+
+        _, runs = run_group
         run_id_to_parent_run_id = {run.run_id: run.parent_run_id for run in runs}
         source_run_id = self.pipeline_run.parent_run_id
         while source_run_id:

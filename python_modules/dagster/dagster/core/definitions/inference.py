@@ -23,25 +23,27 @@ class InferredOutputProps(NamedTuple):
 
 
 def _infer_input_description_from_docstring(fn: Callable) -> Dict[str, Optional[str]]:
-    if not is_module_available("docstring_parser"):
+    doc_str = fn.__doc__
+    if not is_module_available("docstring_parser") or doc_str is None:
         return {}
 
     from docstring_parser import parse
 
     try:
-        docstring = parse(fn.__doc__)
+        docstring = parse(doc_str)
         return {p.arg_name: p.description for p in docstring.params}
     except Exception:  # pylint: disable=broad-except
         return {}
 
 
 def _infer_output_description_from_docstring(fn: Callable) -> Optional[str]:
-    if not is_module_available("docstring_parser"):
+    doc_str = fn.__doc__
+    if not is_module_available("docstring_parser") or doc_str is None:
         return None
     from docstring_parser import parse
 
     try:
-        docstring = parse(fn.__doc__)
+        docstring = parse(doc_str)
         if docstring.returns is None:
             return None
 

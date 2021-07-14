@@ -904,11 +904,12 @@ def _checked_input_resource_reqs_for_mode(
 
     for node in node_dict.values():
         if node.is_graph:
+            graph_def = node.definition.ensure_graph_def()
             # check inner solids
             resource_reqs.update(
                 _checked_input_resource_reqs_for_mode(
-                    dependency_structure=node.definition.dependency_structure,
-                    node_dict=node.definition.node_dict,
+                    dependency_structure=graph_def.dependency_structure,
+                    node_dict=graph_def.node_dict,
                     mode_def=mode_def,
                     outer_dependency_structure=dependency_structure,
                     outer_solid=node,

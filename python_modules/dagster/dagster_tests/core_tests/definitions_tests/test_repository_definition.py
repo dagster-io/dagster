@@ -20,7 +20,6 @@ from dagster import (
     solid,
     weekly_schedule,
 )
-from dagster.core.definitions.decorators.graph import graph
 from dagster.core.definitions.partition import (
     Partition,
     PartitionedConfig,

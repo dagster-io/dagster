@@ -18,7 +18,7 @@ import inspect
 from abc import ABC, abstractmethod
 from enum import Enum
 from inspect import Parameter, signature
-from typing import Any, Dict, NamedTuple, Optional, Set, Tuple, Type, Union, cast
+from typing import Any, Dict, NamedTuple, Optional, Set, Tuple, Type, TypeVar, Union, cast
 
 from dagster import check, seven
 
@@ -270,9 +270,15 @@ def deserialize_json_to_dagster_namedtuple(
     return dagster_namedtuple
 
 
-def deserialize_as(json_str: str, cls: type) -> tuple:
+T = TypeVar("T")
+
+
+def deserialize_as(json_str: str, cls: Type[T]) -> T:
     """Deserialize a json encoded string to a specific namedtuple class."""
-    return check.inst(deserialize_json_to_dagster_namedtuple(json_str), cls)
+    val = deserialize_json_to_dagster_namedtuple(json_str)
+    if isinstance(val, cls):
+        return val
+    check.failed(f"Deserialized object was not expected target type {cls}, got {type(val)}")
 
 
 def _deserialize_json(json_str: str, whitelist_map: WhitelistMap):
