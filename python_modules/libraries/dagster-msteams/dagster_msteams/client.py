@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Optional
 
 from requests import codes, exceptions, post
 
@@ -10,10 +10,10 @@ class TeamsClient:
     def __init__(
         self,
         hook_url: str,
-        http_proxy: str = None,
-        https_proxy: str = None,
-        timeout: float = 60,
-        verify: bool = None,
+        http_proxy: Optional[str] = None,
+        https_proxy: Optional[str] = None,
+        timeout: Optional[float] = 60,
+        verify: Optional[bool] = None,
     ):
         self._hook_url = hook_url
         self._timeout = timeout

@@ -4,8 +4,8 @@ from dagster.core.definitions.pipeline_sensor import (
     PipelineFailureSensorContext,
     pipeline_failure_sensor,
 )
-from dagster_msteams.client import TeamsClient
 from dagster_msteams.card import Card
+from dagster_msteams.client import TeamsClient
 
 
 def _default_failure_message(context: PipelineFailureSensorContext) -> str:

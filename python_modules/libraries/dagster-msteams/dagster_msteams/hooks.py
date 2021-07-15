@@ -2,7 +2,6 @@ from typing import Callable, Optional
 
 from dagster.core.definitions import failure_hook, success_hook
 from dagster.core.execution.context.hook import HookContext
-
 from dagster_msteams.card import Card
 
 
