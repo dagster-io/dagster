@@ -330,13 +330,18 @@ class GraphDefinition(NodeDefinition):
 
     def input_supports_dynamic_output_dep(self, input_name: str) -> bool:
         mapping = self.get_input_mapping(input_name)
-        internal_dynamic_handle = self.dependency_structure.get_upstream_dynamic_handle_for_solid(
-            mapping.maps_to.solid_name
-        )
-        if internal_dynamic_handle:
+        target_node = mapping.maps_to.solid_name
+        # check if input mapped to solid which is downstream of another dynamic output within
+        if self.dependency_structure.is_dynamic_mapped(target_node):
             return False
 
-        return True
+        # check if input mapped to solid which starts new dynamic downstream
+        if self.dependency_structure.has_dynamic_downstreams(target_node):
+            return False
+
+        return self.solid_named(target_node).definition.input_supports_dynamic_output_dep(
+            mapping.maps_to.input_name
+        )
 
     def copy_for_configured(
         self,

@@ -672,7 +672,7 @@ class DependencyStructure:
         # solid_name => output_handle => list[input_handle]
         self._solid_output_index: dict = defaultdict(lambda: defaultdict(list))
 
-        # solid_name => dynamic output_handle that this will solid dupe for
+        # solid_name => dynamic output_handle that this solid will dupe for
         self._dynamic_fan_out_index: dict = {}
 
         # solid_name => set of dynamic output_handle this collects over
@@ -900,3 +900,10 @@ class DependencyStructure:
 
     def is_dynamic_mapped(self, solid_name: str) -> bool:
         return solid_name in self._dynamic_fan_out_index
+
+    def has_dynamic_downstreams(self, solid_name: str) -> bool:
+        for upstream_handle in self._dynamic_fan_out_index.values():
+            if upstream_handle.solid_name == solid_name:
+                return True
+
+        return False

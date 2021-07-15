@@ -11,18 +11,23 @@ from dagster import (
 
 
 @solid(output_defs=[DynamicOutputDefinition()])
-def dynamic_solid(_):
+def dynamic_solid():
     yield DynamicOutput(1, mapping_key="1")
     yield DynamicOutput(2, mapping_key="2")
 
 
+@solid(output_defs=[DynamicOutputDefinition()])
+def dynamic_echo(x):
+    yield DynamicOutput(x, mapping_key="echo")
+
+
 @solid
-def echo(_, x):
+def echo(x):
     return x
 
 
 @solid
-def add(_, x, y):
+def add(x, y):
     return x + y
 
 
@@ -118,6 +123,59 @@ def test_multi_composite_in():
         @pipeline
         def _should_fail():
             dynamic_solid().map(lambda x: composed_add(echo(x)))
+
+
+def test_multi_composite_in_2():
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match='cannot be downstream of dynamic output "dynamic_solid:result" since input "a" maps to a solid that is already downstream of another dynamic output',
+    ):
+
+        @composite_solid
+        def composed_add(a):
+            dynamic_solid().map(lambda b: add(a, b))
+
+        @composite_solid
+        def indirect(a):
+            composed_add(a)
+
+        @pipeline
+        def _should_fail():
+            dynamic_solid().map(lambda x: indirect(echo(x)))
+
+
+def test_multi_composite_in_3():
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match='cannot be downstream of dynamic output "dynamic_solid:result" since input "a" maps to a solid that is already downstream of another dynamic output',
+    ):
+
+        @composite_solid
+        def composed(a):
+            dynamic_echo(a).map(echo)
+
+        @pipeline
+        def _should_fail():
+            dynamic_solid().map(composed)
+
+
+def test_multi_composite_in_4():
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match='cannot be downstream of dynamic output "dynamic_solid:result" since input "a" maps to a solid that is already downstream of another dynamic output',
+    ):
+
+        @composite_solid
+        def composed(a):
+            dynamic_echo(a).map(echo)
+
+        @composite_solid
+        def indirect(a):
+            composed(a)
+
+        @pipeline
+        def _should_fail():
+            dynamic_solid().map(indirect)
 
 
 def test_direct_dep():

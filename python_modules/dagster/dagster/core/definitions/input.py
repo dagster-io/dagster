@@ -313,6 +313,10 @@ class InputMapping(namedtuple("_InputMapping", "definition maps_to")):
     def maps_to_fan_in(self):
         return isinstance(self.maps_to, FanInInputPointer)
 
+    def describe(self) -> str:
+        idx = self.maps_to.fan_in_index if isinstance(self.maps_to, FanInInputPointer) else ""
+        return f"{self.definition.name} -> {self.maps_to.solid_name}:{self.maps_to.input_name}{idx}"
+
 
 class In(
     namedtuple(
