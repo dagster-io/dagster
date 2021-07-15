@@ -1,5 +1,23 @@
 # Changelog
 
+# 0.12.2
+
+### New
+
+- Improved Asset catalog load times in Dagit, for Dagster instances that have fully migrated using `dagster instance migrate`.
+- When using the `ScheduleDefinition` constructor to instantiate a schedule definition, if a schedule name is not provided, the name of the schedule will now default to the pipeline name, plus “_schedule”, instead of raising an error.
+
+### Bugfixes
+
+- Fixed a bug where pipeline definition arguments `description` and `solid_retry_policy` were getting dropped when using a `solid_hook` decorator on a pipeline definition ([#4355](https://github.com/dagster-io/dagster/issues/4355)).
+- Fixed an issue where the Dagit frontend wasn’t disabling certain UI elements when launched in read-only mode. 
+- Fixed a bug where directly invoking an async solid with type annotations would fail, if called from another async function.
+
+### Documentation
+
+- Added a guide to migrating from the existing Pipeline, Mode, Preset, and Solid APIs to the new experimental Graph, Job, and Op APIs. Check out the guide [here](https://docs.dagster.io/guides/dagster/graph_job_op)!
+
+
 # 0.12.1
 
 ### Bugfixes
