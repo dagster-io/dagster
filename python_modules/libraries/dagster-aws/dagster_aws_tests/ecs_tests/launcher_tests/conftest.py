@@ -33,11 +33,7 @@ def task_definition(ecs, image, environment):
     return ecs.register_task_definition(
         family="dagster",
         containerDefinitions=[
-            {
-                "name": "dagster",
-                "image": image,
-                "environment": environment,
-            }
+            {"name": "dagster", "image": image, "environment": environment, "entryPoint": ["ls"]}
         ],
         networkMode="awsvpc",
     )["taskDefinition"]

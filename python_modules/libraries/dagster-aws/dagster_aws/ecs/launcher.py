@@ -183,10 +183,19 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         # pipeline's code installed. Inherit most of the process's container
         # definition (things like environment, dependencies, etc.) but replace
         # the image with the pipeline origin's image and give it a new name.
+        # Also remove entryPoint. We plan to set containerOverrides. If both
+        # entryPoint and containerOverrides are specified, they're concatenated
+        # and the command will fail
+        # https://aws.amazon.com/blogs/opensource/demystifying-entrypoint-cmd-docker/
         container_definitions = task_definition["containerDefinitions"]
         container_definitions.remove(metadata.container_definition)
         container_definitions.append(
-            {**metadata.container_definition, "name": self.container_name, "image": image}
+            {
+                **metadata.container_definition,
+                "name": self.container_name,
+                "image": image,
+                "entryPoint": [],
+            }
         )
         task_definition = {
             **task_definition,

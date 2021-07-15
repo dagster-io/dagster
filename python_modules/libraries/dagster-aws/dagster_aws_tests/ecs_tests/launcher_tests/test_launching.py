@@ -33,6 +33,7 @@ def test_default_launcher(
     container_definition = task_definition["containerDefinitions"][0]
     assert container_definition["name"] == "run"
     assert container_definition["image"] == image
+    assert not container_definition.get("entryPoint")
     # But other stuff is inhereted from the parent task definition
     assert container_definition["environment"] == environment
 
