@@ -86,6 +86,7 @@ from dagster.core.definitions import (
     repository,
     resource,
     schedule,
+    schedule_from_partitions,
     sensor,
     solid,
     success_hook,
@@ -386,6 +387,7 @@ __all__ = [
     "EventRecordsFilter",
     "RunShardedEventsCursor",
     # partitions and schedules
+    "schedule_from_partitions",
     "daily_partitioned_config",
     "hourly_partitioned_config",
     "monthly_partitioned_config",

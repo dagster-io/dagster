@@ -68,6 +68,7 @@ from .logger import LoggerDefinition, build_init_logger_context, logger
 from .mode import ModeDefinition
 from .output import DynamicOut, DynamicOutputDefinition, Out, OutputDefinition, OutputMapping
 from .partition import Partition, PartitionScheduleDefinition, PartitionSetDefinition
+from .partitioned_schedule import schedule_from_partitions
 from .pipeline import PipelineDefinition
 from .pipeline_base import IPipeline
 from .pipeline_sensor import PipelineFailureSensorContext, pipeline_failure_sensor
