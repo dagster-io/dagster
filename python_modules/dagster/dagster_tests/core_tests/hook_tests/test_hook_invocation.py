@@ -2,7 +2,7 @@ import re
 
 import mock
 import pytest
-from dagster import HookContext, build_hook_context, failure_hook, resource, success_hook
+from dagster import HookContext, build_hook_context, failure_hook, resource, solid, success_hook
 from dagster.core.definitions.decorators.hook import event_list_hook
 from dagster.core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
 
@@ -194,3 +194,21 @@ def test_success_hook_cm_resource(hook_decorator, is_event_list_hook):
             hook(build_hook_context(resources={"cm": cm_resource}), None)
         else:
             hook(build_hook_context(resources={"cm": cm_resource}))
+
+
+def test_hook_invocation_with_solid():
+    @success_hook
+    def basic_hook(context):
+        assert context.solid.name == "foo"
+        assert len(context.solid.graph_definition.solids) == 1
+
+    @solid
+    def foo():
+        pass
+
+    @solid
+    def not_foo():
+        pass
+
+    basic_hook(build_hook_context(solid=foo))
+    basic_hook(build_hook_context(solid=not_foo.alias("foo")))
