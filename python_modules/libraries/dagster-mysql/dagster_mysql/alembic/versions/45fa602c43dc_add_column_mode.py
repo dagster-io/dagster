@@ -27,7 +27,7 @@ def upgrade():
         columns = [x.get("name") for x in inspector.get_columns("runs")]
         with op.batch_alter_table("runs") as batch_op:
             if "mode" not in columns:
-                batch_op.add_column(sa.Column("mode", sa.String))
+                batch_op.add_column(sa.Column("mode", sa.Text))
 
 
 def downgrade():
