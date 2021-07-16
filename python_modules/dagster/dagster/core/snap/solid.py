@@ -334,12 +334,12 @@ def build_solid_definitions_snapshot(pipeline_def: PipelineDefinition) -> SolidD
     return SolidDefinitionsSnapshot(
         solid_def_snaps=[
             build_core_solid_def_snap(solid_def)
-            for solid_def in pipeline_def.all_solid_defs
+            for solid_def in pipeline_def.all_node_defs
             if isinstance(solid_def, SolidDefinition)
         ],
         composite_solid_def_snaps=[
             build_composite_solid_def_snap(solid_def)
-            for solid_def in pipeline_def.all_solid_defs
+            for solid_def in pipeline_def.all_node_defs
             if isinstance(solid_def, CompositeSolidDefinition)
         ],
     )

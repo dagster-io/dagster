@@ -412,7 +412,7 @@ class RepositoryData:
             return self._all_pipelines
 
         self._all_pipelines = self._pipelines.get_all_definitions()
-        self.get_all_solid_defs()
+        self.get_all_node_defs()
         return self._all_pipelines
 
     def get_pipeline(self, pipeline_name):
@@ -528,7 +528,7 @@ class RepositoryData:
     def has_sensor(self, name):
         return self._sensors.has_definition(name)
 
-    def get_all_solid_defs(self):
+    def get_all_node_defs(self):
         if self._all_solids is not None:
             return self._all_solids
 
@@ -549,7 +549,7 @@ class RepositoryData:
         # memoization of _all_pipelines and _all_solids short
         # circuits that
         for pipeline in self.get_all_pipelines():
-            for solid_def in pipeline.all_solid_defs + [pipeline.graph]:
+            for solid_def in pipeline.all_node_defs + [pipeline.graph]:
                 if solid_def.name not in solid_defs:
                     solid_defs[solid_def.name] = solid_def
                     solid_to_pipeline[solid_def.name] = pipeline.name
@@ -689,13 +689,13 @@ class RepositoryDefinition:
         """
         return self._repository_data.get_all_pipelines()
 
-    def get_all_solid_defs(self):
+    def get_all_node_defs(self):
         """Get all the solid definitions in a repository.
 
         Returns:
             List[SolidDefinition]: All solid definitions in the repository.
         """
-        return self._repository_data.get_all_solid_defs()
+        return self._repository_data.get_all_node_defs()
 
     def solid_def_named(self, name):
         """Get the solid with the given name in the repository.

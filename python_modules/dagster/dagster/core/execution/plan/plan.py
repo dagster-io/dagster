@@ -899,7 +899,7 @@ def can_isolate_steps(pipeline_def: PipelineDefinition, mode_def: ModeDefinition
 
     output_defs = [
         output_def
-        for solid_def in pipeline_def.all_solid_defs
+        for solid_def in pipeline_def.all_node_defs
         for output_def in solid_def.output_defs
     ]
     for output_def in output_defs:

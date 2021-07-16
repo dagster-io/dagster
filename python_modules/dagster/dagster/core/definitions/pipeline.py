@@ -228,7 +228,7 @@ class PipelineDefinition:
                 mode_def,
                 self._current_level_node_defs,
                 self._graph_def._dagster_type_dict,
-                self._graph_def._solid_dict,
+                self._graph_def._node_dict,
                 self._hook_defs,
                 self._graph_def._dependency_structure,
             )
@@ -344,7 +344,7 @@ class PipelineDefinition:
         }
 
     @property
-    def all_solid_defs(self) -> List[NodeDefinition]:
+    def all_node_defs(self) -> List[NodeDefinition]:
         return list(self._all_node_defs.values())
 
     @property
@@ -1051,7 +1051,7 @@ def _create_run_config_schema(
         check.failed("Unexpected outer_config_type value of None")
 
     config_type_dict_by_name, config_type_dict_by_key = construct_config_type_dictionary(
-        pipeline_def.all_solid_defs,
+        pipeline_def.all_node_defs,
         outer_config_type,
     )
 

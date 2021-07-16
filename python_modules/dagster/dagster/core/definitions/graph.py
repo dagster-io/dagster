@@ -126,14 +126,14 @@ class GraphDefinition(NodeDefinition):
         self._node_defs = _check_node_defs_arg(name, node_defs)
         self._dagster_type_dict = construct_dagster_type_dictionary(self._node_defs)
         self._dependencies = validate_dependency_dict(dependencies)
-        self._dependency_structure, self._solid_dict = create_execution_structure(
+        self._dependency_structure, self._node_dict = create_execution_structure(
             node_defs, self._dependencies, graph_definition=self
         )
 
         # List[InputMapping]
         self._input_mappings, input_defs = _validate_in_mappings(
             check.opt_list_param(input_mappings, "input_mappings"),
-            self._solid_dict,
+            self._node_dict,
             self._dependency_structure,
             name,
             class_name=type(self).__name__,
@@ -141,7 +141,7 @@ class GraphDefinition(NodeDefinition):
         # List[OutputMapping]
         self._output_mappings = _validate_out_mappings(
             check.opt_list_param(output_mappings, "output_mappings"),
-            self._solid_dict,
+            self._node_dict,
             self._dependency_structure,
             name,
             class_name=type(self).__name__,
@@ -176,11 +176,11 @@ class GraphDefinition(NodeDefinition):
 
     @property
     def solids(self) -> List[Node]:
-        return list(set(self._solid_dict.values()))
+        return list(set(self._node_dict.values()))
 
     @property
     def node_dict(self) -> Dict[str, Node]:
-        return self._solid_dict
+        return self._node_dict
 
     @property
     def node_defs(self) -> List[NodeDefinition]:
@@ -188,16 +188,16 @@ class GraphDefinition(NodeDefinition):
 
     def has_solid_named(self, name: str) -> bool:
         check.str_param(name, "name")
-        return name in self._solid_dict
+        return name in self._node_dict
 
     def solid_named(self, name: str) -> Node:
         check.str_param(name, "name")
         check.invariant(
-            name in self._solid_dict,
+            name in self._node_dict,
             "{graph_name} has no solid named {name}.".format(graph_name=self._name, name=name),
         )
 
-        return self._solid_dict[name]
+        return self._node_dict[name]
 
     def get_solid(self, handle: NodeHandle) -> Node:
         check.inst_param(handle, "handle", NodeHandle)
@@ -353,7 +353,7 @@ class GraphDefinition(NodeDefinition):
         check.not_implemented("@graph does not yet implement configured")
 
     def node_names(self):
-        return list(self._solid_dict.keys())
+        return list(self._node_dict.keys())
 
     @experimental
     def to_job(
