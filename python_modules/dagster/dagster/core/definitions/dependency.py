@@ -18,7 +18,12 @@ from typing import (
 from dagster import check
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.serdes import register_serdes_tuple_fallbacks, whitelist_for_serdes
+from dagster.serdes.serdes import (
+    DefaultNamedTupleSerializer,
+    WhitelistMap,
+    register_serdes_tuple_fallbacks,
+    whitelist_for_serdes,
+)
 from dagster.utils import frozentags
 
 from .hook import HookDefinition
@@ -208,7 +213,25 @@ class Node:
         return self._retry_policy
 
 
-@whitelist_for_serdes
+class NodeHandleSerializer(DefaultNamedTupleSerializer):
+    @classmethod
+    def value_to_storage_dict(
+        cls,
+        value: NamedTuple,
+        whitelist_map: WhitelistMap,
+        descent_path: str,
+    ) -> Dict[str, Any]:
+        storage = super().value_to_storage_dict(
+            value,
+            whitelist_map,
+            descent_path,
+        )
+        # persist using legacy name SolidHandle
+        storage["__class__"] = "SolidHandle"
+        return storage
+
+
+@whitelist_for_serdes(serializer=NodeHandleSerializer)
 class NodeHandle(
     # mypy does not yet support recursive types
     namedtuple("_NodeHandle", "name parent")

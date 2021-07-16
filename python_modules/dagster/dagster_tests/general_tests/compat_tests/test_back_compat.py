@@ -2,6 +2,7 @@
 import os
 import re
 import sqlite3
+from collections import namedtuple
 from gzip import GzipFile
 
 import pytest
@@ -16,13 +17,20 @@ from dagster import (
     solid,
 )
 from dagster.cli.debug import DebugRunPayload
+from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.errors import DagsterInstanceMigrationRequired
 from dagster.core.events import DagsterEvent
 from dagster.core.events.log import EventLogEntry
 from dagster.core.instance import DagsterInstance, InstanceRef
 from dagster.core.storage.event_log.migration import migrate_event_log_data
 from dagster.core.storage.event_log.sql_event_log import SqlEventLogStorage
-from dagster.serdes import deserialize_json_to_dagster_namedtuple
+from dagster.serdes.serdes import (
+    WhitelistMap,
+    _deserialize_json,
+    _whitelist_for_serdes,
+    deserialize_json_to_dagster_namedtuple,
+    serialize_dagster_namedtuple,
+)
 from dagster.utils.test import copy_directory
 
 
@@ -496,3 +504,20 @@ def test_0_12_0_extract_asset_index_cols():
             # make sure that wiping still works
             storage.wipe_asset(AssetKey(["a"]))
             assert not storage.has_asset_key(AssetKey(["a"]))
+
+
+def test_solid_handle_node_handle():
+    # serialize in current code
+    test_handle = NodeHandle("test", None)
+    test_str = serialize_dagster_namedtuple(test_handle)
+
+    # deserialize in "legacy" code
+    legacy_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(legacy_env)
+    class SolidHandle(namedtuple("_SolidHandle", "name parent")):
+        pass
+
+    result = _deserialize_json(test_str, legacy_env)
+    assert isinstance(result, SolidHandle)
+    assert result.name == test_handle.name
