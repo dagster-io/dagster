@@ -296,7 +296,6 @@ def execute_pipeline_with_steps(
     plan = create_execution_plan(pipeline_def, step_keys_to_execute=step_keys_to_execute)
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline_def,
-        step_keys_to_execute=step_keys_to_execute,
         run_id=run_id,
         # the backfill flow can inject run group info
         parent_run_id=parent_run_id,
