@@ -61,6 +61,7 @@ class DagsterDaemon(AbstractContextManager):
 
     def run_loop(
         self,
+        instance_ref,
         daemon_uuid,
         daemon_shutdown_event,
         gen_workspace,
@@ -69,7 +70,7 @@ class DagsterDaemon(AbstractContextManager):
         until=None,
     ):
         # Each loop runs in its own thread with its own instance and IWorkspace
-        with DagsterInstance.get() as instance:
+        with DagsterInstance.from_ref(instance_ref) as instance:
             with gen_workspace(instance) as workspace:
                 check.inst_param(workspace, "workspace", IWorkspace)
 

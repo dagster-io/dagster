@@ -137,6 +137,7 @@ class DagsterDaemonController:
             self._daemon_threads[daemon_type] = threading.Thread(
                 target=daemon.run_loop,
                 args=(
+                    self._instance.get_ref(),
                     self._daemon_uuid,
                     self._daemon_shutdown_event,
                     gen_workspace,

@@ -859,6 +859,7 @@ def test_error_sensor_daemon(external_repo_context, monkeypatch):
             sensor_daemon = SensorDaemon(interval_seconds=DEFAULT_SENSOR_DAEMON_INTERVAL)
             daemon_shutdown_event = threading.Event()
             sensor_daemon.run_loop(
+                instance.get_ref(),
                 "my_uuid",
                 daemon_shutdown_event,
                 _gen_workspace,
