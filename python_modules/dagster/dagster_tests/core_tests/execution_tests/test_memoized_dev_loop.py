@@ -1,8 +1,6 @@
 import tempfile
 
-import pytest
 from dagster import execute_pipeline, reexecute_pipeline
-from dagster.core.errors import DagsterNoStepsToExecuteException
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.resolve_versions import resolve_memoized_execution_plan
 from dagster.core.instance import DagsterInstance, InstanceType
@@ -64,9 +62,15 @@ def test_dev_loop_changing_versions():
             instance=instance,
         )
         assert result.success
+
+        # Ensure that after one memoized execution, with no change to run config, that upon the next
+        # computation, there are no step keys to execute.
         assert not get_step_keys_to_execute(asset_pipeline, run_config, "only_mode", instance)
 
         run_config["solids"]["take_string_1_asset"]["config"]["input_str"] = "banana"
+
+        # Ensure that after changing run config that affects only the `take_string_1_asset` step, we
+        # only need to execute that step.
 
         assert get_step_keys_to_execute(asset_pipeline, run_config, "only_mode", instance) == [
             "take_string_1_asset"
@@ -80,14 +84,17 @@ def test_dev_loop_changing_versions():
             instance=instance,
         )
         assert result.success
+
+        # After executing with the updated run config, ensure that there are no unmemoized steps.
         assert not get_step_keys_to_execute(asset_pipeline, run_config, "only_mode", instance)
-        # Ensure pipeline execution fails with proper error if every step has already been memoized.
-        with pytest.raises(DagsterNoStepsToExecuteException):
-            reexecute_pipeline(
-                asset_pipeline,
-                parent_run_id=result.run_id,
-                run_config=run_config,
-                mode="only_mode",
-                tags={"dagster/is_memoized_run": "true"},
-                instance=instance,
-            )
+
+        # Ensure that the pipeline runs, but with no steps.
+        result = execute_pipeline(
+            asset_pipeline,
+            run_config=run_config,
+            mode="only_mode",
+            tags={"dagster/is_memoized_run": "true"},
+            instance=instance,
+        )
+        assert result.success
+        assert len(result.step_event_list) == 0

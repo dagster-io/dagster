@@ -723,7 +723,7 @@ def create_execution_plan(
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
     run_config = check.opt_dict_param(run_config, "run_config", key_type=str)
     mode = check.opt_str_param(mode, "mode", default=pipeline_def.get_default_mode_name())
-    check.opt_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
+    check.opt_nullable_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
 
     resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config, mode=mode)
 

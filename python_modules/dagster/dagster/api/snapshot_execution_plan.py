@@ -27,7 +27,7 @@ def sync_get_external_execution_plan_grpc(
     check.opt_list_param(solid_selection, "solid_selection", of_type=str)
     check.dict_param(run_config, "run_config")
     check.str_param(mode, "mode")
-    check.opt_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
+    check.opt_nullable_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
     check.str_param(pipeline_snapshot_id, "pipeline_snapshot_id")
     check.opt_inst_param(known_state, "known_state", KnownExecutionState)
 

@@ -116,11 +116,6 @@ class DagsterInvariantViolationError(DagsterError):
     at runtime."""
 
 
-class DagsterNoStepsToExecuteException(DagsterError):
-    """Indicates that a user has attempted to execute a pipeline where every step has been
-    memoized."""
-
-
 class DagsterExecutionStepNotFoundError(DagsterError):
     """Thrown when the user specifies execution step keys that do not exist."""
 
