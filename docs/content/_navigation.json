@@ -399,6 +399,10 @@
           {
             "title": "Re-execution",
             "path": "/guides/dagster/re-execution"
+          },
+          {
+            "title": "Deployment Options",
+            "path": "/guides/dagster/deployment-options"
           }
         ]
       }

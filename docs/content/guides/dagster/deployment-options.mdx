@@ -1,0 +1,122 @@
+---
+title: Deployment Options | Dagster
+---
+
+# Deployment Options
+
+This guide walks through three different ways of running Dagit, from running locally all the way to deploying to Kubernetes.
+
+## Motivation
+
+Different teams have varying use cases for Dagster. With different cases come different infrastructure needs.
+
+Developing and testing pipelines would be easier with a lightweight solution. Data engineers running Dagit on their own machine would suffice in meeting requirements for end-to-end testing.
+
+However, this likely wouldn’t meet requirements for a final solution. Imagine a forever running and auto-scaling Dagit that can be accessed by team members everywhere; these needs demand a hosted agile solution, such as Kubernetes.
+
+## Local Dagit
+
+<CodeReferenceLink filePath="examples/docs_snippets/docs_snippets/guides/dagster/deployment-options" />
+
+Running Dagit as a service is particularly helpful when the main need is to view the webserver UI with as little outside set up as possible.
+
+First, `dagit` needs to be installed.
+
+```bash file=/guides/dagster/deployment-options/local_deploy.sh startafter=start_install_dagit_marker endbefore=end_install_dagit_marker
+pip install dagit
+```
+
+Then, Dagit can be run with a one line terminal command. The `DAGSTER_HOME` environment variable needs to be set, telling Dagit where the pipeline definitions are. By navigating to where pipelines are located in the terminal, the `DAGSTER_HOME` variable can be programmatically set to the current directory.
+
+The default host for Dagit is `0.0.0.0` (your local machine), while the default port is `3000`. These can be custom set by adding variables to the command.
+
+```bash file=/guides/dagster/deployment-options/local_deploy.sh startafter=start_custom_command_marker endbefore=end_custom_command_marker
+DAGSTER_HOME=$(pwd) dagit -h 0.0.0.0 -p 3000
+```
+
+The lightweight setup comes with downsides, the largest one being the setup is not portable to other machines. If a pipeline requires other Python packages to be installed, they must be manually installed within a virtual environment on a new computer. Furthermore, additional steps are required if running schedules or sensors; in particular, the `dagster-daemon` needs to be running as well.
+
+The next two solutions aid with portability when additional complexity arises.
+
+## Using docker-compose
+
+<CodeReferenceLink filePath="examples/deploy_docker" />
+
+Any machine running Docker can run dockerized deployments. Code is be packaged into an image, which can be pulled into any other machine running Docker. For the local developer who would like to write and test pipelines, this option streamlines setup by only needing Docker to automatically install all other dependencies (like Python packages).
+
+Leveraging Docker also opens up a world of cloud-hosting Dagster on AWS or GCP by running the containers on a virtual machine, or better yet, a managed container service like ECS on AWS.
+
+For a Dagster deployment, three things are needed outside of the actual Python pipeline code:
+
+- `Dockerfile`: this serves as the instructions for building the actual image.
+- `docker-compose.yaml`: this file defines the multiple containers needed when running the application.
+- `dagster.yaml`: this file tells Dagster about the desired configuration settings, if not the defaults.
+
+### Dockerfile
+
+Running `docker build .` from the directory with the listed files would create the image, however this isn’t needed with the presence of the `build` section of the `docker-compose.yaml` file.
+
+The Dockerfile installs the relevant packages on top of a Python image, as well as sets the environment variables, host, and port for Dagit.
+
+The `ENTRYPOINT` is the exact same as the command for running Dagit locally, with the only difference being it runs automatically within a Docker container.
+
+### docker-compose.yaml
+
+The docker-compose file defines several services to be run in parallel on different containers.
+
+Four containers are launched from the file:
+
+- `docker_example_postgresql`: The Postgres container serves as the backend to storing logs and schedules.
+- `docker_example_pipelines`: This container loads and executes pipelines, used for both Dagit and the daemon.
+- `docker_example_dagit`: This container runs Dagit, the webserver and UI interaction you, the user, will have with Dagster.
+- `docker_example_daemon`: The `dagster-daemon` tracks runs, their schedules, and queues. This is the scheduling service of Dagster.
+
+### dagster.yaml
+
+The `dagster.yaml` file defines the backend setup, using a Postgres Docker container to store logs and schedules.
+
+### Launching Containers
+
+The Docker containers can be launched by running the following from within the directory with the Docker files listed. With this command, you will be able to load Dagit on [https://localhost:3000](https://localhost:3000).
+
+```bash file=/guides/dagster/deployment-options/docker_deploy.sh startafter=start_build_marker endbefore=end_build_marker
+docker-compose up -d
+```
+
+## Deploying to Kubernetes
+
+Kubernetes is a container orchestration system for automating deployment, scaling, and management of containerized applications. Dagster uses Kubernetes in combination with Helm, a package manager for Kubernetes applications. Kubernetes is particularly useful when the resources required for Dagster will need to scale automatically.
+
+To get up and running, only a few commands are necessary. Before continuing, your operatoring system must have `kubectl` and `helm` installed.
+
+First, the `kubectl` context must be set to use Dagster, running on Docker Desktop. For this to run smoothly, make sure to enable Kubernetes on Docker Desktop as described [here](https://docs.docker.com/desktop/kubernetes/).
+
+```bash file=/guides/dagster/deployment-options/mac_k8s_deploy.sh startafter=start_kubectl_config_marker endbefore=end_kubectl_config_marker
+kubectl config set-context dagster --namespace default --cluster docker-desktop --user=docker-desktop
+kubectl config use-context dagster
+```
+
+Helm must be configured to add the `dagster` repo and install it.
+
+```bash file=/guides/dagster/deployment-options/mac_k8s_deploy.sh startafter=start_helm_repo_marker endbefore=end_helm_repo_marker
+helm repo add dagster https://dagster-io.github.io/helm
+
+helm show values dagster/dagster > values.yaml
+helm upgrade --install dagster dagster/dagster -f values.yaml
+```
+
+Finally, to load `dagit` in the browser the ports must be configured properly for the Kubernetes pod running `dagit` itself. The ports are forwarded from the pod name, which can be programatically fetched.
+
+```bash file=/guides/dagster/deployment-options/mac_k8s_deploy.sh startafter=start_dagit_pod_marker endbefore=end_dagit_pod_marker
+export DAGIT_POD_NAME=$(kubectl get pods --namespace default \
+  -l "app.kubernetes.io/name=dagster,app.kubernetes.io/instance=dagster,component=dagit" \
+  -o jsonpath="{.items[0].metadata.name}")
+```
+
+Lastly, forward the pod activity to the appropriate port to view `dagit`. In this example, the command is run in the foreground to maintain port forwarding. You will be able to load Dagit on [https://127.0.0.1:8080](https://127.0.0.1:8080).
+
+```bash file=/guides/dagster/deployment-options/mac_k8s_deploy.sh startafter=start_port_forward_marker endbefore=end_port_forward_marker
+kubectl --namespace default port-forward $DAGIT_POD_NAME 8080:80
+```
+
+An in depth guide to the ins-and-outs of Kubernetes and Helm can be found in our guide for <Link href="/deployment/guides/kubernetes/deploying-with-helm">Deploying Dagster on Helm</Link>.
