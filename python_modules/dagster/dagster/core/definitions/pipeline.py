@@ -15,8 +15,10 @@ from dagster.core.storage.root_input_manager import (
     IInputManagerDefinition,
     RootInputManagerDefinition,
 )
+from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 from dagster.core.types.dagster_type import DagsterType, DagsterTypeKind
 from dagster.core.utils import str_format_set
+from dagster.utils import merge_dicts
 
 from .dependency import (
     DependencyDefinition,
@@ -309,6 +311,10 @@ class PipelineDefinition:
     @property
     def is_multi_mode(self) -> bool:
         return len(self._mode_definitions) > 1
+
+    def is_using_memoization(self, run_tags: Dict[str, str]) -> bool:
+        tags = merge_dicts(self.tags, run_tags)
+        return MEMOIZED_RUN_TAG in tags and tags.get(MEMOIZED_RUN_TAG) == "true"
 
     def has_mode_definition(self, mode: str) -> bool:
         check.str_param(mode, "mode")

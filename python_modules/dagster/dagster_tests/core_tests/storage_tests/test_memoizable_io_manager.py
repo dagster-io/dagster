@@ -70,9 +70,10 @@ def test_versioned_io_manager_with_resources():
     def basic_pipeline():
         basic_solid()
 
-    execute_pipeline(basic_pipeline)
+    with instance_for_test() as instance:
+        execute_pipeline(basic_pipeline, instance=instance)
 
-    assert occurrence_log == ["has", "has", "handle"]
+    assert occurrence_log == ["has", "handle"]
 
 
 def test_versioned_filesystem_io_manager_default_base_dir():

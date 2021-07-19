@@ -61,7 +61,7 @@ def resource_initialization_manager(
     return EventGenerationManager(generator, ScopedResourcesBuilder)
 
 
-def _resolve_resource_dependencies(resource_defs):
+def resolve_resource_dependencies(resource_defs):
     """Generates a dictionary that maps resource key to resource keys it requires for initialization"""
     resource_dependencies = {
         key: resource_def.required_resource_keys for key, resource_def in resource_defs.items()
@@ -69,7 +69,7 @@ def _resolve_resource_dependencies(resource_defs):
     return resource_dependencies
 
 
-def _get_dependencies(resource_name, resource_deps):
+def get_dependencies(resource_name, resource_deps):
     """Get all resources that must be initialized before resource_name can be initialized.
 
     Uses dfs to get all required dependencies from a particular resource. If dependencies are
@@ -129,7 +129,7 @@ def _core_resource_initialization_event_generator(
                 resource_keys_to_init,
             )
 
-        resource_dependencies = _resolve_resource_dependencies(resource_defs)
+        resource_dependencies = resolve_resource_dependencies(resource_defs)
 
         for level in toposort(resource_dependencies):
             for resource_name in level:
@@ -351,7 +351,7 @@ def get_required_resource_keys_for_step(
 
     mode_definition = pipeline_def.get_mode_definition(resolved_run_config.mode)
 
-    resource_dependencies = _resolve_resource_dependencies(mode_definition.resource_defs)
+    resource_dependencies = resolve_resource_dependencies(mode_definition.resource_defs)
 
     # add all the intermediate storage resource keys
     if intermediate_storage_def is not None:
@@ -406,6 +406,6 @@ def get_required_resource_keys_for_step(
 
     for resource_name in resource_keys:
         resource_keys = resource_keys.union(
-            set(_get_dependencies(resource_name, resource_dependencies))
+            set(get_dependencies(resource_name, resource_dependencies))
         )
     return frozenset(resource_keys)

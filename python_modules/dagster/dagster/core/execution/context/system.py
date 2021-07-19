@@ -426,6 +426,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             log_manager=self.log,
             step_context=self,
             resources=None,
+            version=self.execution_plan.get_version_for_step_output_handle(step_output_handle),
         )
 
     def for_input_manager(

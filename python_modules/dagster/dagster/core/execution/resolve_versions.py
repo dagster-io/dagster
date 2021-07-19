@@ -1,8 +1,7 @@
 from dagster import check
-from dagster.core.execution.context.output import get_output_context
+from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.step import is_executable_step
-from dagster.utils.backcompat import experimental
 
 from .plan.inputs import join_and_hash
 
@@ -105,16 +104,32 @@ def resolve_step_versions(pipeline_def, execution_plan, resolved_run_config):
             )
             for input_name, step_input in step.step_input_dict.items()
         }
+        for input_name, version in input_version_dict.items():
+            if version is None:
+                raise DagsterInvariantViolationError(
+                    f"Received None version for input {input_name} to solid {solid_def.name}."
+                )
         input_versions = [version for version in input_version_dict.values()]
 
         solid_name = str(step.solid_handle)
         solid_def_version = solid_def.version
+        if solid_def_version is None:
+            raise DagsterInvariantViolationError(
+                f"No version argument provided for solid '{solid_def.name}' when using memoization. "
+                "Please provide a version argument to the '@solid' decorator when defining your solid."
+            )
         solid_config_version = resolve_config_version(resolved_run_config.solids[solid_name].config)
-        hashed_resources = [
-            resource_versions_by_key[resource_key]
-            for resource_key in solid_def.required_resource_keys
-        ]
-        solid_resources_version = join_and_hash(*hashed_resources)
+
+        resource_versions = []
+        for resource_key in solid_def.required_resource_keys:
+            if resource_versions_by_key[resource_key] is None:
+                raise DagsterInvariantViolationError(
+                    f"No version argument provided for resource '{resource_key}' when using "
+                    "memoization. Please provide a version argument to the '@resource' decorator "
+                    "when defining your resource."
+                )
+            resource_versions.append(resource_versions_by_key[resource_key])
+        solid_resources_version = join_and_hash(*resource_versions)
         solid_version = join_and_hash(
             solid_def_version, solid_config_version, solid_resources_version
         )
@@ -136,54 +151,3 @@ def resolve_step_output_versions(pipeline_def, execution_plan, resolved_run_conf
         if is_executable_step(step)
         for output_name in step.step_output_dict.keys()
     }
-
-
-@experimental
-def resolve_memoized_execution_plan(
-    execution_plan, pipeline_def, run_config, instance, resolved_run_config
-):
-    """
-    Returns:
-        ExecutionPlan: Execution plan configured to only run unmemoized steps.
-    """
-    from .build_resources import build_resources, initialize_console_manager
-
-    mode = resolved_run_config.mode
-    mode_def = pipeline_def.get_mode_definition(mode)
-
-    step_keys_to_execute = set()
-
-    log_manager = initialize_console_manager(None)
-
-    for step in execution_plan.steps:
-        for output_name in step.step_output_dict.keys():
-            step_output_handle = StepOutputHandle(step.key, output_name)
-
-            io_manager_key = execution_plan.get_manager_key(step_output_handle, pipeline_def)
-
-            # We can do better here by only initializing the io manager and the resources it
-            # depends on.
-            with build_resources(
-                resources=mode_def.resource_defs,
-                instance=instance,
-                resource_config=run_config.get("resources", {}),
-                log_manager=log_manager,
-            ) as resources:
-
-                io_manager = getattr(resources, io_manager_key)
-                context = get_output_context(
-                    execution_plan=execution_plan,
-                    pipeline_def=pipeline_def,
-                    resolved_run_config=resolved_run_config,
-                    step_output_handle=step_output_handle,
-                    run_id=None,
-                    log_manager=log_manager,
-                    step_context=None,
-                    resources=resources,
-                )
-                if not io_manager.has_output(context):
-                    step_keys_to_execute.add(step_output_handle.step_key)
-
-    return execution_plan.build_subset_plan(
-        list(step_keys_to_execute), pipeline_def, resolved_run_config
-    )

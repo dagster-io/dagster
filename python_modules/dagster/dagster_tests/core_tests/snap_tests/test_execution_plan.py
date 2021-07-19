@@ -1,6 +1,18 @@
-from dagster import InputDefinition, OutputDefinition, composite_solid, pipeline, solid
+import tempfile
+
+from dagster import (
+    InputDefinition,
+    ModeDefinition,
+    OutputDefinition,
+    composite_solid,
+    pipeline,
+    solid,
+)
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.snap import create_pipeline_snapshot_id, snapshot_from_execution_plan
+from dagster.core.storage.memoizable_io_manager import versioned_filesystem_io_manager
+from dagster.core.storage.tags import MEMOIZED_RUN_TAG
+from dagster.core.test_utils import instance_for_test
 from dagster.serdes import serialize_pp
 
 
@@ -105,3 +117,41 @@ def test_create_noop_execution_plan_with_tags(snapshot):
             )
         )
     )
+
+
+def test_execution_plan_snapshot_step_output_versions():
+    @solid(version="foo")
+    def noop_solid():
+        pass
+
+    @pipeline
+    def noop_pipeline():
+        noop_solid()
+
+    execution_plan = create_execution_plan(noop_pipeline)
+
+    execution_plan_snap = snapshot_from_execution_plan(
+        execution_plan, create_pipeline_snapshot_id(noop_pipeline.get_pipeline_snapshot())
+    )
+
+    assert len(execution_plan_snap.step_output_versions) == 0
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with instance_for_test(temp_dir=temp_dir) as instance:
+
+            @pipeline(
+                tags={MEMOIZED_RUN_TAG: "true"},
+                mode_defs=[
+                    ModeDefinition(resource_defs={"io_manager": versioned_filesystem_io_manager})
+                ],
+            )
+            def noop_pipeline_versioned():
+                noop_solid()
+
+            execution_plan = create_execution_plan(noop_pipeline_versioned, instance=instance)
+
+            execution_plan_snap = snapshot_from_execution_plan(
+                execution_plan, create_pipeline_snapshot_id(noop_pipeline.get_pipeline_snapshot())
+            )
+
+            assert len(execution_plan_snap.step_output_versions) == 1

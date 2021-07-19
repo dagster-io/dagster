@@ -1,11 +1,9 @@
 from dagster import check
-from dagster.core.events import EngineEventData, EventMetadataEntry
 from dagster.core.execution.plan.resume_retry import get_retry_steps_from_execution_plan
 from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.host_representation import ExternalPipeline
-from dagster.core.instance import is_memoized_run
 from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.core.storage.tags import MEMOIZED_RUN_TAG, RESUME_RETRY_TAG
+from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.core.utils import make_new_run_id
 from dagster.utils import merge_dicts
 from graphql.execution.base import ResolveInfo
@@ -80,28 +78,5 @@ def create_valid_pipeline_run(graphene_info, external_pipeline, execution_params
         external_pipeline_origin=external_pipeline.get_external_origin(),
         pipeline_code_origin=external_pipeline.get_python_origin(),
     )
-
-    # TODO: support memoized execution from dagit. https://github.com/dagster-io/dagster/issues/3322
-    if is_memoized_run(tags):
-        graphene_info.context.instance.report_engine_event(
-            'Tag "{tag}" was found when initializing pipeline run, however, memoized '
-            "execution is only supported from the dagster CLI. This pipeline will run, but "
-            "outputs from previous executions will be ignored. "
-            "In order to execute this pipeline using memoization, provide the "
-            '"{tag}" tag to the `dagster pipeline execute` CLI. The CLI is documented at '
-            "the provided link.".format(tag=MEMOIZED_RUN_TAG),
-            pipeline_run,
-            EngineEventData(
-                [
-                    EventMetadataEntry.url(
-                        "https://docs.dagster.io/_apidocs/cli#dagster-pipeline-execute",
-                        label="dagster_pipeline_execute_docs_url",
-                        description="In order to execute this pipeline using memoization, provide the "
-                        '"{tag}" tag to the `dagster pipeline execute` CLI. The CLI is documented at '
-                        "the provided link.".format(tag=MEMOIZED_RUN_TAG),
-                    )
-                ]
-            ),
-        )
 
     return pipeline_run

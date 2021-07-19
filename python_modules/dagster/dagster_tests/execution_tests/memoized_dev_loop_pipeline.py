@@ -9,7 +9,6 @@ from dagster import (
     solid,
 )
 from dagster.core.storage.memoizable_io_manager import versioned_filesystem_io_manager
-from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 
 
 @solid(
@@ -35,7 +34,6 @@ def take_string_1_asset(context, _string_input):
     mode_defs=[
         ModeDefinition("only_mode", resource_defs={"io_manager": versioned_filesystem_io_manager})
     ],
-    tags={MEMOIZED_RUN_TAG: "true"},
 )
 def asset_pipeline():
     return take_string_1_asset(create_string_1_asset())

@@ -683,6 +683,7 @@ def test_get_output_context_with_resources():
             log_manager=None,
             step_context=mock.MagicMock(),
             resources=mock.MagicMock(),
+            version=None,
         )
 
 

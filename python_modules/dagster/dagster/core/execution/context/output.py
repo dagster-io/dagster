@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
 from dagster import check
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.utils import build_resources_for_manager
-from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 
 if TYPE_CHECKING:
     from dagster.core.execution.context.system import StepExecutionContext
@@ -211,6 +210,7 @@ def get_output_context(
     log_manager: Optional["DagsterLogManager"],
     step_context: Optional["StepExecutionContext"],
     resources: Optional["Resources"],
+    version: Optional[str],
 ) -> "OutputContext":
     """
     Args:
@@ -254,20 +254,14 @@ def get_output_context(
         solid_def=pipeline_def.get_solid(step.solid_handle).definition,
         dagster_type=output_def.dagster_type,
         log_manager=log_manager,
-        version=(
-            _step_output_version(
-                pipeline_def, execution_plan, resolved_run_config, step_output_handle
-            )
-            if MEMOIZED_RUN_TAG in pipeline_def.tags
-            else None
-        ),
+        version=version,
         step_context=step_context,
         resource_config=resource_config,
         resources=resources,
     )
 
 
-def _step_output_version(
+def step_output_version(
     pipeline_def: "PipelineDefinition",
     execution_plan: "ExecutionPlan",
     resolved_run_config: "ResolvedRunConfig",
