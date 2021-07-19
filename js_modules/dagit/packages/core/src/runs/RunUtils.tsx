@@ -240,7 +240,8 @@ export const LAUNCH_PIPELINE_REEXECUTION_MUTATION = gql`
 interface RunTimeProps {
   run: RunTimeFragment;
 }
-export const RunTime: React.FunctionComponent<RunTimeProps> = ({run}) => {
+
+export const RunTime: React.FC<RunTimeProps> = ({run}) => {
   const {stats, status} = run;
 
   if (stats.__typename !== 'PipelineRunStatsSnapshot') {
