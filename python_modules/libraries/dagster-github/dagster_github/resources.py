@@ -11,13 +11,14 @@ def to_seconds(dt):
 
 
 class GithubResource:
-    def __init__(self, client, app_id, app_private_rsa_key, default_installation_id):
+    def __init__(self, client, app_id, app_private_rsa_key, default_installation_id, hostname=None):
         self.client = client
         self.app_private_rsa_key = app_private_rsa_key
         self.app_id = app_id
         self.default_installation_id = default_installation_id
         self.installation_tokens = {}
         self.app_token = {}
+        self.hostname = hostname
 
     def __set_app_token(self):
         # from https://developer.github.com/apps/building-github-apps/authenticating-with-github-apps/
@@ -55,7 +56,8 @@ class GithubResource:
         headers["Authorization"] = "Bearer {}".format(self.app_token["value"])
         headers["Accept"] = "application/vnd.github.machine-man-preview+json"
         request = self.client.get(
-            "https://api.github.com/app/installations",
+            "https://api.github.com/app/installations" if self.hostname is None else \
+                "https://{}/api/v3/app/installations".format(self.hostname),
             headers=headers,
         )
         request.raise_for_status()
@@ -68,7 +70,8 @@ class GithubResource:
         headers["Authorization"] = "Bearer {}".format(self.app_token["value"])
         headers["Accept"] = "application/vnd.github.machine-man-preview+json"
         request = requests.post(
-            "https://api.github.com/app/installations/{}/access_tokens".format(installation_id),
+            "https://api.github.com/app/installations/{}/access_tokens".format(installation_id) if self.hostname is None else \
+                "https://{}/api/v3/app/installations/{}/access_tokens".format(self.hostname, installation_id),
             headers=headers,
         )
         request.raise_for_status()
@@ -94,7 +97,8 @@ class GithubResource:
             self.installation_tokens[installation_id]["value"]
         )
         request = requests.post(
-            "https://api.github.com/graphql",
+            "https://api.github.com/graphql" if self.hostname is None else \
+                "https://{}/api/graphql".format(self.hostname),
             json={"query": query, "variables": variables},
             headers=headers,
         )
@@ -157,6 +161,11 @@ class GithubResource:
             is_required=False,
             description="Github Application Installation ID, for more info see https://developer.github.com/apps/",
         ),
+        "github_hostname": Field(
+            StringSource,
+            is_required=False,
+            description="Github hostname. Defaults to `api.github.com`, for more info see https://developer.github.com/apps/",
+        ),
     },
     description="This resource is for connecting to Github",
 )
@@ -166,4 +175,5 @@ def github_resource(context):
         app_id=context.resource_config["github_app_id"],
         app_private_rsa_key=context.resource_config["github_app_private_rsa_key"],
         default_installation_id=context.resource_config["github_installation_id"],
+        hostname=context.resource_config.get("github_hostname", None),
     )
