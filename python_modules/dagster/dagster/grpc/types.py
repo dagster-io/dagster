@@ -254,7 +254,7 @@ class ExternalScheduleExecutionArgs(
             repository_origin=check.inst_param(
                 repository_origin, "repository_origin", ExternalRepositoryOrigin
             ),
-            instance_ref=check.inst_param(instance_ref, "instance_ref", InstanceRef),
+            instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
             schedule_name=check.str_param(schedule_name, "schedule_name"),
             scheduled_execution_timestamp=check.opt_float_param(
                 scheduled_execution_timestamp, "scheduled_execution_timestamp"
@@ -287,7 +287,7 @@ class SensorExecutionArgs(
             repository_origin=check.inst_param(
                 repository_origin, "repository_origin", ExternalRepositoryOrigin
             ),
-            instance_ref=check.inst_param(instance_ref, "instance_ref", InstanceRef),
+            instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
             sensor_name=check.str_param(sensor_name, "sensor_name"),
             last_completion_time=check.opt_float_param(
                 last_completion_time, "last_completion_time"

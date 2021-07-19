@@ -1,6 +1,7 @@
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import instance_for_test, poll_for_event, poll_for_finished_run
 from dagster.grpc.server import ExecuteExternalPipelineArgs
+from dagster.serdes import deserialize_json_to_dagster_namedtuple
 
 from .utils import get_foo_pipeline_handle
 
@@ -41,11 +42,15 @@ def test_launch_run_with_unloadable_pipeline_grpc():
             original_origin = pipeline_handle.get_external_origin()
 
             # point the api to a pipeline that cannot be loaded
-            res = api_client.start_run(
-                ExecuteExternalPipelineArgs(
-                    pipeline_origin=original_origin._replace(pipeline_name="i_am_fake_pipeline"),
-                    pipeline_run_id=run_id,
-                    instance_ref=instance.get_ref(),
+            res = deserialize_json_to_dagster_namedtuple(
+                api_client.start_run(
+                    ExecuteExternalPipelineArgs(
+                        pipeline_origin=original_origin._replace(
+                            pipeline_name="i_am_fake_pipeline"
+                        ),
+                        pipeline_run_id=run_id,
+                        instance_ref=instance.get_ref(),
+                    )
                 )
             )
 
@@ -96,11 +101,13 @@ def test_launch_run_grpc():
             )
             run_id = pipeline_run.run_id
 
-            res = api_client.start_run(
-                ExecuteExternalPipelineArgs(
-                    pipeline_origin=pipeline_handle.get_external_origin(),
-                    pipeline_run_id=run_id,
-                    instance_ref=instance.get_ref(),
+            res = deserialize_json_to_dagster_namedtuple(
+                api_client.start_run(
+                    ExecuteExternalPipelineArgs(
+                        pipeline_origin=pipeline_handle.get_external_origin(),
+                        pipeline_run_id=run_id,
+                        instance_ref=instance.get_ref(),
+                    )
                 )
             )
 
@@ -152,11 +159,13 @@ def test_launch_unloadable_run_grpc():
             run_id = pipeline_run.run_id
 
             with instance_for_test() as other_instance:
-                res = api_client.start_run(
-                    ExecuteExternalPipelineArgs(
-                        pipeline_origin=pipeline_handle.get_external_origin(),
-                        pipeline_run_id=run_id,
-                        instance_ref=other_instance.get_ref(),
+                res = deserialize_json_to_dagster_namedtuple(
+                    api_client.start_run(
+                        ExecuteExternalPipelineArgs(
+                            pipeline_origin=pipeline_handle.get_external_origin(),
+                            pipeline_run_id=run_id,
+                            instance_ref=other_instance.get_ref(),
+                        )
                     )
                 )
 

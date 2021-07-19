@@ -10,7 +10,7 @@ from dagster.core.events import EngineEventData
 from dagster.core.host_representation.origin import ExternalRepositoryOrigin
 from dagster.core.instance import DagsterInstance
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
+from dagster.serdes import serialize_dagster_namedtuple
 from dagster.utils.error import serializable_error_info_from_exc_info
 from grpc_health.v1 import health_pb2
 from grpc_health.v1.health_pb2_grpc import HealthStub
@@ -136,15 +136,11 @@ class DagsterGrpcClient:
                 execution_plan_snapshot_args
             ),
         )
-        return deserialize_json_to_dagster_namedtuple(res.serialized_execution_plan_snapshot)
+        return res.serialized_execution_plan_snapshot
 
     def list_repositories(self):
-
         res = self._query("ListRepositories", api_pb2.ListRepositoriesRequest)
-
-        return deserialize_json_to_dagster_namedtuple(
-            res.serialized_list_repositories_response_or_error
-        )
+        return res.serialized_list_repositories_response_or_error
 
     def external_partition_names(self, partition_names_args):
         check.inst_param(partition_names_args, "partition_names_args", PartitionNamesArgs)
@@ -155,9 +151,7 @@ class DagsterGrpcClient:
             serialized_partition_names_args=serialize_dagster_namedtuple(partition_names_args),
         )
 
-        return deserialize_json_to_dagster_namedtuple(
-            res.serialized_external_partition_names_or_external_partition_execution_error
-        )
+        return res.serialized_external_partition_names_or_external_partition_execution_error
 
     def external_partition_config(self, partition_args):
         check.inst_param(partition_args, "partition_args", PartitionArgs)
@@ -168,9 +162,7 @@ class DagsterGrpcClient:
             serialized_partition_args=serialize_dagster_namedtuple(partition_args),
         )
 
-        return deserialize_json_to_dagster_namedtuple(
-            res.serialized_external_partition_config_or_external_partition_execution_error
-        )
+        return res.serialized_external_partition_config_or_external_partition_execution_error
 
     def external_partition_tags(self, partition_args):
         check.inst_param(partition_args, "partition_args", PartitionArgs)
@@ -181,9 +173,7 @@ class DagsterGrpcClient:
             serialized_partition_args=serialize_dagster_namedtuple(partition_args),
         )
 
-        return deserialize_json_to_dagster_namedtuple(
-            res.serialized_external_partition_tags_or_external_partition_execution_error
-        )
+        return res.serialized_external_partition_tags_or_external_partition_execution_error
 
     def external_partition_set_execution_params(self, partition_set_execution_param_args):
         check.inst_param(
@@ -202,9 +192,7 @@ class DagsterGrpcClient:
             )
         )
 
-        return deserialize_json_to_dagster_namedtuple(
-            "".join([chunk.serialized_chunk for chunk in chunks])
-        )
+        return "".join([chunk.serialized_chunk for chunk in chunks])
 
     def external_pipeline_subset(self, pipeline_subset_snapshot_args):
         check.inst_param(
@@ -221,9 +209,7 @@ class DagsterGrpcClient:
             ),
         )
 
-        return deserialize_json_to_dagster_namedtuple(
-            res.serialized_external_pipeline_subset_result
-        )
+        return res.serialized_external_pipeline_subset_result
 
     def external_repository(self, external_repository_origin):
         check.inst_param(
@@ -241,7 +227,7 @@ class DagsterGrpcClient:
             ),
         )
 
-        return deserialize_json_to_dagster_namedtuple(res.serialized_external_repository_data)
+        return res.serialized_external_repository_data
 
     def streaming_external_repository(self, external_repository_origin):
         for res in self._streaming_query(
@@ -274,9 +260,7 @@ class DagsterGrpcClient:
             )
         )
 
-        return deserialize_json_to_dagster_namedtuple(
-            "".join([chunk.serialized_chunk for chunk in chunks])
-        )
+        return "".join([chunk.serialized_chunk for chunk in chunks])
 
     def external_sensor_execution(self, sensor_execution_args, timeout=DEFAULT_GRPC_TIMEOUT):
         check.inst_param(
@@ -296,13 +280,11 @@ class DagsterGrpcClient:
             )
         )
 
-        return deserialize_json_to_dagster_namedtuple(
-            "".join([chunk.serialized_chunk for chunk in chunks])
-        )
+        return "".join([chunk.serialized_chunk for chunk in chunks])
 
     def shutdown_server(self, timeout=15):
         res = self._query("ShutdownServer", api_pb2.Empty, timeout=timeout)
-        return deserialize_json_to_dagster_namedtuple(res.serialized_shutdown_server_result)
+        return res.serialized_shutdown_server_result
 
     def cancel_execution(self, cancel_execution_request):
         check.inst_param(
@@ -319,7 +301,7 @@ class DagsterGrpcClient:
             ),
         )
 
-        return deserialize_json_to_dagster_namedtuple(res.serialized_cancel_execution_result)
+        return res.serialized_cancel_execution_result
 
     def can_cancel_execution(self, can_cancel_execution_request, timeout=None):
         check.inst_param(
@@ -337,7 +319,7 @@ class DagsterGrpcClient:
             ),
         )
 
-        return deserialize_json_to_dagster_namedtuple(res.serialized_can_cancel_execution_result)
+        return res.serialized_can_cancel_execution_result
 
     def start_run(self, execute_run_args):
         check.inst_param(execute_run_args, "execute_run_args", ExecuteExternalPipelineArgs)
@@ -349,7 +331,7 @@ class DagsterGrpcClient:
                     api_pb2.StartRunRequest,
                     serialized_execute_run_args=serialize_dagster_namedtuple(execute_run_args),
                 )
-                return deserialize_json_to_dagster_namedtuple(res.serialized_start_run_result)
+                return res.serialized_start_run_result
 
             except Exception:  # pylint: disable=bare-except
                 pipeline_run = instance.get_run_by_id(execute_run_args.pipeline_run_id)
@@ -364,7 +346,7 @@ class DagsterGrpcClient:
 
     def get_current_image(self):
         res = self._query("GetCurrentImage", api_pb2.Empty)
-        return deserialize_json_to_dagster_namedtuple(res.serialized_current_image)
+        return res.serialized_current_image
 
     def health_check_query(self):
         try:
