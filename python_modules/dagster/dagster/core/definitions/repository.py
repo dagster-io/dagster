@@ -16,6 +16,7 @@ VALID_REPOSITORY_DATA_DICT_KEYS = {
     "partition_sets",
     "schedules",
     "sensors",
+    "jobs",
 }
 
 RepositoryLevelDefinition = TypeVar(
@@ -205,7 +206,11 @@ class RepositoryData:
         check.dict_param(sensors, "sensors", key_type=str)
 
         self._pipelines = _CacheingDefinitionIndex(
-            PipelineDefinition, "PipelineDefinition", "pipeline", pipelines, self._validate_pipeline
+            PipelineDefinition,
+            "PipelineDefinition",
+            "pipeline",
+            pipelines,
+            self._validate_pipeline,
         )
 
         self._schedules = _CacheingDefinitionIndex(
@@ -294,13 +299,27 @@ class RepositoryData:
             if key not in repository_definitions:
                 repository_definitions[key] = {}
 
-        duplicate_keys = set(repository_definitions.get("schedules", {}).keys()).intersection(
-            set(repository_definitions.get("sensors", {}).keys())
+        duplicate_keys = set(repository_definitions["schedules"].keys()).intersection(
+            set(repository_definitions["sensors"].keys())
         )
         if duplicate_keys:
             raise DagsterInvalidDefinitionError(
-                f"Duplicate definitions found for keys: {duplicate_keys.join(', ')}"
+                f"Duplicate definitions between schedules and sensors found for keys: {duplicate_keys.join(', ')}"
             )
+
+        # merge jobs in to pipelines while they are just implemented as pipelines
+        for key, job in repository_definitions["jobs"].items():
+            if key in repository_definitions["pipelines"]:
+                raise DagsterInvalidDefinitionError(
+                    f'Conflicting entries for name {key} in "jobs" and "pipelines".'
+                )
+
+            if isinstance(job, GraphDefinition):
+                repository_definitions["pipelines"][key] = job.coerce_to_job()
+            else:
+                repository_definitions["pipelines"][key] = job
+
+        del repository_definitions["jobs"]
 
         return RepositoryData(**repository_definitions)
 
@@ -367,8 +386,7 @@ class RepositoryData:
                         )
                     partition_sets[partition_set_def.name] = partition_set_def
             elif isinstance(definition, GraphDefinition):
-                # error experience when this fails can be improved
-                coerced = definition.to_job(resource_defs={})
+                coerced = definition.coerce_to_job()
                 pipelines[coerced.name] = coerced
             else:
                 check.failed(f"Unexpected repository entry {definition}")

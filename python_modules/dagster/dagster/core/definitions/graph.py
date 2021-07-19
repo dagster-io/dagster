@@ -464,6 +464,16 @@ class GraphDefinition(NodeDefinition):
             hook_defs=hooks,
         )
 
+    def coerce_to_job(self):
+        # attempt to coerce a Graph in to a Job, raising a useful error if it doesn't work
+        try:
+            return self.to_job()
+        except DagsterInvalidDefinitionError as err:
+            raise DagsterInvalidDefinitionError(
+                f"Failed attempting to coerce Graph {self.name} in to a Job. "
+                "Use to_job instead, passing the required information."
+            ) from err
+
     def _get_config_schema(
         self,
         resource_defs: Optional[Dict[str, ResourceDefinition]],

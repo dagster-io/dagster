@@ -12,6 +12,7 @@ from dagster import (
     hourly_schedule,
     lambda_solid,
     monthly_schedule,
+    op,
     pipeline,
     repository,
     schedule,
@@ -331,7 +332,7 @@ def test_bare_graph_with_resources():
     def bare():
         needy()
 
-    with pytest.raises(DagsterInvalidDefinitionError, match='Resource key "stuff" is required'):
+    with pytest.raises(DagsterInvalidDefinitionError, match="Failed attempting to coerce Graph"):
 
         @repository
         def _test():
@@ -411,3 +412,58 @@ def test_dupe_graph_defs():
     ):
 
         graph_collide.get_all_pipelines()
+
+
+def test_dict_jobs():
+    @graph
+    def my_graph():
+        pass
+
+    @repository
+    def jobs():
+        return {
+            "jobs": {
+                "my_graph": my_graph,
+                "other_graph": my_graph.to_job(name="other_graph"),
+            }
+        }
+
+    assert jobs.get_pipeline("my_graph")
+    assert jobs.get_pipeline("other_graph")
+
+
+def test_bad_job_pipeline():
+    @pipeline
+    def foo():
+        pass
+
+    @graph
+    def bar():
+        pass
+
+    with pytest.raises(DagsterInvalidDefinitionError, match="Conflicting"):
+
+        @repository
+        def _fails():
+            return {
+                "pipelines": {"foo": foo},
+                "jobs": {"foo": bar.to_job(name="foo")},
+            }
+
+
+def test_bad_coerce():
+    @op(required_resource_keys={"x"})
+    def foo():
+        pass
+
+    @graph
+    def bar():
+        foo()
+
+    with pytest.raises(DagsterInvalidDefinitionError, match="Failed attempting to coerce Graph"):
+
+        @repository
+        def _fails():
+            return {
+                "jobs": {"bar": bar},
+            }
