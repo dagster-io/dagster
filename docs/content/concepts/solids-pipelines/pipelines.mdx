@@ -382,7 +382,7 @@ from dagster import InputDefinition, Nothing, pipeline, solid
 
 
 @solid
-def create_table_1() -> Nothing:
+def create_table_1():
     get_database_connection().execute("create table_1 as select * from some_source_table")
 
 
@@ -396,7 +396,7 @@ def nothing_dependency_pipeline():
     create_table_2(start=create_table_1())
 ```
 
-In this example, `create_table_1` returns an output of type <PyObject object="Nothing"/>, and `create_table_2` has an input of type `Nothing`. This lets us connect them in the pipeline definition so that `create_table_2` executes only after `create_table_1` successfully executes.
+In this example, `create_table_2` has an input of type `Nothing` meaning that it doesn't exepct any data to be provided by the upstream solid. This lets us connect them in the pipeline definition so that `create_table_2` executes only after `create_table_1` successfully executes.
 
 `Nothing` type inputs do not have a corresponding parameter in the function since there is no data to pass. When connecting the dependencies, it is recommended to use keyword args to prevent mix-ups with other positional inputs.
 

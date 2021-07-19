@@ -15,7 +15,7 @@ from dagster import InputDefinition, Nothing, pipeline, solid
 
 
 @solid
-def create_table_1() -> Nothing:
+def create_table_1():
     get_database_connection().execute("create table_1 as select * from some_source_table")
 
 
