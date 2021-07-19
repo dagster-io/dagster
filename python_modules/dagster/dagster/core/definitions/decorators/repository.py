@@ -7,7 +7,12 @@ from dagster.core.errors import DagsterInvalidDefinitionError
 from ..graph import GraphDefinition
 from ..partition import PartitionSetDefinition
 from ..pipeline import PipelineDefinition
-from ..repository import VALID_REPOSITORY_DATA_DICT_KEYS, RepositoryData, RepositoryDefinition
+from ..repository import (
+    VALID_REPOSITORY_DATA_DICT_KEYS,
+    CachingRepositoryData,
+    RepositoryData,
+    RepositoryDefinition,
+)
 from ..schedule import ScheduleDefinition
 from ..sensor import SensorDefinition
 
@@ -59,7 +64,7 @@ class _Repository:
                     "must be of type PipelineDefinition, PartitionSetDefinition, "
                     f"ScheduleDefinition, or SensorDefinition. Got {bad_definitions_str}."
                 )
-            repository_data = RepositoryData.from_list(repository_definitions)
+            repository_data = CachingRepositoryData.from_list(repository_definitions)
 
         elif isinstance(repository_definitions, dict):
             if not set(repository_definitions.keys()).issubset(VALID_REPOSITORY_DATA_DICT_KEYS):
@@ -76,7 +81,7 @@ class _Repository:
                         )
                     )
                 )
-            repository_data = RepositoryData.from_dict(repository_definitions)
+            repository_data = CachingRepositoryData.from_dict(repository_definitions)
         elif isinstance(repository_definitions, RepositoryData):
             repository_data = repository_definitions
 
@@ -212,10 +217,13 @@ def repository(
             def __init__(self, yaml_directory):
                 self._yaml_directory = yaml_directory
 
-            def get_pipeline(self, pipeline_name):
-                return self._construct_pipeline_def_from_yaml_file(
-                    self._yaml_file_for_pipeline_name(pipeline_name)
-                )
+            def get_all_pipelines(self):
+                return [
+                    self._construct_pipeline_def_from_yaml_file(
+                      self._yaml_file_for_pipeline_name(file_name)
+                    )
+                    for file_name in os.listdir(self._yaml_directory)
+                ]
 
             ...
 

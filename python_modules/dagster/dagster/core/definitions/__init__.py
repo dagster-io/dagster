@@ -78,7 +78,7 @@ from .reconstructable import (
     build_reconstructable_pipeline,
     reconstructable,
 )
-from .repository import RepositoryDefinition
+from .repository import RepositoryData, RepositoryDefinition
 from .resource import ResourceDefinition, make_values_resource, resource
 from .run_config_schema import RunConfigSchema, create_run_config_schema
 from .run_request import JobType, RunRequest, SkipReason

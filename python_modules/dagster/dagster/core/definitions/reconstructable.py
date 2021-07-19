@@ -487,14 +487,14 @@ def pipeline_def_from_pointer(pointer):
 
 def repository_def_from_target_def(target):
     from .pipeline import PipelineDefinition
-    from .repository import RepositoryData, RepositoryDefinition
+    from .repository import CachingRepositoryData, RepositoryDefinition
 
     # special case - we can wrap a single pipeline in a repository
     if isinstance(target, PipelineDefinition):
         # consider including pipeline name in generated repo name
         return RepositoryDefinition(
             name=get_ephemeral_repository_name(target.name),
-            repository_data=RepositoryData.from_list([target]),
+            repository_data=CachingRepositoryData.from_list([target]),
         )
     elif isinstance(target, RepositoryDefinition):
         return target

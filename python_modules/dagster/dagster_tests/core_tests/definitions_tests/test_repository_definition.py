@@ -82,9 +82,6 @@ def test_repo_lazy_definition():
 
     assert set(["foo", "bar"]) == {pipeline.name for pipeline in pipelines}
 
-    assert lazy_repo.solid_def_named("foo_solid").name == "foo_solid"
-    assert lazy_repo.solid_def_named("bar_solid").name == "bar_solid"
-
 
 def test_dupe_solid_repo_definition():
     @lambda_solid(name="same")

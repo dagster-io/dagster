@@ -12,7 +12,6 @@ from dagster import (
     execute_pipeline,
     lambda_solid,
     pipeline,
-    repository,
     solid,
 )
 from dagster.core.definitions.decorators.hook import event_list_hook, success_hook
@@ -456,26 +455,6 @@ def test_pipeline_has_solid_def():
     assert a_pipeline.has_solid_def("add_one")
     assert a_pipeline.has_solid_def("outer")
     assert a_pipeline.has_solid_def("inner")
-
-
-def test_repository_has_solid_def():
-    @composite_solid(output_defs=[OutputDefinition()])
-    def inner():
-        return add_one(return_one())
-
-    @composite_solid
-    def outer():
-        add_one(inner())
-
-    @pipeline
-    def a_pipeline():
-        outer()
-
-    @repository
-    def has_solid_def_test():
-        return [a_pipeline]
-
-    assert has_solid_def_test.solid_def_named("inner")
 
 
 def test_mapping_args_ordering():
