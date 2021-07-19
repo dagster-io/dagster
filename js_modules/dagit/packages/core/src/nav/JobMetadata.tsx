@@ -4,6 +4,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {useFeatureFlags} from '../app/Flags';
 import {RunStatus} from '../runs/RunStatusDots';
 import {TimeElapsed} from '../runs/TimeElapsed';
 import {ScheduleSwitch} from '../schedules/ScheduleSwitch';
@@ -101,21 +102,26 @@ const ScheduleOrSensor: React.FC<{job: Job; mode: string; repoAddress: RepoAddre
   mode,
   repoAddress,
 }) => {
+  const {flagPipelineModeTuples} = useFeatureFlags();
   const [open, setOpen] = React.useState(false);
 
   const matchingSchedules = React.useMemo(() => {
     if (job?.__typename === 'Pipeline' && job.schedules.length) {
-      return job.schedules.filter((schedule) => schedule.mode === mode);
+      return flagPipelineModeTuples
+        ? job.schedules.filter((schedule) => schedule.mode === mode)
+        : job.schedules;
     }
     return [];
-  }, [job, mode]);
+  }, [flagPipelineModeTuples, job, mode]);
 
   const matchingSensors = React.useMemo(() => {
     if (job?.__typename === 'Pipeline' && job.sensors.length) {
-      return job.sensors.filter((sensor) => sensor.mode === mode);
+      return flagPipelineModeTuples
+        ? job.sensors.filter((sensor) => sensor.mode === mode)
+        : job.sensors;
     }
     return [];
-  }, [job, mode]);
+  }, [flagPipelineModeTuples, job, mode]);
 
   const scheduleCount = matchingSchedules.length;
   const sensorCount = matchingSensors.length;
