@@ -359,6 +359,7 @@ class GraphDefinition(NodeDefinition):
     def to_job(
         self,
         name: Optional[str] = None,
+        description: Optional[str] = None,
         resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
         config: Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"] = None,
         tags: Optional[Dict[str, str]] = None,
@@ -449,6 +450,7 @@ class GraphDefinition(NodeDefinition):
 
         return PipelineDefinition(
             name=job_name,
+            description=description,
             graph_def=self,
             mode_defs=[
                 ModeDefinition(

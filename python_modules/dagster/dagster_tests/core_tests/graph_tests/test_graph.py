@@ -290,3 +290,17 @@ def test_conflict():
         def _conflict_zone():
             test_1()
             test_2()
+
+
+def test_desc():
+    @graph(description="graph desc")
+    def empty():
+        pass
+
+    job = empty.to_job()
+    # should we inherit from the graph instead?
+    assert job.description == None
+
+    desc = "job desc"
+    job = empty.to_job(description=desc)
+    assert job.description == desc
