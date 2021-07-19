@@ -1,10 +1,12 @@
-from dagster import ConfigMapping, graph, logger, resource, solid, success_hook
+import pytest
+from dagster import ConfigMapping, graph, logger, op, resource, solid, success_hook
 from dagster.core.definitions.graph import GraphDefinition
 from dagster.core.definitions.partition import (
     Partition,
     PartitionedConfig,
     StaticPartitionsDefinition,
 )
+from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.execution.execute import execute_in_process
 
 
@@ -237,3 +239,54 @@ def test_job_with_hooks():
 
     assert result.success
     assert entered == ["yes"]
+
+
+def test_composition_bug():
+    @op
+    def expensive_task1():
+        pass
+
+    @op
+    def expensive_task2(_my_input):
+        pass
+
+    @op
+    def expensive_task3(_my_input):
+        pass
+
+    @graph
+    def my_graph1():
+        task1_done = expensive_task1()
+        _task2_done = expensive_task2(task1_done)
+
+    @graph
+    def my_graph2():
+        _task3_done = expensive_task3()
+
+    @graph
+    def my_graph_final():
+        my_graph1()
+        my_graph2()
+
+    my_job = my_graph_final.to_job()
+
+    index = my_job.get_pipeline_index()
+    assert index.get_node_def_snap("my_graph1")
+    assert index.get_node_def_snap("my_graph2")
+
+
+def test_conflict():
+    @op(name="conflict")
+    def test_1():
+        pass
+
+    @graph(name="conflict")
+    def test_2():
+        pass
+
+    with pytest.raises(DagsterInvalidDefinitionError, match="definitions with the same name"):
+
+        @graph
+        def _conflict_zone():
+            test_1()
+            test_2()

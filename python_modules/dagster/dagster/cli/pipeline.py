@@ -217,7 +217,7 @@ def print_solid(printer, pipeline_snapshot, solid_invocation_snap):
                 printer.line("Input: {name}".format(name=input_dep_snap.input_name))
 
         printer.line("Outputs:")
-        for output_def_snap in pipeline_snapshot.get_solid_def_snap(
+        for output_def_snap in pipeline_snapshot.get_node_def_snap(
             solid_invocation_snap.solid_def_name
         ).output_def_snaps:
             printer.line(output_def_snap.name)

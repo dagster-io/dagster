@@ -179,7 +179,7 @@ class PipelineSnapshot(
             graph_def_name=pipeline_def.graph.name,
         )
 
-    def get_solid_def_snap(self, solid_def_name: str) -> Union[SolidDefSnap, CompositeSolidDefSnap]:
+    def get_node_def_snap(self, solid_def_name: str) -> Union[SolidDefSnap, CompositeSolidDefSnap]:
         check.str_param(solid_def_name, "solid_def_name")
         for solid_def_snap in self.solid_definitions_snapshot.solid_def_snaps:
             if solid_def_snap.name == solid_def_name:

@@ -1243,6 +1243,11 @@ def simple_graph():
     noop_solid()
 
 
+@graph
+def composed_graph():
+    simple_graph()
+
+
 @repository
 def empty_repo():
     return []
@@ -1290,6 +1295,7 @@ def define_pipelines():
         backcompat_materialization_pipeline,
         simple_graph.to_job("simple_job_a"),
         simple_graph.to_job("simple_job_b"),
+        composed_graph.to_job(),
     ]
 
 

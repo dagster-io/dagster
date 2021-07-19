@@ -686,6 +686,14 @@ snapshots['test_query_all_solids 1'] = {
                         'solidHandle': {
                             'handleID': 'noop_solid'
                         }
+                    },
+                    {
+                        'pipeline': {
+                            'name': 'composed_graph'
+                        },
+                        'solidHandle': {
+                            'handleID': 'simple_graph.noop_solid'
+                        }
                     }
                 ]
             },
@@ -909,6 +917,22 @@ snapshots['test_query_all_solids 1'] = {
                         },
                         'solidHandle': {
                             'handleID': 'return_str'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'simple_graph'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'composed_graph'
+                        },
+                        'solidHandle': {
+                            'handleID': 'simple_graph'
                         }
                     }
                 ]
