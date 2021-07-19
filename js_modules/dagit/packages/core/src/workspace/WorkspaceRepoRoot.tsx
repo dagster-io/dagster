@@ -29,7 +29,10 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
 
   const tabs = [
     {text: 'Pipelines', href: workspacePathFromAddress(repoAddress, '/pipelines')},
-    {text: 'Solids', href: workspacePathFromAddress(repoAddress, '/solids')},
+    {
+      text: flagPipelineModeTuples ? 'Ops' : 'Solids',
+      href: workspacePathFromAddress(repoAddress, flagPipelineModeTuples ? '/ops' : '/solids'),
+    },
     {text: 'Schedules', href: workspacePathFromAddress(repoAddress, '/schedules')},
     {text: 'Sensors', href: workspacePathFromAddress(repoAddress, '/sensors')},
   ];
@@ -47,6 +50,8 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
         return 'Sensors';
       case 'solids':
         return 'Solids';
+      case 'ops':
+        return 'Ops';
       case 'graphs':
         return 'Graphs';
       case 'jobs':
@@ -86,10 +91,19 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
             render={() => <SensorsRoot repoAddress={repoAddress} />}
           />
           <Route
-            path="/workspace/:repoPath/solids/:name?"
+            path="/workspace/:repoPath/ops/:name?"
             render={(props) => (
               <SolidsRoot name={props.match.params.name} repoAddress={repoAddress} />
             )}
+          />
+          <Route
+            path="/workspace/:repoPath/solids/:name?"
+            render={(props) => {
+              if (flagPipelineModeTuples) {
+                return <Redirect to={props.match.url.replace(/\/solids\/?/, '/ops/')} />;
+              }
+              return <SolidsRoot name={props.match.params.name} repoAddress={repoAddress} />;
+            }}
           />
           {flagPipelineModeTuples && (
             <Redirect from={'/workspace/:repoPath/pipelines'} to={'/workspace/:repoPath/jobs'} />

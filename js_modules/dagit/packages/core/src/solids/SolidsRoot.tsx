@@ -6,6 +6,7 @@ import {useHistory, useLocation} from 'react-router-dom';
 import {AutoSizer, CellMeasurer, CellMeasurerCache, List} from 'react-virtualized';
 import styled from 'styled-components/macro';
 
+import {useFeatureFlags} from '../app/Flags';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {Loading} from '../ui/Loading';
 import {SplitPanelContainer} from '../ui/SplitPanelContainer';
@@ -99,7 +100,9 @@ interface Props {
 
 export const SolidsRoot: React.FC<Props> = (props) => {
   const {name, repoAddress} = props;
-  useDocumentTitle('Solids');
+  const {flagPipelineModeTuples} = useFeatureFlags();
+
+  useDocumentTitle(flagPipelineModeTuples ? 'Ops' : 'Solids');
   const repositorySelector = repoAddressToSelector(repoAddress);
 
   const queryResult = useQuery<SolidsRootQuery>(SOLIDS_ROOT_QUERY, {
@@ -129,6 +132,7 @@ const SolidsRootWithData: React.FC<Props & {usedSolids: Solid[]}> = (props) => {
   const {name, repoAddress, usedSolids} = props;
   const history = useHistory();
   const location = useLocation();
+  const {flagPipelineModeTuples} = useFeatureFlags();
 
   const {q, typeExplorer} = querystring.parse(location.search);
   const suggestions = searchSuggestionsForSolids(usedSolids);
@@ -176,7 +180,7 @@ const SolidsRootWithData: React.FC<Props & {usedSolids: Solid[]}> = (props) => {
   return (
     <div style={{height: '100%', display: 'flex'}}>
       <SplitPanelContainer
-        identifier={'solids'}
+        identifier={flagPipelineModeTuples ? 'ops' : 'solids'}
         firstInitialPercent={40}
         firstMinSize={420}
         first={
@@ -222,8 +226,12 @@ const SolidsRootWithData: React.FC<Props & {usedSolids: Solid[]}> = (props) => {
             </SolidDetailScrollContainer>
           ) : (
             <NonIdealState
-              title="No solid selected"
-              description="Select a solid to see its definition and invocations."
+              title={flagPipelineModeTuples ? 'No op selected' : 'No solid selected'}
+              description={
+                flagPipelineModeTuples
+                  ? 'Select an op to see its definition and invocations'
+                  : 'Select a solid to see its definition and invocations.'
+              }
             />
           )
         }
