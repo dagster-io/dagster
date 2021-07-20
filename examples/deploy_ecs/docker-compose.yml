@@ -25,6 +25,8 @@ services:
     depends_on:
       - postgresql
       - pipelines
+    x-aws-policies:
+      - "arn:aws:iam::aws:policy/AmazonECS_FullAccess"
 
   # This service runs the dagster-daemon process, which is responsible for
   # taking runs off of the queue and launching them, as well as creating
