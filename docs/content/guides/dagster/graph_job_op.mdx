@@ -320,8 +320,10 @@ do_it_all_job.execute_in_process(run_config={"arg": "some_value"})
 
 With the pipeline APIs, a schedule targets a pipeline by referencing the pipeline name in the schedule definition.
 
+Both the schedule and its targeted pipeline need to be provided to a repository in order to make use of the schedule.
+
 ```python file=/guides/dagster/graph_job_op/pipeline_with_schedule.py
-from dagster import ScheduleDefinition, pipeline, solid
+from dagster import ScheduleDefinition, pipeline, repository, solid
 
 
 @solid
@@ -335,6 +337,11 @@ def do_it_all():
 
 
 do_it_all_schedule = ScheduleDefinition(cron_schedule="0 0 * * *", pipeline_name="do_it_all")
+
+
+@repository
+def do_it_all_repository():
+    return [do_it_all, do_it_all_schedule]
 ```
 
 With the new APIs, a schedule targets a pipeline by referencing the graph or job object.
@@ -408,6 +415,68 @@ do_it_all_schedule = ScheduleDefinition(
     job=do_it_all.to_job(config={"solids": {"do_something": {"config": {"param": "some_val"}}}}),
     cron_schedule="0 0 * * *",
 )
+```
+
+### Partition Schedules
+
+In order to declare a partitioned schedule using the pipeline-centric APIs, you need to use one of the partitioned schedule decorators, such as <PyObject object="daily_schedule"/> or <PyObject object="hourly_schedule"/>. The created schedule targets a specific pipeline via `pipeline_name`.
+
+```python file=/guides/dagster/graph_job_op/pipeline_with_partition_schedule.py
+import datetime
+
+from dagster import daily_schedule, pipeline, repository, solid
+
+
+@solid(config_schema={"date": str})
+def do_something_with_config(context):
+    return context.solid_config["date"]
+
+
+@pipeline
+def do_it_all():
+    do_something_with_config()
+
+
+@daily_schedule(pipeline_name="do_it_all", start_date=datetime.datetime(2020, 1, 1))
+def do_it_all_schedule(date):
+    return {
+        "solids": {"do_something_with_config": {"config": {"date": date.strftime("%Y-%m-%d %H")}}}
+    }
+
+
+@repository
+def do_it_all_repo():
+    return [do_it_all, do_it_all_schedule]
+```
+
+With the graph APIs, you can first define a partitioning for the job. These partitions exist independently of any schedule, and can be used for backfills. A schedule can then be derived from that partitioning, while providing execution time information. The resulting schedule can be independently passed to a repository, and the underlying job will be inferred.
+
+```python file=/guides/dagster/graph_job_op/graph_with_partition_schedule.py
+from dagster import daily_partitioned_config, graph, op, repository, schedule_from_partitions
+
+
+@op(config_schema={"date": str})
+def do_something_with_config(context):
+    return context.op_config["date"]
+
+
+@graph
+def do_it_all():
+    do_something_with_config()
+
+
+@daily_partitioned_config(start_date="2020-01-01")
+def do_it_all_config(start, _end):
+    return {"solids": {"do_something_with_config": {"config": {"date": str(start)}}}}
+
+
+do_it_all_job = do_it_all.to_job(config=do_it_all_config)
+do_it_all_schedule = schedule_from_partitions(do_it_all_job)
+
+
+@repository
+def do_it_all_repo():
+    return [do_it_all_schedule]
 ```
 
 ## InputDefinitions and OutputDefinitions

@@ -4,11 +4,13 @@ from docs_snippets.guides.dagster.graph_job_op import (
     graph_with_config,
     graph_with_config_and_schedule,
     graph_with_config_mapping,
+    graph_with_partition_schedule,
     graph_with_resources,
     graph_with_schedule,
     op_in_out,
     op_multi_out,
     pipeline_mode_test,
+    pipeline_with_partition_schedule,
     pipeline_with_preset_and_schedule,
     pipeline_with_resources,
     pipeline_with_schedule,
@@ -28,6 +30,8 @@ jobs = [
 job_repos = [
     (prod_dev_jobs, "prod_repo"),
     (prod_dev_jobs, "dev_repo"),
+    (graph_with_partition_schedule, "do_it_all_repo"),
+    (pipeline_with_partition_schedule, "my_repo"),
 ]
 functions = [
     (graph_with_config_mapping, "execute_do_it_all"),
@@ -37,6 +41,7 @@ functions = [
 job_schedules = [
     (graph_with_schedule, "do_it_all_schedule"),
     (graph_with_config_and_schedule, "do_it_all_schedule"),
+    (graph_with_partition_schedule, "do_it_all_schedule"),
 ]
 pipelines = [
     (simple_pipeline, "do_it_all"),
@@ -46,10 +51,16 @@ pipelines = [
     (pipeline_with_schedule, "do_it_all"),
     (pipeline_with_preset_and_schedule, "do_it_all"),
 ]
+pipeline_schedules = [
+    (pipeline_with_partition_schedule, ("do_it_all_schedule", "do_it_all")),
+]
 ops_and_solids = [
     (solid_input_output_def, "do_something"),
     (op_in_out, "do_something"),
     (op_multi_out, "do_something"),
+]
+pipeline_repos = [
+    (pipeline_with_schedule, "do_it_all_repo"),
 ]
 
 
@@ -100,6 +111,20 @@ def test_job_schedules():
             context = build_schedule_context()
             run_config = schedule.evaluate_tick(context).run_requests[0].run_config
             assert job.execute_in_process(run_config=run_config).success
+        except Exception as ex:
+            raise Exception(
+                f"Error while executing schedule '{schedule.name}' from module '{module.__name__}'"
+            ) from ex
+
+
+def test_pipeline_schedules():
+    for module, (schedule_name, pipeline_name) in pipeline_schedules:
+        schedule = getattr(module, schedule_name)
+        the_pipeline = getattr(module, pipeline_name)
+        try:
+            context = build_schedule_context()
+            run_config = schedule.evaluate_tick(context).run_requests[0].run_config
+            assert execute_pipeline(the_pipeline, run_config=run_config).success
         except Exception as ex:
             raise Exception(
                 f"Error while executing schedule '{schedule.name}' from module '{module.__name__}'"

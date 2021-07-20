@@ -1,4 +1,4 @@
-from dagster import ScheduleDefinition, pipeline, solid
+from dagster import ScheduleDefinition, pipeline, repository, solid
 
 
 @solid
@@ -12,3 +12,8 @@ def do_it_all():
 
 
 do_it_all_schedule = ScheduleDefinition(cron_schedule="0 0 * * *", pipeline_name="do_it_all")
+
+
+@repository
+def do_it_all_repository():
+    return [do_it_all, do_it_all_schedule]
