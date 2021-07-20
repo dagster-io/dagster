@@ -324,8 +324,8 @@ def test_0_12_0_extract_asset_index_cols(hostname, conn_string):
             assert storage.has_asset_key(AssetKey(["a"]))
             new_tags = storage.get_asset_tags(AssetKey(["a"]))
             new_keys = storage.all_asset_keys()
-            assert old_tags == new_tags
-            assert old_keys == new_keys
+            assert set(old_tags) == set(new_tags)
+            assert set(old_keys) == set(new_keys)
 
             # make sure that storing assets still works
             execute_pipeline(asset_pipeline, instance=instance)
