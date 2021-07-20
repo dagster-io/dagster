@@ -115,7 +115,7 @@ def my_directory_sensor_cursor(context):
 
 # end_cursor_sensors_marker
 
-# start_sensor_testing_with
+# start_sensor_testing_with_context
 from dagster import build_sensor_context
 
 
@@ -125,7 +125,7 @@ def test_my_directory_sensor_cursor():
         assert validate_run_config(log_file_pipeline, run_request.run_config)
 
 
-# end_sensor_testing_with
+# end_sensor_testing_with_context
 
 
 # start_skip_sensors_marker

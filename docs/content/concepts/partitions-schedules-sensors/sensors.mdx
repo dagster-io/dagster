@@ -232,7 +232,13 @@ def my_directory_sensor_cursor(context):
 This sensor makes use of the `context` argument, and thus to invoke it, we need to provide one.
 
 ```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_sensor_testing_with_context endbefore=end_sensor_testing_with_context
-No match for startAfter value "start_sensor_testing_with_context"
+from dagster import build_sensor_context
+
+
+def test_my_directory_sensor_cursor():
+    context = build_sensor_context(cursor="0")
+    for run_request in my_directory_sensor_cursor(context):
+        assert validate_run_config(log_file_pipeline, run_request.run_config)
 ```
 
 ## Monitoring sensors in Dagit
