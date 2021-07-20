@@ -7,7 +7,6 @@ import {LeftNav} from '../nav/LeftNav';
 import {FallthroughRoot} from './FallthroughRoot';
 import {LayoutContext} from './LayoutProvider';
 
-const FeatureFlagsRoot = React.lazy(() => import('./FeatureFlagsRoot'));
 const InstanceRoot = React.lazy(() => import('../instance/InstanceRoot'));
 const SettingsRoot = React.lazy(() => import('../app/SettingsRoot'));
 const WorkspaceRoot = React.lazy(() => import('../workspace/WorkspaceRoot'));
@@ -15,7 +14,6 @@ const WorkspaceRoot = React.lazy(() => import('../workspace/WorkspaceRoot'));
 const ContentRoot = React.memo(() => (
   <React.Suspense fallback={<div />}>
     <Switch>
-      <Route path="/flags" component={FeatureFlagsRoot} />
       <Route path="/instance" component={InstanceRoot} />
       <Route path="/workspace" component={WorkspaceRoot} />
       <Route path="/settings" component={SettingsRoot} />
