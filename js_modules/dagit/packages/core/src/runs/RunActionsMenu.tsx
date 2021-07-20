@@ -22,11 +22,10 @@ import {
 import {TerminationDialog} from './TerminationDialog';
 import {LaunchPipelineReexecution} from './types/LaunchPipelineReexecution';
 import {PipelineEnvironmentYamlQuery} from './types/PipelineEnvironmentYamlQuery';
-import {RunActionMenuFragment} from './types/RunActionMenuFragment';
 import {RunTableRunFragment} from './types/RunTableRunFragment';
 
 export const RunActionsMenu: React.FC<{
-  run: RunTableRunFragment | RunActionMenuFragment;
+  run: RunTableRunFragment;
 }> = React.memo(({run}) => {
   const {refetch} = React.useContext(RunsQueryRefetchContext);
   const [visibleDialog, setVisibleDialog] = React.useState<'none' | 'terminate' | 'delete'>('none');

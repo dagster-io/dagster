@@ -7,14 +7,12 @@ import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {Timestamp} from '../app/time/Timestamp';
 import {ExecutionParams, PipelineRunStatus} from '../types/globalTypes';
-import {REPOSITORY_ORIGIN_FRAGMENT} from '../workspace/RepositoryInformation';
 
 import {DagsterTag} from './RunTag';
 import {StepSelection} from './StepSelection';
 import {TimeElapsed} from './TimeElapsed';
 import {LaunchPipelineExecution} from './types/LaunchPipelineExecution';
 import {LaunchPipelineReexecution} from './types/LaunchPipelineReexecution';
-import {RunActionMenuFragment} from './types/RunActionMenuFragment';
 import {RunFragment} from './types/RunFragment';
 import {RunTableRunFragment} from './types/RunTableRunFragment';
 import {RunTimeFragment} from './types/RunTimeFragment';
@@ -64,7 +62,7 @@ export function handleLaunchResult(
   }
 }
 
-function getBaseExecutionMetadata(run: RunFragment | RunTableRunFragment | RunActionMenuFragment) {
+function getBaseExecutionMetadata(run: RunFragment | RunTableRunFragment) {
   const hiddenTagKeys: string[] = [DagsterTag.IsResumeRetry, DagsterTag.StepSelection];
 
   return {
@@ -99,7 +97,7 @@ export type ReExecutionStyle =
   | {type: 'selection'; selection: StepSelection};
 
 export function getReexecutionVariables(input: {
-  run: (RunFragment | RunTableRunFragment | RunActionMenuFragment) & {runConfigYaml: string};
+  run: (RunFragment | RunTableRunFragment) & {runConfigYaml: string};
   style: ReExecutionStyle;
   repositoryLocationName: string;
   repositoryName: string;
@@ -313,27 +311,4 @@ export const RUN_TIME_FRAGMENT = gql`
     }
   }
   ${PYTHON_ERROR_FRAGMENT}
-`;
-
-export const RUN_ACTION_MENU_FRAGMENT = gql`
-  fragment RunActionMenuFragment on PipelineRun {
-    id
-    runId
-    rootRunId
-    pipelineName
-    solidSelection
-    pipelineSnapshotId
-    mode
-    canTerminate
-    tags {
-      key
-      value
-    }
-    status
-    repositoryOrigin {
-      id
-      ...RepositoryOriginFragment
-    }
-  }
-  ${REPOSITORY_ORIGIN_FRAGMENT}
 `;
