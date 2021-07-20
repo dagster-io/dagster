@@ -171,15 +171,15 @@ def op(
                 print('hello')
 
             @op
-            def echo(in: str) -> str:
-                return in
+            def echo(msg: str) -> str:
+                return msg
 
             @op(
-                ins={'in': In(str)},
+                ins={'msg': In(str)},
                 out=Out(str)
             )
-            def echo_2(in): # same as above
-                return in
+            def echo_2(msg): # same as above
+                return msg
 
             @op(
                 out={'word': Out(), 'num': Out()}
