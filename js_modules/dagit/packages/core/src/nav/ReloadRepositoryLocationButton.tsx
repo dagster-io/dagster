@@ -47,7 +47,9 @@ export const useRepositoryLocationReload = (location: string, onReload: OnReload
         break;
     }
 
-    if (loadFailure) {
+    if (loadStatus === 'LOADING') {
+      onReload(location, {type: 'loading'});
+    } else if (loadFailure) {
       SharedToaster.show({
         message: 'Repository Location Reloaded with Errors',
         timeout: 3000,
@@ -55,7 +57,7 @@ export const useRepositoryLocationReload = (location: string, onReload: OnReload
         intent: Intent.DANGER,
       });
       onReload(location, {type: 'error', message: loadFailure});
-    } else if (loadStatus === 'LOADED') {
+    } else {
       SharedToaster.show({
         message: 'Repository Location Reloaded',
         timeout: 3000,
@@ -63,8 +65,6 @@ export const useRepositoryLocationReload = (location: string, onReload: OnReload
         intent: Intent.SUCCESS,
       });
       onReload(location, {type: 'success'});
-    } else {
-      onReload(location, {type: 'loading'});
     }
 
     // Update run config localStorage, which may now be out of date.
