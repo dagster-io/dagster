@@ -53,6 +53,39 @@ def test_github_resource_get_installations():
 
 
 @responses.activate
+def test_github_resource_get_installations_with_hostname():
+    @solid(required_resource_keys={"github"})
+    def github_solid(context):
+        assert context.resources.github
+        with responses.RequestsMock() as rsps:
+            rsps.add(
+                rsps.GET,
+                "https://github.contoso.com/api/v3/app/installations",
+                status=200,
+                json={},
+            )
+            context.resources.github.get_installations()
+
+    result = execute_solid(
+        github_solid,
+        run_config={
+            "resources": {
+                "github": {
+                    "config": {
+                        "github_app_id": 123,
+                        "github_app_private_rsa_key": FAKE_PRIVATE_RSA_KEY,
+                        "github_installation_id": 123,
+                        "github_hostname": 'github.contoso.com',
+                    }
+                }
+            }
+        },
+        mode_def=ModeDefinition(resource_defs={"github": github_resource}),
+    )
+    assert result.success
+
+
+@responses.activate
 def test_github_resource_create_issue():
     @solid(required_resource_keys={"github"})
     def github_solid(context):
