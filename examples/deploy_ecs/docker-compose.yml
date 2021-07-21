@@ -25,8 +25,22 @@ services:
     depends_on:
       - postgresql
       - pipelines
-    x-aws-policies:
-      - "arn:aws:iam::aws:policy/AmazonECS_FullAccess"
+    x-aws-role:
+      Statement:
+        - Effect: "Allow"
+          Action:
+            - "ecs:DescribeTasks"
+            - "ecs:StopTask"
+          Resource:
+            - "*"
+        - Effect: "Allow"
+          Action:
+            - "iam:PassRole"
+          Resource:
+            - "*"
+          Condition:
+            StringLike:
+              iam:PassedToService: "ecs-tasks.amazonaws.com"
 
   # This service runs the dagster-daemon process, which is responsible for
   # taking runs off of the queue and launching them, as well as creating
@@ -47,10 +61,26 @@ services:
     depends_on:
       - postgresql
       - pipelines
-    # Grant the EcsRunLauncher the ability to modify task definitions and
-    # run new tasks
-    x-aws-policies:
-      - "arn:aws:iam::aws:policy/AmazonECS_FullAccess"
+    x-aws-role:
+      Statement:
+        - Effect: "Allow"
+          Action:
+            - "ec2:DescribeNetworkInterfaces"
+            - "ecs:DescribeTaskDefinition"
+            - "ecs:DescribeTasks"
+            - "ecs:RegisterTaskDefinition"
+            - "ecs:RunTask"
+            - "ecs:TagResource"
+          Resource:
+            - "*"
+        - Effect: "Allow"
+          Action:
+            - "iam:PassRole"
+          Resource:
+            - "*"
+          Condition:
+            StringLike:
+              iam:PassedToService: "ecs-tasks.amazonaws.com"
 
   # This service runs a gRPC server that serves information about your
   # repository. By setting DAGSTER_CURRENT_IMAGE to its own image, we tell the
