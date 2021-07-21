@@ -81,6 +81,7 @@ GitHub enterprise users can provide their hostname in the run config. Provide ``
 as part of your github config like below.
 
 .. code-block:: python
+
    execute_pipeline(
        github_pipeline, {'resources': {'github': {'config': {
            "github_app_id": os.getenv('GITHUB_APP_ID'),
