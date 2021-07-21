@@ -55,7 +55,7 @@ class _Graph:
             name=self.name,
             dependencies=dependencies,
             node_defs=solid_defs,
-            description=self.description,
+            description=self.description or fn.__doc__,
             input_mappings=input_mappings,
             output_mappings=output_mappings,
             config_mapping=config_mapping,

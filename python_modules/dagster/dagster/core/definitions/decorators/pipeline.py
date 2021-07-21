@@ -86,7 +86,7 @@ class _Pipeline:
                 positional_inputs=positional_inputs,
             ),
             tags=self.tags,
-            description=self.description,
+            description=self.description or fn.__doc__,
             hook_defs=self.hook_defs,
             solid_retry_policy=self.solid_retry_policy,
         )

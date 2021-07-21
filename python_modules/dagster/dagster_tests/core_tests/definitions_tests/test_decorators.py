@@ -18,7 +18,9 @@ from dagster import (
     composite_solid,
     execute_pipeline,
     execute_solid,
+    graph,
     lambda_solid,
+    op,
     pipeline,
     schedule,
     solid,
@@ -1051,18 +1053,39 @@ def test_solid_docstring():
         """THE_DOCSTRING"""
         quux_solid()
 
+    @op
+    def the_op():
+        """OP_DOCSTRING"""
+
+    @graph
+    def the_graph():
+        """GRAPH_DOCSTRING"""
+        the_op()
+
     assert foo_solid.__doc__ == "FOO_DOCSTRING"
+    assert foo_solid.description == "FOO_DOCSTRING"
     assert foo_solid.__name__ == "foo_solid"
     assert bar_solid.__doc__ == "BAR_DOCSTRING"
+    assert bar_solid.description == "BAR_DOCSTRING"
     assert bar_solid.__name__ == "bar_solid"
     assert baz_solid.__doc__ == "BAZ_DOCSTRING"
+    assert baz_solid.description == "BAZ_DOCSTRING"
     assert baz_solid.__name__ == "baz_solid"
     assert quux_solid.__doc__ == "QUUX_DOCSTRING"
+    assert quux_solid.description == "QUUX_DOCSTRING"
     assert quux_solid.__name__ == "quux_solid"
     assert comp_solid.__doc__ == "COMP_DOCSTRING"
+    assert comp_solid.description == "COMP_DOCSTRING"
     assert comp_solid.__name__ == "comp_solid"
     assert the_pipeline.__doc__ == "THE_DOCSTRING"
+    assert the_pipeline.description == "THE_DOCSTRING"
     assert the_pipeline.__name__ == "the_pipeline"
+    assert the_op.__doc__ == "OP_DOCSTRING"
+    assert the_op.description == "OP_DOCSTRING"
+    assert the_op.__name__ == "the_op"
+    assert the_graph.__doc__ == "GRAPH_DOCSTRING"
+    assert the_graph.description == "GRAPH_DOCSTRING"
+    assert the_graph.__name__ == "the_graph"
 
 
 def test_solid_yields_single_bare_value():

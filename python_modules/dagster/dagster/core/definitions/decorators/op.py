@@ -104,7 +104,7 @@ class _Op:
             name=self.name,
             input_defs=self.input_defs or input_defs,
             output_defs=final_output_defs,
-            description=self.description,
+            description=self.description or fn.__doc__,
             required_resource_keys=self.required_resource_keys,
             config_schema=self.config_schema,
             tags=self.tags,
