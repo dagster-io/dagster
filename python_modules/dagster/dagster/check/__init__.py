@@ -295,6 +295,18 @@ def opt_bool_param(obj: Any, param_name: str, default: bool = None) -> Optional[
     return default if obj is None else obj
 
 
+def is_dict(obj: Any, key_type: Type = None, value_type: Type = None, desc: str = None) -> Dict:
+    from dagster.utils import frozendict
+
+    if not isinstance(obj, (frozendict, dict)):
+        raise _type_mismatch_error(obj, (frozendict, dict), desc)
+
+    if not (key_type or value_type):
+        return obj
+
+    return _check_key_value_types(obj, key_type, value_type)
+
+
 def is_list(obj_list: Any, of_type: Type = None, desc: str = None) -> List:
     if not isinstance(obj_list, list):
         raise _type_mismatch_error(obj_list, list, desc)

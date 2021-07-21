@@ -260,73 +260,65 @@ def test_opt_typed_list_param():
         check.opt_list_param([None], "list_param", Foo)
 
 
-def test_dict_param():
-    assert check.dict_param({}, "dict_param") == {}
-    assert check.dict_param(frozendict(), "dict_param") == {}
-    ddict = {"a": 2}
-    assert check.dict_param(ddict, "dict_param") == ddict
-
-    with pytest.raises(ParameterCheckError):
-        check.dict_param(None, "dict_param")
-
-    with pytest.raises(ParameterCheckError):
-        check.dict_param(0, "dict_param")
-
-    with pytest.raises(ParameterCheckError):
-        check.dict_param(1, "dict_param")
-
-    with pytest.raises(ParameterCheckError):
-        check.dict_param("foo", "dict_param")
-
-    with pytest.raises(ParameterCheckError):
-        check.dict_param(["foo"], "dict_param")
-
-    with pytest.raises(ParameterCheckError):
-        check.dict_param([], "dict_param")
+class Wrong:
+    pass
 
 
-def test_dict_param_with_type():
-    str_to_int = {"str": 1}
-    assert check.dict_param(str_to_int, "str_to_int", key_type=str, value_type=int)
-    assert check.dict_param(str_to_int, "str_to_int", value_type=int)
-    assert check.dict_param(str_to_int, "str_to_int", key_type=str)
-    assert check.dict_param(str_to_int, "str_to_int")
+class AlsoWrong:
+    pass
 
-    assert check.dict_param({}, "str_to_int", key_type=str, value_type=int) == {}
-    assert check.dict_param({}, "str_to_int", value_type=int) == {}
-    assert check.dict_param({}, "str_to_int", key_type=str) == {}
-    assert check.dict_param({}, "str_to_int") == {}
 
-    assert check.dict_param(
-        {"str": 1, "str2": "str", 1: "str", 2: "str"},
-        "multi_type_dict",
-        key_type=(str, int),
-        value_type=(str, int),
-    )
+DICT_TEST_CASES = [
+    (dict(obj={}), True),
+    (dict(obj=frozendict()), True),
+    (dict(obj={"a": 2}), True),
+    (dict(obj=None), False),
+    (dict(obj=0), False),
+    (dict(obj=1), False),
+    (dict(obj="foo"), False),
+    (dict(obj=["foo"]), False),
+    (dict(obj=[]), False),
+    (dict(obj={"str": 1}, key_type=str, value_type=int), True),
+    (dict(obj={"str": 1}, value_type=int), True),
+    (dict(obj={"str": 1}, key_type=str), True),
+    (dict(obj={"str": 1}), True),
+    (dict(obj={}, key_type=str, value_type=int), True),
+    (dict(obj={}, value_type=int), True),
+    (dict(obj={}, key_type=str), True),
+    (dict(obj={}), True),
+    (
+        dict(
+            obj={"str": 1, "str2": "str", 1: "str", 2: "str"},
+            key_type=(str, int),
+            value_type=(str, int),
+        ),
+        True,
+    ),
+    (dict(obj={"str": 1}, key_type=Wrong, value_type=Wrong), False),
+    (dict(obj={"str": 1}, key_type=Wrong, value_type=int), False),
+    (dict(obj={"str": 1}, key_type=str, value_type=Wrong), False),
+    (dict(obj={"str": 1}, key_type=Wrong), False),
+    (dict(obj={"str": 1}, key_type=(Wrong, AlsoWrong)), False),
+    (dict(obj={"str": 1}, value_type=(Wrong, AlsoWrong)), False),
+]
 
-    class Wrong:
-        pass
 
-    with pytest.raises(CheckError):
-        assert check.dict_param(str_to_int, "str_to_int", key_type=Wrong, value_type=Wrong)
+@pytest.mark.parametrize("kwargs, should_succeed", DICT_TEST_CASES)
+def test_dict_param(kwargs, should_succeed):
+    if should_succeed:
+        assert check.dict_param(**kwargs, param_name="name") == kwargs["obj"]
+    else:
+        with pytest.raises(CheckError):
+            check.dict_param(**kwargs, param_name="name")
 
-    with pytest.raises(CheckError):
-        assert check.dict_param(str_to_int, "str_to_int", key_type=Wrong, value_type=int)
 
-    with pytest.raises(CheckError):
-        assert check.dict_param(str_to_int, "str_to_int", key_type=str, value_type=Wrong)
-
-    with pytest.raises(CheckError):
-        assert check.dict_param(str_to_int, "str_to_int", key_type=Wrong)
-
-    class AlsoWrong:
-        pass
-
-    with pytest.raises(CheckError):
-        assert check.dict_param(str_to_int, "str_to_int", key_type=(Wrong, AlsoWrong))
-
-    with pytest.raises(CheckError):
-        assert check.dict_param(str_to_int, "str_to_int", value_type=(Wrong, AlsoWrong))
+@pytest.mark.parametrize("kwargs, should_succeed", DICT_TEST_CASES)
+def test_is_dict(kwargs, should_succeed):
+    if should_succeed:
+        assert check.is_dict(**kwargs) == kwargs["obj"]
+    else:
+        with pytest.raises(CheckError):
+            check.is_dict(**kwargs)
 
 
 def test_opt_dict_param_with_type():
