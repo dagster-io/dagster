@@ -4,6 +4,7 @@ from abc import abstractmethod
 from collections import defaultdict
 from datetime import datetime
 from enum import Enum
+from typing import List, Set, Tuple
 
 import pendulum
 import sqlalchemy as db
@@ -314,7 +315,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             for row in rows
         ]
 
-    def get_run_tags(self):
+    def get_run_tags(self) -> List[Tuple[str, Set[str]]]:
         result = defaultdict(set)
         query = db.select([RunTagsTable.c.key, RunTagsTable.c.value]).distinct(
             RunTagsTable.c.key, RunTagsTable.c.value

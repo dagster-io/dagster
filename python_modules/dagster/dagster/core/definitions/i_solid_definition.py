@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from typing import TYPE_CHECKING
 
 from dagster import check
 from dagster.core.definitions.configurable import NamedConfigurableDefinition
@@ -8,6 +9,9 @@ from dagster.utils import frozendict, frozenlist
 from .hook import HookDefinition
 from .utils import check_valid_name, validate_tags
 
+if TYPE_CHECKING:
+    from .graph import GraphDefinition
+    from .solid import SolidDefinition
 
 # base class for SolidDefinition and GraphDefinition
 # represents that this is embedable within a graph
@@ -195,3 +199,19 @@ class NodeDefinition(NamedConfigurableDefinition):
             hook_defs=None,
             retry_policy=retry_policy,
         )
+
+    def ensure_graph_def(self) -> "GraphDefinition":
+        from .graph import GraphDefinition
+
+        if isinstance(self, GraphDefinition):
+            return self
+
+        check.failed(f"{self.name} is not a GraphDefinition")
+
+    def ensure_solid_def(self) -> "SolidDefinition":
+        from .solid import SolidDefinition
+
+        if isinstance(self, SolidDefinition):
+            return self
+
+        check.failed(f"{self.name} is not a SolidDefinition")

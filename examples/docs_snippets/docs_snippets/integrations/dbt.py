@@ -68,8 +68,6 @@ def scope_dbt_cli_profile_modes():
     from dagster import pipeline, solid, ModeDefinition
     from dagster_dbt import dbt_cli_resource
 
-    my_dbt_resource = dbt_cli_resource.configured({"project_dir": "path/to/dbt/project"})
-
     @solid(required_resource_keys={"dbt"})
     def run_all_models(context):
         context.resources.dbt.run()
@@ -78,11 +76,19 @@ def scope_dbt_cli_profile_modes():
         mode_defs=[
             ModeDefinition(
                 "dev",
-                resource_defs={"dbt": my_dbt_resource.configured({"profile": "dev"})},
+                resource_defs={
+                    "dbt": dbt_cli_resource.configured(
+                        {"project_dir": "path/to/dbt/project", "profile": "dev"}
+                    )
+                },
             ),
             ModeDefinition(
                 "prod",
-                resource_defs={"dbt": my_dbt_resource.configured({"profile": "prod"})},
+                resource_defs={
+                    "dbt": dbt_cli_resource.configured(
+                        {"project_dir": "path/to/dbt/project", "profile": "prod"}
+                    )
+                },
             ),
         ]
     )

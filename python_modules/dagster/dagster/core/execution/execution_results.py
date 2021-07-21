@@ -1,7 +1,7 @@
 from abc import abstractproperty
 from typing import Any, Dict, List, Optional, cast
 
-from dagster import DagsterEvent
+from dagster import DagsterEvent, check
 from dagster.core.definitions import GraphDefinition, Node, NodeHandle, SolidDefinition
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.outputs import StepOutputHandle
@@ -143,6 +143,7 @@ class InProcessGraphResult(NodeExecutionResult):
 
         if not handle_with_ancestor:
             raise DagsterInvariantViolationError(f"No handle provided for solid {solid.name}")
+
         if isinstance(node_def, SolidDefinition):
             return InProcessSolidResult(
                 solid_def=node_def,
@@ -150,13 +151,15 @@ class InProcessGraphResult(NodeExecutionResult):
                 all_events=events_for_handle,
                 output_capture=outputs_for_handle,
             )
-        else:
+        elif isinstance(node_def, GraphDefinition):
             return InProcessGraphResult(
                 graph_def=node_def,
                 handle=handle_with_ancestor,
                 all_events=events_for_handle,
                 output_capture=outputs_for_handle,
             )
+
+        check.failed("Unhandled node type {node_def}")
 
     @property
     def output_values(self) -> Dict[str, Any]:

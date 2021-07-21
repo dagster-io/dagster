@@ -7,6 +7,7 @@ from dagster.core.snap.execution_plan_snapshot import (
     ExecutionPlanSnapshotErrorData,
 )
 from dagster.grpc.types import ExecutionPlanSnapshotArgs
+from dagster.serdes import deserialize_json_to_dagster_namedtuple
 
 
 def sync_get_external_execution_plan_grpc(
@@ -31,16 +32,18 @@ def sync_get_external_execution_plan_grpc(
     check.opt_inst_param(known_state, "known_state", KnownExecutionState)
 
     result = check.inst(
-        api_client.execution_plan_snapshot(
-            execution_plan_snapshot_args=ExecutionPlanSnapshotArgs(
-                pipeline_origin=pipeline_origin,
-                solid_selection=solid_selection,
-                run_config=run_config,
-                mode=mode,
-                step_keys_to_execute=step_keys_to_execute,
-                pipeline_snapshot_id=pipeline_snapshot_id,
-                known_state=known_state,
-            )
+        deserialize_json_to_dagster_namedtuple(
+            api_client.execution_plan_snapshot(
+                execution_plan_snapshot_args=ExecutionPlanSnapshotArgs(
+                    pipeline_origin=pipeline_origin,
+                    solid_selection=solid_selection,
+                    run_config=run_config,
+                    mode=mode,
+                    step_keys_to_execute=step_keys_to_execute,
+                    pipeline_snapshot_id=pipeline_snapshot_id,
+                    known_state=known_state,
+                )
+            ),
         ),
         (ExecutionPlanSnapshot, ExecutionPlanSnapshotErrorData),
     )

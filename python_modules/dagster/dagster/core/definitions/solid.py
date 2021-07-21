@@ -330,7 +330,8 @@ class CompositeSolidDefinition(GraphDefinition):
         config_schema: IDefinitionConfigSchema,
         config_or_config_fn: Any,
     ) -> "CompositeSolidDefinition":
-        if not self.has_config_mapping:
+        config_mapping = self._config_mapping
+        if config_mapping is None:
             raise DagsterInvalidDefinitionError(
                 "Only composite solids utilizing config mapping can be pre-configured. The solid "
                 '"{graph_name}" does not have a config mapping, and thus has nothing to be '
@@ -343,7 +344,7 @@ class CompositeSolidDefinition(GraphDefinition):
             input_mappings=self.input_mappings,
             output_mappings=self.output_mappings,
             config_mapping=ConfigMapping(
-                self._config_mapping.config_fn,
+                config_mapping.config_fn,
                 config_schema=config_schema,
             ),
             dependencies=self.dependencies,

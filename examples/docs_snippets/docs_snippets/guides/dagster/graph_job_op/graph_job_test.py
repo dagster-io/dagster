@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock
 
-from dagster import ResourceDefinition, graph, op, resource
+from dagster import graph, op, resource
 
 
 @resource
@@ -22,6 +22,4 @@ do_it_all_job = do_it_all.to_job(resource_defs={"external_service": external_ser
 
 
 def test_do_it_all():
-    do_it_all.execute_in_process(
-        resources={"external_service": ResourceDefinition.hardcoded_resource(MagicMock())}
-    )
+    do_it_all.execute_in_process(resources={"external_service": MagicMock()})

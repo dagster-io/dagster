@@ -1,4 +1,5 @@
 from collections import OrderedDict, defaultdict
+from typing import List, Set, Tuple
 
 from dagster import check
 from dagster.core.errors import DagsterRunAlreadyExists, DagsterSnapshotDoesNotExist
@@ -144,7 +145,7 @@ class InMemoryRunStorage(RunStorage):
     def get_run_records(self, filters=None, limit=None, order_by=None, ascending=False):
         raise NotImplementedError("In memory run storage does not track timestamp yet.")
 
-    def get_run_tags(self):
+    def get_run_tags(self) -> List[Tuple[str, Set[str]]]:
         all_tags = defaultdict(set)
         for _run_id, tags in self._run_tags.items():
             for k, v in tags.items():

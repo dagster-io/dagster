@@ -12,8 +12,9 @@ from dagster.grpc.types import (
     CanCancelExecutionRequest,
     CancelExecutionRequest,
     ExecuteExternalPipelineArgs,
+    StartRunResult,
 )
-from dagster.serdes import ConfigurableClass
+from dagster.serdes import ConfigurableClass, deserialize_as, deserialize_json_to_dagster_namedtuple
 from dagster.utils import merge_dicts
 
 from .base import LaunchRunContext, RunLauncher
@@ -83,14 +84,16 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
             },
         )
 
-        res = repository_location.client.start_run(
-            ExecuteExternalPipelineArgs(
-                pipeline_origin=run.external_pipeline_origin,
-                pipeline_run_id=run.run_id,
-                instance_ref=self._instance.get_ref(),
-            )
+        res = deserialize_as(
+            repository_location.client.start_run(
+                ExecuteExternalPipelineArgs(
+                    pipeline_origin=run.external_pipeline_origin,
+                    pipeline_run_id=run.run_id,
+                    instance_ref=self._instance.get_ref(),
+                )
+            ),
+            StartRunResult,
         )
-
         if not res.success:
             raise (
                 DagsterLaunchFailedError(
@@ -133,7 +136,9 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
             return False
 
         try:
-            res = client.can_cancel_execution(CanCancelExecutionRequest(run_id=run_id), timeout=5)
+            res = deserialize_json_to_dagster_namedtuple(
+                client.can_cancel_execution(CanCancelExecutionRequest(run_id=run_id), timeout=5)
+            )
         except grpc._channel._InactiveRpcError:  # pylint: disable=protected-access
             # Server that created the run may no longer exist
             return False
@@ -160,7 +165,9 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
             return False
 
         self._instance.report_run_canceling(run)
-        res = client.cancel_execution(CancelExecutionRequest(run_id=run_id))
+        res = deserialize_json_to_dagster_namedtuple(
+            client.cancel_execution(CancelExecutionRequest(run_id=run_id))
+        )
         return res.success
 
     def join(self, timeout=30):

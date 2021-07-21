@@ -1,6 +1,6 @@
 import React from 'react';
 
-export type PipelineExplorerJobContextData =
+type PipelineExplorerJobContextData =
   | {
       sidebarTab: React.ReactNode;
     }

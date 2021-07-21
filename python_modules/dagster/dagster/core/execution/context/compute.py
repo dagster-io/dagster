@@ -25,7 +25,7 @@ class AbstractComputeExecutionContext(ABC):  # pylint: disable=no-init
         """Implement this method to check if a logging tag is set."""
 
     @abstractmethod
-    def get_tag(self, key: str) -> str:
+    def get_tag(self, key: str) -> Optional[str]:
         """Implement this method to get a logging tag."""
 
     @abstractproperty
@@ -211,14 +211,14 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         """
         return self._step_execution_context.has_tag(key)
 
-    def get_tag(self, key: str) -> str:
+    def get_tag(self, key: str) -> Optional[str]:
         """Get a logging tag.
 
         Args:
             key (tag): The tag to get.
 
         Returns:
-            str: The value of the tag.
+            Optional[str]: The value of the tag, if present.
         """
         return self._step_execution_context.get_tag(key)
 

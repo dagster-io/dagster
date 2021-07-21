@@ -1,7 +1,7 @@
 import abc
 from typing import Dict, List, Optional
 
-from dagster import DagsterEvent, DagsterInstance
+from dagster import DagsterEvent, DagsterInstance, check
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.grpc.types import ExecuteStepArgs
 
@@ -27,7 +27,10 @@ class StepHandlerContext:
     def pipeline_run(self) -> PipelineRun:
         # lazy load
         if not self._pipeline_run:
-            run = self._instance.get_run_by_id(self.execute_step_args.pipeline_run_id)
+            run_id = self.execute_step_args.pipeline_run_id
+            run = self._instance.get_run_by_id(run_id)
+            if run is None:
+                check.failed(f"Failed to load run {run_id}")
             self._pipeline_run = run
 
         return self._pipeline_run

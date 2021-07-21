@@ -189,7 +189,14 @@ class Node:
         )
 
     def container_mapped_input(self, input_name: str) -> InputMapping:
-        return self.graph_definition.input_mapping_for_pointer(InputPointer(self.name, input_name))
+        mapping = self.graph_definition.input_mapping_for_pointer(
+            InputPointer(self.name, input_name)
+        )
+        if mapping is None:
+            check.failed(
+                f"container does not map input {input_name}, check container_maps_input first"
+            )
+        return mapping
 
     def container_maps_fan_in_input(self, input_name: str, fan_in_index: int) -> bool:
         return (
@@ -200,9 +207,16 @@ class Node:
         )
 
     def container_mapped_fan_in_input(self, input_name: str, fan_in_index: int) -> InputMapping:
-        return self.graph_definition.input_mapping_for_pointer(
+        mapping = self.graph_definition.input_mapping_for_pointer(
             FanInInputPointer(self.name, input_name, fan_in_index)
         )
+        if mapping is None:
+            check.failed(
+                f"container does not map fan-in {input_name} idx {fan_in_index}, check "
+                "container_maps_fan_in_input first"
+            )
+
+        return mapping
 
     @property
     def hook_defs(self) -> AbstractSet[HookDefinition]:
@@ -344,16 +358,20 @@ class NodeHandle(
         return NodeHandle.from_path((ancestor.path if ancestor else []) + self.path)
 
     @staticmethod
-    def from_path(path: List[str]) -> Optional["NodeHandle"]:
+    def from_path(path: List[str]) -> "NodeHandle":
         check.list_param(path, "path", of_type=str)
 
-        cur = None
+        cur: Optional["NodeHandle"] = None
         while len(path) > 0:
             cur = NodeHandle(name=path.pop(0), parent=cur)
+
+        if cur is None:
+            check.failed(f"Invalid handle path {path}")
+
         return cur
 
     @staticmethod
-    def from_string(handle_str: str) -> Optional["NodeHandle"]:
+    def from_string(handle_str: str) -> "NodeHandle":
         check.str_param(handle_str, "handle_str")
 
         path = handle_str.split(".")

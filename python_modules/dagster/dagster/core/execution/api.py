@@ -486,12 +486,12 @@ def reexecute_pipeline(
         )
 
         parent_pipeline_run = execute_instance.get_run_by_id(parent_run_id)
-        check.invariant(
-            parent_pipeline_run,
-            "No parent run with id {parent_run_id} found in instance.".format(
-                parent_run_id=parent_run_id
-            ),
-        )
+        if parent_pipeline_run is None:
+            check.failed(
+                "No parent run with id {parent_run_id} found in instance.".format(
+                    parent_run_id=parent_run_id
+                ),
+            )
 
         execution_plan: Optional[ExecutionPlan] = None
         # resolve step selection DSL queries using parent execution information
@@ -587,12 +587,12 @@ def reexecute_pipeline_iterator(
             solid_selection=None,
         )
         parent_pipeline_run = execute_instance.get_run_by_id(parent_run_id)
-        check.invariant(
-            parent_pipeline_run,
-            "No parent run with id {parent_run_id} found in instance.".format(
-                parent_run_id=parent_run_id
-            ),
-        )
+        if parent_pipeline_run is None:
+            check.failed(
+                "No parent run with id {parent_run_id} found in instance.".format(
+                    parent_run_id=parent_run_id
+                ),
+            )
 
         execution_plan: Optional[ExecutionPlan] = None
         # resolve step selection DSL queries using parent execution information

@@ -14,6 +14,7 @@ from dagster.core.test_utils import environ, instance_for_test, new_cwd
 from dagster.grpc.client import DagsterGrpcClient
 from dagster.grpc.server import wait_for_grpc_server
 from dagster.grpc.types import SensorExecutionArgs
+from dagster.serdes import deserialize_json_to_dagster_namedtuple
 from dagster.serdes.ipc import DagsterIPCProtocolError
 from dagster.seven import get_system_temp_directory
 from dagster.utils import file_relative_path, find_free_port
@@ -285,7 +286,9 @@ def test_lazy_load_with_error():
 
     try:
         wait_for_grpc_server(process, ipc_output_file)
-        list_repositories_response = DagsterGrpcClient(port=port).list_repositories()
+        list_repositories_response = deserialize_json_to_dagster_namedtuple(
+            DagsterGrpcClient(port=port).list_repositories()
+        )
         assert isinstance(list_repositories_response, SerializableErrorInfo)
         assert "No module named" in list_repositories_response.message
     finally:
@@ -316,7 +319,9 @@ def test_lazy_load_via_env_var():
 
         try:
             wait_for_grpc_server(process, ipc_output_file)
-            list_repositories_response = DagsterGrpcClient(port=port).list_repositories()
+            list_repositories_response = deserialize_json_to_dagster_namedtuple(
+                DagsterGrpcClient(port=port).list_repositories()
+            )
             assert isinstance(list_repositories_response, SerializableErrorInfo)
             assert "No module named" in list_repositories_response.message
         finally:

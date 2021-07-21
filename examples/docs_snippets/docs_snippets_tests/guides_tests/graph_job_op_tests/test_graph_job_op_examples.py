@@ -6,6 +6,8 @@ from docs_snippets.guides.dagster.graph_job_op import (
     graph_with_config_mapping,
     graph_with_resources,
     graph_with_schedule,
+    op_in_out,
+    op_multi_out,
     pipeline_mode_test,
     pipeline_with_preset_and_schedule,
     pipeline_with_resources,
@@ -14,6 +16,7 @@ from docs_snippets.guides.dagster.graph_job_op import (
     prod_dev_modes,
     simple_graph,
     simple_pipeline,
+    solid_input_output_def,
 )
 
 jobs = [
@@ -43,6 +46,11 @@ pipelines = [
     (pipeline_with_schedule, "do_it_all"),
     (pipeline_with_preset_and_schedule, "do_it_all"),
 ]
+ops_and_solids = [
+    (solid_input_output_def, "do_something"),
+    (op_in_out, "do_something"),
+    (op_multi_out, "do_something"),
+]
 
 
 def test_jobs():
@@ -52,7 +60,7 @@ def test_jobs():
             assert job.execute_in_process().success
         except Exception as ex:
             raise Exception(
-                f"Error while executing function '{job.name}' from module '{module.__name__}'"
+                f"Error while executing job '{job.name}' from module '{module.__name__}'"
             ) from ex
 
 
@@ -68,7 +76,7 @@ def test_pipelines():
                     assert execute_pipeline(pipeline, mode=mode.name).success
         except Exception as ex:
             raise Exception(
-                f"Error while executing function '{pipeline.name}' from module '{module.__name__}'"
+                f"Error while executing pipeline '{pipeline.name}' from module '{module.__name__}'"
             ) from ex
 
 
@@ -95,4 +103,15 @@ def test_job_schedules():
         except Exception as ex:
             raise Exception(
                 f"Error while executing schedule '{schedule.name}' from module '{module.__name__}'"
+            ) from ex
+
+
+def test_ops():
+    for module, attr_name in ops_and_solids:
+        op_or_solid = getattr(module, attr_name)
+        try:
+            assert op_or_solid("5")
+        except Exception as ex:
+            raise Exception(
+                f"Error while executing op or solid '{op_or_solid.name}' from module '{module.__name__}'"
             ) from ex

@@ -4,6 +4,10 @@ Ops, Graphs, and Jobs, are an experimental set of APIs that aim to simplify and 
 
 A detailed API reference for the new APIs can be found [here](/\_apidocs/experimental).
 
+Migrating a pipeline to a graph does not require migrating all your other pipelines to graphs. Graphs, jobs, and pipelines can co-exist peacefully in Python.
+
+In Dagit, graphs and jobs will be displayed as pipelines. You can also toggle Dagit to switch to a view that's better suited to the new APIs. Click the gear icon in the upper right corner, and then toggle "Experimental Core APIs (Job & Graph)". After flipping this toggle, Dagit will display a job for each mode in each pipeline.
+
 ## A simple pipeline
 
 For simple pipelines, the new APIs just have different names. Here's a pipeline containing a single solid:
@@ -141,7 +145,7 @@ This made it difficult to construct mock resources that were specific to a parti
 ```python file=/guides/dagster/graph_job_op/graph_job_test.py
 from unittest.mock import MagicMock
 
-from dagster import ResourceDefinition, graph, op, resource
+from dagster import graph, op, resource
 
 
 @resource
@@ -163,9 +167,7 @@ do_it_all_job = do_it_all.to_job(resource_defs={"external_service": external_ser
 
 
 def test_do_it_all():
-    do_it_all.execute_in_process(
-        resources={"external_service": ResourceDefinition.hardcoded_resource(MagicMock())}
-    )
+    do_it_all.execute_in_process(resources={"external_service": MagicMock()})
 ```
 
 ### A pipeline with prod and dev modes
@@ -406,4 +408,47 @@ do_it_all_schedule = ScheduleDefinition(
     job=do_it_all.to_job(config={"solids": {"do_something": {"config": {"param": "some_val"}}}}),
     cron_schedule="0 0 * * *",
 )
+```
+
+## InputDefinitions and OutputDefinitions
+
+With the solid API, you define inputs and outputs using the InputDefinition and OutputDefinition classes.
+
+```python file=/guides/dagster/graph_job_op/solid_input_output_def.py
+from dagster import InputDefinition, OutputDefinition, solid
+
+
+@solid(
+    input_defs=[InputDefinition("arg1", metadata={"a": "b"})],
+    output_defs=[OutputDefinition(metadata={"c": "d"})],
+)
+def do_something(arg1: str) -> int:
+    return int(arg1)
+```
+
+The op API supports a less verbose way to define inputs and outputs: with the In and Out classes.
+
+```python file=/guides/dagster/graph_job_op/op_in_out.py
+from dagster import In, Out, op
+
+
+@op(ins={"arg1": In(metadata={"a": "b"})}, out=Out(metadata={"c": "d"}))
+def do_something(arg1: str) -> int:
+    return int(arg1)
+```
+
+For single outputs, you can just supply an Out object, and for multiple outputs, you can use a dictionary:
+
+```python file=/guides/dagster/graph_job_op/op_multi_out.py
+from typing import Tuple
+
+from dagster import In, Out, op
+
+
+@op(
+    ins={"arg1": In(metadata={"a": "b"})},
+    out={"out1": Out(metadata={"c": "d"}), "out2": Out(metadata={"e": "f"})},
+)
+def do_something(arg1: str) -> Tuple[int, int]:
+    return int(arg1), int(arg1) + 1
 ```
