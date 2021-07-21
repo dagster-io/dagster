@@ -30,5 +30,5 @@ class FixedS3PickleIOManager(IOManager):
 
 
 @io_manager(config_schema={"bucket": str})
-def fixed_s3_pickle_io_manager(_):
+def fixed_s3_pickle_io_manager(_) -> FixedS3PickleIOManager:
     return FixedS3PickleIOManager()

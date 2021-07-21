@@ -1,6 +1,6 @@
-from typing import Tuple
+from typing import List, Tuple
 
-from dagster import ExpectationResult, Output, OutputDefinition, solid
+from dagster import ExpectationResult, Output, OutputDefinition, RetryRequested, solid
 from pandas import DataFrame
 from pyspark.sql import DataFrame as SparkDF
 from pyspark.sql.types import (
@@ -61,6 +61,31 @@ def download_items(context, id_range: Tuple[int, int]) -> Output:
         "items",
         metadata={"Non-empty items": len(non_none_rows), "Empty items": rows.count(None)},
     )
+
+
+@solid(
+    required_resource_keys={"hn_client"},
+    description="Downloads all of the items for the id range passed in as input and return the List of items.",
+)
+def dynamic_download_items(context, id_range: Tuple[int, int]) -> List[dict]:
+    start_id, end_id = id_range
+
+    context.log.info(f"Downloading range {start_id} up to {end_id}: {end_id - start_id} items.")
+    try:
+        return [
+            context.resources.hn_client.fetch_item_by_id(item_id)
+            for item_id in range(start_id, end_id)
+        ]
+    except Exception as e:
+        raise RetryRequested(max_retries=3) from e
+
+
+@solid(
+    output_defs=[OutputDefinition(name="items", io_manager_key="parquet_io_manager")],
+    description="Creates a DataFrame with all the entries from combining batch of items.",
+)
+def join_items(_, item_batches: List[List[dict]]) -> DataFrame:
+    return DataFrame(item for items in item_batches for item in items)
 
 
 @solid(

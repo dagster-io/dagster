@@ -13,11 +13,17 @@ from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 from dagster_pyspark import pyspark_resource
 from dagster_slack import slack_resource
 from hacker_news.hooks.slack_hooks import slack_on_success
-from hacker_news.resources.hn_resource import hn_api_client, hn_snapshot_client
+from hacker_news.resources.hn_resource import hn_api_subsample_client, hn_snapshot_client
 from hacker_news.resources.parquet_io_manager import partitioned_parquet_io_manager
 from hacker_news.resources.snowflake_io_manager import time_partitioned_snowflake_io_manager
-from hacker_news.solids.download_items import HN_ACTION_SCHEMA, download_items, split_types
-from hacker_news.solids.id_range_for_time import id_range_for_time
+from hacker_news.solids.download_items import (
+    HN_ACTION_SCHEMA,
+    download_items,
+    dynamic_download_items,
+    join_items,
+    split_types,
+)
+from hacker_news.solids.id_range_for_time import dynamic_id_ranges_for_time, id_range_for_time
 from hacker_news.solids.upload_to_database import make_upload_to_database_solid
 
 # the configuration we'll need to make our Snowflake-based IOManager work
@@ -39,6 +45,7 @@ S3_SPARK_CONF = {
         "spark.hadoop.fs.s3.buffer.dir": "/tmp",
     }
 }
+
 
 MODE_TEST = ModeDefinition(
     name="test_local_data",
@@ -72,7 +79,7 @@ MODE_LOCAL = ModeDefinition(
         ),
         "db_io_manager": fs_io_manager,
         "pyspark": pyspark_resource,
-        "hn_client": hn_api_client,
+        "hn_client": hn_api_subsample_client.configured({"sample_rate": 10}),
         "slack": ResourceDefinition.mock_resource(),
         "base_url": ResourceDefinition.hardcoded_resource("http://localhost:3000", "Dagit URL"),
     },
@@ -95,7 +102,7 @@ MODE_STAGING = ModeDefinition(
         ),
         "db_io_manager": time_partitioned_snowflake_io_manager.configured(SNOWFLAKE_CONF),
         "pyspark": pyspark_resource.configured(S3_SPARK_CONF),
-        "hn_client": hn_api_client,
+        "hn_client": hn_api_subsample_client.configured({"sample_rate": 10}),
         "slack": ResourceDefinition.mock_resource(),
         "base_url": ResourceDefinition.hardcoded_resource("http://demo.elementl.dev", "Dagit URL"),
     },
@@ -118,7 +125,7 @@ MODE_PROD = ModeDefinition(
         ),
         "db_io_manager": time_partitioned_snowflake_io_manager.configured(SNOWFLAKE_CONF),
         "pyspark": pyspark_resource.configured(S3_SPARK_CONF),
-        "hn_client": hn_api_client,
+        "hn_client": hn_api_subsample_client.configured({"sample_rate": 10}),
         "slack": slack_resource.configured({"token": {"env": "SLACK_DAGSTER_ETL_BOT_TOKEN"}}),
         "base_url": ResourceDefinition.hardcoded_resource(
             "https://demo.elementl.show", "Dagit URL"
@@ -132,7 +139,7 @@ download_pipeline_properties = {
     "#### About\n"
     "This pipeline downloads all items from the HN API for a given day, "
     "splits the items into stories and comment types using Spark, and uploads filtered items to "
-    "the corresponding stories or comments BigQuery table",
+    "the corresponding stories or comments Snowflake table",
     "mode_defs": [
         MODE_TEST,
         MODE_LOCAL,
@@ -150,22 +157,44 @@ download_pipeline_properties = {
     },
 }
 
+DEFAULT_PARTITION_RESOURCE_CONFIG = {
+    "partition_start": {"config": "2020-12-30 00:00:00"},
+    "partition_end": {"config": "2020-12-30 01:00:00"},
+}
+
 PRESET_TEST = PresetDefinition(
     name="test_local_data",
     run_config={
-        "parquet_io_manager": {"config": {"base_path": get_system_temp_directory()}},
-        "partition_start": {"config": "2020-12-30 00:00:00"},
-        "partition_end": {"config": "2020-12-30 01:00:00"},
+        "resources": dict(
+            parquet_io_manager={"config": {"base_path": get_system_temp_directory()}},
+            **DEFAULT_PARTITION_RESOURCE_CONFIG,
+        ),
     },
     mode="test_local_data",
 )
 
-"""
-Here, we generate solids by use of the make_upload_to_database_solid factory method. This pattern
-is used to create solids with similar properties (in this case, they perform the same exact
-function, only differing in what table name they attach to their Output's metadata), without having
-to duplicate our code.
-"""
+PRESET_TEST_DYNAMIC = PresetDefinition(
+    name="test_local_data",
+    run_config={
+        "solids": {
+            "dynamic_id_ranges_for_time": {
+                "config": {
+                    "batch_size": 100,
+                }
+            },
+        },
+        "resources": dict(
+            parquet_io_manager={"config": {"base_path": get_system_temp_directory()}},
+            **DEFAULT_PARTITION_RESOURCE_CONFIG,
+        ),
+    },
+    mode="test_local_data",
+)
+
+# Here, we generate solids by use of the make_upload_to_database_solid factory method. This pattern
+# is used to create solids with similar properties (in this case, they perform the same exact
+# function, only differing in what table name they attach to their Output's metadata), without having
+# to duplicate our code.
 upload_comments = make_upload_to_database_solid(
     table="hackernews.comments",
     schema=HN_ACTION_SCHEMA,
@@ -181,5 +210,18 @@ def download_pipeline():
     comments, stories = split_types(
         download_items.with_hooks({slack_on_success})(id_range_for_time())
     )
+    upload_comments(comments)
+    upload_stories(stories)
+
+
+# This pipeline does the same thing as the the regular download_pipeline, but with the map / collect
+# pattern. This allows the download operation to be parallelized.
+@pipeline(**download_pipeline_properties, preset_defs=[PRESET_TEST_DYNAMIC])
+def dynamic_download_pipeline():
+    ranges = dynamic_id_ranges_for_time()
+    items = ranges.map(dynamic_download_items)  # pylint: disable=no-member
+    raw_df = join_items.with_hooks({slack_on_success})(items.collect())
+    comments, stories = split_types(raw_df)
+
     upload_comments(comments)
     upload_stories(stories)

@@ -60,14 +60,14 @@ def connect_snowflake(config, schema="public"):
 
 
 @io_manager(
-    config_schema=dict(**SNOWFLAKE_CONFIG_SCHEMA),
+    config_schema=SNOWFLAKE_CONFIG_SCHEMA,
 )
 def snowflake_io_manager(_):
     return SnowflakeIOManager()
 
 
 @io_manager(
-    config_schema=dict(**SNOWFLAKE_CONFIG_SCHEMA),
+    config_schema=SNOWFLAKE_CONFIG_SCHEMA,
     required_resource_keys={"partition_start", "partition_end"},
 )
 def time_partitioned_snowflake_io_manager(_):
