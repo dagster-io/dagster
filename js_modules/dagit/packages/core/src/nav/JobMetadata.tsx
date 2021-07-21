@@ -34,6 +34,8 @@ interface Props {
 
 export const JobMetadata: React.FC<Props> = (props) => {
   const {pipelineName, pipelineMode, repoAddress} = props;
+  const {flagPipelineModeTuples} = useFeatureFlags();
+
   const {data, loading} = useQuery<JobMetadataQuery>(JOB_METADATA_QUERY, {
     variables: {
       params: {
@@ -43,7 +45,7 @@ export const JobMetadata: React.FC<Props> = (props) => {
       },
       runsFilter: {
         pipelineName,
-        mode: pipelineMode,
+        mode: flagPipelineModeTuples ? pipelineMode : undefined,
       },
     },
   });
