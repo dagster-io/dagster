@@ -1,5 +1,35 @@
 # Changelog
 
+# 0.12.3
+
+### New
+
+- The Dagit web app now has a strict Content Security Policy.
+- Introduced a new decorator `[@run_status_sensor](https://docs.dagster.io/_apidocs/schedules-sensors#dagster.run_status_sensor)` which defines sensors that react to given `PipelineRunStatus`.
+- You can now specify a `solid` on `build_hook_context`. This allows you to access the `hook_context.solid` parameter.
+
+### Bugfixes
+
+- `dagster`’s dependency on `docstring-parser` has been loosened.
+- `@pipeline` now pulls its `description` from the doc string on the decorated function if it is provided.
+- The sensor example generated via `dagster new-project` now no longer targets a non-existent mode.
+
+### Community Contributions
+
+- Thanks for the docs typo fix @cvoegele!
+
+### Experimental
+
+- The “jobs” key is now supported when returning a dict from `@repository` functions.
+- `GraphDefinition.to_job` now supports the `description` argument.
+- Jobs with nested Graph structures no longer fail to load in dagit.
+- Previously, the ECS reference deployment granted its tasks the `AmazonECS_FullAccess` policy. Now, the attached roles has been more narrowly scoped to only allow the daemon and dagit tasks to interact with the ECS actions required by the EcsRunLauncher.
+- The EcsRunLauncher launches ECS tasks by setting a command override. Previously, if the Task Definition it was using also defined an entrypoint, it would concatenate the entrypoint and the overridden command which would cause launches to fail with `Error: Got unexpected extra arguments`. Now, it ignores the entrypoint and launches succeed.
+
+### Documentation
+
+- Fixed a broken link in the sensor testing overview.
+
 # 0.12.2
 
 ### New
