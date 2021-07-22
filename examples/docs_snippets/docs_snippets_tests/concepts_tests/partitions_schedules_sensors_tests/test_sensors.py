@@ -3,6 +3,7 @@ from dagster.core.definitions.run_request import RunRequest
 from docs_snippets.concepts.partitions_schedules_sensors.sensors.sensor_alert import (
     email_on_pipeline_failure,
     my_slack_on_pipeline_failure,
+    my_slack_on_pipeline_success,
     slack_on_pipeline_failure,
 )
 from docs_snippets.concepts.partitions_schedules_sensors.sensors.sensors import (
@@ -58,11 +59,13 @@ def test_pipeline_failure_sensor_def():
             my_slack_on_pipeline_failure,
             slack_on_pipeline_failure,
             email_on_pipeline_failure,
+            my_slack_on_pipeline_success,
         ]
 
     assert my_repo.has_sensor_def("my_slack_on_pipeline_failure")
     assert my_repo.has_sensor_def("slack_on_pipeline_failure")
     assert my_repo.has_sensor_def("email_on_pipeline_failure")
+    assert my_repo.has_sensor_def("my_slack_on_pipeline_success")
 
 
 def test_sensor_testing_example():

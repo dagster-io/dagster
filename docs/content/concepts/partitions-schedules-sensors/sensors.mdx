@@ -363,11 +363,40 @@ def multi_asset_sensor(context):
     )
 ```
 
-## Examples
+## Run status sensors
+
+If you want to act on the status of a pipeline run, Dagster provides a way to create a sensor that reacts to run statuses. You can use <PyObject object="run_status_sensor" /> with a specified <PyObject object="PipelineRunStatus" /> to decorate a function that will run when the given status occurs. This can be used to send alerts to a monitoring service on pipeline failure or report a run success.
+
+Here is an example of a sensor that reports pipeline success:
+
+```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_success_sensor_marker endbefore=end_success_sensor_marker
+from dagster import run_status_sensor, RunStatusSensorContext, PipelineRunStatus
+
+
+@run_status_sensor(pipeline_run_status=PipelineRunStatus.SUCCESS)
+def my_slack_on_pipeline_success(context: RunStatusSensorContext):
+    slack_client = WebClient(token=os.environ["SLACK_DAGSTER_ETL_BOT_TOKEN"])
+
+    slack_client.chat_postMessage(
+        channel="#alert-channel",
+        message=f'Pipeline "{context.pipeline_run.pipeline_name}" succeeded.',
+    )
+```
+
+Then, you can add the sensor to a repository so it can be enabled and used the same as other sensors:
+
+```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_repo_marker endbefore=end_repo_marker
+from dagster import repository
+
+
+@repository
+def my_repository():
+    return my_pipelines + [my_slack_on_pipeline_success]
+```
 
 ### Pipeline failure sensor
 
-If you want to act on pipeline failures, e.g., you need to send an alert to a monitoring service on pipeline failure, Dagster provides a way to create a sensor that reacts to pipeline failure events. You can use <PyObject object="pipeline_failure_sensor" /> to decorate a function that will run when a pipeline run fails.
+Dagster provides a set of special run status sensor decorators for defining sensors that monitor pipeline failure events. You can use <PyObject object="pipeline_failure_sensor" /> to decorate a function that will run when a pipeline run fails.
 
 For example, you can write a sensor that sends a slack message when it runs using this decorator:
 
@@ -385,17 +414,6 @@ def my_slack_on_pipeline_failure(context: PipelineFailureSensorContext):
         channel="#alert-channel",
         message=f'Pipeline "{context.pipeline_run.pipeline_name}" failed. Error: {context.failure_event.message}',
     )
-```
-
-Then, you can add the sensor to a repository so it can be enabled and used the same as other sensors:
-
-```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_repo_marker endbefore=end_repo_marker
-from dagster import repository
-
-
-@repository
-def my_repository():
-    return my_pipelines + [my_slack_on_pipeline_failure]
 ```
 
 **Dagster also provides the following out-of-box pipeline failure sensors:**
@@ -431,6 +449,8 @@ email_on_pipeline_failure = make_email_on_pipeline_failure_sensor(
 ```
 
 Besides, if you would like to set up success or failure handling policies on solids, you can find more information on the [Solid Hooks](/concepts/solids-pipelines/solid-hooks) page.
+
+## Examples
 
 ### S3 sensors
 
