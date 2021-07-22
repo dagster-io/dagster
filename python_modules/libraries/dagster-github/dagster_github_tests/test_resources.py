@@ -75,7 +75,7 @@ def test_github_resource_get_installations_with_hostname():
                         "github_app_id": 123,
                         "github_app_private_rsa_key": FAKE_PRIVATE_RSA_KEY,
                         "github_installation_id": 123,
-                        "github_hostname": 'github.contoso.com',
+                        "github_hostname": "github.contoso.com",
                     }
                 }
             }
