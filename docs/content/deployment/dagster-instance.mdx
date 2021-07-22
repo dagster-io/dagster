@@ -219,8 +219,8 @@ To configure Event Log Storage, you should set the `event_log_storage` attribute
 #### SqliteEventLogStorage (Default)
 
 <PyObject
-  module="dagster.core.storage.event_log"
-  object="SqliteEventLogStorage"
+module="dagster.core.storage.event_log"
+object="SqliteEventLogStorage"
 /> uses a Sqlite database as the backing storage for event logs. However, it utilizes
 a seperate Sqlite database (i.e. directory) for each run. In other words, the storage
 is _run-sharded_. This means that certain useful features, like the Assets page,
@@ -250,8 +250,8 @@ event_log_storage:
 #### ConsolidatedSqliteEventLogStorage <Experimental/>
 
 <PyObject
-  module="dagster.core.storage.event_log"
-  object="ConsolidatedSqliteEventLogStorage"
+module="dagster.core.storage.event_log"
+object="ConsolidatedSqliteEventLogStorage"
 /> is meant to imitate the behavior of Postgres or MySQL-based event log storages,
 as it is not _run sharded_. That is, all runs are persisted to the same Sqlite DB,
 which allows for cross-run queries (& thus use of certain Dagster features, like
@@ -390,8 +390,8 @@ To configure Schedule Storage, you should set the `schedule_storage` key in your
 #### SqliteScheduleStorage (Default)
 
 <PyObject
-  module="dagster.core.storage.schedules"
-  object="SqliteScheduleStorage"
+module="dagster.core.storage.schedules"
+object="SqliteScheduleStorage"
 /> uses a Sqlite DB as the backing schedule storage solution.
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_schedule_storage_sqlite endbefore=end_marker_schedule_storage_sqlite
@@ -643,8 +643,8 @@ To configure Compute Log Storage, set the `compute_logs` key in your `dagster.ya
 #### LocalComputeLogManager (Default)
 
 <PyObject
-  module="dagster.core.storage.local_compute_log_manager"
-  object="LocalComputeLogManager"
+module="dagster.core.storage.local_compute_log_manager"
+object="LocalComputeLogManager"
 /> writes stdout & stderr logs to disk.
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_compute_log_storage_local endbefore=end_marker_compute_log_storage_local
