@@ -374,6 +374,9 @@ class BoundSolidExecutionContext(SolidExecutionContext):
             self.run_id, self.log, ScopedResourcesBuilder(resources._asdict()), dagster_type
         )
 
+    def get_mapping_key(self) -> Optional[str]:
+        return None
+
 
 def build_op_context(
     resources: Optional[Dict[str, Any]] = None,

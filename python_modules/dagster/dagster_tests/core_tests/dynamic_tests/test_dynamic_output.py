@@ -3,6 +3,7 @@ from dagster import (
     DynamicOut,
     DynamicOutput,
     DynamicOutputDefinition,
+    build_solid_context,
     execute_pipeline,
     execute_solid,
     op,
@@ -182,3 +183,8 @@ def test_context_mapping_key():
     result = execute_pipeline(test)
     assert result.success
     assert _observed == [None, "key_1", "key_2"]
+
+    # test standalone doesn't throw as well
+    _observed = []
+    observe_key(build_solid_context())
+    assert _observed == [None]
