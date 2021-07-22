@@ -64,10 +64,6 @@ class BaseWorkspaceRequestContext(IWorkspace):
         pass
 
     @abstractproperty
-    def workspace_snapshot(self) -> Dict[str, WorkspaceLocationEntry]:
-        pass
-
-    @abstractproperty
     def process_context(self) -> "IWorkspaceProcessContext":
         pass
 
@@ -79,80 +75,53 @@ class BaseWorkspaceRequestContext(IWorkspace):
     def permissions(self) -> Dict[str, bool]:
         pass
 
+    @abstractmethod
     def has_permission(self, permission: str) -> bool:
         pass
 
-    def get_location(self, origin):
-        location_name = origin.location_name
-        location_entry = self.workspace_snapshot.get(location_name)
-        if not location_entry:
-            raise DagsterInvariantViolationError(
-                f"Location {location_name} does not exist in workspace"
-            )
-
-        if location_entry.repository_location:
-            return location_entry.repository_location
-
-        error_info = location_entry.load_error
-        raise DagsterRepositoryLocationLoadError(
-            f"Failure loading {location_name}: {error_info.to_string()}",
-            load_error_infos=[error_info],
-        )
-
-    @property
+    @abstractproperty
     def repository_locations(self) -> List[RepositoryLocation]:
-        return [
-            entry.repository_location
-            for entry in self.workspace_snapshot.values()
-            if entry.repository_location
-        ]
+        pass
 
-    @property
+    @abstractproperty
     def repository_location_names(self) -> List[str]:
-        return list(self.workspace_snapshot)
+        pass
 
+    @abstractmethod
     def repository_location_errors(self) -> List[SerializableErrorInfo]:
-        return [entry.load_error for entry in self.workspace_snapshot.values() if entry.load_error]
+        pass
 
+    @abstractmethod
     def get_repository_location(self, name: str) -> RepositoryLocation:
-        if not self.has_repository_location(name):
-            raise Exception(f"Location {name} not in workspace")
-        return cast(RepositoryLocation, self.workspace_snapshot[name].repository_location)
+        pass
 
+    @abstractmethod
     def get_load_status(self, name: str) -> WorkspaceLocationLoadStatus:
-        return self.workspace_snapshot[name].load_status
+        pass
 
+    @abstractmethod
     def has_repository_location_error(self, name: str) -> bool:
-        return self.get_repository_location_error(name) != None
+        pass
 
+    @abstractmethod
     def get_repository_location_error(self, name: str) -> Optional[SerializableErrorInfo]:
-        return self.workspace_snapshot[name].load_error
+        pass
 
+    @abstractmethod
     def has_repository_location_name(self, name: str) -> bool:
-        return bool(self.workspace_snapshot.get(name))
+        pass
 
+    @abstractmethod
     def has_repository_location(self, name: str) -> bool:
-        location_entry = self.workspace_snapshot.get(name)
-        return bool(location_entry and location_entry.repository_location != None)
+        pass
 
+    @abstractmethod
     def is_reload_supported(self, name: str) -> bool:
-        return self.workspace_snapshot[name].origin.is_reload_supported
+        pass
 
+    @abstractmethod
     def is_shutdown_supported(self, name: str) -> bool:
-        return self.workspace_snapshot[name].origin.is_shutdown_supported
-
-    def reload_repository_location(self, name: str) -> "BaseWorkspaceRequestContext":
-        # This method reloads the location on the process context, and returns a new
-        # request context created from the updated process context
-        self.process_context.reload_repository_location(name)
-        return self.process_context.create_request_context()
-
-    def shutdown_repository_location(self, name: str):
-        self.process_context.shutdown_repository_location(name)
-
-    def reload_workspace(self) -> "BaseWorkspaceRequestContext":
-        self.process_context.reload_workspace()
-        return self.process_context.create_request_context()
+        pass
 
     def has_external_pipeline(self, selector: PipelineSelector) -> bool:
         check.inst_param(selector, "selector", PipelineSelector)
@@ -257,6 +226,65 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
     def instance(self) -> DagsterInstance:
         return self._instance
 
+    def get_location(self, origin):
+        location_name = origin.location_name
+        location_entry = self.workspace_snapshot.get(location_name)
+        if not location_entry:
+            raise DagsterInvariantViolationError(
+                f"Location {location_name} does not exist in workspace"
+            )
+
+        if location_entry.repository_location:
+            return location_entry.repository_location
+
+        error_info = location_entry.load_error
+        raise DagsterRepositoryLocationLoadError(
+            f"Failure loading {location_name}: {error_info.to_string()}",
+            load_error_infos=[error_info],
+        )
+
+    @property
+    def repository_locations(self) -> List[RepositoryLocation]:
+        return [
+            entry.repository_location
+            for entry in self.workspace_snapshot.values()
+            if entry.repository_location
+        ]
+
+    @property
+    def repository_location_names(self) -> List[str]:
+        return list(self.workspace_snapshot)
+
+    def repository_location_errors(self) -> List[SerializableErrorInfo]:
+        return [entry.load_error for entry in self.workspace_snapshot.values() if entry.load_error]
+
+    def get_repository_location(self, name: str) -> RepositoryLocation:
+        if not self.has_repository_location(name):
+            raise Exception(f"Location {name} not in workspace")
+        return cast(RepositoryLocation, self.workspace_snapshot[name].repository_location)
+
+    def get_load_status(self, name: str) -> WorkspaceLocationLoadStatus:
+        return self.workspace_snapshot[name].load_status
+
+    def has_repository_location_error(self, name: str) -> bool:
+        return self.get_repository_location_error(name) != None
+
+    def get_repository_location_error(self, name: str) -> Optional[SerializableErrorInfo]:
+        return self.workspace_snapshot[name].load_error
+
+    def has_repository_location_name(self, name: str) -> bool:
+        return bool(self.workspace_snapshot.get(name))
+
+    def has_repository_location(self, name: str) -> bool:
+        location_entry = self.workspace_snapshot.get(name)
+        return bool(location_entry and location_entry.repository_location != None)
+
+    def is_reload_supported(self, name: str) -> bool:
+        return self.workspace_snapshot[name].origin.is_reload_supported
+
+    def is_shutdown_supported(self, name: str) -> bool:
+        return self.workspace_snapshot[name].origin.is_shutdown_supported
+
     @property
     def workspace_snapshot(self) -> Dict[str, WorkspaceLocationEntry]:
         return self._workspace_snapshot
@@ -280,6 +308,19 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
     def has_permission(self, permission: str) -> bool:
         return self._process_context.has_permission(permission)
 
+    def reload_repository_location(self, name: str) -> "WorkspaceRequestContext":
+        # This method reloads the location on the process context, and returns a new
+        # request context created from the updated process context
+        self._process_context.reload_repository_location(name)
+        return self._process_context.create_request_context()
+
+    def shutdown_repository_location(self, name: str):
+        self._process_context.shutdown_repository_location(name)
+
+    def reload_workspace(self) -> "WorkspaceRequestContext":
+        self._process_context.reload_workspace()
+        return self._process_context.create_request_context()
+
 
 class IWorkspaceProcessContext(ABC):
     """
@@ -299,26 +340,12 @@ class IWorkspaceProcessContext(ABC):
                 or http connection.
         """
 
-    def has_permission(self, permission: str) -> bool:
-        pass
-
     @abstractproperty
     def version(self) -> str:
         pass
 
     @abstractproperty
     def location_state_events(self) -> "Subject":
-        pass
-
-    @abstractmethod
-    def reload_repository_location(self, name: str) -> None:
-        pass
-
-    def shutdown_repository_location(self, name: str) -> None:
-        raise NotImplementedError
-
-    @abstractmethod
-    def reload_workspace(self) -> None:
         pass
 
     @abstractproperty
