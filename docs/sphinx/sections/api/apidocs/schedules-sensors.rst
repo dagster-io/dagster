@@ -45,3 +45,9 @@ Sensors
 .. autodecorator:: pipeline_failure_sensor
 
 .. autoclass:: PipelineFailureSensorContext
+
+.. autoclass:: RunStatusSensorDefinition
+
+.. autoclass:: RunStatusSensorContext
+
+.. autodecorator:: run_status_sensor

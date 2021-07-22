@@ -71,7 +71,13 @@ from .partition import Partition, PartitionScheduleDefinition, PartitionSetDefin
 from .partitioned_schedule import schedule_from_partitions
 from .pipeline import PipelineDefinition
 from .pipeline_base import IPipeline
-from .pipeline_sensor import PipelineFailureSensorContext, pipeline_failure_sensor
+from .pipeline_sensor import (
+    PipelineFailureSensorContext,
+    RunStatusSensorContext,
+    RunStatusSensorDefinition,
+    pipeline_failure_sensor,
+    run_status_sensor,
+)
 from .preset import PresetDefinition
 from .reconstructable import (
     ReconstructablePipeline,
