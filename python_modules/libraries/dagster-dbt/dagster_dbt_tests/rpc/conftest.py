@@ -11,7 +11,7 @@ from dagster_dbt import DbtRpcClient
 
 TEST_HOSTNAME = "127.0.0.1"
 TEST_PORT = 8580
-RPC_ESTABLISH_RETRIES = 4
+RPC_ESTABLISH_RETRIES = 10
 RPC_ESTABLISH_RETRY_INTERVAL_S = 1.5
 
 RPC_ENDPOINT = "http://{hostname}:{port}/jsonrpc".format(hostname=TEST_HOSTNAME, port=TEST_PORT)
