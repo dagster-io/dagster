@@ -1,7 +1,8 @@
 trigger:
-  branches: master
-pr:
-  autoCancel: true
+  branches:
+    include:
+      - master
+pr: none
 parameters:
   - name: py3_versions
     type: object
