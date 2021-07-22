@@ -94,9 +94,19 @@ class DagsterDaemon(AbstractContextManager):
                             until,
                         )
 
-                    self._check_add_heartbeat(
-                        instance, daemon_uuid, heartbeat_interval_seconds, error_interval_seconds
-                    )
+                    try:
+                        self._check_add_heartbeat(
+                            instance,
+                            daemon_uuid,
+                            heartbeat_interval_seconds,
+                            error_interval_seconds,
+                        )
+                    except Exception:  # pylint: disable=broad-except
+                        self._logger.error(
+                            "Failed to add heartbeat: \n{}".format(
+                                serializable_error_info_from_exc_info(sys.exc_info())
+                            )
+                        )
                     daemon_shutdown_event.wait(0.5)
 
     def _run_iteration(
