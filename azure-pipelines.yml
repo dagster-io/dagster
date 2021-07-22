@@ -1,3 +1,7 @@
+trigger:
+  branches: master
+pr:
+  autoCancel: true
 parameters:
   - name: py3_versions
     type: object
