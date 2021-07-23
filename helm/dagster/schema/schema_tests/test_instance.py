@@ -9,6 +9,10 @@ from schema.charts.dagster.subschema.compute_log_manager import (
     AzureBlobComputeLogManager as AzureBlobComputeLogManagerModel,
 )
 from schema.charts.dagster.subschema.compute_log_manager import (
+    ComputeLogManager,
+    ComputeLogManagerType,
+)
+from schema.charts.dagster.subschema.compute_log_manager import (
     GCSComputeLogManager as GCSComputeLogManagerModel,
 )
 from schema.charts.dagster.subschema.compute_log_manager import (
@@ -153,6 +157,26 @@ def test_custom_run_coordinator_config(template: HelmTemplate):
     assert instance["run_coordinator"]["module"] == module
     assert instance["run_coordinator"]["class"] == class_
     assert instance["run_coordinator"]["config"] == config
+
+
+@pytest.mark.parametrize(
+    "compute_log_manager_type",
+    [ComputeLogManagerType.NOOP, ComputeLogManagerType.LOCAL],
+    ids=["noop", "local compute log manager becomes noop"],
+)
+def test_noop_compute_log_manager(
+    template: HelmTemplate, compute_log_manager_type: ComputeLogManagerType
+):
+    helm_values = DagsterHelmValues.construct(
+        computeLogManager=ComputeLogManager.construct(type=compute_log_manager_type)
+    )
+
+    configmaps = template.render(helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    compute_logs_config = instance["compute_logs"]
+
+    assert compute_logs_config["module"] == "dagster.core.storage.noop_compute_log_manager"
+    assert compute_logs_config["class"] == "NoOpComputeLogManager"
 
 
 @pytest.mark.parametrize(

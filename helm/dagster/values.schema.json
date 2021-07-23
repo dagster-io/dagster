@@ -827,6 +827,7 @@
             "title": "ComputeLogManagerType",
             "description": "An enumeration.",
             "enum": [
+                "NoOpComputeLogManager",
                 "LocalComputeLogManager",
                 "AzureBlobComputeLogManager",
                 "GCSComputeLogManager",

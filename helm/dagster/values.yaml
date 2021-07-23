@@ -131,13 +131,14 @@ dagit:
 ####################################################################################################
 computeLogManager:
   # Type can be one of [
-  #   LocalComputeLogManager,
+  #   NoOpComputeLogManager,
+  #   LocalComputeLogManager (deprecated - if set, NoOpComputeLogManager will be used instead),
   #   AzureBlobComputeLogManager,
   #   GCSComputeLogManager,
   #   S3ComputeLogManager,
   #   CustomComputeLogManager,
   # ]
-  type: LocalComputeLogManager
+  type: NoOpComputeLogManager
   config: {}
   ##  Uncomment this configuration if the AzureBlobComputeLogManager is selected
   #   azureBlobComputeLogManager:

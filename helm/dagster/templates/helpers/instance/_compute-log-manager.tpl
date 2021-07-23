@@ -8,6 +8,11 @@
 {{- end }}
 {{- end }}
 
+{{- define "dagsterYaml.computeLogManager.noop" }}
+module: dagster.core.storage.noop_compute_log_manager
+class: NoOpComputeLogManager
+{{- end }}
+
 {{- define "dagsterYaml.computeLogManager.azure" }}
 {{- $azureBlobComputeLogManagerConfig := .Values.computeLogManager.config.azureBlobComputeLogManager }}
 module: dagster_azure.blob.compute_log_manager
