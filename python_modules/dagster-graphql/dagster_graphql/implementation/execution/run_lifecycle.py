@@ -23,16 +23,8 @@ def compute_step_keys_to_execute(graphene_info, external_pipeline, execution_par
 
     if not execution_params.step_keys and is_resume_retry(execution_params):
         # Get step keys from parent_run_id if it's a resume/retry
-        external_execution_plan = get_external_execution_plan_or_raise(
-            graphene_info=graphene_info,
-            external_pipeline=external_pipeline,
-            mode=execution_params.mode,
-            run_config=execution_params.run_config,
-            step_keys_to_execute=None,
-            known_state=None,
-        )
         return get_retry_steps_from_execution_plan(
-            instance, external_execution_plan, execution_params.execution_metadata.parent_run_id
+            instance, external_pipeline, execution_params.execution_metadata.parent_run_id
         )
     else:
         known_state = None
