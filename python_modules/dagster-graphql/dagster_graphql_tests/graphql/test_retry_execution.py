@@ -474,8 +474,9 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         )
 
         query_result = result_two.data["launchPipelineReexecution"]
-        assert query_result["__typename"] == "InvalidStepError"
-        assert query_result["invalidStepKey"] == "nope"
+        assert query_result["__typename"] == "PythonError"
+        assert query_result["className"] == "DagsterExecutionStepNotFoundError"
+        assert "Can not build subset plan from unknown step: nope" in query_result["message"]
 
 
 class TestHardFailures(ExecutingGraphQLContextTestMatrix):
