@@ -1,8 +1,10 @@
+import os
 from tempfile import TemporaryDirectory
 
 from dagster import (
     ModeDefinition,
     ResourceDefinition,
+    build_init_resource_context,
     build_input_context,
     build_output_context,
     execute_pipeline,
@@ -13,8 +15,10 @@ from dagster import (
 from dagster.core.storage.memoizable_io_manager import (
     MemoizableIOManager,
     VersionedPickledObjectFilesystemIOManager,
+    versioned_filesystem_io_manager,
 )
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
+from dagster.core.test_utils import instance_for_test
 
 
 def test_versioned_pickled_object_filesystem_io_manager():
@@ -69,3 +73,14 @@ def test_versioned_io_manager_with_resources():
     execute_pipeline(basic_pipeline)
 
     assert occurrence_log == ["has", "has", "handle"]
+
+
+def test_versioned_filesystem_io_manager_default_base_dir():
+    with TemporaryDirectory() as temp_dir:
+        with instance_for_test(temp_dir=temp_dir) as instance:
+            my_io_manager = versioned_filesystem_io_manager(
+                build_init_resource_context(instance=instance)
+            )
+            assert my_io_manager.base_dir == os.path.join(
+                instance.storage_directory(), "versioned_outputs"
+            )

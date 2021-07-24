@@ -79,7 +79,7 @@ class VersionedPickledObjectFilesystemIOManager(MemoizableIOManager):
         return os.path.exists(filepath) and not os.path.isdir(filepath)
 
 
-@io_manager(config_schema={"base_dir": Field(StringSource, is_required=True)})
+@io_manager(config_schema={"base_dir": Field(StringSource, is_required=False)})
 @experimental
 def versioned_filesystem_io_manager(init_context):
     """Filesystem IO manager that utilizes versioning of stored objects.
@@ -90,5 +90,7 @@ def versioned_filesystem_io_manager(init_context):
     output.
     """
     return VersionedPickledObjectFilesystemIOManager(
-        base_dir=init_context.resource_config.get("base_dir")
+        base_dir=init_context.resource_config.get(
+            "base_dir", os.path.join(init_context.instance.storage_directory(), "versioned_outputs")
+        )
     )
