@@ -7,7 +7,6 @@ from dagster.core.definitions import InputDefinition, NodeHandle, PipelineDefini
 from dagster.core.definitions.events import AssetLineageInfo
 from dagster.core.errors import (
     DagsterExecutionLoadInputError,
-    DagsterInvariantViolationError,
     DagsterTypeLoadingError,
     user_code_error_boundary,
 )
@@ -166,8 +165,28 @@ class FromRootInputManager(
         )
 
     def compute_version(self, step_versions, pipeline_def, resolved_run_config) -> Optional[str]:
-        raise DagsterInvariantViolationError(
-            "Root input managers are currently not supported with memoization."
+        from ..resolve_versions import resolve_config_version
+
+        solid = pipeline_def.get_solid(self.solid_handle)
+        root_manager_key = solid.input_def_named(self.input_name).root_manager_key
+        root_manager_def = pipeline_def.get_mode_definition(resolved_run_config.mode).resource_defs[
+            root_manager_key
+        ]
+
+        if pipeline_def.version_strategy is not None:
+            root_manager_def_version = pipeline_def.version_strategy.get_resource_version(
+                root_manager_def
+            )
+        else:
+            root_manager_def_version = root_manager_def.version
+
+        solid_config = resolved_run_config.solids.get(solid.name)
+        input_config = solid_config.inputs.get(self.input_name)
+        resource_config = resolved_run_config.resources.get(root_manager_key).config
+        return join_and_hash(
+            resolve_config_version(input_config),
+            resolve_config_version(resource_config),
+            root_manager_def_version,
         )
 
     def required_resource_keys(self, pipeline_def: PipelineDefinition) -> Set[str]:

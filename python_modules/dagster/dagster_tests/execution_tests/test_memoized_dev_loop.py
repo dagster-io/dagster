@@ -1,6 +1,14 @@
 import tempfile
 
-from dagster import execute_pipeline, graph, op, reexecute_pipeline, resource
+from dagster import (
+    In,
+    execute_pipeline,
+    graph,
+    op,
+    reexecute_pipeline,
+    resource,
+    root_input_manager,
+)
 from dagster.core.definitions.version_strategy import VersionStrategy
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.storage.memoizable_io_manager import versioned_filesystem_io_manager
@@ -152,7 +160,7 @@ def test_memoization_with_default_strategy_overriden():
             unmemoized_plan = create_execution_plan(my_job, instance=instance)
             assert len(unmemoized_plan.step_keys_to_execute) == 1
 
-            result = my_job.execute_in_process()
+            result = my_job.execute_in_process(instance=instance)
             assert result.success
 
             assert len(recorder) == 1
@@ -163,7 +171,7 @@ def test_memoization_with_default_strategy_overriden():
             memoized_plan = create_execution_plan(my_job, instance=instance)
             assert len(memoized_plan.step_keys_to_execute) == 0
 
-            result = my_job.execute_in_process()
+            result = my_job.execute_in_process(instance=instance)
             assert result.success
 
             assert len(recorder) == 1
@@ -174,3 +182,38 @@ def test_memoization_with_default_strategy_overriden():
                 my_job, instance=instance, tags={MEMOIZED_RUN_TAG: "false"}
             )
             assert len(unmemoized_plan.step_keys_to_execute) == 1
+
+
+def test_version_strategy_root_input_manager():
+    class MyVersionStrategy(VersionStrategy):
+        def get_solid_version(self, _):
+            return "foo"
+
+        def get_resource_version(self, _):
+            return "foo"
+
+    @root_input_manager
+    def my_input_manager(_):
+        return 5
+
+    @op(ins={"x": In(root_manager_key="my_input_manager")})
+    def my_op(x):
+        return x
+
+    @graph
+    def my_graph():
+        my_op()
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with instance_for_test(temp_dir=temp_dir) as instance:
+            my_job = my_graph.to_job(
+                resource_defs={
+                    "io_manager": versioned_filesystem_io_manager,
+                    "my_input_manager": my_input_manager,
+                },
+                version_strategy=MyVersionStrategy(),
+            )
+            result = my_job.execute_in_process(instance=instance)
+            assert result.success
+            post_memoization_plan = create_execution_plan(my_job, instance=instance)
+            assert len(post_memoization_plan.step_keys_to_execute) == 0

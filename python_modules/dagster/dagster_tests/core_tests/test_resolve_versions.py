@@ -16,6 +16,7 @@ from dagster import (
     io_manager,
     pipeline,
     resource,
+    root_input_manager,
     solid,
     usable_as_dagster_type,
 )
@@ -570,3 +571,148 @@ def test_memoized_plan_disable_memoization():
             my_pipeline, instance=instance, tags={MEMOIZED_RUN_TAG: "false"}
         )
         assert len(unmemoized_again.step_keys_to_execute) == 1
+
+
+def test_memoized_plan_root_input_manager():
+    @root_input_manager(version="foo")
+    def my_input_manager():
+        return 5
+
+    @solid(input_defs=[InputDefinition("x", root_manager_key="my_input_manager")], version="foo")
+    def my_solid_takes_input(x):
+        return x
+
+    @pipeline(
+        mode_defs=[
+            ModeDefinition(
+                resource_defs={
+                    "io_manager": IOManagerDefinition.hardcoded_io_manager(
+                        VersionedInMemoryIOManager()
+                    ),
+                    "my_input_manager": my_input_manager,
+                },
+            ),
+        ],
+        tags={MEMOIZED_RUN_TAG: "true"},
+    )
+    def my_pipeline():
+        my_solid_takes_input()
+
+    with instance_for_test() as instance:
+        plan = create_execution_plan(my_pipeline, instance=instance)
+        assert (
+            plan.get_version_for_step_output_handle(
+                StepOutputHandle("my_solid_takes_input", "result")
+            )
+            is not None
+        )
+
+
+def test_memoized_plan_root_input_manager_input_config():
+    @root_input_manager(version="foo", input_config_schema={"my_str": str})
+    def my_input_manager():
+        return 5
+
+    @solid(input_defs=[InputDefinition("x", root_manager_key="my_input_manager")], version="foo")
+    def my_solid_takes_input(x):
+        return x
+
+    @pipeline(
+        mode_defs=[
+            ModeDefinition(
+                resource_defs={
+                    "io_manager": IOManagerDefinition.hardcoded_io_manager(
+                        VersionedInMemoryIOManager()
+                    ),
+                    "my_input_manager": my_input_manager,
+                },
+            ),
+        ],
+        tags={MEMOIZED_RUN_TAG: "true"},
+    )
+    def my_pipeline():
+        my_solid_takes_input()
+
+    input_config = {"my_str": "foo"}
+    run_config = {"solids": {"my_solid_takes_input": {"inputs": {"x": input_config}}}}
+    with instance_for_test() as instance:
+        plan = create_execution_plan(
+            my_pipeline,
+            instance=instance,
+            run_config=run_config,
+        )
+        output_version = plan.get_version_for_step_output_handle(
+            StepOutputHandle("my_solid_takes_input", "result")
+        )
+
+        assert output_version is not None
+
+        input_config["my_str"] = "bar"
+
+        plan = create_execution_plan(
+            my_pipeline,
+            instance=instance,
+            run_config=run_config,
+        )
+
+        new_output_version = plan.get_version_for_step_output_handle(
+            StepOutputHandle("my_solid_takes_input", "result")
+        )
+
+        # Ensure that after changing input config, the version changes.
+        assert not new_output_version == output_version
+
+
+def test_memoized_plan_root_input_manager_resource_config():
+    @root_input_manager(version="foo", config_schema={"my_str": str})
+    def my_input_manager():
+        return 5
+
+    @solid(input_defs=[InputDefinition("x", root_manager_key="my_input_manager")], version="foo")
+    def my_solid_takes_input(x):
+        return x
+
+    @pipeline(
+        mode_defs=[
+            ModeDefinition(
+                resource_defs={
+                    "io_manager": IOManagerDefinition.hardcoded_io_manager(
+                        VersionedInMemoryIOManager()
+                    ),
+                    "my_input_manager": my_input_manager,
+                },
+            ),
+        ],
+        tags={MEMOIZED_RUN_TAG: "true"},
+    )
+    def my_pipeline():
+        my_solid_takes_input()
+
+    resource_config = {"my_str": "foo"}
+    run_config = {"resources": {"my_input_manager": {"config": resource_config}}}
+    with instance_for_test() as instance:
+        plan = create_execution_plan(
+            my_pipeline,
+            instance=instance,
+            run_config=run_config,
+        )
+        output_version = plan.get_version_for_step_output_handle(
+            StepOutputHandle("my_solid_takes_input", "result")
+        )
+
+        assert output_version is not None
+
+        resource_config["my_str"] = "bar"
+
+        plan = create_execution_plan(
+            my_pipeline,
+            instance=instance,
+            run_config=run_config,
+        )
+
+        new_output_version = plan.get_version_for_step_output_handle(
+            StepOutputHandle("my_solid_takes_input", "result")
+        )
+
+        # Ensure that after changing resource config, the version changes.
+        assert not new_output_version == output_version
