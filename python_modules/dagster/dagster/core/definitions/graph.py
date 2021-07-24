@@ -46,6 +46,7 @@ from .logger import LoggerDefinition
 from .output import OutputDefinition, OutputMapping
 from .preset import PresetDefinition
 from .solid_container import create_execution_structure, validate_dependency_dict
+from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
     from dagster.core.instance import DagsterInstance
@@ -366,6 +367,7 @@ class GraphDefinition(NodeDefinition):
         logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
         executor_def: Optional["ExecutorDefinition"] = None,
         hooks: Optional[AbstractSet[HookDefinition]] = None,
+        version_strategy: Optional[VersionStrategy] = None,
     ) -> "PipelineDefinition":
         """
         Make this graph in to an executable Job by providing remaining components required for execution.
@@ -404,6 +406,9 @@ class GraphDefinition(NodeDefinition):
                 A dictionary of string logger identifiers to their implementations.
             executor_def (Optional[ExecutorDefinition]):
                 How this Job will be executed. Defaults to :py:class:`multiprocess_executor` .
+            version_strategy (Optional[VersionStrategy]):
+                Defines how each solid (and optionally, resource) in the job can be versioned. If
+                provided, memoizaton will be enabled for this job.
 
         Returns:
             PipelineDefinition: The "Job" currently implemented as a single-mode pipeline
@@ -464,6 +469,7 @@ class GraphDefinition(NodeDefinition):
             preset_defs=presets,
             tags=tags,
             hook_defs=hooks,
+            version_strategy=version_strategy,
         )
 
     def coerce_to_job(self):

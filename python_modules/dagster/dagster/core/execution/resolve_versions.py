@@ -29,38 +29,6 @@ def resolve_config_version(config_value):
         )
 
 
-def resolve_resource_versions(resolved_run_config, pipeline_definition):
-    """Resolves the version of each resource provided within the ResolvedRunConfig.
-
-    If `resolved_run_config` was constructed from the mode represented by `mode_def`, then
-    `resolved_run_config` will have an entry for each resource in the mode (even if it does not
-    require any configuration). For each resource, calculates a version for the run config provided
-    by `resolved_run_config`, and joins with the corresponding version for the resource definition.
-
-    Args:
-        resolved_run_config (ResolvedRunConfig): Provides configuration values passed for each
-            resource.
-        pipeline_definition (PipelineDefinition): Definition for pipeline that configuration is
-            provided for.
-    Returns:
-        Dict[str, Optional[str]]: dictionary where each key is a resource key, and each value is
-            the resolved version of the corresponding resource.
-    """
-
-    mode = resolved_run_config.mode
-    mode_definition = pipeline_definition.get_mode_definition(mode)
-
-    resource_versions = {}
-
-    for resource_key, resource_config in resolved_run_config.resources.items():
-        resource_def_version = mode_definition.resource_defs[resource_key].version
-        resource_versions[resource_key] = join_and_hash(
-            resolve_config_version(resource_config.config), resource_def_version
-        )
-
-    return resource_versions
-
-
 def resolve_step_versions(pipeline_def, execution_plan, resolved_run_config):
     """Resolves the version of each step in an execution plan.
 
@@ -87,7 +55,8 @@ def resolve_step_versions(pipeline_def, execution_plan, resolved_run_config):
             If a step has no computed version, then the step key maps to None.
     """
 
-    resource_versions_by_key = resolve_resource_versions(resolved_run_config, pipeline_def)
+    resource_versions = {}
+    resource_defs = pipeline_def.get_mode_definition(resolved_run_config.mode).resource_defs
 
     step_versions = {}  # step_key (str) -> version (str)
 
@@ -112,24 +81,46 @@ def resolve_step_versions(pipeline_def, execution_plan, resolved_run_config):
         input_versions = [version for version in input_version_dict.values()]
 
         solid_name = str(step.solid_handle)
-        solid_def_version = solid_def.version
+
+        solid_def_version = None
+        if solid_def.version is not None:
+            solid_def_version = solid_def.version
+        elif pipeline_def.version_strategy is not None:
+            solid_def_version = pipeline_def.version_strategy.get_solid_version(solid_def)
+
         if solid_def_version is None:
             raise DagsterInvariantViolationError(
-                f"No version argument provided for solid '{solid_def.name}' when using memoization. "
-                "Please provide a version argument to the '@solid' decorator when defining your solid."
+                f"While using memoization, version for solid '{solid_def.name}' was None. Please "
+                "either provide a versioning strategy for your job, or provide a version using the "
+                "solid decorator."
             )
+
         solid_config_version = resolve_config_version(resolved_run_config.solids[solid_name].config)
 
-        resource_versions = []
+        resource_versions_for_solid = []
         for resource_key in solid_def.required_resource_keys:
-            if resource_versions_by_key[resource_key] is None:
-                raise DagsterInvariantViolationError(
-                    f"No version argument provided for resource '{resource_key}' when using "
-                    "memoization. Please provide a version argument to the '@resource' decorator "
-                    "when defining your resource."
+            if resource_key not in resource_versions:
+                resource_def = resource_defs[resource_key]
+                resource_def_version = None
+                if resource_def.version is not None:
+                    resource_def_version = resource_def.version
+                else:
+                    resource_def_version = pipeline_def.version_strategy.get_resource_version(
+                        resource_def
+                    )
+                if resource_def_version is None:
+                    raise DagsterInvariantViolationError(
+                        f"While using memoization, version for resource '{resource_key}' was None. Please "
+                        "either provide a versioning strategy for your job, or provide a version using the "
+                        "resource decorator."
+                    )
+                resource_config = resolved_run_config.resources[resource_key].config
+                resource_config_version = resolve_config_version(resource_config)
+                resource_versions[resource_key] = join_and_hash(
+                    resource_config_version, resource_def_version
                 )
-            resource_versions.append(resource_versions_by_key[resource_key])
-        solid_resources_version = join_and_hash(*resource_versions)
+            resource_versions_for_solid.append(resource_versions[resource_key])
+        solid_resources_version = join_and_hash(*resource_versions_for_solid)
         solid_version = join_and_hash(
             solid_def_version, solid_config_version, solid_resources_version
         )

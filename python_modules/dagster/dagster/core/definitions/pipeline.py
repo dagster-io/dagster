@@ -19,6 +19,7 @@ from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 from dagster.core.types.dagster_type import DagsterType, DagsterTypeKind
 from dagster.core.utils import str_format_set
 from dagster.utils import merge_dicts
+from dagster.utils.backcompat import experimental_class_warning
 
 from .dependency import (
     DependencyDefinition,
@@ -37,6 +38,7 @@ from .mode import ModeDefinition
 from .preset import PresetDefinition
 from .solid import NodeDefinition
 from .utils import validate_tags
+from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
     from .run_config_schema import RunConfigSchema
@@ -151,6 +153,7 @@ class PipelineDefinition:
         solid_retry_policy: Optional[RetryPolicy] = None,
         graph_def=None,
         _parent_pipeline_def=None,  # https://github.com/dagster-io/dagster/issues/2115
+        version_strategy: Optional[VersionStrategy] = None,
     ):
         # If a graph is specificed directly use it
         if check.opt_inst_param(graph_def, "graph_def", GraphDefinition):
@@ -245,6 +248,13 @@ class PipelineDefinition:
         self._cached_run_config_schemas: Dict[str, "RunConfigSchema"] = {}
         self._cached_external_pipeline = None
 
+        self.version_strategy = check.opt_inst_param(
+            version_strategy, "version_strategy", VersionStrategy
+        )
+
+        if self.version_strategy is not None:
+            experimental_class_warning("VersionStrategy")
+
     @property
     def name(self):
         return self._name
@@ -314,7 +324,13 @@ class PipelineDefinition:
 
     def is_using_memoization(self, run_tags: Dict[str, str]) -> bool:
         tags = merge_dicts(self.tags, run_tags)
-        return MEMOIZED_RUN_TAG in tags and tags.get(MEMOIZED_RUN_TAG) == "true"
+        # If someone provides a false value for memoized run tag, then they are intentionally
+        # switching off memoization.
+        if tags.get(MEMOIZED_RUN_TAG) == "false":
+            return False
+        return (
+            MEMOIZED_RUN_TAG in tags and tags.get(MEMOIZED_RUN_TAG) == "true"
+        ) or self.version_strategy is not None
 
     def has_mode_definition(self, mode: str) -> bool:
         check.str_param(mode, "mode")
@@ -581,6 +597,7 @@ class PipelineDefinition:
             mode_defs=[in_proc_mode],
             hook_defs=self.hook_defs,
             tags=self.tags,
+            version_strategy=self.version_strategy,
         )
 
         return core_execute_in_process(
