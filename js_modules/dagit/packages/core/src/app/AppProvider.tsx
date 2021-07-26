@@ -79,15 +79,15 @@ interface Props {
   appCache: InMemoryCache;
   config: {
     basePath?: string;
+    headers?: {[key: string]: string};
     origin: string;
     permissions: PermissionsFromJSON;
-    subscriptionParams?: {[key: string]: string};
   };
 }
 
 export const AppProvider: React.FC<Props> = (props) => {
   const {appCache, config} = props;
-  const {basePath = '', origin, permissions, subscriptionParams = {}} = config;
+  const {basePath = '', headers, origin, permissions} = config;
 
   const graphqlPath = `${basePath}/graphql`;
   const rootServerURI = `${origin}${basePath}`;
@@ -96,9 +96,9 @@ export const AppProvider: React.FC<Props> = (props) => {
   const websocketClient = React.useMemo(() => {
     return new SubscriptionClient(websocketURI, {
       reconnect: true,
-      connectionParams: subscriptionParams,
+      connectionParams: {...headers},
     });
-  }, [subscriptionParams, websocketURI]);
+  }, [headers, websocketURI]);
 
   const apolloClient = React.useMemo(() => {
     const logLink = new ApolloLink((operation, forward) =>
@@ -114,7 +114,7 @@ export const AppProvider: React.FC<Props> = (props) => {
       return forward(operation);
     });
 
-    const httpLink = new HttpLink({uri: graphqlPath});
+    const httpLink = new HttpLink({uri: graphqlPath, headers});
     const websocketLink = new WebSocketLink(websocketClient);
 
     // subscriptions should use the websocket link; queries & mutations should use HTTP
@@ -131,7 +131,7 @@ export const AppProvider: React.FC<Props> = (props) => {
       cache: appCache,
       link: ApolloLink.from([logLink, AppErrorLink(), timeStartLink, splitLink]),
     });
-  }, [appCache, graphqlPath, websocketClient]);
+  }, [appCache, graphqlPath, headers, websocketClient]);
 
   const appContextValue = React.useMemo(
     () => ({
