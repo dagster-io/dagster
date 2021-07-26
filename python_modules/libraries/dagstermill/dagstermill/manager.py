@@ -298,7 +298,10 @@ class Manager:
 
         dagster_type = self.solid_def.output_def_named(output_name).dagster_type
 
-        out_file = os.path.join(self.marshal_dir, f"output-{output_name}")
+        # https://github.com/dagster-io/dagster/issues/2648*
+        # dagstermill temporary file creation should use a more systematic and robust scheme*
+        out_file = os.path.join(self.marshal_dir, f"{self.solid_def.name}-output-{output_name}")
+
         scrapbook.glue(output_name, write_value(dagster_type, value, out_file))
 
     def yield_event(self, dagster_event):

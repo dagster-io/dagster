@@ -1,5 +1,6 @@
 import os
 import pickle
+import time
 import uuid
 
 import dagstermill
@@ -13,12 +14,15 @@ from dagster import (
     OutputDefinition,
     ResourceDefinition,
     String,
+    fs_io_manager,
     pipeline,
     repository,
     resource,
     solid,
 )
 from dagster.core.storage.file_manager import local_file_manager
+from dagster.core.types.dagster_type import DagsterType
+from dagster.core.types.marshal import SerializationStrategy
 from dagster.utils import PICKLE_PROTOCOL, file_relative_path
 
 try:
@@ -78,8 +82,12 @@ def hello_world_pipeline():
     hello_world()
 
 
-hello_world_with_custom_tags_and_description = test_nb_solid(
-    "hello_world", output_defs=[], tags={"foo": "bar"}, description="custom description"
+hello_world_with_custom_tags_and_description = dagstermill.define_dagstermill_solid(
+    name="hello_world_custom",
+    notebook_path=nb_test_path("hello_world"),
+    output_notebook="notebook",
+    tags={"foo": "bar"},
+    description="custom description",
 )
 
 
@@ -390,6 +398,75 @@ def failure_pipeline():
     test_nb_solid("yield_failure")()
 
 
+class ASerializationStrategy(SerializationStrategy):  # pylint: disable=no-init
+    def serialize(self, value, write_file_obj):
+        write_file_obj.write(bytes(value.encode("utf-8")))
+
+    def deserialize(self, read_file_obj):
+        time.sleep(1)  # ensure serdes interleaves with B
+        return read_file_obj.read().decode("utf-8")
+
+
+class BSerializationStrategy(SerializationStrategy):  # pylint: disable=no-init
+    def serialize(self, value, write_file_obj):
+        time.sleep(1)  # ensure serdes interleaves with A
+        write_file_obj.write(bytes(value.encode("utf-8")))
+
+    def deserialize(self, read_file_obj):
+        return read_file_obj.read().decode("utf-8")
+
+
+ADagsterType = DagsterType(
+    name="ADagsterType",
+    type_check_fn=lambda _, value: True,
+    serialization_strategy=ASerializationStrategy("int"),
+)
+
+BDagsterType = DagsterType(
+    name="BDagsterType",
+    type_check_fn=lambda _, value: True,
+    serialization_strategy=BSerializationStrategy("str"),
+)
+
+
+@solid
+def return_hello():
+    return "hello"
+
+
+yield_something = test_nb_solid(
+    name="yield_something",
+    input_defs=[InputDefinition("obj", str)],
+    output_defs=[OutputDefinition(ADagsterType)],
+)
+
+yield_something_2 = dagstermill.define_dagstermill_solid(
+    name="yield_something_2",
+    notebook_path=nb_test_path("yield_something"),
+    output_notebook="notebook",
+    input_defs=[InputDefinition("obj", str)],
+    output_defs=[OutputDefinition(BDagsterType)],
+)
+
+
+@solid(input_defs=[InputDefinition("a", ADagsterType), InputDefinition("b", BDagsterType)])
+def fan_in(a, b):
+    return f"{a} {b}"
+
+
+@pipeline(
+    mode_defs=[
+        ModeDefinition(
+            resource_defs={"io_manager": fs_io_manager, "file_manager": local_file_manager}
+        )
+    ]
+)
+def fan_in_notebook_pipeline():
+    a, _ = yield_something()
+    b, _ = yield_something_2()
+    fan_in(a, b)
+
+
 @repository
 def notebook_repo():
     pipelines = [
@@ -410,6 +487,7 @@ def notebook_repo():
         yield_obj_pipeline,
         retries_pipeline,
         failure_pipeline,
+        fan_in_notebook_pipeline,
     ]
     if DAGSTER_PANDAS_PRESENT and SKLEARN_PRESENT and MATPLOTLIB_PRESENT:
         pipelines += [tutorial_pipeline]

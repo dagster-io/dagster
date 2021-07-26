@@ -282,6 +282,7 @@ def _dm_solid_compute(name, notebook_path, output_notebook=None, asset_key_prefi
             for (output_name, output_def) in step_execution_context.solid_def.output_dict.items():
                 data_dict = output_nb.scraps.data_dict
                 if output_name in data_dict:
+                    # read result that was written by the "yield_result" call
                     value = read_value(output_def.dagster_type, data_dict[output_name])
 
                     yield Output(value, output_name)
