@@ -336,7 +336,7 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
         />
       )}
       <div style={{overflow: 'scroll', flex: 1}} {...containerProps}>
-        <div style={{position: 'relative', ...layoutSize}}>
+        <div style={{position: 'relative', marginBottom: 50, ...layoutSize}}>
           {measurementComplete && (
             <GanttChartViewportContents
               options={options}
