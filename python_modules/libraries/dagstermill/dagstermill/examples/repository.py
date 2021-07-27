@@ -14,6 +14,7 @@ from dagster import (
     OutputDefinition,
     ResourceDefinition,
     String,
+    composite_solid,
     fs_io_manager,
     pipeline,
     repository,
@@ -398,40 +399,27 @@ def failure_pipeline():
     test_nb_solid("yield_failure")()
 
 
-class ASerializationStrategy(SerializationStrategy):  # pylint: disable=no-init
+class ASerializationStrategy(SerializationStrategy):
+    def __init__(self, name="foo"):
+        super(ASerializationStrategy, self).__init__(name)
+        self.count = 0
+
     def serialize(self, value, write_file_obj):
+        if self.count % 2 == 0:  # ensure two steps' serdes interleave
+            time.sleep(1)
         write_file_obj.write(bytes(value.encode("utf-8")))
 
     def deserialize(self, read_file_obj):
-        time.sleep(1)  # ensure serdes interleaves with B
-        return read_file_obj.read().decode("utf-8")
-
-
-class BSerializationStrategy(SerializationStrategy):  # pylint: disable=no-init
-    def serialize(self, value, write_file_obj):
-        time.sleep(1)  # ensure serdes interleaves with A
-        write_file_obj.write(bytes(value.encode("utf-8")))
-
-    def deserialize(self, read_file_obj):
+        if self.count % 2 == 1:  # ensure two steps' serdes interleave
+            time.sleep(1)
         return read_file_obj.read().decode("utf-8")
 
 
 ADagsterType = DagsterType(
     name="ADagsterType",
     type_check_fn=lambda _, value: True,
-    serialization_strategy=ASerializationStrategy("int"),
+    serialization_strategy=ASerializationStrategy(),
 )
-
-BDagsterType = DagsterType(
-    name="BDagsterType",
-    type_check_fn=lambda _, value: True,
-    serialization_strategy=BSerializationStrategy("str"),
-)
-
-
-@solid
-def return_hello():
-    return "hello"
 
 
 yield_something = test_nb_solid(
@@ -440,16 +428,8 @@ yield_something = test_nb_solid(
     output_defs=[OutputDefinition(ADagsterType)],
 )
 
-yield_something_2 = dagstermill.define_dagstermill_solid(
-    name="yield_something_2",
-    notebook_path=nb_test_path("yield_something"),
-    output_notebook="notebook",
-    input_defs=[InputDefinition("obj", str)],
-    output_defs=[OutputDefinition(BDagsterType)],
-)
 
-
-@solid(input_defs=[InputDefinition("a", ADagsterType), InputDefinition("b", BDagsterType)])
+@solid(input_defs=[InputDefinition("a", ADagsterType), InputDefinition("b", ADagsterType)])
 def fan_in(a, b):
     return f"{a} {b}"
 
@@ -462,9 +442,25 @@ def fan_in(a, b):
     ]
 )
 def fan_in_notebook_pipeline():
-    a, _ = yield_something()
-    b, _ = yield_something_2()
+    a, _ = yield_something.alias("solid_1")()
+    b, _ = yield_something.alias("solid_2")()
     fan_in(a, b)
+
+
+@composite_solid
+def outer():
+    yield_something()
+
+
+@pipeline(
+    mode_defs=[
+        ModeDefinition(
+            resource_defs={"io_manager": fs_io_manager, "file_manager": local_file_manager}
+        )
+    ]
+)
+def composite_pipeline():
+    outer()
 
 
 @repository

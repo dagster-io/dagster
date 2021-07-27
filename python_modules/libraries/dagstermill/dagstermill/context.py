@@ -1,7 +1,7 @@
 from typing import Any, Dict, Set
 
 from dagster import PipelineDefinition, PipelineRun, SolidDefinition, check
-from dagster.core.definitions.dependency import Node
+from dagster.core.definitions.dependency import Node, NodeHandle
 from dagster.core.execution.context.compute import AbstractComputeExecutionContext
 from dagster.core.execution.context.system import PlanExecutionContext
 from dagster.core.log_manager import DagsterLogManager
@@ -20,6 +20,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         pipeline_def: PipelineDefinition,
         resource_keys_to_init: Set[str],
         solid_name: str,
+        solid_handle: NodeHandle,
         solid_config: Any = None,
     ):
         self._pipeline_context = check.inst_param(
@@ -30,6 +31,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
             resource_keys_to_init, "resource_keys_to_init", of_type=str
         )
         self.solid_name = check.str_param(solid_name, "solid_name")
+        self.solid_handle = check.inst_param(solid_handle, "solid_handle", NodeHandle)
         self._solid_config = solid_config
 
     def has_tag(self, key: str) -> bool:
@@ -125,7 +127,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         In interactive contexts, this may be a dagstermill-specific shim, depending whether a
         solid definition was passed to ``dagstermill.get_context``.
         """
-        return self.pipeline_def.solid_named(self.solid_name)
+        return self.pipeline_def.get_solid(self.solid_handle)
 
     @property
     def solid_config(self) -> Any:

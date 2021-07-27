@@ -241,15 +241,31 @@ def test_fan_in_notebook_pipeline():
         {
             "execution": {"multiprocess": {}},
             "solids": {
-                "yield_something": {"inputs": {"obj": "hello"}},
-                "yield_something_2": {"inputs": {"obj": "world"}},
+                "solid_1": {"inputs": {"obj": "hello"}},
+                "solid_2": {"inputs": {"obj": "world"}},
             },
         },
     ) as result:
         assert result.success
-        assert result.result_for_solid("yield_something").output_value() == "hello"
-        assert result.result_for_solid("yield_something_2").output_value() == "world"
+        assert result.result_for_solid("solid_1").output_value() == "hello"
+        assert result.result_for_solid("solid_2").output_value() == "world"
         assert result.result_for_solid("fan_in").output_value() == "hello world"
+
+
+@pytest.mark.notebook_test
+def test_composite_pipeline():
+    with exec_for_test(
+        "composite_pipeline",
+        {
+            "execution": {"multiprocess": {}},
+            "solids": {"outer": {"solids": {"yield_something": {"inputs": {"obj": "hello"}}}}},
+        },
+    ) as result:
+        assert result.success
+        assert (
+            result.result_for_solid("outer").result_for_solid("yield_something").output_value()
+            == "hello"
+        )
 
 
 @pytest.mark.notebook_test
