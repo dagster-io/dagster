@@ -802,7 +802,10 @@ class DagsterGrpcServer:
             "If set to None, the server will use the gRPC default.",
         )
 
-        self.server = grpc.server(ThreadPoolExecutor(max_workers=max_workers))
+        self.server = grpc.server(
+            ThreadPoolExecutor(max_workers=max_workers),
+            compression=grpc.Compression.Gzip,
+        )
         self._server_termination_event = threading.Event()
 
         try:
