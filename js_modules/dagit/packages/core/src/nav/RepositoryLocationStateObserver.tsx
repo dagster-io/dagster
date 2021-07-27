@@ -1,7 +1,6 @@
 import {ApolloClient, gql} from '@apollo/client';
 import {Icon, Colors} from '@blueprintjs/core';
 import * as React from 'react';
-import {useEffect, useState} from 'react';
 
 import {AppContext} from '../app/AppContext';
 import {DirectGraphQLSubscription} from '../app/DirectGraphQLSubscription';
@@ -32,13 +31,13 @@ interface StateObserverProps {
 
 export const RepositoryLocationStateObserver = ({client}: StateObserverProps) => {
   const {locationEntries, refetch} = React.useContext(WorkspaceContext);
-  const [updatedLocations, setUpdatedLocations] = useState<string[]>([]);
-  const [erroredLocations, setErroredLocations] = useState<string[]>([]);
-  const totalMessages = updatedLocations.length + erroredLocations.length;
+  const [updatedLocations, setUpdatedLocations] = React.useState<string[]>([]);
+  const totalMessages = updatedLocations.length;
 
+  // todo dish: Get more WS info from context.
   const {websocketURI} = React.useContext(AppContext);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const onHandleMessages = (
       messages: LocationStateChangeSubscription[], //   isFirstResponse: boolean,
     ) => {
@@ -78,7 +77,11 @@ export const RepositoryLocationStateObserver = ({client}: StateObserverProps) =>
     };
   }, [locationEntries, refetch, websocketURI]);
 
-  return totalMessages > 0 ? (
+  if (!totalMessages) {
+    return null;
+  }
+
+  return (
     <Group background={Colors.GRAY5} direction="column" spacing={0}>
       {updatedLocations.length > 0 ? (
         <Group padding={{vertical: 8, horizontal: 12}} direction="row" spacing={8}>
@@ -89,11 +92,14 @@ export const RepositoryLocationStateObserver = ({client}: StateObserverProps) =>
               : 'One or more repository locations have been updated,'}{' '}
             and new data is available.{' '}
             <ButtonLink
-              color={{link: Colors.DARK_GRAY3, hover: Colors.DARK_GRAY1, active: Colors.DARK_GRAY1}}
+              color={{
+                link: Colors.DARK_GRAY3,
+                hover: Colors.DARK_GRAY1,
+                active: Colors.DARK_GRAY1,
+              }}
               underline="always"
               onClick={() => {
                 setUpdatedLocations([]);
-                setErroredLocations([]);
                 refetch();
                 client.resetStore();
               }}
@@ -104,5 +110,5 @@ export const RepositoryLocationStateObserver = ({client}: StateObserverProps) =>
         </Group>
       ) : null}
     </Group>
-  ) : null;
+  );
 };

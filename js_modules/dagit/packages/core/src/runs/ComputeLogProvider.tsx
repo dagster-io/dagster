@@ -9,7 +9,36 @@ import {ComputeLogContentFileFragment} from './types/ComputeLogContentFileFragme
 import {ComputeLogsSubscription} from './types/ComputeLogsSubscription';
 import {ComputeLogsSubscriptionFragment} from './types/ComputeLogsSubscriptionFragment';
 
-interface IComputeLogsProviderProps {
+const slice = (s: string) => {
+  if (s.length < MAX_STREAMING_LOG_BYTES) {
+    return s;
+  }
+  return s.slice(-MAX_STREAMING_LOG_BYTES);
+};
+
+const merge = (
+  a: ComputeLogContentFileFragment | null,
+  b: ComputeLogContentFileFragment | null,
+): ComputeLogContentFileFragment | null => {
+  if (!b) {
+    return a;
+  }
+  let data = a?.data;
+  if (a?.data && b?.data) {
+    data = slice(a.data + b.data);
+  } else if (b?.data) {
+    data = slice(b.data);
+  }
+  return {
+    __typename: b.__typename,
+    path: b.path,
+    downloadUrl: b.downloadUrl,
+    data: typeof data === 'string' ? data : null,
+    cursor: b.cursor,
+  };
+};
+
+interface Props {
   children: (props: {
     isLoading: boolean;
     stdout: ComputeLogsSubscriptionFragment | null;
@@ -19,123 +48,91 @@ interface IComputeLogsProviderProps {
   stepKey: string;
   websocketURI: string;
 }
-interface IComputeLogsProviderState {
+
+interface State {
   stdout: ComputeLogsSubscriptionFragment | null;
   stderr: ComputeLogsSubscriptionFragment | null;
   isLoading: boolean;
 }
 
-export class ComputeLogsProvider extends React.Component<
-  IComputeLogsProviderProps,
-  IComputeLogsProviderState
-> {
-  _stdout: DirectGraphQLSubscription<ComputeLogsSubscription> | null = null;
-  _stderr: DirectGraphQLSubscription<ComputeLogsSubscription> | null = null;
-  state: IComputeLogsProviderState = {
-    stdout: null,
-    stderr: null,
-    isLoading: true,
-  };
+type Action =
+  | {type: 'initialize'}
+  | {type: 'stdout'; messages: ComputeLogsSubscription[]}
+  | {type: 'stderr'; messages: ComputeLogsSubscription[]}
+  | {type: 'error'};
 
-  componentDidMount() {
-    this.subscribe();
-  }
-
-  componentWillUnmount() {
-    this.unsubscribe();
-  }
-
-  componentDidUpdate(prevProps: IComputeLogsProviderProps) {
-    if (prevProps.runId !== this.props.runId || prevProps.stepKey !== this.props.stepKey) {
-      this.unsubscribe();
-      this.subscribe();
+const reducer = (state: State, action: Action): State => {
+  switch (action.type) {
+    case 'initialize':
+      return {isLoading: true, stdout: null, stderr: null};
+    case 'stdout': {
+      let computeLogs: ComputeLogsSubscriptionFragment | null = state.stdout;
+      action.messages.forEach((subscription: ComputeLogsSubscription) => {
+        computeLogs = merge(computeLogs, subscription.computeLogs);
+      });
+      return {...state, isLoading: false, stdout: computeLogs};
     }
+    case 'stderr': {
+      let computeLogs: ComputeLogsSubscriptionFragment | null = state.stderr;
+      action.messages.forEach((subscription: ComputeLogsSubscription) => {
+        computeLogs = merge(computeLogs, subscription.computeLogs);
+      });
+      return {...state, isLoading: false, stderr: merge(state.stderr, computeLogs)};
+    }
+    case 'error':
+      return {...state, isLoading: false};
+    default:
+      return state;
   }
+};
 
-  subscribe() {
-    const {runId, stepKey} = this.props;
-    this.setState({isLoading: true, stdout: null, stderr: null});
-    this._stdout = new DirectGraphQLSubscription<ComputeLogsSubscription>(
-      this.props.websocketURI,
+const initialState: State = {
+  stdout: null,
+  stderr: null,
+  isLoading: false,
+};
+
+export const ComputeLogsProvider = (props: Props) => {
+  // todo dish: Get WS info from context.
+  const {children, runId, stepKey, websocketURI} = props;
+  const [state, dispatch] = React.useReducer(reducer, initialState);
+
+  React.useEffect(() => {
+    dispatch({type: 'initialize'});
+
+    const onMessages = (ioType: string, messages: ComputeLogsSubscription[]) => {
+      dispatch({type: ioType === 'stdout' ? 'stdout' : 'stderr', messages});
+    };
+
+    const onStdout = (messages: ComputeLogsSubscription[]) => onMessages('stdout', messages);
+    const onStderr = (messages: ComputeLogsSubscription[]) => onMessages('stderr', messages);
+    const onError = () => dispatch({type: 'error'});
+
+    const stdout = new DirectGraphQLSubscription<ComputeLogsSubscription>(
+      websocketURI,
       COMPUTE_LOGS_SUBSCRIPTION,
       {runId, stepKey, ioType: ComputeIOType.STDOUT, cursor: null},
-      this.onStdout,
-      this.onError,
+      onStdout,
+      onError,
     );
-    this._stderr = new DirectGraphQLSubscription<ComputeLogsSubscription>(
-      this.props.websocketURI,
+
+    const stderr = new DirectGraphQLSubscription<ComputeLogsSubscription>(
+      websocketURI,
       COMPUTE_LOGS_SUBSCRIPTION,
       {runId, stepKey, ioType: ComputeIOType.STDERR, cursor: null},
-      this.onStderr,
-      this.onError,
+      onStderr,
+      onError,
     );
-  }
 
-  unsubscribe() {
-    if (this._stdout) {
-      this._stdout.close();
-    }
-    if (this._stderr) {
-      this._stderr.close();
-    }
-  }
-
-  onStdout = (messages: ComputeLogsSubscription[], _: boolean) => {
-    this.onMessages('stdout', messages);
-  };
-
-  onStderr = (messages: ComputeLogsSubscription[], _: boolean) => {
-    this.onMessages('stderr', messages);
-  };
-
-  onMessages = (ioType: string, messages: ComputeLogsSubscription[]) => {
-    let computeLogs = this.state[ioType];
-    messages.forEach((subscription: ComputeLogsSubscription) => {
-      computeLogs = this.merge(computeLogs, subscription.computeLogs);
-    });
-
-    if (ioType === 'stdout') {
-      this.setState({stdout: computeLogs, isLoading: false});
-    } else {
-      this.setState({stderr: computeLogs, isLoading: false});
-    }
-  };
-
-  onError = () => {
-    this.setState({isLoading: false});
-  };
-
-  merge(a: ComputeLogContentFileFragment | null, b: ComputeLogContentFileFragment | null) {
-    if (!b) {
-      return a;
-    }
-    let data = a?.data;
-    if (a?.data && b?.data) {
-      data = this.slice(a.data + b.data);
-    } else if (b?.data) {
-      data = this.slice(b.data);
-    }
-    return {
-      __typename: b.__typename,
-      path: b.path,
-      downloadUrl: b.downloadUrl,
-      data: data,
-      cursor: b.cursor,
+    return () => {
+      stdout.close();
+      stderr.close();
     };
-  }
+  }, [runId, stepKey, websocketURI]);
 
-  slice(s: string) {
-    if (s.length < MAX_STREAMING_LOG_BYTES) {
-      return s;
-    }
-    return s.slice(-MAX_STREAMING_LOG_BYTES);
-  }
-
-  render() {
-    const {isLoading, stdout, stderr} = this.state;
-    return this.props.children({isLoading, stdout, stderr});
-  }
-}
+  const {isLoading, stdout, stderr} = state;
+  return <>{children({isLoading, stdout, stderr})}</>;
+};
 
 const COMPUTE_LOGS_SUBSCRIPTION_FRAGMENT = gql`
   fragment ComputeLogsSubscriptionFragment on ComputeLogFile {

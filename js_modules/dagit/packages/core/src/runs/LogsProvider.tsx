@@ -25,6 +25,7 @@ export interface LogFilter {
 }
 
 type LogNode = RunPipelineRunEventFragment & {clientsideKey: string};
+type Nodes = LogNode[];
 
 export interface LogsProviderLogs {
   allNodes: LogNode[];
@@ -38,139 +39,114 @@ interface LogsProviderProps {
   children: (result: LogsProviderLogs) => React.ReactChild;
 }
 
-interface LogsProviderState {
-  nodes: (RunPipelineRunEventFragment & {clientsideKey: string})[] | null;
-}
+const LogsProviderWithSubscription = (props: LogsProviderProps) => {
+  // todo dish: Get WS info from context.
+  const {websocketURI, client, runId, children} = props;
+  const [nodes, setNodes] = React.useState<Nodes | null>(null);
 
-class LogsProviderWithSubscription extends React.Component<LogsProviderProps, LogsProviderState> {
-  state: LogsProviderState = {
-    nodes: null,
-  };
+  React.useEffect(() => {
+    setNodes([]);
+  }, [runId]);
 
-  _subscription: DirectGraphQLSubscription<PipelineRunLogsSubscription> | null = null;
-
-  componentDidMount() {
-    this.subscribeToRun();
-  }
-
-  componentDidUpdate(prevProps: LogsProviderProps) {
-    if (prevProps.runId !== this.props.runId) {
-      this.subscribeToRun();
-    }
-  }
-
-  componentWillUnmount() {
-    this.unsubscribeFromRun();
-  }
-
-  subscribeToRun() {
-    const {runId} = this.props;
-
-    if (this._subscription) {
-      this.unsubscribeFromRun();
-      this.setState({nodes: []});
-    }
-
-    if (!runId) {
-      return;
-    }
-
-    this._subscription = new DirectGraphQLSubscription<PipelineRunLogsSubscription>(
-      this.props.websocketURI,
-      PIPELINE_RUN_LOGS_SUBSCRIPTION,
-      {runId: runId, after: null},
-      this.onHandleMessages,
-      () => {}, // https://github.com/dagster-io/dagster/issues/2151
-    );
-  }
-
-  unsubscribeFromRun() {
-    if (this._subscription) {
-      this._subscription.close();
-    }
-  }
-
-  onHandleMessages = (messages: PipelineRunLogsSubscription[], isFirstResponse: boolean) => {
-    // Note: if the socket says this is the first response, it may be becacuse the connection
-    // was dropped and re-opened, so we reset our local state to an empty array.
-    const nextNodes = isFirstResponse ? [] : [...(this.state.nodes || [])];
-
-    let nextPipelineStatus: PipelineRunStatus | null = null;
-    for (const msg of messages) {
-      if (msg.pipelineRunLogs.__typename === 'PipelineRunLogsSubscriptionFailure') {
-        break;
-      }
-
-      // append the nodes to our local array and give each of them a unique key
-      // so we can change the row indexes they're displayed at and still track their
-      // sizes, etc.
-      nextNodes.push(
-        ...msg.pipelineRunLogs.messages.map((m, idx) =>
-          Object.assign(m, {clientsideKey: `csk${nextNodes.length + idx}`}),
-        ),
-      );
-
-      // look for changes to the pipeline's overall run status and sync that to apollo
-      for (const {__typename} of msg.pipelineRunLogs.messages) {
-        if (__typename === 'PipelineStartEvent') {
-          nextPipelineStatus = PipelineRunStatus.STARTED;
-        } else if (__typename === 'PipelineEnqueuedEvent') {
-          nextPipelineStatus = PipelineRunStatus.QUEUED;
-        } else if (__typename === 'PipelineStartingEvent') {
-          nextPipelineStatus = PipelineRunStatus.STARTING;
-        } else if (__typename === 'PipelineCancelingEvent') {
-          nextPipelineStatus = PipelineRunStatus.CANCELING;
-        } else if (__typename === 'PipelineCanceledEvent') {
-          nextPipelineStatus = PipelineRunStatus.CANCELED;
-        } else if (__typename === 'PipelineSuccessEvent') {
-          nextPipelineStatus = PipelineRunStatus.SUCCESS;
-        } else if (__typename === 'PipelineFailureEvent') {
-          nextPipelineStatus = PipelineRunStatus.FAILURE;
-        }
-      }
-    }
-
-    if (nextPipelineStatus) {
-      this.syncPipelineStatusToApolloCache(nextPipelineStatus);
-    }
-    this.setState({nodes: nextNodes});
-  };
-
-  syncPipelineStatusToApolloCache(status: PipelineRunStatus) {
-    const local = this.props.client.readFragment<PipelineRunLogsSubscriptionStatusFragment>({
-      fragmentName: 'PipelineRunLogsSubscriptionStatusFragment',
-      fragment: PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT,
-      id: `PipelineRun:${this.props.runId}`,
-    });
-
-    if (local) {
-      const toWrite = {...local, status};
-      if (
-        status === PipelineRunStatus.FAILURE ||
-        status === PipelineRunStatus.SUCCESS ||
-        status === PipelineRunStatus.STARTING ||
-        status === PipelineRunStatus.CANCELING ||
-        status === PipelineRunStatus.CANCELED
-      ) {
-        toWrite.canTerminate = false;
-      }
-      this.props.client.writeFragment({
+  const syncPipelineStatusToApolloCache = React.useCallback(
+    (status: PipelineRunStatus) => {
+      const local = client.readFragment<PipelineRunLogsSubscriptionStatusFragment>({
         fragmentName: 'PipelineRunLogsSubscriptionStatusFragment',
         fragment: PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT,
-        id: `PipelineRun:${this.props.runId}`,
-        data: toWrite,
+        id: `PipelineRun:${runId}`,
       });
-    }
-  }
 
-  render() {
-    const {nodes} = this.state;
+      if (local) {
+        const toWrite = {...local, status};
+        if (
+          status === PipelineRunStatus.FAILURE ||
+          status === PipelineRunStatus.SUCCESS ||
+          status === PipelineRunStatus.STARTING ||
+          status === PipelineRunStatus.CANCELING ||
+          status === PipelineRunStatus.CANCELED
+        ) {
+          toWrite.canTerminate = false;
+        }
+        client.writeFragment({
+          fragmentName: 'PipelineRunLogsSubscriptionStatusFragment',
+          fragment: PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT,
+          id: `PipelineRun:${runId}`,
+          data: toWrite,
+        });
+      }
+    },
+    [client, runId],
+  );
 
-    return this.props.children(
-      nodes !== null ? {allNodes: nodes, loading: false} : {allNodes: [], loading: true},
+  const onHandleMessages = React.useCallback(
+    (messages: PipelineRunLogsSubscription[], isFirstResponse: boolean) => {
+      const toAppend: RunPipelineRunEventFragment[] = [];
+
+      let nextPipelineStatus: PipelineRunStatus | null = null;
+      for (const msg of messages) {
+        if (msg.pipelineRunLogs.__typename === 'PipelineRunLogsSubscriptionFailure') {
+          break;
+        }
+
+        // append the nodes to our local array and give each of them a unique key
+        // so we can change the row indexes they're displayed at and still track their
+        // sizes, etc.
+        toAppend.push(...msg.pipelineRunLogs.messages);
+
+        // look for changes to the pipeline's overall run status and sync that to apollo
+        for (const {__typename} of msg.pipelineRunLogs.messages) {
+          if (__typename === 'PipelineStartEvent') {
+            nextPipelineStatus = PipelineRunStatus.STARTED;
+          } else if (__typename === 'PipelineEnqueuedEvent') {
+            nextPipelineStatus = PipelineRunStatus.QUEUED;
+          } else if (__typename === 'PipelineStartingEvent') {
+            nextPipelineStatus = PipelineRunStatus.STARTING;
+          } else if (__typename === 'PipelineCancelingEvent') {
+            nextPipelineStatus = PipelineRunStatus.CANCELING;
+          } else if (__typename === 'PipelineCanceledEvent') {
+            nextPipelineStatus = PipelineRunStatus.CANCELED;
+          } else if (__typename === 'PipelineSuccessEvent') {
+            nextPipelineStatus = PipelineRunStatus.SUCCESS;
+          } else if (__typename === 'PipelineFailureEvent') {
+            nextPipelineStatus = PipelineRunStatus.FAILURE;
+          }
+        }
+      }
+
+      if (nextPipelineStatus) {
+        syncPipelineStatusToApolloCache(nextPipelineStatus);
+      }
+
+      setNodes((current) => {
+        // Note: if the socket says this is the first response, it may be becacuse the connection
+        // was dropped and re-opened, so we reset our local state to an empty array.
+        const existing = isFirstResponse ? [] : [...(current || [])];
+        return [...existing, ...toAppend].map((m, idx) => ({...m, clientsideKey: `csk${idx}`}));
+      });
+    },
+    [syncPipelineStatusToApolloCache],
+  );
+
+  React.useEffect(() => {
+    const subscription = new DirectGraphQLSubscription<PipelineRunLogsSubscription>(
+      websocketURI,
+      PIPELINE_RUN_LOGS_SUBSCRIPTION,
+      {runId: runId, after: null},
+      onHandleMessages,
+      () => {}, // https://github.com/dagster-io/dagster/issues/2151
     );
-  }
-}
+
+    return () => {
+      subscription.close();
+    };
+  }, [onHandleMessages, runId, websocketURI]);
+
+  return (
+    <>
+      {children(nodes !== null ? {allNodes: nodes, loading: false} : {allNodes: [], loading: true})}
+    </>
+  );
+};
 
 interface LogsProviderWithQueryProps {
   runId: string;
