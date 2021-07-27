@@ -20,7 +20,7 @@ class PickledObjectADLS2IOManager(IOManager):
         self.file_system_client.get_file_system_properties()
 
     def _get_path(self, context):
-        keys = context.get_run_scoped_output_identifier()
+        keys = context.get_output_identifier()
         run_id = keys[0]
         output_identifiers = keys[1:]  # variable length because of mapping key
         return "/".join(

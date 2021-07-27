@@ -585,7 +585,7 @@ class PipelineDefinition:
         in_proc_mode = ModeDefinition(
             name="in_process",
             executor_defs=[execute_in_process_executor],
-            resource_defs=_swap_default_io_man(base_mode.resource_defs),
+            resource_defs=_swap_default_io_man(base_mode.resource_defs, self),
             logger_defs=base_mode.loggers,
             _config_mapping=base_mode.config_mapping,
             _partitioned_config=base_mode.partitioned_config,
@@ -1087,7 +1087,7 @@ def _create_run_config_schema(
     )
 
 
-def _swap_default_io_man(resources: Dict[str, ResourceDefinition]):
+def _swap_default_io_man(resources: Dict[str, ResourceDefinition], job: PipelineDefinition):
     """
     Used to create the user facing experience of the default io_manager
     switching to in-memory when using execute_in_process.
@@ -1097,8 +1097,8 @@ def _swap_default_io_man(resources: Dict[str, ResourceDefinition]):
 
     if (
         # pylint: disable=comparison-with-callable
-        resources.get("io_manager")
-        == default_job_io_manager
+        resources.get("io_manager") == default_job_io_manager
+        and job.version_strategy is None
     ):
         updated_resources = dict(resources)
         updated_resources["io_manager"] = mem_io_manager

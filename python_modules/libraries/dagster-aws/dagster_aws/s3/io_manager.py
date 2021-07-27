@@ -18,7 +18,7 @@ class PickledObjectS3IOManager(IOManager):
         self.s3.head_bucket(Bucket=self.bucket)
 
     def _get_path(self, context):
-        return "/".join([self.s3_prefix, "storage", *context.get_run_scoped_output_identifier()])
+        return "/".join([self.s3_prefix, "storage", *context.get_output_identifier()])
 
     def _rm_object(self, key):
         check.str_param(key, "key")
