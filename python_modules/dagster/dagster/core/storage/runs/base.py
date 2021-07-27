@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple, Union
 
 from dagster.core.events import DagsterEvent
+from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster.core.instance import MayHaveInstanceWeakref
 from dagster.core.snap import ExecutionPlanSnapshot, PipelineSnapshot
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunsFilter, RunRecord
@@ -21,7 +22,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
     """
 
     @abstractmethod
-    def add_run(self, pipeline_run: PipelineRun):
+    def add_run(self, pipeline_run: PipelineRun) -> PipelineRun:
         """Add a run to storage.
 
         If a run already exists with the same ID, raise DagsterRunAlreadyExists
@@ -297,17 +298,19 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
 
     # Backfill storage
     @abstractmethod
-    def get_backfills(self, status=None, cursor=None, limit=None):
+    def get_backfills(
+        self, status: BulkActionStatus = None, cursor: str = None, limit: int = None
+    ) -> List[PartitionBackfill]:
         """Get a list of partition backfills"""
 
     @abstractmethod
-    def get_backfill(self, backfill_id):
-        """Get a list of partition backfills"""
+    def get_backfill(self, backfill_id: str) -> Optional[PartitionBackfill]:
+        """Get the partition backfill of the given backfill id."""
 
     @abstractmethod
-    def add_backfill(self, partition_backfill):
+    def add_backfill(self, partition_backfill: PartitionBackfill):
         """Add partition backfill to run storage"""
 
     @abstractmethod
-    def update_backfill(self, partition_backfill):
+    def update_backfill(self, partition_backfill: PartitionBackfill):
         """Update a partition backfill in run storage"""
