@@ -42,14 +42,21 @@ pip install --editable .
 
 ## Local Development
 
-1. Start the [Dagit process](https://docs.dagster.io/overview/dagit). This will start a Dagit web
+1. Set the `DAGSTER_HOME` environment variable. Dagster will store run history in this directory.
+
+```base
+mkdir ~/dagster_home
+export DAGSTER_HOME=~/dagster_home
+```
+
+2. Start the [Dagit process](https://docs.dagster.io/overview/dagit). This will start a Dagit web
 server that, by default, is served on http://localhost:3000.
 
 ```bash
 dagit
 ```
 
-2. (Optional) If you want to enable Dagster
+3. (Optional) If you want to enable Dagster
 [Schedules](https://docs.dagster.io/overview/schedules-sensors/schedules) or
 [Sensors](https://docs.dagster.io/overview/schedules-sensors/sensors) for your pipelines, start the
 [Dagster Daemon process](https://docs.dagster.io/overview/daemon#main) **in a different shell or terminal**:
