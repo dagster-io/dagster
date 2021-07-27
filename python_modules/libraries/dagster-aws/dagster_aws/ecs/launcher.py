@@ -137,8 +137,12 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         cluster = tags.get("ecs/cluster")
 
         if arn and cluster:
-            status = self.ecs.describe_tasks(tasks=[arn], cluster=cluster)["tasks"][0]["lastStatus"]
-            if status != "STOPPED":
+            status = (
+                self.ecs.describe_tasks(tasks=[arn], cluster=cluster)
+                .get("tasks", [{}])[0]
+                .get("lastStatus")
+            )
+            if status and status != "STOPPED":
                 return True
 
         return False
