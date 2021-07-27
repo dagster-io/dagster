@@ -288,7 +288,7 @@ class DagsterK8sJobConfig(
         }
 
     @classmethod
-    def config_type_pipeline_run(cls):
+    def config_type_pipeline_run(cls, default_image_pull_policy=None):
         """Configuration intended to be set at pipeline execution time."""
         return {
             "job_image": Field(
@@ -300,11 +300,11 @@ class DagsterK8sJobConfig(
                 '(Ex: "mycompany.com/dagster-k8s-image:latest").',
             ),
             "image_pull_policy": Field(
-                StringSource,
+                Noneable(StringSource),
                 is_required=False,
-                default_value="IfNotPresent",
                 description="Image pull policy to set on the launched task Job Pods. Defaults to "
                 '"IfNotPresent".',
+                default_value=default_image_pull_policy,
             ),
             "image_pull_secrets": Field(
                 Noneable(Array(Shape({"name": StringSource}))),

@@ -76,7 +76,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             and https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#podspec-v1-core.
         image_pull_policy (Optional[str]): Allows the image pull policy to be overridden, e.g. to
             facilitate local testing with `kind <https://kind.sigs.k8s.io/>`_. Default:
-            ``"Always"``. See: https://kubernetes.io/docs/concepts/containers/images/#updating-images.
+            ``"IfNotPresent"``. See: https://kubernetes.io/docs/concepts/containers/images/#updating-images.
         job_namespace (Optional[str]): The namespace into which to launch new jobs. Note that any
             other Kubernetes resources the Job requires (such as the service account) must be
             present in this namespace. Default: ``"default"``
@@ -95,7 +95,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         postgres_password_secret=None,
         dagster_home=None,
         job_image=None,
-        image_pull_policy="Always",
+        image_pull_policy=None,
         image_pull_secrets=None,
         load_incluster_config=True,
         kubeconfig_file=None,
@@ -125,7 +125,9 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         self._job_config = None
         self._job_image = check.opt_str_param(job_image, "job_image")
         self.dagster_home = check.str_param(dagster_home, "dagster_home")
-        self._image_pull_policy = check.str_param(image_pull_policy, "image_pull_policy")
+        self._image_pull_policy = check.opt_str_param(
+            image_pull_policy, "image_pull_policy", "IfNotPresent"
+        )
         self._image_pull_secrets = check.opt_list_param(
             image_pull_secrets, "image_pull_secrets", of_type=dict
         )
@@ -140,6 +142,26 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         self._env_secrets = check.opt_list_param(env_secrets, "env_secrets", of_type=str)
 
         super().__init__()
+
+    @property
+    def image_pull_policy(self):
+        return self._image_pull_policy
+
+    @property
+    def image_pull_secrets(self):
+        return self._image_pull_secrets
+
+    @property
+    def service_account_name(self):
+        return self._service_account_name
+
+    @property
+    def env_config_maps(self):
+        return self._env_config_maps
+
+    @property
+    def env_secrets(self):
+        return self._env_secrets
 
     @property
     def _batch_api(self):

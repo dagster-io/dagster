@@ -24,8 +24,8 @@ from dagster_test.test_project import (
 
 
 @pytest.mark.integration
-def test_k8s_run_launcher_default(
-    dagster_instance_for_k8s_run_launcher, helm_namespace_for_k8s_run_launcher, dagster_docker_image
+def test_k8s_run_launcher_no_celery_pods(
+    dagster_instance_for_k8s_run_launcher, helm_namespace_for_k8s_run_launcher
 ):
     # sanity check that we have a K8sRunLauncher
     check.inst(dagster_instance_for_k8s_run_launcher.run_launcher, K8sRunLauncher)
@@ -35,6 +35,11 @@ def test_k8s_run_launcher_default(
     celery_pod_names = [p.metadata.name for p in pods.items if "celery-workers" in p.metadata.name]
     check.invariant(not celery_pod_names)
 
+
+@pytest.mark.integration
+def test_k8s_run_launcher_default(
+    dagster_instance_for_k8s_run_launcher, helm_namespace_for_k8s_run_launcher, dagster_docker_image
+):
     run_config = merge_dicts(
         load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml")),
         load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
@@ -52,7 +57,37 @@ def test_k8s_run_launcher_default(
             },
         },
     )
+    _launch_executor_run(
+        run_config,
+        dagster_instance_for_k8s_run_launcher,
+        helm_namespace_for_k8s_run_launcher,
+    )
 
+
+@pytest.mark.integration
+def test_k8s_executor_get_config_from_run_launcher(
+    dagster_instance_for_k8s_run_launcher, helm_namespace_for_k8s_run_launcher, dagster_docker_image
+):
+    # Verify that if you do not specify executor config it is delegated by the run launcher
+    run_config = merge_dicts(
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml")),
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
+        {
+            "execution": {"k8s": {"config": {"job_image": dagster_docker_image}}},
+        },
+    )
+    _launch_executor_run(
+        run_config,
+        dagster_instance_for_k8s_run_launcher,
+        helm_namespace_for_k8s_run_launcher,
+    )
+
+
+def _launch_executor_run(
+    run_config,
+    dagster_instance_for_k8s_run_launcher,
+    helm_namespace_for_k8s_run_launcher,
+):
     pipeline_name = "demo_k8s_executor_pipeline"
     tags = {"key": "value"}
 
