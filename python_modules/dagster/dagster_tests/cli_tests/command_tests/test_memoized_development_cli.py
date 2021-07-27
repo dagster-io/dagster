@@ -15,7 +15,7 @@ from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import SqliteRunStorage
 from dagster.utils import file_relative_path
 
-from ...core_tests.execution_tests.memoized_dev_loop_pipeline import asset_pipeline
+from ...execution_tests.memoized_dev_loop_pipeline import asset_pipeline
 
 
 class Capturing(list):
@@ -62,7 +62,7 @@ def test_execute_display_command():
             "config": (os.path.join(temp_dir, "pipeline_config.yaml"),),
             "pipeline": "asset_pipeline",
             "python_file": file_relative_path(
-                __file__, "../../core_tests/execution_tests/memoized_dev_loop_pipeline.py"
+                __file__, "../../execution_tests/memoized_dev_loop_pipeline.py"
             ),
             "tags": '{"dagster/is_memoized_run": "true"}',
         }
