@@ -77,6 +77,10 @@ config:
   {{- if $s3ComputeLogManagerConfig.endpointUrl }}
   endpoint_url: {{ include "stringSource" $s3ComputeLogManagerConfig.endpointUrl }}
   {{- end }}
+
+  {{- if $s3ComputeLogManagerConfig.skipEmptyFiles }}
+  skip_empty_files: {{ $s3ComputeLogManagerConfig.skipEmptyFiles }}
+  {{- end }}
 {{- end }}
 
 {{- define "dagsterYaml.computeLogManager.custom" }}

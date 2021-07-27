@@ -10,6 +10,7 @@ from schema.charts.dagster.subschema.compute_log_manager import (
 )
 from schema.charts.dagster.subschema.compute_log_manager import (
     ComputeLogManager,
+    ComputeLogManagerConfig,
     ComputeLogManagerType,
 )
 from schema.charts.dagster.subschema.compute_log_manager import (
@@ -177,6 +178,152 @@ def test_noop_compute_log_manager(
 
     assert compute_logs_config["module"] == "dagster.core.storage.noop_compute_log_manager"
     assert compute_logs_config["class"] == "NoOpComputeLogManager"
+
+
+def test_azure_blob_compute_log_manager(template: HelmTemplate):
+    storage_account = "account"
+    container = "container"
+    secret_key = "secret_key"
+    local_dir = "/dir"
+    prefix = "prefix"
+    helm_values = DagsterHelmValues.construct(
+        computeLogManager=ComputeLogManager.construct(
+            type=ComputeLogManagerType.AZURE,
+            config=ComputeLogManagerConfig.construct(
+                azureBlobComputeLogManager=AzureBlobComputeLogManagerModel(
+                    storageAccount=storage_account,
+                    container=container,
+                    secretKey=secret_key,
+                    localDir=local_dir,
+                    prefix=prefix,
+                )
+            ),
+        )
+    )
+
+    configmaps = template.render(helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    compute_logs_config = instance["compute_logs"]
+
+    assert compute_logs_config["module"] == "dagster_azure.blob.compute_log_manager"
+    assert compute_logs_config["class"] == "AzureBlobComputeLogManager"
+    assert compute_logs_config["config"] == {
+        "storage_account": storage_account,
+        "container": container,
+        "secret_key": secret_key,
+        "local_dir": local_dir,
+        "prefix": prefix,
+    }
+
+    # Test all config fields in configurable class
+    assert compute_logs_config["config"].keys() == AzureBlobComputeLogManager.config_type().keys()
+
+
+def test_gcs_compute_log_manager(template: HelmTemplate):
+    bucket = "bucket"
+    local_dir = "/dir"
+    prefix = "prefix"
+    helm_values = DagsterHelmValues.construct(
+        computeLogManager=ComputeLogManager.construct(
+            type=ComputeLogManagerType.GCS,
+            config=ComputeLogManagerConfig.construct(
+                gcsComputeLogManager=GCSComputeLogManagerModel(
+                    bucket=bucket, localDir=local_dir, prefix=prefix
+                )
+            ),
+        )
+    )
+
+    configmaps = template.render(helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    compute_logs_config = instance["compute_logs"]
+
+    assert compute_logs_config["module"] == "dagster_gcp.gcs.compute_log_manager"
+    assert compute_logs_config["class"] == "GCSComputeLogManager"
+    assert compute_logs_config["config"] == {
+        "bucket": bucket,
+        "local_dir": local_dir,
+        "prefix": prefix,
+    }
+
+    # Test all config fields in configurable class
+    assert compute_logs_config["config"].keys() == GCSComputeLogManager.config_type().keys()
+
+
+def test_s3_compute_log_manager(template: HelmTemplate):
+    bucket = "bucket"
+    local_dir = "/dir"
+    prefix = "prefix"
+    use_ssl = True
+    verify = True
+    verify_cert_path = "/path"
+    endpoint_url = "endpoint.com"
+    skip_empty_files = True
+    helm_values = DagsterHelmValues.construct(
+        computeLogManager=ComputeLogManager.construct(
+            type=ComputeLogManagerType.S3,
+            config=ComputeLogManagerConfig.construct(
+                s3ComputeLogManager=S3ComputeLogManagerModel(
+                    bucket=bucket,
+                    localDir=local_dir,
+                    prefix=prefix,
+                    useSsl=use_ssl,
+                    verify=verify,
+                    verifyCertPath=verify_cert_path,
+                    endpointUrl=endpoint_url,
+                    skipEmptyFiles=skip_empty_files,
+                )
+            ),
+        )
+    )
+
+    configmaps = template.render(helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    compute_logs_config = instance["compute_logs"]
+
+    assert compute_logs_config["module"] == "dagster_aws.s3.compute_log_manager"
+    assert compute_logs_config["class"] == "S3ComputeLogManager"
+    assert compute_logs_config["config"] == {
+        "bucket": bucket,
+        "local_dir": local_dir,
+        "prefix": prefix,
+        "use_ssl": use_ssl,
+        "verify": verify,
+        "verify_cert_path": verify_cert_path,
+        "endpoint_url": endpoint_url,
+        "skip_empty_files": skip_empty_files,
+    }
+
+    # Test all config fields in configurable class
+    assert compute_logs_config["config"].keys() == S3ComputeLogManager.config_type().keys()
+
+
+def test_custom_compute_log_manager_config(template: HelmTemplate):
+    module = "a_module"
+    class_ = "Class"
+    config_field_one = "1"
+    config_field_two = "two"
+    config = {"config_field_one": config_field_one, "config_field_two": config_field_two}
+    helm_values = DagsterHelmValues.construct(
+        computeLogManager=ComputeLogManager.construct(
+            type=ComputeLogManagerType.CUSTOM,
+            config=ComputeLogManagerConfig.construct(
+                customComputeLogManager=ConfigurableClass.construct(
+                    module=module,
+                    class_=class_,
+                    config=config,
+                )
+            ),
+        )
+    )
+
+    configmaps = template.render(helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    compute_logs_config = instance["compute_logs"]
+
+    assert compute_logs_config["module"] == module
+    assert compute_logs_config["class"] == class_
+    assert compute_logs_config["config"] == config
 
 
 @pytest.mark.parametrize(

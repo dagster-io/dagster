@@ -82,7 +82,7 @@ data:
     compute_logs:
       {{- if has $computeLogManagerType (list "NoOpComputeLogManager" "LocalComputeLogManager") -}}
         {{- include "dagsterYaml.computeLogManager.noop" . | indent 6 -}}
-      {{- if eq $computeLogManagerType "AzureBlobComputeLogManager" }}
+      {{- else if eq $computeLogManagerType "AzureBlobComputeLogManager" }}
         {{- include "dagsterYaml.computeLogManager.azure" . | indent 6 -}}
       {{- else if eq $computeLogManagerType "GCSComputeLogManager" }}
         {{- include "dagsterYaml.computeLogManager.gcs" . | indent 6 -}}
@@ -91,4 +91,3 @@ data:
       {{- else if eq $computeLogManagerType "CustomComputeLogManager" }}
         {{- include "dagsterYaml.computeLogManager.custom" . | indent 6 -}}
       {{- end }}
-    {{- end }}
