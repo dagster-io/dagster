@@ -4,6 +4,7 @@ import {MemoryRouter, MemoryRouterProps} from 'react-router-dom';
 
 import {AppContext, AppContextValue} from '../app/AppContext';
 import {PERMISSIONS_ALLOW_ALL} from '../app/Permissions';
+import {WebSocketContext} from '../app/WebSocketProvider';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
 
 import {ApolloTestProps, ApolloTestProvider} from './ApolloTestProvider';
@@ -14,7 +15,11 @@ const testValue = {
   basePath: '',
   permissions: PERMISSIONS_ALLOW_ALL,
   rootServerURI: '',
+};
+
+const websocketValue = {
   websocketURI: 'ws://foo',
+  status: WebSocket.OPEN,
 };
 
 interface Props {
@@ -28,11 +33,13 @@ export const TestProvider: React.FC<Props> = (props) => {
 
   return (
     <AppContext.Provider value={{...testValue, ...appContextProps}}>
-      <MemoryRouter {...routerProps}>
-        <ApolloTestProvider {...apolloProps} typeDefs={typeDefs}>
-          <WorkspaceProvider>{props.children}</WorkspaceProvider>
-        </ApolloTestProvider>
-      </MemoryRouter>
+      <WebSocketContext.Provider value={websocketValue}>
+        <MemoryRouter {...routerProps}>
+          <ApolloTestProvider {...apolloProps} typeDefs={typeDefs}>
+            <WorkspaceProvider>{props.children}</WorkspaceProvider>
+          </ApolloTestProvider>
+        </MemoryRouter>
+      </WebSocketContext.Provider>
     </AppContext.Provider>
   );
 };

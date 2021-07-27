@@ -1,4 +1,4 @@
-import {ApolloClient, useMutation} from '@apollo/client';
+import {useMutation} from '@apollo/client';
 import {NonIdealState} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
@@ -41,19 +41,17 @@ import {
 import {useQueryPersistedLogFilter} from './useQueryPersistedLogFilter';
 
 interface RunProps {
-  client: ApolloClient<any>;
   runId: string;
   run?: RunFragment;
 }
 
 export const Run: React.FunctionComponent<RunProps> = (props) => {
-  const {client, run, runId} = props;
+  const {run, runId} = props;
   const [logsFilter, setLogsFilter] = useQueryPersistedLogFilter();
   const [selectionQuery, setSelectionQuery] = useQueryPersistedState<string>({
     queryKey: 'selection',
     defaults: {selection: ''},
   });
-  const {websocketURI} = React.useContext(AppContext);
 
   const onShowStateDetails = (stepKey: string, logs: RunPipelineRunEventFragment[]) => {
     const errorNode = logs.find(
@@ -79,7 +77,7 @@ export const Run: React.FunctionComponent<RunProps> = (props) => {
     <RunContext.Provider value={run}>
       {run && <RunStatusToPageAttributes run={run} />}
 
-      <LogsProvider websocketURI={websocketURI} key={runId} client={client} runId={runId}>
+      <LogsProvider key={runId} runId={runId}>
         {(logs) => (
           <RunMetadataProvider logs={logs.allNodes}>
             {(metadata) => (

@@ -2,6 +2,7 @@ import {gql} from '@apollo/client';
 import * as React from 'react';
 
 import {DirectGraphQLSubscription} from '../app/DirectGraphQLSubscription';
+import {WebSocketContext} from '../app/WebSocketProvider';
 import {ComputeIOType} from '../types/globalTypes';
 
 import {COMPUTE_LOG_CONTENT_FRAGMENT, MAX_STREAMING_LOG_BYTES} from './ComputeLogContent';
@@ -46,7 +47,6 @@ interface Props {
   }) => React.ReactChild;
   runId: string;
   stepKey: string;
-  websocketURI: string;
 }
 
 interface State {
@@ -93,8 +93,8 @@ const initialState: State = {
 };
 
 export const ComputeLogsProvider = (props: Props) => {
-  // todo dish: Get WS info from context.
-  const {children, runId, stepKey, websocketURI} = props;
+  const {children, runId, stepKey} = props;
+  const {connectionParams, websocketURI} = React.useContext(WebSocketContext);
   const [state, dispatch] = React.useReducer(reducer, initialState);
 
   React.useEffect(() => {
@@ -114,6 +114,7 @@ export const ComputeLogsProvider = (props: Props) => {
       {runId, stepKey, ioType: ComputeIOType.STDOUT, cursor: null},
       onStdout,
       onError,
+      connectionParams,
     );
 
     const stderr = new DirectGraphQLSubscription<ComputeLogsSubscription>(
@@ -122,13 +123,14 @@ export const ComputeLogsProvider = (props: Props) => {
       {runId, stepKey, ioType: ComputeIOType.STDERR, cursor: null},
       onStderr,
       onError,
+      connectionParams,
     );
 
     return () => {
       stdout.close();
       stderr.close();
     };
-  }, [runId, stepKey, websocketURI]);
+  }, [connectionParams, runId, stepKey, websocketURI]);
 
   const {isLoading, stdout, stderr} = state;
   return <>{children({isLoading, stdout, stderr})}</>;

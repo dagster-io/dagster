@@ -1,4 +1,3 @@
-import {ApolloConsumer} from '@apollo/client';
 import {Colors} from '@blueprintjs/core';
 import memoize from 'lodash/memoize';
 import * as React from 'react';
@@ -149,9 +148,7 @@ const LoadedRepositorySection: React.FC<{allRepos: DagsterRepoOption[]}> = ({all
         selected={visibleRepos}
         onToggle={toggleRepo}
       />
-      <ApolloConsumer>
-        {(client) => <RepositoryLocationStateObserver client={client} />}
-      </ApolloConsumer>
+      <RepositoryLocationStateObserver />
       {visibleRepos.size ? (
         <div style={{display: 'flex', flex: 1, flexDirection: 'column', minHeight: 0}}>
           {flagPipelineModeTuples ? (

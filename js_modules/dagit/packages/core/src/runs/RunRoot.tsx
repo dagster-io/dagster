@@ -1,4 +1,4 @@
-import {gql, useApolloClient, useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {Colors, NonIdealState} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
@@ -89,10 +89,8 @@ const RunById: React.FC<{data: RunRootQuery | undefined; runId: string}> = (prop
   const {data, runId} = props;
   useDocumentTitle(`Run: ${runId}`);
 
-  const client = useApolloClient();
-
   if (!data || !data.pipelineRunOrError) {
-    return <Run client={client} run={undefined} runId={runId} />;
+    return <Run run={undefined} runId={runId} />;
   }
 
   if (data.pipelineRunOrError.__typename !== 'PipelineRun') {
@@ -105,7 +103,7 @@ const RunById: React.FC<{data: RunRootQuery | undefined; runId: string}> = (prop
     );
   }
 
-  return <Run client={client} run={data.pipelineRunOrError} runId={runId} />;
+  return <Run run={data.pipelineRunOrError} runId={runId} />;
 };
 
 const RUN_ROOT_QUERY = gql`

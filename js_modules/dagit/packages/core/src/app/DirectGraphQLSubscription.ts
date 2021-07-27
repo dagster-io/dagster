@@ -24,6 +24,7 @@ export class DirectGraphQLSubscription<T> {
   private messagesReceived = false;
   private onFlushMessages: FlushCallback<T>;
   private onError: ErrorCallback;
+  private connectionParams: {[key: string]: string};
   private closed = false;
   private query: any;
   private variables: any;
@@ -34,12 +35,14 @@ export class DirectGraphQLSubscription<T> {
     variables: any,
     onFlushMessages: FlushCallback<T>,
     onError: ErrorCallback,
+    connectionParams: {[key: string]: string} = {},
   ) {
     this.websocketURI = websocketURI;
     this.onFlushMessages = onFlushMessages;
     this.onError = onError;
     this.query = query;
     this.variables = variables;
+    this.connectionParams = connectionParams;
     this.open();
   }
 
@@ -51,7 +54,7 @@ export class DirectGraphQLSubscription<T> {
     ws.addEventListener('error', this.handleRetry);
     ws.addEventListener('close', this.handleRetry);
     ws.addEventListener('open', () => {
-      ws.send(JSON.stringify({type: 'connection_init', payload: {}}));
+      ws.send(JSON.stringify({type: 'connection_init', payload: this.connectionParams}));
       ws.send(
         JSON.stringify({
           id: '1',

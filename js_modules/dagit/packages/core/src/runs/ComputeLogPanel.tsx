@@ -29,7 +29,7 @@ const resolveDownloadUrl = (
 
 export const ComputeLogPanel: React.FC<RunComputeLogs> = React.memo(
   ({runId, stepKeys, computeLogKey, ioType, setComputeLogUrl}) => {
-    const {rootServerURI, websocketURI} = React.useContext(AppContext);
+    const {rootServerURI} = React.useContext(AppContext);
 
     if (!stepKeys.length || !computeLogKey) {
       return (
@@ -44,7 +44,7 @@ export const ComputeLogPanel: React.FC<RunComputeLogs> = React.memo(
 
     return (
       <div style={{flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column'}}>
-        <ComputeLogsProvider websocketURI={websocketURI} runId={runId} stepKey={computeLogKey}>
+        <ComputeLogsProvider runId={runId} stepKey={computeLogKey}>
           {({isLoading, stdout, stderr}) => {
             const logData = ioType === 'stdout' ? stdout : stderr;
             const downloadUrl = resolveDownloadUrl(rootServerURI, logData);
