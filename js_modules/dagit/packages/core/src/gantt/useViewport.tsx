@@ -48,13 +48,13 @@ export const useViewport = (
       if ('ResizeObserver' in window) {
         resizeObserver = new window['ResizeObserver']((entries: any) => {
           if (entries[0].target === ref.current) {
-            onApplySize(entries[0].contentRect);
+            onApplySize({width: ref.current.clientWidth, height: ref.current.clientHeight});
           }
         });
         resizeObserver.observe(ref.current);
       } else {
         console.warn(`No ResizeObserver support, or useViewport is attached to a non-DOM node?`);
-        onApplySize(ref.current.getBoundingClientRect());
+        onApplySize({width: ref.current.clientWidth, height: ref.current.clientHeight});
       }
     }
     return () => {
@@ -84,7 +84,8 @@ export const useViewport = (
   };
 
   const onMoveToViewport = (targetOffset: {left: number; top: number}, animated: boolean) => {
-    const {width, height} = ref.current.getBoundingClientRect();
+    const width = ref.current.clientWidth;
+    const height = ref.current.clientHeight;
 
     if (animation.current) {
       animation.current.cancel();
