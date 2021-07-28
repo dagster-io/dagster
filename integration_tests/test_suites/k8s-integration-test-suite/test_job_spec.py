@@ -111,7 +111,7 @@ metadata:
     app.kubernetes.io/version: {dagster_version}
   name: dagster-run-{run_id}
 spec:
-  backoff_limit: 0
+  backoff_limit: {backoff_limit}
   template:
     metadata:
       {annotations}
@@ -154,7 +154,7 @@ spec:
       - config_map:
           name: dagster-instance
         name: dagster-instance
-  ttl_seconds_after_finished: 86400
+  ttl_seconds_after_finished: {ttl_seconds_after_finished}
 """
 
 
@@ -244,6 +244,9 @@ def test_valid_job_format_with_user_defined_k8s_config(run_launcher):
     pipeline_name = "demo_pipeline"
     run = PipelineRun(pipeline_name=pipeline_name, run_config=run_config)
 
+    backoff_limit = 1234
+    ttl_seconds_after_finished = 5678
+
     tags = validate_tags(
         {
             USER_DEFINED_K8S_CONFIG_KEY: (
@@ -257,6 +260,10 @@ def test_valid_job_format_with_user_defined_k8s_config(run_launcher):
                     "pod_template_spec_metadata": {
                         "annotations": {"cluster-autoscaler.kubernetes.io/safe-to-evict": "true"},
                         "labels": {"spotinst.io/restrict-scale-down": "true"},
+                    },
+                    "job_spec_config": {
+                        "ttl_seconds_after_finished": ttl_seconds_after_finished,
+                        "backoff_limit": backoff_limit,
                     },
                     "pod_spec_config": {
                         "affinity": {
@@ -302,6 +309,8 @@ def test_valid_job_format_with_user_defined_k8s_config(run_launcher):
             dagster_version=dagster_version,
             labels="spotinst.io/restrict-scale-down: 'true'",
             env_from=ENV_FROM,
+            backoff_limit=backoff_limit,
+            ttl_seconds_after_finished=ttl_seconds_after_finished,
             resources="""
         resources:
           limits:

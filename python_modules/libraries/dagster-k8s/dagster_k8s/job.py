@@ -17,9 +17,9 @@ from dagster.utils import frozentags, merge_dicts
 # To retry step job, users should raise RetryRequested() so that the dagster system is aware of the
 # retry. As an example, see retry_pipeline in dagster_test.test_project.test_pipelines.repo
 # To override this config, user can specify UserDefinedDagsterK8sConfig.
-K8S_JOB_BACKOFF_LIMIT = 0
+DEFAULT_K8S_JOB_BACKOFF_LIMIT = 0
 
-K8S_JOB_TTL_SECONDS_AFTER_FINISHED = 24 * 60 * 60  # 1 day
+DEFAULT_K8S_JOB_TTL_SECONDS_AFTER_FINISHED = 24 * 60 * 60  # 1 day
 
 DAGSTER_HOME_DEFAULT = "/opt/dagster/dagster_home"
 
@@ -51,6 +51,11 @@ USER_DEFINED_K8S_CONFIG_SCHEMA = Shape(
         "job_spec_config": Permissive(),
     }
 )
+
+DEFAULT_JOB_SPEC_CONFIG = {
+    "ttl_seconds_after_finished": DEFAULT_K8S_JOB_TTL_SECONDS_AFTER_FINISHED,
+    "backoff_limit": DEFAULT_K8S_JOB_BACKOFF_LIMIT,
+}
 
 
 class UserDefinedDagsterK8sConfig(
@@ -516,6 +521,11 @@ def construct_dagster_k8s_job(
         ),
     )
 
+    job_spec_config = merge_dicts(
+        DEFAULT_JOB_SPEC_CONFIG,
+        user_defined_k8s_config.job_spec_config,
+    )
+
     job = kubernetes.client.V1Job(
         api_version="batch/v1",
         kind="Job",
@@ -524,9 +534,7 @@ def construct_dagster_k8s_job(
         ),
         spec=kubernetes.client.V1JobSpec(
             template=template,
-            backoff_limit=K8S_JOB_BACKOFF_LIMIT,
-            ttl_seconds_after_finished=K8S_JOB_TTL_SECONDS_AFTER_FINISHED,
-            **user_defined_k8s_config.job_spec_config,
+            **job_spec_config,
         ),
         **user_defined_k8s_config.job_config,
     )
