@@ -108,13 +108,18 @@ class DbtResource:
         """
 
     @abstractmethod
-    def seed(self, show: bool = False, **kwargs) -> DbtOutput:
+    def seed(
+        self, show: bool = False, select: List[str] = None, exclude: List[str] = None, **kwargs
+    ) -> DbtOutput:
         """
         Run the ``seed`` command on a dbt project. kwargs are passed in as additional parameters.
 
         Args:
             show (bool, optional): If ``True``, then show a sample of the seeded data in the
                 response. Defaults to ``False``.
+            select (List[str], optional): the snapshots to include in the run.
+            exclude (List[str], optional): the snapshots to exclude from the run.
+
 
         Returns:
             DbtOutput: object containing parsed output from dbt

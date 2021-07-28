@@ -294,7 +294,9 @@ class DbtRpcClient(DbtResource):
 
         return self._post(data=json.dumps(data))
 
-    def seed(self, show: bool = False, **kwargs) -> DbtRpcOutput:
+    def seed(
+        self, show: bool = False, select: List[str] = None, exclude: List[str] = None, **kwargs
+    ) -> DbtRpcOutput:
         """Sends a request with the method ``seed`` to the dbt RPC server, and returns the response.
         For more details, see the dbt docs for the RPC method `seed
         <https://docs.getdbt.com/reference/commands/rpc/#run-seed>`_.
@@ -302,6 +304,8 @@ class DbtRpcClient(DbtResource):
         Args:
             show (bool, optional): If ``True``, then show a sample of the seeded data in the
                 response. Defaults to ``False``.
+            select (List[str], optional): the snapshots to include in the run.
+            exclude (List[str], optional): the snapshots to exclude from the run.
 
         Returns:
             Response: the HTTP response from the dbt RPC server.
