@@ -129,7 +129,7 @@
     "source-map-explorer": "^2.5.0",
     "ts-node": "9.1.1",
     "ts-prune": "0.8.9",
-    "typescript": "4.3.2",
+    "typescript": "4.3.5",
     "webpack": "4.46.0"
   },
   "peerDependencies": {

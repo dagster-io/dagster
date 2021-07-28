@@ -2849,7 +2849,7 @@ __metadata:
     style-loader: 1.3.0
     terser-webpack-plugin: 4.2.3
     ts-pnp: 1.2.0
-    typescript: 4.3.2
+    typescript: 4.3.5
     url-loader: 4.1.1
     webpack: 4.44.2
     webpack-dev-server: 3.11.1
@@ -2981,7 +2981,7 @@ __metadata:
     subscriptions-transport-ws: ^0.9.15
     ts-node: 9.1.1
     ts-prune: 0.8.9
-    typescript: 4.3.2
+    typescript: 4.3.5
     webpack: 4.46.0
     worker-loader: ^3.0.8
     yaml: 2.0.0-1
@@ -24486,6 +24486,16 @@ typescript@4.3.2:
   languageName: node
   linkType: hard
 
+typescript@4.3.5:
+  version: 4.3.5
+  resolution: "typescript@npm:4.3.5"
+  bin:
+    tsc: bin/tsc
+    tsserver: bin/tsserver
+  checksum: d9a8e78d72dd19896e6bfa73ab2a0fcea6eca2700d1d6e7c33f67a970af54a3e0fed8f715a8c4e6a0ff7fc0995067b394b2003518ab0aa84cd396377e54b760c
+  languageName: node
+  linkType: hard
+
 "typescript@patch:typescript@*#builtin<compat/typescript>":
   version: 4.2.4
   resolution: "typescript@patch:typescript@npm%3A4.2.4#builtin<compat/typescript>::version=4.2.4&hash=ddfc1b"
@@ -24503,6 +24513,16 @@ typescript@4.3.2:
     tsc: bin/tsc
     tsserver: bin/tsserver
   checksum: 68d48dc86dacfeab59a22414ff061c976c46b679a9717a3a710051ea7bab779fd23f4edb856434da8155e8e8646c90b3912e342cc0010dfd15ed321a42cb0578
+  languageName: node
+  linkType: hard
+
+"typescript@patch:typescript@4.3.5#builtin<compat/typescript>":
+  version: 4.3.5
+  resolution: "typescript@patch:typescript@npm%3A4.3.5#builtin<compat/typescript>::version=4.3.5&hash=ddfc1b"
+  bin:
+    tsc: bin/tsc
+    tsserver: bin/tsserver
+  checksum: 7f0b8343f71ecac18095be1476b398aca420ab60dc207cc1efe078f381eef5527b80a518297720257114cdbda65612f8839e4b63e85dc95e67ac5cbbade8bdf0
   languageName: node
   linkType: hard
 
