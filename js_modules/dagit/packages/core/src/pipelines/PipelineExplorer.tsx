@@ -41,27 +41,26 @@ interface PipelineExplorerProps {
   getInvocations?: (definitionName: string) => {handleID: string}[];
 }
 
-interface PipelineExplorerState {
-  highlighted: string;
-}
+export const PipelineExplorer: React.FC<PipelineExplorerProps> = (props) => {
+  const {
+    getInvocations,
+    handles,
+    options,
+    pipeline,
+    explorerPath,
+    onChangeExplorerPath,
+    parentHandle,
+    selectedHandle,
+    setOptions,
+    repoAddress,
+  } = props;
+  const [highlighted, setHighlighted] = React.useState('');
 
-export class PipelineExplorer extends React.Component<
-  PipelineExplorerProps,
-  PipelineExplorerState
-> {
-  pathOverlayEl = React.createRef<HTMLDivElement>();
-
-  state = {
-    highlighted: '',
-  };
-
-  handleQueryChange = (solidsQuery: string) => {
-    const {explorerPath, onChangeExplorerPath} = this.props;
+  const handleQueryChange = (solidsQuery: string) => {
     onChangeExplorerPath({...explorerPath, solidsQuery}, 'replace');
   };
 
-  handleAdjustPath = (fn: (solidNames: string[]) => void) => {
-    const {explorerPath, onChangeExplorerPath} = this.props;
+  const handleAdjustPath = (fn: (solidNames: string[]) => void) => {
     const pathSolids = [...explorerPath.pathSolids];
     const retValue = fn(pathSolids);
     if (retValue !== undefined) {
@@ -74,8 +73,8 @@ export class PipelineExplorer extends React.Component<
   // This is important because the DAG component tree doesn't always have access to a handleID,
   // and we sometimes want to be able to jump to a solid in the parent layer.
   //
-  handleClickSolid = (arg: SolidNameOrPath) => {
-    this.handleAdjustPath((solidNames) => {
+  const handleClickSolid = (arg: SolidNameOrPath) => {
+    handleAdjustPath((solidNames) => {
       if ('name' in arg) {
         solidNames[solidNames.length ? solidNames.length - 1 : 0] = arg.name;
       } else {
@@ -94,14 +93,14 @@ export class PipelineExplorer extends React.Component<
     });
   };
 
-  handleEnterCompositeSolid = (arg: SolidNameOrPath) => {
+  const handleEnterCompositeSolid = (arg: SolidNameOrPath) => {
     // To animate the rect of the composite solid expanding correctly, we need
     // to select it before entering it so we can draw the "initial state" of the
     // labeled rectangle.
-    this.handleClickSolid(arg);
+    handleClickSolid(arg);
 
     window.requestAnimationFrame(() => {
-      this.handleAdjustPath((solidNames) => {
+      handleAdjustPath((solidNames) => {
         const last = 'name' in arg ? arg.name : arg.path[arg.path.length - 1];
         solidNames[solidNames.length - 1] = last;
         solidNames.push('');
@@ -109,144 +108,143 @@ export class PipelineExplorer extends React.Component<
     });
   };
 
-  handleLeaveCompositeSolid = () => {
-    this.handleAdjustPath((solidNames) => {
+  const handleLeaveCompositeSolid = () => {
+    handleAdjustPath((solidNames) => {
       solidNames.pop();
     });
   };
 
-  handleClickBackground = () => {
-    this.handleClickSolid({name: ''});
+  const handleClickBackground = () => {
+    handleClickSolid({name: ''});
   };
 
-  render() {
-    const {options, pipeline, explorerPath, parentHandle, selectedHandle} = this.props;
-    const {highlighted} = this.state;
+  const {solidsQuery} = explorerPath;
+  const solids = React.useMemo(() => handles.map((h) => h.solid), [handles]);
+  const solidsQueryEnabled = !parentHandle && !explorerPath.snapshotId;
+  const explodeCompositesEnabled =
+    !parentHandle &&
+    (options.explodeComposites ||
+      solids.some((f) => f.definition.__typename === 'CompositeSolidDefinition'));
 
-    const solids = this.props.handles.map((h) => h.solid);
-    const solidsQueryEnabled = !parentHandle && !explorerPath.snapshotId;
-    const explodeCompositesEnabled =
-      !parentHandle &&
-      (options.explodeComposites ||
-        solids.some((f) => f.definition.__typename === 'CompositeSolidDefinition'));
+  const queryResultSolids = React.useMemo(
+    () => (solidsQueryEnabled ? filterByQuery(solids, solidsQuery) : {all: solids, focus: []}),
+    [solidsQuery, solids, solidsQueryEnabled],
+  );
 
-    const queryResultSolids = solidsQueryEnabled
-      ? filterByQuery(solids, explorerPath.solidsQuery)
-      : {all: solids, focus: []};
+  const {all} = queryResultSolids;
+  const highlightedSolids = React.useMemo(() => all.filter((s) => s.name.includes(highlighted)), [
+    highlighted,
+    all,
+  ]);
 
-    const highlightedSolids = queryResultSolids.all.filter((s) => s.name.includes(highlighted));
+  const backgroundColor = parentHandle ? Colors.WHITE : Colors.WHITE;
+  const backgroundTranslucent = Color(backgroundColor).fade(0.6).toString();
 
-    const backgroundColor = parentHandle ? Colors.WHITE : Colors.WHITE;
-    const backgroundTranslucent = Color(backgroundColor).fade(0.6).toString();
-
-    return (
-      <SplitPanelContainer
-        identifier="explorer"
-        firstInitialPercent={70}
-        first={
-          <>
-            <PathOverlay style={{background: backgroundTranslucent}} ref={this.pathOverlayEl}>
-              <Breadcrumbs
-                items={explorerPath.pathSolids.map((name, idx) => {
-                  return {
-                    text: name,
-                    onClick: () =>
-                      this.props.onChangeExplorerPath(
-                        {...explorerPath, pathSolids: explorerPath.pathSolids.slice(0, idx + 1)},
-                        'push',
-                      ),
-                  };
-                })}
-                currentBreadcrumbRenderer={() => (
-                  <SolidJumpBar
-                    solids={queryResultSolids.all}
-                    selectedSolid={selectedHandle && selectedHandle.solid}
-                    onChange={(solid) => this.handleClickSolid({name: solid.name})}
-                  />
-                )}
-              />
-            </PathOverlay>
-            {solidsQueryEnabled && (
-              <PipelineGraphQueryInputContainer>
-                <GraphQueryInput
-                  items={solids}
-                  value={explorerPath.solidsQuery}
-                  placeholder="Type a Solid Subset"
-                  onChange={this.handleQueryChange}
-                />
-              </PipelineGraphQueryInputContainer>
-            )}
-
-            <SearchOverlay style={{background: backgroundTranslucent}}>
-              <SolidHighlightInput
-                type="text"
-                name="highlighted"
-                leftIcon="search"
-                value={highlighted}
-                placeholder="Highlight..."
-                onChange={(e: React.ChangeEvent<any>) =>
-                  this.setState({highlighted: e.target.value})
-                }
-              />
-            </SearchOverlay>
-            {explodeCompositesEnabled && (
-              <OptionsOverlay>
-                <Checkbox
-                  label="Explode composites"
-                  checked={options.explodeComposites}
-                  onChange={() => {
-                    this.handleQueryChange('');
-                    this.props.setOptions({
-                      ...options,
-                      explodeComposites: !options.explodeComposites,
-                    });
-                  }}
-                />
-              </OptionsOverlay>
-            )}
-            {solids.length === 0 ? <EmptyDAGNotice /> : null}
-            {solids.length > 0 &&
-              queryResultSolids.all.length === 0 &&
-              !explorerPath.solidsQuery.length && <LargeDAGNotice />}
-            <PipelineGraphContainer
-              pipelineName={pipeline.name}
-              backgroundColor={backgroundColor}
-              solids={queryResultSolids.all}
-              focusSolids={queryResultSolids.focus}
-              highlightedSolids={highlightedSolids}
-              selectedHandle={selectedHandle}
-              parentHandle={parentHandle}
-              onClickSolid={this.handleClickSolid}
-              onClickBackground={this.handleClickBackground}
-              onEnterCompositeSolid={this.handleEnterCompositeSolid}
-              onLeaveCompositeSolid={this.handleLeaveCompositeSolid}
-            />
-          </>
-        }
-        second={
-          <RightInfoPanel>
-            <Route
-              // eslint-disable-next-line react/no-children-prop
-              children={({location}: {location: any}) => (
-                <SidebarTabbedContainer
-                  pipeline={pipeline}
-                  explorerPath={explorerPath}
-                  solidHandleID={selectedHandle && selectedHandle.handleID}
-                  parentSolidHandleID={parentHandle && parentHandle.handleID}
-                  getInvocations={this.props.getInvocations}
-                  onEnterCompositeSolid={this.handleEnterCompositeSolid}
-                  onClickSolid={this.handleClickSolid}
-                  repoAddress={this.props.repoAddress}
-                  {...querystring.parse(location.search || '')}
+  return (
+    <SplitPanelContainer
+      identifier="explorer"
+      firstInitialPercent={70}
+      first={
+        <>
+          <PathOverlay style={{background: backgroundTranslucent}}>
+            <Breadcrumbs
+              items={explorerPath.pathSolids.map((name, idx) => {
+                return {
+                  text: name,
+                  onClick: () =>
+                    onChangeExplorerPath(
+                      {...explorerPath, pathSolids: explorerPath.pathSolids.slice(0, idx + 1)},
+                      'push',
+                    ),
+                };
+              })}
+              currentBreadcrumbRenderer={() => (
+                <SolidJumpBar
+                  solids={queryResultSolids.all}
+                  selectedSolid={selectedHandle && selectedHandle.solid}
+                  onChange={(solid) => handleClickSolid({name: solid.name})}
                 />
               )}
             />
-          </RightInfoPanel>
-        }
-      />
-    );
-  }
-}
+          </PathOverlay>
+          {solidsQueryEnabled && (
+            <PipelineGraphQueryInputContainer>
+              <GraphQueryInput
+                items={solids}
+                value={explorerPath.solidsQuery}
+                placeholder="Type a Solid Subset"
+                onChange={handleQueryChange}
+              />
+            </PipelineGraphQueryInputContainer>
+          )}
+
+          <SearchOverlay style={{background: backgroundTranslucent}}>
+            <SolidHighlightInput
+              type="text"
+              name="highlighted"
+              leftIcon="search"
+              value={highlighted}
+              placeholder="Highlight..."
+              onChange={(e: React.ChangeEvent<any>) => setHighlighted(e.target.value)}
+            />
+          </SearchOverlay>
+          {explodeCompositesEnabled && (
+            <OptionsOverlay>
+              <Checkbox
+                label="Explode composites"
+                checked={options.explodeComposites}
+                onChange={() => {
+                  handleQueryChange('');
+                  setOptions({
+                    ...options,
+                    explodeComposites: !options.explodeComposites,
+                  });
+                }}
+              />
+            </OptionsOverlay>
+          )}
+          {solids.length === 0 ? <EmptyDAGNotice /> : null}
+          {solids.length > 0 &&
+            queryResultSolids.all.length === 0 &&
+            !explorerPath.solidsQuery.length && <LargeDAGNotice />}
+          <PipelineGraphContainer
+            pipelineName={pipeline.name}
+            backgroundColor={backgroundColor}
+            solids={queryResultSolids.all}
+            focusSolids={queryResultSolids.focus}
+            highlightedSolids={highlightedSolids}
+            selectedHandle={selectedHandle}
+            parentHandle={parentHandle}
+            onClickSolid={handleClickSolid}
+            onClickBackground={handleClickBackground}
+            onEnterCompositeSolid={handleEnterCompositeSolid}
+            onLeaveCompositeSolid={handleLeaveCompositeSolid}
+          />
+        </>
+      }
+      second={
+        <RightInfoPanel>
+          <Route
+            // eslint-disable-next-line react/no-children-prop
+            children={({location}: {location: any}) => (
+              <SidebarTabbedContainer
+                pipeline={pipeline}
+                explorerPath={explorerPath}
+                solidHandleID={selectedHandle && selectedHandle.handleID}
+                parentSolidHandleID={parentHandle && parentHandle.handleID}
+                getInvocations={getInvocations}
+                onEnterCompositeSolid={handleEnterCompositeSolid}
+                onClickSolid={handleClickSolid}
+                repoAddress={repoAddress}
+                {...querystring.parse(location.search || '')}
+              />
+            )}
+          />
+        </RightInfoPanel>
+      }
+    />
+  );
+};
 
 export const PIPELINE_EXPLORER_FRAGMENT = gql`
   fragment PipelineExplorerFragment on IPipelineSnapshot {

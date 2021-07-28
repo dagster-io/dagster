@@ -89,8 +89,6 @@ export const PipelineExplorerContainer: React.FC<{
   const queryResult = useQuery<PipelineExplorerRootQuery, PipelineExplorerRootQueryVariables>(
     PIPELINE_EXPLORER_ROOT_QUERY,
     {
-      fetchPolicy: 'cache-and-network',
-      partialRefetch: true,
       variables: {
         pipelineSelector: explorerPath.snapshotId ? undefined : pipelineSelector,
         snapshotId: explorerPath.snapshotId ? explorerPath.snapshotId : undefined,
@@ -99,6 +97,7 @@ export const PipelineExplorerContainer: React.FC<{
       },
     },
   );
+
   return (
     <Loading<PipelineExplorerRootQuery> queryResult={queryResult}>
       {({pipelineSnapshotOrError: result}) => {
