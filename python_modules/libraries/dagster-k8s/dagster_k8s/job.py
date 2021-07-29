@@ -1,8 +1,10 @@
 import hashlib
 import json
+import os
 import random
 import string
 from collections import namedtuple
+from typing import List
 
 import kubernetes
 from dagster import Array, Field, Noneable, StringSource
@@ -180,7 +182,8 @@ class DagsterK8sJobConfig(
     namedtuple(
         "_K8sJobTaskConfig",
         "job_image dagster_home image_pull_policy image_pull_secrets service_account_name "
-        "instance_config_map postgres_password_secret env_config_maps env_secrets volume_mounts",
+        "instance_config_map postgres_password_secret env_config_maps env_secrets env_vars "
+        "volume_mounts",
     )
 ):
     """Configuration parameters for launching Dagster Jobs on Kubernetes.
@@ -213,6 +216,8 @@ class DagsterK8sJobConfig(
         env_secrets (Optional[List[str]]): A list of custom Secret names from which to
             draw environment variables (using ``envFrom``) for the Job. Default: ``[]``. See:
             https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables
+        env_vars (Optional[List[str]]): A list of environment variables to inject into the Job.
+            Default: ``[]``. See: https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables
         job_image (Optional[str]): The docker image to use. The Job container will be launched with this
             image. Should not be specified if using userDeployments.
 
@@ -229,6 +234,7 @@ class DagsterK8sJobConfig(
         postgres_password_secret=None,
         env_config_maps=None,
         env_secrets=None,
+        env_vars=None,
         volume_mounts=None,
     ):
         return super(DagsterK8sJobConfig, cls).__new__(
@@ -248,6 +254,7 @@ class DagsterK8sJobConfig(
             ),
             env_config_maps=check.opt_list_param(env_config_maps, "env_config_maps", of_type=str),
             env_secrets=check.opt_list_param(env_secrets, "env_secrets", of_type=str),
+            env_vars=check.opt_list_param(env_vars, "env_secrets", of_type=str),
             volume_mounts=check.opt_list_param(volume_mounts, "volume_mounts"),
         )
 
@@ -332,7 +339,21 @@ class DagsterK8sJobConfig(
                 "variables (using ``envFrom``) for the Job. Default: ``[]``. See:"
                 "https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables",
             ),
+            "env_vars": Field(
+                Noneable(Array(str)),
+                is_required=False,
+                description="A list of environment variables to inject into the Job. "
+                "Default: ``[]``. See: "
+                "https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables",
+            ),
         }
+
+    @property
+    def env(self) -> List[kubernetes.client.V1EnvVar]:
+        return [
+            kubernetes.client.V1EnvVar(name=key, value=os.getenv(key))
+            for key in (self.env_vars or [])
+        ]
 
     @property
     def env_from_sources(self):
@@ -454,7 +475,7 @@ def construct_dagster_k8s_job(
         image=job_config.job_image,
         args=args,
         image_pull_policy=job_config.image_pull_policy,
-        env=env + additional_k8s_env_vars,
+        env=env + job_config.env + additional_k8s_env_vars,
         env_from=job_config.env_from_sources,
         volume_mounts=[
             kubernetes.client.V1VolumeMount(

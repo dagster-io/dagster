@@ -86,6 +86,8 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         env_secrets (Optional[List[str]]): A list of custom Secret names from which to
             draw environment variables (using ``envFrom``) for the Job. Default: ``[]``. See:
             https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables
+        env_vars (Optional[List[str]]): A list of environment variables to inject into the Job.
+            Default: ``[]``. See: https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables
     """
 
     def __init__(
@@ -103,6 +105,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         job_namespace="default",
         env_config_maps=None,
         env_secrets=None,
+        env_vars=None,
         k8s_client_batch_api=None,
     ):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
@@ -140,6 +143,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             env_config_maps, "env_config_maps", of_type=str
         )
         self._env_secrets = check.opt_list_param(env_secrets, "env_secrets", of_type=str)
+        self._env_vars = check.opt_list_param(env_vars, "env_vars", of_type=str)
 
         super().__init__()
 
@@ -213,6 +217,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                     self._env_config_maps, "env_config_maps", of_type=str
                 ),
                 env_secrets=check.opt_list_param(self._env_secrets, "env_secrets", of_type=str),
+                env_vars=check.opt_list_param(self._env_vars, "env_vars", of_type=str),
             )
             return self._job_config
 
@@ -235,6 +240,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                 self._env_config_maps, "env_config_maps", of_type=str
             ),
             env_secrets=check.opt_list_param(self._env_secrets, "env_secrets", of_type=str),
+            env_vars=check.opt_list_param(self._env_vars, "env_vars", of_type=str),
         )
 
     def launch_run(self, context: LaunchRunContext) -> None:
