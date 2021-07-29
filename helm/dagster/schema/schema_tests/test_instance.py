@@ -29,6 +29,12 @@ from schema.charts.dagster.subschema.daemon import (
     TagConcurrencyLimit,
 )
 from schema.charts.dagster.subschema.postgresql import PostgreSQL, Service
+from schema.charts.dagster.subschema.run_launcher import (
+    K8sRunLauncherConfig,
+    RunLauncher,
+    RunLauncherConfig,
+    RunLauncherType,
+)
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.utils.helm_template import HelmTemplate
 
@@ -85,6 +91,44 @@ def test_storage_postgres_db_config(template: HelmTemplate, storage: str):
     assert postgres_db["db_name"] == postgresql_database
     assert postgres_db["port"] == postgresql_port
     assert postgres_db["params"] == postgresql_params
+
+
+def test_k8s_run_launcher_config(template: HelmTemplate):
+    job_namespace = "namespace"
+    load_incluster_config = True
+    env_config_maps = [{"name": "env_config_map"}]
+    env_secrets = [{"name": "secret"}]
+    env_vars = ["ENV_VAR"]
+    helm_values = DagsterHelmValues.construct(
+        runLauncher=RunLauncher.construct(
+            type=RunLauncherType.K8S,
+            config=RunLauncherConfig.construct(
+                k8sRunLauncher=K8sRunLauncherConfig.construct(
+                    jobNamespace=job_namespace,
+                    loadInclusterConfig=load_incluster_config,
+                    envConfigMaps=env_config_maps,
+                    envSecrets=env_secrets,
+                    envVars=env_vars,
+                )
+            ),
+        )
+    )
+
+    configmaps = template.render(helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    run_launcher_config = instance["run_launcher"]
+
+    assert run_launcher_config["module"] == "dagster_k8s"
+    assert run_launcher_config["class"] == "K8sRunLauncher"
+    assert run_launcher_config["config"]["job_namespace"] == job_namespace
+    assert run_launcher_config["config"]["load_incluster_config"] == load_incluster_config
+    assert run_launcher_config["config"]["env_config_maps"][1:] == [
+        configmap["name"] for configmap in env_config_maps
+    ]
+    assert run_launcher_config["config"]["env_secrets"] == [
+        secret["name"] for secret in env_secrets
+    ]
+    assert run_launcher_config["config"]["env_vars"] == env_vars
 
 
 @pytest.mark.parametrize("enabled", [True, False])

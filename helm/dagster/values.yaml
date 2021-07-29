@@ -375,6 +375,14 @@ runLauncher:
       #   - name: secret
       envSecrets: []
 
+      # Additional variables from the existing environment can be passed into the Job.
+      #
+      # Example:
+      #
+      # envVars:
+      #   - "ENV_VAR"
+      envVars: []
+
     # This configuration will only be used if the CeleryK8sRunLauncher is selected
     celeryK8sRunLauncher:
       # The Celery workers can be deployed with a fixed image (no user code included)
