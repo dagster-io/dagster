@@ -1,3 +1,4 @@
+from dagster.core.test_utils import environ
 from dagster_k8s import DagsterK8sJobConfig, construct_dagster_k8s_job
 from dagster_k8s.job import DAGSTER_PG_PASSWORD_ENV_VAR, UserDefinedDagsterK8sConfig
 
@@ -124,3 +125,23 @@ def test_construct_dagster_k8s_job_with_mounts():
         ],
     )
     construct_dagster_k8s_job(cfg, ["foo", "bar"], "job123").to_dict()
+
+
+def test_construct_dagster_k8s_job_with_env():
+    with environ({"ENV_VAR_1": "one", "ENV_VAR_2": "two"}):
+        cfg = DagsterK8sJobConfig(
+            job_image="test/foo:latest",
+            dagster_home="/opt/dagster/dagster_home",
+            instance_config_map="some-instance-configmap",
+            env_vars=["ENV_VAR_1", "ENV_VAR_2"],
+        )
+
+        job = construct_dagster_k8s_job(cfg, ["foo", "bar"], "job").to_dict()
+
+        env = job["spec"]["template"]["spec"]["containers"][0]["env"]
+        env_mapping = {env_var["name"]: env_var for env_var in env}
+
+        # Has DAGSTER_HOME and two additional env vars
+        assert len(env_mapping) == 3
+        assert env_mapping["ENV_VAR_1"]["value"] == "one"
+        assert env_mapping["ENV_VAR_2"]["value"] == "two"
