@@ -195,11 +195,16 @@ def create_backfill_run(
         backfill_job.tags,
     )
 
+    solids_to_execute = None
+    solid_selection = None
     if not backfill_job.from_failure and not backfill_job.reexecution_steps:
         step_keys_to_execute = None
         parent_run_id = None
         root_run_id = None
         known_state = None
+        if external_partition_set.solid_selection:
+            solids_to_execute = frozenset(external_partition_set.solid_selection)
+            solid_selection = external_partition_set.solid_selection
 
     elif backfill_job.from_failure:
         last_run = _fetch_last_run(instance, external_partition_set, partition_data.name)
@@ -219,6 +224,8 @@ def create_backfill_run(
         step_keys_to_execute, known_state = get_retry_steps_from_execution_plan(
             instance, full_external_execution_plan, parent_run_id
         )
+        solids_to_execute = last_run.solids_to_execute
+        solid_selection = last_run.solid_selection
     elif backfill_job.reexecution_steps:
         last_run = _fetch_last_run(instance, external_partition_set, partition_data.name)
         parent_run_id = last_run.run_id if last_run else None
@@ -235,6 +242,10 @@ def create_backfill_run(
             )
         else:
             known_state = None
+
+        if external_partition_set.solid_selection:
+            solids_to_execute = frozenset(external_partition_set.solid_selection)
+            solid_selection = external_partition_set.solid_selection
 
     if step_keys_to_execute:
         external_execution_plan = repo_location.get_external_execution_plan(
@@ -253,9 +264,7 @@ def create_backfill_run(
         parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
         pipeline_name=external_pipeline.name,
         run_id=make_new_run_id(),
-        solids_to_execute=frozenset(external_partition_set.solid_selection)
-        if external_partition_set.solid_selection
-        else None,
+        solids_to_execute=solids_to_execute,
         run_config=partition_data.run_config,
         mode=external_partition_set.mode,
         step_keys_to_execute=step_keys_to_execute,
@@ -265,6 +274,7 @@ def create_backfill_run(
         status=PipelineRunStatus.NOT_STARTED,
         external_pipeline_origin=external_pipeline.get_external_origin(),
         pipeline_code_origin=external_pipeline.get_python_origin(),
+        solid_selection=solid_selection,
     )
 
 
