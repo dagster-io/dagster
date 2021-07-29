@@ -1,5 +1,39 @@
 # Changelog
 
+# 0.12.4
+
+### New
+
+- [helm] The compute log manager now defaults to a `NoOpComputeLogManager`. It did not make sense to default to the `LocalComputeLogManager` as pipeline runs are executed in ephemeral jobs, so logs could not be retrieved once these jobs were cleaned up. To have compute logs in a Kubernetes environment, users should configure a compute log manager that uses a cloud provider. 
+- [helm] The K8sRunLauncher now supports environment variables to be passed in from the current container to the launched Kubernetes job.
+- [examples] Added a new `dbt_pipeline` to the [hacker news example repo](https://github.com/dagster-io/dagster/tree/master/examples/hacker_news), which demonstrates how to run a dbt project within a Dagster pipeline.
+- Changed the default configuration of steps launched by the `k8s_job_executor` to match the configuration set in the `K8sRunLauncher`. 
+
+### Bugfixes
+
+- Fixed an issue where dagster gRPC servers failed to load if they did not have permissions to write to a temporary directory.
+- Enabled compression and raised the message receive limit for our gRPC communication. This prevents large pipelines from causing gRPC message limit errors. This limit can now be manually overridden with the `DAGSTER_GRPC_MAX_RX_BYTES` environment variable.
+- Fixed errors with `dagster instance migrate` when the asset catalog contains wiped assets.
+- Fixed an issue where backfill jobs with the “Re-execute from failures” option enabled were not picking up the solid selection from the originating failed run.
+- Previously, when using memoization, if every step was memoized already, you would get an error. Now, the run succeeds and runs no steps.
+- [dagster-dbt] If you specify `--models`, `--select`, or `--exclude` flags while configuring the `dbt_cli_resource`, it will no longer attempt to supply these flags to commands that don’t accept them.
+- [dagstermill] Fixed an issue where `yield_result` wrote output value to the same file path if output names are the same for different solids.
+
+### Community Contributions
+
+- Added the ability to customize the TTL and backoff limit on Dagster Kubernetes jobs (thanks [@Oliver-Sellwood](https://github.com/Oliver-Sellwood)!)
+
+### Experimental
+
+- `ops` can now be used as a config entry in place of `solids`.
+- Fixed a GraphQL bug in ECS deployments by making the `EcsRunLauncher` more resilient to ECS’ eventual consistency model.
+
+### Documentation
+
+- Fixed hyperlink display to be more visible within source code snippets.
+- Added documentation for Run Status Sensor on the [Sensors](https://docs.dagster.io/concepts/partitions-schedules-sensors/sensors#run-status-sensors) concept page. 
+
+
 # 0.12.3
 
 ### New
