@@ -1,4 +1,4 @@
-from typing import Any, Callable, Mapping, Optional, Sequence, Set
+from typing import Any, Callable, Dict, Mapping, Optional, Set
 
 from dagster.core.decorator_utils import get_function_params, get_valid_name_permutations
 from dagster.core.definitions.decorators.op import _Op
@@ -9,6 +9,8 @@ from dagster.core.definitions.solid import SolidDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.utils.merger import merge_dicts
 
+from .asset_in import AssetIn
+
 LOGICAL_ASSET_KEY = "logical_asset_key"
 NAMESPACE = "namespace"
 
@@ -16,7 +18,7 @@ NAMESPACE = "namespace"
 def asset(
     name: Optional[str] = None,
     namespace: Optional[str] = None,
-    input_namespaces: Optional[Mapping[str, str]] = None,
+    ins: Optional[Mapping[str, AssetIn]] = None,
     metadata: Optional[Mapping[str, Any]] = None,
     description: Optional[str] = None,
     required_resource_keys: Optional[Set[str]] = None,
@@ -32,8 +34,8 @@ def asset(
             decorated function.
         namespace (Optional[str]): The namespace that the asset resides in.  The namespace + the
             name forms the asset key.
-        input_namespaces (Optional[Mapping[str, str]]): A dictionary that maps input names to the
-            asset namespaces where they reside.
+        ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to their metadata
+            and namespaces.
         metadata (Optional[Dict[str, Any]]): A dict of metadata entries for the asset.
         required_resource_keys (Optional[Set[str]]): Set of resource handles required by the op.
         io_manager_key (Optional[str]): The resource key of the IOManager used for storing the
@@ -58,7 +60,7 @@ def asset(
         return _Asset(
             name=name,
             namespace=namespace,
-            input_namespaces=input_namespaces,
+            ins=ins,
             metadata=metadata,
             description=description,
             required_resource_keys=required_resource_keys,
@@ -73,7 +75,7 @@ class _Asset:
         self,
         name: Optional[str] = None,
         namespace: Optional[str] = None,
-        input_namespaces: Mapping[str, Sequence] = None,
+        ins: Optional[Mapping[str, AssetIn]] = None,
         metadata: Optional[Mapping[str, Any]] = None,
         description: Optional[str] = None,
         required_resource_keys: Optional[Set[str]] = None,
@@ -81,7 +83,7 @@ class _Asset:
     ):
         self.name = name
         self.namespace = namespace
-        self.input_namespaces = input_namespaces or {}
+        self.ins = ins or {}
         self.metadata = metadata
         self.description = description
         self.required_resource_keys = required_resource_keys
@@ -93,27 +95,33 @@ class _Asset:
         is_context_provided = len(params) > 0 and params[0].name in get_valid_name_permutations(
             "context"
         )
-        input_params = params[1:] if is_context_provided else params
+        input_param_names = [
+            input_param.name for input_param in (params[1:] if is_context_provided else params)
+        ]
 
-        ins = {
-            input_param.name: In(
-                metadata={
-                    LOGICAL_ASSET_KEY: AssetKey(
-                        tuple(
-                            filter(
-                                None,
-                                [
-                                    self.input_namespaces.get(input_param.name, self.namespace),
-                                    input_param.name,
-                                ],
-                            )
-                        )
-                    ),
-                },
-                root_manager_key="root_manager",
+        for in_key in self.ins.keys():
+            if in_key not in input_param_names:
+                raise DagsterInvalidDefinitionError(
+                    f"Key '{in_key}' in provided ins dict does not correspond to any of the names "
+                    "of the arguments to the decorated function"
+                )
+
+        ins: Dict[str, In] = {}
+        for input_param_name in input_param_names:
+            if input_param_name in self.ins:
+                extra_metadata = self.ins[input_param_name].metadata or {}
+                namespace = self.ins[input_param_name].namespace
+            else:
+                extra_metadata = {}
+                namespace = None
+
+            asset_key = AssetKey(
+                tuple(filter(None, [namespace or self.namespace, input_param_name]))
             )
-            for input_param in input_params
-        }
+            metadata = merge_dicts({LOGICAL_ASSET_KEY: asset_key}, extra_metadata)
+
+            ins[input_param_name] = In(metadata=metadata, root_manager_key="root_manager")
+
         out = Out(
             metadata=merge_dicts(
                 {LOGICAL_ASSET_KEY: AssetKey(tuple(filter(None, [self.namespace, asset_name])))},

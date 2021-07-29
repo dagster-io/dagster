@@ -1,6 +1,6 @@
 import pytest
 from dagster import AssetKey, DagsterInvalidDefinitionError, SolidDefinition
-from dagster.core.asset_defs import asset
+from dagster.core.asset_defs import AssetIn, asset
 
 
 def test_asset_no_decorator_args():
@@ -55,6 +55,30 @@ def test_asset_with_context_arg_and_dep():
     assert isinstance(my_asset, SolidDefinition)
     assert len(my_asset.input_defs) == 1
     assert my_asset.input_defs[0].metadata["logical_asset_key"] == AssetKey("arg1")
+
+
+def test_input_namespace():
+    @asset(ins={"arg1": AssetIn(namespace="abc")})
+    def my_asset(arg1):
+        assert arg1
+
+    assert my_asset.input_defs[0].metadata["logical_asset_key"] == AssetKey(["abc", "arg1"])
+
+
+def test_input_metadata():
+    @asset(ins={"arg1": AssetIn(metadata={"abc": 123})})
+    def my_asset(arg1):
+        assert arg1
+
+    assert my_asset.input_defs[0].metadata == {"logical_asset_key": AssetKey("arg1"), "abc": 123}
+
+
+def test_unknown_in():
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @asset(ins={"arg1": AssetIn()})
+        def _my_asset():
+            pass
 
 
 def test_all_fields():
