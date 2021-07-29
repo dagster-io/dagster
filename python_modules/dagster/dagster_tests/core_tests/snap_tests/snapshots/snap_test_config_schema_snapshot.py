@@ -6,13 +6,10 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
-snapshots[
-    'test_historical_config_type_snap 1'
-] = '''{
+snapshots['test_historical_config_type_snap 1'] = '''{
   "__class__": "ConfigTypeSnap",
   "description": "",
   "enum_values": [],
-  "field_aliases": null,
   "fields": [],
   "given_name": "kjdkfjdkfjdkj",
   "key": "ksjdkfjdkfjd",
