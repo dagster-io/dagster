@@ -25,7 +25,7 @@
 
 ### Community Contributions
 
-- Added the ability to customize the TTL and backoff limit on Dagster Kubernetes jobs (thanks @Oliver-Sellwood!)
+- Added the ability to customize the TTL and backoff limit on Dagster Kubernetes jobs (thanks [@Oliver-Sellwood](https://github.com/Oliver-Sellwood)!)
 
 ### Experimental
 
