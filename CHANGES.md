@@ -25,7 +25,7 @@
 
 ### Experimental
 
-- `Ops` can now be used as a config entry in place of `Solids`.
+- `ops` can now be used as a config entry in place of `solids`.
 - Fixed a GraphQL bug in ECS deployments by making the `EcsRunLauncher` more resilient to ECS’ eventual consistency model.
 
 ### Documentation
