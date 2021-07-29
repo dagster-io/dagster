@@ -8,7 +8,7 @@ many of its features, including:
 - IOManagers
 - Modes / Resources
 - Unit Tests
-- Snowflake, s3, and pyspark integrations
+- dbt, snowflake, s3, and pyspark integrations
 
 Feel free to poke around!
 
@@ -29,9 +29,13 @@ This repo contains two pipelines:
 - `story_recommender`
   - This pipeline reads from the tables that the `download_pipeline` writes to, and uses this data
     to train a machine learning model to recommend stories to specific users based on their comment history.
+- `dbt_pipeline`
+  - This pipeline also uses the tables that the `download_pipeline` produces, this time running a dbt
+    project which consumes them and creates aggregated metric tables.
 
 The `download_pipeline` runs on an hourly schedule, constantly updating the tables with new data.
 The `story_recommender` is triggered by a sensor, which detects when both of its input tables have been updated.
+The `dbt_pipeline` is triggered by a different sensor, which will fire a run whenever the `download_pipeline` finishes.
 
 Each pipeline has modes that allow them to be run in either a staging (or dev) environment, which will
 read data from the same sources as the production modes of these pipelines, but writes data to a different
