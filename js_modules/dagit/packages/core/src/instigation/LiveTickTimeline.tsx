@@ -44,16 +44,22 @@ export const LiveTickTimeline: React.FC<{
     }
   }, [isPaused, nextTick, now]);
 
-  const tickData = ticks.map((tick) => ({x: 1000 * tick.timestamp, y: 0}));
-  if (nextTick) {
-    tickData.push({x: 1000 * nextTick.timestamp, y: 0});
-  }
-
   const isAtFutureTick = nextTick && 1000 * nextTick.timestamp <= now;
   const PULSE_DURATION = 2000;
   const nextTickRadius = isAtFutureTick
     ? 4 + Math.sin((2 * Math.PI * (now % PULSE_DURATION)) / PULSE_DURATION)
     : 3;
+
+  const tickData = ticks.map((tick) => ({x: 1000 * tick.timestamp, y: 0}));
+  const tickColors = ticks.map((tick) => COLOR_MAP[tick.status]);
+  const tickRadii = Array(ticks.length).fill(3);
+
+  if (nextTick) {
+    tickData.push({x: 1000 * nextTick.timestamp, y: 0});
+    tickColors.push(Colors.GRAY5);
+    tickRadii.push(nextTickRadius);
+  }
+
   const graphData = {
     labels: ['ticks'],
     datasets: [
@@ -66,7 +72,7 @@ export const LiveTickTimeline: React.FC<{
         borderColor: Colors.LIGHT_GRAY4,
         borderWidth: 1,
         pointBorderWidth: 2,
-        pointBorderColor: isAtFutureTick ? Colors.GRAY5 : Colors.GRAY5,
+        pointBorderColor: Colors.GRAY5,
         pointRadius: 1,
         pointHoverRadius: 1,
       },
@@ -78,11 +84,11 @@ export const LiveTickTimeline: React.FC<{
         backgroundColor: 'rgba(0,0,0,0)',
         pointBackgroundColor: 'rgba(0,0,0,0)',
         pointBorderWidth: 2,
-        pointBorderColor: ticks.map((tick) => COLOR_MAP[tick.status]),
-        pointRadius: [...Array(ticks.length).fill(3), nextTickRadius],
+        pointBorderColor: tickColors,
+        pointRadius: tickRadii,
         pointHoverBorderWidth: 2,
         pointHoverRadius: 5,
-        pointHoverBorderColor: ticks.map((tick) => COLOR_MAP[tick.status]),
+        pointHoverBorderColor: tickColors,
       },
     ],
   };
@@ -113,6 +119,38 @@ export const LiveTickTimeline: React.FC<{
     plugins: {
       legend: {
         display: false,
+      },
+      tooltip: {
+        displayColors: false,
+        callbacks: {
+          label: function (tooltipItem: TooltipItem<any>) {
+            if (!tooltipItem.datasetIndex) {
+              // this is the current time
+              return 'Current time';
+            }
+            if (tooltipItem.dataIndex === undefined) {
+              return '';
+            }
+            if (tooltipItem.dataIndex === ticks.length) {
+              // This is the future tick
+              return '';
+            }
+            const tick = ticks[tooltipItem.dataIndex];
+            if (tick.status === InstigationTickStatus.SKIPPED && tick.skipReason) {
+              return tick.skipReason;
+            }
+            if (tick.status === InstigationTickStatus.SUCCESS && tick.runIds.length) {
+              return tick.runIds;
+            }
+            if (tick.status === InstigationTickStatus.SUCCESS && tick.originRunIds) {
+              return tick.originRunIds;
+            }
+            if (tick.status === InstigationTickStatus.FAILURE && tick.error?.message) {
+              return tick.error.message;
+            }
+            return '';
+          },
+        },
       },
     },
 
@@ -146,39 +184,6 @@ export const LiveTickTimeline: React.FC<{
         setPaused(false);
         onHoverTick(undefined);
       }
-    },
-
-    tooltips: {
-      displayColors: false,
-      callbacks: {
-        label: function (tooltipItem: TooltipItem<any>) {
-          if (!tooltipItem.datasetIndex) {
-            // this is the current time
-            return 'Current time';
-          }
-          if (tooltipItem.dataIndex === undefined) {
-            return '';
-          }
-          if (tooltipItem.dataIndex === ticks.length) {
-            // This is the future tick
-            return '';
-          }
-          const tick = ticks[tooltipItem.dataIndex];
-          if (tick.status === InstigationTickStatus.SKIPPED && tick.skipReason) {
-            return tick.skipReason;
-          }
-          if (tick.status === InstigationTickStatus.SUCCESS && tick.runIds.length) {
-            return tick.runIds;
-          }
-          if (tick.status === InstigationTickStatus.SUCCESS && tick.originRunIds) {
-            return tick.originRunIds;
-          }
-          if (tick.status === InstigationTickStatus.FAILURE && tick.error?.message) {
-            return tick.error.message;
-          }
-          return '';
-        },
-      },
     },
   };
 
