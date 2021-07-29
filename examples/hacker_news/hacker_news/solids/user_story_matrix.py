@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 import numpy as np
-from dagster import OutputDefinition, solid
+from dagster.core.asset_defs import asset
 from pandas import DataFrame, Series
 from scipy.sparse import coo_matrix
 
@@ -21,8 +21,8 @@ class IndexedCooMatrix:
     matrix and whose values are the corresponding values in this index."""
 
 
-@solid(output_defs=[OutputDefinition(metadata={"key": "user_story_matrix"})])
-def build_user_story_matrix(comment_stories: DataFrame) -> IndexedCooMatrix:
+@asset
+def user_story_matrix(comment_stories: DataFrame) -> IndexedCooMatrix:
     """
     Builds a sparse matrix where the rows are users, the columns are stories, and the values
     are whether the user commented on the story.

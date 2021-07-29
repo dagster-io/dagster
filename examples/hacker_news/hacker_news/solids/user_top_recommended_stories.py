@@ -1,21 +1,14 @@
 import numpy as np
-from dagster import OutputDefinition, solid
+from dagster.core.asset_defs import asset
 from hacker_news.solids.user_story_matrix import IndexedCooMatrix
 from pandas import DataFrame
 from scipy.sparse import coo_matrix, csc_matrix, csr_matrix
 from sklearn.decomposition import TruncatedSVD
 
 
-@solid(
-    output_defs=[
-        OutputDefinition(
-            io_manager_key="warehouse_io_manager",
-            metadata={"table": "hackernews.user_top_recommended_stories"},
-        )
-    ],
-)
-def build_user_top_recommended_stories(
-    context, model: TruncatedSVD, user_story_matrix: IndexedCooMatrix
+@asset(io_manager_key="warehouse_io_manager")
+def user_top_recommended_stories(
+    context, recommender_model: TruncatedSVD, user_story_matrix: IndexedCooMatrix
 ) -> DataFrame:
     """
     Find the top stories for each commenter (user).
@@ -26,7 +19,7 @@ def build_user_top_recommended_stories(
         relevance (float)
     """
     # Compute XV, which has a row for each user and a column for each component
-    XV = model.transform(user_story_matrix.matrix)
+    XV = recommender_model.transform(user_story_matrix.matrix)
 
     # Now we want to project XV back into story-space.  As a dense matrix, the product would be way
     # too big - | # users * # stories|, so we sparsify both the multiplicands to make it more
@@ -36,9 +29,9 @@ def build_user_top_recommended_stories(
     context.log.info(f"sparse_XV shape: {sparse_XV.shape}")
     context.log.info(f"sparse_XV non-zero: {sparse_XV.count_nonzero()}")
 
-    model.components_[np.abs(model.components_) < 1e-2] = 0
-    sparse_components = csc_matrix(model.components_)
-    context.log.info(f"model.components_ shape: {model.components_.shape}")
+    recommender_model.components_[np.abs(recommender_model.components_) < 1e-2] = 0
+    sparse_components = csc_matrix(recommender_model.components_)
+    context.log.info(f"recommender_model.components_ shape: {recommender_model.components_.shape}")
     context.log.info(f"sparse_components non-zero: {sparse_components.count_nonzero()}")
 
     # A matrix with the same dimensions as user_story_matrix, but reduced in rank

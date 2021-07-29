@@ -1,13 +1,11 @@
-from dagster import ModeDefinition, fs_io_manager, pipeline
+from dagster import AssetKey, ModeDefinition, fs_io_manager
+from dagster.core.asset_defs import SourceAsset, build_assets_job
 from hacker_news.resources.fixed_s3_pickle_io_manager import fixed_s3_pickle_io_manager
 from hacker_news.resources.snowflake_io_manager import snowflake_io_manager
-from hacker_news.solids.comment_stories import build_comment_stories
-from hacker_news.solids.recommender_model import (
-    build_component_top_stories,
-    build_recommender_model,
-)
-from hacker_news.solids.user_story_matrix import build_user_story_matrix
-from hacker_news.solids.user_top_recommended_stories import build_user_top_recommended_stories
+from hacker_news.solids.comment_stories import comment_stories
+from hacker_news.solids.recommender_model import component_top_stories, recommender_model
+from hacker_news.solids.user_story_matrix import user_story_matrix
+from hacker_news.solids.user_top_recommended_stories import user_top_recommended_stories
 
 snowflake_manager = snowflake_io_manager.configured(
     {
@@ -39,17 +37,29 @@ PROD_MODE = ModeDefinition(
     },
 )
 
+assets = [
+    comment_stories,
+    user_story_matrix,
+    recommender_model,
+    component_top_stories,
+    user_top_recommended_stories,
+]
 
-@pipeline(
-    mode_defs=[DEV_MODE, PROD_MODE],
-    description="""
-    Trains a collaborative filtering model that can recommend HN stories to users based on what
-    stories they've commented on in the past.
-    """,
+source_assets = [
+    SourceAsset(AssetKey("comments"), io_manager_key="warehouse_io_manager"),
+    SourceAsset(AssetKey("stories"), io_manager_key="warehouse_io_manager"),
+]
+
+story_recommender_dev = build_assets_job(
+    "story_recommender_dev",
+    assets=assets,
+    source_assets=source_assets,
+    resource_defs=DEV_MODE.resource_defs,
 )
-def story_recommender():
-    comment_stories = build_comment_stories()
-    user_story_matrix = build_user_story_matrix(comment_stories)
-    recommender_model = build_recommender_model(user_story_matrix)
-    build_component_top_stories(recommender_model, user_story_matrix)
-    build_user_top_recommended_stories(recommender_model, user_story_matrix)
+
+story_recommender_prod = build_assets_job(
+    "story_recommender_prod",
+    assets=assets,
+    source_assets=source_assets,
+    resource_defs=PROD_MODE.resource_defs,
+)

@@ -1,15 +1,15 @@
+# pylint: disable=redefined-outer-name
 import random
 
-from dagster import EventMetadata, InputDefinition, Output, OutputDefinition, solid
+from dagster import EventMetadata, Output
+from dagster.core.asset_defs import AssetIn, asset
 from hacker_news.solids.user_story_matrix import IndexedCooMatrix
 from pandas import DataFrame, Series
 from sklearn.decomposition import TruncatedSVD
 
 
-@solid(
-    output_defs=[OutputDefinition(dagster_type=TruncatedSVD, metadata={"key": "recommender_model"})]
-)
-def build_recommender_model(user_story_matrix: IndexedCooMatrix):
+@asset
+def recommender_model(user_story_matrix: IndexedCooMatrix):
     """
     Trains an SVD model for collaborative filtering-based recommendation.
     """
@@ -28,27 +28,12 @@ def build_recommender_model(user_story_matrix: IndexedCooMatrix):
     )
 
 
-@solid(
-    input_defs=[
-        InputDefinition(
-            "story_titles",
-            root_manager_key="warehouse_loader",
-            metadata={
-                "table": "hackernews.stories",
-                "columns": ["id", "title"],
-            },
-        ),
-    ],
-    output_defs=[
-        OutputDefinition(
-            dagster_type=DataFrame,
-            io_manager_key="warehouse_io_manager",
-            metadata={"table": "hackernews.component_top_stories"},
-        )
-    ],
+@asset(
+    ins={"stories": AssetIn(metadata={"columns": ["id", "title"]})},
+    io_manager_key="warehouse_io_manager",
 )
-def build_component_top_stories(
-    model: TruncatedSVD, user_story_matrix: IndexedCooMatrix, story_titles: DataFrame
+def component_top_stories(
+    recommender_model: TruncatedSVD, user_story_matrix: IndexedCooMatrix, stories: DataFrame
 ):
     """
     For each component in the collaborative filtering model, finds the titles of the top stories
@@ -59,10 +44,10 @@ def build_component_top_stories(
     components_column = []
     titles_column = []
 
-    story_titles = story_titles.set_index("id")
+    story_titles = stories.set_index("id")
 
-    for i in range(model.components_.shape[0]):
-        component = model.components_[i]
+    for i in range(recommender_model.components_.shape[0]):
+        component = recommender_model.components_[i]
         top_story_indices = component.argsort()[-n_stories:][::-1]
         top_story_ids = user_story_matrix.col_index[top_story_indices]
         top_story_titles = story_titles.loc[top_story_ids]

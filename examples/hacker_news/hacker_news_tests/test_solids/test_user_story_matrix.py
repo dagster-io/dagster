@@ -1,5 +1,5 @@
 import pytest
-from hacker_news.solids.user_story_matrix import build_user_story_matrix
+from hacker_news.solids.user_story_matrix import user_story_matrix
 from pandas import DataFrame
 
 
@@ -20,10 +20,10 @@ from pandas import DataFrame
         ),
     ],
 )
-def test_build_user_story_matrix(comment_stories, expected):
+def test_user_story_matrix(comment_stories, expected):
     comment_stories_df = DataFrame(
         comment_stories, columns=["comment_id", "story_id", "commenter_id"]
     )
-    indexed_matrix = build_user_story_matrix(comment_stories=comment_stories_df)
+    indexed_matrix = user_story_matrix(comment_stories=comment_stories_df)
 
     assert indexed_matrix.matrix.toarray().tolist() == expected

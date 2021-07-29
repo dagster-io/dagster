@@ -1,7 +1,8 @@
 from dagster import AssetKey, EventRecordsFilter, RunRequest, sensor
+from hacker_news.pipelines.story_recommender import story_recommender_prod
 
 
-@sensor(pipeline_name="story_recommender", mode="prod")
+@sensor(job=story_recommender_prod)
 def story_recommender_on_hn_table_update(context):
     """Kick off a run if both the stories and comments tables have received updates"""
     if context.last_run_key:
