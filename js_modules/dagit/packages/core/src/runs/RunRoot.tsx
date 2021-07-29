@@ -11,6 +11,7 @@ import {Group} from '../ui/Group';
 import {PageHeader} from '../ui/PageHeader';
 import {Heading} from '../ui/Text';
 import {FontFamily} from '../ui/styles';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {Run} from './Run';
 import {RunConfigDialog, RunDetails} from './RunDetails';
@@ -30,6 +31,14 @@ export const RunRoot = (props: RouteComponentProps<{runId: string}>) => {
   const run =
     data?.pipelineRunOrError.__typename === 'PipelineRun' ? data.pipelineRunOrError : null;
   const snapshotID = run?.pipelineSnapshotId;
+  const repoAddress = React.useMemo(() => {
+    const repositoryOrigin = run?.repositoryOrigin;
+    if (repositoryOrigin) {
+      const {repositoryLocationName, repositoryName} = repositoryOrigin;
+      return buildRepoAddress(repositoryName, repositoryLocationName);
+    }
+    return null;
+  }, [run]);
 
   return (
     <div
@@ -67,7 +76,7 @@ export const RunRoot = (props: RouteComponentProps<{runId: string}>) => {
               {run ? (
                 <PipelineReference
                   pipelineName={run?.pipeline.name}
-                  pipelineHrefContext={'repo-unknown'}
+                  pipelineHrefContext={repoAddress || 'repo-unknown'}
                   snapshotId={snapshotID}
                   mode={run?.mode}
                 />
