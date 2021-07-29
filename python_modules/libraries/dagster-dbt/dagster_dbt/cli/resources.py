@@ -172,6 +172,21 @@ class DbtCliResource(DbtResource):
         """
         return self.cli("seed", show=show, **kwargs)
 
+    def freshness(
+        self, select: List[str] = None, **kwargs
+    ) -> DbtCliOutput:
+        """
+        Run the ``source snapshot-freshness`` command on a dbt project. kwargs are passed in as additional parameters.
+
+        Args:
+            select (List[str], optional): the sources to include in the run.
+
+        Returns:
+            DbtCliOutput: An instance of :class:`DbtCliOutput<dagster_dbt.DbtCliOutput>` containing
+                parsed log output as well as the contents of run_results.json (if applicable).
+        """
+        return self.cli("source snapshot-freshness", **kwargs)
+
     def generate_docs(
         self, models: List[str] = None, exclude: List[str] = None, **kwargs
     ) -> DbtCliOutput:
