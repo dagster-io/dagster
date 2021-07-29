@@ -485,6 +485,7 @@ def helm_chart_for_k8s_run_launcher(namespace, docker_image, should_cleanup=True
                     "jobNamespace": namespace,
                     "envConfigMaps": [{"name": TEST_CONFIGMAP_NAME}],
                     "envSecrets": [{"name": TEST_SECRET_NAME}],
+                    "envVars": ["BUILDKITE"],
                 }
             },
         },

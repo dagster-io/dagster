@@ -51,6 +51,7 @@ class K8sRunLauncherConfig(BaseModel):
     kubeconfigFile: Optional[str]
     envConfigMaps: List[kubernetes.ConfigMapEnvSource]
     envSecrets: List[kubernetes.SecretEnvSource]
+    envVars: List[str]
 
     class Config:
         extra = Extra.forbid

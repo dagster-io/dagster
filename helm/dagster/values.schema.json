@@ -1509,12 +1509,20 @@
                     "items": {
                         "$ref": "#/definitions/SecretEnvSource"
                     }
+                },
+                "envVars": {
+                    "title": "Envvars",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             },
             "required": [
                 "loadInclusterConfig",
                 "envConfigMaps",
-                "envSecrets"
+                "envSecrets",
+                "envVars"
             ],
             "additionalProperties": false
         },
