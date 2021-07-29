@@ -13,11 +13,11 @@
 
 - Fixed an issue where dagster gRPC servers failed to load if they did not have permissions to write to a temporary directory.
 - Enabled compression and raised the message receive limit for our gRPC communication. This prevents large pipelines from causing gRPC message limit errors. This limit can now be manually overridden with the `DAGSTER_GRPC_MAX_RX_BYTES` environment variable.
-- [dagster-dbt] If you specify `--models`, `--select`, or `--exclude` flags while configuring the `dbt_cli_resource`, it will no longer attempt to supply these flags to commands that don’t accept them.
 - Fixed errors with `dagster instance migrate` when the asset catalog contains wiped assets.
 - Fixed an issue where backfill jobs with the “Re-execute from failures” option enabled were not picking up the solid selection from the originating failed run.
-- [dagstermill] Fixed an issue where `yield_result` wrote output value to the same file path if output names are the same for different solids. 
 - Previously, when using memoization, if every step was memoized already, you would get an error. Now, the run succeeds and runs no steps.
+- [dagster-dbt] If you specify `--models`, `--select`, or `--exclude` flags while configuring the `dbt_cli_resource`, it will no longer attempt to supply these flags to commands that don’t accept them.
+- [dagstermill] Fixed an issue where `yield_result` wrote output value to the same file path if output names are the same for different solids.
 
 ### Community Contributions
 
