@@ -2,7 +2,7 @@ import gc
 
 import objgraph
 from dagit.starlette import ROOT_ADDRESS_STATIC_RESOURCES, GraphQLWS
-from dagster import execute_pipeline, pipeline
+from dagster import execute_pipeline, pipeline, op, graph, reconstructable
 from starlette.testclient import TestClient
 
 EVENT_LOG_SUBSCRIPTION = """
@@ -133,3 +133,27 @@ def test_download_debug_file(instance, empty_app):
     response = TestClient(empty_app).get(f"/download_debug/{run_id}")
     assert response.status_code == 200
     assert response.headers["content-type"] == "application/gzip"
+
+
+def _simple_job():
+    @op
+    def my_op():
+        print("STDOUT RULEZ")  # pylint: disable=print-call
+
+    @graph
+    def my_graph():
+        my_op()
+
+    return my_graph.to_job()
+
+
+def test_download_compute(instance, empty_app):
+    result = execute_pipeline(reconstructable(_simple_job), instance=instance)
+    run_id = result.run_id
+
+    response = TestClient(empty_app).get(f"/download/{run_id}/my_op/stdout")
+    assert response.status_code == 200
+    assert "STDOUT RULEZ" in str(response.content)
+
+    response = TestClient(empty_app).get(f"/download/{run_id}/jonx/stdout")
+    assert response.status_code == 404
