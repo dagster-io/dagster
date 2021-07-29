@@ -180,6 +180,14 @@ def create_backfill_run(
     check.inst_param(backfill_job, "backfill_job", PartitionBackfill)
     check.inst_param(partition_data, "partition_data", ExternalPartitionExecutionParamData)
 
+    full_external_execution_plan = repo_location.get_external_execution_plan(
+        external_pipeline,
+        partition_data.run_config,
+        external_partition_set.mode,
+        step_keys_to_execute=None,
+        known_state=None,
+    )
+
     tags = merge_dicts(
         external_pipeline.tags,
         partition_data.tags,
@@ -209,7 +217,7 @@ def create_backfill_run(
             },
         )
         step_keys_to_execute, known_state = get_retry_steps_from_execution_plan(
-            instance, external_pipeline, parent_run_id
+            instance, full_external_execution_plan, parent_run_id
         )
     elif backfill_job.reexecution_steps:
         last_run = _fetch_last_run(instance, external_partition_set, partition_data.name)
@@ -228,13 +236,16 @@ def create_backfill_run(
         else:
             known_state = None
 
-    external_execution_plan = repo_location.get_external_execution_plan(
-        external_pipeline,
-        partition_data.run_config,
-        external_partition_set.mode,
-        step_keys_to_execute=step_keys_to_execute,
-        known_state=known_state,
-    )
+    if step_keys_to_execute:
+        external_execution_plan = repo_location.get_external_execution_plan(
+            external_pipeline,
+            partition_data.run_config,
+            external_partition_set.mode,
+            step_keys_to_execute=step_keys_to_execute,
+            known_state=known_state,
+        )
+    else:
+        external_execution_plan = full_external_execution_plan
 
     return instance.create_run(
         pipeline_snapshot=external_pipeline.pipeline_snapshot,
