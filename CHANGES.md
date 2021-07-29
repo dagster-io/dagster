@@ -19,10 +19,6 @@
 - [dagstermill] Fixed an issue where `yield_result` wrote output value to the same file path if output names are the same for different solids. 
 - Previously, when using memoization, if every step was memoized already, you would get an error. Now, the run succeeds and runs no steps.
 
-### Breaking Changes
-
-- breaking changes here
-
 ### Community Contributions
 
 - Added the ability to customize the TTL and backoff limit on Dagster Kubernetes jobs (thanks [@Oliver-Sellwood](https://github.com/Oliver-Sellwood)!)
