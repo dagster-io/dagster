@@ -362,7 +362,7 @@ class GraphDefinition(NodeDefinition):
         description: Optional[str] = None,
         resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
         config: Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"] = None,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[Dict[str, Any]] = None,
         logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
         executor_def: Optional["ExecutorDefinition"] = None,
         hooks: Optional[AbstractSet[HookDefinition]] = None,
@@ -412,7 +412,7 @@ class GraphDefinition(NodeDefinition):
         from .partition import PartitionedConfig
         from .executor import ExecutorDefinition, multiprocess_executor
 
-        tags = check.opt_dict_param(tags, "tags", key_type=str, value_type=str)
+        tags = check.opt_dict_param(tags, "tags", key_type=str)
         executor_def = check.opt_inst_param(
             executor_def, "executor_def", ExecutorDefinition, default=multiprocess_executor
         )

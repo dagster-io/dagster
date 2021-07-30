@@ -1,3 +1,5 @@
+import json
+
 import pytest
 from dagster import ConfigMapping, Permissive, graph, logger, op, resource, success_hook
 from dagster.core.definitions.graph import GraphDefinition
@@ -199,6 +201,24 @@ def test_tags_on_job():
 
     result = job.execute_in_process()
     assert result.success
+
+
+def test_non_string_tag():
+    @op
+    def basic():
+        pass
+
+    @graph
+    def basic_graph():
+        basic()
+
+    inner = {"a": "b"}
+    tags = {"my_tag": inner}
+    job = basic_graph.to_job(tags=tags)
+    assert job.tags == {"my_tag": json.dumps(inner)}
+
+    with pytest.raises(DagsterInvalidDefinitionError, match="Invalid value for tag"):
+        basic_graph.to_job(tags={"my_tag": basic_graph})
 
 
 def test_logger_defs():
