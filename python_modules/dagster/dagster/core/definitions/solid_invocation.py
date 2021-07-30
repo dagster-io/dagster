@@ -120,7 +120,7 @@ def _resolve_inputs(
                 description=(
                     f'Type check failed for solid input "{input_def.name}" - '
                     f'expected type "{dagster_type.display_name}". '
-                    f"Description: {type_check.description}."
+                    f"Description: {type_check.description}"
                 ),
                 metadata_entries=type_check.metadata_entries,
                 dagster_type=dagster_type,
@@ -286,7 +286,7 @@ def _type_check_output(
                 description=(
                     f'Type check failed for solid output "{output.output_name}" - '
                     f'expected type "{dagster_type.display_name}". '
-                    f"Description: {type_check.description}."
+                    f"Description: {type_check.description}"
                 ),
                 metadata_entries=type_check.metadata_entries,
                 dagster_type=dagster_type,
