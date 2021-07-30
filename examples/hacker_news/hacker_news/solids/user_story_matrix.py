@@ -1,4 +1,4 @@
-from typing import NamedTuple
+from dataclasses import dataclass
 
 import numpy as np
 from dagster import OutputDefinition, solid
@@ -6,7 +6,8 @@ from pandas import DataFrame, Series
 from scipy.sparse import coo_matrix
 
 
-class IndexedCooMatrix(NamedTuple):
+@dataclass
+class IndexedCooMatrix:
     """A matrix with indexes for the rows and columns"""
 
     matrix: coo_matrix
