@@ -7,14 +7,14 @@ import {FontFamily} from '../ui/styles';
 
 import {showCustomAlert} from './CustomAlertProvider';
 
-export interface DagsterGraphQLError extends GraphQLError {
+interface DagsterGraphQLError extends GraphQLError {
   stack_trace: string[];
   cause?: DagsterGraphQLError;
 }
 
 const ErrorToaster = Toaster.create({position: Position.TOP_RIGHT});
 
-export const showGraphQLError = (error: DagsterGraphQLError, operationName?: string) => {
+const showGraphQLError = (error: DagsterGraphQLError, operationName?: string) => {
   const message = (
     <div>
       Unexpected GraphQL error

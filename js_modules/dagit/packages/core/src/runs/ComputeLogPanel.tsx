@@ -5,8 +5,8 @@ import {Box} from '../ui/Box';
 import {Spinner} from '../ui/Spinner';
 
 import {ComputeLogContent} from './ComputeLogContent';
-import {ComputeLogsProvider} from './ComputeLogProvider';
 import {ComputeLogContentFileFragment} from './types/ComputeLogContentFileFragment';
+import {useComputeLogs} from './useComputeLogs';
 interface RunComputeLogs {
   runId: string;
   stepKeys: string[];
@@ -30,6 +30,7 @@ const resolveDownloadUrl = (
 export const ComputeLogPanel: React.FC<RunComputeLogs> = React.memo(
   ({runId, stepKeys, computeLogKey, ioType, setComputeLogUrl}) => {
     const {rootServerURI} = React.useContext(AppContext);
+    const {isLoading, stdout, stderr} = useComputeLogs(runId, computeLogKey);
 
     if (!stepKeys.length || !computeLogKey) {
       return (
@@ -42,32 +43,25 @@ export const ComputeLogPanel: React.FC<RunComputeLogs> = React.memo(
       );
     }
 
+    const logData = ioType === 'stdout' ? stdout : stderr;
+    const downloadUrl = resolveDownloadUrl(rootServerURI, logData);
+
     return (
       <div style={{flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column'}}>
-        <ComputeLogsProvider runId={runId} stepKey={computeLogKey}>
-          {({isLoading, stdout, stderr}) => {
-            const logData = ioType === 'stdout' ? stdout : stderr;
-            const downloadUrl = resolveDownloadUrl(rootServerURI, logData);
-            return (
-              <>
-                <ContentWrapper
-                  logData={stdout}
-                  isLoading={isLoading}
-                  isVisible={ioType === 'stdout'}
-                  downloadUrl={downloadUrl}
-                  setComputeLogUrl={setComputeLogUrl}
-                />
-                <ContentWrapper
-                  logData={stderr}
-                  isLoading={isLoading}
-                  isVisible={ioType === 'stderr'}
-                  downloadUrl={downloadUrl}
-                  setComputeLogUrl={setComputeLogUrl}
-                />
-              </>
-            );
-          }}
-        </ComputeLogsProvider>
+        <ContentWrapper
+          logData={stdout}
+          isLoading={isLoading}
+          isVisible={ioType === 'stdout'}
+          downloadUrl={downloadUrl}
+          setComputeLogUrl={setComputeLogUrl}
+        />
+        <ContentWrapper
+          logData={stderr}
+          isLoading={isLoading}
+          isVisible={ioType === 'stderr'}
+          downloadUrl={downloadUrl}
+          setComputeLogUrl={setComputeLogUrl}
+        />
       </div>
     );
   },

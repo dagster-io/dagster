@@ -4,7 +4,16 @@ import '@blueprintjs/select/lib/css/blueprint-select.css';
 import '@blueprintjs/table/lib/css/table.css';
 import '@blueprintjs/popover2/lib/css/blueprint-popover2.css';
 
-import {ApolloLink, ApolloClient, ApolloProvider, HttpLink, InMemoryCache} from '@apollo/client';
+import {
+  ApolloLink,
+  ApolloClient,
+  ApolloProvider,
+  HttpLink,
+  InMemoryCache,
+  split,
+} from '@apollo/client';
+import {WebSocketLink} from '@apollo/client/link/ws';
+import {getMainDefinition} from '@apollo/client/utilities';
 import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import {BrowserRouter} from 'react-router-dom';
@@ -101,12 +110,29 @@ export const AppProvider: React.FC<Props> = (props) => {
     });
 
     const httpLink = new HttpLink({uri: graphqlPath, headers: headerObject});
+    const webSocketLink = new WebSocketLink({
+      uri: websocketURI,
+      options: {
+        reconnect: true,
+        connectionParams: {...headerObject},
+      },
+    });
+
+    // subscriptions should use the websocket link; queries & mutations should use HTTP
+    const splitLink = split(
+      ({query}) => {
+        const definition = getMainDefinition(query);
+        return definition.kind === 'OperationDefinition' && definition.operation === 'subscription';
+      },
+      webSocketLink,
+      httpLink,
+    );
 
     return new ApolloClient({
       cache: appCache,
-      link: ApolloLink.from([logLink, AppErrorLink(), timeStartLink, httpLink]),
+      link: ApolloLink.from([logLink, AppErrorLink(), timeStartLink, splitLink]),
     });
-  }, [appCache, graphqlPath, headerObject]);
+  }, [appCache, graphqlPath, headerObject, websocketURI]);
 
   const appContextValue = React.useMemo(
     () => ({
