@@ -14,6 +14,7 @@ from dagster.core.host_representation.external_data import (
     ExternalPartitionSetExecutionParamData,
 )
 from dagster.core.host_representation.origin import ExternalPartitionSetOrigin
+from dagster.core.host_representation.selector import PipelineSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import (
@@ -180,14 +181,6 @@ def create_backfill_run(
     check.inst_param(backfill_job, "backfill_job", PartitionBackfill)
     check.inst_param(partition_data, "partition_data", ExternalPartitionExecutionParamData)
 
-    full_external_execution_plan = repo_location.get_external_execution_plan(
-        external_pipeline,
-        partition_data.run_config,
-        external_partition_set.mode,
-        step_keys_to_execute=None,
-        known_state=None,
-    )
-
     tags = merge_dicts(
         external_pipeline.tags,
         partition_data.tags,
@@ -221,11 +214,34 @@ def create_backfill_run(
                 ROOT_RUN_ID_TAG: root_run_id,
             },
         )
-        step_keys_to_execute, known_state = get_retry_steps_from_execution_plan(
-            instance, full_external_execution_plan, parent_run_id
-        )
         solids_to_execute = last_run.solids_to_execute
         solid_selection = last_run.solid_selection
+
+        if solid_selection:
+            pipeline_origin = external_pipeline.get_external_origin()
+
+            pipeline_selector = PipelineSelector(
+                location_name=pipeline_origin.external_repository_origin.repository_location_origin.location_name,
+                repository_name=pipeline_origin.external_repository_origin.repository_name,
+                pipeline_name=pipeline_origin.pipeline_name,
+                solid_selection=solid_selection,
+            )
+
+            subset_pipeline_result = repo_location.get_subset_external_pipeline_result(
+                pipeline_selector
+            )
+
+            subset_external_pipeline = ExternalPipeline(
+                subset_pipeline_result.external_pipeline_data,
+                external_pipeline.repository_handle,
+            )
+        else:
+            subset_external_pipeline = external_pipeline
+
+        step_keys_to_execute, known_state = get_retry_steps_from_execution_plan(
+            instance, subset_external_pipeline, parent_run_id
+        )
+
     elif backfill_job.reexecution_steps:
         last_run = _fetch_last_run(instance, external_partition_set, partition_data.name)
         parent_run_id = last_run.run_id if last_run else None
@@ -247,16 +263,13 @@ def create_backfill_run(
             solids_to_execute = frozenset(external_partition_set.solid_selection)
             solid_selection = external_partition_set.solid_selection
 
-    if step_keys_to_execute:
-        external_execution_plan = repo_location.get_external_execution_plan(
-            external_pipeline,
-            partition_data.run_config,
-            external_partition_set.mode,
-            step_keys_to_execute=step_keys_to_execute,
-            known_state=known_state,
-        )
-    else:
-        external_execution_plan = full_external_execution_plan
+    external_execution_plan = repo_location.get_external_execution_plan(
+        external_pipeline,
+        partition_data.run_config,
+        external_partition_set.mode,
+        step_keys_to_execute=step_keys_to_execute,
+        known_state=known_state,
+    )
 
     return instance.create_run(
         pipeline_snapshot=external_pipeline.pipeline_snapshot,

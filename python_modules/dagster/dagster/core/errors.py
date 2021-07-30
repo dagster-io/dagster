@@ -124,6 +124,10 @@ class DagsterExecutionStepNotFoundError(DagsterError):
         super(DagsterExecutionStepNotFoundError, self).__init__(*args, **kwargs)
 
 
+class DagsterExecutionPlanSnapshotNotFoundError(DagsterError):
+    """Thrown when an expected execution plan snapshot could not be found on a PipelineRun."""
+
+
 class DagsterRunNotFoundError(DagsterError):
     """Thrown when a run cannot be found in run storage."""
 
