@@ -137,11 +137,10 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         cluster = tags.get("ecs/cluster")
 
         if arn and cluster:
-            status = (
-                self.ecs.describe_tasks(tasks=[arn], cluster=cluster)
-                .get("tasks", [{}])[0]
-                .get("lastStatus")
-            )
+            tasks = self.ecs.describe_tasks(tasks=[arn], cluster=cluster).get("tasks")
+            if not tasks:
+                return False
+            status = tasks[0].get("lastStatus")
             if status and status != "STOPPED":
                 return True
 
@@ -152,16 +151,16 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         arn = tags.get("ecs/task_arn")
         cluster = tags.get("ecs/cluster")
 
-        status = (
-            self.ecs.describe_tasks(tasks=[arn], cluster=cluster)
-            .get("tasks", [{}])[0]
-            .get("lastStatus")
-        )
-        if status == "STOPPED":
-            return False
+        if arn and cluster:
+            tasks = self.ecs.describe_tasks(tasks=[arn], cluster=cluster).get("tasks")
+            if not tasks:
+                return False
+            status = tasks[0].get("lastStatus")
+            if status == "STOPPED":
+                return False
 
-        self.ecs.stop_task(task=arn, cluster=cluster)
-        return True
+            self.ecs.stop_task(task=arn, cluster=cluster)
+            return True
 
     def _task_definition(self, metadata, image):
         """
