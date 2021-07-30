@@ -6,6 +6,7 @@ import {App} from '@dagit/core/app/App';
 import {createAppCache} from '@dagit/core/app/AppCache';
 import {AppProvider} from '@dagit/core/app/AppProvider';
 import {AppTopNav} from '@dagit/core/app/AppTopNav';
+import {ContentRoot} from '@dagit/core/app/ContentRoot';
 import * as React from 'react';
 import ReactDOM from 'react-dom';
 import {Link} from 'react-router-dom';
@@ -46,7 +47,9 @@ ReactDOM.render(
         <Icon icon="cog" iconSize={16} color={Colors.GRAY2} />
       </SettingsLink>
     </AppTopNav>
-    <App />
+    <App>
+      <ContentRoot />
+    </App>
   </AppProvider>,
   document.getElementById('root'),
 );
