@@ -1,4 +1,4 @@
-import {useMutation} from '@apollo/client';
+import {gql, useMutation} from '@apollo/client';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 
@@ -13,14 +13,14 @@ import {
   START_SCHEDULE_MUTATION,
   STOP_SCHEDULE_MUTATION,
 } from './ScheduleMutations';
-import {ScheduleFragment} from './types/ScheduleFragment';
+import {ScheduleSwitchFragment} from './types/ScheduleSwitchFragment';
 import {StartSchedule} from './types/StartSchedule';
 import {StopSchedule} from './types/StopSchedule';
 
 interface Props {
   large?: boolean;
   repoAddress: RepoAddress;
-  schedule: ScheduleFragment;
+  schedule: ScheduleSwitchFragment;
 }
 
 export const ScheduleSwitch: React.FC<Props> = (props) => {
@@ -91,3 +91,14 @@ export const ScheduleSwitch: React.FC<Props> = (props) => {
     </Tooltip>
   );
 };
+
+export const SCHEDULE_SWITCH_FRAGMENT = gql`
+  fragment ScheduleSwitchFragment on Schedule {
+    id
+    name
+    scheduleState {
+      id
+      status
+    }
+  }
+`;

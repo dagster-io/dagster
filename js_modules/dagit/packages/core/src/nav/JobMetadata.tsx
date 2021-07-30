@@ -9,11 +9,9 @@ import {useFeatureFlags} from '../app/Flags';
 import {timingStringForStatus} from '../runs/RunDetails';
 import {RunStatus} from '../runs/RunStatusDots';
 import {RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
-import {ScheduleSwitch} from '../schedules/ScheduleSwitch';
-import {SCHEDULE_FRAGMENT} from '../schedules/ScheduleUtils';
+import {ScheduleSwitch, SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {SENSOR_FRAGMENT} from '../sensors/SensorFragment';
-import {SensorSwitch} from '../sensors/SensorSwitch';
+import {SensorSwitch, SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
 import {Group} from '../ui/Group';
@@ -357,11 +355,13 @@ const JOB_METADATA_QUERY = gql`
         id
         schedules {
           id
-          ...ScheduleFragment
+          mode
+          ...ScheduleSwitchFragment
         }
         sensors {
           id
-          ...SensorFragment
+          mode
+          ...SensorSwitchFragment
         }
       }
     }
@@ -374,7 +374,7 @@ const JOB_METADATA_QUERY = gql`
       }
     }
   }
-  ${SCHEDULE_FRAGMENT}
-  ${SENSOR_FRAGMENT}
+  ${SCHEDULE_SWITCH_FRAGMENT}
+  ${SENSOR_SWITCH_FRAGMENT}
   ${RUN_METADATA_FRAGMENT}
 `;
