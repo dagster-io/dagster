@@ -157,7 +157,7 @@ class PipelineSnapshot(
                 parent_snapshot_id=create_pipeline_snapshot_id(
                     cls.from_pipeline_def(pipeline_def.parent_pipeline_def)
                 ),
-                solid_selection=pipeline_def.solid_selection,
+                solid_selection=sorted(pipeline_def.solid_selection),
                 solids_to_execute=pipeline_def.solids_to_execute,
             )
 
