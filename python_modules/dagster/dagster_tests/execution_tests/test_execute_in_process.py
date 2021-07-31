@@ -165,3 +165,21 @@ def test_graph_with_required_resources():
 
     result = basic_graph.execute_in_process(resources={"a": basic_resource})
     assert result.output_values["result"] == "bar"
+
+
+def test_executor_config_ignored_by_execute_in_process():
+    # Ensure that execute_in_process is able to properly ignore provided executor config.
+    @solid
+    def my_solid():
+        return 0
+
+    @graph
+    def my_graph():
+        my_solid()
+
+    my_job = my_graph.to_job(
+        config={"execution": {"multiprocess": {"config": {"max_concurrent": 5}}}}
+    )
+
+    result = my_job.execute_in_process()
+    assert result.success

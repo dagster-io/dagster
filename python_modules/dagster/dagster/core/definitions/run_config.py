@@ -1,10 +1,14 @@
 from typing import Any, Dict, Iterator, List, NamedTuple, Optional, Set, Tuple
 
-from dagster.config import Field, Selector
+from dagster.config import Field, Permissive, Selector
 from dagster.config.config_type import ALL_CONFIG_BUILTINS, Array, ConfigType
 from dagster.config.field_utils import FIELD_NO_DEFAULT_PROVIDED, Shape, all_optional_type
 from dagster.config.iterate_types import iterate_config_types
-from dagster.core.definitions.executor import ExecutorDefinition, in_process_executor
+from dagster.core.definitions.executor import (
+    ExecutorDefinition,
+    execute_in_process_executor,
+    in_process_executor,
+)
 from dagster.core.definitions.input import InputDefinition
 from dagster.core.definitions.output import OutputDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError
@@ -87,6 +91,14 @@ def define_execution_field(executor_defs: List[ExecutorDefinition]) -> Field:
 
     if default_in_process:
         return Field(selector, default_value={in_process_executor.name: {}})
+
+    # If we are using the execute_in_process executor, then ignore all executor config.
+    if (
+        len(executor_defs) == 1
+        and executor_defs[0]  # pylint: disable=comparison-with-callable
+        == execute_in_process_executor
+    ):
+        return Field(Permissive(), is_required=False, default_value={})
 
     return Field(selector)
 

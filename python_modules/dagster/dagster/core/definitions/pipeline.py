@@ -570,7 +570,7 @@ class PipelineDefinition:
             InProcessGraphResult
 
         """
-        from dagster.core.definitions.executor import in_process_executor
+        from dagster.core.definitions.executor import execute_in_process_executor
         from dagster.core.execution.execute import core_execute_in_process
 
         run_config = check.opt_dict_param(run_config, "run_config")
@@ -584,7 +584,7 @@ class PipelineDefinition:
         # switching the default fs io_manager to in mem, if another was not set
         in_proc_mode = ModeDefinition(
             name="in_process",
-            executor_defs=[in_process_executor],
+            executor_defs=[execute_in_process_executor],
             resource_defs=_swap_default_io_man(base_mode.resource_defs),
             logger_defs=base_mode.loggers,
             _config_mapping=base_mode.config_mapping,

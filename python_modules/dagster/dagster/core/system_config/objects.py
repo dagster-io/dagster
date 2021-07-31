@@ -4,7 +4,7 @@ from typing import AbstractSet, Any, Dict, List, NamedTuple, Optional, Type, Uni
 
 from dagster import check
 from dagster.core.definitions.configurable import ConfigurableDefinition
-from dagster.core.definitions.executor import ExecutorDefinition
+from dagster.core.definitions.executor import ExecutorDefinition, execute_in_process_executor
 from dagster.core.definitions.intermediate_storage import IntermediateStorageDefinition
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.pipeline import PipelineDefinition
@@ -188,9 +188,18 @@ class ResolvedRunConfig(
             "intermediate storage",
         )
 
-        config_mapped_execution_configs = config_map_objects(
-            config_value, mode_def.executor_defs, "execution", ExecutorDefinition, "executor"
-        )
+        # If using the `execute_in_process` executor, we ignore the execution config value, since it
+        # may be pointing to the executor for the job rather than the `execute_in_process` executor.
+        if (
+            len(mode_def.executor_defs) == 1
+            and mode_def.executor_defs[0]  # pylint: disable=comparison-with-callable
+            == execute_in_process_executor
+        ):
+            config_mapped_execution_configs: Optional[Dict[str, Any]] = {}
+        else:
+            config_mapped_execution_configs = config_map_objects(
+                config_value, mode_def.executor_defs, "execution", ExecutorDefinition, "executor"
+            )
 
         resource_defs = pipeline_def.get_required_resource_defs_for_mode(mode)
         resource_configs = config_value.get("resources", {})
