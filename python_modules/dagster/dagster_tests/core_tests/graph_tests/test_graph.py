@@ -334,3 +334,24 @@ def test_op_config_recursive():
     )
     assert result.success
     assert result.output_values["result"] == config
+
+
+def test_to_job_default_config_field_aliasing():
+    @op
+    def add_one(x):
+        return x + 1
+
+    @graph
+    def my_graph():
+        return add_one()
+
+    my_job = my_graph.to_job(config={"ops": {"add_one": {"inputs": {"x": {"value": 1}}}}})
+
+    result = my_job.execute_in_process()
+    assert result.success
+
+    result = my_job.execute_in_process({"solids": {"add_one": {"inputs": {"x": {"value": 1}}}}})
+    assert result.success
+
+    result = my_job.execute_in_process({"ops": {"add_one": {"inputs": {"x": {"value": 1}}}}})
+    assert result.success

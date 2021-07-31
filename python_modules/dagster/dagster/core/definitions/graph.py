@@ -775,6 +775,7 @@ def _config_mapping_with_default_value(
         config_schema=Shape(
             fields=updated_fields,
             description="run config schema with default values from default_config",
+            field_aliases=inner_schema.field_aliases,
         ),
     )
 
