@@ -41,7 +41,7 @@ export class Structured extends React.Component<StructuredProps, StructuredState
         title: 'Error',
         body: (
           <PythonErrorInfo
-            error={node.error}
+            error={node.error ? node.error : node}
             failureMetadata={node.failureMetadata}
             errorSource={node.errorSource}
           />
@@ -50,7 +50,7 @@ export class Structured extends React.Component<StructuredProps, StructuredState
     } else if (node.__typename === 'HookErroredEvent') {
       showCustomAlert({
         title: 'Error',
-        body: <PythonErrorInfo error={node.error} />,
+        body: <PythonErrorInfo error={node.error ? node.error : node} />,
       });
     } else if (node.__typename === 'EngineEvent' && node.engineError) {
       showCustomAlert({
@@ -60,7 +60,9 @@ export class Structured extends React.Component<StructuredProps, StructuredState
     } else if (node.__typename === 'PipelineFailureEvent' && node.pipelineFailureError) {
       showCustomAlert({
         title: 'Error',
-        body: <PythonErrorInfo error={node.pipelineFailureError} />,
+        body: (
+          <PythonErrorInfo error={node.pipelineFailureError ? node.pipelineFailureError : node} />
+        ),
       });
     } else {
       showCustomAlert({
@@ -76,11 +78,7 @@ export class Structured extends React.Component<StructuredProps, StructuredState
 
   render() {
     return (
-      <CellTruncationProvider
-        style={this.props.style}
-        onExpand={this.onExpand}
-        forceExpandability={this.props.node.__typename === 'ExecutionStepFailureEvent'}
-      >
+      <CellTruncationProvider style={this.props.style} onExpand={this.onExpand}>
         <StructuredMemoizedContent
           node={this.props.node}
           metadata={this.props.metadata}

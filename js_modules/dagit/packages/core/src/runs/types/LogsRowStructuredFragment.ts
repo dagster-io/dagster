@@ -248,7 +248,7 @@ export interface LogsRowStructuredFragment_ExecutionStepFailureEvent {
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
-  error: LogsRowStructuredFragment_ExecutionStepFailureEvent_error;
+  error: LogsRowStructuredFragment_ExecutionStepFailureEvent_error | null;
   errorSource: ErrorSource | null;
   failureMetadata: LogsRowStructuredFragment_ExecutionStepFailureEvent_failureMetadata | null;
 }
@@ -948,7 +948,7 @@ export interface LogsRowStructuredFragment_HookErroredEvent {
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
-  error: LogsRowStructuredFragment_HookErroredEvent_error;
+  error: LogsRowStructuredFragment_HookErroredEvent_error | null;
 }
 
 export interface LogsRowStructuredFragment_LogsCapturedEvent {

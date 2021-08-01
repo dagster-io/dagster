@@ -34,6 +34,7 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
           error={node.error}
           metadataEntries={node?.failureMetadata?.metadataEntries}
           errorSource={node.errorSource}
+          message={node.error ? undefined : node.message}
         />
       );
 
@@ -279,7 +280,7 @@ const DefaultContent: React.FunctionComponent<{
 const FailureContent: React.FunctionComponent<{
   message?: string;
   eventType: string;
-  error?: PythonErrorFragment;
+  error?: PythonErrorFragment | null;
   errorSource?: ErrorSource | null;
   metadataEntries?: MetadataEntryFragment[];
 }> = ({message, error, errorSource, eventType, metadataEntries}) => {
