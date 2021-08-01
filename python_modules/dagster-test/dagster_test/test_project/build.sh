@@ -6,7 +6,10 @@ BASE_DIR="${ROOT}/python_modules/dagster-test"
 function cleanup {
     rm -rf "${BASE_DIR}/modules"
     set +ux
+    shopt -u expand_aliases
 }
+
+cleanup
 
 # ensure cleanup happens on error or normal exit
 trap cleanup INT TERM EXIT ERR
@@ -18,6 +21,7 @@ if [ "$#" -ne 2 ]; then
     exit 1
 fi
 set -ux
+shopt -s expand_aliases
 
 # e.g. 3.7.4
 PYTHON_VERSION=$1
@@ -32,22 +36,29 @@ mkdir -p modules
 cp $GOOGLE_APPLICATION_CREDENTIALS ./modules/gac.json
 
 echo -e "--- \033[32m:truck: Copying files...\033[0m"
-cp -R $ROOT/python_modules/dagster \
-      $ROOT/python_modules/dagit \
-      $ROOT/python_modules/dagster-graphql \
-      $ROOT/python_modules/libraries/dagster-airflow \
-      $ROOT/python_modules/libraries/dagster-aws \
-      $ROOT/python_modules/libraries/dagster-celery \
-      $ROOT/python_modules/libraries/dagster-celery-k8s \
-      $ROOT/python_modules/libraries/dagster-celery-docker \
-      $ROOT/python_modules/libraries/dagster-docker \
-      $ROOT/python_modules/libraries/dagster-pandas \
-      $ROOT/python_modules/libraries/dagster-postgres \
-      $ROOT/python_modules/libraries/dagster-gcp \
-      $ROOT/python_modules/libraries/dagster-k8s \
-      modules/
+alias copy_py="rsync -av \
+      --progress \
+      --exclude *.egginfo \
+      --exclude *.tox \
+      --exclude dist \
+      --exclude __pycache__ \
+      --exclude *.pyc \
+      --exclude .coverage"
 
-find . \( -name '*.egg-info' -o -name '*.tox' -o -name 'dist' \) | xargs rm -rf
+copy_py $ROOT/python_modules/dagster \
+        $ROOT/python_modules/dagit \
+        $ROOT/python_modules/dagster-graphql \
+        $ROOT/python_modules/libraries/dagster-airflow \
+        $ROOT/python_modules/libraries/dagster-aws \
+        $ROOT/python_modules/libraries/dagster-celery \
+        $ROOT/python_modules/libraries/dagster-celery-k8s \
+        $ROOT/python_modules/libraries/dagster-celery-docker \
+        $ROOT/python_modules/libraries/dagster-docker \
+        $ROOT/python_modules/libraries/dagster-pandas \
+        $ROOT/python_modules/libraries/dagster-postgres \
+        $ROOT/python_modules/libraries/dagster-gcp \
+        $ROOT/python_modules/libraries/dagster-k8s \
+        modules/
 
 echo -e "--- \033[32m:docker: Building Docker image\033[0m"
 
