@@ -525,7 +525,7 @@ type ExecutionStepFailureEvent implements MessageEvent & StepEvent {
   stepKey: String
   solidHandleID: String
   eventType: DagsterEventType
-  error: PythonError!
+  error: PythonError
   errorSource: ErrorSource
   failureMetadata: FailureMetadata
 }
@@ -615,7 +615,7 @@ type ExecutionStepUpForRetryEvent implements MessageEvent & StepEvent {
   stepKey: String
   solidHandleID: String
   eventType: DagsterEventType
-  error: PythonError!
+  error: PythonError
   secondsToWait: Int
 }
 
@@ -854,7 +854,7 @@ type HookErroredEvent implements MessageEvent & StepEvent {
   stepKey: String
   solidHandleID: String
   eventType: DagsterEventType
-  error: PythonError!
+  error: PythonError
 }
 
 type AlertStartEvent implements MessageEvent & PipelineEvent {
