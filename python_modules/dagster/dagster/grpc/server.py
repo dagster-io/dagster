@@ -202,7 +202,7 @@ class DagsterApiServer(DagsterApiServicer):
         )
         try:
             self._repository_symbols_and_code_pointers.load()
-        except Exception:  # pylint:disable=broad-except
+        except:  # pylint:disable=bare-except
             if not lazy_load_user_code:
                 raise
             self._serializable_load_error = serializable_error_info_from_exc_info(sys.exc_info())
