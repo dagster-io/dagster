@@ -22,7 +22,7 @@ def docs_steps() -> List[dict]:
             "pushd docs/next",
             "yarn",
             "yarn test",
-            "yarn build",
+            "yarn build-master",
         )
         .on_integration_image(SupportedPython.V3_7)
         .build(),
