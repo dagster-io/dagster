@@ -401,8 +401,8 @@
             "path": "/guides/dagster/re-execution"
           },
           {
-            "title": "Example Repository",
-            "path": "/guides/dagster/example_repo"
+            "title": "Fully-Featured Example Project",
+            "path": "/guides/dagster/example_project"
           }
         ]
       }
