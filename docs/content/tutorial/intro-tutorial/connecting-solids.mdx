@@ -121,7 +121,7 @@ def complex_pipeline():
     )
 ```
 
-First we introduce the intermediate variable `cereals` into our pipeline definition to represent the output of the `load_cereals` solid. Then we make both `find_highest_calorie_cereal` and `find_highest_protein_cereal` consume this output. Their outputs are in turn both consumed by `display_results`.
+First we introduce the intermediate variable `cereals` into our pipeline definition to represent the output of the `download_cereals` solid. Then we make both `find_highest_calorie_cereal` and `find_highest_protein_cereal` consume this output. Their outputs are in turn both consumed by `display_results`.
 
 Let's visualize this pipeline in Dagit:
 
@@ -136,6 +136,6 @@ width={1680}
 height={946}
 />
 
-When you execute this example from Dagit, you'll see that `load_cereals` executes first, followed by `find_highest_calorie_cereal` and `find_highest_protein_cereal`—in any order—and that `display_results` executes last, only after `find_highest_calorie_cereal` and `find_highest_protein_cereal` have both executed.
+When you execute this example from Dagit, you'll see that `download_cereals` executes first, followed by `find_highest_calorie_cereal` and `find_highest_protein_cereal`—in any order—and that `display_results` executes last, only after `find_highest_calorie_cereal` and `find_highest_protein_cereal` have both executed.
 
-In more sophisticated execution environments, `find_highest_calorie_cereal` and `find_highest_protein_cereal` could execute not just in any order, but at the same time, since they don't depend on each other's outputs—but both would still have to execute after `load_cereals` (because they depend on its output) and before `display_results` (because `display_results` depends on both of their outputs).
+In more sophisticated execution environments, `find_highest_calorie_cereal` and `find_highest_protein_cereal` could execute not just in any order, but at the same time, since they don't depend on each other's outputs—but both would still have to execute after `download_cereals` (because they depend on its output) and before `display_results` (because `display_results` depends on both of their outputs).
