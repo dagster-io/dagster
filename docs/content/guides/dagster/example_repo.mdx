@@ -3,26 +3,20 @@ title: Example Dagster Repo | Dagster
 description: This guide describes our example Dagster repository
 ---
 
-# Hacker News Repository
+# Hacker News Example Repository
 
-When starting out with Dagster, it can be helpful to have an example repository that takes advantage of lots of Dagster features, as a base for your own repositories. This repo shows a set of example pipelines, complete with different modes, and can serve as a jumping off point for people that
+The [Hacker News example repo](https://github.com/dagster-io/dagster/tree/master/examples/hacker_news) takes advantage of a wide range of Dagster features, and can be useful as a point of reference for how we imagine structuring Dagster projects and using different APIs. At a high level, it consists of three pipelines, all centered around a (contrived) use case of downloading Hacker News user activity data, loading it into a database, and doing analysis on the aggregated data.
+
+Beyond the dagster libraries that it demonstrates the use of (listed below), this example shows useful patterns for many Dagster concepts: schedules, sensors, IOManagers, modes, resources, and unit tests (to name a few).
+
+As time goes on, this repository will be kept up to date, taking advantage of new Dagster features and interfaces. If you have anything you'd like to add, or like to see an example of, don't hesitate to reach out!
 
 ## Integrations Used
 
-- [dagster_dbt](/_apidocs/libraries/dagster-dbt)
-- dagster_aws(/\_apidocs/libraries/dagster-aws)
-- dagster_slack(/\_apidocs/libraries/dagster-slack)
-- dagster_pandas(/\_apidocs/libraries/dagster-pandas)
-- dagster_pyspark(/\_apidocs/libraries/dagster-pyspark)
+This repository uses several dagster integration libraries:
 
-Ops, Graphs, and Jobs, are an experimental set of APIs that aim to simplify and give more accessible names to some of Dagster's core concepts. This guide describes how to migrate code that uses Pipelines, Modes, Presets, and Partition Sets to the new APIs.
-
-A detailed API reference for the new APIs can be found [here](/_apidocs/experimental).
-
-Migrating a pipeline to a graph does not require migrating all your other pipelines to graphs. Graphs, jobs, and pipelines can co-exist peacefully in Python.
-
-In Dagit, graphs and jobs will be displayed as pipelines. You can also toggle Dagit to switch to a view that's better suited to the new APIs. Click the gear icon in the upper right corner, and then toggle "Experimental Core APIs (Job & Graph)". After flipping this toggle, Dagit will display a job for each mode in each pipeline.
-
-## A simple pipeline
-
-For simple pipelines, the new APIs just have different names. Here's a pipeline containing a single solid:
+- [dagster_dbt](/\_apidocs/libraries/dagster-dbt)
+- [dagster_aws](/\_apidocs/libraries/dagster-aws)
+- [dagster_slack](/\_apidocs/libraries/dagster-slack)
+- [dagster_pandas](/\_apidocs/libraries/dagster-pandas)
+- [dagster_pyspark](/\_apidocs/libraries/dagster-pyspark)
