@@ -1,6 +1,6 @@
-from dagster import ModeDefinition, PresetDefinition, fs_io_manager, pipeline, file_relative_path
-from dagster_slack import slack_resource
+from dagster import ModeDefinition, PresetDefinition, file_relative_path, fs_io_manager, pipeline
 from dagster_dbt import dbt_cli_resource
+from dagster_slack import slack_resource
 
 from .resources import mock_slack_resource, postgres
 from .solids import (

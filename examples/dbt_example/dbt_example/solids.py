@@ -1,6 +1,6 @@
 import pandas
 import requests
-from dagster import Array, InputDefinition, OutputDefinition, solid, Nothing
+from dagster import Array, InputDefinition, Nothing, OutputDefinition, solid
 from dagster.utils import file_relative_path
 from dagster_dbt.cli.types import DbtCliOutput
 from dagstermill import define_dagstermill_solid
