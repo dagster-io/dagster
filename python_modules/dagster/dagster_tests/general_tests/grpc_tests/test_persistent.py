@@ -198,6 +198,7 @@ def test_load_with_empty_working_directory(capfd):
 
         # indicating the working directory is empty fails
 
+        port = find_free_port()
         subprocess_args = [
             "dagster",
             "api",
