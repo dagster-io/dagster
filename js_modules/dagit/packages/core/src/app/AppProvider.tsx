@@ -19,7 +19,7 @@ import {CustomAlertProvider} from './CustomAlertProvider';
 import {CustomConfirmationProvider} from './CustomConfirmationProvider';
 import {CustomTooltipProvider} from './CustomTooltipProvider';
 import {LayoutProvider} from './LayoutProvider';
-import {PermissionsFromJSON} from './Permissions';
+import {PermissionsProvider} from './Permissions';
 import {formatElapsedTime, patchCopyToRemoveZeroWidthUnderscores, debugLog} from './Util';
 import {WebSocketProvider} from './WebSocketProvider';
 import {TimezoneProvider} from './time/TimezoneContext';
@@ -71,13 +71,12 @@ interface Props {
     basePath?: string;
     headers?: {[key: string]: string};
     origin: string;
-    permissions: PermissionsFromJSON;
   };
 }
 
 export const AppProvider: React.FC<Props> = (props) => {
   const {appCache, config} = props;
-  const {basePath = '', headers = {}, origin, permissions} = config;
+  const {basePath = '', headers = {}, origin} = config;
 
   const graphqlPath = `${basePath}/graphql`;
   const rootServerURI = `${origin}${basePath}`;
@@ -112,10 +111,9 @@ export const AppProvider: React.FC<Props> = (props) => {
   const appContextValue = React.useMemo(
     () => ({
       basePath,
-      permissions,
       rootServerURI,
     }),
-    [basePath, permissions, rootServerURI],
+    [basePath, rootServerURI],
   );
 
   return (
@@ -123,17 +121,19 @@ export const AppProvider: React.FC<Props> = (props) => {
       <WebSocketProvider websocketURI={websocketURI} connectionParams={headerObject}>
         <GlobalStyle />
         <ApolloProvider client={apolloClient}>
-          <BrowserRouter basename={basePath || ''}>
-            <TimezoneProvider>
-              <WorkspaceProvider>
-                <CustomConfirmationProvider>
-                  <LayoutProvider>{props.children}</LayoutProvider>
-                </CustomConfirmationProvider>
-                <CustomTooltipProvider />
-                <CustomAlertProvider />
-              </WorkspaceProvider>
-            </TimezoneProvider>
-          </BrowserRouter>
+          <PermissionsProvider>
+            <BrowserRouter basename={basePath || ''}>
+              <TimezoneProvider>
+                <WorkspaceProvider>
+                  <CustomConfirmationProvider>
+                    <LayoutProvider>{props.children}</LayoutProvider>
+                  </CustomConfirmationProvider>
+                  <CustomTooltipProvider />
+                  <CustomAlertProvider />
+                </WorkspaceProvider>
+              </TimezoneProvider>
+            </BrowserRouter>
+          </PermissionsProvider>
         </ApolloProvider>
       </WebSocketProvider>
     </AppContext.Provider>

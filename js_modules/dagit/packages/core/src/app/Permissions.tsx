@@ -1,6 +1,8 @@
+import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
-import {AppContext} from '../app/AppContext';
+import {PermissionFragment} from './types/PermissionFragment';
+import {PermissionsQuery} from './types/PermissionsQuery';
 
 export type PermissionsFromJSON = {
   launch_pipeline_execution?: boolean;
@@ -19,6 +21,7 @@ export type PermissionsFromJSON = {
   cancel_partition_backfill?: boolean;
 };
 
+// todo dish: Delete this, we don't want it anymore.
 export const PERMISSIONS_ALLOW_ALL: PermissionsFromJSON = {
   launch_pipeline_execution: true,
   launch_pipeline_reexecution: true,
@@ -36,31 +39,71 @@ export const PERMISSIONS_ALLOW_ALL: PermissionsFromJSON = {
   cancel_partition_backfill: true,
 };
 
-export const DISABLED_MESSAGE = 'Disabled by your administrator';
+export const extractPermissions = (permissions: PermissionFragment[]) => {
+  const permsMap: PermissionsFromJSON = {};
+  for (const item of permissions) {
+    permsMap[item.permission] = item.value;
+  }
 
-export const usePermissions = () => {
-  const appContext = React.useContext(AppContext);
-  const {permissions} = appContext;
-
-  return React.useMemo(
-    () => ({
-      canLaunchPipelineExecution: !!permissions.launch_pipeline_execution,
-      canLaunchPipelineReexecution: !!permissions.launch_pipeline_reexecution,
-      canReconcileSchedulerState: !!permissions.reconcile_scheduler_state,
-      canStartSchedule: !!permissions.start_schedule,
-      canStopRunningSchedule: !!permissions.stop_running_schedule,
-      canStartSensor: !!permissions.start_sensor,
-      canStopSensor: !!permissions.stop_sensor,
-      canTerminatePipelineExecution: !!permissions.terminate_pipeline_execution,
-      canDeletePipelineRun: !!permissions.delete_pipeline_run,
-      canReloadRepositoryLocation: !!permissions.reload_repository_location,
-      canReloadWorkspace: !!permissions.reload_workspace,
-      canWipeAssets: !!permissions.wipe_assets,
-      canLaunchPartitionBackfill: !!permissions.launch_partition_backfill,
-      canCancelPartitionBackfill: !!permissions.cancel_partition_backfill,
-    }),
-    [permissions],
-  );
+  return {
+    canLaunchPipelineExecution: !!permsMap.launch_pipeline_execution,
+    canLaunchPipelineReexecution: !!permsMap.launch_pipeline_reexecution,
+    canReconcileSchedulerState: !!permsMap.reconcile_scheduler_state,
+    canStartSchedule: !!permsMap.start_schedule,
+    canStopRunningSchedule: !!permsMap.stop_running_schedule,
+    canStartSensor: !!permsMap.start_sensor,
+    canStopSensor: !!permsMap.stop_sensor,
+    canTerminatePipelineExecution: !!permsMap.terminate_pipeline_execution,
+    canDeletePipelineRun: !!permsMap.delete_pipeline_run,
+    canReloadRepositoryLocation: !!permsMap.reload_repository_location,
+    canReloadWorkspace: !!permsMap.reload_workspace,
+    canWipeAssets: !!permsMap.wipe_assets,
+    canLaunchPartitionBackfill: !!permsMap.launch_partition_backfill,
+    canCancelPartitionBackfill: !!permsMap.cancel_partition_backfill,
+  };
 };
 
-export type PermissionSet = ReturnType<typeof usePermissions>;
+export type PermissionsMap = ReturnType<typeof extractPermissions>;
+
+export const DISABLED_MESSAGE = 'Disabled by your administrator';
+
+type PermissionsContextValue = {
+  rawPermissions: PermissionFragment[];
+  permissionsMap: PermissionsMap;
+};
+
+export const PermissionsContext = React.createContext<PermissionsContextValue>({
+  rawPermissions: [],
+  permissionsMap: {} as PermissionsMap,
+});
+
+export const PermissionsProvider: React.FC = (props) => {
+  const {data} = useQuery<PermissionsQuery>(PERMISSIONS_QUERY);
+  const value = React.useMemo(() => {
+    const rawPermissions = data?.permissions || [];
+    const permissionsMap = extractPermissions(rawPermissions);
+    return {
+      rawPermissions,
+      permissionsMap,
+    };
+  }, [data]);
+  return <PermissionsContext.Provider value={value}>{props.children}</PermissionsContext.Provider>;
+};
+
+export const usePermissions = () => {
+  const {permissionsMap} = React.useContext(PermissionsContext);
+  return permissionsMap;
+};
+
+const PERMISSIONS_QUERY = gql`
+  query PermissionsQuery {
+    permissions {
+      ...PermissionFragment
+    }
+  }
+
+  fragment PermissionFragment on GraphenePermission {
+    permission
+    value
+  }
+`;

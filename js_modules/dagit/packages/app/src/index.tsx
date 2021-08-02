@@ -6,7 +6,6 @@ import {App} from '@dagit/core/app/App';
 import {createAppCache} from '@dagit/core/app/AppCache';
 import {AppProvider} from '@dagit/core/app/AppProvider';
 import {AppTopNav} from '@dagit/core/app/AppTopNav';
-import {PermissionsFromJSON, PERMISSIONS_ALLOW_ALL} from '@dagit/core/app/Permissions';
 import * as React from 'react';
 import ReactDOM from 'react-dom';
 import {Link} from 'react-router-dom';
@@ -16,21 +15,9 @@ import {extractPathPrefix} from './extractPathPrefix';
 
 const pathPrefix = extractPathPrefix();
 
-const permissionsElement = document.getElementById('permissions');
-
-const identity: {permissions: PermissionsFromJSON} = permissionsElement
-  ? JSON.parse(permissionsElement.textContent || '')
-  : {
-      permissions: {},
-    };
-
-const permissions =
-  identity.permissions === '[permissions_here]' ? PERMISSIONS_ALLOW_ALL : identity.permissions;
-
 const config = {
   basePath: pathPrefix,
   origin: process.env.REACT_APP_BACKEND_ORIGIN || document.location.origin,
-  permissions,
 };
 
 const appCache = createAppCache();

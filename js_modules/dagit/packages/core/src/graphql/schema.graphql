@@ -27,6 +27,7 @@ type Query {
   assetOrError(assetKey: AssetKeyInput!): AssetOrError!
   partitionBackfillOrError(backfillId: String!): PartitionBackfillOrError!
   partitionBackfillsOrError(cursor: String, limit: Int): PartitionBackfillsOrError!
+  permissions: [GraphenePermission!]!
 }
 
 union RepositoriesOrError = RepositoryConnection | PythonError
@@ -1386,6 +1387,11 @@ union PartitionBackfillsOrError = PartitionBackfills | PythonError
 
 type PartitionBackfills {
   results: [PartitionBackfill!]!
+}
+
+type GraphenePermission {
+  permission: String!
+  value: Boolean!
 }
 
 type Mutation {

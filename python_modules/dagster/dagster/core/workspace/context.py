@@ -75,6 +75,10 @@ class BaseWorkspaceRequestContext(IWorkspace):
     def version(self) -> Optional[str]:
         pass
 
+    @abstractproperty
+    def permissions(self) -> Dict[str, bool]:
+        pass
+
     def has_permission(self, permission: str) -> bool:
         pass
 
@@ -263,6 +267,10 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
     def read_only(self) -> bool:
         return self._process_context.read_only
 
+    @property
+    def permissions(self) -> Dict[str, bool]:
+        return self._process_context.permissions
+
     def has_permission(self, permission: str) -> bool:
         return self._process_context.has_permission(permission)
 
@@ -429,8 +437,12 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
     def read_only(self):
         return self._read_only
 
+    @property
+    def permissions(self) -> Dict[str, bool]:
+        return get_user_permissions(self)
+
     def has_permission(self, permission: str) -> bool:
-        permissions = get_user_permissions(self)
+        permissions = self.permissions
         check.invariant(
             permission in permissions, f"Permission {permission} not listed in permissions map"
         )

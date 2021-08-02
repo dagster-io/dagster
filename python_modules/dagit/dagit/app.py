@@ -1,11 +1,9 @@
 import gzip
 import io
-import json
 import os
 import uuid
 
 import nbformat
-import werkzeug
 from dagster import __version__ as dagster_version
 from dagster import check
 from dagster.core.debug import DebugRunPayload
@@ -13,7 +11,6 @@ from dagster.core.execution.compute_logs import warn_if_compute_logs_disabled
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.telemetry import log_workspace_stats
 from dagster.core.workspace.context import IWorkspaceProcessContext, WorkspaceProcessContext
-from dagster.core.workspace.permissions import get_user_permissions
 from dagster_graphql.schema import create_schema
 from dagster_graphql.version import __version__ as dagster_graphql_version
 from flask import Blueprint, Flask, jsonify, redirect, render_template_string, request, send_file
@@ -139,47 +136,11 @@ def download_dump_view(context):
     return view
 
 
-def register_permissions(app, context: IWorkspaceProcessContext):
-    # TODO: This is a nasty hack because we aren't currently using Jinja templating to render the
-    # static views; we should instead be injecting values into the Jinja environment and using Jinja
-    # to template them in rather than using string replace
-    def make_wrapper(view_fn):
-        def _wrapper(*args, **kwargs):
-            res = view_fn(*args, **kwargs)
-            if not isinstance(res, str):
-                return res
-
-            templated_res = res.replace(
-                '"[permissions_here]"',
-                json.dumps(
-                    get_user_permissions(context),
-                ),
-            )
-            return templated_res
-
-        return _wrapper
-
-    for view_function_key in app.view_functions:
-        if view_function_key != "routes.graphql":
-            app.view_functions[view_function_key] = make_wrapper(
-                app.view_functions[view_function_key]
-            )
-    # TODO: This is a brutal hack which is following on a brutal hack (treating
-    # all paths other than / as 404s and falling through to an error handler) -- we should instead
-    # have a catch-all handler for "/<path:path>"
-    error_handler = app.error_handler_spec[None][404][werkzeug.exceptions.NotFound]
-    app.register_error_handler(404, make_wrapper(error_handler))
-
-    return app
-
-
 def instantiate_app_with_views(
     context: IWorkspaceProcessContext,
     schema,
     app_path_prefix,
     target_dir=os.path.dirname(__file__),
-    # If you are injecting middleware that registers permissions on its own, set register_permissions_middleware to False
-    register_permissions_middleware=True,
     graphql_middleware=None,
 ):
     app = Flask(
@@ -262,9 +223,6 @@ def instantiate_app_with_views(
     app.app_protocol = lambda environ_path_info: "graphql-ws"
     app.register_blueprint(bp)
     app.register_error_handler(404, index_view)
-
-    if register_permissions_middleware:
-        app = register_permissions(app, context)
 
     CORS(app)
 
