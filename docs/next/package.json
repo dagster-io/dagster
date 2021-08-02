@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "PORT=3001 next-remote-watch ../content",
     "build": "next build",
+    "build-master": "VERSIONING_DISABLED=true next build",
     "start": "next start",
     "snapshot": "ts-node -O '{\"module\": \"commonjs\"}' scripts/snapshot.ts && yarn format",
     "test": "jest",

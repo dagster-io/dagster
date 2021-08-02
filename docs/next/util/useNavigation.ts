@@ -56,19 +56,24 @@ export const allPaths = () => {
 
   paths = [...flattenedMasterNavigation, ...paths];
 
-  for (const [key, value] of Object.entries(versionedNavigation)) {
-    const flattenedVersionNavigation = flatten(value)
-      .filter((n: { path: any }) => n.path)
-      .map(({ path }) => [key, ...path.split("/").splice(1)])
-      .map((page: string[]) => {
-        return {
-          params: {
-            page: page,
-          },
-        };
-      });
+  // Always enable versioning when on Vercel
+  if (process.env.VERCEL || !__VERSIONING_DISABLED__) {
+    console.log("?????????", process.env.VERCEL, __VERSIONING_DISABLED__);
 
-    paths = [...paths, ...flattenedVersionNavigation];
+    for (const [key, value] of Object.entries(versionedNavigation)) {
+      const flattenedVersionNavigation = flatten(value)
+        .filter((n: { path: any }) => n.path)
+        .map(({ path }) => [key, ...path.split("/").splice(1)])
+        .map((page: string[]) => {
+          return {
+            params: {
+              page: page,
+            },
+          };
+        });
+
+      paths = [...paths, ...flattenedVersionNavigation];
+    }
   }
 
   return paths;

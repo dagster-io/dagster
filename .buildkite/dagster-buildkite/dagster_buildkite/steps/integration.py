@@ -1,7 +1,8 @@
 import os
 
-from ..defines import GCP_CREDS_LOCAL_FILE
+from ..defines import GCP_CREDS_LOCAL_FILE, SupportedPython
 from ..module_build_spec import ModuleBuildSpec
+from ..step_builder import StepBuilder
 from ..utils import connect_sibling_docker_container, network_buildkite_container
 from .test_images import publish_test_images, test_image_depends_fn
 
@@ -81,4 +82,17 @@ def integration_steps():
             tox_env_suffixes=tox_env_suffixes,
             retries=2,
         ).get_tox_build_steps()
+
+        tests += (
+            StepBuilder("docs next")
+            .run(
+                "pushd docs/next",
+                "yarn",
+                "yarn test",
+                "yarn build",
+            )
+            .on_integration_image(SupportedPython.V3_7)
+            .build(),
+        )
+
     return tests
