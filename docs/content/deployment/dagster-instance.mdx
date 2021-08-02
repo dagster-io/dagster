@@ -731,9 +731,9 @@ compute_logs:
 
 ### Local Artifact Storage
 
-The local artifact storage is used to configure storage for any artifacts that require a local disk, such as schedules, or when using the filesystem system storage to manage files and intermediates.
+The local artifact storage is used to configure storage for any artifacts that require a local disk, such as schedules, or when using the filesystem IO manager to manage files and intermediates.
 
-Note that pipeline intermediates storage is itself not configured this way, but instead is configured on the pipeline level (i.e. via <Link href="/concepts/io-management/io-managers">IO Managers</Link>)
+Note how a pipeline persists its artifact through IO managers is not configured this way, but instead is configured on the pipeline level (i.e. via <Link href="/concepts/io-management/io-managers">IO Managers</Link>)
 
 To configure Local Artifact Storage, set `local_artifact_storage` as follows in your `dagster.yaml`:
 
@@ -741,8 +741,8 @@ To configure Local Artifact Storage, set `local_artifact_storage` as follows in 
 
 <PyObject module="dagster.core.storage.root" object="LocalArtifactStorage" /> is
 currently the only option for Local Artifact Storage. This configures the directory
-used by the default filesystem intermediates storage, as well as any schedule-related
-artifacts that require a local disk.
+used by the default filesystem IO Manager, as well as any schedule-related artifacts
+that require a local disk.
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_local_artifact_storage endbefore=end_marker_local_artifact_storage
 # there are two possible ways to configure LocalArtifactStorage
