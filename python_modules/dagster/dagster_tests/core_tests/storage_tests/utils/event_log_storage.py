@@ -8,6 +8,7 @@ import pytest
 from dagster import (
     AssetKey,
     AssetMaterialization,
+    DagsterInstance,
     InputDefinition,
     ModeDefinition,
     Output,
@@ -52,6 +53,9 @@ from watchdog.utils import platform
 DEFAULT_RUN_ID = "foo"
 
 TEST_TIMEOUT = 5
+
+# py36 & 37 list.append not hashable
+# pylint: disable=unnecessary-lambda
 
 
 def create_test_event_log_record(message: str, run_id: str = DEFAULT_RUN_ID):
@@ -182,7 +186,7 @@ def _synthesize_events(solids_fn, run_id=None, check_success=True, instance=None
 
     with ExitStack() as stack:
         if not instance:
-            instance = stack.enter_context(instance_for_test())
+            instance = stack.enter_context(DagsterInstance.ephemeral())
         pipeline_run = instance.create_run_for_pipeline(
             a_pipe, run_id=run_id, run_config={"loggers": {"callback": {}, "console": {}}}
         )
@@ -249,11 +253,6 @@ class TestEventLogStorage:
         # Whether the storage is allowed to wipe the event log
         return True
 
-    def can_watch(self):
-        # whether the storage is allowed to subscribe to runs
-        # for event log updates
-        return True
-
     def test_event_log_storage_store_events_and_wipe(self, storage):
         assert len(storage.get_logs_for_run(DEFAULT_RUN_ID)) == 0
         storage.store_event(
@@ -312,9 +311,6 @@ class TestEventLogStorage:
         reason="watchdog's default MacOSX FSEventsObserver sometimes fails to pick up changes",
     )
     def test_event_log_storage_watch(self, storage):
-        if self.can_watch():
-            pytest.skip("storage cannot watch runs")
-
         watched = []
         watcher = lambda x: watched.append(x)  # pylint: disable=unnecessary-lambda
 
@@ -674,9 +670,6 @@ class TestEventLogStorage:
         assert set(map(lambda e: e.run_id, out_events_two)) == {result_two.run_id}
 
     def test_event_watcher_single_run_event(self, storage):
-        if not hasattr(storage, "event_watcher"):
-            pytest.skip("This test requires an event_watcher attribute")
-
         @solid
         def return_one(_):
             return 1
@@ -688,7 +681,7 @@ class TestEventLogStorage:
 
         run_id = make_new_run_id()
 
-        storage.event_watcher.watch_run(run_id, -1, event_list.append)
+        storage.watch(run_id, -1, lambda x: event_list.append(x))
 
         events, _ = _synthesize_events(_solids, run_id=run_id)
         for event in events:
@@ -702,9 +695,6 @@ class TestEventLogStorage:
         assert all([isinstance(event, EventLogEntry) for event in event_list])
 
     def test_event_watcher_filter_run_event(self, storage):
-        if not hasattr(storage, "event_watcher"):
-            pytest.skip("This test requires an event_watcher attribute")
-
         @solid
         def return_one(_):
             return 1
@@ -717,7 +707,7 @@ class TestEventLogStorage:
 
         # only watch one of the runs
         event_list = []
-        storage.event_watcher.watch_run(run_id_two, -1, event_list.append)
+        storage.watch(run_id_two, -1, lambda x: event_list.append(x))
 
         events_one, _result_one = _synthesize_events(_solids, run_id=run_id_one)
         for event in events_one:
@@ -751,8 +741,8 @@ class TestEventLogStorage:
         run_id_one = make_new_run_id()
         run_id_two = make_new_run_id()
 
-        storage.event_watcher.watch_run(run_id_one, -1, event_list_one.append)
-        storage.event_watcher.watch_run(run_id_two, -1, event_list_two.append)
+        storage.watch(run_id_one, -1, lambda x: event_list_one.append(x))
+        storage.watch(run_id_two, -1, lambda x: event_list_two.append(x))
 
         events_one, _result_one = _synthesize_events(_solids, run_id=run_id_one)
         for event in events_one:
