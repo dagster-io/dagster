@@ -9,7 +9,7 @@ The [dagster-dask](https://github.com/dagster-io/dagster/tree/master/python_modu
 
 This executor takes the compiled execution plan, and converts each execution step into a [Dask Future](https://docs.dask.org/en/latest/futures.html) configured with the appropriate task dependencies to ensure tasks are properly sequenced. When the pipeline is executed, these futures are generated and then awaited by the parent Dagster process.
 
-Data is passed between step executions via intermediate storage. As a consequence, a persistent shared storage (such as a network filesystem shared by all of the Dask nodes, S3, or GCS) must be used.
+Data is passed between step executions via [IO Managers](/concepts/io-management/io-managers). As a consequence, a persistent shared storage (such as a network filesystem shared by all of the Dask nodes, S3, or GCS) must be used.
 
 Note that, when using this executor, the compute function of a single solid is still executed in a single process on a single machine. If your goal is to distribute execution of workloads _within_ the logic of a single solid, you may find that invoking Dask or PySpark directly from within the body of a solid's compute function is a better fit than the engine layer covered in this documentation.
 
@@ -25,9 +25,20 @@ First, run `pip install dagster-dask`.
 
 Then, you'll need to add the dask executor to a **`ModeDefinition`** on your pipeline:
 
-```python file=/deploying/dask_hello_world.py
-from dagster import ModeDefinition, default_executors, fs_io_manager, pipeline, solid
+```python file=/deploying/dask_hello_world.py startafter=start_local_mode endbefore=end_local_mode
 from dagster_dask import dask_executor
+from dagster import ModeDefinition, default_executors, fs_io_manager
+
+
+local_mode = ModeDefinition(
+    name="local",
+    resource_defs={"io_manager": fs_io_manager},
+    executor_defs=default_executors + [dask_executor],
+)
+```
+
+```python file=/deploying/dask_hello_world.py startafter=start_pipeline_marker endbefore=end_pipeline_marker
+from dagster import pipeline, solid
 
 
 @solid
@@ -35,14 +46,7 @@ def hello_world():
     return "Hello, World!"
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={"io_manager": fs_io_manager},
-            executor_defs=default_executors + [dask_executor],
-        )
-    ]
-)
+@pipeline(mode_defs=[local_mode, distributed_mode])
 def dask_pipeline():
     return hello_world()
 ```
@@ -63,7 +67,18 @@ Executing this pipeline will spin up local Dask execution, run the Dagster pipel
 
 If you want to use a Dask cluster for distributed execution, you will first need to [set up a Dask cluster](https://distributed.readthedocs.io/en/latest/quickstart.html#setup-dask-distributed-the-hard-way). Note that the machine running the Dagster parent process must be able to connect to the host/port on which the Dask scheduler is running.
 
-You'll also need a persistent shared storage, which should be attached to a pipeline **`ModeDefinition`** along with any resources on which it depends. (Here, we use the **`s3_system_storage`**)
+You'll also need an IO manager that uses persistent shared storage, which should be attached to a pipeline **`ModeDefinition`** along with any resources on which it depends. Here, we use the <PyObject module="dagster_aws.s3" object="s3_pickle_io_manager"/>:
+
+```python file=/deploying/dask_hello_world.py startafter=start_distributed_mode endbefore=end_distributed_mode
+from dagster_aws.s3.io_manager import s3_pickle_io_manager
+from dagster_aws.s3.resources import s3_resource
+
+distributed_mode = ModeDefinition(
+    name="distributed",
+    resource_defs={"io_manager": s3_pickle_io_manager, "s3": s3_resource},
+    executor_defs=default_executors + [dask_executor],
+)
+```
 
 For distributing task execution on a Dask cluster, you must provide a config block that includes the address/port of the Dask scheduler:
 
@@ -113,7 +128,7 @@ The dict passed to `dagster-dask/resource_requirements` will be passed through a
 
 ## Caveats
 
-- For distributed execution, you must use a persistent intermediates storage such as S3 or GCS.
+- For distributed execution, you must use a persistent io manager for handling intermediates between solids, such as <PyObject module="dagster_aws.s3" object="s3_pickle_io_manager"/>, <PyObject module="dagster_azure.adls2" object="adls2_pickle_io_manager"/>, or <PyObject module="dagster_gcp.gcs" object="gcs_pickle_io_manager"/>.
 - Dagster logs are not yet retrieved from Dask workers; this will be addressed in follow-up work.
 
 While this library is still nascent, we're working to improve it, and we are happy to accept contributions.

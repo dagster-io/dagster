@@ -4,13 +4,14 @@ from dagster.utils.yaml_utils import load_yaml_from_globs
 from docs_snippets.deploying.dask_hello_world import dask_pipeline  # pylint: disable=import-error
 
 
-def test_dask_pipeline():
+def test_local_dask_pipeline():
     with instance_for_test() as instance:
         run_config = load_yaml_from_globs(
             file_relative_path(__file__, "../../docs_snippets/deploying/dask_hello_world.yaml")
         )
         result = execute_pipeline(
             reconstructable(dask_pipeline),
+            mode="local",
             run_config=run_config,
             instance=instance,
         )

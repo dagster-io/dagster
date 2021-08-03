@@ -73,7 +73,7 @@ execution:
 
 In the quick start, we cheated in a couple of ways:
 
-- By running a single Celery worker on the same node as Dagit, so that local ephemeral run storage and event log storage could be shared between them, and so that filesystem intermediates storage would be sufficient to exchange values between the worker's task executions.
+- By running a single Celery worker on the same node as Dagit, so that local ephemeral run storage and event log storage could be shared between them, and so that filesystem io manager would be sufficient to exchange values between the worker's task executions.
 - By running the Celery worker in the same directory to which we saved `celery_pipeline.py`, so that our Dagster code would be available both to Dagit and to the worker: i.e., the worker and Dagit can both find the pipeline definition in the same file (`-f celery_pipeline.py`).
 
 In production, more configuration is required.
