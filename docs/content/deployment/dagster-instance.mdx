@@ -731,9 +731,9 @@ compute_logs:
 
 ### Local Artifact Storage
 
-The local artifact storage is used to configure storage for any artifacts that require a local disk, such as schedules, or when using the filesystem IO manager to manage files and intermediates.
+The local artifact storage is used to configure storage for any artifacts that require a local disk, such as schedules, or when using the filesystem IO manager to manage intermediates.
 
-Note how a pipeline persists its artifact through IO managers is not configured this way, but instead is configured on the pipeline level (i.e. via <Link href="/concepts/io-management/io-managers">IO Managers</Link>)
+Note that how a pipeline persists its artifact through IO managers is not configured this way, but instead is configured on the pipeline level (i.e. via <Link href="/concepts/io-management/io-managers">IO Managers</Link>)
 
 To configure Local Artifact Storage, set `local_artifact_storage` as follows in your `dagster.yaml`:
 

@@ -26,6 +26,10 @@ First, run `pip install dagster-dask`.
 Then, you'll need to add the dask executor to a **`ModeDefinition`** on your pipeline:
 
 ```python file=/deploying/dask_hello_world.py startafter=start_local_mode endbefore=end_local_mode
+from dagster_dask import dask_executor
+from dagster import ModeDefinition, default_executors, fs_io_manager
+
+
 local_mode = ModeDefinition(
     name="local",
     resource_defs={"io_manager": fs_io_manager},
@@ -34,6 +38,14 @@ local_mode = ModeDefinition(
 ```
 
 ```python file=/deploying/dask_hello_world.py startafter=start_pipeline_marker endbefore=end_pipeline_marker
+from dagster import pipeline, solid
+
+
+@solid
+def hello_world():
+    return "Hello, World!"
+
+
 @pipeline(mode_defs=[local_mode, distributed_mode])
 def dask_pipeline():
     return hello_world()
@@ -58,6 +70,9 @@ If you want to use a Dask cluster for distributed execution, you will first need
 You'll also need an IO manager that uses persistent shared storage, which should be attached to a pipeline **`ModeDefinition`** along with any resources on which it depends. Here, we use the <PyObject module="dagster_aws.s3" object="s3_pickle_io_manager"/>:
 
 ```python file=/deploying/dask_hello_world.py startafter=start_distributed_mode endbefore=end_distributed_mode
+from dagster_aws.s3.io_manager import s3_pickle_io_manager
+from dagster_aws.s3.resources import s3_resource
+
 distributed_mode = ModeDefinition(
     name="distributed",
     resource_defs={"io_manager": s3_pickle_io_manager, "s3": s3_resource},
