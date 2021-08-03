@@ -18,6 +18,7 @@ class ConfigMapping(
         [
             ("config_fn", Callable[[Any], Any]),
             ("config_schema", IDefinitionConfigSchema),
+            ("enable_pre_processing", bool),
         ],
     )
 ):
@@ -41,9 +42,11 @@ class ConfigMapping(
         cls,
         config_fn: Callable[[Any], Any],
         config_schema: Any = None,
+        enable_pre_processing: bool = True,
     ):
         return super(ConfigMapping, cls).__new__(
             cls,
             config_fn=check.callable_param(config_fn, "config_fn"),
             config_schema=convert_user_facing_definition_config_schema(config_schema),
+            enable_pre_processing=check.bool_param(enable_pre_processing, "enable_pre_processing"),
         )

@@ -1,6 +1,17 @@
 """System-provided config objects and constructors."""
 import warnings
-from typing import AbstractSet, Any, Dict, List, NamedTuple, Optional, Type, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Dict,
+    List,
+    NamedTuple,
+    Optional,
+    Type,
+    Union,
+    cast,
+)
 
 from dagster import check
 from dagster.core.definitions.configurable import ConfigurableDefinition
@@ -12,6 +23,9 @@ from dagster.core.definitions.resource import ResourceDefinition
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.utils import ensure_single_item
 from dagster.utils.merger import deep_merge_dicts
+
+if TYPE_CHECKING:
+    from dagster.config import ConfigType
 
 
 class SolidConfig(
@@ -141,7 +155,8 @@ class ResolvedRunConfig(
 
         In case the run_config is invalid, this method raises a DagsterInvalidConfigError
         """
-        from dagster.config.validate import process_config
+        from dagster.config.validate import process_config, validate_config
+        from dagster.config.post_process import resolve_defaults
         from .composite_descent import composite_descent
 
         check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
@@ -152,18 +167,28 @@ class ResolvedRunConfig(
         run_config_schema = pipeline_def.get_run_config_schema(mode)
 
         if run_config_schema.config_mapping:
-            outer_evr = process_config(
-                run_config_schema.config_mapping.config_schema.config_type,
-                run_config,
-            )
+            if run_config_schema.config_mapping.enable_pre_processing:
+                outer_evr = process_config(
+                    run_config_schema.config_mapping.config_schema.config_type,
+                    run_config,
+                )
+            else:
+                outer_evr = validate_config(
+                    run_config_schema.config_mapping.config_schema.config_type,
+                    run_config,
+                )
             if not outer_evr.success:
                 raise DagsterInvalidConfigError(
                     f"Error in config mapping for pipeline {pipeline_def.name} mode {mode}",
                     outer_evr.errors,
                     run_config,
                 )
+            outer_config = resolve_defaults(
+                cast("ConfigType", run_config_schema.config_mapping.config_schema.config_type),
+                outer_evr.value,
+            ).value
             # add user code boundary
-            run_config = run_config_schema.config_mapping.config_fn(outer_evr.value)
+            run_config = run_config_schema.config_mapping.config_fn(outer_config)
 
         config_evr = process_config(
             run_config_schema.run_config_schema_type,
