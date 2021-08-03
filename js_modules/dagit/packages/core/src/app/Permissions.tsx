@@ -21,24 +21,6 @@ export type PermissionsFromJSON = {
   cancel_partition_backfill?: boolean;
 };
 
-// todo dish: Delete this, we don't want it anymore.
-export const PERMISSIONS_ALLOW_ALL: PermissionsFromJSON = {
-  launch_pipeline_execution: true,
-  launch_pipeline_reexecution: true,
-  reconcile_scheduler_state: true,
-  start_schedule: true,
-  stop_running_schedule: true,
-  start_sensor: true,
-  stop_sensor: true,
-  terminate_pipeline_execution: true,
-  delete_pipeline_run: true,
-  reload_repository_location: true,
-  reload_workspace: true,
-  wipe_assets: true,
-  launch_partition_backfill: true,
-  cancel_partition_backfill: true,
-};
-
 export const extractPermissions = (permissions: PermissionFragment[]) => {
   const permsMap: PermissionsFromJSON = {};
   for (const item of permissions) {
@@ -67,32 +49,17 @@ export type PermissionsMap = ReturnType<typeof extractPermissions>;
 
 export const DISABLED_MESSAGE = 'Disabled by your administrator';
 
-type PermissionsContextValue = {
-  rawPermissions: PermissionFragment[];
-  permissionsMap: PermissionsMap;
-};
-
-export const PermissionsContext = React.createContext<PermissionsContextValue>({
-  rawPermissions: [],
-  permissionsMap: {} as PermissionsMap,
-});
+export const PermissionsContext = React.createContext<PermissionFragment[]>([]);
 
 export const PermissionsProvider: React.FC = (props) => {
   const {data} = useQuery<PermissionsQuery>(PERMISSIONS_QUERY);
-  const value = React.useMemo(() => {
-    const rawPermissions = data?.permissions || [];
-    const permissionsMap = extractPermissions(rawPermissions);
-    return {
-      rawPermissions,
-      permissionsMap,
-    };
-  }, [data]);
+  const value = React.useMemo(() => data?.permissions || [], [data]);
   return <PermissionsContext.Provider value={value}>{props.children}</PermissionsContext.Provider>;
 };
 
 export const usePermissions = () => {
-  const {permissionsMap} = React.useContext(PermissionsContext);
-  return permissionsMap;
+  const rawPermissions = React.useContext(PermissionsContext);
+  return React.useMemo(() => extractPermissions(rawPermissions), [rawPermissions]);
 };
 
 const PERMISSIONS_QUERY = gql`

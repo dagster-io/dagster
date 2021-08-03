@@ -94,7 +94,7 @@ describe('PipelineRoot', () => {
 
       render(
         <TestProvider
-          permissionOverrides={{canLaunchPipelineExecution: false}}
+          permissionOverrides={{launch_pipeline_execution: false}}
           apolloProps={apolloProps}
           routerProps={routerProps}
         >

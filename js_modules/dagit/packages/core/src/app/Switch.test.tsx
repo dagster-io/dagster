@@ -228,7 +228,7 @@ describe('Switch', () => {
 
       render(
         <TestProvider
-          permissionOverrides={{canReloadRepositoryLocation: false}}
+          permissionOverrides={{reload_repository_location: false}}
           routerProps={routerProps}
         >
           <Test routes={routes} />
