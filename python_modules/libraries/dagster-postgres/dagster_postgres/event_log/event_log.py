@@ -1,3 +1,4 @@
+import logging
 import threading
 from collections import defaultdict
 from typing import Callable, List, MutableMapping, Optional
@@ -291,10 +292,14 @@ def watcher_thread(
             finally:
                 engine.dispose()
 
-            with dict_lock:
-                for callback_with_cursor in handlers:
-                    if callback_with_cursor.start_cursor < index:
+            for callback_with_cursor in handlers:
+                if callback_with_cursor.start_cursor < index:
+                    try:
                         callback_with_cursor.callback(dagster_event)
+                    except Exception:  # pylint: disable=broad-except
+                        logging.exception(
+                            "Exception in callback for event watch on run %s.", run_id
+                        )
 
 
 class PostgresEventWatcher:
