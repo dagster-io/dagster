@@ -1,5 +1,6 @@
 from dagster import build_schedule_context, execute_pipeline
 from docs_snippets.guides.dagster.graph_job_op import (
+    composite_solid,
     graph_job_test,
     graph_with_config,
     graph_with_config_and_schedule,
@@ -7,6 +8,7 @@ from docs_snippets.guides.dagster.graph_job_op import (
     graph_with_partition_schedule,
     graph_with_resources,
     graph_with_schedule,
+    nested_graphs,
     op_in_out,
     op_multi_out,
     pipeline_mode_test,
@@ -26,6 +28,7 @@ jobs = [
     (graph_with_resources, "do_it_all_job"),
     (graph_with_config, "do_it_all_job"),
     (graph_job_test, "do_it_all_job"),
+    (nested_graphs, "do_it_all"),
 ]
 job_repos = [
     (prod_dev_jobs, "prod_repo"),
@@ -50,6 +53,7 @@ pipelines = [
     (pipeline_with_resources, "do_it_all"),
     (pipeline_with_schedule, "do_it_all"),
     (pipeline_with_preset_and_schedule, "do_it_all"),
+    (composite_solid, "do_it_all"),
 ]
 pipeline_schedules = [
     (pipeline_with_partition_schedule, ("do_it_all_schedule", "do_it_all")),
