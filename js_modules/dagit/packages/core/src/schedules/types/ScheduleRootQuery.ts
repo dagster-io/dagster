@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { ScheduleSelector, PipelineRunStatus, InstigationType, InstigationStatus, InstigationTickStatus } from "./../../types/globalTypes";
+import { ScheduleSelector, InstigationType, InstigationStatus, PipelineRunStatus, InstigationTickStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: ScheduleRootQuery
@@ -35,29 +35,10 @@ export interface ScheduleRootQuery_scheduler_PythonError {
 
 export type ScheduleRootQuery_scheduler = ScheduleRootQuery_scheduler_SchedulerNotDefinedError | ScheduleRootQuery_scheduler_Scheduler | ScheduleRootQuery_scheduler_PythonError;
 
-export interface ScheduleRootQuery_scheduleOrError_Schedule_partitionSet_partitionStatusesOrError_PythonError {
-  __typename: "PythonError";
-}
-
-export interface ScheduleRootQuery_scheduleOrError_Schedule_partitionSet_partitionStatusesOrError_PartitionStatuses_results {
-  __typename: "PartitionStatus";
-  id: string;
-  partitionName: string;
-  runStatus: PipelineRunStatus | null;
-}
-
-export interface ScheduleRootQuery_scheduleOrError_Schedule_partitionSet_partitionStatusesOrError_PartitionStatuses {
-  __typename: "PartitionStatuses";
-  results: ScheduleRootQuery_scheduleOrError_Schedule_partitionSet_partitionStatusesOrError_PartitionStatuses_results[];
-}
-
-export type ScheduleRootQuery_scheduleOrError_Schedule_partitionSet_partitionStatusesOrError = ScheduleRootQuery_scheduleOrError_Schedule_partitionSet_partitionStatusesOrError_PythonError | ScheduleRootQuery_scheduleOrError_Schedule_partitionSet_partitionStatusesOrError_PartitionStatuses;
-
 export interface ScheduleRootQuery_scheduleOrError_Schedule_partitionSet {
   __typename: "PartitionSet";
   id: string;
   name: string;
-  partitionStatusesOrError: ScheduleRootQuery_scheduleOrError_Schedule_partitionSet_partitionStatusesOrError;
 }
 
 export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_repositoryOrigin_repositoryLocationMetadata {

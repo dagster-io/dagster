@@ -56,7 +56,7 @@ export const SchedulesTable: React.FC<{
           <th style={{width: '60px'}}></th>
           <th style={{minWidth: '300px'}}>Schedule Name</th>
           <th style={{minWidth: '150px'}}>Schedule</th>
-          <th style={{width: '200px'}}>Next Tick</th>
+          <th style={{width: '160px'}}>Next Tick</th>
           <th style={{width: '120px'}}>
             <Group direction="row" spacing={8} alignItems="center">
               Last Tick
@@ -83,7 +83,7 @@ export const SchedulesTable: React.FC<{
           </th>
           <th>
             <Group direction="row" spacing={8} alignItems="center">
-              Partition Status
+              Partition
               <Tooltip position="top" content={partitionStatus}>
                 <Icon
                   icon={IconNames.INFO_SIGN}
@@ -227,7 +227,11 @@ const ScheduleRow: React.FC<{
         <InstigatedRunStatus instigationState={scheduleState} />
       </td>
       <td>
-        <SchedulePartitionStatus schedule={schedule} repoAddress={repoAddress} />
+        {schedule.partitionSet ? (
+          <SchedulePartitionStatus schedule={schedule} repoAddress={repoAddress} />
+        ) : (
+          <div style={{color: Colors.GRAY4}}>None</div>
+        )}
       </td>
       <td>
         {schedule.partitionSet ? (

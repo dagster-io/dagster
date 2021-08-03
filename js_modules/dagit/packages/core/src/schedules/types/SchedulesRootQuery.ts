@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { RepositorySelector, InstigationType, PipelineRunStatus, InstigationStatus, InstigationTickStatus } from "./../../types/globalTypes";
+import { RepositorySelector, InstigationType, InstigationStatus, PipelineRunStatus, InstigationTickStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: SchedulesRootQuery
@@ -20,29 +20,10 @@ export interface SchedulesRootQuery_repositoryOrError_Repository_location {
   name: string;
 }
 
-export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionSet_partitionStatusesOrError_PythonError {
-  __typename: "PythonError";
-}
-
-export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionSet_partitionStatusesOrError_PartitionStatuses_results {
-  __typename: "PartitionStatus";
-  id: string;
-  partitionName: string;
-  runStatus: PipelineRunStatus | null;
-}
-
-export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionSet_partitionStatusesOrError_PartitionStatuses {
-  __typename: "PartitionStatuses";
-  results: SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionSet_partitionStatusesOrError_PartitionStatuses_results[];
-}
-
-export type SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionSet_partitionStatusesOrError = SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionSet_partitionStatusesOrError_PythonError | SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionSet_partitionStatusesOrError_PartitionStatuses;
-
 export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionSet {
   __typename: "PartitionSet";
   id: string;
   name: string;
-  partitionStatusesOrError: SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionSet_partitionStatusesOrError;
 }
 
 export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState_repositoryOrigin_repositoryLocationMetadata {
