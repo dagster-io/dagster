@@ -24,7 +24,30 @@ from dagster.core.execution.retries import RetryMode
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.utils import make_new_run_id
 
-from ..engine_tests.test_multiprocessing import define_diamond_pipeline
+
+def define_diamond_pipeline():
+    @lambda_solid
+    def return_two():
+        return 2
+
+    @solid
+    def add_three(num):
+        return num + 3
+
+    @solid
+    def mult_three(num):
+        return num * 3
+
+    @solid
+    def adder(left, right):
+        return left + right
+
+    @pipeline
+    def diamond_pipeline():
+        two = return_two()
+        adder(left=add_three(two), right=mult_three(two))
+
+    return diamond_pipeline
 
 
 def test_topological_sort():
