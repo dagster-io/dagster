@@ -2,6 +2,7 @@ import warnings
 from collections import OrderedDict
 
 from dagster import check
+from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.run_request import JobType
 from dagster.core.definitions.sensor import DEFAULT_SENSOR_DAEMON_INTERVAL
 from dagster.core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
@@ -143,6 +144,17 @@ class ExternalRepository:
         where it came from.
         """
         return self.get_external_origin().get_id()
+
+    def get_external_asset_definitions(self):
+        return self.external_repository_data.external_asset_graph_data
+
+    def get_external_asset_definition(self, asset_key: AssetKey):
+        matching = [
+            asset_definition
+            for asset_definition in self.external_repository_data.external_asset_graph_data
+            if asset_definition.asset_key == asset_key
+        ]
+        return matching[0] if matching else None
 
     def get_display_metadata(self):
         return self.handle.repository_location.get_display_metadata()

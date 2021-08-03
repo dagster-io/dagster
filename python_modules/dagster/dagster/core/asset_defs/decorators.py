@@ -116,7 +116,7 @@ class _Asset:
                 namespace = None
 
             asset_key = AssetKey(
-                tuple(filter(None, [namespace or self.namespace, input_param_name]))
+                list(filter(None, [namespace or self.namespace, input_param_name]))
             )
             metadata = merge_dicts({LOGICAL_ASSET_KEY: asset_key}, extra_metadata)
 
@@ -124,7 +124,7 @@ class _Asset:
 
         out = Out(
             metadata=merge_dicts(
-                {LOGICAL_ASSET_KEY: AssetKey(tuple(filter(None, [self.namespace, asset_name])))},
+                {LOGICAL_ASSET_KEY: AssetKey(list(filter(None, [self.namespace, asset_name])))},
                 self.metadata or {},
             ),
             io_manager_key=self.io_manager_key,
