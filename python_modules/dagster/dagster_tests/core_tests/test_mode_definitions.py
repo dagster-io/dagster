@@ -15,6 +15,7 @@ from dagster import (
     resource,
     solid,
 )
+from dagster.check import CheckError
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.utils.test import execute_solids_within_pipeline
 from dagster_tests.general_tests.test_repository import (
@@ -34,6 +35,19 @@ def test_mode_takes_a_name():
         name="takesamode", solid_defs=[], mode_defs=[ModeDefinition(name="a_mode")]
     )
     assert pipeline_def
+
+
+def test_error_on_invalid_resource_key():
+    @resource
+    def test_resource():
+        return ""
+
+    with pytest.raises(CheckError, match="test-foo"):
+        test_mode_def = ModeDefinition(
+            resource_defs={
+                "test-foo": test_resource,
+            },
+        )
 
 
 def test_mode_from_resources():
