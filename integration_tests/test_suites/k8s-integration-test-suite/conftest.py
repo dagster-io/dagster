@@ -12,7 +12,11 @@ from dagster_k8s_test_infra.cluster import (
     define_cluster_provider_fixture,
     helm_postgres_url_for_k8s_run_launcher,
 )
-from dagster_k8s_test_infra.helm import TEST_AWS_CONFIGMAP_NAME
+from dagster_k8s_test_infra.helm import (
+    TEST_AWS_CONFIGMAP_NAME,
+    TEST_IMAGE_PULL_SECRET_NAME,
+    TEST_SECRET_NAME,
+)
 from dagster_k8s_test_infra.integration_utils import image_pull_policy
 from dagster_test.test_project import build_and_tag_test_image, get_test_project_docker_image
 
@@ -47,7 +51,7 @@ def run_launcher(
 ):  # pylint: disable=redefined-outer-name,unused-argument
 
     return K8sRunLauncher(
-        image_pull_secrets=[{"name": "element-dev-key"}],
+        image_pull_secrets=[{"name": TEST_IMAGE_PULL_SECRET_NAME}],
         service_account_name="dagit-admin",
         instance_config_map="dagster-instance",
         postgres_password_secret="dagster-postgresql-secret",

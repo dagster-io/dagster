@@ -89,7 +89,7 @@ spec:
           name: dagster-instance
           sub_path: dagster.yaml
       image_pull_secrets:
-      - name: element-dev-key
+      - name: test-image-pull-secret
       restart_policy: Never
       service_account_name: dagit-admin
       volumes:
@@ -147,7 +147,7 @@ spec:
           name: dagster-instance
           sub_path: dagster.yaml
       image_pull_secrets:
-      - name: element-dev-key
+      - name: test-image-pull-secret
       restart_policy: Never
       service_account_name: dagit-admin
       volumes:

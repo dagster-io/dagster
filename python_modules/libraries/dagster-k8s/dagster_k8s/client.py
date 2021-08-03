@@ -341,6 +341,23 @@ class DagsterKubernetesClient:
 
     ### Pod operations ###
 
+    def get_pods_in_job(self, job_name, namespace):
+        """Get the pods launched by the job ``job_name``.
+
+        Args:
+            job_name (str): Name of the job to inspect.
+            namespace (str): Namespace in which the job is located.
+
+        Returns:
+            List[V1Pod]: List of all pod objects that have been launched by the job ``job_name``.
+        """
+        check.str_param(job_name, "job_name")
+        check.str_param(namespace, "namespace")
+
+        return self.core_api.list_namespaced_pod(
+            namespace=namespace, label_selector="job-name={}".format(job_name)
+        ).items
+
     def get_pod_names_in_job(self, job_name, namespace):
         """Get the names of pods launched by the job ``job_name``.
 
@@ -354,9 +371,7 @@ class DagsterKubernetesClient:
         check.str_param(job_name, "job_name")
         check.str_param(namespace, "namespace")
 
-        pods = self.core_api.list_namespaced_pod(
-            namespace=namespace, label_selector="job-name={}".format(job_name)
-        ).items
+        pods = self.get_pods_in_job(job_name, namespace)
         return [p.metadata.name for p in pods]
 
     def wait_for_pod(
