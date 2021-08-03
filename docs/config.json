@@ -50,5 +50,6 @@
     }
   },
   "js_render": true,
+  "js_wait": 3,
   "nb_hits": 9458
 }
