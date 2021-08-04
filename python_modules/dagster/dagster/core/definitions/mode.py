@@ -73,9 +73,14 @@ class ModeDefinition(
         from .intermediate_storage import IntermediateStorageDefinition
         from .partition import PartitionedConfig
 
-        check.opt_dict_param(
+        resource_defs = check.opt_dict_param(
             resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition
         )
+
+        for key in resource_defs:
+            if not key.isidentifier():
+                check.failed(f"Resource key '{key}' must be a valid Python identifier.")
+
         if resource_defs and "io_manager" in resource_defs:
             resource_defs_with_defaults = resource_defs
         else:
