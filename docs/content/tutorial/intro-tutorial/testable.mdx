@@ -13,32 +13,37 @@ Creating testable and verifiable data pipelines is one of the focuses of Dagster
 
 ## Testing the Cereal Pipeline (and its solids)
 
-Let's go back to our first solid and pipeline in [`hello_cereal.py`](/tutorial/intro-tutorial/single-solid-pipeline#executing-our-first-pipeline) and ensure they're working as expected by writing some tests. We'll use <PyObject module="dagster" object="execute_pipeline" displayText="execute_pipeline()" /> to test our pipeline, as well as <PyObject module="dagster" object="execute_solid" displayText="execute_solid()" /> to test our solid in isolation.
+Let's go back to the `complex_pipeline` we wrote in the [prior section](/tutorial/intro-tutorial/connecting-solids#a-more-complex-dag), and ensure that it's working as expected by writing some unit tests.
 
-These functions synchronously execute a pipeline or solid and return results objects (<PyObject
-module="dagster" object="SolidExecutionResult" /> and <PyObject module="dagster"
-object="PipelineExecutionResult" />) whose methods let us investigate, in detail, the success or failure of execution, the outputs produced by solids, and (as we'll see later) other events associated with execution.
+We'll start by writing a test for the `find_highest_calorie_cereal` solid, which takes a set of cereals as input and returns the name of the cereal with the most calories. To run a solid, we can invoke it directly, as if its a regular Python function:
 
-```python file=/intro_tutorial/basics/e04_quality/hello_cereal_with_tests.py startafter=start_hello_cereal_with_tests_marker_0 endbefore=end_hello_cereal_with_tests_marker_0
-def test_hello_cereal_solid():
-    res = execute_solid(hello_cereal)
+```python file=/intro_tutorial/basics/e04_quality/test_complex_pipeline.py startafter=start_solid_test endbefore=end_solid_test
+def test_find_highest_calorie_cereal():
+    cereals = [
+        {"name": "hi-cal cereal", "calories": 400},
+        {"name": "lo-cal cereal", "calories": 50},
+    ]
+    result = find_highest_calorie_cereal(cereals)
+    assert result == "hi-cal cereal"
+```
+
+We'll also write a test for the entire pipeline. The <PyObject
+module="dagster" object="execute_pipeline" /> function synchronously executes a pipeline and returns a <PyObject module="dagster"
+object="PipelineExecutionResult" />, whose methods let us investigate, in detail, the success or failure of execution, the outputs produced by solids, and (as we'll see later) other events associated with execution.
+
+```python file=/intro_tutorial/basics/e04_quality/test_complex_pipeline.py startafter=start_pipeline_test endbefore=end_pipeline_test
+def test_complex_pipeline():
+    res = execute_pipeline(complex_pipeline)
     assert res.success
-    assert len(res.output_value()) == 77
-
-
-def test_hello_cereal_pipeline():
-    res = execute_pipeline(hello_cereal_pipeline)
-    assert res.success
-    assert len(res.result_for_solid("hello_cereal").output_value()) == 77
+    highest_protein_cereal = res.result_for_solid("find_highest_protein_cereal").output_value()
+    assert highest_protein_cereal == "Special K"
 ```
 
 Now you can use pytest, or your test runner of choice, to run unit tests as you develop your data applications.
 
 ```bash
-pytest hello_cereal_with_tests.py
+pytest test_complex_pipeline.py
 ```
-
-**Note:** by convention, pytest tests are typically kept in separate files prefixed with `test_`. We've put them in the same file just to simplify the tutorial code.
 
 Obviously, in production we'll often execute pipelines in a parallel, streaming way that doesn't admit this kind of API, which is intended to enable local tests like this.
 
