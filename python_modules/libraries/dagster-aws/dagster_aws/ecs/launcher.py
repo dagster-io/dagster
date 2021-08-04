@@ -132,7 +132,11 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         )
 
     def can_terminate(self, run_id):
-        tags = self._instance.get_run_by_id(run_id).tags
+        run = self._instance.get_run_by_id(run_id)
+        if not run:
+            return False
+
+        tags = run.tags
         arn = tags.get("ecs/task_arn")
         cluster = tags.get("ecs/cluster")
 
@@ -147,7 +151,11 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         return False
 
     def terminate(self, run_id):
-        tags = self._instance.get_run_by_id(run_id).tags
+        run = self._instance.get_run_by_id(run_id)
+        if not run:
+            return False
+
+        tags = run.tags
         arn = tags.get("ecs/task_arn")
         cluster = tags.get("ecs/cluster")
 

@@ -9,6 +9,27 @@ def test_termination(instance, workspace, run):
     assert not instance.run_launcher.terminate(run.run_id)
 
 
+def test_missing_run(instance, workspace, run, monkeypatch):
+    instance.launch_run(run.run_id, workspace)
+
+    def missing_run(*_args, **_kwargs):
+        return None
+
+    original = instance.get_run_by_id
+
+    monkeypatch.setattr(instance, "get_run_by_id", missing_run)
+    assert not instance.run_launcher.can_terminate(run.run_id)
+
+    monkeypatch.setattr(instance, "get_run_by_id", original)
+    assert instance.run_launcher.can_terminate(run.run_id)
+
+    monkeypatch.setattr(instance, "get_run_by_id", missing_run)
+    assert not instance.run_launcher.terminate(run.run_id)
+
+    monkeypatch.setattr(instance, "get_run_by_id", original)
+    assert instance.run_launcher.terminate(run.run_id)
+
+
 def test_eventual_consistency(instance, workspace, run, monkeypatch):
     instance.launch_run(run.run_id, workspace)
 
