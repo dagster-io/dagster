@@ -83,6 +83,14 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         tags = {"ecs/task_arn": task_arn, "ecs/cluster": cluster}
         self._instance.add_run_tags(run_id, tags)
 
+    def _get_run_tags(self, run_id):
+        run = self._instance.get_run_by_id(run_id)
+        tags = run.tags if run else {}
+        arn = tags.get("ecs/task_arn")
+        cluster = tags.get("ecs/cluster")
+
+        return (arn, cluster)
+
     def launch_run(self, context: LaunchRunContext) -> None:
 
         """
@@ -134,14 +142,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         )
 
     def can_terminate(self, run_id):
-        run = self._instance.get_run_by_id(run_id)
-        if not run:
-            return False
-
-        tags = run.tags
-        arn = tags.get("ecs/task_arn")
-        cluster = tags.get("ecs/cluster")
-
+        arn, cluster = self._get_run_tags(run_id)
         if arn and cluster:
             tasks = self.ecs.describe_tasks(tasks=[arn], cluster=cluster).get("tasks")
             if not tasks:
@@ -153,14 +154,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         return False
 
     def terminate(self, run_id):
-        run = self._instance.get_run_by_id(run_id)
-        if not run:
-            return False
-
-        tags = run.tags
-        arn = tags.get("ecs/task_arn")
-        cluster = tags.get("ecs/cluster")
-
+        arn, cluster = self._get_run_tags(run_id)
         if arn and cluster:
             tasks = self.ecs.describe_tasks(tasks=[arn], cluster=cluster).get("tasks")
             if not tasks:
