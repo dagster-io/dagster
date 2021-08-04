@@ -2,6 +2,7 @@ import json
 
 import pytest
 from dagster import ConfigMapping, Permissive, graph, logger, op, resource, success_hook
+from dagster.check import CheckError
 from dagster.core.definitions.graph import GraphDefinition
 from dagster.core.definitions.partition import (
     Partition,
@@ -76,6 +77,27 @@ def test_with_resources():
 
     result = my_graph.execute_in_process(resources={"a": "foo"})
     assert result.success
+
+
+def test_error_on_invalid_resource_key():
+    @resource
+    def test_resource():
+        return "test-resource"
+
+    @op(required_resource_keys={"test-resource"})
+    def needs_resource(context):
+        return ""
+
+    @graph
+    def test_graph():
+        needs_resource()
+
+    with pytest.raises(CheckError, match="test-resource"):
+        test_graph.to_job(
+            resource_defs={
+                "test-resource": test_resource,
+            }
+        )
 
 
 def test_config_mapping_fn():
