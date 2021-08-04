@@ -18,7 +18,7 @@ class ConfigMapping(
         [
             ("config_fn", Callable[[Any], Any]),
             ("config_schema", IDefinitionConfigSchema),
-            ("enable_pre_processing", bool),
+            ("receive_processed_config_values", bool),
         ],
     )
 ):
@@ -36,17 +36,23 @@ class ConfigMapping(
         config_fn (Callable[[dict], dict]): The function that will be called
             to map the composite config to a config appropriate for the child solids.
         config_schema (ConfigSchema): The schema of the composite config.
+        receive_processed_config_values (bool): If true, config values provided to the config_fn
+            will be converted to their dagster types before being passed in. For example, if this
+            value is true, enum config passed to config_fn will be actual enums, while if false,
+            then enum config passed to config_fn will be strings.
     """
 
     def __new__(
         cls,
         config_fn: Callable[[Any], Any],
         config_schema: Any = None,
-        enable_pre_processing: bool = True,
+        receive_processed_config_values: bool = True,
     ):
         return super(ConfigMapping, cls).__new__(
             cls,
             config_fn=check.callable_param(config_fn, "config_fn"),
             config_schema=convert_user_facing_definition_config_schema(config_schema),
-            enable_pre_processing=check.bool_param(enable_pre_processing, "enable_pre_processing"),
+            receive_processed_config_values=check.bool_param(
+                receive_processed_config_values, "receive_processed_config_values"
+            ),
         )

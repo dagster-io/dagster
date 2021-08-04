@@ -518,7 +518,7 @@ def test_enum_config_mapping():
                 )
             }
         ),
-        enable_pre_processing=False,
+        receive_processed_config_values=False,
     )
     ingest_mapping = my_graph.to_job(config=default_config_mapping)
     result = ingest_mapping.execute_in_process()
@@ -528,7 +528,7 @@ def test_enum_config_mapping():
     no_default_config_mapping = ConfigMapping(
         config_fn=_ingest_config_mapping,
         config_schema=Shape({"my_field": Field(Enum.from_python_enum(TestEnum), is_required=True)}),
-        enable_pre_processing=False,
+        receive_processed_config_values=False,
     )
     ingest_mapping_no_default = my_graph.to_job(config=no_default_config_mapping)
     result = ingest_mapping_no_default.execute_in_process(run_config={"my_field": "TWO"})

@@ -167,26 +167,27 @@ class ResolvedRunConfig(
         run_config_schema = pipeline_def.get_run_config_schema(mode)
 
         if run_config_schema.config_mapping:
-            if run_config_schema.config_mapping.enable_pre_processing:
+            if run_config_schema.config_mapping.receive_processed_config_values:
                 outer_evr = process_config(
                     run_config_schema.config_mapping.config_schema.config_type,
                     run_config,
                 )
+                outer_config = outer_evr.value
             else:
                 outer_evr = validate_config(
                     run_config_schema.config_mapping.config_schema.config_type,
                     run_config,
                 )
+                outer_config = resolve_defaults(
+                    cast("ConfigType", run_config_schema.config_mapping.config_schema.config_type),
+                    outer_evr.value,
+                ).value
             if not outer_evr.success:
                 raise DagsterInvalidConfigError(
                     f"Error in config mapping for pipeline {pipeline_def.name} mode {mode}",
                     outer_evr.errors,
                     run_config,
                 )
-            outer_config = resolve_defaults(
-                cast("ConfigType", run_config_schema.config_mapping.config_schema.config_type),
-                outer_evr.value,
-            ).value
             # add user code boundary
             run_config = run_config_schema.config_mapping.config_fn(outer_config)
 
