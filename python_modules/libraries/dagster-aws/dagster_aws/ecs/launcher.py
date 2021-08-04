@@ -166,6 +166,8 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             self.ecs.stop_task(task=arn, cluster=cluster)
             return True
 
+        return False
+
     def _task_definition(self, metadata, image):
         """
         Return the launcher's default task definition if it's configured.
