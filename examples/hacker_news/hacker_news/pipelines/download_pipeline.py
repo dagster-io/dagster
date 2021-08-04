@@ -11,8 +11,6 @@ from dagster import (
 from dagster.seven.temp_dir import get_system_temp_directory
 from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 from dagster_pyspark import pyspark_resource
-from dagster_slack import slack_resource
-from hacker_news.hooks.slack_hooks import slack_on_success
 from hacker_news.resources.hn_resource import hn_api_subsample_client, hn_snapshot_client
 from hacker_news.resources.parquet_io_manager import partitioned_parquet_io_manager
 from hacker_news.resources.snowflake_io_manager import time_partitioned_snowflake_io_manager
@@ -58,8 +56,6 @@ MODE_TEST = ModeDefinition(
         "db_io_manager": mem_io_manager,
         "pyspark": pyspark_resource,
         "hn_client": hn_snapshot_client,
-        "slack": ResourceDefinition.mock_resource(),
-        "base_url": ResourceDefinition.hardcoded_resource("http://localhost:3000", "Dagit URL"),
     },
 )
 
@@ -80,8 +76,6 @@ MODE_LOCAL = ModeDefinition(
         "db_io_manager": fs_io_manager,
         "pyspark": pyspark_resource,
         "hn_client": hn_api_subsample_client.configured({"sample_rate": 10}),
-        "slack": ResourceDefinition.mock_resource(),
-        "base_url": ResourceDefinition.hardcoded_resource("http://localhost:3000", "Dagit URL"),
     },
 )
 
@@ -103,7 +97,6 @@ MODE_STAGING = ModeDefinition(
         "db_io_manager": time_partitioned_snowflake_io_manager.configured(SNOWFLAKE_CONF),
         "pyspark": pyspark_resource.configured(S3_SPARK_CONF),
         "hn_client": hn_api_subsample_client.configured({"sample_rate": 10}),
-        "slack": ResourceDefinition.mock_resource(),
         "base_url": ResourceDefinition.hardcoded_resource("http://demo.elementl.dev", "Dagit URL"),
     },
 )
@@ -126,10 +119,6 @@ MODE_PROD = ModeDefinition(
         "db_io_manager": time_partitioned_snowflake_io_manager.configured(SNOWFLAKE_CONF),
         "pyspark": pyspark_resource.configured(S3_SPARK_CONF),
         "hn_client": hn_api_subsample_client.configured({"sample_rate": 10}),
-        "slack": slack_resource.configured({"token": {"env": "SLACK_DAGSTER_ETL_BOT_TOKEN"}}),
-        "base_url": ResourceDefinition.hardcoded_resource(
-            "https://demo.elementl.show", "Dagit URL"
-        ),
     },
 )
 
@@ -207,9 +196,7 @@ upload_stories = make_upload_to_database_solid(
 
 @pipeline(**download_pipeline_properties, preset_defs=[PRESET_TEST])
 def download_pipeline():
-    comments, stories = split_types(
-        download_items.with_hooks({slack_on_success})(id_range_for_time())
-    )
+    comments, stories = split_types(download_items(id_range_for_time()))
     upload_comments(comments)
     upload_stories(stories)
 
@@ -220,7 +207,7 @@ def download_pipeline():
 def dynamic_download_pipeline():
     ranges = dynamic_id_ranges_for_time()
     items = ranges.map(dynamic_download_items)  # pylint: disable=no-member
-    raw_df = join_items.with_hooks({slack_on_success})(items.collect())
+    raw_df = join_items(items.collect())
     comments, stories = split_types(raw_df)
 
     upload_comments(comments)
