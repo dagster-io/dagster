@@ -30,6 +30,31 @@ def test_missing_run(instance, workspace, run, monkeypatch):
     assert instance.run_launcher.terminate(run.run_id)
 
 
+def test_missing_tag(instance, workspace, run):
+    instance.launch_run(run.run_id, workspace)
+    original = instance.get_run_by_id(run.run_id).tags
+
+    instance.add_run_tags(run.run_id, {"ecs/task_arn": ""})
+    assert not instance.run_launcher.can_terminate(run.run_id)
+
+    instance.add_run_tags(run.run_id, original)
+    instance.add_run_tags(run.run_id, {"ecs/cluster": ""})
+    assert not instance.run_launcher.can_terminate(run.run_id)
+
+    instance.add_run_tags(run.run_id, original)
+    assert instance.run_launcher.can_terminate(run.run_id)
+
+    instance.add_run_tags(run.run_id, {"ecs/task_arn": ""})
+    assert not instance.run_launcher.terminate(run.run_id)
+
+    instance.add_run_tags(run.run_id, original)
+    instance.add_run_tags(run.run_id, {"ecs/cluster": ""})
+    assert not instance.run_launcher.terminate(run.run_id)
+
+    instance.add_run_tags(run.run_id, original)
+    assert instance.run_launcher.terminate(run.run_id)
+
+
 def test_eventual_consistency(instance, workspace, run, monkeypatch):
     instance.launch_run(run.run_id, workspace)
 
