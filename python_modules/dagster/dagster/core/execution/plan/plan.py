@@ -733,6 +733,17 @@ class ExecutionPlan(
         mode = resolved_run_config.mode
         mode_def = pipeline_def.get_mode_definition(mode)
 
+        # Memoization cannot be used with dynamic orchestration yet.
+        # Tracking: https://github.com/dagster-io/dagster/issues/4451
+        for node_def in pipeline_def.all_node_defs:
+            if pipeline_def.dependency_structure.is_dynamic_mapped(
+                node_def.name
+            ) or pipeline_def.dependency_structure.has_dynamic_downstreams(node_def.name):
+                raise DagsterInvariantViolationError(
+                    "Attempted to use memoization with dynamic orchestration, which is not yet "
+                    "supported."
+                )
+
         unmemoized_step_keys = set()
 
         log_manager = initialize_console_manager(None)
