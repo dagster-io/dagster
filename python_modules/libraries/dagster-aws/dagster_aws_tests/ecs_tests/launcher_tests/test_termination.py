@@ -63,9 +63,6 @@ def test_eventual_consistency(instance, workspace, run, monkeypatch):
 
     original = instance.run_launcher.ecs.describe_tasks
 
-    # The ECS API is eventually consistent:
-    # https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_RunTask.html
-    # describe_tasks might initially return nothing even if a task exists.
     monkeypatch.setattr(instance.run_launcher.ecs, "describe_tasks", empty)
     assert not instance.run_launcher.can_terminate(run.run_id)
 
