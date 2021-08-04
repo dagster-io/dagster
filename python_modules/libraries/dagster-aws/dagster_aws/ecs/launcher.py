@@ -74,12 +74,14 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
     def from_config_value(inst_data, config_value):
         return EcsRunLauncher(inst_data=inst_data, **config_value)
 
-    def _ecs_tags(self, run_id):
-        return [{"key": "dagster/run_id", "value": run_id}]
+    def _set_ecs_tags(self, run_id, task_arn):
+        tags = [{"key": "dagster/run_id", "value": run_id}]
+        self.ecs.tag_resource(resourceArn=task_arn, tags=tags)
 
-    def _run_tags(self, task_arn):
+    def _set_run_tags(self, run_id, task_arn):
         cluster = self._task_metadata().cluster
-        return {"ecs/task_arn": task_arn, "ecs/cluster": cluster}
+        tags = {"ecs/task_arn": task_arn, "ecs/cluster": cluster}
+        self._instance.add_run_tags(run_id, tags)
 
     def launch_run(self, context: LaunchRunContext) -> None:
 
@@ -123,8 +125,8 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         )
 
         arn = response["tasks"][0]["taskArn"]
-        self._instance.add_run_tags(run.run_id, self._run_tags(task_arn=arn))
-        self.ecs.tag_resource(resourceArn=arn, tags=self._ecs_tags(run.run_id))
+        self._set_run_tags(run.run_id, task_arn=arn)
+        self._set_ecs_tags(run.run_id, task_arn=arn)
         self._instance.report_engine_event(
             message=f"Launching run in task {arn} on cluster {metadata.cluster}",
             pipeline_run=run,
