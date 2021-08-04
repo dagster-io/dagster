@@ -1,9 +1,23 @@
+import re
+
 from dagster import check
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.step import is_executable_step
 
 from .plan.inputs import join_and_hash
+
+VALID_VERSION_REGEX_STR = r"^[A-Za-z0-9_]+$"
+VALID_VERSION_REGEX = re.compile(VALID_VERSION_REGEX_STR)
+
+
+def check_valid_version(version: str) -> None:
+    is_valid = bool(VALID_VERSION_REGEX.match(version))
+    if not is_valid:
+        raise DagsterInvariantViolationError(
+            f"'{version}' is not a valid version string. Version must be in regex "
+            f"{VALID_VERSION_REGEX_STR}."
+        )
 
 
 def resolve_config_version(config_value):
@@ -95,6 +109,8 @@ def resolve_step_versions(pipeline_def, execution_plan, resolved_run_config):
                 "solid decorator."
             )
 
+        check_valid_version(solid_def_version)
+
         solid_config_version = resolve_config_version(resolved_run_config.solids[solid_name].config)
 
         resource_versions_for_solid = []
@@ -114,6 +130,8 @@ def resolve_step_versions(pipeline_def, execution_plan, resolved_run_config):
                         "either provide a versioning strategy for your job, or provide a version using the "
                         "resource decorator."
                     )
+
+                check_valid_version(resource_def_version)
                 resource_config = resolved_run_config.resources[resource_key].config
                 resource_config_version = resolve_config_version(resource_config)
                 resource_versions[resource_key] = join_and_hash(
