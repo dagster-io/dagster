@@ -70,7 +70,7 @@ class RunConfigSchemaCreationData(NamedTuple):
     logger_defs: Dict[str, LoggerDefinition]
     ignored_solids: List[Node]
     required_resources: Set[str]
-    created_from_ops: bool
+    is_using_graph_job_op_apis: bool
 
 
 def define_logger_dictionary_cls(creation_data: RunConfigSchemaCreationData) -> Shape:
@@ -149,14 +149,14 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
         ),
     }
 
-    if creation_data.created_from_ops:
+    if creation_data.is_using_graph_job_op_apis:
         fields["ops"] = Field(
             define_solid_dictionary_cls(
                 solids=creation_data.solids,
                 ignored_solids=creation_data.ignored_solids,
                 dependency_structure=creation_data.dependency_structure,
                 resource_defs=creation_data.mode_definition.resource_defs,
-                created_from_ops=creation_data.created_from_ops,
+                is_using_graph_job_op_apis=creation_data.is_using_graph_job_op_apis,
             )
         )
         field_aliases = {"ops": "solids"}
@@ -167,7 +167,7 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
                 ignored_solids=creation_data.ignored_solids,
                 dependency_structure=creation_data.dependency_structure,
                 resource_defs=creation_data.mode_definition.resource_defs,
-                created_from_ops=creation_data.created_from_ops,
+                is_using_graph_job_op_apis=creation_data.is_using_graph_job_op_apis,
             )
         )
         field_aliases = {"solids": "ops"}
@@ -327,9 +327,9 @@ def get_type_output_field(output_def: OutputDefinition) -> Optional[Field]:
 
 
 def solid_config_field(
-    fields: Dict[str, Optional[Field]], ignored: bool, created_from_ops: bool
+    fields: Dict[str, Optional[Field]], ignored: bool, is_using_graph_job_op_apis: bool
 ) -> Optional[Field]:
-    field_aliases = {"ops": "solids"} if created_from_ops else {"solids": "ops"}
+    field_aliases = {"ops": "solids"} if is_using_graph_job_op_apis else {"solids": "ops"}
     trimmed_fields = remove_none_entries(fields)
     if trimmed_fields:
         if ignored:
@@ -351,7 +351,7 @@ def construct_leaf_solid_config(
     config_schema: Optional[IDefinitionConfigSchema],
     resource_defs: Dict[str, ResourceDefinition],
     ignored: bool,
-    created_from_ops: bool,
+    is_using_graph_job_op_apis: bool,
 ) -> Optional[Field]:
     return solid_config_field(
         {
@@ -365,7 +365,7 @@ def construct_leaf_solid_config(
             "config": config_schema.as_field() if config_schema else None,
         },
         ignored=ignored,
-        created_from_ops=created_from_ops,
+        is_using_graph_job_op_apis=is_using_graph_job_op_apis,
     )
 
 
@@ -375,7 +375,7 @@ def define_isolid_field(
     dependency_structure: DependencyStructure,
     resource_defs: Dict[str, ResourceDefinition],
     ignored: bool,
-    created_from_ops: bool,
+    is_using_graph_job_op_apis: bool,
 ) -> Optional[Field]:
 
     # All solids regardless of compositing status get the same inputs and outputs
@@ -395,7 +395,7 @@ def define_isolid_field(
             solid.definition.config_schema,
             resource_defs,
             ignored,
-            created_from_ops,
+            is_using_graph_job_op_apis,
         )
 
     graph_def = solid.definition.ensure_graph_def()
@@ -410,7 +410,7 @@ def define_isolid_field(
             graph_def.config_schema,
             resource_defs,
             ignored,
-            created_from_ops,
+            is_using_graph_job_op_apis,
         )
         # This case omits a 'solids' key, thus if a composite solid is `configured` or has a field
         # mapping, the user cannot stub any config, inputs, or outputs for inner (child) solids.
@@ -424,7 +424,7 @@ def define_isolid_field(
             ),
             "outputs": get_outputs_field(solid, resource_defs),
         }
-        if created_from_ops:
+        if is_using_graph_job_op_apis:
             fields["ops"] = Field(
                 define_solid_dictionary_cls(
                     solids=graph_def.solids,
@@ -432,7 +432,7 @@ def define_isolid_field(
                     dependency_structure=graph_def.dependency_structure,
                     parent_handle=handle,
                     resource_defs=resource_defs,
-                    created_from_ops=created_from_ops,
+                    is_using_graph_job_op_apis=is_using_graph_job_op_apis,
                 )
             )
         else:
@@ -443,11 +443,11 @@ def define_isolid_field(
                     dependency_structure=graph_def.dependency_structure,
                     parent_handle=handle,
                     resource_defs=resource_defs,
-                    created_from_ops=created_from_ops,
+                    is_using_graph_job_op_apis=is_using_graph_job_op_apis,
                 )
             )
 
-        return solid_config_field(fields, ignored=ignored, created_from_ops=created_from_ops)
+        return solid_config_field(fields, ignored=ignored, is_using_graph_job_op_apis=is_using_graph_job_op_apis)
 
 
 def define_solid_dictionary_cls(
@@ -455,7 +455,7 @@ def define_solid_dictionary_cls(
     ignored_solids: Optional[List[Node]],
     dependency_structure: DependencyStructure,
     resource_defs: Dict[str, ResourceDefinition],
-    created_from_ops: bool,
+    is_using_graph_job_op_apis: bool,
     parent_handle: Optional[NodeHandle] = None,
 ) -> Shape:
     ignored_solids = check.opt_list_param(ignored_solids, "ignored_solids", of_type=Node)
@@ -468,7 +468,7 @@ def define_solid_dictionary_cls(
             dependency_structure,
             resource_defs,
             ignored=False,
-            created_from_ops=created_from_ops,
+            is_using_graph_job_op_apis=is_using_graph_job_op_apis,
         )
 
         if solid_field:
@@ -481,12 +481,12 @@ def define_solid_dictionary_cls(
             dependency_structure,
             resource_defs,
             ignored=True,
-            created_from_ops=created_from_ops,
+            is_using_graph_job_op_apis=is_using_graph_job_op_apis,
         )
         if solid_field:
             fields[solid.name] = solid_field
 
-    field_aliases = {"ops": "solids"} if created_from_ops else {"solids": "ops"}
+    field_aliases = {"ops": "solids"} if is_using_graph_job_op_apis else {"solids": "ops"}
     return Shape(fields, field_aliases=field_aliases)
 
 

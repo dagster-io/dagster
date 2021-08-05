@@ -124,7 +124,6 @@ class _Solid:
             tags=self.tags,
             version=self.version,
             retry_policy=self.retry_policy,
-            created_from_op=self.created_from_op,
         )
         update_wrapper(solid_def, compute_fn.decorated_fn)
         return solid_def

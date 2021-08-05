@@ -82,12 +82,12 @@ def composite_descent(pipeline_def, solids_config, resource_defs):
             parent_stack=DescentStack(pipeline_def, None),
             solids_config_dict=solids_config,
             resource_defs=resource_defs,
-            created_from_ops=pipeline_def.created_from_ops,
+            is_using_graph_job_op_apis=pipeline_def._is_using_graph_job_op_apis,  # pylint: disable=protected-access
         )
     }
 
 
-def _composite_descent(parent_stack, solids_config_dict, resource_defs, created_from_ops):
+def _composite_descent(parent_stack, solids_config_dict, resource_defs, is_using_graph_job_op_apis):
     """
     The core implementation of composite_descent. This yields a stream of
     SolidConfigEntry. This is used by composite_descent to construct a
@@ -137,7 +137,7 @@ def _composite_descent(parent_stack, solids_config_dict, resource_defs, created_
                 }
             ),
         )
-        node_key = "ops" if created_from_ops else "solids"
+        node_key = "ops" if is_using_graph_job_op_apis else "solids"
 
         # If there is a config mapping, invoke it and get the descendent solids
         # config that way. Else just grabs the solids entry of the current config
@@ -148,17 +148,24 @@ def _composite_descent(parent_stack, solids_config_dict, resource_defs, created_
                 current_stack,
                 current_solid_config,
                 resource_defs,
-                created_from_ops,
+                is_using_graph_job_op_apis,
             )
             if graph_def.config_mapping
             else current_solid_config.get(node_key, {})
         )
 
-        yield from _composite_descent(current_stack, solids_dict, resource_defs, created_from_ops)
+        yield from _composite_descent(
+            current_stack, solids_dict, resource_defs, is_using_graph_job_op_apis
+        )
 
 
 def _get_mapped_solids_dict(
-    composite, graph_def, current_stack, current_solid_config, resource_defs, created_from_ops
+    composite,
+    graph_def,
+    current_stack,
+    current_solid_config,
+    resource_defs,
+    is_using_graph_job_op_apis,
 ):
     # the spec of the config mapping function is that it takes the dictionary at:
     # solid_name:
@@ -197,7 +204,7 @@ def _get_mapped_solids_dict(
         dependency_structure=graph_def.dependency_structure,
         parent_handle=current_stack.handle,
         resource_defs=resource_defs,
-        created_from_ops=created_from_ops,
+        is_using_graph_job_op_apis=is_using_graph_job_op_apis,
     )
 
     # process against that new type
