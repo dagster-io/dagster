@@ -209,7 +209,7 @@ def local_file_manager(init_context):
             mode_defs=[
                 ModeDefinition(
                     resource_defs={
-                        "file_manager": local_file_manager.configured({"base_path": "/my/base/path"})
+                        "file_manager": local_file_manager.configured({"base_dir": "/my/base/dir"})
                     }
                 )
             ]
