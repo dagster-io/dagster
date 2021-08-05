@@ -155,3 +155,12 @@ def test_eventual_consistency(ecs, instance, workspace, run, monkeypatch):
 
     tasks = ecs.list_tasks()["taskArns"]
     assert len(tasks) == len(initial_tasks) + 1
+
+    # backoff fails for reasons unrelated to eventual consistency
+
+    def exploding_describe_tasks(*_args, **_kwargs):
+        raise Exception("boom")
+
+    with pytest.raises(Exception, match="boom"):
+        monkeypatch.setattr(instance.run_launcher.ecs, "describe_tasks", exploding_describe_tasks)
+        instance.launch_run(run.run_id, workspace)

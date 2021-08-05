@@ -20,6 +20,10 @@ class EcsEventualConsistencyTimeout(Exception):
     pass
 
 
+class EcsNoTasksFound(Exception):
+    pass
+
+
 # 9 retries polls for up to 51.1 seconds with exponential backoff.
 BACKOFF_RETRIES = 9
 
@@ -265,16 +269,19 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         task_arn = response.get("TaskARN")
 
         def describe_task_or_raise(task_arn, cluster):
-            return self.ecs.describe_tasks(tasks=[task_arn], cluster=cluster)["tasks"][0]
+            try:
+                return self.ecs.describe_tasks(tasks=[task_arn], cluster=cluster)["tasks"][0]
+            except IndexError:
+                raise EcsNoTasksFound
 
         try:
             task = backoff(
                 describe_task_or_raise,
-                retry_on=(IndexError,),
+                retry_on=(EcsNoTasksFound,),
                 kwargs={"task_arn": task_arn, "cluster": cluster},
                 max_retries=BACKOFF_RETRIES,
             )
-        except:
+        except EcsNoTasksFound:
             raise EcsEventualConsistencyTimeout
 
         enis = []
