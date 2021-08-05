@@ -344,6 +344,7 @@ const ASSETS_GRAPH_QUERY = gql`
             }
             runOrError {
               ... on PipelineRun {
+                id
                 runId
                 status
               }

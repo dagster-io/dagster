@@ -390,10 +390,11 @@ class ExternalAssetDefinition(
 def external_repository_data_from_def(repository_def):
     check.inst_param(repository_def, "repository_def", RepositoryDefinition)
 
+    pipelines = repository_def.get_all_pipelines()
     return ExternalRepositoryData(
         name=repository_def.name,
         external_pipeline_datas=sorted(
-            list(map(external_pipeline_data_from_def, repository_def.get_all_pipelines())),
+            list(map(external_pipeline_data_from_def, pipelines)),
             key=lambda pd: pd.name,
         ),
         external_schedule_datas=sorted(
@@ -408,19 +409,15 @@ def external_repository_data_from_def(repository_def):
             list(map(external_sensor_data_from_def, repository_def.sensor_defs)),
             key=lambda sd: sd.name,
         ),
-        external_asset_graph_data=external_asset_graph_data_from_def(repository_def),
+        external_asset_graph_data=external_asset_graph_data_from_def(pipelines),
     )
 
 
-def external_asset_graph_data_from_def(repository_def: RepositoryDefinition):
+def external_asset_graph_data_from_def(pipelines: List[PipelineDefinition]):
     node_defs_by_asset_key: Dict[AssetKey, NodeDefinition] = {}
     deps: Dict[AssetKey, Dict[str, ExternalAssetDependency]] = defaultdict(dict)
 
-    all_node_defs = (
-        node_def
-        for pipeline in repository_def.get_all_pipelines()
-        for node_def in pipeline.all_node_defs
-    )
+    all_node_defs = [node_def for pipeline in pipelines for node_def in pipeline.all_node_defs]
 
     all_upstream_asset_keys = set()
     for node_def in all_node_defs:

@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 from snapshottest import Snapshot
 
+
 snapshots = Snapshot()
 
 snapshots['test_external_pipeline_data 1'] = '''{
@@ -1218,6 +1219,7 @@ snapshots['test_external_pipeline_data 1'] = '''{
 
 snapshots['test_external_repository_data 1'] = '''{
   "__class__": "ExternalRepositoryData",
+  "external_asset_graph_data": [],
   "external_partition_set_datas": [
     {
       "__class__": "ExternalPartitionSetData",
