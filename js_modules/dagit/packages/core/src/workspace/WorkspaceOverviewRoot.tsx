@@ -57,6 +57,7 @@ export const WorkspaceOverviewRoot = () => {
               <th>Pipelines</th>
             )}
             <th>{flagPipelineModeTuples ? 'Ops' : 'Solids'}</th>
+            <th>Assets</th>
             <th>Schedules</th>
             <th>Sensors</th>
           </tr>
@@ -91,6 +92,9 @@ export const WorkspaceOverviewRoot = () => {
                   >
                     {flagPipelineModeTuples ? 'Ops' : 'Solids'}
                   </Link>
+                </td>
+                <td>
+                  <Link to={workspacePath(name, location, '/assets')}>Assets</Link>
                 </td>
                 <td>
                   <Link to={workspacePath(name, location, '/schedules')}>Schedules</Link>
