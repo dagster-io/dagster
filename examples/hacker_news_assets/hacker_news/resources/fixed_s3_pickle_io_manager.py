@@ -1,7 +1,7 @@
 import pickle
 
 import boto3
-from dagster import AssetKey, EventMetadataEntry, IOManager, io_manager
+from dagster import EventMetadataEntry, IOManager, io_manager
 
 
 def s3_client():
@@ -10,12 +10,12 @@ def s3_client():
 
 class FixedS3PickleIOManager(IOManager):
     def load_input(self, context):
-        key = context.upstream_output.metadata["key"]
+        key = context.upstream_output.metadata["logical_asset_key"].path[-1]
         bucket = context.resource_config["bucket"]
         return pickle.loads(s3_client().get_object(Bucket=bucket, Key=key)["Body"].read())
 
     def handle_output(self, context, obj):
-        key = context.metadata["key"]
+        key = context.metadata["logical_asset_key"].path[-1]
         bucket = context.resource_config["bucket"]
 
         context.log.debug("about to pickle object")
@@ -26,7 +26,7 @@ class FixedS3PickleIOManager(IOManager):
         client.put_object(Bucket=bucket, Key=key, Body=pickled_obj)
 
     def get_output_asset_key(self, context):
-        return AssetKey(["s3", context.resource_config["bucket"], context.metadata["key"]])
+        return context.metadata["logical_asset_key"]
 
 
 @io_manager(config_schema={"bucket": str})

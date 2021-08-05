@@ -86,7 +86,7 @@ class SnowflakeIOManager(IOManager):
         self.config = config
 
     def get_output_asset_key(self, context: OutputContext):
-        return AssetKey(["snowflake", "hackernews", *context.metadata["logical_asset_key"]])
+        return context.metadata["logical_asset_key"]
 
     def handle_output(self, context: OutputContext, obj: Union[ParquetPointer, DataFrame]):
 
