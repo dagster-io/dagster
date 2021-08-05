@@ -7,6 +7,7 @@ import pytest
 from dagster import (
     Backoff,
     DagsterEventType,
+    Failure,
     Jitter,
     Output,
     OutputDefinition,
@@ -280,11 +281,15 @@ def test_basic_retry_policy():
 def test_retry_policy_rules():
     @solid(retry_policy=RetryPolicy(max_retries=2))
     def throw_with_policy():
-        raise Exception("I fail")
+        raise Exception("I throw")
 
     @solid
     def throw_no_policy():
-        raise Exception("I fail")
+        raise Exception("I throw")
+
+    @solid
+    def fail_no_policy():
+        raise Failure("I fail")
 
     @pipeline(solid_retry_policy=RetryPolicy(max_retries=3))
     def policy_test():
@@ -292,6 +297,10 @@ def test_retry_policy_rules():
         throw_no_policy()
         throw_with_policy.with_retry_policy(RetryPolicy(max_retries=1)).alias("override_with")()
         throw_no_policy.alias("override_no").with_retry_policy(RetryPolicy(max_retries=1))()
+        throw_no_policy.configured({"jonx": True}, name="config_override_no").with_retry_policy(
+            RetryPolicy(max_retries=1)
+        )()
+        fail_no_policy.alias("override_fail").with_retry_policy(RetryPolicy(max_retries=1))()
 
     result = execute_pipeline(policy_test, raise_on_error=False)
     assert not result.success
@@ -299,6 +308,8 @@ def test_retry_policy_rules():
     assert result.result_for_solid("throw_with_policy").retry_attempts == 2
     assert result.result_for_solid("override_no").retry_attempts == 1
     assert result.result_for_solid("override_with").retry_attempts == 1
+    assert result.result_for_solid("config_override_no").retry_attempts == 1
+    assert result.result_for_solid("override_fail").retry_attempts == 1
 
 
 def test_delay():
