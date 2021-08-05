@@ -10,6 +10,22 @@ from dagster.core.launcher.base import LaunchRunContext, RunLauncher
 from dagster.grpc.types import ExecuteRunArgs
 from dagster.serdes import ConfigurableClass, serialize_dagster_namedtuple
 from dagster.utils.backcompat import experimental
+from dagster.utils.backoff import backoff
+
+
+# The ECS API is eventually consistent:
+# https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_RunTask.html
+# describe_tasks might initially return nothing even if a task exists.
+class EcsEventualConsistencyTimeout(Exception):
+    pass
+
+
+class EcsNoTasksFound(Exception):
+    pass
+
+
+# 9 retries polls for up to 51.1 seconds with exponential backoff.
+BACKOFF_RETRIES = 9
 
 
 @dataclass
@@ -252,7 +268,22 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         cluster = response.get("Cluster")
         task_arn = response.get("TaskARN")
 
-        task = self.ecs.describe_tasks(tasks=[task_arn], cluster=cluster)["tasks"][0]
+        def describe_task_or_raise(task_arn, cluster):
+            try:
+                return self.ecs.describe_tasks(tasks=[task_arn], cluster=cluster)["tasks"][0]
+            except IndexError:
+                raise EcsNoTasksFound
+
+        try:
+            task = backoff(
+                describe_task_or_raise,
+                retry_on=(EcsNoTasksFound,),
+                kwargs={"task_arn": task_arn, "cluster": cluster},
+                max_retries=BACKOFF_RETRIES,
+            )
+        except EcsNoTasksFound:
+            raise EcsEventualConsistencyTimeout
+
         enis = []
         subnets = []
         for attachment in task["attachments"]:
