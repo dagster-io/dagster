@@ -125,10 +125,18 @@ def build_root_manager(
         source_asset = source_assets_by_key[source_asset_path]
 
         output_context = build_output_context(
-            name=source_asset.key.path[-1], step_key="none", metadata=source_asset.metadata
+            name=source_asset.key.path[-1],
+            step_key="none",
+            metadata=merge_dicts(
+                source_asset.metadata or {}, {"logical_asset_key": source_asset.key}
+            ),
         )
         input_context_with_upstream = build_input_context(
-            name=input_context.name, upstream_output=output_context
+            name=input_context.name,
+            metadata=input_context.metadata,
+            config=input_context.config,
+            dagster_type=input_context.dagster_type,
+            upstream_output=output_context,
         )
 
         io_manager = getattr(cast(Any, input_context.resources), source_asset.io_manager_key)
