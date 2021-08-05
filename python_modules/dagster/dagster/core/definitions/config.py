@@ -1,11 +1,18 @@
-from typing import Any, Callable, Dict, NamedTuple, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, NamedTuple, Union, cast
 
 from dagster import check
 from dagster.builtins import BuiltinEnum
+from dagster.config import ConfigType
+from dagster.config.post_process import resolve_defaults
+from dagster.config.validate import process_config, validate_config
 from dagster.core.definitions.definition_config_schema import IDefinitionConfigSchema
+from dagster.core.errors import DagsterInvalidConfigError
 from dagster.primitive_mapping import is_supported_config_python_builtin
 
 from .definition_config_schema import convert_user_facing_definition_config_schema
+
+if TYPE_CHECKING:
+    from .pipeline import PipelineDefinition
 
 
 def is_callable_valid_config_arg(config: Union[Callable[..., Any], Dict[str, Any]]) -> bool:
@@ -56,3 +63,33 @@ class ConfigMapping(
                 receive_processed_config_values, "receive_processed_config_values"
             ),
         )
+
+    def resolve(self, config: Any, config_has_been_validated=False) -> Any:
+        if not config_has_been_validated:
+            if self.receive_processed_config_values:
+                outer_evr = process_config(
+                    self.config_schema.config_type,
+                    config,
+                )
+            else:
+                outer_evr = validate_config(
+                    self.config_schema.config_type,
+                    config,
+                )
+            if not outer_evr.success:
+                raise DagsterInvalidConfigError(
+                    "Error in config mapping ",
+                    outer_evr.errors,
+                    config,
+                )
+
+            outer_config = outer_evr.value
+            if not self.receive_processed_config_values:
+                outer_config = resolve_defaults(
+                    cast(ConfigType, self.config_schema.config_type),
+                    outer_config,
+                ).value
+        else:
+            outer_config = config
+
+        return self.config_fn(outer_config)

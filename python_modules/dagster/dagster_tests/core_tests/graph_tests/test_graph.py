@@ -2,7 +2,6 @@ import enum
 import json
 
 import pytest
-from dagster.check import CheckError
 from dagster import (
     ConfigMapping,
     Enum,
@@ -15,6 +14,7 @@ from dagster import (
     resource,
     success_hook,
 )
+from dagster.check import CheckError
 from dagster.core.definitions.graph import GraphDefinition
 from dagster.core.definitions.partition import (
     Partition,
