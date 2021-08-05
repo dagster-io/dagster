@@ -58,6 +58,7 @@ class _Solid:
         version: Optional[str] = None,
         decorator_takes_context: Optional[bool] = True,
         retry_policy: Optional[RetryPolicy] = None,
+        created_from_op: bool = False,
     ):
         self.name = check.opt_str_param(name, "name")
         self.input_defs = check.opt_list_param(input_defs, "input_defs", InputDefinition)
@@ -78,8 +79,11 @@ class _Solid:
 
         # config will be checked within SolidDefinition
         self.config_schema = config_schema
+        self.created_from_op = created_from_op
 
     def __call__(self, fn: Callable[..., Any]) -> SolidDefinition:
+        from ..op import OpDefinition
+
         check.callable_param(fn, "fn")
 
         if not self.name:
@@ -107,7 +111,8 @@ class _Solid:
             exclude_nothing=True,
         )
 
-        solid_def = SolidDefinition(
+        defn_cls = OpDefinition if self.created_from_op else SolidDefinition
+        solid_def = defn_cls(
             name=self.name,
             input_defs=resolved_input_defs,
             output_defs=output_defs,

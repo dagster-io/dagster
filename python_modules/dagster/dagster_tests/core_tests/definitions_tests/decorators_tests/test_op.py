@@ -10,10 +10,13 @@ from dagster import (
     Nothing,
     Out,
     Output,
+    SolidDefinition,
     build_op_context,
     graph,
     op,
+    solid,
 )
+from dagster.core.definitions.op import OpDefinition
 from dagster.core.execution.execute import execute_in_process
 
 
@@ -31,7 +34,16 @@ def test_op():
     def my_op():
         pass
 
+    assert isinstance(my_op, OpDefinition)
     execute_op_in_graph(my_op)
+
+
+def test_solid_decorator_produces_solid():
+    @solid
+    def my_solid():
+        pass
+
+    assert isinstance(my_solid, SolidDefinition) and not isinstance(my_solid, OpDefinition)
 
 
 def test_ins():

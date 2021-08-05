@@ -111,6 +111,7 @@ class _Op:
             version=self.version,
             decorator_takes_context=self.decorator_takes_context,
             retry_policy=self.retry_policy,
+            created_from_op=True,
         )(fn)
 
 
