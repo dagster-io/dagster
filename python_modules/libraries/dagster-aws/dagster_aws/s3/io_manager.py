@@ -1,3 +1,4 @@
+import io
 import pickle
 
 from dagster import Field, IOManager, StringSource, check, io_manager
@@ -69,7 +70,8 @@ class PickledObjectS3IOManager(IOManager):
             self._rm_object(key)
 
         pickled_obj = pickle.dumps(obj, PICKLE_PROTOCOL)
-        self.s3.put_object(Bucket=self.bucket, Key=key, Body=pickled_obj)
+        pickled_obj_bytes = io.BytesIO(pickled_obj)
+        self.s3.upload_fileobj(pickled_obj_bytes, self.bucket, key)
 
 
 @io_manager(
