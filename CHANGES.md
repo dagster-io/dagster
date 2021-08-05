@@ -4,7 +4,7 @@
 
 ### Bugfixes
 
-- Fixed tick display in the sensor/schedule timeline view in Dagit
+- Fixed tick display in the sensor/schedule timeline view in Dagit.
 - Changed the `dagster sensor list` and `dagster schedule list` CLI commands to include schedules and sensors that have never been turned on.
 - Fixed the backfill progress stats in Dagit which incorrectly capped the number of successful/failed runs.
 - Improved query performance in Dagit on pipeline (or job) views, schedule views, and schedules list view by loading partition set data on demand instead of by default.
@@ -14,7 +14,7 @@
 - Fixed an issue with default config for jobs where using an `ops` config entry in place of `solids` would cause a config error.
 - Dynamic outputs are now properly supported while using `adls2_io_manager` 
 - `ModeDefinition` now validates the keys of `resource_defs` at definition time.
-- `Failure` exceptions no longer bypass the `RetryPolicy` if one is set
+- `Failure` exceptions no longer bypass the `RetryPolicy` if one is set.
 
 ### Community Contributions
 
@@ -25,7 +25,7 @@
 - To account for ECS’ eventual consistency model, the `EcsRunLauncher` will now exponentially backoff certain requests for up to a minute while waiting for ECS to reach a consistent state.
 - Memoization is now available from all execution entrypoints. This means that a pipeline tagged for use with memoization can be launched from dagit, the `launch` CLI, and other modes of external execution, whereas before, memoization was only available via `execute_pipeline` and the `execute` CLI.
 - Memoization now works with root input managers. In order to use a root input manager in a pipeline that utilizes memoization, provide a string value to the `version` argument on the decorator:
-```
+```python
 from dagster import root_input_manager
         
 @root_input_manager(version="foo")
