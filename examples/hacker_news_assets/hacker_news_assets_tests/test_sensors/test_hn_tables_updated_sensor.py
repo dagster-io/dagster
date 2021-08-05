@@ -5,7 +5,7 @@ from unittest import mock
 from dagster import SensorEvaluationContext
 from dagster.core.instance.ref import InstanceRef
 from dagster.core.storage.event_log.base import EventLogRecord
-from hacker_news.sensors.hn_tables_updated_sensor import story_recommender_on_hn_table_update
+from hacker_news_assets.sensors.hn_tables_updated_sensor import story_recommender_on_hn_table_update
 
 
 def get_mock_event_records(asset_events: List[Tuple[str, int]]):

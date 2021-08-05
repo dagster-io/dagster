@@ -5,8 +5,8 @@ from dagster import Partition
 from dagster.core.definitions import PipelineDefinition
 from dagster.core.definitions.partition import PartitionScheduleDefinition
 from dagster.core.execution.api import create_execution_plan
-from hacker_news.pipelines.download_pipeline import download_pipeline
-from hacker_news.schedules.hourly_hn_download_schedule import hourly_hn_download_schedule
+from hacker_news_assets.pipelines.download_pipeline import download_pipeline
+from hacker_news_assets.schedules.hourly_hn_download_schedule import hourly_hn_download_schedule
 
 
 def assert_partitioned_schedule_builds(

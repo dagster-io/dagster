@@ -1,7 +1,7 @@
 from setuptools import find_packages, setup
 
 setup(
-    name="hacker_news",
+    name="hacker_news_assets",
     version="dev",
     author="Elementl",
     author_email="hello@elementl.com",
@@ -12,7 +12,7 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["test"]),
-    package_data={"hacker_news": ["hacker_news_dbt/*"]},
+    package_data={"hacker_news_assets": ["hacker_news_dbt/*"]},
     install_requires=[
         "dagster",
         "dagster-aws",

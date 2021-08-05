@@ -4,7 +4,7 @@ from typing import Dict, List
 from dagster import SensorDefinition
 from dagster.core.definitions.pipeline_sensor import PipelineFailureSensorContext
 from dagster_slack import make_slack_on_pipeline_failure_sensor
-from hacker_news.utils.slack_message import build_slack_message_blocks
+from hacker_news_assets.utils.slack_message import build_slack_message_blocks
 
 
 def slack_message_blocks_fn(context: PipelineFailureSensorContext, base_url: str) -> List[Dict]:

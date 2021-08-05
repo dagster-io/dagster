@@ -4,9 +4,9 @@ import uuid
 from dagster import build_sensor_context, validate_run_config
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
-from hacker_news.pipelines.dbt_pipeline import dbt_pipeline
-from hacker_news.pipelines.download_pipeline import DEFAULT_PARTITION_RESOURCE_CONFIG
-from hacker_news.sensors.download_pipeline_finished_sensor import dbt_on_hn_download_finished
+from hacker_news_assets.pipelines.dbt_pipeline import dbt_pipeline
+from hacker_news_assets.pipelines.download_pipeline import DEFAULT_PARTITION_RESOURCE_CONFIG
+from hacker_news_assets.sensors.download_pipeline_finished_sensor import dbt_on_hn_download_finished
 
 
 def test_no_runs():

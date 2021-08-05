@@ -12,7 +12,7 @@ from dagster import (
     io_manager,
 )
 from dagster.core.storage.io_manager import IOManager
-from hacker_news.resources.parquet_pointer import ParquetPointer
+from hacker_news_assets.resources.parquet_pointer import ParquetPointer
 from pandas import DataFrame, read_sql
 from pyspark.sql.types import StructField
 from snowflake.connector.pandas_tools import pd_writer

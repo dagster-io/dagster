@@ -1,5 +1,5 @@
 from dagster import repository
-from hacker_news.sensors.slack_on_pipeline_failure_sensor import make_pipeline_failure_sensor
+from hacker_news_assets.sensors.slack_on_pipeline_failure_sensor import make_pipeline_failure_sensor
 
 
 def test_slack_on_pipeline_failure_def():

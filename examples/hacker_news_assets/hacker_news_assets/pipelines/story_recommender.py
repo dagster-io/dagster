@@ -1,11 +1,11 @@
 from dagster import AssetKey, fs_io_manager
 from dagster.core.asset_defs import SourceAsset, build_assets_job
-from hacker_news.resources.fixed_s3_pickle_io_manager import fixed_s3_pickle_io_manager
-from hacker_news.resources.snowflake_io_manager import snowflake_io_manager
-from hacker_news.solids.comment_stories import comment_stories
-from hacker_news.solids.recommender_model import component_top_stories, recommender_model
-from hacker_news.solids.user_story_matrix import user_story_matrix
-from hacker_news.solids.user_top_recommended_stories import user_top_recommended_stories
+from hacker_news_assets.resources.fixed_s3_pickle_io_manager import fixed_s3_pickle_io_manager
+from hacker_news_assets.resources.snowflake_io_manager import snowflake_io_manager
+from hacker_news_assets.solids.comment_stories import comment_stories
+from hacker_news_assets.solids.recommender_model import component_top_stories, recommender_model
+from hacker_news_assets.solids.user_story_matrix import user_story_matrix
+from hacker_news_assets.solids.user_top_recommended_stories import user_top_recommended_stories
 
 snowflake_manager = snowflake_io_manager.configured(
     {

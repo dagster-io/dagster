@@ -11,7 +11,7 @@ from dagster import (
     solid,
 )
 from dagster_pyspark import pyspark_resource
-from hacker_news.resources.parquet_io_manager import partitioned_parquet_io_manager
+from hacker_news_assets.resources.parquet_io_manager import partitioned_parquet_io_manager
 from pyspark.sql import DataFrame as SparkDF
 
 

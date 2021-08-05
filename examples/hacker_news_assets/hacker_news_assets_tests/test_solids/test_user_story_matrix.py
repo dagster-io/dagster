@@ -1,5 +1,5 @@
 import pytest
-from hacker_news.solids.user_story_matrix import user_story_matrix
+from hacker_news_assets.solids.user_story_matrix import user_story_matrix
 from pandas import DataFrame
 
 

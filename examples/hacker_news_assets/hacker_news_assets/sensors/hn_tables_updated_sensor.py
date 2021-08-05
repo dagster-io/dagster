@@ -1,5 +1,5 @@
 from dagster import AssetKey, EventRecordsFilter, RunRequest, sensor
-from hacker_news.pipelines.story_recommender import story_recommender_prod
+from hacker_news_assets.pipelines.story_recommender import story_recommender_prod
 
 
 @sensor(job=story_recommender_prod)
