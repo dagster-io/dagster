@@ -36,7 +36,7 @@ from .graph import GraphDefinition
 from .hook import HookDefinition
 from .mode import ModeDefinition
 from .preset import PresetDefinition
-from .solid import NodeDefinition
+from .solid import NodeDefinition, SolidDefinition
 from .utils import validate_tags
 from .version_strategy import VersionStrategy
 
@@ -179,6 +179,8 @@ class PipelineDefinition:
                 description=None,
             )
 
+        self._created_from_ops = _is_using_op(self._graph_def.solids)
+
         # tags and description can exist on graph as well, but since
         # same graph may be in multiple pipelines/jobs, keep separate layer
         self._description = check.opt_str_param(description, "description")
@@ -254,6 +256,10 @@ class PipelineDefinition:
 
         if self.version_strategy is not None:
             experimental_class_warning("VersionStrategy")
+
+    @property
+    def created_from_ops(self) -> bool:
+        return self._created_from_ops
 
     @property
     def name(self):
@@ -1063,6 +1069,7 @@ def _create_run_config_schema(
             logger_defs=mode_definition.loggers,
             ignored_solids=ignored_solids,
             required_resources=required_resources,
+            created_from_ops=pipeline_def.created_from_ops,
         )
     )
 
@@ -1105,3 +1112,15 @@ def _swap_default_io_man(resources: Dict[str, ResourceDefinition], job: Pipeline
         return updated_resources
 
     return resources
+
+
+def _is_using_op(node_list: List[Node]):
+    """Recursively determine if any node definitions were constructed using the `op` decorator."""
+    for node in node_list:
+        if isinstance(node.definition, SolidDefinition):
+            if node.definition.created_from_op:
+                return True
+        elif isinstance(node.definition, GraphDefinition):
+            if _is_using_op(node.definition.solids):
+                return True
+    return False

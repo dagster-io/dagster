@@ -70,6 +70,7 @@ class _Solid:
         )
 
         self.description = check.opt_str_param(description, "description")
+        self.created_from_op = check.bool_param(created_from_op, "created_from_op")
 
         # these will be checked within SolidDefinition
         self.required_resource_keys = required_resource_keys
@@ -123,6 +124,7 @@ class _Solid:
             tags=self.tags,
             version=self.version,
             retry_policy=self.retry_policy,
+            created_from_op=self.created_from_op,
         )
         update_wrapper(solid_def, compute_fn.decorated_fn)
         return solid_def

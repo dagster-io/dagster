@@ -39,6 +39,7 @@ def create_creation_data(pipeline_def):
         logger_defs=default_loggers(),
         ignored_solids=[],
         required_resources=set(),
+        created_from_ops=pipeline_def.created_from_ops,
     )
 
 
@@ -284,6 +285,7 @@ def test_solid_config_error():
         dependency_structure=pipeline_def.dependency_structure,
         parent_handle=None,
         resource_defs={},
+        created_from_ops=False,
     )
 
     int_solid_config_type = solid_dict_type.fields["int_config_solid"].config_type

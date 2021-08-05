@@ -103,6 +103,7 @@ class SolidDefinition(NodeDefinition):
         required_resource_keys: Optional[Union[Set[str], FrozenSet[str]]] = None,
         version: Optional[str] = None,
         retry_policy: Optional[RetryPolicy] = None,
+        created_from_op: bool = False,
     ):
         from .decorators.solid import DecoratedSolidFunction
 
@@ -119,6 +120,7 @@ class SolidDefinition(NodeDefinition):
         if version:
             experimental_arg_warning("version", "SolidDefinition.__init__")
         self._retry_policy = check.opt_inst_param(retry_policy, "retry_policy", RetryPolicy)
+        self._created_from_op = check.bool_param(created_from_op, "created_from_op")
 
         positional_inputs = (
             self._compute_fn.positional_inputs()
@@ -227,7 +229,12 @@ class SolidDefinition(NodeDefinition):
             required_resource_keys=self.required_resource_keys,
             version=self.version,
             retry_policy=self.retry_policy,
+            created_from_op=self._created_from_op,
         )
+
+    @property
+    def created_from_op(self) -> bool:
+        return self._created_from_op
 
     @property
     def retry_policy(self) -> Optional[RetryPolicy]:

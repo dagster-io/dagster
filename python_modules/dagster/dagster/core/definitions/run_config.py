@@ -70,6 +70,7 @@ class RunConfigSchemaCreationData(NamedTuple):
     logger_defs: Dict[str, LoggerDefinition]
     ignored_solids: List[Node]
     required_resources: Set[str]
+    created_from_ops: bool
 
 
 def define_logger_dictionary_cls(creation_data: RunConfigSchemaCreationData) -> Shape:
@@ -135,30 +136,45 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
         is_required=False,
     )
 
-    return Shape(
-        fields=remove_none_entries(
-            {
-                "solids": Field(
-                    define_solid_dictionary_cls(
-                        solids=creation_data.solids,
-                        ignored_solids=creation_data.ignored_solids,
-                        dependency_structure=creation_data.dependency_structure,
-                        resource_defs=creation_data.mode_definition.resource_defs,
-                    )
-                ),
-                "storage": storage_field,
-                "intermediate_storage": intermediate_storage_field,
-                "execution": define_execution_field(creation_data.mode_definition.executor_defs),
-                "loggers": Field(define_logger_dictionary_cls(creation_data)),
-                "resources": Field(
-                    define_resource_dictionary_cls(
-                        creation_data.mode_definition.resource_defs,
-                        creation_data.required_resources,
-                    )
-                ),
-            }
+    fields = {
+        "storage": storage_field,
+        "intermediate_storage": intermediate_storage_field,
+        "execution": define_execution_field(creation_data.mode_definition.executor_defs),
+        "loggers": Field(define_logger_dictionary_cls(creation_data)),
+        "resources": Field(
+            define_resource_dictionary_cls(
+                creation_data.mode_definition.resource_defs,
+                creation_data.required_resources,
+            )
         ),
-        field_aliases={"solids": "ops"},
+    }
+
+    if creation_data.created_from_ops:
+        fields["ops"] = Field(
+            define_solid_dictionary_cls(
+                solids=creation_data.solids,
+                ignored_solids=creation_data.ignored_solids,
+                dependency_structure=creation_data.dependency_structure,
+                resource_defs=creation_data.mode_definition.resource_defs,
+                created_from_ops=creation_data.created_from_ops,
+            )
+        )
+        field_aliases = {"ops": "solids"}
+    else:
+        fields["solids"] = Field(
+            define_solid_dictionary_cls(
+                solids=creation_data.solids,
+                ignored_solids=creation_data.ignored_solids,
+                dependency_structure=creation_data.dependency_structure,
+                resource_defs=creation_data.mode_definition.resource_defs,
+                created_from_ops=creation_data.created_from_ops,
+            )
+        )
+        field_aliases = {"solids": "ops"}
+
+    return Shape(
+        fields=remove_none_entries(fields),
+        field_aliases=field_aliases,
     )
 
 
@@ -310,18 +326,21 @@ def get_type_output_field(output_def: OutputDefinition) -> Optional[Field]:
     return None
 
 
-def solid_config_field(fields: Dict[str, Optional[Field]], ignored: bool) -> Optional[Field]:
+def solid_config_field(
+    fields: Dict[str, Optional[Field]], ignored: bool, created_from_ops: bool
+) -> Optional[Field]:
+    field_aliases = {"ops": "solids"} if created_from_ops else {"solids": "ops"}
     trimmed_fields = remove_none_entries(fields)
     if trimmed_fields:
         if ignored:
             return Field(
-                Shape(trimmed_fields, field_aliases={"solids": "ops"}),
+                Shape(trimmed_fields, field_aliases=field_aliases),
                 is_required=False,
                 description="This solid is not present in the current solid selection, "
                 "the config values are allowed but ignored.",
             )
         else:
-            return Field(Shape(trimmed_fields, field_aliases={"solids": "ops"}))
+            return Field(Shape(trimmed_fields, field_aliases=field_aliases))
     else:
         return None
 
@@ -332,6 +351,7 @@ def construct_leaf_solid_config(
     config_schema: Optional[IDefinitionConfigSchema],
     resource_defs: Dict[str, ResourceDefinition],
     ignored: bool,
+    created_from_ops: bool,
 ) -> Optional[Field]:
     return solid_config_field(
         {
@@ -345,6 +365,7 @@ def construct_leaf_solid_config(
             "config": config_schema.as_field() if config_schema else None,
         },
         ignored=ignored,
+        created_from_ops=created_from_ops,
     )
 
 
@@ -354,6 +375,7 @@ def define_isolid_field(
     dependency_structure: DependencyStructure,
     resource_defs: Dict[str, ResourceDefinition],
     ignored: bool,
+    created_from_ops: bool,
 ) -> Optional[Field]:
 
     # All solids regardless of compositing status get the same inputs and outputs
@@ -373,6 +395,7 @@ def define_isolid_field(
             solid.definition.config_schema,
             resource_defs,
             ignored,
+            created_from_ops,
         )
 
     graph_def = solid.definition.ensure_graph_def()
@@ -387,31 +410,44 @@ def define_isolid_field(
             graph_def.config_schema,
             resource_defs,
             ignored,
+            created_from_ops,
         )
         # This case omits a 'solids' key, thus if a composite solid is `configured` or has a field
         # mapping, the user cannot stub any config, inputs, or outputs for inner (child) solids.
     else:
-        return solid_config_field(
-            {
-                "inputs": get_inputs_field(
-                    solid,
-                    dependency_structure,
-                    resource_defs,
-                    ignored,
-                ),
-                "outputs": get_outputs_field(solid, resource_defs),
-                "solids": Field(
-                    define_solid_dictionary_cls(
-                        solids=graph_def.solids,
-                        ignored_solids=None,
-                        dependency_structure=graph_def.dependency_structure,
-                        parent_handle=handle,
-                        resource_defs=resource_defs,
-                    )
-                ),
-            },
-            ignored=ignored,
-        )
+        fields = {
+            "inputs": get_inputs_field(
+                solid,
+                dependency_structure,
+                resource_defs,
+                ignored,
+            ),
+            "outputs": get_outputs_field(solid, resource_defs),
+        }
+        if created_from_ops:
+            fields["ops"] = Field(
+                define_solid_dictionary_cls(
+                    solids=graph_def.solids,
+                    ignored_solids=None,
+                    dependency_structure=graph_def.dependency_structure,
+                    parent_handle=handle,
+                    resource_defs=resource_defs,
+                    created_from_ops=created_from_ops,
+                )
+            )
+        else:
+            fields["solids"] = Field(
+                define_solid_dictionary_cls(
+                    solids=graph_def.solids,
+                    ignored_solids=None,
+                    dependency_structure=graph_def.dependency_structure,
+                    parent_handle=handle,
+                    resource_defs=resource_defs,
+                    created_from_ops=created_from_ops,
+                )
+            )
+
+        return solid_config_field(fields, ignored=ignored, created_from_ops=created_from_ops)
 
 
 def define_solid_dictionary_cls(
@@ -419,6 +455,7 @@ def define_solid_dictionary_cls(
     ignored_solids: Optional[List[Node]],
     dependency_structure: DependencyStructure,
     resource_defs: Dict[str, ResourceDefinition],
+    created_from_ops: bool,
     parent_handle: Optional[NodeHandle] = None,
 ) -> Shape:
     ignored_solids = check.opt_list_param(ignored_solids, "ignored_solids", of_type=Node)
@@ -431,6 +468,7 @@ def define_solid_dictionary_cls(
             dependency_structure,
             resource_defs,
             ignored=False,
+            created_from_ops=created_from_ops,
         )
 
         if solid_field:
@@ -443,11 +481,13 @@ def define_solid_dictionary_cls(
             dependency_structure,
             resource_defs,
             ignored=True,
+            created_from_ops=created_from_ops,
         )
         if solid_field:
             fields[solid.name] = solid_field
 
-    return Shape(fields, field_aliases={"solids": "ops"})
+    field_aliases = {"ops": "solids"} if created_from_ops else {"solids": "ops"}
+    return Shape(fields, field_aliases=field_aliases)
 
 
 def iterate_node_def_config_types(node_def: NodeDefinition) -> Iterator[ConfigType]:

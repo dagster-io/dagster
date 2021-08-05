@@ -206,8 +206,9 @@ class ResolvedRunConfig(
         config_mapped_resource_configs = config_map_resources(resource_defs, resource_configs)
         config_mapped_logger_configs = config_map_loggers(pipeline_def, config_value, mode)
 
+        node_key = "ops" if pipeline_def.created_from_ops else "solids"
         solid_config_dict = composite_descent(
-            pipeline_def, config_value.get("solids", {}), mode_def.resource_defs
+            pipeline_def, config_value.get(node_key, {}), mode_def.resource_defs
         )
 
         return ResolvedRunConfig(
