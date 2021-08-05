@@ -145,6 +145,7 @@ export interface AssetGraphQuery_repositoryOrError_Repository_assetDefinitions_a
 
 export interface AssetGraphQuery_repositoryOrError_Repository_assetDefinitions_assetMaterializations_runOrError_PipelineRun {
   __typename: "PipelineRun";
+  id: string;
   runId: string;
   status: PipelineRunStatus;
 }
@@ -161,7 +162,9 @@ export interface AssetGraphQuery_repositoryOrError_Repository_assetDefinitions {
   __typename: "AssetDefinition";
   id: string;
   assetKey: AssetGraphQuery_repositoryOrError_Repository_assetDefinitions_assetKey;
-  nodeName: string | null;
+  opName: string | null;
+  description: string | null;
+  jobNames: (string | null)[] | null;
   dependencies: AssetGraphQuery_repositoryOrError_Repository_assetDefinitions_dependencies[];
   assetMaterializations: AssetGraphQuery_repositoryOrError_Repository_assetDefinitions_assetMaterializations[];
 }

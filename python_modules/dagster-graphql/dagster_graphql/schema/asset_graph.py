@@ -34,7 +34,9 @@ class GrapheneAssetDependency(graphene.ObjectType):
 class GrapheneAssetDefinition(graphene.ObjectType):
     id = graphene.NonNull(graphene.ID)
     assetKey = graphene.NonNull(GrapheneAssetKey)
-    nodeName = graphene.String()
+    description = graphene.String()
+    opName = graphene.String()
+    jobNames = graphene.List(graphene.String)
     dependencies = non_null_list(GrapheneAssetDependency)
     assetMaterializations = graphene.Field(
         non_null_list(GrapheneAssetMaterialization),
@@ -56,7 +58,9 @@ class GrapheneAssetDefinition(graphene.ObjectType):
         super().__init__(
             id=external_asset_def.asset_key.to_string(),
             assetKey=external_asset_def.asset_key,
-            nodeName=external_asset_def.node_name,
+            opName=external_asset_def.op_name,
+            description=external_asset_def.op_description,
+            jobNames=external_asset_def.job_names,
         )
 
     def resolve_dependencies(self, _graphene_info):

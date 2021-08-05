@@ -1076,7 +1076,9 @@ type SolidInvocationSite {
 type AssetDefinition {
   id: ID!
   assetKey: AssetKey!
-  nodeName: String
+  description: String
+  opName: String
+  jobNames: [String]
   dependencies: [AssetDependency!]!
   assetMaterializations(partitions: [String], beforeTimestampMillis: String, limit: Int): [AssetMaterialization!]!
 }

@@ -7,6 +7,7 @@ import {RouteComponentProps} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {SVGViewport} from '../graph/SVGViewport';
+import {Description} from '../pipelines/Description';
 import {SidebarSection} from '../pipelines/SidebarComponents';
 import {METADATA_ENTRY_FRAGMENT} from '../runs/MetadataEntry';
 import {Box} from '../ui/Box';
@@ -36,6 +37,7 @@ const DEFAULT_NODE_DIMENSIONS = {
 interface Node {
   id: string;
   assetKey: AssetKey;
+  definition: AssetDefinition;
 }
 interface LayoutNode {
   id: string;
@@ -65,7 +67,7 @@ const buildGraphData = (assetDefinitions: AssetDefinition[]) => {
     nodes[assetKeyJson] = {
       id: assetKeyJson,
       assetKey: definition.assetKey,
-      node: definition,
+      definition,
     };
     definition.dependencies.forEach((dependency) => {
       const upstreamAssetKeyJson = JSON.stringify(dependency.upstreamAsset.assetKey.path);
@@ -293,13 +295,19 @@ export const AssetGraphRoot: React.FC<Props> = (props) => {
 };
 
 const AssetPanel = ({node}: {node: Node}) => {
-  console.log(node);
   return (
     <>
       <Box margin={32} style={{fontWeight: 'bold', fontSize: 18}}>
         {node.assetKey.path.join(' > ')}
       </Box>
-      <SidebarSection title="Materialization">Hi</SidebarSection>
+      <SidebarSection title="Description">
+        <Description description={node.definition.description || null} />
+      </SidebarSection>
+      <SidebarSection title="Jobs">
+        {node.definition.jobNames
+          ? node.definition.jobNames.map((name) => <div key={name}>{name}</div>)
+          : null}
+      </SidebarSection>
     </>
   );
 };
@@ -319,7 +327,9 @@ const ASSETS_GRAPH_QUERY = gql`
           assetKey {
             path
           }
-          nodeName
+          opName
+          description
+          jobNames
           dependencies {
             inputName
             upstreamAsset {

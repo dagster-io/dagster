@@ -6,7 +6,7 @@ for that.
 """
 
 from collections import defaultdict, namedtuple
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional, Set, Tuple
 
 from dagster import check
 from dagster.core.asset_defs.decorators import LOGICAL_ASSET_KEY
@@ -366,7 +366,9 @@ class ExternalAssetDependency(
 
 @whitelist_for_serdes
 class ExternalAssetDefinition(
-    namedtuple("_ExternalAssetDefinition", "asset_key node_name dependencies")
+    namedtuple(
+        "_ExternalAssetDefinition", "asset_key dependencies op_name op_description job_names"
+    )
 ):
     """A definition of a node in the logical asset graph.
 
@@ -376,14 +378,18 @@ class ExternalAssetDefinition(
     def __new__(
         cls,
         asset_key: AssetKey,
-        node_name: Optional[str],
         dependencies: List[ExternalAssetDependency],
+        op_name: Optional[str] = None,
+        op_description: Optional[str] = None,
+        job_names: Optional[List[str]] = None,
     ):
         return super(ExternalAssetDefinition, cls).__new__(
             cls,
             asset_key=asset_key,
-            node_name=node_name,
             dependencies=dependencies,
+            op_name=op_name,
+            op_description=op_description,
+            job_names=job_names,
         )
 
 
@@ -414,53 +420,66 @@ def external_repository_data_from_def(repository_def):
 
 
 def external_asset_graph_data_from_def(pipelines: List[PipelineDefinition]):
-    node_defs_by_asset_key: Dict[AssetKey, NodeDefinition] = {}
+    node_defs_by_asset_key: Dict[
+        AssetKey, List[Tuple[NodeDefinition, PipelineDefinition]]
+    ] = defaultdict(list)
     deps: Dict[AssetKey, Dict[str, ExternalAssetDependency]] = defaultdict(dict)
 
-    all_node_defs = [node_def for pipeline in pipelines for node_def in pipeline.all_node_defs]
+    # all_node_defs = [node_def for pipeline in pipelines for node_def in pipeline.all_node_defs]
 
     all_upstream_asset_keys = set()
-    for node_def in all_node_defs:
-        node_asset_keys: Set[AssetKey] = set()
-        for output_def in node_def.output_defs:
-            if output_def.metadata and output_def.metadata.get(LOGICAL_ASSET_KEY):
-                if isinstance(output_def.metadata[LOGICAL_ASSET_KEY], AssetKey):
-                    node_asset_keys.add(output_def.metadata[LOGICAL_ASSET_KEY])
-                    node_defs_by_asset_key[output_def.metadata[LOGICAL_ASSET_KEY]] = node_def
-                else:
-                    check.failed(
-                        f"Output '{output_def.name}' of node '{node_def.name}' has "
-                        f"'{LOGICAL_ASSET_KEY}' metadata entry, but its type is not AssetKey"
-                    )
-
-        for input_def in node_def.input_defs:
-            if input_def.metadata and input_def.metadata.get(LOGICAL_ASSET_KEY):
-                if isinstance(input_def.metadata[LOGICAL_ASSET_KEY], AssetKey):
-                    for node_asset_key in node_asset_keys:
-                        upstream_asset_key = input_def.metadata[LOGICAL_ASSET_KEY]
-                        deps[node_asset_key][input_def.name] = ExternalAssetDependency(
-                            upstream_asset_key=upstream_asset_key,
-                            input_name=input_def.name,
+    for pipeline in pipelines:
+        for node_def in pipeline.all_node_defs:
+            node_asset_keys: Set[AssetKey] = set()
+            for output_def in node_def.output_defs:
+                if output_def.metadata and output_def.metadata.get(LOGICAL_ASSET_KEY):
+                    if isinstance(output_def.metadata[LOGICAL_ASSET_KEY], AssetKey):
+                        node_asset_keys.add(output_def.metadata[LOGICAL_ASSET_KEY])
+                        node_defs_by_asset_key[output_def.metadata[LOGICAL_ASSET_KEY]].append(
+                            tuple([node_def, pipeline])
                         )
-                        all_upstream_asset_keys.add(upstream_asset_key)
-                else:
-                    check.failed(
-                        f"Input '{input_def.name}' of node '{node_def.name}' has "
-                        "'logical_asset_key' metadata entry, but its type is not AssetKey"
-                    )
+                    else:
+                        check.failed(
+                            f"Output '{output_def.name}' of node '{node_def.name}' has "
+                            f"'{LOGICAL_ASSET_KEY}' metadata entry, but its type is not AssetKey"
+                        )
+
+            for input_def in node_def.input_defs:
+                if input_def.metadata and input_def.metadata.get(LOGICAL_ASSET_KEY):
+                    if isinstance(input_def.metadata[LOGICAL_ASSET_KEY], AssetKey):
+                        for node_asset_key in node_asset_keys:
+                            upstream_asset_key = input_def.metadata[LOGICAL_ASSET_KEY]
+                            deps[node_asset_key][input_def.name] = ExternalAssetDependency(
+                                upstream_asset_key=upstream_asset_key,
+                                input_name=input_def.name,
+                            )
+                            all_upstream_asset_keys.add(upstream_asset_key)
+                    else:
+                        check.failed(
+                            f"Input '{input_def.name}' of node '{node_def.name}' has "
+                            "'logical_asset_key' metadata entry, but its type is not AssetKey"
+                        )
 
     source_asset_keys = all_upstream_asset_keys.difference(node_defs_by_asset_key.keys())
-    return [
-        ExternalAssetDefinition(asset_key=asset_key, node_name=None, dependencies=[])
+    asset_defs = [
+        ExternalAssetDefinition(asset_key=asset_key, dependencies=[])
         for asset_key in source_asset_keys
-    ] + [
-        ExternalAssetDefinition(
-            asset_key=asset_key,
-            node_name=node_def.name,
-            dependencies=list(deps[asset_key].values()),
-        )
-        for asset_key, node_def in node_defs_by_asset_key.items()
     ]
+
+    for asset_key, node_tuple_list in node_defs_by_asset_key.items():
+        node_def = node_tuple_list[0][0]
+        job_names = [node_tuple[1].name for node_tuple in node_tuple_list]
+        asset_defs.append(
+            ExternalAssetDefinition(
+                asset_key=asset_key,
+                dependencies=list(deps[asset_key].values()),
+                op_name=node_def.name,
+                op_description=node_def.description,
+                job_names=job_names,
+            )
+        )
+
+    return asset_defs
 
 
 def external_pipeline_data_from_def(pipeline_def):
