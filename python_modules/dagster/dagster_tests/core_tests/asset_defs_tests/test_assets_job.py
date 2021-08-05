@@ -1,5 +1,5 @@
 from dagster import AssetKey, DependencyDefinition, IOManager, io_manager
-from dagster.core.asset_defs import SourceAsset, asset, build_assets_job
+from dagster.core.asset_defs import ForeignAsset, asset, build_assets_job
 
 
 def test_single_asset_pipeline():
@@ -80,7 +80,7 @@ def test_join():
     assert job.execute_in_process().success
 
 
-def test_source_asset():
+def test_foreign_asset():
     @asset
     def asset1(source1):
         assert source1 == 5
@@ -100,7 +100,38 @@ def test_source_asset():
     job = build_assets_job(
         "a",
         [asset1],
-        source_assets=[SourceAsset(AssetKey("source1"), io_manager_key="special_io_manager")],
+        source_assets=[ForeignAsset(AssetKey("source1"), io_manager_key="special_io_manager")],
+        resource_defs={"special_io_manager": my_io_manager},
+    )
+    assert job.graph.node_defs == [asset1]
+    assert job.execute_in_process().success
+
+
+def test_source_op_asset():
+    @asset(io_manager_key="special_io_manager")
+    def source1():
+        pass
+
+    @asset
+    def asset1(source1):
+        assert source1 == 5
+        return 1
+
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            pass
+
+        def load_input(self, context):
+            return 5
+
+    @io_manager
+    def my_io_manager(_):
+        return MyIOManager()
+
+    job = build_assets_job(
+        "a",
+        [asset1],
+        source_assets=[source1],
         resource_defs={"special_io_manager": my_io_manager},
     )
     assert job.graph.node_defs == [asset1]

@@ -1,5 +1,5 @@
 from dagster import AssetKey, fs_io_manager
-from dagster.core.asset_defs import SourceAsset, build_assets_job
+from dagster.core.asset_defs import ForeignAsset, build_assets_job
 from hacker_news_assets.resources.fixed_s3_pickle_io_manager import fixed_s3_pickle_io_manager
 from hacker_news_assets.resources.snowflake_io_manager import snowflake_io_manager
 from hacker_news_assets.solids.comment_stories import comment_stories
@@ -38,8 +38,8 @@ assets = [
 ]
 
 source_assets = [
-    SourceAsset(AssetKey("comments"), io_manager_key="source_warehouse_io_manager"),
-    SourceAsset(AssetKey("stories"), io_manager_key="source_warehouse_io_manager"),
+    ForeignAsset(AssetKey("comments"), io_manager_key="source_warehouse_io_manager"),
+    ForeignAsset(AssetKey("stories"), io_manager_key="source_warehouse_io_manager"),
 ]
 
 story_recommender_dev = build_assets_job(

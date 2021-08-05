@@ -9,7 +9,6 @@ from collections import defaultdict, namedtuple
 from typing import Dict, List, Optional, Set, Tuple
 
 from dagster import check
-from dagster.core.asset_defs.decorators import LOGICAL_ASSET_KEY
 from dagster.core.definitions import (
     PartitionSetDefinition,
     PipelineDefinition,
@@ -432,33 +431,28 @@ def external_asset_graph_data_from_def(pipelines: List[PipelineDefinition]):
         for node_def in pipeline.all_node_defs:
             node_asset_keys: Set[AssetKey] = set()
             for output_def in node_def.output_defs:
-                if output_def.metadata and output_def.metadata.get(LOGICAL_ASSET_KEY):
-                    if isinstance(output_def.metadata[LOGICAL_ASSET_KEY], AssetKey):
-                        node_asset_keys.add(output_def.metadata[LOGICAL_ASSET_KEY])
-                        node_defs_by_asset_key[output_def.metadata[LOGICAL_ASSET_KEY]].append(
-                            (node_def, pipeline)
-                        )
-                    else:
-                        check.failed(
-                            f"Output '{output_def.name}' of node '{node_def.name}' has "
-                            f"'{LOGICAL_ASSET_KEY}' metadata entry, but its type is not AssetKey"
-                        )
+                try:
+                    asset_key = output_def.get_asset_key(None)
+                except Exception:  # pylint: disable=broad-except
+                    asset_key = None
+
+                if asset_key:
+                    node_asset_keys.add(asset_key)
+                    node_defs_by_asset_key[asset_key].append((node_def, pipeline))
 
             for input_def in node_def.input_defs:
-                if input_def.metadata and input_def.metadata.get(LOGICAL_ASSET_KEY):
-                    if isinstance(input_def.metadata[LOGICAL_ASSET_KEY], AssetKey):
-                        for node_asset_key in node_asset_keys:
-                            upstream_asset_key = input_def.metadata[LOGICAL_ASSET_KEY]
-                            deps[node_asset_key][input_def.name] = ExternalAssetDependency(
-                                upstream_asset_key=upstream_asset_key,
-                                input_name=input_def.name,
-                            )
-                            all_upstream_asset_keys.add(upstream_asset_key)
-                    else:
-                        check.failed(
-                            f"Input '{input_def.name}' of node '{node_def.name}' has "
-                            "'logical_asset_key' metadata entry, but its type is not AssetKey"
+                try:
+                    asset_key = output_def.get_asset_key(None)
+                except Exception:  # pylint: disable=broad-except
+                    asset_key = None
+
+                if asset_key:
+                    for node_asset_key in node_asset_keys:
+                        deps[node_asset_key][input_def.name] = ExternalAssetDependency(
+                            upstream_asset_key=asset_key,
+                            input_name=input_def.name,
                         )
+                        all_upstream_asset_keys.add(asset_key)
 
     source_asset_keys = all_upstream_asset_keys.difference(node_defs_by_asset_key.keys())
     asset_defs = [

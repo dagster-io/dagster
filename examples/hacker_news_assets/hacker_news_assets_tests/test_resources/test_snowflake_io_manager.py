@@ -2,7 +2,14 @@ import os
 import uuid
 from contextlib import contextmanager
 
-from dagster import AssetKey, build_init_resource_context, build_input_context, build_output_context
+from dagster import (
+    AssetKey,
+    OutputDefinition,
+    build_init_resource_context,
+    build_input_context,
+    build_output_context,
+    solid,
+)
 from hacker_news_assets.resources.snowflake_io_manager import (  # pylint: disable=E0401
     connect_snowflake,
     snowflake_io_manager,
@@ -25,12 +32,12 @@ def temporary_snowflake_table(contents: DataFrame):
     snowflake_config = generate_snowflake_config()
     table_name = "a" + str(uuid.uuid4()).replace("-", "_")
     with connect_snowflake(snowflake_config) as con:
-        contents.to_sql(name=table_name, con=con, index=False, schema="public")
+        contents.to_sql(name=table_name, con=con, index=False, schema="hackernews")
     try:
         yield table_name
     finally:
         with connect_snowflake(snowflake_config) as conn:
-            conn.execute(f"drop table public.{table_name}")
+            conn.execute(f"drop table hackernews.{table_name}")
 
 
 def test_handle_output_then_load_input():
@@ -39,8 +46,14 @@ def test_handle_output_then_load_input():
     contents1 = DataFrame([{"col1": "a", "col2": 1}])  # just to get the types right
     contents2 = DataFrame([{"col1": "b", "col2": 2}])  # contents we will insert
     with temporary_snowflake_table(contents1) as temp_table_name:
-        metadata = {"table": f"public.{temp_table_name}", "logical_asset_key": AssetKey("table")}
-        output_context = build_output_context(metadata=metadata, resource_config=snowflake_config)
+
+        @solid(output_defs=[OutputDefinition(asset_key=AssetKey(temp_table_name))])
+        def my_solid():
+            pass
+
+        output_context = build_output_context(
+            name="result", solid_def=my_solid, resource_config=snowflake_config
+        )
 
         list(snowflake_manager.handle_output(output_context, contents2))  # exhaust the iterator
 

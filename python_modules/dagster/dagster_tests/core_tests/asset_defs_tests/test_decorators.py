@@ -21,7 +21,7 @@ def test_asset_with_inputs():
     assert isinstance(my_asset, SolidDefinition)
     assert len(my_asset.output_defs) == 1
     assert len(my_asset.input_defs) == 1
-    assert my_asset.input_defs[0].metadata["logical_asset_key"] == AssetKey("arg1")
+    assert my_asset.input_defs[0].get_asset_key(None) == AssetKey("arg1")
 
 
 def test_asset_with_inputs_and_namespace():
@@ -32,9 +32,7 @@ def test_asset_with_inputs_and_namespace():
     assert isinstance(my_asset, SolidDefinition)
     assert len(my_asset.output_defs) == 1
     assert len(my_asset.input_defs) == 1
-    assert my_asset.input_defs[0].metadata["logical_asset_key"] == AssetKey(
-        ["my_namespace", "arg1"]
-    )
+    assert my_asset.input_defs[0].get_asset_key(None) == AssetKey(["my_namespace", "arg1"])
 
 
 def test_asset_with_context_arg():
@@ -54,7 +52,7 @@ def test_asset_with_context_arg_and_dep():
 
     assert isinstance(my_asset, SolidDefinition)
     assert len(my_asset.input_defs) == 1
-    assert my_asset.input_defs[0].metadata["logical_asset_key"] == AssetKey("arg1")
+    assert my_asset.input_defs[0].get_asset_key(None) == AssetKey("arg1")
 
 
 def test_input_namespace():
@@ -62,7 +60,7 @@ def test_input_namespace():
     def my_asset(arg1):
         assert arg1
 
-    assert my_asset.input_defs[0].metadata["logical_asset_key"] == AssetKey(["abc", "arg1"])
+    assert my_asset.input_defs[0].get_asset_key(None) == AssetKey(["abc", "arg1"])
 
 
 def test_input_metadata():
@@ -70,7 +68,7 @@ def test_input_metadata():
     def my_asset(arg1):
         assert arg1
 
-    assert my_asset.input_defs[0].metadata == {"logical_asset_key": AssetKey("arg1"), "abc": 123}
+    assert my_asset.input_defs[0].metadata == {"abc": 123}
 
 
 def test_unknown_in():
@@ -100,12 +98,6 @@ def test_all_fields():
 
 
 def test_banned_metadata_keys():
-    with pytest.raises(DagsterInvalidDefinitionError):
-
-        @asset(metadata={"logical_asset_key": 123})
-        def _asset():
-            pass
-
     with pytest.raises(DagsterInvalidDefinitionError):
 
         @asset(metadata={"namespace": 123})

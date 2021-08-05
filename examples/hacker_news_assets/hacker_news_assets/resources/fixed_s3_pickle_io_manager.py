@@ -25,9 +25,6 @@ class FixedS3PickleIOManager(IOManager):
         context.log.debug("created S3 client")
         client.put_object(Bucket=bucket, Key=key, Body=pickled_obj)
 
-    def get_output_asset_key(self, context):
-        return context.metadata["logical_asset_key"]
-
 
 @io_manager(config_schema={"bucket": str})
 def fixed_s3_pickle_io_manager(_) -> FixedS3PickleIOManager:

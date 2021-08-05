@@ -11,7 +11,6 @@ from dagster.utils.merger import merge_dicts
 
 from .asset_in import AssetIn
 
-LOGICAL_ASSET_KEY = "logical_asset_key"
 NAMESPACE = "namespace"
 
 
@@ -49,11 +48,6 @@ def asset(
         if NAMESPACE in metadata:
             raise DagsterInvalidDefinitionError(
                 f"'{NAMESPACE}' is a reserved metadata key, but was included in the asset metadata"
-            )
-
-        if LOGICAL_ASSET_KEY in metadata:
-            raise DagsterInvalidDefinitionError(
-                f"'{LOGICAL_ASSET_KEY}' is a reserved metadata key, but was included in the asset metadata"
             )
 
     def inner(fn: Callable[..., Any]) -> SolidDefinition:
@@ -109,24 +103,23 @@ class _Asset:
         ins: Dict[str, In] = {}
         for input_param_name in input_param_names:
             if input_param_name in self.ins:
-                extra_metadata = self.ins[input_param_name].metadata or {}
+                metadata = self.ins[input_param_name].metadata or {}
                 namespace = self.ins[input_param_name].namespace
             else:
-                extra_metadata = {}
+                metadata = {}
                 namespace = None
 
             asset_key = AssetKey(
                 list(filter(None, [namespace or self.namespace, input_param_name]))
             )
-            metadata = merge_dicts({LOGICAL_ASSET_KEY: asset_key}, extra_metadata)
 
-            ins[input_param_name] = In(metadata=metadata, root_manager_key="root_manager")
+            ins[input_param_name] = In(
+                metadata=metadata, root_manager_key="root_manager", asset_key=asset_key
+            )
 
         out = Out(
-            metadata=merge_dicts(
-                {LOGICAL_ASSET_KEY: AssetKey(list(filter(None, [self.namespace, asset_name])))},
-                self.metadata or {},
-            ),
+            asset_key=AssetKey(list(filter(None, [self.namespace, asset_name]))),
+            metadata=self.metadata or {},
             io_manager_key=self.io_manager_key,
         )
         return _Op(

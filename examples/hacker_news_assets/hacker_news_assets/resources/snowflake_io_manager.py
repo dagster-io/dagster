@@ -1,9 +1,17 @@
 import os
 import textwrap
 from contextlib import contextmanager
-from typing import Any, Dict, Union
+from typing import Optional, Sequence, Union
 
-from dagster import EventMetadataEntry, InputContext, OutputContext, StringSource, io_manager
+from dagster import (
+    AssetKey,
+    EventMetadataEntry,
+    InputContext,
+    OutputContext,
+    StringSource,
+    check,
+    io_manager,
+)
 from dagster.core.storage.io_manager import IOManager
 from hacker_news_assets.resources.parquet_pointer import ParquetPointer
 from pandas import DataFrame, read_sql
@@ -70,16 +78,10 @@ class SnowflakeIOManager(IOManager):
     This IOManager can handle Outputs that are either pandas DataFrames or ParquetPointers (which
     are just paths that spark can interpret which store some parquet files). In either case, the
     data will be written to a Snowflake table specified by metadata on the relevant OutputDefinition.
-
-    Because we specify a get_output_asset_key() function, AssetMaterialization events will be
-    automatically created each time an output is processed with this IOManager.
     """
 
     def __init__(self, config):
         self.config = config
-
-    def get_output_asset_key(self, context: OutputContext):
-        return context.metadata["logical_asset_key"]
 
     def handle_output(self, context: OutputContext, obj: Union[ParquetPointer, DataFrame]):
 
@@ -100,7 +102,7 @@ class SnowflakeIOManager(IOManager):
 
         connector.paramstyle = "pyformat"
 
-        schema, table = "hackernews", context.metadata["logical_asset_key"].path[-1]
+        schema, table = "hackernews", context.asset_key.path[-1]
         with connect_snowflake(config=self.config, schema=schema) as con:
             with_uppercase_cols = obj.rename(str.upper, copy=False, axis="columns")
             with_uppercase_cols.to_sql(
@@ -137,39 +139,37 @@ class SnowflakeIOManager(IOManager):
             for field in parquet_pointer.schema.fields
         )
         return f"""
-        CREATE TABLE IF NOT EXISTS hackernews.{context.metadata["logical_asset_key"].path[-1]} ({column_str});
+        CREATE TABLE IF NOT EXISTS hackernews.{context.asset_key.path[-1]} ({column_str});
         """
 
     def _get_copy_statement(self, context: OutputContext, parquet_pointer: ParquetPointer):
         # need to expand out the single parquet value into separate columns
         select_str = ",".join(f'$1:"{field.name}"' for field in parquet_pointer.schema.fields)
         return f"""
-        COPY INTO hackernews.{context.metadata["logical_asset_key"].path[-1]} FROM ( SELECT {select_str} FROM @tmp_s3_stage )
+        COPY INTO hackernews.{context.asset_key.path[-1]} FROM ( SELECT {select_str} FROM @tmp_s3_stage )
             PATTERN='.*parquet';
         """
 
     def _get_cleanup_statement(self, context: OutputContext):
         return f"""
-        DELETE FROM hackernews.{context.metadata["logical_asset_key"].path[-1]} WHERE true;
+        DELETE FROM hackernews.{context.asset_key.path[-1]} WHERE true;
         """
 
-    def _get_select_statement(self, _resources, metadata: Dict[str, Any]):
-        col_str = ", ".join(f'"{c}"' for c in metadata["columns"]) if "columns" in metadata else "*"
+    def _get_select_statement(
+        self, _resources, asset_key: AssetKey, columns: Optional[Sequence[str]]
+    ):
+        col_str = ", ".join(f'"{c}"' for c in columns) if columns else "*"
         return f"""
-        SELECT {col_str} FROM hackernews.{metadata["logical_asset_key"].path[-1]};
+        SELECT {col_str} FROM hackernews.{asset_key.path[-1]};
         """
 
     def load_input(self, context: InputContext) -> DataFrame:
         resources = context.resources
-        if context.upstream_output is not None:
-            # loading from an upstream output
-            metadata = context.upstream_output.metadata
-        else:
-            # loading as a root input
-            metadata = context.metadata
         with connect_snowflake(config=self.config) as con:
             result = read_sql(
-                sql=self._get_select_statement(resources, metadata),
+                sql=self._get_select_statement(
+                    resources, context.upstream_output.asset_key, context.metadata.get("columns")
+                ),
                 con=con,
             )
             result.columns = map(str.lower, result.columns)
@@ -191,14 +191,20 @@ class TimePartitionedSnowflakeIOManager(SnowflakeIOManager):
 
     def _get_cleanup_statement(self, context: OutputContext):
         return f"""
-        DELETE FROM hackernews.{context.metadata["logical_asset_key"].path[-1]} WHERE
+        DELETE FROM hackernews.{context.asset_key.path[-1]} WHERE
             TO_TIMESTAMP("time") BETWEEN
                 '{context.resources.partition_start}' AND '{context.resources.partition_end}';
         """
 
-    def _get_select_statement(self, resources, metadata: Dict[str, Any]):
+    def _get_select_statement(
+        self,
+        resources,
+        asset_key: AssetKey,
+        columns: Optional[Sequence[str]],
+    ):
+        check.invariant(columns is None)
         return f"""
-        SELECT * FROM hackernews.{metadata["logical_asset_key"].path[-1]} WHERE
+        SELECT * FROM hackernews.{asset_key.path[-1]} WHERE
             TO_TIMESTAMP("time") BETWEEN
                 '{resources.partition_start}' AND '{resources.partition_end}';
         """
