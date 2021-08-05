@@ -1,5 +1,45 @@
 # Changelog
 
+# 0.12.5
+
+### Bugfixes
+
+- Fixed tick display in the sensor/schedule timeline view in Dagit.
+- Changed the `dagster sensor list` and `dagster schedule list` CLI commands to include schedules and sensors that have never been turned on.
+- Fixed the backfill progress stats in Dagit which incorrectly capped the number of successful/failed runs.
+- Improved query performance in Dagit on pipeline (or job) views, schedule views, and schedules list view by loading partition set data on demand instead of by default.
+- Fixed an issue in Dagit where re-executing a pipeline that shares an identical name and graph to a pipeline in another repository could lead to the wrong pipeline being executed.
+- Fixed an issue in Dagit where loading a very large DAG in the pipeline overview could sometimes lead to a render loop that repeated the same GraphQL query every few seconds, causing an endless loading state and never rendering the DAG.
+- Fixed an issue with `execute_in_process` where providing default executor config to a job would cause config errors.
+- Fixed an issue with default config for jobs where using an `ops` config entry in place of `solids` would cause a config error.
+- Dynamic outputs are now properly supported while using `adls2_io_manager` 
+- `ModeDefinition` now validates the keys of `resource_defs` at definition time.
+- `Failure` exceptions no longer bypass the `RetryPolicy` if one is set.
+
+### Community Contributions
+
+- Added `serviceAccount.name` to the user deployment Helm subchart and schema, thanks [@jrouly](https://github.com/jrouly)!
+
+### Experimental
+
+- To account for ECS’ eventual consistency model, the `EcsRunLauncher` will now exponentially backoff certain requests for up to a minute while waiting for ECS to reach a consistent state.
+- Memoization is now available from all execution entrypoints. This means that a pipeline tagged for use with memoization can be launched from dagit, the `launch` CLI, and other modes of external execution, whereas before, memoization was only available via `execute_pipeline` and the `execute` CLI.
+- Memoization now works with root input managers. In order to use a root input manager in a pipeline that utilizes memoization, provide a string value to the `version` argument on the decorator:
+```python
+from dagster import root_input_manager
+        
+@root_input_manager(version="foo")
+def my_root_manager(_):
+    pass
+```
+- The `versioned_fs_io_manager` now defaults to using the storage directory of the instance as a base directory.
+- `GraphDefinition.to_job` now accepts a tags dictionary with non-string values - which will be serialized to JSON.  This makes job tags work similarly to pipeline tags and solid tags.
+
+### Documentation
+
+- The guide for migrating to the experimental graph, job, and op APIs now includes an example of how to migrate a pipeline with a composite solid.
+
+
 # 0.12.4
 
 ### New
