@@ -1,9 +1,11 @@
+import os
 import tempfile
 from contextlib import contextmanager
 
 from dagster import LocalFileHandle, ModeDefinition, execute_pipeline, pipeline, solid
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.file_manager import LocalFileManager, local_file_manager
+from dagster.core.test_utils import instance_for_test
 from dagster.utils.temp_file import get_temp_file_handle_with_data
 
 
@@ -64,5 +66,25 @@ def test_basic_file_manager_execute():
         result = execute_pipeline(
             pipe, run_config={"resources": {"file_manager": {"config": {"base_dir": temp_dir}}}}
         )
+        assert result.success
+        assert called["yup"]
+
+
+def test_basic_file_manager_base_dir():
+    called = {}
+
+    @solid(required_resource_keys={"file_manager"})
+    def file_handle(context):
+        assert context.resources.file_manager.base_dir == os.path.join(
+            context.instance.storage_directory(), "file_manager"
+        )
+        called["yup"] = True
+
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"file_manager": local_file_manager})])
+    def pipe():
+        return file_handle()
+
+    with instance_for_test() as instance:
+        result = execute_pipeline(pipe, instance=instance)
         assert result.success
         assert called["yup"]
