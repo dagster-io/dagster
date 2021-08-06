@@ -6,7 +6,7 @@ for that.
 """
 
 from collections import defaultdict, namedtuple
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple, cast
 
 from dagster import check
 from dagster.core.asset_defs.decorators import LOGICAL_ASSET_KEY
@@ -436,7 +436,7 @@ def external_asset_graph_data_from_def(pipelines: List[PipelineDefinition]):
                     if isinstance(output_def.metadata[LOGICAL_ASSET_KEY], AssetKey):
                         node_asset_keys.add(output_def.metadata[LOGICAL_ASSET_KEY])
                         node_defs_by_asset_key[output_def.metadata[LOGICAL_ASSET_KEY]].append(
-                            tuple([node_def, pipeline])
+                            (node_def, pipeline)
                         )
                     else:
                         check.failed(
