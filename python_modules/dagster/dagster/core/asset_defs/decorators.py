@@ -10,8 +10,6 @@ from dagster.core.errors import DagsterInvalidDefinitionError
 
 from .asset_in import AssetIn
 
-NAMESPACE = "namespace"
-
 
 def asset(
     name: Optional[str] = None,
@@ -42,12 +40,6 @@ def asset(
     """
     if callable(name):
         return _Asset()(name)
-
-    if metadata:
-        if NAMESPACE in metadata:
-            raise DagsterInvalidDefinitionError(
-                f"'{NAMESPACE}' is a reserved metadata key, but was included in the asset metadata"
-            )
 
     def inner(fn: Callable[..., Any]) -> SolidDefinition:
         return _Asset(
@@ -84,37 +76,6 @@ class _Asset:
 
     def __call__(self, fn: Callable):
         asset_name = self.name or fn.__name__
-        params = get_function_params(fn)
-        is_context_provided = len(params) > 0 and params[0].name in get_valid_name_permutations(
-            "context"
-        )
-        input_param_names = [
-            input_param.name for input_param in (params[1:] if is_context_provided else params)
-        ]
-
-        for in_key in self.ins.keys():
-            if in_key not in input_param_names:
-                raise DagsterInvalidDefinitionError(
-                    f"Key '{in_key}' in provided ins dict does not correspond to any of the names "
-                    "of the arguments to the decorated function"
-                )
-
-        ins: Dict[str, In] = {}
-        for input_param_name in input_param_names:
-            if input_param_name in self.ins:
-                metadata = self.ins[input_param_name].metadata or {}
-                namespace = self.ins[input_param_name].namespace
-            else:
-                metadata = {}
-                namespace = None
-
-            asset_key = AssetKey(
-                list(filter(None, [namespace or self.namespace, input_param_name]))
-            )
-
-            ins[input_param_name] = In(
-                metadata=metadata, root_manager_key="root_manager", asset_key=asset_key
-            )
 
         out = Out(
             asset_key=AssetKey(list(filter(None, [self.namespace, asset_name]))),
@@ -124,7 +85,94 @@ class _Asset:
         return _Op(
             name=asset_name,
             description=self.description,
-            ins=ins,
+            ins=build_asset_ins(fn, self.namespace, self.ins),
             out=out,
             required_resource_keys=self.required_resource_keys,
         )(fn)
+
+
+def multi_asset(
+    name: Optional[str] = None,
+    outs: Optional[Dict[str, Out]] = None,
+    ins: Optional[Mapping[str, AssetIn]] = None,
+    description: Optional[str] = None,
+    required_resource_keys: Optional[Set[str]] = None,
+) -> Callable[[Callable[..., Any]], SolidDefinition]:
+    if callable(name):
+        return _Asset()(name)
+
+    def inner(fn: Callable[..., Any]) -> SolidDefinition:
+        return _MultiAsset(
+            name=name,
+            outs=outs,
+            ins=ins,
+            description=description,
+            required_resource_keys=required_resource_keys,
+        )(fn)
+
+    return inner
+
+
+class _MultiAsset:
+    def __init__(
+        self,
+        name: Optional[str] = None,
+        outs: Optional[Dict[str, Out]] = None,
+        ins: Optional[Mapping[str, AssetIn]] = None,
+        description: Optional[str] = None,
+        required_resource_keys: Optional[Set[str]] = None,
+        io_manager_key: Optional[str] = None,
+    ):
+        self.name = name
+        self.ins = ins or {}
+        self.outs = outs
+        self.description = description
+        self.required_resource_keys = required_resource_keys
+        self.io_manager_key = io_manager_key
+
+    def __call__(self, fn: Callable):
+        asset_name = self.name or fn.__name__
+
+        return _Op(
+            name=asset_name,
+            description=self.description,
+            ins=build_asset_ins(fn, None, self.ins),
+            out=self.outs,
+            required_resource_keys=self.required_resource_keys,
+        )(fn)
+
+
+def build_asset_ins(
+    fn: Callable, asset_namespace: Optional[str], asset_ins: Mapping[str, AssetIn]
+) -> Dict[str, In]:
+    params = get_function_params(fn)
+    is_context_provided = len(params) > 0 and params[0].name in get_valid_name_permutations(
+        "context"
+    )
+    input_param_names = [
+        input_param.name for input_param in (params[1:] if is_context_provided else params)
+    ]
+
+    for in_key in asset_ins.keys():
+        if in_key not in input_param_names:
+            raise DagsterInvalidDefinitionError(
+                f"Key '{in_key}' in provided ins dict does not correspond to any of the names "
+                "of the arguments to the decorated function"
+            )
+
+    ins: Dict[str, In] = {}
+    for input_param_name in input_param_names:
+        if input_param_name in asset_ins:
+            metadata = asset_ins[input_param_name].metadata or {}
+            namespace = asset_ins[input_param_name].namespace
+        else:
+            metadata = {}
+            namespace = None
+
+        asset_key = AssetKey(list(filter(None, [namespace or asset_namespace, input_param_name])))
+
+        ins[input_param_name] = In(
+            metadata=metadata, root_manager_key="root_manager", asset_key=asset_key
+        )
+
+    return ins
