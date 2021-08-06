@@ -1,7 +1,14 @@
 import pytest
 import responses
 from dagster import ModeDefinition, execute_solid, solid
-from dagster_dbt import DbtRpcClient, dbt_rpc_resource, local_dbt_rpc_resource
+from dagster_dbt import (
+    DbtRpcOutput,
+    DbtRpcClient,
+    DbtRpcSyncClient,
+    dbt_rpc_resource,
+    local_dbt_rpc_resource,
+    dbt_rpc_sync_resource,
+)
 
 
 def test_url(client):
@@ -111,3 +118,79 @@ def test_local_dbt_rpc_resource():
 
     execute_solid(a_solid, ModeDefinition(resource_defs={"dbt_rpc": local_dbt_rpc_resource}))
     assert it["ran"]
+
+
+def test_dbt_rpc_sync_resource():
+    it = {}
+
+    @solid(required_resource_keys={"dbt_rpc"})
+    def a_solid(context):
+        assert isinstance(context.resources.dbt_rpc, DbtRpcSyncClient)
+        assert context.resources.dbt_rpc.host == "<default host>"
+        assert context.resources.dbt_rpc.port == 8580
+        it["ran"] = True
+
+    execute_solid(
+        a_solid,
+        ModeDefinition(resource_defs={"dbt_rpc": dbt_rpc_sync_resource}),
+        None,
+        None,
+        {"resources": {"dbt_rpc": {"config": {"host": "<default host>"}}}},
+    )
+    assert it["ran"]
+
+
+def test_dbt_rpc_sync_resource_2(dbt_rpc_server):
+    # it = {}
+
+    @solid(required_resource_keys={"dbt_rpc"})
+    def a_solid(context):
+        assert isinstance(context.resources.dbt_rpc, DbtRpcSyncClient)
+        # assert context.resources.dbt_rpc.host == "<default host>"
+        # assert context.resources.dbt_rpc.port == 8580
+
+        out = context.resources.dbt_rpc.cli("run")
+
+        print("lmaoooo")
+        print(out)
+        return out
+        # it["ran"] = True
+
+    result = execute_solid(
+        a_solid,
+        ModeDefinition(resource_defs={"dbt_rpc": dbt_rpc_sync_resource}),
+        None,
+        None,
+        {"resources": {"dbt_rpc": {"config": {"host": "localhost"}}}},
+    )
+
+    assert result.success
+    assert isinstance(result.output_value("result"), DbtRpcOutput)
+
+
+### passing test reference function is successfully obtaining request token
+# def test_dbt_rpc_resource_2(dbt_rpc_server):
+#     response = {}
+
+#     @solid(required_resource_keys={"dbt_rpc"})
+#     def a_solid(context):
+#         assert isinstance(context.resources.dbt_rpc, DbtRpcClient)
+#         # assert context.resources.dbt_rpc.host == "<default host>"
+#         # assert context.resources.dbt_rpc.port == 8580
+
+#         response["response"] = context.resources.dbt_rpc.cli("run")
+#         # print("wya response")
+#         # print(str(response.__dict__))
+#         # response.result.get("request_token")
+
+#     # use this fn instead:
+#     # dpt_rpc_resource.configured(dictionary)
+#     execute_solid(
+#         a_solid,
+#         ModeDefinition(resource_defs={"dbt_rpc": dbt_rpc_resource}),
+#         None,
+#         None,
+#         {"resources": {"dbt_rpc": {"config": {"host": "localhost"}}}},
+#     )
+#     # assert it["ran"]
+#     assert response["response"] != None

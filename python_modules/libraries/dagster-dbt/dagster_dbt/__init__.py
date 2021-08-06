@@ -25,6 +25,7 @@ from .errors import (
 )
 from .rpc import (
     DbtRpcClient,
+    DbtRpcSyncClient,
     DbtRpcOutput,
     create_dbt_rpc_run_sql_solid,
     dbt_rpc_compile_sql,
@@ -43,6 +44,7 @@ from .rpc import (
     dbt_rpc_snapshot_freshness_and_wait,
     dbt_rpc_test,
     dbt_rpc_test_and_wait,
+    dbt_rpc_sync_resource,
     local_dbt_rpc_resource,
 )
 from .types import DbtOutput
