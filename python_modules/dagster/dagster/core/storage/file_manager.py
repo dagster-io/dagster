@@ -162,8 +162,8 @@ class FileManager(ABC):  # pylint: disable=no-init
 def local_file_manager(init_context):
     """FileManager that provides abstract access to a local filesystem.
 
-    By default, files will be stored in the directory specified by local_artifact_storage in
-    your dagster.yaml file (which will be a temporary directory if not explicitly set).
+    By default, files will be stored in `<local_artifact_storage>/storage/file_manager` where
+    `<local_artifact_storage>` can be configured the ``dagster.yaml`` file in ``$DAGSTER_HOME``.
 
     Implements the :py:class:`~dagster.core.storage.file_manager.FileManager` API.
 
