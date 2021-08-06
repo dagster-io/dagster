@@ -442,17 +442,17 @@ def external_asset_graph_data_from_def(pipelines: List[PipelineDefinition]):
 
             for input_def in node_def.input_defs:
                 try:
-                    asset_key = output_def.get_asset_key(None)
+                    upstream_asset_key = input_def.get_asset_key(None)
                 except Exception:  # pylint: disable=broad-except
-                    asset_key = None
+                    upstream_asset_key = None
 
                 if asset_key:
                     for node_asset_key in node_asset_keys:
                         deps[node_asset_key][input_def.name] = ExternalAssetDependency(
-                            upstream_asset_key=asset_key,
+                            upstream_asset_key=upstream_asset_key,
                             input_name=input_def.name,
                         )
-                        all_upstream_asset_keys.add(asset_key)
+                        all_upstream_asset_keys.add(upstream_asset_key)
 
     source_asset_keys = all_upstream_asset_keys.difference(node_defs_by_asset_key.keys())
     asset_defs = [

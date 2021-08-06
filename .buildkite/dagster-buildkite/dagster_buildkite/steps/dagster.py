@@ -441,6 +441,7 @@ def examples_tests():
         "dbt_example",
         "deploy_docker",
         "hacker_news",
+        "hacker_news_assets",
     ]
 
     examples_root = os.path.join(GIT_REPO_ROOT, "examples")

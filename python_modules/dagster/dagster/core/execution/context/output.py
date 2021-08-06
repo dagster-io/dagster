@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from dagster.core.execution.context.system import StepExecutionContext
     from dagster.core.definitions.resource import Resources
     from dagster.core.types.dagster_type import DagsterType
-    from dagster.core.definitions import SolidDefinition, PipelineDefinition, ModeDefinition
+    from dagster.core.definitions import PipelineDefinition, ModeDefinition
     from dagster.core.log_manager import DagsterLogManager
     from dagster.core.system_config.objects import ResolvedRunConfig
     from dagster.core.execution.plan.plan import ExecutionPlan

@@ -7,7 +7,6 @@ from dagster.core.definitions.input import In
 from dagster.core.definitions.output import Out
 from dagster.core.definitions.solid import SolidDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.utils.merger import merge_dicts
 
 from .asset_in import AssetIn
 

@@ -87,39 +87,39 @@ def build_solid_deps(
     assets: List[NodeDefinition], source_paths: AbstractSet[Tuple[str]]
 ) -> Dict[Union[str, SolidInvocation], Dict[str, IDependencyDefinition]]:
     solids_by_logical_asset: Dict[AssetKey, NodeDefinition] = {}
-    for solid in assets:
-        n_outputs = len(solid.output_defs)
-        if len(solid.output_defs) != 1:
+    for asset_solid in assets:
+        n_outputs = len(asset_solid.output_defs)
+        if len(asset_solid.output_defs) != 1:
             raise DagsterInvalidDefinitionError(
-                f"Assets must have exactly one output, but '{solid.name}' has {n_outputs}"
+                f"Assets must have exactly one output, but '{asset_solid.name}' has {n_outputs}"
             )
 
-        output_def = solid.output_defs[0]
-        logical_asset = get_asset_key(output_def, f"Output of asset '{solid.name}'")
+        output_def = asset_solid.output_defs[0]
+        logical_asset = get_asset_key(output_def, f"Output of asset '{asset_solid.name}'")
 
         if logical_asset in solids_by_logical_asset:
             prev_solid = solids_by_logical_asset[logical_asset].name
             raise DagsterInvalidDefinitionError(
-                f"Two solids produce the same logical asset: '{solid.name}' and '{prev_solid.name}"
+                f"Two solids produce the same logical asset: '{asset_solid.name}' and '{prev_solid.name}"
             )
 
-        solids_by_logical_asset[logical_asset] = solid
+        solids_by_logical_asset[logical_asset] = asset_solid
 
     solid_deps: Dict[Union[str, SolidInvocation], Dict[str, IDependencyDefinition]] = {}
-    for solid in assets:
-        solid_deps[solid.name] = {}
-        for input_def in solid.input_defs:
+    for asset_solid in assets:
+        solid_deps[asset_solid.name] = {}
+        for input_def in asset_solid.input_defs:
             logical_asset = get_asset_key(
-                input_def, f"Input '{input_def.name}' of asset '{solid.name}'"
+                input_def, f"Input '{input_def.name}' of asset '{asset_solid.name}'"
             )
 
             if logical_asset in solids_by_logical_asset:
-                solid_deps[solid.name][input_def.name] = DependencyDefinition(
+                solid_deps[asset_solid.name][input_def.name] = DependencyDefinition(
                     solids_by_logical_asset[logical_asset].name, "result"
                 )
             elif logical_asset not in source_paths:
                 raise DagsterInvalidDefinitionError(
-                    f"Logical input asset '{logical_asset}' for asset '{solid.name}' is not "
+                    f"Logical input asset '{logical_asset}' for asset '{asset_solid.name}' is not "
                     "produced by any of the provided asset solids and is not one of the provided "
                     "sources"
                 )
