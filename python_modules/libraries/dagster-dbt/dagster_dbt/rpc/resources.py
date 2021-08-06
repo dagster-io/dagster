@@ -446,13 +446,12 @@ class DbtRpcSyncClient(DbtRpcClient):
         """Polls the dbt RPC server for the status of a request until the state is ``success``."""
 
         logs_start = 0
-        interval = 1  # get some interval from context
+        interval = 1  # do we need to allow users to pass in interval?
 
         elapsed_time = -1
         current_state = None
 
         while True:
-            print("wot")
             # Poll for the dbt RPC request.
             # need to figure out the logging stuff here
             out = super().poll(
@@ -511,11 +510,9 @@ class DbtRpcSyncClient(DbtRpcClient):
             Response: the HTTP response from the dbt RPC server.
         """
 
-        explicit_params = dict(models=models, exclude=exclude)
-        params = self._format_params({**explicit_params, **kwargs})
-        data = self._default_request(method="compile", params=params)
-
-        return self._post(data=json.dumps(data))
+        out = super().compile(models, exclude, **kwargs)
+        request_token = out.result.get("request_token")
+        return self._poll_rpc_until_complete(request_token)
 
     def run(self, models: List[str] = None, exclude: List[str] = None, **kwargs) -> DbtRpcOutput:
         """Sends a request with the method ``run`` to the dbt RPC server, and returns the response.
@@ -529,11 +526,10 @@ class DbtRpcSyncClient(DbtRpcClient):
         Returns:
             Response: the HTTP response from the dbt RPC server.
         """
-        explicit_params = dict(models=models, exclude=exclude)
-        params = self._format_params({**explicit_params, **kwargs})
-        data = self._default_request(method="run", params=params)
 
-        return self._post(data=json.dumps(data))
+        out = super().run(models, exclude, **kwargs)
+        request_token = out.result.get("request_token")
+        return self._poll_rpc_until_complete(request_token)
 
     def snapshot(
         self, select: List[str] = None, exclude: List[str] = None, **kwargs
@@ -549,11 +545,10 @@ class DbtRpcSyncClient(DbtRpcClient):
         Returns:
             Response: the HTTP response from the dbt RPC server.
         """
-        explicit_params = dict(select=select, exclude=exclude)
-        params = self._format_params({**explicit_params, **kwargs})
-        data = self._default_request(method="snapshot", params=params)
 
-        return self._post(data=json.dumps(data))
+        out = super().snapshot(select, exclude, **kwargs)
+        request_token = out.result.get("request_token")
+        return self._poll_rpc_until_complete(request_token)
 
     def test(
         self,
@@ -576,11 +571,10 @@ class DbtRpcSyncClient(DbtRpcClient):
         Returns:
             Response: the HTTP response from the dbt RPC server.
         """
-        explicit_params = dict(models=models, exclude=exclude, data=data, schema=schema)
-        params = self._format_params({**explicit_params, **kwargs})
-        data = self._default_request(method="test", params=params)
 
-        return self._post(data=json.dumps(data))
+        out = super().test(models, exclude, data, schema, **kwargs)
+        request_token = out.result.get("request_token")
+        return self._poll_rpc_until_complete(request_token)
 
     def seed(
         self, show: bool = False, select: List[str] = None, exclude: List[str] = None, **kwargs
@@ -598,13 +592,10 @@ class DbtRpcSyncClient(DbtRpcClient):
         Returns:
             Response: the HTTP response from the dbt RPC server.
         """
-        data = self._default_request(method="seed")
-        data["params"] = {"show": show}
 
-        if kwargs is not None:
-            data["params"]["task_tags"] = kwargs
-
-        return self._post(data=json.dumps(data))
+        out = super().seed(show, select, exclude, **kwargs)
+        request_token = out.result.get("request_token")
+        return self._poll_rpc_until_complete(request_token)
 
     def generate_docs(
         self,
@@ -621,11 +612,12 @@ class DbtRpcSyncClient(DbtRpcClient):
             exclude (List[str], optional): the models to exclude from docs generation.
 
         """
-        explicit_params = dict(models=models, exclude=exclude)
-        params = self._format_params({**explicit_params, **kwargs})
-        data = self._default_request(method="docs.generate", params=params)
+        # Currently erroring:
+        # 2021-08-06 15:36:06 - dagster - ERROR - ephemeral_compile_solid_solid_pipeline - 1873c7f3-ea95-40dd-b7ec-31f1939a7028 - 37004 - PIPELINE_FAILURE - Execution of pipeline "ephemeral_compile_solid_solid_pipeline" failed. An exception was thrown during execution.
 
-        return self._post(data=json.dumps(data))
+        out = super().generate_docs(models, exclude, **kwargs)
+        request_token = out.result.get("request_token")
+        return self._poll_rpc_until_complete(request_token)
 
     def run_operation(
         self, macro: str, args: Optional[Dict[str, Any]] = None, **kwargs
@@ -641,11 +633,10 @@ class DbtRpcSyncClient(DbtRpcClient):
         Returns:
             Response: the HTTP response from the dbt RPC server.
         """
-        explicit_params = dict(macro=macro, args=args)
-        params = self._format_params({**explicit_params, **kwargs})
-        data = self._default_request(method="run-operation", params=params)
 
-        return self._post(data=json.dumps(data))
+        out = super().run_operation(macro, args, **kwargs)
+        request_token = out.result.get("request_token")
+        return self._poll_rpc_until_complete(request_token)
 
     def snapshot_freshness(self, select: Optional[List[str]] = None, **kwargs) -> DbtRpcOutput:
         """Sends a request with the method ``snapshot-freshness`` to the dbt RPC server, and returns

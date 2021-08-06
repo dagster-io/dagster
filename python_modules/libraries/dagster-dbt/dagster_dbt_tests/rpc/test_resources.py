@@ -140,21 +140,54 @@ def test_dbt_rpc_sync_resource():
     assert it["ran"]
 
 
-def test_dbt_rpc_sync_resource_2(dbt_rpc_server):
+# def test_dbt_rpc_sync_resource_cli(dbt_rpc_server):
+#     @solid(required_resource_keys={"dbt_rpc"})
+#     def cli_solid(context):
+#         assert isinstance(context.resources.dbt_rpc, DbtRpcSyncClient)
+#         out = context.resources.dbt_rpc.cli("run")
+#         return out
+
+#     result = execute_solid(
+#         cli_solid,
+#         ModeDefinition(
+#             resource_defs={"dbt_rpc": dbt_rpc_sync_resource.configured({"host": "localhost"})}
+#         ),
+#     )
+
+#     assert result.success
+#     assert isinstance(result.output_value("result"), DbtRpcOutput)
+
+
+# def test_dbt_rpc_sync_resource_compile(dbt_rpc_server):
+#     @solid(required_resource_keys={"dbt_rpc"})
+#     def compile_solid(context):
+#         assert isinstance(context.resources.dbt_rpc, DbtRpcSyncClient)
+#         out = context.resources.dbt_rpc.generate_docs(['sort_by_calories.sql'])
+#         return out
+
+#     result = execute_solid(
+#         compile_solid,
+#         ModeDefinition(
+#             resource_defs={"dbt_rpc": dbt_rpc_sync_resource.configured({"host": "localhost"})}
+#         ),
+#     )
+
+#     assert result.success
+#     assert isinstance(result.output_value("result"), DbtRpcOutput)
+
+
+def test_dbt_rpc_sync_resource_run_operation(dbt_rpc_server):
     @solid(required_resource_keys={"dbt_rpc"})
-    def a_solid(context):
+    def compile_solid(context):
         assert isinstance(context.resources.dbt_rpc, DbtRpcSyncClient)
-
-        out = context.resources.dbt_rpc.cli("run")
-
+        out = context.resources.dbt_rpc.run_operation('log_macro.sql', {"msg": "hello world"})
         return out
 
     result = execute_solid(
-        a_solid,
-        ModeDefinition(resource_defs={"dbt_rpc": dbt_rpc_sync_resource}),
-        None,
-        None,
-        {"resources": {"dbt_rpc": {"config": {"host": "localhost"}}}},
+        compile_solid,
+        ModeDefinition(
+            resource_defs={"dbt_rpc": dbt_rpc_sync_resource.configured({"host": "localhost"})}
+        ),
     )
 
     assert result.success
