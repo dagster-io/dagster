@@ -484,7 +484,8 @@ class EventMetadata:
                 yield AssetMaterialization(
                     asset_key="my_dataset",
                     metadata={
-                        "size (bytes)": EventMetadata.float(calculate_bytes(df)),
+                        "class": EventMetadata.python_artifact(MyClass),
+                        "function": EventMetadata.python_artifact(my_function),
                     }
                 )
 
