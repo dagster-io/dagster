@@ -3,14 +3,7 @@ import textwrap
 from contextlib import contextmanager
 from typing import Any, Dict, Union
 
-from dagster import (
-    AssetKey,
-    EventMetadataEntry,
-    InputContext,
-    OutputContext,
-    StringSource,
-    io_manager,
-)
+from dagster import EventMetadataEntry, InputContext, OutputContext, StringSource, io_manager
 from dagster.core.storage.io_manager import IOManager
 from hacker_news_assets.resources.parquet_pointer import ParquetPointer
 from pandas import DataFrame, read_sql
@@ -192,9 +185,6 @@ class TimePartitionedSnowflakeIOManager(SnowflakeIOManager):
     This is useful for pipelines that run on a schedule, updating each hour (or day, etc.) with new
     data.
     """
-
-    def __init__(self, config):
-        super(TimePartitionedSnowflakeIOManager, self).__init__(config)
 
     def get_output_asset_partitions(self, context: OutputContext):
         return [context.resources.partition_start]

@@ -6,7 +6,7 @@ for that.
 """
 
 from collections import defaultdict, namedtuple
-from typing import Dict, List, Optional, Set, Tuple, cast
+from typing import Dict, List, Optional, Set, Tuple
 
 from dagster import check
 from dagster.core.asset_defs.decorators import LOGICAL_ASSET_KEY
