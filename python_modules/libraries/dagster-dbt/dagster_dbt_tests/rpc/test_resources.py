@@ -141,20 +141,13 @@ def test_dbt_rpc_sync_resource():
 
 
 def test_dbt_rpc_sync_resource_2(dbt_rpc_server):
-    # it = {}
-
     @solid(required_resource_keys={"dbt_rpc"})
     def a_solid(context):
         assert isinstance(context.resources.dbt_rpc, DbtRpcSyncClient)
-        # assert context.resources.dbt_rpc.host == "<default host>"
-        # assert context.resources.dbt_rpc.port == 8580
 
         out = context.resources.dbt_rpc.cli("run")
 
-        print("lmaoooo")
-        print(out)
         return out
-        # it["ran"] = True
 
     result = execute_solid(
         a_solid,
