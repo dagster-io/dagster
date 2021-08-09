@@ -198,34 +198,34 @@ def _dm_solid_compute(name, notebook_path, output_notebook=None, asset_key_prefi
                     )
 
                 except Exception as ex:  # pylint: disable=broad-except
-                    try:
-                        with open(executed_notebook_path, "rb") as fd:
-                            executed_notebook_file_handle = (
-                                step_context.resources.file_manager.write(
-                                    fd, mode="wb", ext="ipynb"
-                                )
-                            )
-                            executed_notebook_materialization_path = (
-                                executed_notebook_file_handle.path_desc
-                            )
-                    except Exception:  # pylint: disable=broad-except
-                        step_context.log.warning(
-                            "Error when attempting to materialize executed notebook using file manager (falling back to local): {exc}".format(
-                                exc=str(serializable_error_info_from_exc_info(sys.exc_info()))
-                            )
+                    # try:
+                    #     with open(executed_notebook_path, "rb") as fd:
+                    #         executed_notebook_file_handle = (
+                    #             step_context.resources.file_manager.write(
+                    #                 fd, mode="wb", ext="ipynb"
+                    #             )
+                    #         )
+                    #         executed_notebook_materialization_path = (
+                    #             executed_notebook_file_handle.path_desc
+                    #         )
+                    # except Exception:  # pylint: disable=broad-except
+                    step_execution_context.log.warn(
+                        "Error when attempting to materialize executed notebook: {exc}".format(
+                            exc=str(serializable_error_info_from_exc_info(sys.exc_info()))
                         )
-                        executed_notebook_materialization_path = executed_notebook_path
-
-                    yield AssetMaterialization(
-                        asset_key=(asset_key_prefix + [f"{name}_output_notebook"]),
-                        description="Location of output notebook in file manager",
-                        metadata_entries=[
-                            EventMetadataEntry.fspath(
-                                executed_notebook_materialization_path,
-                                label="executed_notebook_path",
-                            )
-                        ],
                     )
+                    # executed_notebook_materialization_path = executed_notebook_path
+
+                    # yield AssetMaterialization(
+                    #     asset_key=(asset_key_prefix + [f"{name}_output_notebook"]),
+                    #     description="Location of output notebook in file manager",
+                    #     metadata_entries=[
+                    #         EventMetadataEntry.fspath(
+                    #             executed_notebook_materialization_path,
+                    #             label="executed_notebook_path",
+                    #         )
+                    #     ],
+                    # )
 
                     # pylint: disable=no-member
                     # compat:
@@ -255,21 +255,27 @@ def _dm_solid_compute(name, notebook_path, output_notebook=None, asset_key_prefi
                         fd, mode="wb", ext="ipynb"
                     )
                     executed_notebook_materialization_path = executed_notebook_file_handle.path_desc
+
+                yield AssetMaterialization(
+                    asset_key=(asset_key_prefix + [f"{name}_output_notebook"]),
+                    description="Location of output notebook in file manager",
+                    metadata_entries=[
+                        EventMetadataEntry.fspath(executed_notebook_materialization_path)
+                    ],
+                )
+
             except Exception:  # pylint: disable=broad-except
+                # if file manager writing errors, e.g. file manager is not provided, we throw a warning
+                # and fall back to the previously stored temp executed notebook.
                 step_context.log.warning(
-                    "Error when attempting to materialize executed notebook using file manager (falling back to local): {exc}".format(
-                        exc=str(serializable_error_info_from_exc_info(sys.exc_info()))
-                    )
+                    "Error when attempting to materialize executed notebook using file manager: "
+                    f"{str(serializable_error_info_from_exc_info(sys.exc_info()))}"
+                    f"\nNow falling back to local: notebook execution was temporarily materialized at {executed_notebook_path}"
+                    "\nIf you have supplied a file manager and expect to use it for materializing the "
+                    'notebook, please include "file_manager" in the `required_resource_keys` argument '
+                    "to `define_dagstermill_solid`"
                 )
                 executed_notebook_materialization_path = executed_notebook_path
-
-            yield AssetMaterialization(
-                asset_key=(asset_key_prefix + [f"{name}_output_notebook"]),
-                description="Location of output notebook in file manager",
-                metadata_entries=[
-                    EventMetadataEntry.fspath(executed_notebook_materialization_path)
-                ],
-            )
 
             if output_notebook is not None:
                 yield Output(executed_notebook_file_handle, output_notebook)
