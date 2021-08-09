@@ -3,10 +3,7 @@ import uuid
 from contextlib import contextmanager
 
 from dagster import build_init_resource_context, build_input_context, build_output_context
-from hacker_news.resources.snowflake_io_manager import (  # pylint: disable=E0401
-    connect_snowflake,
-    snowflake_io_manager,
-)
+from hacker_news.resources.snowflake_io_manager import connect_snowflake, snowflake_io_manager
 from pandas import DataFrame
 
 
