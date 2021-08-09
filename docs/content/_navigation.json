@@ -485,6 +485,10 @@
             "path": "/_apidocs/experimental"
           },
           {
+            "title": "Versioning & Memoization",
+            "path": "/_apidocs/memoization"
+          },
+          {
             "title": "Utilities",
             "path": "/_apidocs/utilities"
           },

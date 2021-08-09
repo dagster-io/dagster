@@ -5,6 +5,7 @@ from abc import abstractmethod
 from dagster import check
 from dagster.config import Field
 from dagster.config.source import StringSource
+from dagster.core.execution.context.output import OutputContext
 from dagster.core.storage.io_manager import IOManager, io_manager
 from dagster.utils import PICKLE_PROTOCOL, mkdir_p
 from dagster.utils.backcompat import experimental
@@ -18,7 +19,7 @@ class MemoizableIOManager(IOManager):
     """
 
     @abstractmethod
-    def has_output(self, context):
+    def has_output(self, context: OutputContext) -> bool:
         """The user-defined method that returns whether data exists given the metadata.
 
         Args:

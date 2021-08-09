@@ -102,6 +102,7 @@ from dagster.core.definitions.configurable import configured
 from dagster.core.definitions.policy import Backoff, Jitter, RetryPolicy
 from dagster.core.definitions.schedule import build_schedule_context
 from dagster.core.definitions.sensor import build_sensor_context
+from dagster.core.definitions.version_strategy import VersionStrategy
 from dagster.core.errors import (
     DagsterConfigMappingFunctionError,
     DagsterError,
@@ -159,6 +160,7 @@ from dagster.core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io_
 from dagster.core.storage.init import InitIntermediateStorageContext
 from dagster.core.storage.io_manager import IOManager, IOManagerDefinition, io_manager
 from dagster.core.storage.mem_io_manager import mem_io_manager
+from dagster.core.storage.memoizable_io_manager import MemoizableIOManager
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.storage.root_input_manager import (
     RootInputManager,
@@ -172,6 +174,7 @@ from dagster.core.storage.system_storage import (
     io_manager_from_intermediate_storage,
     mem_intermediate_storage,
 )
+from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 from dagster.core.types.config_schema import (
     DagsterTypeLoader,
     DagsterTypeMaterializer,
@@ -434,4 +437,8 @@ __all__ = [
     "custom_path_fs_io_manager",
     # warnings
     "ExperimentalWarning",
+    # Versioning / Memoization
+    "VersionStrategy",
+    "MEMOIZED_RUN_TAG",
+    "MemoizableIOManager",
 ]
