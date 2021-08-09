@@ -2,12 +2,12 @@ import {gql, useQuery} from '@apollo/client';
 import {Colors, NonIdealState} from '@blueprintjs/core';
 import {pathVerticalDiagonal} from '@vx/shape';
 import * as dagre from 'dagre';
-import React, {CSSProperties} from 'react';
+import React from 'react';
 import {Link, RouteComponentProps} from 'react-router-dom';
 import styled from 'styled-components/macro';
+
 import {AssetDetails} from '../assets/AssetDetails';
 import {AssetMaterializations} from '../assets/AssetMaterializations';
-
 import {SVGViewport} from '../graph/SVGViewport';
 import {Description} from '../pipelines/Description';
 import {SidebarSection} from '../pipelines/SidebarComponents';
@@ -19,8 +19,8 @@ import {Box} from '../ui/Box';
 import {Loading} from '../ui/Loading';
 import {PageHeader} from '../ui/PageHeader';
 import {SplitPanelContainer} from '../ui/SplitPanelContainer';
-import {FontFamily} from '../ui/styles';
 import {Heading} from '../ui/Text';
+import {FontFamily} from '../ui/styles';
 
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
@@ -29,6 +29,7 @@ import {
   AssetGraphQuery_repositoryOrError_Repository_assetDefinitions_assetKey,
 } from './types/AssetGraphQuery';
 import {workspacePath} from './workspacePath';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
 
 type AssetDefinition = AssetGraphQuery_repositoryOrError_Repository_assetDefinitions;
 type AssetKey = AssetGraphQuery_repositoryOrError_Repository_assetDefinitions_assetKey;
@@ -200,10 +201,15 @@ export const AssetGraphRoot: React.FC<Props> = (props) => {
   // Show the name of the composite solid we are within (-1 is the selection, -2 is current parent)
   // or the name of the pipeline tweaked to look a bit more like a graph name.
 
+  useDocumentTitle('Workspace Asset Graph');
+
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%'}}>
       <Box padding={24}>
-        <PageHeader title={<Heading>Assets</Heading>} />
+        <PageHeader
+          title={<Heading>Asset Graph</Heading>}
+          description={`Static asset definitions and dependencies defined in ${repoAddress.name}`}
+        />
       </Box>
       <div style={{flex: 1, display: 'flex', borderTop: '1px solid #ececec', minHeight: 0}}>
         <SplitPanelContainer
