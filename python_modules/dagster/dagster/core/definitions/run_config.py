@@ -149,27 +149,20 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
         ),
     }
 
-    if creation_data.is_using_graph_job_op_apis:
-        fields["ops"] = Field(
-            define_solid_dictionary_cls(
-                solids=creation_data.solids,
-                ignored_solids=creation_data.ignored_solids,
-                dependency_structure=creation_data.dependency_structure,
-                resource_defs=creation_data.mode_definition.resource_defs,
-                is_using_graph_job_op_apis=creation_data.is_using_graph_job_op_apis,
-            )
+    nodes_field = Field(
+        define_solid_dictionary_cls(
+            solids=creation_data.solids,
+            ignored_solids=creation_data.ignored_solids,
+            dependency_structure=creation_data.dependency_structure,
+            resource_defs=creation_data.mode_definition.resource_defs,
+            is_using_graph_job_op_apis=creation_data.is_using_graph_job_op_apis,
         )
+    )
+    if creation_data.is_using_graph_job_op_apis:
+        fields["ops"] = nodes_field
         field_aliases = {"ops": "solids"}
     else:
-        fields["solids"] = Field(
-            define_solid_dictionary_cls(
-                solids=creation_data.solids,
-                ignored_solids=creation_data.ignored_solids,
-                dependency_structure=creation_data.dependency_structure,
-                resource_defs=creation_data.mode_definition.resource_defs,
-                is_using_graph_job_op_apis=creation_data.is_using_graph_job_op_apis,
-            )
-        )
+        fields["solids"] = nodes_field
         field_aliases = {"solids": "ops"}
 
     return Shape(
@@ -424,30 +417,24 @@ def define_isolid_field(
             ),
             "outputs": get_outputs_field(solid, resource_defs),
         }
+        nodes_field = Field(
+            define_solid_dictionary_cls(
+                solids=graph_def.solids,
+                ignored_solids=None,
+                dependency_structure=graph_def.dependency_structure,
+                parent_handle=handle,
+                resource_defs=resource_defs,
+                is_using_graph_job_op_apis=is_using_graph_job_op_apis,
+            )
+        )
         if is_using_graph_job_op_apis:
-            fields["ops"] = Field(
-                define_solid_dictionary_cls(
-                    solids=graph_def.solids,
-                    ignored_solids=None,
-                    dependency_structure=graph_def.dependency_structure,
-                    parent_handle=handle,
-                    resource_defs=resource_defs,
-                    is_using_graph_job_op_apis=is_using_graph_job_op_apis,
-                )
-            )
+            fields["ops"] = nodes_field
         else:
-            fields["solids"] = Field(
-                define_solid_dictionary_cls(
-                    solids=graph_def.solids,
-                    ignored_solids=None,
-                    dependency_structure=graph_def.dependency_structure,
-                    parent_handle=handle,
-                    resource_defs=resource_defs,
-                    is_using_graph_job_op_apis=is_using_graph_job_op_apis,
-                )
-            )
+            fields["solids"] = nodes_field
 
-        return solid_config_field(fields, ignored=ignored, is_using_graph_job_op_apis=is_using_graph_job_op_apis)
+        return solid_config_field(
+            fields, ignored=ignored, is_using_graph_job_op_apis=is_using_graph_job_op_apis
+        )
 
 
 def define_solid_dictionary_cls(
