@@ -22,7 +22,9 @@ def test_find_highest_calorie_cereal():
 def test_complex_pipeline():
     res = execute_pipeline(complex_pipeline)
     assert res.success
-    highest_protein_cereal = res.result_for_solid("find_highest_protein_cereal").output_value()
+    highest_protein_cereal = res.result_for_solid(
+        "find_highest_protein_cereal"
+    ).output_value()
     assert highest_protein_cereal == "Special K"
 
 
