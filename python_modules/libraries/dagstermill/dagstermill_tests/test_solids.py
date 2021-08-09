@@ -264,8 +264,7 @@ def test_error_notebook():
 
     with exec_for_test("error_pipeline", raise_on_error=False) as result:
         assert not result.success
-        assert result.step_event_list[1].event_type.value == "ASSET_MATERIALIZATION"
-        assert result.step_event_list[2].event_type.value == "STEP_FAILURE"
+        assert result.step_event_list[1].event_type.value == "STEP_FAILURE"
 
 
 @pytest.mark.nettest
