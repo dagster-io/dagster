@@ -24,9 +24,10 @@ import {AssetQuery, AssetQueryVariables} from './types/AssetQuery';
 interface Props {
   assetKey: AssetKey;
   asOf: string | null;
+  asSidebarSection?: boolean;
 }
 
-export const AssetDetails: React.FC<Props> = ({assetKey, asOf}) => {
+export const AssetDetails: React.FC<Props> = ({assetKey, asOf, asSidebarSection}) => {
   const before = React.useMemo(() => (asOf ? `${Number(asOf) + 1}` : ''), [asOf]);
   const {data, loading} = useQuery<AssetQuery, AssetQueryVariables>(ASSET_QUERY, {
     variables: {
@@ -200,7 +201,9 @@ export const AssetDetails: React.FC<Props> = ({assetKey, asOf}) => {
           }
         />
       ) : null}
-      <Subheading>{isPartitioned ? 'Latest Materialized Partition' : 'Details'}</Subheading>
+      {!asSidebarSection && (
+        <Subheading>{isPartitioned ? 'Latest Materialized Partition' : 'Details'}</Subheading>
+      )}
       {content()}
     </Group>
   );

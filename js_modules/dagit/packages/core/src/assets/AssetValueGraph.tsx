@@ -98,7 +98,7 @@ export const AssetValueGraph: React.FC<{
   };
 
   return (
-    <div style={{marginTop: 30, width: props.width}}>
+    <div style={{marginBottom: 30, width: props.width}}>
       <Group direction="column" spacing={12}>
         <Subheading>{props.label}</Subheading>
         <Line type="line" data={graphData} height={100} options={options} key={props.width} />

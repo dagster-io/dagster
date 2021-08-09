@@ -5,6 +5,8 @@ import * as dagre from 'dagre';
 import React, {CSSProperties} from 'react';
 import {Link, RouteComponentProps} from 'react-router-dom';
 import styled from 'styled-components/macro';
+import {AssetDetails} from '../assets/AssetDetails';
+import {AssetMaterializations} from '../assets/AssetMaterializations';
 
 import {SVGViewport} from '../graph/SVGViewport';
 import {Description} from '../pipelines/Description';
@@ -202,7 +204,7 @@ export const AssetGraphRoot: React.FC<Props> = (props) => {
       <Box padding={24}>
         <PageHeader title={<Heading>Assets</Heading>} />
       </Box>
-      <div style={{flex: 1, display: 'flex', borderTop: '1px solid #ececec'}}>
+      <div style={{flex: 1, display: 'flex', borderTop: '1px solid #ececec', minHeight: 0}}>
         <SplitPanelContainer
           identifier="assets"
           firstInitialPercent={70}
@@ -296,7 +298,7 @@ export const AssetGraphRoot: React.FC<Props> = (props) => {
 
 const AssetPanel = ({node}: {node: Node}) => {
   return (
-    <>
+    <div style={{overflowY: 'auto'}}>
       <Box margin={32} style={{fontWeight: 'bold', fontSize: 18}}>
         {node.assetKey.path.join(' > ')}
       </Box>
@@ -308,7 +310,14 @@ const AssetPanel = ({node}: {node: Node}) => {
           ? node.definition.jobNames.map((name) => <div key={name}>{name}</div>)
           : null}
       </SidebarSection>
-    </>
+      <SidebarSection title={'Latest Event'}>
+        <AssetDetails assetKey={node.assetKey} asOf={null} asSidebarSection />
+      </SidebarSection>
+
+      <SidebarSection title={'Graphs'}>
+        <AssetMaterializations assetKey={node.assetKey} asOf={null} asSidebarSection />
+      </SidebarSection>
+    </div>
   );
 };
 
