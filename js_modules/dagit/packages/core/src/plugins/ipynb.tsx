@@ -52,6 +52,7 @@ export class SidebarComponent extends React.Component<IPluginSidebarProps> {
               src={`${this.props.rootServerURI}/dagit/notebook?path=${encodeURIComponent(
                 notebookPath.value,
               )}`}
+              sandbox=""
               style={{border: 0, background: 'white'}}
               seamless={true}
               width="100%"
