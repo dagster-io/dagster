@@ -83,6 +83,12 @@ download_comments_and_stories_dev = build_assets_job(
     "download_comments_and_stories_dev",
     assets=assets,
     resource_defs=DEV_RESOURCES,
+    config={
+        "resources": {
+            "partition_start": {"config": "2020-12-30 00:00:00"},
+            "partition_end": {"config": "2020-12-30 01:00:00"},
+        },
+    },
     description=(
         "This job queries live HN data but does all writes locally. "
         "It is meant to be used on a local machine"
@@ -97,4 +103,13 @@ download_comments_and_stories_prod = build_assets_job(
         "This mode queries live HN data and writes to a prod S3 bucket."
         "Intended for use in production."
     ),
+    tags={
+        "dagster-k8s/config": {
+            "container_config": {
+                "resources": {
+                    "requests": {"cpu": "500m", "memory": "2Gi"},
+                }
+            },
+        }
+    },
 )

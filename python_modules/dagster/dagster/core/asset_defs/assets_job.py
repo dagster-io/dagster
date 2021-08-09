@@ -20,6 +20,7 @@ from dagster.core.execution.context.input import InputContext, build_input_conte
 from dagster.core.execution.context.output import build_output_context
 from dagster.core.storage.root_input_manager import RootInputManagerDefinition, root_input_manager
 from dagster.utils.merger import merge_dicts
+from dagster.core.definitions.config import ConfigMapping
 
 from .foreign_asset import ForeignAsset
 
@@ -30,6 +31,8 @@ def build_assets_job(
     source_assets: Optional[Sequence[Union[ForeignAsset, SolidDefinition]]] = None,
     resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
     description: Optional[str] = None,
+    config: Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"] = None,
+    tags: Optional[Dict[str, Any]] = None,
 ) -> PipelineDefinition:
     """Builds a job that materializes the given assets.
 
@@ -65,7 +68,11 @@ def build_assets_job(
         input_mappings=None,
         output_mappings=None,
         config_mapping=None,
-    ).to_job(resource_defs=merge_dicts(resource_defs or {}, {"root_manager": root_manager}))
+    ).to_job(
+        resource_defs=merge_dicts(resource_defs or {}, {"root_manager": root_manager}),
+        config=config,
+        tags=tags,
+    )
 
 
 def build_source_assets_by_key(
