@@ -175,12 +175,32 @@ def test_dbt_rpc_sync_resource():
 #     assert result.success
 #     assert isinstance(result.output_value("result"), DbtRpcOutput)
 
+# parametrize to run with sync and async resources
+def test_dbt_rpc_sync_resource_generate_docs(dbt_rpc_server):
+    @solid(required_resource_keys={"dbt_rpc"})
+    def compile_solid(context):
+        assert isinstance(context.resources.dbt_rpc, DbtRpcSyncClient)
+        out = context.resources.dbt_rpc.generate_docs()
 
+        return out
+
+    result = execute_solid(
+        compile_solid,
+        ModeDefinition(
+            resource_defs={"dbt_rpc": dbt_rpc_sync_resource.configured({"host": "localhost"})}
+        ),
+    )
+
+    assert result.success
+    assert isinstance(result.output_value("result"), DbtRpcOutput)
+
+
+# parametrize to run with sync and async resources
 def test_dbt_rpc_sync_resource_run_operation(dbt_rpc_server):
     @solid(required_resource_keys={"dbt_rpc"})
     def compile_solid(context):
         assert isinstance(context.resources.dbt_rpc, DbtRpcSyncClient)
-        out = context.resources.dbt_rpc.run_operation('log_macro.sql', {"msg": "hello world"})
+        out = context.resources.dbt_rpc.run_operation('log_macro', {"msg": "hello world"})
         return out
 
     result = execute_solid(
@@ -220,3 +240,24 @@ def test_dbt_rpc_sync_resource_run_operation(dbt_rpc_server):
 #     )
 #     # assert it["ran"]
 #     assert response["response"] != None
+
+# parametrize to run with sync and async resources
+# test currently fails because generate_docs shoudl not accept params.
+# def test_dbt_rpc_resource_generate_docs(dbt_rpc_server):
+#     @solid(required_resource_keys={"dbt_rpc"})
+#     def compile_solid(context):
+#         assert isinstance(context.resources.dbt_rpc, DbtRpcClient)
+#         out = context.resources.dbt_rpc.generate_docs(['sort_by_calories'])
+#         # request_token = out.result.get("request_token")
+#         print(out.__dict__)
+#         return out
+
+#     result = execute_solid(
+#         compile_solid,
+#         ModeDefinition(
+#             resource_defs={"dbt_rpc": dbt_rpc_resource.configured({"host": "localhost"})}
+#         ),
+#     )
+
+#     assert result.success
+#     assert isinstance(result.output_value("result"), DbtRpcOutput)

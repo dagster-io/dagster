@@ -76,7 +76,7 @@ class DbtRpcClient(DbtResource):
         headers["Accept"] = "application/json"
         return headers
 
-    def _post(self, data: str = None) -> DbtRpcOutput:
+    def _get_result(self, data: str = None) -> DbtRpcOutput:
         """Constructs and sends a POST request to the dbt RPC server.
 
         Returns:
@@ -144,7 +144,7 @@ class DbtRpcClient(DbtResource):
             Response: the HTTP response from the dbt RPC server.
         """
         data = self._default_request(method="status")
-        return self._post(data=json.dumps(data))
+        return DbtRpcClient._get_result(self, data=json.dumps(data))
 
     def poll(self, request_token: str, logs: bool = False, logs_start: int = 0) -> DbtRpcOutput:
         """Sends a request with the method ``poll`` to the dbt RPC server, and returns the response.
@@ -161,7 +161,7 @@ class DbtRpcClient(DbtResource):
         """
         data = self._default_request(method="poll")
         data["params"] = {"request_token": request_token, "logs": logs, "logs_start": logs_start}
-        return self._post(data=json.dumps(data))
+        return DbtRpcClient._get_result(self, data=json.dumps(data))
 
     def ps(self, completed: bool = False) -> DbtRpcOutput:
         """Sends a request with the method ``ps`` to the dbt RPC server, and returns the response.
@@ -176,7 +176,7 @@ class DbtRpcClient(DbtResource):
         """
         data = self._default_request(method="ps")
         data["params"] = {"completed": completed}
-        return self._post(data=json.dumps(data))
+        return DbtRpcClient._get_result(self, data=json.dumps(data))
 
     def kill(self, task_id: str) -> DbtRpcOutput:
         """Sends a request with the method ``kill`` to the dbt RPC server, and returns the response.
@@ -191,7 +191,7 @@ class DbtRpcClient(DbtResource):
         """
         data = self._default_request(method="kill")
         data["params"] = {"task_id": task_id}
-        return self._post(data=json.dumps(data))
+        return DbtRpcClient._get_result(self, data=json.dumps(data))
 
     def cli(self, command: str, **kwargs) -> DbtRpcOutput:
         """Sends a request with CLI syntax to the dbt RPC server, and returns the response.
@@ -207,7 +207,7 @@ class DbtRpcClient(DbtResource):
         params = self._format_params({"cli": command, **kwargs})
         data = self._default_request(method="cli_args", params=params)
 
-        return self._post(data=json.dumps(data))
+        return self._get_result(data=json.dumps(data))
 
     def compile(
         self, models: List[str] = None, exclude: List[str] = None, **kwargs
@@ -228,7 +228,7 @@ class DbtRpcClient(DbtResource):
         params = self._format_params({**explicit_params, **kwargs})
         data = self._default_request(method="compile", params=params)
 
-        return self._post(data=json.dumps(data))
+        return self._get_result(data=json.dumps(data))
 
     def run(self, models: List[str] = None, exclude: List[str] = None, **kwargs) -> DbtRpcOutput:
         """Sends a request with the method ``run`` to the dbt RPC server, and returns the response.
@@ -246,7 +246,7 @@ class DbtRpcClient(DbtResource):
         params = self._format_params({**explicit_params, **kwargs})
         data = self._default_request(method="run", params=params)
 
-        return self._post(data=json.dumps(data))
+        return self._get_result(data=json.dumps(data))
 
     def snapshot(
         self, select: List[str] = None, exclude: List[str] = None, **kwargs
@@ -266,7 +266,7 @@ class DbtRpcClient(DbtResource):
         params = self._format_params({**explicit_params, **kwargs})
         data = self._default_request(method="snapshot", params=params)
 
-        return self._post(data=json.dumps(data))
+        return self._get_result(data=json.dumps(data))
 
     def test(
         self,
@@ -293,7 +293,7 @@ class DbtRpcClient(DbtResource):
         params = self._format_params({**explicit_params, **kwargs})
         data = self._default_request(method="test", params=params)
 
-        return self._post(data=json.dumps(data))
+        return self._get_result(data=json.dumps(data))
 
     def seed(
         self, show: bool = False, select: List[str] = None, exclude: List[str] = None, **kwargs
@@ -317,7 +317,7 @@ class DbtRpcClient(DbtResource):
         if kwargs is not None:
             data["params"]["task_tags"] = kwargs
 
-        return self._post(data=json.dumps(data))
+        return self._get_result(data=json.dumps(data))
 
     def generate_docs(
         self,
@@ -338,7 +338,7 @@ class DbtRpcClient(DbtResource):
         params = self._format_params({**explicit_params, **kwargs})
         data = self._default_request(method="docs.generate", params=params)
 
-        return self._post(data=json.dumps(data))
+        return self._get_result(data=json.dumps(data))
 
     def run_operation(
         self, macro: str, args: Optional[Dict[str, Any]] = None, **kwargs
@@ -358,7 +358,7 @@ class DbtRpcClient(DbtResource):
         params = self._format_params({**explicit_params, **kwargs})
         data = self._default_request(method="run-operation", params=params)
 
-        return self._post(data=json.dumps(data))
+        return self._get_result(data=json.dumps(data))
 
     def snapshot_freshness(self, select: Optional[List[str]] = None, **kwargs) -> DbtRpcOutput:
         """Sends a request with the method ``snapshot-freshness`` to the dbt RPC server, and returns
@@ -375,7 +375,7 @@ class DbtRpcClient(DbtResource):
         params = self._format_params({**explicit_params, **kwargs})
         data = self._default_request(method="snapshot-freshness", params=params)
 
-        return self._post(data=json.dumps(data))
+        return self._get_result(data=json.dumps(data))
 
     def compile_sql(self, sql: str, name: str) -> DbtRpcOutput:
         """Sends a request with the method ``compile_sql`` to the dbt RPC server, and returns the
@@ -393,7 +393,7 @@ class DbtRpcClient(DbtResource):
         params = self._format_params(explicit_params)
         data = self._default_request(method="compile_sql", params=params)
 
-        return self._post(data=json.dumps(data))
+        return self._get_result(data=json.dumps(data))
 
     def run_sql(self, sql: str, name: str) -> DbtRpcOutput:
         """Sends a request with the method ``run_sql`` to the dbt RPC server, and returns the
@@ -411,7 +411,7 @@ class DbtRpcClient(DbtResource):
         params = self._format_params(explicit_params)
         data = self._default_request(method="run_sql", params=params)
 
-        return self._post(data=json.dumps(data))
+        return self._get_result(data=json.dumps(data))
 
 
 @resource(
@@ -441,8 +441,13 @@ def dbt_rpc_resource(context) -> DbtRpcClient:
     return DbtRpcClient(host=context.resource_config["host"], port=context.resource_config["port"])
 
 
+## define shared base class among sync and async clients. replace implementation of `get result`
+# with posting or polling
 class DbtRpcSyncClient(DbtRpcClient):
-    def _poll_rpc_until_complete(self, request_token: str):
+    def _get_result(self, data: str = None) -> DbtRpcOutput:
+        out = super()._get_result(data)
+        request_token = out.result.get("request_token")
+
         """Polls the dbt RPC server for the status of a request until the state is ``success``."""
 
         logs_start = 0
@@ -479,217 +484,6 @@ class DbtRpcSyncClient(DbtRpcClient):
             )
 
         return out
-
-    def cli(self, command: str, **kwargs) -> DbtRpcOutput:
-        """Sends a request with CLI syntax to the dbt RPC server, and returns the response.
-        For more details, see the dbt docs for `running CLI commands via RPC
-        <https://docs.getdbt.com/reference/commands/rpc/#running-a-task-with-cli-syntax>`_.
-
-        Args:
-            cli (str): a dbt command in CLI syntax.
-
-        Returns:
-            Response: the HTTP response from the dbt RPC server.
-        """
-        out = super().cli(command, **kwargs)
-        request_token = out.result.get("request_token")
-        return self._poll_rpc_until_complete(request_token)
-
-    def compile(
-        self, models: List[str] = None, exclude: List[str] = None, **kwargs
-    ) -> DbtRpcOutput:
-        """Sends a request with the method ``compile`` to the dbt RPC server, and returns the
-        response. For more details, see the dbt docs for `compiling projects via RPC
-        <https://docs.getdbt.com/reference/commands/rpc/#compile-a-project>`_.
-
-        Args:
-            models (List[str], optional): the models to include in compilation.
-            exclude (List[str]), optional): the models to exclude from compilation.
-
-        Returns:
-            Response: the HTTP response from the dbt RPC server.
-        """
-
-        out = super().compile(models, exclude, **kwargs)
-        request_token = out.result.get("request_token")
-        return self._poll_rpc_until_complete(request_token)
-
-    def run(self, models: List[str] = None, exclude: List[str] = None, **kwargs) -> DbtRpcOutput:
-        """Sends a request with the method ``run`` to the dbt RPC server, and returns the response.
-        For more details, see the dbt docs for the RPC method `run
-        <https://docs.getdbt.com/reference/commands/rpc/#run-models>`_.
-
-        Args:
-            models (List[str], optional): the models to include in the run.
-            exclude (List[str]), optional): the models to exclude from the run.
-
-        Returns:
-            Response: the HTTP response from the dbt RPC server.
-        """
-
-        out = super().run(models, exclude, **kwargs)
-        request_token = out.result.get("request_token")
-        return self._poll_rpc_until_complete(request_token)
-
-    def snapshot(
-        self, select: List[str] = None, exclude: List[str] = None, **kwargs
-    ) -> DbtRpcOutput:
-        """Sends a request with the method ``snapshot`` to the dbt RPC server, and returns the
-        response. For more details, see the dbt docs for the command `snapshot
-        <https://docs.getdbt.com/reference/commands/snapshot>`_.
-
-        Args:
-            select (List[str], optional): the snapshots to include in the run.
-            exclude (List[str], optional): the snapshots to exclude from the run.
-
-        Returns:
-            Response: the HTTP response from the dbt RPC server.
-        """
-
-        out = super().snapshot(select, exclude, **kwargs)
-        request_token = out.result.get("request_token")
-        return self._poll_rpc_until_complete(request_token)
-
-    def test(
-        self,
-        models: List[str] = None,
-        exclude: List[str] = None,
-        data: bool = True,
-        schema: bool = True,
-        **kwargs,
-    ) -> DbtRpcOutput:
-        """Sends a request with the method ``test`` to the dbt RPC server, and returns the response.
-        For more details, see the dbt docs for the RPC method `test
-        <https://docs.getdbt.com/reference/commands/rpc/#run-test>`_.
-
-        Args:
-            models (List[str], optional): the models to include in testing.
-            exclude (List[str], optional): the models to exclude from testing.
-            data (bool, optional): If ``True`` (default), then run data tests.
-            schema (bool, optional): If ``True`` (default), then run schema tests.
-
-        Returns:
-            Response: the HTTP response from the dbt RPC server.
-        """
-
-        out = super().test(models, exclude, data, schema, **kwargs)
-        request_token = out.result.get("request_token")
-        return self._poll_rpc_until_complete(request_token)
-
-    def seed(
-        self, show: bool = False, select: List[str] = None, exclude: List[str] = None, **kwargs
-    ) -> DbtRpcOutput:
-        """Sends a request with the method ``seed`` to the dbt RPC server, and returns the response.
-        For more details, see the dbt docs for the RPC method `seed
-        <https://docs.getdbt.com/reference/commands/rpc/#run-seed>`_.
-
-        Args:
-            show (bool, optional): If ``True``, then show a sample of the seeded data in the
-                response. Defaults to ``False``.
-            select (List[str], optional): the snapshots to include in the run.
-            exclude (List[str], optional): the snapshots to exclude from the run.
-
-        Returns:
-            Response: the HTTP response from the dbt RPC server.
-        """
-
-        out = super().seed(show, select, exclude, **kwargs)
-        request_token = out.result.get("request_token")
-        return self._poll_rpc_until_complete(request_token)
-
-    def generate_docs(
-        self,
-        models: List[str] = None,
-        exclude: List[str] = None,
-        **kwargs,
-    ) -> DbtRpcOutput:
-        """Sends a request with the method ``docs.generate`` to the dbt RPC server, and returns the
-        response. For more details, see the dbt docs for the RPC method `docs.generate
-        <https://docs.getdbt.com/reference/commands/rpc/#generate-docs>`_.
-
-        Args:
-            models (List[str], optional): the models to include in docs generation.
-            exclude (List[str], optional): the models to exclude from docs generation.
-
-        """
-        # Currently erroring:
-        # 2021-08-06 15:36:06 - dagster - ERROR - ephemeral_compile_solid_solid_pipeline - 1873c7f3-ea95-40dd-b7ec-31f1939a7028 - 37004 - PIPELINE_FAILURE - Execution of pipeline "ephemeral_compile_solid_solid_pipeline" failed. An exception was thrown during execution.
-
-        out = super().generate_docs(models, exclude, **kwargs)
-        request_token = out.result.get("request_token")
-        return self._poll_rpc_until_complete(request_token)
-
-    def run_operation(
-        self, macro: str, args: Optional[Dict[str, Any]] = None, **kwargs
-    ) -> DbtRpcOutput:
-        """Sends a request with the method ``run-operation`` to the dbt RPC server, and returns the
-        response. For more details, see the dbt docs for the command `run-operation
-        <https://docs.getdbt.com/reference/commands/run-operation>`_.
-
-        Args:
-            macro (str): the dbt macro to invoke.
-            args (Dict[str, Any], optional): the keyword arguments to be supplied to the macro.
-
-        Returns:
-            Response: the HTTP response from the dbt RPC server.
-        """
-
-        out = super().run_operation(macro, args, **kwargs)
-        request_token = out.result.get("request_token")
-        return self._poll_rpc_until_complete(request_token)
-
-    def snapshot_freshness(self, select: Optional[List[str]] = None, **kwargs) -> DbtRpcOutput:
-        """Sends a request with the method ``snapshot-freshness`` to the dbt RPC server, and returns
-        the response. For more details, see the dbt docs for the command `source snapshot-freshness
-        <https://docs.getdbt.com/reference/commands/source#dbt-source-snapshot-freshness>`_.
-
-        Args:
-            select (List[str], optional): the models to include in calculating snapshot freshness.
-
-        Returns:
-            Response: the HTTP response from the dbt RPC server.
-        """
-        explicit_params = dict(select=select)
-        params = self._format_params({**explicit_params, **kwargs})
-        data = self._default_request(method="snapshot-freshness", params=params)
-
-        return self._post(data=json.dumps(data))
-
-    def compile_sql(self, sql: str, name: str) -> DbtRpcOutput:
-        """Sends a request with the method ``compile_sql`` to the dbt RPC server, and returns the
-        response. For more details, see the dbt docs for `compiling SQL via RPC
-        <https://docs.getdbt.com/reference/commands/rpc#compiling-a-query>`_.
-
-        Args:
-            sql (str): the SQL to compile in base-64 encoding.
-            name (str): a name for the compiled SQL.
-
-        Returns:
-            Response: the HTTP response from the dbt RPC server.
-        """
-        explicit_params = dict(sql=b64(sql.encode("utf-8")).decode("utf-8"), name=name)
-        params = self._format_params(explicit_params)
-        data = self._default_request(method="compile_sql", params=params)
-
-        return self._post(data=json.dumps(data))
-
-    def run_sql(self, sql: str, name: str) -> DbtRpcOutput:
-        """Sends a request with the method ``run_sql`` to the dbt RPC server, and returns the
-        response. For more details, see the dbt docs for `running SQL via RPC
-        <https://docs.getdbt.com/reference/commands/rpc#executing-a-query>`_.
-
-        Args:
-            sql (str): the SQL to run in base-64 encoding.
-            name (str): a name for the compiled SQL.
-
-        Returns:
-            Response: the HTTP response from the dbt RPC server.
-        """
-        explicit_params = dict(sql=b64(sql.encode("utf-8")).decode("utf-8"), name=name)
-        params = self._format_params(explicit_params)
-        data = self._default_request(method="run_sql", params=params)
-
-        return self._post(data=json.dumps(data))
 
 
 @resource(
