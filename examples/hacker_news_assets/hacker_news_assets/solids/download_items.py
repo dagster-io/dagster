@@ -36,7 +36,7 @@ HN_ACTION_SCHEMA = StructType(
 @asset(
     io_manager_key="parquet_io_manager",
     required_resource_keys={"hn_client"},
-    description="Downloads all of the items for the id range passed in as input and creates a DataFrame with all the entries.",
+    description="Items from the Hacker News API: each is a story or a comment on a story.",
 )
 def items(context, id_range_for_time: Tuple[int, int]) -> Output:
     """
@@ -67,15 +67,17 @@ def items(context, id_range_for_time: Tuple[int, int]) -> Output:
             SparkDF,
             io_manager_key="parquet_io_manager",
             asset_key=AssetKey("comments_lake"),
+            description="Comments posted on Hacker News stories - in data lake.",
         ),
         "stories": Out(
             SparkDF,
             io_manager_key="parquet_io_manager",
             asset_key=AssetKey("stories_lake"),
+            description="Stories posted to Hacker News - in data lake.",
         ),
     },
     required_resource_keys={"pyspark"},
-    description="Split raw the DataFrame by the 'type' column.",
+    description="Stories and comments posted to Hacker News - in data lake.",
 )
 def comments_and_stories_lake(context, items: SparkDF):  # pylint: disable=redefined-outer-name
     expected_df = context.resources.pyspark.spark_session.createDataFrame([], HN_ACTION_SCHEMA)

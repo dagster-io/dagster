@@ -11,7 +11,7 @@ from sklearn.decomposition import TruncatedSVD
 @asset
 def recommender_model(user_story_matrix: IndexedCooMatrix):
     """
-    Trains an SVD model for collaborative filtering-based recommendation.
+    An SVD model for collaborative filtering-based recommendation.
     """
     n_components = random.randint(90, 110)
     svd = TruncatedSVD(n_components=n_components)
@@ -36,7 +36,7 @@ def component_top_stories(
     recommender_model: TruncatedSVD, user_story_matrix: IndexedCooMatrix, stories: DataFrame
 ):
     """
-    For each component in the collaborative filtering model, finds the titles of the top stories
+    For each component in the collaborative filtering model, the titles of the top stories
     it's associated with.
     """
     n_stories = 10

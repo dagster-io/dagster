@@ -1,6 +1,7 @@
 from typing import AbstractSet, Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union, cast
 
 from dagster import check
+from dagster.core.definitions.config import ConfigMapping
 from dagster.core.definitions.decorators.solid import solid
 from dagster.core.definitions.dependency import (
     DependencyDefinition,
@@ -12,6 +13,7 @@ from dagster.core.definitions.graph import GraphDefinition
 from dagster.core.definitions.i_solid_definition import NodeDefinition
 from dagster.core.definitions.input import InputDefinition
 from dagster.core.definitions.output import OutputDefinition
+from dagster.core.definitions.partition import PartitionedConfig
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.definitions.resource import ResourceDefinition
 from dagster.core.definitions.solid import SolidDefinition
@@ -20,7 +22,6 @@ from dagster.core.execution.context.input import InputContext, build_input_conte
 from dagster.core.execution.context.output import build_output_context
 from dagster.core.storage.root_input_manager import RootInputManagerDefinition, root_input_manager
 from dagster.utils.merger import merge_dicts
-from dagster.core.definitions.config import ConfigMapping
 
 from .foreign_asset import ForeignAsset
 
@@ -31,7 +32,7 @@ def build_assets_job(
     source_assets: Optional[Sequence[Union[ForeignAsset, SolidDefinition]]] = None,
     resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
     description: Optional[str] = None,
-    config: Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"] = None,
+    config: Union[ConfigMapping, Dict[str, Any], PartitionedConfig] = None,
     tags: Optional[Dict[str, Any]] = None,
 ) -> PipelineDefinition:
     """Builds a job that materializes the given assets.

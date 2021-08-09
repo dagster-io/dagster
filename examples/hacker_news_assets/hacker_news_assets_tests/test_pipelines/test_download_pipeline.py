@@ -1,12 +1,8 @@
 import tempfile
 
-from hacker_news_assets.pipelines.download_pipeline import download_comments_and_stories_dev
-from dagster import (
-    ResourceDefinition,
-    fs_io_manager,
-    mem_io_manager,
-)
+from dagster import ResourceDefinition, fs_io_manager, mem_io_manager
 from dagster_pyspark import pyspark_resource
+from hacker_news_assets.pipelines.download_pipeline import download_comments_and_stories_dev
 from hacker_news_assets.resources.hn_resource import hn_snapshot_client
 from hacker_news_assets.resources.parquet_io_manager import partitioned_parquet_io_manager
 

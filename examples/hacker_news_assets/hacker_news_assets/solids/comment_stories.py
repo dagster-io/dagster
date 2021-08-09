@@ -11,7 +11,7 @@ from pandas import DataFrame, Series
 )
 def comment_stories(stories: DataFrame, comments: DataFrame) -> DataFrame:
     """
-    Traverses the comment tree to link each comment to its root story.
+    Comments linked to their root stories.
 
     Returns a DataFrame with a row per comment and the columns:
     - comment_id (int)

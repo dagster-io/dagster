@@ -11,7 +11,7 @@ def user_top_recommended_stories(
     context, recommender_model: TruncatedSVD, user_story_matrix: IndexedCooMatrix
 ) -> DataFrame:
     """
-    Find the top stories for each commenter (user).
+    The top stories for each commenter (user).
 
     Produces a DataFrame with these columns:
         user_id (str)
