@@ -9,16 +9,22 @@ from dagster.utils.error import serializable_error_info_from_exc_info
 def check_permission(permission):
     def decorator(fn):
         def _fn(self, graphene_info, *args, **kwargs):  # pylint: disable=unused-argument
-            from dagster_graphql.schema.errors import GrapheneUnauthorizedError
-
-            if not graphene_info.context.has_permission(permission):
-                raise UserFacingGraphQLError(GrapheneUnauthorizedError())
+            assert_permission(graphene_info, permission)
 
             return fn(self, graphene_info, *args, **kwargs)
 
         return _fn
 
     return decorator
+
+
+def assert_permission(graphene_info, permission):
+    from dagster_graphql.schema.errors import GrapheneUnauthorizedError
+
+    if not graphene_info.context.has_permission(permission):
+        raise UserFacingGraphQLError(GrapheneUnauthorizedError())
+
+    return True
 
 
 def capture_error(fn):
