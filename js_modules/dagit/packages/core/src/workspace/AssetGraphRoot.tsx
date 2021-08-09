@@ -2,18 +2,22 @@ import {gql, useQuery} from '@apollo/client';
 import {Colors, NonIdealState} from '@blueprintjs/core';
 import {pathVerticalDiagonal} from '@vx/shape';
 import * as dagre from 'dagre';
-import React from 'react';
-import {RouteComponentProps} from 'react-router-dom';
+import React, {CSSProperties} from 'react';
+import {Link, RouteComponentProps} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {SVGViewport} from '../graph/SVGViewport';
 import {Description} from '../pipelines/Description';
 import {SidebarSection} from '../pipelines/SidebarComponents';
 import {METADATA_ENTRY_FRAGMENT} from '../runs/MetadataEntry';
+import {titleForRun} from '../runs/RunUtils';
+import {TimeElapsed} from '../runs/TimeElapsed';
+import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {Box} from '../ui/Box';
 import {Loading} from '../ui/Loading';
 import {PageHeader} from '../ui/PageHeader';
 import {SplitPanelContainer} from '../ui/SplitPanelContainer';
+import {FontFamily} from '../ui/styles';
 import {Heading} from '../ui/Text';
 
 import {repoAddressToSelector} from './repoAddressToSelector';
@@ -30,10 +34,6 @@ interface Props extends RouteComponentProps {
   repoAddress: RepoAddress;
 }
 
-const DEFAULT_NODE_DIMENSIONS = {
-  width: 250,
-  height: 50,
-};
 interface Node {
   id: string;
   assetKey: AssetKey;
@@ -58,10 +58,21 @@ export type IEdge = {
   dashed: boolean;
 };
 
-const getNodeDimensions = () => ({...DEFAULT_NODE_DIMENSIONS});
+const getNodeDimensions = (def: AssetDefinition) => {
+  let height = 40;
+  if (def.description) {
+    height += 25;
+  }
+  if (def.assetMaterializations.length) {
+    height += 60;
+  }
+  return {width: Math.max(250, def.assetKey.path.join('>').length * 9.5), height};
+};
+
 const buildGraphData = (assetDefinitions: AssetDefinition[]) => {
-  const nodes = {};
-  const downstream = {};
+  const nodes: {[id: string]: {id: string; assetKey: AssetKey; definition: AssetDefinition}} = {};
+  const downstream: {[downstreamId: string]: {[upstreamId: string]: string}} = {};
+
   assetDefinitions.forEach((definition) => {
     const assetKeyJson = JSON.stringify(definition.assetKey.path);
     nodes[assetKeyJson] = {
@@ -111,7 +122,7 @@ const layoutGraph = (graphData: GraphData) => {
   g.setDefaultEdgeLabel(() => ({}));
 
   Object.values(graphData.nodes).forEach((node) => {
-    g.setNode(node.id, getNodeDimensions());
+    g.setNode(node.id, getNodeDimensions(node.definition));
   });
   Object.keys(graphData.downstream).forEach((upstreamId) => {
     const downstreamIds = Object.keys(graphData.downstream[upstreamId]);
@@ -242,32 +253,21 @@ export const AssetGraphRoot: React.FC<Props> = (props) => {
                           ))}
                         </g>
                         {layout.nodes.map((layoutNode) => {
-                          const {width, height} = getNodeDimensions();
                           const graphNode = graphData.nodes[layoutNode.id];
+                          const {width, height} = getNodeDimensions(graphNode.definition);
                           return (
                             <foreignObject
                               key={layoutNode.id}
-                              width={width}
-                              height={height}
                               x={layoutNode.x}
                               y={layoutNode.y}
+                              width={width}
+                              height={height}
                               onClick={() => selectNode(graphNode)}
                             >
-                              <div
-                                style={{
-                                  width: width - 8,
-                                  height: height - 6,
-                                  border: '1px solid #ececec',
-                                  marginTop: 6,
-                                  marginRight: 4,
-                                  marginLeft: 4,
-                                  display: 'flex',
-                                  justifyContent: 'center',
-                                  alignItems: 'center',
-                                }}
-                              >
-                                {JSON.parse(layoutNode.id).join(' > ')}
-                              </div>
+                              <AssetNode
+                                definition={graphNode.definition}
+                                selected={nodeSelection?.id === graphNode.id}
+                              />
                             </foreignObject>
                           );
                         })}
@@ -377,3 +377,96 @@ const StyledPath = styled('path')<{dashed: boolean}>`
   ${({dashed}) => (dashed ? `stroke-dasharray: 8 2;` : '')}
   fill: none;
 `;
+
+const AssetNode: React.FC<{
+  definition: AssetDefinition;
+  selected: boolean;
+}> = ({definition, selected}) => {
+  const {materializationEvent: event, runOrError} = definition.assetMaterializations[0] || {};
+
+  return (
+    <div
+      style={{
+        border: '1px solid #ececec',
+        outline: selected ? `2px solid ${Colors.BLUE4}` : 'none',
+        marginTop: 10,
+        marginRight: 4,
+        marginLeft: 4,
+        marginBottom: 2,
+        position: 'absolute',
+        background: 'white',
+        inset: 0,
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          padding: '4px 8px',
+          fontFamily: FontFamily.monospace,
+          fontWeight: 600,
+        }}
+      >
+        {definition.assetKey.path.join(' > ')}
+        <div style={{flex: 1}} />
+      </div>
+      {definition.description && (
+        <div
+          style={{
+            background: '#EFF4F7',
+            padding: '4px 8px',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            borderTop: '1px solid #ccc',
+            fontSize: 12,
+          }}
+        >
+          {definition.description}
+        </div>
+      )}
+      {event ? (
+        <div
+          style={{
+            background: '#E1EAF0',
+            padding: '4px 8px',
+            borderTop: '1px solid #ccc',
+            fontSize: 12,
+            lineHeight: '18px',
+          }}
+        >
+          <div style={{display: 'flex', justifyContent: 'space-between'}}>
+            <div>Elapsed Time: </div>
+            <TimeElapsed startUnix={event.stepStats.startTime} endUnix={event.stepStats.endTime} />
+          </div>
+          <div style={{display: 'flex', justifyContent: 'space-between'}}>
+            <div>Materialized: </div>
+            {event.stepStats.endTime ? (
+              <TimestampDisplay
+                timestamp={event.stepStats.endTime}
+                timeFormat={{showSeconds: false, showTimezone: false}}
+              />
+            ) : (
+              'Never'
+            )}
+          </div>
+          <div style={{display: 'flex', justifyContent: 'space-between'}}>
+            <div>Run: </div>
+            {runOrError.__typename === 'PipelineRun' ? (
+              <Link
+                style={{fontFamily: FontFamily.monospace}}
+                to={`/instance/runs/${runOrError.runId}?timestamp=${event.stepStats.endTime}`}
+                target="_blank"
+              >
+                {titleForRun({runId: runOrError.runId})}
+              </Link>
+            ) : (
+              'Not Found'
+            )}
+          </div>
+        </div>
+      ) : (
+        <span></span>
+      )}
+    </div>
+  );
+};
