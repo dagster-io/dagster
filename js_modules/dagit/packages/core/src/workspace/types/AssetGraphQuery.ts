@@ -148,6 +148,8 @@ export interface AssetGraphQuery_repositoryOrError_Repository_assetDefinitions_a
   id: string;
   runId: string;
   status: PipelineRunStatus;
+  pipelineName: string;
+  mode: string;
 }
 
 export type AssetGraphQuery_repositoryOrError_Repository_assetDefinitions_assetMaterializations_runOrError = AssetGraphQuery_repositoryOrError_Repository_assetDefinitions_assetMaterializations_runOrError_PipelineRunNotFoundError | AssetGraphQuery_repositoryOrError_Repository_assetDefinitions_assetMaterializations_runOrError_PipelineRun;

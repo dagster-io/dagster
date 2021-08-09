@@ -5,8 +5,9 @@ import * as dagre from 'dagre';
 import qs from 'query-string';
 import React from 'react';
 import {Link, RouteComponentProps} from 'react-router-dom';
-import styled from 'styled-components/macro';
+import styled, {CSSProperties} from 'styled-components/macro';
 
+import {QueryCountdown} from '../app/QueryCountdown';
 import {AssetDetails} from '../assets/AssetDetails';
 import {AssetMaterializations} from '../assets/AssetMaterializations';
 import {SVGViewport} from '../graph/SVGViewport';
@@ -16,6 +17,7 @@ import {SidebarSection} from '../pipelines/SidebarComponents';
 import {METADATA_ENTRY_FRAGMENT} from '../runs/MetadataEntry';
 import {titleForRun} from '../runs/RunUtils';
 import {TimeElapsed} from '../runs/TimeElapsed';
+import {POLL_INTERVAL} from '../runs/useCursorPaginatedQuery';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {Box} from '../ui/Box';
 import {Loading} from '../ui/Loading';
@@ -69,7 +71,10 @@ const getNodeDimensions = (def: AssetDefinition) => {
     height += 25;
   }
   if (def.assetMaterializations.length) {
-    height += 60;
+    height += 22;
+    if (runForDisplay(def)) {
+      height += 22;
+    }
   }
   return {width: Math.max(250, def.assetKey.path.join('>').length * 9.5) + 25, height};
 };
@@ -192,6 +197,7 @@ export const AssetGraphRoot: React.FC<Props> = (props) => {
   const queryResult = useQuery(ASSETS_GRAPH_QUERY, {
     variables: {repositorySelector},
     notifyOnNetworkStatusChange: true,
+    pollInterval: POLL_INTERVAL,
   });
   const [nodeSelection, setSelectedNode] = React.useState<Node | undefined>();
 
@@ -206,11 +212,22 @@ export const AssetGraphRoot: React.FC<Props> = (props) => {
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%'}}>
-      <Box padding={24}>
+      <Box
+        padding={24}
+        style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          width: '100%',
+        }}
+      >
         <PageHeader
           title={<Heading>Asset Graph</Heading>}
           description={`Static asset definitions and dependencies defined in ${repoAddress.name}`}
         />
+        <Box padding={{bottom: 8}}>
+          <QueryCountdown pollInterval={POLL_INTERVAL} queryResult={queryResult} />
+        </Box>
       </Box>
       <div style={{flex: 1, display: 'flex', borderTop: '1px solid #ececec', minHeight: 0}}>
         <SplitPanelContainer
@@ -227,6 +244,14 @@ export const AssetGraphRoot: React.FC<Props> = (props) => {
                 const hasCycles = graphHasCycles(graphData);
                 const layout = hasCycles ? null : layoutGraph(graphData);
                 const computeStatuses = hasCycles ? {} : buildGraphComputeStatuses(graphData);
+
+                const nodeSelectionPipeline =
+                  nodeSelection && runForDisplay(nodeSelection.definition)?.pipelineName;
+                const samePipelineNodes = nodeSelectionPipeline
+                  ? Object.values(graphData.nodes).filter(
+                      (n) => runForDisplay(n.definition)?.pipelineName === nodeSelectionPipeline,
+                    )
+                  : [];
 
                 return layout ? (
                   <SVGViewport
@@ -279,7 +304,9 @@ export const AssetGraphRoot: React.FC<Props> = (props) => {
                               <AssetNode
                                 definition={graphNode.definition}
                                 selected={nodeSelection?.id === graphNode.id}
+                                seondaryHighlight={samePipelineNodes.includes(graphNode)}
                                 computeStatus={computeStatuses[graphNode.id]}
+                                repoAddress={repoAddress}
                               />
                             </foreignObject>
                           );
@@ -338,6 +365,11 @@ const AssetPanel = ({node, repoAddress}: {node: Node; repoAddress: RepoAddress})
   );
 };
 
+function runForDisplay(d: AssetDefinition) {
+  const run = d.assetMaterializations[0]?.runOrError;
+  return run.__typename === 'PipelineRun' ? run : null;
+}
+
 const ASSETS_GRAPH_QUERY = gql`
   query AssetGraphQuery($repositorySelector: RepositorySelector!) {
     repositoryOrError(repositorySelector: $repositorySelector) {
@@ -383,6 +415,8 @@ const ASSETS_GRAPH_QUERY = gql`
                 id
                 runId
                 status
+                pipelineName
+                mode
               }
             }
           }
@@ -408,14 +442,20 @@ const AssetNode: React.FC<{
   definition: AssetDefinition;
   selected: boolean;
   computeStatus: Status;
-}> = ({definition, selected, computeStatus}) => {
+  repoAddress: RepoAddress;
+  seondaryHighlight: boolean;
+}> = ({definition, selected, computeStatus, repoAddress, seondaryHighlight}) => {
   const {materializationEvent: event, runOrError} = definition.assetMaterializations[0] || {};
 
   return (
     <div
       style={{
         border: '1px solid #ececec',
-        outline: selected ? `2px solid ${Colors.BLUE4}` : 'none',
+        outline: selected
+          ? `2px solid ${Colors.BLUE4}`
+          : seondaryHighlight
+          ? `2px solid ${Colors.BLUE4}55`
+          : 'none',
         marginTop: 10,
         marginRight: 4,
         marginLeft: 4,
@@ -472,24 +512,24 @@ const AssetNode: React.FC<{
             lineHeight: '18px',
           }}
         >
-          <div style={{display: 'flex', justifyContent: 'space-between'}}>
-            <div>Materialized: </div>
-            {event.stepStats.endTime ? (
-              <TimestampDisplay
-                timestamp={event.stepStats.endTime}
-                timeFormat={{showSeconds: false, showTimezone: false}}
-              />
-            ) : (
-              'Never'
-            )}
-          </div>
-          <div style={{display: 'flex', justifyContent: 'space-between'}}>
-            <div>Elapsed Time: </div>
-            <TimeElapsed startUnix={event.stepStats.startTime} endUnix={event.stepStats.endTime} />
-          </div>
-          <div style={{display: 'flex', justifyContent: 'space-between'}}>
-            <div>Run: </div>
-            {runOrError.__typename === 'PipelineRun' ? (
+          {runOrError.__typename === 'PipelineRun' && (
+            <div style={{display: 'flex', justifyContent: 'space-between'}}>
+              <Link
+                data-tooltip={`${runOrError.pipelineName}${
+                  runOrError.mode !== 'default' ? `:${runOrError.mode}` : ''
+                }`}
+                data-tooltip-style={RunLinkTooltipStyle}
+                style={{flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', paddingRight: 8}}
+                to={workspacePath(
+                  repoAddress.name,
+                  repoAddress.location,
+                  `jobs/${runOrError.pipelineName}:${runOrError.mode}`,
+                )}
+              >
+                {`${runOrError.pipelineName}${
+                  runOrError.mode !== 'default' ? `:${runOrError.mode}` : ''
+                }`}
+              </Link>
               <Link
                 style={{fontFamily: FontFamily.monospace}}
                 to={`/instance/runs/${runOrError.runId}?${qs.stringify({
@@ -501,9 +541,19 @@ const AssetNode: React.FC<{
               >
                 {titleForRun({runId: runOrError.runId})}
               </Link>
+            </div>
+          )}
+
+          <div style={{display: 'flex', justifyContent: 'space-between'}}>
+            {event.stepStats.endTime ? (
+              <TimestampDisplay
+                timestamp={event.stepStats.endTime}
+                timeFormat={{showSeconds: false, showTimezone: false}}
+              />
             ) : (
-              'Not Found'
+              'Never'
             )}
+            <TimeElapsed startUnix={event.stepStats.startTime} endUnix={event.stepStats.endTime} />
           </div>
         </div>
       ) : (
@@ -519,7 +569,6 @@ function buildGraphComputeStatuses(graphData: GraphData) {
     timestamps[node.id] =
       node.definition.assetMaterializations[0]?.materializationEvent.stepStats?.startTime || 0;
   }
-
   const upstream: {[key: string]: string[]} = {};
   Object.keys(graphData.downstream).forEach((upstreamId) => {
     const downstreamIds = Object.keys(graphData.downstream[upstreamId]);
@@ -538,7 +587,8 @@ function buildGraphComputeStatuses(graphData: GraphData) {
     }
   }
   for (const asset of Object.values(graphData.nodes)) {
-    statuses[asset.id] = findComputeStatusForId(timestamps, statuses, upstream, asset.id);
+    const id = JSON.stringify(asset.assetKey.path);
+    statuses[id] = findComputeStatusForId(timestamps, statuses, upstream, id);
   }
   return statuses;
 }
@@ -550,22 +600,31 @@ function findComputeStatusForId(
   statuses: {[key: string]: Status},
   upstream: {[key: string]: string[]},
   id: string,
-  mustBeNewerThan?: number,
 ): Status {
+  const ts = timestamps[id];
+  const upstreamIds = upstream[id] || [];
   if (id in statuses) {
     return statuses[id];
   }
-  if (mustBeNewerThan && timestamps[id] < mustBeNewerThan) {
-    statuses[id] = 'old';
-    return 'old';
-  }
 
-  statuses[id] = (upstream[id] || []).some(
-    (upstreamId) =>
-      findComputeStatusForId(timestamps, statuses, upstream, upstreamId, timestamps[id]) !== 'good',
-  )
+  statuses[id] = upstreamIds.some((uid) => timestamps[uid] > ts)
+    ? 'old'
+    : upstreamIds.some(
+        (uid) => findComputeStatusForId(timestamps, statuses, upstream, uid) !== 'good',
+      )
     ? 'downstream-from-old'
     : 'good';
 
   return statuses[id];
 }
+
+const RunLinkTooltipStyle = JSON.stringify({
+  background: '#E1EAF0',
+  padding: '4px 8px',
+  marginLeft: -10,
+  marginTop: -8,
+  fontSize: 13,
+  color: Colors.BLUE2,
+  border: 0,
+  borderRadius: 4,
+} as CSSProperties);
