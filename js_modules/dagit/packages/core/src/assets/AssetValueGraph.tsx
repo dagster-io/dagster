@@ -21,6 +21,9 @@ export const AssetValueGraph: React.FC<{
   // and pass the partition index as the x value. This prevents ChartJS from auto-coercing
   // ISO date partition names to dates and then re-formatting the labels away from 2020-01-01.
   //
+  if (!props.data) {
+    return <span />;
+  }
   let labels: React.ReactText[] | undefined = undefined;
   let xHover = props.xHover;
   if (props.data.xAxis === 'partition') {

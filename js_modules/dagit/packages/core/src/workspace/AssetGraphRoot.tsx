@@ -28,6 +28,7 @@ import {
   AssetGraphQuery_repositoryOrError_Repository_assetDefinitions,
   AssetGraphQuery_repositoryOrError_Repository_assetDefinitions_assetKey,
 } from './types/AssetGraphQuery';
+import {workspacePath} from './workspacePath';
 
 type AssetDefinition = AssetGraphQuery_repositoryOrError_Repository_assetDefinitions;
 type AssetKey = AssetGraphQuery_repositoryOrError_Repository_assetDefinitions_assetKey;
@@ -68,7 +69,7 @@ const getNodeDimensions = (def: AssetDefinition) => {
   if (def.assetMaterializations.length) {
     height += 60;
   }
-  return {width: Math.max(250, def.assetKey.path.join('>').length * 9.5), height};
+  return {width: Math.max(250, def.assetKey.path.join('>').length * 9.5) + 25, height};
 };
 
 const buildGraphData = (assetDefinitions: AssetDefinition[]) => {
@@ -218,6 +219,8 @@ export const AssetGraphRoot: React.FC<Props> = (props) => {
                 const graphData = buildGraphData(repositoryOrError.assetDefinitions);
                 const hasCycles = graphHasCycles(graphData);
                 const layout = hasCycles ? null : layoutGraph(graphData);
+                const computeStatuses = hasCycles ? {} : buildGraphComputeStatuses(graphData);
+
                 return layout ? (
                   <SVGViewport
                     interactor={SVGViewport.Interactors.PanAndZoom}
@@ -269,6 +272,7 @@ export const AssetGraphRoot: React.FC<Props> = (props) => {
                               <AssetNode
                                 definition={graphNode.definition}
                                 selected={nodeSelection?.id === graphNode.id}
+                                computeStatus={computeStatuses[graphNode.id]}
                               />
                             </foreignObject>
                           );
@@ -282,7 +286,7 @@ export const AssetGraphRoot: React.FC<Props> = (props) => {
           }
           second={
             nodeSelection ? (
-              <AssetPanel node={nodeSelection} />
+              <AssetPanel node={nodeSelection} repoAddress={repoAddress} />
             ) : (
               <NonIdealState
                 title="No asset selected"
@@ -296,7 +300,7 @@ export const AssetGraphRoot: React.FC<Props> = (props) => {
   );
 };
 
-const AssetPanel = ({node}: {node: Node}) => {
+const AssetPanel = ({node, repoAddress}: {node: Node; repoAddress: RepoAddress}) => {
   return (
     <div style={{overflowY: 'auto'}}>
       <Box margin={32} style={{fontWeight: 'bold', fontSize: 18}}>
@@ -307,7 +311,13 @@ const AssetPanel = ({node}: {node: Node}) => {
       </SidebarSection>
       <SidebarSection title="Jobs">
         {node.definition.jobNames
-          ? node.definition.jobNames.map((name) => <div key={name}>{name}</div>)
+          ? node.definition.jobNames.map((name) => (
+              <div key={name}>
+                <Link to={workspacePath(repoAddress.name, repoAddress.location, `/jobs/${name}`)}>
+                  {name}
+                </Link>
+              </div>
+            ))
           : null}
       </SidebarSection>
       <SidebarSection title={'Latest Event'}>
@@ -390,7 +400,8 @@ const StyledPath = styled('path')<{dashed: boolean}>`
 const AssetNode: React.FC<{
   definition: AssetDefinition;
   selected: boolean;
-}> = ({definition, selected}) => {
+  computeStatus: Status;
+}> = ({definition, selected, computeStatus}) => {
   const {materializationEvent: event, runOrError} = definition.assetMaterializations[0] || {};
 
   return (
@@ -417,6 +428,17 @@ const AssetNode: React.FC<{
       >
         {definition.assetKey.path.join(' > ')}
         <div style={{flex: 1}} />
+        <div
+          title="Green if this asset has been materialized since it's upstream dependencies."
+          style={{
+            background: {old: 'red', 'downstream-from-old': 'orange', good: 'green', none: '#ccc'}[
+              computeStatus
+            ],
+            borderRadius: 7.5,
+            width: 15,
+            height: 15,
+          }}
+        />
       </div>
       {definition.description && (
         <div
@@ -479,3 +501,60 @@ const AssetNode: React.FC<{
     </div>
   );
 };
+
+function buildGraphComputeStatuses(graphData: GraphData) {
+  const timestamps: {[key: string]: number} = {};
+  for (const node of Object.values(graphData.nodes)) {
+    timestamps[node.id] =
+      node.definition.assetMaterializations[0]?.materializationEvent.stepStats?.startTime || 0;
+  }
+
+  const upstream: {[key: string]: string[]} = {};
+  Object.keys(graphData.downstream).forEach((upstreamId) => {
+    const downstreamIds = Object.keys(graphData.downstream[upstreamId]);
+
+    downstreamIds.forEach((downstreamId) => {
+      upstream[downstreamId] = upstream[downstreamId] || [];
+      upstream[downstreamId].push(upstreamId);
+    });
+  });
+
+  const statuses: {[key: string]: Status} = {};
+
+  for (const asset of Object.values(graphData.nodes)) {
+    if (asset.definition.assetMaterializations.length === 0) {
+      statuses[asset.id] = 'none';
+    }
+  }
+  for (const asset of Object.values(graphData.nodes)) {
+    statuses[asset.id] = findComputeStatusForId(timestamps, statuses, upstream, asset.id);
+  }
+  return statuses;
+}
+
+type Status = 'good' | 'old' | 'downstream-from-old' | 'none';
+
+function findComputeStatusForId(
+  timestamps: {[key: string]: number},
+  statuses: {[key: string]: Status},
+  upstream: {[key: string]: string[]},
+  id: string,
+  mustBeNewerThan?: number,
+): Status {
+  if (id in statuses) {
+    return statuses[id];
+  }
+  if (mustBeNewerThan && timestamps[id] < mustBeNewerThan) {
+    statuses[id] = 'old';
+    return 'old';
+  }
+
+  statuses[id] = (upstream[id] || []).some(
+    (upstreamId) =>
+      findComputeStatusForId(timestamps, statuses, upstream, upstreamId, timestamps[id]) !== 'good',
+  )
+    ? 'downstream-from-old'
+    : 'good';
+
+  return statuses[id];
+}
