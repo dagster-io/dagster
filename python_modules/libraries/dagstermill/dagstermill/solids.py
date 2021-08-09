@@ -170,7 +170,7 @@ def _dm_solid_compute(name, notebook_path, output_notebook=None, asset_key_prefi
         step_execution_context = step_context.get_step_execution_context()
 
         with tempfile.TemporaryDirectory() as output_notebook_dir:
-            with safe_tempfile_path() as output_log_path:
+            with safe_tempfile_path() as output_log_path:  # [2]??????????? what is this
 
                 prefix = str(uuid.uuid4())
                 parameterized_notebook_path = os.path.join(
@@ -192,13 +192,14 @@ def _dm_solid_compute(name, notebook_path, output_notebook=None, asset_key_prefi
                     papermill_engines.register("dagstermill", DagstermillEngine)
                     papermill.execute_notebook(
                         input_path=parameterized_notebook_path,
-                        output_path=executed_notebook_path,
+                        output_path=executed_notebook_path,  # if the user wants to upload to s3, they have to output to local and upload the file up to s3
                         engine_name="dagstermill",
                         log_output=True,
                     )
 
                 except Exception as ex:  # pylint: disable=broad-except
                     try:
+                        # [1] WHY OPEN AND WRITE AGAIN?????????
                         with open(executed_notebook_path, "rb") as fd:
                             executed_notebook_file_handle = (
                                 step_context.resources.file_manager.write(
@@ -216,6 +217,7 @@ def _dm_solid_compute(name, notebook_path, output_notebook=None, asset_key_prefi
                         )
                         executed_notebook_materialization_path = executed_notebook_path
 
+                    # WTF????? why twice
                     yield AssetMaterialization(
                         asset_key=(asset_key_prefix + [f"{name}_output_notebook"]),
                         description="Location of output notebook in file manager",
@@ -251,6 +253,8 @@ def _dm_solid_compute(name, notebook_path, output_notebook=None, asset_key_prefi
                 # use binary mode when when moving the file since certain file_managers such as S3
                 # may try to hash the contents
                 with open(executed_notebook_path, "rb") as fd:
+                    # hi! here's how the output notebook is stored
+                    # TODO: this should be changed to io manager
                     executed_notebook_file_handle = step_context.resources.file_manager.write(
                         fd, mode="wb", ext="ipynb"
                     )
@@ -283,6 +287,7 @@ def _dm_solid_compute(name, notebook_path, output_notebook=None, asset_key_prefi
                 data_dict = output_nb.scraps.data_dict
                 if output_name in data_dict:
                     # read result that was written by the "yield_result" call
+                    # TODO: read value via io manager
                     value = read_value(output_def.dagster_type, data_dict[output_name])
 
                     yield Output(value, output_name)
@@ -306,7 +311,8 @@ def define_dagstermill_solid(
     output_defs=None,
     config_schema=None,
     required_resource_keys=None,
-    output_notebook=None,
+    output_notebook=None,  # TODO: how do i specify the path rather than the file name?
+    # => so i dont think we have a way to specify the path or file name. instead, `output_notebook` is just the output name.
     asset_key_prefix=None,
     description=None,
     tags=None,
