@@ -38,12 +38,12 @@ HN_ACTION_SCHEMA = StructType(
     required_resource_keys={"hn_client"},
     description="Downloads all of the items for the id range passed in as input and creates a DataFrame with all the entries.",
 )
-def items(context, id_range: Tuple[int, int]) -> Output:
+def items(context, id_range_for_time: Tuple[int, int]) -> Output:
     """
     Downloads all of the items for the id range passed in as input and creates a DataFrame with
     all the entries.
     """
-    start_id, end_id = id_range
+    start_id, end_id = id_range_for_time
 
     context.log.info(f"Downloading range {start_id} up to {end_id}: {end_id - start_id} items.")
 
@@ -55,9 +55,8 @@ def items(context, id_range: Tuple[int, int]) -> Output:
 
     non_none_rows = [row for row in rows if row is not None]
 
-    return Output(
+    yield Output(
         DataFrame(non_none_rows).drop_duplicates(subset=["id"]),
-        "items",
         metadata={"Non-empty items": len(non_none_rows), "Empty items": rows.count(None)},
     )
 

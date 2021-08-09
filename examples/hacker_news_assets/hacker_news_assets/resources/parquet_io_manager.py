@@ -3,7 +3,7 @@ from typing import Union
 
 import pandas
 import pyspark
-from dagster import AssetKey, EventMetadataEntry, IOManager, OutputContext, check, io_manager
+from dagster import EventMetadataEntry, IOManager, OutputContext, check, io_manager
 
 
 class ParquetIOManager(IOManager):
@@ -19,10 +19,7 @@ class ParquetIOManager(IOManager):
 
         base_path = context.resource_config["base_path"]
 
-        return os.path.join(base_path, f"{context.name}.pq")
-
-    def get_output_asset_key(self, context: OutputContext):
-        return AssetKey([*context.resource_config["base_path"].split("://"), context.name])
+        return os.path.join(base_path, f"{context.asset_key.path[-1]}.pq")
 
     def handle_output(
         self, context: OutputContext, obj: Union[pandas.DataFrame, pyspark.sql.DataFrame]
@@ -71,9 +68,9 @@ class PartitionedParquetIOManager(ParquetIOManager):
 
         # if local fs path, store all outptus in same directory
         if "://" not in base_path:
-            return os.path.join(base_path, f"{context.name}-{partition_str}.pq")
+            return os.path.join(base_path, f"{context.asset_key.path[-1]}-{partition_str}.pq")
         # otherwise seperate into different dirs
-        return os.path.join(base_path, context.name, f"{partition_str}.pq")
+        return os.path.join(base_path, context.asset_key.path[-1], f"{partition_str}.pq")
 
     def get_output_asset_partitions(self, context: OutputContext):
         return set([context.resources.partition_start])

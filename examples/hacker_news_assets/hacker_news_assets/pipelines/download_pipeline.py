@@ -1,17 +1,11 @@
 import os
 
-from dagster import (
-    ModeDefinition,
-    PresetDefinition,
-    ResourceDefinition,
-    fs_io_manager,
-    mem_io_manager,
-)
+from dagster import ResourceDefinition, fs_io_manager
 from dagster.core.asset_defs import build_assets_job
 from dagster.seven.temp_dir import get_system_temp_directory
 from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 from dagster_pyspark import pyspark_resource
-from hacker_news_assets.resources.hn_resource import hn_api_subsample_client, hn_snapshot_client
+from hacker_news_assets.resources.hn_resource import hn_api_subsample_client
 from hacker_news_assets.resources.parquet_io_manager import partitioned_parquet_io_manager
 from hacker_news_assets.resources.snowflake_io_manager import time_partitioned_snowflake_io_manager
 from hacker_news_assets.solids.download_items import comments_and_stories_lake, items
@@ -37,21 +31,6 @@ S3_SPARK_CONF = {
         "spark.hadoop.fs.s3.buffer.dir": "/tmp",
     }
 }
-
-
-MODE_TEST = ModeDefinition(
-    name="test_local_data",
-    description="This mode queries snapshotted HN data and does all writes locally.",
-    resource_defs={
-        "io_manager": fs_io_manager,
-        "partition_start": ResourceDefinition.string_resource(),
-        "partition_end": ResourceDefinition.string_resource(),
-        "parquet_io_manager": partitioned_parquet_io_manager,
-        "db_io_manager": mem_io_manager,
-        "pyspark": pyspark_resource,
-        "hn_client": hn_snapshot_client,
-    },
-)
 
 
 DEV_RESOURCES = {
@@ -97,23 +76,6 @@ download_pipeline_properties = {
         }
     },
 }
-
-DEFAULT_PARTITION_RESOURCE_CONFIG = {
-    "partition_start": {"config": "2020-12-30 00:00:00"},
-    "partition_end": {"config": "2020-12-30 01:00:00"},
-}
-
-PRESET_TEST = PresetDefinition(
-    name="test_local_data",
-    run_config={
-        "resources": dict(
-            parquet_io_manager={"config": {"base_path": get_system_temp_directory()}},
-            **DEFAULT_PARTITION_RESOURCE_CONFIG,
-        ),
-    },
-    mode="test_local_data",
-)
-
 
 assets = [id_range_for_time, items, comments_and_stories_lake, comments, stories]
 

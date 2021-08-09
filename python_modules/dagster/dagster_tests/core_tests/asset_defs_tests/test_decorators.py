@@ -95,11 +95,3 @@ def test_all_fields():
     output_def = my_asset.output_defs[0]
     assert output_def.io_manager_key == "my_io_key"
     assert output_def.metadata["metakey"] == "metaval"
-
-
-def test_banned_metadata_keys():
-    with pytest.raises(DagsterInvalidDefinitionError):
-
-        @asset(metadata={"namespace": 123})
-        def _asset2():
-            pass
