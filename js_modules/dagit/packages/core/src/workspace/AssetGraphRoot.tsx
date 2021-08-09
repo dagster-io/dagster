@@ -2,6 +2,7 @@ import {gql, useQuery} from '@apollo/client';
 import {Colors, NonIdealState} from '@blueprintjs/core';
 import {pathVerticalDiagonal} from '@vx/shape';
 import * as dagre from 'dagre';
+import qs from 'query-string';
 import React from 'react';
 import {Link, RouteComponentProps} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -9,6 +10,7 @@ import styled from 'styled-components/macro';
 import {AssetDetails} from '../assets/AssetDetails';
 import {AssetMaterializations} from '../assets/AssetMaterializations';
 import {SVGViewport} from '../graph/SVGViewport';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {Description} from '../pipelines/Description';
 import {SidebarSection} from '../pipelines/SidebarComponents';
 import {METADATA_ENTRY_FRAGMENT} from '../runs/MetadataEntry';
@@ -29,7 +31,6 @@ import {
   AssetGraphQuery_repositoryOrError_Repository_assetDefinitions_assetKey,
 } from './types/AssetGraphQuery';
 import {workspacePath} from './workspacePath';
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
 
 type AssetDefinition = AssetGraphQuery_repositoryOrError_Repository_assetDefinitions;
 type AssetKey = AssetGraphQuery_repositoryOrError_Repository_assetDefinitions_assetKey;
@@ -472,10 +473,6 @@ const AssetNode: React.FC<{
           }}
         >
           <div style={{display: 'flex', justifyContent: 'space-between'}}>
-            <div>Elapsed Time: </div>
-            <TimeElapsed startUnix={event.stepStats.startTime} endUnix={event.stepStats.endTime} />
-          </div>
-          <div style={{display: 'flex', justifyContent: 'space-between'}}>
             <div>Materialized: </div>
             {event.stepStats.endTime ? (
               <TimestampDisplay
@@ -487,11 +484,19 @@ const AssetNode: React.FC<{
             )}
           </div>
           <div style={{display: 'flex', justifyContent: 'space-between'}}>
+            <div>Elapsed Time: </div>
+            <TimeElapsed startUnix={event.stepStats.startTime} endUnix={event.stepStats.endTime} />
+          </div>
+          <div style={{display: 'flex', justifyContent: 'space-between'}}>
             <div>Run: </div>
             {runOrError.__typename === 'PipelineRun' ? (
               <Link
                 style={{fontFamily: FontFamily.monospace}}
-                to={`/instance/runs/${runOrError.runId}?timestamp=${event.stepStats.endTime}`}
+                to={`/instance/runs/${runOrError.runId}?${qs.stringify({
+                  timestamp: event.stepStats.endTime,
+                  selection: event.stepStats.stepKey,
+                  logs: `step:${event.stepStats.stepKey}`,
+                })}`}
                 target="_blank"
               >
                 {titleForRun({runId: runOrError.runId})}
