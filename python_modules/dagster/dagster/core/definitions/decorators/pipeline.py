@@ -12,6 +12,7 @@ from ..mode import ModeDefinition
 from ..output import OutputDefinition
 from ..pipeline import PipelineDefinition
 from ..preset import PresetDefinition
+from ..version_strategy import VersionStrategy
 
 
 class _Pipeline:
@@ -28,6 +29,7 @@ class _Pipeline:
         config_schema: Optional[Dict[str, Any]] = None,
         config_fn: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]] = None,
         solid_retry_policy: Optional[RetryPolicy] = None,
+        version_strategy: Optional[VersionStrategy] = None,
     ):
         self.name = check.opt_str_param(name, "name")
         self.mode_definitions = check.opt_list_param(mode_defs, "mode_defs", ModeDefinition)
@@ -44,6 +46,9 @@ class _Pipeline:
         self.config_fn = check.opt_callable_param(config_fn, "config_fn")
         self.solid_retry_policy = check.opt_inst_param(
             solid_retry_policy, "solid_retry_policy", RetryPolicy
+        )
+        self.version_strategy = check.opt_inst_param(
+            version_strategy, "version_strategy", VersionStrategy
         )
 
     def __call__(self, fn: Callable[..., Any]) -> PipelineDefinition:
@@ -89,6 +94,7 @@ class _Pipeline:
             description=self.description or fn.__doc__,
             hook_defs=self.hook_defs,
             solid_retry_policy=self.solid_retry_policy,
+            version_strategy=self.version_strategy,
         )
         update_wrapper(pipeline_def, fn)
         return pipeline_def
@@ -106,6 +112,7 @@ def pipeline(
     config_schema: Optional[Dict[str, Any]] = None,
     config_fn: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]] = None,
     solid_retry_policy: Optional[RetryPolicy] = None,
+    version_strategy: Optional[VersionStrategy] = None,
 ) -> Union[PipelineDefinition, _Pipeline]:
     """Create a pipeline with the specified parameters from the decorated composition function.
 
@@ -135,6 +142,8 @@ def pipeline(
         solid_retry_policy (Optional[RetryPolicy]): The default retry policy for all solids in
             this pipeline. Only used if retry policy is not defined on the solid definition or
             solid invocation.
+        version_strategy (Optional[VersionStrategy]): The version strategy to use with this
+            pipeline. Providing a VersionStrategy will enable memoization on the pipeline.
 
     Example:
 
@@ -191,4 +200,5 @@ def pipeline(
         config_schema=config_schema,
         config_fn=config_fn,
         solid_retry_policy=solid_retry_policy,
+        version_strategy=version_strategy,
     )

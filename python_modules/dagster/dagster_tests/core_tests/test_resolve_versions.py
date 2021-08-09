@@ -14,6 +14,7 @@ from dagster import (
     String,
     composite_solid,
     dagster_type_loader,
+    execute_pipeline,
     graph,
     io_manager,
     op,
@@ -810,3 +811,34 @@ def test_bad_version_str(graph_for_test, strategy):
             DagsterInvariantViolationError, match=f"'{bad_str}' is not a valid version string."
         ):
             create_execution_plan(my_job, instance=instance)
+
+
+def test_version_strategy_on_pipeline():
+    @solid
+    def my_solid():
+        return 5
+
+    class MyVersionStrategy(VersionStrategy):
+        def get_solid_version(self, _):
+            return "foo"
+
+    @pipeline(
+        version_strategy=MyVersionStrategy(),
+        mode_defs=[
+            ModeDefinition(
+                resource_defs={
+                    "io_manager": IOManagerDefinition.hardcoded_io_manager(
+                        VersionedInMemoryIOManager()
+                    )
+                }
+            )
+        ],
+    )
+    def ten_pipeline():
+        my_solid()
+
+    with instance_for_test() as instance:
+        execute_pipeline(ten_pipeline, instance=instance)
+
+        memoized_plan = create_execution_plan(ten_pipeline, instance=instance)
+        assert len(memoized_plan.step_keys_to_execute) == 0
