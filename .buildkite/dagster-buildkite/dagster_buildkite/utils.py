@@ -55,8 +55,8 @@ def is_pr_and_dagit_only():
 
     try:
         base_branch = os.getenv("BUILDKITE_PULL_REQUEST_BASE_BRANCH")
-        print("Base branch: " + base_branch)
-        print("Branch name: " + branch_name)
+        sys.stderr.write("Base branch: " + base_branch + "\n")
+        sys.stderr.write("Branch name: " + branch_name)
         subprocess.check_call(["git", "fetch", "--tags"])
         diff_files = (
             subprocess.check_output(["git", "diff", base_branch, branch_name, "--name-only"])
