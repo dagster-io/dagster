@@ -140,124 +140,101 @@ def test_dbt_rpc_sync_resource():
     assert it["ran"]
 
 
-# def test_dbt_rpc_sync_resource_cli(dbt_rpc_server):
+@pytest.mark.parametrize(
+    "client_class,resource",
+    [(DbtRpcClient, dbt_rpc_resource), (DbtRpcSyncClient, dbt_rpc_sync_resource)],
+)
+def test_dbt_rpc_resource_status(dbt_rpc_server, client_class, resource):
+    @solid(required_resource_keys={"dbt_rpc"})
+    def compile_solid(context):
+        assert isinstance(context.resources.dbt_rpc, client_class)
+        out = context.resources.dbt_rpc.status()
+        return out
+
+    result = execute_solid(
+        compile_solid,
+        ModeDefinition(resource_defs={"dbt_rpc": resource.configured({"host": "localhost"})}),
+    )
+
+    assert result.success
+    assert isinstance(result.output_value("result"), DbtRpcOutput)
+
+
+# @pytest.mark.parametrize(
+#     "client_class,resource",
+#     [(DbtRpcClient, dbt_rpc_resource), (DbtRpcSyncClient, dbt_rpc_sync_resource)],
+# )
+# def test_dbt_rpc_resource_cli(dbt_rpc_server, client_class, resource):
 #     @solid(required_resource_keys={"dbt_rpc"})
 #     def cli_solid(context):
-#         assert isinstance(context.resources.dbt_rpc, DbtRpcSyncClient)
+#         assert isinstance(context.resources.dbt_rpc, client_class)
 #         out = context.resources.dbt_rpc.cli("run")
 #         return out
 
 #     result = execute_solid(
 #         cli_solid,
-#         ModeDefinition(
-#             resource_defs={"dbt_rpc": dbt_rpc_sync_resource.configured({"host": "localhost"})}
-#         ),
+#         ModeDefinition(resource_defs={"dbt_rpc": resource.configured({"host": "localhost"})}),
 #     )
 
 #     assert result.success
 #     assert isinstance(result.output_value("result"), DbtRpcOutput)
 
 
-# def test_dbt_rpc_sync_resource_compile(dbt_rpc_server):
+# @pytest.mark.parametrize(
+#     "client_class,resource",
+#     [(DbtRpcClient, dbt_rpc_resource), (DbtRpcSyncClient, dbt_rpc_sync_resource)],
+# )
+# def test_dbt_rpc_resource_run(dbt_rpc_server, client_class, resource):
 #     @solid(required_resource_keys={"dbt_rpc"})
-#     def compile_solid(context):
-#         assert isinstance(context.resources.dbt_rpc, DbtRpcSyncClient)
-#         out = context.resources.dbt_rpc.generate_docs(['sort_by_calories.sql'])
+#     def cli_solid(context):
+#         assert isinstance(context.resources.dbt_rpc, client_class)
+#         out = context.resources.dbt_rpc.run(['sort_by_calories'])
 #         return out
 
 #     result = execute_solid(
-#         compile_solid,
-#         ModeDefinition(
-#             resource_defs={"dbt_rpc": dbt_rpc_sync_resource.configured({"host": "localhost"})}
-#         ),
+#         cli_solid,
+#         ModeDefinition(resource_defs={"dbt_rpc": resource.configured({"host": "localhost"})}),
 #     )
 
 #     assert result.success
 #     assert isinstance(result.output_value("result"), DbtRpcOutput)
 
-# parametrize to run with sync and async resources
-def test_dbt_rpc_sync_resource_generate_docs(dbt_rpc_server):
+
+@pytest.mark.parametrize(
+    "client_class,resource",
+    [(DbtRpcClient, dbt_rpc_resource), (DbtRpcSyncClient, dbt_rpc_sync_resource)],
+)
+def test_dbt_rpc_resource_generate_docs(dbt_rpc_server, client_class, resource):
     @solid(required_resource_keys={"dbt_rpc"})
     def compile_solid(context):
-        assert isinstance(context.resources.dbt_rpc, DbtRpcSyncClient)
-        out = context.resources.dbt_rpc.generate_docs()
-
+        assert isinstance(context.resources.dbt_rpc, client_class)
+        out = context.resources.dbt_rpc.generate_docs(True)
         return out
 
     result = execute_solid(
         compile_solid,
-        ModeDefinition(
-            resource_defs={"dbt_rpc": dbt_rpc_sync_resource.configured({"host": "localhost"})}
-        ),
+        ModeDefinition(resource_defs={"dbt_rpc": resource.configured({"host": "localhost"})}),
     )
 
     assert result.success
     assert isinstance(result.output_value("result"), DbtRpcOutput)
 
 
-# parametrize to run with sync and async resources
-def test_dbt_rpc_sync_resource_run_operation(dbt_rpc_server):
+@pytest.mark.parametrize(
+    "client_class,resource",
+    [(DbtRpcClient, dbt_rpc_resource), (DbtRpcSyncClient, dbt_rpc_sync_resource)],
+)
+def test_dbt_rpc_resource_run_operation(dbt_rpc_server, client_class, resource):
     @solid(required_resource_keys={"dbt_rpc"})
     def compile_solid(context):
-        assert isinstance(context.resources.dbt_rpc, DbtRpcSyncClient)
+        assert isinstance(context.resources.dbt_rpc, client_class)
         out = context.resources.dbt_rpc.run_operation('log_macro', {"msg": "hello world"})
         return out
 
     result = execute_solid(
         compile_solid,
-        ModeDefinition(
-            resource_defs={"dbt_rpc": dbt_rpc_sync_resource.configured({"host": "localhost"})}
-        ),
+        ModeDefinition(resource_defs={"dbt_rpc": resource.configured({"host": "localhost"})}),
     )
 
     assert result.success
     assert isinstance(result.output_value("result"), DbtRpcOutput)
-
-
-### passing test reference function is successfully obtaining request token
-# def test_dbt_rpc_resource_2(dbt_rpc_server):
-#     response = {}
-
-#     @solid(required_resource_keys={"dbt_rpc"})
-#     def a_solid(context):
-#         assert isinstance(context.resources.dbt_rpc, DbtRpcClient)
-#         # assert context.resources.dbt_rpc.host == "<default host>"
-#         # assert context.resources.dbt_rpc.port == 8580
-
-#         response["response"] = context.resources.dbt_rpc.cli("run")
-#         # print("wya response")
-#         # print(str(response.__dict__))
-#         # response.result.get("request_token")
-
-#     # use this fn instead:
-#     # dpt_rpc_resource.configured(dictionary)
-#     execute_solid(
-#         a_solid,
-#         ModeDefinition(resource_defs={"dbt_rpc": dbt_rpc_resource}),
-#         None,
-#         None,
-#         {"resources": {"dbt_rpc": {"config": {"host": "localhost"}}}},
-#     )
-#     # assert it["ran"]
-#     assert response["response"] != None
-
-# parametrize to run with sync and async resources
-# test currently fails because generate_docs shoudl not accept params.
-# def test_dbt_rpc_resource_generate_docs(dbt_rpc_server):
-#     @solid(required_resource_keys={"dbt_rpc"})
-#     def compile_solid(context):
-#         assert isinstance(context.resources.dbt_rpc, DbtRpcClient)
-#         out = context.resources.dbt_rpc.generate_docs(['sort_by_calories'])
-#         # request_token = out.result.get("request_token")
-#         print(out.__dict__)
-#         return out
-
-#     result = execute_solid(
-#         compile_solid,
-#         ModeDefinition(
-#             resource_defs={"dbt_rpc": dbt_rpc_resource.configured({"host": "localhost"})}
-#         ),
-#     )
-
-#     assert result.success
-#     assert isinstance(result.output_value("result"), DbtRpcOutput)

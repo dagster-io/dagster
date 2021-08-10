@@ -321,8 +321,7 @@ class DbtRpcClient(DbtResource):
 
     def generate_docs(
         self,
-        models: List[str] = None,
-        exclude: List[str] = None,
+        compile: bool = False,
         **kwargs,
     ) -> DbtRpcOutput:
         """Sends a request with the method ``docs.generate`` to the dbt RPC server, and returns the
@@ -330,11 +329,10 @@ class DbtRpcClient(DbtResource):
         <https://docs.getdbt.com/reference/commands/rpc/#generate-docs>`_.
 
         Args:
-            models (List[str], optional): the models to include in docs generation.
-            exclude (List[str], optional): the models to exclude from docs generation.
+            compile (bool, optional): If true, compile the project before generating a catalog.
 
         """
-        explicit_params = dict(models=models, exclude=exclude)
+        explicit_params = dict(compile=compile)
         params = self._format_params({**explicit_params, **kwargs})
         data = self._default_request(method="docs.generate", params=params)
 
@@ -441,30 +439,27 @@ def dbt_rpc_resource(context) -> DbtRpcClient:
     return DbtRpcClient(host=context.resource_config["host"], port=context.resource_config["port"])
 
 
-## define shared base class among sync and async clients. replace implementation of `get result`
-# with posting or polling
 class DbtRpcSyncClient(DbtRpcClient):
     def _get_result(self, data: str = None) -> DbtRpcOutput:
+        """Sends a request to the dbt RPC server and continuously polls for the status of a request until the state is ``success``."""
+
         out = super()._get_result(data)
         request_token = out.result.get("request_token")
 
-        """Polls the dbt RPC server for the status of a request until the state is ``success``."""
+        logs_start = 0  # Set as 0 for default, confirm this is the expected value
+        interval = 1  # Do we need to allow users to pass in interval?
 
-        logs_start = 0
-        interval = 1  # do we need to allow users to pass in interval?
+        # Any additional logging that needs to happen in this method?
 
         elapsed_time = -1
         current_state = None
 
         while True:
-            # Poll for the dbt RPC request.
-            # need to figure out the logging stuff here
             out = super().poll(
                 request_token=request_token,
                 logs=False,
                 logs_start=logs_start,
             )
-            # raise_for_rpc_error(context, out.response)
 
             current_state = out.result.get("state")
             # Stop polling if request's state is no longer "running".
@@ -487,14 +482,14 @@ class DbtRpcSyncClient(DbtRpcClient):
 
 
 @resource(
-    description="A resource representing a dbt RPC client.",
+    description="A resource representing a synchronous dbt RPC client.",
     config_schema={
         "host": Field(StringSource),
         "port": Field(IntSource, is_required=False, default_value=8580),
     },
 )
 def dbt_rpc_sync_resource(context) -> DbtRpcClient:
-    """This resource defines a dbt RPC client.
+    """This resource defines a synchronous dbt RPC client.
 
     To configure this resource, we recommend using the `configured
     <https://docs.dagster.io/overview/configuration#configured>`_ method.
@@ -503,9 +498,9 @@ def dbt_rpc_sync_resource(context) -> DbtRpcClient:
 
     .. code-block:: python
 
-        custom_dbt_rpc_resource = dbt_rpc_resource.configured({"host": "80.80.80.80","port": 8080,})
+        custom_sync_dbt_rpc_resource = dbt_rpc_sync_resource.configured({"host": "80.80.80.80","port": 8080,})
 
-        @pipeline(mode_defs=[ModeDefinition(resource_defs={"dbt_rpc": custom_dbt_rpc_resource})])
+        @pipeline(mode_defs=[ModeDefinition(resource_defs={"dbt_rpc": custom_dbt_rpc_sync_resource})])
         def dbt_rpc_pipeline():
             # Run solids with `required_resource_keys={"dbt_rpc", ...}`.
 
