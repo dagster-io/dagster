@@ -1,11 +1,23 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors, NonIdealState} from '@blueprintjs/core';
+import {useMutation} from '@apollo/client';
+import {
+  Menu,
+  MenuItem,
+  Colors, NonIdealState} from '@blueprintjs/core';
 import {pathVerticalDiagonal} from '@vx/shape';
 import * as dagre from 'dagre';
 import qs from 'query-string';
 import React from 'react';
 import {useHistory, useRouteMatch, Link, RouteComponentProps} from 'react-router-dom';
 import styled, {CSSProperties} from 'styled-components/macro';
+import {ContextMenu2 as ContextMenu} from '@blueprintjs/popover2';
+import {LAUNCH_PIPELINE_EXECUTION_MUTATION, handleLaunchResult} from '../runs/RunUtils';
+import {
+  LaunchPipelineExecution,
+  LaunchPipelineExecutionVariables,
+} from '../runs/types/LaunchPipelineExecution';
+import {showLaunchError} from '../execute/showLaunchError';
+import {AppContext} from '../app/AppContext';
 
 import {QueryCountdown} from '../app/QueryCountdown';
 import {AssetDetails} from '../assets/AssetDetails';
@@ -33,6 +45,7 @@ import {
   AssetGraphQuery_repositoryOrError_Repository_assetDefinitions_assetKey,
 } from './types/AssetGraphQuery';
 import {workspacePath} from './workspacePath';
+import Color from 'color';
 
 type AssetDefinition = AssetGraphQuery_repositoryOrError_Repository_assetDefinitions;
 type AssetKey = AssetGraphQuery_repositoryOrError_Repository_assetDefinitions_assetKey;
@@ -466,9 +479,38 @@ const AssetNode: React.FC<{
   repoAddress: RepoAddress;
   seondaryHighlight: boolean;
 }> = ({definition, selected, computeStatus, repoAddress, seondaryHighlight}) => {
+  const [launchPipelineExecution] = useMutation<LaunchPipelineExecution>(
+    LAUNCH_PIPELINE_EXECUTION_MUTATION,
+  );
+  const {basePath} = React.useContext(AppContext);
   const {materializationEvent: event, runOrError} = definition.assetMaterializations[0] || {};
 
+  const onLaunch = async () => {
+    console.log('launch', definition, repoAddress)
+    if (!definition.jobName) {
+      console.log('no job');
+      return;
+    }
+
+    try {
+      const result = await launchPipelineExecution({variables: {
+        executionParams: {
+          selector: {
+            pipelineName: definition.jobName,
+            ...repoAddressToSelector(repoAddress),
+            solidSelection: [definition.opName],
+          },
+        }
+      }});
+      handleLaunchResult(basePath, definition.jobName, result);
+    } catch (error) {
+      showLaunchError(error);
+    }
+  }
   return (
+    <ContextMenu content={<Menu><MenuItem text={
+    <span>Launch run to build <span style={{fontFamily: 'monospace', fontWeight: 600}}>{definition.assetKey.path.join(' > ')}</span></span>
+    } icon="send-to" onClick={onLaunch}/></Menu>}>
     <div
       style={{
         border: '1px solid #ececec',
@@ -581,6 +623,7 @@ const AssetNode: React.FC<{
         <span></span>
       )}
     </div>
+    </ContextMenu>
   );
 };
 
