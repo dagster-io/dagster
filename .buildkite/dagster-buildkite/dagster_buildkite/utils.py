@@ -42,7 +42,7 @@ def check_for_release():
     return False
 
 
-def is_phab_and_dagit_only():
+def is_pr_and_dagit_only():
     branch_name = os.getenv("BUILDKITE_BRANCH")
     if branch_name is None:
         branch_name = (
@@ -50,11 +50,11 @@ def is_phab_and_dagit_only():
             .decode("utf-8")
             .strip()
         )
-    if not branch_name.startswith("phabricator"):
+    if branch_name == "master" or branch_name.startswith("release"):
         return False
 
     try:
-        base_branch = branch_name.replace("/diff/", "/base/")
+        base_branch = os.getenv("BUILDKITE_PULL_REQUEST_BASE_BRANCH")
         subprocess.check_call(["git", "fetch", "--tags"])
         diff_files = (
             subprocess.check_output(["git", "diff", base_branch, branch_name, "--name-only"])
