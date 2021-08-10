@@ -1,3 +1,4 @@
+import logging
 import time
 from collections import OrderedDict, defaultdict
 from typing import Dict, Iterable, Optional
@@ -78,8 +79,14 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
             materialization = event.dagster_event.step_materialization_data.materialization
             self._asset_tags[event.dagster_event.asset_key] = materialization.tags or {}
 
-        for handler in self._handlers[run_id]:
-            handler(event)
+        # snapshot handlers
+        handlers = list(self._handlers[run_id])
+
+        for handler in handlers:
+            try:
+                handler(event)
+            except Exception:  # pylint: disable=broad-except
+                logging.exception("Exception in callback for event watch on run %s.", run_id)
 
     def delete_events(self, run_id):
         del self._logs[run_id]
