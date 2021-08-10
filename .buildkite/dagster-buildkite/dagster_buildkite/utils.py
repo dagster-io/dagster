@@ -47,21 +47,13 @@ def is_pr_and_dagit_only():
     branch_name = os.getenv("BUILDKITE_BRANCH")
     base_branch = os.getenv("BUILDKITE_PULL_REQUEST_BASE_BRANCH")
 
-    # if branch_name is None:
-    #     branch_name = (
-    #         subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"])
-    #         .decode("utf-8")
-    #         .strip()
-    #     )
     if branch_name is None or branch_name == "master" or branch_name.startswith("release"):
         return False
 
     try:
-        # sys.stderr.write("Base branch: " + base_branch + "\n")
-        # sys.stderr.write("Branch name: " + branch_name)
-        # subprocess.check_call(["git", "fetch", "--tags"])
+        pr_commit = os.getenv("BUILDKITE_COMMIT")
         diff_files = (
-            subprocess.check_output(["git", "diff", base_branch, branch_name, "--name-only"])
+            subprocess.check_output(["git", "diff", base_branch, pr_commit, "--name-only"])
             .decode("utf-8")
             .strip()
             .split("\n")
