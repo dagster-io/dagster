@@ -160,44 +160,44 @@ def test_dbt_rpc_resource_status(dbt_rpc_server, client_class, resource):
     assert isinstance(result.output_value("result"), DbtRpcOutput)
 
 
-# @pytest.mark.parametrize(
-#     "client_class,resource",
-#     [(DbtRpcClient, dbt_rpc_resource), (DbtRpcSyncClient, dbt_rpc_sync_resource)],
-# )
-# def test_dbt_rpc_resource_cli(dbt_rpc_server, client_class, resource):
-#     @solid(required_resource_keys={"dbt_rpc"})
-#     def cli_solid(context):
-#         assert isinstance(context.resources.dbt_rpc, client_class)
-#         out = context.resources.dbt_rpc.cli("run")
-#         return out
+@pytest.mark.parametrize(
+    "client_class,resource",
+    [(DbtRpcClient, dbt_rpc_resource), (DbtRpcSyncClient, dbt_rpc_sync_resource)],
+)
+def test_dbt_rpc_resource_cli(dbt_rpc_server, client_class, resource):
+    @solid(required_resource_keys={"dbt_rpc"})
+    def cli_solid(context):
+        assert isinstance(context.resources.dbt_rpc, client_class)
+        out = context.resources.dbt_rpc.cli("run")
+        return out
 
-#     result = execute_solid(
-#         cli_solid,
-#         ModeDefinition(resource_defs={"dbt_rpc": resource.configured({"host": "localhost"})}),
-#     )
+    result = execute_solid(
+        cli_solid,
+        ModeDefinition(resource_defs={"dbt_rpc": resource.configured({"host": "localhost"})}),
+    )
 
-#     assert result.success
-#     assert isinstance(result.output_value("result"), DbtRpcOutput)
+    assert result.success
+    assert isinstance(result.output_value("result"), DbtRpcOutput)
 
 
-# @pytest.mark.parametrize(
-#     "client_class,resource",
-#     [(DbtRpcClient, dbt_rpc_resource), (DbtRpcSyncClient, dbt_rpc_sync_resource)],
-# )
-# def test_dbt_rpc_resource_run(dbt_rpc_server, client_class, resource):
-#     @solid(required_resource_keys={"dbt_rpc"})
-#     def cli_solid(context):
-#         assert isinstance(context.resources.dbt_rpc, client_class)
-#         out = context.resources.dbt_rpc.run(['sort_by_calories'])
-#         return out
+@pytest.mark.parametrize(
+    "client_class,resource",
+    [(DbtRpcClient, dbt_rpc_resource), (DbtRpcSyncClient, dbt_rpc_sync_resource)],
+)
+def test_dbt_rpc_resource_run(dbt_rpc_server, client_class, resource):
+    @solid(required_resource_keys={"dbt_rpc"})
+    def cli_solid(context):
+        assert isinstance(context.resources.dbt_rpc, client_class)
+        out = context.resources.dbt_rpc.run(['sort_by_calories'])
+        return out
 
-#     result = execute_solid(
-#         cli_solid,
-#         ModeDefinition(resource_defs={"dbt_rpc": resource.configured({"host": "localhost"})}),
-#     )
+    result = execute_solid(
+        cli_solid,
+        ModeDefinition(resource_defs={"dbt_rpc": resource.configured({"host": "localhost"})}),
+    )
 
-#     assert result.success
-#     assert isinstance(result.output_value("result"), DbtRpcOutput)
+    assert result.success
+    assert isinstance(result.output_value("result"), DbtRpcOutput)
 
 
 @pytest.mark.parametrize(

@@ -11,7 +11,7 @@ from dagster import Field, IntSource, RetryRequested, StringSource, check, resou
 
 from ..dbt_resource import DbtResource
 from .types import DbtRpcOutput
-from .utils import is_fatal_code, raise_for_rpc_error, log_rpc
+from .utils import is_fatal_code
 
 
 class DbtRpcClient(DbtResource):
