@@ -107,8 +107,14 @@ const RepoRouteContainer: React.FC<{repoPath: string}> = (props) => {
         )}
       />
       <Route
-        path="/workspace/:repoPath/assets"
-        render={(props) => <AssetGraphRoot {...props} repoAddress={addressForPath} />}
+        path="/workspace/:repoPath/assets/:assetId"
+        render={(props) => (
+          <AssetGraphRoot
+            {...props}
+            repoAddress={addressForPath}
+            selected={props.match.params.assetId}
+          />
+        )}
       />
       <Route
         path="/workspace/:repoPath/:tab?"

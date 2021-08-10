@@ -166,7 +166,7 @@ export interface AssetGraphQuery_repositoryOrError_Repository_assetDefinitions {
   assetKey: AssetGraphQuery_repositoryOrError_Repository_assetDefinitions_assetKey;
   opName: string | null;
   description: string | null;
-  jobNames: (string | null)[] | null;
+  jobName: string | null;
   dependencies: AssetGraphQuery_repositoryOrError_Repository_assetDefinitions_dependencies[];
   assetMaterializations: AssetGraphQuery_repositoryOrError_Repository_assetDefinitions_assetMaterializations[];
 }

@@ -14,6 +14,7 @@ import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {Item, Items} from './RepositoryContentList';
+import {NavAssetFragment} from './types/NavAssetFragment';
 import {NavQuery} from './types/NavQuery';
 import {NavScheduleFragment} from './types/NavScheduleFragment';
 import {NavSensorFragment} from './types/NavSensorFragment';
@@ -27,6 +28,14 @@ interface Props {
 
 type JobItem = {
   job: [string, string];
+  label: React.ReactNode;
+  repoAddress: RepoAddress;
+  schedule: NavScheduleFragment | null;
+  sensor: NavSensorFragment | null;
+};
+
+type AssetItem = {
+  asset: NavAssetFragment;
   label: React.ReactNode;
   repoAddress: RepoAddress;
   schedule: NavScheduleFragment | null;
@@ -101,19 +110,65 @@ export const FlatContentList: React.FC<Props> = (props) => {
     );
   }, [loading, data, activeRepoAddresses]);
 
+  const assetDefs = React.useMemo(() => {
+    if (
+      loading ||
+      !data ||
+      !data.workspaceOrError ||
+      data.workspaceOrError.__typename !== 'Workspace'
+    ) {
+      return [];
+    }
+    const {locationEntries} = data.workspaceOrError;
+    const assetDefs: AssetItem[] = [];
+    for (const entry of locationEntries) {
+      const location = entry.locationOrLoadError;
+      if (location?.__typename !== 'RepositoryLocation') {
+        continue;
+      }
+
+      for (const repo of location.repositories) {
+        const address = buildRepoAddress(repo.name, location.name);
+        if (!activeRepoAddresses.has(address)) {
+          continue;
+        }
+
+        repo.assetDefinitions.forEach((asset) => {
+          const schedule = null;
+          const sensor = null;
+          assetDefs.push({
+            asset,
+            label: (
+              <Label $hasIcon={!!(schedule || sensor)}>{asset.assetKey.path.join(' > ')}</Label>
+            ),
+            repoAddress: address,
+            schedule,
+            sensor,
+          });
+        });
+      }
+    }
+    return assetDefs;
+  }, [loading, data, activeRepoAddresses]);
+
   if (jobs.length === 0) {
     return <div />;
   }
 
   return (
     <Items style={{height: 'calc(100% - 226px)'}}>
-      {jobs.map((job) => (
-        <JobItem
-          key={`${job.job[0]}:${job.job[1]}-${repoAddressAsString(job.repoAddress)}`}
-          job={job}
-          repoPath={repoPath}
-          selector={selector}
-        />
+      {assetDefs.map(({asset, repoAddress, label}) => (
+        <Item
+          key={asset.id}
+          className={`${
+            asset.id === selector && repoPath === repoAddressAsString(repoAddress) ? 'selected' : ''
+          }`}
+          to={workspacePathFromAddress(repoAddress, `/assets/${encodeURIComponent(asset.id)}`)}
+        >
+          <Box flex={{justifyContent: 'space-between', alignItems: 'center'}}>
+            <div>{label}</div>
+          </Box>
+        </Item>
       ))}
     </Items>
   );
@@ -199,6 +254,16 @@ const NAV_SENSOR_FRAGMENT = gql`
   }
 `;
 
+const NAV_ASSET_FRAGMENT = gql`
+  fragment NavAssetFragment on AssetDefinition {
+    id
+    assetKey {
+      path
+    }
+    jobName
+  }
+`;
+
 const NAV_QUERY = gql`
   query NavQuery {
     workspaceOrError {
@@ -230,6 +295,10 @@ const NAV_QUERY = gql`
                     ...NavSensorFragment
                   }
                 }
+                assetDefinitions {
+                  id
+                  ...NavAssetFragment
+                }
               }
             }
             ... on PythonError {
@@ -244,6 +313,7 @@ const NAV_QUERY = gql`
   ${PYTHON_ERROR_FRAGMENT}
   ${NAV_SCHEDULE_FRAGMENT}
   ${NAV_SENSOR_FRAGMENT}
+  ${NAV_ASSET_FRAGMENT}
 `;
 
 const Label = styled.div<{$hasIcon: boolean}>`

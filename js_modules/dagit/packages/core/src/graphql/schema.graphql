@@ -1078,7 +1078,7 @@ type AssetDefinition {
   assetKey: AssetKey!
   description: String
   opName: String
-  jobNames: [String]
+  jobName: String
   dependencies: [AssetDependency!]!
   assetMaterializations(partitions: [String], beforeTimestampMillis: String, limit: Int): [AssetMaterialization!]!
 }

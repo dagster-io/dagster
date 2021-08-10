@@ -53,11 +53,24 @@ export interface NavQuery_workspaceOrError_Workspace_locationEntries_locationOrL
   sensors: NavQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_sensors[];
 }
 
+export interface NavQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_assetDefinitions_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface NavQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_assetDefinitions {
+  __typename: "AssetDefinition";
+  id: string;
+  assetKey: NavQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_assetDefinitions_assetKey;
+  jobName: string | null;
+}
+
 export interface NavQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories {
   __typename: "Repository";
   id: string;
   name: string;
   pipelines: NavQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines[];
+  assetDefinitions: NavQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_assetDefinitions[];
 }
 
 export interface NavQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation {

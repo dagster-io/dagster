@@ -4,7 +4,7 @@ import {pathVerticalDiagonal} from '@vx/shape';
 import * as dagre from 'dagre';
 import qs from 'query-string';
 import React from 'react';
-import {Link, RouteComponentProps} from 'react-router-dom';
+import {useHistory, useRouteMatch, Link, RouteComponentProps} from 'react-router-dom';
 import styled, {CSSProperties} from 'styled-components/macro';
 
 import {QueryCountdown} from '../app/QueryCountdown';
@@ -39,6 +39,7 @@ type AssetKey = AssetGraphQuery_repositoryOrError_Repository_assetDefinitions_as
 
 interface Props extends RouteComponentProps {
   repoAddress: RepoAddress;
+  selected: string | undefined;
 }
 
 interface Node {
@@ -192,7 +193,7 @@ const buildSVGPath = pathVerticalDiagonal({
 });
 
 export const AssetGraphRoot: React.FC<Props> = (props) => {
-  const {repoAddress} = props;
+  const {repoAddress, selected} = props;
   const repositorySelector = repoAddressToSelector(repoAddress);
   const queryResult = useQuery(ASSETS_GRAPH_QUERY, {
     variables: {repositorySelector},
@@ -200,9 +201,31 @@ export const AssetGraphRoot: React.FC<Props> = (props) => {
     pollInterval: POLL_INTERVAL,
   });
   const [nodeSelection, setSelectedNode] = React.useState<Node | undefined>();
+  const history = useHistory();
+  const match = useRouteMatch<{repoPath: string;}>();
+
+  React.useEffect(() => {
+    if (!selected || !queryResult.data || !queryResult.data.repositoryOrError) {
+      return;
+    }
+    if (queryResult.data.repositoryOrError.__typename !== 'Repository') {
+      return;
+    }
+    const repository = queryResult.data.repositoryOrError;
+    repository.assetDefinitions.forEach((definition: AssetDefinition) => {
+      if (definition.id === selected) {
+        setSelectedNode({
+          id: JSON.stringify(definition.assetKey.path),
+          assetKey: definition.assetKey,
+          definition,
+        })
+      }
+    })
+  }, [selected, queryResult]);
 
   const selectNode = (node: Node) => {
     setSelectedNode(node);
+    history.push(`/workspace/${match.params.repoPath}/assets/${encodeURIComponent(node.id)}`)
   };
 
   // Show the name of the composite solid we are within (-1 is the selection, -2 is current parent)
@@ -343,15 +366,13 @@ const AssetPanel = ({node, repoAddress}: {node: Node; repoAddress: RepoAddress})
       <SidebarSection title="Description">
         <Description description={node.definition.description || null} />
       </SidebarSection>
-      <SidebarSection title="Jobs">
-        {node.definition.jobNames
-          ? node.definition.jobNames.map((name) => (
-              <div key={name}>
-                <Link to={workspacePath(repoAddress.name, repoAddress.location, `/jobs/${name}`)}>
-                  {name}
-                </Link>
-              </div>
-            ))
+      <SidebarSection title="Job">
+        {node.definition.jobName
+          ? (
+              <Link to={workspacePath(repoAddress.name, repoAddress.location, `/jobs/${node.definition.jobName}`)}>
+                {node.definition.jobName}
+              </Link>
+            )
           : null}
       </SidebarSection>
       <SidebarSection title={'Latest Event'}>
@@ -367,7 +388,7 @@ const AssetPanel = ({node, repoAddress}: {node: Node; repoAddress: RepoAddress})
 
 function runForDisplay(d: AssetDefinition) {
   const run = d.assetMaterializations[0]?.runOrError;
-  return run.__typename === 'PipelineRun' ? run : null;
+  return run && run.__typename === 'PipelineRun' ? run : null;
 }
 
 const ASSETS_GRAPH_QUERY = gql`
@@ -387,7 +408,7 @@ const ASSETS_GRAPH_QUERY = gql`
           }
           opName
           description
-          jobNames
+          jobName
           dependencies {
             inputName
             upstreamAsset {

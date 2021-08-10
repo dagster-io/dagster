@@ -35,7 +35,7 @@ export const RepositoryContentList: React.FC<RepositoryContentListProps> = ({
   selector,
 }) => {
   const client = useApolloClient();
-  const [type, setType] = React.useState<'pipelines' | 'solids'>('pipelines');
+  const [type, setType] = React.useState<'pipelines' | 'solids' | 'assets'>('assets');
   const [selectedSolids, setSelectedSolids] = React.useState<Item[]>(() => []);
   const {flagPipelineModeTuples} = useFeatureFlags();
 
