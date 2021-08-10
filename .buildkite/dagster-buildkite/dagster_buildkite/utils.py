@@ -1,6 +1,7 @@
 import os
 import subprocess
 
+import sys
 import yaml
 
 DAGIT_PATH = "js_modules/dagit"
