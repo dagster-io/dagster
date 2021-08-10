@@ -39,7 +39,7 @@ To define a pipeline, use the <PyObject object="pipeline" decorator /> decorator
 
 Within the decorated function body, we use function calls to indicate the dependency structure between the solids making up the pipeline.
 
-In this example, the `add_one` solid depends on the `return_one` solid's output. Because this data dependency exists, the `return_one` solid executes after `add_one` runs successfully and emits the required output.
+In this example, the `add_one` solid depends on the `return_one` solid's output. Because this data dependency exists, the `add_one` solid executes after `return_one` runs successfully and emits the required output.
 
 ```python file=/concepts/solids_pipelines/pipelines.py startafter=start_pipeline_example_marker endbefore=end_pipeline_example_marker
 @solid
