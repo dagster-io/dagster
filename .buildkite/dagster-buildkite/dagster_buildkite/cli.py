@@ -4,7 +4,7 @@ from .steps.dagster import coverage_step, dagster_steps
 from .steps.integration import integration_steps
 from .steps.trigger import trigger_step
 from .steps.wait import wait_step
-from .utils import buildkite_yaml_for_steps, is_phab_and_dagit_only
+from .utils import buildkite_yaml_for_steps, is_pr_and_dagit_only
 
 CLI_HELP = """This CLI is used for generating Buildkite YAML.
 """
@@ -12,7 +12,7 @@ CLI_HELP = """This CLI is used for generating Buildkite YAML.
 
 def dagster():
     all_steps = dagit_steps()
-    dagit_only = is_phab_and_dagit_only()
+    dagit_only = is_pr_and_dagit_only()
 
     # If we're in a Phabricator diff and are only making dagit changes, skip the
     # remaining steps since they're not relevant to the diff.
