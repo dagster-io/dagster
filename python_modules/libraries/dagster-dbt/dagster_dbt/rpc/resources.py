@@ -76,7 +76,7 @@ class DbtRpcClient(DbtResource):
         headers["Accept"] = "application/json"
         return headers
 
-    def _get_result(self, data: str = None) -> DbtRpcOutput:
+    def _post(self, data: str = None) -> DbtRpcOutput:
         """Constructs and sends a POST request to the dbt RPC server.
 
         Returns:
@@ -92,6 +92,14 @@ class DbtRpcClient(DbtResource):
             else:
                 raise RetryRequested(max_retries=5, seconds_to_wait=30)
         return DbtRpcOutput(response)
+
+    def _get_result(self, data: str = None) -> DbtRpcOutput:
+        """Constructs and sends a POST request to the dbt RPC server.
+
+        Returns:
+            Response: the HTTP response from the dbt RPC server.
+        """
+        return self._post(data)
 
     def _default_request(self, method: str, params: Dict[str, Any] = None) -> Dict[str, Any]:
         """Constructs a standard HTTP request body, to be sent to a dbt RPC server.
@@ -144,7 +152,7 @@ class DbtRpcClient(DbtResource):
             Response: the HTTP response from the dbt RPC server.
         """
         data = self._default_request(method="status")
-        return DbtRpcClient._get_result(self, data=json.dumps(data))
+        return self._post(data=json.dumps(data))
 
     def poll(self, request_token: str, logs: bool = False, logs_start: int = 0) -> DbtRpcOutput:
         """Sends a request with the method ``poll`` to the dbt RPC server, and returns the response.
@@ -161,7 +169,7 @@ class DbtRpcClient(DbtResource):
         """
         data = self._default_request(method="poll")
         data["params"] = {"request_token": request_token, "logs": logs, "logs_start": logs_start}
-        return DbtRpcClient._get_result(self, data=json.dumps(data))
+        return self._post(data=json.dumps(data))
 
     def ps(self, completed: bool = False) -> DbtRpcOutput:
         """Sends a request with the method ``ps`` to the dbt RPC server, and returns the response.
@@ -176,7 +184,7 @@ class DbtRpcClient(DbtResource):
         """
         data = self._default_request(method="ps")
         data["params"] = {"completed": completed}
-        return DbtRpcClient._get_result(self, data=json.dumps(data))
+        return self._post(data=json.dumps(data))
 
     def kill(self, task_id: str) -> DbtRpcOutput:
         """Sends a request with the method ``kill`` to the dbt RPC server, and returns the response.
@@ -191,7 +199,7 @@ class DbtRpcClient(DbtResource):
         """
         data = self._default_request(method="kill")
         data["params"] = {"task_id": task_id}
-        return DbtRpcClient._get_result(self, data=json.dumps(data))
+        return self._post(data=json.dumps(data))
 
     def cli(self, command: str, **kwargs) -> DbtRpcOutput:
         """Sends a request with CLI syntax to the dbt RPC server, and returns the response.
@@ -440,6 +448,29 @@ def dbt_rpc_resource(context) -> DbtRpcClient:
 
 
 class DbtRpcSyncClient(DbtRpcClient):
+    def __init__(
+        self,
+        host: str = "0.0.0.0",
+        port: int = 8580,
+        jsonrpc_version: str = "2.0",
+        logger: Optional[Any] = None,
+        poll_interval: int = 1,
+        **_,
+    ):
+        """Constructor
+
+        Args:
+            host (str): The IP address of the host of the dbt RPC server. Default is ``"0.0.0.0"``.
+            port (int): The port of the dbt RPC server. Default is ``8580``.
+            jsonrpc_version (str): The JSON-RPC version to send in RPC requests.
+                Default is ``"2.0"``.
+            logger (Optional[Any]): A property for injecting a logger dependency.
+                Default is ``None``.
+            poll_interval (int): The polling interval in seconds.
+        """
+        super().__init__(host, port, jsonrpc_version, logger)
+        self.poll_interval = poll_interval
+
     def _get_result(self, data: str = None) -> DbtRpcOutput:
         """Sends a request to the dbt RPC server and continuously polls for the status of a request until the state is ``success``."""
 
@@ -447,13 +478,12 @@ class DbtRpcSyncClient(DbtRpcClient):
         request_token = out.result.get("request_token")
 
         logs_start = 0
-        interval = 1
 
         elapsed_time = -1
         current_state = None
 
         while True:
-            out = super().poll(
+            out = self.poll(
                 request_token=request_token,
                 logs=False,
                 logs_start=logs_start,
@@ -466,7 +496,7 @@ class DbtRpcSyncClient(DbtRpcClient):
 
             elapsed_time = out.result.get("elapsed", 0)
             # Sleep for the configured time interval before polling again.
-            time.sleep(interval)
+            time.sleep(self.poll_interval)
 
         if current_state != "success":
             raise Failure(
@@ -484,9 +514,13 @@ class DbtRpcSyncClient(DbtRpcClient):
     config_schema={
         "host": Field(StringSource),
         "port": Field(IntSource, is_required=False, default_value=8580),
+        "poll_interval": Field(IntSource, is_required=False, default_value=1),
     },
 )
-def dbt_rpc_sync_resource(context) -> DbtRpcClient:
+def dbt_rpc_sync_resource(
+    context,
+    poll_interval: int = 1,
+) -> DbtRpcClient:
     """This resource defines a synchronous dbt RPC client.
 
     To configure this resource, we recommend using the `configured
@@ -504,7 +538,9 @@ def dbt_rpc_sync_resource(context) -> DbtRpcClient:
 
     """
     return DbtRpcSyncClient(
-        host=context.resource_config["host"], port=context.resource_config["port"]
+        host=context.resource_config["host"],
+        port=context.resource_config["port"],
+        poll_interval=poll_interval,
     )
 
 

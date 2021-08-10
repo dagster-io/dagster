@@ -135,7 +135,7 @@ def test_dbt_rpc_sync_resource():
         ModeDefinition(resource_defs={"dbt_rpc": dbt_rpc_sync_resource}),
         None,
         None,
-        {"resources": {"dbt_rpc": {"config": {"host": "<default host>"}}}},
+        {"resources": {"dbt_rpc": {"config": {"host": "<default host>", "poll_interval": 5}}}},
     )
     assert it["ran"]
 
@@ -158,6 +158,52 @@ def test_dbt_rpc_resource_status(dbt_rpc_server, client_class, resource):
 
     assert result.success
     assert isinstance(result.output_value("result"), DbtRpcOutput)
+
+
+def test_dbt_rpc_resource_is_not_waiting(dbt_rpc_server):
+    @solid(required_resource_keys={"dbt_rpc"})
+    def cli_solid(context):
+        assert isinstance(context.resources.dbt_rpc, DbtRpcClient)
+        out = context.resources.dbt_rpc.cli("run")
+        return out
+
+    result = execute_solid(
+        cli_solid,
+        ModeDefinition(
+            resource_defs={"dbt_rpc": dbt_rpc_resource.configured({"host": "localhost"})}
+        ),
+    )
+
+    assert result.success
+    result = result.output_value("result")
+    assert isinstance(result, DbtRpcOutput)
+
+    response = result.response_dict.get("result", {})
+    assert "elapsed" not in response
+    assert "request_token" in response
+
+
+def test_dbt_rpc_sync_resource_is_waiting(dbt_rpc_server):
+    @solid(required_resource_keys={"dbt_rpc"})
+    def cli_solid(context):
+        assert isinstance(context.resources.dbt_rpc, DbtRpcSyncClient)
+        out = context.resources.dbt_rpc.cli("run")
+        return out
+
+    result = execute_solid(
+        cli_solid,
+        ModeDefinition(
+            resource_defs={"dbt_rpc": dbt_rpc_sync_resource.configured({"host": "localhost"})}
+        ),
+    )
+
+    assert result.success
+    result = result.output_value("result")
+    assert isinstance(result, DbtRpcOutput)
+
+    response = result.response_dict.get("result", {})
+    assert "elapsed" in response
+    assert "request_token" not in response
 
 
 @pytest.mark.parametrize(
