@@ -52,8 +52,9 @@ def is_pr_and_dagit_only():
 
     try:
         pr_commit = os.getenv("BUILDKITE_COMMIT")
+        origin_base = "origin/" + base_branch
         diff_files = (
-            subprocess.check_output(["git", "diff", base_branch, pr_commit, "--name-only"])
+            subprocess.check_output(["git", "diff", origin_base, pr_commit, "--name-only"])
             .decode("utf-8")
             .strip()
             .split("\n")
