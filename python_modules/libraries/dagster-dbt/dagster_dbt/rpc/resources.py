@@ -446,10 +446,8 @@ class DbtRpcSyncClient(DbtRpcClient):
         out = super()._get_result(data)
         request_token = out.result.get("request_token")
 
-        logs_start = 0  # Set as 0 for default, confirm this is the expected value
-        interval = 1  # Do we need to allow users to pass in interval?
-
-        # Any additional logging that needs to happen in this method?
+        logs_start = 0
+        interval = 1
 
         elapsed_time = -1
         current_state = None
