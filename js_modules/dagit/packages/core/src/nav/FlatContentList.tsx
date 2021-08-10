@@ -110,6 +110,15 @@ export const FlatContentList: React.FC<Props> = (props) => {
     );
   }, [loading, data, activeRepoAddresses]);
 
+  const jobsByJobName: {[jobName: string]: JobItem[]} = React.useMemo(() => {
+    const _jobs = {};
+    jobs.forEach((job) => {
+      const jobName = job.job[0];
+      _jobs[jobName] = [...(_jobs[jobName] || []), job];
+    });
+    return _jobs;
+  }, [jobs]);
+
   const assetDefs = React.useMemo(() => {
     if (
       loading ||
@@ -134,8 +143,9 @@ export const FlatContentList: React.FC<Props> = (props) => {
         }
 
         repo.assetDefinitions.forEach((asset) => {
-          const schedule = null;
-          const sensor = null;
+          const jobs = asset.jobName ? jobsByJobName[asset.jobName] || [] : [];
+          const schedule = jobs.find((x) => x.schedule)?.schedule || null;
+          const sensor = jobs.find((x) => x.sensor)?.sensor || null;
           assetDefs.push({
             asset,
             label: (
@@ -149,7 +159,7 @@ export const FlatContentList: React.FC<Props> = (props) => {
       }
     }
     return assetDefs;
-  }, [loading, data, activeRepoAddresses]);
+  }, [loading, data, activeRepoAddresses, jobsByJobName]);
 
   if (jobs.length === 0) {
     return <div />;
@@ -157,7 +167,7 @@ export const FlatContentList: React.FC<Props> = (props) => {
 
   return (
     <Items style={{height: 'calc(100% - 226px)'}}>
-      {assetDefs.map(({asset, repoAddress, label}) => (
+      {assetDefs.map(({asset, repoAddress, label, schedule, sensor}) => (
         <Item
           key={asset.id}
           className={`${
@@ -167,10 +177,46 @@ export const FlatContentList: React.FC<Props> = (props) => {
         >
           <Box flex={{justifyContent: 'space-between', alignItems: 'center'}}>
             <div>{label}</div>
+            <ItemIcon schedule={schedule} sensor={sensor} />
           </Box>
         </Item>
       ))}
     </Items>
+  );
+};
+
+const ItemIcon = ({
+  schedule,
+  sensor,
+}: {
+  schedule: NavScheduleFragment | null;
+  sensor: NavSensorFragment | null;
+}) => {
+  if (!schedule && !sensor) {
+    return null;
+  }
+
+  const whichIcon = schedule ? 'time' : 'automatic-updates';
+  const status = schedule ? schedule?.scheduleState.status : sensor?.sensorState.status;
+  const tooltipContent = schedule ? (
+    <>
+      Schedule: <strong>{schedule.name}</strong>
+    </>
+  ) : (
+    <>
+      Sensor: <strong>{sensor?.name}</strong>
+    </>
+  );
+
+  return (
+    <IconWithTooltip content={tooltipContent} inheritDarkTheme={false}>
+      <Icon
+        icon={whichIcon}
+        iconSize={12}
+        color={status === InstigationStatus.RUNNING ? Colors.GREEN5 : Colors.DARK_GRAY5}
+        style={{display: 'block'}}
+      />
+    </IconWithTooltip>
   );
 };
 
@@ -187,35 +233,6 @@ const JobItem: React.FC<JobItemProps> = (props) => {
   const jobName = `${job[0]}:${job[1]}`;
   const jobRepoPath = repoAddressAsString(repoAddress);
 
-  const icon = () => {
-    if (!schedule && !sensor) {
-      return null;
-    }
-
-    const whichIcon = schedule ? 'time' : 'automatic-updates';
-    const status = schedule ? schedule?.scheduleState.status : sensor?.sensorState.status;
-    const tooltipContent = schedule ? (
-      <>
-        Schedule: <strong>{schedule.name}</strong>
-      </>
-    ) : (
-      <>
-        Sensor: <strong>{sensor?.name}</strong>
-      </>
-    );
-
-    return (
-      <IconWithTooltip content={tooltipContent} inheritDarkTheme={false}>
-        <Icon
-          icon={whichIcon}
-          iconSize={12}
-          color={status === InstigationStatus.RUNNING ? Colors.GREEN5 : Colors.DARK_GRAY5}
-          style={{display: 'block'}}
-        />
-      </IconWithTooltip>
-    );
-  };
-
   return (
     <Item
       key={jobName}
@@ -224,7 +241,7 @@ const JobItem: React.FC<JobItemProps> = (props) => {
     >
       <Box flex={{justifyContent: 'space-between', alignItems: 'center'}}>
         <div>{label}</div>
-        {icon()}
+        <ItemIcon schedule={schedule} sensor={sensor} />
       </Box>
     </Item>
   );
