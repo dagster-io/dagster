@@ -2,12 +2,12 @@ import pytest
 import responses
 from dagster import ModeDefinition, execute_solid, solid
 from dagster_dbt import (
-    DbtRpcOutput,
     DbtRpcClient,
+    DbtRpcOutput,
     DbtRpcSyncClient,
     dbt_rpc_resource,
-    local_dbt_rpc_resource,
     dbt_rpc_sync_resource,
+    local_dbt_rpc_resource,
 )
 
 
@@ -234,7 +234,7 @@ def test_dbt_rpc_resource_run(dbt_rpc_server, client_class, resource):
     @solid(required_resource_keys={"dbt_rpc"})
     def cli_solid(context):
         assert isinstance(context.resources.dbt_rpc, client_class)
-        out = context.resources.dbt_rpc.run(['sort_by_calories'])
+        out = context.resources.dbt_rpc.run(["sort_by_calories"])
         return out
 
     result = execute_solid(
@@ -274,7 +274,7 @@ def test_dbt_rpc_resource_run_operation(dbt_rpc_server, client_class, resource):
     @solid(required_resource_keys={"dbt_rpc"})
     def compile_solid(context):
         assert isinstance(context.resources.dbt_rpc, client_class)
-        out = context.resources.dbt_rpc.run_operation('log_macro', {"msg": "hello world"})
+        out = context.resources.dbt_rpc.run_operation("log_macro", {"msg": "hello world"})
         return out
 
     result = execute_solid(

@@ -7,7 +7,7 @@ from base64 import standard_b64encode as b64
 from typing import Any, Dict, List, Optional
 
 import requests
-from dagster import Field, IntSource, RetryRequested, StringSource, check, resource, Failure
+from dagster import Failure, Field, IntSource, RetryRequested, StringSource, check, resource
 
 from ..dbt_resource import DbtResource
 from .types import DbtRpcOutput
@@ -519,7 +519,6 @@ class DbtRpcSyncClient(DbtRpcClient):
 )
 def dbt_rpc_sync_resource(
     context,
-    poll_interval: int = 1,
 ) -> DbtRpcClient:
     """This resource defines a synchronous dbt RPC client.
 
@@ -540,7 +539,7 @@ def dbt_rpc_sync_resource(
     return DbtRpcSyncClient(
         host=context.resource_config["host"],
         port=context.resource_config["port"],
-        poll_interval=poll_interval,
+        poll_interval=context.resource_config["poll_interval"],
     )
 
 
