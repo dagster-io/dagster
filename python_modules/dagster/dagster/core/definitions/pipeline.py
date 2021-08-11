@@ -259,6 +259,10 @@ class PipelineDefinition:
             experimental_class_warning("VersionStrategy")
 
     @property
+    def origin_class(self) -> str:
+        return "pipeline"
+
+    @property
     def name(self):
         return self._name
 

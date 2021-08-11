@@ -782,7 +782,7 @@ class ExecutionPlan(
                 io_manager = getattr(resources, io_manager_key)
                 if not isinstance(io_manager, MemoizableIOManager):
                     raise DagsterInvariantViolationError(
-                        f"Pipeline {pipeline_def.name} uses memoization, but IO manager "
+                        f"{pipeline_def.origin_class} {pipeline_def.name} uses memoization, but IO manager "
                         f"'{io_manager_key}' is not a MemoizableIOManager. In order to use "
                         "memoization, all io managers need to subclass MemoizableIOManager. "
                         "Learn more about MemoizableIOManagers here: "

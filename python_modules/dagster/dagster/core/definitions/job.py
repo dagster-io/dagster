@@ -58,3 +58,7 @@ class JobDefinition(PipelineDefinition):
             graph_def=graph_def,
             version_strategy=version_strategy,
         )
+
+    @property
+    def origin_class(self) -> str:
+        return "job"
