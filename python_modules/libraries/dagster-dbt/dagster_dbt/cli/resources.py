@@ -172,18 +172,18 @@ class DbtCliResource(DbtResource):
         """
         return self.cli("seed", show=show, **kwargs)
 
-    def generate_docs(self, compile: bool = False, **kwargs) -> DbtCliOutput:
+    def generate_docs(self, compile_project: bool = False, **kwargs) -> DbtCliOutput:
         """
         Run the ``docs generate`` command on a dbt project. kwargs are passed in as additional parameters.
 
         Args:
-            compile (bool, optional): If true, compile the project before generating a catalog.
+            compile_project (bool, optional): If true, compile the project before generating a catalog.
 
         Returns:
             DbtCliOutput: An instance of :class:`DbtCliOutput<dagster_dbt.DbtCliOutput>` containing
                 parsed log output as well as the contents of run_results.json (if applicable).
         """
-        return self.cli("docs generate", compile=compile, **kwargs)
+        return self.cli("docs generate", compile=compile_project, **kwargs)
 
     def run_operation(
         self, macro: str, args: Optional[Dict[str, Any]] = None, **kwargs

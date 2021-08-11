@@ -144,7 +144,9 @@ def test_dbt_rpc_sync_resource():
     "client_class,resource",
     [(DbtRpcClient, dbt_rpc_resource), (DbtRpcSyncClient, dbt_rpc_sync_resource)],
 )
-def test_dbt_rpc_resource_status(dbt_rpc_server, client_class, resource):
+def test_dbt_rpc_resource_status(
+    dbt_rpc_server, client_class, resource
+):  # pylint: disable=unused-argument
     @solid(required_resource_keys={"dbt_rpc"})
     def compile_solid(context):
         assert isinstance(context.resources.dbt_rpc, client_class)
@@ -160,7 +162,7 @@ def test_dbt_rpc_resource_status(dbt_rpc_server, client_class, resource):
     assert isinstance(result.output_value("result"), DbtRpcOutput)
 
 
-def test_dbt_rpc_resource_is_not_waiting(dbt_rpc_server):
+def test_dbt_rpc_resource_is_not_waiting(dbt_rpc_server):  # pylint: disable=unused-argument
     @solid(required_resource_keys={"dbt_rpc"})
     def cli_solid(context):
         assert isinstance(context.resources.dbt_rpc, DbtRpcClient)
@@ -183,7 +185,7 @@ def test_dbt_rpc_resource_is_not_waiting(dbt_rpc_server):
     assert "request_token" in response
 
 
-def test_dbt_rpc_sync_resource_is_waiting(dbt_rpc_server):
+def test_dbt_rpc_sync_resource_is_waiting(dbt_rpc_server):  # pylint: disable=unused-argument
     @solid(required_resource_keys={"dbt_rpc"})
     def cli_solid(context):
         assert isinstance(context.resources.dbt_rpc, DbtRpcSyncClient)
@@ -210,7 +212,9 @@ def test_dbt_rpc_sync_resource_is_waiting(dbt_rpc_server):
     "client_class,resource",
     [(DbtRpcClient, dbt_rpc_resource), (DbtRpcSyncClient, dbt_rpc_sync_resource)],
 )
-def test_dbt_rpc_resource_cli(dbt_rpc_server, client_class, resource):
+def test_dbt_rpc_resource_cli(
+    dbt_rpc_server, client_class, resource
+):  # pylint: disable=unused-argument
     @solid(required_resource_keys={"dbt_rpc"})
     def cli_solid(context):
         assert isinstance(context.resources.dbt_rpc, client_class)
@@ -230,7 +234,9 @@ def test_dbt_rpc_resource_cli(dbt_rpc_server, client_class, resource):
     "client_class,resource",
     [(DbtRpcClient, dbt_rpc_resource), (DbtRpcSyncClient, dbt_rpc_sync_resource)],
 )
-def test_dbt_rpc_resource_run(dbt_rpc_server, client_class, resource):
+def test_dbt_rpc_resource_run(
+    dbt_rpc_server, client_class, resource
+):  # pylint: disable=unused-argument
     @solid(required_resource_keys={"dbt_rpc"})
     def cli_solid(context):
         assert isinstance(context.resources.dbt_rpc, client_class)
@@ -250,7 +256,9 @@ def test_dbt_rpc_resource_run(dbt_rpc_server, client_class, resource):
     "client_class,resource",
     [(DbtRpcClient, dbt_rpc_resource), (DbtRpcSyncClient, dbt_rpc_sync_resource)],
 )
-def test_dbt_rpc_resource_generate_docs(dbt_rpc_server, client_class, resource):
+def test_dbt_rpc_resource_generate_docs(
+    dbt_rpc_server, client_class, resource
+):  # pylint: disable=unused-argument
     @solid(required_resource_keys={"dbt_rpc"})
     def compile_solid(context):
         assert isinstance(context.resources.dbt_rpc, client_class)
@@ -270,7 +278,9 @@ def test_dbt_rpc_resource_generate_docs(dbt_rpc_server, client_class, resource):
     "client_class,resource",
     [(DbtRpcClient, dbt_rpc_resource), (DbtRpcSyncClient, dbt_rpc_sync_resource)],
 )
-def test_dbt_rpc_resource_run_operation(dbt_rpc_server, client_class, resource):
+def test_dbt_rpc_resource_run_operation(
+    dbt_rpc_server, client_class, resource
+):  # pylint: disable=unused-argument
     @solid(required_resource_keys={"dbt_rpc"})
     def compile_solid(context):
         assert isinstance(context.resources.dbt_rpc, client_class)

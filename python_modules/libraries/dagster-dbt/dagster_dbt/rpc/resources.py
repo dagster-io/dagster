@@ -329,7 +329,7 @@ class DbtRpcClient(DbtResource):
 
     def generate_docs(
         self,
-        compile: bool = False,
+        compile_project: bool = False,
         **kwargs,
     ) -> DbtRpcOutput:
         """Sends a request with the method ``docs.generate`` to the dbt RPC server, and returns the
@@ -337,10 +337,10 @@ class DbtRpcClient(DbtResource):
         <https://docs.getdbt.com/reference/commands/rpc/#generate-docs>`_.
 
         Args:
-            compile (bool, optional): If true, compile the project before generating a catalog.
+            compile_project (bool, optional): If true, compile the project before generating a catalog.
 
         """
-        explicit_params = dict(compile=compile)
+        explicit_params = dict(compile=compile_project)
         params = self._format_params({**explicit_params, **kwargs})
         data = self._default_request(method="docs.generate", params=params)
 

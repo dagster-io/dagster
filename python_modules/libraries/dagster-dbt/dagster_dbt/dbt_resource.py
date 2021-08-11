@@ -126,12 +126,12 @@ class DbtResource:
         """
 
     @abstractmethod
-    def generate_docs(self, compile: bool = False, **kwargs) -> DbtOutput:
+    def generate_docs(self, compile_project: bool = False, **kwargs) -> DbtOutput:
         """
         Run the ``docs generate`` command on a dbt project. kwargs are passed in as additional parameters.
 
         Args:
-            compile (bool, optional): If true, compile the project before generating a catalog.
+            compile_project (bool, optional): If true, compile the project before generating a catalog.
 
         Returns:
             DbtOutput: object containing parsed output from dbt
