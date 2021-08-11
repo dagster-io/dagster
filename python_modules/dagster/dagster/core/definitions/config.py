@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Callable, Dict, NamedTuple, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Dict, NamedTuple, Optional, Union, cast
 
 from dagster import check
 from dagster.builtins import BuiltinEnum
@@ -25,7 +25,7 @@ class ConfigMapping(
         [
             ("config_fn", Callable[[Any], Any]),
             ("config_schema", IDefinitionConfigSchema),
-            ("receive_processed_config_values", bool),
+            ("receive_processed_config_values", Optional[bool]),
         ],
     )
 ):
@@ -43,7 +43,7 @@ class ConfigMapping(
         config_fn (Callable[[dict], dict]): The function that will be called
             to map the composite config to a config appropriate for the child solids.
         config_schema (ConfigSchema): The schema of the composite config.
-        receive_processed_config_values (bool): If true, config values provided to the config_fn
+        receive_processed_config_values (Optional[bool]): If true, config values provided to the config_fn
             will be converted to their dagster types before being passed in. For example, if this
             value is true, enum config passed to config_fn will be actual enums, while if false,
             then enum config passed to config_fn will be strings.
@@ -53,43 +53,54 @@ class ConfigMapping(
         cls,
         config_fn: Callable[[Any], Any],
         config_schema: Any = None,
-        receive_processed_config_values: bool = True,
+        receive_processed_config_values: Optional[bool] = None,
     ):
         return super(ConfigMapping, cls).__new__(
             cls,
             config_fn=check.callable_param(config_fn, "config_fn"),
             config_schema=convert_user_facing_definition_config_schema(config_schema),
-            receive_processed_config_values=check.bool_param(
+            receive_processed_config_values=check.opt_bool_param(
                 receive_processed_config_values, "receive_processed_config_values"
             ),
         )
 
-    def resolve(self, config: Any, config_has_been_validated=False) -> Any:
-        if not config_has_been_validated:
-            if self.receive_processed_config_values:
-                outer_evr = process_config(
-                    self.config_schema.config_type,
-                    config,
-                )
-            else:
-                outer_evr = validate_config(
-                    self.config_schema.config_type,
-                    config,
-                )
-            if not outer_evr.success:
-                raise DagsterInvalidConfigError(
-                    "Error in config mapping ",
-                    outer_evr.errors,
-                    config,
-                )
+    def resolve_from_unvalidated_config(self, config: Any) -> Any:
+        """Validates config against outer config schema, and calls mapping against validated config."""
 
-            outer_config = outer_evr.value
-            if not self.receive_processed_config_values:
-                outer_config = resolve_defaults(
-                    cast(ConfigType, self.config_schema.config_type),
-                    outer_config,
-                ).value
+        receive_processed_config_values = check.opt_bool_param(
+            self.receive_processed_config_values, "receive_processed_config_values", default=True
+        )
+        if receive_processed_config_values:
+            outer_evr = process_config(
+                self.config_schema.config_type,
+                config,
+            )
         else:
-            outer_config = config
+            outer_evr = validate_config(
+                self.config_schema.config_type,
+                config,
+            )
+        if not outer_evr.success:
+            raise DagsterInvalidConfigError(
+                "Error in config mapping ",
+                outer_evr.errors,
+                config,
+            )
+
+        outer_config = outer_evr.value
+        if not receive_processed_config_values:
+            outer_config = resolve_defaults(
+                cast(ConfigType, self.config_schema.config_type),
+                outer_config,
+            ).value
 
         return self.config_fn(outer_config)
+
+    def resolve_from_validated_config(self, config: Any) -> Any:
+        if self.receive_processed_config_values is not None:
+            check.failed(
+                "`receive_processed_config_values` parameter has been set, but only applies to "
+                "unvalidated config."
+            )
+
+        return self.config_fn(config)

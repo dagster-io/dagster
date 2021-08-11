@@ -167,7 +167,9 @@ class ResolvedRunConfig(
 
         if run_config_schema.config_mapping:
             # add user code boundary
-            run_config = run_config_schema.config_mapping.resolve(run_config)
+            run_config = run_config_schema.config_mapping.resolve_from_unvalidated_config(
+                run_config
+            )
 
         config_evr = process_config(
             run_config_schema.run_config_schema_type,
