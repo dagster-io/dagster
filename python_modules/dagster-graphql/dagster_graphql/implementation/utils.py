@@ -4,6 +4,7 @@ from collections import namedtuple
 from dagster import check
 from dagster.core.host_representation import PipelineSelector
 from dagster.utils.error import serializable_error_info_from_exc_info
+from graphql.execution.base import ResolveInfo
 
 
 def check_permission(permission):
@@ -18,13 +19,11 @@ def check_permission(permission):
     return decorator
 
 
-def assert_permission(graphene_info, permission):
+def assert_permission(graphene_info: ResolveInfo, permission: str) -> None:
     from dagster_graphql.schema.errors import GrapheneUnauthorizedError
 
     if not graphene_info.context.has_permission(permission):
         raise UserFacingGraphQLError(GrapheneUnauthorizedError())
-
-    return True
 
 
 def capture_error(fn):

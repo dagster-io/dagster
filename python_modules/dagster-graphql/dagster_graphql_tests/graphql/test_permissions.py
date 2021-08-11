@@ -78,7 +78,7 @@ def test_check_permission_permission_does_not_exist(fake_graphene_info):
 
 
 def test_assert_permission_has_permission(fake_graphene_info):
-    assert assert_permission(fake_graphene_info, "fake_permission")
+    assert_permission(fake_graphene_info, "fake_permission")
 
 
 def test_assert_permission_does_not_have_permission(fake_graphene_info):
