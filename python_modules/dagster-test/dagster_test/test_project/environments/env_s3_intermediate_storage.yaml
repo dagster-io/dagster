@@ -1,0 +1,4 @@
+intermediate_storage:
+  s3:
+    config:
+      s3_bucket: dagster-scratch-80542c2
