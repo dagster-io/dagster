@@ -519,6 +519,7 @@ def _create_external_pipeline_run(
         parent_pipeline_snapshot=external_pipeline_subset.parent_pipeline_snapshot,
         external_pipeline_origin=external_pipeline_subset.get_external_origin(),
         pipeline_code_origin=external_pipeline.get_python_origin(),
+        origin_class=external_pipeline.origin_class,
     )
 
 

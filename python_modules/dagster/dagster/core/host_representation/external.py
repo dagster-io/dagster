@@ -156,7 +156,12 @@ class ExternalPipeline(RepresentedPipeline):
     objects such as these to interact with user-defined artifacts.
     """
 
-    def __init__(self, external_pipeline_data, repository_handle, pipeline_index=None):
+    def __init__(
+        self,
+        external_pipeline_data,
+        repository_handle,
+        pipeline_index=None,
+    ):
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.inst_param(external_pipeline_data, "external_pipeline_data", ExternalPipelineData)
         check.opt_inst_param(pipeline_index, "pipeline_index", PipelineIndex)
@@ -188,6 +193,10 @@ class ExternalPipeline(RepresentedPipeline):
     @property
     def external_pipeline_data(self):
         return self._external_pipeline_data
+
+    @property
+    def origin_class(self):
+        return self.external_pipeline_data.origin_class
 
     @property
     def repository_handle(self):

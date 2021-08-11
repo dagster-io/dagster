@@ -121,10 +121,13 @@ class ExternalPipelineSubsetResult(
 @whitelist_for_serdes
 class ExternalPipelineData(
     namedtuple(
-        "_ExternalPipelineData", "name pipeline_snapshot active_presets parent_pipeline_snapshot"
+        "_ExternalPipelineData",
+        "name pipeline_snapshot active_presets parent_pipeline_snapshot origin_class",
     )
 ):
-    def __new__(cls, name, pipeline_snapshot, active_presets, parent_pipeline_snapshot):
+    def __new__(
+        cls, name, pipeline_snapshot, active_presets, parent_pipeline_snapshot, origin_class
+    ):
         return super(ExternalPipelineData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
@@ -137,6 +140,7 @@ class ExternalPipelineData(
             active_presets=check.list_param(
                 active_presets, "active_presets", of_type=ExternalPresetData
             ),
+            origin_class=check.str_param(origin_class, "origin_class"),
         )
 
 
@@ -370,6 +374,7 @@ def external_pipeline_data_from_def(pipeline_def):
             list(map(external_preset_data_from_def, pipeline_def.preset_defs)),
             key=lambda pd: pd.name,
         ),
+        origin_class=pipeline_def.origin_class,
     )
 
 

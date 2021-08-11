@@ -473,4 +473,5 @@ def _create_sensor_run(instance, repo_location, external_sensor, external_pipeli
         parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
         external_pipeline_origin=external_pipeline.get_external_origin(),
         pipeline_code_origin=external_pipeline.get_python_origin(),
+        origin_class=external_pipeline.origin_class,
     )
