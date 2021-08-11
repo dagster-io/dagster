@@ -54,7 +54,7 @@ if TYPE_CHECKING:
     from .solid import SolidDefinition
     from .partition import PartitionedConfig
     from .executor import ExecutorDefinition
-    from .pipeline import PipelineDefinition
+    from .job import JobDefinition
     from dagster.core.execution.execute import InProcessGraphResult
 
 
@@ -369,7 +369,7 @@ class GraphDefinition(NodeDefinition):
         executor_def: Optional["ExecutorDefinition"] = None,
         hooks: Optional[AbstractSet[HookDefinition]] = None,
         version_strategy: Optional[VersionStrategy] = None,
-    ) -> "PipelineDefinition":
+    ) -> "JobDefinition":
         """
         Make this graph in to an executable Job by providing remaining components required for execution.
 
@@ -412,9 +412,9 @@ class GraphDefinition(NodeDefinition):
                 provided, memoizaton will be enabled for this job.
 
         Returns:
-            PipelineDefinition: The "Job" currently implemented as a single-mode pipeline
+            JobDefinition: The "Job" currently implemented as a single-mode pipeline
         """
-        from .pipeline import PipelineDefinition
+        from .job import JobDefinition
         from .partition import PartitionedConfig
         from .executor import ExecutorDefinition, multiprocess_executor
 
@@ -457,7 +457,7 @@ class GraphDefinition(NodeDefinition):
                 f"is an object of type {type(config)}"
             )
 
-        return PipelineDefinition(
+        return JobDefinition(
             name=job_name,
             description=description,
             graph_def=self,
