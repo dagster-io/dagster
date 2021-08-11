@@ -1,4 +1,4 @@
-from dagster import In, Int, Out, Output, job, op, resource
+from dagster import In, Int, Out, Output, VersionStrategy, job, op, resource
 from dagster_aws.s3.io_manager import s3_pickle_io_manager
 from dagster_aws.s3.utils import construct_s3_client
 
@@ -80,3 +80,34 @@ def test_s3_pickle_io_manager_prefix(mock_s3_bucket):
     assert result.output_for_node("return_two_outputs", "foobar") == 10
 
     assert len(list(mock_s3_bucket.objects.all())) == 2
+
+
+def test_memoization_s3_io_manager(mock_s3_bucket):
+    class BasicVersionStrategy(VersionStrategy):
+        def get_solid_version(self, solid_def):
+            return "foo"
+
+    @solid
+    def basic_solid():
+        return "foo"
+
+    @pipeline(
+        mode_defs=[
+            ModeDefinition(
+                resource_defs={"io_manager": s3_pickle_io_manager, "s3": s3_test_resource}
+            )
+        ],
+        version_strategy=BasicVersionStrategy(),
+    )
+    def memoized_pipeline():
+        basic_solid()
+
+    run_config = {"resources": {"io_manager": {"config": {"s3_bucket": mock_s3_bucket.name}}}}
+    with instance_for_test() as instance:
+        result = execute_pipeline(memoized_pipeline, instance=instance, run_config=run_config)
+        assert result.success
+        assert result.output_for_solid("basic_solid") == "foo"
+
+        result = execute_pipeline(memoized_pipeline, instance=instance, run_config=run_config)
+        assert result.success
+        assert len(result.step_event_list) == 0

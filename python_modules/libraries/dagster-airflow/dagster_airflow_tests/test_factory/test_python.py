@@ -72,7 +72,7 @@ def test_s3_storage(
         ),
         environment_yaml=[
             os.path.join(environments_path, "env.yaml"),
-            os.path.join(environments_path, "env_s3.yaml"),
+            os.path.join(environments_path, "env_s3_intermediate_storage.yaml"),
         ],
     )
     validate_pipeline_execution(results)
