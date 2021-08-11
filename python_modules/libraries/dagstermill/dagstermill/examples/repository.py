@@ -72,7 +72,14 @@ def test_nb_solid(name, **kwargs):
     )
 
 
-default_mode_defs = [ModeDefinition(resource_defs={"file_manager": local_file_manager})]
+default_mode_defs = [
+    ModeDefinition(
+        resource_defs={
+            "file_manager": local_file_manager,
+            "io_manager": fs_io_manager,
+        }
+    )
+]
 
 
 hello_world = test_nb_solid("hello_world", output_defs=[])
@@ -347,12 +354,17 @@ def filepicklelist_resource(init_context):
             name="test",
             resource_defs={
                 "list": ResourceDefinition(lambda _: []),
+                "io_manager": fs_io_manager,
                 "file_manager": local_file_manager,
             },
         ),
         ModeDefinition(
             name="prod",
-            resource_defs={"list": filepicklelist_resource, "file_manager": local_file_manager},
+            resource_defs={
+                "list": filepicklelist_resource,
+                "file_manager": local_file_manager,
+                "io_manager": fs_io_manager,
+            },
         ),
     ]
 )
@@ -363,7 +375,11 @@ def resource_pipeline():
 @pipeline(
     mode_defs=[
         ModeDefinition(
-            resource_defs={"list": filepicklelist_resource, "file_manager": local_file_manager}
+            resource_defs={
+                "list": filepicklelist_resource,
+                "file_manager": local_file_manager,
+                "io_manager": fs_io_manager,
+            }
         )
     ]
 )
@@ -444,15 +460,65 @@ ADagsterType = DagsterType(
     serialization_strategy=ASerializationStrategy(),
 )
 
-
-yield_something = test_nb_solid(
-    name="yield_something",
+yield_something_legacy = dagstermill.define_dagstermill_solid(
+    name="yield_something_legacy",
+    notebook_path=nb_test_path("yield_something"),
+    output_notebook="notebook",
     input_defs=[InputDefinition("obj", str)],
     output_defs=[OutputDefinition(ADagsterType)],
 )
 
 
 @solid(input_defs=[InputDefinition("a", ADagsterType), InputDefinition("b", ADagsterType)])
+def fan_in_legacy(a, b):
+    return f"{a} {b}"
+
+
+@pipeline(
+    mode_defs=[
+        ModeDefinition(
+            resource_defs={
+                "io_manager": fs_io_manager,
+                "file_manager": local_file_manager,
+                "output_notebook_io_manager": backcompact_output_notebook_io_manager,
+            }
+        )
+    ]
+)
+def fan_in_notebook_pipeline_legacy():
+    a, _ = yield_something_legacy.alias("solid_1")()
+    b, _ = yield_something_legacy.alias("solid_2")()
+    fan_in_legacy(a, b)
+
+
+@composite_solid
+def outer_legacy():
+    yield_something_legacy()
+
+
+@pipeline(
+    mode_defs=[
+        ModeDefinition(
+            resource_defs={
+                "io_manager": fs_io_manager,
+                "file_manager": local_file_manager,
+                "output_notebook_io_manager": backcompact_output_notebook_io_manager,
+            }
+        )
+    ]
+)
+def composite_pipeline_legacy():
+    outer_legacy()
+
+
+yield_something = test_nb_solid(
+    "yield_something",
+    input_defs=[InputDefinition("obj", str)],
+    output_defs=[OutputDefinition(str, "result")],
+)
+
+
+@solid
 def fan_in(a, b):
     return f"{a} {b}"
 
@@ -465,6 +531,22 @@ def fan_in(a, b):
     ]
 )
 def fan_in_notebook_pipeline():
+    a, _ = yield_something.alias("solid_1")()
+    b, _ = yield_something.alias("solid_2")()
+    fan_in(a, b)
+
+
+@pipeline(
+    mode_defs=[
+        ModeDefinition(
+            resource_defs={
+                "file_manager": local_file_manager,
+                "output_notebook_io_manager": backcompact_output_notebook_io_manager,
+            }
+        )
+    ]
+)
+def fan_in_notebook_pipeline_in_mem():
     a, _ = yield_something.alias("solid_1")()
     b, _ = yield_something.alias("solid_2")()
     fan_in(a, b)
@@ -506,6 +588,8 @@ def notebook_repo():
         yield_obj_pipeline,
         retries_pipeline,
         failure_pipeline,
+        fan_in_notebook_pipeline_legacy,
+        fan_in_notebook_pipeline_in_mem,
         fan_in_notebook_pipeline,
         hello_world_no_output_notebook_no_file_manager_pipeline,
     ]
