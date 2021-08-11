@@ -176,7 +176,7 @@ def _get_mapped_solids_dict(
     with user_code_error_boundary(
         DagsterConfigMappingFunctionError, _get_error_lambda(current_stack)
     ):
-        mapped_solids_config = graph_def.config_mapping.config_fn(
+        mapped_solids_config = graph_def.config_mapping.resolve_from_validated_config(
             config_mapped_solid_config.value.get("config", {})
         )
 

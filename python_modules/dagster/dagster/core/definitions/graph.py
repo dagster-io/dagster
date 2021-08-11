@@ -799,8 +799,7 @@ def _config_mapping_with_default_value(
         )
 
     return ConfigMapping(
-        config_fn=config_fn,
-        config_schema=config_schema,
+        config_fn=config_fn, config_schema=config_schema, receive_processed_config_values=False
     )
 
 
