@@ -417,6 +417,8 @@ def test_solid_and_op_config_error_messages():
     def my_graph_with_solid():
         my_solid()
 
+    # Document that for now, using graphs/jobs with only solids will result in config errors being
+    # in terms of solids.
     with pytest.raises(
         DagsterInvalidConfigError,
         match='Missing required config entry "solids" at the root. Sample config for missing '
@@ -424,3 +426,45 @@ def test_solid_and_op_config_error_messages():
         "}}}}}}",
     ):
         my_graph_with_solid.execute_in_process()
+
+
+def test_error_message_mixed_ops_and_solids():
+    # Document that opting into using ops at all (even one op) will switch error messages entirely
+    # to ops, including in the recursive case.
+
+    @op(config_schema={"foo": str})
+    def my_op(context):
+        return context.op_config["foo"]
+
+    @solid(config_schema={"foo": str})
+    def my_solid(context):
+        return context.solid_config["foo"]
+
+    @graph
+    def my_graph_with_both():
+        my_op()
+        my_solid()
+
+    my_job = my_graph_with_both.to_job()
+
+    with pytest.raises(
+        DagsterInvalidConfigError,
+        match='Missing required config entry "ops" at the root. Sample config for missing '
+        "entry: {'ops': {'my_op': {'config': {'foo': '...'}}, 'my_solid': "
+        "{'config': {'foo': '...'}}}",
+    ):
+        my_job.execute_in_process()
+
+    @graph
+    def nested_ops():
+        my_graph_with_both()
+
+    nested_job = nested_ops.to_job()
+
+    with pytest.raises(
+        DagsterInvalidConfigError,
+        match='Missing required config entry "ops" at the root. Sample config for missing '
+        "entry: {'ops': {'my_graph_with_both': {'ops': {'my_op': {'config': {'foo': '...'}}, 'my_solid': "
+        "{'config': {'foo': '...'}}}}}",
+    ):
+        nested_job.execute_in_process()
