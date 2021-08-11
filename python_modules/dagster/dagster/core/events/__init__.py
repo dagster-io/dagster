@@ -217,7 +217,8 @@ def log_pipeline_event(pipeline_context: IPlanContext, event: "DagsterEvent") ->
 
     pipeline_context.log.log_dagster_event(
         level=log_level,
-        msg=event.message or f"{event_type} for pipeline {pipeline_context.pipeline_name}",
+        msg=event.message
+        or f"{event_type} for {pipeline_context.pipeline_run.origin_class} {pipeline_context.pipeline_name}",
         dagster_event=event,
     )
 
@@ -726,8 +727,9 @@ class DagsterEvent(
         return DagsterEvent.from_pipeline(
             DagsterEventType.PIPELINE_START,
             pipeline_context,
-            message='Started execution of pipeline "{pipeline_name}".'.format(
-                pipeline_name=pipeline_context.pipeline_name
+            message='Started execution of {origin_class} "{pipeline_name}".'.format(
+                pipeline_name=pipeline_context.pipeline_name,
+                origin_class=pipeline_context.pipeline_run.origin_class,
             ),
         )
 
@@ -736,8 +738,9 @@ class DagsterEvent(
         return DagsterEvent.from_pipeline(
             DagsterEventType.PIPELINE_SUCCESS,
             pipeline_context,
-            message='Finished execution of pipeline "{pipeline_name}".'.format(
-                pipeline_name=pipeline_context.pipeline_name
+            message='Finished execution of {origin_class} "{pipeline_name}".'.format(
+                pipeline_name=pipeline_context.pipeline_name,
+                origin_class=pipeline_context.pipeline_run.origin_class,
             ),
         )
 
@@ -752,8 +755,9 @@ class DagsterEvent(
             return DagsterEvent.from_pipeline(
                 DagsterEventType.PIPELINE_FAILURE,
                 pipeline_context_or_name,
-                message='Execution of pipeline "{pipeline_name}" failed. {context_msg}'.format(
+                message='Execution of {origin_class} "{pipeline_name}" failed. {context_msg}'.format(
                     pipeline_name=pipeline_context_or_name.pipeline_name,
+                    origin_class=pipeline_context_or_name.pipeline_run.origin_class,
                     context_msg=context_msg,
                 ),
                 event_specific_data=PipelineFailureData(error_info),
@@ -781,8 +785,9 @@ class DagsterEvent(
         return DagsterEvent.from_pipeline(
             DagsterEventType.PIPELINE_CANCELED,
             pipeline_context,
-            message='Execution of pipeline "{pipeline_name}" canceled.'.format(
-                pipeline_name=pipeline_context.pipeline_name
+            message='Execution of {origin_class} "{pipeline_name}" canceled.'.format(
+                pipeline_name=pipeline_context.pipeline_name,
+                origin_class=pipeline_context.pipeline_run.origin_class,
             ),
             event_specific_data=PipelineCanceledData(
                 check.opt_inst_param(error_info, "error_info", SerializableErrorInfo)

@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 def _default_failure_email_body(context: "PipelineFailureSensorContext") -> str:
     return "<br>".join(
         [
-            f"Pipeline {context.pipeline_run.pipeline_name} failed!",
+            f"{context.pipeline_run.origin_class.uppercase()} {context.pipeline_run.pipeline_name} failed!",
             f"Run ID: {context.pipeline_run.run_id}",
             f"Mode: {context.pipeline_run.mode}",
             f"Error: {context.failure_event.message}",
@@ -21,7 +21,7 @@ def _default_failure_email_body(context: "PipelineFailureSensorContext") -> str:
 
 
 def _default_failure_email_subject(context: "PipelineFailureSensorContext") -> str:
-    return f"Dagster Pipeline Failed: {context.pipeline_run.pipeline_name}"
+    return f"Dagster {context.pipeline_run.origin_class.uppercase()} Failed: {context.pipeline_run.pipeline_name}"
 
 
 EMAIL_MESSAGE = """From: {email_from}

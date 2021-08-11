@@ -13,7 +13,7 @@ def my_slack_on_pipeline_failure(context: PipelineFailureSensorContext):
 
     slack_client.chat_postMessage(
         channel="#alert-channel",
-        message=f'Pipeline "{context.pipeline_run.pipeline_name}" failed. Error: {context.failure_event.message}',
+        message=f'{context.pipeline_run.origin_class.uppercase()} "{context.pipeline_run.pipeline_name}" failed. Error: {context.failure_event.message}',
     )
 
 
@@ -53,7 +53,7 @@ def my_slack_on_pipeline_success(context: RunStatusSensorContext):
 
     slack_client.chat_postMessage(
         channel="#alert-channel",
-        message=f'Pipeline "{context.pipeline_run.pipeline_name}" succeeded.',
+        message=f'{context.pipeline_run.origin_class.uppercase()} "{context.pipeline_run.pipeline_name}" succeeded.',
     )
 
 

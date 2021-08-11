@@ -136,10 +136,11 @@ def host_mode_execution_context_event_generator(
             )
             error_info = serializable_error_info_from_exc_info(user_facing_exc_info)
 
+            origin_class = pipeline_run.origin_class
             event = DagsterEvent.pipeline_failure(
                 pipeline_context_or_name=pipeline_run.pipeline_name,
                 context_msg=(
-                    f'Pipeline failure during initialization for pipeline "{pipeline_run.pipeline_name}". '
+                    f'{origin_class.capitalize()} failure during initialization for {origin_class} "{pipeline_run.pipeline_name}". '
                     "This may be due to a failure in initializing the executor or one of the loggers."
                 ),
                 error_info=error_info,

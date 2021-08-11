@@ -98,7 +98,7 @@ def get_toys_sensors():
         channel = "#yuhan-test"
         message = "\n".join(
             [
-                f'Pipeline "{context.pipeline_run.pipeline_name}" failed.',
+                f'{context.pipeline_run.origin_class.uppercase()} "{context.pipeline_run.pipeline_name}" failed.',
                 f"error: {context.failure_event.message}",
                 f"mode: {context.pipeline_run.mode}",
                 f"run_page_url: {run_page_url}",

@@ -73,8 +73,11 @@ def execute_run_iterator(
     check.invariant(
         pipeline_run.status == PipelineRunStatus.NOT_STARTED
         or pipeline_run.status == PipelineRunStatus.STARTING,
-        desc="Pipeline run {} ({}) in state {}, expected NOT_STARTED or STARTING".format(
-            pipeline_run.pipeline_name, pipeline_run.run_id, pipeline_run.status
+        desc="{} run {} ({}) in state {}, expected NOT_STARTED or STARTING".format(
+            pipeline_run.origin_class.uppercase(),
+            pipeline_run.pipeline_name,
+            pipeline_run.run_id,
+            pipeline_run.status,
         ),
     )
 
@@ -161,8 +164,11 @@ def execute_run(
     check.invariant(
         pipeline_run.status == PipelineRunStatus.NOT_STARTED
         or pipeline_run.status == PipelineRunStatus.STARTING,
-        desc="Pipeline run {} ({}) in state {}, expected NOT_STARTED or STARTING".format(
-            pipeline_run.pipeline_name, pipeline_run.run_id, pipeline_run.status
+        desc="{} run {} ({}) in state {}, expected NOT_STARTED or STARTING".format(
+            pipeline_run.origin_class.uppercase(),
+            pipeline_run.pipeline_name,
+            pipeline_run.run_id,
+            pipeline_run.status,
         ),
     )
     pipeline_def = pipeline.get_definition()

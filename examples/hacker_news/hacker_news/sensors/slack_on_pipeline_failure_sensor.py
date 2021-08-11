@@ -10,7 +10,7 @@ from hacker_news.utils.slack_message import build_slack_message_blocks
 def slack_message_blocks_fn(context: PipelineFailureSensorContext, base_url: str) -> List[Dict]:
     return build_slack_message_blocks(
         title="👎 Pipeline Failure",
-        markdown_message=f'Pipeline "{context.pipeline_run.pipeline_name}" failed.',
+        markdown_message=f'{context.pipeline_run.origin_class.uppercase()} "{context.pipeline_run.pipeline_name}" failed.',
         pipeline_name=context.pipeline_run.pipeline_name,
         run_id=context.pipeline_run.run_id,
         mode=context.pipeline_run.mode,

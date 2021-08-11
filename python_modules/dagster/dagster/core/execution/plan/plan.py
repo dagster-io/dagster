@@ -515,11 +515,14 @@ def get_step_input_source(
     # Otherwise we throw an error.
     raise DagsterInvariantViolationError(
         (
-            "In pipeline {pipeline_name} solid {solid_name}, input {input_name} "
+            "In {origin_class} {pipeline_name} solid {solid_name}, input {input_name} "
             "must get a value either (a) from a dependency or (b) from the "
             "inputs section of its configuration."
         ).format(
-            pipeline_name=plan_builder.pipeline_name, solid_name=solid.name, input_name=input_name
+            origin_class=plan_builder.pipeline.get_definition().origin_class,
+            pipeline_name=plan_builder.pipeline_name,
+            solid_name=solid.name,
+            input_name=input_name,
         )
     )
 
