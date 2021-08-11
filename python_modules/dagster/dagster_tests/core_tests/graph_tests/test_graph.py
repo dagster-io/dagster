@@ -119,7 +119,7 @@ def test_error_on_invalid_resource_key():
         return "test-resource"
 
     @op(required_resource_keys={"test-resource"})
-    def needs_resource(context):
+    def needs_resource(_):
         return ""
 
     @graph
@@ -382,7 +382,7 @@ def test_desc():
     assert job.description == desc
 
 
-def test_op_config_recursive():
+def test_config_naming_collisions():
     @op(config_schema={"solids": Permissive(), "ops": Permissive()})
     def my_op(context):
         return context.op_config
