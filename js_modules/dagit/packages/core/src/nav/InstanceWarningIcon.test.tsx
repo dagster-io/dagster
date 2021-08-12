@@ -22,19 +22,6 @@ describe('InstanceWarningIcon', () => {
     );
   };
 
-  it('displays if any repo errors', async () => {
-    const mocks = {
-      RepositoryLocationOrLoadError: () => ({
-        __typename: 'PythonError',
-        message: () => 'Failure',
-      }),
-    };
-    render(<Test mocks={[defaultMocks, mocks]} />);
-    await waitFor(() => {
-      expect(screen.getByText(/warnings found/i)).toBeVisible();
-    });
-  });
-
   it('displays if daemon errors', async () => {
     const mocks = {
       DaemonStatus: () => ({
