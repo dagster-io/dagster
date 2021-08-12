@@ -4,6 +4,7 @@ from collections import OrderedDict
 from dagster import check
 from dagster.core.definitions.run_request import JobType
 from dagster.core.definitions.sensor import DEFAULT_SENSOR_DAEMON_INTERVAL
+from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.snap import ExecutionPlanSnapshot
@@ -306,10 +307,13 @@ class ExternalExecutionPlan:
 
         self._step_index = {step.key: step for step in self.execution_plan_snapshot.steps}
 
-        check.invariant(
+        if (
             execution_plan_snapshot.pipeline_snapshot_id
-            == represented_pipeline.identifying_pipeline_snapshot_id
-        )
+            != represented_pipeline.identifying_pipeline_snapshot_id
+        ):
+            raise DagsterInvariantViolationError(
+                "Execution plan snapshot does not match passed in pipeline snapshot. "
+            )
 
         self._step_keys_in_plan = (
             set(execution_plan_snapshot.step_keys_to_execute)
