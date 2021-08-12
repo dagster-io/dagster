@@ -35,7 +35,7 @@ if __name__ == "__main__":
             f"dagster{pin}",
             f"dagster-pandas{pin}",
             "pandas",
-            "great_expectations >=0.11.9, !=0.12.8, !=0.13.17",
+            "great_expectations >=0.11.9, !=0.12.8, !=0.13.17, !=0.13.27",
         ],
         zip_safe=False,
     )
