@@ -23,14 +23,15 @@ import {FontFamily} from '../ui/styles';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
 
 import {AppContext} from './AppContext';
-import {AppErrorLink} from './AppError';
+import {errorLink} from './AppError';
 import {CustomAlertProvider} from './CustomAlertProvider';
 import {CustomConfirmationProvider} from './CustomConfirmationProvider';
 import {CustomTooltipProvider} from './CustomTooltipProvider';
 import {LayoutProvider} from './LayoutProvider';
 import {PermissionsProvider} from './Permissions';
-import {formatElapsedTime, patchCopyToRemoveZeroWidthUnderscores, debugLog} from './Util';
+import {patchCopyToRemoveZeroWidthUnderscores} from './Util';
 import {WebSocketProvider} from './WebSocketProvider';
+import {logLink, timeStartLink} from './apolloLinks';
 import {TimezoneProvider} from './time/TimezoneContext';
 
 // The solid sidebar and other UI elements insert zero-width spaces so solid names
@@ -77,6 +78,8 @@ const GlobalStyle = createGlobalStyle`
 interface Props {
   appCache: InMemoryCache;
   config: {
+    // todo dish: Make this non-optional.
+    apolloLinks?: ApolloLink[];
     basePath?: string;
     headers?: {[key: string]: string};
     origin: string;
@@ -85,7 +88,13 @@ interface Props {
 
 export const AppProvider: React.FC<Props> = (props) => {
   const {appCache, config} = props;
-  const {basePath = '', headers = {}, origin} = config;
+  const {
+    // todo dish: Remove this default array.
+    apolloLinks = [logLink, errorLink, timeStartLink],
+    basePath = '',
+    headers = {},
+    origin,
+  } = config;
 
   const graphqlPath = `${basePath}/graphql`;
   const rootServerURI = `${origin}${basePath}`;
@@ -96,43 +105,27 @@ export const AppProvider: React.FC<Props> = (props) => {
   const headerObject = React.useMemo(() => JSON.parse(headersAsString), [headersAsString]);
 
   const apolloClient = React.useMemo(() => {
-    const logLink = new ApolloLink((operation, forward) =>
-      forward(operation).map((data) => {
-        const time = performance.now() - operation.getContext().start;
-        debugLog(`${operation.operationName} took ${formatElapsedTime(time)}`, {operation, data});
-        return data;
-      }),
-    );
-
-    const timeStartLink = new ApolloLink((operation, forward) => {
-      operation.setContext({start: performance.now()});
-      return forward(operation);
-    });
-
-    const httpLink = new HttpLink({uri: graphqlPath, headers: headerObject});
-    const webSocketLink = new WebSocketLink({
-      uri: websocketURI,
-      options: {
-        reconnect: true,
-        connectionParams: {...headerObject},
-      },
-    });
-
-    // subscriptions should use the websocket link; queries & mutations should use HTTP
+    // Subscriptions use WebSocketLink, queries & mutations use HttpLink.
     const splitLink = split(
       ({query}) => {
         const definition = getMainDefinition(query);
         return definition.kind === 'OperationDefinition' && definition.operation === 'subscription';
       },
-      webSocketLink,
-      httpLink,
+      new WebSocketLink({
+        uri: websocketURI,
+        options: {
+          reconnect: true,
+          connectionParams: {...headerObject},
+        },
+      }),
+      new HttpLink({uri: graphqlPath, headers: headerObject}),
     );
 
     return new ApolloClient({
       cache: appCache,
-      link: ApolloLink.from([logLink, AppErrorLink(), timeStartLink, splitLink]),
+      link: ApolloLink.from([...apolloLinks, splitLink]),
     });
-  }, [appCache, graphqlPath, headerObject, websocketURI]);
+  }, [apolloLinks, appCache, graphqlPath, headerObject, websocketURI]);
 
   const appContextValue = React.useMemo(
     () => ({

@@ -25,24 +25,20 @@ const showGraphQLError = (error: DagsterGraphQLError, operationName?: string) =>
   console.error('[GraphQL error]', error);
 };
 
-export const AppErrorLink = () => {
-  return onError((response: ErrorResponse) => {
-    if (response.graphQLErrors) {
-      const {graphQLErrors, operation} = response;
-      const {operationName} = operation;
-      graphQLErrors.forEach((error) =>
-        showGraphQLError(error as DagsterGraphQLError, operationName),
-      );
-    }
-    if (response.networkError) {
-      ErrorToaster.show({
-        message: `[Network error] ${response.networkError.message}`,
-        intent: Intent.DANGER,
-      });
-      console.error('[Network error]', response.networkError);
-    }
-  });
-};
+export const errorLink = onError((response: ErrorResponse) => {
+  if (response.graphQLErrors) {
+    const {graphQLErrors, operation} = response;
+    const {operationName} = operation;
+    graphQLErrors.forEach((error) => showGraphQLError(error as DagsterGraphQLError, operationName));
+  }
+  if (response.networkError) {
+    ErrorToaster.show({
+      message: `[Network error] ${response.networkError.message}`,
+      intent: Intent.DANGER,
+    });
+    console.error('[Network error]', response.networkError);
+  }
+});
 
 interface AppStackTraceLinkProps {
   error: DagsterGraphQLError;
