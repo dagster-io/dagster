@@ -1,36 +1,33 @@
-import {gql, useQuery} from '@apollo/client';
-import {useMutation} from '@apollo/client';
-import {
-  Menu,
-  MenuItem,
-  Colors, NonIdealState} from '@blueprintjs/core';
+import {gql, useQuery, useMutation} from '@apollo/client';
+import {Menu, MenuItem, Colors, NonIdealState} from '@blueprintjs/core';
+import {ContextMenu2 as ContextMenu} from '@blueprintjs/popover2';
 import {pathVerticalDiagonal} from '@vx/shape';
 import * as dagre from 'dagre';
 import qs from 'query-string';
 import React from 'react';
 import {useHistory, useRouteMatch, Link, RouteComponentProps} from 'react-router-dom';
 import styled, {CSSProperties} from 'styled-components/macro';
-import {ContextMenu2 as ContextMenu} from '@blueprintjs/popover2';
-import {LAUNCH_PIPELINE_EXECUTION_MUTATION, handleLaunchResult} from '../runs/RunUtils';
-import {
-  LaunchPipelineExecution,
-  LaunchPipelineExecutionVariables,
-} from '../runs/types/LaunchPipelineExecution';
-import {showLaunchError} from '../execute/showLaunchError';
-import {AppContext} from '../app/AppContext';
 
+import {AppContext} from '../app/AppContext';
 import {QueryCountdown} from '../app/QueryCountdown';
 import {AssetDetails} from '../assets/AssetDetails';
 import {AssetMaterializations} from '../assets/AssetMaterializations';
+import {showLaunchError} from '../execute/showLaunchError';
 import {SVGViewport} from '../graph/SVGViewport';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {Description} from '../pipelines/Description';
 import {SidebarSection} from '../pipelines/SidebarComponents';
 import {METADATA_ENTRY_FRAGMENT} from '../runs/MetadataEntry';
-import {titleForRun} from '../runs/RunUtils';
+import {
+  LAUNCH_PIPELINE_EXECUTION_MUTATION,
+  handleLaunchResult,
+  titleForRun,
+} from '../runs/RunUtils';
 import {TimeElapsed} from '../runs/TimeElapsed';
+import {LaunchPipelineExecution} from '../runs/types/LaunchPipelineExecution';
 import {POLL_INTERVAL} from '../runs/useCursorPaginatedQuery';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
+import {SearchResult, SearchResultType} from '../search/types';
 import {Box} from '../ui/Box';
 import {Loading} from '../ui/Loading';
 import {PageHeader} from '../ui/PageHeader';
@@ -38,17 +35,23 @@ import {SplitPanelContainer} from '../ui/SplitPanelContainer';
 import {Heading} from '../ui/Text';
 import {FontFamily} from '../ui/styles';
 
+import {AssetGraphSearchBar} from './AssetGraphSearchBar';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
 import {
+  AssetGraphQuery_repositoryOrError_Repository,
   AssetGraphQuery_repositoryOrError_Repository_assetDefinitions,
   AssetGraphQuery_repositoryOrError_Repository_assetDefinitions_assetKey,
+  AssetGraphQuery_repositoryOrError_Repository_assetDefinitions_schedules,
+  AssetGraphQuery_repositoryOrError_Repository_assetDefinitions_sensors,
 } from './types/AssetGraphQuery';
 import {workspacePath} from './workspacePath';
-import Color from 'color';
 
+type Repository = AssetGraphQuery_repositoryOrError_Repository;
 type AssetDefinition = AssetGraphQuery_repositoryOrError_Repository_assetDefinitions;
 type AssetKey = AssetGraphQuery_repositoryOrError_Repository_assetDefinitions_assetKey;
+type Schedule = AssetGraphQuery_repositoryOrError_Repository_assetDefinitions_schedules;
+type Sensor = AssetGraphQuery_repositoryOrError_Repository_assetDefinitions_sensors;
 
 interface Props extends RouteComponentProps {
   repoAddress: RepoAddress;
@@ -68,6 +71,7 @@ interface LayoutNode {
 interface GraphData {
   nodes: {[id: string]: Node};
   downstream: {[upstream: string]: {[downstream: string]: string}};
+  upstream: {[downstream: string]: {[upstream: string]: boolean}};
 }
 interface IPoint {
   x: number;
@@ -93,27 +97,58 @@ const getNodeDimensions = (def: AssetDefinition) => {
   return {width: Math.max(250, def.assetKey.path.join('>').length * 9.5) + 25, height};
 };
 
-const buildGraphData = (assetDefinitions: AssetDefinition[]) => {
+const getBlankDimensions = (id: string) => {
+  const path = JSON.parse(id);
+  return {width: Math.max(250, path.join('>').length * 1.2) + 25, height: 30};
+};
+
+const buildGraphData = (repository: Repository, itemFilter?: SearchResult) => {
   const nodes: {[id: string]: {id: string; assetKey: AssetKey; definition: AssetDefinition}} = {};
   const downstream: {[downstreamId: string]: {[upstreamId: string]: string}} = {};
+  const upstream: {[upstreamId: string]: {[downstreamId: string]: boolean}} = {};
 
-  assetDefinitions.forEach((definition) => {
+  const jobNameBySchedule = {};
+  const jobNameBySensor = {};
+  repository.schedules.forEach((schedule: Schedule) => {
+    jobNameBySchedule[schedule.name] = schedule.pipelineName;
+  });
+  repository.sensors.forEach((sensor: Sensor) => {
+    jobNameBySensor[sensor.name] = sensor.pipelineName;
+  });
+
+  const _filterToJobName = (itemFilter: SearchResult) => {
+    if (itemFilter.type === SearchResultType.Sensor) {
+      return jobNameBySensor[itemFilter.label];
+    } else if (itemFilter.type === SearchResultType.Schedule) {
+      return jobNameBySchedule[itemFilter.label];
+    } else {
+      return itemFilter.label.split(':').map((x) => x.trim())[0];
+    }
+  };
+
+  repository.assetDefinitions.forEach((definition: AssetDefinition) => {
     const assetKeyJson = JSON.stringify(definition.assetKey.path);
-    nodes[assetKeyJson] = {
-      id: assetKeyJson,
-      assetKey: definition.assetKey,
-      definition,
-    };
     definition.dependencies.forEach((dependency) => {
       const upstreamAssetKeyJson = JSON.stringify(dependency.upstreamAsset.assetKey.path);
       downstream[upstreamAssetKeyJson] = {
         ...(downstream[upstreamAssetKeyJson] || {}),
         [assetKeyJson]: dependency.inputName,
       };
+      upstream[assetKeyJson] = {
+        ...(upstream[assetKeyJson] || {}),
+        [upstreamAssetKeyJson]: true,
+      };
     });
+    if (!itemFilter || definition.jobName === _filterToJobName(itemFilter)) {
+      nodes[assetKeyJson] = {
+        id: assetKeyJson,
+        assetKey: definition.assetKey,
+        definition,
+      };
+    }
   });
 
-  return {nodes, downstream};
+  return {nodes, downstream, upstream};
 };
 
 const graphHasCycles = (graphData: GraphData) => {
@@ -148,11 +183,23 @@ const layoutGraph = (graphData: GraphData) => {
   Object.values(graphData.nodes).forEach((node) => {
     g.setNode(node.id, getNodeDimensions(node.definition));
   });
+  const foreignNodes = {};
   Object.keys(graphData.downstream).forEach((upstreamId) => {
     const downstreamIds = Object.keys(graphData.downstream[upstreamId]);
     downstreamIds.forEach((downstreamId) => {
+      if (!graphData.nodes[downstreamId]) {
+        // do not render if the downstream node is not in the graph
+        return;
+      }
       g.setEdge({v: upstreamId, w: downstreamId}, {weight: 1});
+      if (!graphData.nodes[upstreamId]) {
+        foreignNodes[upstreamId] = true;
+      }
     });
+  });
+
+  Object.keys(foreignNodes).forEach((upstreamId) => {
+    g.setNode(upstreamId, getBlankDimensions(upstreamId));
   });
 
   dagre.layout(g);
@@ -215,8 +262,8 @@ export const AssetGraphRoot: React.FC<Props> = (props) => {
   });
   const [nodeSelection, setSelectedNode] = React.useState<Node | undefined>();
   const history = useHistory();
-  const match = useRouteMatch<{repoPath: string;}>();
-
+  const match = useRouteMatch<{repoPath: string}>();
+  const [itemFilter, setItemFilter] = React.useState<SearchResult | undefined>();
   React.useEffect(() => {
     if (!selected || !queryResult.data || !queryResult.data.repositoryOrError) {
       return;
@@ -231,18 +278,18 @@ export const AssetGraphRoot: React.FC<Props> = (props) => {
           id: JSON.stringify(definition.assetKey.path),
           assetKey: definition.assetKey,
           definition,
-        })
+        });
       }
-    })
+    });
   }, [selected, queryResult]);
 
   const selectNode = (node: Node) => {
+    if (!node) {
+      return;
+    }
     setSelectedNode(node);
-    history.push(`/workspace/${match.params.repoPath}/assets/${encodeURIComponent(node.id)}`)
+    history.push(`/workspace/${match.params.repoPath}/assets/${encodeURIComponent(node.id)}`);
   };
-
-  // Show the name of the composite solid we are within (-1 is the selection, -2 is current parent)
-  // or the name of the pipeline tweaked to look a bit more like a graph name.
 
   useDocumentTitle('Workspace Asset Graph');
 
@@ -276,7 +323,7 @@ export const AssetGraphRoot: React.FC<Props> = (props) => {
                 if (repositoryOrError.__typename !== 'Repository') {
                   return null;
                 }
-                const graphData = buildGraphData(repositoryOrError.assetDefinitions);
+                const graphData = buildGraphData(repositoryOrError, itemFilter);
                 const hasCycles = graphHasCycles(graphData);
                 const layout = hasCycles ? null : layoutGraph(graphData);
                 const computeStatuses = hasCycles ? {} : buildGraphComputeStatuses(graphData);
@@ -289,6 +336,15 @@ export const AssetGraphRoot: React.FC<Props> = (props) => {
                     )
                   : [];
 
+                const jobsBySchedule = {};
+                const jobsBySensor = {};
+                repositoryOrError.schedules.forEach((schedule: Schedule) => {
+                  jobsBySchedule[schedule.name] = schedule.pipelineName;
+                });
+                repositoryOrError.sensors.forEach((sensor: Sensor) => {
+                  jobsBySensor[sensor.name] = sensor.pipelineName;
+                });
+
                 return layout ? (
                   <SVGViewport
                     interactor={SVGViewport.Interactors.PanAndZoom}
@@ -296,8 +352,15 @@ export const AssetGraphRoot: React.FC<Props> = (props) => {
                     graphHeight={layout.height}
                     onKeyDown={() => {}}
                     onDoubleClick={() => {}}
-                    maxZoom={1.2}
-                    maxAutocenterZoom={1.0}
+                    maxZoom={1.0}
+                    maxAutocenterZoom={0.8}
+                    searchComponent={
+                      <AssetGraphSearchBar
+                        selected={itemFilter}
+                        onSelectItem={setItemFilter}
+                        onClear={() => setItemFilter(undefined)}
+                      />
+                    }
                   >
                     {({scale: _scale}: any) => (
                       <SVGContainer width={layout.width} height={layout.height}>
@@ -327,7 +390,9 @@ export const AssetGraphRoot: React.FC<Props> = (props) => {
                         </g>
                         {layout.nodes.map((layoutNode) => {
                           const graphNode = graphData.nodes[layoutNode.id];
-                          const {width, height} = getNodeDimensions(graphNode.definition);
+                          const {width, height} = graphNode
+                            ? getNodeDimensions(graphNode.definition)
+                            : getBlankDimensions(layoutNode.id);
                           return (
                             <foreignObject
                               key={layoutNode.id}
@@ -337,13 +402,17 @@ export const AssetGraphRoot: React.FC<Props> = (props) => {
                               height={height}
                               onClick={() => selectNode(graphNode)}
                             >
-                              <AssetNode
-                                definition={graphNode.definition}
-                                selected={nodeSelection?.id === graphNode.id}
-                                seondaryHighlight={samePipelineNodes.includes(graphNode)}
-                                computeStatus={computeStatuses[graphNode.id]}
-                                repoAddress={repoAddress}
-                              />
+                              {graphNode ? (
+                                <AssetNode
+                                  definition={graphNode.definition}
+                                  selected={nodeSelection?.id === graphNode.id}
+                                  seondaryHighlight={samePipelineNodes.includes(graphNode)}
+                                  computeStatus={computeStatuses[graphNode.id]}
+                                  repoAddress={repoAddress}
+                                />
+                              ) : (
+                                <ForeignNode assetKeyPath={JSON.parse(layoutNode.id)} />
+                              )}
                             </foreignObject>
                           );
                         })}
@@ -380,13 +449,17 @@ const AssetPanel = ({node, repoAddress}: {node: Node; repoAddress: RepoAddress})
         <Description description={node.definition.description || null} />
       </SidebarSection>
       <SidebarSection title="Job">
-        {node.definition.jobName
-          ? (
-              <Link to={workspacePath(repoAddress.name, repoAddress.location, `/jobs/${node.definition.jobName}`)}>
-                {node.definition.jobName}
-              </Link>
-            )
-          : null}
+        {node.definition.jobName ? (
+          <Link
+            to={workspacePath(
+              repoAddress.name,
+              repoAddress.location,
+              `/jobs/${node.definition.jobName}`,
+            )}
+          >
+            {node.definition.jobName}
+          </Link>
+        ) : null}
       </SidebarSection>
       <SidebarSection title={'Latest Event'}>
         <AssetDetails assetKey={node.assetKey} asOf={null} asSidebarSection />
@@ -455,6 +528,27 @@ const ASSETS_GRAPH_QUERY = gql`
             }
           }
         }
+        pipelines {
+          id
+          name
+          modes {
+            id
+            name
+          }
+        }
+        schedules {
+          id
+          name
+          pipelineName
+          mode
+          cronSchedule
+        }
+        sensors {
+          id
+          name
+          pipelineName
+          mode
+        }
       }
     }
   }
@@ -472,6 +566,27 @@ const StyledPath = styled('path')<{dashed: boolean}>`
   fill: none;
 `;
 
+const ForeignNode: React.FC<{assetKeyPath: string[]}> = ({assetKeyPath}) => (
+  <div
+    style={{
+      border: '1px dashed #eaeaea',
+      background: 'white',
+      inset: 0,
+    }}
+  >
+    <div
+      style={{
+        display: 'flex',
+        padding: '4px 8px 6px',
+        fontFamily: FontFamily.monospace,
+        fontWeight: 600,
+      }}
+    >
+      {assetKeyPath.join(' > ')}
+    </div>
+  </div>
+);
+
 const AssetNode: React.FC<{
   definition: AssetDefinition;
   selected: boolean;
@@ -486,143 +601,165 @@ const AssetNode: React.FC<{
   const {materializationEvent: event, runOrError} = definition.assetMaterializations[0] || {};
 
   const onLaunch = async () => {
-    console.log('launch', definition, repoAddress)
     if (!definition.jobName) {
-      console.log('no job');
       return;
     }
 
     try {
-      const result = await launchPipelineExecution({variables: {
-        executionParams: {
-          selector: {
-            pipelineName: definition.jobName,
-            ...repoAddressToSelector(repoAddress),
-            solidSelection: [definition.opName],
+      const result = await launchPipelineExecution({
+        variables: {
+          executionParams: {
+            selector: {
+              pipelineName: definition.jobName,
+              ...repoAddressToSelector(repoAddress),
+              solidSelection: [definition.opName],
+            },
+            mode: 'default',
           },
-        }
-      }});
-      handleLaunchResult(basePath, definition.jobName, result);
+        },
+      });
+      handleLaunchResult(basePath, definition.jobName, result, true);
     } catch (error) {
       showLaunchError(error);
     }
-  }
+  };
   return (
-    <ContextMenu content={<Menu><MenuItem text={
-    <span>Launch run to build <span style={{fontFamily: 'monospace', fontWeight: 600}}>{definition.assetKey.path.join(' > ')}</span></span>
-    } icon="send-to" onClick={onLaunch}/></Menu>}>
-    <div
-      style={{
-        border: '1px solid #ececec',
-        outline: selected
-          ? `2px solid ${Colors.BLUE4}`
-          : seondaryHighlight
-          ? `2px solid ${Colors.BLUE4}55`
-          : 'none',
-        marginTop: 10,
-        marginRight: 4,
-        marginLeft: 4,
-        marginBottom: 2,
-        position: 'absolute',
-        background: 'white',
-        inset: 0,
-      }}
+    <ContextMenu
+      content={
+        <Menu>
+          <MenuItem
+            text={
+              <span>
+                Launch run to build{' '}
+                <span style={{fontFamily: 'monospace', fontWeight: 600}}>
+                  {definition.assetKey.path.join(' > ')}
+                </span>
+              </span>
+            }
+            icon="send-to"
+            onClick={onLaunch}
+          />
+        </Menu>
+      }
     >
       <div
         style={{
-          display: 'flex',
-          padding: '4px 8px',
-          fontFamily: FontFamily.monospace,
-          fontWeight: 600,
+          border: '1px solid #ececec',
+          outline: selected
+            ? `2px solid ${Colors.BLUE4}`
+            : seondaryHighlight
+            ? `2px solid ${Colors.BLUE4}55`
+            : 'none',
+          marginTop: 10,
+          marginRight: 4,
+          marginLeft: 4,
+          marginBottom: 2,
+          position: 'absolute',
+          background: 'white',
+          inset: 0,
         }}
       >
-        {definition.assetKey.path.join(' > ')}
-        <div style={{flex: 1}} />
-        <div
-          title="Green if this asset has been materialized since it's upstream dependencies."
-          style={{
-            background: {old: 'red', 'downstream-from-old': 'orange', good: 'green', none: '#ccc'}[
-              computeStatus
-            ],
-            borderRadius: 7.5,
-            width: 15,
-            height: 15,
-          }}
-        />
-      </div>
-      {definition.description && (
         <div
           style={{
-            background: '#EFF4F7',
+            display: 'flex',
             padding: '4px 8px',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            borderTop: '1px solid #ccc',
-            fontSize: 12,
+            fontFamily: FontFamily.monospace,
+            fontWeight: 600,
           }}
         >
-          {definition.description}
+          {definition.assetKey.path.join(' > ')}
+          <div style={{flex: 1}} />
+          <div
+            title="Green if this asset has been materialized since it's upstream dependencies."
+            style={{
+              background: {
+                old: 'red',
+                'downstream-from-old': 'orange',
+                good: 'green',
+                none: '#ccc',
+              }[computeStatus],
+              borderRadius: 7.5,
+              width: 15,
+              height: 15,
+            }}
+          />
         </div>
-      )}
-      {event ? (
-        <div
-          style={{
-            background: '#E1EAF0',
-            padding: '4px 8px',
-            borderTop: '1px solid #ccc',
-            fontSize: 12,
-            lineHeight: '18px',
-          }}
-        >
-          {runOrError.__typename === 'PipelineRun' && (
-            <div style={{display: 'flex', justifyContent: 'space-between'}}>
-              <Link
-                data-tooltip={`${runOrError.pipelineName}${
-                  runOrError.mode !== 'default' ? `:${runOrError.mode}` : ''
-                }`}
-                data-tooltip-style={RunLinkTooltipStyle}
-                style={{flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', paddingRight: 8}}
-                to={workspacePath(
-                  repoAddress.name,
-                  repoAddress.location,
-                  `jobs/${runOrError.pipelineName}:${runOrError.mode}`,
-                )}
-              >
-                {`${runOrError.pipelineName}${
-                  runOrError.mode !== 'default' ? `:${runOrError.mode}` : ''
-                }`}
-              </Link>
-              <Link
-                style={{fontFamily: FontFamily.monospace}}
-                to={`/instance/runs/${runOrError.runId}?${qs.stringify({
-                  timestamp: event.stepStats.endTime,
-                  selection: event.stepStats.stepKey,
-                  logs: `step:${event.stepStats.stepKey}`,
-                })}`}
-                target="_blank"
-              >
-                {titleForRun({runId: runOrError.runId})}
-              </Link>
-            </div>
-          )}
-
-          <div style={{display: 'flex', justifyContent: 'space-between'}}>
-            {event.stepStats.endTime ? (
-              <TimestampDisplay
-                timestamp={event.stepStats.endTime}
-                timeFormat={{showSeconds: false, showTimezone: false}}
-              />
-            ) : (
-              'Never'
-            )}
-            <TimeElapsed startUnix={event.stepStats.startTime} endUnix={event.stepStats.endTime} />
+        {definition.description && (
+          <div
+            style={{
+              background: '#EFF4F7',
+              padding: '4px 8px',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              borderTop: '1px solid #ccc',
+              fontSize: 12,
+            }}
+          >
+            {definition.description}
           </div>
-        </div>
-      ) : (
-        <span></span>
-      )}
-    </div>
+        )}
+        {event ? (
+          <div
+            style={{
+              background: '#E1EAF0',
+              padding: '4px 8px',
+              borderTop: '1px solid #ccc',
+              fontSize: 12,
+              lineHeight: '18px',
+            }}
+          >
+            {runOrError.__typename === 'PipelineRun' && (
+              <div style={{display: 'flex', justifyContent: 'space-between'}}>
+                <Link
+                  data-tooltip={`${runOrError.pipelineName}${
+                    runOrError.mode !== 'default' ? `:${runOrError.mode}` : ''
+                  }`}
+                  data-tooltip-style={RunLinkTooltipStyle}
+                  style={{flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', paddingRight: 8}}
+                  to={workspacePath(
+                    repoAddress.name,
+                    repoAddress.location,
+                    `jobs/${runOrError.pipelineName}:${runOrError.mode}`,
+                  )}
+                >
+                  {`${runOrError.pipelineName}${
+                    runOrError.mode !== 'default' ? `:${runOrError.mode}` : ''
+                  }`}
+                </Link>
+                <Link
+                  style={{fontFamily: FontFamily.monospace}}
+                  to={`/instance/runs/${runOrError.runId}?${qs.stringify({
+                    timestamp: event.stepStats.endTime,
+                    selection: event.stepStats.stepKey,
+                    logs: `step:${event.stepStats.stepKey}`,
+                  })}`}
+                  target="_blank"
+                >
+                  {titleForRun({runId: runOrError.runId})}
+                </Link>
+              </div>
+            )}
+
+            <div style={{display: 'flex', justifyContent: 'space-between'}}>
+              {event.stepStats.endTime ? (
+                <TimestampDisplay
+                  timestamp={event.stepStats.endTime}
+                  timeFormat={{showSeconds: false, showTimezone: false}}
+                />
+              ) : (
+                'Never'
+              )}
+              <TimeElapsed
+                startUnix={event.stepStats.startTime}
+                endUnix={event.stepStats.endTime}
+              />
+            </div>
+          </div>
+        ) : (
+          <span></span>
+        )}
+      </div>
     </ContextMenu>
   );
 };

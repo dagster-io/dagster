@@ -171,12 +171,45 @@ export interface AssetGraphQuery_repositoryOrError_Repository_assetDefinitions {
   assetMaterializations: AssetGraphQuery_repositoryOrError_Repository_assetDefinitions_assetMaterializations[];
 }
 
+export interface AssetGraphQuery_repositoryOrError_Repository_pipelines_modes {
+  __typename: "Mode";
+  id: string;
+  name: string;
+}
+
+export interface AssetGraphQuery_repositoryOrError_Repository_pipelines {
+  __typename: "Pipeline";
+  id: string;
+  name: string;
+  modes: AssetGraphQuery_repositoryOrError_Repository_pipelines_modes[];
+}
+
+export interface AssetGraphQuery_repositoryOrError_Repository_schedules {
+  __typename: "Schedule";
+  id: string;
+  name: string;
+  pipelineName: string;
+  mode: string;
+  cronSchedule: string;
+}
+
+export interface AssetGraphQuery_repositoryOrError_Repository_sensors {
+  __typename: "Sensor";
+  id: string;
+  name: string;
+  pipelineName: string | null;
+  mode: string | null;
+}
+
 export interface AssetGraphQuery_repositoryOrError_Repository {
   __typename: "Repository";
   id: string;
   name: string;
   location: AssetGraphQuery_repositoryOrError_Repository_location;
   assetDefinitions: AssetGraphQuery_repositoryOrError_Repository_assetDefinitions[];
+  pipelines: AssetGraphQuery_repositoryOrError_Repository_pipelines[];
+  schedules: AssetGraphQuery_repositoryOrError_Repository_schedules[];
+  sensors: AssetGraphQuery_repositoryOrError_Repository_sensors[];
 }
 
 export type AssetGraphQuery_repositoryOrError = AssetGraphQuery_repositoryOrError_PythonError | AssetGraphQuery_repositoryOrError_Repository;
