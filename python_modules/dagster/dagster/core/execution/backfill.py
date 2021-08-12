@@ -2,7 +2,7 @@ from collections import namedtuple
 from enum import Enum
 
 from dagster import check
-from dagster.core.execution.plan.resume_retry import get_retry_steps_from_execution_plan
+from dagster.core.execution.plan.resume_retry import get_retry_steps_from_parent_run
 from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.host_representation import (
     ExternalPartitionSet,
@@ -14,7 +14,6 @@ from dagster.core.host_representation.external_data import (
     ExternalPartitionSetExecutionParamData,
 )
 from dagster.core.host_representation.origin import ExternalPartitionSetOrigin
-from dagster.core.host_representation.selector import PipelineSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import (
@@ -217,30 +216,7 @@ def create_backfill_run(
         solids_to_execute = last_run.solids_to_execute
         solid_selection = last_run.solid_selection
 
-        if solid_selection:
-            pipeline_origin = external_pipeline.get_external_origin()
-
-            pipeline_selector = PipelineSelector(
-                location_name=pipeline_origin.external_repository_origin.repository_location_origin.location_name,
-                repository_name=pipeline_origin.external_repository_origin.repository_name,
-                pipeline_name=pipeline_origin.pipeline_name,
-                solid_selection=solid_selection,
-            )
-
-            subset_pipeline_result = repo_location.get_subset_external_pipeline_result(
-                pipeline_selector
-            )
-
-            subset_external_pipeline = ExternalPipeline(
-                subset_pipeline_result.external_pipeline_data,
-                external_pipeline.repository_handle,
-            )
-        else:
-            subset_external_pipeline = external_pipeline
-
-        step_keys_to_execute, known_state = get_retry_steps_from_execution_plan(
-            instance, subset_external_pipeline, parent_run_id
-        )
+        step_keys_to_execute, known_state = get_retry_steps_from_parent_run(instance, parent_run_id)
 
     elif backfill_job.reexecution_steps:
         last_run = _fetch_last_run(instance, external_partition_set, partition_data.name)
