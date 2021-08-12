@@ -1,6 +1,5 @@
 import datetime
 
-from hacker_news_assets.pipelines.download_pipeline import download_comments_and_stories_prod
 from dagster.core.definitions.partition import (
     PartitionSetDefinition,
     ScheduleTimeBasedPartitionsDefinition,
@@ -10,6 +9,7 @@ from dagster.utils.partitions import (
     DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE,
     create_offset_partition_selector,
 )
+from hacker_news_assets.pipelines.download_pipeline import download_comments_and_stories_prod
 
 
 def get_hourly_download_def_schedule_config(start_time: datetime.datetime):

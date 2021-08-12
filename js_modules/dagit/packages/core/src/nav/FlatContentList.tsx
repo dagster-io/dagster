@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors, Icon} from '@blueprintjs/core';
+import {Button, ButtonGroup, Colors, Icon} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -54,6 +54,7 @@ export const FlatContentList: React.FC<Props> = (props) => {
 
   const {loading, data} = useQuery<NavQuery>(NAV_QUERY);
 
+  const [type, setType] = React.useState<'jobs' | 'assets'>('assets');
   const jobs = React.useMemo(() => {
     if (
       loading ||
@@ -167,20 +168,59 @@ export const FlatContentList: React.FC<Props> = (props) => {
 
   return (
     <Items style={{height: 'calc(100% - 226px)'}}>
-      {assetDefs.map(({asset, repoAddress, label, schedule, sensor}) => (
-        <Item
-          key={asset.id}
-          className={`${
-            asset.id === selector && repoPath === repoAddressAsString(repoAddress) ? 'selected' : ''
-          }`}
-          to={workspacePathFromAddress(repoAddress, `/assets/${encodeURIComponent(asset.id)}`)}
+      {assetDefs.length && jobs.length ? (
+        <Box
+          flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
+          padding={{vertical: 8, horizontal: 12}}
+          border={{side: 'bottom', width: 1, color: Colors.DARK_GRAY3}}
         >
-          <Box flex={{justifyContent: 'space-between', alignItems: 'center'}}>
-            <div>{label}</div>
-            <ItemIcon schedule={schedule} sensor={sensor} />
-          </Box>
-        </Item>
-      ))}
+          <ItemHeader>{'Assets & Jobs'}</ItemHeader>
+          <ButtonGroup>
+            <Button
+              small={true}
+              active={type === 'assets'}
+              intent={type === 'assets' ? 'primary' : 'none'}
+              icon={<Icon icon="box" iconSize={13} />}
+              onClick={() => setType('assets')}
+            />
+            <Button
+              small={true}
+              active={type === 'jobs'}
+              intent={type === 'jobs' ? 'primary' : 'none'}
+              icon={<Icon icon="send-to-graph" iconSize={13} />}
+              onClick={() => setType('jobs')}
+            />
+          </ButtonGroup>
+        </Box>
+      ) : null}
+      {type === 'assets'
+        ? assetDefs.map(({asset, repoAddress, label, schedule, sensor}) => (
+            <Item
+              key={asset.id}
+              className={`${
+                asset.id === selector && repoPath === repoAddressAsString(repoAddress)
+                  ? 'selected'
+                  : ''
+              }`}
+              to={workspacePathFromAddress(repoAddress, `/assets/${encodeURIComponent(asset.id)}`)}
+            >
+              <Box flex={{justifyContent: 'space-between', alignItems: 'center'}}>
+                <div>{label}</div>
+                <ItemIcon schedule={schedule} sensor={sensor} />
+              </Box>
+            </Item>
+          ))
+        : null}
+      {type === 'jobs'
+        ? jobs.map((job) => (
+            <JobItem
+              key={`${job.job[0]}:${job.job[1]}-${repoAddressAsString(job.repoAddress)}`}
+              job={job}
+              repoPath={repoPath}
+              selector={selector}
+            />
+          ))
+        : null}
     </Items>
   );
 };
@@ -344,4 +384,12 @@ const IconWithTooltip = styled(Tooltip)`
   .bp3-icon:active {
     outline: none;
   }
+`;
+
+const ItemHeader = styled.div`
+  font-size: 15px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  font-weight: bold;
+  color: ${Colors.LIGHT_GRAY3} !important;
 `;

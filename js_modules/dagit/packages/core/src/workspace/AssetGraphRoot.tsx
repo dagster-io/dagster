@@ -462,12 +462,18 @@ const AssetPanel = ({node, repoAddress}: {node: Node; repoAddress: RepoAddress})
         ) : null}
       </SidebarSection>
       <SidebarSection title={'Latest Event'}>
-        <AssetDetails assetKey={node.assetKey} asOf={null} asSidebarSection />
+        {node.definition.assetMaterializations.length ? (
+          <AssetDetails assetKey={node.assetKey} asOf={null} asSidebarSection />
+        ) : (
+          <div>&mdash;</div>
+        )}
       </SidebarSection>
 
-      <SidebarSection title={'Graphs'}>
-        <AssetMaterializations assetKey={node.assetKey} asOf={null} asSidebarSection />
-      </SidebarSection>
+      {node.definition.assetMaterializations.length ? (
+        <SidebarSection title={'Graphs'}>
+          <AssetMaterializations assetKey={node.assetKey} asOf={null} asSidebarSection />
+        </SidebarSection>
+      ) : null}
     </div>
   );
 };
