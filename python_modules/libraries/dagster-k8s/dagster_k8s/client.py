@@ -121,6 +121,7 @@ class KubernetesWaitingReasons:
     ImagePullBackOff = "ImagePullBackOff"
     CrashLoopBackOff = "CrashLoopBackOff"
     RunContainerError = "RunContainerError"
+    CreateContainerConfigError = "CreateContainerConfigError"
 
 
 class DagsterKubernetesClient:
@@ -458,6 +459,13 @@ class DagsterKubernetesClient:
                 # https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#containerstatewaiting-v1-core
                 if state.waiting.reason == KubernetesWaitingReasons.PodInitializing:
                     self.logger('Waiting for pod "%s" to initialize...' % pod_name)
+                    self.sleeper(wait_time_between_attempts)
+                    continue
+                if state.waiting.reason == KubernetesWaitingReasons.CreateContainerConfigError:
+                    self.logger(
+                        'Pod "%s" is waiting due to a CreateContainerConfigError with message "%s" - trying again to see if it recovers'
+                        % (pod_name, state.waiting.message)
+                    )
                     self.sleeper(wait_time_between_attempts)
                     continue
                 elif state.waiting.reason == KubernetesWaitingReasons.ContainerCreating:
