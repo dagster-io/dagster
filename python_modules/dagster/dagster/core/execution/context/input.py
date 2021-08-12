@@ -7,10 +7,10 @@ from dagster.core.errors import DagsterInvariantViolationError
 
 if TYPE_CHECKING:
     from .output import OutputContext
+    from dagster.core.definitions.resource import Resources
     from dagster.core.log_manager import DagsterLogManager
     from dagster.core.types.dagster_type import DagsterType
     from dagster.core.execution.context.system import StepExecutionContext
-    from dagster.core.definitions.resource import Resources
 
 
 class InputContext:
@@ -91,19 +91,43 @@ class InputContext:
             self._resources_cm.__exit__(None, None, None)  # pylint: disable=no-member
 
     @property
-    def name(self) -> Optional[str]:
+    def has_input_name(self) -> bool:
+        """If we're the InputContext is being used to load the result of a run from outside the run,
+        then it won't have an input name."""
+        return self._name is not None
+
+    @property
+    def name(self) -> str:
+        if self._name is None:
+            raise DagsterInvariantViolationError(
+                "Attempting to access name, "
+                "but it was not provided when constructing the InputContext"
+            )
+
         return self._name
 
     @property
-    def pipeline_name(self) -> Optional[str]:
+    def pipeline_name(self) -> str:
+        if self._pipeline_name is None:
+            raise DagsterInvariantViolationError(
+                "Attempting to access pipeline_name, "
+                "but it was not provided when constructing the InputContext"
+            )
+
         return self._pipeline_name
 
     @property
-    def solid_def(self) -> Optional["SolidDefinition"]:
+    def solid_def(self) -> "SolidDefinition":
+        if self._solid_def is None:
+            raise DagsterInvariantViolationError(
+                "Attempting to access solid_def, "
+                "but it was not provided when constructing the InputContext"
+            )
+
         return self._solid_def
 
     @property
-    def config(self) -> Optional[Any]:
+    def config(self) -> Any:
         return self._config
 
     @property
@@ -115,11 +139,23 @@ class InputContext:
         return self._upstream_output
 
     @property
-    def dagster_type(self) -> Optional["DagsterType"]:
+    def dagster_type(self) -> "DagsterType":
+        if self._dagster_type is None:
+            raise DagsterInvariantViolationError(
+                "Attempting to access dagster_type, "
+                "but it was not provided when constructing the InputContext"
+            )
+
         return self._dagster_type
 
     @property
-    def log(self) -> Optional["DagsterLogManager"]:
+    def log(self) -> "DagsterLogManager":
+        if self._log is None:
+            raise DagsterInvariantViolationError(
+                "Attempting to access log, "
+                "but it was not provided when constructing the InputContext"
+            )
+
         return self._log
 
     @property
@@ -127,7 +163,13 @@ class InputContext:
         return self._resource_config
 
     @property
-    def resources(self) -> Optional["Resources"]:
+    def resources(self) -> Any:
+        if self._resources is None:
+            raise DagsterInvariantViolationError(
+                "Attempting to access resources, "
+                "but it was not provided when constructing the InputContext"
+            )
+
         if self._resources_cm and self._resources_contain_cm and not self._cm_scope_entered:
             raise DagsterInvariantViolationError(
                 "At least one provided resource is a generator, but attempting to access "
@@ -147,7 +189,13 @@ class InputContext:
         return matching_input_defs[0].get_asset_key(self)
 
     @property
-    def step_context(self) -> Optional["StepExecutionContext"]:
+    def step_context(self) -> "StepExecutionContext":
+        if self._step_context is None:
+            raise DagsterInvariantViolationError(
+                "Attempting to access step_context, "
+                "but it was not provided when constructing the InputContext"
+            )
+
         return self._step_context
 
 
