@@ -35,8 +35,7 @@ from papermill.iorw import load_notebook_node, write_ipynb
 from .compat import ExecutionError
 from .engine import DagstermillEngine
 from .errors import DagstermillError
-from .serialize import write_value
-from .translator import RESERVED_INPUT_NAMES, DagsterTranslator
+from .translator import DagsterTranslator
 
 
 # https://github.com/nteract/papermill/blob/17d4bbb3960c30c263bca835e48baf34322a3530/papermill/parameterize.py
@@ -134,25 +133,13 @@ def get_papermill_parameters(step_context, inputs, output_log_path):
 
     parameters = {}
 
-    input_def_dict = step_context.solid_def.input_dict
-    for input_name, input_value in inputs.items():
-        assert (
-            input_name not in RESERVED_INPUT_NAMES
-        ), "Dagstermill solids cannot have inputs named {input_name}".format(input_name=input_name)
-        dagster_type = input_def_dict[input_name].dagster_type
-        parameter_value = write_value(
-            dagster_type,
-            input_value,
-            os.path.join(marshal_dir, f"{str(step_context.solid_handle)}-input-{input_name}"),
-        )
-        parameters[input_name] = parameter_value
-
     parameters["__dm_context"] = dm_context_dict
     parameters["__dm_executable_dict"] = dm_executable_dict
     parameters["__dm_pipeline_run_dict"] = pack_value(step_context.pipeline_run)
     parameters["__dm_solid_handle_kwargs"] = dm_solid_handle_kwargs
     parameters["__dm_instance_ref_dict"] = pack_value(step_context.instance.get_ref())
     parameters["__dm_step_key"] = dm_step_key
+    parameters["__dm_input_names"] = list(inputs.keys())
 
     return parameters
 
