@@ -1,5 +1,39 @@
 # Changelog
 
+# 0.12.6
+
+### New
+
+* [dagster-dbt] Added a new synchronous RPC dbt resource (`dbt_rpc_sync_resource`), which allows you to programmatically send `dbt` commands to an RPC server, returning only when the command completes (as opposed to returning as soon as the command has been sent).
+* Specifying secrets in the `k8s_job_executor` now adds to the secrets specified in `K8sRunLa``uncher` , instead of overwriting them.
+* The `local_file_manager` no longer uses the current directory as the default `base_dir` , instead defaulting to `LOCAL_ARTIFACT_STORAGE/storage/file_manager`. If you wish, you can configure `LOCAL_ARTIFACT_STORAGE` in your dagster.yaml file.
+
+### Bugfixes
+
+* Following the recent change to add strict Content-Security-Policy directives to Dagit, the CSP began to block the iframe used to render ipynb notebook files. This has been fixed, and these iframes should now render correctly.
+* Fixed an error where large files would fail to upload when using the `s3_pickle_io_manager` for intermediate storage. 
+* Fixed an issue where Kubernetes environment variables defined in pipeline tags were not being applied properly to Kubernetes jobs.
+* Fixed tick preview in the `Recent` live tick timeline view for Sensors.
+* Added more descriptive error messages for invalid sensor evaluation functions.
+* `dagit` will now write to a temp directory in the current working directory when launched with the env var `DAGSTER_HOME` not set. This should resolve issues where the event log was not keeping up to date when observing runs progress live in `dagit`  with no `DAGSTER_HOME`
+
+* Fixed an issue where retrying from a failed run sometimes failed if the pipeline was changed after the failure.
+* Fixed an issue with default config on `to_job` that would result in an error when using an enum config schema within a job. 
+
+### Community Contributions
+
+* Documentation typo fix for pipeline example, thanks @clippered!
+
+### Experimental
+
+* Solid and resource versions will now be validated for consistency.  Valid characters are `A-Za-z0-9_`.
+
+### Documentation
+
+* The “Testing Solids and Pipelines” section of the tutorial now uses the new direct invocation functionality and tests a solid and pipeline from an earlier section of the tutorial.
+* Fixed the example in the API docs for `EventMetadata.python_artifact`.
+
+
 # 0.12.5
 
 ### Bugfixes
