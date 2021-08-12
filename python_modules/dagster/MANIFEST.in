@@ -7,6 +7,5 @@ recursive-include dagster/core/storage/runs/sqlite/alembic *
 recursive-include dagster/core/storage/schedules/sqlite/alembic *
 recursive-include dagster/generate/new_project *
 recursive-include dagster *.proto
-recursive-include dagster py.typed
 global-exclude __pycache__
 global-exclude *.py[co]

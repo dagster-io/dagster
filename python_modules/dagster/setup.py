@@ -52,7 +52,6 @@ if __name__ == "__main__":
                 "dagster/core/storage/schedules/sqlite/alembic/*",
                 "dagster/generate/new_project/*",
                 "dagster/grpc/protos/*",
-                "dagster/py.typed",
             ]
         },
         include_package_data=True,
