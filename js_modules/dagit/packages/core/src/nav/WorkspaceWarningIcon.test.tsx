@@ -1,4 +1,3 @@
-import {MockList} from '@graphql-tools/mock';
 import {waitFor} from '@testing-library/dom';
 import {render, screen} from '@testing-library/react';
 import * as React from 'react';
