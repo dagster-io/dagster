@@ -145,6 +145,9 @@ class UnboundHookContext(HookContext):
         resources: Dict[str, Any],
         mode_def: Optional[ModeDefinition],
         solid: Optional[Union[SolidDefinition, PendingNodeInvocation]],
+        pipeline_name: Optional[str],
+        run_id: Optional[str],
+        step_key: Optional[str],
     ):  # pylint: disable=super-init-not-called
         from ..context_creation_pipeline import initialize_console_manager
         from ..build_resources import build_resources
@@ -169,6 +172,10 @@ class UnboundHookContext(HookContext):
 
         self._cm_scope_entered = False
 
+        self._pipeline_name = pipeline_name
+        self._run_id = run_id
+        self._step_key = step_key
+
     def __enter__(self):
         self._cm_scope_entered = True
         return self
@@ -180,13 +187,21 @@ class UnboundHookContext(HookContext):
         if self._resources_contain_cm and not self._cm_scope_entered:
             self._resources_cm.__exit__(None, None, None)  # pylint: disable=no-member
 
+    def _unbound_invariant(val, name):
+        check.invariant(
+            val is not None,
+            f"{name} property not specified when constructing the hook context.",
+        )
+
     @property
     def pipeline_name(self) -> str:
-        raise DagsterInvalidPropertyError(_property_msg("pipeline_name", "property"))
+        self._unbound_invariant(self._pipeline_name, "pipeline_name")
+        return self._pipeline_name
 
     @property
     def run_id(self) -> str:
-        raise DagsterInvalidPropertyError(_property_msg("run_id", "property"))
+        self._unbound_invariant(self._run_id, "run_id")
+        return self._run_id
 
     @property
     def hook_def(self) -> HookDefinition:
@@ -206,7 +221,8 @@ class UnboundHookContext(HookContext):
 
     @property
     def step_key(self) -> str:
-        raise DagsterInvalidPropertyError(_property_msg("step_key", "property"))
+        self._unbound_invariant(self._step_key, "step_key")
+        return self._step_key
 
     @property
     def mode_def(self) -> Optional[ModeDefinition]:
@@ -343,6 +359,9 @@ def build_hook_context(
     resources: Optional[Dict[str, Any]] = None,
     mode_def: Optional[ModeDefinition] = None,
     solid: Optional[Union[SolidDefinition, PendingNodeInvocation]] = None,
+    pipeline_name: Optional[str] = None,
+    run_id: Optional[str] = None,
+    step_key: Optional[str] = None,
 ) -> UnboundHookContext:
     """Builds hook context from provided parameters.
 
@@ -357,6 +376,9 @@ def build_hook_context(
         mode_def (Optional[ModeDefinition]): The mode definition used with the context.
         solid (Optional[SolidDefinition, PendingNodeInvocation]): The solid definition which the
             hook may be associated with.
+        pipeline_name (Optional[str]): The name of the pipeline.
+        run_id (Optional[str]): The unique run id.
+        step_key (Optional[str]): The step key.
 
     Examples:
         .. code-block:: python
@@ -371,4 +393,7 @@ def build_hook_context(
         resources=check.opt_dict_param(resources, "resources", key_type=str),
         mode_def=check.opt_inst_param(mode_def, "mode_def", ModeDefinition),
         solid=check.opt_inst_param(solid, "solid", (SolidDefinition, PendingNodeInvocation)),
+        pipeline_name=check.opt_inst_param(pipeline_name, "pipeline_name", str),
+        run_id=check.opt_inst_param(run_id, "run_id", str),
+        step_key=check.opt_inst_param(step_key, "step_key", str),
     )
