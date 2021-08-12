@@ -15,3 +15,5 @@ schedule_storage:
   class: PostgresScheduleStorage
   config:
     postgres_url: "postgresql://test:test@{hostname}:5432/test"
+
+log_conf: './logging.conf'

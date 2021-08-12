@@ -1,5 +1,6 @@
 import inspect
 import logging
+import logging.config
 import os
 import sys
 import tempfile
@@ -237,7 +238,9 @@ class DagsterInstance:
         scheduler: Optional["Scheduler"] = None,
         schedule_storage: Optional["ScheduleStorage"] = None,
         settings: Optional[Dict[str, Any]] = None,
+        log_conf: Optional[str] = None,
         ref: Optional[InstanceRef] = None,
+        **kwargs,
     ):
         from dagster.core.storage.compute_log_manager import ComputeLogManager
         from dagster.core.storage.event_log import EventLogStorage
@@ -305,6 +308,8 @@ class DagsterInstance:
         self._ref = check.opt_inst_param(ref, "ref", InstanceRef)
 
         self._subscribers: Dict[str, List[Callable]] = defaultdict(list)
+
+        self.logger = self._init_logger(log_conf)
 
     # ctors
 
@@ -405,6 +410,7 @@ class DagsterInstance:
             run_coordinator=instance_ref.run_coordinator,
             run_launcher=instance_ref.run_launcher,
             settings=instance_ref.settings,
+            log_conf=instance_ref.log_conf,
             ref=instance_ref,
             **kwargs,
         )
@@ -444,6 +450,11 @@ class DagsterInstance:
         if DagsterInstance._PROCESS_TEMPDIR is None:
             DagsterInstance._PROCESS_TEMPDIR = tempfile.TemporaryDirectory()
         return DagsterInstance._PROCESS_TEMPDIR.name
+
+    def _init_logger(self, filename):
+        # need to checks to make sure file is valid
+        logging.config.fileConfig(filename)
+        return logging.getLogger("userLogger")
 
     def _info(self, component):
         # ConfigurableClass may not have inst_data if it's a direct instantiation
