@@ -204,24 +204,21 @@ def log_step_event(step_context: IStepContext, event: "DagsterEvent") -> None:
     event_type = DagsterEventType(event.event_type_value)
     log_level = logging.ERROR if event_type in FAILURE_EVENTS else logging.DEBUG
 
-    step_context.log.log(
+    step_context.log.log_dagster_event(
         level=log_level,
         msg=event.message or f"{event_type} for step {step_context.step.key}",
         dagster_event=event,
     )
 
 
-def log_pipeline_event(
-    pipeline_context: IPlanContext, event: "DagsterEvent", step_key: Optional[str]
-) -> None:
+def log_pipeline_event(pipeline_context: IPlanContext, event: "DagsterEvent") -> None:
     event_type = DagsterEventType(event.event_type_value)
     log_level = logging.ERROR if event_type in FAILURE_EVENTS else logging.DEBUG
 
-    pipeline_context.log.log(
+    pipeline_context.log.log_dagster_event(
         level=log_level,
         msg=event.message or f"{event_type} for pipeline {pipeline_context.pipeline_name}",
         dagster_event=event,
-        step_key=step_key,
     )
 
 
@@ -229,7 +226,7 @@ def log_resource_event(log_manager: DagsterLogManager, event: "DagsterEvent") ->
     event_specific_data = cast(EngineEventData, event.event_specific_data)
 
     log_level = logging.ERROR if event_specific_data.error else logging.DEBUG
-    log_manager.log(level=log_level, msg=event.message, dagster_event=event)
+    log_manager.log_dagster_event(level=log_level, msg=event.message or "", dagster_event=event)
 
 
 @whitelist_for_serdes
@@ -312,8 +309,7 @@ class DagsterEvent(
             pid=os.getpid(),
         )
 
-        step_key = step_handle.to_key() if step_handle else None
-        log_pipeline_event(pipeline_context, event, step_key)
+        log_pipeline_event(pipeline_context, event)
 
         return event
 
@@ -1042,10 +1038,8 @@ class DagsterEvent(
             ).format(hook_name=hook_def.name, solid_name=step_context.solid.name),
         )
 
-        step_context.log.debug(
-            event.message,
-            dagster_event=event,
-            pipeline_name=step_context.pipeline_name,
+        step_context.log.log_dagster_event(
+            level=logging.DEBUG, msg=event.message or "", dagster_event=event
         )
 
         return event
@@ -1071,11 +1065,7 @@ class DagsterEvent(
             ),
         )
 
-        step_context.log.error(
-            str(error),
-            dagster_event=event,
-            pipeline_name=step_context.pipeline_name,
-        )
+        step_context.log.log_dagster_event(level=logging.ERROR, msg=str(error), dagster_event=event)
 
         return event
 
@@ -1098,10 +1088,8 @@ class DagsterEvent(
             ).format(hook_name=hook_def.name, solid_name=step_context.solid.name),
         )
 
-        step_context.log.debug(
-            event.message,
-            dagster_event=event,
-            pipeline_name=step_context.pipeline_name,
+        step_context.log.log_dagster_event(
+            level=logging.DEBUG, msg=event.message or "", dagster_event=event
         )
 
         return event

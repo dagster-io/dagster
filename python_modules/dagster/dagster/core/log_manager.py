@@ -1,8 +1,6 @@
 import datetime
-import itertools
 import logging
-from collections import namedtuple
-from typing import TYPE_CHECKING, Any, Dict, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional
 
 from dagster import check
 from dagster.core.utils import coerce_valid_log_level, make_new_run_id
@@ -64,6 +62,12 @@ class DagsterMessageProps(
         if self.dagster_event is None or self.dagster_event.pid is None:
             return None
         return str(self.dagster_event.pid)
+
+    @property
+    def step_key(self) -> Optional[str]:
+        if self.dagster_event is None:
+            return None
+        return self.dagster_event.step_key
 
     @property
     def event_type_value(self) -> Optional[str]:
@@ -140,36 +144,57 @@ def construct_log_string(
     )
 
 
-class DagsterLogManager(namedtuple("_DagsterLogManager", "logging_metadata loggers")):
-    """Centralized dispatch for logging from user code.
-
-    Handles the construction of uniform structured log messages and passes them through to the
-    underlying loggers.
-
-    An instance of the log manager is made available to solids as ``context.log``. Users should not
-    initialize instances of the log manager directly. To configure custom loggers, set the
-    ``logger_defs`` on a :py:class:`ModeDefinition` for a pipeline.
-
-    The log manager supports standard convenience methods like those exposed by the Python standard
-    library :py:mod:`python:logging` module (i.e., within the body of a solid,
-    ``context.log.{debug, info, warning, warn, error, critical, fatal}``).
-
-    The underlying integer API can also be called directly using, e.g.
-    ``context.log.log(5, msg)``, and the log manager will delegate to the ``log`` method
-    defined on each of the loggers it manages.
-
-    User-defined custom log levels are not supported, and calls to, e.g.,
-    ``context.log.trace`` or ``context.log.notice`` will result in hard exceptions **at runtime**.
-    """
-
-    def __new__(cls, logging_metadata, loggers):
-        return super(DagsterLogManager, cls).__new__(
-            cls,
-            logging_metadata=check.inst_param(
-                logging_metadata, "logging_metadata", DagsterLoggingMetadata
-            ),
-            loggers=check.list_param(loggers, "loggers", of_type=logging.Logger),
+class DagsterLogManager(logging.Logger):
+    def __init__(self, logging_metadata: DagsterLoggingMetadata, loggers: List[logging.Logger]):
+        self._logging_metadata = check.inst_param(
+            logging_metadata, "logging_metadata", DagsterLoggingMetadata
         )
+        self._loggers = check.list_param(loggers, "loggers", of_type=logging.Logger)
+        super().__init__(name="dagster", level=logging.DEBUG)
+
+    @property
+    def logging_metadata(self) -> DagsterLoggingMetadata:
+        return self._logging_metadata
+
+    @property
+    def loggers(self) -> List[logging.Logger]:
+        return self._loggers
+
+    def log_dagster_event(self, level: int, msg: str, dagster_event: "DagsterEvent"):
+        self.log(level=level, msg=msg, extra={DAGSTER_META_KEY: dagster_event})
+
+    def log(self, level, msg, *args, **kwargs):
+        # allow for string level names
+        super().log(coerce_valid_log_level(level), msg, *args, **kwargs)
+
+    def _log(
+        self, level, msg, args, exc_info=None, extra=None, stack_info=False
+    ):  # pylint: disable=arguments-differ
+
+        # we stash dagster meta information in the extra field
+        extra = extra or {}
+
+        dagster_message_props = DagsterMessageProps(
+            orig_message=msg, dagster_event=extra.get(DAGSTER_META_KEY)
+        )
+
+        # convert the message to our preferred format
+        msg = construct_log_string(self.logging_metadata, dagster_message_props)
+
+        # combine all dagster meta information into a single dictionary
+        meta_dict = {
+            **self.logging_metadata._asdict(),
+            **dagster_message_props._asdict(),
+        }
+        # step-level events can be logged from a pipeline context. for these cases, pull the step
+        # key from the underlying DagsterEvent
+        if meta_dict["step_key"] is None:
+            meta_dict["step_key"] = dagster_message_props.step_key
+
+        extra[DAGSTER_META_KEY] = meta_dict
+
+        for logger in self._loggers:
+            logger.log(level, msg, *args, extra=extra)
 
     def with_tags(self, **new_tags):
         """Add new tags in "new_tags" to the set of tags attached to this log manager instance, and
@@ -182,142 +207,6 @@ class DagsterLogManager(namedtuple("_DagsterLogManager", "logging_metadata logge
             DagsterLogManager: a new DagsterLogManager namedtuple with updated tags for the same
                 run ID and loggers.
         """
-        return self._replace(logging_metadata=self.logging_metadata._replace(**new_tags))
-
-    def _prepare_message(self, orig_message, message_props):
-        check.str_param(orig_message, "orig_message")
-        check.dict_param(message_props, "message_props")
-
-        # These are todos to further align with the Python logging API
-        check.invariant(
-            "extra" not in message_props, "do not allow until explicit support is handled"
+        return DagsterLogManager(
+            logging_metadata=self.logging_metadata._replace(**new_tags), loggers=self._loggers
         )
-        check.invariant(
-            "exc_info" not in message_props, "do not allow until explicit support is handled"
-        )
-
-        # Reserved keys in the message_props -- these are system generated.
-        check.invariant("orig_message" not in message_props, "orig_message reserved value")
-        check.invariant("message" not in message_props, "message reserved value")
-        check.invariant("log_message_id" not in message_props, "log_message_id reserved value")
-        check.invariant("log_timestamp" not in message_props, "log_timestamp reserved value")
-
-        # structured information about this specific message
-        dagster_message_props = DagsterMessageProps(
-            orig_message=orig_message, dagster_event=message_props.get("dagster_event")
-        )
-
-        # We first generate all props for the purpose of producing the semi-structured
-        # log message via _kv_messsage
-        all_props = dict(
-            itertools.chain(
-                self.logging_metadata._asdict().items(),
-                message_props.items(),
-                dagster_message_props._asdict().items(),
-            )
-        )
-
-        # So here we use the arbitrary key DAGSTER_META_KEY to store a dictionary of
-        # all the meta information that dagster injects into log message.
-        # The python logging module, in its infinite wisdom, actually takes all the
-        # keys in extra and unconditionally smashes them into the internal dictionary
-        # of the logging.LogRecord class. We used a reserved key here to avoid naming
-        # collisions with internal variables of the LogRecord class.
-        # See __init__.py:363 (makeLogRecord) in the python 3.6 logging module source
-        # for the gory details.
-        return (
-            construct_log_string(self.logging_metadata, dagster_message_props),
-            {DAGSTER_META_KEY: all_props},
-        )
-
-    def _log(self, level, orig_message, message_props):
-        """Invoke the underlying loggers for a given log level.
-
-        Args:
-            level (Union[str, int]): An integer represeting a Python logging level or one of the
-                standard Python string representations of a logging level.
-            orig_message (str): The log message generated in user code.
-            message_props (dict): Additional properties for the structured log message.
-        """
-        if not self.loggers:
-            return
-
-        level = coerce_valid_log_level(level)
-
-        message, extra = self._prepare_message(orig_message, message_props)
-
-        for logger_ in self.loggers:
-            logger_.log(level, message, extra=extra)
-
-    def log(self, level, msg, **kwargs):
-        """Invoke the underlying loggers for a given integer log level.
-
-        Args:
-            level (int): An integer represeting a Python logging level.
-            orig_message (str): The message to log.
-        """
-
-        check.str_param(msg, "msg")
-        check.int_param(level, "level")
-        return self._log(level, msg, kwargs)
-
-    def debug(self, msg, **kwargs):
-        """Log at the ``logging.DEBUG`` level.
-
-        The message will be automatically adorned with contextual information about the name
-        of the pipeline, the name of the solid, etc., so it is generally unnecessary to include
-        this type of information in the log message.
-
-        You can optionally additional key-value pairs to an individual log message using the kwargs
-        to this method.
-
-        Args:
-            msg (str): The message to log.
-            **kwargs (Optional[Any]): Any additional key-value pairs for only this log message.
-        """
-
-        check.str_param(msg, "msg")
-        return self._log(logging.DEBUG, msg, kwargs)
-
-    def info(self, msg, **kwargs):
-        """Log at the ``logging.INFO`` level.
-
-        See :py:meth:`~DagsterLogManager.debug`.
-        """
-
-        check.str_param(msg, "msg")
-        return self._log(logging.INFO, msg, kwargs)
-
-    def warning(self, msg, **kwargs):
-        """Log at the ``logging.WARNING`` level.
-
-        See :py:meth:`~DagsterLogManager.debug`.
-        """
-
-        check.str_param(msg, "msg")
-        return self._log(logging.WARNING, msg, kwargs)
-
-    # Define the alias .warn()
-    warn = warning
-    """Alias for :py:meth:`~DagsterLogManager.warning`"""
-
-    def error(self, msg, **kwargs):
-        """Log at the ``logging.ERROR`` level.
-
-        See :py:meth:`~DagsterLogManager.debug`.
-        """
-
-        check.str_param(msg, "msg")
-        return self._log(logging.ERROR, msg, kwargs)
-
-    def critical(self, msg, **kwargs):
-        """Log at the ``logging.CRITICAL`` level.
-
-        See :py:meth:`~DagsterLogManager.debug`.
-        """
-        check.str_param(msg, "msg")
-        return self._log(logging.CRITICAL, msg, kwargs)
-
-    # Define the alias .fatal()
-    fatal = critical
-    """Alias for :py:meth:`~DagsterLogManager.critical`"""

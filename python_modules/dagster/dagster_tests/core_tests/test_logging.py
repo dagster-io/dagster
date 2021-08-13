@@ -107,44 +107,39 @@ def test_logging_bad_custom_log_levels():
 
         dl = DagsterLogManager(DagsterLoggingMetadata(run_id="123"), [logger])
         with pytest.raises(check.CheckError):
-            dl._log("test", "foobar", {})  # pylint: disable=protected-access
+            dl.log(level="test", msg="foobar")
 
 
 def test_multiline_logging_complex():
     msg = "DagsterEventType.STEP_FAILURE for step start.materialization.output.result.0"
-    kwargs = {
-        "step_key": "start.materialization.output.result.0",
-        "solid": "start",
-        "solid_definition": "emit_num",
-        "dagster_event": DagsterEvent(
-            event_type_value="STEP_FAILURE",
-            pipeline_name="error_monster",
-            step_key="start.materialization.output.result.0",
-            solid_handle=NodeHandle("start", None),
-            step_kind_value="MATERIALIZATION_THUNK",
-            logging_tags={
-                "pipeline": "error_monster",
-                "step_key": "start.materialization.output.result.0",
-                "solid": "start",
-                "solid_definition": "emit_num",
-            },
-            event_specific_data=StepFailureData(
-                error=SerializableErrorInfo(
-                    message="FileNotFoundError: [Errno 2] No such file or directory: '/path/to/file'\n",
-                    stack=["a stack message"],
-                    cls_name="FileNotFoundError",
-                ),
-                user_failure_data=None,
+    dagster_event = DagsterEvent(
+        event_type_value="STEP_FAILURE",
+        pipeline_name="error_monster",
+        step_key="start.materialization.output.result.0",
+        solid_handle=NodeHandle("start", None),
+        step_kind_value="MATERIALIZATION_THUNK",
+        logging_tags={
+            "pipeline": "error_monster",
+            "step_key": "start.materialization.output.result.0",
+            "solid": "start",
+            "solid_definition": "emit_num",
+        },
+        event_specific_data=StepFailureData(
+            error=SerializableErrorInfo(
+                message="FileNotFoundError: [Errno 2] No such file or directory: '/path/to/file'\n",
+                stack=["a stack message"],
+                cls_name="FileNotFoundError",
             ),
+            user_failure_data=None,
         ),
-    }
+    )
 
     with _setup_logger(DAGSTER_DEFAULT_LOGGER) as (captured_results, logger):
 
         dl = DagsterLogManager(
             DagsterLoggingMetadata(run_id="123", pipeline_name="error_monster"), [logger]
         )
-        dl.info(msg, **kwargs)
+        dl.log_dagster_event(logging.INFO, msg, dagster_event)
 
     expected_results = [
         "error_monster - 123 - STEP_FAILURE - DagsterEventType.STEP_FAILURE for step "

@@ -1,3 +1,4 @@
+import logging
 import sys
 from typing import List, Optional
 
@@ -143,10 +144,8 @@ def host_mode_execution_context_event_generator(
                 ),
                 error_info=error_info,
             )
-            log_manager.error(
-                event.message,
-                dagster_event=event,
-                pipeline_name=pipeline_run.pipeline_name,
+            log_manager.log_dagster_event(
+                level=logging.ERROR, msg=event.message, dagster_event=event
             )
             yield event
         else:
