@@ -2,10 +2,13 @@ import datetime
 import itertools
 import logging
 from collections import namedtuple
-from typing import Any, Dict, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Dict, NamedTuple, Optional
 
 from dagster import check
 from dagster.core.utils import coerce_valid_log_level, make_new_run_id
+
+if TYPE_CHECKING:
+    from dagster.core.events import DagsterEvent
 
 DAGSTER_META_KEY = "dagster_meta"
 
