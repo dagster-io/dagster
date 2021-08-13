@@ -6,7 +6,7 @@ from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.errors import DagsterUserCodeExecutionError, user_code_error_boundary
 from dagster.core.execution.plan.objects import ErrorSource, StepFailureData
 from dagster.core.execution.plan.outputs import StepOutputData, StepOutputHandle
-from dagster.core.log_manager import construct_log_string
+from dagster.core.log_manager import DagsterLoggingTags, DagsterMessageProps, construct_log_string
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 
@@ -22,27 +22,28 @@ def test_construct_log_string_for_event():
         message='Yielded output "result" of type "Any" for step "solid2". (Type check passed).',
         pid=54348,
     )
-    message_props = {"dagster_event": step_output_event, "pipeline_name": "my_pipeline"}
 
-    synth_props = {
-        "orig_message": step_output_event.message,
-        "run_id": "f79a8a93-27f1-41b5-b465-b35d0809b26d",
-    }
+    logging_tags = DagsterLoggingTags(
+        run_id="f79a8a93-27f1-41b5-b465-b35d0809b26d", pipeline_name="my_pipeline"
+    )
+    dagster_message_props = DagsterMessageProps(
+        orig_message=step_output_event.message,
+        dagster_event=step_output_event,
+    )
+
     assert (
-        construct_log_string(message_props=message_props, logging_tags={}, synth_props=synth_props)
+        construct_log_string(logging_tags=logging_tags, message_props=dagster_message_props)
         == 'my_pipeline - f79a8a93-27f1-41b5-b465-b35d0809b26d - 54348 - STEP_OUTPUT - Yielded output "result" of type "Any" for step "solid2". (Type check passed).'
     )
 
 
 def test_construct_log_string_for_log():
-    message_props = {"pipeline_name": "my_pipeline"}
-
-    synth_props = {
-        "orig_message": "hear my tale",
-        "run_id": "f79a8a93-27f1-41b5-b465-b35d0809b26d",
-    }
+    logging_tags = DagsterLoggingTags(
+        run_id="f79a8a93-27f1-41b5-b465-b35d0809b26d", pipeline_name="my_pipeline"
+    )
+    dagster_message_props = DagsterMessageProps(orig_message="hear my tale")
     assert (
-        construct_log_string(message_props=message_props, logging_tags={}, synth_props=synth_props)
+        construct_log_string(logging_tags, dagster_message_props)
         == "my_pipeline - f79a8a93-27f1-41b5-b465-b35d0809b26d - hear my tale"
     )
 
@@ -62,15 +63,14 @@ def make_log_string(error, error_source=None):
         pid=54348,
     )
 
-    message_props = {"dagster_event": step_failure_event, "pipeline_name": "my_pipeline"}
-
-    synth_props = {
-        "orig_message": step_failure_event.message,
-        "run_id": "f79a8a93-27f1-41b5-b465-b35d0809b26d",
-    }
-    return construct_log_string(
-        message_props=message_props, logging_tags={}, synth_props=synth_props
+    logging_tags = DagsterLoggingTags(
+        run_id="f79a8a93-27f1-41b5-b465-b35d0809b26d", pipeline_name="my_pipeline"
     )
+    dagster_message_props = DagsterMessageProps(
+        orig_message=step_failure_event.message,
+        dagster_event=step_failure_event,
+    )
+    return construct_log_string(logging_tags, dagster_message_props)
 
 
 def test_construct_log_string_with_error():
