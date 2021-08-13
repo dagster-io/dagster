@@ -240,7 +240,6 @@ class DagsterInstance:
         settings: Optional[Dict[str, Any]] = None,
         log_conf: Optional[str] = None,
         ref: Optional[InstanceRef] = None,
-        **kwargs,
     ):
         from dagster.core.storage.compute_log_manager import ComputeLogManager
         from dagster.core.storage.event_log import EventLogStorage
@@ -1112,14 +1111,8 @@ records = instance.get_event_records(
             self._event_storage.wipe_asset(asset_key)
 
     # event subscriptions
-    # creates logger
-    # add all loggers specified in conf file
-    def get_loggers(self):
 
-        # def _init_logger(self, filename):
-        # # need to check to make sure file is valid
-        # logging.config.fileConfig(filename)
-        # return logging.getLogger("userLogger")
+    def get_loggers(self):
 
         loggers = []
 
