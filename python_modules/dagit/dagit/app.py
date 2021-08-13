@@ -69,22 +69,27 @@ def info_view():
     )
 
 
-def notebook_view(request_args):
+def notebook_view(context, request_args):
+    context = check.inst_param(context, "context", IWorkspaceProcessContext)
+    repo_location_name = request_args["repoLocName"]
     check.dict_param(request_args, "request_args")
 
-    # This currently provides open access to your file system - the very least we can
-    # do is limit it to notebook files until we create a more permanent solution.
     path = request_args["path"]
     if not path.endswith(".ipynb"):
         return "Invalid Path", 400
 
-    with open(os.path.abspath(path)) as f:
-        read_data = f.read()
-        notebook = nbformat.reads(read_data, as_version=4)
-        html_exporter = HTMLExporter()
-        html_exporter.template_file = "basic"
-        (body, resources) = html_exporter.from_notebook_node(notebook)
-        return "<style>" + resources["inlining"]["css"][0] + "</style>" + body, 200
+    # get ipynb content from grpc call
+    request_context = context.create_request_context()
+    res = request_context.get_external_notebook_data(repo_location_name, path)
+    notebook_content = res.content
+    check.str_param(notebook_content, "notebook_content")
+
+    # parse content to HTML
+    notebook = nbformat.reads(notebook_content, as_version=4)
+    html_exporter = HTMLExporter()
+    html_exporter.template_file = "basic"
+    (body, resources) = html_exporter.from_notebook_node(notebook)
+    return "<style>" + resources["inlining"]["css"][0] + "</style>" + body, 200
 
 
 def download_log_view(context):
@@ -190,7 +195,7 @@ def instantiate_app_with_views(
     # these routes are specifically for the Dagit UI and are not part of the graphql
     # API that we want other people to consume, so they're separate for now.
     # Also grabbing the magic global request args dict so that notebook_view is testable
-    bp.add_url_rule("/dagit/notebook", "notebook", lambda: notebook_view(request.args))
+    bp.add_url_rule("/dagit/notebook", "notebook", lambda: notebook_view(context, request.args))
     bp.add_url_rule("/dagit_info", "sanity_view", info_view)
 
     index_path = os.path.join(target_dir, "./webapp/build/index.html")

@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
 from dagster import check
 from dagster.api.get_server_id import sync_get_server_id
 from dagster.api.list_repositories import sync_list_repositories_grpc
+from dagster.api.notebook_data import sync_get_streaming_external_notebook_data_grpc
 from dagster.api.snapshot_execution_plan import sync_get_external_execution_plan_grpc
 from dagster.api.snapshot_partition import (
     sync_get_external_partition_config_grpc,
@@ -67,6 +68,7 @@ if TYPE_CHECKING:
         ExternalPartitionSetExecutionParamData,
         ExternalPartitionTagsData,
         ExternalScheduleExecutionErrorData,
+        ExternalNotebookData,
     )
     from dagster.core.definitions.schedule import ScheduleExecutionData
     from dagster.core.definitions.sensor import SensorExecutionData
@@ -724,3 +726,8 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         return sync_get_external_partition_set_execution_param_data_grpc(
             self.client, repository_handle, partition_set_name, partition_names
         )
+
+    def get_external_notebook_data(self, notebook_path: str) -> "ExternalNotebookData":
+
+        check.str_param(notebook_path, "notebook_path")
+        return sync_get_streaming_external_notebook_data_grpc(self.client, notebook_path)

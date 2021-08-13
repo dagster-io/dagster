@@ -67,6 +67,7 @@ export const SidebarSolidContainer: React.FC<SidebarSolidContainerProps> = ({
               definition={pipelineOrError!.solidHandle!.solid.definition}
               getInvocations={getInvocations}
               onClickInvocation={({handleID}) => onClickSolid({path: handleID.split('.')})}
+              repoAddress={repoAddress}
             />
           </>
         );

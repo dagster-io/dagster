@@ -233,6 +233,11 @@ class BaseWorkspaceRequestContext(IWorkspace):
             partition_names=partition_names,
         )
 
+    def get_external_notebook_data(self, repository_location_name, notebook_path: str):
+        check.str_param(notebook_path, "notebook_path")
+        repository_location = self.get_repository_location(repository_location_name)
+        return repository_location.get_external_notebook_data(notebook_path)
+
 
 class WorkspaceRequestContext(BaseWorkspaceRequestContext):
     def __init__(

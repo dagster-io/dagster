@@ -12,6 +12,7 @@ from dagster_test.toys.log_s3 import log_s3_pipeline
 from dagster_test.toys.log_spew import log_spew
 from dagster_test.toys.longitudinal import longitudinal_pipeline
 from dagster_test.toys.many_events import many_events
+from dagster_test.toys.notebooks import hello_world_notebook_pipeline
 from dagster_test.toys.retries import retry_pipeline
 from dagster_test.toys.sleepy import sleepy_pipeline
 from dagster_test.toys.unreliable import unreliable_pipeline
@@ -53,6 +54,7 @@ def toys_repository():
             asset_lineage_pipeline,
             asset_lineage_partition_set,
             model_pipeline,
+            hello_world_notebook_pipeline,
         ]
         + get_toys_schedules()
         + get_toys_sensors()

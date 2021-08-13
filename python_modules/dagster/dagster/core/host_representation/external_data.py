@@ -336,6 +336,14 @@ class ExternalPartitionExecutionErrorData(
         )
 
 
+@whitelist_for_serdes
+class ExternalNotebookData(namedtuple("_ExternalNotebookData", "content")):
+    def __new__(cls, content):
+        return super(ExternalNotebookData, cls).__new__(
+            cls, content=check.str_param(content, "content")
+        )
+
+
 def external_repository_data_from_def(repository_def):
     check.inst_param(repository_def, "repository_def", RepositoryDefinition)
 
