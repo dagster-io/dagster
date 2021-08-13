@@ -32,12 +32,12 @@ def test_init_with_logger(hostname, conn_string):
         instance = DagsterInstance.from_config(tempdir)
 
         @solid
-        def noop_solid(_):
-            instance.logger.error('hello logger')
+        def log_solid(context):
+            context.log.warning("hello logger lol")
 
         @pipeline
         def noop_pipeline():
-            noop_solid()
+            log_solid()
 
         result = execute_pipeline(noop_pipeline, instance=instance)
 

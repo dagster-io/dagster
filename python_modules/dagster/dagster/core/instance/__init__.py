@@ -309,7 +309,7 @@ class DagsterInstance:
 
         self._subscribers: Dict[str, List[Callable]] = defaultdict(list)
 
-        self.logger = self._init_logger(log_conf)
+        self.log_conf = check.opt_str_param(log_conf, "log_conf")
 
     # ctors
 
@@ -450,11 +450,6 @@ class DagsterInstance:
         if DagsterInstance._PROCESS_TEMPDIR is None:
             DagsterInstance._PROCESS_TEMPDIR = tempfile.TemporaryDirectory()
         return DagsterInstance._PROCESS_TEMPDIR.name
-
-    def _init_logger(self, filename):
-        # need to checks to make sure file is valid
-        logging.config.fileConfig(filename)
-        return logging.getLogger("userLogger")
 
     def _info(self, component):
         # ConfigurableClass may not have inst_data if it's a direct instantiation
@@ -1117,12 +1112,41 @@ records = instance.get_event_records(
             self._event_storage.wipe_asset(asset_key)
 
     # event subscriptions
+    # creates logger
+    # add all loggers specified in conf file
+    def get_loggers(self):
 
-    def get_logger(self):
-        logger = logging.Logger("__event_listener")
-        logger.addHandler(_EventListenerLogHandler(self))
-        logger.setLevel(10)
-        return logger
+        # def _init_logger(self, filename):
+        # # need to check to make sure file is valid
+        # logging.config.fileConfig(filename)
+        # return logging.getLogger("userLogger")
+
+        loggers = []
+
+        event_logger = logging.Logger("__event_listener")
+        event_logger.addHandler(_EventListenerLogHandler(self))
+        event_logger.setLevel(10)
+        loggers.append(event_logger)
+
+        if self.log_conf:
+            logging.config.fileConfig(self.log_conf)
+
+            with open(self.log_conf, 'r+') as f:
+                lines = f.readlines()
+
+                logger_names = []
+
+                # handle error cases:
+                # no [loggers], names not in next line, etc.
+                for i in range(0, len(lines)):
+                    if "[loggers]" in lines[i]:
+                        # remove substring "keys=" from start
+                        logger_names = lines[i + 1][5:].strip().split(",")
+
+                for name in logger_names:
+                    loggers.append(logging.getLogger(name))
+
+        return loggers
 
     def handle_new_event(self, event):
         run_id = event.run_id
