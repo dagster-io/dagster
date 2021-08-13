@@ -32,10 +32,11 @@ interface Props {
   pipelineName: string;
   pipelineMode: string;
   repoAddress: RepoAddress;
+  instigationOnly?: boolean;
 }
 
 export const JobMetadata: React.FC<Props> = (props) => {
-  const {pipelineName, pipelineMode, repoAddress} = props;
+  const {pipelineName, pipelineMode, repoAddress, instigationOnly} = props;
   const {flagPipelineModeTuples} = useFeatureFlags();
 
   const {data, loading} = useQuery<JobMetadataQuery>(JOB_METADATA_QUERY, {
@@ -68,37 +69,37 @@ export const JobMetadata: React.FC<Props> = (props) => {
 
   const lastRun = runs[0] || null;
 
-  return (
-    <MetadataTable
-      spacing={2}
-      rows={[
-        {
-          key: 'Schedule/sensor',
-          value: job ? (
-            <ScheduleOrSensor job={job} mode={pipelineMode} repoAddress={repoAddress} />
-          ) : (
-            <GrayText>{loading ? 'Loading…' : 'None'}</GrayText>
-          ),
-        },
-        {
-          key: 'Latest run',
-          value: lastRun ? (
-            <LatestRun run={lastRun} />
-          ) : (
-            <GrayText>{loading ? 'Loading…' : 'None'}</GrayText>
-          ),
-        },
-        {
-          key: 'Related assets',
-          value: runs.length ? (
-            <RelatedAssets runs={runs} />
-          ) : (
-            <GrayText>{loading ? 'Loading…' : 'None'}</GrayText>
-          ),
-        },
-      ]}
-    />
-  );
+  let rows = [
+    {
+      key: 'Schedule/sensor',
+      value: job ? (
+        <ScheduleOrSensor job={job} mode={pipelineMode} repoAddress={repoAddress} />
+      ) : (
+        <GrayText>{loading ? 'Loading…' : 'None'}</GrayText>
+      ),
+    },
+  ];
+  if (!instigationOnly) {
+    rows = rows.concat([
+      {
+        key: 'Latest run',
+        value: lastRun ? (
+          <LatestRun run={lastRun} />
+        ) : (
+          <GrayText>{loading ? 'Loading…' : 'None'}</GrayText>
+        ),
+      },
+      {
+        key: 'Related assets',
+        value: runs.length ? (
+          <RelatedAssets runs={runs} />
+        ) : (
+          <GrayText>{loading ? 'Loading…' : 'None'}</GrayText>
+        ),
+      },
+    ]);
+  }
+  return <MetadataTable spacing={2} rows={rows} />;
 };
 
 const ScheduleOrSensor: React.FC<{job: Job; mode: string; repoAddress: RepoAddress}> = ({

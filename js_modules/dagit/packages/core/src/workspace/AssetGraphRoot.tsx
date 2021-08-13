@@ -15,6 +15,7 @@ import {AssetMaterializations} from '../assets/AssetMaterializations';
 import {showLaunchError} from '../execute/showLaunchError';
 import {SVGViewport} from '../graph/SVGViewport';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {JobMetadata} from '../nav/JobMetadata';
 import {Description} from '../pipelines/Description';
 import {SidebarSection} from '../pipelines/SidebarComponents';
 import {METADATA_ENTRY_FRAGMENT} from '../runs/MetadataEntry';
@@ -27,7 +28,6 @@ import {TimeElapsed} from '../runs/TimeElapsed';
 import {LaunchPipelineExecution} from '../runs/types/LaunchPipelineExecution';
 import {POLL_INTERVAL} from '../runs/useCursorPaginatedQuery';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {SearchResult, SearchResultType} from '../search/types';
 import {Box} from '../ui/Box';
 import {Loading} from '../ui/Loading';
 import {PageHeader} from '../ui/PageHeader';
@@ -35,7 +35,6 @@ import {SplitPanelContainer} from '../ui/SplitPanelContainer';
 import {Heading} from '../ui/Text';
 import {FontFamily} from '../ui/styles';
 
-import {AssetGraphSearchBar} from './AssetGraphSearchBar';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
 import {
@@ -62,6 +61,7 @@ interface Node {
   id: string;
   assetKey: AssetKey;
   definition: AssetDefinition;
+  hidden: boolean;
 }
 interface LayoutNode {
   id: string;
@@ -102,29 +102,10 @@ const getBlankDimensions = (id: string) => {
   return {width: Math.max(250, path.join('>').length * 1.2) + 25, height: 30};
 };
 
-const buildGraphData = (repository: Repository, itemFilter?: SearchResult) => {
-  const nodes: {[id: string]: {id: string; assetKey: AssetKey; definition: AssetDefinition}} = {};
+const buildGraphData = (repository: Repository, selected?: Node) => {
+  const nodes: {[id: string]: Node} = {};
   const downstream: {[downstreamId: string]: {[upstreamId: string]: string}} = {};
   const upstream: {[upstreamId: string]: {[downstreamId: string]: boolean}} = {};
-
-  const jobNameBySchedule = {};
-  const jobNameBySensor = {};
-  repository.schedules.forEach((schedule: Schedule) => {
-    jobNameBySchedule[schedule.name] = schedule.pipelineName;
-  });
-  repository.sensors.forEach((sensor: Sensor) => {
-    jobNameBySensor[sensor.name] = sensor.pipelineName;
-  });
-
-  const _filterToJobName = (itemFilter: SearchResult) => {
-    if (itemFilter.type === SearchResultType.Sensor) {
-      return jobNameBySensor[itemFilter.label];
-    } else if (itemFilter.type === SearchResultType.Schedule) {
-      return jobNameBySchedule[itemFilter.label];
-    } else {
-      return itemFilter.label.split(':').map((x) => x.trim())[0];
-    }
-  };
 
   repository.assetDefinitions.forEach((definition: AssetDefinition) => {
     const assetKeyJson = JSON.stringify(definition.assetKey.path);
@@ -139,13 +120,12 @@ const buildGraphData = (repository: Repository, itemFilter?: SearchResult) => {
         [upstreamAssetKeyJson]: true,
       };
     });
-    if (!itemFilter || definition.jobName === _filterToJobName(itemFilter)) {
-      nodes[assetKeyJson] = {
-        id: assetKeyJson,
-        assetKey: definition.assetKey,
-        definition,
-      };
-    }
+    nodes[assetKeyJson] = {
+      id: assetKeyJson,
+      assetKey: definition.assetKey,
+      definition,
+      hidden: !!selected && definition.jobName !== selected.definition.jobName,
+    };
   });
 
   return {nodes, downstream, upstream};
@@ -180,19 +160,22 @@ const layoutGraph = (graphData: GraphData) => {
   g.setGraph({rankdir: 'TB', marginx, marginy});
   g.setDefaultEdgeLabel(() => ({}));
 
-  Object.values(graphData.nodes).forEach((node) => {
-    g.setNode(node.id, getNodeDimensions(node.definition));
-  });
+  Object.values(graphData.nodes)
+    .filter((x) => !x.hidden)
+    .forEach((node) => {
+      g.setNode(node.id, getNodeDimensions(node.definition));
+    });
   const foreignNodes = {};
   Object.keys(graphData.downstream).forEach((upstreamId) => {
     const downstreamIds = Object.keys(graphData.downstream[upstreamId]);
     downstreamIds.forEach((downstreamId) => {
-      if (!graphData.nodes[downstreamId]) {
-        // do not render if the downstream node is not in the graph
+      if (graphData.nodes[downstreamId].hidden && graphData.nodes[upstreamId].hidden) {
         return;
       }
       g.setEdge({v: upstreamId, w: downstreamId}, {weight: 1});
-      if (!graphData.nodes[upstreamId]) {
+      if (graphData.nodes[downstreamId].hidden) {
+        foreignNodes[downstreamId] = true;
+      } else if (graphData.nodes[upstreamId].hidden) {
         foreignNodes[upstreamId] = true;
       }
     });
@@ -263,7 +246,6 @@ export const AssetGraphRoot: React.FC<Props> = (props) => {
   const [nodeSelection, setSelectedNode] = React.useState<Node | undefined>();
   const history = useHistory();
   const match = useRouteMatch<{repoPath: string}>();
-  const [itemFilter, setItemFilter] = React.useState<SearchResult | undefined>();
   React.useEffect(() => {
     if (!selected || !queryResult.data || !queryResult.data.repositoryOrError) {
       return;
@@ -278,6 +260,7 @@ export const AssetGraphRoot: React.FC<Props> = (props) => {
           id: JSON.stringify(definition.assetKey.path),
           assetKey: definition.assetKey,
           definition,
+          hidden: false,
         });
       }
     });
@@ -305,8 +288,29 @@ export const AssetGraphRoot: React.FC<Props> = (props) => {
         }}
       >
         <PageHeader
-          title={<Heading>Asset Graph</Heading>}
-          description={`Static asset definitions and dependencies defined in ${repoAddress.name}`}
+          title={
+            <Heading>
+              {nodeSelection ? nodeSelection.assetKey.path.join(' > ') : 'Asset Graph'}
+            </Heading>
+          }
+          description={
+            nodeSelection ? (
+              <span>
+                Static asset definitions and dependencies defined for{' '}
+                <Link
+                  to={workspacePath(
+                    repoAddress.name,
+                    repoAddress.location,
+                    `/jobs/${nodeSelection.definition.jobName}`,
+                  )}
+                >
+                  {nodeSelection.definition.jobName}
+                </Link>
+              </span>
+            ) : (
+              `Static asset definitions and dependencies defined in ${repoAddress.name}`
+            )
+          }
         />
         <Box padding={{bottom: 8}}>
           <QueryCountdown pollInterval={POLL_INTERVAL} queryResult={queryResult} />
@@ -323,7 +327,7 @@ export const AssetGraphRoot: React.FC<Props> = (props) => {
                 if (repositoryOrError.__typename !== 'Repository') {
                   return null;
                 }
-                const graphData = buildGraphData(repositoryOrError, itemFilter);
+                const graphData = buildGraphData(repositoryOrError, nodeSelection);
                 const hasCycles = graphHasCycles(graphData);
                 const layout = hasCycles ? null : layoutGraph(graphData);
                 const computeStatuses = hasCycles ? {} : buildGraphComputeStatuses(graphData);
@@ -352,15 +356,8 @@ export const AssetGraphRoot: React.FC<Props> = (props) => {
                     graphHeight={layout.height}
                     onKeyDown={() => {}}
                     onDoubleClick={() => {}}
-                    maxZoom={1.0}
-                    maxAutocenterZoom={0.8}
-                    searchComponent={
-                      <AssetGraphSearchBar
-                        selected={itemFilter}
-                        onSelectItem={setItemFilter}
-                        onClear={() => setItemFilter(undefined)}
-                      />
-                    }
+                    maxZoom={1.2}
+                    maxAutocenterZoom={1.0}
                   >
                     {({scale: _scale}: any) => (
                       <SVGContainer width={layout.width} height={layout.height}>
@@ -390,9 +387,9 @@ export const AssetGraphRoot: React.FC<Props> = (props) => {
                         </g>
                         {layout.nodes.map((layoutNode) => {
                           const graphNode = graphData.nodes[layoutNode.id];
-                          const {width, height} = graphNode
-                            ? getNodeDimensions(graphNode.definition)
-                            : getBlankDimensions(layoutNode.id);
+                          const {width, height} = graphNode.hidden
+                            ? getBlankDimensions(layoutNode.id)
+                            : getNodeDimensions(graphNode.definition);
                           return (
                             <foreignObject
                               key={layoutNode.id}
@@ -402,16 +399,16 @@ export const AssetGraphRoot: React.FC<Props> = (props) => {
                               height={height}
                               onClick={() => selectNode(graphNode)}
                             >
-                              {graphNode ? (
+                              {graphNode.hidden ? (
+                                <ForeignNode assetKeyPath={JSON.parse(layoutNode.id)} />
+                              ) : (
                                 <AssetNode
                                   definition={graphNode.definition}
                                   selected={nodeSelection?.id === graphNode.id}
-                                  seondaryHighlight={samePipelineNodes.includes(graphNode)}
+                                  secondaryHighlight={samePipelineNodes.includes(graphNode)}
                                   computeStatus={computeStatuses[graphNode.id]}
                                   repoAddress={repoAddress}
                                 />
-                              ) : (
-                                <ForeignNode assetKeyPath={JSON.parse(layoutNode.id)} />
                               )}
                             </foreignObject>
                           );
@@ -450,15 +447,25 @@ const AssetPanel = ({node, repoAddress}: {node: Node; repoAddress: RepoAddress})
       </SidebarSection>
       <SidebarSection title="Job">
         {node.definition.jobName ? (
-          <Link
-            to={workspacePath(
-              repoAddress.name,
-              repoAddress.location,
-              `/jobs/${node.definition.jobName}`,
-            )}
-          >
-            {node.definition.jobName}
-          </Link>
+          <div>
+            <Box margin={{bottom: 8}}>
+              <Link
+                to={workspacePath(
+                  repoAddress.name,
+                  repoAddress.location,
+                  `/jobs/${node.definition.jobName}`,
+                )}
+              >
+                {node.definition.jobName}
+              </Link>
+            </Box>
+            <JobMetadata
+              repoAddress={repoAddress}
+              pipelineMode="default"
+              pipelineName={node.definition.jobName}
+              instigationOnly={true}
+            />
+          </div>
         ) : null}
       </SidebarSection>
       <SidebarSection title={'Latest Event'}>
@@ -575,7 +582,7 @@ const StyledPath = styled('path')<{dashed: boolean}>`
 const ForeignNode: React.FC<{assetKeyPath: string[]}> = ({assetKeyPath}) => (
   <div
     style={{
-      border: '1px dashed #eaeaea',
+      border: '1px dashed #aaaaaa',
       background: 'white',
       inset: 0,
     }}
@@ -598,8 +605,8 @@ const AssetNode: React.FC<{
   selected: boolean;
   computeStatus: Status;
   repoAddress: RepoAddress;
-  seondaryHighlight: boolean;
-}> = ({definition, selected, computeStatus, repoAddress, seondaryHighlight}) => {
+  secondaryHighlight: boolean;
+}> = ({definition, selected, computeStatus, repoAddress, secondaryHighlight}) => {
   const [launchPipelineExecution] = useMutation<LaunchPipelineExecution>(
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
   );
@@ -653,7 +660,7 @@ const AssetNode: React.FC<{
           border: '1px solid #ececec',
           outline: selected
             ? `2px solid ${Colors.BLUE4}`
-            : seondaryHighlight
+            : secondaryHighlight
             ? `2px solid ${Colors.BLUE4}55`
             : 'none',
           marginTop: 10,
