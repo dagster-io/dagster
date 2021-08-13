@@ -323,10 +323,6 @@
           {
             "title": "Executing on Dask",
             "path": "/deployment/guides/dask"
-          },
-          {
-            "title": "Executing on Airflow",
-            "path": "/deployment/guides/airflow"
           }
         ]
       }
