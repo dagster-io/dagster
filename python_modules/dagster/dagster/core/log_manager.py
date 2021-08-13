@@ -107,7 +107,6 @@ class DagsterLoggingTags(
             ("pipeline_tags", Dict[str, str]),
             ("step_key", Optional[str]),
             ("solid_name", Optional[str]),
-            ("solid_tags", Dict[str, str]),
             ("resource_name", Optional[str]),
             ("resource_fn_name", Optional[str]),
         ],
@@ -124,7 +123,6 @@ class DagsterLoggingTags(
         pipeline_tags: Dict[str, str] = None,
         step_key: str = None,
         solid_name: str = None,
-        solid_tags: Dict[str, str] = None,
         resource_name: str = None,
         resource_fn_name: str = None,
     ):
@@ -135,7 +133,6 @@ class DagsterLoggingTags(
             pipeline_tags=pipeline_tags or {},
             step_key=step_key,
             solid_name=solid_name,
-            solid_tags=solid_tags or {},
             resource_name=resource_name,
             resource_fn_name=resource_fn_name,
         )
@@ -145,16 +142,6 @@ class DagsterLoggingTags(
         if self.resource_name is None:
             return self.pipeline_name or "system"
         return f"resource:{self.resource_name}"
-
-    def has_tag(self, key: str):
-        return key in self.solid_tags or key in self.pipeline_tags
-
-    def get_tag(self, key: str):
-        if key in self.solid_tags:
-            return self.solid_tags[key]
-        if key in self.pipeline_tags:
-            return self.pipeline_tags[key]
-        return None
 
 
 def construct_log_string(

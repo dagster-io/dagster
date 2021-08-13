@@ -101,11 +101,11 @@ class IPlanContext(ABC):
 
     def has_tag(self, key: str) -> bool:
         check.str_param(key, "key")
-        return self.log.logging_tags.has_tag(key)
+        return key in self.log.logging_tags.pipeline_tags
 
     def get_tag(self, key: str) -> Optional[str]:
         check.str_param(key, "key")
-        return self.log.logging_tags.get_tag(key)
+        return self.log.logging_tags.pipeline_tags.get(key)
 
 
 class PlanData(NamedTuple):
