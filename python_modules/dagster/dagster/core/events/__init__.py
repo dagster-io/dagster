@@ -201,7 +201,6 @@ def _validate_event_specific_data(
 
 
 def log_step_event(step_context: IStepContext, event: "DagsterEvent") -> None:
-
     event_type = DagsterEventType(event.event_type_value)
     log_level = logging.ERROR if event_type in FAILURE_EVENTS else logging.DEBUG
 
@@ -212,7 +211,9 @@ def log_step_event(step_context: IStepContext, event: "DagsterEvent") -> None:
     )
 
 
-def log_pipeline_event(pipeline_context: IPlanContext, event: "DagsterEvent") -> None:
+def log_pipeline_event(
+    pipeline_context: IPlanContext, event: "DagsterEvent", step_key: Optional[str]
+) -> None:
     event_type = DagsterEventType(event.event_type_value)
     log_level = logging.ERROR if event_type in FAILURE_EVENTS else logging.DEBUG
 
@@ -220,6 +221,7 @@ def log_pipeline_event(pipeline_context: IPlanContext, event: "DagsterEvent") ->
         level=log_level,
         msg=event.message or f"{event_type} for pipeline {pipeline_context.pipeline_name}",
         dagster_event=event,
+        step_key=step_key,
     )
 
 
@@ -309,7 +311,9 @@ class DagsterEvent(
             step_handle=step_handle,
             pid=os.getpid(),
         )
-        log_pipeline_event(pipeline_context, event)
+
+        step_key = step_handle.to_key() if step_handle else None
+        log_pipeline_event(pipeline_context, event, step_key)
 
         return event
 
