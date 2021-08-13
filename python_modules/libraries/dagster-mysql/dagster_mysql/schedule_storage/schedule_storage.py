@@ -84,12 +84,16 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         )
 
     @staticmethod
-    def create_clean_storage(mysql_url):
+    def wipe_storage(mysql_url):
         engine = create_engine(mysql_url, isolation_level="AUTOCOMMIT", poolclass=db.pool.NullPool)
         try:
             ScheduleStorageSqlMetadata.drop_all(engine)
         finally:
             engine.dispose()
+
+    @staticmethod
+    def create_clean_storage(mysql_url):
+        MySQLScheduleStorage.wipe_storage(mysql_url)
         return MySQLScheduleStorage(mysql_url)
 
     def connect(self, run_id=None):  # pylint: disable=arguments-differ, unused-argument
