@@ -333,12 +333,12 @@ def index_endpoint(
             )
     except FileNotFoundError:
         raise Exception(
-            """Can't find webapp files. Probably webapp isn't built. If you are using
-            dagit, then probably it's a corrupted installation or a bug. However, if you are
-            developing dagit locally, your problem can be fixed as follows:
-
-            cd ./python_modules/
-            make rebuild_dagit"""
+            """
+            Can't find webapp files.
+            If you are using dagit, then probably it's a corrupted installation or a bug.
+            However, if you are developing dagit locally, your problem can be fixed by running
+            "make rebuild_dagit" in the project root.
+            """
         )
 
 
@@ -376,13 +376,19 @@ def create_routes(
         # static resources addressed at /static/
         Mount(
             "/static",
-            StaticFiles(directory=path.join(static_resources_dir, "./webapp/build/static")),
+            StaticFiles(
+                directory=path.join(static_resources_dir, "webapp/build/static"),
+                check_dir=False,
+            ),
             name="static",
         ),
         # static resources addressed at /vendor/
         Mount(
             "/vendor",
-            StaticFiles(directory=path.join(static_resources_dir, "./webapp/build/vendor")),
+            StaticFiles(
+                directory=path.join(static_resources_dir, "webapp/build/vendor"),
+                check_dir=False,
+            ),
             name="vendor",
         ),
         # specific static resources addressed at /
