@@ -1,25 +1,27 @@
-import {Button, Classes, Colors, Dialog, NonIdealState, Tag} from '@blueprintjs/core';
+import {Colors, NonIdealState, Tag} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import React from 'react';
 
 import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
-import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {Timestamp} from '../app/time/Timestamp';
-import {useRepositoryLocationReload} from '../nav/ReloadRepositoryLocationButton';
+import {ReloadRepositoryLocationButton} from '../nav/ReloadRepositoryLocationButton';
+import {useRepositoryLocationReload} from '../nav/useRepositoryLocationReload';
 import {ButtonLink} from '../ui/ButtonLink';
 import {Group} from '../ui/Group';
 import {Spinner} from '../ui/Spinner';
 import {Table} from '../ui/Table';
 import {Caption} from '../ui/Text';
 
+import {RepositoryLocationNonBlockingErrorDialog} from './RepositoryLocationErrorDialog';
 import {WorkspaceContext} from './WorkspaceContext';
 import {RootRepositoriesQuery_workspaceOrError_Workspace_locationEntries as LocationOrError} from './types/RootRepositoriesQuery';
 
 const TIME_FORMAT = {showSeconds: true, showTimezone: true};
 
-const LocationStatus: React.FC<{locationOrError: LocationOrError}> = (props) => {
-  const {locationOrError} = props;
+const LocationStatus: React.FC<{location: string; locationOrError: LocationOrError}> = (props) => {
+  const {location, locationOrError} = props;
   const [showDialog, setShowDialog] = React.useState(false);
+  const {reloading, tryReload} = useRepositoryLocationReload(location);
 
   if (locationOrError.loadStatus === 'LOADING') {
     if (locationOrError.locationOrLoadError) {
@@ -48,25 +50,14 @@ const LocationStatus: React.FC<{locationOrError: LocationOrError}> = (props) => 
             <ButtonLink onClick={() => setShowDialog(true)}>View error</ButtonLink>
           </div>
         </div>
-        <Dialog
+        <RepositoryLocationNonBlockingErrorDialog
+          location={location}
           isOpen={showDialog}
-          title="Repository location error"
-          onClose={() => setShowDialog(false)}
-          style={{width: '90%'}}
-        >
-          <div className={Classes.DIALOG_BODY}>
-            <div style={{marginBottom: '12px'}}>
-              Error loading <strong>{locationOrError.name}</strong>. Try reloading the repository
-              location after resolving the issue.
-            </div>
-            <PythonErrorInfo error={locationOrError.locationOrLoadError} />
-          </div>
-          <div className={Classes.DIALOG_FOOTER}>
-            <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-              <Button onClick={() => setShowDialog(false)}>OK</Button>
-            </div>
-          </div>
-        </Dialog>
+          error={locationOrError.locationOrLoadError}
+          reloading={reloading}
+          onDismiss={() => setShowDialog(false)}
+          onTryReload={() => tryReload()}
+        />
       </>
     );
   }
@@ -82,7 +73,6 @@ const ReloadButton: React.FC<{
   location: string;
 }> = (props) => {
   const {location} = props;
-  const {reloading, onClick} = useRepositoryLocationReload(location);
   const {canReloadRepositoryLocation} = usePermissions();
 
   if (!canReloadRepositoryLocation) {
@@ -94,12 +84,16 @@ const ReloadButton: React.FC<{
   }
 
   return (
-    <ButtonLink onClick={onClick}>
-      <Group direction="row" spacing={4} alignItems="center">
-        Reload
-        {reloading ? <Spinner purpose="body-text" /> : null}
-      </Group>
-    </ButtonLink>
+    <ReloadRepositoryLocationButton location={location}>
+      {({reloading, tryReload}) => (
+        <ButtonLink onClick={() => tryReload()}>
+          <Group direction="row" spacing={4} alignItems="center">
+            Reload
+            {reloading ? <Spinner purpose="body-text" /> : null}
+          </Group>
+        </ButtonLink>
+      )}
+    </ReloadRepositoryLocationButton>
   );
 };
 
@@ -142,7 +136,7 @@ export const RepositoryLocationsList = () => {
               </Group>
             </td>
             <td>
-              <LocationStatus locationOrError={location} />
+              <LocationStatus location={location.name} locationOrError={location} />
             </td>
             <td style={{whiteSpace: 'nowrap'}}>
               <Timestamp timestamp={{unix: location.updatedTimestamp}} timeFormat={TIME_FORMAT} />
