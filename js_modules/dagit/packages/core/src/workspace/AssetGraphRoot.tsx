@@ -42,16 +42,16 @@ import {
   AssetGraphQuery_repositoryOrError_Repository,
   AssetGraphQuery_repositoryOrError_Repository_assetDefinitions,
   AssetGraphQuery_repositoryOrError_Repository_assetDefinitions_assetKey,
-  AssetGraphQuery_repositoryOrError_Repository_assetDefinitions_schedules,
-  AssetGraphQuery_repositoryOrError_Repository_assetDefinitions_sensors,
+  AssetGraphQuery_repositoryOrError_Repository_schedules,
+  AssetGraphQuery_repositoryOrError_Repository_sensors,
 } from './types/AssetGraphQuery';
 import {workspacePath} from './workspacePath';
 
 type Repository = AssetGraphQuery_repositoryOrError_Repository;
 type AssetDefinition = AssetGraphQuery_repositoryOrError_Repository_assetDefinitions;
 type AssetKey = AssetGraphQuery_repositoryOrError_Repository_assetDefinitions_assetKey;
-type Schedule = AssetGraphQuery_repositoryOrError_Repository_assetDefinitions_schedules;
-type Sensor = AssetGraphQuery_repositoryOrError_Repository_assetDefinitions_sensors;
+type Schedule = AssetGraphQuery_repositoryOrError_Repository_schedules;
+type Sensor = AssetGraphQuery_repositoryOrError_Repository_sensors;
 
 interface Props extends RouteComponentProps {
   repoAddress: RepoAddress;

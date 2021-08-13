@@ -159,6 +159,16 @@ export const FlatContentList: React.FC<Props> = (props) => {
         });
       }
     }
+    assetDefs.sort((a: AssetItem, b: AssetItem) => {
+      if (a.asset.id > b.asset.id) {
+        return 1;
+      }
+      if (a.asset.id < b.asset.id) {
+        return -1;
+      }
+      return 0;
+    });
+
     return assetDefs;
   }, [loading, data, activeRepoAddresses, jobsByJobName]);
 
