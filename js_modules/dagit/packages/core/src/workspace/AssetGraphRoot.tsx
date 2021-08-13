@@ -625,9 +625,9 @@ const AssetNode: React.FC<{
             selector: {
               pipelineName: definition.jobName,
               ...repoAddressToSelector(repoAddress),
-              solidSelection: [definition.opName],
             },
             mode: 'default',
+            stepKeys: [definition.opName],
           },
         },
       });
