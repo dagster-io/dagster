@@ -59,7 +59,7 @@ def test_notebook_view():
         with create_app_from_workspace_process_context(
             workspace_process_context,
         ).test_client() as client:
-            res = client.get("/dagit/notebook?path={}".format(notebook_path))
+            res = client.get(f"/dagit/notebook?path={notebook_path}&repoLocName=load_from_file")
 
         assert res.status_code == 200
         # This magic guid is hardcoded in the notebook
