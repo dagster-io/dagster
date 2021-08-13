@@ -1,17 +1,30 @@
+import io
 import json
 import logging
+import os
 import re
-from contextlib import contextmanager
+import tempfile
+from contextlib import contextmanager, redirect_stdout
 
 import pytest
-from dagster import ModeDefinition, check, execute_solid, pipeline, resource, solid
+from dagster import (
+    ModeDefinition,
+    check,
+    execute_solid,
+    pipeline,
+    resource,
+    solid,
+    execute_pipeline,
+)
 from dagster.core.definitions import NodeHandle
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.logger import InitLoggerContext
 from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.plan.outputs import StepOutputHandle
+from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
 from dagster.loggers import colored_console_logger, json_console_logger
+from dagster.utils import file_relative_path
 from dagster.utils.error import SerializableErrorInfo
 
 REGEX_UUID = r"[a-z-0-9]{8}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{12}"
@@ -256,3 +269,35 @@ def test_io_context_logging(capsys):
 
     assert re.search("test OUTPUT debug logging from logged_solid.", captured.err, re.MULTILINE)
     assert re.search("test INPUT debug logging from logged_solid.", captured.err, re.MULTILINE)
+
+
+def test_conf_file_logging():
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+                template = template_fd.read().format()
+                target_fd.write(template)
+
+        instance = DagsterInstance.from_config(tempdir)
+
+        @solid
+        def log_solid(context):
+            context.log.warning("Hello world!")
+
+        @pipeline
+        def log_pipeline():
+            log_solid()
+
+        # Python 3.4+
+        f = io.StringIO()
+        with redirect_stdout(f):
+            execute_pipeline(log_pipeline, instance=instance)
+        out = f.getvalue()
+
+        print(out)
+
+        # defined in ./test_logging.conf
+        assert "loggerOne" in out
+        assert "loggerTwo" in out
+
+        assert False

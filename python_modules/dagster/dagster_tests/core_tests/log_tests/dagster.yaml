@@ -1,0 +1,1 @@
+log_conf: './dagster_tests/core_tests/log_tests/test_logging.conf'
