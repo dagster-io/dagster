@@ -16,7 +16,7 @@ from dagster import (
     solid,
 )
 from dagster.check import CheckError
-from dagster.core.log_manager import coerce_valid_log_level
+from dagster.core.utils import coerce_valid_log_level
 from dagster.utils.test import execute_solids_within_pipeline
 from dagster_tests.general_tests.test_repository import (
     define_multi_mode_pipeline,

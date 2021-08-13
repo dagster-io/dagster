@@ -1,39 +1,13 @@
 import datetime
 import itertools
 import logging
-from collections import OrderedDict, namedtuple
+from collections import namedtuple
 from typing import Any, Dict, NamedTuple, Optional
 
-from dagster import check, seven
-from dagster.core.utils import make_new_run_id
-from dagster.utils import frozendict, merge_dicts
-from dagster.utils.error import SerializableErrorInfo
+from dagster import check
+from dagster.core.utils import coerce_valid_log_level, make_new_run_id
 
 DAGSTER_META_KEY = "dagster_meta"
-
-
-PYTHON_LOGGING_LEVELS_MAPPING = frozendict(
-    OrderedDict({"CRITICAL": 50, "ERROR": 40, "WARNING": 30, "INFO": 20, "DEBUG": 10})
-)
-
-PYTHON_LOGGING_LEVELS_ALIASES = frozendict(OrderedDict({"FATAL": "CRITICAL", "WARN": "WARNING"}))
-
-PYTHON_LOGGING_LEVELS_NAMES = frozenset(
-    [
-        level_name.lower()
-        for level_name in sorted(
-            list(PYTHON_LOGGING_LEVELS_MAPPING.keys()) + list(PYTHON_LOGGING_LEVELS_ALIASES.keys())
-        )
-    ]
-)
-
-
-def _dump_value(value):
-    # dump namedtuples as objects instead of arrays
-    if isinstance(value, tuple) and hasattr(value, "_asdict"):
-        return seven.json.dumps(value._asdict())
-
-    return seven.json.dumps(value)
 
 
 class DagsterMessageProps(
@@ -43,7 +17,7 @@ class DagsterMessageProps(
             ("orig_message", Optional[str]),
             ("log_message_id", Optional[str]),
             ("log_timestamp", Optional[str]),
-            ("dagster_event", Optional["DagsterEvent"]),
+            ("dagster_event", Optional[Any]),
         ],
     )
 ):
@@ -77,12 +51,9 @@ class DagsterMessageProps(
         if not event_specific_data:
             return None
 
-        if hasattr(event_specific_data, "error") and isinstance(
-            event_specific_data.error, SerializableErrorInfo
-        ):
-            if hasattr(event_specific_data, "error_display_string"):
-                return "\n\n" + event_specific_data.error_display_string
-            return "\n\n" + event_specific_data.error.to_string()
+        error = getattr(event_specific_data, "error", None)
+        if error:
+            return "\n\n" + getattr(event_specific_data, "error_display_string", error.to_string())
         return None
 
     @property
@@ -164,24 +135,6 @@ def construct_log_string(
         )
         + (message_props.error_str or "")
     )
-
-
-def coerce_valid_log_level(log_level):
-    """Convert a log level into an integer for consumption by the low-level Python logging API."""
-    if isinstance(log_level, int):
-        return log_level
-    check.str_param(log_level, "log_level")
-    check.invariant(
-        log_level.lower() in PYTHON_LOGGING_LEVELS_NAMES,
-        "Bad value for log level {level}: permissible values are {levels}.".format(
-            level=log_level,
-            levels=", ".join(
-                ["'{}'".format(level_name.upper()) for level_name in PYTHON_LOGGING_LEVELS_NAMES]
-            ),
-        ),
-    )
-    log_level = PYTHON_LOGGING_LEVELS_ALIASES.get(log_level.upper(), log_level.upper())
-    return PYTHON_LOGGING_LEVELS_MAPPING[log_level]
 
 
 class DagsterLogManager(namedtuple("_DagsterLogManager", "logging_tags loggers")):

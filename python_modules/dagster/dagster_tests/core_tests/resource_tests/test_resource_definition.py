@@ -27,8 +27,8 @@ from dagster.core.errors import DagsterConfigMappingFunctionError, DagsterInvali
 from dagster.core.events.log import EventLogEntry, construct_event_logger
 from dagster.core.execution.api import create_execution_plan, execute_plan, execute_run
 from dagster.core.instance import DagsterInstance
-from dagster.core.log_manager import coerce_valid_log_level
 from dagster.core.test_utils import instance_for_test
+from dagster.core.utils import coerce_valid_log_level
 
 
 def define_string_resource():
