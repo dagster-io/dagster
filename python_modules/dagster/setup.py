@@ -56,7 +56,6 @@ if __name__ == "__main__":
         },
         include_package_data=True,
         install_requires=[
-            "future",
             # cli
             "click>=5.0,<8.0",
             "coloredlogs>=6.1, <=14.0",
