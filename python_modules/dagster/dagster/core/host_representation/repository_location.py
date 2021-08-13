@@ -47,6 +47,7 @@ from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_pl
 from dagster.grpc.impl import (
     get_external_schedule_execution,
     get_external_sensor_execution,
+    get_notebook_data,
     get_partition_config,
     get_partition_names,
     get_partition_set_execution_param_data,
@@ -180,6 +181,10 @@ class RepositoryLocation(AbstractContextManager):
         last_run_key: Optional[str],
         cursor: Optional[str],
     ) -> Union["SensorExecutionData", "ExternalSensorExecutionErrorData"]:
+        pass
+
+    @abstractmethod
+    def get_external_notebook_data(self, notebook_path: str) -> "ExternalNotebookData":
         pass
 
     @abstractproperty
@@ -423,6 +428,11 @@ class InProcessRepositoryLocation(RepositoryLocation):
             partition_set_name=partition_set_name,
             partition_names=partition_names,
         )
+
+    def get_external_notebook_data(self, notebook_path: str) -> "ExternalNotebookData":
+
+        check.str_param(notebook_path, "notebook_path")
+        return get_notebook_data(notebook_path)
 
 
 class GrpcServerRepositoryLocation(RepositoryLocation):
