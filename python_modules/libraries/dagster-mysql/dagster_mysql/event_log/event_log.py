@@ -109,10 +109,17 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         )
 
     @staticmethod
+    def wipe_storage(mysql_url):
+        engine = create_engine(mysql_url, isolation_level="AUTOCOMMIT", poolclass=db.pool.NullPool)
+        try:
+            SqlEventLogStorageMetadata.drop_all(engine)
+        finally:
+            engine.dispose()
+
+    @staticmethod
     def create_clean_storage(conn_string):
-        inst = MySQLEventLogStorage(conn_string)
-        inst.wipe()
-        return inst
+        MySQLEventLogStorage.wipe_storage(conn_string)
+        return MySQLEventLogStorage(conn_string)
 
     def store_asset(self, event):
         check.inst_param(event, "event", EventLogEntry)
