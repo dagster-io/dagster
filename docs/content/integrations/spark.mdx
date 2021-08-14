@@ -1,24 +1,46 @@
 ---
-title: Dagster with PySpark | Dagster
+title: Dagster with Spark
+description: Dagster solids can perform computations using Spark.
 ---
 
-# Using Dagster with PySpark
+# Using Dagster with Spark
 
-This guide includes two examples:
+Dagster solids can perform computations using Spark.
 
-- [Running PySpark code in solids](#running-pyspark-code-in-solids) demonstrates the basic usage of the [`dagster-pyspark`](/\_apidocs/libraries/dagster_pyspark) package.
-- [Submitting PySpark solids on EMR](#submitting-pyspark-solids-on-emr) shows have a solid run as a Spark step on an EMR cluster.
+Running computations on Spark presents unique challenges, because, unlike other computations, Spark jobs typically execute on infrastructure that's specialized for Spark - i.e. that can network sets of workers into clusters that Spark can run computations against. Spark applications are typically not containerized or executed on Kubernetes. Running Spark code often requires submitting code to a Databricks or EMR cluster.
 
-## Running PySpark code in solids
+There are two approaches to writing Dagster solids that invoke Spark computations:
+
+## Solid body submits job
+
+With this approach, the code inside the solid submits a job to an external system like Databricks or EMR, usually pointing to a jar or zip of Python files that contain the actual Spark data transformations and actions.
+
+If you want to use this approach to run a Spark job on Databricks, <PyObject module='dagster_databricks' object='create_databricks_job_solid' /> helps create a solid that submits a job using the Databricks REST API.
+
+If you want to run a Spark job against YARN or a Spark Standalone cluster, you can use <PyObject module='dagster_shell' object='create_shell_command_solid' /> to create a solid that invokes `spark-submit`.
+
+This is the easiest approach for migrating existing Spark jobs, and it's the only approach that works for Spark jobs written in Java or Scala. The downside is that it loses out on some of the benefits of Dagster - the implementation of each solid is bound to the execution environment, so you can't run your Spark transformations without relying on external infrastructure. Writing unit tests is cumbersome.
+
+## Solid accepts and produces DataFrames or RDDs
+
+With this approach, the code inside the solid consists of pure logical data transformations on Spark DataFrames or RDDs. The solid-decorated function accepts DataFrames as parameters and returns DataFrames when it completes. An [IOManager](/concepts/io-management/io-managers) handles writing and reading the DataFrames to and from persistent storage. The [Running PySpark code in solids](#running-pyspark-code-in-solids) example below shows what this looks like.
+
+If you want your Spark driver to run inside a Spark cluster, you use a "step launcher" resource that informs Dagster how to launch the solid. The step launcher resource is responsible for invoking `spark-submit` or submitting the job to Databricks or EMR. [Submitting PySpark solids on EMR](#submitting-pyspark-solids-on-emr) shows what this looks like for EMR.
+
+The advantage of this approach is a very clean local testing story. You can run an entire pipeline of Spark solids in a single process. You can use [IOManagers](/concepts/io-management/io-managers) to abstract away IO - storing outputs on the local filesystem during local development and in the cloud in production.
+
+The downside is that this approach only works with PySpark, and setting up a step launcher can be difficult. We currently provide an <PyObject module='dagster_aws.emr' object='emr_pyspark_step_launcher' /> and a <PyObject module='dagster_databricks' object='databricks_pyspark_step_launcher' />, but if you need to submit your Spark job to a different kind of cluster, writing your own can be time consuming ([here are some tips](https://github.com/dagster-io/dagster/discussions/3201)). You also need to install the Dagster library itself on the cluster.
+
+### Running PySpark code in solids
 
 <CodeReferenceLink filePath="examples/basic_pyspark" />
 
-Passing PySpark DataFrames between solids requires a little bit of extra care, for a couple reasons:
+Passing PySpark DataFrames between solids requires a little bit of extra care, compared to other data types, for a couple reasons:
 
 - Spark has a lazy execution model, which means that PySpark won't process any data until an action like `write` or `collect` is called on a DataFrame.
 - PySpark DataFrames cannot be pickled, which means that [IO Managers](/concepts/io-management/io-managers) like the `fs_io_manager` won't work for them.
 
-In this example, we've defined an Asset Store that knows how to store and retrieve PySpark DataFrames that are produced and consumed by solids.
+In this example, we've defined an <PyObject module='dagster' object='IOManager' /> that knows how to store and retrieve PySpark DataFrames that are produced and consumed by solids.
 
 This example assumes that all the outputs within the pipeline will be PySpark DataFrames and stored in the same way. To learn how to use different IO managers for different outputs within the same pipeline, take a look at the [IO Manager](/concepts/io-management/io-managers) concept page.
 
@@ -67,11 +89,11 @@ def my_pipeline():
     filter_over_50(make_people())
 ```
 
-## Submitting PySpark solids on EMR
+### Submitting PySpark solids on EMR
 
 <CodeReferenceLink filePath="examples/emr_pyspark" />
 
-This example demonstrates how to have a solid run as a Spark step on an EMR cluster. In it, each of the three solids will be executed as a separate EMR step on the same EMR cluster.
+This example demonstrates how to use the <PyObject module='dagster_aws.emr' object='emr_pyspark_step_launcher' /> to have a solid run as a Spark step on an EMR cluster. In it, each of the three solids will be executed as a separate EMR step on the same EMR cluster.
 
 ```python file=../../emr_pyspark/repo.py startafter=start-snippet endbefore=end-snippet
 from pathlib import Path
@@ -147,8 +169,4 @@ def my_pipeline():
     count_people(filter_over_50(make_people()))
 ```
 
-It accomplishes this by using the `emr_pyspark_step_launcher`, which knows how to launch an EMR step that runs the contents of a solid. The example defines a mode that links the resource key "pyspark_step_launcher" to the `emr_pyspark_step_launcher` resource definition, and then requires that "pyspark_step_launcher" resource key for the solid which it wants to launch remotely.
-
 The EMR PySpark step launcher relies on S3 to shuttle config and events to and from EMR.
-
-More generally, a step launcher is any resource that extends the StepLauncher abstract class, whose methods can be invoked where a solid would otherwise be executed in-process to instead launch a remote process with the solid running inside it. To use a step launcher for a particular solid, set a required resource key for the solid that points to that resource.
