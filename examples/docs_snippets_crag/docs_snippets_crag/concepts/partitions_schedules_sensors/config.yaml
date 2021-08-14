@@ -1,0 +1,4 @@
+solids:
+  process_data_for_date:
+    config:
+      date: "2020-05-05"
