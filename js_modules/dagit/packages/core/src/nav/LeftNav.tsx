@@ -9,6 +9,7 @@ import {Box} from '../ui/Box';
 
 import {InstanceWarningIcon} from './InstanceWarningIcon';
 import {LeftNavRepositorySection} from './LeftNavRepositorySection';
+import {WorkspaceWarningIcon} from './WorkspaceWarningIcon';
 
 export const LeftNav = () => {
   const history = useHistory();
@@ -67,9 +68,7 @@ export const LeftNav = () => {
           <Tab to="/instance" className={!!statusMatch ? 'selected' : ''}>
             <Icon icon="dashboard" iconSize={16} />
             <TabLabel>Status</TabLabel>
-            <Box margin={{left: 8}}>
-              <InstanceWarningIcon />
-            </Box>
+            <InstanceWarningIcon />
           </Tab>
         </ShortcutHandler>
         <ShortcutHandler
@@ -80,6 +79,7 @@ export const LeftNav = () => {
           <Tab to="/workspace" className={!!workspaceMatch ? 'selected' : ''}>
             <Icon icon="cube" iconSize={16} />
             <TabLabel>Workspace</TabLabel>
+            <WorkspaceWarningIcon />
           </Tab>
         </ShortcutHandler>
       </Box>
