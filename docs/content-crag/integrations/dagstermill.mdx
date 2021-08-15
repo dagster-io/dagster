@@ -98,7 +98,7 @@ We'll illustrate this process by adding a non-notebook solid to our pipeline, wh
 import dagstermill as dm
 from dagster import InputDefinition, ModeDefinition, fs_io_manager, pipeline
 from dagster.utils import script_relative_path
-from docs_snippets.legacy.data_science.download_file import download_file
+from docs_snippets_crag.legacy.data_science.download_file import download_file
 
 k_means_iris = dm.define_dagstermill_solid(
     "k_means_iris",
@@ -220,7 +220,7 @@ For instance, suppose we want to make the number of clusters (the \_k\_ in k-mea
 import dagstermill as dm
 from dagster import Field, InputDefinition, Int, ModeDefinition, fs_io_manager, pipeline
 from dagster.utils import script_relative_path
-from docs_snippets.legacy.data_science.download_file import download_file
+from docs_snippets_crag.legacy.data_science.download_file import download_file
 
 k_means_iris = dm.define_dagstermill_solid(
     "k_means_iris",

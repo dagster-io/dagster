@@ -37,20 +37,18 @@ For this quickstart, we'll use our familiar, simple demo pipeline:
 ```python file=/intro_tutorial/airflow.py
 import csv
 
+import requests
 from dagster import pipeline, solid
-from dagster.utils import file_relative_path
 
 
 @solid
 def hello_cereal(context):
-    dataset_path = file_relative_path(__file__, "cereal.csv")
-    context.log.info(dataset_path)
-    with open(dataset_path, "r") as fd:
-        cereals = [row for row in csv.DictReader(fd)]
+    response = requests.get("https://docs.dagster.io/assets/cereal.csv")
+    lines = response.text.split("\n")
+    cereals = [row for row in csv.DictReader(lines)]
+    context.log.info(f"Found {len(cereals)} cereals")
 
-    context.log.info(
-        "Found {n_cereals} cereals".format(n_cereals=len(cereals))
-    )
+    return cereals
 
 
 @pipeline
@@ -71,7 +69,7 @@ Let's take a look at the generated file:
 
 ```python file=/deploying/airflow/generated_airflow.py
 """
-The airflow DAG scaffold for docs_snippets.intro_tutorial.airflow.hello_cereal_pipeline
+The airflow DAG scaffold for docs_snippets_crag.intro_tutorial.airflow.hello_cereal_pipeline
 
 Note that this docstring must contain the strings "airflow" and "DAG" for
 Airflow to properly detect it as a DAG
@@ -111,9 +109,9 @@ DEFAULT_ARGS = {
 }
 
 dag, tasks = make_airflow_dag(
-    # NOTE: you must ensure that docs_snippets.intro_tutorial.airflow is
+    # NOTE: you must ensure that docs_snippets_crag.intro_tutorial.airflow is
     # installed or available on sys.path, otherwise, this import will fail.
-    module_name="docs_snippets.intro_tutorial.airflow",
+    module_name="docs_snippets_crag.intro_tutorial.airflow",
     pipeline_name="hello_cereal_pipeline",
     run_config=yaml.safe_load(ENVIRONMENT),
     dag_kwargs={"default_args": DEFAULT_ARGS, "max_active_runs": 1},
@@ -250,7 +248,7 @@ As in the uncontainerized case, you'll put a new Python file defining your DAG i
 from dagster_airflow.factory import make_airflow_dag_containerized
 
 dag, steps = make_airflow_dag_containerized(
-    module_name="docs_snippets.intro_tutorial.airflow",
+    module_name="docs_snippets_crag.intro_tutorial.airflow",
     pipeline_name="hello_cereal_pipeline",
     image="dagster-airflow-demo-repository",
     run_config={"storage": {"filesystem": {"config": {"base_dir": "/tmp"}}}},
@@ -271,7 +269,7 @@ By default, the **`DagsterDockerOperator`** will bind-mount `/tmp` on the host i
 from dagster_airflow.factory import make_airflow_dag
 
 dag, steps = make_airflow_dag(
-    module_name="docs_snippets.intro_tutorial.airflow",
+    module_name="docs_snippets_crag.intro_tutorial.airflow",
     pipeline_name="hello_cereal_pipeline",
     run_config={"storage": {"filesystem": {"config": {"base_dir": "/container_tmp"}}}},
     dag_id=None,

@@ -16,7 +16,7 @@ def hello(context, name: str):
 
 
 @pipeline
-def hello_pipeline():
+def hello_graph():
     hello(get_name())
 
 
@@ -27,6 +27,6 @@ def hello_pipeline():
 from dagster import execute_pipeline
 
 if __name__ == "__main__":
-    result = execute_pipeline(hello_pipeline)
+    result = execute_pipeline(hello_graph)
 
 # end_execute_marker
