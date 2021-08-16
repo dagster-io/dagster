@@ -74,11 +74,8 @@ Create the name of the service account to use
 {{- end -}}
 
 {{- define "dagsterUserDeployments.postgresql.secretName" -}}
-{{- if .Values.global }}
-{{- .Values.global.postgresqlSecretName }}
-{{- else }}
-{{- .Values.postgresqlSecretName }}
-{{- end }}
+{{- $global := .Values.global | default dict }}
+{{- $global.postgresqlSecretName | default .Values.postgresqlSecretName }}
 {{- end -}}
 
 {{/*
