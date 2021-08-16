@@ -40,7 +40,7 @@ from dagster.core.execution.resources_init import (
 from dagster.core.execution.retries import RetryMode
 from dagster.core.executor.init import InitExecutorContext
 from dagster.core.instance import DagsterInstance
-from dagster.core.log_manager import DagsterLogManager, DagsterLoggingTags
+from dagster.core.log_manager import DagsterLogManager, DagsterLoggingMetadata
 from dagster.core.storage.init import InitIntermediateStorageContext
 from dagster.core.storage.intermediate_storage import IntermediateStorage
 from dagster.core.storage.pipeline_run import PipelineRun
@@ -76,7 +76,7 @@ def initialize_console_manager(pipeline_run: Optional[PipelineRun]) -> DagsterLo
             )
         )
     return DagsterLogManager(
-        DagsterLoggingTags(
+        DagsterLoggingMetadata(
             pipeline_tags=pipeline_run.tags if pipeline_run and pipeline_run.tags else {}
         ),
         loggers,
@@ -585,7 +585,7 @@ def create_log_manager(context_creation_data: ContextCreationData) -> DagsterLog
     loggers.append(context_creation_data.instance.get_logger())
 
     return DagsterLogManager(
-        logging_tags=get_logging_tags(pipeline_run),
+        logging_metadata=get_logging_metadata(pipeline_run),
         loggers=loggers,
     )
 
@@ -617,12 +617,12 @@ def _create_context_free_log_manager(
             )
         ]
 
-    return DagsterLogManager(get_logging_tags(pipeline_run), loggers)
+    return DagsterLogManager(get_logging_metadata(pipeline_run), loggers)
 
 
-def get_logging_tags(pipeline_run: PipelineRun) -> DagsterLoggingTags:
+def get_logging_metadata(pipeline_run: PipelineRun) -> DagsterLoggingMetadata:
     check.opt_inst_param(pipeline_run, "pipeline_run", PipelineRun)
-    return DagsterLoggingTags(
+    return DagsterLoggingMetadata(
         run_id=pipeline_run.run_id,
         pipeline_name=pipeline_run.pipeline_name,
         pipeline_tags=pipeline_run.tags,

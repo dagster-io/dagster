@@ -18,7 +18,7 @@ from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.logger import InitLoggerContext
 from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.plan.outputs import StepOutputHandle
-from dagster.core.log_manager import DagsterLogManager, DagsterLoggingTags
+from dagster.core.log_manager import DagsterLogManager, DagsterLoggingMetadata
 from dagster.loggers import colored_console_logger, json_console_logger
 from dagster.utils.error import SerializableErrorInfo
 
@@ -66,7 +66,7 @@ def _regex_match_kv_pair(regex, kv_pairs):
 
 
 def test_logging_no_loggers_registered():
-    dl = DagsterLogManager(DagsterLoggingTags(), [])
+    dl = DagsterLogManager(DagsterLoggingMetadata(), [])
     dl.debug("test")
     dl.info("test")
     dl.warning("test")
@@ -77,7 +77,7 @@ def test_logging_no_loggers_registered():
 def test_logging_basic():
     with _setup_logger("test") as (captured_results, logger):
 
-        dl = DagsterLogManager(DagsterLoggingTags(run_id="123"), [logger])
+        dl = DagsterLogManager(DagsterLoggingMetadata(run_id="123"), [logger])
         dl.debug("test")
         dl.info("test")
         dl.warning("test")
@@ -90,7 +90,7 @@ def test_logging_basic():
 def test_logging_custom_log_levels():
     with _setup_logger("test", {"FOO": 3}) as (_captured_results, logger):
 
-        dl = DagsterLogManager(DagsterLoggingTags(run_id="123"), [logger])
+        dl = DagsterLogManager(DagsterLoggingMetadata(run_id="123"), [logger])
         with pytest.raises(AttributeError):
             dl.foo("test")  # pylint: disable=no-member
 
@@ -98,14 +98,14 @@ def test_logging_custom_log_levels():
 def test_logging_integer_log_levels():
     with _setup_logger("test", {"FOO": 3}) as (_captured_results, logger):
 
-        dl = DagsterLogManager(DagsterLoggingTags(run_id="123"), [logger])
+        dl = DagsterLogManager(DagsterLoggingMetadata(run_id="123"), [logger])
         dl.log(3, "test")  # pylint: disable=no-member
 
 
 def test_logging_bad_custom_log_levels():
     with _setup_logger("test") as (_, logger):
 
-        dl = DagsterLogManager(DagsterLoggingTags(run_id="123"), [logger])
+        dl = DagsterLogManager(DagsterLoggingMetadata(run_id="123"), [logger])
         with pytest.raises(check.CheckError):
             dl._log("test", "foobar", {})  # pylint: disable=protected-access
 
@@ -142,7 +142,7 @@ def test_multiline_logging_complex():
     with _setup_logger(DAGSTER_DEFAULT_LOGGER) as (captured_results, logger):
 
         dl = DagsterLogManager(
-            DagsterLoggingTags(run_id="123", pipeline_name="error_monster"), [logger]
+            DagsterLoggingMetadata(run_id="123", pipeline_name="error_monster"), [logger]
         )
         dl.info(msg, **kwargs)
 

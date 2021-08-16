@@ -72,9 +72,9 @@ class DagsterMessageProps(
         return self.dagster_event.event_type_value
 
 
-class DagsterLoggingTags(
+class DagsterLoggingMetadata(
     NamedTuple(
-        "_DagsterLoggingTags",
+        "_DagsterLoggingMetadata",
         [
             ("run_id", Optional[str]),
             ("pipeline_name", Optional[str]),
@@ -119,7 +119,7 @@ class DagsterLoggingTags(
 
 
 def construct_log_string(
-    logging_tags: DagsterLoggingTags, message_props: DagsterMessageProps
+    logging_metadata: DagsterLoggingMetadata, message_props: DagsterMessageProps
 ) -> str:
 
     return (
@@ -127,10 +127,10 @@ def construct_log_string(
             filter(
                 None,
                 (
-                    logging_tags.log_source,
-                    logging_tags.run_id,
+                    logging_metadata.log_source,
+                    logging_metadata.run_id,
                     message_props.pid,
-                    logging_tags.step_key,
+                    logging_metadata.step_key,
                     message_props.event_type_value,
                     message_props.orig_message,
                 ),
@@ -140,7 +140,7 @@ def construct_log_string(
     )
 
 
-class DagsterLogManager(namedtuple("_DagsterLogManager", "logging_tags loggers")):
+class DagsterLogManager(namedtuple("_DagsterLogManager", "logging_metadata loggers")):
     """Centralized dispatch for logging from user code.
 
     Handles the construction of uniform structured log messages and passes them through to the
@@ -162,10 +162,12 @@ class DagsterLogManager(namedtuple("_DagsterLogManager", "logging_tags loggers")
     ``context.log.trace`` or ``context.log.notice`` will result in hard exceptions **at runtime**.
     """
 
-    def __new__(cls, logging_tags, loggers):
+    def __new__(cls, logging_metadata, loggers):
         return super(DagsterLogManager, cls).__new__(
             cls,
-            logging_tags=check.inst_param(logging_tags, "logging_tags", DagsterLoggingTags),
+            logging_metadata=check.inst_param(
+                logging_metadata, "logging_metadata", DagsterLoggingMetadata
+            ),
             loggers=check.list_param(loggers, "loggers", of_type=logging.Logger),
         )
 
@@ -180,7 +182,7 @@ class DagsterLogManager(namedtuple("_DagsterLogManager", "logging_tags loggers")
             DagsterLogManager: a new DagsterLogManager namedtuple with updated tags for the same
                 run ID and loggers.
         """
-        return self._replace(logging_tags=self.logging_tags._replace(**new_tags))
+        return self._replace(logging_metadata=self.logging_metadata._replace(**new_tags))
 
     def _prepare_message(self, orig_message, message_props):
         check.str_param(orig_message, "orig_message")
@@ -209,7 +211,7 @@ class DagsterLogManager(namedtuple("_DagsterLogManager", "logging_tags loggers")
         # log message via _kv_messsage
         all_props = dict(
             itertools.chain(
-                self.logging_tags._asdict().items(),
+                self.logging_metadata._asdict().items(),
                 message_props.items(),
                 dagster_message_props._asdict().items(),
             )
@@ -224,7 +226,7 @@ class DagsterLogManager(namedtuple("_DagsterLogManager", "logging_tags loggers")
         # See __init__.py:363 (makeLogRecord) in the python 3.6 logging module source
         # for the gory details.
         return (
-            construct_log_string(self.logging_tags, dagster_message_props),
+            construct_log_string(self.logging_metadata, dagster_message_props),
             {DAGSTER_META_KEY: all_props},
         )
 
