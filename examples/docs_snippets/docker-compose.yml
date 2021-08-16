@@ -12,3 +12,8 @@ services:
       POSTGRES_DB: "test"
     networks:
       - postgres
+
+networks:
+  postgres:
+    driver: bridge
+    name: postgres
