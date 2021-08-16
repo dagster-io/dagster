@@ -497,3 +497,35 @@ def test_subchart_postgres_password_global_override(subchart_template: HelmTempl
 
     assert container.env[1].name == "DAGSTER_PG_PASSWORD"
     assert container.env[1].value_from.secret_key_ref.name == "global-postgresql-secret"
+
+
+def test_subchart_postgres_password(subchart_template: HelmTemplate):
+    deployment_values = DagsterUserDeploymentsHelmValues.construct(
+        postgresqlSecretName="postgresql-secret",
+    )
+
+    deployment_templates = subchart_template.render(deployment_values)
+
+    assert len(deployment_templates) == 1
+
+    deployment_template = deployment_templates[0]
+    pod_spec = deployment_template.spec.template.spec
+    container = pod_spec.containers[0]
+
+    assert container.env[1].name == "DAGSTER_PG_PASSWORD"
+    assert container.env[1].value_from.secret_key_ref.name == "postgresql-secret"
+
+
+def test_subchart_default_postgres_password(subchart_template: HelmTemplate):
+    deployment_values = DagsterUserDeploymentsHelmValues.construct()
+
+    deployment_templates = subchart_template.render(deployment_values)
+
+    assert len(deployment_templates) == 1
+
+    deployment_template = deployment_templates[0]
+    pod_spec = deployment_template.spec.template.spec
+    container = pod_spec.containers[0]
+
+    assert container.env[1].name == "DAGSTER_PG_PASSWORD"
+    assert container.env[1].value_from.secret_key_ref.name == "dagster-postgresql-secret"
