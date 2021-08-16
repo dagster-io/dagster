@@ -1129,8 +1129,7 @@ records = instance.get_event_records(
 
                 logger_names = []
 
-                # handle error cases:
-                # no [loggers], names not in next line, etc.
+                # Searches for logger names within configuration file
                 for i in range(0, len(lines)):
                     if "[loggers]" in lines[i]:
                         # remove substring "keys=" from start
