@@ -46,7 +46,7 @@ from dagster import validate_run_config
 
 
 def test_my_partition_set():
-    for partition in date_partition_set.partition_fn():
+    for partition in date_partition_set.get_partitions():
         run_config = date_partition_set.run_config_for_partition(partition)
         assert validate_run_config(my_data_pipeline, run_config)
 

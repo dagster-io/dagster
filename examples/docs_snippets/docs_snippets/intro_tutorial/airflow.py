@@ -1,19 +1,17 @@
 import csv
 
+import requests
 from dagster import pipeline, solid
-from dagster.utils import file_relative_path
 
 
 @solid
 def hello_cereal(context):
-    dataset_path = file_relative_path(__file__, "cereal.csv")
-    context.log.info(dataset_path)
-    with open(dataset_path, "r") as fd:
-        cereals = [row for row in csv.DictReader(fd)]
+    response = requests.get("https://docs.dagster.io/assets/cereal.csv")
+    lines = response.text.split("\n")
+    cereals = [row for row in csv.DictReader(lines)]
+    context.log.info(f"Found {len(cereals)} cereals")
 
-    context.log.info(
-        "Found {n_cereals} cereals".format(n_cereals=len(cereals))
-    )
+    return cereals
 
 
 @pipeline

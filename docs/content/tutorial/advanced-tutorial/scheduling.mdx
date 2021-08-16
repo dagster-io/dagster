@@ -51,9 +51,7 @@ The decorated function should return the `run_config` needed to run the schedule
 def good_morning_schedule(date):
     return {
         "solids": {
-            "hello_cereal": {
-                "inputs": {"date": {"value": date.strftime("%Y-%m-%d")}}
-            }
+            "hello_cereal": {"config": {"date": date.strftime("%Y-%m-%d")}}
         }
     }
 ```

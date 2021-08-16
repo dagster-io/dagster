@@ -7,10 +7,8 @@ from dagster.utils.test.postgres_instance import TestPostgresInstance
 
 @pytest.fixture(scope="function")
 def postgres():  # pylint: disable=redefined-outer-name
-    with TestPostgresInstance.docker_service_up(
-        file_relative_path(
-            __file__, os.path.join("..", "..", "..", "dbt_example", "docker-compose.yml")
-        ),
-        "test-postgres-db",
+    with TestPostgresInstance.docker_service_up_or_skip(
+        file_relative_path(__file__, os.path.join("..", "..", "docker-compose.yml")),
+        "test-postgres-db-docs-snippets",
     ) as conn_string:
         yield conn_string

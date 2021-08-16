@@ -1,5 +1,4 @@
 solids:
   hello_cereal:
-    inputs:
-      date:
-        value: "Date"
+    config:
+      date: "Date"

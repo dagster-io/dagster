@@ -75,6 +75,22 @@ def dbt_example_extra_cmds_fn(_):
     ]
 
 
+def docs_snippets_extra_cmds_fn(_):
+    return [
+        "pushd examples/docs_snippets",
+        # Run the postgres db. We are in docker running docker
+        # so this will be a sibling container.
+        "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
+        # Can't use host networking on buildkite and communicate via localhost
+        # between these sibling containers, so pass along the ip.
+        network_buildkite_container("postgres"),
+        connect_sibling_docker_container(
+            "postgres", "test-postgres-db-docs-snippets", "POSTGRES_TEST_DB_HOST"
+        ),
+        "popd",
+    ]
+
+
 def deploy_docker_example_extra_cmds_fn(_):
     return [
         "pushd examples/deploy_docker/from_source",
@@ -263,6 +279,13 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         "examples/deploy_docker",
         extra_cmds_fn=deploy_docker_example_extra_cmds_fn,
         buildkite_label="deploy_docker_example",
+        upload_coverage=False,
+        supported_pythons=ExamplePythons,
+    ),
+    ModuleBuildSpec(
+        "examples/docs_snippets",
+        extra_cmds_fn=docs_snippets_extra_cmds_fn,
+        buildkite_label="docs_snippets",
         upload_coverage=False,
         supported_pythons=ExamplePythons,
     ),
