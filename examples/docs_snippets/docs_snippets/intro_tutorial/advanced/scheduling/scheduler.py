@@ -33,7 +33,7 @@ def good_morning_schedule(date):
     return {
         "solids": {
             "hello_cereal": {
-                "inputs": {"date": {"value": date.strftime("%Y-%m-%d")}}
+                "config": {"date": date.strftime("%Y-%m-%d")}
             }
         }
     }
