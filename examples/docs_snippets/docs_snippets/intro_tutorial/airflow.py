@@ -1,6 +1,6 @@
 import csv
-import requests
 
+import requests
 from dagster import pipeline, solid
 
 
