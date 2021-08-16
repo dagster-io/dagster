@@ -112,7 +112,7 @@ const secondaryDataToSearchResults = (data?: SearchSecondaryQuery) => {
       key: path,
       label: path,
       description: 'Asset',
-      href: `/instance/assets/${key.path.join('/')}`,
+      href: `/instance/assets/${key.path.map(encodeURIComponent).join('/')}`,
       type: SearchResultType.Asset,
     };
   });
