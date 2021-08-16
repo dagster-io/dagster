@@ -5,6 +5,8 @@ from typing import List
 import pytest
 from kubernetes.client import models
 from schema.charts.dagster.values import DagsterHelmValues
+from schema.charts.dagster.subschema.global_ import Global
+from schema.charts.dagster.subschema.service_account import ServiceAccount
 from schema.charts.dagster_user_deployments.subschema.user_deployments import UserDeployments
 from schema.charts.dagster_user_deployments.values import DagsterUserDeploymentsHelmValues
 from schema.charts.utils import kubernetes
@@ -475,3 +477,23 @@ def test_subchart_image_pull_secrets(subchart_template: HelmTemplate):
     pod_spec = deployment_template.spec.template.spec
 
     assert pod_spec.image_pull_secrets[0].name == image_pull_secrets[0]["name"]
+
+
+def test_subchart_postgres_password_global_override(subchart_template: HelmTemplate):
+    deployment_values = DagsterUserDeploymentsHelmValues.construct(
+        postgresqlSecretName="postgresql-secret",
+        global_=Global.construct(
+            postgresqlSecretName="global-postgresql-secret",
+        ),
+    )
+
+    deployment_templates = subchart_template.render(deployment_values)
+
+    assert len(deployment_templates) == 1
+
+    deployment_template = deployment_templates[0]
+    pod_spec = deployment_template.spec.template.spec
+    container = pod_spec.containers[0]
+
+    assert container.env[1].name == 'DAGSTER_PG_PASSWORD'
+    assert container.env[1].value_from.secret_key_ref.name == 'global-postgresql-secret'
