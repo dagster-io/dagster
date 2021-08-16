@@ -98,11 +98,10 @@ export const AssetDetails: React.FC<Props> = ({assetKey, asOf, asSidebarSection}
       <MetadataTable
         rows={[
           {
-            key: 'Latest materialization from',
+            key: 'Job run',
             value: latestRun ? (
               <div>
                 <div>
-                  {'Run '}
                   <Link
                     style={{fontFamily: FontFamily.monospace}}
                     to={`/instance/runs/${latestEvent.runId}?timestamp=${latestEvent.timestamp}`}
@@ -147,7 +146,7 @@ export const AssetDetails: React.FC<Props> = ({assetKey, asOf, asSidebarSection}
               }
             : undefined,
           {
-            key: 'Latest timestamp',
+            key: 'Timestamp',
             value: latestEvent ? (
               <Timestamp timestamp={{ms: Number(latestEvent.timestamp)}} />
             ) : (
@@ -156,7 +155,7 @@ export const AssetDetails: React.FC<Props> = ({assetKey, asOf, asSidebarSection}
           },
           latestAssetLineage?.length
             ? {
-                key: 'Latest parent assets',
+                key: 'Parent assets',
                 value: (
                   <AssetLineageElements
                     elements={latestAssetLineage}
@@ -202,7 +201,7 @@ export const AssetDetails: React.FC<Props> = ({assetKey, asOf, asSidebarSection}
         />
       ) : null}
       {!asSidebarSection && (
-        <Subheading>{isPartitioned ? 'Latest Materialized Partition' : 'Details'}</Subheading>
+        <Subheading>{isPartitioned ? 'Latest Materialized Partition' : 'Latest Materialization'}</Subheading>
       )}
       {content()}
     </Group>

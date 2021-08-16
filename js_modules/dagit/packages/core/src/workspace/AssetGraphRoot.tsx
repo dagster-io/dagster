@@ -468,7 +468,7 @@ const AssetPanel = ({node, repoAddress}: {node: Node; repoAddress: RepoAddress})
           </div>
         ) : null}
       </SidebarSection>
-      <SidebarSection title={'Latest Event'}>
+      <SidebarSection title={'Latest Materialization'}>
         {node.definition.assetMaterializations.length ? (
           <AssetDetails assetKey={node.assetKey} asOf={null} asSidebarSection />
         ) : (
@@ -477,7 +477,7 @@ const AssetPanel = ({node, repoAddress}: {node: Node; repoAddress: RepoAddress})
       </SidebarSection>
 
       {node.definition.assetMaterializations.length ? (
-        <SidebarSection title={'Graphs'}>
+        <SidebarSection title={'Plots'}>
           <AssetMaterializations assetKey={node.assetKey} asOf={null} asSidebarSection />
         </SidebarSection>
       ) : null}
