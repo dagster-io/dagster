@@ -4,13 +4,21 @@ import re
 from contextlib import contextmanager
 
 import pytest
-from dagster import ModeDefinition, check, execute_solid, pipeline, resource, solid
+from dagster import (
+    ModeDefinition,
+    check,
+    execute_pipeline,
+    execute_solid,
+    pipeline,
+    resource,
+    solid,
+)
 from dagster.core.definitions import NodeHandle
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.logger import InitLoggerContext
 from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.plan.outputs import StepOutputHandle
-from dagster.core.log_manager import DagsterLogManager
+from dagster.core.log_manager import DagsterLogManager, DagsterLoggingMetadata
 from dagster.loggers import colored_console_logger, json_console_logger
 from dagster.utils.error import SerializableErrorInfo
 
@@ -58,7 +66,7 @@ def _regex_match_kv_pair(regex, kv_pairs):
 
 
 def test_logging_no_loggers_registered():
-    dl = DagsterLogManager("none", {}, [])
+    dl = DagsterLogManager(DagsterLoggingMetadata(), [])
     dl.debug("test")
     dl.info("test")
     dl.warning("test")
@@ -69,7 +77,7 @@ def test_logging_no_loggers_registered():
 def test_logging_basic():
     with _setup_logger("test") as (captured_results, logger):
 
-        dl = DagsterLogManager("123", {}, [logger])
+        dl = DagsterLogManager(DagsterLoggingMetadata(run_id="123"), [logger])
         dl.debug("test")
         dl.info("test")
         dl.warning("test")
@@ -82,7 +90,7 @@ def test_logging_basic():
 def test_logging_custom_log_levels():
     with _setup_logger("test", {"FOO": 3}) as (_captured_results, logger):
 
-        dl = DagsterLogManager("123", {}, [logger])
+        dl = DagsterLogManager(DagsterLoggingMetadata(run_id="123"), [logger])
         with pytest.raises(AttributeError):
             dl.foo("test")  # pylint: disable=no-member
 
@@ -90,14 +98,14 @@ def test_logging_custom_log_levels():
 def test_logging_integer_log_levels():
     with _setup_logger("test", {"FOO": 3}) as (_captured_results, logger):
 
-        dl = DagsterLogManager("123", {}, [logger])
+        dl = DagsterLogManager(DagsterLoggingMetadata(run_id="123"), [logger])
         dl.log(3, "test")  # pylint: disable=no-member
 
 
 def test_logging_bad_custom_log_levels():
     with _setup_logger("test") as (_, logger):
 
-        dl = DagsterLogManager("123", {}, [logger])
+        dl = DagsterLogManager(DagsterLoggingMetadata(run_id="123"), [logger])
         with pytest.raises(check.CheckError):
             dl._log("test", "foobar", {})  # pylint: disable=protected-access
 
@@ -105,8 +113,6 @@ def test_logging_bad_custom_log_levels():
 def test_multiline_logging_complex():
     msg = "DagsterEventType.STEP_FAILURE for step start.materialization.output.result.0"
     kwargs = {
-        "pipeline": "example",
-        "pipeline_name": "error_monster",
         "step_key": "start.materialization.output.result.0",
         "solid": "start",
         "solid_definition": "emit_num",
@@ -135,7 +141,9 @@ def test_multiline_logging_complex():
 
     with _setup_logger(DAGSTER_DEFAULT_LOGGER) as (captured_results, logger):
 
-        dl = DagsterLogManager("123", {}, [logger])
+        dl = DagsterLogManager(
+            DagsterLoggingMetadata(run_id="123", pipeline_name="error_monster"), [logger]
+        )
         dl.info(msg, **kwargs)
 
     expected_results = [
@@ -200,6 +208,33 @@ def test_json_console_logger(capsys):
                 found_msg = True
 
     assert found_msg
+
+
+def test_pipeline_logging(capsys):
+    @solid
+    def foo(context):
+        context.log.info("bar")
+        return 0
+
+    @solid
+    def foo2(context, _in1):
+        context.log.info("baz")
+
+    @pipeline
+    def pipe():
+        foo2(foo())
+
+    execute_pipeline(pipe)
+
+    captured = capsys.readouterr()
+    expected_log_regexes = [
+        r"dagster - INFO - pipe - [a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-"
+        r"[a-f0-9]{12} - foo - bar",
+        r"dagster - INFO - pipe - [a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-"
+        r"[a-f0-9]{12} - foo2 - baz",
+    ]
+    for expected_log_regex in expected_log_regexes:
+        assert re.search(expected_log_regex, captured.err, re.MULTILINE)
 
 
 def test_resource_logging(capsys):

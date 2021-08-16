@@ -1,97 +1,146 @@
 import datetime
 import itertools
 import logging
-from collections import OrderedDict, namedtuple
+from collections import namedtuple
+from typing import TYPE_CHECKING, Any, Dict, NamedTuple, Optional
 
-from dagster import check, seven
-from dagster.core.utils import make_new_run_id
-from dagster.utils import frozendict, merge_dicts
-from dagster.utils.error import SerializableErrorInfo
+from dagster import check
+from dagster.core.utils import coerce_valid_log_level, make_new_run_id
+
+if TYPE_CHECKING:
+    from dagster.core.events import DagsterEvent
 
 DAGSTER_META_KEY = "dagster_meta"
 
 
-PYTHON_LOGGING_LEVELS_MAPPING = frozendict(
-    OrderedDict({"CRITICAL": 50, "ERROR": 40, "WARNING": 30, "INFO": 20, "DEBUG": 10})
-)
-
-PYTHON_LOGGING_LEVELS_ALIASES = frozendict(OrderedDict({"FATAL": "CRITICAL", "WARN": "WARNING"}))
-
-PYTHON_LOGGING_LEVELS_NAMES = frozenset(
-    [
-        level_name.lower()
-        for level_name in sorted(
-            list(PYTHON_LOGGING_LEVELS_MAPPING.keys()) + list(PYTHON_LOGGING_LEVELS_ALIASES.keys())
-        )
-    ]
-)
-
-
-def _dump_value(value):
-    # dump namedtuples as objects instead of arrays
-    if isinstance(value, tuple) and hasattr(value, "_asdict"):
-        return seven.json.dumps(value._asdict())
-
-    return seven.json.dumps(value)
-
-
-def construct_log_string(synth_props, logging_tags, message_props):
-    # Handle this explicitly
-    dagster_event = (
-        message_props["dagster_event"]._asdict() if "dagster_event" in message_props else {}
+class DagsterMessageProps(
+    NamedTuple(
+        "_DagsterMessageProps",
+        [
+            ("orig_message", Optional[str]),
+            ("log_message_id", Optional[str]),
+            ("log_timestamp", Optional[str]),
+            ("dagster_event", Optional[Any]),
+        ],
     )
+):
+    """Internal class used to represent specific attributes about a logged message"""
 
-    event_specific_data = dagster_event.get("event_specific_data")
-    error = ""
-    if hasattr(event_specific_data, "error") and isinstance(
-        event_specific_data.error, SerializableErrorInfo
+    def __new__(
+        cls,
+        orig_message: str,
+        log_message_id: Optional[str] = None,
+        log_timestamp: Optional[str] = None,
+        dagster_event: Optional["DagsterEvent"] = None,
     ):
-        if hasattr(event_specific_data, "error_display_string"):
-            error = "\n\n" + event_specific_data.error_display_string
-        else:
-            error = "\n\n" + event_specific_data.error.to_string()
-
-    log_source_prefix = (
-        "resource:%s" % logging_tags["resource_name"]
-        if "resource_name" in logging_tags
-        else message_props.get("pipeline_name", "system")
-    )
-
-    prefix = " - ".join(
-        filter(
-            None,
-            (
-                log_source_prefix,
-                synth_props.get("run_id"),
-                str(dagster_event["pid"]) if dagster_event.get("pid") is not None else None,
-                logging_tags.get("step_key"),
-                dagster_event.get("event_type_value"),
-                synth_props.get("orig_message"),
+        return super().__new__(
+            cls,
+            orig_message=check.str_param(orig_message, "orig_message"),
+            log_message_id=check.opt_str_param(
+                log_message_id, "log_message_id", default=make_new_run_id()
             ),
+            log_timestamp=check.opt_str_param(
+                log_timestamp, "log_timestamp", default=datetime.datetime.utcnow().isoformat()
+            ),
+            dagster_event=dagster_event,
         )
+
+    @property
+    def error_str(self) -> Optional[str]:
+        if self.dagster_event is None:
+            return None
+
+        event_specific_data = self.dagster_event.event_specific_data
+        if not event_specific_data:
+            return None
+
+        error = getattr(event_specific_data, "error", None)
+        if error:
+            return "\n\n" + getattr(event_specific_data, "error_display_string", error.to_string())
+        return None
+
+    @property
+    def pid(self) -> Optional[str]:
+        if self.dagster_event is None or self.dagster_event.pid is None:
+            return None
+        return str(self.dagster_event.pid)
+
+    @property
+    def event_type_value(self) -> Optional[str]:
+        if self.dagster_event is None:
+            return None
+        return self.dagster_event.event_type_value
+
+
+class DagsterLoggingMetadata(
+    NamedTuple(
+        "_DagsterLoggingMetadata",
+        [
+            ("run_id", Optional[str]),
+            ("pipeline_name", Optional[str]),
+            ("pipeline_tags", Dict[str, str]),
+            ("step_key", Optional[str]),
+            ("solid_name", Optional[str]),
+            ("resource_name", Optional[str]),
+            ("resource_fn_name", Optional[str]),
+        ],
     )
-    return prefix + error
+):
+    """Internal class used to represent the context in which a given message was logged (i.e. the
+    step, pipeline run, resource, etc.)
+    """
+
+    def __new__(
+        cls,
+        run_id: str = None,
+        pipeline_name: str = None,
+        pipeline_tags: Dict[str, str] = None,
+        step_key: str = None,
+        solid_name: str = None,
+        resource_name: str = None,
+        resource_fn_name: str = None,
+    ):
+        return super().__new__(
+            cls,
+            run_id=run_id,
+            pipeline_name=pipeline_name,
+            pipeline_tags=pipeline_tags or {},
+            step_key=step_key,
+            solid_name=solid_name,
+            resource_name=resource_name,
+            resource_fn_name=resource_fn_name,
+        )
+
+    @property
+    def log_source(self):
+        if self.resource_name is None:
+            return self.pipeline_name or "system"
+        return f"resource:{self.resource_name}"
 
 
-def coerce_valid_log_level(log_level):
-    """Convert a log level into an integer for consumption by the low-level Python logging API."""
-    if isinstance(log_level, int):
-        return log_level
-    check.str_param(log_level, "log_level")
-    check.invariant(
-        log_level.lower() in PYTHON_LOGGING_LEVELS_NAMES,
-        "Bad value for log level {level}: permissible values are {levels}.".format(
-            level=log_level,
-            levels=", ".join(
-                ["'{}'".format(level_name.upper()) for level_name in PYTHON_LOGGING_LEVELS_NAMES]
-            ),
-        ),
+def construct_log_string(
+    logging_metadata: DagsterLoggingMetadata, message_props: DagsterMessageProps
+) -> str:
+
+    return (
+        " - ".join(
+            filter(
+                None,
+                (
+                    logging_metadata.log_source,
+                    logging_metadata.run_id,
+                    message_props.pid,
+                    logging_metadata.step_key,
+                    message_props.event_type_value,
+                    message_props.orig_message,
+                ),
+            )
+        )
+        + (message_props.error_str or "")
     )
-    log_level = PYTHON_LOGGING_LEVELS_ALIASES.get(log_level.upper(), log_level.upper())
-    return PYTHON_LOGGING_LEVELS_MAPPING[log_level]
 
 
-class DagsterLogManager(namedtuple("_DagsterLogManager", "run_id logging_tags loggers")):
+class DagsterLogManager(namedtuple("_DagsterLogManager", "logging_metadata loggers")):
     """Centralized dispatch for logging from user code.
 
     Handles the construction of uniform structured log messages and passes them through to the
@@ -113,12 +162,11 @@ class DagsterLogManager(namedtuple("_DagsterLogManager", "run_id logging_tags lo
     ``context.log.trace`` or ``context.log.notice`` will result in hard exceptions **at runtime**.
     """
 
-    def __new__(cls, run_id, logging_tags, loggers):
+    def __new__(cls, logging_metadata, loggers):
         return super(DagsterLogManager, cls).__new__(
             cls,
-            run_id=check.opt_str_param(run_id, "run_id"),
-            logging_tags=check.dict_param(
-                logging_tags, "logging_tags", key_type=str, value_type=str
+            logging_metadata=check.inst_param(
+                logging_metadata, "logging_metadata", DagsterLoggingMetadata
             ),
             loggers=check.list_param(loggers, "loggers", of_type=logging.Logger),
         )
@@ -134,7 +182,7 @@ class DagsterLogManager(namedtuple("_DagsterLogManager", "run_id logging_tags lo
             DagsterLogManager: a new DagsterLogManager namedtuple with updated tags for the same
                 run ID and loggers.
         """
-        return self._replace(logging_tags=merge_dicts(self.logging_tags, new_tags))
+        return self._replace(logging_metadata=self.logging_metadata._replace(**new_tags))
 
     def _prepare_message(self, orig_message, message_props):
         check.str_param(orig_message, "orig_message")
@@ -154,21 +202,19 @@ class DagsterLogManager(namedtuple("_DagsterLogManager", "run_id logging_tags lo
         check.invariant("log_message_id" not in message_props, "log_message_id reserved value")
         check.invariant("log_timestamp" not in message_props, "log_timestamp reserved value")
 
-        log_message_id = make_new_run_id()
-
-        log_timestamp = datetime.datetime.utcnow().isoformat()
-
-        synth_props = {
-            "orig_message": orig_message,
-            "log_message_id": log_message_id,
-            "log_timestamp": log_timestamp,
-            "run_id": self.run_id,
-        }
+        # structured information about this specific message
+        dagster_message_props = DagsterMessageProps(
+            orig_message=orig_message, dagster_event=message_props.get("dagster_event")
+        )
 
         # We first generate all props for the purpose of producing the semi-structured
         # log message via _kv_messsage
         all_props = dict(
-            itertools.chain(synth_props.items(), self.logging_tags.items(), message_props.items())
+            itertools.chain(
+                self.logging_metadata._asdict().items(),
+                message_props.items(),
+                dagster_message_props._asdict().items(),
+            )
         )
 
         # So here we use the arbitrary key DAGSTER_META_KEY to store a dictionary of
@@ -180,7 +226,7 @@ class DagsterLogManager(namedtuple("_DagsterLogManager", "run_id logging_tags lo
         # See __init__.py:363 (makeLogRecord) in the python 3.6 logging module source
         # for the gory details.
         return (
-            construct_log_string(synth_props, self.logging_tags, message_props),
+            construct_log_string(self.logging_metadata, dagster_message_props),
             {DAGSTER_META_KEY: all_props},
         )
 
