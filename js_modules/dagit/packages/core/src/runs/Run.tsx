@@ -11,6 +11,7 @@ import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {showLaunchError} from '../execute/showLaunchError';
 import {GanttChart, GanttChartLoadingState, GanttChartMode, QueuedState} from '../gantt/GanttChart';
 import {toGraphQueryItems} from '../gantt/toGraphQueryItems';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {FirstOrSecondPanelToggle, SplitPanelContainer} from '../ui/SplitPanelContainer';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
@@ -22,7 +23,6 @@ import {LogsToolbar, LogType} from './LogsToolbar';
 import {RunActionButtons} from './RunActionButtons';
 import {RunContext} from './RunContext';
 import {IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
-import {RunStatusToPageAttributes} from './RunStatusToPageAttributes';
 import {
   LAUNCH_PIPELINE_REEXECUTION_MUTATION,
   getReexecutionVariables,
@@ -39,19 +39,23 @@ import {
   RunPipelineRunEventFragment_ExecutionStepFailureEvent,
 } from './types/RunPipelineRunEventFragment';
 import {useQueryPersistedLogFilter} from './useQueryPersistedLogFilter';
+import {useRunFavicon} from './useRunFavicon';
 
 interface RunProps {
   runId: string;
   run?: RunFragment;
 }
 
-export const Run: React.FunctionComponent<RunProps> = (props) => {
+export const Run: React.FC<RunProps> = (props) => {
   const {run, runId} = props;
   const [logsFilter, setLogsFilter] = useQueryPersistedLogFilter();
   const [selectionQuery, setSelectionQuery] = useQueryPersistedState<string>({
     queryKey: 'selection',
     defaults: {selection: ''},
   });
+
+  useRunFavicon(run?.status);
+  useDocumentTitle(run ? `${run.pipeline.name} ${runId} [${run.status}]` : `Run: ${runId}`);
 
   const onShowStateDetails = (stepKey: string, logs: RunPipelineRunEventFragment[]) => {
     const errorNode = logs.find(
@@ -75,8 +79,6 @@ export const Run: React.FunctionComponent<RunProps> = (props) => {
 
   return (
     <RunContext.Provider value={run}>
-      {run && <RunStatusToPageAttributes run={run} />}
-
       <LogsProvider key={runId} runId={runId}>
         {(logs) => (
           <RunMetadataProvider logs={logs.allNodes}>
