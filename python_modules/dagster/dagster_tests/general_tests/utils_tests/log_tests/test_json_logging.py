@@ -77,7 +77,7 @@ def test_write_dagster_meta():
         execution_context = create_test_pipeline_execution_context(
             logger_defs={"json": define_json_file_logger("foo", tf_name, logging.DEBUG)}
         )
-        execution_context.log.debug("some_debug_message", context_key="context_value")
+        execution_context.log.debug("some_debug_message", extra={"context_key": "context_value"})
         data = list(parse_json_lines(tf_name))
         assert len(data) == 1
         assert data[0]["name"] == "foo"

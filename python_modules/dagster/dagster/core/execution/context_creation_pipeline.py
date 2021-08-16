@@ -1,3 +1,4 @@
+import logging
 import sys
 from abc import ABC, abstractproperty
 from contextlib import contextmanager
@@ -392,10 +393,8 @@ def orchestration_context_event_generator(
             ),
             error_info=error_info,
         )
-        log_manager.error(
-            event.message,
-            dagster_event=event,
-            pipeline_name=pipeline_run.pipeline_name,
+        log_manager.log_dagster_event(
+            level=logging.ERROR, msg=event.message or "", dagster_event=event
         )
         yield event
 
