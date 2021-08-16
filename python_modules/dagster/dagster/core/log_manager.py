@@ -121,6 +121,10 @@ class DagsterLoggingMetadata(
             return self.pipeline_name or "system"
         return f"resource:{self.resource_name}"
 
+    def to_tags(self) -> Dict[str, str]:
+        # converts all values into strings
+        return {k: str(v) for k, v in self._asdict().items()}
+
 
 def construct_log_string(
     logging_metadata: DagsterLoggingMetadata, message_props: DagsterMessageProps

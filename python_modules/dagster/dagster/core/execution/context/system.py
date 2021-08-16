@@ -97,7 +97,7 @@ class IPlanContext(ABC):
 
     @property
     def logging_tags(self) -> Dict[str, str]:
-        return self.log.logging_metadata._asdict()
+        return self.log.logging_metadata.to_tags()
 
     def has_tag(self, key: str) -> bool:
         check.str_param(key, "key")
