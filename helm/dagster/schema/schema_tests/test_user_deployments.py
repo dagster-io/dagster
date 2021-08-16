@@ -4,9 +4,9 @@ from typing import List
 
 import pytest
 from kubernetes.client import models
-from schema.charts.dagster.values import DagsterHelmValues
 from schema.charts.dagster.subschema.global_ import Global
 from schema.charts.dagster.subschema.service_account import ServiceAccount
+from schema.charts.dagster.values import DagsterHelmValues
 from schema.charts.dagster_user_deployments.subschema.user_deployments import UserDeployments
 from schema.charts.dagster_user_deployments.values import DagsterUserDeploymentsHelmValues
 from schema.charts.utils import kubernetes
@@ -495,5 +495,5 @@ def test_subchart_postgres_password_global_override(subchart_template: HelmTempl
     pod_spec = deployment_template.spec.template.spec
     container = pod_spec.containers[0]
 
-    assert container.env[1].name == 'DAGSTER_PG_PASSWORD'
-    assert container.env[1].value_from.secret_key_ref.name == 'global-postgresql-secret'
+    assert container.env[1].name == "DAGSTER_PG_PASSWORD"
+    assert container.env[1].value_from.secret_key_ref.name == "global-postgresql-secret"
