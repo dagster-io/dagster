@@ -298,14 +298,6 @@ class SensorExecutionArgs(
 
 
 @whitelist_for_serdes
-class NotebookDataArgs(namedtuple("_NotebookDataArgs", "notebook_path")):
-    def __new__(cls, notebook_path):
-        return super(NotebookDataArgs, cls).__new__(
-            cls, notebook_path=check.str_param(notebook_path, "notebook_path")
-        )
-
-
-@whitelist_for_serdes
 class ExternalJobArgs(
     namedtuple(
         "_ExternalJobArgs",

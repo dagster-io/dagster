@@ -12,7 +12,7 @@ service DagsterApi {
   rpc ExecutionPlanSnapshot (ExecutionPlanSnapshotRequest) returns (ExecutionPlanSnapshotReply) {}
   rpc ListRepositories (ListRepositoriesRequest) returns (ListRepositoriesReply) {}
   rpc ExternalPartitionNames (ExternalPartitionNamesRequest) returns (ExternalPartitionNamesReply) {}
-  rpc ExternalNotebookData (ExternalNotebookDataRequest) returns (stream StreamingChunkEvent) {}
+  rpc ExternalNotebookData (ExternalNotebookDataRequest) returns (ExternalNotebookDataReply) {}
   rpc ExternalPartitionConfig (ExternalPartitionConfigRequest) returns (ExternalPartitionConfigReply) {}
   rpc ExternalPartitionTags (ExternalPartitionTagsRequest) returns (ExternalPartitionTagsReply) {}
   rpc ExternalPartitionSetExecutionParams (ExternalPartitionSetExecutionParamsRequest) returns (stream StreamingChunkEvent) {}
@@ -69,11 +69,11 @@ message ExternalPartitionNamesReply {
 }
 
 message ExternalNotebookDataRequest {
-  string serialized_external_notebook_data_args = 1;
+  string notebook_path = 1;
 }
 
 message ExternalNotebookDataReply {
-  string serialized_external_notebook_data = 1;
+  bytes content = 1;
 }
 
 message ExternalPartitionConfigRequest {

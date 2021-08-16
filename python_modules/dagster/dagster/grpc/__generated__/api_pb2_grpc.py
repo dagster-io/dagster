@@ -57,10 +57,10 @@ class DagsterApiStub(object):
             request_serializer=api__pb2.ExternalPartitionNamesRequest.SerializeToString,
             response_deserializer=api__pb2.ExternalPartitionNamesReply.FromString,
         )
-        self.ExternalNotebookData = channel.unary_stream(
+        self.ExternalNotebookData = channel.unary_unary(
             "/api.DagsterApi/ExternalNotebookData",
             request_serializer=api__pb2.ExternalNotebookDataRequest.SerializeToString,
-            response_deserializer=api__pb2.StreamingChunkEvent.FromString,
+            response_deserializer=api__pb2.ExternalNotebookDataReply.FromString,
         )
         self.ExternalPartitionConfig = channel.unary_unary(
             "/api.DagsterApi/ExternalPartitionConfig",
@@ -296,10 +296,10 @@ def add_DagsterApiServicer_to_server(servicer, server):
             request_deserializer=api__pb2.ExternalPartitionNamesRequest.FromString,
             response_serializer=api__pb2.ExternalPartitionNamesReply.SerializeToString,
         ),
-        "ExternalNotebookData": grpc.unary_stream_rpc_method_handler(
+        "ExternalNotebookData": grpc.unary_unary_rpc_method_handler(
             servicer.ExternalNotebookData,
             request_deserializer=api__pb2.ExternalNotebookDataRequest.FromString,
-            response_serializer=api__pb2.StreamingChunkEvent.SerializeToString,
+            response_serializer=api__pb2.ExternalNotebookDataReply.SerializeToString,
         ),
         "ExternalPartitionConfig": grpc.unary_unary_rpc_method_handler(
             servicer.ExternalPartitionConfig,
@@ -591,12 +591,12 @@ class DagsterApi(object):
         timeout=None,
         metadata=None,
     ):
-        return grpc.experimental.unary_stream(
+        return grpc.experimental.unary_unary(
             request,
             target,
             "/api.DagsterApi/ExternalNotebookData",
             api__pb2.ExternalNotebookDataRequest.SerializeToString,
-            api__pb2.StreamingChunkEvent.FromString,
+            api__pb2.ExternalNotebookDataReply.FromString,
             options,
             channel_credentials,
             insecure,

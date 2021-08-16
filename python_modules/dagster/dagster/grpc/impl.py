@@ -24,7 +24,6 @@ from dagster.core.events import EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_run_iterator
 from dagster.core.host_representation import external_pipeline_data_from_def
 from dagster.core.host_representation.external_data import (
-    ExternalNotebookData,
     ExternalPartitionConfigData,
     ExternalPartitionExecutionErrorData,
     ExternalPartitionExecutionParamData,
@@ -405,6 +404,6 @@ def get_partition_set_execution_param_data(recon_repo, partition_set_name, parti
 def get_notebook_data(notebook_path):
     check.str_param(notebook_path, "notebook_path")
 
-    with open(os.path.abspath(notebook_path)) as f:
+    with open(os.path.abspath(notebook_path), "rb") as f:
         content = f.read()
-        return ExternalNotebookData(content=content)
+        return content

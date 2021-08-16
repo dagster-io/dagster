@@ -69,7 +69,6 @@ if TYPE_CHECKING:
         ExternalPartitionSetExecutionParamData,
         ExternalPartitionTagsData,
         ExternalScheduleExecutionErrorData,
-        ExternalNotebookData,
     )
     from dagster.core.definitions.schedule import ScheduleExecutionData
     from dagster.core.definitions.sensor import SensorExecutionData
@@ -184,7 +183,7 @@ class RepositoryLocation(AbstractContextManager):
         pass
 
     @abstractmethod
-    def get_external_notebook_data(self, notebook_path: str) -> "ExternalNotebookData":
+    def get_external_notebook_data(self, notebook_path: str) -> bytes:
         pass
 
     @abstractproperty
@@ -429,7 +428,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
             partition_names=partition_names,
         )
 
-    def get_external_notebook_data(self, notebook_path: str) -> "ExternalNotebookData":
+    def get_external_notebook_data(self, notebook_path: str) -> bytes:
 
         check.str_param(notebook_path, "notebook_path")
         return get_notebook_data(notebook_path)
@@ -737,7 +736,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             self.client, repository_handle, partition_set_name, partition_names
         )
 
-    def get_external_notebook_data(self, notebook_path: str) -> "ExternalNotebookData":
+    def get_external_notebook_data(self, notebook_path: str) -> bytes:
 
         check.str_param(notebook_path, "notebook_path")
         return sync_get_streaming_external_notebook_data_grpc(self.client, notebook_path)

@@ -82,7 +82,7 @@ def notebook_view(context, request_args):
     request_context = context.create_request_context()
     res = request_context.get_external_notebook_data(repo_location_name, path)
     notebook_content = res.content
-    check.str_param(notebook_content, "notebook_content")
+    check.inst_param(notebook_content, "notebook_content", bytes)
 
     # parse content to HTML
     notebook = nbformat.reads(notebook_content, as_version=4)

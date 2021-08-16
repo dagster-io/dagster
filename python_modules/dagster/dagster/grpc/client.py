@@ -23,7 +23,6 @@ from .types import (
     ExecuteExternalPipelineArgs,
     ExecutionPlanSnapshotArgs,
     ExternalScheduleExecutionArgs,
-    NotebookDataArgs,
     PartitionArgs,
     PartitionNamesArgs,
     PartitionSetExecutionParamArgs,
@@ -304,19 +303,13 @@ class DagsterGrpcClient:
 
         return "".join([chunk.serialized_chunk for chunk in chunks])
 
-    def external_notebook_data(self, notebook_data_args, timeout=DEFAULT_GRPC_TIMEOUT):
-        check.inst_param(notebook_data_args, "notebook_data_args", NotebookDataArgs)
-
-        res = self._streaming_query(
+    def external_notebook_data(self, notebook_path):
+        check.str_param(notebook_path, "notebook_path")
+        return self._query(
             "ExternalNotebookData",
             api_pb2.ExternalNotebookDataRequest,
-            timeout=timeout,
-            serialized_external_notebook_data_args=serialize_dagster_namedtuple(notebook_data_args),
+            notebook_path=notebook_path,
         )
-
-        chunks = list(res)
-
-        return "".join([chunk.serialized_chunk for chunk in chunks])
 
     def shutdown_server(self, timeout=15):
         res = self._query("ShutdownServer", api_pb2.Empty, timeout=timeout)
