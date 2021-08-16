@@ -85,7 +85,7 @@ def docs_snippets_extra_cmds_fn(_):
         # between these sibling containers, so pass along the ip.
         network_buildkite_container("postgres"),
         connect_sibling_docker_container(
-            "postgres", "test-postgres-db-airline", "POSTGRES_TEST_DB_HOST"
+            "postgres", "test-postgres-db-docs-snippets", "POSTGRES_TEST_DB_HOST"
         ),
         "popd",
     ]
