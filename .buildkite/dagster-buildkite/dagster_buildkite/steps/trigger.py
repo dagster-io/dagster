@@ -1,3 +1,4 @@
+import os
 import subprocess
 from typing import Dict, List, Optional
 
@@ -28,6 +29,12 @@ def trigger_step(
         "trigger": pipeline,
         "label": f":link: {pipeline} from dagster@{commit}",
         "async": async_step,
+        "build": {
+            "env": {
+                "DAGSTER_BRANCH": os.getenv("BUILDKITE_BRANCH"),
+                "DAGSTER_COMMIT_HASH": os.getenv("BUILDKITE_COMMIT"),
+            },
+        },
     }
 
     if branches:
