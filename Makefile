@@ -13,8 +13,9 @@ check_black:
 	black examples/docs_snippets/docs_snippets/intro_tutorial --check --line-length 78 --target-version py36 --target-version py37 --target-version py38 --fast --exclude "build/|buck-out/|dist/|_build/|\.eggs/|\.git/|\.hg/|\.mypy_cache/|\.nox/|\.tox/|\.venv/|snapshots/"
 
 isort:
-	isort `git ls-files '*.py' ':!:examples/docs_snippets/docs_snippets/intro_tutorial'`
+	isort `git ls-files '*.py' ':!:examples/docs_snippets/docs_snippets/intro_tutorial' ':!:examples/docs_snippets_crag/docs_snippets_crag/intro_tutorial/*.py'`
 	isort -l 78 `git ls-files 'examples/docs_snippets/docs_snippets/intro_tutorial/*.py'`
+	isort -l 78 `git ls-files 'examples/docs_snippets_crag/docs_snippets_crag/intro_tutorial/*.py'`
 
 yamllint:
 	yamllint -c .yamllint.yaml --strict `git ls-files 'helm/**/*.yml' 'helm/**/*.yaml' ':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml'`

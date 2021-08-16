@@ -1,8 +1,8 @@
 from dagster import execute_pipeline, reconstructable
 from dagster.core.test_utils import instance_for_test
-from docs_snippets_crag.deploying.dask_hello_world import (
+from docs_snippets_crag.deploying.dask_hello_world import (  # pylint: disable=import-error
     dask_pipeline,
-)  # pylint: disable=import-error
+)
 
 
 def test_local_dask_pipeline():
