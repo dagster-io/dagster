@@ -32,9 +32,7 @@ def hello_cereal_pipeline():
 def good_morning_schedule(date):
     return {
         "solids": {
-            "hello_cereal": {
-                "config": {"date": date.strftime("%Y-%m-%d")}
-            }
+            "hello_cereal": {"config": {"date": date.strftime("%Y-%m-%d")}}
         }
     }
 

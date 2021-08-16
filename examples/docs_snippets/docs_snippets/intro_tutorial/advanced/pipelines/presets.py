@@ -135,18 +135,26 @@ def normalize_calories(context, cereals):
         ),
         ModeDefinition(
             name="dev",
-            resource_defs={"warehouse": sqlalchemy_postgres_warehouse_resource},
+            resource_defs={
+                "warehouse": sqlalchemy_postgres_warehouse_resource
+            },
         ),
     ],
     preset_defs=[
         PresetDefinition(
             "unittest",
-            run_config={"resources": {"warehouse": {"config": {"conn_str": ":memory:"}}}},
+            run_config={
+                "resources": {
+                    "warehouse": {"config": {"conn_str": ":memory:"}}
+                }
+            },
             mode="unittest",
         ),
         PresetDefinition.from_files(
             "dev",
-            config_files=[file_relative_path(__file__, "presets_dev_warehouse.yaml")],
+            config_files=[
+                file_relative_path(__file__, "presets_dev_warehouse.yaml")
+            ],
             mode="dev",
         ),
     ],
