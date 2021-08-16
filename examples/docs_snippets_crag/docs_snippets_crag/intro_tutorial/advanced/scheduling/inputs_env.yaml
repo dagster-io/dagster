@@ -1,0 +1,4 @@
+solids:
+  hello_cereal:
+    config:
+      date: "Date"

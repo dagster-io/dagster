@@ -289,7 +289,9 @@ async function getVersionedContent(version: string, asPath: string) {
 async function getContent(version: string, asPath: string) {
   if (version == "master") {
     // render files from the local content folder
-    const basePath = path.resolve("../content");
+    const basePath = __IS_CRAG__
+      ? path.resolve("../content-crag") // CRAG
+      : path.resolve("../content");
     const pathToFile = path.join(basePath, asPath);
     const buffer = await fs.readFile(pathToFile);
     const contentString = buffer.toString();

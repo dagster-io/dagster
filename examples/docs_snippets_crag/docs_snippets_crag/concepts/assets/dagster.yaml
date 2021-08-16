@@ -1,0 +1,9 @@
+run_launcher:
+  module: dagster.core.launcher
+  class: DefaultRunLauncher
+
+event_log_storage:
+  module: dagster.core.storage.event_log
+  class: ConsolidatedSqliteEventLogStorage
+  config:
+    base_dir: "/var/shared/dagster_home"

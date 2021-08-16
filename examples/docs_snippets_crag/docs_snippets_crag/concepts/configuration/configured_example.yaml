@@ -1,0 +1,5 @@
+resources:
+  key:
+    config:
+      region: us-east-1
+      use_unsigned_session: False
