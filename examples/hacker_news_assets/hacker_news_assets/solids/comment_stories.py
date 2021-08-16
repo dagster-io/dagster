@@ -1,23 +1,20 @@
-from dagster.core.asset_defs import AssetIn, asset
+from dagster.core.asset_defs import AssetIn, Column, table
 from pandas import DataFrame, Series
 
 
-@asset(
+@table(
     ins={
         "stories": AssetIn(metadata={"columns": ["id"]}),
         "comments": AssetIn(metadata={"columns": ["id", "by", "parent"]}),
     },
     io_manager_key="warehouse_io_manager",
+    columns={
+        "story_id": Column("int", "The ID of the story."),
+        "comment_id": Column("str", "The user ID of the commenter."),
+    },
 )
 def comment_stories(stories: DataFrame, comments: DataFrame) -> DataFrame:
-    """
-    Comments linked to their root stories.
-
-    Returns a DataFrame with a row per comment and the columns:
-    - comment_id (int)
-    - story_id (int)
-    - commenter_id (str)
-    """
+    """Comments linked to their root stories."""
     comments.rename(columns={"by": "commenter_id", "id": "comment_id"}, inplace=True)
     comments = comments.set_index("comment_id")[["commenter_id", "parent"]]
     stories = stories.set_index("id")[[]]

@@ -1,13 +1,15 @@
-from dagster.core.asset_defs import asset
+from dagster.core.asset_defs import table
 from hacker_news_assets.resources.parquet_pointer import ParquetPointer
-from hacker_news_assets.solids.download_items import HN_ACTION_SCHEMA
+from hacker_news_assets.solids.download_items import HN_ITEMS_COLUMNS, HN_ITEMS_SCHEMA
 
 
-@asset(io_manager_key="db_io_manager", description="Comments posted on Hacker News stories")
+@table(io_manager_key="db_io_manager", columns=HN_ITEMS_COLUMNS)
 def comments(comments_lake: str) -> ParquetPointer:
-    return ParquetPointer(comments_lake, HN_ACTION_SCHEMA)
+    """Comments posted on Hacker News stories"""
+    return ParquetPointer(comments_lake, HN_ITEMS_SCHEMA)
 
 
-@asset(io_manager_key="db_io_manager", description="Stories posted on Hacker News")
+@table(io_manager_key="db_io_manager", columns=HN_ITEMS_COLUMNS)
 def stories(stories_lake: str) -> ParquetPointer:
-    return ParquetPointer(stories_lake, HN_ACTION_SCHEMA)
+    """"Stories posted on Hacker News"""
+    return ParquetPointer(stories_lake, HN_ITEMS_SCHEMA)

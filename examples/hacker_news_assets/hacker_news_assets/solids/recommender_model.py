@@ -2,7 +2,7 @@
 import random
 
 from dagster import EventMetadata, Output
-from dagster.core.asset_defs import AssetIn, asset
+from dagster.core.asset_defs import AssetIn, Column, asset, table
 from hacker_news_assets.solids.user_story_matrix import IndexedCooMatrix
 from pandas import DataFrame, Series
 from sklearn.decomposition import TruncatedSVD
@@ -28,9 +28,13 @@ def recommender_model(user_story_matrix: IndexedCooMatrix):
     )
 
 
-@asset(
+@table(
     ins={"stories": AssetIn(metadata={"columns": ["id", "title"]})},
     io_manager_key="warehouse_io_manager",
+    columns={
+        "component_index": Column("int", "The component in the dimensionality-reduced basis."),
+        "title": Column("str", "The title of the story."),
+    },
 )
 def component_top_stories(
     recommender_model: TruncatedSVD, user_story_matrix: IndexedCooMatrix, stories: DataFrame

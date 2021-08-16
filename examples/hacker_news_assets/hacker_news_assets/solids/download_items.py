@@ -1,7 +1,7 @@
 from typing import Tuple
 
 from dagster import AssetKey, ExpectationResult, Out, Output
-from dagster.core.asset_defs import asset, multi_asset
+from dagster.core.asset_defs import Column, multi_asset, table
 from pandas import DataFrame
 from pyspark.sql import DataFrame as SparkDF
 from pyspark.sql.types import (
@@ -14,7 +14,7 @@ from pyspark.sql.types import (
     StructType,
 )
 
-HN_ACTION_SCHEMA = StructType(
+HN_ITEMS_SCHEMA = StructType(
     [
         StructField("deleted", BooleanType()),
         StructField("id", LongType()),
@@ -32,11 +32,16 @@ HN_ACTION_SCHEMA = StructType(
     ]
 )
 
+HN_ITEMS_COLUMNS = {
+    field.name: Column(field.dataType.simpleString(), "") for field in HN_ITEMS_SCHEMA.fields
+}
 
-@asset(
+
+@table(
     io_manager_key="parquet_io_manager",
     required_resource_keys={"hn_client"},
     description="Items from the Hacker News API: each is a story or a comment on a story.",
+    columns=HN_ITEMS_COLUMNS,
 )
 def items(context, id_range_for_time: Tuple[int, int]) -> Output:
     """
@@ -80,7 +85,7 @@ def items(context, id_range_for_time: Tuple[int, int]) -> Output:
     description="Stories and comments posted to Hacker News - in data lake.",
 )
 def comments_and_stories_lake(context, items: SparkDF):  # pylint: disable=redefined-outer-name
-    expected_df = context.resources.pyspark.spark_session.createDataFrame([], HN_ACTION_SCHEMA)
+    expected_df = context.resources.pyspark.spark_session.createDataFrame([], HN_ITEMS_SCHEMA)
     # Schema validation
     yield ExpectationResult(
         success=set(items.schema) == set(expected_df.schema),

@@ -1,23 +1,23 @@
 import numpy as np
-from dagster.core.asset_defs import asset
+from dagster.core.asset_defs import Column, table
 from hacker_news_assets.solids.user_story_matrix import IndexedCooMatrix
 from pandas import DataFrame
 from scipy.sparse import coo_matrix, csc_matrix, csr_matrix
 from sklearn.decomposition import TruncatedSVD
 
 
-@asset(io_manager_key="warehouse_io_manager")
+@table(
+    io_manager_key="warehouse_io_manager",
+    columns={
+        "user_id": Column("str", "The ID of the user."),
+        "story_id": Column("int", "The ID of the story."),
+        "relevance": Column("float", "The relevance of the story to the user - between 0 and 1."),
+    },
+)
 def user_top_recommended_stories(
     context, recommender_model: TruncatedSVD, user_story_matrix: IndexedCooMatrix
 ) -> DataFrame:
-    """
-    The top stories for each commenter (user).
-
-    Produces a DataFrame with these columns:
-        user_id (str)
-        story_id (int)
-        relevance (float)
-    """
+    """The top stories for each commenter (user)."""
     # Compute XV, which has a row for each user and a column for each component
     XV = recommender_model.transform(user_story_matrix.matrix)
 
