@@ -1137,7 +1137,8 @@ records = instance.get_event_records(
                         logger_names = lines[i + 1][5:].strip().split(",")
 
                 for name in logger_names:
-                    loggers.append(logging.getLogger(name))
+                    logger = logging.getLogger(name)
+                    loggers.append(logger)
 
         return loggers
 
