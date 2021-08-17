@@ -442,7 +442,7 @@ const AssetPanel = ({node, repoAddress}: {node: Node; repoAddress: RepoAddress})
       <Box margin={32} style={{fontWeight: 'bold', fontSize: 18}}>
         {node.assetKey.path.join(' > ')}
       </Box>
-      <SidebarSection title="Description">
+      <SidebarSection title="Definition">
         <Description description={node.definition.description || null} />
       </SidebarSection>
       <SidebarSection title="Job">
@@ -683,11 +683,10 @@ const AssetNode: React.FC<{
           {definition.assetKey.path.join(' > ')}
           <div style={{flex: 1}} />
           <div
-            title="Green if this asset has been materialized since it's upstream dependencies."
+            title="Green if this asset has been materialized since its upstream dependencies."
             style={{
               background: {
-                old: 'red',
-                'downstream-from-old': 'orange',
+                old: 'orange',
                 good: 'green',
                 none: '#ccc',
               }[computeStatus],
@@ -807,7 +806,7 @@ function buildGraphComputeStatuses(graphData: GraphData) {
   return statuses;
 }
 
-type Status = 'good' | 'old' | 'downstream-from-old' | 'none';
+type Status = 'good' | 'old' | 'none';
 
 function findComputeStatusForId(
   timestamps: {[key: string]: number},
@@ -826,7 +825,7 @@ function findComputeStatusForId(
     : upstreamIds.some(
         (uid) => findComputeStatusForId(timestamps, statuses, upstream, uid) !== 'good',
       )
-    ? 'downstream-from-old'
+    ? 'old'
     : 'good';
 
   return statuses[id];
