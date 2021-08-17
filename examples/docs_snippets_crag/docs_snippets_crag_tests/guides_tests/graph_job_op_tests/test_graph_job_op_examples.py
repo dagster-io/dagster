@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from dagster import build_schedule_context, execute_pipeline
 from docs_snippets_crag.guides.dagster.graph_job_op import (
     composite_solid,
@@ -44,10 +46,10 @@ functions = [
     (pipeline_mode_test, "test_do_it_all"),
 ]
 job_schedules = [
-    (graph_with_schedule, "do_it_all_schedule"),
-    (graph_with_config_and_schedule, "do_it_all_schedule"),
-    (graph_with_partition_schedule, "do_it_all_schedule"),
-    (graph_with_schedule_return_config, "do_it_all_schedule"),
+    (graph_with_schedule, "do_it_all_schedule", None),
+    (graph_with_config_and_schedule, "do_it_all_schedule", None),
+    (graph_with_partition_schedule, "do_it_all_schedule", None),
+    (graph_with_schedule_return_config, "do_it_all_schedule", datetime(2020, 1, 1)),
 ]
 pipelines = [
     (simple_pipeline, "do_it_all"),
@@ -59,8 +61,12 @@ pipelines = [
     (composite_solid, "do_it_all"),
 ]
 pipeline_schedules = [
-    (pipeline_with_partition_schedule, ("do_it_all_schedule", "do_it_all")),
-    (pipeline_with_schedule_return_config, ("do_it_all_schedule", "do_it_all")),
+    (pipeline_with_partition_schedule, ("do_it_all_schedule", "do_it_all"), None),
+    (
+        pipeline_with_schedule_return_config,
+        ("do_it_all_schedule", "do_it_all"),
+        datetime(2020, 1, 1),
+    ),
 ]
 ops_and_solids = [
     (solid_input_output_def, "do_something"),
@@ -111,12 +117,12 @@ def test_functions():
 
 
 def test_job_schedules():
-    for module, attr_name in job_schedules:
+    for module, attr_name, scheduled_execution_time in job_schedules:
         schedule = getattr(module, attr_name)
         try:
             assert schedule.has_loadable_target()
             job = schedule.load_target()
-            context = build_schedule_context()
+            context = build_schedule_context(scheduled_execution_time=scheduled_execution_time)
             run_config = schedule.evaluate_tick(context).run_requests[0].run_config
             assert job.execute_in_process(run_config=run_config).success
         except Exception as ex:
@@ -126,11 +132,11 @@ def test_job_schedules():
 
 
 def test_pipeline_schedules():
-    for module, (schedule_name, pipeline_name) in pipeline_schedules:
+    for module, (schedule_name, pipeline_name), scheduled_execution_time in pipeline_schedules:
         schedule = getattr(module, schedule_name)
         the_pipeline = getattr(module, pipeline_name)
         try:
-            context = build_schedule_context()
+            context = build_schedule_context(scheduled_execution_time=scheduled_execution_time)
             run_config = schedule.evaluate_tick(context).run_requests[0].run_config
             assert execute_pipeline(the_pipeline, run_config=run_config).success
         except Exception as ex:
