@@ -2,7 +2,7 @@ import time
 
 import grpc
 from dagster import Bool, Field, check, seven
-from dagster.core.errors import DagsterLaunchFailedError
+from dagster.core.errors import DagsterInvariantViolationError, DagsterLaunchFailedError
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster.core.storage.pipeline_run import PipelineRun
@@ -56,6 +56,11 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         run = context.pipeline_run
 
         check.inst_param(run, "run", PipelineRun)
+
+        if not context.workspace:
+            raise DagsterInvariantViolationError(
+                "DefaultRunLauncher requires a workspace to be included in its LaunchRunContext"
+            )
 
         repository_location = context.workspace.get_location(
             run.external_pipeline_origin.external_repository_origin.repository_location_origin
