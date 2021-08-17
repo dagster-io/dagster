@@ -1,3 +1,4 @@
+import configparser
 import inspect
 import logging
 import logging.config
@@ -1112,8 +1113,20 @@ records = instance.get_event_records(
 
     # event subscriptions
 
-    def get_loggers(self):
+    def _get_file_loggers(self):
+        loggers = []
+        if self.log_conf:
+            logging.config.fileConfig(self.log_conf)
 
+            log_config = configparser.ConfigParser()
+            log_config.read(self.log_conf)
+
+            for logger_name in log_config.get("loggers", "keys").split(','):
+                loggers.append(logging.getLogger(logger_name))
+
+        return loggers
+
+    def get_loggers(self):
         loggers = []
 
         event_logger = logging.Logger("__event_listener")
@@ -1121,23 +1134,7 @@ records = instance.get_event_records(
         event_logger.setLevel(10)
         loggers.append(event_logger)
 
-        if self.log_conf:
-            logging.config.fileConfig(self.log_conf)
-
-            with open(self.log_conf, 'r+') as f:
-                lines = f.readlines()
-
-                logger_names = []
-
-                # Searches for logger names within configuration file
-                for i in range(0, len(lines)):
-                    if "[loggers]" in lines[i]:
-                        # remove substring "keys=" from start
-                        logger_names = lines[i + 1][5:].strip().split(",")
-
-                for name in logger_names:
-                    logger = logging.getLogger(name)
-                    loggers.append(logger)
+        loggers.extend(self._get_file_loggers())
 
         return loggers
 
