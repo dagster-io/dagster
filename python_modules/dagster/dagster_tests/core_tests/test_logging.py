@@ -1,11 +1,7 @@
-import io
 import json
 import logging
-import os
 import re
-import sys
-import tempfile
-from contextlib import contextmanager, redirect_stdout
+from contextlib import contextmanager
 
 import pytest
 from dagster import (
@@ -16,9 +12,6 @@ from dagster import (
     pipeline,
     resource,
     solid,
-    logger,
-    Field,
-    execute_pipeline,
 )
 from dagster.core.definitions import NodeHandle
 from dagster.core.events import DagsterEvent
@@ -26,9 +19,7 @@ from dagster.core.execution.context.logger import InitLoggerContext
 from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.log_manager import DagsterLogManager, DagsterLoggingMetadata
-from dagster.core.instance import DagsterInstance
 from dagster.loggers import colored_console_logger, json_console_logger
-from dagster.utils import file_relative_path
 from dagster.utils.error import SerializableErrorInfo
 
 REGEX_UUID = r"[a-z-0-9]{8}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{12}"
@@ -295,90 +286,3 @@ def test_io_context_logging(capsys):
 
     assert re.search("test OUTPUT debug logging from logged_solid.", captured.err, re.MULTILINE)
     assert re.search("test INPUT debug logging from logged_solid.", captured.err, re.MULTILINE)
-
-
-def test_conf_file_logging():
-    with tempfile.TemporaryDirectory() as tempdir:
-        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
-                template = template_fd.read().format()
-                target_fd.write(template)
-
-        instance = DagsterInstance.from_config(tempdir)
-
-        @solid
-        def log_solid(context):
-            context.log.info("Hello world!")
-
-        @pipeline
-        def log_pipeline():
-            log_solid()
-
-        # Python 3.4+
-        f = io.StringIO()
-        with redirect_stdout(f):
-            execute_pipeline(log_pipeline, instance=instance)
-        out = f.getvalue()
-
-        # test to check configuration of handler and formatter
-        # following format in test_logging.conf
-        assert re.search(r'loggerOne :: .+ Hello world!', out)
-
-
-def test_conf_file_logging_with_custom_logger():
-    with tempfile.TemporaryDirectory() as tempdir:
-        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
-                template = template_fd.read().format()
-                target_fd.write(template)
-
-        instance = DagsterInstance.from_config(tempdir)
-
-        @logger(
-            {
-                "log_level": Field(str, is_required=False, default_value="DEBUG"),
-                "name": Field(str, is_required=False, default_value="customLogger"),
-            },
-            description="A JSON-formatted console logger",
-        )
-        def custom_console_logger(init_context):
-            level = init_context.logger_config["log_level"]
-            name = init_context.logger_config["name"]
-
-            klass = logging.getLoggerClass()
-            logger_ = klass(name, level=level)
-
-            handler = logging.StreamHandler(sys.stdout)
-
-            class CustomFormatter(logging.Formatter):
-                def format(self, record):
-                    return "CustomFormatter :: " + str(record)
-
-            handler.setFormatter(CustomFormatter())
-            logger_.addHandler(handler)
-
-            return logger_
-
-        @solid
-        def log_solid(context):
-            context.log.info("Hello world!")
-
-        @pipeline(
-            mode_defs=[ModeDefinition(logger_defs={"my_custom_logger": custom_console_logger})]
-        )
-        def log_pipeline():
-            log_solid()
-
-        # Python 3.4+
-        f = io.StringIO()
-        with redirect_stdout(f):
-            execute_pipeline(
-                log_pipeline,
-                instance=instance,
-                run_config={"loggers": {"my_custom_logger": {"config": {"log_level": "DEBUG"}}}},
-            )
-        out = f.getvalue()
-
-        # defined in ./test_logging.conf
-        assert re.search(r'loggerOne :: .+ Hello world!', out)
-        assert re.search(r'CustomFormatter :: .* Hello world!', out)
