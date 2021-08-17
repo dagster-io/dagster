@@ -1,4 +1,4 @@
-from dagster import schedule, pipeline, solid
+from dagster import pipeline, schedule, solid
 
 
 @solid(config_schema={"param": str})

@@ -1,4 +1,4 @@
-from dagster import schedule, graph, op
+from dagster import graph, op, schedule
 
 
 @op(config_schema={"param": str})

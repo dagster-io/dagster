@@ -377,7 +377,7 @@ The same pattern works for sensors.
 With the pipeline APIs, if you want to schedule runs with a pre-defined config, you need to do something like this:
 
 ```python file=/guides/dagster/graph_job_op/pipeline_with_schedule_return_config.py
-from dagster import schedule, pipeline, solid
+from dagster import pipeline, schedule, solid
 
 
 @solid(config_schema={"param": str})
@@ -398,7 +398,7 @@ def do_it_all_schedule():
 With the new APIs, you can simply reference the graph or job object:
 
 ```python file=/guides/dagster/graph_job_op/graph_with_schedule_return_config.py
-from dagster import schedule, graph, op
+from dagster import graph, op, schedule
 
 
 @op(config_schema={"param": str})
