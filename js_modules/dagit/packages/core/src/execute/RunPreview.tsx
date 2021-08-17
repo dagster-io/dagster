@@ -1,5 +1,6 @@
 import {gql} from '@apollo/client';
-import {Button, Checkbox, Code, Colors, Icon, Intent, Position, Tooltip} from '@blueprintjs/core';
+import {Button, Checkbox, Code, Colors, Icon, Intent, Position} from '@blueprintjs/core';
+import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 

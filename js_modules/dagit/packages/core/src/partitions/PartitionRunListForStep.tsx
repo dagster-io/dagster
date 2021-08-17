@@ -1,6 +1,7 @@
 import {gql, useQuery} from '@apollo/client';
-import {NonIdealState, Button, Colors, Tooltip} from '@blueprintjs/core';
+import {NonIdealState, Button, Colors} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
+import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import qs from 'query-string';
 import React from 'react';
 import {Link} from 'react-router-dom';

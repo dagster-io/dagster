@@ -8,11 +8,11 @@ import {
   Popover,
   InputGroup as BlueprintInputGroup,
   NonIdealState,
-  Tooltip,
   Colors,
   ButtonGroup,
 } from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
+import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import {useHistory, Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
