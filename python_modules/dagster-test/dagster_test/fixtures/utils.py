@@ -16,7 +16,7 @@ def retrying_requests():
     yield session
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def test_directory(request):
     yield os.path.dirname(request.fspath)
 
