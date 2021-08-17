@@ -372,9 +372,9 @@ This makes it easier to catch errors and makes it possible to reference the grap
 
 The same pattern works for sensors.
 
-### A pipeline with a config and a schedule
+### A pipeline with config and a schedule
 
-With the pipeline APIs, if you want to schedule runs with a pre-defined config, you need to do something like this:
+With the pipeline APIs, if you want to schedule runs with config that depends on the scheduled execution time, you need to do something like this:
 
 ```python file=/guides/dagster/graph_job_op/pipeline_with_schedule_return_config.py
 from dagster import pipeline, schedule, solid
