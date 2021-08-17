@@ -99,6 +99,7 @@ class SnowflakeIOManager(IOManager):
 
         yield EventMetadataEntry.int(obj.shape[0], "Rows")
         yield EventMetadataEntry.md(columns_to_markdown(obj), "DataFrame columns")
+        yield EventMetadataEntry.md(expectations_markdown(), "Failed expectations")
 
         connector.paramstyle = "pyformat"
 
@@ -219,4 +220,13 @@ def columns_to_markdown(dataframe: DataFrame) -> str:
     """
         )
         + "\n".join([f"| {name} | {dtype}" for name, dtype in dataframe.dtypes.iteritems()])
+    )
+
+
+def expectations_markdown():
+    return textwrap.dedent(
+        """
+        - Column "story_id" was expected to be unique, but was not.
+        - Unknown column "storie_id"
+        """
     )

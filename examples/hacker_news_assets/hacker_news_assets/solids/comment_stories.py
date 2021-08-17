@@ -14,7 +14,11 @@ from pandas import DataFrame, Series
     },
 )
 def comment_stories(stories: DataFrame, comments: DataFrame) -> DataFrame:
-    """Comments linked to their root stories."""
+    """
+    Comments linked to their root stories.
+
+    Owners: sandy@elementl.com, owen@elementl.com
+    """
     comments.rename(columns={"by": "commenter_id", "id": "comment_id"}, inplace=True)
     comments = comments.set_index("comment_id")[["commenter_id", "parent"]]
     stories = stories.set_index("id")[[]]
