@@ -177,6 +177,7 @@ def _type_checked_event_sequence_for_input(
     step_input = step_context.step.step_input_named(input_name)
     input_def = step_input.source.get_input_def(step_context.pipeline_def)
     dagster_type = input_def.dagster_type
+    type_check_context = step_context.for_type(dagster_type)
     with user_code_error_boundary(
         DagsterTypeCheckError,
         lambda: (
@@ -184,8 +185,9 @@ def _type_checked_event_sequence_for_input(
             f'"{str(step_context.step.solid_handle)}", with Python type {type(input_value)} and '
             f"Dagster type {dagster_type.display_name}"
         ),
+        log_manager=type_check_context.log,
     ):
-        type_check = do_type_check(step_context.for_type(dagster_type), dagster_type, input_value)
+        type_check = do_type_check(type_check_context, dagster_type, input_value)
 
     yield _create_step_input_event(
         step_context, input_name, type_check=type_check, success=type_check.success
@@ -216,6 +218,7 @@ def _type_check_output(
     step_output_def = step_context.solid_def.output_def_named(step_output.name)
 
     dagster_type = step_output_def.dagster_type
+    type_check_context = step_context.for_type(dagster_type)
     with user_code_error_boundary(
         DagsterTypeCheckError,
         lambda: (
@@ -223,8 +226,9 @@ def _type_check_output(
             f'"{str(step_context.step.solid_handle)}", with Python type {type(output.value)} and '
             f"Dagster type {dagster_type.display_name}"
         ),
+        log_manager=type_check_context.log,
     ):
-        type_check = do_type_check(step_context.for_type(dagster_type), dagster_type, output.value)
+        type_check = do_type_check(type_check_context, dagster_type, output.value)
 
     yield DagsterEvent.step_output_event(
         step_context=step_context,
@@ -578,6 +582,7 @@ def _create_type_materializations(
                         f'\n    solid invocation: "{step_context.solid.name}"'
                         f'\n    solid definition: "{step_context.solid_def.name}"'
                     ),
+                    log_manager=step_context.log,
                 ):
                     output_def = step_context.solid_def.output_def_named(step_output.name)
                     dagster_type = output_def.dagster_type

@@ -282,7 +282,9 @@ def single_resource_event_generator(context, resource_name, resource_def):
         msg_fn = lambda: "Error executing resource_fn on ResourceDefinition {name}".format(
             name=resource_name
         )
-        with user_code_error_boundary(DagsterResourceFunctionError, msg_fn):
+        with user_code_error_boundary(
+            DagsterResourceFunctionError, msg_fn, log_manager=context.log
+        ):
             try:
                 with time_execution_scope() as timer_result:
                     resource_or_gen = (
@@ -308,7 +310,7 @@ def single_resource_event_generator(context, resource_name, resource_def):
     except DagsterUserCodeExecutionError as dagster_user_error:
         raise dagster_user_error
 
-    with user_code_error_boundary(DagsterResourceFunctionError, msg_fn):
+    with user_code_error_boundary(DagsterResourceFunctionError, msg_fn, log_manager=context.log):
         try:
             next(gen)
         except StopIteration:
