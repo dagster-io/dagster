@@ -6,6 +6,7 @@ from docs_snippets.guides.dagster.graph_job_op import (
     graph_with_config_and_schedule,
     graph_with_config_mapping,
     graph_with_partition_schedule,
+    graph_with_schedule_return_config,
     graph_with_resources,
     graph_with_schedule,
     nested_graphs,
@@ -14,6 +15,7 @@ from docs_snippets.guides.dagster.graph_job_op import (
     pipeline_mode_test,
     pipeline_with_partition_schedule,
     pipeline_with_preset_and_schedule,
+    pipeline_with_schedule_return_config,
     pipeline_with_resources,
     pipeline_with_schedule,
     prod_dev_jobs,
@@ -45,6 +47,7 @@ job_schedules = [
     (graph_with_schedule, "do_it_all_schedule"),
     (graph_with_config_and_schedule, "do_it_all_schedule"),
     (graph_with_partition_schedule, "do_it_all_schedule"),
+    (graph_with_schedule_return_config, "do_it_all_schedule"),
 ]
 pipelines = [
     (simple_pipeline, "do_it_all"),
@@ -57,6 +60,7 @@ pipelines = [
 ]
 pipeline_schedules = [
     (pipeline_with_partition_schedule, ("do_it_all_schedule", "do_it_all")),
+    (pipeline_with_schedule_return_config, ("do_it_all_schedule", "do_it_all")),
 ]
 ops_and_solids = [
     (solid_input_output_def, "do_something"),
