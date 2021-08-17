@@ -1,7 +1,7 @@
 import os
 import warnings
 
-from dagster import Bool, check
+from dagster import Bool, check, String
 from dagster.config import Field, Permissive
 from dagster.config.validate import validate_config
 from dagster.core.errors import DagsterInvalidConfigError
@@ -92,4 +92,5 @@ def dagster_instance_config_schema():
         "run_launcher": config_field_for_configurable_class(),
         "telemetry": Field({"enabled": Field(Bool, is_required=False)}),
         "instance_class": config_field_for_configurable_class(),
+        "log_conf": Field(String, is_required=False),
     }
