@@ -1,5 +1,7 @@
+import configparser
 import inspect
 import logging
+import logging.config
 import os
 import sys
 import tempfile
@@ -237,6 +239,7 @@ class DagsterInstance:
         scheduler: Optional["Scheduler"] = None,
         schedule_storage: Optional["ScheduleStorage"] = None,
         settings: Optional[Dict[str, Any]] = None,
+        log_conf: Optional[str] = None,
         ref: Optional[InstanceRef] = None,
     ):
         from dagster.core.storage.compute_log_manager import ComputeLogManager
@@ -305,6 +308,8 @@ class DagsterInstance:
         self._ref = check.opt_inst_param(ref, "ref", InstanceRef)
 
         self._subscribers: Dict[str, List[Callable]] = defaultdict(list)
+
+        self.log_conf = check.opt_str_param(log_conf, "log_conf")
 
     # ctors
 
@@ -405,6 +410,7 @@ class DagsterInstance:
             run_coordinator=instance_ref.run_coordinator,
             run_launcher=instance_ref.run_launcher,
             settings=instance_ref.settings,
+            log_conf=instance_ref.log_conf,
             ref=instance_ref,
             **kwargs,
         )
@@ -1107,11 +1113,30 @@ records = instance.get_event_records(
 
     # event subscriptions
 
-    def get_logger(self):
-        logger = logging.Logger("__event_listener")
-        logger.addHandler(_EventListenerLogHandler(self))
-        logger.setLevel(10)
-        return logger
+    def _get_file_loggers(self):
+        loggers = []
+        if self.log_conf:
+            logging.config.fileConfig(self.log_conf)
+
+            log_config = configparser.ConfigParser()
+            log_config.read(self.log_conf)
+
+            for logger_name in log_config.get("loggers", "keys").split(','):
+                loggers.append(logging.getLogger(logger_name))
+
+        return loggers
+
+    def get_loggers(self):
+        loggers = []
+
+        event_logger = logging.Logger("__event_listener")
+        event_logger.addHandler(_EventListenerLogHandler(self))
+        event_logger.setLevel(10)
+        loggers.append(event_logger)
+
+        loggers.extend(self._get_file_loggers())
+
+        return loggers
 
     def handle_new_event(self, event):
         run_id = event.run_id

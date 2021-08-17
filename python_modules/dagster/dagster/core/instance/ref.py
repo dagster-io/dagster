@@ -46,7 +46,7 @@ class InstanceRef(
         "_InstanceRef",
         "local_artifact_storage_data run_storage_data event_storage_data compute_logs_data "
         "schedule_storage_data scheduler_data run_coordinator_data run_launcher_data settings "
-        "custom_instance_class_data",
+        "log_conf custom_instance_class_data",
     )
 ):
     """Serializable representation of a :py:class:`DagsterInstance`.
@@ -65,6 +65,7 @@ class InstanceRef(
         run_coordinator_data,
         run_launcher_data,
         settings,
+        log_conf,
         custom_instance_class_data=None,
     ):
         return super(cls, InstanceRef).__new__(
@@ -94,6 +95,7 @@ class InstanceRef(
                 run_launcher_data, "run_launcher_data", ConfigurableClassData
             ),
             settings=check.opt_dict_param(settings, "settings"),
+            log_conf=check.opt_str_param(log_conf, "log_conf"),
             custom_instance_class_data=check.opt_inst_param(
                 custom_instance_class_data,
                 "instance_class",
@@ -207,6 +209,8 @@ class InstanceRef(
         settings_keys = {"telemetry"}
         settings = {key: config_value.get(key) for key in settings_keys}
 
+        log_conf = config_value.get("log_conf", None)
+
         return InstanceRef(
             local_artifact_storage_data=local_artifact_storage_data,
             run_storage_data=run_storage_data,
@@ -217,6 +221,7 @@ class InstanceRef(
             run_coordinator_data=run_coordinator_data,
             run_launcher_data=run_launcher_data,
             settings=settings,
+            log_conf=log_conf,
             custom_instance_class_data=custom_instance_class_data,
         )
 
