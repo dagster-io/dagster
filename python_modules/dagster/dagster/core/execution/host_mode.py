@@ -100,12 +100,10 @@ def host_mode_execution_context_event_generator(
             )
         )
 
-    handlers = [instance.get_event_log_handler()]
-
     log_manager = DagsterLogManager(
         logging_metadata=get_logging_metadata(pipeline_run),
         loggers=loggers,
-        handlers=handlers,
+        handlers=instance.get_handlers(),
     )
 
     try:
