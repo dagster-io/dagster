@@ -9,24 +9,23 @@ from contextlib import contextmanager, redirect_stdout
 
 import pytest
 from dagster import (
+    Field,
     ModeDefinition,
     check,
     execute_pipeline,
     execute_solid,
+    logger,
     pipeline,
     resource,
     solid,
-    logger,
-    Field,
-    execute_pipeline,
 )
 from dagster.core.definitions import NodeHandle
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.logger import InitLoggerContext
 from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.plan.outputs import StepOutputHandle
-from dagster.core.log_manager import DagsterLogManager, DagsterLoggingMetadata
 from dagster.core.instance import DagsterInstance
+from dagster.core.log_manager import DagsterLogManager, DagsterLoggingMetadata
 from dagster.loggers import colored_console_logger, json_console_logger
 from dagster.utils import file_relative_path
 from dagster.utils.error import SerializableErrorInfo
@@ -322,7 +321,7 @@ def test_conf_file_logging():
 
         # test to check configuration of handler and formatter
         # following format in test_logging.conf
-        assert re.search(r'loggerOne :: .+ Hello world!', out)
+        assert re.search(r"loggerOne :: .+ Hello world!", out)
 
 
 def test_conf_file_logging_with_custom_logger():
@@ -380,5 +379,5 @@ def test_conf_file_logging_with_custom_logger():
         out = f.getvalue()
 
         # defined in ./test_logging.conf
-        assert re.search(r'loggerOne :: .+ Hello world!', out)
-        assert re.search(r'CustomFormatter :: .* Hello world!', out)
+        assert re.search(r"loggerOne :: .+ Hello world!", out)
+        assert re.search(r"CustomFormatter :: .* Hello world!", out)

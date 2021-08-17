@@ -1121,7 +1121,7 @@ records = instance.get_event_records(
             log_config = configparser.ConfigParser()
             log_config.read(self.log_conf)
 
-            for logger_name in log_config.get("loggers", "keys").split(','):
+            for logger_name in log_config.get("loggers", "keys").split(","):
                 loggers.append(logging.getLogger(logger_name))
 
         return loggers
