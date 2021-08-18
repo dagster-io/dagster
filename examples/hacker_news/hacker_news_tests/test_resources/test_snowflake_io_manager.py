@@ -2,6 +2,7 @@ import os
 import uuid
 from contextlib import contextmanager
 
+import pytest
 from dagster import build_init_resource_context, build_input_context, build_output_context
 from hacker_news.resources.snowflake_io_manager import connect_snowflake, snowflake_io_manager
 from pandas import DataFrame
@@ -30,6 +31,7 @@ def temporary_snowflake_table(contents: DataFrame):
             conn.execute(f"drop table public.{table_name}")
 
 
+@pytest.mark.skip(reason="avoid dependency on snowflake for tests")
 def test_handle_output_then_load_input():
     snowflake_config = generate_snowflake_config()
     snowflake_manager = snowflake_io_manager(build_init_resource_context(config=snowflake_config))
