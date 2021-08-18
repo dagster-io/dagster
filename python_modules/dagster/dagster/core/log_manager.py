@@ -210,7 +210,7 @@ class DagsterLogManager(logging.Logger):
         for logger in self._loggers:
             logger.log(level, msg, *args, extra=extra)
 
-        super()._log(level, msg, args)
+        super()._log(level, msg, args, exc_info=exc_info, extra=extra, stack_info=stack_info)
 
     def with_tags(self, **new_tags):
         """Add new tags in "new_tags" to the set of tags attached to this log manager instance, and

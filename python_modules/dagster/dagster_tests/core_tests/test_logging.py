@@ -216,7 +216,7 @@ def test_capture_handler_log_records():
     )
 
     dl.info("info")
-    dl.critical("critical error")
+    dl.critical("critical error", extra={"foo": "bar"})
 
     assert len(capture_handler.captured) == 2
 
@@ -229,6 +229,7 @@ def test_capture_handler_log_records():
     assert captured_critical_record.name == "dagster"
     assert captured_critical_record.msg == "pipeline - 123456 - some_step - critical error"
     assert captured_critical_record.levelno == logging.CRITICAL
+    assert captured_critical_record.foo == "bar"
 
 
 def test_default_context_logging():
