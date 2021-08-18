@@ -92,31 +92,6 @@ def test_hello_world_with_config():
 
 
 @pytest.mark.notebook_test
-def test_hello_world_with_output_notebook():
-    with exec_for_test("hello_world_with_output_notebook_pipeline") as result:
-        assert result.success
-        materializations = [
-            x for x in result.event_list if x.event_type_value == "ASSET_MATERIALIZATION"
-        ]
-        assert len(materializations) == 1
-
-        assert result.result_for_solid("hello_world").success
-        assert "notebook" in result.result_for_solid("hello_world").output_values
-        assert os.path.exists(
-            result.result_for_solid("hello_world").output_values["notebook"].path_desc
-        )
-        assert (
-            materializations[0]
-            .event_specific_data.materialization.metadata_entries[0]
-            .entry_data.path
-            == result.result_for_solid("hello_world").output_values["notebook"].path_desc
-        )
-
-        assert result.result_for_solid("load_notebook").success
-        assert result.result_for_solid("load_notebook").output_value() is True
-
-
-@pytest.mark.notebook_test
 def test_hello_world_with_config_escape():
     with exec_for_test(
         "hello_world_config_pipeline",

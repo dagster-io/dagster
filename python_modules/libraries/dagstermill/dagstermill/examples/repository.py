@@ -134,6 +134,30 @@ def hello_world_with_output_notebook_pipeline():
     load_notebook(notebook)
 
 
+hello_world_no_output_notebook_no_file_manager = dagstermill.define_dagstermill_solid(
+    name="hello_world_no_output_notebook_no_file_manager",
+    notebook_path=nb_test_path("hello_world"),
+)
+
+
+@pipeline
+def hello_world_no_output_notebook_no_file_manager_pipeline():
+    hello_world_no_output_notebook_no_file_manager()
+
+
+hello_world_no_output_notebook = dagstermill.define_dagstermill_solid(
+    name="hello_world_no_output_notebook",
+    notebook_path=nb_test_path("hello_world"),
+    # FIXME the current behavior is implicitly peristing output notebooks based on whether resources.file_manager.write works.
+    required_resource_keys={"file_manager"},
+)
+
+
+@pipeline(mode_defs=default_mode_defs)
+def hello_world_no_output_notebook_pipeline():
+    hello_world_no_output_notebook()
+
+
 hello_world_output = test_nb_solid("hello_world_output", output_defs=[OutputDefinition(str)])
 
 
