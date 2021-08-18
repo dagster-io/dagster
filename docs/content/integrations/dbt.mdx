@@ -32,7 +32,7 @@ This library also provides pre-built solids that can be integrated into your pip
 
 `dagster-dbt` provides a `dbt_cli_resource` to help make it easy to run commands through the [dbt CLI](https://docs.getdbt.com/dbt-cli/cli-overview).
 
-When you supply this resource to a solid, you can call any of the many provided methods to invoke that particular CLI command. You can check out a full list of functions (as well as their signatures) in the <PyObject module='dagster_dbt' object='DbtCliResource'/> API Docs. All methods on the resource will return a <PyObject module="dagster" object="DbtCliOutput"/> object.
+When you supply this resource to a solid, you can call any of the many provided methods to invoke that particular CLI command. You can check out a full list of functions (as well as their signatures) in the <PyObject module='dagster_dbt' object='DbtCliResource'/> API Docs. All methods on the resource will return a <PyObject module="dagster_dbt" object="DbtCliOutput"/> object.
 
 To run dbt CLI commands, your dbt project directory must be on your local filesystem and you must have a dbt profile already set up to connect to your data warehouse. Visit [the official dbt CLI documentation](https://docs.getdbt.com/dbt-cli/cli-overview) for more details.
 
@@ -260,7 +260,7 @@ def my_dbt_pipeline():
 
 ## Advanced Configuration
 
-For full documentation on all available config, [visit the API docs for dagster-dbt](/\_apidocs/libraries/dagster_dbt).
+For full documentation on all available config, [visit the API docs for dagster-dbt](/_apidocs/libraries/dagster_dbt).
 
 **dbt CLI: Set the dbt profile and target to load**
 
