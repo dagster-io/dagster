@@ -480,7 +480,6 @@ def fan_in_legacy(a, b):
             resource_defs={
                 "io_manager": fs_io_manager,
                 "file_manager": local_file_manager,
-                "output_notebook_io_manager": backcompact_output_notebook_io_manager,
             }
         )
     ]
@@ -502,7 +501,6 @@ def outer_legacy():
             resource_defs={
                 "io_manager": fs_io_manager,
                 "file_manager": local_file_manager,
-                "output_notebook_io_manager": backcompact_output_notebook_io_manager,
             }
         )
     ]
@@ -541,7 +539,6 @@ def fan_in_notebook_pipeline():
         ModeDefinition(
             resource_defs={
                 "file_manager": local_file_manager,
-                "output_notebook_io_manager": backcompact_output_notebook_io_manager,
             }
         )
     ]

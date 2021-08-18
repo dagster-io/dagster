@@ -23,8 +23,8 @@ from dagster.core.definitions.utils import validate_tags
 from dagster.core.execution.context.compute import SolidExecutionContext
 from dagster.core.execution.context.input import build_input_context
 from dagster.core.execution.context.system import StepExecutionContext
-from dagster.core.storage.file_manager import FileHandle
 from dagster.core.execution.plan.outputs import StepOutputHandle
+from dagster.core.storage.file_manager import FileHandle
 from dagster.serdes import pack_value
 from dagster.seven import get_system_temp_directory
 from dagster.utils import mkdir_p, safe_tempfile_path
