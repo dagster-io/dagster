@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Dict, Optional, Set, Union, cast
+from typing import Any, Dict, Optional, Set, TypeVar, Union, cast
 
 from dagster import check
 
@@ -139,6 +139,17 @@ class HookContext:
         return results
 
 
+T = TypeVar("T")
+
+
+def _assert_property_not_none(val: Optional[T], name: str) -> T:
+    if val is None:
+        raise DagsterInvariantViolationError(
+            f"{name} property not specified when constructing the hook context."
+        )
+    return val
+
+
 class UnboundHookContext(HookContext):
     def __init__(
         self,
@@ -148,6 +159,8 @@ class UnboundHookContext(HookContext):
         pipeline_name: Optional[str],
         run_id: Optional[str],
         step_key: Optional[str],
+        solid_exception: Optional[BaseException],
+        solid_config: Any,
     ):  # pylint: disable=super-init-not-called
         from ..context_creation_pipeline import initialize_console_manager
         from ..build_resources import build_resources
@@ -175,6 +188,8 @@ class UnboundHookContext(HookContext):
         self._pipeline_name = pipeline_name
         self._run_id = run_id
         self._step_key = step_key
+        self._solid_exception = solid_exception
+        self._solid_config = solid_config
 
     def __enter__(self):
         self._cm_scope_entered = True
@@ -187,21 +202,13 @@ class UnboundHookContext(HookContext):
         if self._resources_contain_cm and not self._cm_scope_entered:
             self._resources_cm.__exit__(None, None, None)  # pylint: disable=no-member
 
-    def _unbound_invariant(val, name):
-        check.invariant(
-            val is not None,
-            f"{name} property not specified when constructing the hook context.",
-        )
-
     @property
     def pipeline_name(self) -> str:
-        self._unbound_invariant(self._pipeline_name, "pipeline_name")
-        return self._pipeline_name
+        return _assert_property_not_none(self._pipeline_name, "pipeline_name")
 
     @property
     def run_id(self) -> str:
-        self._unbound_invariant(self._run_id, "run_id")
-        return self._run_id
+        return _assert_property_not_none(self._run_id, "run_id")
 
     @property
     def hook_def(self) -> HookDefinition:
@@ -221,8 +228,7 @@ class UnboundHookContext(HookContext):
 
     @property
     def step_key(self) -> str:
-        self._unbound_invariant(self._step_key, "step_key")
-        return self._step_key
+        return _assert_property_not_none(self._step_key, "step_key")
 
     @property
     def mode_def(self) -> Optional[ModeDefinition]:
@@ -244,7 +250,7 @@ class UnboundHookContext(HookContext):
 
     @property
     def solid_config(self) -> Any:
-        raise DagsterInvalidPropertyError(_property_msg("solid_config", "property"))
+        return self._solid_config
 
     @property
     def log(self) -> DagsterLogManager:
@@ -258,7 +264,7 @@ class UnboundHookContext(HookContext):
             Optional[BaseException]: the exception object, None if the solid execution succeeds.
         """
 
-        raise DagsterInvalidPropertyError(_property_msg("solid_exception", "property"))
+        return self._solid_exception
 
     @property
     def solid_output_values(self) -> Dict[str, Union[Any, Dict[str, Any]]]:
@@ -279,20 +285,30 @@ class BoundHookContext(HookContext):
         solid: Optional[Node],
         mode_def: Optional[ModeDefinition],
         log_manager: DagsterLogManager,
+        pipeline_name: Optional[str],
+        run_id: Optional[str],
+        step_key: Optional[str],
+        solid_exception: Optional[BaseException],
+        solid_config: Any,
     ):  # pylint: disable=super-init-not-called
         self._hook_def = hook_def
         self._resources = resources
         self._solid = solid
         self._mode_def = mode_def
         self._log_manager = log_manager
+        self._pipeline_name = pipeline_name
+        self._run_id = run_id
+        self._step_key = step_key
+        self._solid_exception = solid_exception
+        self._solid_config = solid_config
 
     @property
     def pipeline_name(self) -> str:
-        raise DagsterInvalidPropertyError(_property_msg("pipeline_name", "property"))
+        return _assert_property_not_none(self._pipeline_name, "pipeline_name")
 
     @property
     def run_id(self) -> str:
-        raise DagsterInvalidPropertyError(_property_msg("run_id", "property"))
+        return _assert_property_not_none(self._run_id, "run_id")
 
     @property
     def hook_def(self) -> HookDefinition:
@@ -312,7 +328,7 @@ class BoundHookContext(HookContext):
 
     @property
     def step_key(self) -> str:
-        raise DagsterInvalidPropertyError(_property_msg("step_key", "property"))
+        return _assert_property_not_none(self._step_key, "step_key")
 
     @property
     def mode_def(self) -> Optional[ModeDefinition]:
@@ -328,7 +344,7 @@ class BoundHookContext(HookContext):
 
     @property
     def solid_config(self) -> Any:
-        raise DagsterInvalidPropertyError(_property_msg("solid_config", "property"))
+        return _assert_property_not_none(self._solid_config, "solid_config")
 
     @property
     def log(self) -> DagsterLogManager:
@@ -342,7 +358,7 @@ class BoundHookContext(HookContext):
             Optional[BaseException]: the exception object, None if the solid execution succeeds.
         """
 
-        raise DagsterInvalidPropertyError(_property_msg("solid_exception", "property"))
+        return _assert_property_not_none(self._solid_exception, "solid_exception")
 
     @property
     def solid_output_values(self) -> Dict[str, Union[Any, Dict[str, Any]]]:
@@ -362,6 +378,8 @@ def build_hook_context(
     pipeline_name: Optional[str] = None,
     run_id: Optional[str] = None,
     step_key: Optional[str] = None,
+    solid_exception: Optional[BaseException] = None,
+    solid_config: Any = None,
 ) -> UnboundHookContext:
     """Builds hook context from provided parameters.
 
@@ -393,7 +411,9 @@ def build_hook_context(
         resources=check.opt_dict_param(resources, "resources", key_type=str),
         mode_def=check.opt_inst_param(mode_def, "mode_def", ModeDefinition),
         solid=check.opt_inst_param(solid, "solid", (SolidDefinition, PendingNodeInvocation)),
-        pipeline_name=check.opt_inst_param(pipeline_name, "pipeline_name", str),
-        run_id=check.opt_inst_param(run_id, "run_id", str),
-        step_key=check.opt_inst_param(step_key, "step_key", str),
+        pipeline_name=check.opt_str_param(pipeline_name, "pipeline_name"),
+        run_id=check.opt_str_param(run_id, "run_id"),
+        step_key=check.opt_str_param(step_key, "step_key"),
+        solid_exception=check.opt_inst_param(solid_exception, "solid_exception", BaseException),
+        solid_config=solid_config,
     )

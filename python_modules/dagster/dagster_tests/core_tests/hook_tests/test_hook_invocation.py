@@ -212,3 +212,30 @@ def test_hook_invocation_with_solid():
 
     basic_hook(build_hook_context(solid=foo))
     basic_hook(build_hook_context(solid=not_foo.alias("foo")))
+
+
+def test_hook_invocation_properties():
+    ctx = build_hook_context(
+        pipeline_name="foo_pipeline",
+        run_id="foo_id",
+        step_key="foo_step_key",
+        solid_exception=DagsterInvariantViolationError("blah"),
+        solid_config="foo_config",
+    )
+
+    # Ensure that each property makes it through both unbound and bound hook context creation time
+    # intact, without setting off errors.
+    def _hook_context_assertions(hook_context):
+        assert hook_context.pipeline_name == "foo_pipeline"
+        assert hook_context.run_id == "foo_id"
+        assert hook_context.step_key == "foo_step_key"
+        assert isinstance(hook_context.solid_exception, DagsterInvariantViolationError)
+        assert hook_context.solid_config == "foo_config"
+
+    _hook_context_assertions(ctx)
+
+    @failure_hook
+    def basic_hook(context):
+        _hook_context_assertions(context)
+
+    basic_hook(ctx)
