@@ -1,7 +1,9 @@
+import io
 import json
 import logging
 import re
-from contextlib import contextmanager
+import sys
+from contextlib import contextmanager, redirect_stdout
 
 import pytest
 from dagster import (
@@ -152,6 +154,60 @@ def test_multiline_logging_complex():
     ]
 
     assert captured_results[0].split("\n") == expected_results
+
+
+def test_handler_in_log_manager():
+    f = io.StringIO()
+    with redirect_stdout(f):
+        test_formatter = logging.Formatter(fmt='%(levelname)s :: %(message)s')
+
+        test_info_handler = logging.StreamHandler(sys.stdout)
+        test_info_handler.setLevel("INFO")
+        test_info_handler.setFormatter(test_formatter)
+
+        test_warn_handler = logging.StreamHandler(sys.stdout)
+        test_warn_handler.setLevel("WARN")
+        test_warn_handler.setFormatter(test_formatter)
+
+        dl = DagsterLogManager(
+            DagsterLoggingMetadata(run_id="123"),
+            [],
+            [test_info_handler, test_warn_handler],
+        )
+        dl.info("test")
+        dl.warning("test")
+    out = f.getvalue()
+
+    assert re.search(r"INFO :: system - 123 - test", out)
+    assert len(re.findall(r"WARNING :: system - 123 - test", out)) == 2
+
+
+def test_handler_in_log_manager_with_tags():
+    f = io.StringIO()
+    with redirect_stdout(f):
+        test_formatter = logging.Formatter(fmt='%(levelname)s :: %(message)s')
+
+        test_info_handler = logging.StreamHandler(sys.stdout)
+        test_info_handler.setLevel("INFO")
+        test_info_handler.setFormatter(test_formatter)
+
+        test_warn_handler = logging.StreamHandler(sys.stdout)
+        test_warn_handler.setLevel("WARN")
+        test_warn_handler.setFormatter(test_formatter)
+
+        dl = DagsterLogManager(
+            DagsterLoggingMetadata(run_id="123"),
+            [],
+            [test_info_handler, test_warn_handler],
+        )
+        dl.with_tags(**{})
+
+        dl.info("test")
+        dl.warning("test")
+    out = f.getvalue()
+
+    assert re.search(r"INFO :: system - 123 - test", out)
+    assert len(re.findall(r"WARNING :: system - 123 - test", out)) == 2
 
 
 def test_default_context_logging():

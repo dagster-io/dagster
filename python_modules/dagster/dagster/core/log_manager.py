@@ -149,12 +149,23 @@ def construct_log_string(
 
 
 class DagsterLogManager(logging.Logger):
-    def __init__(self, logging_metadata: DagsterLoggingMetadata, loggers: List[logging.Logger]):
+    def __init__(
+        self,
+        logging_metadata: DagsterLoggingMetadata,
+        loggers: List[logging.Logger],
+        handlers: Optional[List[logging.Handler]] = None,
+    ):
         self._logging_metadata = check.inst_param(
             logging_metadata, "logging_metadata", DagsterLoggingMetadata
         )
         self._loggers = check.list_param(loggers, "loggers", of_type=logging.Logger)
+
         super().__init__(name="dagster", level=logging.DEBUG)
+
+        check.opt_nullable_list_param(handlers, "handlers", of_type=logging.Handler)
+        if handlers:
+            for handler in handlers:
+                self.addHandler(handler)
 
     @property
     def logging_metadata(self) -> DagsterLoggingMetadata:
@@ -200,6 +211,8 @@ class DagsterLogManager(logging.Logger):
         for logger in self._loggers:
             logger.log(level, msg, *args, extra=extra)
 
+        super()._log(level, msg, args)
+
     def with_tags(self, **new_tags):
         """Add new tags in "new_tags" to the set of tags attached to this log manager instance, and
         return a new DagsterLogManager with the merged set of tags.
@@ -212,5 +225,7 @@ class DagsterLogManager(logging.Logger):
                 run ID and loggers.
         """
         return DagsterLogManager(
-            logging_metadata=self.logging_metadata._replace(**new_tags), loggers=self._loggers
+            logging_metadata=self.logging_metadata._replace(**new_tags),
+            loggers=self._loggers,
+            handlers=self.handlers,
         )
