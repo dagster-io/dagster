@@ -99,6 +99,7 @@ from dagster.core.definitions import (
     weekly_schedule,
 )
 from dagster.core.definitions.configurable import configured
+from dagster.core.definitions.utils import config_from_files
 from dagster.core.definitions.policy import Backoff, Jitter, RetryPolicy
 from dagster.core.definitions.schedule import build_schedule_context
 from dagster.core.definitions.sensor import build_sensor_context
@@ -351,6 +352,7 @@ __all__ = [
     "execute_solid",
     "execute_solids_within_pipeline",
     "file_relative_path",
+    "config_from_files",
     "configured",
     # types
     "Any",
