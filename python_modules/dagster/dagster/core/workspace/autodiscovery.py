@@ -3,9 +3,9 @@ from collections import namedtuple
 
 from dagster import (
     DagsterInvariantViolationError,
+    GraphDefinition,
     PipelineDefinition,
     RepositoryDefinition,
-    GraphDefinition,
 )
 from dagster.core.code_pointer import load_python_file, load_python_module
 
@@ -62,11 +62,11 @@ def loadable_targets_from_loaded_module(module):
             (
                 'No repository, no pipeline, and more than one graph found in "{module_name}". '
                 "If you load a file or module directly it must either have one repository, one "
-                "pipeline, or one graph in scope. Found pipelines defined in variables or "
-                "decorated functions: {pipeline_symbols}."
+                "pipeline, or one graph in scope. Found graphs defined in variables or "
+                "decorated functions: {graph_symbols}."
             ).format(
                 module_name=module.__name__,
-                pipeline_symbols=repr([p.attribute for p in loadable_pipelines]),
+                graph_symbols=repr([g.attribute for g in loadable_graphs]),
             )
         )
 
