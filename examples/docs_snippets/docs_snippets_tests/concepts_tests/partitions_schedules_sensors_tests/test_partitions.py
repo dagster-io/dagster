@@ -19,7 +19,7 @@ def test_pipeline():
 
 @pytest.mark.parametrize("partition_set", [date_partition_set, weekday_partition_set])
 def test_pipeline_with_partition_set(partition_set):
-    for partition in partition_set.partition_fn():
+    for partition in partition_set.get_partitions():
         run_config = partition_set.run_config_for_partition(partition)
         result = execute_pipeline(
             my_data_pipeline,

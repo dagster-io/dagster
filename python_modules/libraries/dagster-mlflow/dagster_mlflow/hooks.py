@@ -1,4 +1,5 @@
 from dagster.core.definitions.decorators.hook import event_list_hook
+from dagster.core.definitions.events import HookExecutionResult
 from mlflow.entities.run_status import RunStatus
 
 
@@ -10,6 +11,8 @@ def end_mlflow_run_on_pipeline_finished(context, event_list):
         elif event.is_step_failure:
             mlf = context.resources.mlflow
             mlf.end_run(status=RunStatus.to_string(RunStatus.FAILED))
+
+    return HookExecutionResult(hook_name="end_mlflow_run_on_pipeline_finished", is_skipped=False)
 
 
 def _cleanup_on_success(context):

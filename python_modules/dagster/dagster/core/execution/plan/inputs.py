@@ -7,6 +7,7 @@ from dagster.core.definitions import InputDefinition, NodeHandle, PipelineDefini
 from dagster.core.definitions.events import AssetLineageInfo
 from dagster.core.errors import (
     DagsterExecutionLoadInputError,
+    DagsterInvariantViolationError,
     DagsterTypeLoadingError,
     user_code_error_boundary,
 )
@@ -165,7 +166,7 @@ class FromRootInputManager(
         )
 
     def compute_version(self, step_versions, pipeline_def, resolved_run_config) -> Optional[str]:
-        from ..resolve_versions import resolve_config_version
+        from ..resolve_versions import resolve_config_version, check_valid_version
 
         solid = pipeline_def.get_solid(self.solid_handle)
         root_manager_key = solid.input_def_named(self.input_name).root_manager_key
@@ -179,6 +180,15 @@ class FromRootInputManager(
             )
         else:
             root_manager_def_version = root_manager_def.version
+
+        if root_manager_def_version is None:
+            raise DagsterInvariantViolationError(
+                f"While using memoization, version for root input manager '{root_manager_key}' was "
+                "None. Please either provide a versioning strategy for your job, or provide a "
+                "version using the root_input_manager decorator."
+            )
+
+        check_valid_version(root_manager_def_version)
 
         solid_config = resolved_run_config.solids.get(solid.name)
         input_config = solid_config.inputs.get(self.input_name)

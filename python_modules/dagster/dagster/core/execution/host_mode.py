@@ -1,3 +1,4 @@
+import logging
 import sys
 from typing import List, Optional
 
@@ -29,7 +30,7 @@ from dagster.utils.error import serializable_error_info_from_exc_info
 from .api import ExecuteRunWithPlanIterable, pipeline_execution_iterator
 from .context.logger import InitLoggerContext
 from .context.system import PlanData, PlanOrchestrationContext
-from .context_creation_pipeline import PlanOrchestrationContextManager, get_logging_tags
+from .context_creation_pipeline import PlanOrchestrationContextManager, get_logging_metadata
 
 
 def _get_host_mode_executor(recon_pipeline, run_config, executor_defs, instance):
@@ -102,8 +103,7 @@ def host_mode_execution_context_event_generator(
     loggers.append(instance.get_logger())
 
     log_manager = DagsterLogManager(
-        run_id=pipeline_run.run_id,
-        logging_tags=get_logging_tags(pipeline_run),
+        logging_metadata=get_logging_metadata(pipeline_run),
         loggers=loggers,
     )
 
@@ -144,10 +144,8 @@ def host_mode_execution_context_event_generator(
                 ),
                 error_info=error_info,
             )
-            log_manager.error(
-                event.message,
-                dagster_event=event,
-                pipeline_name=pipeline_run.pipeline_name,
+            log_manager.log_dagster_event(
+                level=logging.ERROR, msg=event.message, dagster_event=event
             )
             yield event
         else:

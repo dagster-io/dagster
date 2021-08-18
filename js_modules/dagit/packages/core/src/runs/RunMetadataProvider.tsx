@@ -244,8 +244,10 @@ interface IRunMetadataProviderProps {
   children: (metadata: IRunMetadataDict) => React.ReactElement<any>;
 }
 
-export const RunMetadataProvider: React.FC<IRunMetadataProviderProps> = (props) =>
-  props.children(extractMetadataFromLogs(props.logs));
+export const RunMetadataProvider: React.FC<IRunMetadataProviderProps> = ({logs, children}) => {
+  const metadata = React.useMemo(() => extractMetadataFromLogs(logs), [logs]);
+  return <>{children(metadata)}</>;
+};
 
 export const RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT = gql`
   fragment RunMetadataProviderMessageFragment on PipelineRunEvent {

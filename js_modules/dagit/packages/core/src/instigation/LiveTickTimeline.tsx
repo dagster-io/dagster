@@ -159,10 +159,10 @@ export const LiveTickTimeline: React.FC<{
         return;
       }
       const [item] = activeElements;
-      if (item._datasetIndex === undefined || item._index === undefined) {
+      if (item.datasetIndex === undefined || item.index === undefined) {
         return;
       }
-      const tick = ticks[item._index];
+      const tick = ticks[item.index];
       onSelectTick(tick);
     },
 

@@ -35,6 +35,7 @@ from .dependency import (
 from .graph import GraphDefinition
 from .hook import HookDefinition
 from .mode import ModeDefinition
+from .op import OpDefinition
 from .preset import PresetDefinition
 from .solid import NodeDefinition
 from .utils import validate_tags
@@ -178,6 +179,8 @@ class PipelineDefinition:
                 config_mapping=None,
                 description=None,
             )
+
+        self._is_using_graph_job_op_apis = _is_using_graph_job_op_apis(self._graph_def.solids)
 
         # tags and description can exist on graph as well, but since
         # same graph may be in multiple pipelines/jobs, keep separate layer
@@ -585,7 +588,7 @@ class PipelineDefinition:
         in_proc_mode = ModeDefinition(
             name="in_process",
             executor_defs=[execute_in_process_executor],
-            resource_defs=_swap_default_io_man(base_mode.resource_defs),
+            resource_defs=_swap_default_io_man(base_mode.resource_defs, self),
             logger_defs=base_mode.loggers,
             _config_mapping=base_mode.config_mapping,
             _partitioned_config=base_mode.partitioned_config,
@@ -1063,6 +1066,7 @@ def _create_run_config_schema(
             logger_defs=mode_definition.loggers,
             ignored_solids=ignored_solids,
             required_resources=required_resources,
+            is_using_graph_job_op_apis=pipeline_def._is_using_graph_job_op_apis,  # pylint: disable=protected-access
         )
     )
 
@@ -1087,7 +1091,7 @@ def _create_run_config_schema(
     )
 
 
-def _swap_default_io_man(resources: Dict[str, ResourceDefinition]):
+def _swap_default_io_man(resources: Dict[str, ResourceDefinition], job: PipelineDefinition):
     """
     Used to create the user facing experience of the default io_manager
     switching to in-memory when using execute_in_process.
@@ -1097,11 +1101,22 @@ def _swap_default_io_man(resources: Dict[str, ResourceDefinition]):
 
     if (
         # pylint: disable=comparison-with-callable
-        resources.get("io_manager")
-        == default_job_io_manager
+        resources.get("io_manager") == default_job_io_manager
+        and job.version_strategy is None
     ):
         updated_resources = dict(resources)
         updated_resources["io_manager"] = mem_io_manager
         return updated_resources
 
     return resources
+
+
+def _is_using_graph_job_op_apis(node_list: List[Node]):
+    """Recursively determine if any node definitions were constructed using the `op` decorator."""
+    for node in node_list:
+        if isinstance(node.definition, OpDefinition):
+            return True
+        elif isinstance(node.definition, GraphDefinition):
+            if _is_using_graph_job_op_apis(node.definition.solids):
+                return True
+    return False

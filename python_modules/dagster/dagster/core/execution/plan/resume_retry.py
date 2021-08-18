@@ -7,7 +7,7 @@ from dagster.core.events import DagsterEventType
 from dagster.core.execution.plan.handle import StepHandle, UnresolvedStepHandle
 from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.execution.plan.step import ResolvedFromDynamicStepHandle
-from dagster.core.host_representation import ExternalExecutionPlan, ExternalPipeline
+from dagster.core.host_representation import ExternalExecutionPlan
 from dagster.core.instance import DagsterInstance
 
 
@@ -29,11 +29,10 @@ def _in_tracking_dict(handle, tracking):
         return handle.to_key() in tracking
 
 
-def get_retry_steps_from_execution_plan(
-    instance, external_pipeline, parent_run_id
+def get_retry_steps_from_parent_run(
+    instance, parent_run_id
 ) -> Tuple[List[str], Optional[KnownExecutionState]]:
     check.inst_param(instance, "instance", DagsterInstance)
-    check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
     check.str_param(parent_run_id, "parent_run_id")
 
     parent_run = instance.get_run_by_id(parent_run_id)
@@ -42,13 +41,16 @@ def get_retry_steps_from_execution_plan(
     execution_plan_snapshot = instance.get_execution_plan_snapshot(
         parent_run.execution_plan_snapshot_id
     )
+
     if not execution_plan_snapshot:
         raise DagsterExecutionPlanSnapshotNotFoundError(
             f"Could not load execution plan snapshot for run {parent_run_id}"
         )
 
+    historical_pipeline = instance.get_historical_pipeline(parent_run.pipeline_snapshot_id)
+
     execution_plan = ExternalExecutionPlan(
-        execution_plan_snapshot=execution_plan_snapshot, represented_pipeline=external_pipeline
+        execution_plan_snapshot=execution_plan_snapshot, represented_pipeline=historical_pipeline
     )
 
     # keep track of steps with dicts that point:

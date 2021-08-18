@@ -1,6 +1,9 @@
+import warnings
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
 
 from dagster import check
+from dagster.core.definitions.events import AssetKey
+from dagster.core.definitions.solid import SolidDefinition
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.utils import build_resources_for_manager
 
@@ -8,7 +11,7 @@ if TYPE_CHECKING:
     from dagster.core.execution.context.system import StepExecutionContext
     from dagster.core.definitions.resource import Resources
     from dagster.core.types.dagster_type import DagsterType
-    from dagster.core.definitions import SolidDefinition, PipelineDefinition, ModeDefinition
+    from dagster.core.definitions import PipelineDefinition, ModeDefinition
     from dagster.core.log_manager import DagsterLogManager
     from dagster.core.system_config.objects import ResolvedRunConfig
     from dagster.core.execution.plan.plan import ExecutionPlan
@@ -159,6 +162,16 @@ class OutputContext:
         return self._resources
 
     @property
+    def asset_key(self) -> Optional[AssetKey]:
+        matching_output_defs = [
+            output_def
+            for output_def in cast(SolidDefinition, self._solid_def).output_defs
+            if output_def.name == self.name
+        ]
+        check.invariant(len(matching_output_defs) == 1)
+        return matching_output_defs[0].get_asset_key(self)
+
+    @property
     def step_context(self) -> Optional["StepExecutionContext"]:
         return self._step_context
 
@@ -178,6 +191,11 @@ class OutputContext:
         Returns:
             List[str, ...]: A list of identifiers, i.e. run id, step key, and output name
         """
+
+        warnings.warn(
+            "`OutputContext.get_run_scoped_output_identifier` is deprecated. Use "
+            "`OutputContext.get_output_identifier` instead."
+        )
         # if run_id is None and this is a re-execution, it means we failed to find its source run id
         check.invariant(
             self.run_id is not None,
@@ -199,6 +217,62 @@ class OutputContext:
             return [run_id, step_key, name, self.mapping_key]
 
         return [run_id, step_key, name]
+
+    def get_output_identifier(self) -> List[str]:
+        """Utility method to get a collection of identifiers that as a whole represent a unique
+        step output.
+
+        If not using memoization, the unique identifier collection consists of
+
+        - ``run_id``: the id of the run which generates the output.
+            Note: This method also handles the re-execution memoization logic. If the step that
+            generates the output is skipped in the re-execution, the ``run_id`` will be the id
+            of its parent run.
+        - ``step_key``: the key for a compute step.
+        - ``name``: the name of the output. (default: 'result').
+
+        If using memoization, the ``version`` corresponding to the step output is used in place of
+        the ``run_id``.
+
+        Returns:
+            List[str, ...]: A list of identifiers, i.e. (run_id or version), step_key, and output_name
+        """
+        run_id = self.run_id
+        version = self.version
+        step_key = self.step_key
+        name = self.name
+        if run_id is None and version is None:
+            check.failed(
+                "Unable to find the output identifier: run_id is None on OutputContext, and no "
+                "version was provided."
+            )
+        if step_key is None:
+            check.failed(
+                "Unable to find the output identifier: step_key is None on " "OutputContext."
+            )
+        if name is None:
+            check.failed("Unable to find the output identifier: name is None on OutputContext.")
+
+        if version is not None:
+            check.invariant(
+                self.mapping_key is None,
+                f"Mapping key and version both provided for output '{name}' of step '{step_key}'. "
+                "Dynamic mapping is not supported when using versioning.",
+            )
+            identifier = ["versioned_outputs", version, step_key, name]
+        else:
+            # if run_id is None and this is a re-execution, it means we failed to find its source run id
+            if run_id is None:
+                check.failed(
+                    check.failed(
+                        "Unable to find the output identifier: run_id is None on OutputContext."
+                    )
+                )
+            identifier = [run_id, step_key, name]
+            if self.mapping_key:
+                identifier.append(self.mapping_key)
+
+        return identifier
 
 
 def get_output_context(
@@ -290,6 +364,7 @@ def build_output_context(
     version: Optional[str] = None,
     resource_config: Optional[Dict[str, Any]] = None,
     resources: Optional[Dict[str, Any]] = None,
+    solid_def: Optional[SolidDefinition] = None,
 ) -> "OutputContext":
     """Builds output context from provided parameters.
 
@@ -312,6 +387,7 @@ def build_output_context(
         resources (Optional[Resources]): The resources to make available from the context.
             For a given key, you can provide either an actual instance of an object, or a resource
             definition.
+        solid_def (Optional[SolidDefinition]): The definition of the solid that produced the output.
 
     Examples:
 
@@ -335,6 +411,7 @@ def build_output_context(
     version = check.opt_str_param(version, "version")
     resource_config = check.opt_dict_param(resource_config, "resource_config", key_type=str)
     resources = check.opt_dict_param(resources, "resources", key_type=str)
+    solid_def = check.opt_inst_param(solid_def, "solid_def", SolidDefinition)
 
     return OutputContext(
         step_key=step_key,
@@ -344,7 +421,7 @@ def build_output_context(
         metadata=metadata,
         mapping_key=mapping_key,
         config=config,
-        solid_def=None,
+        solid_def=solid_def,
         dagster_type=dagster_type,
         log_manager=initialize_console_manager(None),
         version=version,

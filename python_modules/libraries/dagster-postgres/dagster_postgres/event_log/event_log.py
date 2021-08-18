@@ -1,3 +1,4 @@
+import logging
 import threading
 from collections import defaultdict
 from typing import Callable, List, MutableMapping, Optional
@@ -234,10 +235,6 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def end_watch(self, run_id, handler):
         self._event_watcher.unwatch_run(run_id, handler)
 
-    @property
-    def event_watcher(self):
-        return self._event_watcher
-
     def __del__(self):
         # Keep the inherent limitations of __del__ in Python in mind!
         self.dispose()
@@ -295,10 +292,14 @@ def watcher_thread(
             finally:
                 engine.dispose()
 
-            with dict_lock:
-                for callback_with_cursor in handlers:
-                    if callback_with_cursor.start_cursor < index:
+            for callback_with_cursor in handlers:
+                if callback_with_cursor.start_cursor < index:
+                    try:
                         callback_with_cursor.callback(dagster_event)
+                    except Exception:  # pylint: disable=broad-except
+                        logging.exception(
+                            "Exception in callback for event watch on run %s.", run_id
+                        )
 
 
 class PostgresEventWatcher:

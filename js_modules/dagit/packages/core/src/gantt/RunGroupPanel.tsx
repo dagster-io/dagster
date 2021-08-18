@@ -19,7 +19,7 @@ function subsetTitleForRun(run: {tags: {key: string; value: string}[]}) {
   return stepsTag ? stepsTag.value : '*';
 }
 
-export const RunGroupPanel: React.FunctionComponent<{runId: string}> = ({runId}) => {
+export const RunGroupPanel: React.FC<{runId: string}> = ({runId}) => {
   const queryResult = useQuery<RunGroupPanelQuery>(RUN_GROUP_PANEL_QUERY, {
     variables: {runId},
     fetchPolicy: 'cache-and-network',

@@ -1,7 +1,6 @@
 from dagster import check
-from dagster.core.execution.plan.resume_retry import get_retry_steps_from_execution_plan
+from dagster.core.execution.plan.resume_retry import get_retry_steps_from_parent_run
 from dagster.core.execution.plan.state import KnownExecutionState
-from dagster.core.host_representation import ExternalPipeline
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.core.utils import make_new_run_id
@@ -12,17 +11,16 @@ from ..external import ensure_valid_config, get_external_execution_plan_or_raise
 from ..utils import ExecutionParams
 
 
-def compute_step_keys_to_execute(graphene_info, external_pipeline, execution_params):
+def compute_step_keys_to_execute(graphene_info, execution_params):
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
-    check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
     check.inst_param(execution_params, "execution_params", ExecutionParams)
 
     instance = graphene_info.context.instance
 
     if not execution_params.step_keys and is_resume_retry(execution_params):
         # Get step keys from parent_run_id if it's a resume/retry
-        return get_retry_steps_from_execution_plan(
-            instance, external_pipeline, execution_params.execution_metadata.parent_run_id
+        return get_retry_steps_from_parent_run(
+            instance, execution_params.execution_metadata.parent_run_id
         )
     else:
         known_state = None
@@ -44,7 +42,7 @@ def create_valid_pipeline_run(graphene_info, external_pipeline, execution_params
     ensure_valid_config(external_pipeline, execution_params.mode, execution_params.run_config)
 
     step_keys_to_execute, known_state = compute_step_keys_to_execute(
-        graphene_info, external_pipeline, execution_params
+        graphene_info, execution_params
     )
 
     external_execution_plan = get_external_execution_plan_or_raise(

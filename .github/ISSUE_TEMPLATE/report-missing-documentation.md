@@ -23,21 +23,16 @@ Among the following items, pick a doc type that the content would most likely be
 - API Reference: e.g. docstring
 --> 
 
-## (Optional) Anything in particular you want the docs to cover
+## Anything else?
 <!-- Do you have exactly anything in mind you are looking for
 Examples:
 - Show how to test a partition set
 - Include a diagram to explain the relations between inputs and outputs
 -->
 
+---
 
-## (Optional) Target Date
-<!-- When do you want to have this by -->
-
-## Writer's Guide
-- [Docs README](https://github.com/dagster-io/dagster/tree/master/docs)
-- Templates to follow: <fill by the docs team>
-- Examples for reference: <fill by the docs team>
+Writer's Guide: [Docs README](https://github.com/dagster-io/dagster/tree/master/docs)
 
 ---
 #### Message from the maintainers:

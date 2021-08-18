@@ -1,6 +1,12 @@
+from dagster import graph
 from dagster.core.test_utils import environ
 from dagster_k8s import DagsterK8sJobConfig, construct_dagster_k8s_job
-from dagster_k8s.job import DAGSTER_PG_PASSWORD_ENV_VAR, UserDefinedDagsterK8sConfig
+from dagster_k8s.job import (
+    DAGSTER_PG_PASSWORD_ENV_VAR,
+    USER_DEFINED_K8S_CONFIG_KEY,
+    UserDefinedDagsterK8sConfig,
+    get_user_defined_k8s_config,
+)
 
 
 def test_job_serialization():
@@ -145,3 +151,42 @@ def test_construct_dagster_k8s_job_with_env():
         assert len(env_mapping) == 3
         assert env_mapping["ENV_VAR_1"]["value"] == "one"
         assert env_mapping["ENV_VAR_2"]["value"] == "two"
+
+
+def test_construct_dagster_k8s_job_with_user_defined_env():
+    @graph
+    def user_defined_k8s_env_tags_graph():
+        pass
+
+    user_defined_k8s_config = get_user_defined_k8s_config(
+        user_defined_k8s_env_tags_graph.to_job(
+            tags={
+                USER_DEFINED_K8S_CONFIG_KEY: {
+                    "container_config": {
+                        "env": [
+                            {"name": "ENV_VAR_1", "value": "one"},
+                            {"name": "ENV_VAR_2", "value": "two"},
+                        ]
+                    }
+                }
+            }
+        ).tags
+    )
+
+    cfg = DagsterK8sJobConfig(
+        job_image="test/foo:latest",
+        dagster_home="/opt/dagster/dagster_home",
+        instance_config_map="some-instance-configmap",
+    )
+
+    job = construct_dagster_k8s_job(
+        cfg, ["foo", "bar"], "job", user_defined_k8s_config=user_defined_k8s_config
+    ).to_dict()
+
+    env = job["spec"]["template"]["spec"]["containers"][0]["env"]
+    env_mapping = {env_var["name"]: env_var for env_var in env}
+
+    # Has DAGSTER_HOME and two additional env vars
+    assert len(env_mapping) == 3
+    assert env_mapping["ENV_VAR_1"]["value"] == "one"
+    assert env_mapping["ENV_VAR_2"]["value"] == "two"

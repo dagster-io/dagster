@@ -14,6 +14,10 @@ def retrieve_pod_logs(pod_name, namespace):
     return DagsterKubernetesClient.production_client().retrieve_pod_logs(pod_name, namespace)
 
 
+def get_pods_in_job(job_name, namespace):
+    return DagsterKubernetesClient.production_client().get_pods_in_job(job_name, namespace)
+
+
 def get_pod_names_in_job(job_name, namespace):
     return DagsterKubernetesClient.production_client().get_pod_names_in_job(job_name, namespace)
 

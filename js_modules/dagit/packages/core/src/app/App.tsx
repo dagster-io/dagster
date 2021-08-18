@@ -1,28 +1,12 @@
 import * as React from 'react';
-import {Route, Switch} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {LeftNav} from '../nav/LeftNav';
 
-import {FallthroughRoot} from './FallthroughRoot';
+import {ContentRoot} from './ContentRoot';
 import {LayoutContext} from './LayoutProvider';
 
-const InstanceRoot = React.lazy(() => import('../instance/InstanceRoot'));
-const SettingsRoot = React.lazy(() => import('../app/SettingsRoot'));
-const WorkspaceRoot = React.lazy(() => import('../workspace/WorkspaceRoot'));
-
-const ContentRoot = React.memo(() => (
-  <React.Suspense fallback={<div />}>
-    <Switch>
-      <Route path="/instance" component={InstanceRoot} />
-      <Route path="/workspace" component={WorkspaceRoot} />
-      <Route path="/settings" component={SettingsRoot} />
-      <Route path="*" component={FallthroughRoot} />
-    </Switch>
-  </React.Suspense>
-));
-
-export const App = () => {
+export const App: React.FC = (props) => {
   const {nav} = React.useContext(LayoutContext);
 
   const onClickMain = React.useCallback(() => {
@@ -33,7 +17,8 @@ export const App = () => {
     <Container>
       <LeftNav />
       <Main $navOpen={nav.isOpen} onClick={onClickMain}>
-        <ContentRoot />
+        {/* todo dish: Remove `ContentRoot`. */}
+        {props.children || <ContentRoot />}
       </Main>
     </Container>
   );

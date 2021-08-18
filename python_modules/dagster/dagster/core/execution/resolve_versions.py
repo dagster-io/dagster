@@ -1,9 +1,23 @@
+import re
+
 from dagster import check
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.step import is_executable_step
 
 from .plan.inputs import join_and_hash
+
+VALID_VERSION_REGEX_STR = r"^[A-Za-z0-9_]+$"
+VALID_VERSION_REGEX = re.compile(VALID_VERSION_REGEX_STR)
+
+
+def check_valid_version(version: str) -> None:
+    is_valid = bool(VALID_VERSION_REGEX.match(version))
+    if not is_valid:
+        raise DagsterInvariantViolationError(
+            f"'{version}' is not a valid version string. Version must be in regex "
+            f"{VALID_VERSION_REGEX_STR}."
+        )
 
 
 def resolve_config_version(config_value):
@@ -95,11 +109,17 @@ def resolve_step_versions(pipeline_def, execution_plan, resolved_run_config):
                 "solid decorator."
             )
 
+        check_valid_version(solid_def_version)
+
         solid_config_version = resolve_config_version(resolved_run_config.solids[solid_name].config)
 
         resource_versions_for_solid = []
         for resource_key in solid_def.required_resource_keys:
             if resource_key not in resource_versions:
+
+                resource_config = resolved_run_config.resources[resource_key].config
+                resource_config_version = resolve_config_version(resource_config)
+
                 resource_def = resource_defs[resource_key]
                 resource_def_version = None
                 if resource_def.version is not None:
@@ -108,18 +128,19 @@ def resolve_step_versions(pipeline_def, execution_plan, resolved_run_config):
                     resource_def_version = pipeline_def.version_strategy.get_resource_version(
                         resource_def
                     )
-                if resource_def_version is None:
-                    raise DagsterInvariantViolationError(
-                        f"While using memoization, version for resource '{resource_key}' was None. Please "
-                        "either provide a versioning strategy for your job, or provide a version using the "
-                        "resource decorator."
+
+                if resource_def_version is not None:
+
+                    check_valid_version(resource_def_version)
+                    resource_versions[resource_key] = join_and_hash(
+                        resource_config_version, resource_def_version
                     )
-                resource_config = resolved_run_config.resources[resource_key].config
-                resource_config_version = resolve_config_version(resource_config)
-                resource_versions[resource_key] = join_and_hash(
-                    resource_config_version, resource_def_version
-                )
-            resource_versions_for_solid.append(resource_versions[resource_key])
+                else:
+
+                    resource_versions[resource_key] = join_and_hash(resource_config)
+
+            if resource_versions[resource_key] is not None:
+                resource_versions_for_solid.append(resource_versions[resource_key])
         solid_resources_version = join_and_hash(*resource_versions_for_solid)
         solid_version = join_and_hash(
             solid_def_version, solid_config_version, solid_resources_version

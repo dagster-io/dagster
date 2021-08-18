@@ -2,11 +2,48 @@ import random
 import string
 import uuid
 import warnings
+from collections import OrderedDict
 
 import toposort as toposort_
+from dagster import check
+from dagster.utils import frozendict
 from dagster.version import __version__
 
 BACKFILL_TAG_LENGTH = 8
+
+PYTHON_LOGGING_LEVELS_MAPPING = frozendict(
+    OrderedDict({"CRITICAL": 50, "ERROR": 40, "WARNING": 30, "INFO": 20, "DEBUG": 10})
+)
+
+PYTHON_LOGGING_LEVELS_ALIASES = frozendict(OrderedDict({"FATAL": "CRITICAL", "WARN": "WARNING"}))
+
+PYTHON_LOGGING_LEVELS_NAMES = frozenset(
+    [
+        level_name.lower()
+        for level_name in sorted(
+            list(PYTHON_LOGGING_LEVELS_MAPPING.keys()) + list(PYTHON_LOGGING_LEVELS_ALIASES.keys())
+        )
+    ]
+)
+
+
+def coerce_valid_log_level(log_level):
+
+    """Convert a log level into an integer for consumption by the low-level Python logging API."""
+    if isinstance(log_level, int):
+        return log_level
+    check.str_param(log_level, "log_level")
+    check.invariant(
+        log_level.lower() in PYTHON_LOGGING_LEVELS_NAMES,
+        "Bad value for log level {level}: permissible values are {levels}.".format(
+            level=log_level,
+            levels=", ".join(
+                ["'{}'".format(level_name.upper()) for level_name in PYTHON_LOGGING_LEVELS_NAMES]
+            ),
+        ),
+    )
+    log_level = PYTHON_LOGGING_LEVELS_ALIASES.get(log_level.upper(), log_level.upper())
+    return PYTHON_LOGGING_LEVELS_MAPPING[log_level]
 
 
 def toposort(data):

@@ -53,7 +53,7 @@ def test_yes_output_notebook_no_file_manager():
 
 @pytest.mark.notebook_test
 def test_no_output_notebook_yes_file_manager():
-    # when output_notebook is not set and file_manager is not provided:
+    # when output_notebook is not set and file_manager is provided:
     # * persist output notebook (but no solid output)
     # * yield AssetMaterialization
     with exec_for_test("hello_world_no_output_notebook_pipeline") as result:

@@ -1,6 +1,10 @@
 import tempfile
 
+import pytest
 from dagster import (
+    DagsterInvariantViolationError,
+    DynamicOut,
+    DynamicOutput,
     In,
     execute_pipeline,
     graph,
@@ -217,3 +221,43 @@ def test_version_strategy_root_input_manager():
             assert result.success
             post_memoization_plan = create_execution_plan(my_job, instance=instance)
             assert len(post_memoization_plan.step_keys_to_execute) == 0
+
+
+def test_dynamic_memoization_error():
+    class MyVersionStrategy(VersionStrategy):
+        def get_solid_version(self, _):
+            return "foo"
+
+        def get_resource_version(self, _):
+            return "foo"
+
+    @op(out=DynamicOut())
+    def emit():
+        yield DynamicOutput(1, mapping_key="one")
+        yield DynamicOutput(2, mapping_key="two")
+
+    @op
+    def return_input(x):
+        return x
+
+    @graph
+    def dynamic_graph():
+        x = emit().map(return_input)  # pylint: disable=no-member
+        return_input(x.collect())
+
+    @graph
+    def just_mapping_graph():
+        emit().map(return_input)  # pylint: disable=no-member
+
+    with instance_for_test() as instance:
+        for cur_graph in [dynamic_graph, just_mapping_graph]:
+            with pytest.raises(
+                DagsterInvariantViolationError,
+                match="Attempted to use memoization with dynamic orchestration, which is not yet supported.",
+            ):
+                my_job = cur_graph.to_job(
+                    version_strategy=MyVersionStrategy(),
+                    resource_defs={"io_manager": versioned_filesystem_io_manager},
+                )
+
+                my_job.execute_in_process(instance=instance)

@@ -6,6 +6,7 @@ from dagster import (
     DagsterInvariantViolationError,
     Float,
     IOManagerDefinition,
+    In,
     Int,
     ModeDefinition,
     Output,
@@ -13,7 +14,10 @@ from dagster import (
     String,
     composite_solid,
     dagster_type_loader,
+    execute_pipeline,
+    graph,
     io_manager,
+    op,
     pipeline,
     resource,
     root_input_manager,
@@ -21,6 +25,7 @@ from dagster import (
     usable_as_dagster_type,
 )
 from dagster.core.definitions import InputDefinition
+from dagster.core.definitions.version_strategy import VersionStrategy
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.resolve_versions import join_and_hash, resolve_config_version
@@ -716,3 +721,160 @@ def test_memoized_plan_root_input_manager_resource_config():
 
         # Ensure that after changing resource config, the version changes.
         assert not new_output_version == output_version
+
+
+bad_str = "'well this doesn't work !'"
+
+
+class BadSolidStrategy(VersionStrategy):
+    def get_solid_version(self, solid_def):
+        return bad_str
+
+    def get_resource_version(self, resource_def):
+        return "foo"
+
+
+class BadResourceStrategy(VersionStrategy):
+    def get_solid_version(self, solid_def):
+        return "foo"
+
+    def get_resource_version(self, resource_def):
+        return bad_str
+
+
+def get_basic_graph():
+    @op
+    def my_op():
+        pass
+
+    @graph
+    def my_graph():
+        my_op()
+
+    return my_graph
+
+
+def get_graph_reqs_resource():
+    @op(required_resource_keys={"foo"})
+    def my_op():
+        pass
+
+    @graph
+    def my_graph():
+        my_op()
+
+    return my_graph
+
+
+def get_graph_reqs_root_input_manager():
+    @op(ins={"x": In(root_manager_key="my_key")})
+    def my_op(x):
+        return x
+
+    @graph
+    def my_graph():
+        my_op()
+
+    return my_graph
+
+
+@pytest.mark.parametrize(
+    "graph_for_test,strategy",
+    [
+        (get_basic_graph(), BadSolidStrategy()),
+        (get_graph_reqs_resource(), BadResourceStrategy()),
+        (get_graph_reqs_root_input_manager(), BadResourceStrategy()),
+    ],
+)
+def test_bad_version_str(graph_for_test, strategy):
+    @resource
+    def my_resource():
+        pass
+
+    @root_input_manager
+    def my_manager():
+        pass
+
+    with instance_for_test() as instance:
+        my_job = graph_for_test.to_job(
+            version_strategy=strategy,
+            resource_defs={
+                "io_manager": IOManagerDefinition.hardcoded_io_manager(
+                    VersionedInMemoryIOManager()
+                ),
+                "my_key": my_manager,
+                "foo": my_resource,
+            },
+        )
+
+        with pytest.raises(
+            DagsterInvariantViolationError, match=f"'{bad_str}' is not a valid version string."
+        ):
+            create_execution_plan(my_job, instance=instance)
+
+
+def test_version_strategy_on_pipeline():
+    @solid
+    def my_solid():
+        return 5
+
+    class MyVersionStrategy(VersionStrategy):
+        def get_solid_version(self, _):
+            return "foo"
+
+    @pipeline(
+        version_strategy=MyVersionStrategy(),
+        mode_defs=[
+            ModeDefinition(
+                resource_defs={
+                    "io_manager": IOManagerDefinition.hardcoded_io_manager(
+                        VersionedInMemoryIOManager()
+                    )
+                }
+            )
+        ],
+    )
+    def ten_pipeline():
+        my_solid()
+
+    with instance_for_test() as instance:
+        execute_pipeline(ten_pipeline, instance=instance)
+
+        memoized_plan = create_execution_plan(ten_pipeline, instance=instance)
+        assert len(memoized_plan.step_keys_to_execute) == 0
+
+
+def test_version_strategy_no_resource_version():
+    @solid(required_resource_keys={"foo"})
+    def my_solid(context):
+        return context.resources.foo
+
+    @resource
+    def foo_resource():
+        return "bar"
+
+    class MyVersionStrategy(VersionStrategy):
+        def get_solid_version(self, _):
+            return "foo"
+
+    @pipeline(
+        version_strategy=MyVersionStrategy(),
+        mode_defs=[
+            ModeDefinition(
+                resource_defs={
+                    "io_manager": IOManagerDefinition.hardcoded_io_manager(
+                        VersionedInMemoryIOManager()
+                    ),
+                    "foo": foo_resource,
+                }
+            )
+        ],
+    )
+    def my_pipeline():
+        my_solid()
+
+    with instance_for_test() as instance:
+        execute_pipeline(my_pipeline, instance=instance)
+
+        memoized_plan = create_execution_plan(my_pipeline, instance=instance)
+        assert len(memoized_plan.step_keys_to_execute) == 0

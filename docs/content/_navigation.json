@@ -353,8 +353,8 @@
             "path": "/integrations/great-expectations"
           },
           {
-            "title": "Dagster with PySpark",
-            "path": "/integrations/pyspark"
+            "title": "Dagster with Spark",
+            "path": "/integrations/spark"
           },
           {
             "title": "Dagster with Pandas",
@@ -483,6 +483,10 @@
           {
             "title": "Experimental Core APIs",
             "path": "/_apidocs/experimental"
+          },
+          {
+            "title": "Versioning & Memoization",
+            "path": "/_apidocs/memoization"
           },
           {
             "title": "Utilities",

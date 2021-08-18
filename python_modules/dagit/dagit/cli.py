@@ -126,7 +126,9 @@ def _get_instance():
         with DagsterInstance.get() as instance:
             yield instance
     else:
-        with tempfile.TemporaryDirectory() as tempdir:
+        # make the temp dir in the cwd since default temp dir roots
+        # have issues with FS notif based event log watching
+        with tempfile.TemporaryDirectory(dir=os.getcwd()) as tempdir:
             click.echo(
                 f"Using temporary directory {tempdir} for storage. This will be removed when dagit exits.\n"
                 "To persist information across sessions, set the environment variable DAGSTER_HOME to a directory to use.\n"

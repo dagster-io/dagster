@@ -19,7 +19,7 @@ from dagster.core.execution.resources_init import (
     single_resource_event_generator,
 )
 from dagster.core.execution.retries import RetryMode
-from dagster.core.log_manager import DagsterLogManager
+from dagster.core.log_manager import DagsterLogManager, DagsterLoggingMetadata
 from dagster.core.system_config.objects import ResolvedRunConfig
 
 
@@ -83,7 +83,9 @@ def test_clean_event_generator_exit():
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline_def, execution_plan=execution_plan
     )
-    log_manager = DagsterLogManager(run_id=pipeline_run.run_id, logging_tags={}, loggers=[])
+    log_manager = DagsterLogManager(
+        logging_metadata=DagsterLoggingMetadata(run_id=pipeline_run.run_id), loggers=[]
+    )
     resolved_run_config = ResolvedRunConfig.build(pipeline_def)
     execution_plan = create_execution_plan(pipeline_def)
 

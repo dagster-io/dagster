@@ -14,14 +14,8 @@ from dagster_pyspark import pyspark_resource
 from hacker_news.resources.hn_resource import hn_api_subsample_client, hn_snapshot_client
 from hacker_news.resources.parquet_io_manager import partitioned_parquet_io_manager
 from hacker_news.resources.snowflake_io_manager import time_partitioned_snowflake_io_manager
-from hacker_news.solids.download_items import (
-    HN_ACTION_SCHEMA,
-    download_items,
-    dynamic_download_items,
-    join_items,
-    split_types,
-)
-from hacker_news.solids.id_range_for_time import dynamic_id_ranges_for_time, id_range_for_time
+from hacker_news.solids.download_items import HN_ACTION_SCHEMA, download_items, split_types
+from hacker_news.solids.id_range_for_time import id_range_for_time
 from hacker_news.solids.upload_to_database import make_upload_to_database_solid
 
 # the configuration we'll need to make our Snowflake-based IOManager work
@@ -122,29 +116,6 @@ MODE_PROD = ModeDefinition(
     },
 )
 
-download_pipeline_properties = {
-    "description": "#### Owners:\n"
-    "schrockn@elementl.com, cat@elementl.com\n "
-    "#### About\n"
-    "This pipeline downloads all items from the HN API for a given day, "
-    "splits the items into stories and comment types using Spark, and uploads filtered items to "
-    "the corresponding stories or comments Snowflake table",
-    "mode_defs": [
-        MODE_TEST,
-        MODE_LOCAL,
-        MODE_STAGING,
-        MODE_PROD,
-    ],
-    "tags": {
-        "dagster-k8s/config": {
-            "container_config": {
-                "resources": {
-                    "requests": {"cpu": "500m", "memory": "2Gi"},
-                }
-            },
-        }
-    },
-}
 
 DEFAULT_PARTITION_RESOURCE_CONFIG = {
     "partition_start": {"config": "2020-12-30 00:00:00"},
@@ -154,24 +125,6 @@ DEFAULT_PARTITION_RESOURCE_CONFIG = {
 PRESET_TEST = PresetDefinition(
     name="test_local_data",
     run_config={
-        "resources": dict(
-            parquet_io_manager={"config": {"base_path": get_system_temp_directory()}},
-            **DEFAULT_PARTITION_RESOURCE_CONFIG,
-        ),
-    },
-    mode="test_local_data",
-)
-
-PRESET_TEST_DYNAMIC = PresetDefinition(
-    name="test_local_data",
-    run_config={
-        "solids": {
-            "dynamic_id_ranges_for_time": {
-                "config": {
-                    "batch_size": 100,
-                }
-            },
-        },
         "resources": dict(
             parquet_io_manager={"config": {"base_path": get_system_temp_directory()}},
             **DEFAULT_PARTITION_RESOURCE_CONFIG,
@@ -194,21 +147,31 @@ upload_stories = make_upload_to_database_solid(
 )
 
 
-@pipeline(**download_pipeline_properties, preset_defs=[PRESET_TEST])
+@pipeline(
+    description="#### Owners:\n"
+    "schrockn@elementl.com, cat@elementl.com\n "
+    "#### About\n"
+    "This pipeline downloads all items from the HN API for a given day, "
+    "splits the items into stories and comment types using Spark, and uploads filtered items to "
+    "the corresponding stories or comments Snowflake table",
+    mode_defs=[
+        MODE_TEST,
+        MODE_LOCAL,
+        MODE_STAGING,
+        MODE_PROD,
+    ],
+    tags={
+        "dagster-k8s/config": {
+            "container_config": {
+                "resources": {
+                    "requests": {"cpu": "500m", "memory": "2Gi"},
+                }
+            },
+        }
+    },
+    preset_defs=[PRESET_TEST],
+)
 def download_pipeline():
     comments, stories = split_types(download_items(id_range_for_time()))
-    upload_comments(comments)
-    upload_stories(stories)
-
-
-# This pipeline does the same thing as the the regular download_pipeline, but with the map / collect
-# pattern. This allows the download operation to be parallelized.
-@pipeline(**download_pipeline_properties, preset_defs=[PRESET_TEST_DYNAMIC])
-def dynamic_download_pipeline():
-    ranges = dynamic_id_ranges_for_time()
-    items = ranges.map(dynamic_download_items)  # pylint: disable=no-member
-    raw_df = join_items(items.collect())
-    comments, stories = split_types(raw_df)
-
     upload_comments(comments)
     upload_stories(stories)

@@ -3,6 +3,7 @@ import {render, screen, waitFor} from '@testing-library/react';
 import * as React from 'react';
 
 import {TestProvider} from '../testing/TestProvider';
+import {LocationStateChangeEventType} from '../types/globalTypes';
 
 import {LAST_REPO_KEY, LeftNavRepositorySection, REPO_KEYS} from './LeftNavRepositorySection';
 
@@ -17,6 +18,9 @@ describe('Repository options', () => {
     }),
     Sensors: () => ({
       results: () => new MockList(0),
+    }),
+    LocationStateChangeEvent: () => ({
+      eventType: () => LocationStateChangeEventType.LOCATION_UPDATED,
     }),
   };
 

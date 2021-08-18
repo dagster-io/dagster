@@ -1,9 +1,7 @@
-import {gql, useApolloClient} from '@apollo/client';
+import {gql, useApolloClient, useSubscription} from '@apollo/client';
 import {Icon, Colors} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {DirectGraphQLSubscription} from '../app/DirectGraphQLSubscription';
-import {WebSocketContext} from '../app/WebSocketProvider';
 import {LocationStateChangeEventType} from '../types/globalTypes';
 import {ButtonLink} from '../ui/ButtonLink';
 import {Group} from '../ui/Group';
@@ -30,16 +28,16 @@ export const RepositoryLocationStateObserver = () => {
   const {locationEntries, refetch} = React.useContext(WorkspaceContext);
   const [updatedLocations, setUpdatedLocations] = React.useState<string[]>([]);
   const totalMessages = updatedLocations.length;
-  const {connectionParams, websocketURI} = React.useContext(WebSocketContext);
 
-  React.useEffect(() => {
-    const onHandleMessages = (
-      messages: LocationStateChangeSubscription[], //   isFirstResponse: boolean,
-    ) => {
-      const {
-        locationStateChangeEvents: {event},
-      } = messages[0];
-      const {locationName, eventType, serverId} = event;
+  useSubscription<LocationStateChangeSubscription>(LOCATION_STATE_CHANGE_SUBSCRIPTION, {
+    fetchPolicy: 'no-cache',
+    onSubscriptionData: ({subscriptionData}) => {
+      const changeEvents = subscriptionData.data?.locationStateChangeEvents;
+      if (!changeEvents) {
+        return;
+      }
+
+      const {locationName, eventType, serverId} = changeEvents.event;
 
       switch (eventType) {
         case LocationStateChangeEventType.LOCATION_ERROR:
@@ -57,21 +55,8 @@ export const RepositoryLocationStateObserver = () => {
           }
           return;
       }
-    };
-
-    const subscriptionToken = new DirectGraphQLSubscription<LocationStateChangeSubscription>(
-      websocketURI,
-      LOCATION_STATE_CHANGE_SUBSCRIPTION,
-      {},
-      onHandleMessages,
-      () => {}, // https://github.com/dagster-io/dagster/issues/2151
-      connectionParams,
-    );
-
-    return () => {
-      subscriptionToken.close();
-    };
-  }, [connectionParams, locationEntries, refetch, websocketURI]);
+    },
+  });
 
   if (!totalMessages) {
     return null;
