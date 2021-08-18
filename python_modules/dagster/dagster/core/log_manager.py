@@ -162,10 +162,9 @@ class DagsterLogManager(logging.Logger):
 
         super().__init__(name="dagster", level=logging.DEBUG)
 
-        check.opt_nullable_list_param(handlers, "handlers", of_type=logging.Handler)
-        if handlers:
-            for handler in handlers:
-                self.addHandler(handler)
+        handlers = check.opt_list_param(handlers, "handlers", of_type=logging.Handler)
+        for handler in handlers:
+            self.addHandler(handler)
 
     @property
     def logging_metadata(self) -> DagsterLoggingMetadata:
