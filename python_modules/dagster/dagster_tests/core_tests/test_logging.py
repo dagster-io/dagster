@@ -153,7 +153,7 @@ def test_multiline_logging_complex():
 
 
 def _setup_test_two_handler_log_mgr():
-    test_formatter = logging.Formatter(fmt='%(levelname)s :: %(message)s')
+    test_formatter = logging.Formatter(fmt="%(levelname)s :: %(message)s")
 
     test_info_handler = logging.StreamHandler(sys.stdout)
     test_info_handler.setLevel("INFO")
