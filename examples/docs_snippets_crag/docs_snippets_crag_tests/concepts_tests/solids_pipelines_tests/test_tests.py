@@ -1,4 +1,4 @@
-from docs_snippets.concepts.solids_pipelines.unit_tests import (
+from docs_snippets_crag.concepts.solids_pipelines.unit_tests import (
     test_event_stream,
     test_inputs_solid_with_invocation,
     test_pipeline,
