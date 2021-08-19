@@ -1,14 +1,20 @@
 import re
 import warnings
-from collections import namedtuple
 from enum import Enum
+from typing import AbstractSet, Any, Dict, List, NamedTuple, Optional, Tuple, Union, cast
 
 from dagster import check, seven
 from dagster.core.errors import DagsterInvalidAssetKey
 from dagster.serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
 from dagster.utils.backcompat import experimental_arg_warning, experimental_class_param_warning
 
-from .event_metadata import EventMetadataEntry, last_file_comp, parse_metadata
+from .event_metadata import (
+    EventMetadataEntry,
+    ParseableMetadataEntryData,
+    PartitionMetadataEntry,
+    last_file_comp,
+    parse_metadata,
+)
 from .utils import DEFAULT_OUTPUT, check_valid_name
 
 ASSET_KEY_REGEX = re.compile("^[a-zA-Z0-9_.-]+$")  # alphanumeric, _, -, .
@@ -16,19 +22,19 @@ ASSET_KEY_SPLIT_REGEX = re.compile("[^a-zA-Z0-9_]")
 ASSET_KEY_STRUCTURED_DELIMITER = "."
 
 
-def validate_asset_key_string(s):
+def validate_asset_key_string(s: Optional[str]) -> str:
     if not s or not ASSET_KEY_REGEX.match(s):
         raise DagsterInvalidAssetKey()
 
     return s
 
 
-def parse_asset_key_string(s):
+def parse_asset_key_string(s: str) -> List[str]:
     return list(filter(lambda x: x, re.split(ASSET_KEY_SPLIT_REGEX, s)))
 
 
 @whitelist_for_serdes
-class AssetKey(namedtuple("_AssetKey", "path")):
+class AssetKey(NamedTuple("_AssetKey", [("path", Union[Tuple[str, ...], List[str]])])):
     """Object representing the structure of an asset key.  Takes in a sanitized string, list of
     strings, or tuple of strings.
 
@@ -58,11 +64,11 @@ class AssetKey(namedtuple("_AssetKey", "path")):
             )
 
     Args:
-        path (str|str[]|str()): String, list of strings, or tuple of strings.  A list of strings
+        path (Union[str, List[str], Tuple[str, ...]]): String, list of strings, or tuple of strings.  A list of strings
             represent the hierarchical structure of the asset_key.
     """
 
-    def __new__(cls, path=None):
+    def __new__(cls, path: Optional[Union[str, List[str], Tuple[str, ...]]] = None):
         if isinstance(path, str):
             path = [path]
         elif isinstance(path, list):
@@ -86,7 +92,7 @@ class AssetKey(namedtuple("_AssetKey", "path")):
             return False
         return self.to_string() == other.to_string()
 
-    def to_string(self, legacy=False):
+    def to_string(self, legacy: Optional[bool] = False) -> Optional[str]:
         if not self.path:
             return None
         if legacy:
@@ -94,7 +100,7 @@ class AssetKey(namedtuple("_AssetKey", "path")):
         return seven.json.dumps(self.path)
 
     @staticmethod
-    def from_db_string(asset_key_string):
+    def from_db_string(asset_key_string: Optional[str]) -> Optional["AssetKey"]:
         if not asset_key_string:
             return None
         if asset_key_string[0] == "[":
@@ -108,28 +114,39 @@ class AssetKey(namedtuple("_AssetKey", "path")):
         return AssetKey(path)
 
     @staticmethod
-    def get_db_prefix(path, legacy=False):
+    def get_db_prefix(path: List[str], legacy: Optional[bool] = False):
         check.list_param(path, "path", of_type=str)
         if legacy:
             return ASSET_KEY_STRUCTURED_DELIMITER.join(path)
         return seven.json.dumps(path)[:-2]  # strip trailing '"]' from json string
 
     @staticmethod
-    def from_graphql_input(asset_key):
+    def from_graphql_input(asset_key: Dict[str, List[str]]) -> Optional["AssetKey"]:
         if asset_key and asset_key.get("path"):
             return AssetKey(asset_key.get("path"))
         return None
 
 
 @whitelist_for_serdes
-class AssetLineageInfo(namedtuple("_AssetLineageInfo", "asset_key partitions")):
+class AssetLineageInfo(
+    NamedTuple("_AssetLineageInfo", [("asset_key", AssetKey), ("partitions", AbstractSet[str])])
+):
     def __new__(cls, asset_key, partitions=None):
         asset_key = check.inst_param(asset_key, "asset_key", AssetKey)
         partitions = check.opt_set_param(partitions, "partitions", str)
         return super(AssetLineageInfo, cls).__new__(cls, asset_key=asset_key, partitions=partitions)
 
 
-class Output(namedtuple("_Output", "value output_name metadata_entries")):
+class Output(
+    NamedTuple(
+        "_Output",
+        [
+            ("value", Any),
+            ("output_name", str),
+            ("metadata_entries", List[Union[PartitionMetadataEntry, EventMetadataEntry]]),
+        ],
+    )
+):
     """Event corresponding to one of a solid's outputs.
 
     Solid compute functions must explicitly yield events of this type when they have more than
@@ -152,11 +169,24 @@ class Output(namedtuple("_Output", "value output_name metadata_entries")):
             list, and one of the data classes returned by a EventMetadata static method.
     """
 
-    def __new__(cls, value, output_name=DEFAULT_OUTPUT, metadata_entries=None, metadata=None):
+    def __new__(
+        cls,
+        value: Any,
+        output_name: Optional[str] = DEFAULT_OUTPUT,
+        metadata_entries: Optional[List[Union[EventMetadataEntry, PartitionMetadataEntry]]] = None,
+        metadata: Optional[Dict[str, ParseableMetadataEntryData]] = None,
+    ):
         if metadata_entries:
             experimental_arg_warning("metadata_entries", "Output.__new__")
         elif metadata:
             experimental_arg_warning("metadata", "Output.__new__")
+
+        metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
+        metadata_entries = check.opt_list_param(
+            metadata_entries,
+            "metadata_entries",
+            of_type=(EventMetadataEntry, PartitionMetadataEntry),
+        )
 
         return super(Output, cls).__new__(
             cls,
@@ -166,7 +196,17 @@ class Output(namedtuple("_Output", "value output_name metadata_entries")):
         )
 
 
-class DynamicOutput(namedtuple("_DynamicOutput", "value mapping_key output_name metadata_entries")):
+class DynamicOutput(
+    NamedTuple(
+        "_DynamicOutput",
+        [
+            ("value", Any),
+            ("mapping_key", str),
+            ("output_name", str),
+            ("metadata_entries", List[Union[PartitionMetadataEntry, EventMetadataEntry]]),
+        ],
+    )
+):
     """
     (Experimental) Variant of :py:class:`Output <dagster.Output>` used to support
     dynamic mapping & collect. Each ``DynamicOutput`` produced by a solid represents
@@ -194,25 +234,47 @@ class DynamicOutput(namedtuple("_DynamicOutput", "value mapping_key output_name 
     """
 
     def __new__(
-        cls, value, mapping_key, output_name=DEFAULT_OUTPUT, metadata_entries=None, metadata=None
+        cls,
+        value: Any,
+        mapping_key: str,
+        output_name: Optional[str] = DEFAULT_OUTPUT,
+        metadata_entries: Optional[List[Union[PartitionMetadataEntry, EventMetadataEntry]]] = None,
+        metadata: Optional[Dict[str, ParseableMetadataEntryData]] = None,
     ):
         if metadata_entries:
             experimental_arg_warning("metadata_entries", "DynamicOutput.__new__")
         elif metadata:
             experimental_arg_warning("metadata", "DynamicOutput.__new__")
 
+        metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
+        metadata_entries = check.opt_list_param(
+            metadata_entries, "metadata_entries", of_type=EventMetadataEntry
+        )
+
         return super(DynamicOutput, cls).__new__(
             cls,
-            value,
-            check_valid_name(check.str_param(mapping_key, "mapping_key")),
-            check.str_param(output_name, "output_name"),
-            parse_metadata(metadata, metadata_entries),
+            value=value,
+            mapping_key=check_valid_name(check.str_param(mapping_key, "mapping_key")),
+            output_name=check.str_param(output_name, "output_name"),
+            metadata_entries=parse_metadata(metadata, metadata_entries),
         )
+
+
+MetadataValues = Union[str, float, int, Dict, EventMetadataEntry]
 
 
 @whitelist_for_serdes
 class AssetMaterialization(
-    namedtuple("_AssetMaterialization", "asset_key description metadata_entries partition tags")
+    NamedTuple(
+        "_AssetMaterialization",
+        [
+            ("asset_key", AssetKey),
+            ("description", Optional[str]),
+            ("metadata_entries", List[EventMetadataEntry]),
+            ("partition", Optional[str]),
+            ("tags", Dict[str, str]),
+        ],
+    )
 ):
     """Event indicating that a solid has materialized an asset.
 
@@ -226,7 +288,7 @@ class AssetMaterialization(
     computations, enabling tooling like the Assets dashboard in Dagit.
 
     Args:
-        asset_key (str|List[str]|AssetKey): A key to identify the materialized asset across pipeline
+        asset_key (Union[str, List[str], AssetKey]): A key to identify the materialized asset across pipeline
             runs
         description (Optional[str]): A longer human-readable description of the materialized value.
         metadata_entries (Optional[List[EventMetadataEntry]]): Arbitrary metadata about the
@@ -243,12 +305,12 @@ class AssetMaterialization(
 
     def __new__(
         cls,
-        asset_key,
-        description=None,
-        metadata_entries=None,
-        partition=None,
-        tags=None,
-        metadata=None,
+        asset_key: Union[List[str], AssetKey, str],
+        description: Optional[str] = None,
+        metadata_entries: Optional[List[EventMetadataEntry]] = None,
+        partition: Optional[str] = None,
+        tags: Optional[Dict[str, str]] = None,
+        metadata: Optional[Dict[str, MetadataValues]] = None,
     ):
         if isinstance(asset_key, AssetKey):
             check.inst_param(asset_key, "asset_key", AssetKey)
@@ -264,21 +326,32 @@ class AssetMaterialization(
         if tags:
             experimental_class_param_warning("tags", "AssetMaterialization")
 
+        metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
+        metadata_entries = check.opt_list_param(
+            metadata_entries, "metadata_entries", of_type=EventMetadataEntry
+        )
+
         return super(AssetMaterialization, cls).__new__(
             cls,
             asset_key=asset_key,
             description=check.opt_str_param(description, "description"),
-            metadata_entries=parse_metadata(metadata, metadata_entries),
+            metadata_entries=cast(
+                List[EventMetadataEntry], parse_metadata(metadata, metadata_entries)
+            ),
             partition=check.opt_str_param(partition, "partition"),
             tags=check.opt_dict_param(tags, "tags", key_type=str, value_type=str),
         )
 
     @property
-    def label(self):
+    def label(self) -> str:
         return " ".join(self.asset_key.path)
 
     @staticmethod
-    def file(path, description=None, asset_key=None):
+    def file(
+        path: str,
+        description: Optional[str] = None,
+        asset_key: Optional[Union[str, List[str], AssetKey]] = None,
+    ) -> "AssetMaterialization":
         """Static constructor for standard materializations corresponding to files on disk.
 
         Args:
@@ -289,7 +362,7 @@ class AssetMaterialization(
             asset_key = path
 
         return AssetMaterialization(
-            asset_key=asset_key,
+            asset_key=cast(Union[str, AssetKey, List[str]], asset_key),
             description=description,
             metadata_entries=[EventMetadataEntry.fspath(path)],
         )
@@ -305,7 +378,17 @@ class MaterializationSerializer(DefaultNamedTupleSerializer):
 
 @whitelist_for_serdes(serializer=MaterializationSerializer)
 class Materialization(
-    namedtuple("_Materialization", "label description metadata_entries asset_key partition tags")
+    NamedTuple(
+        "_Materialization",
+        [
+            ("label", str),
+            ("description", Optional[str]),
+            ("metadata_entries", List[EventMetadataEntry]),
+            ("asset_key", AssetKey),
+            ("partition", Optional[str]),
+            ("tags", Dict[str, str]),
+        ],
+    )
 ):
     """Event indicating that a solid has materialized a value.
 
@@ -322,7 +405,7 @@ class Materialization(
         description (Optional[str]): A longer human-radable description of the materialized value.
         metadata_entries (Optional[List[EventMetadataEntry]]): Arbitrary metadata about the
             materialized value.
-        asset_key (Optional[str|AssetKey]): An optional parameter to identify the materialized asset
+        asset_key (Optional[Union[str, AssetKey]]): An optional parameter to identify the materialized asset
             across pipeline runs
         partition (Optional[str]): The name of the partition that was materialized.
         tags (Optional[Dict[str, str]]): (Experimental) Tag metadata for a given asset
@@ -332,19 +415,20 @@ class Materialization(
 
     def __new__(
         cls,
-        label=None,
-        description=None,
-        metadata_entries=None,
-        asset_key=None,
-        partition=None,
-        tags=None,
-        skip_deprecation_warning=False,
+        label: str = None,
+        description: Optional[str] = None,
+        metadata_entries: Optional[List[EventMetadataEntry]] = None,
+        asset_key: Optional[Union[str, AssetKey]] = None,
+        partition: Optional[str] = None,
+        tags: Optional[Dict[str, str]] = None,
+        skip_deprecation_warning: Optional[bool] = False,
     ):
         if asset_key and isinstance(asset_key, str):
             asset_key = AssetKey(parse_asset_key_string(asset_key))
         else:
             check.opt_inst_param(asset_key, "asset_key", AssetKey)
 
+        asset_key = cast(AssetKey, asset_key)
         if not label:
             check.param_invariant(
                 asset_key and asset_key.path,
@@ -356,12 +440,16 @@ class Materialization(
         if not skip_deprecation_warning:
             warnings.warn("`Materialization` is deprecated; use `AssetMaterialization` instead.")
 
+        metadata_entries = check.opt_list_param(
+            metadata_entries, "metadata_entries", of_type=EventMetadataEntry
+        )
+
         return super(Materialization, cls).__new__(
             cls,
             label=check.str_param(label, "label"),
             description=check.opt_str_param(description, "description"),
             metadata_entries=check.opt_list_param(
-                metadata_entries, metadata_entries, of_type=EventMetadataEntry
+                metadata_entries, "metadata_entries", of_type=EventMetadataEntry
             ),
             asset_key=asset_key,
             partition=check.opt_str_param(partition, "partition"),
@@ -369,7 +457,11 @@ class Materialization(
         )
 
     @staticmethod
-    def file(path, description=None, asset_key=None):
+    def file(
+        path: str,
+        description: Optional[str] = None,
+        asset_key: Optional[Union[str, AssetKey]] = None,
+    ) -> "Materialization":
         """Static constructor for standard materializations corresponding to files on disk.
 
         Args:
@@ -386,7 +478,15 @@ class Materialization(
 
 @whitelist_for_serdes
 class ExpectationResult(
-    namedtuple("_ExpectationResult", "success label description metadata_entries")
+    NamedTuple(
+        "_ExpectationResult",
+        [
+            ("success", bool),
+            ("label", Optional[str]),
+            ("description", Optional[str]),
+            ("metadata_entries", List[EventMetadataEntry]),
+        ],
+    )
 ):
     """Event corresponding to a data quality test.
 
@@ -406,18 +506,41 @@ class ExpectationResult(
             list, and one of the data classes returned by a EventMetadata static method.
     """
 
-    def __new__(cls, success, label=None, description=None, metadata_entries=None, metadata=None):
+    def __new__(
+        cls,
+        success: bool,
+        label: Optional[str] = None,
+        description: Optional[str] = None,
+        metadata_entries: Optional[List[EventMetadataEntry]] = None,
+        metadata: Optional[Dict[str, MetadataValues]] = None,
+    ):
+        metadata_entries = check.opt_list_param(
+            metadata_entries, "metadata_entries", of_type=EventMetadataEntry
+        )
+        metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
+
         return super(ExpectationResult, cls).__new__(
             cls,
             success=check.bool_param(success, "success"),
             label=check.opt_str_param(label, "label", "result"),
             description=check.opt_str_param(description, "description"),
-            metadata_entries=parse_metadata(metadata, metadata_entries),
+            metadata_entries=cast(
+                List[EventMetadataEntry], parse_metadata(metadata, metadata_entries)
+            ),
         )
 
 
 @whitelist_for_serdes
-class TypeCheck(namedtuple("_TypeCheck", "success description metadata_entries")):
+class TypeCheck(
+    NamedTuple(
+        "_TypeCheck",
+        [
+            ("success", bool),
+            ("description", Optional[str]),
+            ("metadata_entries", List[EventMetadataEntry]),
+        ],
+    )
+):
     """Event corresponding to a successful typecheck.
 
     Events of this type should be returned by user-defined type checks when they need to encapsulate
@@ -438,12 +561,26 @@ class TypeCheck(namedtuple("_TypeCheck", "success description metadata_entries")
             list, and one of the data classes returned by a EventMetadata static method.
     """
 
-    def __new__(cls, success, description=None, metadata_entries=None, metadata=None):
+    def __new__(
+        cls,
+        success: bool,
+        description: Optional[str] = None,
+        metadata_entries: Optional[List[EventMetadataEntry]] = None,
+        metadata: Optional[Dict[str, MetadataValues]] = None,
+    ):
+
+        metadata_entries = check.opt_list_param(
+            metadata_entries, "metadata_entries", of_type=EventMetadataEntry
+        )
+        metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
+
         return super(TypeCheck, cls).__new__(
             cls,
             success=check.bool_param(success, "success"),
             description=check.opt_str_param(description, "description"),
-            metadata_entries=parse_metadata(metadata, metadata_entries),
+            metadata_entries=cast(
+                List[EventMetadataEntry], parse_metadata(metadata, metadata_entries)
+            ),
         )
 
 
@@ -464,7 +601,17 @@ class Failure(Exception):
             list, and one of the data classes returned by a EventMetadata static method.
     """
 
-    def __init__(self, description=None, metadata_entries=None, metadata=None):
+    def __init__(
+        self,
+        description: Optional[str] = None,
+        metadata_entries: Optional[List[EventMetadataEntry]] = None,
+        metadata: Optional[Dict[str, MetadataValues]] = None,
+    ):
+        metadata_entries = check.opt_list_param(
+            metadata_entries, "metadata_entries", of_type=EventMetadataEntry
+        )
+        metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
+
         super(Failure, self).__init__(description)
         self.description = check.opt_str_param(description, "description")
         self.metadata_entries = parse_metadata(metadata, metadata_entries)
@@ -493,7 +640,9 @@ class RetryRequested(Exception):
                     raise RetryRequested(max_retries=3)
     """
 
-    def __init__(self, max_retries=1, seconds_to_wait=None):
+    def __init__(
+        self, max_retries: Optional[int] = 1, seconds_to_wait: Optional[Union[float, int]] = None
+    ):
         super(RetryRequested, self).__init__()
         self.max_retries = check.int_param(max_retries, "max_retries")
         self.seconds_to_wait = check.opt_numeric_param(seconds_to_wait, "seconds_to_wait")
@@ -507,9 +656,19 @@ class ObjectStoreOperationType(Enum):
 
 
 class ObjectStoreOperation(
-    namedtuple(
+    NamedTuple(
         "_ObjectStoreOperation",
-        "op key dest_key obj serialization_strategy_name object_store_name value_name version mapping_key",
+        [
+            ("op", ObjectStoreOperationType),
+            ("key", str),
+            ("dest_key", Optional[str]),
+            ("obj", Any),
+            ("serialization_strategy_name", Optional[str]),
+            ("object_store_name", Optional[str]),
+            ("value_name", Optional[str]),
+            ("version", Optional[str]),
+            ("mapping_key", Optional[str]),
+        ],
     )
 ):
     """This event is used internally by Dagster machinery when values are written to and read from
@@ -533,15 +692,15 @@ class ObjectStoreOperation(
 
     def __new__(
         cls,
-        op,
-        key,
-        dest_key=None,
-        obj=None,
-        serialization_strategy_name=None,
-        object_store_name=None,
-        value_name=None,
-        version=None,
-        mapping_key=None,
+        op: ObjectStoreOperationType,
+        key: str,
+        dest_key: Optional[str] = None,
+        obj: Any = None,
+        serialization_strategy_name: Optional[str] = None,
+        object_store_name: Optional[str] = None,
+        value_name: Optional[str] = None,
+        version: Optional[str] = None,
+        mapping_key: Optional[str] = None,
     ):
         return super(ObjectStoreOperation, cls).__new__(
             cls,
@@ -577,7 +736,9 @@ class ObjectStoreOperation(
         )
 
 
-class HookExecutionResult(namedtuple("_HookExecutionResult", "hook_name is_skipped")):
+class HookExecutionResult(
+    NamedTuple("_HookExecutionResult", [("hook_name", str), ("is_skipped", bool)])
+):
     """This event is used internally to indicate the execution result of a hook, e.g. whether the
     user-defined hook function is skipped.
 
@@ -586,9 +747,9 @@ class HookExecutionResult(namedtuple("_HookExecutionResult", "hook_name is_skipp
         is_skipped (bool): ``False`` if the hook_fn is executed, ``True`` otheriwse.
     """
 
-    def __new__(cls, hook_name, is_skipped=None):
+    def __new__(cls, hook_name: str, is_skipped: Optional[bool] = None):
         return super(HookExecutionResult, cls).__new__(
             cls,
             hook_name=check.str_param(hook_name, "hook_name"),
-            is_skipped=check.opt_bool_param(is_skipped, "is_skipped", default=False),
+            is_skipped=cast(bool, check.opt_bool_param(is_skipped, "is_skipped", default=False)),
         )

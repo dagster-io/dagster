@@ -1,7 +1,9 @@
+import io
 import json
 import logging
 import re
-from contextlib import contextmanager
+import sys
+from contextlib import contextmanager, redirect_stdout
 
 import pytest
 from dagster import (
@@ -59,10 +61,6 @@ def _setup_logger(name, log_levels=None):
         setattr(logger, "log", int_log_fn)
 
     yield (captured_results, logger)
-
-
-def _regex_match_kv_pair(regex, kv_pairs):
-    return any([re.match(regex, kv_pair) for kv_pair in kv_pairs])
 
 
 def test_logging_no_loggers_registered():
@@ -152,6 +150,86 @@ def test_multiline_logging_complex():
     ]
 
     assert captured_results[0].split("\n") == expected_results
+
+
+def _setup_test_two_handler_log_mgr():
+    test_formatter = logging.Formatter(fmt="%(levelname)s :: %(message)s")
+
+    test_info_handler = logging.StreamHandler(sys.stdout)
+    test_info_handler.setLevel("INFO")
+    test_info_handler.setFormatter(test_formatter)
+
+    test_warn_handler = logging.StreamHandler(sys.stdout)
+    test_warn_handler.setLevel("WARN")
+    test_warn_handler.setFormatter(test_formatter)
+
+    dl = DagsterLogManager(
+        DagsterLoggingMetadata(run_id="123"),
+        [],
+        [test_info_handler, test_warn_handler],
+    )
+    return dl
+
+
+def test_handler_in_log_manager(capsys):
+    dl = _setup_test_two_handler_log_mgr()
+
+    dl.info("test")
+    dl.warning("test")
+
+    out, _ = capsys.readouterr()
+
+    assert re.search(r"INFO :: system - 123 - test", out)
+    assert len(re.findall(r"WARNING :: system - 123 - test", out)) == 2
+
+
+def test_handler_in_log_manager_with_tags(capsys):
+    dl = _setup_test_two_handler_log_mgr()
+    dl = dl.with_tags(**{"pipeline_name": "test_pipeline"})
+
+    dl.info("test")
+    dl.warning("test")
+
+    out, _ = capsys.readouterr()
+
+    assert re.search(r"INFO :: test_pipeline - 123 - test", out)
+    assert len(re.findall(r"WARNING :: test_pipeline - 123 - test", out)) == 2
+
+
+def test_capture_handler_log_records():
+    class TestHandler(logging.Handler):
+        def __init__(self):
+            self.captured = []
+            super().__init__(logging.INFO)
+
+        def emit(self, record):
+            self.captured.append(record)
+
+    capture_handler = TestHandler()
+
+    dl = DagsterLogManager(
+        logging_metadata=DagsterLoggingMetadata(
+            run_id="123456", pipeline_name="pipeline", step_key="some_step"
+        ),
+        loggers=[],
+        handlers=[capture_handler],
+    )
+
+    dl.info("info")
+    dl.critical("critical error", extra={"foo": "bar"})
+
+    assert len(capture_handler.captured) == 2
+
+    captured_info_record = capture_handler.captured[0]
+    assert captured_info_record.name == "dagster"
+    assert captured_info_record.msg == "pipeline - 123456 - some_step - info"
+    assert captured_info_record.levelno == logging.INFO
+
+    captured_critical_record = capture_handler.captured[1]
+    assert captured_critical_record.name == "dagster"
+    assert captured_critical_record.msg == "pipeline - 123456 - some_step - critical error"
+    assert captured_critical_record.levelno == logging.CRITICAL
+    assert captured_critical_record.foo == "bar"
 
 
 def test_default_context_logging():

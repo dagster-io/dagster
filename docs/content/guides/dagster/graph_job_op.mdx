@@ -372,6 +372,52 @@ This makes it easier to catch errors and makes it possible to reference the grap
 
 The same pattern works for sensors.
 
+### A pipeline with config and a schedule
+
+With the pipeline APIs, if you want to schedule runs with config that depends on the scheduled execution time, you need to do something like this:
+
+```python file=/guides/dagster/graph_job_op/pipeline_with_schedule_return_config.py
+from dagster import pipeline, schedule, solid
+
+
+@solid(config_schema={"date": str})
+def do_something(_):
+    ...
+
+
+@pipeline
+def do_it_all():
+    do_something()
+
+
+@schedule(cron_schedule="0 0 * * *", pipeline_name="do_it_all", execution_timezone="US/Central")
+def do_it_all_schedule(context):
+    date = context.scheduled_execution_time.strftime("%Y-%m-%d")
+    return {"solids": {"do_something": {"config": {"date": date}}}}
+```
+
+With the new APIs, you can simply reference the graph or job object:
+
+```python file=/guides/dagster/graph_job_op/graph_with_schedule_return_config.py
+from dagster import graph, op, schedule
+
+
+@op(config_schema={"date": str})
+def do_something(_):
+    ...
+
+
+@graph
+def do_it_all():
+    do_something()
+
+
+@schedule(cron_schedule="0 0 * * *", job=do_it_all.to_job(), execution_timezone="US/Central")
+def do_it_all_schedule(context):
+    date = context.scheduled_execution_time.strftime("%Y-%m-%d")
+    return {"solids": {"do_something": {"config": {"date": date}}}}
+```
+
 ### A pipeline with a preset and a schedule
 
 With the pipeline APIs, if you want to have the same config available for manual runs of a pipeline and used in a schedule, you need to do something like this:
