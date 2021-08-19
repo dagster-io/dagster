@@ -290,7 +290,7 @@ def test_attribute_is_wrong_thing():
         with pytest.raises(
             DagsterInvariantViolationError,
             match=re.escape(
-                "Loadable attributes must be either a PipelineDefinition or a "
+                "Loadable attributes must be either a PipelineDefinition, GraphDefinition, or a "
                 "RepositoryDefinition. Got 123."
             ),
         ):
@@ -311,7 +311,8 @@ def test_attribute_fn_returns_wrong_thing():
         with pytest.raises(
             DagsterInvariantViolationError,
             match=re.escape(
-                "Loadable attributes must be either a PipelineDefinition or a RepositoryDefinition."
+                "Loadable attributes must be either a PipelineDefinition, GraphDefinition, or a "
+                "RepositoryDefinition."
             ),
         ):
             execute_execute_command(
