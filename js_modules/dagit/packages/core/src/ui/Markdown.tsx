@@ -19,14 +19,11 @@ export const Markdown: React.FC<Props> = (props) => {
 };
 
 const Container = styled.div`
-  table {
-    font-family: ${FontFamily.monospace};
-  }
-
   table tr th {
     color: ${Colors.GRAY3};
     font-weight: normal;
     padding: 4px 16px 4px 0;
+    text-align: left;
   }
 
   table tr td {
