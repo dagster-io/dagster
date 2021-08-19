@@ -234,6 +234,18 @@ class PipelineSubsetSnapshotArgs(
 
 
 @whitelist_for_serdes
+class NotebookPathArgs(namedtuple("_NotebookPathArgs", "repository_origin notebook_path")):
+    def __new__(cls, repository_origin, notebook_path):
+        return super(NotebookPathArgs, cls).__new__(
+            cls,
+            repository_origin=check.inst_param(
+                repository_origin, "repository_origin", ExternalRepositoryOrigin
+            ),
+            notebook_path=check.str_param(notebook_path, "notebook_path"),
+        )
+
+
+@whitelist_for_serdes
 class ExternalScheduleExecutionArgs(
     namedtuple(
         "_ExternalScheduleExecutionArgs",

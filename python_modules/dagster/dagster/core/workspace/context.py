@@ -233,10 +233,20 @@ class BaseWorkspaceRequestContext(IWorkspace):
             partition_names=partition_names,
         )
 
-    def get_external_notebook_data(self, repository_location_name, notebook_path: str):
+    def get_external_notebook_data(
+        self, repository_name, repository_location_name, notebook_path: str
+    ):
+        check.str_param(repository_name, "repository_name")
+        check.str_param(repository_location_name, "repository_location_name")
         check.str_param(notebook_path, "notebook_path")
         repository_location = self.get_repository_location(repository_location_name)
-        return repository_location.get_external_notebook_data(notebook_path)
+        return repository_location.get_external_notebook_data(
+            repository_handle=RepositoryHandle(
+                repository_name=repository_name,
+                repository_location=repository_location,
+            ),
+            notebook_path=notebook_path,
+        )
 
 
 class WorkspaceRequestContext(BaseWorkspaceRequestContext):

@@ -1,5 +1,5 @@
-from dagster.utils import file_relative_path
 from dagster.api.notebook_data import sync_get_streaming_external_notebook_data_grpc
+from dagster.utils import file_relative_path
 
 from .utils import get_bar_repo_handle
 
