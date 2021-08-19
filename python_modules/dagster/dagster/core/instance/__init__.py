@@ -1107,11 +1107,10 @@ records = instance.get_event_records(
 
     # event subscriptions
 
-    def get_logger(self):
-        logger = logging.Logger("__event_listener")
-        logger.addHandler(_EventListenerLogHandler(self))
-        logger.setLevel(10)
-        return logger
+    def get_event_log_handler(self):
+        event_log_handler = _EventListenerLogHandler(self)
+        event_log_handler.setLevel(10)
+        return event_log_handler
 
     def handle_new_event(self, event):
         run_id = event.run_id
