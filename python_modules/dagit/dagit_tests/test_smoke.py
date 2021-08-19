@@ -59,7 +59,9 @@ def test_smoke_app(gen_instance):
             assert len(data["errors"]) == 1
             assert data["errors"][0]["message"] == "Must provide query string."
 
-            result = client.get("/dagit/notebook?path=foo.bar&repoLocName=foo_repo")
+            result = client.get(
+                "/dagit/notebook?path=foo.bar&repoName=test_repository&repoLocName=foo_repo"
+            )
             assert result.status_code == 400
             assert result.data.decode("utf-8") == "Invalid Path"
 
