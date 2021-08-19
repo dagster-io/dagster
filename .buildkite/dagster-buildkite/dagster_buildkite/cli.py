@@ -22,14 +22,16 @@ def dagster():
         all_steps += dagster_steps()
 
         # Trigger builds of the internal pipeline.
+        dagster_branch = os.getenv("BUILDKITE_BRANCH", "master")
+        dagster_commit_hash = os.getenv("BUILDKITE_COMMIT", "HEAD")
         all_steps += [
             trigger_step(
                 pipeline="internal",
-                async_step=os.getenv("BUILDKITE_BRANCH", "master") == "master",
+                async_step=dagster_branch == "master",
                 if_condition="build.creator.email =~ /elementl.com$$/",
                 env={
-                    "DAGSTER_BRANCH": os.getenv("BUILDKITE_BRANCH"),
-                    "DAGSTER_COMMIT_HASH": os.getenv("BUILDKITE_COMMIT"),
+                    "DAGSTER_BRANCH": dagster_branch,
+                    "DAGSTER_COMMIT_HASH": dagster_commit_hash,
                 },
             ),
         ]
