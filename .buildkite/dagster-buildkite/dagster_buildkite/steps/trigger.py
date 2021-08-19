@@ -1,5 +1,4 @@
 import os
-import subprocess
 from typing import Dict, List, Optional
 
 
@@ -8,6 +7,7 @@ def trigger_step(
     branches: Optional[List[str]] = None,
     async_step: bool = False,
     if_condition: str = None,
+    env: Dict[str, str] = None,
 ) -> Dict:
     """trigger_step: Trigger a build of another pipeline. See:
 
@@ -22,18 +22,13 @@ def trigger_step(
         if_condition (str): A boolean expression that omits the step when false. Cannot be set with
             "branches" also set.
     """
-    commit = (
-        subprocess.check_output(["git", "rev-parse", "--short", "HEAD"]).decode("utf-8").strip()
-    )
+    dagster_commit_hash = os.getenv("BUILDKITE_COMMIT")
     step = {
         "trigger": pipeline,
-        "label": f":link: {pipeline} from dagster@{commit}",
+        "label": f":link: {pipeline} from dagster@{dagster_commit_hash}",
         "async": async_step,
         "build": {
-            "env": {
-                "DAGSTER_BRANCH": os.getenv("BUILDKITE_BRANCH"),
-                "DAGSTER_COMMIT_HASH": os.getenv("BUILDKITE_COMMIT"),
-            },
+            "env": env or {},
         },
     }
 
