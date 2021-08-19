@@ -1,3 +1,5 @@
+import os
+
 from .defines import DO_COVERAGE
 from .steps.dagit import dagit_steps
 from .steps.dagster import coverage_step, dagster_steps
@@ -30,6 +32,10 @@ def dagster():
                 pipeline="internal",
                 async_step=True,
                 if_condition="build.branch=='master' && build.creator.email =~ /elementl.com$$/",
+                env={
+                    "DAGSTER_BRANCH": os.getenv("BUILDKITE_BRANCH"),
+                    "DAGSTER_COMMIT_HASH": os.getenv("BUILDKITE_COMMIT"),
+                },
             ),
         ]
 
