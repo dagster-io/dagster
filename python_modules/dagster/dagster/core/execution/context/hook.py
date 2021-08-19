@@ -187,7 +187,7 @@ class UnboundHookContext(HookContext):
         if self._resources_contain_cm and not self._cm_scope_entered:
             self._resources_cm.__exit__(None, None, None)  # pylint: disable=no-member
 
-    def _unbound_invariant(val, name):
+    def _unbound_invariant(self, val, name):
         check.invariant(
             val is not None,
             f"{name} property not specified when constructing the hook context.",
