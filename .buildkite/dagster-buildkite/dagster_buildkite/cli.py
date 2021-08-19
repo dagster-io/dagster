@@ -21,23 +21,25 @@ def dagster():
     if not dagit_only:
         all_steps += dagster_steps()
 
+        # Trigger builds of the internal pipeline.
+        dagster_branch = os.getenv("BUILDKITE_BRANCH", "master")
+        dagster_commit_hash = os.getenv("BUILDKITE_COMMIT", "HEAD")
+        all_steps += [
+            trigger_step(
+                pipeline="internal",
+                async_step=dagster_branch == "master",
+                if_condition="build.creator.email =~ /elementl.com$$/",
+                env={
+                    "DAGSTER_BRANCH": dagster_branch,
+                    "DAGSTER_COMMIT_HASH": dagster_commit_hash,
+                },
+            ),
+        ]
+
         all_steps += [wait_step()]
 
         if DO_COVERAGE:
             all_steps += [coverage_step()]
-
-        # Trigger builds of the internal pipeline for builds on master
-        all_steps += [
-            trigger_step(
-                pipeline="internal",
-                async_step=True,
-                if_condition="build.branch=='master' && build.creator.email =~ /elementl.com$$/",
-                env={
-                    "DAGSTER_BRANCH": os.getenv("BUILDKITE_BRANCH"),
-                    "DAGSTER_COMMIT_HASH": os.getenv("BUILDKITE_COMMIT"),
-                },
-            ),
-        ]
 
     buildkite_yaml = buildkite_yaml_for_steps(all_steps)
     print(buildkite_yaml)  # pylint: disable=print-call
