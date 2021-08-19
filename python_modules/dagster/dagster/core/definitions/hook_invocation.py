@@ -38,6 +38,9 @@ def hook_invocation_result(
         mode_def=hook_context.mode_def,
         log_manager=hook_context.log,
         solid=hook_context._solid,  # pylint: disable=protected-access
+        pipeline_name=hook_context.pipeline_name,
+        run_id=hook_context.run_id,
+        step_key=hook_context.step_key,
     )
 
     return (

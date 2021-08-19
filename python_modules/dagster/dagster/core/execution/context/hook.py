@@ -279,20 +279,26 @@ class BoundHookContext(HookContext):
         solid: Optional[Node],
         mode_def: Optional[ModeDefinition],
         log_manager: DagsterLogManager,
+        pipeline_name: Optional[str],
+        run_id: Optional[str],
+        step_key: Optional[str],
     ):  # pylint: disable=super-init-not-called
         self._hook_def = hook_def
         self._resources = resources
         self._solid = solid
         self._mode_def = mode_def
         self._log_manager = log_manager
+        self._pipeline_name = pipeline_name
+        self._run_id = run_id
+        self._step_key = step_key
 
     @property
     def pipeline_name(self) -> str:
-        raise DagsterInvalidPropertyError(_property_msg("pipeline_name", "property"))
+        return self._pipeline_name
 
     @property
     def run_id(self) -> str:
-        raise DagsterInvalidPropertyError(_property_msg("run_id", "property"))
+        return self._run_id
 
     @property
     def hook_def(self) -> HookDefinition:
@@ -312,7 +318,7 @@ class BoundHookContext(HookContext):
 
     @property
     def step_key(self) -> str:
-        raise DagsterInvalidPropertyError(_property_msg("step_key", "property"))
+        return self._step_key
 
     @property
     def mode_def(self) -> Optional[ModeDefinition]:
