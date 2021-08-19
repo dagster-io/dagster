@@ -92,5 +92,5 @@ def dagster_instance_config_schema():
         "run_launcher": config_field_for_configurable_class(),
         "telemetry": Field({"enabled": Field(Bool, is_required=False)}),
         "instance_class": config_field_for_configurable_class(),
-        "log_conf": Field(String, is_required=False),
+        "dagster_python_log_config": Field(dict, is_required=False),
     }

@@ -1,1 +1,11 @@
-log_conf: './dagster_tests/core_tests/log_tests/test_logging.conf'
+dagster_python_log_config:
+  version: 1
+  handlers:
+    handlerOne:
+      class: logging.StreamHandler
+      level: INFO
+      stream: ext://sys.stdout
+    handlerTwo:
+      class: logging.StreamHandler
+      level: WARN
+      stream: ext://sys.stdout
