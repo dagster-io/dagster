@@ -14,7 +14,14 @@ def hook_invocation_result(
     event_list: Optional[List["DagsterEvent"]] = None,
 ):
     if not hook_context:
-        hook_context = UnboundHookContext(resources={}, mode_def=None, solid=None)
+        hook_context = UnboundHookContext(
+            resources={},
+            mode_def=None,
+            solid=None,
+            pipeline_name=None,
+            run_id=None,
+            step_key=None,
+        )
 
     # Validate that all required resources are provided in the context
     for key in hook_def.required_resource_keys:
