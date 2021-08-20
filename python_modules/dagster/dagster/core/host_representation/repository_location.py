@@ -183,9 +183,7 @@ class RepositoryLocation(AbstractContextManager):
         pass
 
     @abstractmethod
-    def get_external_notebook_data(
-        self, repository_handle: RepositoryHandle, notebook_path: str
-    ) -> bytes:
+    def get_external_notebook_data(self, notebook_path: str) -> bytes:
         pass
 
     @abstractproperty
@@ -430,10 +428,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
             partition_names=partition_names,
         )
 
-    def get_external_notebook_data(
-        self, repository_handle: RepositoryHandle, notebook_path: str
-    ) -> bytes:
-        check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
+    def get_external_notebook_data(self, notebook_path: str) -> bytes:
         check.str_param(notebook_path, "notebook_path")
         return get_notebook_data(notebook_path)
 
@@ -740,9 +735,6 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             self.client, repository_handle, partition_set_name, partition_names
         )
 
-    def get_external_notebook_data(
-        self, repository_handle: RepositoryHandle, notebook_path: str
-    ) -> bytes:
-        check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
+    def get_external_notebook_data(self, notebook_path: str) -> bytes:
         check.str_param(notebook_path, "notebook_path")
         return sync_get_streaming_external_notebook_data_grpc(self.client, notebook_path)

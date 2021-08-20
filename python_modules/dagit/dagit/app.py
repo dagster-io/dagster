@@ -72,7 +72,6 @@ def info_view():
 def notebook_view(context, request_args):
     context = check.inst_param(context, "context", IWorkspaceProcessContext)
     repo_location_name = request_args["repoLocName"]
-    repo_name = request_args["repoName"]
     check.dict_param(request_args, "request_args")
 
     path = request_args["path"]
@@ -81,9 +80,7 @@ def notebook_view(context, request_args):
 
     # get ipynb content from grpc call
     request_context = context.create_request_context()
-    notebook_content = request_context.get_external_notebook_data(
-        repo_name, repo_location_name, path
-    )
+    notebook_content = request_context.get_external_notebook_data(repo_location_name, path)
     check.inst_param(notebook_content, "notebook_content", bytes)
 
     # parse content to HTML
