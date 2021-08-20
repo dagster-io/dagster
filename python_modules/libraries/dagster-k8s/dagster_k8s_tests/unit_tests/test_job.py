@@ -190,3 +190,112 @@ def test_construct_dagster_k8s_job_with_user_defined_env():
     assert len(env_mapping) == 3
     assert env_mapping["ENV_VAR_1"]["value"] == "one"
     assert env_mapping["ENV_VAR_2"]["value"] == "two"
+
+
+def test_construct_dagster_k8s_job_with_user_defined_env_from():
+    @graph
+    def user_defined_k8s_env_from_tags_graph():
+        pass
+
+    user_defined_k8s_config = get_user_defined_k8s_config(
+        user_defined_k8s_env_from_tags_graph.to_job(
+            tags={
+                USER_DEFINED_K8S_CONFIG_KEY: {
+                    "container_config": {
+                        "env_from": [
+                            {
+                                "config_map_ref": {
+                                    "name": "user_config_map_ref",
+                                    "optional": "True",
+                                }
+                            },
+                            {"secret_ref": {"name": "user_secret_ref_one", "optional": "True"}},
+                            {
+                                "secret_ref": {
+                                    "name": "user_secret_ref_two",
+                                    "optional": "False",
+                                },
+                                "prefix": "with_prefix",
+                            },
+                        ]
+                    }
+                }
+            }
+        ).tags
+    )
+
+    cfg = DagsterK8sJobConfig(
+        job_image="test/foo:latest",
+        dagster_home="/opt/dagster/dagster_home",
+        instance_config_map="some-instance-configmap",
+        env_config_maps=["config_map"],
+        env_secrets=["secret"],
+    )
+
+    job = construct_dagster_k8s_job(
+        cfg, ["foo", "bar"], "job", user_defined_k8s_config=user_defined_k8s_config
+    ).to_dict()
+
+    env_from = job["spec"]["template"]["spec"]["containers"][0]["env_from"]
+    env_from_mapping = {
+        (env_var.get("config_map_ref") or env_var.get("secret_ref")).get("name"): env_var
+        for env_var in env_from
+    }
+
+    assert len(env_from_mapping) == 5
+    assert env_from_mapping["config_map"]
+    assert env_from_mapping["user_config_map_ref"]
+    assert env_from_mapping["secret"]
+    assert env_from_mapping["user_secret_ref_one"]
+    assert env_from_mapping["user_secret_ref_two"]
+
+
+def test_construct_dagster_k8s_job_with_user_defined_volume_mounts():
+    @graph
+    def user_defined_k8s_volume_mounts_tags_graph():
+        pass
+
+    user_defined_k8s_config = get_user_defined_k8s_config(
+        user_defined_k8s_volume_mounts_tags_graph.to_job(
+            tags={
+                USER_DEFINED_K8S_CONFIG_KEY: {
+                    "container_config": {
+                        "volume_mounts": [
+                            {
+                                "mount_path": "mount_path",
+                                "mount_propagation": "mount_propagation",
+                                "name": "a_volume_mount_one",
+                                "read_only": "False",
+                                "sub_path": "path/",
+                            },
+                            {
+                                "mount_path": "mount_path",
+                                "mount_propagation": "mount_propagation",
+                                "name": "a_volume_mount_two",
+                                "read_only": "False",
+                                "sub_path_expr": "path/",
+                            },
+                        ]
+                    }
+                }
+            }
+        ).tags
+    )
+
+    cfg = DagsterK8sJobConfig(
+        job_image="test/foo:latest",
+        dagster_home="/opt/dagster/dagster_home",
+        instance_config_map="some-instance-configmap",
+    )
+
+    job = construct_dagster_k8s_job(
+        cfg, ["foo", "bar"], "job", user_defined_k8s_config=user_defined_k8s_config
+    ).to_dict()
+
+    volume_mounts = job["spec"]["template"]["spec"]["containers"][0]["volume_mounts"]
+    volume_mounts_mapping = {volume_mount["name"]: volume_mount for volume_mount in volume_mounts}
+
+    assert len(volume_mounts_mapping) == 3
+    assert volume_mounts_mapping["dagster-instance"]
+    assert volume_mounts_mapping["a_volume_mount_one"]
+    assert volume_mounts_mapping["a_volume_mount_two"]
