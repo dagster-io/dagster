@@ -3,7 +3,7 @@ import logging
 import pytest
 from dagster import Field, build_init_logger_context, logger
 from dagster.core.errors import DagsterInvalidConfigError, DagsterInvalidInvocationError
-from dagster.core.log_manager import coerce_valid_log_level
+from dagster.core.utils import coerce_valid_log_level
 
 
 def test_logger_invocation_arguments():

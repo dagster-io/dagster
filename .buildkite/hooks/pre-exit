@@ -16,6 +16,16 @@ docker-compose stop
 docker-compose rm -f
 popd
 
+pushd examples/docs_snippets
+docker-compose stop
+docker-compose rm -f
+popd
+
+pushd examples/docs_snippets_crag
+docker-compose stop
+docker-compose rm -f
+popd
+
 pushd python_modules/libraries/dagster-celery
 docker-compose stop
 docker-compose rm -f

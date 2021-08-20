@@ -842,3 +842,39 @@ def test_version_strategy_on_pipeline():
 
         memoized_plan = create_execution_plan(ten_pipeline, instance=instance)
         assert len(memoized_plan.step_keys_to_execute) == 0
+
+
+def test_version_strategy_no_resource_version():
+    @solid(required_resource_keys={"foo"})
+    def my_solid(context):
+        return context.resources.foo
+
+    @resource
+    def foo_resource():
+        return "bar"
+
+    class MyVersionStrategy(VersionStrategy):
+        def get_solid_version(self, _):
+            return "foo"
+
+    @pipeline(
+        version_strategy=MyVersionStrategy(),
+        mode_defs=[
+            ModeDefinition(
+                resource_defs={
+                    "io_manager": IOManagerDefinition.hardcoded_io_manager(
+                        VersionedInMemoryIOManager()
+                    ),
+                    "foo": foo_resource,
+                }
+            )
+        ],
+    )
+    def my_pipeline():
+        my_solid()
+
+    with instance_for_test() as instance:
+        execute_pipeline(my_pipeline, instance=instance)
+
+        memoized_plan = create_execution_plan(my_pipeline, instance=instance)
+        assert len(memoized_plan.step_keys_to_execute) == 0

@@ -8,8 +8,10 @@ import {LoadingSpinner} from '../ui/Loading';
 import {Page} from '../ui/Page';
 import {PageHeader} from '../ui/PageHeader';
 import {Table} from '../ui/Table';
-import {Heading} from '../ui/Text';
+import {Heading, Subheading} from '../ui/Text';
 
+import {ReloadAllButton} from './ReloadAllButton';
+import {RepositoryLocationsList} from './RepositoryLocationsList';
 import {useRepositoryOptions} from './WorkspaceContext';
 import {buildRepoPath} from './buildRepoAddress';
 import {workspacePath} from './workspacePath';
@@ -110,6 +112,14 @@ export const WorkspaceOverviewRoot = () => {
     <Page>
       <Group direction="column" spacing={16}>
         <PageHeader title={<Heading>Workspace</Heading>} />
+        <Group direction="column" spacing={16}>
+          <Group direction="row" spacing={12} alignItems="center">
+            <Subheading id="repository-locations">Locations</Subheading>
+            <ReloadAllButton />
+          </Group>
+          <RepositoryLocationsList />
+        </Group>
+        <Subheading id="repository-locations">Repositories</Subheading>
         {content()}
       </Group>
     </Page>

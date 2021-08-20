@@ -58,17 +58,46 @@ def test_double_pipeline():
 
     assert str(exc_info.value) == (
         'No repository and more than one pipeline found in "double_pipeline". '
-        "If you load a file or module directly it must either have one repository "
-        "or one pipeline in scope. Found pipelines defined in variables or decorated "
+        "If you load a file or module directly it must either have one repository, "
+        "one pipeline, or one graph in scope. Found pipelines defined in variables or decorated "
         "functions: ['pipe_one', 'pipe_two']."
     )
 
 
-def test_nada():
+def test_single_graph():
+    single_graph_path = file_relative_path(__file__, "single_graph.py")
+    loadable_targets = loadable_targets_from_python_file(single_graph_path)
+
+    assert len(loadable_targets) == 1
+    symbol = loadable_targets[0].attribute
+    assert symbol == "graph_one"
+
+    repo_def = repository_def_from_pointer(
+        CodePointer.from_python_file(single_graph_path, symbol, None)
+    )
+
+    isinstance(repo_def, RepositoryDefinition)
+    assert repo_def.get_pipeline("graph_one")
+
+
+def test_double_graph():
+    double_pipeline_path = file_relative_path(__file__, "double_graph.py")
+    with pytest.raises(DagsterInvariantViolationError) as exc_info:
+        loadable_targets_from_python_file(double_pipeline_path)
+
+    assert str(exc_info.value) == (
+        'No repository, no pipeline, and more than one graph found in "double_graph". '
+        "If you load a file or module directly it must either have one repository, "
+        "one pipeline, or one graph in scope. Found graphs defined in variables or decorated "
+        "functions: ['graph_one', 'graph_two']."
+    )
+
+
+def test_no_loadable_targets():
     with pytest.raises(DagsterInvariantViolationError) as exc_info:
         loadable_targets_from_python_file(file_relative_path(__file__, "nada.py"))
 
-    assert str(exc_info.value) == 'No pipelines or repositories found in "nada".'
+    assert str(exc_info.value) == 'No pipelines, graphs, or repositories found in "nada".'
 
 
 def test_single_repository_in_module():

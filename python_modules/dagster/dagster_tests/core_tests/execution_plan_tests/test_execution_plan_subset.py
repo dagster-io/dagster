@@ -110,4 +110,7 @@ def test_reentrant_execute_plan():
 
     assert called["yup"]
 
-    assert find_events(step_events, event_type="STEP_OUTPUT")[0].logging_tags["foo"] == "bar"
+    assert (
+        find_events(step_events, event_type="STEP_OUTPUT")[0].logging_tags["pipeline_tags"]
+        == "{'foo': 'bar'}"
+    )

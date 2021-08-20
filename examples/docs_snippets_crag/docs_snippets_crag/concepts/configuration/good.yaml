@@ -1,0 +1,4 @@
+solids:
+  config_example_solid:
+    config:
+      iterations: 1

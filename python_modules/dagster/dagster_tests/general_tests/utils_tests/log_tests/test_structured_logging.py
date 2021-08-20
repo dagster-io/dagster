@@ -20,12 +20,12 @@ def construct_structured_logger(constructor=lambda x: x):
 def test_structured_logger_in_context():
     with construct_structured_logger() as (logger, messages):
         context = create_test_pipeline_execution_context(logger_defs={"structured_log": logger})
-        context.log.debug("from_context", foo=2)
+        context.log.debug("from_context", extra={"foo": 2})
         assert len(messages) == 1
         message = messages[0]
         assert message.name == "some_name"
         assert message.level == logging.DEBUG
-        assert message.meta["foo"] == 2
+        assert message.record.__dict__["foo"] == 2
         assert message.meta["orig_message"] == "from_context"
 
 
@@ -38,4 +38,4 @@ def test_structured_logger_in_context_with_bad_log_level():
     logger = define_structured_logger("some_name", _append_message, level=logging.DEBUG)
     context = create_test_pipeline_execution_context(logger_defs={"structured_logger": logger})
     with pytest.raises(AttributeError):
-        context.log.gargle("from_context", foo=2)
+        context.log.gargle("from_context")

@@ -6,7 +6,7 @@ from dagster.cli.workspace.cli_target import get_workspace_process_context_from_
 
 @pytest.fixture(scope="session")
 def instance():
-    return DagsterInstance.ephemeral()
+    return DagsterInstance.local_temp()
 
 
 @pytest.fixture(scope="session")

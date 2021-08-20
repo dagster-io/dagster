@@ -74,7 +74,7 @@ from dagster_graphql.test.utils import (
     main_repo_name,
 )
 
-LONG_INT = 29119888133298982934829348
+LONG_INT = 2875972244  # 32b unsigned, > 32b signed
 
 
 @dagster_type_loader(String)
