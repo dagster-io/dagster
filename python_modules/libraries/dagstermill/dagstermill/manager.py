@@ -312,17 +312,9 @@ class Manager:
         output_context = step_context.get_output_context(step_output_handle)
         io_manager = step_context.get_io_manager(step_output_handle)
 
+        # Note that we assume io manager is symmetric, i.e handle_input(handle_output(X)) == X
         io_manager.handle_output(output_context, value)
 
-        # warn when we detect the io manager is asymmetric and discourage it
-        value_from_load_input = io_manager.load_input(
-            build_input_context(upstream_output=output_context)
-        )
-        if pickle.dumps(value_from_load_input) != pickle.dumps(value):
-            step_context.log.warn(
-                f"the input of `handle_output` method and the return value of `load_input` method on {io_manager} are asymmetric, "
-                "which likely causes downstream IO handling issues. Please provide a symmetric IO manager instead."
-            )
         # record that the output has been yielded
         scrapbook.glue(output_name, "")
 
