@@ -154,6 +154,7 @@ from dagster.core.executor.init import InitExecutorContext
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import DefaultRunLauncher
 from dagster.core.log_manager import DagsterLogManager
+from dagster.core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster.core.storage.event_log import (
     EventLogEntry,
     EventLogRecord,
@@ -166,7 +167,6 @@ from dagster.core.storage.init import InitIntermediateStorageContext
 from dagster.core.storage.io_manager import IOManager, IOManagerDefinition, io_manager
 from dagster.core.storage.mem_io_manager import mem_io_manager
 from dagster.core.storage.memoizable_io_manager import MemoizableIOManager
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.storage.root_input_manager import (
     RootInputManager,
     RootInputManagerDefinition,
@@ -312,8 +312,8 @@ __all__ = [
     "build_input_context",
     "OutputContext",
     "build_output_context",
-    "PipelineRun",
-    "PipelineRunStatus",
+    "DagsterRun",
+    "DagsterRunStatus",
     "default_executors",
     "default_intermediate_storage_defs",
     "execute_pipeline_iterator",

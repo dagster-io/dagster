@@ -9,7 +9,7 @@ import pytest
 from dagster import AssetKey, AssetMaterialization, Output, execute_pipeline, pipeline, solid
 from dagster.core.errors import DagsterInstanceMigrationRequired
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import PipelineRunsFilter
+from dagster.core.storage.dagster_run import DagsterRunsFilter
 from dagster.core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster.utils import file_relative_path
 from sqlalchemy import create_engine
@@ -261,7 +261,7 @@ def test_0_12_0_add_mode_column(hostname, conn_string):
             DagsterInstanceMigrationRequired,
             match=_migration_regex("run", current_revision="7cba9eeaaf1d"),
         ):
-            instance.get_runs(filters=PipelineRunsFilter(mode="the_mode"))
+            instance.get_runs(filters=DagsterRunsFilter(mode="the_mode"))
 
         instance.upgrade()
 
@@ -269,13 +269,13 @@ def test_0_12_0_add_mode_column(hostname, conn_string):
         assert result.success
         assert len(instance.get_runs()) == 3
 
-        runs = instance.get_runs(filters=PipelineRunsFilter(mode="default"))
+        runs = instance.get_runs(filters=DagsterRunsFilter(mode="default"))
         assert len(runs) == 2
         assert runs[0].mode == "default"
         assert runs[1].mode == "default"
 
         # Ensure historical runs have their mode filled post-data migration
-        runs = instance.get_runs(filters=PipelineRunsFilter(mode="the_mode"))
+        runs = instance.get_runs(filters=DagsterRunsFilter(mode="the_mode"))
         assert len(runs) == 1
         assert runs[0].mode == "the_mode"
 

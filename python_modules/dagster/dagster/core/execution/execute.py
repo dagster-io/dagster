@@ -119,7 +119,7 @@ def core_execute_in_process(
     recorder: Dict[StepOutputHandle, Any] = {}
 
     with ephemeral_instance_if_missing(instance) as execute_instance:
-        pipeline_run = execute_instance.create_run_for_pipeline(
+        dagster_run = execute_instance.create_run_for_pipeline(
             pipeline_def=pipeline_def,
             run_config=run_config,
             mode=mode_def.name,
@@ -132,7 +132,7 @@ def core_execute_in_process(
                 context_event_generator=orchestration_context_event_generator,
                 pipeline=pipeline,
                 execution_plan=execution_plan,
-                pipeline_run=pipeline_run,
+                dagster_run=dagster_run,
                 instance=execute_instance,
                 run_config=run_config,
                 executor_defs=None,

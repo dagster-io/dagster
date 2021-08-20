@@ -10,7 +10,7 @@ from dagster.core.execution.api import (
     execute_run,
     execute_run_iterator,
 )
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.dagster_run import DagsterRunStatus
 from dagster.core.test_utils import instance_for_test
 
 
@@ -90,14 +90,14 @@ def test_execute_run_iterator():
                 )
             ],
         )
-        pipeline_run = instance.create_run_for_pipeline(
+        dagster_run = instance.create_run_for_pipeline(
             pipeline_def=pipeline_def,
             run_config={"loggers": {"callback": {}}},
             mode="default",
         )
 
         iterator = execute_run_iterator(
-            InMemoryPipeline(pipeline_def), pipeline_run, instance=instance
+            InMemoryPipeline(pipeline_def), dagster_run, instance=instance
         )
 
         event_type = None
@@ -114,29 +114,29 @@ def test_execute_run_iterator():
         assert len([message for message in messages if message == "CLEANING A"]) > 0
         assert len([message for message in messages if message == "CLEANING B"]) > 0
 
-        pipeline_run = instance.create_run_for_pipeline(
+        dagster_run = instance.create_run_for_pipeline(
             pipeline_def=pipeline_def,
             run_config={"loggers": {"callback": {}}},
             mode="default",
-        ).with_status(PipelineRunStatus.SUCCESS)
+        ).with_status(DagsterRunStatus.SUCCESS)
 
         with pytest.raises(
             check.CheckError,
             match=r"Pipeline run basic_resource_pipeline \({}\) in state"
-            r" PipelineRunStatus.SUCCESS, expected NOT_STARTED or STARTING".format(
-                pipeline_run.run_id
+            r" DagsterRunStatus.SUCCESS, expected NOT_STARTED or STARTING".format(
+                dagster_run.run_id
             ),
         ):
-            execute_run_iterator(InMemoryPipeline(pipeline_def), pipeline_run, instance=instance)
+            execute_run_iterator(InMemoryPipeline(pipeline_def), dagster_run, instance=instance)
 
-        pipeline_run = instance.create_run_for_pipeline(
+        dagster_run = instance.create_run_for_pipeline(
             pipeline_def=pipeline_def,
             run_config={"loggers": {"callback": {}}},
             mode="default",
-        ).with_status(PipelineRunStatus.CANCELED)
+        ).with_status(DagsterRunStatus.CANCELED)
 
         events = list(
-            execute_run_iterator(InMemoryPipeline(pipeline_def), pipeline_run, instance=instance)
+            execute_run_iterator(InMemoryPipeline(pipeline_def), dagster_run, instance=instance)
         )
 
         assert len(events) == 1
@@ -161,20 +161,20 @@ def test_execute_canceled_state():
                 )
             ],
         )
-        pipeline_run = instance.create_run_for_pipeline(
+        dagster_run = instance.create_run_for_pipeline(
             pipeline_def=pipeline_def,
             run_config={"loggers": {"callback": {}}},
             mode="default",
-        ).with_status(PipelineRunStatus.CANCELED)
+        ).with_status(DagsterRunStatus.CANCELED)
 
         with pytest.raises(DagsterInvariantViolationError):
             execute_run(
                 InMemoryPipeline(pipeline_def),
-                pipeline_run,
+                dagster_run,
                 instance=instance,
             )
 
-        logs = instance.all_logs(pipeline_run.run_id)
+        logs = instance.all_logs(dagster_run.run_id)
 
         assert len(logs) == 1
         assert (
@@ -186,7 +186,7 @@ def test_execute_canceled_state():
             pipeline_def=pipeline_def,
             run_config={"loggers": {"callback": {}}},
             mode="default",
-        ).with_status(PipelineRunStatus.CANCELED)
+        ).with_status(DagsterRunStatus.CANCELED)
 
         iter_events = list(
             execute_run_iterator(InMemoryPipeline(pipeline_def), iter_run, instance=instance)
@@ -217,20 +217,20 @@ def test_execute_run_bad_state():
                 )
             ],
         )
-        pipeline_run = instance.create_run_for_pipeline(
+        dagster_run = instance.create_run_for_pipeline(
             pipeline_def=pipeline_def,
             run_config={"loggers": {"callback": {}}},
             mode="default",
-        ).with_status(PipelineRunStatus.SUCCESS)
+        ).with_status(DagsterRunStatus.SUCCESS)
 
         with pytest.raises(
             check.CheckError,
             match=r"Pipeline run basic_resource_pipeline \({}\) in state"
-            r" PipelineRunStatus.SUCCESS, expected NOT_STARTED or STARTING".format(
-                pipeline_run.run_id
+            r" DagsterRunStatus.SUCCESS, expected NOT_STARTED or STARTING".format(
+                dagster_run.run_id
             ),
         ):
-            execute_run(InMemoryPipeline(pipeline_def), pipeline_run, instance=instance)
+            execute_run(InMemoryPipeline(pipeline_def), dagster_run, instance=instance)
 
 
 def test_execute_plan_iterator():
@@ -254,7 +254,7 @@ def test_execute_plan_iterator():
         run_config = {"loggers": {"callback": {}}}
 
         execution_plan = create_execution_plan(pipeline, run_config=run_config)
-        pipeline_run = instance.create_run_for_pipeline(
+        dagster_run = instance.create_run_for_pipeline(
             pipeline_def=pipeline,
             run_config={"loggers": {"callback": {}}},
             execution_plan=execution_plan,
@@ -263,7 +263,7 @@ def test_execute_plan_iterator():
         iterator = execute_plan_iterator(
             execution_plan,
             InMemoryPipeline(pipeline),
-            pipeline_run,
+            dagster_run,
             instance,
             run_config=run_config,
         )

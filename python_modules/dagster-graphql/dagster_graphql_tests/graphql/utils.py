@@ -45,7 +45,7 @@ def sync_execute_get_payload(variables, context):
 
     assert result.data
 
-    if result.data["launchPipelineExecution"]["__typename"] != "LaunchPipelineRunSuccess":
+    if result.data["launchPipelineExecution"]["__typename"] != "LaunchDagsterRunSuccess":
         raise Exception(result.data)
 
     context.instance.run_launcher.join()

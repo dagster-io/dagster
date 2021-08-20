@@ -2,7 +2,7 @@ import pytest
 from dagster.check import CheckError
 from dagster.core.run_coordinator import SubmitRunContext
 from dagster.core.run_coordinator.default_run_coordinator import DefaultRunCoordinator
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.dagster_run import DagsterRunStatus
 from dagster.core.test_utils import create_run_for_test, instance_for_test
 from dagster.utils import merge_dicts
 from dagster_tests.api_tests.utils import get_bar_workspace
@@ -47,11 +47,11 @@ def test_submit_run(instance, coodinator):  # pylint: disable=redefined-outer-na
         run = create_run(instance, external_pipeline, run_id="foo-1")
         returned_run = coodinator.submit_run(SubmitRunContext(run, workspace))
         assert returned_run.run_id == "foo-1"
-        assert returned_run.status == PipelineRunStatus.STARTING
+        assert returned_run.status == DagsterRunStatus.STARTING
 
         assert len(instance.run_launcher.queue()) == 1
         assert instance.run_launcher.queue()[0].run_id == "foo-1"
-        assert instance.run_launcher.queue()[0].status == PipelineRunStatus.STARTING
+        assert instance.run_launcher.queue()[0].status == DagsterRunStatus.STARTING
         assert instance.get_run_by_id("foo-1")
 
 
@@ -64,7 +64,7 @@ def test_submit_run_checks_status(instance, coodinator):  # pylint: disable=rede
         )
 
         run = create_run(
-            instance, external_pipeline, run_id="foo-1", status=PipelineRunStatus.STARTED
+            instance, external_pipeline, run_id="foo-1", status=DagsterRunStatus.STARTED
         )
         with pytest.raises(CheckError):
             coodinator.submit_run(SubmitRunContext(run, workspace))

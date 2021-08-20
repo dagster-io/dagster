@@ -3,11 +3,11 @@
 # start_custom_run_coordinator_marker
 
 from dagster.core.run_coordinator import QueuedRunCoordinator, SubmitRunContext
-from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.storage.dagster_run import DagsterRun
 
 
 class CustomRunCoordinator(QueuedRunCoordinator):
-    def submit_run(self, context: SubmitRunContext) -> PipelineRun:
+    def submit_run(self, context: SubmitRunContext) -> DagsterRun:
         pass
 
 

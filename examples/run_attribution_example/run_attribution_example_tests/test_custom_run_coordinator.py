@@ -1,6 +1,6 @@
 import pytest
 from dagster.core.run_coordinator import SubmitRunContext
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.dagster_run import DagsterRunStatus
 from dagster_tests.core_tests.run_coordinator_tests.test_queued_run_coordinator import (
     TestQueuedRunCoordinator,
 )
@@ -30,12 +30,12 @@ class TestCustomRunCoordinator(TestQueuedRunCoordinator):
                 instance,
                 external_pipeline,
                 run_id=run_id,
-                status=PipelineRunStatus.NOT_STARTED,
+                status=DagsterRunStatus.NOT_STARTED,
             )
             returned_run = coordinator.submit_run(SubmitRunContext(run, workspace))
 
             assert returned_run.run_id == run_id
-            assert returned_run.status == PipelineRunStatus.QUEUED
+            assert returned_run.status == DagsterRunStatus.QUEUED
             tags = instance.get_run_tags()
             assert len(tags) == 0
             mock_warnings.warn.assert_called_once()
@@ -64,12 +64,12 @@ class TestCustomRunCoordinator(TestQueuedRunCoordinator):
                 instance,
                 external_pipeline,
                 run_id=run_id,
-                status=PipelineRunStatus.NOT_STARTED,
+                status=DagsterRunStatus.NOT_STARTED,
             )
             returned_run = coordinator.submit_run(SubmitRunContext(run, workspace))
 
             assert returned_run.run_id == run_id
-            assert returned_run.status == PipelineRunStatus.QUEUED
+            assert returned_run.status == DagsterRunStatus.QUEUED
             tags = instance.get_run_tags()
             assert len(tags) == 1
             (tag_name, set_of_tag_values) = tags[0]

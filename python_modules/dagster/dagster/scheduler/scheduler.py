@@ -10,7 +10,12 @@ from dagster.core.host_representation import ExternalPipeline, PipelineSelector,
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import JobState, JobStatus, JobTickData, JobTickStatus, JobType
 from dagster.core.scheduler.scheduler import DEFAULT_MAX_CATCHUP_RUNS, DagsterSchedulerError
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.dagster_run import (
+    DagsterRun,
+    DagsterRunStatus,
+    DagsterRunsFilter,
+    PipelineTarget,
+)
 from dagster.core.storage.tags import RUN_KEY_TAG, SCHEDULED_EXECUTION_TIME_TAG, check_tags
 from dagster.core.workspace import IWorkspace
 from dagster.seven.compat.pendulum import to_timezone
@@ -273,7 +278,7 @@ def _schedule_runs_at_time(
     for run_request in schedule_execution_data.run_requests:
         run = _get_existing_run_for_request(instance, external_schedule, schedule_time, run_request)
         if run:
-            if run.status != PipelineRunStatus.NOT_STARTED:
+            if run.status != DagsterRunStatus.NOT_STARTED:
                 # A run already exists and was launched for this time period,
                 # but the scheduler must have crashed before the tick could be put
                 # into a SUCCESS state
@@ -303,7 +308,7 @@ def _schedule_runs_at_time(
 
         _check_for_debug_crash(debug_crash_flags, "RUN_CREATED")
 
-        if run.status != PipelineRunStatus.FAILURE:
+        if run.status != DagsterRunStatus.FAILURE:
             try:
                 instance.submit_run(run.run_id, workspace)
                 logger.info(f"Completed scheduled launch of run {run.run_id} for {schedule_name}")
@@ -325,14 +330,14 @@ def _schedule_runs_at_time(
 
 def _get_existing_run_for_request(instance, external_schedule, schedule_time, run_request):
     tags = merge_dicts(
-        PipelineRun.tags_for_schedule(external_schedule),
+        DagsterRun.tags_for_schedule(external_schedule),
         {
             SCHEDULED_EXECUTION_TIME_TAG: to_timezone(schedule_time, "UTC").isoformat(),
         },
     )
     if run_request.run_key:
         tags[RUN_KEY_TAG] = run_request.run_key
-    runs_filter = PipelineRunsFilter(tags=tags)
+    runs_filter = DagsterRunsFilter(tags=tags)
     existing_runs = instance.get_runs(runs_filter)
     if not len(existing_runs):
         return None
@@ -374,20 +379,20 @@ def _create_scheduler_run(
     if run_request.run_key:
         tags[RUN_KEY_TAG] = run_request.run_key
 
+    target = PipelineTarget(name=external_schedule.name, mode=external_schedule.mode)
     # If the run was scheduled correctly but there was an error creating its
     # run config, enter it into the run DB with a FAILURE status
-    possibly_invalid_pipeline_run = instance.create_run(
-        pipeline_name=external_schedule.pipeline_name,
+    possibly_invalid_dagster_run = instance.create_run(
+        target=target,
         run_id=None,
         run_config=run_config,
-        mode=external_schedule.mode,
-        solids_to_execute=external_pipeline.solids_to_execute,
+        nodes_to_execute=external_pipeline.solids_to_execute,
         step_keys_to_execute=None,
-        solid_selection=external_pipeline.solid_selection,
+        node_selection=external_pipeline.solid_selection,
         status=(
-            PipelineRunStatus.FAILURE
+            DagsterRunStatus.FAILURE
             if len(execution_plan_errors) > 0
-            else PipelineRunStatus.NOT_STARTED
+            else DagsterRunStatus.NOT_STARTED
         ),
         root_run_id=None,
         parent_run_id=None,
@@ -403,10 +408,10 @@ def _create_scheduler_run(
         for error in execution_plan_errors:
             instance.report_engine_event(
                 error.message,
-                possibly_invalid_pipeline_run,
+                possibly_invalid_dagster_run,
                 EngineEventData.engine_error(error),
             )
-        instance.report_run_failed(possibly_invalid_pipeline_run)
+        instance.report_run_failed(possibly_invalid_dagster_run)
         error_string = "\n".join([error.to_string() for error in execution_plan_errors])
         logger.error(f"Failed to fetch execution plan for {external_schedule.name}: {error_string}")
-    return (possibly_invalid_pipeline_run, execution_plan_errors)
+    return (possibly_invalid_dagster_run, execution_plan_errors)

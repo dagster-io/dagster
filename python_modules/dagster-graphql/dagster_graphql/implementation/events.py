@@ -3,7 +3,7 @@ from math import isnan
 from dagster import check, seven
 from dagster.core.definitions.event_metadata import (
     DagsterAssetMetadataEntryData,
-    DagsterPipelineRunMetadataEntryData,
+    DagsterDagsterRunMetadataEntryData,
     EventMetadataEntry,
     FloatMetadataEntryData,
     IntMetadataEntryData,
@@ -32,7 +32,7 @@ def iterate_metadata_entries(metadata_entries):
         GrapheneEventPythonArtifactMetadataEntry,
         GrapheneEventTextMetadataEntry,
         GrapheneEventUrlMetadataEntry,
-        GrapheneEventPipelineRunMetadataEntry,
+        GrapheneEventDagsterRunMetadataEntry,
         GrapheneEventAssetMetadataEntry,
     )
 
@@ -100,8 +100,8 @@ def iterate_metadata_entries(metadata_entries):
                 # make string representation available to allow for > 32bit int
                 intRepr=str(metadata_entry.entry_data.value),
             )
-        elif isinstance(metadata_entry.entry_data, DagsterPipelineRunMetadataEntryData):
-            yield GrapheneEventPipelineRunMetadataEntry(
+        elif isinstance(metadata_entry.entry_data, DagsterDagsterRunMetadataEntryData):
+            yield GrapheneEventDagsterRunMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
                 runId=metadata_entry.entry_data.run_id,

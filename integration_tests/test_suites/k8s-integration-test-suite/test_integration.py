@@ -4,7 +4,7 @@ import time
 
 import pytest
 from dagster import DagsterEventType, check
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.dagster_run import DagsterRunStatus
 from dagster.core.storage.tags import DOCKER_IMAGE_TAG
 from dagster.core.test_utils import create_run_for_test
 from dagster.utils import load_yaml_from_path, merge_dicts
@@ -156,7 +156,7 @@ def test_k8s_run_launcher_with_celery_executor_fails(
         assert found_pipeline_failure
         assert (
             dagster_instance_for_k8s_run_launcher.get_run_by_id(run.run_id).status
-            == PipelineRunStatus.FAILURE
+            == DagsterRunStatus.FAILURE
         )
 
 
@@ -263,13 +263,13 @@ def test_k8s_run_launcher_terminate(
         assert dagster_instance_for_k8s_run_launcher.run_launcher.terminate(run_id=run.run_id)
 
         start_time = datetime.datetime.now()
-        pipeline_run = None
+        dagster_run = None
         while datetime.datetime.now() < start_time + timeout:
-            pipeline_run = dagster_instance_for_k8s_run_launcher.get_run_by_id(run.run_id)
-            if pipeline_run.status == PipelineRunStatus.CANCELED:
+            dagster_run = dagster_instance_for_k8s_run_launcher.get_run_by_id(run.run_id)
+            if dagster_run.status == DagsterRunStatus.CANCELED:
                 break
             time.sleep(5)
 
-        assert pipeline_run.status == PipelineRunStatus.CANCELED
+        assert dagster_run.status == DagsterRunStatus.CANCELED
 
         assert not dagster_instance_for_k8s_run_launcher.run_launcher.terminate(run_id=run.run_id)

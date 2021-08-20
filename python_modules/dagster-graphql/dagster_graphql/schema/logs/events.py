@@ -230,12 +230,12 @@ class GrapheneEventIntMetadataEntry(graphene.ObjectType):
         name = "EventIntMetadataEntry"
 
 
-class GrapheneEventPipelineRunMetadataEntry(graphene.ObjectType):
+class GrapheneEventDagsterRunMetadataEntry(graphene.ObjectType):
     runId = graphene.NonNull(graphene.String)
 
     class Meta:
         interfaces = (GrapheneEventMetadataEntry,)
-        name = "EventPipelineRunMetadataEntry"
+        name = "EventDagsterRunMetadataEntry"
 
 
 class GrapheneEventAssetMetadataEntry(graphene.ObjectType):
@@ -397,7 +397,7 @@ class GrapheneStepMaterializationEvent(graphene.ObjectType):
         name = "StepMaterializationEvent"
 
     materialization = graphene.NonNull(GrapheneMaterialization)
-    stepStats = graphene.NonNull(lambda: GraphenePipelineRunStepStats)
+    stepStats = graphene.NonNull(lambda: GrapheneDagsterRunStepStats)
     assetLineage = non_null_list(GrapheneAssetLineageInfo)
 
     def __init__(self, materialization, assetLineage, **basic_params):
@@ -467,7 +467,7 @@ class GrapheneStepExpectationResultEvent(graphene.ObjectType):
 
 
 # Should be a union of all possible events
-class GraphenePipelineRunEvent(graphene.Union):
+class GrapheneDagsterRunEvent(graphene.Union):
     class Meta:
         types = (
             GrapheneExecutionStepFailureEvent,
@@ -500,10 +500,10 @@ class GraphenePipelineRunEvent(graphene.Union):
             GrapheneAlertStartEvent,
             GrapheneAlertSuccessEvent,
         )
-        name = "PipelineRunEvent"
+        name = "DagsterRunEvent"
 
 
-class GraphenePipelineRunStepStats(graphene.ObjectType):
+class GrapheneDagsterRunStepStats(graphene.ObjectType):
     runId = graphene.NonNull(graphene.String)
     stepKey = graphene.NonNull(graphene.String)
     status = graphene.Field(GrapheneStepEventStatus)
@@ -513,7 +513,7 @@ class GraphenePipelineRunStepStats(graphene.ObjectType):
     expectationResults = non_null_list(GrapheneExpectationResult)
 
     class Meta:
-        name = "PipelineRunStepStats"
+        name = "DagsterRunStepStats"
 
     def __init__(self, stats):
         self._stats = check.inst_param(stats, "stats", RunStepKeyStatsSnapshot)

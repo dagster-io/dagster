@@ -1,8 +1,8 @@
 import graphene
 import pendulum
-from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.dagster_run import DagsterRunStatus, DagsterRunsFilter
 
-from .pipelines.status import GraphenePipelineRunStatus
+from .pipelines.status import GrapheneDagsterRunStatus
 from .runs import GrapheneRunConfigData
 from .util import non_null_list
 
@@ -22,18 +22,18 @@ class GrapheneExecutionTag(graphene.InputObjectType):
         name = "ExecutionTag"
 
 
-class GraphenePipelineRunsFilter(graphene.InputObjectType):
+class GrapheneDagsterRunsFilter(graphene.InputObjectType):
     runIds = graphene.List(graphene.String)
     pipelineName = graphene.Field(graphene.String)
     tags = graphene.List(graphene.NonNull(GrapheneExecutionTag))
-    statuses = graphene.List(graphene.NonNull(GraphenePipelineRunStatus))
+    statuses = graphene.List(graphene.NonNull(GrapheneDagsterRunStatus))
     snapshotId = graphene.Field(graphene.String)
     updatedAfter = graphene.Field(graphene.String)
     mode = graphene.Field(graphene.String)
 
     class Meta:
         description = """This type represents a filter on pipeline runs."""
-        name = "PipelineRunsFilter"
+        name = "DagsterRunsFilter"
 
     def to_selector(self):
         if self.tags:
@@ -44,7 +44,7 @@ class GraphenePipelineRunsFilter(graphene.InputObjectType):
 
         if self.statuses:
             statuses = [
-                PipelineRunStatus[status]
+                DagsterRunStatus[status]
                 for status in self.statuses  # pylint: disable=not-an-iterable
             ]
         else:
@@ -52,9 +52,9 @@ class GraphenePipelineRunsFilter(graphene.InputObjectType):
 
         updated_after = pendulum.parse(self.updatedAfter) if self.updatedAfter else None
 
-        return PipelineRunsFilter(
+        return DagsterRunsFilter(
             run_ids=self.runIds,
-            pipeline_name=self.pipelineName,
+            target_name=self.pipelineName,
             tags=tags,
             statuses=statuses,
             snapshot_id=self.snapshotId,
@@ -228,7 +228,7 @@ types = [
     GrapheneMarshalledOutput,
     GrapheneLaunchBackfillParams,
     GraphenePartitionSetSelector,
-    GraphenePipelineRunsFilter,
+    GrapheneDagsterRunsFilter,
     GraphenePipelineSelector,
     GrapheneRepositorySelector,
     GrapheneScheduleSelector,

@@ -116,7 +116,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         only supported networkMode. These are the defaults that are set up by
         docker-compose when you use the Dagster ECS reference deployment.
         """
-        run = context.pipeline_run
+        run = context.dagster_run
         metadata = self._task_metadata()
         pipeline_origin = context.pipeline_code_origin
         image = pipeline_origin.repository_origin.container_image
@@ -125,7 +125,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         input_json = serialize_dagster_namedtuple(
             ExecuteRunArgs(
                 pipeline_origin=pipeline_origin,
-                pipeline_run_id=run.run_id,
+                dagster_run_id=run.run_id,
                 instance_ref=self._instance.get_ref(),
             )
         )
@@ -153,7 +153,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         self._set_ecs_tags(run.run_id, task_arn=arn)
         self._instance.report_engine_event(
             message=f"Launching run in task {arn} on cluster {metadata.cluster}",
-            pipeline_run=run,
+            dagster_run=run,
             cls=self.__class__,
         )
 

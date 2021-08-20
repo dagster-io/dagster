@@ -3,7 +3,7 @@ from graphql.execution.base import ResolveInfo
 
 from ..external import get_external_pipeline_or_raise
 from ..utils import ExecutionMetadata, ExecutionParams, capture_error
-from .run_lifecycle import create_valid_pipeline_run
+from .run_lifecycle import create_valid_dagster_run
 
 
 @capture_error
@@ -31,17 +31,17 @@ def do_launch(graphene_info, execution_params, is_reexecuted=False):
 
     external_pipeline = get_external_pipeline_or_raise(graphene_info, execution_params.selector)
 
-    pipeline_run = create_valid_pipeline_run(graphene_info, external_pipeline, execution_params)
+    dagster_run = create_valid_dagster_run(graphene_info, external_pipeline, execution_params)
 
     return graphene_info.context.instance.submit_run(
-        pipeline_run.run_id,
+        dagster_run.run_id,
         workspace=graphene_info.context,
     )
 
 
 def _launch_pipeline_execution(graphene_info, execution_params, is_reexecuted=False):
-    from ...schema.pipelines.pipeline import GraphenePipelineRun
-    from ...schema.runs import GrapheneLaunchPipelineRunSuccess
+    from ...schema.pipelines.pipeline import GrapheneDagsterRun
+    from ...schema.runs import GrapheneLaunchDagsterRunSuccess
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(execution_params, "execution_params", ExecutionParams)
@@ -49,4 +49,4 @@ def _launch_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fa
 
     run = do_launch(graphene_info, execution_params, is_reexecuted)
 
-    return GrapheneLaunchPipelineRunSuccess(run=GraphenePipelineRun(run))
+    return GrapheneLaunchDagsterRunSuccess(run=GrapheneDagsterRun(run))

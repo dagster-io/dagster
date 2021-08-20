@@ -8,7 +8,7 @@ from contextlib import contextmanager
 import pytest
 from dagster import DefaultRunLauncher, file_relative_path, pipeline, repository, seven, solid
 from dagster.core.errors import DagsterLaunchFailedError
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.dagster_run import DagsterRunStatus
 from dagster.core.test_utils import (
     environ,
     instance_for_test,
@@ -179,24 +179,24 @@ def test_successful_run(get_workspace, run_config):  # pylint: disable=redefined
                 .get_full_external_pipeline("noop_pipeline")
             )
 
-            pipeline_run = instance.create_run_for_pipeline(
+            dagster_run = instance.create_run_for_pipeline(
                 pipeline_def=noop_pipeline,
                 run_config=run_config,
                 external_pipeline_origin=external_pipeline.get_external_origin(),
                 pipeline_code_origin=external_pipeline.get_python_origin(),
             )
-            run_id = pipeline_run.run_id
+            run_id = dagster_run.run_id
 
-            assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
+            assert instance.get_run_by_id(run_id).status == DagsterRunStatus.NOT_STARTED
 
-            instance.launch_run(run_id=pipeline_run.run_id, workspace=workspace)
+            instance.launch_run(run_id=dagster_run.run_id, workspace=workspace)
 
-            pipeline_run = instance.get_run_by_id(run_id)
-            assert pipeline_run
-            assert pipeline_run.run_id == run_id
+            dagster_run = instance.get_run_by_id(run_id)
+            assert dagster_run
+            assert dagster_run.run_id == run_id
 
-            pipeline_run = poll_for_finished_run(instance, run_id)
-            assert pipeline_run.status == PipelineRunStatus.SUCCESS
+            dagster_run = poll_for_finished_run(instance, run_id)
+            assert dagster_run.status == DagsterRunStatus.SUCCESS
 
 
 @pytest.mark.parametrize(
@@ -231,7 +231,7 @@ def test_invalid_instance_run(get_workspace):
                             .get_full_external_pipeline("noop_pipeline")
                         )
 
-                        pipeline_run = instance.create_run_for_pipeline(
+                        dagster_run = instance.create_run_for_pipeline(
                             pipeline_def=noop_pipeline,
                             external_pipeline_origin=external_pipeline.get_external_origin(),
                             pipeline_code_origin=external_pipeline.get_python_origin(),
@@ -240,14 +240,14 @@ def test_invalid_instance_run(get_workspace):
                             DagsterLaunchFailedError,
                             match=re.escape(
                                 "gRPC server could not load run {run_id} in order to execute it".format(
-                                    run_id=pipeline_run.run_id
+                                    run_id=dagster_run.run_id
                                 )
                             ),
                         ):
-                            instance.launch_run(run_id=pipeline_run.run_id, workspace=workspace)
+                            instance.launch_run(run_id=dagster_run.run_id, workspace=workspace)
 
-                        failed_run = instance.get_run_by_id(pipeline_run.run_id)
-                        assert failed_run.status == PipelineRunStatus.FAILURE
+                        failed_run = instance.get_run_by_id(dagster_run.run_id)
+                        assert failed_run.status == DagsterRunStatus.FAILURE
 
 
 @pytest.mark.parametrize(
@@ -275,26 +275,26 @@ def test_crashy_run(get_workspace, run_config):  # pylint: disable=redefined-out
                 .get_full_external_pipeline("crashy_pipeline")
             )
 
-            pipeline_run = instance.create_run_for_pipeline(
+            dagster_run = instance.create_run_for_pipeline(
                 pipeline_def=crashy_pipeline,
                 run_config=run_config,
                 external_pipeline_origin=external_pipeline.get_external_origin(),
                 pipeline_code_origin=external_pipeline.get_python_origin(),
             )
 
-            run_id = pipeline_run.run_id
+            run_id = dagster_run.run_id
 
-            assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
+            assert instance.get_run_by_id(run_id).status == DagsterRunStatus.NOT_STARTED
 
-            instance.launch_run(pipeline_run.run_id, workspace)
+            instance.launch_run(dagster_run.run_id, workspace)
 
-            failed_pipeline_run = instance.get_run_by_id(run_id)
+            failed_dagster_run = instance.get_run_by_id(run_id)
 
-            assert failed_pipeline_run
-            assert failed_pipeline_run.run_id == run_id
+            assert failed_dagster_run
+            assert failed_dagster_run.run_id == run_id
 
-            failed_pipeline_run = poll_for_finished_run(instance, run_id, timeout=5)
-            assert failed_pipeline_run.status == PipelineRunStatus.FAILURE
+            failed_dagster_run = poll_for_finished_run(instance, run_id, timeout=5)
+            assert failed_dagster_run.status == DagsterRunStatus.FAILURE
 
             event_records = instance.all_logs(run_id)
 
@@ -330,18 +330,18 @@ def test_terminated_run(get_workspace, run_config):  # pylint: disable=redefined
                 .get_repository("nope")
                 .get_full_external_pipeline("sleepy_pipeline")
             )
-            pipeline_run = instance.create_run_for_pipeline(
+            dagster_run = instance.create_run_for_pipeline(
                 pipeline_def=sleepy_pipeline,
                 run_config=run_config,
                 external_pipeline_origin=external_pipeline.get_external_origin(),
                 pipeline_code_origin=external_pipeline.get_python_origin(),
             )
 
-            run_id = pipeline_run.run_id
+            run_id = dagster_run.run_id
 
-            assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
+            assert instance.get_run_by_id(run_id).status == DagsterRunStatus.NOT_STARTED
 
-            instance.launch_run(pipeline_run.run_id, workspace)
+            instance.launch_run(dagster_run.run_id, workspace)
 
             poll_for_step_start(instance, run_id)
 
@@ -349,9 +349,9 @@ def test_terminated_run(get_workspace, run_config):  # pylint: disable=redefined
             assert launcher.can_terminate(run_id)
             assert launcher.terminate(run_id)
 
-            terminated_pipeline_run = poll_for_finished_run(instance, run_id, timeout=30)
-            terminated_pipeline_run = instance.get_run_by_id(run_id)
-            assert terminated_pipeline_run.status == PipelineRunStatus.CANCELED
+            terminated_dagster_run = poll_for_finished_run(instance, run_id, timeout=30)
+            terminated_dagster_run = instance.get_run_by_id(run_id)
+            assert terminated_dagster_run.status == DagsterRunStatus.CANCELED
 
             poll_for_event(
                 instance,
@@ -443,25 +443,25 @@ def test_single_solid_selection_execution(
                 .get_repository("nope")
                 .get_full_external_pipeline("math_diamond")
             )
-            pipeline_run = instance.create_run_for_pipeline(
+            dagster_run = instance.create_run_for_pipeline(
                 pipeline_def=math_diamond,
                 run_config=run_config,
                 solids_to_execute={"return_one"},
                 external_pipeline_origin=external_pipeline.get_external_origin(),
                 pipeline_code_origin=external_pipeline.get_python_origin(),
             )
-            run_id = pipeline_run.run_id
+            run_id = dagster_run.run_id
 
-            assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
+            assert instance.get_run_by_id(run_id).status == DagsterRunStatus.NOT_STARTED
 
-            instance.launch_run(pipeline_run.run_id, workspace)
-            finished_pipeline_run = poll_for_finished_run(instance, run_id)
+            instance.launch_run(dagster_run.run_id, workspace)
+            finished_dagster_run = poll_for_finished_run(instance, run_id)
 
             event_records = instance.all_logs(run_id)
 
-            assert finished_pipeline_run
-            assert finished_pipeline_run.run_id == run_id
-            assert finished_pipeline_run.status == PipelineRunStatus.SUCCESS
+            assert finished_dagster_run
+            assert finished_dagster_run.run_id == run_id
+            assert finished_dagster_run.status == DagsterRunStatus.SUCCESS
 
             assert _get_successful_step_keys(event_records) == {"return_one"}
 
@@ -489,25 +489,25 @@ def test_multi_solid_selection_execution(
                 .get_full_external_pipeline("math_diamond")
             )
 
-            pipeline_run = instance.create_run_for_pipeline(
+            dagster_run = instance.create_run_for_pipeline(
                 pipeline_def=math_diamond,
                 run_config=run_config,
                 solids_to_execute={"return_one", "multiply_by_2"},
                 external_pipeline_origin=external_pipeline.get_external_origin(),
                 pipeline_code_origin=external_pipeline.get_python_origin(),
             )
-            run_id = pipeline_run.run_id
+            run_id = dagster_run.run_id
 
-            assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
+            assert instance.get_run_by_id(run_id).status == DagsterRunStatus.NOT_STARTED
 
-            instance.launch_run(pipeline_run.run_id, workspace)
-            finished_pipeline_run = poll_for_finished_run(instance, run_id)
+            instance.launch_run(dagster_run.run_id, workspace)
+            finished_dagster_run = poll_for_finished_run(instance, run_id)
 
             event_records = instance.all_logs(run_id)
 
-            assert finished_pipeline_run
-            assert finished_pipeline_run.run_id == run_id
-            assert finished_pipeline_run.status == PipelineRunStatus.SUCCESS
+            assert finished_dagster_run
+            assert finished_dagster_run.run_id == run_id
+            assert finished_dagster_run.status == DagsterRunStatus.SUCCESS
 
             assert _get_successful_step_keys(event_records) == {
                 "return_one",
@@ -534,22 +534,22 @@ def test_engine_events(get_workspace, run_config):  # pylint: disable=redefined-
                 .get_repository("nope")
                 .get_full_external_pipeline("math_diamond")
             )
-            pipeline_run = instance.create_run_for_pipeline(
+            dagster_run = instance.create_run_for_pipeline(
                 pipeline_def=math_diamond,
                 run_config=run_config,
                 external_pipeline_origin=external_pipeline.get_external_origin(),
                 pipeline_code_origin=external_pipeline.get_python_origin(),
             )
-            run_id = pipeline_run.run_id
+            run_id = dagster_run.run_id
 
-            assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
+            assert instance.get_run_by_id(run_id).status == DagsterRunStatus.NOT_STARTED
 
-            instance.launch_run(pipeline_run.run_id, workspace)
-            finished_pipeline_run = poll_for_finished_run(instance, run_id)
+            instance.launch_run(dagster_run.run_id, workspace)
+            finished_dagster_run = poll_for_finished_run(instance, run_id)
 
-            assert finished_pipeline_run
-            assert finished_pipeline_run.run_id == run_id
-            assert finished_pipeline_run.status == PipelineRunStatus.SUCCESS
+            assert finished_dagster_run
+            assert finished_dagster_run.run_id == run_id
+            assert finished_dagster_run.status == DagsterRunStatus.SUCCESS
 
             poll_for_event(
                 instance, run_id, event_type="ENGINE_EVENT", message="Process for pipeline exited"

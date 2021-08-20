@@ -1,5 +1,5 @@
 from dagster import RunRequest, sensor
-from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.dagster_run import DagsterRunStatus, DagsterRunsFilter
 
 
 @sensor(pipeline_name="dbt_pipeline", mode="prod")
@@ -11,8 +11,8 @@ def dbt_on_hn_download_finished(context):
     #
     # This is not a recommended pattern as it can put a lot of pressure on your log database.
     runs = context.instance.get_runs(
-        filters=PipelineRunsFilter(
-            statuses=[PipelineRunStatus.SUCCESS], pipeline_name="download_pipeline"
+        filters=DagsterRunsFilter(
+            statuses=[DagsterRunStatus.SUCCESS], target_name="download_pipeline"
         ),
         limit=5,
     )

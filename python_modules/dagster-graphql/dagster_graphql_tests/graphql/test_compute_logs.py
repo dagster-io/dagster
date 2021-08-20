@@ -6,7 +6,7 @@ from .utils import sync_execute_get_run_log_data
 COMPUTE_LOGS_QUERY = """
   query ComputeLogsQuery($runId: ID!, $stepKey: String!) {
     pipelineRunOrError(runId: $runId) {
-      ... on PipelineRun {
+      ... on DagsterRun {
         runId
         computeLogs(stepKey: $stepKey) {
           stdout {

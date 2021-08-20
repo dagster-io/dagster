@@ -6,7 +6,7 @@ RESERVED_INPUT_NAMES = [
     "__dm_dagstermill",
     "__dm_executable_dict",
     "__dm_json",
-    "__dm_pipeline_run_dict",
+    "__dm_dagster_run_dict",
     "__dm_solid_handle_kwargs",
     "__dm_instance_ref_dict",
 ]
@@ -30,14 +30,14 @@ class DagsterTranslator(papermill.translators.PythonTranslator):
     def codify(cls, parameters):  # pylint: disable=arguments-differ
         assert "__dm_context" in parameters
         assert "__dm_executable_dict" in parameters
-        assert "__dm_pipeline_run_dict" in parameters
+        assert "__dm_dagster_run_dict" in parameters
         assert "__dm_solid_handle_kwargs" in parameters
         assert "__dm_instance_ref_dict" in parameters
 
         context_args = parameters["__dm_context"]
         pipeline_context_args = dict(
             executable_dict=parameters["__dm_executable_dict"],
-            pipeline_run_dict=parameters["__dm_pipeline_run_dict"],
+            dagster_run_dict=parameters["__dm_dagster_run_dict"],
             solid_handle_kwargs=parameters["__dm_solid_handle_kwargs"],
             instance_ref_dict=parameters["__dm_instance_ref_dict"],
             **context_args,

@@ -2,7 +2,7 @@ from collections import namedtuple
 from enum import Enum
 
 from dagster import check
-from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.storage.dagster_run import DagsterRun
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
 
@@ -58,19 +58,19 @@ class RunRequest(namedtuple("_RunRequest", "run_key run_config tags")):
 
 
 @whitelist_for_serdes
-class PipelineRunReaction(namedtuple("_PipelineRunReaction", "pipeline_run error")):
+class DagsterRunReaction(namedtuple("_DagsterRunReaction", "dagster_run error")):
     """
     Represents a request that reacts to an existing pipeline run. If success, it will report logs
     back to the run.
 
     Attributes:
-        pipeline_run (PipelineRun): The pipeline run that originates this reaction.
+        dagster_run (DagsterRun): The pipeline run that originates this reaction.
         error (Optional[SerializableErrorInfo]): user code execution error.
     """
 
-    def __new__(cls, pipeline_run, error=None):
-        return super(PipelineRunReaction, cls).__new__(
+    def __new__(cls, dagster_run, error=None):
+        return super(DagsterRunReaction, cls).__new__(
             cls,
-            pipeline_run=check.opt_inst_param(pipeline_run, "pipeline_run", PipelineRun),
+            dagster_run=check.opt_inst_param(dagster_run, "dagster_run", DagsterRun),
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
         )

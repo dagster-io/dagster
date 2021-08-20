@@ -6,7 +6,7 @@ from dagster.config import Field
 from dagster.config.config_type import Array, Noneable
 from dagster.config.field_utils import Shape
 from dagster.core.events.log import EventLogEntry
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 
 from .base import RunCoordinator, SubmitRunContext
@@ -73,36 +73,36 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
             dequeue_interval_seconds=config_value.get("dequeue_interval_seconds"),
         )
 
-    def submit_run(self, context: SubmitRunContext) -> PipelineRun:
-        pipeline_run = context.pipeline_run
-        check.invariant(pipeline_run.status == PipelineRunStatus.NOT_STARTED)
+    def submit_run(self, context: SubmitRunContext) -> DagsterRun:
+        dagster_run = context.dagster_run
+        check.invariant(dagster_run.status == DagsterRunStatus.NOT_STARTED)
 
         enqueued_event = DagsterEvent(
             event_type_value=DagsterEventType.PIPELINE_ENQUEUED.value,
-            pipeline_name=pipeline_run.pipeline_name,
+            pipeline_name=dagster_run.target.name,
         )
         event_record = EventLogEntry(
             message="",
             user_message="",
             level=logging.INFO,
-            pipeline_name=pipeline_run.pipeline_name,
-            run_id=pipeline_run.run_id,
+            pipeline_name=dagster_run.target.name,
+            run_id=dagster_run.run_id,
             error_info=None,
             timestamp=time.time(),
             dagster_event=enqueued_event,
         )
         self._instance.handle_new_event(event_record)
 
-        run = self._instance.get_run_by_id(pipeline_run.run_id)
+        run = self._instance.get_run_by_id(dagster_run.run_id)
         if run is None:
-            check.failed(f"Failed to reload run {pipeline_run.run_id}")
+            check.failed(f"Failed to reload run {dagster_run.run_id}")
         return run
 
     def can_cancel_run(self, run_id):
         run = self._instance.get_run_by_id(run_id)
         if not run:
             return False
-        if run.status == PipelineRunStatus.QUEUED:
+        if run.status == DagsterRunStatus.QUEUED:
             return True
         else:
             return self._instance.run_launcher.can_terminate(run_id)
@@ -113,7 +113,7 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
             return False
         # NOTE: possible race condition if the dequeuer acts on this run at the same time
         # https://github.com/dagster-io/dagster/issues/3323
-        if run.status == PipelineRunStatus.QUEUED:
+        if run.status == DagsterRunStatus.QUEUED:
             self._instance.report_run_canceling(
                 run,
                 message="Canceling run from the queue.",

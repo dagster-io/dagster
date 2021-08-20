@@ -6,7 +6,7 @@ import re
 from contextlib import contextmanager
 
 import pytest
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.dagster_run import DagsterRunStatus
 from dagster.core.test_utils import environ, poll_for_finished_run, poll_for_step_start
 from dagster.utils.test.postgres_instance import postgres_instance_for_test
 from dagster.utils.yaml_utils import merge_yamls
@@ -92,7 +92,7 @@ def test_launch_docker_image_on_pipeline_config():
 
                 run = instance.get_run_by_id(run.run_id)
 
-                assert run.status == PipelineRunStatus.SUCCESS
+                assert run.status == DagsterRunStatus.SUCCESS
 
                 assert run.tags[DOCKER_IMAGE_TAG] == docker_image
 
@@ -164,9 +164,9 @@ def test_terminate_launched_docker_run():
             assert instance.run_launcher.can_terminate(run_id)
             assert instance.run_launcher.terminate(run_id)
 
-            terminated_pipeline_run = poll_for_finished_run(instance, run_id, timeout=30)
-            terminated_pipeline_run = instance.get_run_by_id(run_id)
-            assert terminated_pipeline_run.status == PipelineRunStatus.CANCELED
+            terminated_dagster_run = poll_for_finished_run(instance, run_id, timeout=30)
+            terminated_dagster_run = instance.get_run_by_id(run_id)
+            assert terminated_dagster_run.status == DagsterRunStatus.CANCELED
 
             run_logs = instance.all_logs(run_id)
 
@@ -330,4 +330,4 @@ def _test_launch(docker_image, launcher_config):
 
             poll_for_finished_run(instance, run.run_id, timeout=60)
 
-            assert instance.get_run_by_id(run.run_id).status == PipelineRunStatus.SUCCESS
+            assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS

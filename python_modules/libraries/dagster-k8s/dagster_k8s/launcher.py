@@ -5,7 +5,7 @@ from dagster import EventMetadataEntry, Field, Noneable, StringSource, check
 from dagster.cli.api import ExecuteRunArgs
 from dagster.core.events import EngineEventData
 from dagster.core.launcher import LaunchRunContext, RunLauncher
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.dagster_run import DagsterRunStatus
 from dagster.core.storage.tags import DOCKER_IMAGE_TAG
 from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
 from dagster.utils import frozentags, merge_dicts
@@ -34,7 +34,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             module: dagster_k8s.launcher
             class: K8sRunLauncher
             config:
-                service_account_name: pipeline_run_service_account
+                service_account_name: dagster_run_service_account
                 job_image: my_project/dagster_image:latest
                 instance_config_map: dagster-instance
                 postgres_password_secret: dagster-postgresql-secret
@@ -244,7 +244,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         )
 
     def launch_run(self, context: LaunchRunContext) -> None:
-        run = context.pipeline_run
+        run = context.dagster_run
 
         job_name = "dagster-run-{}".format(run.run_id)
         pod_name = job_name
@@ -268,7 +268,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         input_json = serialize_dagster_namedtuple(
             ExecuteRunArgs(
                 pipeline_origin=pipeline_origin,
-                pipeline_run_id=run.run_id,
+                dagster_run_id=run.run_id,
                 instance_ref=None,
             )
         )
@@ -313,10 +313,10 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     def can_terminate(self, run_id):
         check.str_param(run_id, "run_id")
 
-        pipeline_run = self._instance.get_run_by_id(run_id)
-        if not pipeline_run:
+        dagster_run = self._instance.get_run_by_id(run_id)
+        if not dagster_run:
             return False
-        if pipeline_run.status != PipelineRunStatus.STARTED:
+        if dagster_run.status != DagsterRunStatus.STARTED:
             return False
         return True
 
@@ -333,7 +333,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                 message="Unable to terminate pipeline; can_terminate returned {}".format(
                     can_terminate
                 ),
-                pipeline_run=run,
+                dagster_run=run,
                 cls=self.__class__,
             )
             return False
@@ -347,7 +347,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             if termination_result:
                 self._instance.report_engine_event(
                     message="Pipeline was terminated successfully.",
-                    pipeline_run=run,
+                    dagster_run=run,
                     cls=self.__class__,
                 )
             else:
@@ -355,14 +355,14 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                     message="Pipeline was not terminated successfully; delete_job returned {}".format(
                         termination_result
                     ),
-                    pipeline_run=run,
+                    dagster_run=run,
                     cls=self.__class__,
                 )
             return termination_result
         except Exception:  # pylint: disable=broad-except
             self._instance.report_engine_event(
                 message="Pipeline was not terminated successfully; encountered error in delete_job",
-                pipeline_run=run,
+                dagster_run=run,
                 engine_event_data=EngineEventData.engine_error(
                     serializable_error_info_from_exc_info(sys.exc_info())
                 ),

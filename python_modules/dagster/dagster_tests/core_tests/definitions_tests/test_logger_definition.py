@@ -14,7 +14,7 @@ from dagster import (
 from dagster.core.utils import coerce_valid_log_level
 
 
-def assert_pipeline_runs_with_logger(logger_def, logger_config):
+def assert_dagster_runs_with_logger(logger_def, logger_config):
     @pipeline(mode_defs=[ModeDefinition(logger_defs={"test_logger": logger_def})])
     def pass_pipeline():
         pass
@@ -53,7 +53,7 @@ def test_logger_using_configured():
 
     test_logger_configured = configured(test_logger)("secret testing value!!")
 
-    assert_pipeline_runs_with_logger(test_logger_configured, {})
+    assert_dagster_runs_with_logger(test_logger_configured, {})
     assert it["ran"]
 
 
@@ -87,7 +87,7 @@ def test_logger_with_enum_in_schema_using_configured():
         it["ran pick_different_enum_value"] = True
         return {"enum": "OTHER" if config["enum"] == TestPythonEnum.VALUE_ONE else "VALUE_ONE"}
 
-    assert_pipeline_runs_with_logger(pick_different_enum_value, {"enum": "VALUE_ONE"})
+    assert_dagster_runs_with_logger(pick_different_enum_value, {"enum": "VALUE_ONE"})
 
     assert it["ran test_logger"]
     assert it["ran pick_different_enum_value"]

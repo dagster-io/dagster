@@ -132,7 +132,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
     def launch_run(self, context: LaunchRunContext) -> None:
 
-        run = context.pipeline_run
+        run = context.dagster_run
 
         pipeline_code_origin = context.pipeline_code_origin
 
@@ -157,7 +157,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
         input_json = serialize_dagster_namedtuple(
             ExecuteRunArgs(
                 pipeline_origin=pipeline_code_origin,
-                pipeline_run_id=run.run_id,
+                dagster_run_id=run.run_id,
                 instance_ref=self._instance.get_ref(),
             )
         )
@@ -201,7 +201,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
                 container_id=container.id,
                 docker_image=docker_image,
             ),
-            pipeline_run=run,
+            dagster_run=run,
             cls=self.__class__,
         )
 
@@ -237,7 +237,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
         if not container:
             self._instance.report_engine_event(
                 message="Unable to get docker container to send termination request to.",
-                pipeline_run=run,
+                dagster_run=run,
                 cls=self.__class__,
             )
             return False

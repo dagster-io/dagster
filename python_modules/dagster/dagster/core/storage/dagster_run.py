@@ -2,7 +2,7 @@ import warnings
 from collections import namedtuple
 from datetime import datetime
 from enum import Enum
-from typing import NamedTuple
+from typing import NamedTuple, Union
 
 from dagster import check
 from dagster.core.errors import DagsterInvariantViolationError
@@ -221,14 +221,17 @@ def dagster_run_from_storage(
 
 
 @whitelist_for_serdes
-class PipelineTarget(NamedTuple):
-    name: str
-    mode: str
+class PipelineTarget(NamedTuple("PipelineTarget", [("name", str), ("mode", str)])):
+    def __new__(cls, name, mode):
+        return super(PipelineTarget, cls).__new__(cls, name, mode)
 
 
 @whitelist_for_serdes
 class JobTarget(NamedTuple):
     name: str
+
+
+Target = Union[PipelineTarget, JobTarget]
 
 
 @whitelist_for_serdes(serializer=DagsterRunSerializer)
@@ -342,6 +345,14 @@ class DagsterRun(
         else:
             return self.target.mode
 
+    @property
+    def pipeline_name(self) -> str:
+        if isinstance(self.target, JobTarget):
+            raise DagsterInvariantViolationError(
+                "Attempted to retrieve pipeline name, but dagster run represents a job."
+            )
+        return self.target.name
+
     def with_mode(self, mode):
         if isinstance(self.target, JobTarget):
             raise DagsterInvariantViolationError(
@@ -410,20 +421,22 @@ class DagsterRunsFilter(
     def __new__(
         cls,
         run_ids=None,
-        target=None,
+        target_name=None,
         statuses=None,
         tags=None,
         snapshot_id=None,
         updated_after=None,
+        mode=None,
     ):
         return super(DagsterRunsFilter, cls).__new__(
             cls,
             run_ids=check.opt_list_param(run_ids, "run_ids", of_type=str),
-            target=check.opt_inst_param(target, "target", (JobTarget, PipelineTarget)),
+            target_name=check.opt_str_param(target_name, "target_name"),
             statuses=check.opt_list_param(statuses, "statuses", of_type=DagsterRunStatus),
             tags=check.opt_dict_param(tags, "tags", key_type=str, value_type=str),
             snapshot_id=check.opt_str_param(snapshot_id, "snapshot_id"),
             updated_after=check.opt_inst_param(updated_after, "updated_after", datetime),
+            mode=check.opt_str_param(mode, "mode"),
         )
 
     @staticmethod
@@ -449,7 +462,7 @@ class RunRecord(NamedTuple):
     """
 
     storage_id: int
-    pipeline_run: DagsterRun
+    dagster_run: DagsterRun
     create_timestamp: datetime
     update_timestamp: datetime
 

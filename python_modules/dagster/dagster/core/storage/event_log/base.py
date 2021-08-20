@@ -13,7 +13,7 @@ from dagster.core.execution.stats import (
     build_run_step_stats_from_events,
 )
 from dagster.core.instance import MayHaveInstanceWeakref
-from dagster.core.storage.pipeline_run import PipelineRunStatsSnapshot
+from dagster.core.storage.dagster_run import DagsterRunStatsSnapshot
 from dagster.serdes import whitelist_for_serdes
 
 
@@ -129,7 +129,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
             of_type (Optional[DagsterEventType]): the dagster event type to filter the logs.
         """
 
-    def get_stats_for_run(self, run_id: str) -> PipelineRunStatsSnapshot:
+    def get_stats_for_run(self, run_id: str) -> DagsterRunStatsSnapshot:
         """Get a summary of events that have ocurred in a run."""
         return build_run_stats_from_events(run_id, self.get_logs_for_run(run_id))
 

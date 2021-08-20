@@ -6,7 +6,7 @@ from ..instigation import GrapheneInstigationTickStatus
 
 
 class GrapheneScheduleTickSuccessData(graphene.ObjectType):
-    run = graphene.Field("dagster_graphql.schema.pipelines.pipeline.GraphenePipelineRun")
+    run = graphene.Field("dagster_graphql.schema.pipelines.pipeline.GrapheneDagsterRun")
 
     class Meta:
         name = "ScheduleTickSuccessData"
@@ -20,12 +20,12 @@ class GrapheneScheduleTickFailureData(graphene.ObjectType):
 
 
 def tick_specific_data_from_dagster_tick(graphene_info, tick):
-    from ..pipelines.pipeline import GraphenePipelineRun
+    from ..pipelines.pipeline import GrapheneDagsterRun
 
     if tick.status == JobTickStatus.SUCCESS:
         if tick.run_ids and graphene_info.context.instance.has_run(tick.run_ids[0]):
             return GrapheneScheduleTickSuccessData(
-                run=GraphenePipelineRun(
+                run=GrapheneDagsterRun(
                     graphene_info.context.instance.get_run_by_id(tick.run_ids[0])
                 )
             )

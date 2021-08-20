@@ -1,5 +1,5 @@
 from dagster import check
-from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.storage.dagster_run import DagsterRun
 from graphql.execution.base import ResolveInfo
 
 from .external import get_external_pipeline_or_raise, get_full_external_pipeline_or_raise
@@ -51,22 +51,20 @@ def get_pipeline_or_raise(graphene_info, selector):
     return get_pipeline_from_selector(graphene_info, selector)
 
 
-def get_pipeline_reference_or_raise(graphene_info, pipeline_run):
+def get_pipeline_reference_or_raise(graphene_info, dagster_run):
     """Returns a PipelineReference or raises a UserFacingGraphQLError if a pipeline
     reference cannot be retrieved based on the run, e.g, a UserFacingGraphQLError that wraps an
     InvalidSubsetError."""
     from ..schema.pipelines.pipeline_ref import GrapheneUnknownPipeline
 
-    check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
-    solid_selection = (
-        list(pipeline_run.solids_to_execute) if pipeline_run.solids_to_execute else None
-    )
+    check.inst_param(dagster_run, "dagster_run", DagsterRun)
+    solid_selection = list(dagster_run.nodes_to_execute) if dagster_run.nodes_to_execute else None
 
-    if pipeline_run.pipeline_snapshot_id is None:
-        return GrapheneUnknownPipeline(pipeline_run.pipeline_name, solid_selection)
+    if dagster_run.pipeline_snapshot_id is None:
+        return GrapheneUnknownPipeline(dagster_run.target.name, solid_selection)
 
     return _get_pipeline_snapshot_from_instance(
-        graphene_info.context.instance, pipeline_run.pipeline_snapshot_id
+        graphene_info.context.instance, dagster_run.pipeline_snapshot_id
     )
 
 

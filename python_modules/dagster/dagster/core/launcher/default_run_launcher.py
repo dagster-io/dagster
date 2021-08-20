@@ -5,7 +5,7 @@ from dagster import Bool, Field, check, seven
 from dagster.core.errors import DagsterInvariantViolationError, DagsterLaunchFailedError
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
-from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.storage.dagster_run import DagsterRun
 from dagster.core.storage.tags import GRPC_INFO_TAG
 from dagster.grpc.client import DagsterGrpcClient
 from dagster.grpc.types import (
@@ -53,9 +53,9 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         )
 
     def launch_run(self, context: LaunchRunContext) -> None:
-        run = context.pipeline_run
+        run = context.dagster_run
 
-        check.inst_param(run, "run", PipelineRun)
+        check.inst_param(run, "run", DagsterRun)
 
         if not context.workspace:
             raise DagsterInvariantViolationError(
@@ -93,7 +93,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
             repository_location.client.start_run(
                 ExecuteExternalPipelineArgs(
                     pipeline_origin=run.external_pipeline_origin,
-                    pipeline_run_id=run.run_id,
+                    dagster_run_id=run.run_id,
                     instance_ref=self._instance.get_ref(),
                 )
             ),
@@ -164,7 +164,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         if not client:
             self._instance.report_engine_event(
                 message="Unable to get grpc client to send termination request to.",
-                pipeline_run=run,
+                dagster_run=run,
                 cls=self.__class__,
             )
             return False

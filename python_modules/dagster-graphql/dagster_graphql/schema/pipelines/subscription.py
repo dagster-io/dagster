@@ -1,30 +1,30 @@
 import graphene
 
-from ..logs.events import GraphenePipelineRunEvent
+from ..logs.events import GrapheneDagsterRunEvent
 from ..util import non_null_list
-from .pipeline import GraphenePipelineRun
+from .pipeline import GrapheneDagsterRun
 
 
-class GraphenePipelineRunLogsSubscriptionSuccess(graphene.ObjectType):
-    run = graphene.NonNull(GraphenePipelineRun)
-    messages = non_null_list(GraphenePipelineRunEvent)
+class GrapheneDagsterRunLogsSubscriptionSuccess(graphene.ObjectType):
+    run = graphene.NonNull(GrapheneDagsterRun)
+    messages = non_null_list(GrapheneDagsterRunEvent)
 
     class Meta:
-        name = "PipelineRunLogsSubscriptionSuccess"
+        name = "DagsterRunLogsSubscriptionSuccess"
 
 
-class GraphenePipelineRunLogsSubscriptionFailure(graphene.ObjectType):
+class GrapheneDagsterRunLogsSubscriptionFailure(graphene.ObjectType):
     message = graphene.NonNull(graphene.String)
     missingRunId = graphene.Field(graphene.String)
 
     class Meta:
-        name = "PipelineRunLogsSubscriptionFailure"
+        name = "DagsterRunLogsSubscriptionFailure"
 
 
-class GraphenePipelineRunLogsSubscriptionPayload(graphene.Union):
+class GrapheneDagsterRunLogsSubscriptionPayload(graphene.Union):
     class Meta:
         types = (
-            GraphenePipelineRunLogsSubscriptionSuccess,
-            GraphenePipelineRunLogsSubscriptionFailure,
+            GrapheneDagsterRunLogsSubscriptionSuccess,
+            GrapheneDagsterRunLogsSubscriptionFailure,
         )
-        name = "PipelineRunLogsSubscriptionPayload"
+        name = "DagsterRunLogsSubscriptionPayload"

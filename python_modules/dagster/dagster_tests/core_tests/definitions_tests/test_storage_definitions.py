@@ -38,7 +38,7 @@ def create_mem_system_intermediate_store(init_context):
     )
 
 
-def assert_pipeline_runs_with_intermediate_storage(
+def assert_dagster_runs_with_intermediate_storage(
     intermediate_storage_def, intermediate_storage_config
 ):
     @pipeline(mode_defs=[ModeDefinition(intermediate_storage_defs=[intermediate_storage_def])])
@@ -57,13 +57,13 @@ def test_naked_intermediate_storage():
         it["ran"] = True
         return create_mem_system_intermediate_store(init_context)
 
-    assert_pipeline_runs_with_intermediate_storage(
+    assert_dagster_runs_with_intermediate_storage(
         no_config_intermediate_storage, {"no_config_intermediate_storage": {}}
     )
     assert it["ran"]
 
     it = {}
-    assert_pipeline_runs_with_intermediate_storage(
+    assert_dagster_runs_with_intermediate_storage(
         no_config_intermediate_storage, {"no_config_intermediate_storage": None}
     )
     assert it["ran"]
@@ -79,7 +79,7 @@ def test_intermediate_storage_primitive_config():
         it["ran"] = True
         return create_mem_system_intermediate_store(init_context)
 
-    assert_pipeline_runs_with_intermediate_storage(
+    assert_dagster_runs_with_intermediate_storage(
         test_intermediate_storage,
         {"test_intermediate_storage": {"config": "secret testing value!!"}},
     )
@@ -95,7 +95,7 @@ def test_intermediate_storage_dict_config():
         it["ran"] = True
         return create_mem_system_intermediate_store(init_context)
 
-    assert_pipeline_runs_with_intermediate_storage(
+    assert_dagster_runs_with_intermediate_storage(
         test_intermediate_storage,
         {"test_intermediate_storage": {"config": {"value": "secret testing value!!"}}},
     )
@@ -115,13 +115,13 @@ def test_intermediate_storage_dict_config_configured():
         {"value": "secret testing value!!"}
     )
 
-    assert_pipeline_runs_with_intermediate_storage(
+    assert_dagster_runs_with_intermediate_storage(
         test_intermediate_storage_configured, {"test_intermediate_storage": {}}
     )
     assert it["ran"]
 
     it = {}
-    assert_pipeline_runs_with_intermediate_storage(
+    assert_dagster_runs_with_intermediate_storage(
         test_intermediate_storage_configured, {"test_intermediate_storage": None}
     )
     assert it["ran"]

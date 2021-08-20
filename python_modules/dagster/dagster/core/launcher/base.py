@@ -3,7 +3,7 @@ from typing import NamedTuple, Optional
 
 from dagster.core.instance import MayHaveInstanceWeakref
 from dagster.core.origin import PipelinePythonOrigin
-from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.storage.dagster_run import DagsterRun
 from dagster.core.workspace.workspace import IWorkspace
 
 
@@ -12,12 +12,12 @@ class LaunchRunContext(NamedTuple):
     Context available within a run launcher's launch_run call.
     """
 
-    pipeline_run: PipelineRun
+    dagster_run: DagsterRun
     workspace: Optional[IWorkspace]
 
     @property
     def pipeline_code_origin(self) -> Optional[PipelinePythonOrigin]:
-        return self.pipeline_run.pipeline_code_origin
+        return self.dagster_run.pipeline_code_origin
 
 
 class RunLauncher(ABC, MayHaveInstanceWeakref):
@@ -28,12 +28,12 @@ class RunLauncher(ABC, MayHaveInstanceWeakref):
         This method should begin the execution of the specified run, and may emit engine events.
         Runs should be created in the instance (e.g., by calling
         ``DagsterInstance.create_run()``) *before* this method is called, and
-        should be in the ``PipelineRunStatus.STARTING`` state. Typically, this method will
+        should be in the ``DagsterRunStatus.STARTING`` state. Typically, this method will
         not be invoked directly, but should be invoked through ``DagsterInstance.launch_run()``.
 
         Args:
             context (LaunchRunContext): information about the launch - every run launcher
-            will need the PipelineRun, and some run launchers may need information from the
+            will need the DagsterRun, and some run launchers may need information from the
             IWorkspace from which the run was launched.
         """
 

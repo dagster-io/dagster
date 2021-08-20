@@ -2,16 +2,16 @@ import graphene
 from dagster import check
 from dagster.core.storage.compute_log_manager import ComputeIOType
 
-from ...implementation.execution import get_compute_log_observable, get_pipeline_run_observable
+from ...implementation.execution import get_compute_log_observable, get_dagster_run_observable
 from ..external import GrapheneLocationStateChangeSubscription, get_location_state_change_observable
 from ..logs.compute_logs import GrapheneComputeIOType, GrapheneComputeLogFile
 from ..paging import GrapheneCursor
-from ..pipelines.subscription import GraphenePipelineRunLogsSubscriptionPayload
+from ..pipelines.subscription import GrapheneDagsterRunLogsSubscriptionPayload
 
 
 class GrapheneSubscription(graphene.ObjectType):
     pipelineRunLogs = graphene.Field(
-        graphene.NonNull(GraphenePipelineRunLogsSubscriptionPayload),
+        graphene.NonNull(GrapheneDagsterRunLogsSubscriptionPayload),
         runId=graphene.Argument(graphene.NonNull(graphene.ID)),
         after=graphene.Argument(GrapheneCursor),
     )
@@ -32,7 +32,7 @@ class GrapheneSubscription(graphene.ObjectType):
         name = "Subscription"
 
     def resolve_pipelineRunLogs(self, graphene_info, runId, after=None):
-        return get_pipeline_run_observable(graphene_info, runId, after)
+        return get_dagster_run_observable(graphene_info, runId, after)
 
     def resolve_computeLogs(self, graphene_info, runId, stepKey, ioType, cursor=None):
         check.str_param(ioType, "ioType")  # need to resolve to enum

@@ -35,7 +35,7 @@ from dagster.core.host_representation import (
 )
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.scheduler.job import JobState, JobStatus, JobTickStatus
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.dagster_run import DagsterRunStatus
 from dagster.core.test_utils import instance_for_test
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.core.workspace.dynamic_workspace import DynamicWorkspace
@@ -202,7 +202,7 @@ def my_pipeline_failure_sensor(_):
     pass
 
 
-@run_status_sensor(pipeline_run_status=PipelineRunStatus.SUCCESS)
+@run_status_sensor(dagster_run_status=DagsterRunStatus.SUCCESS)
 def my_pipeline_success_sensor(_):
     pass
 
@@ -305,12 +305,12 @@ def validate_tick(
 def validate_run_started(run, expected_success=True):
     if expected_success:
         assert (
-            run.status == PipelineRunStatus.STARTED
-            or run.status == PipelineRunStatus.SUCCESS
-            or run.status == PipelineRunStatus.STARTING
+            run.status == DagsterRunStatus.STARTED
+            or run.status == DagsterRunStatus.SUCCESS
+            or run.status == DagsterRunStatus.STARTING
         )
     else:
-        assert run.status == PipelineRunStatus.FAILURE
+        assert run.status == DagsterRunStatus.FAILURE
 
 
 def wait_for_all_runs_to_start(instance, timeout=10):
@@ -321,7 +321,7 @@ def wait_for_all_runs_to_start(instance, timeout=10):
         time.sleep(0.5)
 
         not_started_runs = [
-            run for run in instance.get_runs() if run.status == PipelineRunStatus.NOT_STARTED
+            run for run in instance.get_runs() if run.status == DagsterRunStatus.NOT_STARTED
         ]
 
         if len(not_started_runs) == 0:
@@ -331,9 +331,9 @@ def wait_for_all_runs_to_start(instance, timeout=10):
 def wait_for_all_runs_to_finish(instance, timeout=10):
     start_time = time.time()
     FINISHED_STATES = [
-        PipelineRunStatus.SUCCESS,
-        PipelineRunStatus.FAILURE,
-        PipelineRunStatus.CANCELED,
+        DagsterRunStatus.SUCCESS,
+        DagsterRunStatus.FAILURE,
+        DagsterRunStatus.CANCELED,
     ]
     while True:
         if time.time() - start_time > timeout:
@@ -1177,7 +1177,7 @@ def test_pipeline_failure_sensor(external_repo_context):
             instance.submit_run(run.run_id, workspace)
             wait_for_all_runs_to_finish(instance)
             run = instance.get_runs()[0]
-            assert run.status == PipelineRunStatus.FAILURE
+            assert run.status == DagsterRunStatus.FAILURE
             freeze_datetime = freeze_datetime.add(seconds=60)
 
         with pendulum.test(freeze_datetime):
@@ -1231,7 +1231,7 @@ def test_run_status_sensor(external_repo_context):
             instance.submit_run(run.run_id, workspace)
             wait_for_all_runs_to_finish(instance)
             run = instance.get_runs()[0]
-            assert run.status == PipelineRunStatus.FAILURE
+            assert run.status == DagsterRunStatus.FAILURE
             freeze_datetime = freeze_datetime.add(seconds=60)
 
         with pendulum.test(freeze_datetime):
@@ -1258,7 +1258,7 @@ def test_run_status_sensor(external_repo_context):
             instance.submit_run(run.run_id, workspace)
             wait_for_all_runs_to_finish(instance)
             run = instance.get_runs()[0]
-            assert run.status == PipelineRunStatus.SUCCESS
+            assert run.status == DagsterRunStatus.SUCCESS
             freeze_datetime = freeze_datetime.add(seconds=60)
 
         with pendulum.test(freeze_datetime):
@@ -1354,7 +1354,7 @@ def test_run_status_sensor_interleave(external_repo_context, storage_config_fn):
                 instance.report_run_failed(run2)
                 freeze_datetime = freeze_datetime.add(seconds=60)
                 run = instance.get_runs()[0]
-                assert run.status == PipelineRunStatus.FAILURE
+                assert run.status == DagsterRunStatus.FAILURE
                 assert run.run_id == run2.run_id
 
             # check sensor

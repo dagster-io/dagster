@@ -61,7 +61,7 @@ def test_using_file_system_for_subplan():
 
     resolved_run_config = ResolvedRunConfig.build(pipeline, run_config=run_config)
     execution_plan = ExecutionPlan.build(InMemoryPipeline(pipeline), resolved_run_config)
-    pipeline_run = instance.create_run_for_pipeline(
+    dagster_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline, execution_plan=execution_plan
     )
     assert execution_plan.get_step_by_key("return_one")
@@ -72,12 +72,12 @@ def test_using_file_system_for_subplan():
             InMemoryPipeline(pipeline),
             instance,
             run_config=run_config,
-            pipeline_run=pipeline_run,
+            dagster_run=dagster_run,
         )
     )
 
     intermediate_storage = build_fs_intermediate_storage(
-        instance.intermediates_directory, pipeline_run.run_id
+        instance.intermediates_directory, dagster_run.run_id
     )
     assert get_step_output(return_one_step_events, "return_one")
     assert intermediate_storage.has_intermediate(None, StepOutputHandle("return_one"))
@@ -89,7 +89,7 @@ def test_using_file_system_for_subplan():
             InMemoryPipeline(pipeline),
             instance,
             run_config=run_config,
-            pipeline_run=pipeline_run,
+            dagster_run=dagster_run,
         )
     )
 
@@ -125,7 +125,7 @@ def test_using_intermediates_file_system_for_subplan():
         InMemoryPipeline(pipeline),
         resolved_run_config,
     )
-    pipeline_run = instance.create_run_for_pipeline(
+    dagster_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline, execution_plan=execution_plan
     )
     assert execution_plan.get_step_by_key("return_one")
@@ -136,12 +136,12 @@ def test_using_intermediates_file_system_for_subplan():
             InMemoryPipeline(pipeline),
             instance,
             run_config=run_config,
-            pipeline_run=pipeline_run,
+            dagster_run=dagster_run,
         )
     )
 
     intermediate_storage = build_fs_intermediate_storage(
-        instance.intermediates_directory, pipeline_run.run_id
+        instance.intermediates_directory, dagster_run.run_id
     )
     assert get_step_output(return_one_step_events, "return_one")
     assert intermediate_storage.has_intermediate(None, StepOutputHandle("return_one"))
@@ -153,7 +153,7 @@ def test_using_intermediates_file_system_for_subplan():
             InMemoryPipeline(pipeline),
             instance,
             run_config=run_config,
-            pipeline_run=pipeline_run,
+            dagster_run=dagster_run,
         )
     )
 
@@ -176,7 +176,7 @@ def test_using_intermediates_to_override():
         InMemoryPipeline(pipeline),
         resolved_run_config,
     )
-    pipeline_run = instance.create_run_for_pipeline(
+    dagster_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline, execution_plan=execution_plan
     )
     assert execution_plan.get_step_by_key("return_one")
@@ -187,12 +187,12 @@ def test_using_intermediates_to_override():
             InMemoryPipeline(pipeline),
             instance,
             run_config=run_config,
-            pipeline_run=pipeline_run,
+            dagster_run=dagster_run,
         )
     )
 
     intermediate_storage = build_fs_intermediate_storage(
-        instance.intermediates_directory, pipeline_run.run_id
+        instance.intermediates_directory, dagster_run.run_id
     )
     assert get_step_output(return_one_step_events, "return_one")
     assert not intermediate_storage.has_intermediate(None, StepOutputHandle("return_one"))
@@ -212,7 +212,7 @@ def test_using_file_system_for_subplan_multiprocessing():
             pipeline,
             resolved_run_config,
         )
-        pipeline_run = instance.create_run_for_pipeline(
+        dagster_run = instance.create_run_for_pipeline(
             pipeline_def=pipeline.get_definition(), execution_plan=execution_plan
         )
 
@@ -226,12 +226,12 @@ def test_using_file_system_for_subplan_multiprocessing():
                 pipeline,
                 instance,
                 run_config=dict(run_config, execution={"multiprocess": {}}),
-                pipeline_run=pipeline_run,
+                dagster_run=dagster_run,
             )
         )
 
         intermediate_storage = build_fs_intermediate_storage(
-            instance.intermediates_directory, pipeline_run.run_id
+            instance.intermediates_directory, dagster_run.run_id
         )
 
         assert get_step_output(return_one_step_events, "return_one")
@@ -249,7 +249,7 @@ def test_using_file_system_for_subplan_multiprocessing():
                 pipeline,
                 instance,
                 run_config=dict(run_config, execution={"multiprocess": {}}),
-                pipeline_run=pipeline_run,
+                dagster_run=dagster_run,
             )
         )
 
@@ -275,7 +275,7 @@ def test_using_intermediate_file_system_for_subplan_multiprocessing():
             pipeline,
             resolved_run_config,
         )
-        pipeline_run = instance.create_run_for_pipeline(
+        dagster_run = instance.create_run_for_pipeline(
             pipeline_def=pipeline.get_definition(), execution_plan=execution_plan
         )
 
@@ -289,12 +289,12 @@ def test_using_intermediate_file_system_for_subplan_multiprocessing():
                 pipeline,
                 instance,
                 run_config=dict(run_config, execution={"multiprocess": {}}),
-                pipeline_run=pipeline_run,
+                dagster_run=dagster_run,
             )
         )
 
         intermediate_storage = build_fs_intermediate_storage(
-            instance.intermediates_directory, pipeline_run.run_id
+            instance.intermediates_directory, dagster_run.run_id
         )
 
         assert get_step_output(return_one_step_events, "return_one")
@@ -312,7 +312,7 @@ def test_using_intermediate_file_system_for_subplan_multiprocessing():
                 pipeline,
                 instance,
                 run_config=dict(run_config, execution={"multiprocess": {}}),
-                pipeline_run=pipeline_run,
+                dagster_run=dagster_run,
             )
         )
 
@@ -334,7 +334,7 @@ def test_execute_step_wrong_step_key():
         InMemoryPipeline(pipeline),
         resolved_run_config,
     )
-    pipeline_run = instance.create_run_for_pipeline(
+    dagster_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline, execution_plan=execution_plan
     )
 
@@ -343,7 +343,7 @@ def test_execute_step_wrong_step_key():
             execution_plan.build_subset_plan(["nope.compute"], pipeline, resolved_run_config),
             InMemoryPipeline(pipeline),
             instance,
-            pipeline_run=pipeline_run,
+            dagster_run=dagster_run,
         )
 
     assert exc_info.value.step_keys == ["nope.compute"]
@@ -357,7 +357,7 @@ def test_execute_step_wrong_step_key():
             ),
             InMemoryPipeline(pipeline),
             instance,
-            pipeline_run=pipeline_run,
+            dagster_run=dagster_run,
         )
 
     assert exc_info.value.step_keys == ["nope.compute", "nuh_uh.compute"]
@@ -381,7 +381,7 @@ def test_using_file_system_for_subplan_missing_input():
         InMemoryPipeline(pipeline),
         resolved_run_config,
     )
-    pipeline_run = instance.create_run_for_pipeline(
+    dagster_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline, execution_plan=execution_plan
     )
 
@@ -390,7 +390,7 @@ def test_using_file_system_for_subplan_missing_input():
         InMemoryPipeline(pipeline),
         instance,
         run_config=run_config,
-        pipeline_run=pipeline_run,
+        dagster_run=dagster_run,
     )
     failures = [event for event in events if event.event_type_value == "STEP_FAILURE"]
     assert len(failures) == 1
@@ -414,7 +414,7 @@ def test_using_file_system_for_subplan_invalid_step():
         resolved_run_config,
     )
 
-    pipeline_run = instance.create_run_for_pipeline(
+    dagster_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline, execution_plan=execution_plan
     )
 
@@ -424,5 +424,5 @@ def test_using_file_system_for_subplan_invalid_step():
             InMemoryPipeline(pipeline),
             instance,
             run_config=run_config,
-            pipeline_run=pipeline_run,
+            dagster_run=dagster_run,
         )

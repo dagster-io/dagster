@@ -18,7 +18,7 @@ from dagster.core.snap import (
 from dagster.daemon.types import DaemonHeartbeat
 from dagster.utils import frozendict, merge_dicts
 
-from ..pipeline_run import PipelineRun, PipelineRunsFilter, RunRecord
+from ..dagster_run import DagsterRun, DagsterRunsFilter, RunRecord
 from .base import RunStorage
 
 
@@ -27,43 +27,43 @@ class InMemoryRunStorage(RunStorage):
         self._init_storage()
         if preload:
             for payload in preload:
-                self._runs[payload.pipeline_run.run_id] = payload.pipeline_run
+                self._runs[payload.dagster_run.run_id] = payload.dagster_run
                 self._pipeline_snapshots[
-                    payload.pipeline_run.pipeline_snapshot_id
+                    payload.dagster_run.pipeline_snapshot_id
                 ] = payload.pipeline_snapshot
                 self._ep_snapshots[
-                    payload.pipeline_run.execution_plan_snapshot_id
+                    payload.dagster_run.execution_plan_snapshot_id
                 ] = payload.execution_plan_snapshot
 
         super().__init__()
 
     # separate method so it can be reused in wipe
     def _init_storage(self):
-        self._runs: Dict[str, PipelineRun] = OrderedDict()
+        self._runs: Dict[str, DagsterRun] = OrderedDict()
         self._run_tags: Dict[str, dict] = defaultdict(dict)
         self._pipeline_snapshots: Dict[str, PipelineSnapshot] = OrderedDict()
         self._ep_snapshots: Dict[str, ExecutionPlanSnapshot] = OrderedDict()
         self._bulk_actions: Dict[str, PartitionBackfill] = OrderedDict()
 
-    def add_run(self, pipeline_run: PipelineRun) -> PipelineRun:
-        check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
-        if self._runs.get(pipeline_run.run_id):
+    def add_run(self, dagster_run: DagsterRun) -> DagsterRun:
+        check.inst_param(dagster_run, "dagster_run", DagsterRun)
+        if self._runs.get(dagster_run.run_id):
             raise DagsterRunAlreadyExists(
-                "Can not add same run twice for run_id {run_id}".format(run_id=pipeline_run.run_id),
+                "Can not add same run twice for run_id {run_id}".format(run_id=dagster_run.run_id),
             )
-        if pipeline_run.pipeline_snapshot_id:
-            if not self.has_pipeline_snapshot(pipeline_run.pipeline_snapshot_id):
+        if dagster_run.pipeline_snapshot_id:
+            if not self.has_pipeline_snapshot(dagster_run.pipeline_snapshot_id):
                 raise DagsterSnapshotDoesNotExist(
                     "pipeline_snapshot_id {ss_id} does not exist in run storage.".format(
-                        ss_id=pipeline_run.pipeline_snapshot_id
+                        ss_id=dagster_run.pipeline_snapshot_id
                     )
                 )
 
-        self._runs[pipeline_run.run_id] = pipeline_run
-        if pipeline_run.tags and len(pipeline_run.tags) > 0:
-            self._run_tags[pipeline_run.run_id] = frozendict(pipeline_run.tags)
+        self._runs[dagster_run.run_id] = dagster_run
+        if dagster_run.tags and len(dagster_run.tags) > 0:
+            self._run_tags[dagster_run.run_id] = frozendict(dagster_run.tags)
 
-        return pipeline_run
+        return dagster_run
 
     def handle_run_event(self, run_id: str, event: DagsterEvent):
         check.str_param(run_id, "run_id")
@@ -82,9 +82,9 @@ class InMemoryRunStorage(RunStorage):
             )
 
     def get_runs(
-        self, filters: PipelineRunsFilter = None, cursor: str = None, limit: int = None
-    ) -> List[PipelineRun]:
-        check.opt_inst_param(filters, "filters", PipelineRunsFilter)
+        self, filters: DagsterRunsFilter = None, cursor: str = None, limit: int = None
+    ) -> List[DagsterRun]:
+        check.opt_inst_param(filters, "filters", DagsterRunsFilter)
         check.opt_str_param(cursor, "cursor")
         check.opt_int_param(limit, "limit")
 
@@ -98,7 +98,7 @@ class InMemoryRunStorage(RunStorage):
             if filters.statuses and run.status not in filters.statuses:
                 return False
 
-            if filters.pipeline_name and filters.pipeline_name != run.pipeline_name:
+            if filters.target_name and filters.target_name != run.target.name:
                 return False
 
             if filters.mode and filters.mode != run.mode:
@@ -117,8 +117,8 @@ class InMemoryRunStorage(RunStorage):
         matching_runs = list(filter(run_filter, list(self._runs.values())[::-1]))
         return self._slice(matching_runs, cursor=cursor, limit=limit)
 
-    def get_runs_count(self, filters: PipelineRunsFilter = None) -> int:
-        check.opt_inst_param(filters, "filters", PipelineRunsFilter)
+    def get_runs_count(self, filters: DagsterRunsFilter = None) -> int:
+        check.opt_inst_param(filters, "filters", DagsterRunsFilter)
 
         return len(self.get_runs(filters))
 
@@ -146,13 +146,13 @@ class InMemoryRunStorage(RunStorage):
 
         return list(items)[start:end]
 
-    def get_run_by_id(self, run_id: str) -> Optional[PipelineRun]:
+    def get_run_by_id(self, run_id: str) -> Optional[DagsterRun]:
         check.str_param(run_id, "run_id")
         return self._runs.get(run_id)
 
     def get_run_records(
         self,
-        filters: PipelineRunsFilter = None,
+        filters: DagsterRunsFilter = None,
         limit: int = None,
         order_by: str = None,
         ascending: bool = False,
@@ -219,18 +219,16 @@ class InMemoryRunStorage(RunStorage):
     def build_missing_indexes(self, print_fn: Callable = None, force_rebuild_all: bool = False):
         pass
 
-    def get_run_group(self, run_id: str) -> Optional[Tuple[str, List[PipelineRun]]]:
+    def get_run_group(self, run_id: str) -> Optional[Tuple[str, List[DagsterRun]]]:
         check.str_param(run_id, "run_id")
-        pipeline_run = self._runs.get(run_id)
-        if not pipeline_run:
+        dagster_run = self._runs.get(run_id)
+        if not dagster_run:
             raise DagsterRunNotFoundError(
                 f"Run {run_id} was not found in instance.", invalid_run_id=run_id
             )
         # if the run doesn't have root_run_id, itself is the root
         root_run = (
-            self.get_run_by_id(pipeline_run.root_run_id)
-            if pipeline_run.root_run_id
-            else pipeline_run
+            self.get_run_by_id(dagster_run.root_run_id) if dagster_run.root_run_id else dagster_run
         )
         if not root_run:
             return None
@@ -241,10 +239,10 @@ class InMemoryRunStorage(RunStorage):
         return (root_run.root_run_id, run_group)
 
     def get_run_groups(
-        self, filters: PipelineRunsFilter = None, cursor: str = None, limit: int = None
-    ) -> Dict[str, Dict[str, Union[Iterable[PipelineRun], int]]]:
+        self, filters: DagsterRunsFilter = None, cursor: str = None, limit: int = None
+    ) -> Dict[str, Dict[str, Union[Iterable[DagsterRun], int]]]:
         runs = self.get_runs(filters=filters, cursor=cursor, limit=limit)
-        root_run_id_to_group: Dict[str, Dict[str, PipelineRun]] = defaultdict(dict)
+        root_run_id_to_group: Dict[str, Dict[str, DagsterRun]] = defaultdict(dict)
         for run in runs:
             root_run_id = run.get_root_run_id()
             if root_run_id is not None:
@@ -256,9 +254,9 @@ class InMemoryRunStorage(RunStorage):
         # add root run to the group if it's not already there
         for root_run_id in root_run_id_to_group:
             if root_run_id not in root_run_id_to_group[root_run_id]:
-                root_pipeline_run = self.get_run_by_id(root_run_id)
-                if root_pipeline_run:
-                    root_run_id_to_group[root_run_id][root_run_id] = root_pipeline_run
+                root_dagster_run = self.get_run_by_id(root_run_id)
+                if root_dagster_run:
+                    root_run_id_to_group[root_run_id][root_run_id] = root_dagster_run
 
         # counts total number of runs in a run group, including the ones don't match the given filter
         root_run_id_to_count: Dict[str, int] = defaultdict(int)

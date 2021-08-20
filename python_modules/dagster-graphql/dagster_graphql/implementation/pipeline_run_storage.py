@@ -1,4 +1,4 @@
-class PipelineRunObservableSubscribe:
+class DagsterRunObservableSubscribe:
     def __init__(self, instance, run_id, after_cursor=None):
         self.instance = instance
         self.run_id = run_id

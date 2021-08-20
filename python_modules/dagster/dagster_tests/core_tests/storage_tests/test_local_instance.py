@@ -7,10 +7,10 @@ import yaml
 from dagster import (
     DagsterEventType,
     DagsterInvalidConfigError,
+    DagsterRun,
     InputDefinition,
     Output,
     OutputDefinition,
-    PipelineRun,
     check,
     execute_pipeline,
     pipeline,
@@ -21,9 +21,9 @@ from dagster.core.execution.stats import StepEventStatus
 from dagster.core.instance import DagsterInstance, InstanceRef, InstanceType
 from dagster.core.launcher import DefaultRunLauncher
 from dagster.core.run_coordinator import DefaultRunCoordinator
+from dagster.core.storage.dagster_run import DagsterRunStatus
 from dagster.core.storage.event_log import SqliteEventLogStorage
 from dagster.core.storage.local_compute_log_manager import LocalComputeLogManager
-from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import SqliteRunStorage
 
@@ -55,7 +55,7 @@ def test_fs_stores():
         result = execute_pipeline(simple, instance=instance)
 
         assert run_store.has_run(result.run_id)
-        assert run_store.get_run_by_id(result.run_id).status == PipelineRunStatus.SUCCESS
+        assert run_store.get_run_by_id(result.run_id).status == DagsterRunStatus.SUCCESS
         assert DagsterEventType.PIPELINE_SUCCESS in [
             event.dagster_event.event_type
             for event in event_store.get_logs_for_run(result.run_id)
@@ -106,26 +106,26 @@ def test_get_run_by_id():
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
 
         assert instance.get_runs() == []
-        pipeline_run = PipelineRun("foo_pipeline", "new_run")
-        assert instance.get_run_by_id(pipeline_run.run_id) is None
+        dagster_run = DagsterRun("foo_pipeline", "new_run")
+        assert instance.get_run_by_id(dagster_run.run_id) is None
 
-        instance._run_storage.add_run(pipeline_run)  # pylint: disable=protected-access
+        instance._run_storage.add_run(dagster_run)  # pylint: disable=protected-access
 
-        assert instance.get_runs() == [pipeline_run]
+        assert instance.get_runs() == [dagster_run]
 
-        assert instance.get_run_by_id(pipeline_run.run_id) == pipeline_run
+        assert instance.get_run_by_id(dagster_run.run_id) == dagster_run
 
     # Run is created after we check whether it exists
     with tempfile.TemporaryDirectory() as tmpdir_path:
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
-        run = PipelineRun(pipeline_name="foo_pipeline", run_id="bar_run")
+        run = DagsterRun(pipeline_name="foo_pipeline", run_id="bar_run")
 
         def _has_run(self, run_id):
             # This is uglier than we would like because there is no nonlocal keyword in py2
             global MOCK_HAS_RUN_CALLED  # pylint: disable=global-statement
             # pylint: disable=protected-access
             if not self._run_storage.has_run(run_id) and not MOCK_HAS_RUN_CALLED:
-                self._run_storage.add_run(PipelineRun(pipeline_name="foo_pipeline", run_id=run_id))
+                self._run_storage.add_run(DagsterRun(pipeline_name="foo_pipeline", run_id=run_id))
                 return False
             else:
                 return self._run_storage.has_run(run_id)
@@ -139,13 +139,13 @@ def test_get_run_by_id():
     MOCK_HAS_RUN_CALLED = False
     with tempfile.TemporaryDirectory() as tmpdir_path:
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
-        run = PipelineRun(pipeline_name="foo_pipeline", run_id="bar_run")
+        run = DagsterRun(pipeline_name="foo_pipeline", run_id="bar_run")
 
         def _has_run(self, run_id):
             global MOCK_HAS_RUN_CALLED  # pylint: disable=global-statement
             # pylint: disable=protected-access
             if not self._run_storage.has_run(run_id) and not MOCK_HAS_RUN_CALLED:
-                self._run_storage.add_run(PipelineRun(pipeline_name="foo_pipeline", run_id=run_id))
+                self._run_storage.add_run(DagsterRun(pipeline_name="foo_pipeline", run_id=run_id))
                 MOCK_HAS_RUN_CALLED = True
                 return False
             elif self._run_storage.has_run(run_id) and MOCK_HAS_RUN_CALLED:

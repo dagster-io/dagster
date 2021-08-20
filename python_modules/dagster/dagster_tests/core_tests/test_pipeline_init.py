@@ -80,11 +80,11 @@ def test_clean_event_generator_exit():
     pipeline_def = gen_basic_resource_pipeline()
     instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(pipeline_def)
-    pipeline_run = instance.create_run_for_pipeline(
+    dagster_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline_def, execution_plan=execution_plan
     )
     log_manager = DagsterLogManager(
-        logging_metadata=DagsterLoggingMetadata(run_id=pipeline_run.run_id), loggers=[]
+        logging_metadata=DagsterLoggingMetadata(run_id=dagster_run.run_id), loggers=[]
     )
     resolved_run_config = ResolvedRunConfig.build(pipeline_def)
     execution_plan = create_execution_plan(pipeline_def)
@@ -94,7 +94,7 @@ def test_clean_event_generator_exit():
         resource_def=resource_def,
         resources=ScopedResourcesBuilder().build(None),
         resource_config=None,
-        pipeline_run=pipeline_run,
+        dagster_run=dagster_run,
         instance=instance,
     )
     generator = single_resource_event_generator(resource_context, resource_name, resource_def)
@@ -108,7 +108,7 @@ def test_clean_event_generator_exit():
         resource_configs=resolved_run_config.resources,
         log_manager=log_manager,
         execution_plan=execution_plan,
-        pipeline_run=pipeline_run,
+        dagster_run=dagster_run,
         resource_keys_to_init={"a"},
         instance=instance,
         emit_persistent_events=True,
@@ -121,7 +121,7 @@ def test_clean_event_generator_exit():
         pipeline=InMemoryPipeline(pipeline_def),
         execution_plan=execution_plan,
         run_config={},
-        pipeline_run=pipeline_run,
+        dagster_run=dagster_run,
         instance=instance,
         retry_mode=RetryMode.DISABLED,
         scoped_resources_builder_cm=resource_initialization_manager,

@@ -12,7 +12,7 @@ RUN_QUERY = """
 query RunQuery($runId: ID!) {
   pipelineRunOrError(runId: $runId) {
     __typename
-    ... on PipelineRun {
+    ... on DagsterRun {
         status
       }
     }
@@ -37,9 +37,7 @@ class TestReexecution(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        assert (
-            result_one.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
-        )
+        assert result_one.data["launchPipelineExecution"]["__typename"] == "LaunchDagsterRunSuccess"
 
         result_one.data["launchPipelineExecution"]["run"]["runId"] = "<runId dummy value>"
         result_one.data["launchPipelineExecution"]["run"][
@@ -69,7 +67,7 @@ class TestReexecution(ExecutingGraphQLContextTestMatrix):
         )
 
         query_result = result_two.data["launchPipelineReexecution"]
-        assert query_result["__typename"] == "LaunchPipelineRunSuccess"
+        assert query_result["__typename"] == "LaunchDagsterRunSuccess"
         assert query_result["run"]["rootRunId"] == run_id
         assert query_result["run"]["parentRunId"] == run_id
 
@@ -89,9 +87,7 @@ class TestReexecution(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        assert (
-            result_one.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
-        )
+        assert result_one.data["launchPipelineExecution"]["__typename"] == "LaunchDagsterRunSuccess"
 
         result_one.data["launchPipelineExecution"]["run"]["runId"] = "<runId dummy value>"
         result_one.data["launchPipelineExecution"]["run"][
@@ -121,7 +117,7 @@ class TestReexecution(ExecutingGraphQLContextTestMatrix):
         )
 
         query_result = result_two.data["launchPipelineReexecution"]
-        assert query_result["__typename"] == "LaunchPipelineRunSuccess"
+        assert query_result["__typename"] == "LaunchDagsterRunSuccess"
         assert query_result["run"]["rootRunId"] == run_id
         assert query_result["run"]["parentRunId"] == run_id
 
@@ -141,7 +137,7 @@ class TestReexecution(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchDagsterRunSuccess"
         assert result.data["launchPipelineExecution"]["run"]["status"] == "STARTING"
 
         graphql_context.instance.run_launcher.join()
@@ -149,7 +145,7 @@ class TestReexecution(ExecutingGraphQLContextTestMatrix):
         result = execute_dagster_graphql(
             context=graphql_context, query=RUN_QUERY, variables={"runId": run_id}
         )
-        assert result.data["pipelineRunOrError"]["__typename"] == "PipelineRun"
+        assert result.data["pipelineRunOrError"]["__typename"] == "DagsterRun"
         assert result.data["pipelineRunOrError"]["status"] == "SUCCESS"
 
         # reexecution
@@ -170,12 +166,12 @@ class TestReexecution(ExecutingGraphQLContextTestMatrix):
                 }
             },
         )
-        assert result.data["launchPipelineReexecution"]["__typename"] == "LaunchPipelineRunSuccess"
+        assert result.data["launchPipelineReexecution"]["__typename"] == "LaunchDagsterRunSuccess"
 
         graphql_context.instance.run_launcher.join()
 
         result = execute_dagster_graphql(
             context=graphql_context, query=RUN_QUERY, variables={"runId": new_run_id}
         )
-        assert result.data["pipelineRunOrError"]["__typename"] == "PipelineRun"
+        assert result.data["pipelineRunOrError"]["__typename"] == "DagsterRun"
         assert result.data["pipelineRunOrError"]["status"] == "SUCCESS"

@@ -6,7 +6,7 @@ from contextlib import contextmanager
 
 from dagster import Field, Float, StringSource, check
 from dagster.core.execution.compute_logs import mirror_stream_to_file
-from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.storage.dagster_run import DagsterRun
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.utils import ensure_dir, touch_file
 from watchdog.events import PatternMatchingEventHandler
@@ -39,13 +39,13 @@ class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
 
     @contextmanager
-    def _watch_logs(self, pipeline_run, step_key=None):
-        check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+    def _watch_logs(self, dagster_run, step_key=None):
+        check.inst_param(dagster_run, "dagster_run", DagsterRun)
         check.opt_str_param(step_key, "step_key")
 
-        key = self.get_key(pipeline_run, step_key)
-        outpath = self.get_local_path(pipeline_run.run_id, key, ComputeIOType.STDOUT)
-        errpath = self.get_local_path(pipeline_run.run_id, key, ComputeIOType.STDERR)
+        key = self.get_key(dagster_run, step_key)
+        outpath = self.get_local_path(dagster_run.run_id, key, ComputeIOType.STDOUT)
+        errpath = self.get_local_path(dagster_run.run_id, key, ComputeIOType.STDERR)
         with mirror_stream_to_file(sys.stdout, outpath):
             with mirror_stream_to_file(sys.stderr, errpath):
                 yield
@@ -111,19 +111,19 @@ class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
     def is_watch_completed(self, run_id, key):
         return os.path.exists(self.complete_artifact_path(run_id, key))
 
-    def on_watch_start(self, pipeline_run, step_key):
+    def on_watch_start(self, dagster_run, step_key):
         pass
 
-    def get_key(self, pipeline_run, step_key):
-        check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+    def get_key(self, dagster_run, step_key):
+        check.inst_param(dagster_run, "dagster_run", DagsterRun)
         check.opt_str_param(step_key, "step_key")
-        return step_key or pipeline_run.pipeline_name
+        return step_key or dagster_run.target.name
 
-    def on_watch_finish(self, pipeline_run, step_key=None):
-        check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+    def on_watch_finish(self, dagster_run, step_key=None):
+        check.inst_param(dagster_run, "dagster_run", DagsterRun)
         check.opt_str_param(step_key, "step_key")
-        key = self.get_key(pipeline_run, step_key)
-        touchpath = self.complete_artifact_path(pipeline_run.run_id, key)
+        key = self.get_key(dagster_run, step_key)
+        touchpath = self.complete_artifact_path(dagster_run.run_id, key)
         touch_file(touchpath)
 
     def download_url(self, run_id, key, io_type):

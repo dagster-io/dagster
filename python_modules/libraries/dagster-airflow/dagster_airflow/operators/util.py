@@ -103,7 +103,7 @@ def invoke_steps_within_python_operator(
     if instance:
         with instance:
             tags = {AIRFLOW_EXECUTION_DATE_STR: ts} if ts else {}
-            pipeline_run = instance.register_managed_run(
+            dagster_run = instance.register_managed_run(
                 pipeline_name=pipeline_name,
                 run_id=run_id,
                 run_config=run_config,
@@ -120,7 +120,7 @@ def invoke_steps_within_python_operator(
 
             recon_pipeline = recon_repo.get_reconstructable_pipeline(
                 pipeline_name
-            ).subset_for_execution_from_existing_pipeline(pipeline_run.solids_to_execute)
+            ).subset_for_execution_from_existing_pipeline(dagster_run.nodes_to_execute)
 
             execution_plan = create_execution_plan(
                 recon_pipeline,
@@ -128,12 +128,12 @@ def invoke_steps_within_python_operator(
                 step_keys_to_execute=step_keys,
                 mode=mode,
             )
-            if should_skip_step(execution_plan, instance, pipeline_run.run_id):
+            if should_skip_step(execution_plan, instance, dagster_run.run_id):
                 raise AirflowSkipException(
                     "Dagster emitted skip event, skipping execution in Airflow"
                 )
             events = execute_plan(
-                execution_plan, recon_pipeline, instance, pipeline_run, run_config=run_config
+                execution_plan, recon_pipeline, instance, dagster_run, run_config=run_config
             )
             check_events_for_failures(events)
             check_events_for_skips(events)

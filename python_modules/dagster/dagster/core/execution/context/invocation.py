@@ -20,7 +20,7 @@ from dagster.core.errors import (
 from dagster.core.execution.build_resources import build_resources
 from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
-from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.storage.dagster_run import DagsterRun
 from dagster.core.types.dagster_type import DagsterType
 from dagster.utils import merge_dicts
 from dagster.utils.forked_pdb import ForkedPdb
@@ -101,8 +101,8 @@ class UnboundSolidExecutionContext(SolidExecutionContext):
         return self._resources
 
     @property
-    def pipeline_run(self) -> PipelineRun:
-        raise DagsterInvalidPropertyError(_property_msg("pipeline_run", "property"))
+    def dagster_run(self) -> DagsterRun:
+        raise DagsterInvalidPropertyError(_property_msg("dagster_run", "property"))
 
     @property
     def instance(self) -> DagsterInstance:
@@ -288,8 +288,8 @@ class BoundSolidExecutionContext(SolidExecutionContext):
         return self._resources
 
     @property
-    def pipeline_run(self) -> PipelineRun:
-        raise DagsterInvalidPropertyError(_property_msg("pipeline_run", "property"))
+    def dagster_run(self) -> DagsterRun:
+        raise DagsterInvalidPropertyError(_property_msg("dagster_run", "property"))
 
     @property
     def instance(self) -> DagsterInstance:

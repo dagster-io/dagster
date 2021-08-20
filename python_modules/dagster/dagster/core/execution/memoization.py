@@ -8,7 +8,7 @@ def validate_reexecution_memoization(
     plan_context: IPlanContext, execution_plan: ExecutionPlan
 ) -> None:
 
-    parent_run_id = plan_context.pipeline_run.parent_run_id
+    parent_run_id = plan_context.dagster_run.parent_run_id
     check.opt_str_param(parent_run_id, "parent_run_id")
 
     if parent_run_id is None:

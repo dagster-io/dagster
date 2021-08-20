@@ -65,7 +65,7 @@ class MlFlow(metaclass=MlflowMeta):
 
         # Context associated attributes
         self.log = context.log
-        self.run_name = context.pipeline_run.pipeline_name
+        self.run_name = context.dagster_run.target.name
         self.dagster_run_id = context.run_id
 
         # resource config attributes

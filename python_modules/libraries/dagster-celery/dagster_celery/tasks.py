@@ -27,24 +27,24 @@ def create_task(celery_app, **task_kwargs):
         pipeline = ReconstructablePipeline.from_dict(executable_dict)
         retry_mode = execute_step_args.retry_mode
 
-        pipeline_run = instance.get_run_by_id(execute_step_args.pipeline_run_id)
+        dagster_run = instance.get_run_by_id(execute_step_args.dagster_run_id)
         check.invariant(
-            pipeline_run, "Could not load run {}".format(execute_step_args.pipeline_run_id)
+            dagster_run, "Could not load run {}".format(execute_step_args.dagster_run_id)
         )
 
         step_keys_str = ", ".join(execute_step_args.step_keys_to_execute)
 
         execution_plan = create_execution_plan(
             pipeline,
-            pipeline_run.run_config,
-            mode=pipeline_run.mode,
+            dagster_run.run_config,
+            mode=dagster_run.target.mode,
             step_keys_to_execute=execute_step_args.step_keys_to_execute,
             known_state=execute_step_args.known_state,
         )
 
         engine_event = instance.report_engine_event(
             "Executing steps {} in celery worker".format(step_keys_str),
-            pipeline_run,
+            dagster_run,
             EngineEventData(
                 [
                     EventMetadataEntry.text(step_keys_str, "step_keys"),
@@ -60,10 +60,10 @@ def create_task(celery_app, **task_kwargs):
         for step_event in execute_plan_iterator(
             execution_plan=execution_plan,
             pipeline=pipeline,
-            pipeline_run=pipeline_run,
+            dagster_run=dagster_run,
             instance=instance,
             retry_mode=retry_mode,
-            run_config=pipeline_run.run_config,
+            run_config=dagster_run.run_config,
         ):
             events.append(step_event)
 

@@ -32,7 +32,7 @@ from dagster.core.host_representation import (
 )
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.scheduler.job import JobState, JobStatus, JobTickStatus, JobType, ScheduleJobData
-from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.dagster_run import DagsterRunStatus, DagsterRunsFilter
 from dagster.core.storage.tags import PARTITION_NAME_TAG, SCHEDULED_EXECUTION_TIME_TAG
 from dagster.core.test_utils import instance_for_test, mock_system_timezone
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
@@ -436,15 +436,15 @@ def validate_run_started(
 
     if expected_success:
         assert (
-            run.status == PipelineRunStatus.STARTED
-            or run.status == PipelineRunStatus.STARTING
-            or run.status == PipelineRunStatus.SUCCESS
+            run.status == DagsterRunStatus.STARTED
+            or run.status == DagsterRunStatus.STARTING
+            or run.status == DagsterRunStatus.SUCCESS
         )
 
         if partition_time:
             assert run.run_config == _solid_config(partition_time)
     else:
-        assert run.status == PipelineRunStatus.FAILURE
+        assert run.status == DagsterRunStatus.FAILURE
 
 
 def wait_for_all_runs_to_start(instance, timeout=10):
@@ -455,7 +455,7 @@ def wait_for_all_runs_to_start(instance, timeout=10):
         time.sleep(0.5)
 
         not_started_runs = [
-            run for run in instance.get_runs() if run.status == PipelineRunStatus.NOT_STARTED
+            run for run in instance.get_runs() if run.status == DagsterRunStatus.NOT_STARTED
         ]
 
         if len(not_started_runs) == 0:
@@ -977,7 +977,7 @@ def test_bad_schedules_mixed_with_good_schedule(external_repo_context, capfd):
             wait_for_all_runs_to_start(instance)
 
             good_schedule_runs = instance.get_runs(
-                filters=PipelineRunsFilter.for_schedule(good_schedule)
+                filters=DagsterRunsFilter.for_schedule(good_schedule)
             )
             assert len(good_schedule_runs) == 2
             validate_run_started(
@@ -997,7 +997,7 @@ def test_bad_schedules_mixed_with_good_schedule(external_repo_context, capfd):
             )
 
             bad_schedule_runs = instance.get_runs(
-                filters=PipelineRunsFilter.for_schedule(bad_schedule)
+                filters=DagsterRunsFilter.for_schedule(bad_schedule)
             )
             assert len(bad_schedule_runs) == 1
             validate_run_started(

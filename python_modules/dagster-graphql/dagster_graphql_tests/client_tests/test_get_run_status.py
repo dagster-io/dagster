@@ -1,7 +1,7 @@
 import time
 
 import pytest
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.dagster_run import DagsterRunStatus
 from dagster_graphql import DagsterGraphQLClientError
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
@@ -13,8 +13,8 @@ from .conftest import MockClient, python_client_test_suite
 
 @python_client_test_suite
 def test_get_run_status_success(mock_client: MockClient):
-    expected_result = PipelineRunStatus.SUCCESS
-    response = {"pipelineRunOrError": {"__typename": "PipelineRun", "status": expected_result}}
+    expected_result = DagsterRunStatus.SUCCESS
+    response = {"pipelineRunOrError": {"__typename": "DagsterRun", "status": expected_result}}
     mock_client.mock_gql_client.execute.return_value = response
 
     actual_result = mock_client.python_client.get_run_status("foo")
@@ -34,8 +34,8 @@ def test_get_run_status_fails_with_python_error(mock_client: MockClient):
 
 
 @python_client_test_suite
-def test_get_run_status_fails_with_pipeline_run_not_found_error(mock_client: MockClient):
-    error_type, error_msg = "PipelineRunNotFoundError", "The specified pipeline run does not exist"
+def test_get_run_status_fails_with_dagster_run_not_found_error(mock_client: MockClient):
+    error_type, error_msg = "DagsterRunNotFoundError", "The specified pipeline run does not exist"
     response = {"pipelineRunOrError": {"__typename": error_type, "message": error_msg}}
     mock_client.mock_gql_client.execute.return_value = response
 
@@ -81,7 +81,7 @@ class TestGetRunStatusWithClient(ExecutingGraphQLContextTestMatrix):
 
             status = graphql_client.get_run_status(run_id)
 
-            if status == PipelineRunStatus.SUCCESS:
+            if status == DagsterRunStatus.SUCCESS:
                 break
 
             time.sleep(3)

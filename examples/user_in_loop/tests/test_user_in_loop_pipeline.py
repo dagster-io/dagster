@@ -32,8 +32,8 @@ def test_user_in_loop_pipeline(capsys):
             f1 = executor.submit(run_pipeline, temp_dir)
             executor.submit(create_file, temp_dir)
 
-            pipeline_run_res = f1.result()
-            assert pipeline_run_res.success
+            dagster_run_res = f1.result()
+            assert dagster_run_res.success
 
     file_path_not_exist = False
     file_path_exist = False

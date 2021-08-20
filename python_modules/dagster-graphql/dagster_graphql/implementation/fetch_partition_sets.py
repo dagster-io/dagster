@@ -5,7 +5,7 @@ from dagster.core.host_representation import (
     RepositoryHandle,
     RepositorySelector,
 )
-from dagster.core.storage.pipeline_run import PipelineRunsFilter
+from dagster.core.storage.dagster_run import DagsterRunsFilter
 from dagster.core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG, TagType, get_tag_type
 from graphql.execution.base import ResolveInfo
 
@@ -179,7 +179,7 @@ def get_partition_set_partition_statuses(graphene_info, repository_handle, parti
         repository_handle, partition_set_name
     )
     all_partition_set_runs = graphene_info.context.instance.get_runs(
-        PipelineRunsFilter(tags={PARTITION_SET_TAG: partition_set_name})
+        DagsterRunsFilter(tags={PARTITION_SET_TAG: partition_set_name})
     )
     runs_by_partition = {}
     for run in all_partition_set_runs:

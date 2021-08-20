@@ -125,7 +125,7 @@ class DagsterExecutionStepNotFoundError(DagsterError):
 
 
 class DagsterExecutionPlanSnapshotNotFoundError(DagsterError):
-    """Thrown when an expected execution plan snapshot could not be found on a PipelineRun."""
+    """Thrown when an expected execution plan snapshot could not be found on a DagsterRun."""
 
 
 class DagsterRunNotFoundError(DagsterError):

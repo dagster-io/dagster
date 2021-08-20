@@ -11,7 +11,7 @@ from dagster.core.definitions.step_launcher import StepLauncher
 from dagster.core.errors import DagsterInvalidPropertyError
 from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
-from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.storage.dagster_run import DagsterRun
 from dagster.utils.forked_pdb import ForkedPdb
 
 from .system import StepExecutionContext
@@ -45,8 +45,8 @@ class AbstractComputeExecutionContext(ABC):  # pylint: disable=no-init
         """The pipeline being executed."""
 
     @abstractproperty
-    def pipeline_run(self) -> PipelineRun:
-        """The PipelineRun object corresponding to the execution."""
+    def dagster_run(self) -> DagsterRun:
+        """The DagsterRun object corresponding to the execution."""
 
     @abstractproperty
     def resources(self) -> Any:
@@ -100,9 +100,9 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         return solid_config.config if solid_config else None
 
     @property
-    def pipeline_run(self) -> PipelineRun:
-        """PipelineRun: The current pipeline run"""
-        return self._step_execution_context.pipeline_run
+    def dagster_run(self) -> DagsterRun:
+        """DagsterRun: The current pipeline run"""
+        return self._step_execution_context.dagster_run
 
     @property
     def instance(self) -> DagsterInstance:

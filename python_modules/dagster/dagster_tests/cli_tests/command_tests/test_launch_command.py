@@ -4,7 +4,7 @@ from click.testing import CliRunner
 from dagster import execute_pipeline
 from dagster.cli.pipeline import execute_launch_command, pipeline_launch_command
 from dagster.core.errors import DagsterRunAlreadyExists
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.dagster_run import DagsterRunStatus
 from dagster.core.test_utils import new_cwd
 from dagster.utils import file_relative_path
 
@@ -222,7 +222,7 @@ def test_launch_queued(gen_pipeline_args):
             run = instance.get_run_by_id(run_id)
             assert run is not None
 
-            assert run.status == PipelineRunStatus.QUEUED
+            assert run.status == DagsterRunStatus.QUEUED
 
 
 def test_empty_working_directory():

@@ -1,14 +1,14 @@
 import graphene
 from dagster import check
 from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster.core.storage.pipeline_run import PipelineRunsFilter
+from dagster.core.storage.dagster_run import DagsterRunsFilter
 
 from .errors import (
+    GrapheneDagsterRunConflict,
     GrapheneInvalidOutputError,
     GrapheneInvalidStepError,
     GraphenePartitionSetNotFoundError,
     GraphenePipelineNotFoundError,
-    GraphenePipelineRunConflict,
     GraphenePythonError,
     GrapheneUnauthorizedError,
     create_execution_params_error_types,
@@ -21,7 +21,7 @@ pipeline_execution_error_types = (
     GrapheneInvalidOutputError,
     GraphenePipelineConfigValidationInvalid,
     GraphenePipelineNotFoundError,
-    GraphenePipelineRunConflict,
+    GrapheneDagsterRunConflict,
     GrapheneUnauthorizedError,
     GraphenePythonError,
 ) + create_execution_params_error_types
@@ -94,7 +94,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     timestamp = graphene.NonNull(graphene.Float)
     partitionSet = graphene.Field("dagster_graphql.schema.partition_sets.GraphenePartitionSet")
     runs = graphene.Field(
-        non_null_list("dagster_graphql.schema.pipelines.pipeline.GraphenePipelineRun"),
+        non_null_list("dagster_graphql.schema.pipelines.pipeline.GrapheneDagsterRun"),
         limit=graphene.Int(),
     )
     error = graphene.Field(GraphenePythonError)
@@ -113,11 +113,11 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         )
 
     def resolve_runs(self, graphene_info, **kwargs):
-        from .pipelines.pipeline import GraphenePipelineRun
+        from .pipelines.pipeline import GrapheneDagsterRun
 
-        filters = PipelineRunsFilter.for_backfill(self._backfill_job.backfill_id)
+        filters = DagsterRunsFilter.for_backfill(self._backfill_job.backfill_id)
         return [
-            GraphenePipelineRun(r)
+            GrapheneDagsterRun(r)
             for r in graphene_info.context.instance.get_runs(
                 filters=filters,
                 limit=kwargs.get("limit"),
@@ -125,7 +125,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         ]
 
     def resolve_numRequested(self, graphene_info):
-        filters = PipelineRunsFilter.for_backfill(self._backfill_job.backfill_id)
+        filters = DagsterRunsFilter.for_backfill(self._backfill_job.backfill_id)
         run_count = graphene_info.context.instance.get_runs_count(filters)
         if self._backfill_job.status == BulkActionStatus.COMPLETED:
             return len(self._backfill_job.partition_names)

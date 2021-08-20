@@ -10,11 +10,11 @@ from dagster.core.host_representation.origin import (
     InProcessRepositoryLocationOrigin,
 )
 from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
-from dagster.core.storage.pipeline_run import (
+from dagster.core.storage.dagster_run import (
     IN_PROGRESS_RUN_STATUSES,
     NON_IN_PROGRESS_RUN_STATUSES,
-    PipelineRun,
-    PipelineRunStatus,
+    DagsterRun,
+    DagsterRunStatus,
 )
 
 
@@ -37,28 +37,28 @@ def test_queued_pipeline_origin_check():
         ),
     )
 
-    PipelineRun(
-        status=PipelineRunStatus.QUEUED,
+    DagsterRun(
+        status=DagsterRunStatus.QUEUED,
         external_pipeline_origin=fake_pipeline_origin,
         pipeline_code_origin=fake_code_origin,
     )
 
     with pytest.raises(check.CheckError):
-        PipelineRun(status=PipelineRunStatus.QUEUED)
+        DagsterRun(status=DagsterRunStatus.QUEUED)
 
     with pytest.raises(check.CheckError):
-        PipelineRun().with_status(PipelineRunStatus.QUEUED)
+        DagsterRun().with_status(DagsterRunStatus.QUEUED)
 
 
 def test_in_progress_statuses():
     """
-    If this fails, then the dequeuer's statuses are out of sync with all PipelineRunStatuses.
+    If this fails, then the dequeuer's statuses are out of sync with all DagsterRunStatuses.
     """
-    for status in PipelineRunStatus:
+    for status in DagsterRunStatus:
         in_progress = status in IN_PROGRESS_RUN_STATUSES
         non_in_progress = status in NON_IN_PROGRESS_RUN_STATUSES
         assert in_progress != non_in_progress  # should be in exactly one of the two
 
     assert len(IN_PROGRESS_RUN_STATUSES) + len(NON_IN_PROGRESS_RUN_STATUSES) == len(
-        PipelineRunStatus
+        DagsterRunStatus
     )

@@ -74,10 +74,10 @@ class AzureBlobComputeLogManager(ComputeLogManager, ConfigurableClass):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
 
     @contextmanager
-    def _watch_logs(self, pipeline_run, step_key=None):
+    def _watch_logs(self, dagster_run, step_key=None):
         # proxy watching to the local compute log manager, interacting with the filesystem
         with self.local_manager._watch_logs(  # pylint: disable=protected-access
-            pipeline_run, step_key
+            dagster_run, step_key
         ):
             yield
 
@@ -102,14 +102,14 @@ class AzureBlobComputeLogManager(ComputeLogManager, ConfigurableClass):
     def get_local_path(self, run_id, key, io_type):
         return self.local_manager.get_local_path(run_id, key, io_type)
 
-    def on_watch_start(self, pipeline_run, step_key):
-        self.local_manager.on_watch_start(pipeline_run, step_key)
+    def on_watch_start(self, dagster_run, step_key):
+        self.local_manager.on_watch_start(dagster_run, step_key)
 
-    def on_watch_finish(self, pipeline_run, step_key):
-        self.local_manager.on_watch_finish(pipeline_run, step_key)
-        key = self.local_manager.get_key(pipeline_run, step_key)
-        self._upload_from_local(pipeline_run.run_id, key, ComputeIOType.STDOUT)
-        self._upload_from_local(pipeline_run.run_id, key, ComputeIOType.STDERR)
+    def on_watch_finish(self, dagster_run, step_key):
+        self.local_manager.on_watch_finish(dagster_run, step_key)
+        key = self.local_manager.get_key(dagster_run, step_key)
+        self._upload_from_local(dagster_run.run_id, key, ComputeIOType.STDOUT)
+        self._upload_from_local(dagster_run.run_id, key, ComputeIOType.STDERR)
 
     def is_watch_completed(self, run_id, key):
         return self.local_manager.is_watch_completed(run_id, key)

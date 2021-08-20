@@ -14,8 +14,8 @@ from dagster import check, seven
 from dagster.config.source import StringSource
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventLogEntry
+from dagster.core.storage.dagster_run import DagsterRunStatus, DagsterRunsFilter
 from dagster.core.storage.event_log.base import EventLogRecord, EventRecordsFilter
-from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.sql import (
     check_alembic_revision,
     create_engine,
@@ -304,14 +304,14 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             else None
         )
         run_records = self._instance.get_run_records(
-            filters=PipelineRunsFilter(updated_after=run_updated_after),
+            filters=DagsterRunsFilter(updated_after=run_updated_after),
             order_by="update_timestamp",
             ascending=ascending,
         )
 
         event_records = []
         for run_record in run_records:
-            run_id = run_record.pipeline_run.run_id
+            run_id = run_record.dagster_run.run_id
             with self.run_connection(run_id) as conn:
                 results = conn.execute(query).fetchall()
 
@@ -421,9 +421,9 @@ class SqliteEventLogStorageWatchdog(PatternMatchingEventHandler):
                 logging.exception("Exception in callback for event watch on run %s.", self._run_id)
 
             if (
-                status == PipelineRunStatus.SUCCESS
-                or status == PipelineRunStatus.FAILURE
-                or status == PipelineRunStatus.CANCELED
+                status == DagsterRunStatus.SUCCESS
+                or status == DagsterRunStatus.FAILURE
+                or status == DagsterRunStatus.CANCELED
             ):
                 self._event_log_storage.end_watch(self._run_id, self._cb)
 

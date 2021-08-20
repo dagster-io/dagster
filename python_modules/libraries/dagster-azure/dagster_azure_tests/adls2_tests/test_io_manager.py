@@ -1,13 +1,13 @@
 import pytest
 from dagster import (
     DagsterInstance,
+    DagsterRun,
     DynamicOutput,
     DynamicOutputDefinition,
     InputDefinition,
     Int,
     ModeDefinition,
     OutputDefinition,
-    PipelineRun,
     build_input_context,
     build_output_context,
     pipeline,
@@ -96,16 +96,14 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
 
     step_keys = ["return_one"]
     instance = DagsterInstance.ephemeral()
-    pipeline_run = PipelineRun(
-        pipeline_name=pipeline_def.name, run_id=run_id, run_config=run_config
-    )
+    dagster_run = DagsterRun(pipeline_name=pipeline_def.name, run_id=run_id, run_config=run_config)
 
     return_one_step_events = list(
         execute_plan(
             execution_plan.build_subset_plan(step_keys, pipeline_def, resolved_run_config),
             pipeline=InMemoryPipeline(pipeline_def),
             run_config=run_config,
-            pipeline_run=pipeline_run,
+            dagster_run=dagster_run,
             instance=instance,
         )
     )
@@ -130,7 +128,7 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
         execute_plan(
             execution_plan.build_subset_plan(["add_one"], pipeline_def, resolved_run_config),
             pipeline=InMemoryPipeline(pipeline_def),
-            pipeline_run=pipeline_run,
+            dagster_run=dagster_run,
             run_config=run_config,
             instance=instance,
         )

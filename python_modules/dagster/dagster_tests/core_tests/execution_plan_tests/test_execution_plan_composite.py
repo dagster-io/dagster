@@ -50,14 +50,14 @@ def test_execution_plan_for_composite_solid():
     }
     execution_plan = create_execution_plan(composite_pipeline, run_config=run_config)
     instance = DagsterInstance.ephemeral()
-    pipeline_run = instance.create_run_for_pipeline(
+    dagster_run = instance.create_run_for_pipeline(
         pipeline_def=composite_pipeline, execution_plan=execution_plan
     )
     events = execute_plan(
         execution_plan,
         InMemoryPipeline(composite_pipeline),
         run_config=run_config,
-        pipeline_run=pipeline_run,
+        dagster_run=dagster_run,
         instance=instance,
     )
 
@@ -91,7 +91,7 @@ def test_execution_plan_for_composite_solid_with_config_mapping():
         composite_pipeline_with_config_mapping, run_config=run_config
     )
     instance = DagsterInstance.ephemeral()
-    pipeline_run = instance.create_run_for_pipeline(
+    dagster_run = instance.create_run_for_pipeline(
         pipeline_def=composite_pipeline_with_config_mapping, execution_plan=execution_plan
     )
 
@@ -99,7 +99,7 @@ def test_execution_plan_for_composite_solid_with_config_mapping():
         execution_plan,
         InMemoryPipeline(composite_pipeline_with_config_mapping),
         run_config=run_config,
-        pipeline_run=pipeline_run,
+        dagster_run=dagster_run,
         instance=instance,
     )
 

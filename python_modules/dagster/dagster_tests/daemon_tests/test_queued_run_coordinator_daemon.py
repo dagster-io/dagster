@@ -5,7 +5,7 @@ from contextlib import contextmanager
 import pytest
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
-from dagster.core.storage.pipeline_run import IN_PROGRESS_RUN_STATUSES, PipelineRunStatus
+from dagster.core.storage.dagster_run import IN_PROGRESS_RUN_STATUSES, DagsterRunStatus
 from dagster.core.storage.tags import PRIORITY_TAG
 from dagster.core.test_utils import create_run_for_test, instance_for_test
 from dagster.core.workspace.dynamic_workspace import DynamicWorkspace
@@ -74,12 +74,12 @@ def test_attempt_to_launch_runs_filter(instance, workspace, daemon):
     create_run(
         instance,
         run_id="queued-run",
-        status=PipelineRunStatus.QUEUED,
+        status=DagsterRunStatus.QUEUED,
     )
     create_run(
         instance,
         run_id="non-queued-run",
-        status=PipelineRunStatus.NOT_STARTED,
+        status=DagsterRunStatus.NOT_STARTED,
     )
 
     list(daemon.run_iteration(instance, workspace))
@@ -91,12 +91,12 @@ def test_attempt_to_launch_runs_no_queued(instance, workspace, daemon):
     create_run(
         instance,
         run_id="queued-run",
-        status=PipelineRunStatus.STARTED,
+        status=DagsterRunStatus.STARTED,
     )
     create_run(
         instance,
         run_id="non-queued-run",
-        status=PipelineRunStatus.NOT_STARTED,
+        status=DagsterRunStatus.NOT_STARTED,
     )
 
     list(daemon.run_iteration(instance, workspace))
@@ -128,7 +128,7 @@ def test_get_queued_runs_max_runs(num_in_progress_runs, workspace, daemon):
             create_run(
                 instance,
                 run_id=run_id,
-                status=PipelineRunStatus.QUEUED,
+                status=DagsterRunStatus.QUEUED,
             )
 
         list(daemon.run_iteration(instance, workspace))
@@ -137,17 +137,17 @@ def test_get_queued_runs_max_runs(num_in_progress_runs, workspace, daemon):
 
 
 def test_priority(instance, workspace, daemon):
-    create_run(instance, run_id="default-pri-run", status=PipelineRunStatus.QUEUED)
+    create_run(instance, run_id="default-pri-run", status=DagsterRunStatus.QUEUED)
     create_run(
         instance,
         run_id="low-pri-run",
-        status=PipelineRunStatus.QUEUED,
+        status=DagsterRunStatus.QUEUED,
         tags={PRIORITY_TAG: "-1"},
     )
     create_run(
         instance,
         run_id="hi-pri-run",
-        status=PipelineRunStatus.QUEUED,
+        status=DagsterRunStatus.QUEUED,
         tags={PRIORITY_TAG: "3"},
     )
 
@@ -164,7 +164,7 @@ def test_priority_on_malformed_tag(instance, workspace, daemon):
     create_run(
         instance,
         run_id="bad-pri-run",
-        status=PipelineRunStatus.QUEUED,
+        status=DagsterRunStatus.QUEUED,
         tags={PRIORITY_TAG: "foobar"},
     )
 
@@ -181,19 +181,19 @@ def test_tag_limits(workspace, daemon):
         create_run(
             instance,
             run_id="tiny-1",
-            status=PipelineRunStatus.QUEUED,
+            status=DagsterRunStatus.QUEUED,
             tags={"database": "tiny"},
         )
         create_run(
             instance,
             run_id="tiny-2",
-            status=PipelineRunStatus.QUEUED,
+            status=DagsterRunStatus.QUEUED,
             tags={"database": "tiny"},
         )
         create_run(
             instance,
             run_id="large-1",
-            status=PipelineRunStatus.QUEUED,
+            status=DagsterRunStatus.QUEUED,
             tags={"database": "large"},
         )
 
@@ -213,25 +213,25 @@ def test_multiple_tag_limits(workspace, daemon):
         create_run(
             instance,
             run_id="run-1",
-            status=PipelineRunStatus.QUEUED,
+            status=DagsterRunStatus.QUEUED,
             tags={"database": "tiny", "user": "johann"},
         )
         create_run(
             instance,
             run_id="run-2",
-            status=PipelineRunStatus.QUEUED,
+            status=DagsterRunStatus.QUEUED,
             tags={"database": "tiny"},
         )
         create_run(
             instance,
             run_id="run-3",
-            status=PipelineRunStatus.QUEUED,
+            status=DagsterRunStatus.QUEUED,
             tags={"user": "johann"},
         )
         create_run(
             instance,
             run_id="run-4",
-            status=PipelineRunStatus.QUEUED,
+            status=DagsterRunStatus.QUEUED,
             tags={"user": "johann"},
         )
 
@@ -251,25 +251,25 @@ def test_overlapping_tag_limits(workspace, daemon):
         create_run(
             instance,
             run_id="run-1",
-            status=PipelineRunStatus.QUEUED,
+            status=DagsterRunStatus.QUEUED,
             tags={"foo": "bar"},
         )
         create_run(
             instance,
             run_id="run-2",
-            status=PipelineRunStatus.QUEUED,
+            status=DagsterRunStatus.QUEUED,
             tags={"foo": "bar"},
         )
         create_run(
             instance,
             run_id="run-3",
-            status=PipelineRunStatus.QUEUED,
+            status=DagsterRunStatus.QUEUED,
             tags={"foo": "other"},
         )
         create_run(
             instance,
             run_id="run-4",
-            status=PipelineRunStatus.QUEUED,
+            status=DagsterRunStatus.QUEUED,
             tags={"foo": "other"},
         )
 
@@ -286,13 +286,13 @@ def test_locations_not_created(instance, monkeypatch, workspace, daemon):
     create_run(
         instance,
         run_id="queued-run",
-        status=PipelineRunStatus.QUEUED,
+        status=DagsterRunStatus.QUEUED,
     )
 
     create_run(
         instance,
         run_id="queued-run-2",
-        status=PipelineRunStatus.QUEUED,
+        status=DagsterRunStatus.QUEUED,
     )
 
     original_method = GrpcServerRepositoryLocation.__init__
@@ -339,13 +339,13 @@ def test_skip_error_runs(instance, workspace, daemon):
     create_run(
         instance,
         run_id="bad-run",
-        status=PipelineRunStatus.QUEUED,
+        status=DagsterRunStatus.QUEUED,
     )
 
     create_run(
         instance,
         run_id="good-run",
-        status=PipelineRunStatus.QUEUED,
+        status=DagsterRunStatus.QUEUED,
     )
 
     errors = [error for error in list(daemon.run_iteration(instance, workspace)) if error]
@@ -354,4 +354,4 @@ def test_skip_error_runs(instance, workspace, daemon):
     assert "Bad run bad-run" in errors[0].message
 
     assert get_run_ids(instance.run_launcher.queue()) == ["good-run"]
-    assert instance.get_run_by_id("bad-run").status == PipelineRunStatus.FAILURE
+    assert instance.get_run_by_id("bad-run").status == DagsterRunStatus.FAILURE

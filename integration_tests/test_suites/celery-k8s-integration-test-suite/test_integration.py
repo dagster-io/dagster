@@ -7,7 +7,7 @@ import time
 import boto3
 import pytest
 from dagster import DagsterEventType
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.dagster_run import DagsterRunStatus
 from dagster.core.storage.tags import DOCKER_IMAGE_TAG
 from dagster.core.test_utils import create_run_for_test
 from dagster.utils import merge_dicts
@@ -331,15 +331,15 @@ def _test_termination(dagster_instance, run_config):
         assert dagster_instance.run_launcher.terminate(run_id=run.run_id)
 
         # Check that pipeline run is marked as canceled
-        pipeline_run_status_canceled = False
+        dagster_run_status_canceled = False
         start_time = datetime.datetime.now()
         while datetime.datetime.now() < start_time + timeout:
-            pipeline_run = dagster_instance.get_run_by_id(run.run_id)
-            if pipeline_run.status == PipelineRunStatus.CANCELED:
-                pipeline_run_status_canceled = True
+            dagster_run = dagster_instance.get_run_by_id(run.run_id)
+            if dagster_run.status == DagsterRunStatus.CANCELED:
+                dagster_run_status_canceled = True
                 break
             time.sleep(5)
-        assert pipeline_run_status_canceled
+        assert dagster_run_status_canceled
 
         # Check that terminate cannot be called again
         assert not dagster_instance.run_launcher.can_terminate(run_id=run.run_id)
@@ -410,7 +410,7 @@ def test_execute_on_celery_k8s_with_termination(  # pylint: disable=redefined-ou
 
 
 @pytest.fixture(scope="function")
-def set_dagster_k8s_pipeline_run_namespace_env(helm_namespace):
+def set_dagster_k8s_dagster_run_namespace_env(helm_namespace):
     try:
         old_value = os.getenv("DAGSTER_K8S_PIPELINE_RUN_NAMESPACE")
         os.environ["DAGSTER_K8S_PIPELINE_RUN_NAMESPACE"] = helm_namespace
@@ -421,7 +421,7 @@ def set_dagster_k8s_pipeline_run_namespace_env(helm_namespace):
 
 
 def test_execute_on_celery_k8s_with_env_var_and_termination(  # pylint: disable=redefined-outer-name
-    dagster_docker_image, dagster_instance, set_dagster_k8s_pipeline_run_namespace_env
+    dagster_docker_image, dagster_instance, set_dagster_k8s_dagster_run_namespace_env
 ):
     run_config = merge_dicts(
         merge_yamls(
@@ -439,7 +439,7 @@ def test_execute_on_celery_k8s_with_env_var_and_termination(  # pylint: disable=
 
 
 def test_execute_on_celery_k8s_with_hard_failure(  # pylint: disable=redefined-outer-name
-    dagster_docker_image, dagster_instance, set_dagster_k8s_pipeline_run_namespace_env
+    dagster_docker_image, dagster_instance, set_dagster_k8s_dagster_run_namespace_env
 ):
     run_config = merge_dicts(
         merge_dicts(
@@ -475,17 +475,17 @@ def test_execute_on_celery_k8s_with_hard_failure(  # pylint: disable=redefined-o
         assert isinstance(dagster_instance.run_launcher, CeleryK8sRunLauncher)
 
         # Check that pipeline run is marked as failed
-        pipeline_run_status_failure = False
+        dagster_run_status_failure = False
         start_time = datetime.datetime.now()
         timeout = datetime.timedelta(0, 120)
 
         while datetime.datetime.now() < start_time + timeout:
-            pipeline_run = dagster_instance.get_run_by_id(run.run_id)
-            if pipeline_run.status == PipelineRunStatus.FAILURE:
-                pipeline_run_status_failure = True
+            dagster_run = dagster_instance.get_run_by_id(run.run_id)
+            if dagster_run.status == DagsterRunStatus.FAILURE:
+                dagster_run_status_failure = True
                 break
             time.sleep(5)
-        assert pipeline_run_status_failure
+        assert dagster_run_status_failure
 
         # Check for step failure for hard_fail_or_0.compute
         start_time = datetime.datetime.now()

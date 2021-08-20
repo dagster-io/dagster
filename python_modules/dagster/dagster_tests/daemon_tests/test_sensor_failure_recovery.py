@@ -4,7 +4,7 @@ from dagster.core.definitions.run_request import JobType
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import JobState, JobStatus, JobTickStatus
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.dagster_run import DagsterRunStatus
 from dagster.core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster.core.test_utils import cleanup_test_instance, get_crash_signals
 from dagster.core.workspace.dynamic_workspace import DynamicWorkspace
@@ -159,7 +159,7 @@ def test_failure_after_run_created_before_run_launched(
 
             run = instance.get_runs()[0]
             # Run was created, but hasn't launched yet
-            assert run.status == PipelineRunStatus.NOT_STARTED
+            assert run.status == DagsterRunStatus.NOT_STARTED
             assert run.tags.get(SENSOR_NAME_TAG) == "run_key_sensor"
             assert run.tags.get(RUN_KEY_TAG) == "only_once"
 

@@ -12,16 +12,16 @@ if TYPE_CHECKING:
 def _default_failure_email_body(context: "PipelineFailureSensorContext") -> str:
     return "<br>".join(
         [
-            f"Pipeline {context.pipeline_run.pipeline_name} failed!",
-            f"Run ID: {context.pipeline_run.run_id}",
-            f"Mode: {context.pipeline_run.mode}",
+            f"Pipeline {context.dagster_run.target.name} failed!",
+            f"Run ID: {context.dagster_run.run_id}",
+            f"Mode: {context.dagster_run.target.mode}",
             f"Error: {context.failure_event.message}",
         ]
     )
 
 
 def _default_failure_email_subject(context: "PipelineFailureSensorContext") -> str:
-    return f"Dagster Pipeline Failed: {context.pipeline_run.pipeline_name}"
+    return f"Dagster Pipeline Failed: {context.dagster_run.target.name}"
 
 
 EMAIL_MESSAGE = """From: {email_from}
@@ -121,7 +121,7 @@ def make_email_on_pipeline_failure_sensor(
 
             def my_message_fn(context: PipelineFailureSensorContext) -> str:
                 return "Pipeline {pipeline_name} failed! Error: {error}".format(
-                    pipeline_name=context.pipeline_run.pipeline_name,
+                    pipeline_name=context.dagster_run.target.name,
                     error=context.failure_event.message,
                 )
 
@@ -147,7 +147,7 @@ def make_email_on_pipeline_failure_sensor(
 
         email_body = email_body_fn(context)
         if dagit_base_url:
-            email_body += f'<p><a href="{dagit_base_url}/instance/runs/{context.pipeline_run.run_id}">View in Dagit</a></p>'
+            email_body += f'<p><a href="{dagit_base_url}/instance/runs/{context.dagster_run.run_id}">View in Dagit</a></p>'
 
         message = EMAIL_MESSAGE.format(
             email_to=",".join(email_to),

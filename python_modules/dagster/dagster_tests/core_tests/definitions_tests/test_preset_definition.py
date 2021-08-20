@@ -224,19 +224,19 @@ def test_tags():
         tags={"execute_tag": "execute_tag", "all": "execute"},
     )
     assert result.success
-    pipeline_run = instance.get_run_by_id(result.run_id)
+    dagster_run = instance.get_run_by_id(result.run_id)
 
-    assert "pipeline_tag" in pipeline_run.tags
-    assert "preset_tag" in pipeline_run.tags
-    assert "execute_tag" in pipeline_run.tags
+    assert "pipeline_tag" in dagster_run.tags
+    assert "preset_tag" in dagster_run.tags
+    assert "execute_tag" in dagster_run.tags
 
     # execute overwrites preset overwrites pipeline def
-    assert "all" in pipeline_run.tags
-    assert pipeline_run.tags["all"] == "execute"
+    assert "all" in dagster_run.tags
+    assert dagster_run.tags["all"] == "execute"
 
     # preset overwrites pipeline def
-    assert "defs" in pipeline_run.tags
-    assert pipeline_run.tags["defs"] == "preset"
+    assert "defs" in dagster_run.tags
+    assert dagster_run.tags["defs"] == "preset"
 
 
 @pytest.mark.parametrize("initial_run_config", [{"foo": "bar"}, None])

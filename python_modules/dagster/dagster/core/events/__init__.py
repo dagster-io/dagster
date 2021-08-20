@@ -27,7 +27,7 @@ from dagster.core.execution.context.system import (
 from dagster.core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster.core.execution.plan.outputs import StepOutputData
 from dagster.core.log_manager import DagsterLogManager
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.dagster_run import DagsterRunStatus
 from dagster.serdes import register_serdes_tuple_fallbacks, whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster.utils.timing import format_duration
@@ -151,13 +151,13 @@ ALERT_EVENTS = {
 
 
 EVENT_TYPE_TO_PIPELINE_RUN_STATUS = {
-    DagsterEventType.PIPELINE_START: PipelineRunStatus.STARTED,
-    DagsterEventType.PIPELINE_SUCCESS: PipelineRunStatus.SUCCESS,
-    DagsterEventType.PIPELINE_FAILURE: PipelineRunStatus.FAILURE,
-    DagsterEventType.PIPELINE_ENQUEUED: PipelineRunStatus.QUEUED,
-    DagsterEventType.PIPELINE_STARTING: PipelineRunStatus.STARTING,
-    DagsterEventType.PIPELINE_CANCELING: PipelineRunStatus.CANCELING,
-    DagsterEventType.PIPELINE_CANCELED: PipelineRunStatus.CANCELED,
+    DagsterEventType.PIPELINE_START: DagsterRunStatus.STARTED,
+    DagsterEventType.PIPELINE_SUCCESS: DagsterRunStatus.SUCCESS,
+    DagsterEventType.PIPELINE_FAILURE: DagsterRunStatus.FAILURE,
+    DagsterEventType.PIPELINE_ENQUEUED: DagsterRunStatus.QUEUED,
+    DagsterEventType.PIPELINE_STARTING: DagsterRunStatus.STARTING,
+    DagsterEventType.PIPELINE_CANCELING: DagsterRunStatus.CANCELING,
+    DagsterEventType.PIPELINE_CANCELED: DagsterRunStatus.CANCELED,
 }
 
 PIPELINE_RUN_STATUS_TO_EVENT_TYPE = {v: k for k, v in EVENT_TYPE_TO_PIPELINE_RUN_STATUS.items()}

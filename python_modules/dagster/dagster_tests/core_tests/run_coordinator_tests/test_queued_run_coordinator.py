@@ -3,7 +3,7 @@ from dagster.check import CheckError
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.run_coordinator import SubmitRunContext
 from dagster.core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.dagster_run import DagsterRunStatus
 from dagster.core.test_utils import create_run_for_test, environ, instance_for_test
 from dagster.utils import merge_dicts
 from dagster_tests.api_tests.utils import get_bar_workspace
@@ -108,21 +108,21 @@ class TestQueuedRunCoordinator:
         self, instance, coordinator, workspace, external_pipeline
     ):  # pylint: disable=redefined-outer-name
         run = self.create_run(
-            instance, external_pipeline, run_id="foo-1", status=PipelineRunStatus.NOT_STARTED
+            instance, external_pipeline, run_id="foo-1", status=DagsterRunStatus.NOT_STARTED
         )
         returned_run = coordinator.submit_run(SubmitRunContext(run, workspace))
         assert returned_run.run_id == "foo-1"
-        assert returned_run.status == PipelineRunStatus.QUEUED
+        assert returned_run.status == DagsterRunStatus.QUEUED
 
         assert len(instance.run_launcher.queue()) == 0
         stored_run = instance.get_run_by_id("foo-1")
-        assert stored_run.status == PipelineRunStatus.QUEUED
+        assert stored_run.status == DagsterRunStatus.QUEUED
 
     def test_submit_run_checks_status(
         self, instance, coordinator, workspace, external_pipeline
     ):  # pylint: disable=redefined-outer-name
         run = self.create_run(
-            instance, external_pipeline, run_id="foo-1", status=PipelineRunStatus.QUEUED
+            instance, external_pipeline, run_id="foo-1", status=DagsterRunStatus.QUEUED
         )
         with pytest.raises(CheckError):
             coordinator.submit_run(SubmitRunContext(run, workspace))
@@ -131,7 +131,7 @@ class TestQueuedRunCoordinator:
         self, instance, coordinator, workspace, external_pipeline
     ):  # pylint: disable=redefined-outer-name
         run = self.create_run(
-            instance, external_pipeline, run_id="foo-1", status=PipelineRunStatus.NOT_STARTED
+            instance, external_pipeline, run_id="foo-1", status=DagsterRunStatus.NOT_STARTED
         )
         assert not coordinator.can_cancel_run(run.run_id)
 
@@ -140,5 +140,5 @@ class TestQueuedRunCoordinator:
 
         coordinator.cancel_run(run.run_id)
         stored_run = instance.get_run_by_id("foo-1")
-        assert stored_run.status == PipelineRunStatus.CANCELED
+        assert stored_run.status == DagsterRunStatus.CANCELED
         assert not coordinator.can_cancel_run(run.run_id)

@@ -20,9 +20,9 @@ def types():
     from .mode import GrapheneMode
     from .pipeline_errors import GrapheneInvalidSubsetError, GrapheneConfigTypeNotFoundError
     from .pipeline_ref import GraphenePipelineReference, GrapheneUnknownPipeline
-    from .pipeline_run_stats import (
-        GraphenePipelineRunStatsOrError,
-        GraphenePipelineRunStatsSnapshot,
+    from .dagster_run_stats import (
+        GrapheneDagsterRunStatsOrError,
+        GrapheneDagsterRunStatsSnapshot,
     )
     from .pipeline import (
         GrapheneAsset,
@@ -30,16 +30,16 @@ def types():
         GrapheneIPipelineSnapshot,
         GraphenePipeline,
         GraphenePipelinePreset,
-        GraphenePipelineRun,
-        GraphenePipelineRunOrError,
+        GrapheneDagsterRun,
+        GrapheneDagsterRunOrError,
     )
     from .resource import GrapheneResource
     from .snapshot import GraphenePipelineSnapshot, GraphenePipelineSnapshotOrError
-    from .status import GraphenePipelineRunStatus
+    from .status import GrapheneDagsterRunStatus
     from .subscription import (
-        GraphenePipelineRunLogsSubscriptionFailure,
-        GraphenePipelineRunLogsSubscriptionPayload,
-        GraphenePipelineRunLogsSubscriptionSuccess,
+        GrapheneDagsterRunLogsSubscriptionFailure,
+        GrapheneDagsterRunLogsSubscriptionPayload,
+        GrapheneDagsterRunLogsSubscriptionSuccess,
     )
 
     return [
@@ -66,14 +66,14 @@ def types():
         GraphenePipelineConfigValidationValid,
         GraphenePipelinePreset,
         GraphenePipelineReference,
-        GraphenePipelineRun,
-        GraphenePipelineRunLogsSubscriptionFailure,
-        GraphenePipelineRunLogsSubscriptionPayload,
-        GraphenePipelineRunLogsSubscriptionSuccess,
-        GraphenePipelineRunOrError,
-        GraphenePipelineRunStatsOrError,
-        GraphenePipelineRunStatsSnapshot,
-        GraphenePipelineRunStatus,
+        GrapheneDagsterRun,
+        GrapheneDagsterRunLogsSubscriptionFailure,
+        GrapheneDagsterRunLogsSubscriptionPayload,
+        GrapheneDagsterRunLogsSubscriptionSuccess,
+        GrapheneDagsterRunOrError,
+        GrapheneDagsterRunStatsOrError,
+        GrapheneDagsterRunStatsSnapshot,
+        GrapheneDagsterRunStatus,
         GraphenePipelineSnapshot,
         GraphenePipelineSnapshotOrError,
         GrapheneResource,

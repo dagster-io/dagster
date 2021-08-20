@@ -17,7 +17,7 @@ from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dag
 from dagster.serdes.errors import DeserializationError
 from dagster.utils import datetime_as_float, utc_datetime_from_naive, utc_datetime_from_timestamp
 
-from ..pipeline_run import PipelineRunStatsSnapshot
+from ..dagster_run import DagsterRunStatsSnapshot
 from .base import (
     EventLogRecord,
     EventLogStorage,
@@ -272,7 +272,7 @@ class SqlEventLogStorage(EventLogStorage):
                 ),
             )
 
-            return PipelineRunStatsSnapshot(
+            return DagsterRunStatsSnapshot(
                 run_id=run_id,
                 steps_succeeded=counts.get(DagsterEventType.STEP_SUCCESS.value, 0),
                 steps_failed=counts.get(DagsterEventType.STEP_FAILURE.value, 0),

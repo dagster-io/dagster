@@ -83,7 +83,7 @@ def test_execution_plan_reexecution():
     )
 
     subset_plan = execution_plan.build_subset_plan(["add_two"], pipeline_def, resolved_run_config)
-    pipeline_run = instance.create_run_for_pipeline(
+    dagster_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline_def,
         execution_plan=subset_plan,
         run_config=run_config,
@@ -95,7 +95,7 @@ def test_execution_plan_reexecution():
         subset_plan,
         InMemoryPipeline(pipeline_def),
         run_config=run_config,
-        pipeline_run=pipeline_run,
+        dagster_run=dagster_run,
         instance=instance,
     )
 
@@ -119,7 +119,7 @@ def test_execution_plan_wrong_run_id():
 
     execution_plan = create_execution_plan(pipeline_def, run_config=run_config)
 
-    pipeline_run = instance.create_run_for_pipeline(
+    dagster_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline_def,
         execution_plan=execution_plan,
         run_config=run_config,
@@ -132,7 +132,7 @@ def test_execution_plan_wrong_run_id():
             execution_plan,
             InMemoryPipeline(pipeline_def),
             run_config=run_config,
-            pipeline_run=pipeline_run,
+            dagster_run=dagster_run,
             instance=instance,
         )
 
@@ -156,7 +156,7 @@ def test_execution_plan_reexecution_with_in_memory():
     resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config=run_config)
     execution_plan = ExecutionPlan.build(InMemoryPipeline(pipeline_def), resolved_run_config)
 
-    pipeline_run = instance.create_run_for_pipeline(
+    dagster_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline_def,
         execution_plan=execution_plan,
         run_config=run_config,
@@ -169,7 +169,7 @@ def test_execution_plan_reexecution_with_in_memory():
             execution_plan.build_subset_plan(["add_two"], pipeline_def, resolved_run_config),
             InMemoryPipeline(pipeline_def),
             run_config=run_config,
-            pipeline_run=pipeline_run,
+            dagster_run=dagster_run,
             instance=instance,
         )
 

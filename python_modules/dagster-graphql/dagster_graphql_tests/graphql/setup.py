@@ -59,8 +59,8 @@ from dagster.core.definitions.decorators.sensor import sensor
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.definitions.sensor import RunRequest, SkipReason
 from dagster.core.log_manager import coerce_valid_log_level
+from dagster.core.storage.dagster_run import DagsterRunStatus, DagsterRunsFilter
 from dagster.core.storage.fs_io_manager import fs_io_manager
-from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.core.test_utils import today_at_midnight
 from dagster.core.workspace.context import WorkspaceProcessContext
@@ -388,7 +388,7 @@ def csv_hello_world_two():
 
 @solid
 def solid_that_gets_tags(context):
-    return context.pipeline_run.tags
+    return context.dagster_run.tags
 
 
 @pipeline(tags={"tag_key": "tag_value"})
@@ -654,7 +654,7 @@ def materialization_pipeline():
                 EventMetadataEntry.int(1, "int"),
                 EventMetadataEntry.float(float("nan"), "float NaN"),
                 EventMetadataEntry.int(LONG_INT, "long int"),
-                EventMetadataEntry.pipeline_run("fake_run_id", "pipeline run"),
+                EventMetadataEntry.dagster_run("fake_run_id", "pipeline run"),
                 EventMetadataEntry.asset(AssetKey("my_asset"), "my asset"),
             ],
         )
@@ -929,9 +929,9 @@ def last_empty_partition(context, partition_set_def):
         return None
     selected = None
     for partition in reversed(partitions):
-        filters = PipelineRunsFilter.for_partition(partition_set_def, partition)
+        filters = DagsterRunsFilter.for_partition(partition_set_def, partition)
         matching = context.instance.get_runs(filters)
-        if not any(run.status == PipelineRunStatus.SUCCESS for run in matching):
+        if not any(run.status == DagsterRunStatus.SUCCESS for run in matching):
             selected = partition
             break
     return selected
@@ -1229,7 +1229,7 @@ def backcompat_materialization_pipeline():
                 EventMetadataEntry.int(1, "int"),
                 EventMetadataEntry.float(float("nan"), "float NaN"),
                 EventMetadataEntry.int(LONG_INT, "long int"),
-                EventMetadataEntry.pipeline_run("fake_run_id", "pipeline run"),
+                EventMetadataEntry.dagster_run("fake_run_id", "pipeline run"),
                 EventMetadataEntry.asset(AssetKey("my_asset"), "my asset"),
             ],
         )

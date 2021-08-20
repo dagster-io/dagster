@@ -1,7 +1,7 @@
 import time
 import uuid
 
-from dagster.core.storage.pipeline_run import PipelineRunsFilter
+from dagster.core.storage.dagster_run import DagsterRunsFilter
 from dagster.utils import file_relative_path, merge_dicts
 from dagster.utils.test import get_temp_file_name
 from dagster_graphql.client.query import (
@@ -39,7 +39,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert result.data
 
         # just test existence
-        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchDagsterRunSuccess"
         assert uuid.UUID(result.data["launchPipelineExecution"]["run"]["runId"])
         assert (
             result.data["launchPipelineExecution"]["run"]["pipeline"]["name"] == "csv_hello_world"
@@ -62,7 +62,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert result.data
 
         # just test existence
-        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchDagsterRunSuccess"
         assert uuid.UUID(result.data["launchPipelineExecution"]["run"]["runId"])
         assert (
             result.data["launchPipelineExecution"]["run"]["pipeline"]["name"] == "csv_hello_world"
@@ -87,7 +87,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         ]
 
         # just test existence
-        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchDagsterRunSuccess"
         assert uuid.UUID(result.data["launchPipelineExecution"]["run"]["runId"])
         assert (
             result.data["launchPipelineExecution"]["run"]["pipeline"]["name"]
@@ -295,7 +295,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        assert run_logs["__typename"] == "PipelineRunLogsSubscriptionSuccess"
+        assert run_logs["__typename"] == "DagsterRunLogsSubscriptionSuccess"
         non_engine_event_types = [
             message["__typename"]
             for message in run_logs["messages"]
@@ -326,9 +326,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         assert not exc_result.errors
         assert exc_result.data
-        assert (
-            exc_result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
-        )
+        assert exc_result.data["launchPipelineExecution"]["__typename"] == "LaunchDagsterRunSuccess"
 
         # block until run finishes
         graphql_context.instance.run_launcher.join()
@@ -341,7 +339,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         assert not events_result.errors
         assert events_result.data
-        assert events_result.data["pipelineRunOrError"]["__typename"] == "PipelineRun"
+        assert events_result.data["pipelineRunOrError"]["__typename"] == "DagsterRun"
 
         non_engine_event_types = [
             message["__typename"]
@@ -372,9 +370,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         assert not exc_result.errors
         assert exc_result.data
-        assert (
-            exc_result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
-        )
+        assert exc_result.data["launchPipelineExecution"]["__typename"] == "LaunchDagsterRunSuccess"
 
         def _fetch_events(after):
             events_result = execute_dagster_graphql(
@@ -387,7 +383,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             )
             assert not events_result.errors
             assert events_result.data
-            assert events_result.data["pipelineRunOrError"]["__typename"] == "PipelineRun"
+            assert events_result.data["pipelineRunOrError"]["__typename"] == "DagsterRun"
             return events_result.data["pipelineRunOrError"]["events"]
 
         full_logs = []
@@ -422,7 +418,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        assert run_logs["__typename"] == "PipelineRunLogsSubscriptionSuccess"
+        assert run_logs["__typename"] == "DagsterRunLogsSubscriptionSuccess"
 
         step_run_log_entry = _get_step_run_log_entry(
             run_logs, "throw_a_thing", "ExecutionStepFailureEvent"
@@ -452,7 +448,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         assert (
             subscribe_result.data["pipelineRunLogs"]["__typename"]
-            == "PipelineRunLogsSubscriptionFailure"
+            == "DagsterRunLogsSubscriptionFailure"
         )
         assert subscribe_result.data["pipelineRunLogs"]["missingRunId"] == "nope"
 
@@ -547,7 +543,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         assert not result.errors
         assert result.data
-        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchDagsterRunSuccess"
 
         run = result.data["launchPipelineExecution"]["run"]
         run_id = run["runId"]
@@ -558,7 +554,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         # Check run storage
         runs_with_tag = graphql_context.instance.get_runs(
-            filters=PipelineRunsFilter(tags={"dagster/test_key": "test_value"})
+            filters=DagsterRunsFilter(tags={"dagster/test_key": "test_value"})
         )
         assert len(runs_with_tag) == 1
         assert runs_with_tag[0].run_id == run_id
@@ -602,8 +598,8 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             assert step_mat_event["materialization"]["metadataEntries"][0]["path"] == out_csv_path
 
 
-def _get_step_run_log_entry(pipeline_run_logs, step_key, typename):
-    for message_data in pipeline_run_logs["messages"]:
+def _get_step_run_log_entry(dagster_run_logs, step_key, typename):
+    for message_data in dagster_run_logs["messages"]:
         if message_data["__typename"] == typename:
             if message_data["stepKey"] == step_key:
                 return message_data

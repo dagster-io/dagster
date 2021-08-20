@@ -25,7 +25,7 @@ from dagster.core.execution.api import create_execution_plan, execute_plan, scop
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.storage.dagster_run import DagsterRun
 from dagster.core.storage.type_storage import TypeStoragePlugin, TypeStoragePluginRegistry
 from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.types.dagster_type import Bool as RuntimeBool
@@ -110,16 +110,14 @@ def test_using_gcs_for_subplan(gcs_bucket):
 
     step_keys = ["return_one"]
     instance = DagsterInstance.ephemeral()
-    pipeline_run = PipelineRun(
-        pipeline_name=pipeline_def.name, run_id=run_id, run_config=run_config
-    )
+    dagster_run = DagsterRun(pipeline_name=pipeline_def.name, run_id=run_id, run_config=run_config)
 
     return_one_step_events = list(
         execute_plan(
             execution_plan.build_subset_plan(step_keys, pipeline_def, resolved_run_config),
             pipeline=InMemoryPipeline(pipeline_def),
             run_config=run_config,
-            pipeline_run=pipeline_run,
+            dagster_run=dagster_run,
             instance=instance,
         )
     )
@@ -129,7 +127,7 @@ def test_using_gcs_for_subplan(gcs_bucket):
         execution_plan.build_subset_plan(["return_one"], pipeline_def, resolved_run_config),
         InMemoryPipeline(pipeline_def),
         run_config,
-        pipeline_run,
+        dagster_run,
         instance,
     ) as context:
         intermediate_storage = GCSIntermediateStorage(
@@ -150,7 +148,7 @@ def test_using_gcs_for_subplan(gcs_bucket):
             execution_plan.build_subset_plan(["add_one"], pipeline_def, resolved_run_config),
             pipeline=InMemoryPipeline(pipeline_def),
             run_config=run_config,
-            pipeline_run=pipeline_run,
+            dagster_run=dagster_run,
             instance=instance,
         )
     )
@@ -160,7 +158,7 @@ def test_using_gcs_for_subplan(gcs_bucket):
         execution_plan.build_subset_plan(["return_one"], pipeline_def, resolved_run_config),
         InMemoryPipeline(pipeline_def),
         run_config,
-        pipeline_run,
+        dagster_run,
         instance,
     ) as context:
         assert intermediate_storage.has_intermediate(context, StepOutputHandle("add_one"))
@@ -336,7 +334,7 @@ def test_gcs_pipeline_with_custom_prefix(gcs_bucket):
         }
     }
 
-    pipeline_run = PipelineRun(pipeline_name=pipe.name, run_config=run_config)
+    dagster_run = DagsterRun(pipeline_name=pipe.name, run_config=run_config)
     instance = DagsterInstance.ephemeral()
 
     result = execute_pipeline(
@@ -350,7 +348,7 @@ def test_gcs_pipeline_with_custom_prefix(gcs_bucket):
         execution_plan,
         InMemoryPipeline(pipe),
         run_config,
-        pipeline_run,
+        dagster_run,
         instance,
     ) as context:
         intermediate_storage = GCSIntermediateStorage(

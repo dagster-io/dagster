@@ -3,7 +3,7 @@ from dagster.config.validate import validate_config
 from dagster.core.definitions import create_run_config_schema
 from dagster.core.errors import DagsterRunNotFoundError
 from dagster.core.host_representation import PipelineSelector
-from dagster.core.storage.pipeline_run import PipelineRunsFilter
+from dagster.core.storage.dagster_run import DagsterRunsFilter
 from dagster.core.storage.tags import TagType, get_tag_type
 from graphql.execution.base import ResolveInfo
 
@@ -41,15 +41,15 @@ def get_validated_config(pipeline_def, run_config, mode):
 
 
 def get_run_by_id(graphene_info, run_id):
-    from ..schema.errors import GraphenePipelineRunNotFoundError
-    from ..schema.pipelines.pipeline import GraphenePipelineRun
+    from ..schema.errors import GrapheneDagsterRunNotFoundError
+    from ..schema.pipelines.pipeline import GrapheneDagsterRun
 
     instance = graphene_info.context.instance
     run = instance.get_run_by_id(run_id)
     if not run:
-        return GraphenePipelineRunNotFoundError(run_id)
+        return GrapheneDagsterRunNotFoundError(run_id)
     else:
-        return GraphenePipelineRun(run)
+        return GrapheneDagsterRun(run)
 
 
 def get_run_tags(graphene_info):
@@ -66,7 +66,7 @@ def get_run_tags(graphene_info):
 @capture_error
 def get_run_group(graphene_info, run_id):
     from ..schema.errors import GrapheneRunGroupNotFoundError
-    from ..schema.pipelines.pipeline import GraphenePipelineRun
+    from ..schema.pipelines.pipeline import GrapheneDagsterRun
     from ..schema.runs import GrapheneRunGroup
 
     instance = graphene_info.context.instance
@@ -76,14 +76,14 @@ def get_run_group(graphene_info, run_id):
         return GrapheneRunGroupNotFoundError(run_id)
     root_run_id, run_group = result
     return GrapheneRunGroup(
-        root_run_id=root_run_id, runs=[GraphenePipelineRun(run) for run in run_group]
+        root_run_id=root_run_id, runs=[GrapheneDagsterRun(run) for run in run_group]
     )
 
 
 def get_runs(graphene_info, filters, cursor=None, limit=None):
-    from ..schema.pipelines.pipeline import GraphenePipelineRun
+    from ..schema.pipelines.pipeline import GrapheneDagsterRun
 
-    check.opt_inst_param(filters, "filters", PipelineRunsFilter)
+    check.opt_inst_param(filters, "filters", DagsterRunsFilter)
     check.opt_str_param(cursor, "cursor")
     check.opt_int_param(limit, "limit")
 
@@ -105,7 +105,7 @@ def get_runs(graphene_info, filters, cursor=None, limit=None):
     else:
         runs = instance.get_runs(cursor=cursor, limit=limit)
 
-    return [GraphenePipelineRun(run) for run in runs]
+    return [GrapheneDagsterRun(run) for run in runs]
 
 
 def get_runs_count(graphene_info, filters):
@@ -113,10 +113,10 @@ def get_runs_count(graphene_info, filters):
 
 
 def get_run_groups(graphene_info, filters=None, cursor=None, limit=None):
-    from ..schema.pipelines.pipeline import GraphenePipelineRun
+    from ..schema.pipelines.pipeline import GrapheneDagsterRun
     from ..schema.runs import GrapheneRunGroup
 
-    check.opt_inst_param(filters, "filters", PipelineRunsFilter)
+    check.opt_inst_param(filters, "filters", DagsterRunsFilter)
     check.opt_str_param(cursor, "cursor")
     check.opt_int_param(limit, "limit")
 
@@ -125,7 +125,7 @@ def get_run_groups(graphene_info, filters=None, cursor=None, limit=None):
 
     for root_run_id in run_groups:
         run_groups[root_run_id]["runs"] = [
-            GraphenePipelineRun(run) for run in run_groups[root_run_id]["runs"]
+            GrapheneDagsterRun(run) for run in run_groups[root_run_id]["runs"]
         ]
 
     return [
@@ -170,15 +170,15 @@ def get_execution_plan(graphene_info, selector, run_config, mode):
 
 @capture_error
 def get_stats(graphene_info, run_id):
-    from ..schema.pipelines.pipeline_run_stats import GraphenePipelineRunStatsSnapshot
+    from ..schema.pipelines.dagster_run_stats import GrapheneDagsterRunStatsSnapshot
 
     stats = graphene_info.context.instance.get_run_stats(run_id)
     stats.id = "stats-{run_id}"
-    return GraphenePipelineRunStatsSnapshot(stats)
+    return GrapheneDagsterRunStatsSnapshot(stats)
 
 
 def get_step_stats(graphene_info, run_id, step_keys=None):
-    from ..schema.logs.events import GraphenePipelineRunStepStats
+    from ..schema.logs.events import GrapheneDagsterRunStepStats
 
     step_stats = graphene_info.context.instance.get_run_step_stats(run_id, step_keys)
-    return [GraphenePipelineRunStepStats(stats) for stats in step_stats]
+    return [GrapheneDagsterRunStepStats(stats) for stats in step_stats]

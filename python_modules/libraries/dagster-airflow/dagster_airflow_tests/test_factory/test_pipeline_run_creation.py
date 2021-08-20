@@ -27,7 +27,7 @@ class Spy:
 #    DagsterRunAlreadyExists exception.
 # 4. We expect the second to then try to get_run() again, this time succeeding.
 # 5. We expect the run storage to only contain one run.
-def test_pipeline_run_creation_race():
+def test_dagster_run_creation_race():
     with instance_for_test() as instance:
         run_id = "run_id"
 
@@ -37,7 +37,7 @@ def test_pipeline_run_creation_race():
         instance._run_storage.add_run = add_run_mock  # pylint: disable=protected-access
 
         # This invocation should successfully add the run to run storage
-        pipeline_run = register_managed_run_for_test(instance, run_id=run_id)
+        dagster_run = register_managed_run_for_test(instance, run_id=run_id)
         assert len(add_run_mock.call_args_list) == 1
         assert instance.has_run(run_id)
 
@@ -47,15 +47,15 @@ def test_pipeline_run_creation_race():
         assert len(add_run_spy.return_values) == 1
 
         # (*) Simulate a race where second invocation receives has_run() is False
-        fetched_pipeline_run = ""
+        fetched_dagster_run = ""
         with mock.patch.object(instance, "has_run", mock.MagicMock(return_value=False)):
-            fetched_pipeline_run = register_managed_run_for_test(instance, run_id=run_id)
+            fetched_dagster_run = register_managed_run_for_test(instance, run_id=run_id)
 
         # Check that add_run received DagsterRunAlreadyExists exception and did not return value
         assert len(add_run_mock.call_args_list) == 2
         assert add_run_spy.exceptions == [DagsterRunAlreadyExists]
         assert len(add_run_spy.return_values) == 1
 
-        assert pipeline_run == fetched_pipeline_run
+        assert dagster_run == fetched_dagster_run
         assert instance.has_run(run_id)
         assert len(instance.get_runs()) == 1

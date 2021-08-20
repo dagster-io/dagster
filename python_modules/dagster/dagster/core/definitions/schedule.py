@@ -20,7 +20,7 @@ from ..errors import (
 )
 from ..instance import DagsterInstance
 from ..instance.ref import InstanceRef
-from ..storage.pipeline_run import PipelineRun
+from ..storage.dagster_run import DagsterRun
 from ..storage.tags import check_tags
 from .graph import GraphDefinition
 from .mode import DEFAULT_MODE_NAME
@@ -417,7 +417,7 @@ class ScheduleDefinition:
             RunRequest(
                 run_key=request.run_key,
                 run_config=request.run_config,
-                tags=merge_dicts(request.tags, PipelineRun.tags_for_schedule(self)),
+                tags=merge_dicts(request.tags, DagsterRun.tags_for_schedule(self)),
             )
             for request in run_requests
         ]

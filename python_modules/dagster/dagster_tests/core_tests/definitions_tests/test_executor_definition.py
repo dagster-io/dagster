@@ -25,7 +25,7 @@ from dagster.core.execution.retries import RetryMode
 from dagster.core.test_utils import instance_for_test
 
 
-def assert_pipeline_runs_with_executor(executor_defs, execution_config, instance=None):
+def assert_dagster_runs_with_executor(executor_defs, execution_config, instance=None):
     it = {}
 
     @solid
@@ -60,7 +60,7 @@ def test_in_process_executor_primitive_config():
             marker_to_close=None,
         )
 
-    assert_pipeline_runs_with_executor(
+    assert_dagster_runs_with_executor(
         [test_executor], {"test_executor": {"config": "secret testing value!!"}}
     )
 
@@ -81,7 +81,7 @@ def test_in_process_executor_dict_config():
             marker_to_close=None,
         )
 
-    assert_pipeline_runs_with_executor(
+    assert_dagster_runs_with_executor(
         [test_executor], {"test_executor": {"config": {"value": "secret testing value!!"}}}
     )
 
@@ -104,12 +104,12 @@ def test_in_process_executor_with_requirement():
         )
 
     with pytest.raises(DagsterUnmetExecutorRequirementsError):
-        assert_pipeline_runs_with_executor(
+        assert_dagster_runs_with_executor(
             [test_executor], {"test_executor": {"config": {"value": "secret testing value!!"}}}
         )
 
     with instance_for_test() as instance:
-        assert_pipeline_runs_with_executor(
+        assert_dagster_runs_with_executor(
             [test_executor],
             {"test_executor": {"config": {"value": "secret testing value!!"}}},
             instance=instance,
@@ -139,7 +139,7 @@ def test_in_process_executor_dict_config_configured():
     assert test_executor_configured.requirements == test_executor.requirements
 
     with instance_for_test() as instance:
-        assert_pipeline_runs_with_executor(
+        assert_dagster_runs_with_executor(
             [test_executor_configured], {"configured_test_executor": None}, instance=instance
         )
 

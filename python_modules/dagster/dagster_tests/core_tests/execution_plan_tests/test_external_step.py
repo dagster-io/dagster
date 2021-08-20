@@ -29,7 +29,7 @@ from dagster.core.execution.plan.external_step import (
 )
 from dagster.core.execution.retries import RetryMode
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.storage.dagster_run import DagsterRun
 from dagster.utils import safe_tempfile_path, send_interrupt
 from dagster.utils.merger import deep_merge_dicts
 
@@ -139,7 +139,7 @@ def define_sleepy_pipeline():
 
 
 def initialize_step_context(scratch_dir, instance):
-    pipeline_run = PipelineRun(
+    dagster_run = DagsterRun(
         pipeline_name="foo_pipeline",
         run_id=str(uuid.uuid4()),
         run_config=make_run_config(scratch_dir, "external"),
@@ -148,13 +148,13 @@ def initialize_step_context(scratch_dir, instance):
 
     recon_pipeline = reconstructable(define_basic_pipeline)
 
-    plan = create_execution_plan(recon_pipeline, pipeline_run.run_config, mode="external")
+    plan = create_execution_plan(recon_pipeline, dagster_run.run_config, mode="external")
 
     initialization_manager = PlanExecutionContextManager(
         pipeline=recon_pipeline,
         execution_plan=plan,
-        run_config=pipeline_run.run_config,
-        pipeline_run=pipeline_run,
+        run_config=dagster_run.run_config,
+        dagster_run=dagster_run,
         instance=instance,
         retry_mode=RetryMode.DISABLED,
     )
@@ -171,8 +171,8 @@ def test_step_context_to_step_run_ref():
         step_context = initialize_step_context("", instance)
         step = step_context.step
         step_run_ref = step_context_to_step_run_ref(step_context, 0)
-        assert step_run_ref.run_config == step_context.pipeline_run.run_config
-        assert step_run_ref.run_id == step_context.pipeline_run.run_id
+        assert step_run_ref.run_config == step_context.dagster_run.run_config
+        assert step_run_ref.run_id == step_context.dagster_run.run_id
 
         rehydrated_step_context = step_run_ref_to_step_context(step_run_ref, instance)
         rehydrated_step = rehydrated_step_context.step

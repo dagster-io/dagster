@@ -6,7 +6,7 @@ from dagster.core.definitions.resource import IContainsGenerator, ResourceDefini
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
-from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.storage.dagster_run import DagsterRun
 
 
 class InitResourceContext:
@@ -21,7 +21,7 @@ class InitResourceContext:
         log_manager (DagsterLogManager): The log manager for this run of the pipeline
         resources (ScopedResources): The resources that are available to the resource that we are
             initalizing.
-        pipeline_run (Optional[PipelineRun]): The pipeline run to use. When initializing resources
+        dagster_run (Optional[DagsterRun]): The pipeline run to use. When initializing resources
             outside of execution context, this will be None.
         run_id (Optional[str]): The id for this run of the pipeline. When initializing resources
             outside of execution context, this will be None.
@@ -33,7 +33,7 @@ class InitResourceContext:
         resources: Resources,
         resource_def: Optional[ResourceDefinition] = None,
         instance: Optional[DagsterInstance] = None,
-        pipeline_run: Optional[PipelineRun] = None,
+        dagster_run: Optional[DagsterRun] = None,
         log_manager: Optional[DagsterLogManager] = None,
         pipeline_def_for_backwards_compat: Optional[PipelineDefinition] = None,
     ):
@@ -45,7 +45,7 @@ class InitResourceContext:
         self._resources = resources
 
         self._pipeline_def_for_backwards_compat = pipeline_def_for_backwards_compat
-        self._pipeline_run = pipeline_run
+        self._dagster_run = dagster_run
 
     @property
     def resource_config(self) -> Any:
@@ -68,8 +68,8 @@ class InitResourceContext:
         return self._pipeline_def_for_backwards_compat
 
     @property
-    def pipeline_run(self) -> Optional[PipelineRun]:
-        return self._pipeline_run
+    def dagster_run(self) -> Optional[DagsterRun]:
+        return self._dagster_run
 
     @property
     def log(self) -> Optional[DagsterLogManager]:
@@ -82,7 +82,7 @@ class InitResourceContext:
 
     @property
     def run_id(self) -> Optional[str]:
-        return self.pipeline_run.run_id if self.pipeline_run else None
+        return self.dagster_run.run_id if self.dagster_run else None
 
     def replace_config(self, config: Any) -> "InitResourceContext":
         return InitResourceContext(
@@ -90,7 +90,7 @@ class InitResourceContext:
             resources=self.resources,
             instance=self.instance,
             resource_def=self.resource_def,
-            pipeline_run=self.pipeline_run,
+            dagster_run=self.dagster_run,
             log_manager=self.log,
         )
 
@@ -140,7 +140,7 @@ class UnboundInitResourceContext(InitResourceContext):
             resources=resources,
             resource_def=None,
             instance=instance,
-            pipeline_run=None,
+            dagster_run=None,
             log_manager=initialize_console_manager(None),
             pipeline_def_for_backwards_compat=None,
         )
@@ -190,7 +190,7 @@ class UnboundInitResourceContext(InitResourceContext):
         return None
 
     @property
-    def pipeline_run(self) -> Optional[PipelineRun]:
+    def dagster_run(self) -> Optional[DagsterRun]:
         return None
 
     @property

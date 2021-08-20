@@ -60,7 +60,7 @@ def inner_plan_execution_iterator(
 
             # capture all of the logs for this step
             with pipeline_context.instance.compute_log_manager.watch(
-                step_context.pipeline_run, step_context.step.key
+                step_context.dagster_run, step_context.step.key
             ):
                 yield DagsterEvent.capture_logs(
                     step_context, log_key=step_context.step.key, steps=[step_context.step]

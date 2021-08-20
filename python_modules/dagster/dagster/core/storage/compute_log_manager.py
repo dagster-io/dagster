@@ -5,7 +5,7 @@ from enum import Enum
 
 from dagster import check
 from dagster.core.instance import MayHaveInstanceWeakref
-from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.storage.dagster_run import DagsterRun
 from rx import Observable
 
 MAX_BYTES_FILE_READ = 33554432  # 32 MB
@@ -36,36 +36,36 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref):
     steps of pipeline solids."""
 
     @contextmanager
-    def watch(self, pipeline_run, step_key=None):
+    def watch(self, dagster_run, step_key=None):
         """
         Watch the stdout/stderr for a given execution for a given run_id / step_key and persist it.
 
         Args:
-            pipeline_run (PipelineRun): The pipeline run config
+            dagster_run (DagsterRun): The pipeline run config
             step_key (Optional[String]): The step_key for a compute step
         """
-        check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+        check.inst_param(dagster_run, "dagster_run", DagsterRun)
         check.opt_str_param(step_key, "step_key")
 
-        if not self.enabled(pipeline_run, step_key):
+        if not self.enabled(dagster_run, step_key):
             yield
             return
 
-        self.on_watch_start(pipeline_run, step_key)
-        with self._watch_logs(pipeline_run, step_key):
+        self.on_watch_start(dagster_run, step_key)
+        with self._watch_logs(dagster_run, step_key):
             yield
-        self.on_watch_finish(pipeline_run, step_key)
+        self.on_watch_finish(dagster_run, step_key)
 
     @contextmanager
     @abstractmethod
-    def _watch_logs(self, pipeline_run, step_key=None):
+    def _watch_logs(self, dagster_run, step_key=None):
         """
         Method to watch the stdout/stderr logs for a given run_id / step_key.  Kept separate from
         blessed `watch` method, which triggers all the start/finish hooks that are necessary to
         implement the different remote implementations.
 
         Args:
-            pipeline_run (PipelineRun): The pipeline run config
+            dagster_run (DagsterRun): The pipeline run config
             step_key (Optional[String]): The step_key for a compute step
         """
 
@@ -96,20 +96,20 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref):
         """
 
     @abstractmethod
-    def on_watch_start(self, pipeline_run, step_key):
+    def on_watch_start(self, dagster_run, step_key):
         """Hook called when starting to watch compute logs.
 
         Args:
-            pipeline_run (PipelineRun): The pipeline run config
+            dagster_run (DagsterRun): The pipeline run config
             step_key (Optional[String]): The step_key for a compute step
         """
 
     @abstractmethod
-    def on_watch_finish(self, pipeline_run, step_key):
+    def on_watch_finish(self, dagster_run, step_key):
         """Hook called when computation for a given execution step is finished.
 
         Args:
-            pipeline_run (PipelineRun): The pipeline run config
+            dagster_run (DagsterRun): The pipeline run config
             step_key (Optional[String]): The step_key for a compute step
         """
 
@@ -141,7 +141,7 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref):
             ComputeLogFileData
         """
 
-    def enabled(self, _pipeline_run, _step_key):
+    def enabled(self, _dagster_run, _step_key):
         """Hook for disabling compute log capture.
 
         Args:

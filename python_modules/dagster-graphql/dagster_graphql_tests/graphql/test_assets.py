@@ -98,7 +98,7 @@ def _create_run(graphql_context, pipeline_name, mode="default"):
         LAUNCH_PIPELINE_EXECUTION_MUTATION,
         variables={"executionParams": {"selector": selector, "mode": mode}},
     )
-    assert result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
+    assert result.data["launchPipelineExecution"]["__typename"] == "LaunchDagsterRunSuccess"
     graphql_context.instance.run_launcher.join()
     return result.data["launchPipelineExecution"]["run"]["runId"]
 
@@ -161,7 +161,7 @@ class TestAssetAwareEventLog(
             LAUNCH_PIPELINE_EXECUTION_MUTATION,
             variables={"executionParams": {"selector": selector, "mode": "default"}},
         )
-        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchDagsterRunSuccess"
 
         graphql_context.instance.run_launcher.join()
 
@@ -180,7 +180,7 @@ class TestAssetAwareEventLog(
             LAUNCH_PIPELINE_EXECUTION_MUTATION,
             variables={"executionParams": {"selector": selector, "mode": "default"}},
         )
-        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchDagsterRunSuccess"
 
         graphql_context.instance.run_launcher.join()
 

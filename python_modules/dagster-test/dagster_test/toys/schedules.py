@@ -9,13 +9,13 @@ from dagster import (
     monthly_schedule,
     weekly_schedule,
 )
-from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.dagster_run import DagsterRunStatus, DagsterRunsFilter
 from dagster.utils.partitions import date_partition_range
 
 
 def _fetch_runs_by_partition(instance, partition_set_def, status_filters=None):
     # query runs db for this partition set
-    filters = PipelineRunsFilter(tags={"dagster/partition_set": partition_set_def.name})
+    filters = DagsterRunsFilter(tags={"dagster/partition_set": partition_set_def.name})
     partition_set_runs = instance.get_runs(filters)
 
     runs_by_partition = defaultdict(list)
@@ -32,7 +32,7 @@ def backfilling_partition_selector(
     partition_set_def: PartitionSetDefinition,
     retry_failed=False,
 ):
-    status_filters = [PipelineRunStatus.SUCCESS] if retry_failed else None
+    status_filters = [DagsterRunStatus.SUCCESS] if retry_failed else None
     runs_by_partition = _fetch_runs_by_partition(
         context.instance, partition_set_def, status_filters
     )
@@ -59,7 +59,7 @@ def _toys_tz_info():
 
 def backfill_should_execute(context, partition_set_def, retry_failed=False):
     status_filters = (
-        [PipelineRunStatus.STARTED, PipelineRunStatus.SUCCESS] if retry_failed else None
+        [DagsterRunStatus.STARTED, DagsterRunStatus.SUCCESS] if retry_failed else None
     )
     runs_by_partition = _fetch_runs_by_partition(
         context.instance, partition_set_def, status_filters
@@ -67,7 +67,7 @@ def backfill_should_execute(context, partition_set_def, retry_failed=False):
     for runs in runs_by_partition.values():
         for run in runs:
             # if any active runs - don't start a new one
-            if run.status == PipelineRunStatus.STARTED:
+            if run.status == DagsterRunStatus.STARTED:
                 return False  # would be nice to return a reason here
 
     available_partitions = set([partition.name for partition in partition_set_def.get_partitions()])

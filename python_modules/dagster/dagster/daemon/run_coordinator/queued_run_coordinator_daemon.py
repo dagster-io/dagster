@@ -6,11 +6,11 @@ from collections import defaultdict
 from dagster import DagsterEvent, DagsterEventType, check
 from dagster.core.events.log import EventLogEntry
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import (
+from dagster.core.storage.dagster_run import (
     IN_PROGRESS_RUN_STATUSES,
-    PipelineRun,
-    PipelineRunStatus,
-    PipelineRunsFilter,
+    DagsterRun,
+    DagsterRunStatus,
+    DagsterRunsFilter,
 )
 from dagster.core.storage.tags import PRIORITY_TAG
 from dagster.core.workspace import IWorkspace
@@ -25,7 +25,7 @@ class _TagConcurrencyLimitsCounter:
 
     def __init__(self, tag_concurrency_limits, in_progress_runs):
         check.opt_list_param(tag_concurrency_limits, "tag_concurrency_limits", of_type=dict)
-        check.list_param(in_progress_runs, "in_progress_runs", of_type=PipelineRun)
+        check.list_param(in_progress_runs, "in_progress_runs", of_type=DagsterRun)
 
         # convert currency_limits to dict
         self._tag_concurrency_limits = {}
@@ -154,7 +154,7 @@ class QueuedRunCoordinatorDaemon(DagsterDaemon):
         self._logger.info("Launched {} runs.".format(num_dequeued_runs))
 
     def _get_queued_runs(self, instance):
-        queued_runs_filter = PipelineRunsFilter(statuses=[PipelineRunStatus.QUEUED])
+        queued_runs_filter = DagsterRunsFilter(statuses=[DagsterRunStatus.QUEUED])
 
         # Reversed for fifo ordering
         # Note: should add a maximum fetch limit https://github.com/dagster-io/dagster/issues/3339
@@ -163,7 +163,7 @@ class QueuedRunCoordinatorDaemon(DagsterDaemon):
 
     def _get_in_progress_runs(self, instance):
         # Note: should add a maximum fetch limit https://github.com/dagster-io/dagster/issues/3339
-        return instance.get_runs(filters=PipelineRunsFilter(statuses=IN_PROGRESS_RUN_STATUSES))
+        return instance.get_runs(filters=DagsterRunsFilter(statuses=IN_PROGRESS_RUN_STATUSES))
 
     def _priority_sort(self, runs):
         def get_priority(run):
@@ -180,7 +180,7 @@ class QueuedRunCoordinatorDaemon(DagsterDaemon):
         # double check that the run is still queued before dequeing
         reloaded_run = instance.get_run_by_id(run.run_id)
 
-        if reloaded_run.status != PipelineRunStatus.QUEUED:
+        if reloaded_run.status != DagsterRunStatus.QUEUED:
             self._logger.info(
                 "Run {run_id} is now {status} instead of QUEUED, skipping".format(
                     run_id=reloaded_run.run_id, status=reloaded_run.status

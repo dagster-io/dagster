@@ -36,8 +36,8 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler import Scheduler
 from dagster.core.scheduler.scheduler import DagsterScheduleDoesNotExist, DagsterSchedulerError
 from dagster.core.snap import snapshot_from_execution_plan
+from dagster.core.storage.dagster_run import DagsterRun, PipelineTarget
 from dagster.core.storage.file_manager import LocalFileManager
-from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.types.dagster_type import resolve_dagster_type
 from dagster.core.utility_solids import define_stub_solid
 from dagster.core.utils import make_new_run_id
@@ -66,11 +66,12 @@ def create_test_pipeline_execution_context(logger_defs=None):
         name="test_legacy_context", solid_defs=[], mode_defs=[mode_def]
     )
     run_config = {"loggers": {key: {} for key in loggers}}
-    pipeline_run = PipelineRun(pipeline_name="test_legacy_context", run_config=run_config)
+    target = PipelineTarget(name="test_legacy_context")
+    dagster_run = DagsterRun(target=target, run_config=run_config)
     instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(pipeline=pipeline_def, run_config=run_config)
     creation_data = create_context_creation_data(
-        InMemoryPipeline(pipeline_def), execution_plan, run_config, pipeline_run, instance
+        InMemoryPipeline(pipeline_def), execution_plan, run_config, dagster_run, instance
     )
     log_manager = create_log_manager(creation_data)
     scoped_resources_builder = ScopedResourcesBuilder()
@@ -81,7 +82,7 @@ def create_test_pipeline_execution_context(logger_defs=None):
         execution_data=create_execution_data(
             context_creation_data=creation_data,
             scoped_resources_builder=scoped_resources_builder,
-            intermediate_storage=build_in_mem_intermediates_storage(pipeline_run.run_id),
+            intermediate_storage=build_in_mem_intermediates_storage(dagster_run.run_id),
         ),
         log_manager=log_manager,
         output_capture=None,
@@ -242,12 +243,12 @@ def yield_empty_pipeline_context(run_id=None, instance=None):
 
     execution_plan = create_execution_plan(pipeline)
 
-    pipeline_run = instance.create_run(
-        pipeline_name="<empty>",
+    target = PipelineTarget(name="<empty>")
+    dagster_run = instance.create_run(
+        target=target,
         run_id=run_id,
         run_config=None,
-        mode=None,
-        solids_to_execute=None,
+        nodes_to_execute=None,
         step_keys_to_execute=None,
         status=None,
         tags=None,
@@ -259,7 +260,7 @@ def yield_empty_pipeline_context(run_id=None, instance=None):
         ),
         parent_pipeline_snapshot=pipeline_def.get_parent_pipeline_snapshot(),
     )
-    with scoped_pipeline_context(execution_plan, pipeline, {}, pipeline_run, instance) as context:
+    with scoped_pipeline_context(execution_plan, pipeline, {}, dagster_run, instance) as context:
         yield context
 
 

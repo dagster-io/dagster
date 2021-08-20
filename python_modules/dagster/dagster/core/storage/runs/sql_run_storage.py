@@ -33,7 +33,7 @@ from dagster.serdes import (
 from dagster.seven import JSONDecodeError
 from dagster.utils import merge_dicts, utc_datetime_from_timestamp
 
-from ..pipeline_run import PipelineRun, PipelineRunsFilter, RunRecord
+from ..dagster_run import DagsterRun, DagsterRunsFilter, PipelineTarget, RunRecord
 from .base import RunStorage
 from .migration import MODE_MIGRATION, RUN_DATA_MIGRATIONS, RUN_PARTITIONS
 from .schema import (
@@ -80,39 +80,39 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         return row
 
-    def add_run(self, pipeline_run: PipelineRun) -> PipelineRun:
-        check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+    def add_run(self, dagster_run: DagsterRun) -> DagsterRun:
+        check.inst_param(dagster_run, "dagster_run", DagsterRun)
 
-        if pipeline_run.pipeline_snapshot_id and not self.has_pipeline_snapshot(
-            pipeline_run.pipeline_snapshot_id
+        if dagster_run.pipeline_snapshot_id and not self.has_pipeline_snapshot(
+            dagster_run.pipeline_snapshot_id
         ):
             raise DagsterSnapshotDoesNotExist(
                 "Snapshot {ss_id} does not exist in run storage".format(
-                    ss_id=pipeline_run.pipeline_snapshot_id
+                    ss_id=dagster_run.pipeline_snapshot_id
                 )
             )
 
-        has_tags = pipeline_run.tags and len(pipeline_run.tags) > 0
-        partition = pipeline_run.tags.get(PARTITION_NAME_TAG) if has_tags else None
-        partition_set = pipeline_run.tags.get(PARTITION_SET_TAG) if has_tags else None
+        has_tags = dagster_run.tags and len(dagster_run.tags) > 0
+        partition = dagster_run.tags.get(PARTITION_NAME_TAG) if has_tags else None
+        partition_set = dagster_run.tags.get(PARTITION_SET_TAG) if has_tags else None
         if self.has_built_index(MODE_MIGRATION):
             runs_insert = RunsTable.insert().values(  # pylint: disable=no-value-for-parameter
-                run_id=pipeline_run.run_id,
-                pipeline_name=pipeline_run.pipeline_name,
-                mode=pipeline_run.mode,
-                status=pipeline_run.status.value,
-                run_body=serialize_dagster_namedtuple(pipeline_run),
-                snapshot_id=pipeline_run.pipeline_snapshot_id,
+                run_id=dagster_run.run_id,
+                pipeline_name=dagster_run.target.name,
+                mode=dagster_run.target.mode,
+                status=dagster_run.status.value,
+                run_body=serialize_dagster_namedtuple(dagster_run),
+                snapshot_id=dagster_run.pipeline_snapshot_id,
                 partition=partition,
                 partition_set=partition_set,
             )
         else:
             runs_insert = RunsTable.insert().values(  # pylint: disable=no-value-for-parameter
-                run_id=pipeline_run.run_id,
-                pipeline_name=pipeline_run.pipeline_name,
-                status=pipeline_run.status.value,
-                run_body=serialize_dagster_namedtuple(pipeline_run),
-                snapshot_id=pipeline_run.pipeline_snapshot_id,
+                run_id=dagster_run.run_id,
+                pipeline_name=dagster_run.target.name,
+                status=dagster_run.status.value,
+                run_body=serialize_dagster_namedtuple(dagster_run),
+                snapshot_id=dagster_run.pipeline_snapshot_id,
                 partition=partition,
                 partition_set=partition_set,
             )
@@ -122,16 +122,16 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             except db.exc.IntegrityError as exc:
                 raise DagsterRunAlreadyExists from exc
 
-            if pipeline_run.tags and len(pipeline_run.tags) > 0:
+            if dagster_run.tags and len(dagster_run.tags) > 0:
                 conn.execute(
                     RunTagsTable.insert(),  # pylint: disable=no-value-for-parameter
                     [
-                        dict(run_id=pipeline_run.run_id, key=k, value=v)
-                        for k, v in pipeline_run.tags.items()
+                        dict(run_id=dagster_run.run_id, key=k, value=v)
+                        for k, v in dagster_run.tags.items()
                     ],
                 )
 
-        return pipeline_run
+        return dagster_run
 
     def handle_run_event(self, run_id: str, event: DagsterEvent):
         check.str_param(run_id, "run_id")
@@ -158,10 +158,10 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 )
             )
 
-    def _row_to_run(self, row: Tuple) -> PipelineRun:
-        return deserialize_as(row[0], PipelineRun)
+    def _row_to_run(self, row: Tuple) -> DagsterRun:
+        return deserialize_as(row[0], DagsterRun)
 
-    def _rows_to_runs(self, rows: Iterable[Tuple]) -> List[PipelineRun]:
+    def _rows_to_runs(self, rows: Iterable[Tuple]) -> List[DagsterRun]:
         return list(map(self._row_to_run, rows))
 
     def _add_cursor_limit_to_query(
@@ -187,14 +187,14 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         return query
 
-    def _add_filters_to_query(self, query, filters: PipelineRunsFilter):
-        check.inst_param(filters, "filters", PipelineRunsFilter)
+    def _add_filters_to_query(self, query, filters: DagsterRunsFilter):
+        check.inst_param(filters, "filters", DagsterRunsFilter)
 
         if filters.run_ids:
             query = query.where(RunsTable.c.run_id.in_(filters.run_ids))
 
-        if filters.pipeline_name:
-            query = query.where(RunsTable.c.pipeline_name == filters.pipeline_name)
+        if filters.target_name:
+            query = query.where(RunsTable.c.pipeline_name == filters.target_name)
 
         if filters.mode:
             query = query.where(RunsTable.c.mode == filters.mode)
@@ -227,7 +227,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
     def _runs_query(
         self,
-        filters: PipelineRunsFilter = None,
+        filters: DagsterRunsFilter = None,
         cursor: str = None,
         limit: int = None,
         columns: List[str] = None,
@@ -236,7 +236,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
     ):
 
         filters = check.opt_inst_param(
-            filters, "filters", PipelineRunsFilter, default=PipelineRunsFilter()
+            filters, "filters", DagsterRunsFilter, default=DagsterRunsFilter()
         )
         check.opt_str_param(cursor, "cursor")
         check.opt_int_param(limit, "limit")
@@ -263,14 +263,14 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         return query
 
     def get_runs(
-        self, filters: PipelineRunsFilter = None, cursor: str = None, limit: int = None
-    ) -> List[PipelineRun]:
+        self, filters: DagsterRunsFilter = None, cursor: str = None, limit: int = None
+    ) -> List[DagsterRun]:
         query = self._runs_query(filters, cursor, limit)
 
         rows = self.fetchall(query)
         return self._rows_to_runs(rows)
 
-    def get_runs_count(self, filters: PipelineRunsFilter = None) -> int:
+    def get_runs_count(self, filters: DagsterRunsFilter = None) -> int:
         subquery = self._runs_query(filters=filters).alias("subquery")
 
         # We use an alias here because Postgres requires subqueries to be
@@ -282,30 +282,30 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         count = rows[0][0]
         return count
 
-    def get_run_by_id(self, run_id: str) -> Optional[PipelineRun]:
+    def get_run_by_id(self, run_id: str) -> Optional[DagsterRun]:
         """Get a run by its id.
 
         Args:
             run_id (str): The id of the run
 
         Returns:
-            Optional[PipelineRun]
+            Optional[DagsterRun]
         """
         check.str_param(run_id, "run_id")
 
         query = db.select([RunsTable.c.run_body]).where(RunsTable.c.run_id == run_id)
         rows = self.fetchall(query)
-        return deserialize_as(rows[0][0], PipelineRun) if len(rows) else None
+        return deserialize_as(rows[0][0], DagsterRun) if len(rows) else None
 
     def get_run_records(
         self,
-        filters: PipelineRunsFilter = None,
+        filters: DagsterRunsFilter = None,
         limit: int = None,
         order_by: str = None,
         ascending: bool = False,
     ) -> List[RunRecord]:
         filters = check.opt_inst_param(
-            filters, "filters", PipelineRunsFilter, default=PipelineRunsFilter()
+            filters, "filters", DagsterRunsFilter, default=DagsterRunsFilter()
         )
         limit = check.opt_int_param(limit, "limit")
 
@@ -323,8 +323,8 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         return [
             RunRecord(
                 storage_id=check.int_param(row["id"], "id"),
-                pipeline_run=deserialize_as(
-                    check.str_param(row["run_body"], "run_body"), PipelineRun
+                dagster_run=deserialize_as(
+                    check.str_param(row["run_body"], "run_body"), DagsterRun
                 ),
                 create_timestamp=check.inst(row["create_timestamp"], datetime),
                 update_timestamp=check.inst(row["update_timestamp"], datetime),
@@ -390,16 +390,16 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                     [dict(run_id=run_id, key=tag, value=new_tags[tag]) for tag in added_tags],
                 )
 
-    def get_run_group(self, run_id: str) -> Optional[Tuple[str, Iterable[PipelineRun]]]:
+    def get_run_group(self, run_id: str) -> Optional[Tuple[str, Iterable[DagsterRun]]]:
         check.str_param(run_id, "run_id")
-        pipeline_run = self.get_run_by_id(run_id)
-        if not pipeline_run:
+        dagster_run = self.get_run_by_id(run_id)
+        if not dagster_run:
             raise DagsterRunNotFoundError(
                 f"Run {run_id} was not found in instance.", invalid_run_id=run_id
             )
 
         # find root_run
-        root_run_id = pipeline_run.root_run_id if pipeline_run.root_run_id else pipeline_run.run_id
+        root_run_id = dagster_run.root_run_id if dagster_run.root_run_id else dagster_run.run_id
         root_run = self.get_run_by_id(root_run_id)
         if not root_run:
             raise DagsterRunNotFoundError(
@@ -439,8 +439,8 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         return (root_run_id, [root_run] + run_group)
 
     def get_run_groups(
-        self, filters: PipelineRunsFilter = None, cursor: str = None, limit: int = None
-    ) -> Dict[str, Dict[str, Union[Iterable[PipelineRun], int]]]:
+        self, filters: DagsterRunsFilter = None, cursor: str = None, limit: int = None
+    ) -> Dict[str, Dict[str, Union[Iterable[DagsterRun], int]]]:
         # The runs that would be returned by calling RunStorage.get_runs with the same arguments
         runs = self._runs_query(
             filters=filters, cursor=cursor, limit=limit, columns=["run_body", "run_id"]
@@ -557,17 +557,17 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             res = conn.execute(runs_and_root_runs_with_descendant_counts).fetchall()
 
         # Postprocess: descendant runs get aggregated with their roots
-        root_run_id_to_group: Dict[str, List[PipelineRun]] = defaultdict(list)
+        root_run_id_to_group: Dict[str, List[DagsterRun]] = defaultdict(list)
         root_run_id_to_count: Dict[str, int] = defaultdict(int)
         for (run_body, count) in res:
             row = (run_body,)
-            pipeline_run = self._row_to_run(row)
-            root_run_id = pipeline_run.get_root_run_id()
+            dagster_run = self._row_to_run(row)
+            root_run_id = dagster_run.get_root_run_id()
             if root_run_id is not None:
-                root_run_id_to_group[root_run_id].append(pipeline_run)
+                root_run_id_to_group[root_run_id].append(dagster_run)
             else:
-                root_run_id_to_group[pipeline_run.run_id].append(pipeline_run)
-                root_run_id_to_count[pipeline_run.run_id] = count + 1
+                root_run_id_to_group[dagster_run.run_id].append(dagster_run)
+                root_run_id_to_count[dagster_run.run_id] = count + 1
 
         return {
             root_run_id: {
@@ -656,14 +656,12 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         return defensively_unpack_pipeline_snapshot_query(logging, row) if row else None
 
-    def _get_partition_runs(
-        self, partition_set_name: str, partition_name: str
-    ) -> List[PipelineRun]:
+    def _get_partition_runs(self, partition_set_name: str, partition_name: str) -> List[DagsterRun]:
         # utility method to help test reads off of the partition column
         if not self.has_built_index(RUN_PARTITIONS):
             # query by tags
             return self.get_runs(
-                filters=PipelineRunsFilter(
+                filters=DagsterRunsFilter(
                     tags={
                         PARTITION_SET_TAG: partition_set_name,
                         PARTITION_NAME_TAG: partition_name,

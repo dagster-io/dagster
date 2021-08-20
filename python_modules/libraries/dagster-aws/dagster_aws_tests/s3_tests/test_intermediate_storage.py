@@ -5,12 +5,12 @@ from collections import OrderedDict
 import pytest
 from dagster import (
     Bool,
+    DagsterRun,
     InputDefinition,
     Int,
     List,
     ModeDefinition,
     OutputDefinition,
-    PipelineRun,
     SerializationStrategy,
     String,
     check,
@@ -107,16 +107,14 @@ def test_using_s3_for_subplan(mock_s3_bucket):
 
     step_keys = ["return_one"]
     instance = DagsterInstance.ephemeral()
-    pipeline_run = PipelineRun(
-        pipeline_name=pipeline_def.name, run_id=run_id, run_config=run_config
-    )
+    dagster_run = DagsterRun(pipeline_name=pipeline_def.name, run_id=run_id, run_config=run_config)
 
     return_one_step_events = list(
         execute_plan(
             execution_plan.build_subset_plan(step_keys, pipeline_def, resolved_run_config),
             pipeline=InMemoryPipeline(pipeline_def),
             run_config=run_config,
-            pipeline_run=pipeline_run,
+            dagster_run=dagster_run,
             instance=instance,
         )
     )
@@ -126,7 +124,7 @@ def test_using_s3_for_subplan(mock_s3_bucket):
         execution_plan.build_subset_plan(["return_one"], pipeline_def, resolved_run_config),
         InMemoryPipeline(pipeline_def),
         run_config,
-        pipeline_run,
+        dagster_run,
         instance,
     ) as context:
 
@@ -146,7 +144,7 @@ def test_using_s3_for_subplan(mock_s3_bucket):
             execution_plan.build_subset_plan(["add_one"], pipeline_def, resolved_run_config),
             pipeline=InMemoryPipeline(pipeline_def),
             run_config=run_config,
-            pipeline_run=pipeline_run,
+            dagster_run=dagster_run,
             instance=instance,
         )
     )
@@ -156,7 +154,7 @@ def test_using_s3_for_subplan(mock_s3_bucket):
         execution_plan.build_subset_plan(["add_one"], pipeline_def, resolved_run_config),
         InMemoryPipeline(pipeline_def),
         run_config,
-        pipeline_run,
+        dagster_run,
         instance,
     ) as context:
         step_output_handle = StepOutputHandle("add_one")
@@ -313,7 +311,7 @@ def test_s3_pipeline_with_custom_prefix(mock_s3_bucket):
         }
     }
 
-    pipeline_run = PipelineRun(pipeline_name=pipe.name, run_config=run_config)
+    dagster_run = DagsterRun(pipeline_name=pipe.name, run_config=run_config)
     instance = DagsterInstance.ephemeral()
 
     result = execute_pipeline(
@@ -327,7 +325,7 @@ def test_s3_pipeline_with_custom_prefix(mock_s3_bucket):
         execution_plan,
         InMemoryPipeline(pipe),
         run_config,
-        pipeline_run,
+        dagster_run,
         instance,
     ) as context:
         intermediates_manager = S3IntermediateStorage(

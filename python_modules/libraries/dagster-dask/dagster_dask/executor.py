@@ -117,7 +117,7 @@ def dask_executor(init_context):
 def query_on_dask_worker(
     dependencies,
     recon_pipeline,
-    pipeline_run,
+    dagster_run,
     run_config,
     step_keys,
     mode,
@@ -129,7 +129,7 @@ def query_on_dask_worker(
 
     with DagsterInstance.from_ref(instance_ref) as instance:
         subset_pipeline = recon_pipeline.subset_for_execution_from_existing_pipeline(
-            pipeline_run.solids_to_execute
+            dagster_run.nodes_to_execute
         )
 
         execution_plan = create_execution_plan(
@@ -140,7 +140,7 @@ def query_on_dask_worker(
         )
 
         return execute_plan(
-            execution_plan, subset_pipeline, instance, pipeline_run, run_config=run_config
+            execution_plan, subset_pipeline, instance, dagster_run, run_config=run_config
         )
 
 
@@ -256,10 +256,10 @@ class DaskExecutor(Executor):
                         query_on_dask_worker,
                         dependencies,
                         recon_pipeline,
-                        pipeline_context.pipeline_run,
+                        pipeline_context.dagster_run,
                         run_config,
                         [step.key],
-                        pipeline_context.pipeline_run.mode,
+                        pipeline_context.dagster_run.target.mode,
                         instance.get_ref(),
                         key=dask_task_name,
                         resources=get_dask_resource_requirements(step.tags),

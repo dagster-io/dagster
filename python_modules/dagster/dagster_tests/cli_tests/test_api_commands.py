@@ -49,7 +49,7 @@ def test_execute_run():
             input_json = serialize_dagster_namedtuple(
                 ExecuteRunArgs(
                     pipeline_origin=pipeline_handle.get_python_origin(),
-                    pipeline_run_id=run.run_id,
+                    dagster_run_id=run.run_id,
                     instance_ref=instance.get_ref(),
                 )
             )
@@ -100,7 +100,7 @@ def test_execute_step():
             input_json = serialize_dagster_namedtuple(
                 ExecuteStepArgs(
                     pipeline_origin=pipeline_handle.get_python_origin(),
-                    pipeline_run_id=run.run_id,
+                    dagster_run_id=run.run_id,
                     step_keys_to_execute=None,
                     instance_ref=instance.get_ref(),
                 )
@@ -131,7 +131,7 @@ def test_execute_step_1():
             input_json = serialize_dagster_namedtuple(
                 ExecuteStepArgs(
                     pipeline_origin=pipeline_handle.get_python_origin(),
-                    pipeline_run_id=run.run_id,
+                    dagster_run_id=run.run_id,
                     step_keys_to_execute=None,
                     instance_ref=instance.get_ref(),
                 )
@@ -167,7 +167,7 @@ def test_execute_step_verify_step():
             input_json = serialize_dagster_namedtuple(
                 ExecuteStepArgs(
                     pipeline_origin=pipeline_handle.get_python_origin(),
-                    pipeline_run_id=run.run_id,
+                    dagster_run_id=run.run_id,
                     step_keys_to_execute=None,
                     instance_ref=instance.get_ref(),
                 )

@@ -15,7 +15,7 @@ from .events import AssetKey
 from .graph import GraphDefinition
 from .mode import DEFAULT_MODE_NAME
 from .pipeline import PipelineDefinition
-from .run_request import JobType, PipelineRunReaction, RunRequest, SkipReason
+from .run_request import DagsterRunReaction, JobType, RunRequest, SkipReason
 from .target import DirectTarget, RepoRelativeTarget
 from .utils import check_valid_name
 
@@ -269,19 +269,19 @@ class SensorDefinition:
 
         if not result or result == [None]:
             run_requests = []
-            pipeline_run_reactions = []
+            dagster_run_reactions = []
             skip_message = None
         elif len(result) == 1:
             item = result[0]
-            check.inst(item, (SkipReason, RunRequest, PipelineRunReaction))
+            check.inst(item, (SkipReason, RunRequest, DagsterRunReaction))
             run_requests = [item] if isinstance(item, RunRequest) else []
-            pipeline_run_reactions = [item] if isinstance(item, PipelineRunReaction) else []
+            dagster_run_reactions = [item] if isinstance(item, DagsterRunReaction) else []
             skip_message = item.skip_message if isinstance(item, SkipReason) else None
         else:
-            check.is_list(result, (SkipReason, RunRequest, PipelineRunReaction))
+            check.is_list(result, (SkipReason, RunRequest, DagsterRunReaction))
             has_skip = any(map(lambda x: isinstance(x, SkipReason), result))
             has_run_request = any(map(lambda x: isinstance(x, RunRequest), result))
-            has_run_reaction = any(map(lambda x: isinstance(x, PipelineRunReaction), result))
+            has_run_reaction = any(map(lambda x: isinstance(x, DagsterRunReaction), result))
             skip_message = None
 
             if has_skip:
@@ -292,31 +292,31 @@ class SensorDefinition:
                     )
                 if has_run_reaction:
                     check.failed(
-                        "Expected a single SkipReason or one or more PipelineRunReaction: "
-                        "received both PipelineRunReaction and SkipReason"
+                        "Expected a single SkipReason or one or more DagsterRunReaction: "
+                        "received both DagsterRunReaction and SkipReason"
                     )
                 else:
                     check.failed("Expected a single SkipReason: received multiple SkipReasons")
 
             if has_run_request:
                 run_requests = result
-                pipeline_run_reactions = []
+                dagster_run_reactions = []
                 if has_run_reaction:
                     check.failed(
                         "Expected either one or more RunRequests or one or more "
-                        "PipelineRunReactions: received both"
+                        "DagsterRunReactions: received both"
                     )
 
             else:
                 # only run reactions
                 run_requests = []
-                pipeline_run_reactions = result
+                dagster_run_reactions = result
 
         return SensorExecutionData(
             run_requests,
             skip_message,
             context.cursor,
-            pipeline_run_reactions,
+            dagster_run_reactions,
         )
 
     @property
@@ -341,7 +341,7 @@ class SensorExecutionData(
             ("run_requests", Optional[List[RunRequest]]),
             ("skip_message", Optional[str]),
             ("cursor", Optional[str]),
-            ("pipeline_run_reactions", Optional[List[PipelineRunReaction]]),
+            ("dagster_run_reactions", Optional[List[DagsterRunReaction]]),
         ],
     )
 ):
@@ -350,12 +350,12 @@ class SensorExecutionData(
         run_requests: Optional[List[RunRequest]] = None,
         skip_message: Optional[str] = None,
         cursor: Optional[str] = None,
-        pipeline_run_reactions: Optional[List[PipelineRunReaction]] = None,
+        dagster_run_reactions: Optional[List[DagsterRunReaction]] = None,
     ):
         check.opt_list_param(run_requests, "run_requests", RunRequest)
         check.opt_str_param(skip_message, "skip_message")
         check.opt_str_param(cursor, "cursor")
-        check.opt_list_param(pipeline_run_reactions, "pipeline_run_reactions", PipelineRunReaction)
+        check.opt_list_param(dagster_run_reactions, "dagster_run_reactions", DagsterRunReaction)
         check.invariant(
             not (run_requests and skip_message), "Found both skip data and run request data"
         )
@@ -364,7 +364,7 @@ class SensorExecutionData(
             run_requests=run_requests,
             skip_message=skip_message,
             cursor=cursor,
-            pipeline_run_reactions=pipeline_run_reactions,
+            dagster_run_reactions=dagster_run_reactions,
         )
 
 
@@ -376,13 +376,13 @@ def wrap_sensor_evaluation(
         for item in result:
             yield item
 
-    elif isinstance(result, (SkipReason, RunRequest, PipelineRunReaction)):
+    elif isinstance(result, (SkipReason, RunRequest, DagsterRunReaction)):
         yield result
 
     elif result is not None:
         raise DagsterInvariantViolationError(
             f"Error in sensor {sensor_name}: Sensor unexpectedly returned output "
-            f"{result} of type {type(result)}.  Should only return SkipReason, PipelineRunReaction, or "
+            f"{result} of type {type(result)}.  Should only return SkipReason, DagsterRunReaction, or "
             "RunRequest objects."
         )
 

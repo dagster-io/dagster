@@ -10,7 +10,7 @@ mutation($executionParams: ExecutionParams!) {
       stepKey
       invalidOutputName
     }
-    ... on LaunchPipelineRunSuccess {
+    ... on LaunchDagsterRunSuccess {
       run {
         runId
       }
@@ -21,7 +21,7 @@ mutation($executionParams: ExecutionParams!) {
     ... on PresetNotFoundError {
       message
     }
-    ... on PipelineRunConflict {
+    ... on DagsterRunConflict {
       message
     }
     ... on PipelineConfigValidationInvalid {
@@ -97,10 +97,10 @@ GET_PIPELINE_RUN_STATUS_QUERY = """
 query($runId: ID!) {
   pipelineRunOrError(runId: $runId) {
     __typename
-    ... on PipelineRun {
+    ... on DagsterRun {
         status
     }
-    ... on PipelineRunNotFoundError {
+    ... on DagsterRunNotFoundError {
       message
     }
     ... on PythonError {

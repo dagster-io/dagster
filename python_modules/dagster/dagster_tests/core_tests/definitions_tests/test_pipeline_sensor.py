@@ -7,7 +7,7 @@ def test_pipeline_failure_sensor_def():
 
     @pipeline_failure_sensor
     def call_on_pipeline_failure(context):
-        called[context.pipeline_run.run_id] = True
+        called[context.dagster_run.run_id] = True
 
     @repository
     def my_repo():

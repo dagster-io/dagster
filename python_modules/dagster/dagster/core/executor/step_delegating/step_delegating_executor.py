@@ -53,14 +53,14 @@ class StepDelegatingExecutor(Executor):
             instance=pipeline_context.plan_data.instance,
             execute_step_args=ExecuteStepArgs(
                 pipeline_origin=pipeline_context.reconstructable_pipeline.get_python_origin(),
-                pipeline_run_id=pipeline_context.pipeline_run.run_id,
+                dagster_run_id=pipeline_context.dagster_run.run_id,
                 step_keys_to_execute=[step.key for step in steps],
                 instance_ref=pipeline_context.plan_data.instance.get_ref(),
                 retry_mode=self.retries,
                 known_state=active_execution.get_known_state(),
             ),
             step_tags={step.key: step.tags for step in steps},
-            pipeline_run=pipeline_context.pipeline_run,
+            dagster_run=pipeline_context.dagster_run,
         )
 
     def _log_new_events(self, events, pipeline_context, running_steps):
@@ -118,7 +118,7 @@ class StepDelegatingExecutor(Executor):
                 events.extend(
                     self._pop_events(
                         pipeline_context.plan_data.instance,
-                        pipeline_context.plan_data.pipeline_run.run_id,
+                        pipeline_context.plan_data.dagster_run.run_id,
                     )
                 )
 

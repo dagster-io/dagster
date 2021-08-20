@@ -242,13 +242,13 @@ def test_long_solid_names():
         assert normalize_file_content(stdout.data) == HELLO_SOLID
 
 
-def execute_inner(step_key, pipeline_run, instance_ref):
+def execute_inner(step_key, dagster_run, instance_ref):
     instance = DagsterInstance.from_ref(instance_ref)
-    inner_step(instance, pipeline_run, step_key)
+    inner_step(instance, dagster_run, step_key)
 
 
-def inner_step(instance, pipeline_run, step_key):
-    with instance.compute_log_manager.watch(pipeline_run, step_key=step_key):
+def inner_step(instance, dagster_run, step_key):
+    with instance.compute_log_manager.watch(dagster_run, step_key=step_key):
         time.sleep(0.1)
         print(step_key, "inner 1")  # pylint: disable=print-call
         print(step_key, "inner 2")  # pylint: disable=print-call
@@ -272,26 +272,26 @@ def expected_outer_prefix():
 def test_single():
     with instance_for_test() as instance:
         pipeline_name = "foo_pipeline"
-        pipeline_run = create_run_for_test(instance, pipeline_name=pipeline_name)
+        dagster_run = create_run_for_test(instance, pipeline_name=pipeline_name)
 
         step_keys = ["A", "B", "C"]
 
-        with instance.compute_log_manager.watch(pipeline_run):
+        with instance.compute_log_manager.watch(dagster_run):
             print("outer 1")  # pylint: disable=print-call
             print("outer 2")  # pylint: disable=print-call
             print("outer 3")  # pylint: disable=print-call
 
             for step_key in step_keys:
-                inner_step(instance, pipeline_run, step_key)
+                inner_step(instance, dagster_run, step_key)
 
         for step_key in step_keys:
             stdout = instance.compute_log_manager.read_logs_file(
-                pipeline_run.run_id, step_key, ComputeIOType.STDOUT
+                dagster_run.run_id, step_key, ComputeIOType.STDOUT
             )
             assert normalize_file_content(stdout.data) == expected_inner_output(step_key)
 
         full_out = instance.compute_log_manager.read_logs_file(
-            pipeline_run.run_id, pipeline_name, ComputeIOType.STDOUT
+            dagster_run.run_id, pipeline_name, ComputeIOType.STDOUT
         )
 
         assert normalize_file_content(full_out.data).startswith(expected_outer_prefix())
@@ -313,26 +313,26 @@ def test_compute_log_base_with_spaces():
             },
         ) as instance:
             pipeline_name = "foo_pipeline"
-            pipeline_run = create_run_for_test(instance, pipeline_name=pipeline_name)
+            dagster_run = create_run_for_test(instance, pipeline_name=pipeline_name)
 
             step_keys = ["A", "B", "C"]
 
-            with instance.compute_log_manager.watch(pipeline_run):
+            with instance.compute_log_manager.watch(dagster_run):
                 print("outer 1")  # pylint: disable=print-call
                 print("outer 2")  # pylint: disable=print-call
                 print("outer 3")  # pylint: disable=print-call
 
                 for step_key in step_keys:
-                    inner_step(instance, pipeline_run, step_key)
+                    inner_step(instance, dagster_run, step_key)
 
             for step_key in step_keys:
                 stdout = instance.compute_log_manager.read_logs_file(
-                    pipeline_run.run_id, step_key, ComputeIOType.STDOUT
+                    dagster_run.run_id, step_key, ComputeIOType.STDOUT
                 )
                 assert normalize_file_content(stdout.data) == expected_inner_output(step_key)
 
             full_out = instance.compute_log_manager.read_logs_file(
-                pipeline_run.run_id, pipeline_name, ComputeIOType.STDOUT
+                dagster_run.run_id, pipeline_name, ComputeIOType.STDOUT
             )
 
             assert normalize_file_content(full_out.data).startswith(expected_outer_prefix())
@@ -344,30 +344,30 @@ def test_compute_log_base_with_spaces():
 def test_multi():
     with instance_for_test() as instance:
         pipeline_name = "foo_pipeline"
-        pipeline_run = create_run_for_test(instance, pipeline_name=pipeline_name)
+        dagster_run = create_run_for_test(instance, pipeline_name=pipeline_name)
 
         step_keys = ["A", "B", "C"]
 
-        with instance.compute_log_manager.watch(pipeline_run):
+        with instance.compute_log_manager.watch(dagster_run):
             print("outer 1")  # pylint: disable=print-call
             print("outer 2")  # pylint: disable=print-call
             print("outer 3")  # pylint: disable=print-call
 
             for step_key in step_keys:
                 process = multiprocessing.Process(
-                    target=execute_inner, args=(step_key, pipeline_run, instance.get_ref())
+                    target=execute_inner, args=(step_key, dagster_run, instance.get_ref())
                 )
                 process.start()
                 process.join()
 
         for step_key in step_keys:
             stdout = instance.compute_log_manager.read_logs_file(
-                pipeline_run.run_id, step_key, ComputeIOType.STDOUT
+                dagster_run.run_id, step_key, ComputeIOType.STDOUT
             )
             assert normalize_file_content(stdout.data) == expected_inner_output(step_key)
 
         full_out = instance.compute_log_manager.read_logs_file(
-            pipeline_run.run_id, pipeline_name, ComputeIOType.STDOUT
+            dagster_run.run_id, pipeline_name, ComputeIOType.STDOUT
         )
 
         # The way that the multiprocess compute-logging interacts with pytest (which stubs out the

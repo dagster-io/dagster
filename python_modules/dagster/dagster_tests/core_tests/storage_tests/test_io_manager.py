@@ -299,14 +299,14 @@ def execute_pipeline_with_steps(
     root_run_id=None,
 ):
     plan = create_execution_plan(pipeline_def, step_keys_to_execute=step_keys_to_execute)
-    pipeline_run = instance.create_run_for_pipeline(
+    dagster_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline_def,
         run_id=run_id,
         # the backfill flow can inject run group info
         parent_run_id=parent_run_id,
         root_run_id=root_run_id,
     )
-    return execute_plan(plan, InMemoryPipeline(pipeline_def), instance, pipeline_run)
+    return execute_plan(plan, InMemoryPipeline(pipeline_def), instance, dagster_run)
 
 
 def test_step_subset_with_custom_paths():

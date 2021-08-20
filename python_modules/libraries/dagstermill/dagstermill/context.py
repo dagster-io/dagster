@@ -1,6 +1,6 @@
 from typing import Any, Dict, Set
 
-from dagster import PipelineDefinition, PipelineRun, SolidDefinition, check
+from dagster import DagsterRun, PipelineDefinition, SolidDefinition, check
 from dagster.core.definitions.dependency import Node, NodeHandle
 from dagster.core.execution.context.compute import AbstractComputeExecutionContext
 from dagster.core.execution.context.system import PlanExecutionContext
@@ -99,9 +99,9 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         )
 
     @property
-    def pipeline_run(self) -> PipelineRun:
-        """:class:`dagster.PipelineRun`: The pipeline run for the context."""
-        return self._pipeline_context.pipeline_run
+    def dagster_run(self) -> DagsterRun:
+        """:class:`dagster.DagsterRun`: The pipeline run for the context."""
+        return self._pipeline_context.dagster_run
 
     @property
     def log(self) -> DagsterLogManager:

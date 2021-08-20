@@ -79,13 +79,13 @@ def test_prometheus_histogram():
     @solid(required_resource_keys={"prometheus"})
     def prometheus_solid(context):
         h = Histogram(
-            "pipeline_runtime_seconds",
+            "dagster_runtime_seconds",
             "Description of histogram",
             registry=context.resources.prometheus.registry,
         )
         h.observe(4.7)
         recorded = context.resources.prometheus.registry.get_sample_value(
-            "pipeline_runtime_seconds_sum"
+            "dagster_runtime_seconds_sum"
         )
         assert abs(4.7 - recorded) < EPS
 

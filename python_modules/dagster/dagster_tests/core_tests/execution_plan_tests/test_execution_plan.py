@@ -21,7 +21,7 @@ from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.plan import should_skip_step
 from dagster.core.execution.retries import RetryMode
-from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.storage.dagster_run import DagsterRun
 from dagster.core.utils import make_new_run_id
 
 
@@ -345,13 +345,13 @@ def test_executor_not_created_for_execute_plan():
     instance = DagsterInstance.ephemeral()
     pipe = define_diamond_pipeline()
     plan = create_execution_plan(pipe)
-    pipeline_run = instance.create_run_for_pipeline(pipe, plan)
+    dagster_run = instance.create_run_for_pipeline(pipe, plan)
 
     results = execute_plan(
         plan,
         InMemoryPipeline(pipe),
         instance,
-        pipeline_run,
+        dagster_run,
         run_config={"execution": {"multiprocess": {}}},
     )
     for result in results:
@@ -422,28 +422,28 @@ def test_fan_out_should_skip_step():
         bar.alias("bar_3")(input_arg=foo_res.out_3)
 
     instance = DagsterInstance.ephemeral()
-    pipeline_run = PipelineRun(pipeline_name="optional_outputs", run_id=make_new_run_id())
+    dagster_run = DagsterRun(pipeline_name="optional_outputs", run_id=make_new_run_id())
     execute_plan(
         create_execution_plan(optional_outputs, step_keys_to_execute=["foo"]),
         InMemoryPipeline(optional_outputs),
         instance,
-        pipeline_run,
+        dagster_run,
     )
 
     assert not should_skip_step(
         create_execution_plan(optional_outputs, step_keys_to_execute=["bar_1"]),
         instance,
-        pipeline_run.run_id,
+        dagster_run.run_id,
     )
     assert should_skip_step(
         create_execution_plan(optional_outputs, step_keys_to_execute=["bar_2"]),
         instance,
-        pipeline_run.run_id,
+        dagster_run.run_id,
     )
     assert should_skip_step(
         create_execution_plan(optional_outputs, step_keys_to_execute=["bar_3"]),
         instance,
-        pipeline_run.run_id,
+        dagster_run.run_id,
     )
 
 
@@ -475,7 +475,7 @@ def test_fan_in_should_skip_step():
         composite_one_upstream_skip()
 
     instance = DagsterInstance.ephemeral()
-    pipeline_run = PipelineRun(pipeline_name="optional_outputs_composite", run_id=make_new_run_id())
+    dagster_run = DagsterRun(pipeline_name="optional_outputs_composite", run_id=make_new_run_id())
     execute_plan(
         create_execution_plan(
             optional_outputs_composite,
@@ -486,7 +486,7 @@ def test_fan_in_should_skip_step():
         ),
         InMemoryPipeline(optional_outputs_composite),
         instance,
-        pipeline_run,
+        dagster_run,
     )
     # skip when all the step's sources weren't yield
     assert should_skip_step(
@@ -495,7 +495,7 @@ def test_fan_in_should_skip_step():
             step_keys_to_execute=["composite_all_upstream_skip.fan_in"],
         ),
         instance,
-        pipeline_run.run_id,
+        dagster_run.run_id,
     )
 
     execute_plan(
@@ -508,7 +508,7 @@ def test_fan_in_should_skip_step():
         ),
         InMemoryPipeline(optional_outputs_composite),
         instance,
-        pipeline_run,
+        dagster_run,
     )
     # do not skip when some of the sources exist
     assert not should_skip_step(
@@ -517,7 +517,7 @@ def test_fan_in_should_skip_step():
             step_keys_to_execute=["composite_one_upstream_skip.fan_in"],
         ),
         instance,
-        pipeline_run.run_id,
+        dagster_run.run_id,
     )
 
 
@@ -542,7 +542,7 @@ def test_configured_input_should_skip_step():
 
     # ensure should_skip_step behave the same as execute_pipeline
     instance = DagsterInstance.ephemeral()
-    pipeline_run = PipelineRun(pipeline_name="my_pipeline", run_id=make_new_run_id())
+    dagster_run = DagsterRun(pipeline_name="my_pipeline", run_id=make_new_run_id())
     execute_plan(
         create_execution_plan(
             my_pipeline,
@@ -551,7 +551,7 @@ def test_configured_input_should_skip_step():
         ),
         InMemoryPipeline(my_pipeline),
         instance,
-        pipeline_run,
+        dagster_run,
         run_config=run_config,
     )
     assert not should_skip_step(
@@ -561,5 +561,5 @@ def test_configured_input_should_skip_step():
             run_config=run_config,
         ),
         instance,
-        pipeline_run.run_id,
+        dagster_run.run_id,
     )

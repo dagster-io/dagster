@@ -8,7 +8,7 @@ from dagster.core.events.log import EventLogEntry
 from dagster.core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
 from dagster.core.host_representation.external_data import ExternalPresetData
 from dagster.core.host_representation.represented import RepresentedPipeline
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.dagster_run import DagsterRun, DagsterRunStatus, DagsterRunsFilter
 from dagster.core.storage.tags import TagType, get_tag_type
 
 from ...implementation.events import construct_basic_params, from_event_record
@@ -21,15 +21,15 @@ from ...implementation.utils import UserFacingGraphQLError, capture_error
 from ..asset_key import GrapheneAssetKey
 from ..dagster_types import GrapheneDagsterType, GrapheneDagsterTypeOrError, to_dagster_type
 from ..errors import (
+    GrapheneDagsterRunNotFoundError,
     GrapheneDagsterTypeNotFoundError,
-    GraphenePipelineRunNotFoundError,
     GraphenePythonError,
 )
 from ..execution import GrapheneExecutionPlan
 from ..logs.compute_logs import GrapheneComputeLogs
 from ..logs.events import (
-    GraphenePipelineRunEvent,
-    GraphenePipelineRunStepStats,
+    GrapheneDagsterRunEvent,
+    GrapheneDagsterRunStepStats,
     GrapheneStepMaterializationEvent,
 )
 from ..paging import GrapheneCursor
@@ -45,15 +45,15 @@ from ..solids import (
 )
 from ..tags import GrapheneAssetTag, GraphenePipelineTag
 from ..util import non_null_list
+from .dagster_run_stats import GrapheneDagsterRunStatsOrError
 from .mode import GrapheneMode
 from .pipeline_ref import GraphenePipelineReference
-from .pipeline_run_stats import GraphenePipelineRunStatsOrError
-from .status import GraphenePipelineRunStatus
+from .status import GrapheneDagsterRunStatus
 
 
 class GrapheneAssetMaterialization(graphene.ObjectType):
     materializationEvent = graphene.NonNull(GrapheneStepMaterializationEvent)
-    runOrError = graphene.NonNull(lambda: GraphenePipelineRunOrError)
+    runOrError = graphene.NonNull(lambda: GrapheneDagsterRunOrError)
     partition = graphene.Field(graphene.String)
 
     class Meta:
@@ -133,18 +133,18 @@ class GrapheneAsset(graphene.ObjectType):
         return [GrapheneAssetTag(key=key, value=value) for key, value in tags.items()]
 
 
-class GraphenePipelineRun(graphene.ObjectType):
+class GrapheneDagsterRun(graphene.ObjectType):
     id = graphene.NonNull(graphene.ID)
     runId = graphene.NonNull(graphene.String)
     # Nullable because of historical runs
     pipelineSnapshotId = graphene.String()
     repositoryOrigin = graphene.Field(GrapheneRepositoryOrigin)
-    status = graphene.NonNull(GraphenePipelineRunStatus)
+    status = graphene.NonNull(GrapheneDagsterRunStatus)
     pipeline = graphene.NonNull(GraphenePipelineReference)
     pipelineName = graphene.NonNull(graphene.String)
     solidSelection = graphene.List(graphene.NonNull(graphene.String))
-    stats = graphene.NonNull(GraphenePipelineRunStatsOrError)
-    stepStats = non_null_list(GraphenePipelineRunStepStats)
+    stats = graphene.NonNull(GrapheneDagsterRunStatsOrError)
+    stepStats = non_null_list(GrapheneDagsterRunStepStats)
     computeLogs = graphene.Field(
         graphene.NonNull(GrapheneComputeLogs),
         stepKey=graphene.Argument(graphene.NonNull(graphene.String)),
@@ -162,44 +162,44 @@ class GraphenePipelineRun(graphene.ObjectType):
     canTerminate = graphene.NonNull(graphene.Boolean)
     assets = non_null_list(GrapheneAsset)
     events = graphene.Field(
-        non_null_list(GraphenePipelineRunEvent),
+        non_null_list(GrapheneDagsterRunEvent),
         after=graphene.Argument(GrapheneCursor),
     )
 
     class Meta:
-        name = "PipelineRun"
+        name = "DagsterRun"
 
-    def __init__(self, pipeline_run):
+    def __init__(self, dagster_run):
         super().__init__(
-            runId=pipeline_run.run_id,
-            status=PipelineRunStatus(pipeline_run.status),
-            mode=pipeline_run.mode,
+            runId=dagster_run.run_id,
+            status=DagsterRunStatus(dagster_run.status),
+            mode=dagster_run.target.mode,
         )
-        self._pipeline_run = check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+        self._dagster_run = check.inst_param(dagster_run, "dagster_run", DagsterRun)
 
     def resolve_id(self, _graphene_info):
-        return self._pipeline_run.run_id
+        return self._dagster_run.run_id
 
     def resolve_repositoryOrigin(self, _graphene_info):
         return (
             GrapheneRepositoryOrigin(
-                self._pipeline_run.external_pipeline_origin.external_repository_origin
+                self._dagster_run.external_pipeline_origin.external_repository_origin
             )
-            if self._pipeline_run.external_pipeline_origin
+            if self._dagster_run.external_pipeline_origin
             else None
         )
 
     def resolve_pipeline(self, graphene_info):
-        return get_pipeline_reference_or_raise(graphene_info, self._pipeline_run)
+        return get_pipeline_reference_or_raise(graphene_info, self._dagster_run)
 
     def resolve_pipelineName(self, _graphene_info):
-        return self._pipeline_run.pipeline_name
+        return self._dagster_run.target.name
 
     def resolve_solidSelection(self, _graphene_info):
-        return self._pipeline_run.solid_selection
+        return self._dagster_run.solid_selection
 
     def resolve_pipelineSnapshotId(self, _graphene_info):
-        return self._pipeline_run.pipeline_snapshot_id
+        return self._dagster_run.pipeline_snapshot_id
 
     def resolve_stats(self, graphene_info):
         return get_stats(graphene_info, self.run_id)
@@ -212,17 +212,16 @@ class GraphenePipelineRun(graphene.ObjectType):
 
     def resolve_executionPlan(self, graphene_info):
         if not (
-            self._pipeline_run.execution_plan_snapshot_id
-            and self._pipeline_run.pipeline_snapshot_id
+            self._dagster_run.execution_plan_snapshot_id and self._dagster_run.pipeline_snapshot_id
         ):
             return None
 
         instance = graphene_info.context.instance
         historical_pipeline = instance.get_historical_pipeline(
-            self._pipeline_run.pipeline_snapshot_id
+            self._dagster_run.pipeline_snapshot_id
         )
         execution_plan_snapshot = instance.get_execution_plan_snapshot(
-            self._pipeline_run.execution_plan_snapshot_id
+            self._dagster_run.execution_plan_snapshot_id
         )
         return (
             GrapheneExecutionPlan(
@@ -236,25 +235,23 @@ class GraphenePipelineRun(graphene.ObjectType):
         )
 
     def resolve_stepKeysToExecute(self, _graphene_info):
-        return self._pipeline_run.step_keys_to_execute
+        return self._dagster_run.step_keys_to_execute
 
     def resolve_runConfigYaml(self, _graphene_info):
-        return yaml.dump(
-            self._pipeline_run.run_config, default_flow_style=False, allow_unicode=True
-        )
+        return yaml.dump(self._dagster_run.run_config, default_flow_style=False, allow_unicode=True)
 
     def resolve_tags(self, _graphene_info):
         return [
             GraphenePipelineTag(key=key, value=value)
-            for key, value in self._pipeline_run.tags.items()
+            for key, value in self._dagster_run.tags.items()
             if get_tag_type(key) != TagType.HIDDEN
         ]
 
     def resolve_rootRunId(self, _graphene_info):
-        return self._pipeline_run.root_run_id
+        return self._dagster_run.root_run_id
 
     def resolve_parentRunId(self, _graphene_info):
-        return self._pipeline_run.parent_run_id
+        return self._dagster_run.parent_run_id
 
     @property
     def run_id(self):
@@ -262,7 +259,7 @@ class GraphenePipelineRun(graphene.ObjectType):
 
     def resolve_canTerminate(self, graphene_info):
         # short circuit if the pipeline run is in a terminal state
-        if self._pipeline_run.is_finished:
+        if self._dagster_run.is_finished:
             return False
         return graphene_info.context.instance.run_coordinator.can_cancel_run(self.run_id)
 
@@ -271,7 +268,7 @@ class GraphenePipelineRun(graphene.ObjectType):
 
     def resolve_events(self, graphene_info, after=-1):
         events = graphene_info.context.instance.logs_after(self.run_id, cursor=after)
-        return [from_event_record(event, self._pipeline_run.pipeline_name) for event in events]
+        return [from_event_record(event, self._dagster_run.target.name) for event in events]
 
 
 class GrapheneIPipelineSnapshotMixin:
@@ -302,7 +299,7 @@ class GrapheneIPipelineSnapshotMixin:
     )
     tags = non_null_list(GraphenePipelineTag)
     runs = graphene.Field(
-        non_null_list(GraphenePipelineRun),
+        non_null_list(GrapheneDagsterRun),
         cursor=graphene.String(),
         limit=graphene.Int(),
     )
@@ -406,7 +403,7 @@ class GrapheneIPipelineSnapshotMixin:
         return self.get_represented_pipeline().solid_selection
 
     def resolve_runs(self, graphene_info, **kwargs):
-        runs_filter = PipelineRunsFilter(pipeline_name=self.get_represented_pipeline().name)
+        runs_filter = DagsterRunsFilter(target_name=self.get_represented_pipeline().name)
         return get_runs(graphene_info, runs_filter, kwargs.get("cursor"), kwargs.get("limit"))
 
     def resolve_schedules(self, graphene_info):
@@ -510,7 +507,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
     id = graphene.NonNull(graphene.ID)
     presets = non_null_list(GraphenePipelinePreset)
     runs = graphene.Field(
-        non_null_list(GraphenePipelineRun),
+        non_null_list(GrapheneDagsterRun),
         cursor=graphene.String(),
         limit=graphene.Int(),
     )
@@ -549,7 +546,7 @@ def _get_solid_handles(represented_pipeline):
     }
 
 
-class GraphenePipelineRunOrError(graphene.Union):
+class GrapheneDagsterRunOrError(graphene.Union):
     class Meta:
-        types = (GraphenePipelineRun, GraphenePipelineRunNotFoundError, GraphenePythonError)
-        name = "PipelineRunOrError"
+        types = (GrapheneDagsterRun, GrapheneDagsterRunNotFoundError, GraphenePythonError)
+        name = "DagsterRunOrError"

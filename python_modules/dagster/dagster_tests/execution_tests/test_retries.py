@@ -7,11 +7,11 @@ import pytest
 from dagster import (
     Backoff,
     DagsterEventType,
+    DagsterRun,
     Failure,
     Jitter,
     Output,
     OutputDefinition,
-    PipelineRun,
     RetryPolicy,
     RetryRequested,
     execute_pipeline,
@@ -200,7 +200,7 @@ def test_retry_deferral():
         events = execute_plan(
             create_execution_plan(pipeline_def),
             InMemoryPipeline(pipeline_def),
-            pipeline_run=PipelineRun(pipeline_name="retry_limits", run_id="42"),
+            dagster_run=DagsterRun(pipeline_name="retry_limits", run_id="42"),
             retry_mode=RetryMode.DEFERRED,
             instance=instance,
         )

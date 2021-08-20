@@ -3,7 +3,7 @@ from collections import namedtuple
 from dagster import check
 from dagster.core.events.log import EventLogEntry
 from dagster.core.snap import ExecutionPlanSnapshot, PipelineSnapshot
-from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.storage.dagster_run import DagsterRun
 from dagster.serdes import serialize_dagster_namedtuple, whitelist_for_serdes
 
 
@@ -11,13 +11,13 @@ from dagster.serdes import serialize_dagster_namedtuple, whitelist_for_serdes
 class DebugRunPayload(
     namedtuple(
         "_DebugRunPayload",
-        "version pipeline_run event_list pipeline_snapshot execution_plan_snapshot",
+        "version dagster_run event_list pipeline_snapshot execution_plan_snapshot",
     )
 ):
     def __new__(
         cls,
         version,
-        pipeline_run,
+        dagster_run,
         event_list,
         pipeline_snapshot,
         execution_plan_snapshot,
@@ -25,7 +25,7 @@ class DebugRunPayload(
         return super(DebugRunPayload, cls).__new__(
             cls,
             version=check.str_param(version, "version"),
-            pipeline_run=check.inst_param(pipeline_run, "pipeline_run", PipelineRun),
+            dagster_run=check.inst_param(dagster_run, "dagster_run", DagsterRun),
             event_list=check.list_param(event_list, "event_list", EventLogEntry),
             pipeline_snapshot=check.inst_param(
                 pipeline_snapshot, "pipeline_snapshot", PipelineSnapshot
@@ -41,7 +41,7 @@ class DebugRunPayload(
 
         return cls(
             version=dagster_version,
-            pipeline_run=run,
+            dagster_run=run,
             event_list=instance.all_logs(run.run_id),
             pipeline_snapshot=instance.get_pipeline_snapshot(run.pipeline_snapshot_id),
             execution_plan_snapshot=instance.get_execution_plan_snapshot(

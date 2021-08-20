@@ -26,11 +26,11 @@ def test_get_run_by_id():
     instance = DagsterInstance.ephemeral()
 
     assert instance.get_runs() == []
-    pipeline_run = create_run_for_test(instance, pipeline_name="foo_pipeline", run_id="new_run")
+    dagster_run = create_run_for_test(instance, pipeline_name="foo_pipeline", run_id="new_run")
 
-    assert instance.get_runs() == [pipeline_run]
+    assert instance.get_runs() == [dagster_run]
 
-    assert instance.get_run_by_id(pipeline_run.run_id) == pipeline_run
+    assert instance.get_run_by_id(dagster_run.run_id) == dagster_run
 
 
 def do_test_single_write_read(instance):

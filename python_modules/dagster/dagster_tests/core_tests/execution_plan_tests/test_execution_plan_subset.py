@@ -37,7 +37,7 @@ def test_execution_plan_simple_two_steps():
     pipeline_def = define_two_int_pipeline()
     instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(pipeline_def)
-    pipeline_run = instance.create_run_for_pipeline(
+    dagster_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline_def, execution_plan=execution_plan
     )
 
@@ -48,7 +48,7 @@ def test_execution_plan_simple_two_steps():
     assert execution_plan.get_step_by_key("add_one")
 
     events = execute_plan(
-        execution_plan, InMemoryPipeline(pipeline_def), pipeline_run=pipeline_run, instance=instance
+        execution_plan, InMemoryPipeline(pipeline_def), dagster_run=dagster_run, instance=instance
     )
     step_starts = find_events(events, event_type="STEP_START")
     assert len(step_starts) == 2
@@ -75,11 +75,11 @@ def test_execution_plan_two_outputs():
     execution_plan = create_execution_plan(pipeline_def)
 
     instance = DagsterInstance.ephemeral()
-    pipeline_run = instance.create_run_for_pipeline(
+    dagster_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline_def, execution_plan=execution_plan
     )
     events = execute_plan(
-        execution_plan, InMemoryPipeline(pipeline_def), pipeline_run=pipeline_run, instance=instance
+        execution_plan, InMemoryPipeline(pipeline_def), dagster_run=dagster_run, instance=instance
     )
 
     output_events = find_events(events, event_type="STEP_OUTPUT")
@@ -101,11 +101,11 @@ def test_reentrant_execute_plan():
     pipeline_def = PipelineDefinition(name="has_tag_pipeline", solid_defs=[has_tag])
     instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(pipeline_def)
-    pipeline_run = instance.create_run_for_pipeline(
+    dagster_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline_def, tags={"foo": "bar"}, execution_plan=execution_plan
     )
     step_events = execute_plan(
-        execution_plan, InMemoryPipeline(pipeline_def), pipeline_run=pipeline_run, instance=instance
+        execution_plan, InMemoryPipeline(pipeline_def), dagster_run=dagster_run, instance=instance
     )
 
     assert called["yup"]

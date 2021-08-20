@@ -1,6 +1,6 @@
 import time
 
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunsFilter
+from dagster.core.storage.dagster_run import DagsterRun, DagsterRunsFilter
 from dagster.core.test_utils import poll_for_finished_run
 from dagster_test.test_project import (
     ReOriginatedExternalScheduleForTest,
@@ -21,7 +21,7 @@ def test_execute_schedule_on_celery_k8s(  # pylint: disable=redefined-outer-name
         dagster_instance_for_daemon.start_schedule_and_update_storage_state(reoriginated_schedule)
 
         scheduler_runs = dagster_instance_for_daemon.get_runs(
-            PipelineRunsFilter(tags=PipelineRun.tags_for_schedule(reoriginated_schedule))
+            DagsterRunsFilter(tags=DagsterRun.tags_for_schedule(reoriginated_schedule))
         )
 
         assert len(scheduler_runs) == 0
@@ -32,7 +32,7 @@ def test_execute_schedule_on_celery_k8s(  # pylint: disable=redefined-outer-name
 
             while True:
                 schedule_runs = dagster_instance_for_daemon.get_runs(
-                    PipelineRunsFilter(tags=PipelineRun.tags_for_schedule(reoriginated_schedule))
+                    DagsterRunsFilter(tags=DagsterRun.tags_for_schedule(reoriginated_schedule))
                 )
 
                 if len(schedule_runs) > 0:
@@ -54,8 +54,8 @@ def test_execute_schedule_on_celery_k8s(  # pylint: disable=redefined-outer-name
 
         last_run = schedule_runs[0]
 
-        finished_pipeline_run = poll_for_finished_run(
+        finished_dagster_run = poll_for_finished_run(
             dagster_instance_for_daemon, last_run.run_id, timeout=120
         )
 
-        assert finished_pipeline_run.is_success
+        assert finished_dagster_run.is_success

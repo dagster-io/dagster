@@ -5,7 +5,7 @@ from contextlib import contextmanager
 
 from dagster import check
 from dagster.config.source import StringSource
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.dagster_run import DagsterRunStatus
 from dagster.core.storage.sql import (
     check_alembic_revision,
     create_engine,
@@ -166,9 +166,9 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                     logging.exception("Exception in callback for event watch on run %s.", run_id)
 
                 if (
-                    status == PipelineRunStatus.SUCCESS
-                    or status == PipelineRunStatus.FAILURE
-                    or status == PipelineRunStatus.CANCELED
+                    status == DagsterRunStatus.SUCCESS
+                    or status == DagsterRunStatus.FAILURE
+                    or status == DagsterRunStatus.CANCELED
                 ):
                     self.end_watch(run_id, callback)
 

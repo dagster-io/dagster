@@ -450,7 +450,7 @@ def define_fan_in_fan_out_pipeline():
 
 @solid
 def emit_airflow_execution_date(context):
-    airflow_execution_date = context.pipeline_run.tags["airflow_execution_date"]
+    airflow_execution_date = context.dagster_run.tags["airflow_execution_date"]
     yield AssetMaterialization(
         asset_key="airflow_execution_date",
         metadata={

@@ -5,7 +5,7 @@ from dagster.core.events import DagsterEvent
 from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster.core.instance import MayHaveInstanceWeakref
 from dagster.core.snap import ExecutionPlanSnapshot, PipelineSnapshot
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunsFilter, RunRecord
+from dagster.core.storage.dagster_run import DagsterRun, DagsterRunsFilter, RunRecord
 from dagster.daemon.types import DaemonHeartbeat
 
 
@@ -22,14 +22,14 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
     """
 
     @abstractmethod
-    def add_run(self, pipeline_run: PipelineRun) -> PipelineRun:
+    def add_run(self, dagster_run: DagsterRun) -> DagsterRun:
         """Add a run to storage.
 
         If a run already exists with the same ID, raise DagsterRunAlreadyExists
         If the run's snapshot ID does not exist raise DagsterSnapshotDoesNotExist
 
         Args:
-            pipeline_run (PipelineRun): The run to add.
+            dagster_run (DagsterRun): The run to add.
         """
 
     @abstractmethod
@@ -43,28 +43,28 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
 
     @abstractmethod
     def get_runs(
-        self, filters: PipelineRunsFilter = None, cursor: str = None, limit: int = None
-    ) -> Iterable[PipelineRun]:
+        self, filters: DagsterRunsFilter = None, cursor: str = None, limit: int = None
+    ) -> Iterable[DagsterRun]:
         """Return all the runs present in the storage that match the given filters.
 
         Args:
-            filters (Optional[PipelineRunsFilter]) -- The
-                :py:class:`~dagster.core.storage.pipeline_run.PipelineRunsFilter` by which to filter
+            filters (Optional[DagsterRunsFilter]) -- The
+                :py:class:`~dagster.core.storage.dagster_run.DagsterRunsFilter` by which to filter
                 runs
             cursor (Optional[str]): Starting cursor (run_id) of range of runs
             limit (Optional[int]): Number of results to get. Defaults to infinite.
 
         Returns:
-            List[PipelineRun]
+            List[DagsterRun]
         """
 
     @abstractmethod
-    def get_runs_count(self, filters: PipelineRunsFilter = None) -> int:
+    def get_runs_count(self, filters: DagsterRunsFilter = None) -> int:
         """Return the number of runs present in the storage that match the given filters.
 
         Args:
-            filters (Optional[PipelineRunsFilter]) -- The
-                :py:class:`~dagster.core.storage.pipeline_run.PipelineRunFilter` by which to filter
+            filters (Optional[DagsterRunsFilter]) -- The
+                :py:class:`~dagster.core.storage.dagster_run.DagsterRunFilter` by which to filter
                 runs
 
         Returns:
@@ -72,39 +72,39 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         """
 
     @abstractmethod
-    def get_run_group(self, run_id: str) -> Optional[Tuple[str, Iterable[PipelineRun]]]:
+    def get_run_group(self, run_id: str) -> Optional[Tuple[str, Iterable[DagsterRun]]]:
         """Get the run group to which a given run belongs.
 
         Args:
             run_id (str): If the corresponding run is the descendant of some root run (i.e., there
-                is a root_run_id on the :py:class:`PipelineRun`), that root run and all of its
+                is a root_run_id on the :py:class:`DagsterRun`), that root run and all of its
                 descendants are returned; otherwise, the group will consist only of the given run
                 (a run that does not descend from any root is its own root).
 
         Returns:
-            Optional[Tuple[string, List[PipelineRun]]]: If there is a corresponding run group, tuple
+            Optional[Tuple[string, List[DagsterRun]]]: If there is a corresponding run group, tuple
                 whose first element is the root_run_id and whose second element is a list of all the
                 descendent runs. Otherwise `None`.
         """
 
     @abstractmethod
     def get_run_groups(
-        self, filters: PipelineRunsFilter = None, cursor: str = None, limit: int = None
-    ) -> Dict[str, Dict[str, Union[Iterable[PipelineRun], int]]]:
+        self, filters: DagsterRunsFilter = None, cursor: str = None, limit: int = None
+    ) -> Dict[str, Dict[str, Union[Iterable[DagsterRun], int]]]:
         """Return all of the run groups present in the storage that include rows matching the
         given filter.
 
         Args:
-            filter (Optional[PipelineRunsFilter]) -- The
-                :py:class:`~dagster.core.storage.pipeline_run.PipelineRunsFilter` by which to filter
+            filter (Optional[DagsterRunsFilter]) -- The
+                :py:class:`~dagster.core.storage.dagster_run.DagsterRunsFilter` by which to filter
                 runs
             cursor (Optional[str]): Starting cursor (run_id) of range of runs
             limit (Optional[int]): Number of results to get. Defaults to infinite.
 
         Returns:
-            Dict[str, Dict[str, Union[List[PipelineRun], int]]]: Specifically, a dict of the form
-                ``{'pipeline_run_id': {'runs': [PipelineRun, ...], 'count': int}, ...}``. The
-                instances of :py:class:`~dagster.core.pipeline_run.PipelineRun` returned in this
+            Dict[str, Dict[str, Union[List[DagsterRun], int]]]: Specifically, a dict of the form
+                ``{'dagster_run_id': {'runs': [DagsterRun, ...], 'count': int}, ...}``. The
+                instances of :py:class:`~dagster.core.dagster_run.DagsterRun` returned in this
                 data structure correspond to all of the runs that would have been returned by
                 calling :py:meth:`get_run_groups` with the same arguments, plus their corresponding
                 root runs, if any. The keys of this structure are the run_ids of all of the root
@@ -121,23 +121,23 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         # belonging to a group created long ago; it makes sense to bump these to the top of the
         # interface rather than burying them deeply paginated down. Note also that this query can
         # return no more run groups than there are runs in an equivalent call to get_runs, and no
-        # more than 2x total instances of PipelineRun.
+        # more than 2x total instances of DagsterRun.
 
     @abstractmethod
-    def get_run_by_id(self, run_id: str) -> Optional[PipelineRun]:
+    def get_run_by_id(self, run_id: str) -> Optional[DagsterRun]:
         """Get a run by its id.
 
         Args:
             run_id (str): The id of the run
 
         Returns:
-            Optional[PipelineRun]
+            Optional[DagsterRun]
         """
 
     @abstractmethod
     def get_run_records(
         self,
-        filters: PipelineRunsFilter = None,
+        filters: DagsterRunsFilter = None,
         limit: int = None,
         order_by: str = None,
         ascending: bool = False,
@@ -145,7 +145,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         """Return a list of run records stored in the run storage, sorted by the given column in given order.
 
         Args:
-            filters (Optional[PipelineRunsFilter]): the filter by which to filter runs.
+            filters (Optional[DagsterRunsFilter]): the filter by which to filter runs.
             limit (Optional[int]): Number of results to get. Defaults to infinite.
             order_by (Optional[str]): Name of the column to sort by. Defaults to id.
             ascending (Optional[bool]): Sort the result in ascending order if True, descending

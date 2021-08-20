@@ -262,8 +262,8 @@ class DagsterK8sJobConfig(
     def config_type(cls):
         """Combined config type which includes both run launcher and pipeline run config."""
         cfg_run_launcher = DagsterK8sJobConfig.config_type_run_launcher()
-        cfg_pipeline_run = DagsterK8sJobConfig.config_type_pipeline_run()
-        return merge_dicts(cfg_run_launcher, cfg_pipeline_run)
+        cfg_dagster_run = DagsterK8sJobConfig.config_type_dagster_run()
+        return merge_dicts(cfg_run_launcher, cfg_dagster_run)
 
     @classmethod
     def config_type_run_launcher(cls):
@@ -295,7 +295,7 @@ class DagsterK8sJobConfig(
         }
 
     @classmethod
-    def config_type_pipeline_run(cls, default_image_pull_policy=None):
+    def config_type_dagster_run(cls, default_image_pull_policy=None):
         """Configuration intended to be set at pipeline execution time."""
         return {
             "job_image": Field(

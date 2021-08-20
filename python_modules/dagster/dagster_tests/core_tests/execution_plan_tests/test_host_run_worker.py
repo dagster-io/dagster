@@ -6,7 +6,7 @@ from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.host_mode import execute_run_host_mode
 from dagster.core.execution.retries import RetryMode
 from dagster.core.executor.multiprocess import MultiprocessExecutor
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.dagster_run import DagsterRunStatus
 from dagster.core.test_utils import instance_for_test
 
 
@@ -81,7 +81,7 @@ def test_host_run_worker():
             run_config,
         )
 
-        pipeline_run = instance.create_run_for_pipeline(
+        dagster_run = instance.create_run_for_pipeline(
             pipeline_def=pipeline_with_mode,
             execution_plan=execution_plan,
             run_config=run_config,
@@ -91,14 +91,14 @@ def test_host_run_worker():
 
         execute_run_host_mode(
             ExplodingTestPipeline(recon_pipeline.repository, recon_pipeline.pipeline_name),
-            pipeline_run,
+            dagster_run,
             instance,
             raise_on_error=True,
         )
 
-        assert instance.get_run_by_id(pipeline_run.run_id).status == PipelineRunStatus.SUCCESS
+        assert instance.get_run_by_id(dagster_run.run_id).status == DagsterRunStatus.SUCCESS
 
-        logs = instance.all_logs(pipeline_run.run_id)
+        logs = instance.all_logs(dagster_run.run_id)
         assert any(
             e.is_dagster_event and "Executing steps using multiprocess executor" in e.message
             for e in logs
@@ -126,7 +126,7 @@ def test_custom_executor_fn():
             run_config,
         )
 
-        pipeline_run = instance.create_run_for_pipeline(
+        dagster_run = instance.create_run_for_pipeline(
             pipeline_def=pipeline_with_mode,
             execution_plan=execution_plan,
             run_config=run_config,
@@ -136,15 +136,15 @@ def test_custom_executor_fn():
 
         execute_run_host_mode(
             ExplodingTestPipeline(recon_pipeline.repository, recon_pipeline.pipeline_name),
-            pipeline_run,
+            dagster_run,
             instance,
             executor_defs=[test_executor],
             raise_on_error=True,
         )
 
-        assert instance.get_run_by_id(pipeline_run.run_id).status == PipelineRunStatus.SUCCESS
+        assert instance.get_run_by_id(dagster_run.run_id).status == DagsterRunStatus.SUCCESS
 
-        logs = instance.all_logs(pipeline_run.run_id)
+        logs = instance.all_logs(dagster_run.run_id)
         assert any(
             e.is_dagster_event and "Executing steps using multiprocess executor" in e.message
             for e in logs

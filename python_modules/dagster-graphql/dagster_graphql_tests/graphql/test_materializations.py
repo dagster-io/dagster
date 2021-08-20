@@ -79,7 +79,7 @@ class TestMaterializations(ExecutingGraphQLContextTestMatrix):
         assert int(text_entry["intRepr"]) == LONG_INT
 
         text_entry = mat["metadataEntries"][10]
-        assert text_entry["__typename"] == "EventPipelineRunMetadataEntry"
+        assert text_entry["__typename"] == "EventDagsterRunMetadataEntry"
         assert text_entry["runId"] == "fake_run_id"
 
         text_entry = mat["metadataEntries"][11]

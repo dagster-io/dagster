@@ -6,7 +6,7 @@ from dagster import check
 from dagster.core.definitions import AssetMaterialization, ExpectationResult, Materialization
 from dagster.core.events import DagsterEventType, StepExpectationResultData, StepMaterializationData
 from dagster.core.events.log import EventLogEntry
-from dagster.core.storage.pipeline_run import PipelineRunStatsSnapshot
+from dagster.core.storage.dagster_run import DagsterRunStatsSnapshot
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils import datetime_as_float
 
@@ -65,7 +65,7 @@ def build_run_stats_from_events(run_id, records):
                 else datetime_as_float(event.timestamp)
             )
 
-    return PipelineRunStatsSnapshot(
+    return DagsterRunStatsSnapshot(
         run_id,
         steps_succeeded,
         steps_failed,

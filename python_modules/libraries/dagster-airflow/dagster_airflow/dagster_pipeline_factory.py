@@ -253,7 +253,7 @@ def make_dagster_pipeline_from_airflow_dag(
                 )
             )
 
-    3. (Recommended) Add ``{'airflow_execution_date': utc_date_string}`` to the PipelineRun tags,
+    3. (Recommended) Add ``{'airflow_execution_date': utc_date_string}`` to the DagsterRun tags,
         such as in the Dagit UI. This will override behavior from (1) and (2)
 
 
@@ -404,15 +404,15 @@ def make_dagster_solid_from_airflow_task(task, use_airflow_template_context, uni
         output_defs=[OutputDefinition(Nothing, "airflow_task_complete")],
     )
     def _solid(context):  # pylint: disable=unused-argument
-        if AIRFLOW_EXECUTION_DATE_STR not in context.pipeline_run.tags:
+        if AIRFLOW_EXECUTION_DATE_STR not in context.dagster_run.tags:
             raise DagsterInvariantViolationError(
                 'Could not find "{AIRFLOW_EXECUTION_DATE_STR}" in pipeline tags "{tags}". Please '
                 'add "{AIRFLOW_EXECUTION_DATE_STR}" to pipeline tags before executing'.format(
                     AIRFLOW_EXECUTION_DATE_STR=AIRFLOW_EXECUTION_DATE_STR,
-                    tags=context.pipeline_run.tags,
+                    tags=context.dagster_run.tags,
                 )
             )
-        execution_date_str = context.pipeline_run.tags.get(AIRFLOW_EXECUTION_DATE_STR)
+        execution_date_str = context.dagster_run.tags.get(AIRFLOW_EXECUTION_DATE_STR)
 
         check.str_param(execution_date_str, "execution_date_str")
         try:

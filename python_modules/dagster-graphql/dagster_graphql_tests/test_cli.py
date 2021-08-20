@@ -6,7 +6,7 @@ from contextlib import contextmanager
 
 from click.testing import CliRunner
 from dagster import seven
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.dagster_run import DagsterRunStatus
 from dagster.core.test_utils import instance_for_test
 from dagster.utils import file_relative_path
 from dagster_graphql.cli import ui
@@ -100,7 +100,7 @@ LAUNCH_PIPELINE_EXECUTION_QUERY = """
 mutation ($executionParams: ExecutionParams!) {
     launchPipelineExecution(executionParams: $executionParams) {
         __typename
-        ... on LaunchPipelineRunSuccess {
+        ... on LaunchDagsterRunSuccess {
             run {
                 runId
                 pipeline { ...on PipelineReference { name } }
@@ -150,7 +150,7 @@ def test_start_execution_text():
             result_data = json.loads(result.output.strip("\n").split("\n")[-1])
             assert (
                 result_data["data"]["launchPipelineExecution"]["__typename"]
-                == "LaunchPipelineRunSuccess"
+                == "LaunchDagsterRunSuccess"
             )
         except Exception as e:
             raise Exception("Failed with {} Exception: {}".format(result.output, e))
@@ -189,7 +189,7 @@ def test_start_execution_file():
         result_data = json.loads(result.output.strip("\n").split("\n")[-1])
         assert (
             result_data["data"]["launchPipelineExecution"]["__typename"]
-            == "LaunchPipelineRunSuccess"
+            == "LaunchDagsterRunSuccess"
         )
 
 
@@ -240,7 +240,7 @@ def test_start_execution_save_output():
                 result_data = json.loads(lines[-1])
                 assert (
                     result_data["data"]["launchPipelineExecution"]["__typename"]
-                    == "LaunchPipelineRunSuccess"
+                    == "LaunchDagsterRunSuccess"
                 )
 
 
@@ -271,7 +271,7 @@ def test_start_execution_predefined():
             raise Exception(result_data)
         assert (
             result_data["data"]["launchPipelineExecution"]["__typename"]
-            == "LaunchPipelineRunSuccess"
+            == "LaunchDagsterRunSuccess"
         )
 
 
@@ -309,7 +309,7 @@ def test_logs_in_start_execution_predefined():
             result_data = json.loads(result.output.strip("\n").split("\n")[-1])
             assert (
                 result_data["data"]["launchPipelineExecution"]["__typename"]
-                == "LaunchPipelineRunSuccess"
+                == "LaunchDagsterRunSuccess"
             )
             run_id = result_data["data"]["launchPipelineExecution"]["run"]["runId"]
 
@@ -322,7 +322,7 @@ def test_logs_in_start_execution_predefined():
             # assert that the watching run storage captured the run correctly from the other process
             run = instance.get_run_by_id(run_id)
 
-            assert run.status == PipelineRunStatus.SUCCESS
+            assert run.status == DagsterRunStatus.SUCCESS
 
 
 def _is_done(instance, run_id):

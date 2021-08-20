@@ -207,7 +207,7 @@ class EmrPySparkStepLauncher(StepLauncher):
             step_context, prior_attempts_count, self.local_pipeline_package_path
         )
 
-        run_id = step_context.pipeline_run.run_id
+        run_id = step_context.dagster_run.run_id
         log = step_context.log
 
         step_key = step_run_ref.step_key

@@ -11,7 +11,7 @@ CELERY_K8S_CONFIG_KEY = "celery-k8s"
 def celery_k8s_config():
 
     # DagsterK8sJobConfig provides config schema for specifying Dagster K8s Jobs
-    job_config = DagsterK8sJobConfig.config_type_pipeline_run(
+    job_config = DagsterK8sJobConfig.config_type_dagster_run(
         default_image_pull_policy="IfNotPresent"
     )
 

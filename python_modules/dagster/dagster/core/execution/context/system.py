@@ -23,8 +23,8 @@ from dagster.core.execution.plan.step import ExecutionStep
 from dagster.core.execution.retries import RetryMode
 from dagster.core.executor.base import Executor
 from dagster.core.log_manager import DagsterLogManager
+from dagster.core.storage.dagster_run import DagsterRun
 from dagster.core.storage.io_manager import IOManager
-from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.types.dagster_type import DagsterType
 
@@ -56,20 +56,20 @@ class IPlanContext(ABC):
         return self.plan_data.pipeline
 
     @property
-    def pipeline_run(self) -> PipelineRun:
-        return self.plan_data.pipeline_run
+    def dagster_run(self) -> DagsterRun:
+        return self.plan_data.dagster_run
 
     @property
     def run_id(self) -> str:
-        return self.pipeline_run.run_id
+        return self.dagster_run.run_id
 
     @property
     def run_config(self) -> dict:
-        return self.pipeline_run.run_config
+        return self.dagster_run.run_config
 
     @property
     def pipeline_name(self) -> str:
-        return self.pipeline_run.pipeline_name
+        return self.dagster_run.target.name
 
     @property
     def instance(self) -> "DagsterInstance":
@@ -116,7 +116,7 @@ class PlanData(NamedTuple):
     """
 
     pipeline: IPipeline
-    pipeline_run: PipelineRun
+    dagster_run: DagsterRun
     instance: "DagsterInstance"
     execution_plan: "ExecutionPlan"
     raise_on_error: bool = False
@@ -486,7 +486,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         _, runs = run_group
         run_id_to_parent_run_id = {run.run_id: run.parent_run_id for run in runs}
-        source_run_id = self.pipeline_run.parent_run_id
+        source_run_id = self.dagster_run.parent_run_id
         while source_run_id:
             # note: this would cost N db calls where N = number of parent runs
             step_output_record = self.instance.all_logs(
@@ -515,15 +515,15 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         # determine if the step is not selected and
         if (
             # this is re-execution
-            self.pipeline_run.parent_run_id
+            self.dagster_run.parent_run_id
             # we are not re-executing the entire pipeline
-            and self.pipeline_run.step_keys_to_execute is not None
+            and self.dagster_run.step_keys_to_execute is not None
             # this step is not being executed
-            and step_output_handle.step_key not in self.pipeline_run.step_keys_to_execute
+            and step_output_handle.step_key not in self.dagster_run.step_keys_to_execute
         ):
             return self._get_source_run_id_from_logs(step_output_handle)
         else:
-            return self.pipeline_run.run_id
+            return self.dagster_run.run_id
 
     def capture_step_exception(self, exception: BaseException):
         self._step_exception = check.inst_param(exception, "exception", BaseException)

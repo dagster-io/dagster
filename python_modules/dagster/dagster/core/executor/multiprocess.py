@@ -31,7 +31,7 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
     def __init__(
         self,
         run_config,
-        pipeline_run,
+        dagster_run,
         step_key,
         instance_ref,
         term_event,
@@ -40,7 +40,7 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
         known_state,
     ):
         self.run_config = run_config
-        self.pipeline_run = pipeline_run
+        self.dagster_run = dagster_run
         self.step_key = step_key
         self.instance_ref = instance_ref
         self.term_event = term_event
@@ -55,14 +55,14 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
             execution_plan = create_execution_plan(
                 pipeline=pipeline,
                 run_config=self.run_config,
-                mode=self.pipeline_run.mode,
+                mode=self.dagster_run.target.mode,
                 step_keys_to_execute=[self.step_key],
                 known_state=self.known_state,
             )
 
             yield instance.report_engine_event(
                 "Executing step {} in subprocess".format(self.step_key),
-                self.pipeline_run,
+                self.dagster_run,
                 EngineEventData(
                     [
                         EventMetadataEntry.text(str(os.getpid()), "pid"),
@@ -77,7 +77,7 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
             yield from execute_plan_iterator(
                 execution_plan,
                 pipeline,
-                self.pipeline_run,
+                self.dagster_run,
                 run_config=self.run_config,
                 retry_mode=self.retry_mode.for_inner_plan(),
                 instance=instance,
@@ -249,7 +249,7 @@ class MultiprocessExecutor(Executor):
     ):
         command = MultiprocessExecutorChildProcessCommand(
             run_config=step_context.run_config,
-            pipeline_run=step_context.pipeline_run,
+            dagster_run=step_context.dagster_run,
             step_key=step.key,
             instance_ref=step_context.instance.get_ref(),
             term_event=term_events[step.key],

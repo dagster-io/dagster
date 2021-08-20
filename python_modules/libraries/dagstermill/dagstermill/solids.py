@@ -146,7 +146,7 @@ def get_papermill_parameters(step_context, inputs, output_log_path):
 
     parameters["__dm_context"] = dm_context_dict
     parameters["__dm_executable_dict"] = dm_executable_dict
-    parameters["__dm_pipeline_run_dict"] = pack_value(step_context.pipeline_run)
+    parameters["__dm_dagster_run_dict"] = pack_value(step_context.dagster_run)
     parameters["__dm_solid_handle_kwargs"] = dm_solid_handle_kwargs
     parameters["__dm_instance_ref_dict"] = pack_value(step_context.instance.get_ref())
 

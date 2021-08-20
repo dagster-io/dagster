@@ -11,7 +11,12 @@ from dagster.core.errors import DagsterError
 from dagster.core.host_representation import ExternalPipeline, PipelineSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import JobStatus, JobTickData, JobTickStatus, SensorJobData
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.dagster_run import (
+    DagsterRun,
+    DagsterRunStatus,
+    DagsterRunsFilter,
+    PipelineTarget,
+)
 from dagster.core.storage.tags import RUN_KEY_TAG, check_tags
 from dagster.core.workspace import IWorkspace
 from dagster.utils import merge_dicts
@@ -272,26 +277,26 @@ def _evaluate_sensor(
 
     assert isinstance(sensor_runtime_data, SensorExecutionData)
     if not sensor_runtime_data.run_requests:
-        if sensor_runtime_data.pipeline_run_reactions:
-            for pipeline_run_reaction in sensor_runtime_data.pipeline_run_reactions:
-                origin_run_id = pipeline_run_reaction.pipeline_run.run_id
+        if sensor_runtime_data.dagster_run_reactions:
+            for dagster_run_reaction in sensor_runtime_data.dagster_run_reactions:
+                origin_run_id = dagster_run_reaction.dagster_run.run_id
                 message = (
                     f'Sensor "{external_sensor.name}" processed failure of run {origin_run_id}.'
                 )
 
-                if pipeline_run_reaction.error:
+                if dagster_run_reaction.error:
                     context.logger.error(
-                        f"Got a reaction request for run {origin_run_id} but execution errorred: {pipeline_run_reaction.error}"
+                        f"Got a reaction request for run {origin_run_id} but execution errorred: {dagster_run_reaction.error}"
                     )
                     context.update_state(
                         JobTickStatus.FAILURE,
                         cursor=sensor_runtime_data.cursor,
-                        error=pipeline_run_reaction.error,
+                        error=dagster_run_reaction.error,
                     )
                 else:
                     # log to the original pipeline run
                     instance.report_engine_event(
-                        message=message, pipeline_run=pipeline_run_reaction.pipeline_run
+                        message=message, dagster_run=dagster_run_reaction.dagster_run
                     )
                     context.logger.info(
                         f"Completed a reaction request for run {origin_run_id}: {message}"
@@ -407,9 +412,9 @@ def _get_or_create_sensor_run(
         )
 
     existing_runs = instance.get_runs(
-        PipelineRunsFilter(
+        DagsterRunsFilter(
             tags=merge_dicts(
-                PipelineRun.tags_for_sensor(external_sensor),
+                DagsterRun.tags_for_sensor(external_sensor),
                 {RUN_KEY_TAG: run_request.run_key},
             )
         )
@@ -417,7 +422,7 @@ def _get_or_create_sensor_run(
 
     if len(existing_runs):
         run = existing_runs[0]
-        if run.status != PipelineRunStatus.NOT_STARTED:
+        if run.status != DagsterRunStatus.NOT_STARTED:
             # A run already exists and was launched for this time period,
             # but the scheduler must have crashed before the tick could be put
             # into a SUCCESS state
@@ -451,20 +456,20 @@ def _create_sensor_run(instance, repo_location, external_sensor, external_pipeli
     check_tags(pipeline_tags, "pipeline_tags")
     tags = merge_dicts(
         merge_dicts(pipeline_tags, run_request.tags),
-        PipelineRun.tags_for_sensor(external_sensor),
+        DagsterRun.tags_for_sensor(external_sensor),
     )
     if run_request.run_key:
         tags[RUN_KEY_TAG] = run_request.run_key
 
+    target = PipelineTarget(name=external_sensor.pipeline_name, mode=external_sensor.mode)
     return instance.create_run(
-        pipeline_name=external_sensor.pipeline_name,
+        target=target,
         run_id=None,
         run_config=run_request.run_config,
-        mode=external_sensor.mode,
-        solids_to_execute=external_pipeline.solids_to_execute,
+        nodes_to_execute=external_pipeline.solids_to_execute,
         step_keys_to_execute=None,
-        status=PipelineRunStatus.NOT_STARTED,
-        solid_selection=external_sensor.solid_selection,
+        status=DagsterRunStatus.NOT_STARTED,
+        node_selection=external_sensor.solid_selection,
         root_run_id=None,
         parent_run_id=None,
         tags=tags,

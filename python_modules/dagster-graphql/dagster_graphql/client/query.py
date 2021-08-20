@@ -48,7 +48,7 @@ fragment metadataEntryFragment on EventMetadataEntry {
   ... on EventUrlMetadataEntry {
     url
   }
-  ... on EventPipelineRunMetadataEntry  {
+  ... on EventDagsterRunMetadataEntry  {
     runId
   }
   ... on EventAssetMetadataEntry  {
@@ -200,7 +200,7 @@ SUBSCRIPTION_QUERY = (
 subscription subscribeTest($runId: ID!) {
   pipelineRunLogs(runId: $runId) {
     __typename
-    ... on PipelineRunLogsSubscriptionSuccess {
+    ... on DagsterRunLogsSubscriptionSuccess {
       run {
         runId
       }
@@ -208,7 +208,7 @@ subscription subscribeTest($runId: ID!) {
         ...messageEventFragment
       }
     }
-    ... on PipelineRunLogsSubscriptionFailure {
+    ... on DagsterRunLogsSubscriptionFailure {
       missingRunId
       message
     }
@@ -224,7 +224,7 @@ RUN_EVENTS_QUERY = (
 query pipelineRunEvents($runId: ID!, $after: Cursor) {
   pipelineRunOrError(runId: $runId) {
     __typename
-    ... on PipelineRun {
+    ... on DagsterRun {
       events(after: $after) {
         ...messageEventFragment
       }
@@ -248,7 +248,7 @@ mutation($executionParams: ExecutionParams!) {
       stepKey
       invalidOutputName
     }
-    ... on LaunchPipelineRunSuccess {
+    ... on LaunchDagsterRunSuccess {
       run {
         runId
         pipeline {
@@ -302,7 +302,7 @@ mutation($executionParams: ExecutionParams!) {
     ... on PythonError {
       ...errorFragment
     }
-    ... on LaunchPipelineRunSuccess {
+    ... on LaunchDagsterRunSuccess {
       run {
         runId
         status
@@ -355,7 +355,7 @@ PIPELINE_REEXECUTION_INFO_QUERY = """
 query ReexecutionInfoQuery($runId: ID!) {
   pipelineRunOrError(runId: $runId) {
     __typename
-    ... on PipelineRun {
+    ... on DagsterRun {
         stepKeysToExecute
       }
     }

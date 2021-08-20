@@ -10,7 +10,7 @@ import pytest
 from dagster import AssetMaterialization, ModeDefinition, ResourceDefinition, check
 from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster.core.test_utils import instance_for_test
 from dagster.core.utils import make_new_run_id
 from dagster.serdes import pack_value
@@ -38,21 +38,21 @@ def in_pipeline_manager(
                 "dagstermill.examples.repository", "hello_world_pipeline"
             ).to_dict()
 
-        pipeline_run_dict = pack_value(
-            PipelineRun(
+        dagster_run_dict = pack_value(
+            DagsterRun(
                 pipeline_name=pipeline_name,
                 run_id=run_id,
                 mode=mode or "default",
                 run_config=None,
                 step_keys_to_execute=None,
-                status=PipelineRunStatus.NOT_STARTED,
+                status=DagsterRunStatus.NOT_STARTED,
             )
         )
 
         try:
             with safe_tempfile_path() as output_log_file_path:
                 context_dict = {
-                    "pipeline_run_dict": pipeline_run_dict,
+                    "dagster_run_dict": dagster_run_dict,
                     "solid_handle_kwargs": solid_handle._asdict(),
                     "executable_dict": executable_dict,
                     "marshal_dir": marshal_dir,

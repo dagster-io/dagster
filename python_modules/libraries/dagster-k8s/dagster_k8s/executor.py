@@ -28,7 +28,7 @@ from .utils import delete_job
 @executor(
     name="k8s",
     config_schema=merge_dicts(
-        DagsterK8sJobConfig.config_type_pipeline_run(),
+        DagsterK8sJobConfig.config_type_dagster_run(),
         {"job_namespace": Field(StringSource, is_required=False)},
         {"retries": get_retries_config()},
     ),
@@ -150,7 +150,7 @@ class K8sStepHandler(StepHandler):
         step_key = step_handler_context.execute_step_args.step_keys_to_execute[0]
 
         k8s_name_key = get_k8s_job_name(
-            step_handler_context.execute_step_args.pipeline_run_id,
+            step_handler_context.execute_step_args.dagster_run_id,
             step_key,
         )
         job_name = "dagster-job-%s" % (k8s_name_key)
@@ -207,7 +207,7 @@ class K8sStepHandler(StepHandler):
         step_key = step_handler_context.execute_step_args.step_keys_to_execute[0]
 
         k8s_name_key = get_k8s_job_name(
-            step_handler_context.execute_step_args.pipeline_run_id,
+            step_handler_context.execute_step_args.dagster_run_id,
             step_key,
         )
         job_name = "dagster-job-%s" % (k8s_name_key)
@@ -235,7 +235,7 @@ class K8sStepHandler(StepHandler):
         step_key = step_handler_context.execute_step_args.step_keys_to_execute[0]
 
         k8s_name_key = get_k8s_job_name(
-            step_handler_context.execute_step_args.pipeline_run_id,
+            step_handler_context.execute_step_args.dagster_run_id,
             step_key,
         )
         job_name = "dagster-job-%s" % (k8s_name_key)

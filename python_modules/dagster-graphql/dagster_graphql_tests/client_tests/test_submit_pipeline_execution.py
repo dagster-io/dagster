@@ -11,7 +11,7 @@ EXPECTED_RUN_ID = "foo"
 def test_success(mock_client: MockClient):
     response = {
         "launchPipelineExecution": {
-            "__typename": "LaunchPipelineRunSuccess",
+            "__typename": "LaunchDagsterRunSuccess",
             "run": {"runId": EXPECTED_RUN_ID},
         }
     }
@@ -30,7 +30,7 @@ def test_success(mock_client: MockClient):
 def test_preset_success(mock_client: MockClient):
     response = {
         "launchPipelineExecution": {
-            "__typename": "LaunchPipelineRunSuccess",
+            "__typename": "LaunchDagsterRunSuccess",
             "run": {"runId": EXPECTED_RUN_ID},
         }
     }
@@ -45,7 +45,7 @@ def test_preset_success(mock_client: MockClient):
 def test_tags_success(mock_client: MockClient):
     response = {
         "launchPipelineExecution": {
-            "__typename": "LaunchPipelineRunSuccess",
+            "__typename": "LaunchDagsterRunSuccess",
             "run": {"runId": EXPECTED_RUN_ID},
         }
     }
@@ -65,7 +65,7 @@ def test_tags_success(mock_client: MockClient):
 def test_complex_tags_success(mock_client: MockClient):
     response = {
         "launchPipelineExecution": {
-            "__typename": "LaunchPipelineRunSuccess",
+            "__typename": "LaunchDagsterRunSuccess",
             "run": {"runId": EXPECTED_RUN_ID},
         }
     }
@@ -120,7 +120,7 @@ def test_no_location_or_repo_provided_success(mock_client: MockClient):
     }
     submit_execution_response = {
         "launchPipelineExecution": {
-            "__typename": "LaunchPipelineRunSuccess",
+            "__typename": "LaunchDagsterRunSuccess",
             "run": {"runId": EXPECTED_RUN_ID},
         }
     }
@@ -158,7 +158,7 @@ def test_no_location_or_repo_provided_duplicate_pipeline_failure(mock_client: Mo
     }
     submit_execution_response = {
         "launchPipelineExecution": {
-            "__typename": "LaunchPipelineRunSuccess",
+            "__typename": "LaunchDagsterRunSuccess",
             "run": {"runId": EXPECTED_RUN_ID},
         }
     }
@@ -192,7 +192,7 @@ def test_no_location_or_repo_provided_no_pipeline_failure(mock_client: MockClien
     }
     submit_execution_response = {
         "launchPipelineExecution": {
-            "__typename": "LaunchPipelineRunSuccess",
+            "__typename": "LaunchDagsterRunSuccess",
             "run": {"runId": EXPECTED_RUN_ID},
         }
     }
@@ -313,8 +313,8 @@ def test_failure_with_python_error(mock_client: MockClient):
 
 
 @python_client_test_suite
-def test_failure_with_pipeline_run_conflict(mock_client: MockClient):
-    error_type, message = "PipelineRunConflict", "some conflict"
+def test_failure_with_dagster_run_conflict(mock_client: MockClient):
+    error_type, message = "DagsterRunConflict", "some conflict"
     response = {
         "launchPipelineExecution": {
             "__typename": error_type,

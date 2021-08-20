@@ -4,7 +4,7 @@ from json import JSONDecodeError, loads
 from typing import Optional
 
 from dagster.core.run_coordinator import QueuedRunCoordinator, SubmitRunContext
-from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.storage.dagster_run import DagsterRun
 from flask import has_request_context, request
 
 
@@ -29,14 +29,14 @@ class CustomRunCoordinator(QueuedRunCoordinator):
     # end_email_marker
 
     # start_submit_marker
-    def submit_run(self, context: SubmitRunContext) -> PipelineRun:
-        pipeline_run = context.pipeline_run
+    def submit_run(self, context: SubmitRunContext) -> DagsterRun:
+        dagster_run = context.dagster_run
         jwt_claims_header = (
             request.headers.get("X-Amzn-Oidc-Data", None) if has_request_context() else None
         )
         email = self.get_email(jwt_claims_header)
         if email:
-            self._instance.add_run_tags(pipeline_run.run_id, {"user": email})
+            self._instance.add_run_tags(dagster_run.run_id, {"user": email})
         else:
             warnings.warn(f"Couldn't decode JWT header {jwt_claims_header}")
         return super().submit_run(context)

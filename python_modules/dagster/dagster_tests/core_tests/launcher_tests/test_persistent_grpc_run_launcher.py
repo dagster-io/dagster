@@ -4,7 +4,7 @@ import time
 import pytest
 from dagster import file_relative_path, seven
 from dagster.core.errors import DagsterLaunchFailedError
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.dagster_run import DagsterRunStatus
 from dagster.core.storage.tags import GRPC_INFO_TAG
 from dagster.core.test_utils import instance_for_test, poll_for_finished_run, poll_for_step_start
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
@@ -47,26 +47,26 @@ def test_run_always_finishes():  # pylint: disable=redefined-outer-name
                     .get_full_external_pipeline("slow_pipeline")
                 )
 
-                pipeline_run = instance.create_run_for_pipeline(
+                dagster_run = instance.create_run_for_pipeline(
                     pipeline_def=slow_pipeline,
                     run_config=None,
                     external_pipeline_origin=external_pipeline.get_external_origin(),
                     pipeline_code_origin=external_pipeline.get_python_origin(),
                 )
-                run_id = pipeline_run.run_id
+                run_id = dagster_run.run_id
 
-                assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
+                assert instance.get_run_by_id(run_id).status == DagsterRunStatus.NOT_STARTED
 
                 instance.launch_run(run_id=run_id, workspace=workspace)
 
         # Server process now receives shutdown event, run has not finished yet
-        pipeline_run = instance.get_run_by_id(run_id)
-        assert not pipeline_run.is_finished
+        dagster_run = instance.get_run_by_id(run_id)
+        assert not dagster_run.is_finished
         assert server_process.server_process.poll() is None
 
         # Server should wait until run finishes, then shutdown
-        pipeline_run = poll_for_finished_run(instance, run_id)
-        assert pipeline_run.status == PipelineRunStatus.SUCCESS
+        dagster_run = poll_for_finished_run(instance, run_id)
+        assert dagster_run.status == DagsterRunStatus.SUCCESS
 
         start_time = time.time()
         while server_process.server_process.poll() is None:
@@ -96,16 +96,16 @@ def test_terminate_after_shutdown():
                 .get_full_external_pipeline("sleepy_pipeline")
             )
 
-            pipeline_run = instance.create_run_for_pipeline(
+            dagster_run = instance.create_run_for_pipeline(
                 pipeline_def=sleepy_pipeline,
                 run_config=None,
                 external_pipeline_origin=external_pipeline.get_external_origin(),
                 pipeline_code_origin=external_pipeline.get_python_origin(),
             )
 
-            instance.launch_run(pipeline_run.run_id, workspace)
+            instance.launch_run(dagster_run.run_id, workspace)
 
-            poll_for_step_start(instance, pipeline_run.run_id)
+            poll_for_step_start(instance, dagster_run.run_id)
 
             repository_location = workspace.get_repository_location("test")
             # Tell the server to shut down once executions finish
@@ -119,7 +119,7 @@ def test_terminate_after_shutdown():
                 .get_full_external_pipeline("math_diamond")
             )
 
-            doomed_to_fail_pipeline_run = instance.create_run_for_pipeline(
+            doomed_to_fail_dagster_run = instance.create_run_for_pipeline(
                 pipeline_def=math_diamond,
                 run_config=None,
                 external_pipeline_origin=external_pipeline.get_external_origin(),
@@ -127,13 +127,13 @@ def test_terminate_after_shutdown():
             )
 
             with pytest.raises(DagsterLaunchFailedError):
-                instance.launch_run(doomed_to_fail_pipeline_run.run_id, workspace)
+                instance.launch_run(doomed_to_fail_dagster_run.run_id, workspace)
 
             launcher = instance.run_launcher
 
             # Can terminate the run even after the shutdown event has been received
-            assert launcher.can_terminate(pipeline_run.run_id)
-            assert launcher.terminate(pipeline_run.run_id)
+            assert launcher.can_terminate(dagster_run.run_id)
+            assert launcher.terminate(dagster_run.run_id)
 
 
 def test_server_down():
@@ -166,25 +166,25 @@ def test_server_down():
                     .get_full_external_pipeline("sleepy_pipeline")
                 )
 
-                pipeline_run = instance.create_run_for_pipeline(
+                dagster_run = instance.create_run_for_pipeline(
                     pipeline_def=sleepy_pipeline,
                     run_config=None,
                     external_pipeline_origin=external_pipeline.get_external_origin(),
                     pipeline_code_origin=external_pipeline.get_python_origin(),
                 )
 
-                instance.launch_run(pipeline_run.run_id, workspace)
+                instance.launch_run(dagster_run.run_id, workspace)
 
-                poll_for_step_start(instance, pipeline_run.run_id)
+                poll_for_step_start(instance, dagster_run.run_id)
 
                 launcher = instance.run_launcher
-                assert launcher.can_terminate(pipeline_run.run_id)
+                assert launcher.can_terminate(dagster_run.run_id)
 
-                original_run_tags = instance.get_run_by_id(pipeline_run.run_id).tags[GRPC_INFO_TAG]
+                original_run_tags = instance.get_run_by_id(dagster_run.run_id).tags[GRPC_INFO_TAG]
 
                 # Replace run tags with an invalid port
                 instance.add_run_tags(
-                    pipeline_run.run_id,
+                    dagster_run.run_id,
                     {
                         GRPC_INFO_TAG: seven.json.dumps(
                             merge_dicts({"host": "localhost"}, {"port": find_free_port()})
@@ -192,15 +192,15 @@ def test_server_down():
                     },
                 )
 
-                assert not launcher.can_terminate(pipeline_run.run_id)
+                assert not launcher.can_terminate(dagster_run.run_id)
 
                 instance.add_run_tags(
-                    pipeline_run.run_id,
+                    dagster_run.run_id,
                     {
                         GRPC_INFO_TAG: original_run_tags,
                     },
                 )
 
-                assert launcher.terminate(pipeline_run.run_id)
+                assert launcher.terminate(dagster_run.run_id)
 
         server_process.wait()

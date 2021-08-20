@@ -97,10 +97,10 @@ class GraphenePipelineNotFoundError(graphene.ObjectType):
         )
 
 
-class GraphenePipelineRunNotFoundError(graphene.ObjectType):
+class GrapheneDagsterRunNotFoundError(graphene.ObjectType):
     class Meta:
         interfaces = (GrapheneError,)
-        name = "PipelineRunNotFoundError"
+        name = "DagsterRunNotFoundError"
 
     run_id = graphene.NonNull(graphene.String)
 
@@ -110,10 +110,10 @@ class GraphenePipelineRunNotFoundError(graphene.ObjectType):
         self.message = f"Pipeline run {run_id} could not be found."
 
 
-class GrapheneInvalidPipelineRunsFilterError(graphene.ObjectType):
+class GrapheneInvalidDagsterRunsFilterError(graphene.ObjectType):
     class Meta:
         interfaces = (GrapheneError,)
-        name = "InvalidPipelineRunsFilterError"
+        name = "InvalidDagsterRunsFilterError"
 
     def __init__(self, message):
         super().__init__()
@@ -186,10 +186,10 @@ class GrapheneInvalidOutputError(graphene.ObjectType):
         name = "InvalidOutputError"
 
 
-class GraphenePipelineRunConflict(graphene.ObjectType):
+class GrapheneDagsterRunConflict(graphene.ObjectType):
     class Meta:
         interfaces = (GrapheneError,)
-        name = "PipelineRunConflict"
+        name = "DagsterRunConflict"
 
 
 create_execution_params_error_types = (
@@ -289,13 +289,13 @@ types = [
     GrapheneDagsterTypeNotFoundError,
     GrapheneError,
     GrapheneInvalidOutputError,
-    GrapheneInvalidPipelineRunsFilterError,
+    GrapheneInvalidDagsterRunsFilterError,
     GrapheneInvalidStepError,
     GrapheneModeNotFoundError,
     GraphenePartitionSetNotFoundError,
     GraphenePipelineNotFoundError,
-    GraphenePipelineRunConflict,
-    GraphenePipelineRunNotFoundError,
+    GrapheneDagsterRunConflict,
+    GrapheneDagsterRunNotFoundError,
     GraphenePipelineSnapshotNotFoundError,
     GraphenePresetNotFoundError,
     GraphenePythonError,

@@ -219,7 +219,7 @@ class DagsterDockerOperator(DockerOperator):
         input_json = serialize_dagster_namedtuple(
             ExecuteStepArgs(
                 pipeline_origin=recon_pipeline.get_python_origin(),
-                pipeline_run_id=self.run_id,
+                dagster_run_id=self.run_id,
                 instance_ref=self.instance_ref,
                 step_keys_to_execute=self.step_keys,
             )
@@ -251,17 +251,17 @@ class DagsterDockerOperator(DockerOperator):
 
         return _DummyHook()
 
-    def _should_skip(self, pipeline_run):
+    def _should_skip(self, dagster_run):
         recon_pipeline = self.recon_repo.get_reconstructable_pipeline(self.pipeline_name)
         execution_plan = create_execution_plan(
             recon_pipeline.subset_for_execution_from_existing_pipeline(
-                pipeline_run.solids_to_execute
+                dagster_run.nodes_to_execute
             ),
             run_config=self.run_config,
             step_keys_to_execute=self.step_keys,
             mode=self.mode,
         )
-        return should_skip_step(execution_plan, instance=self.instance, run_id=pipeline_run.run_id)
+        return should_skip_step(execution_plan, instance=self.instance, run_id=dagster_run.run_id)
 
     def execute(self, context):
         if "run_id" in self.params:
@@ -272,7 +272,7 @@ class DagsterDockerOperator(DockerOperator):
         try:
             tags = {AIRFLOW_EXECUTION_DATE_STR: context.get("ts")} if "ts" in context else {}
 
-            pipeline_run = self.instance.register_managed_run(
+            dagster_run = self.instance.register_managed_run(
                 pipeline_name=self.pipeline_name,
                 run_id=self.run_id,
                 run_config=self.run_config,
@@ -286,7 +286,7 @@ class DagsterDockerOperator(DockerOperator):
                 execution_plan_snapshot=self.execution_plan_snapshot,
                 parent_pipeline_snapshot=self.parent_pipeline_snapshot,
             )
-            if self._should_skip(pipeline_run):
+            if self._should_skip(dagster_run):
                 raise AirflowSkipException(
                     "Dagster emitted skip event, skipping execution in Airflow"
                 )

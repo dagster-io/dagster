@@ -28,7 +28,7 @@ from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.instance import DagsterInstance
 from dagster.core.instance.ref import InstanceRef
 from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.dagster_run import DagsterRunStatus
 from dagster.core.storage.root_input_manager import root_input_manager
 from dagster.utils import file_relative_path
 from dagster.utils.test import copy_directory
@@ -196,7 +196,7 @@ def test_execution_plan_snapshot_backcompat():
                 assert len(runs) == 1
 
                 run = runs[0]
-                assert run.status == PipelineRunStatus.NOT_STARTED
+                assert run.status == DagsterRunStatus.NOT_STARTED
 
                 the_pipeline = InMemoryPipeline(dynamic_pipeline)
 

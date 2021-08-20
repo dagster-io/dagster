@@ -3,15 +3,15 @@ from gzip import GzipFile
 import click
 from dagster import DagsterInstance
 from dagster.core.debug import DebugRunPayload
-from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.dagster_run import DagsterRunStatus, DagsterRunsFilter
 
 
 def _recent_failed_runs_text(instance):
     lines = []
     runs = instance.get_runs(
         limit=5,
-        filters=PipelineRunsFilter(
-            statuses=[PipelineRunStatus.FAILURE, PipelineRunStatus.CANCELED]
+        filters=DagsterRunsFilter(
+            statuses=[DagsterRunStatus.FAILURE, DagsterRunStatus.CANCELED]
         ),
     )
     if len(runs) <= 0:

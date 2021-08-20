@@ -15,7 +15,7 @@ from dagster.core.host_representation.external_data import (
 )
 from dagster.core.host_representation.origin import ExternalPartitionSetOrigin
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.dagster_run import DagsterRun, DagsterRunStatus, DagsterRunsFilter
 from dagster.core.storage.tags import (
     PARENT_RUN_ID_TAG,
     PARTITION_NAME_TAG,
@@ -153,7 +153,7 @@ def submit_backfill_runs(instance, workspace, repo_location, backfill_job, parti
         external_partition_set.pipeline_name
     )
     for partition_data in result.partition_data:
-        pipeline_run = create_backfill_run(
+        dagster_run = create_backfill_run(
             instance,
             repo_location,
             external_pipeline,
@@ -161,18 +161,20 @@ def submit_backfill_runs(instance, workspace, repo_location, backfill_job, parti
             backfill_job,
             partition_data,
         )
-        if pipeline_run:
+        if dagster_run:
             # we skip runs in certain cases, e.g. we are running a `from_failure` backfill job
             # and the partition has had a successful run since the time the backfill was
             # scheduled
-            instance.submit_run(pipeline_run.run_id, workspace)
-            yield pipeline_run.run_id
+            instance.submit_run(dagster_run.run_id, workspace)
+            yield dagster_run.run_id
         yield None
 
 
 def create_backfill_run(
     instance, repo_location, external_pipeline, external_partition_set, backfill_job, partition_data
 ):
+    from dagster.core.storage.dagster_run import PipelineTarget
+
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(repo_location, "repo_location", RepositoryLocation)
     check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
@@ -183,7 +185,7 @@ def create_backfill_run(
     tags = merge_dicts(
         external_pipeline.tags,
         partition_data.tags,
-        PipelineRun.tags_for_backfill_id(backfill_job.backfill_id),
+        DagsterRun.tags_for_backfill_id(backfill_job.backfill_id),
         backfill_job.tags,
     )
 
@@ -200,7 +202,7 @@ def create_backfill_run(
 
     elif backfill_job.from_failure:
         last_run = _fetch_last_run(instance, external_partition_set, partition_data.name)
-        if not last_run or last_run.status != PipelineRunStatus.FAILURE:
+        if not last_run or last_run.status != DagsterRunStatus.FAILURE:
             return None
 
         parent_run_id = last_run.run_id
@@ -227,7 +229,7 @@ def create_backfill_run(
                 tags, {PARENT_RUN_ID_TAG: parent_run_id, ROOT_RUN_ID_TAG: root_run_id}
             )
         step_keys_to_execute = backfill_job.reexecution_steps
-        if last_run and last_run.status == PipelineRunStatus.SUCCESS:
+        if last_run and last_run.status == DagsterRunStatus.SUCCESS:
             known_state = KnownExecutionState.for_reexecution(
                 instance.all_logs(parent_run_id),
                 step_keys_to_execute,
@@ -247,23 +249,24 @@ def create_backfill_run(
         known_state=known_state,
     )
 
+    target = PipelineTarget(name=external_pipeline.name, mode=external_partition_set.mode)
+
     return instance.create_run(
         pipeline_snapshot=external_pipeline.pipeline_snapshot,
         execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
         parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
-        pipeline_name=external_pipeline.name,
+        target=target,
         run_id=make_new_run_id(),
-        solids_to_execute=solids_to_execute,
+        nodes_to_execute=solids_to_execute,
         run_config=partition_data.run_config,
-        mode=external_partition_set.mode,
         step_keys_to_execute=step_keys_to_execute,
         tags=tags,
         root_run_id=root_run_id,
         parent_run_id=parent_run_id,
-        status=PipelineRunStatus.NOT_STARTED,
+        status=DagsterRunStatus.NOT_STARTED,
         external_pipeline_origin=external_pipeline.get_external_origin(),
         pipeline_code_origin=external_pipeline.get_python_origin(),
-        solid_selection=solid_selection,
+        node_selection=solid_selection,
     )
 
 
@@ -273,8 +276,8 @@ def _fetch_last_run(instance, external_partition_set, partition_name):
     check.str_param(partition_name, "partition_name")
 
     runs = instance.get_runs(
-        PipelineRunsFilter(
-            pipeline_name=external_partition_set.pipeline_name,
+        DagsterRunsFilter(
+            target_name=external_partition_set.pipeline_name,
             tags={
                 PARTITION_SET_TAG: external_partition_set.name,
                 PARTITION_NAME_TAG: partition_name,

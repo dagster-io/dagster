@@ -51,7 +51,7 @@ class LocalExternalStepLauncher(StepLauncher):
         prior_attempts_count: int,
     ) -> Iterator[DagsterEvent]:
         step_run_ref = step_context_to_step_run_ref(step_context, prior_attempts_count)
-        run_id = step_context.pipeline_run.run_id
+        run_id = step_context.dagster_run.run_id
 
         step_run_dir = os.path.join(self.scratch_dir, run_id, step_run_ref.step_key)
         os.makedirs(step_run_dir)
@@ -142,8 +142,8 @@ def step_context_to_step_run_ref(
 
     return StepRunRef(
         run_config=step_context.run_config,
-        pipeline_run=step_context.pipeline_run,
-        run_id=step_context.pipeline_run.run_id,
+        dagster_run=step_context.dagster_run,
+        run_id=step_context.dagster_run.run_id,
         step_key=step_context.step.key,
         retry_mode=retry_mode,
         recon_pipeline=recon_pipeline,
@@ -156,13 +156,13 @@ def step_run_ref_to_step_context(
 ) -> StepExecutionContext:
     check.inst_param(instance, "instance", DagsterInstance)
     pipeline = step_run_ref.recon_pipeline.subset_for_execution_from_existing_pipeline(
-        step_run_ref.pipeline_run.solids_to_execute
+        step_run_ref.dagster_run.nodes_to_execute
     )
 
     execution_plan = create_execution_plan(
         pipeline,
         step_run_ref.run_config,
-        mode=step_run_ref.pipeline_run.mode,
+        mode=step_run_ref.dagster_run.target.mode,
         step_keys_to_execute=[step_run_ref.step_key],
     )
 
@@ -171,7 +171,7 @@ def step_run_ref_to_step_context(
         pipeline=pipeline,
         execution_plan=execution_plan,
         run_config=step_run_ref.run_config,
-        pipeline_run=step_run_ref.pipeline_run,
+        dagster_run=step_run_ref.dagster_run,
         instance=instance,
     )
     for _ in initialization_manager.prepare_context():

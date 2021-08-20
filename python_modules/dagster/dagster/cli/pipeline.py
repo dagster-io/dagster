@@ -428,7 +428,7 @@ def _check_execute_external_pipeline_args(
                 (
                     "Pipeline {name} has multiple modes (Available modes: {modes}) and you have "
                     "attempted to execute it without specifying a mode. Set "
-                    "mode property on the PipelineRun object."
+                    "mode property on the DagsterRun object."
                 ).format(name=external_pipeline.name, modes=external_pipeline.available_modes)
             )
         mode = external_pipeline.get_default_mode_name()
@@ -443,7 +443,7 @@ def _check_execute_external_pipeline_args(
     )
 
 
-def _create_external_pipeline_run(
+def _create_external_dagster_run(
     instance,
     repo_location,
     external_repo,
@@ -455,6 +455,8 @@ def _create_external_pipeline_run(
     solid_selection,
     run_id,
 ):
+    from dagster.core.storage.dagster_run import PipelineTarget
+
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(repo_location, "repo_location", RepositoryLocation)
     check.inst_param(external_repo, "external_repo", ExternalRepository)
@@ -502,14 +504,15 @@ def _create_external_pipeline_run(
     )
     execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
 
+    target = PipelineTarget(name=pipeline_name, mode=mode)
+
     return instance.create_run(
-        pipeline_name=pipeline_name,
+        target=target,
         run_id=run_id,
         run_config=run_config,
-        mode=pipeline_mode,
-        solids_to_execute=external_pipeline_subset.solids_to_execute,
+        nodes_to_execute=external_pipeline_subset.solids_to_execute,
         step_keys_to_execute=execution_plan_snapshot.step_keys_to_execute,
-        solid_selection=solid_selection,
+        node_selection=solid_selection,
         status=None,
         root_run_id=None,
         parent_run_id=None,
@@ -621,7 +624,7 @@ def execute_launch_command(instance, kwargs):
 
         solid_selection = get_solid_selection_from_args(kwargs)
 
-        pipeline_run = _create_external_pipeline_run(
+        dagster_run = _create_external_dagster_run(
             instance=instance,
             repo_location=repo_location,
             external_repo=external_repo,
@@ -634,7 +637,7 @@ def execute_launch_command(instance, kwargs):
             run_id=kwargs.get("run_id"),
         )
 
-        return instance.submit_run(pipeline_run.run_id, workspace)
+        return instance.submit_run(dagster_run.run_id, workspace)
 
 
 @pipeline_cli.command(
@@ -943,7 +946,7 @@ def _execute_backfill_command_at_location(cli_args, print_fn, instance, workspac
         assert isinstance(partition_execution_data, ExternalPartitionSetExecutionParamData)
 
         for partition_data in partition_execution_data.partition_data:
-            pipeline_run = create_backfill_run(
+            dagster_run = create_backfill_run(
                 instance,
                 repo_location,
                 external_pipeline,
@@ -951,8 +954,8 @@ def _execute_backfill_command_at_location(cli_args, print_fn, instance, workspac
                 backfill_job,
                 partition_data,
             )
-            if pipeline_run:
-                instance.submit_run(pipeline_run.run_id, workspace)
+            if dagster_run:
+                instance.submit_run(dagster_run.run_id, workspace)
 
         instance.add_backfill(backfill_job.with_status(BulkActionStatus.COMPLETED))
 

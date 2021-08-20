@@ -35,7 +35,7 @@ EventMetadataEntryData = Union[
     "IntMetadataEntryData",
     "PythonArtifactMetadataEntryData",
     "DagsterAssetMetadataEntryData",
-    "DagsterPipelineRunMetadataEntryData",
+    "DagsterDagsterRunMetadataEntryData",
 ]
 
 
@@ -287,9 +287,9 @@ class IntMetadataEntryData(
 
 
 @whitelist_for_serdes
-class DagsterPipelineRunMetadataEntryData(
+class DagsterDagsterRunMetadataEntryData(
     NamedTuple(
-        "_DagsterPipelineRunMetadataEntryData",
+        "_DagsterDagsterRunMetadataEntryData",
         [
             ("run_id", str),
         ],
@@ -302,7 +302,7 @@ class DagsterPipelineRunMetadataEntryData(
     """
 
     def __new__(cls, run_id: str):
-        return super(DagsterPipelineRunMetadataEntryData, cls).__new__(
+        return super(DagsterDagsterRunMetadataEntryData, cls).__new__(
             cls, check.str_param(run_id, "run_id")
         )
 
@@ -337,7 +337,7 @@ EntryDataUnion = (
     IntMetadataEntryData,
     PythonArtifactMetadataEntryData,
     DagsterAssetMetadataEntryData,
-    DagsterPipelineRunMetadataEntryData,
+    DagsterDagsterRunMetadataEntryData,
 )
 
 
@@ -542,9 +542,9 @@ class EventMetadata:
         return IntMetadataEntryData(value)
 
     @staticmethod
-    def pipeline_run(run_id: str) -> "DagsterPipelineRunMetadataEntryData":
+    def dagster_run(run_id: str) -> "DagsterDagsterRunMetadataEntryData":
         check.str_param(run_id, "run_id")
-        return DagsterPipelineRunMetadataEntryData(run_id)
+        return DagsterDagsterRunMetadataEntryData(run_id)
 
     @staticmethod
     def asset(asset_key: "AssetKey") -> "DagsterAssetMetadataEntryData":
@@ -824,11 +824,11 @@ class EventMetadataEntry(
         return EventMetadataEntry(label, description, IntMetadataEntryData(value))
 
     @staticmethod
-    def pipeline_run(
+    def dagster_run(
         run_id: str, label: str, description: Optional[str] = None
     ) -> "EventMetadataEntry":
         check.str_param(run_id, "run_id")
-        return EventMetadataEntry(label, description, DagsterPipelineRunMetadataEntryData(run_id))
+        return EventMetadataEntry(label, description, DagsterDagsterRunMetadataEntryData(run_id))
 
     @staticmethod
     def asset(

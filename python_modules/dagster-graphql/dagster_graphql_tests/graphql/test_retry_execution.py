@@ -301,9 +301,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        assert (
-            result_one.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
-        )
+        assert result_one.data["launchPipelineExecution"]["__typename"] == "LaunchDagsterRunSuccess"
 
         expected_value_repr = (
             """[OrderedDict([('num1', '1'), ('num2', '2'), ('sum', 3), """
@@ -350,7 +348,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         )
 
         query_result = result_two.data["launchPipelineReexecution"]
-        assert query_result["__typename"] == "LaunchPipelineRunSuccess"
+        assert query_result["__typename"] == "LaunchDagsterRunSuccess"
 
         result = get_all_logs_for_finished_run_via_subscription(graphql_context, new_run_id)
         logs = result["pipelineRunLogs"]["messages"]
@@ -423,14 +421,14 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
             context, PIPELINE_REEXECUTION_INFO_QUERY, variables={"runId": run_id}
         )
         query_result_one = result_one.data["pipelineRunOrError"]
-        assert query_result_one["__typename"] == "PipelineRun"
+        assert query_result_one["__typename"] == "DagsterRun"
         assert query_result_one["stepKeysToExecute"] is None
 
         result_two = execute_dagster_graphql_and_finish_runs(
             context, PIPELINE_REEXECUTION_INFO_QUERY, variables={"runId": new_run_id}
         )
         query_result_two = result_two.data["pipelineRunOrError"]
-        assert query_result_two["__typename"] == "PipelineRun"
+        assert query_result_two["__typename"] == "DagsterRun"
         stepKeysToExecute = query_result_two["stepKeysToExecute"]
         assert stepKeysToExecute is not None
         snapshot.assert_match(stepKeysToExecute)

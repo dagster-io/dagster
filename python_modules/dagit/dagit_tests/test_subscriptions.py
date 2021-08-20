@@ -14,7 +14,7 @@ from graphql_ws.constants import GQL_CONNECTION_INIT, GQL_CONNECTION_TERMINATE, 
 from graphql_ws.gevent import GeventConnectionContext
 
 EVENT_LOG_SUBSCRIPTION = """
-    subscription PipelineRunLogsSubscription($runId: ID!) {
+    subscription DagsterRunLogsSubscription($runId: ID!) {
         pipelineRunLogs(runId: $runId) {
             __typename
         }
@@ -105,11 +105,11 @@ def test_event_log_subscription():
             start_subscription(server, context, EVENT_LOG_SUBSCRIPTION, {"runId": run.run_id})
             gc.collect()
             assert len(objgraph.by_type("SubscriptionObserver")) == 1
-            assert len(objgraph.by_type("PipelineRunObservableSubscribe")) == 1
+            assert len(objgraph.by_type("DagsterRunObservableSubscribe")) == 1
             end_subscription(server, context)
             gc.collect()
             assert len(objgraph.by_type("SubscriptionObserver")) == 0
-            assert len(objgraph.by_type("PipelineRunObservableSubscribe")) == 0
+            assert len(objgraph.by_type("DagsterRunObservableSubscribe")) == 0
 
 
 @mock.patch(

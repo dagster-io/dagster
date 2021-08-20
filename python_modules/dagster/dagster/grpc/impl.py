@@ -39,7 +39,7 @@ from dagster.core.snap.execution_plan_snapshot import (
     ExecutionPlanSnapshotErrorData,
     snapshot_from_execution_plan,
 )
-from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.storage.dagster_run import DagsterRun
 from dagster.grpc.types import ExecutionPlanSnapshotArgs
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 from dagster.serdes.ipc import IPCErrorMessage
@@ -58,16 +58,16 @@ class StartRunInSubprocessSuccessful:
     """Sentinel passed over multiprocessing Queue when launch is successful in subprocess."""
 
 
-def _report_run_failed_if_not_finished(instance, pipeline_run_id):
+def _report_run_failed_if_not_finished(instance, dagster_run_id):
     check.inst_param(instance, "instance", DagsterInstance)
-    pipeline_run = instance.get_run_by_id(pipeline_run_id)
-    if pipeline_run and (not pipeline_run.is_finished):
-        yield instance.report_run_failed(pipeline_run)
+    dagster_run = instance.get_run_by_id(dagster_run_id)
+    if dagster_run and (not dagster_run.is_finished):
+        yield instance.report_run_failed(dagster_run)
 
 
-def core_execute_run(recon_pipeline, pipeline_run, instance):
+def core_execute_run(recon_pipeline, dagster_run, instance):
     check.inst_param(recon_pipeline, "recon_pipeline", ReconstructablePipeline)
-    check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+    check.inst_param(dagster_run, "dagster_run", DagsterRun)
     check.inst_param(instance, "instance", DagsterInstance)
 
     # try to load the pipeline definition early
@@ -76,28 +76,28 @@ def core_execute_run(recon_pipeline, pipeline_run, instance):
     except Exception:  # pylint: disable=broad-except
         yield instance.report_engine_event(
             "Could not load pipeline definition.",
-            pipeline_run,
+            dagster_run,
             EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
         )
-        yield from _report_run_failed_if_not_finished(instance, pipeline_run.run_id)
+        yield from _report_run_failed_if_not_finished(instance, dagster_run.run_id)
         return
 
     try:
-        yield from execute_run_iterator(recon_pipeline, pipeline_run, instance)
+        yield from execute_run_iterator(recon_pipeline, dagster_run, instance)
     except (KeyboardInterrupt, DagsterExecutionInterruptedError):
-        yield from _report_run_failed_if_not_finished(instance, pipeline_run.run_id)
+        yield from _report_run_failed_if_not_finished(instance, dagster_run.run_id)
         yield instance.report_engine_event(
             message="Pipeline execution terminated by interrupt",
-            pipeline_run=pipeline_run,
+            dagster_run=dagster_run,
         )
     except Exception:  # pylint: disable=broad-except
         yield instance.report_engine_event(
             "An exception was thrown during execution that is likely a framework error, "
             "rather than an error in user code.",
-            pipeline_run,
+            dagster_run,
             EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
         )
-        yield from _report_run_failed_if_not_finished(instance, pipeline_run.run_id)
+        yield from _report_run_failed_if_not_finished(instance, dagster_run.run_id)
 
 
 def _run_in_subprocess(
@@ -114,14 +114,14 @@ def _run_in_subprocess(
         check.inst_param(execute_run_args, "execute_run_args", ExecuteExternalPipelineArgs)
 
         instance = DagsterInstance.from_ref(execute_run_args.instance_ref)
-        pipeline_run = instance.get_run_by_id(execute_run_args.pipeline_run_id)
+        dagster_run = instance.get_run_by_id(execute_run_args.dagster_run_id)
 
-        if not pipeline_run:
+        if not dagster_run:
             raise DagsterRunNotFoundError(
                 "gRPC server could not load run {run_id} in order to execute it. Make sure that the gRPC server has access to your run storage.".format(
-                    run_id=execute_run_args.pipeline_run_id
+                    run_id=execute_run_args.dagster_run_id
                 ),
-                invalid_run_id=execute_run_args.pipeline_run_id,
+                invalid_run_id=execute_run_args.dagster_run_id,
             )
 
         pid = os.getpid()
@@ -145,7 +145,7 @@ def _run_in_subprocess(
     run_event_handler(
         instance.report_engine_event(
             "Started process for pipeline (pid: {pid}).".format(pid=pid),
-            pipeline_run,
+            dagster_run,
             EngineEventData.in_process(pid, marker_end="cli_api_subprocess_init"),
         )
     )
@@ -154,7 +154,7 @@ def _run_in_subprocess(
     # https://amir.rachum.com/blog/2017/03/03/generator-cleanup/
     closed = False
     try:
-        for event in core_execute_run(recon_pipeline, pipeline_run, instance):
+        for event in core_execute_run(recon_pipeline, dagster_run, instance):
             run_event_handler(event)
     except GeneratorExit:
         closed = True
@@ -164,7 +164,7 @@ def _run_in_subprocess(
             run_event_handler(
                 instance.report_engine_event(
                     "Process for pipeline exited (pid: {pid}).".format(pid=pid),
-                    pipeline_run,
+                    dagster_run,
                 )
             )
         subprocess_status_handler(RunInSubprocessComplete())

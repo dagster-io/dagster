@@ -60,4 +60,4 @@ def test_trigger_pipeline_by_gql():
             run_config=RUN_CONFIG,
             mode=MODE,
         )
-        assert result["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
+        assert result["launchPipelineExecution"]["__typename"] == "LaunchDagsterRunSuccess"

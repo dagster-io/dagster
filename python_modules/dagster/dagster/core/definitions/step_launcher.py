@@ -4,13 +4,13 @@ from collections import namedtuple
 from dagster import check
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.execution.retries import RetryMode
-from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.storage.dagster_run import DagsterRun
 
 
 class StepRunRef(
     namedtuple(
         "_StepRunRef",
-        "run_config pipeline_run run_id retry_mode step_key recon_pipeline prior_attempts_count",
+        "run_config dagster_run run_id retry_mode step_key recon_pipeline prior_attempts_count",
     )
 ):
     """
@@ -21,7 +21,7 @@ class StepRunRef(
     def __new__(
         cls,
         run_config,
-        pipeline_run,
+        dagster_run,
         run_id,
         retry_mode,
         step_key,
@@ -31,7 +31,7 @@ class StepRunRef(
         return super(StepRunRef, cls).__new__(
             cls,
             check.dict_param(run_config, "run_config", key_type=str),
-            check.inst_param(pipeline_run, "pipeline_run", PipelineRun),
+            check.inst_param(dagster_run, "dagster_run", DagsterRun),
             check.str_param(run_id, "run_id"),
             check.inst_param(retry_mode, "retry_mode", RetryMode),
             check.str_param(step_key, "step_key"),

@@ -11,7 +11,7 @@ from dagster.cli.workspace.cli_target import (
 from dagster.core.events import EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.storage.dagster_run import DagsterRun
 from dagster.core.test_utils import mock_system_timezone
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc import DagsterGrpcClient, DagsterGrpcServer
@@ -59,48 +59,46 @@ def execute_run_command(input_json):
             def send_to_buffer(event):
                 buffer.append(serialize_dagster_namedtuple(event))
 
-            _execute_run_command_body(
-                recon_pipeline, args.pipeline_run_id, instance, send_to_buffer
-            )
+            _execute_run_command_body(recon_pipeline, args.dagster_run_id, instance, send_to_buffer)
 
             for line in buffer:
                 click.echo(line)
 
 
-def _execute_run_command_body(recon_pipeline, pipeline_run_id, instance, write_stream_fn):
+def _execute_run_command_body(recon_pipeline, dagster_run_id, instance, write_stream_fn):
 
     # we need to send but the fact that we have loaded the args so the calling
     # process knows it is safe to clean up the temp input file
     write_stream_fn(ExecuteRunArgsLoadComplete())
 
-    pipeline_run = instance.get_run_by_id(pipeline_run_id)
+    dagster_run = instance.get_run_by_id(dagster_run_id)
 
     pid = os.getpid()
     instance.report_engine_event(
         "Started process for pipeline (pid: {pid}).".format(pid=pid),
-        pipeline_run,
+        dagster_run,
         EngineEventData.in_process(pid, marker_end="cli_api_subprocess_init"),
     )
 
     try:
-        for event in core_execute_run(recon_pipeline, pipeline_run, instance):
+        for event in core_execute_run(recon_pipeline, dagster_run, instance):
             write_stream_fn(event)
     finally:
         instance.report_engine_event(
             "Process for pipeline exited (pid: {pid}).".format(pid=pid),
-            pipeline_run,
+            dagster_run,
         )
 
 
-def get_step_stats_by_key(instance, pipeline_run, step_keys_to_execute):
+def get_step_stats_by_key(instance, dagster_run, step_keys_to_execute):
     # When using the k8s executor, there whould only ever be one step key
-    step_stats = instance.get_run_step_stats(pipeline_run.run_id, step_keys=step_keys_to_execute)
+    step_stats = instance.get_run_step_stats(dagster_run.run_id, step_keys=step_keys_to_execute)
     step_stats_by_key = {step_stat.step_key: step_stat for step_stat in step_stats}
     return step_stats_by_key
 
 
-def verify_step(instance, pipeline_run, retry_state, step_keys_to_execute):
-    step_stats_by_key = get_step_stats_by_key(instance, pipeline_run, step_keys_to_execute)
+def verify_step(instance, dagster_run, retry_state, step_keys_to_execute):
+    step_stats_by_key = get_step_stats_by_key(instance, dagster_run, step_keys_to_execute)
 
     for step_key in step_keys_to_execute:
         step_stat_for_key = step_stats_by_key.get(step_key)
@@ -122,7 +120,7 @@ def verify_step(instance, pipeline_run, retry_state, step_keys_to_execute):
             instance.report_engine_event(
                 "Attempted to run {step_key} again even though it was already started. "
                 "Exiting to prevent re-running the step.".format(step_key=step_key),
-                pipeline_run,
+                dagster_run,
             )
             return False
         elif current_attempt > 1 and step_stat_for_key:
@@ -134,7 +132,7 @@ def verify_step(instance, pipeline_run, retry_state, step_keys_to_execute):
                     "Attempted to run retry attempt {current_attempt} for step {step_key} again "
                     "even though it was already started. Exiting to prevent re-running "
                     "the step.".format(current_attempt=current_attempt, step_key=step_key),
-                    pipeline_run,
+                    dagster_run,
                 )
                 return False
         elif current_attempt > 1 and not step_stat_for_key:
@@ -143,7 +141,7 @@ def verify_step(instance, pipeline_run, retry_state, step_keys_to_execute):
                 "but there is no record of the original attempt".format(
                     current_attempt=current_attempt, step_key=step_key
                 ),
-                pipeline_run,
+                dagster_run,
             )
             return False
 
@@ -168,19 +166,19 @@ def execute_step_command(input_json):
             if args.instance_ref
             else DagsterInstance.get()
         ) as instance:
-            pipeline_run = instance.get_run_by_id(args.pipeline_run_id)
+            dagster_run = instance.get_run_by_id(args.dagster_run_id)
             check.inst(
-                pipeline_run,
-                PipelineRun,
+                dagster_run,
+                DagsterRun,
                 "Pipeline run with id '{}' not found for step execution".format(
-                    args.pipeline_run_id
+                    args.dagster_run_id
                 ),
             )
 
             if args.should_verify_step:
                 success = verify_step(
                     instance,
-                    pipeline_run,
+                    dagster_run,
                     args.known_state.get_retry_state(),
                     args.step_keys_to_execute,
                 )
@@ -189,13 +187,13 @@ def execute_step_command(input_json):
 
             recon_pipeline = recon_pipeline_from_origin(
                 args.pipeline_origin
-            ).subset_for_execution_from_existing_pipeline(pipeline_run.solids_to_execute)
+            ).subset_for_execution_from_existing_pipeline(dagster_run.nodes_to_execute)
 
             execution_plan = create_execution_plan(
                 recon_pipeline,
-                run_config=pipeline_run.run_config,
+                run_config=dagster_run.run_config,
                 step_keys_to_execute=args.step_keys_to_execute,
-                mode=pipeline_run.mode,
+                mode=dagster_run.target.mode,
                 known_state=args.known_state,
             )
 
@@ -204,9 +202,9 @@ def execute_step_command(input_json):
             for event in execute_plan_iterator(
                 execution_plan,
                 recon_pipeline,
-                pipeline_run,
+                dagster_run,
                 instance,
-                run_config=pipeline_run.run_config,
+                run_config=dagster_run.run_config,
                 retry_mode=args.retry_mode,
             ):
                 buff.append(serialize_dagster_namedtuple(event))

@@ -5,7 +5,7 @@ from enum import Enum
 
 import kubernetes
 from dagster import DagsterInstance, check
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.dagster_run import DagsterRunStatus
 
 DEFAULT_WAIT_TIMEOUT = 86400.0  # 1 day
 DEFAULT_WAIT_BETWEEN_ATTEMPTS = 10.0  # 10 seconds
@@ -281,12 +281,12 @@ class DagsterKubernetesClient:
                 )
 
             if instance and run_id:
-                pipeline_run = instance.get_run_by_id(run_id)
-                if not pipeline_run:
+                dagster_run = instance.get_run_by_id(run_id)
+                if not dagster_run:
                     raise DagsterK8sPipelineStatusException()
 
-                pipeline_run_status = pipeline_run.status
-                if pipeline_run_status != PipelineRunStatus.STARTED:
+                dagster_run_status = dagster_run.status
+                if dagster_run_status != DagsterRunStatus.STARTED:
                     raise DagsterK8sPipelineStatusException()
 
             self.sleeper(wait_time_between_attempts)

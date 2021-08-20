@@ -34,7 +34,7 @@ mutation($executionParams: ExecutionParams!) {
       stepKey
       invalidOutputName
     }
-    ... on LaunchPipelineRunSuccess {
+    ... on LaunchDagsterRunSuccess {
       run {
         runId
         pipeline {

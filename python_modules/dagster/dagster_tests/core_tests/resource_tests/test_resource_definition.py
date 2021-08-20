@@ -49,7 +49,7 @@ def test_resource_decorator_no_context():
         pass
 
 
-def assert_pipeline_runs_with_resource(resource_def, resource_config, expected_resource):
+def assert_dagster_runs_with_resource(resource_def, resource_config, expected_resource):
     called = {}
 
     @solid(required_resource_keys={"some_name"})
@@ -676,7 +676,7 @@ def test_resource_init_failure():
 
     instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(the_pipeline)
-    pipeline_run = instance.create_run_for_pipeline(the_pipeline, execution_plan=execution_plan)
+    dagster_run = instance.create_run_for_pipeline(the_pipeline, execution_plan=execution_plan)
 
     with pytest.raises(
         DagsterResourceFunctionError,
@@ -686,7 +686,7 @@ def test_resource_init_failure():
         execute_plan(
             execution_plan,
             InMemoryPipeline(the_pipeline),
-            pipeline_run=pipeline_run,
+            dagster_run=dagster_run,
             instance=instance,
         )
 
@@ -997,13 +997,13 @@ def test_single_step_resource_event_logs():
     )
 
     with instance_for_test() as instance:
-        pipeline_run = instance.create_run_for_pipeline(
+        dagster_run = instance.create_run_for_pipeline(
             the_pipeline,
             run_config={"loggers": {"callback": {}}},
             solids_to_execute={"resource_solid"},
         )
 
-        result = execute_run(InMemoryPipeline(the_pipeline), pipeline_run, instance)
+        result = execute_run(InMemoryPipeline(the_pipeline), dagster_run, instance)
 
         assert result.success
         log_messages = [
@@ -1028,13 +1028,13 @@ def test_single_step_resource_event_logs():
 def test_configured_with_config():
     str_resource = define_string_resource()
     configured_resource = str_resource.configured("foo")
-    assert_pipeline_runs_with_resource(configured_resource, {}, "foo")
+    assert_dagster_runs_with_resource(configured_resource, {}, "foo")
 
 
 def test_configured_with_fn():
     str_resource = define_string_resource()
     configured_resource = str_resource.configured(lambda num: str(num + 1), Int)
-    assert_pipeline_runs_with_resource(configured_resource, 2, "3")
+    assert_dagster_runs_with_resource(configured_resource, 2, "3")
 
 
 def test_configured_decorator_with_fn():
@@ -1044,7 +1044,7 @@ def test_configured_decorator_with_fn():
     def configured_resource(num):
         return str(num + 1)
 
-    assert_pipeline_runs_with_resource(configured_resource, 2, "3")
+    assert_dagster_runs_with_resource(configured_resource, 2, "3")
 
 
 def test_configured_decorator_with_fn_and_user_code_error():
@@ -1061,7 +1061,7 @@ def test_configured_decorator_with_fn_and_user_code_error():
             "unexpected error during its execution."
         ),
     ) as user_code_exc:
-        assert_pipeline_runs_with_resource(configured_resource, 2, "unreachable")
+        assert_dagster_runs_with_resource(configured_resource, 2, "unreachable")
 
     assert user_code_exc.value.user_exception.args[0] == "beep boop broke"
 
@@ -1085,7 +1085,7 @@ def test_resource_with_enum_in_schema():
     def enum_resource(context):
         return context.resource_config["enum"]
 
-    assert_pipeline_runs_with_resource(
+    assert_dagster_runs_with_resource(
         enum_resource, {"enum": "VALUE_ONE"}, TestPythonEnum.VALUE_ONE
     )
 
@@ -1113,7 +1113,7 @@ def test_resource_with_enum_in_schema_configured():
     def passthrough_to_enum_resource(config):
         return {"enum": "VALUE_ONE" if config["enum"] == TestPythonEnum.VALUE_ONE else "OTHER"}
 
-    assert_pipeline_runs_with_resource(
+    assert_dagster_runs_with_resource(
         passthrough_to_enum_resource, {"enum": "VALUE_ONE"}, TestPythonEnum.VALUE_ONE
     )
 
@@ -1121,10 +1121,10 @@ def test_resource_with_enum_in_schema_configured():
 def test_resource_run_info_exists_during_execution():
     @resource
     def resource_checks_run_info(init_context):
-        assert init_context.pipeline_run.run_id == init_context.run_id
+        assert init_context.dagster_run.run_id == init_context.run_id
         return 1
 
-    assert_pipeline_runs_with_resource(resource_checks_run_info, {}, 1)
+    assert_dagster_runs_with_resource(resource_checks_run_info, {}, 1)
 
 
 def test_resource_needs_resource():

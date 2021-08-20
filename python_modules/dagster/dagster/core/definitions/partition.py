@@ -18,7 +18,7 @@ from ..errors import (
     ScheduleExecutionError,
     user_code_error_boundary,
 )
-from ..storage.pipeline_run import PipelineRun
+from ..storage.dagster_run import DagsterRun
 from ..storage.tags import check_tags
 from .mode import DEFAULT_MODE_NAME
 from .run_request import RunRequest, SkipReason
@@ -389,7 +389,7 @@ class PartitionSetDefinition(Generic[T]):
         user_tags = self._user_defined_tags_fn_for_partition(partition)
         check_tags(user_tags, "user_tags")
 
-        tags = merge_dicts(user_tags, PipelineRun.tags_for_partition_set(self, partition))
+        tags = merge_dicts(user_tags, DagsterRun.tags_for_partition_set(self, partition))
 
         return tags
 

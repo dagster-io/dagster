@@ -113,7 +113,7 @@ def _submit_task(app, pipeline_context, step, queue, priority, known_state):
 
     execute_step_args = ExecuteStepArgs(
         pipeline_origin=pipeline_context.reconstructable_pipeline.get_python_origin(),
-        pipeline_run_id=pipeline_context.pipeline_run.run_id,
+        dagster_run_id=pipeline_context.dagster_run.run_id,
         step_keys_to_execute=[step.key],
         instance_ref=pipeline_context.instance.get_ref(),
         retry_mode=pipeline_context.executor.retries.for_inner_plan(),

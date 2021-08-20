@@ -631,7 +631,7 @@ class DagsterApiServer(DagsterApiServicer):
                 deserialize_json_to_dagster_namedtuple(request.serialized_execute_run_args),
                 ExecuteExternalPipelineArgs,
             )
-            run_id = execute_run_args.pipeline_run_id
+            run_id = execute_run_args.dagster_run_id
             recon_pipeline = self._recon_pipeline_from_origin(execute_run_args.pipeline_origin)
 
         except:  # pylint: disable=bare-except

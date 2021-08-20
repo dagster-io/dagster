@@ -17,7 +17,7 @@ def test_step_handler_context():
 
         args = ExecuteStepArgs(
             pipeline_origin=recon_pipeline.get_python_origin(),
-            pipeline_run_id=run.run_id,
+            dagster_run_id=run.run_id,
             step_keys_to_execute=run.step_keys_to_execute,
             instance_ref=None,
         )
@@ -25,8 +25,8 @@ def test_step_handler_context():
             instance=instance,
             execute_step_args=args,
             step_tags={},
-            pipeline_run=run,
+            dagster_run=run,
         )
 
         assert ctx.execute_step_args == args
-        assert ctx.pipeline_run == run
+        assert ctx.dagster_run == run

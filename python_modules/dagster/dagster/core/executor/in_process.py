@@ -44,7 +44,7 @@ class InProcessExecutor(Executor):
                         retry_mode=pipeline_context.retry_mode,
                         execution_plan=pipeline_context.execution_plan,
                         run_config=pipeline_context.run_config,
-                        pipeline_run=pipeline_context.pipeline_run,
+                        dagster_run=pipeline_context.dagster_run,
                         instance=pipeline_context.instance,
                         raise_on_error=pipeline_context.raise_on_error,
                         output_capture=pipeline_context.output_capture,

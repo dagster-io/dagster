@@ -142,12 +142,12 @@ def test_execution_plan_subset_strict_resources():
         pipeline_def, step_keys_to_execute=["consumes_resource_b"]
     )
 
-    pipeline_run = instance.create_run_for_pipeline(
+    dagster_run = instance.create_run_for_pipeline(
         pipeline_def,
         execution_plan=execution_plan,
     )
 
-    result = execute_run(InMemoryPipeline(pipeline_def), pipeline_run, instance)
+    result = execute_run(InMemoryPipeline(pipeline_def), dagster_run, instance)
 
     assert result.success
 
@@ -284,12 +284,12 @@ def test_execution_plan_subset_strict_resources_within_composite():
         pipeline_def, step_keys_to_execute=["wraps_b.consumes_resource_b"]
     )
 
-    pipeline_run = instance.create_run_for_pipeline(
+    dagster_run = instance.create_run_for_pipeline(
         pipeline_def,
         execution_plan=execution_plan,
     )
 
-    result = execute_run(InMemoryPipeline(pipeline_def), pipeline_run, instance)
+    result = execute_run(InMemoryPipeline(pipeline_def), dagster_run, instance)
 
     assert result.success
 
@@ -348,13 +348,13 @@ def test_execution_plan_subset_with_aliases():
         selective_init_test_pipeline_with_alias, step_keys_to_execute=["b_alias"]
     )
 
-    pipeline_run = instance.create_run_for_pipeline(
+    dagster_run = instance.create_run_for_pipeline(
         selective_init_test_pipeline_with_alias,
         execution_plan=execution_plan,
     )
 
     result = execute_run(
-        InMemoryPipeline(selective_init_test_pipeline_with_alias), pipeline_run, instance
+        InMemoryPipeline(selective_init_test_pipeline_with_alias), dagster_run, instance
     )
 
     assert result.success

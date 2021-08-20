@@ -59,17 +59,17 @@ def context(request):
 
 
 @pytest.fixture
-def pipeline_run():
+def dagster_run():
     return MagicMock(pipeline_name="test")
 
 
 @pytest.fixture
-def basic_context(mlflow_run_config, pipeline_run):
+def basic_context(mlflow_run_config, dagster_run):
     return MagicMock(
         resource_config=mlflow_run_config["resources"]["mlflow"]["config"],
         log=logging.getLogger(),
         run_id=str(uuid.uuid4()),
-        pipeline_run=pipeline_run,
+        dagster_run=dagster_run,
     )
 
 
@@ -81,7 +81,7 @@ def child_context(basic_context, mlflow_run_config):
         resource_config=resource_config,
         log=basic_context.log,
         run_id=str(uuid.uuid4()),
-        pipeline_run=basic_context.pipeline_run,
+        dagster_run=basic_context.dagster_run,
         extra_tags={"wala": "lala"},
     )
 
@@ -117,7 +117,7 @@ def test_mlflow_constructor_basic(
 
     # - the context associated attributes passed have been set
     assert mlf.log == context.log
-    assert mlf.run_name == context.pipeline_run.pipeline_name
+    assert mlf.run_name == context.dagster_run.target.name
     assert mlf.dagster_run_id == context.run_id
 
     # - the tracking URI is the same as what was passed

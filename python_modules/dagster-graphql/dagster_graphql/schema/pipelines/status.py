@@ -1,7 +1,7 @@
 import graphene
 
 
-class GraphenePipelineRunStatus(graphene.Enum):
+class GrapheneDagsterRunStatus(graphene.Enum):
     QUEUED = "QUEUED"
     NOT_STARTED = "NOT_STARTED"
     MANAGED = "MANAGED"
@@ -13,4 +13,4 @@ class GraphenePipelineRunStatus(graphene.Enum):
     CANCELED = "CANCELED"
 
     class Meta:
-        name = "PipelineRunStatus"
+        name = "DagsterRunStatus"

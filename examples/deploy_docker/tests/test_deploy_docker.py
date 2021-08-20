@@ -6,7 +6,7 @@ from contextlib import contextmanager
 
 import requests
 from dagster import file_relative_path
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.dagster_run import DagsterRunStatus
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
@@ -70,7 +70,7 @@ RUN_QUERY = """
 query RunQuery($runId: ID!) {
   pipelineRunOrError(runId: $runId) {
     __typename
-    ... on PipelineRun {
+    ... on DagsterRun {
       status
     }
   }
@@ -81,7 +81,7 @@ LAUNCH_PIPELINE_MUTATION = """
 mutation($executionParams: ExecutionParams!) {
   launchPipelineExecution(executionParams: $executionParams) {
     __typename
-    ... on LaunchPipelineRunSuccess {
+    ... on LaunchDagsterRunSuccess {
       run {
         runId
         status
@@ -114,7 +114,7 @@ mutation($runId: String!) {
       }
       message
     }
-    ... on PipelineRunNotFoundError {
+    ... on DagsterRunNotFoundError {
       runId
     }
     ... on PythonError {
@@ -188,15 +188,14 @@ def test_deploy_docker():
         ).json()
 
         assert (
-            launch_res["data"]["launchPipelineExecution"]["__typename"]
-            == "LaunchPipelineRunSuccess"
+            launch_res["data"]["launchPipelineExecution"]["__typename"] == "LaunchDagsterRunSuccess"
         )
 
         run = launch_res["data"]["launchPipelineExecution"]["run"]
         run_id = run["runId"]
         assert run["status"] == "QUEUED"
 
-        _wait_for_run_status(run_id, dagit_host, PipelineRunStatus.SUCCESS)
+        _wait_for_run_status(run_id, dagit_host, DagsterRunStatus.SUCCESS)
 
         # Launch a hanging pipeline and terminate it
         variables = {
@@ -219,14 +218,13 @@ def test_deploy_docker():
         ).json()
 
         assert (
-            launch_res["data"]["launchPipelineExecution"]["__typename"]
-            == "LaunchPipelineRunSuccess"
+            launch_res["data"]["launchPipelineExecution"]["__typename"] == "LaunchDagsterRunSuccess"
         )
 
         run = launch_res["data"]["launchPipelineExecution"]["run"]
         hanging_run_id = run["runId"]
 
-        _wait_for_run_status(hanging_run_id, dagit_host, PipelineRunStatus.STARTED)
+        _wait_for_run_status(hanging_run_id, dagit_host, DagsterRunStatus.STARTED)
 
         terminate_res = requests.post(
             "http://{dagit_host}:3000/graphql?query={query_string}&variables={variables}".format(
@@ -241,7 +239,7 @@ def test_deploy_docker():
             == "TerminatePipelineExecutionSuccess"
         )
 
-        _wait_for_run_status(hanging_run_id, dagit_host, PipelineRunStatus.CANCELED)
+        _wait_for_run_status(hanging_run_id, dagit_host, DagsterRunStatus.CANCELED)
 
 
 def _wait_for_run_status(run_id, dagit_host, desired_status):

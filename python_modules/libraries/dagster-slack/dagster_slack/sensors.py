@@ -10,9 +10,9 @@ from slack import WebClient
 def _default_failure_message(context: PipelineFailureSensorContext) -> str:
     return "\n".join(
         [
-            f"Pipeline {context.pipeline_run.pipeline_name} failed!",
-            f"Run ID: {context.pipeline_run.run_id}",
-            f"Mode: {context.pipeline_run.mode}",
+            f"Pipeline {context.dagster_run.target.name} failed!",
+            f"Run ID: {context.dagster_run.run_id}",
+            f"Mode: {context.dagster_run.target.mode}",
             f"Error: {context.failure_event.message}",
         ]
     )
@@ -69,7 +69,7 @@ def make_slack_on_pipeline_failure_sensor(
 
             def my_message_fn(context: PipelineFailureSensorContext) -> str:
                 return "Pipeline {pipeline_name} failed! Error: {error}".format(
-                    pipeline_name=context.pipeline_run.pipeline_name,
+                    pipeline_name=context.dagster_run.target.name,
                     error=context.failure_event.message,
                 )
 
@@ -91,7 +91,7 @@ def make_slack_on_pipeline_failure_sensor(
         blocks = blocks_fn(context) if blocks_fn else None
         if dagit_base_url:
             text += "\n<{base_url}/instance/runs/{run_id}|View in Dagit>".format(
-                base_url=dagit_base_url, run_id=context.pipeline_run.run_id
+                base_url=dagit_base_url, run_id=context.dagster_run.run_id
             )
 
         slack_client.chat_postMessage(channel=channel, text=text, blocks=blocks)

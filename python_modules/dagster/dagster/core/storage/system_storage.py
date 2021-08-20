@@ -36,7 +36,7 @@ def build_intermediate_storage_from_object_store(
 
     return ObjectStoreIntermediateStorage(
         object_store=object_store,
-        run_id=init_context.pipeline_run.run_id,
+        run_id=init_context.dagster_run.run_id,
         root_for_run_id=root_for_run_id,
         type_storage_plugin_registry=init_context.type_storage_plugin_registry
         if init_context.type_storage_plugin_registry
@@ -138,25 +138,25 @@ def io_manager_from_intermediate_storage(intermediate_storage_def):
 
     @io_manager
     def _io_manager(init_context):
-        if not init_context.pipeline_run:
+        if not init_context.dagster_run:
             raise DagsterInvariantViolationError(
                 "Attempted to construct intermediate storage outside of execution context. "
                 "Intermediate storage can only be constructed within the context of an execution."
             )
-        pipeline_run = init_context.pipeline_run
+        dagster_run = init_context.dagster_run
         instance = init_context.instance
         pipeline_def = init_context.pipeline_def_for_backwards_compat
         # depend on InitResourceContext.instance and pipeline_def_for_backwards_compat
         resolved_run_config = ResolvedRunConfig.build(
-            pipeline_def, pipeline_run.run_config, mode=pipeline_run.mode
+            pipeline_def, dagster_run.run_config, mode=dagster_run.target.mode
         )
-        mode_def = pipeline_def.get_mode_definition(pipeline_run.mode)
+        mode_def = pipeline_def.get_mode_definition(dagster_run.target.mode)
 
         intermediate_storage_context = InitIntermediateStorageContext(
             pipeline_def=pipeline_def,
             mode_def=mode_def,
             intermediate_storage_def=intermediate_storage_def,
-            pipeline_run=pipeline_run,
+            dagster_run=dagster_run,
             instance=instance,
             resolved_run_config=resolved_run_config,
             type_storage_plugin_registry=construct_type_storage_plugin_registry(

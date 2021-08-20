@@ -45,8 +45,8 @@ class ExecutionPlanSnapshotArgs(
 
 
 @whitelist_for_serdes
-class ExecuteRunArgs(namedtuple("_ExecuteRunArgs", "pipeline_origin pipeline_run_id instance_ref")):
-    def __new__(cls, pipeline_origin, pipeline_run_id, instance_ref):
+class ExecuteRunArgs(namedtuple("_ExecuteRunArgs", "pipeline_origin dagster_run_id instance_ref")):
+    def __new__(cls, pipeline_origin, dagster_run_id, instance_ref):
         return super(ExecuteRunArgs, cls).__new__(
             cls,
             pipeline_origin=check.inst_param(
@@ -54,16 +54,16 @@ class ExecuteRunArgs(namedtuple("_ExecuteRunArgs", "pipeline_origin pipeline_run
                 "pipeline_origin",
                 PipelinePythonOrigin,
             ),
-            pipeline_run_id=check.str_param(pipeline_run_id, "pipeline_run_id"),
+            dagster_run_id=check.str_param(dagster_run_id, "dagster_run_id"),
             instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
         )
 
 
 @whitelist_for_serdes
 class ExecuteExternalPipelineArgs(
-    namedtuple("_ExecuteExternalPipelineArgs", "pipeline_origin pipeline_run_id instance_ref")
+    namedtuple("_ExecuteExternalPipelineArgs", "pipeline_origin dagster_run_id instance_ref")
 ):
-    def __new__(cls, pipeline_origin, pipeline_run_id, instance_ref):
+    def __new__(cls, pipeline_origin, dagster_run_id, instance_ref):
         return super(ExecuteExternalPipelineArgs, cls).__new__(
             cls,
             pipeline_origin=check.inst_param(
@@ -71,7 +71,7 @@ class ExecuteExternalPipelineArgs(
                 "pipeline_origin",
                 ExternalPipelineOrigin,
             ),
-            pipeline_run_id=check.str_param(pipeline_run_id, "pipeline_run_id"),
+            dagster_run_id=check.str_param(dagster_run_id, "dagster_run_id"),
             instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
         )
 
@@ -80,14 +80,14 @@ class ExecuteExternalPipelineArgs(
 class ExecuteStepArgs(
     namedtuple(
         "_ExecuteStepArgs",
-        "pipeline_origin pipeline_run_id step_keys_to_execute instance_ref "
+        "pipeline_origin dagster_run_id step_keys_to_execute instance_ref "
         "retry_mode known_state should_verify_step",
     )
 ):
     def __new__(
         cls,
         pipeline_origin,
-        pipeline_run_id,
+        dagster_run_id,
         step_keys_to_execute,
         instance_ref=None,
         retry_mode=None,
@@ -99,7 +99,7 @@ class ExecuteStepArgs(
             pipeline_origin=check.inst_param(
                 pipeline_origin, "pipeline_origin", PipelinePythonOrigin
             ),
-            pipeline_run_id=check.str_param(pipeline_run_id, "pipeline_run_id"),
+            dagster_run_id=check.str_param(dagster_run_id, "dagster_run_id"),
             step_keys_to_execute=check.opt_nullable_list_param(
                 step_keys_to_execute, "step_keys_to_execute", of_type=str
             ),

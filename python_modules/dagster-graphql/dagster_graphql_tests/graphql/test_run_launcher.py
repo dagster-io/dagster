@@ -7,10 +7,10 @@ RUN_QUERY = """
 query RunQuery($runId: ID!) {
   pipelineRunOrError(runId: $runId) {
     __typename
-    ... on PipelineRun {
+    ... on DagsterRun {
       status
       stats {
-        ... on PipelineRunStatsSnapshot {
+        ... on DagsterRunStatsSnapshot {
           stepsSucceeded
         }
       }
@@ -31,7 +31,7 @@ class TestBasicLaunch(
             variables={"executionParams": {"selector": selector, "mode": "default"}},
         )
 
-        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchDagsterRunSuccess"
         assert result.data["launchPipelineExecution"]["run"]["status"] == "STARTING"
 
         run_id = result.data["launchPipelineExecution"]["run"]["runId"]
@@ -41,7 +41,7 @@ class TestBasicLaunch(
         result = execute_dagster_graphql(
             context=graphql_context, query=RUN_QUERY, variables={"runId": run_id}
         )
-        assert result.data["pipelineRunOrError"]["__typename"] == "PipelineRun"
+        assert result.data["pipelineRunOrError"]["__typename"] == "DagsterRun"
         assert result.data["pipelineRunOrError"]["status"] == "SUCCESS"
 
     def test_run_launcher_subset(self, graphql_context):
@@ -59,7 +59,7 @@ class TestBasicLaunch(
             },
         )
 
-        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchDagsterRunSuccess"
         assert result.data["launchPipelineExecution"]["run"]["status"] == "STARTING"
 
         run_id = result.data["launchPipelineExecution"]["run"]["runId"]
@@ -69,6 +69,6 @@ class TestBasicLaunch(
         result = execute_dagster_graphql(
             context=graphql_context, query=RUN_QUERY, variables={"runId": run_id}
         )
-        assert result.data["pipelineRunOrError"]["__typename"] == "PipelineRun"
+        assert result.data["pipelineRunOrError"]["__typename"] == "DagsterRun"
         assert result.data["pipelineRunOrError"]["status"] == "SUCCESS"
         assert result.data["pipelineRunOrError"]["stats"]["stepsSucceeded"] == 1

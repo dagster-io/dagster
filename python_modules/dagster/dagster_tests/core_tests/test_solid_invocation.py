@@ -549,7 +549,7 @@ def test_output_sent_multiple_times():
 @pytest.mark.parametrize(
     "property_or_method_name,val_to_pass",
     [
-        ("pipeline_run", None),
+        ("dagster_run", None),
         ("step_launcher", None),
         ("run_config", None),
         ("pipeline_def", None),

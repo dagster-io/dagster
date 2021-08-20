@@ -10,7 +10,7 @@ from dagster.core.execution.backfill import (
     submit_backfill_runs,
 )
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunsFilter
+from dagster.core.storage.dagster_run import DagsterRun, DagsterRunsFilter
 from dagster.core.storage.tags import PARTITION_NAME_TAG
 from dagster.core.workspace import IWorkspace
 from dagster.utils.error import serializable_error_info_from_exc_info
@@ -128,7 +128,7 @@ def _get_partitions_chunk(instance, logger, backfill_job, chunk_size):
 
     # for idempotence, fetch all runs with the current backfill id
     backfill_runs = instance.get_runs(
-        PipelineRunsFilter(tags=PipelineRun.tags_for_backfill_id(backfill_job.backfill_id))
+        DagsterRunsFilter(tags=DagsterRun.tags_for_backfill_id(backfill_job.backfill_id))
     )
     completed_partitions = set([run.tags.get(PARTITION_NAME_TAG) for run in backfill_runs])
     initial_checkpoint = (

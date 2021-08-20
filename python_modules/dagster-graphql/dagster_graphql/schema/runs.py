@@ -4,7 +4,7 @@ from graphene.types.generic import GenericScalar
 
 from ..implementation.fetch_runs import get_runs, get_runs_count
 from .errors import (
-    GrapheneInvalidPipelineRunsFilterError,
+    GrapheneInvalidDagsterRunsFilterError,
     GraphenePythonError,
     GrapheneRunGroupNotFoundError,
 )
@@ -20,27 +20,27 @@ class GrapheneStepEventStatus(graphene.Enum):
         name = "StepEventStatus"
 
 
-class GrapheneLaunchPipelineRunSuccess(graphene.ObjectType):
+class GrapheneLaunchDagsterRunSuccess(graphene.ObjectType):
     run = graphene.Field(
-        graphene.NonNull("dagster_graphql.schema.pipelines.pipeline.GraphenePipelineRun")
+        graphene.NonNull("dagster_graphql.schema.pipelines.pipeline.GrapheneDagsterRun")
     )
 
     class Meta:
-        name = "LaunchPipelineRunSuccess"
+        name = "LaunchDagsterRunSuccess"
 
 
 class GrapheneRunGroup(graphene.ObjectType):
     rootRunId = graphene.NonNull(graphene.String)
-    runs = graphene.List("dagster_graphql.schema.pipelines.pipeline.GraphenePipelineRun")
+    runs = graphene.List("dagster_graphql.schema.pipelines.pipeline.GrapheneDagsterRun")
 
     class Meta:
         name = "RunGroup"
 
     def __init__(self, root_run_id, runs):
-        from .pipelines.pipeline import GraphenePipelineRun
+        from .pipelines.pipeline import GrapheneDagsterRun
 
         check.str_param(root_run_id, "root_run_id")
-        check.list_param(runs, "runs", GraphenePipelineRun)
+        check.list_param(runs, "runs", GrapheneDagsterRun)
 
         super().__init__(rootRunId=root_run_id, runs=runs)
 
@@ -52,14 +52,14 @@ class GrapheneRunGroups(graphene.ObjectType):
         name = "RunGroups"
 
 
-launch_pipeline_run_result_types = (GrapheneLaunchPipelineRunSuccess,)
+launch_dagster_run_result_types = (GrapheneLaunchDagsterRunSuccess,)
 
 
 class GrapheneLaunchPipelineExecutionResult(graphene.Union):
     class Meta:
         from .backfill import pipeline_execution_error_types
 
-        types = launch_pipeline_run_result_types + pipeline_execution_error_types
+        types = launch_dagster_run_result_types + pipeline_execution_error_types
 
         name = "LaunchPipelineExecutionResult"
 
@@ -68,17 +68,17 @@ class GrapheneLaunchPipelineReexecutionResult(graphene.Union):
     class Meta:
         from .backfill import pipeline_execution_error_types
 
-        types = launch_pipeline_run_result_types + pipeline_execution_error_types
+        types = launch_dagster_run_result_types + pipeline_execution_error_types
 
         name = "LaunchPipelineReexecutionResult"
 
 
-class GraphenePipelineRuns(graphene.ObjectType):
-    results = non_null_list("dagster_graphql.schema.pipelines.pipeline.GraphenePipelineRun")
+class GrapheneDagsterRuns(graphene.ObjectType):
+    results = non_null_list("dagster_graphql.schema.pipelines.pipeline.GrapheneDagsterRun")
     count = graphene.Int()
 
     class Meta:
-        name = "PipelineRuns"
+        name = "DagsterRuns"
 
     def __init__(self, filters, cursor, limit):
         super().__init__()
@@ -94,10 +94,10 @@ class GraphenePipelineRuns(graphene.ObjectType):
         return get_runs_count(graphene_info, self._filters)
 
 
-class GraphenePipelineRunsOrError(graphene.Union):
+class GrapheneDagsterRunsOrError(graphene.Union):
     class Meta:
-        types = (GraphenePipelineRuns, GrapheneInvalidPipelineRunsFilterError, GraphenePythonError)
-        name = "PipelineRunsOrError"
+        types = (GrapheneDagsterRuns, GrapheneInvalidDagsterRunsFilterError, GraphenePythonError)
+        name = "DagsterRunsOrError"
 
 
 class GrapheneRunGroupOrError(graphene.Union):
@@ -125,9 +125,9 @@ class GrapheneRunConfigData(GenericScalar, graphene.Scalar):
 types = [
     GrapheneLaunchPipelineExecutionResult,
     GrapheneLaunchPipelineReexecutionResult,
-    GrapheneLaunchPipelineRunSuccess,
-    GraphenePipelineRuns,
-    GraphenePipelineRunsOrError,
+    GrapheneLaunchDagsterRunSuccess,
+    GrapheneDagsterRuns,
+    GrapheneDagsterRunsOrError,
     GrapheneRunConfigData,
     GrapheneRunGroup,
     GrapheneRunGroupOrError,

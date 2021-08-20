@@ -1,7 +1,7 @@
 import graphene
 from dagster import check
 from dagster.core.host_representation import ExternalPartitionSet, RepositoryHandle
-from dagster.core.storage.pipeline_run import PipelineRunsFilter
+from dagster.core.storage.dagster_run import DagsterRunsFilter
 from dagster.core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster.utils import merge_dicts
 from dagster_graphql.implementation.fetch_partition_sets import (
@@ -18,9 +18,9 @@ from .errors import (
     GraphenePipelineNotFoundError,
     GraphenePythonError,
 )
-from .inputs import GraphenePipelineRunsFilter
-from .pipelines.pipeline import GraphenePipelineRun
-from .pipelines.status import GraphenePipelineRunStatus
+from .inputs import GrapheneDagsterRunsFilter
+from .pipelines.pipeline import GrapheneDagsterRun
+from .pipelines.status import GrapheneDagsterRunStatus
 from .repository_origin import GrapheneRepositoryOrigin
 from .tags import GraphenePipelineTag
 from .util import non_null_list
@@ -49,7 +49,7 @@ class GraphenePartitionRunConfigOrError(graphene.Union):
 class GraphenePartitionStatus(graphene.ObjectType):
     id = graphene.NonNull(graphene.String)
     partitionName = graphene.NonNull(graphene.String)
-    runStatus = graphene.Field(GraphenePipelineRunStatus)
+    runStatus = graphene.Field(GrapheneDagsterRunStatus)
 
     class Meta:
         name = "PartitionStatus"
@@ -82,12 +82,12 @@ class GraphenePartition(graphene.ObjectType):
     runConfigOrError = graphene.NonNull(GraphenePartitionRunConfigOrError)
     tagsOrError = graphene.NonNull(GraphenePartitionTagsOrError)
     runs = graphene.Field(
-        non_null_list(GraphenePipelineRun),
-        filter=graphene.Argument(GraphenePipelineRunsFilter),
+        non_null_list(GrapheneDagsterRun),
+        filter=graphene.Argument(GrapheneDagsterRunsFilter),
         cursor=graphene.String(),
         limit=graphene.Int(),
     )
-    status = graphene.Field(GraphenePipelineRunStatus)
+    status = graphene.Field(GrapheneDagsterRunStatus)
 
     class Meta:
         name = "Partition"
@@ -132,14 +132,14 @@ class GraphenePartition(graphene.ObjectType):
         }
         if filters is not None:
             filters = filters.to_selector()
-            runs_filter = PipelineRunsFilter(
+            runs_filter = DagsterRunsFilter(
                 run_ids=filters.run_ids,
-                pipeline_name=filters.pipeline_name,
+                target_name=filters.target_name,
                 statuses=filters.statuses,
                 tags=merge_dicts(filters.tags, partition_tags),
             )
         else:
-            runs_filter = PipelineRunsFilter(tags=partition_tags)
+            runs_filter = DagsterRunsFilter(tags=partition_tags)
 
         return get_runs(
             graphene_info, runs_filter, cursor=kwargs.get("cursor"), limit=kwargs.get("limit")

@@ -17,7 +17,12 @@ from dagster.core.host_representation.origin import (
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
 from dagster.core.run_coordinator import RunCoordinator, SubmitRunContext
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.dagster_run import (
+    DagsterRun,
+    DagsterRunStatus,
+    DagsterRunsFilter,
+    PipelineTarget,
+)
 from dagster.core.telemetry import cleanup_telemetry_logger
 from dagster.core.workspace.context import WorkspaceProcessContext
 from dagster.core.workspace.load_target import WorkspaceLoadTarget
@@ -157,11 +162,14 @@ def create_run_for_test(
     external_pipeline_origin=None,
     pipeline_code_origin=None,
 ):
+    if pipeline_name:
+        target = PipelineTarget(name=pipeline_name, mode=mode)
+    else:
+        target = None
     return instance.create_run(
-        pipeline_name,
+        target,
         run_id,
         run_config,
-        mode,
         solids_to_execute,
         step_keys_to_execute,
         status,
@@ -211,10 +219,10 @@ def poll_for_finished_run(instance, run_id=None, timeout=20, run_tags=None):
     total_time = 0
     interval = 0.01
 
-    filters = PipelineRunsFilter(
+    filters = DagsterRunsFilter(
         run_ids=[run_id] if run_id else None,
         tags=run_tags,
-        statuses=[PipelineRunStatus.SUCCESS, PipelineRunStatus.FAILURE, PipelineRunStatus.CANCELED],
+        statuses=[DagsterRunStatus.SUCCESS, DagsterRunStatus.FAILURE, DagsterRunStatus.CANCELED],
     )
 
     while True:
@@ -314,9 +322,9 @@ class MockedRunLauncher(RunLauncher, ConfigurableClass):
         super().__init__()
 
     def launch_run(self, context):
-        run = context.pipeline_run
-        check.inst_param(run, "run", PipelineRun)
-        check.invariant(run.status == PipelineRunStatus.STARTING)
+        run = context.dagster_run
+        check.inst_param(run, "run", DagsterRun)
+        check.invariant(run.status == DagsterRunStatus.STARTING)
 
         if self._bad_run_ids and run.run_id in self._bad_run_ids:
             raise Exception(f"Bad run {run.run_id}")
@@ -354,10 +362,10 @@ class MockedRunCoordinator(RunCoordinator, ConfigurableClass):
         super().__init__()
 
     def submit_run(self, context: SubmitRunContext):
-        pipeline_run = context.pipeline_run
-        check.inst(pipeline_run.external_pipeline_origin, ExternalPipelineOrigin)
-        self._queue.append(pipeline_run)
-        return pipeline_run
+        dagster_run = context.dagster_run
+        check.inst(dagster_run.external_pipeline_origin, ExternalPipelineOrigin)
+        self._queue.append(dagster_run)
+        return dagster_run
 
     def queue(self):
         return self._queue

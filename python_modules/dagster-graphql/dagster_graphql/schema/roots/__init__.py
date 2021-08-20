@@ -2,8 +2,8 @@ def types():
     from .assets import GrapheneAssetConnection, GrapheneAssetOrError, GrapheneAssetsOrError
     from .execution_plan import GrapheneExecutionPlanOrError
     from .mutation import (
-        GrapheneDeletePipelineRunResult,
-        GrapheneDeletePipelineRunSuccess,
+        GrapheneDeleteDagsterRunResult,
+        GrapheneDeleteDagsterRunSuccess,
         GrapheneDeleteRunMutation,
         GrapheneLaunchBackfillMutation,
         GrapheneLaunchPipelineExecutionMutation,
@@ -26,8 +26,8 @@ def types():
         GrapheneAssetConnection,
         GrapheneAssetOrError,
         GrapheneAssetsOrError,
-        GrapheneDeletePipelineRunResult,
-        GrapheneDeletePipelineRunSuccess,
+        GrapheneDeleteDagsterRunResult,
+        GrapheneDeleteDagsterRunSuccess,
         GrapheneDeleteRunMutation,
         GrapheneExecutionPlanOrError,
         GrapheneLaunchBackfillMutation,

@@ -3,7 +3,7 @@ import pytest
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import JobTickStatus
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.dagster_run import DagsterRunStatus
 from dagster.core.storage.tags import PARTITION_NAME_TAG, SCHEDULED_EXECUTION_TIME_TAG
 from dagster.core.test_utils import cleanup_test_instance, get_crash_signals, get_terminate_signal
 from dagster.core.workspace.dynamic_workspace import DynamicWorkspace
@@ -180,7 +180,7 @@ def test_failure_recovery_after_run_created(
                 # Run was created, but hasn't launched yet
                 assert run.tags[SCHEDULED_EXECUTION_TIME_TAG] == frozen_datetime.isoformat()
                 assert run.tags[PARTITION_NAME_TAG] == "2019-02-26"
-                assert run.status == PipelineRunStatus.NOT_STARTED
+                assert run.status == DagsterRunStatus.NOT_STARTED
             else:
                 # The run was created and launched - running again should do nothing other than
                 # moving the tick to success state.
@@ -199,7 +199,7 @@ def test_failure_recovery_after_run_created(
                     instance.get_runs()[0], frozen_datetime, create_pendulum_time(2019, 2, 26)
                 )
 
-                assert run.status in [PipelineRunStatus.STARTED, PipelineRunStatus.SUCCESS]
+                assert run.status in [DagsterRunStatus.STARTED, DagsterRunStatus.SUCCESS]
 
         frozen_datetime = frozen_datetime.add(minutes=5)
         with pendulum.test(frozen_datetime):

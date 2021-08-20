@@ -75,7 +75,7 @@ def test_execute_pipeline_with_non_existant_mode():
 
 @solid
 def solid_that_gets_tags(context):
-    return context.pipeline_run.tags
+    return context.dagster_run.tags
 
 
 @pipeline(

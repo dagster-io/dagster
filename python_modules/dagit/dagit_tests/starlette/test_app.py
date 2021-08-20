@@ -6,7 +6,7 @@ from dagster import execute_pipeline, pipeline
 from starlette.testclient import TestClient
 
 EVENT_LOG_SUBSCRIPTION = """
-    subscription PipelineRunLogsSubscription($runId: ID!) {
+    subscription DagsterRunLogsSubscription($runId: ID!) {
         pipelineRunLogs(runId: $runId) {
             __typename
         }
@@ -115,11 +115,11 @@ def test_graphql_ws_success(instance, empty_app):
         assert response["type"] == GraphQLWS.DATA
 
         gc.collect()
-        assert len(objgraph.by_type("PipelineRunObservableSubscribe")) == 1
+        assert len(objgraph.by_type("DagsterRunObservableSubscribe")) == 1
 
     # after exiting the context manager and closing the connection
     gc.collect()
-    assert len(objgraph.by_type("PipelineRunObservableSubscribe")) == 0
+    assert len(objgraph.by_type("DagsterRunObservableSubscribe")) == 0
 
 
 def test_download_debug_file(instance, empty_app):

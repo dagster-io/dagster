@@ -186,11 +186,11 @@ def _synthesize_events(solids_fn, run_id=None, check_success=True, instance=None
     with ExitStack() as stack:
         if not instance:
             instance = stack.enter_context(DagsterInstance.ephemeral())
-        pipeline_run = instance.create_run_for_pipeline(
+        dagster_run = instance.create_run_for_pipeline(
             a_pipe, run_id=run_id, run_config={"loggers": {"callback": {}, "console": {}}}
         )
 
-        result = execute_run(InMemoryPipeline(a_pipe), pipeline_run, instance)
+        result = execute_run(InMemoryPipeline(a_pipe), dagster_run, instance)
 
         if check_success:
             assert result.success

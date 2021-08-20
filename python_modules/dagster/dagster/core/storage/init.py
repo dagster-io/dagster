@@ -7,7 +7,7 @@ from dagster.core.definitions import (
     PipelineDefinition,
 )
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.storage.dagster_run import DagsterRun
 from dagster.core.storage.type_storage import TypeStoragePluginRegistry
 from dagster.core.system_config.objects import ResolvedRunConfig
 
@@ -16,7 +16,7 @@ class InitIntermediateStorageContext(
     namedtuple(
         "InitIntermediateStorageContext",
         (
-            "pipeline_def mode_def intermediate_storage_def pipeline_run instance resolved_run_config "
+            "pipeline_def mode_def intermediate_storage_def dagster_run instance resolved_run_config "
             "type_storage_plugin_registry resources intermediate_storage_config"
         ),
     )
@@ -28,7 +28,7 @@ class InitIntermediateStorageContext(
         mode_def (ModeDefinition): The definition of the mode in context.
         intermediate_storage_def (IntermediateStorageDefinition): The definition of the intermediate storage to be
             constructed.
-        pipeline_run (PipelineRun): The pipeline run in context.
+        dagster_run (DagsterRun): The pipeline run in context.
         instance (DagsterInstance): The instance.
         resolved_run_config (ResolvedRunConfig): The run config.
         type_storage_plugin_registry (TypeStoragePluginRegistry): Registry containing custom type
@@ -44,7 +44,7 @@ class InitIntermediateStorageContext(
         pipeline_def,
         mode_def,
         intermediate_storage_def,
-        pipeline_run,
+        dagster_run,
         instance,
         resolved_run_config,
         type_storage_plugin_registry,
@@ -58,7 +58,7 @@ class InitIntermediateStorageContext(
             intermediate_storage_def=check.inst_param(
                 intermediate_storage_def, "intermediate_storage_def", IntermediateStorageDefinition
             ),
-            pipeline_run=check.inst_param(pipeline_run, "pipeline_run", PipelineRun),
+            dagster_run=check.inst_param(dagster_run, "dagster_run", DagsterRun),
             instance=check.inst_param(instance, "instance", DagsterInstance),
             resolved_run_config=check.inst_param(
                 resolved_run_config, "resolved_run_config", ResolvedRunConfig

@@ -26,7 +26,7 @@ from dagster.core.execution.resources_init import (
     resource_initialization_event_generator,
 )
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.core.storage.dagster_run import DagsterRun, DagsterRunStatus, PipelineTarget
 from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.utils import make_new_run_id
 from dagster.loggers import colored_console_logger
@@ -71,7 +71,7 @@ class Manager:
         resource_configs,
         log_manager,
         execution_plan,
-        pipeline_run,
+        dagster_run,
         resource_keys_to_init,
         instance,
         emit_persistent_events,
@@ -87,7 +87,7 @@ class Manager:
             resource_configs=resource_configs,
             log_manager=log_manager,
             execution_plan=execution_plan,
-            pipeline_run=pipeline_run,
+            dagster_run=dagster_run,
             resource_keys_to_init=resource_keys_to_init,
             instance=instance,
             emit_persistent_events=emit_persistent_events,
@@ -104,7 +104,7 @@ class Manager:
         marshal_dir=None,
         run_config=None,
         executable_dict=None,
-        pipeline_run_dict=None,
+        dagster_run_dict=None,
         solid_handle_kwargs=None,
         instance_ref_dict=None,
     ):
@@ -122,7 +122,7 @@ class Manager:
         check.opt_str_param(output_log_path, "output_log_path")
         check.opt_str_param(marshal_dir, "marshal_dir")
         run_config = check.opt_dict_param(run_config, "run_config", key_type=str)
-        check.dict_param(pipeline_run_dict, "pipeline_run_dict")
+        check.dict_param(dagster_run_dict, "dagster_run_dict")
         check.dict_param(executable_dict, "executable_dict")
         check.dict_param(solid_handle_kwargs, "solid_handle_kwargs")
         check.dict_param(instance_ref_dict, "instance_ref_dict")
@@ -138,7 +138,7 @@ class Manager:
                 "Error when attempting to resolve DagsterInstance from serialized InstanceRef"
             ) from err
 
-        pipeline_run = unpack_value(pipeline_run_dict)
+        dagster_run = unpack_value(dagster_run_dict)
 
         solid_handle = NodeHandle.from_dict(solid_handle_kwargs)
         solid = pipeline_def.get_solid(solid_handle)
@@ -150,20 +150,20 @@ class Manager:
         self.pipeline = pipeline
 
         resolved_run_config = ResolvedRunConfig.build(
-            pipeline_def, run_config, mode=pipeline_run.mode
+            pipeline_def, run_config, mode=dagster_run.target.mode
         )
 
         execution_plan = ExecutionPlan.build(
             self.pipeline,
             resolved_run_config,
-            step_keys_to_execute=pipeline_run.step_keys_to_execute,
+            step_keys_to_execute=dagster_run.step_keys_to_execute,
         )
 
         with scoped_pipeline_context(
             execution_plan,
             pipeline,
             run_config,
-            pipeline_run,
+            dagster_run,
             instance,
             scoped_resources_builder_cm=self._setup_resources,
             # Set this flag even though we're not in test for clearer error reporting
@@ -230,16 +230,16 @@ class Manager:
 
         run_id = make_new_run_id()
 
-        # construct stubbed PipelineRun for notebook exploration...
+        # construct stubbed DagsterRun for notebook exploration...
         # The actual pipeline run during pipeline execution will be serialized and reconstituted
         # in the `reconstitute_pipeline_context` call
-        pipeline_run = PipelineRun(
-            pipeline_name=pipeline_def.name,
+        dagster_run = DagsterRun(
+            target=PipelineTarget(name=pipeline_def.name),
             run_id=run_id,
             run_config=run_config,
             mode=mode_def.name,
             step_keys_to_execute=None,
-            status=PipelineRunStatus.NOT_STARTED,
+            status=DagsterRunStatus.NOT_STARTED,
             tags=None,
         )
 
@@ -256,7 +256,7 @@ class Manager:
             execution_plan,
             pipeline,
             run_config,
-            pipeline_run,
+            dagster_run,
             DagsterInstance.ephemeral(),
             scoped_resources_builder_cm=self._setup_resources,
         ) as pipeline_context:

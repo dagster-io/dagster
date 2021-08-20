@@ -4,7 +4,7 @@ from typing import Any, Dict, Iterable, List, Optional
 import requests.exceptions
 from dagster import check
 from dagster.core.definitions.utils import validate_tags
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.dagster_run import DagsterRunStatus
 from dagster.utils.backcompat import experimental_class_warning
 from gql import Client, gql
 from gql.transport import Transport
@@ -154,7 +154,7 @@ class DagsterGraphQLClient:
             DagsterGraphQLClientError("ConflictingExecutionParamsError", invalid_step_key): a preset and a run_config & mode are present
                 that conflict with one another
             DagsterGraphQLClientError("PresetNotFoundError", message): if the provided preset name is not found
-            DagsterGraphQLClientError("PipelineRunConflict", message): a `DagsterRunConflict` occured during execution.
+            DagsterGraphQLClientError("DagsterRunConflict", message): a `DagsterRunConflict` occured during execution.
                 This indicates that a conflicting pipeline run already exists in run storage.
             DagsterGraphQLClientError("PipelineConfigurationInvalid", invalid_step_key): the run_config is not in the expected format
                 for the pipeline
@@ -217,7 +217,7 @@ class DagsterGraphQLClient:
         res_data: Dict[str, Any] = self._execute(CLIENT_SUBMIT_PIPELINE_RUN_MUTATION, variables)
         query_result = res_data["launchPipelineExecution"]
         query_result_type = query_result["__typename"]
-        if query_result_type == "LaunchPipelineRunSuccess":
+        if query_result_type == "LaunchDagsterRunSuccess":
             return query_result["run"]["runId"]
         elif query_result_type == "InvalidStepError":
             raise DagsterGraphQLClientError(query_result_type, query_result["invalidStepKey"])
@@ -231,10 +231,10 @@ class DagsterGraphQLClient:
             raise DagsterGraphQLClientError(query_result_type, query_result["errors"])
         else:
             # query_result_type is a ConflictingExecutionParamsError, a PresetNotFoundError
-            # a PipelineNotFoundError, a PipelineRunConflict, or a PythonError
+            # a PipelineNotFoundError, a DagsterRunConflict, or a PythonError
             raise DagsterGraphQLClientError(query_result_type, query_result["message"])
 
-    def get_run_status(self, run_id: str) -> PipelineRunStatus:
+    def get_run_status(self, run_id: str) -> DagsterRunStatus:
         """Get the status of a given Pipeline Run
 
         Args:
@@ -245,7 +245,7 @@ class DagsterGraphQLClient:
             DagsterGraphQLClientError("PythonError", message): on internal framework errors
 
         Returns:
-            PipelineRunStatus: returns a status Enum describing the state of the requested pipeline run
+            DagsterRunStatus: returns a status Enum describing the state of the requested pipeline run
         """
         check.str_param(run_id, "run_id")
 
@@ -254,8 +254,8 @@ class DagsterGraphQLClient:
         )
         query_result: Dict[str, Any] = res_data["pipelineRunOrError"]
         query_result_type: str = query_result["__typename"]
-        if query_result_type == "PipelineRun":
-            return PipelineRunStatus(query_result["status"])
+        if query_result_type == "DagsterRun":
+            return DagsterRunStatus(query_result["status"])
         else:
             raise DagsterGraphQLClientError(query_result_type, query_result["message"])
 

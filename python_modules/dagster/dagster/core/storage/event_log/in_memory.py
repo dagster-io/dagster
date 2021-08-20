@@ -33,7 +33,7 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
         self._wiped_asset_keys = defaultdict(float)
         if preload:
             for payload in preload:
-                self._logs[payload.pipeline_run.run_id] = payload.event_list
+                self._logs[payload.dagster_run.run_id] = payload.event_list
 
         super().__init__()
 
