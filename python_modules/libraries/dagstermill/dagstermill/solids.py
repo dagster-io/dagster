@@ -8,7 +8,8 @@ import uuid
 import nbformat
 import papermill
 from dagster import InputDefinition, Output, OutputDefinition, SolidDefinition, check, seven
-from dagster.core.definitions.events import Failure, RetryRequested
+from dagster.core.definitions.event_metadata import EventMetadataEntry
+from dagster.core.definitions.events import AssetMaterialization, Failure, RetryRequested
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.definitions.utils import validate_tags
 from dagster.core.execution.context.compute import SolidExecutionContext
@@ -19,7 +20,7 @@ from dagster.core.storage.file_manager import FileHandle
 from dagster.serdes import pack_value
 from dagster.seven import get_system_temp_directory
 from dagster.utils import mkdir_p, safe_tempfile_path
-from dagster.utils.backcompat import canonicalize_backcompat_args
+from dagster.utils.backcompat import rename_warning
 from dagster.utils.error import serializable_error_info_from_exc_info
 from papermill.engines import papermill_engines
 from papermill.iorw import load_notebook_node, write_ipynb
@@ -136,11 +137,14 @@ def get_papermill_parameters(step_context, inputs, output_log_path):
     return parameters
 
 
-def _dm_solid_compute(name, notebook_path, output_notebook_name=None, asset_key_prefix=None):
+def _dm_solid_compute(
+    name, notebook_path, output_notebook_name=None, asset_key_prefix=None, output_notebook=None
+):
     check.str_param(name, "name")
     check.str_param(notebook_path, "notebook_path")
     check.opt_str_param(output_notebook_name, "output_notebook_name")
     check.opt_list_param(asset_key_prefix, "asset_key_prefix")
+    check.opt_str_param(output_notebook, "output_notebook")
 
     def _t_fn(step_context, inputs):
         check.inst_param(step_context, "step_context", SolidExecutionContext)
@@ -208,6 +212,43 @@ def _dm_solid_compute(name, notebook_path, output_notebook_name=None, asset_key_
                 # yield output notebook binary stream as a solid output
                 with open(executed_notebook_path, "rb") as fd:
                     yield Output(fd, output_notebook_name)
+            else:
+                # backcompat
+                executed_notebook_file_handle = None
+                try:
+                    # use binary mode when when moving the file since certain file_managers such as S3
+                    # may try to hash the contents
+                    with open(executed_notebook_path, "rb") as fd:
+                        executed_notebook_file_handle = step_context.resources.file_manager.write(
+                            fd, mode="wb", ext="ipynb"
+                        )
+                        executed_notebook_materialization_path = (
+                            executed_notebook_file_handle.path_desc
+                        )
+
+                    yield AssetMaterialization(
+                        asset_key=(asset_key_prefix + [f"{name}_output_notebook"]),
+                        description="Location of output notebook in file manager",
+                        metadata_entries=[
+                            EventMetadataEntry.fspath(executed_notebook_materialization_path)
+                        ],
+                    )
+
+                except Exception:  # pylint: disable=broad-except
+                    # if file manager writing errors, e.g. file manager is not provided, we throw a warning
+                    # and fall back to the previously stored temp executed notebook.
+                    step_context.log.warning(
+                        "Error when attempting to materialize executed notebook using file manager: "
+                        f"{str(serializable_error_info_from_exc_info(sys.exc_info()))}"
+                        f"\nNow falling back to local: notebook execution was temporarily materialized at {executed_notebook_path}"
+                        "\nIf you have supplied a file manager and expect to use it for materializing the "
+                        'notebook, please include "file_manager" in the `required_resource_keys` argument '
+                        "to `define_dagstermill_solid`"
+                    )
+                    executed_notebook_materialization_path = executed_notebook_path
+
+                if output_notebook is not None:
+                    yield Output(executed_notebook_file_handle, output_notebook)
 
             # deferred import for perf
             import scrapbook
@@ -292,20 +333,20 @@ def define_dagstermill_solid(
     required_resource_keys = check.opt_set_param(
         required_resource_keys, "required_resource_keys", of_type=str
     )
-    output_notebook_name = canonicalize_backcompat_args(
-        new_val=output_notebook_name,
-        new_arg="output_notebook_name",
-        old_val=output_notebook,
-        old_arg="output_notebook",
-        breaking_version="0.14.0",
-    )
 
+    extra_output_defs = []
     if output_notebook_name is not None:
         required_resource_keys.add("output_notebook_io_manager")
-
-    # back compact
+        extra_output_defs.append(
+            OutputDefinition(name=output_notebook_name, io_manager_key="output_notebook_io_manager")
+        )
+    # backcompact
     if output_notebook is not None:
+        rename_warning(
+            new_name="output_notebook_name", old_name="output_notebook", breaking_version="0.14.0"
+        )
         required_resource_keys.add("file_manager")
+        extra_output_defs.append(OutputDefinition(dagster_type=FileHandle, name=output_notebook))
 
     if isinstance(asset_key_prefix, str):
         asset_key_prefix = [asset_key_prefix]
@@ -331,18 +372,13 @@ def define_dagstermill_solid(
         name=name,
         input_defs=input_defs,
         compute_fn=_dm_solid_compute(
-            name, notebook_path, output_notebook_name, asset_key_prefix=asset_key_prefix
+            name,
+            notebook_path,
+            output_notebook_name,
+            asset_key_prefix=asset_key_prefix,
+            output_notebook=output_notebook,  # backcompact
         ),
-        output_defs=output_defs
-        + (
-            [
-                OutputDefinition(
-                    name=output_notebook_name, io_manager_key="output_notebook_io_manager"
-                )
-            ]
-            if output_notebook_name
-            else []
-        ),
+        output_defs=output_defs + extra_output_defs,
         config_schema=config_schema,
         required_resource_keys=required_resource_keys,
         description=description,

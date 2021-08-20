@@ -25,7 +25,7 @@ from dagster.core.storage.file_manager import local_file_manager
 from dagster.core.types.dagster_type import DagsterType
 from dagster.core.types.marshal import SerializationStrategy
 from dagster.utils import PICKLE_PROTOCOL, file_relative_path
-from dagstermill.io_managers import backcompact_output_notebook_io_manager
+from dagstermill.io_managers import local_output_notebook_io_manager
 
 try:
     from dagster_pandas import DataFrame
@@ -67,7 +67,7 @@ def test_nb_solid(name, **kwargs):
     return dagstermill.define_dagstermill_solid(
         name=name,
         notebook_path=nb_test_path(name),
-        output_notebook="notebook",
+        output_notebook_name="notebook",
         output_defs=output_defs,
         **kwargs,
     )
@@ -76,7 +76,7 @@ def test_nb_solid(name, **kwargs):
 default_mode_defs = [
     ModeDefinition(
         resource_defs={
-            "file_manager": local_file_manager,
+            "output_notebook_io_manager": local_output_notebook_io_manager,
             "io_manager": fs_io_manager,
         }
     )
@@ -94,7 +94,7 @@ def hello_world_pipeline():
 hello_world_with_custom_tags_and_description = dagstermill.define_dagstermill_solid(
     name="hello_world_custom",
     notebook_path=nb_test_path("hello_world"),
-    output_notebook="notebook",
+    output_notebook_name="notebook",
     tags={"foo": "bar"},
     description="custom description",
 )
@@ -114,7 +114,7 @@ hello_world_config = test_nb_solid(
 goodbye_config = dagstermill.define_dagstermill_solid(
     name="goodbye_config",
     notebook_path=nb_test_path("print_dagstermill_context_solid_config"),
-    output_notebook="notebook",
+    output_notebook_name="notebook",
     config_schema={"farewell": Field(String, is_required=False, default_value="goodbye")},
 )
 
@@ -156,7 +156,6 @@ def hello_world_no_output_notebook_no_file_manager_pipeline():
 hello_world_no_output_notebook = dagstermill.define_dagstermill_solid(
     name="hello_world_no_output_notebook",
     notebook_path=nb_test_path("hello_world"),
-    required_resource_keys={"file_manager"},
 )
 
 
@@ -356,15 +355,14 @@ def filepicklelist_resource(init_context):
             resource_defs={
                 "list": ResourceDefinition(lambda _: []),
                 "io_manager": fs_io_manager,
-                "file_manager": local_file_manager,
-                "output_notebook_io_manager": backcompact_output_notebook_io_manager,
+                "output_notebook_io_manager": local_output_notebook_io_manager,
             },
         ),
         ModeDefinition(
             name="prod",
             resource_defs={
                 "list": filepicklelist_resource,
-                "file_manager": local_file_manager,
+                "output_notebook_io_manager": local_output_notebook_io_manager,
                 "io_manager": fs_io_manager,
             },
         ),
@@ -379,7 +377,7 @@ def resource_pipeline():
         ModeDefinition(
             resource_defs={
                 "list": filepicklelist_resource,
-                "file_manager": local_file_manager,
+                "output_notebook_io_manager": local_output_notebook_io_manager,
                 "io_manager": fs_io_manager,
             }
         )
@@ -528,8 +526,7 @@ def fan_in(a, b):
         ModeDefinition(
             resource_defs={
                 "io_manager": fs_io_manager,
-                "file_manager": local_file_manager,
-                "output_notebook_io_manager": backcompact_output_notebook_io_manager,
+                "output_notebook_io_manager": local_output_notebook_io_manager,
             }
         )
     ]
@@ -544,7 +541,7 @@ def fan_in_notebook_pipeline():
     mode_defs=[
         ModeDefinition(
             resource_defs={
-                "file_manager": local_file_manager,
+                "output_notebook_io_manager": local_output_notebook_io_manager,
             }
         )
     ]
@@ -565,8 +562,7 @@ def outer():
         ModeDefinition(
             resource_defs={
                 "io_manager": fs_io_manager,
-                "file_manager": local_file_manager,
-                "output_notebook_io_manager": backcompact_output_notebook_io_manager,
+                "output_notebook_io_manager": local_output_notebook_io_manager,
             }
         )
     ]
