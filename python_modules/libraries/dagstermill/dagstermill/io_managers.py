@@ -19,7 +19,7 @@ class OutputNotebookIOManager(IOManager):
     def get_output_asset_key(self, context: OutputContext):
         return AssetKey([*self.asset_key_prefix, f"{context.step_key}_output_notebook"])
 
-    def handle_output(self, context: OutputContext, obj: IO[bytes]):
+    def handle_output(self, context: OutputContext, obj: bytes):
         raise NotImplementedError
 
     def load_input(self, context: InputContext) -> Any:
@@ -40,22 +40,22 @@ class LocalOutputNotebookIOManager(OutputNotebookIOManager):
         keys = context.get_run_scoped_output_identifier()
         return str(Path(self.base_dir, *keys).with_suffix(".ipynb"))
 
-    def handle_output(self, context: OutputContext, obj: IO[bytes]):
-        """obj: IO[bytes]"""
+    def handle_output(self, context: OutputContext, obj: bytes):
+        """obj: bytes"""
         check.inst_param(context, "context", OutputContext)
 
         # the output notebook itself is stored at output_file_path
         output_notebook_path = self._get_path(context)
         mkdir_p(os.path.dirname(output_notebook_path))
         with open(output_notebook_path, self.write_mode) as dest_file_obj:
-            dest_file_obj.write(obj.read())
+            dest_file_obj.write(obj)
         yield EventMetadataEntry.fspath(path=output_notebook_path, label="path")
 
-    def load_input(self, context) -> IO[bytes]:
+    def load_input(self, context) -> bytes:
         check.inst_param(context, "context", InputContext)
         # pass output notebook to downstream solids as File Object
         with open(self._get_path(context.upstream_output), self.read_mode) as file_obj:
-            return file_obj
+            return file_obj.read()
 
 
 @io_manager(

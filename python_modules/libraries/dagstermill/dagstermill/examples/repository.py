@@ -131,7 +131,7 @@ def alias_config_pipeline():
     goodbye_config.alias("aliased_goodbye")()
 
 
-@solid(input_defs=[InputDefinition("notebook", dagster_type=FileHandle)])
+@solid(input_defs=[InputDefinition("notebook")])
 def load_notebook(notebook):
     return notebook
 
@@ -438,6 +438,99 @@ def failure_pipeline():
     test_nb_solid("yield_failure")()
 
 
+yield_something = test_nb_solid(
+    "yield_something",
+    input_defs=[InputDefinition("obj", str)],
+    output_defs=[OutputDefinition(str, "result")],
+)
+
+
+@solid
+def fan_in(a, b):
+    return f"{a} {b}"
+
+
+@pipeline(
+    mode_defs=[
+        ModeDefinition(
+            resource_defs={
+                "io_manager": fs_io_manager,
+                "output_notebook_io_manager": local_output_notebook_io_manager,
+            }
+        )
+    ]
+)
+def fan_in_notebook_pipeline():
+    a, _ = yield_something.alias("solid_1")()
+    b, _ = yield_something.alias("solid_2")()
+    fan_in(a, b)
+
+
+@pipeline(
+    mode_defs=[
+        ModeDefinition(
+            resource_defs={
+                "output_notebook_io_manager": local_output_notebook_io_manager,
+            }
+        )
+    ]
+)
+def fan_in_notebook_pipeline_in_mem():
+    a, _ = yield_something.alias("solid_1")()
+    b, _ = yield_something.alias("solid_2")()
+    fan_in(a, b)
+
+
+@composite_solid
+def outer():
+    yield_something()
+
+
+@pipeline(
+    mode_defs=[
+        ModeDefinition(
+            resource_defs={
+                "io_manager": fs_io_manager,
+                "output_notebook_io_manager": local_output_notebook_io_manager,
+            }
+        )
+    ]
+)
+def composite_pipeline():
+    outer()
+
+
+###################################################################################################
+# Back compat
+###################################################################################################
+
+hello_world_legacy = dagstermill.define_dagstermill_solid(
+    name="hello_world_legacy",
+    notebook_path=nb_test_path("hello_world"),
+    output_notebook="notebook",
+)
+
+
+@solid(input_defs=[InputDefinition("notebook", dagster_type=FileHandle)])
+def load_notebook_legacy(notebook):
+    return os.path.exists(notebook.path_desc)
+
+
+@pipeline(
+    mode_defs=[
+        ModeDefinition(
+            resource_defs={
+                "io_manager": fs_io_manager,
+                "file_manager": local_file_manager,
+            }
+        )
+    ]
+)
+def hello_world_with_output_notebook_pipeline_legacy():
+    notebook = hello_world_legacy()
+    load_notebook_legacy(notebook)
+
+
 class ASerializationStrategy(SerializationStrategy):
     def __init__(self, name="foo"):
         super(ASerializationStrategy, self).__init__(name)
@@ -509,68 +602,6 @@ def composite_pipeline_legacy():
     outer_legacy()
 
 
-yield_something = test_nb_solid(
-    "yield_something",
-    input_defs=[InputDefinition("obj", str)],
-    output_defs=[OutputDefinition(str, "result")],
-)
-
-
-@solid
-def fan_in(a, b):
-    return f"{a} {b}"
-
-
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={
-                "io_manager": fs_io_manager,
-                "output_notebook_io_manager": local_output_notebook_io_manager,
-            }
-        )
-    ]
-)
-def fan_in_notebook_pipeline():
-    a, _ = yield_something.alias("solid_1")()
-    b, _ = yield_something.alias("solid_2")()
-    fan_in(a, b)
-
-
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={
-                "output_notebook_io_manager": local_output_notebook_io_manager,
-            }
-        )
-    ]
-)
-def fan_in_notebook_pipeline_in_mem():
-    a, _ = yield_something.alias("solid_1")()
-    b, _ = yield_something.alias("solid_2")()
-    fan_in(a, b)
-
-
-@composite_solid
-def outer():
-    yield_something()
-
-
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={
-                "io_manager": fs_io_manager,
-                "output_notebook_io_manager": local_output_notebook_io_manager,
-            }
-        )
-    ]
-)
-def composite_pipeline():
-    outer()
-
-
 @repository
 def notebook_repo():
     pipelines = [
@@ -592,10 +623,11 @@ def notebook_repo():
         yield_obj_pipeline,
         retries_pipeline,
         failure_pipeline,
-        fan_in_notebook_pipeline_legacy,
         fan_in_notebook_pipeline_in_mem,
         fan_in_notebook_pipeline,
         hello_world_no_output_notebook_no_file_manager_pipeline,
+        hello_world_with_output_notebook_pipeline_legacy,
+        fan_in_notebook_pipeline_legacy,
     ]
     if DAGSTER_PANDAS_PRESENT and SKLEARN_PRESENT and MATPLOTLIB_PRESENT:
         pipelines += [tutorial_pipeline]

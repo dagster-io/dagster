@@ -15,6 +15,7 @@ from dagster import (
 from dagster.core.test_utils import instance_for_test
 from dagster.utils import safe_tempfile_path
 from dagstermill.examples.repository import hello_logging
+from dagstermill.io_managers import local_output_notebook_io_manager
 
 
 class LogTestFileHandler(logging.Handler):
@@ -50,7 +51,7 @@ def test_file_logger(init_context):
                 "critical": test_file_logger,
             },
             resource_defs={
-                "file_manager": local_file_manager,
+                "output_notebook_io_manager": local_output_notebook_io_manager,
             },
         )
     ]

@@ -211,7 +211,7 @@ def _dm_solid_compute(
             if output_notebook_name is not None:
                 # yield output notebook binary stream as a solid output
                 with open(executed_notebook_path, "rb") as fd:
-                    yield Output(fd, output_notebook_name)
+                    yield Output(fd.read(), output_notebook_name)
             else:
                 # backcompat
                 executed_notebook_file_handle = None
