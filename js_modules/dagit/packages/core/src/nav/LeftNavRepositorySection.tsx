@@ -51,23 +51,28 @@ const keysFromLocalStorage = () => {
 const useNavVisibleRepos = (
   options: DagsterRepoOption[],
 ): [typeof repoDetailsForKeys, typeof toggleRepo] => {
-  // Collect keys from localStorage. Any keys that are present in our option list will be our
-  // initial state. If there are none, just grab the first option.
-  const [repoKeys, setRepoKeys] = React.useState<Set<string>>(() => {
-    const keys = keysFromLocalStorage();
-    const hashes = options.map((option) => getRepositoryOptionHash(option));
-    const matches = hashes.filter((hash) => keys.has(hash));
+  // Initialize local state with an empty Set.
+  const [repoKeys, setRepoKeys] = React.useState<Set<string>>(() => new Set());
 
-    if (matches.length) {
-      return new Set(matches);
-    }
+  // Collect keys from localStorage. Any keys that are present in our option list will be pushed into
+  // local state. If there are none specified in localStorage, just grab the first option.
+  React.useEffect(() => {
+    setRepoKeys(() => {
+      const keys = keysFromLocalStorage();
+      const hashes = options.map((option) => getRepositoryOptionHash(option));
+      const matches = hashes.filter((hash) => keys.has(hash));
 
-    if (hashes.length) {
-      return new Set([hashes[0]]);
-    }
+      if (matches.length) {
+        return new Set(matches);
+      }
 
-    return new Set();
-  });
+      if (hashes.length) {
+        return new Set([hashes[0]]);
+      }
+
+      return new Set();
+    });
+  }, [options]);
 
   const toggleRepo = React.useCallback((option: RepoDetails) => {
     const {repoAddress} = option;
