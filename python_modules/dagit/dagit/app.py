@@ -81,8 +81,9 @@ def notebook_view(context, request_args):
 
     # get ipynb content from grpc call
     request_context = context.create_request_context()
-    res = request_context.get_external_notebook_data(repo_name, repo_location_name, path)
-    notebook_content = res.content
+    notebook_content = request_context.get_external_notebook_data(
+        repo_name, repo_location_name, path
+    )
     check.inst_param(notebook_content, "notebook_content", bytes)
 
     # parse content to HTML
