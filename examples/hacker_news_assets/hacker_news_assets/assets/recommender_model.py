@@ -3,7 +3,7 @@ import random
 
 from dagster import EventMetadata, Output
 from dagster.core.asset_defs import AssetIn, Column, asset, table
-from hacker_news_assets.solids.user_story_matrix import IndexedCooMatrix
+from hacker_news_assets.assets.user_story_matrix import IndexedCooMatrix
 from pandas import DataFrame, Series
 from sklearn.decomposition import TruncatedSVD
 

@@ -8,9 +8,9 @@ from dagster_pyspark import pyspark_resource
 from hacker_news_assets.resources.hn_resource import hn_api_subsample_client
 from hacker_news_assets.resources.parquet_io_manager import partitioned_parquet_io_manager
 from hacker_news_assets.resources.snowflake_io_manager import time_partitioned_snowflake_io_manager
-from hacker_news_assets.solids.download_items import comments_and_stories_lake, items
-from hacker_news_assets.solids.id_range_for_time import id_range_for_time
-from hacker_news_assets.solids.upload_to_database import comments, stories
+from hacker_news_assets.assets.download_items import comments_and_stories_lake, items
+from hacker_news_assets.assets.id_range_for_time import id_range_for_time
+from hacker_news_assets.assets.upload_to_database import comments, stories
 
 # the configuration we'll need to make our Snowflake-based IOManager work
 SNOWFLAKE_CONF = {

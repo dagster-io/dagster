@@ -1,6 +1,6 @@
 import numpy as np
 from dagster.core.asset_defs import Column, table
-from hacker_news_assets.solids.user_story_matrix import IndexedCooMatrix
+from hacker_news_assets.assets.user_story_matrix import IndexedCooMatrix
 from pandas import DataFrame
 from scipy.sparse import coo_matrix, csc_matrix, csr_matrix
 from sklearn.decomposition import TruncatedSVD
