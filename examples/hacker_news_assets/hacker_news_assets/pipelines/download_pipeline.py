@@ -40,7 +40,7 @@ DEV_RESOURCES = {
     "parquet_io_manager": partitioned_parquet_io_manager.configured(
         {"base_path": get_system_temp_directory()}
     ),
-    "db_io_manager": fs_io_manager,
+    "warehouse_io_manager": fs_io_manager,
     "pyspark": pyspark_resource,
     "hn_client": hn_api_subsample_client.configured({"sample_rate": 10}),
 }
@@ -54,7 +54,7 @@ PROD_RESOURCES = {
     "parquet_io_manager": partitioned_parquet_io_manager.configured(
         {"base_path": "s3://hackernews-elementl-prod"}
     ),
-    "db_io_manager": time_partitioned_snowflake_io_manager.configured(SNOWFLAKE_CONF),
+    "warehouse_io_manager": time_partitioned_snowflake_io_manager.configured(SNOWFLAKE_CONF),
     "pyspark": pyspark_resource.configured(S3_SPARK_CONF),
     "hn_client": hn_api_subsample_client.configured({"sample_rate": 10}),
 }
