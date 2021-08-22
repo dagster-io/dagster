@@ -212,7 +212,7 @@ def table(
         return _Asset()(name)
 
     def inner(fn: Callable[..., Any]) -> SolidDefinition:
-        final_description = textwrap.dedent(description or fn.__doc__) + columns_to_markdown(
+        final_description = textwrap.dedent(description or fn.__doc__ or "") + columns_to_markdown(
             columns
         )
         return _Asset(
