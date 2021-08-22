@@ -201,7 +201,9 @@ export const AssetDetails: React.FC<Props> = ({assetKey, asOf, asSidebarSection}
         />
       ) : null}
       {!asSidebarSection && (
-        <Subheading>{isPartitioned ? 'Latest Materialized Partition' : 'Latest Materialization'}</Subheading>
+        <Subheading>
+          {isPartitioned ? 'Latest Materialized Partition' : 'Latest Materialization'}
+        </Subheading>
       )}
       {content()}
     </Group>
