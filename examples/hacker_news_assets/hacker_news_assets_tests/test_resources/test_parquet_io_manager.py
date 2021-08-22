@@ -3,6 +3,7 @@ import tempfile
 
 import pandas
 from dagster import (
+    AssetKey,
     ModeDefinition,
     OutputDefinition,
     ResourceDefinition,
@@ -15,7 +16,11 @@ from hacker_news_assets.resources.parquet_io_manager import partitioned_parquet_
 from pyspark.sql import DataFrame as SparkDF
 
 
-@solid(output_defs=[OutputDefinition(name="out", io_manager_key="pandas_to_spark")])
+@solid(
+    output_defs=[
+        OutputDefinition(name="out", io_manager_key="pandas_to_spark", asset_key=AssetKey("out"))
+    ]
+)
 def emit_pandas_df(_):
     return pandas.DataFrame({"foo": ["bar", "baz"], "quux": [1, 2]})
 

@@ -22,7 +22,7 @@ def test_download():
                 "partition_start": ResourceDefinition.string_resource(),
                 "partition_end": ResourceDefinition.string_resource(),
                 "parquet_io_manager": partitioned_parquet_io_manager,
-                "db_io_manager": mem_io_manager,
+                "warehouse_io_manager": mem_io_manager,
                 "pyspark": pyspark_resource,
                 "hn_client": hn_snapshot_client,
             },
