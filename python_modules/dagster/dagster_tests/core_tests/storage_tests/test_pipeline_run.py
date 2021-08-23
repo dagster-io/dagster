@@ -9,13 +9,17 @@ from dagster.core.host_representation.origin import (
     ExternalRepositoryOrigin,
     InProcessRepositoryLocationOrigin,
 )
+from dagster.core.instance import DagsterInstance, InstanceRef
 from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
 from dagster.core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
     NON_IN_PROGRESS_RUN_STATUSES,
     PipelineRun,
     PipelineRunStatus,
+    PipelineTarget,
 )
+from dagster.utils import file_relative_path
+from dagster.utils.test import copy_directory
 
 
 def test_queued_pipeline_origin_check():
@@ -62,3 +66,16 @@ def test_in_progress_statuses():
     assert len(IN_PROGRESS_RUN_STATUSES) + len(NON_IN_PROGRESS_RUN_STATUSES) == len(
         PipelineRunStatus
     )
+
+
+def test_pipeline_run_target_backcompat():
+    src_dir = file_relative_path(__file__, "compat_tests/snapshot_0_12_7_pipeline_name")
+
+    with copy_directory(src_dir) as test_dir:
+        instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
+        runs = instance.get_runs()
+        target = runs[0].target
+        assert len(runs) == 1
+        assert isinstance(target, PipelineTarget)
+        assert target.name == "asset_lineage_pipeline"
+        assert target.mode == "default"

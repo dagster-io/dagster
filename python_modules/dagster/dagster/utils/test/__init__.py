@@ -37,7 +37,7 @@ from dagster.core.scheduler import Scheduler
 from dagster.core.scheduler.scheduler import DagsterScheduleDoesNotExist, DagsterSchedulerError
 from dagster.core.snap import snapshot_from_execution_plan
 from dagster.core.storage.file_manager import LocalFileManager
-from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineTarget
 from dagster.core.types.dagster_type import resolve_dagster_type
 from dagster.core.utility_solids import define_stub_solid
 from dagster.core.utils import make_new_run_id
@@ -66,7 +66,8 @@ def create_test_pipeline_execution_context(logger_defs=None):
         name="test_legacy_context", solid_defs=[], mode_defs=[mode_def]
     )
     run_config = {"loggers": {key: {} for key in loggers}}
-    pipeline_run = PipelineRun(pipeline_name="test_legacy_context", run_config=run_config)
+    target = PipelineTarget(name="test_legacy_context", mode="default")
+    pipeline_run = PipelineRun(target=target, run_config=run_config)
     instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(pipeline=pipeline_def, run_config=run_config)
     creation_data = create_context_creation_data(

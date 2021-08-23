@@ -11,7 +11,6 @@ from dagster import (
     Jitter,
     Output,
     OutputDefinition,
-    PipelineRun,
     RetryPolicy,
     RetryRequested,
     execute_pipeline,
@@ -26,6 +25,7 @@ from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.retries import RetryMode
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineTarget
 from dagster.core.test_utils import instance_for_test
 
 executors = pytest.mark.parametrize(
@@ -197,10 +197,11 @@ def test_step_retry_limit(environment):
 def test_retry_deferral():
     with instance_for_test() as instance:
         pipeline_def = define_retry_limit_pipeline()
+        target = PipelineTarget(name=pipeline_def.name, mode=pipeline_def.get_default_mode_name(0))
         events = execute_plan(
             create_execution_plan(pipeline_def),
             InMemoryPipeline(pipeline_def),
-            pipeline_run=PipelineRun(pipeline_name="retry_limits", run_id="42"),
+            pipeline_run=PipelineRun(target=target, run_id="42"),
             retry_mode=RetryMode.DEFERRED,
             instance=instance,
         )

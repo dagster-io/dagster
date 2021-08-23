@@ -33,7 +33,7 @@ from dagster.serdes import (
 from dagster.seven import JSONDecodeError
 from dagster.utils import merge_dicts, utc_datetime_from_timestamp
 
-from ..pipeline_run import PipelineRun, PipelineRunsFilter, RunRecord
+from ..pipeline_run import DagsterRun, PipelineRun, PipelineRunsFilter, RunRecord
 from .base import RunStorage
 from .migration import MODE_MIGRATION, RUN_DATA_MIGRATIONS, RUN_PARTITIONS
 from .schema import (
@@ -159,7 +159,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             )
 
     def _row_to_run(self, row: Tuple) -> PipelineRun:
-        return deserialize_as(row[0], PipelineRun)
+        return deserialize_as(row[0], DagsterRun)
 
     def _rows_to_runs(self, rows: Iterable[Tuple]) -> List[PipelineRun]:
         return list(map(self._row_to_run, rows))

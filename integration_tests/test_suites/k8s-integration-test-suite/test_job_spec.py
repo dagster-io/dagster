@@ -3,7 +3,7 @@ import os
 import yaml
 from dagster import __version__ as dagster_version
 from dagster.core.definitions.utils import validate_tags
-from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineTarget
 from dagster.core.test_utils import create_run_for_test
 from dagster.utils import load_yaml_from_path
 from dagster_k8s import construct_dagster_k8s_job
@@ -162,8 +162,8 @@ def test_valid_job_format(run_launcher):
     docker_image = get_test_project_docker_image()
 
     run_config = load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml"))
-    pipeline_name = "demo_pipeline"
-    run = PipelineRun(pipeline_name=pipeline_name, run_config=run_config)
+    target = PipelineTarget(name="demo_pipeline", mode="default")
+    run = PipelineRun(target=target, run_config=run_config)
 
     job_name = "dagster-run-%s" % run.run_id
     pod_name = "dagster-run-%s" % run.run_id
@@ -192,8 +192,8 @@ def test_valid_job_format_with_backcompat_resources(run_launcher):
     docker_image = get_test_project_docker_image()
 
     run_config = load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml"))
-    pipeline_name = "demo_pipeline"
-    run = PipelineRun(pipeline_name=pipeline_name, run_config=run_config)
+    target = PipelineTarget(name="demo_pipeline", mode="default")
+    run = PipelineRun(target=target, run_config=run_config)
 
     tags = validate_tags(
         {
@@ -241,8 +241,8 @@ def test_valid_job_format_with_user_defined_k8s_config(run_launcher):
     docker_image = get_test_project_docker_image()
 
     run_config = load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml"))
-    pipeline_name = "demo_pipeline"
-    run = PipelineRun(pipeline_name=pipeline_name, run_config=run_config)
+    target = PipelineTarget(name="demo_pipeline", mode="default")
+    run = PipelineRun(target=target, run_config=run_config)
 
     backoff_limit = 1234
     ttl_seconds_after_finished = 5678

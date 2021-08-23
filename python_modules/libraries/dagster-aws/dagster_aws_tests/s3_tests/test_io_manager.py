@@ -4,7 +4,6 @@ from dagster import (
     Int,
     ModeDefinition,
     OutputDefinition,
-    PipelineRun,
     build_input_context,
     build_output_context,
     lambda_solid,
@@ -16,6 +15,7 @@ from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import execute_plan
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.plan import ExecutionPlan
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineTarget
 from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.utils import make_new_run_id
 from dagster_aws.s3.io_manager import PickledObjectS3IOManager, s3_pickle_io_manager
@@ -79,9 +79,8 @@ def test_s3_pickle_io_manager_execution(mock_s3_bucket):
 
     step_keys = ["return_one"]
     instance = DagsterInstance.ephemeral()
-    pipeline_run = PipelineRun(
-        pipeline_name=pipeline_def.name, run_id=run_id, run_config=run_config
-    )
+    target = PipelineTarget(name=pipeline_def.name, mode=pipeline_def.get_default_mode_name())
+    pipeline_run = PipelineRun(target=target, run_id=run_id, run_config=run_config)
 
     return_one_step_events = list(
         execute_plan(

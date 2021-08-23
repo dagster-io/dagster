@@ -25,6 +25,7 @@ from typing import (
 import yaml
 from dagster import check
 from dagster.core.definitions.events import AssetKey
+from dagster.core.definitions.job import JobDefinition
 from dagster.core.definitions.pipeline import PipelineDefinition, PipelineSubsetDefinition
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.errors import (
@@ -34,10 +35,12 @@ from dagster.core.errors import (
     DagsterRunConflict,
 )
 from dagster.core.storage.pipeline_run import (
+    JobTarget,
     PipelineRun,
     PipelineRunStatsSnapshot,
     PipelineRunStatus,
     PipelineRunsFilter,
+    PipelineTarget,
     RunRecord,
 )
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
@@ -689,11 +692,17 @@ class DagsterInstance:
                 tags=tags,
             )
 
+        if isinstance(pipeline_def, JobDefinition):
+            target = JobTarget(name=pipeline_def.name)
+        else:
+            target = PipelineTarget(
+                name=pipeline_def.name,
+                mode=mode if mode is not None else pipeline_def.get_default_mode_name(),
+            )
         return self.create_run(
-            pipeline_name=pipeline_def.name,
+            target=target,
             run_id=run_id,
             run_config=run_config,
-            mode=check.opt_str_param(mode, "mode", default=pipeline_def.get_default_mode_name()),
             solid_selection=solid_selection,
             solids_to_execute=solids_to_execute,
             step_keys_to_execute=step_keys_to_execute,
@@ -713,10 +722,9 @@ class DagsterInstance:
 
     def _construct_run_with_snapshots(
         self,
-        pipeline_name,
+        target,
         run_id,
         run_config,
-        mode,
         solids_to_execute,
         step_keys_to_execute,
         status,
@@ -758,10 +766,9 @@ class DagsterInstance:
         )
 
         return PipelineRun(
-            pipeline_name=pipeline_name,
+            target=target,
             run_id=run_id,
             run_config=run_config,
-            mode=mode,
             solid_selection=solid_selection,
             solids_to_execute=solids_to_execute,
             step_keys_to_execute=step_keys_to_execute,
@@ -845,10 +852,9 @@ class DagsterInstance:
 
     def create_run(
         self,
-        pipeline_name,
+        target,
         run_id,
         run_config,
-        mode,
         solids_to_execute,
         step_keys_to_execute,
         status,
@@ -864,10 +870,9 @@ class DagsterInstance:
     ):
 
         pipeline_run = self._construct_run_with_snapshots(
-            pipeline_name=pipeline_name,
+            target=target,
             run_id=run_id,
             run_config=run_config,
-            mode=mode,
             solid_selection=solid_selection,
             solids_to_execute=solids_to_execute,
             step_keys_to_execute=step_keys_to_execute,
@@ -885,10 +890,9 @@ class DagsterInstance:
 
     def register_managed_run(
         self,
-        pipeline_name,
+        target,
         run_id,
         run_config,
-        mode,
         solids_to_execute,
         step_keys_to_execute,
         tags,
@@ -911,10 +915,9 @@ class DagsterInstance:
         # https://github.com/dagster-io/dagster/issues/2412
 
         pipeline_run = self._construct_run_with_snapshots(
-            pipeline_name=pipeline_name,
+            target=target,
             run_id=run_id,
             run_config=run_config,
-            mode=mode,
             solid_selection=solid_selection,
             solids_to_execute=solids_to_execute,
             step_keys_to_execute=step_keys_to_execute,

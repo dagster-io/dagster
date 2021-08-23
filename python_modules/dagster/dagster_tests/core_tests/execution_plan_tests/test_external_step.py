@@ -29,7 +29,7 @@ from dagster.core.execution.plan.external_step import (
 )
 from dagster.core.execution.retries import RetryMode
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineTarget
 from dagster.utils import safe_tempfile_path, send_interrupt
 from dagster.utils.merger import deep_merge_dicts
 
@@ -139,11 +139,11 @@ def define_sleepy_pipeline():
 
 
 def initialize_step_context(scratch_dir, instance):
+    target = PipelineTarget(name="foo_pipeline", mode="external")
     pipeline_run = PipelineRun(
-        pipeline_name="foo_pipeline",
+        target=target,
         run_id=str(uuid.uuid4()),
         run_config=make_run_config(scratch_dir, "external"),
-        mode="external",
     )
 
     recon_pipeline = reconstructable(define_basic_pipeline)

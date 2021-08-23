@@ -7,7 +7,6 @@ from dagster import (
     Int,
     ModeDefinition,
     OutputDefinition,
-    PipelineRun,
     build_input_context,
     build_output_context,
     pipeline,
@@ -18,6 +17,7 @@ from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import execute_plan
 from dagster.core.execution.plan.plan import ExecutionPlan
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineTarget
 from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.utils import make_new_run_id
 from dagster_azure.adls2 import create_adls2_client
@@ -96,9 +96,8 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
 
     step_keys = ["return_one"]
     instance = DagsterInstance.ephemeral()
-    pipeline_run = PipelineRun(
-        pipeline_name=pipeline_def.name, run_id=run_id, run_config=run_config
-    )
+    target = PipelineTarget(name=pipeline_def.name, mode=pipeline_def.get_default_mode_name())
+    pipeline_run = PipelineRun(target, run_id=run_id, run_config=run_config)
 
     return_one_step_events = list(
         execute_plan(

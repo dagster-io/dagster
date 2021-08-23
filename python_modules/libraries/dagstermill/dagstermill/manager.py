@@ -16,6 +16,7 @@ from dagster import (
 )
 from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.definitions.events import RetryRequested
+from dagster.core.definitions.job import JobDefinition
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.definitions.resource import ScopedResourcesBuilder
@@ -28,7 +29,12 @@ from dagster.core.execution.resources_init import (
     resource_initialization_event_generator,
 )
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.core.storage.pipeline_run import (
+    JobTarget,
+    PipelineRun,
+    PipelineRunStatus,
+    PipelineTarget,
+)
 from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.utils import make_new_run_id
 from dagster.loggers import colored_console_logger
@@ -235,14 +241,18 @@ class Manager:
 
         run_id = make_new_run_id()
 
+        if isinstance(pipeline_def, JobDefinition):
+            target = JobTarget(pipeline_def.name)
+        else:
+            target = PipelineTarget(name=pipeline_def.name, mode=mode_def.name)
+
         # construct stubbed PipelineRun for notebook exploration...
         # The actual pipeline run during pipeline execution will be serialized and reconstituted
         # in the `reconstitute_pipeline_context` call
         pipeline_run = PipelineRun(
-            pipeline_name=pipeline_def.name,
+            target=target,
             run_id=run_id,
             run_config=run_config,
-            mode=mode_def.name,
             step_keys_to_execute=None,
             status=PipelineRunStatus.NOT_STARTED,
             tags=None,

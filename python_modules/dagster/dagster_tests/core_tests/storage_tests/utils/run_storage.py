@@ -16,7 +16,12 @@ from dagster.core.host_representation import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )
 from dagster.core.snap import create_pipeline_snapshot_id
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.pipeline_run import (
+    PipelineRun,
+    PipelineRunStatus,
+    PipelineRunsFilter,
+    PipelineTarget,
+)
 from dagster.core.storage.runs.migration import RUN_DATA_MIGRATIONS
 from dagster.core.storage.runs.sql_run_storage import SqlRunStorage
 from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
@@ -82,11 +87,11 @@ class TestRunStorage:
         root_run_id=None,
         pipeline_snapshot_id=None,
     ):
+        target = PipelineTarget(name=pipeline_name, mode=mode)
         return PipelineRun(
-            pipeline_name=pipeline_name,
+            target=target,
             run_id=run_id,
             run_config=None,
-            mode=mode,
             tags=tags,
             status=status,
             root_run_id=root_run_id,
@@ -708,7 +713,8 @@ class TestRunStorage:
             pytest.skip("storage cannot delete")
 
         run_id = "some_run_id"
-        run = PipelineRun(run_id=run_id, pipeline_name="a_pipeline", tags={"foo": "bar"})
+        target = PipelineTarget(name="a_pipeline", mode="default")
+        run = PipelineRun(run_id=run_id, target=target, tags={"foo": "bar"})
 
         storage.add_run(run)
 
@@ -723,7 +729,8 @@ class TestRunStorage:
         double_run_id = "double_run_id"
         pipeline_def = PipelineDefinition(name="some_pipeline", solid_defs=[])
 
-        run = PipelineRun(run_id=double_run_id, pipeline_name=pipeline_def.name)
+        target = PipelineTarget(name=pipeline_def.name, mode=pipeline_def.get_default_mode_name())
+        run = PipelineRun(run_id=double_run_id, target=target)
 
         assert storage.add_run(run)
         with pytest.raises(DagsterRunAlreadyExists):
@@ -754,9 +761,10 @@ class TestRunStorage:
 
         pipeline_snapshot_id = create_pipeline_snapshot_id(pipeline_snapshot)
 
+        target = PipelineTarget(name=pipeline_def.name, mode=pipeline_def.get_default_mode_name())
         run_with_snapshot = PipelineRun(
             run_id=run_with_snapshot_id,
-            pipeline_name=pipeline_def.name,
+            target=target,
             pipeline_snapshot_id=pipeline_snapshot_id,
         )
 
@@ -783,9 +791,10 @@ class TestRunStorage:
         run_with_snapshot_id = "lkasjdflkjasdf"
         pipeline_def = PipelineDefinition(name="some_pipeline", solid_defs=[])
 
+        target = PipelineTarget(name=pipeline_def.name, mode=pipeline_def.get_default_mode_name())
         run_with_missing_snapshot = PipelineRun(
             run_id=run_with_snapshot_id,
-            pipeline_name=pipeline_def.name,
+            target=target,
             pipeline_snapshot_id="nope",
         )
 

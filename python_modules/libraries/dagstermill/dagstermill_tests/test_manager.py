@@ -10,7 +10,7 @@ import pytest
 from dagster import AssetMaterialization, ModeDefinition, ResourceDefinition, check
 from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineTarget
 from dagster.core.test_utils import instance_for_test
 from dagster.core.utils import make_new_run_id
 from dagster.serdes import pack_value
@@ -39,11 +39,11 @@ def in_pipeline_manager(
                 "dagstermill.examples.repository", "hello_world_pipeline"
             ).to_dict()
 
+        target = PipelineTarget(name=pipeline_name, mode=mode or "default")
         pipeline_run_dict = pack_value(
             PipelineRun(
-                pipeline_name=pipeline_name,
+                target=target,
                 run_id=run_id,
-                mode=mode or "default",
                 run_config=None,
                 step_keys_to_execute=None,
                 status=PipelineRunStatus.NOT_STARTED,

@@ -10,7 +10,6 @@ from dagster import (
     List,
     ModeDefinition,
     OutputDefinition,
-    PipelineRun,
     SerializationStrategy,
     String,
     check,
@@ -25,6 +24,7 @@ from dagster.core.execution.api import create_execution_plan, execute_plan, scop
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.instance import DagsterInstance
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineTarget
 from dagster.core.storage.type_storage import TypeStoragePlugin, TypeStoragePluginRegistry
 from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.types.dagster_type import Bool as RuntimeBool
@@ -107,9 +107,8 @@ def test_using_s3_for_subplan(mock_s3_bucket):
 
     step_keys = ["return_one"]
     instance = DagsterInstance.ephemeral()
-    pipeline_run = PipelineRun(
-        pipeline_name=pipeline_def.name, run_id=run_id, run_config=run_config
-    )
+    target = PipelineTarget(name=pipeline_def.name, mode=pipeline_def.get_default_mode_name())
+    pipeline_run = PipelineRun(target=target, run_id=run_id, run_config=run_config)
 
     return_one_step_events = list(
         execute_plan(
@@ -313,7 +312,8 @@ def test_s3_pipeline_with_custom_prefix(mock_s3_bucket):
         }
     }
 
-    pipeline_run = PipelineRun(pipeline_name=pipe.name, run_config=run_config)
+    target = PipelineTarget(name=pipe.name, mode=pipe.get_default_mode_name())
+    pipeline_run = PipelineRun(target=target, run_config=run_config)
     instance = DagsterInstance.ephemeral()
 
     result = execute_pipeline(

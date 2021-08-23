@@ -5,6 +5,7 @@ from enum import Enum
 from typing import NamedTuple
 
 from dagster import check
+from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster.core.utils import make_new_run_id
@@ -98,10 +99,9 @@ class PipelineRunSerializer(DefaultNamedTupleSerializer):
 
 
 def pipeline_run_from_storage(
-    pipeline_name=None,
+    target=None,
     run_id=None,
     run_config=None,
-    mode=None,
     solid_selection=None,
     solids_to_execute=None,
     step_keys_to_execute=None,
@@ -119,10 +119,13 @@ def pipeline_run_from_storage(
     reexecution_config=None,  # pylint: disable=unused-argument
     external_pipeline_origin=None,
     pipeline_code_origin=None,
+    pipeline_name=None,
+    mode=None,
     **kwargs,
 ):
 
     # serdes log
+    # * removed pipeline_name and mode, added target field
     # * removed reexecution_config - serdes logic expected to strip unknown keys so no need to preserve
     # * added pipeline_snapshot_id
     # * renamed previous_run_id -> parent_run_id, added root_run_id
@@ -178,17 +181,24 @@ def pipeline_run_from_storage(
     if solid_subset:
         solids_to_execute = frozenset(solid_subset)
 
+    # back compat for pipeline_name, mode => target
+    if pipeline_name is not None:
+        check.invariant(
+            target is None, "Received both target and pipeline_name from stored PipelineRun."
+        )
+        mode = check.str_param(mode, "mode")
+        target = PipelineTarget(name=pipeline_name, mode=mode)
+
     # warn about unused arguments
     if len(kwargs):
         warnings.warn(
             "Found unhandled arguments from stored PipelineRun: {args}".format(args=kwargs.keys())
         )
 
-    return PipelineRun(  # pylint: disable=redundant-keyword-arg
-        pipeline_name=pipeline_name,
+    return DagsterRun(  # pylint: disable=redundant-keyword-arg
+        target=target,
         run_id=run_id,
         run_config=run_config,
-        mode=mode,
         solid_selection=solid_selection,
         solids_to_execute=solids_to_execute,
         step_keys_to_execute=step_keys_to_execute,
@@ -203,12 +213,23 @@ def pipeline_run_from_storage(
     )
 
 
+@whitelist_for_serdes
+class PipelineTarget(NamedTuple):
+    name: str
+    mode: str
+
+
+@whitelist_for_serdes
+class JobTarget(NamedTuple):
+    name: str
+
+
 @whitelist_for_serdes(serializer=PipelineRunSerializer)
-class PipelineRun(
+class DagsterRun(
     namedtuple(
-        "_PipelineRun",
+        "_DagsterRun",
         (
-            "pipeline_name run_id run_config mode solid_selection solids_to_execute "
+            "target run_id run_config solid_selection solids_to_execute "
             "step_keys_to_execute status tags root_run_id parent_run_id "
             "pipeline_snapshot_id execution_plan_snapshot_id external_pipeline_origin "
             "pipeline_code_origin"
@@ -221,10 +242,9 @@ class PipelineRun(
 
     def __new__(
         cls,
-        pipeline_name=None,
+        target=None,
         run_id=None,
         run_config=None,
-        mode=None,
         solid_selection=None,
         solids_to_execute=None,
         step_keys_to_execute=None,
@@ -268,12 +288,11 @@ class PipelineRun(
                 "external_pipeline_origin is required for queued runs",
             )
 
-        return super(PipelineRun, cls).__new__(
+        return super(DagsterRun, cls).__new__(
             cls,
-            pipeline_name=check.opt_str_param(pipeline_name, "pipeline_name"),
+            target=check.opt_inst_param(target, "target", (PipelineTarget, JobTarget)),
             run_id=check.opt_str_param(run_id, "run_id", default=make_new_run_id()),
             run_config=check.opt_dict_param(run_config, "run_config", key_type=str),
-            mode=check.opt_str_param(mode, "mode"),
             solid_selection=solid_selection,
             solids_to_execute=solids_to_execute,
             step_keys_to_execute=step_keys_to_execute,
@@ -295,6 +314,17 @@ class PipelineRun(
             ),
         )
 
+    @property
+    def mode(self) -> str:
+        if isinstance(self.target, JobTarget):
+            return "default"
+        else:
+            return self.target.mode
+
+    @property
+    def pipeline_name(self) -> str:
+        return self.target.name
+
     def with_status(self, status):
         if status == PipelineRunStatus.QUEUED:
             # Placing this with the other imports causes a cyclic import
@@ -310,7 +340,11 @@ class PipelineRun(
         return self._replace(status=status)
 
     def with_mode(self, mode):
-        return self._replace(mode=mode)
+        if not isinstance(self.target, PipelineTarget):
+            raise DagsterInvariantViolationError(
+                "Attempted to switch mode for job, but jobs can only have one mode."
+            )
+        return self.target._replace(mode=mode)
 
     def with_tags(self, tags):
         return self._replace(tags=tags)
@@ -361,6 +395,11 @@ class PipelineRun(
     @staticmethod
     def tags_for_partition_set(partition_set, partition):
         return {PARTITION_NAME_TAG: partition.name, PARTITION_SET_TAG: partition_set.name}
+
+
+@whitelist_for_serdes(serializer=PipelineRunSerializer)
+class PipelineRun(DagsterRun):
+    pass
 
 
 @whitelist_for_serdes
