@@ -10,6 +10,7 @@ from dagster.core.definitions.sensor import (
 )
 from dagster.core.errors import RunStatusSensorExecutionError, user_code_error_boundary
 from dagster.core.events import PIPELINE_RUN_STATUS_TO_EVENT_TYPE, DagsterEvent
+from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.serdes import (
     deserialize_json_to_dagster_namedtuple,
@@ -60,7 +61,12 @@ register_serdes_tuple_fallbacks({"PipelineSensorCursor": RunStatusSensorCursor})
 class RunStatusSensorContext(
     NamedTuple(
         "_RunStatusSensorContext",
-        [("sensor_name", str), ("pipeline_run", PipelineRun), ("dagster_event", DagsterEvent)],
+        [
+            ("sensor_name", str),
+            ("pipeline_run", PipelineRun),
+            ("dagster_event", DagsterEvent),
+            ("instance", DagsterInstance),
+        ],
     )
 ):
     """The ``context`` object available to a decorated function of ``run_status_sensor``.
@@ -69,15 +75,17 @@ class RunStatusSensorContext(
         sensor_name (str): the name of the sensor.
         pipeline_run (PipelineRun): the pipeline run.
         dagster_event (DagsterEvent): the event associated with the pipeline run status.
+        instance (DagsterInstance): the current instance.
     """
 
-    def __new__(cls, sensor_name, pipeline_run, dagster_event):
+    def __new__(cls, sensor_name, pipeline_run, dagster_event, instance):
 
         return super(RunStatusSensorContext, cls).__new__(
             cls,
             sensor_name=check.str_param(sensor_name, "sensor_name"),
             pipeline_run=check.inst_param(pipeline_run, "pipeline_run", PipelineRun),
             dagster_event=check.inst_param(dagster_event, "dagster_event", DagsterEvent),
+            instance=check.inst_param(instance, "instance", DagsterInstance),
         )
 
     def for_failure(self):
@@ -85,6 +93,7 @@ class RunStatusSensorContext(
             sensor_name=self.sensor_name,
             pipeline_run=self.pipeline_run,
             dagster_event=self.dagster_event,
+            instance=self.instance,
         )
 
 
@@ -276,6 +285,7 @@ class RunStatusSensorDefinition(SensorDefinition):
                                 sensor_name=name,
                                 pipeline_run=pipeline_run,
                                 dagster_event=event_log_entry.dagster_event,
+                                instance=context.instance,
                             )
                         )
                 except RunStatusSensorExecutionError as run_status_sensor_execution_error:
