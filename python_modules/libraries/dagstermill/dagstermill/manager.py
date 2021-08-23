@@ -20,6 +20,7 @@ from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.definitions.resource import ScopedResourcesBuilder
 from dagster.core.execution.api import scoped_pipeline_context
+from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.resources_init import (
     get_required_resource_keys_to_init,
@@ -35,7 +36,7 @@ from dagster.utils import EventGenerationManager
 
 from .context import DagstermillExecutionContext, DagstermillRuntimeExecutionContext
 from .errors import DagstermillError
-from .serialize import PICKLE_PROTOCOL, read_value, write_value
+from .serialize import PICKLE_PROTOCOL, read_value
 
 
 class DagstermillResourceEventGenerationManager(EventGenerationManager):
@@ -107,6 +108,7 @@ class Manager:
         pipeline_run_dict=None,
         solid_handle_kwargs=None,
         instance_ref_dict=None,
+        step_key=None,
     ):
         """Reconstitutes a context for dagstermill-managed execution.
 
@@ -126,6 +128,7 @@ class Manager:
         check.dict_param(executable_dict, "executable_dict")
         check.dict_param(solid_handle_kwargs, "solid_handle_kwargs")
         check.dict_param(instance_ref_dict, "instance_ref_dict")
+        check.str_param(step_key, "step_key")
 
         pipeline = ReconstructablePipeline.from_dict(executable_dict)
         pipeline_def = pipeline.get_definition()
@@ -181,6 +184,7 @@ class Manager:
                 ),
                 solid_name=solid.name,
                 solid_handle=solid_handle,
+                step_context=pipeline_context.for_step(execution_plan.get_step_by_key(step_key)),
             )
 
         return self.context
@@ -298,15 +302,20 @@ class Manager:
                 f"Expected one of {[str(output_def.name) for output_def in self.solid_def.output_defs]}"
             )
 
-        dagster_type = self.solid_def.output_def_named(output_name).dagster_type
-
-        # https://github.com/dagster-io/dagster/issues/2648
-        # dagstermill temporary file creation should use a more systematic and robust scheme
-        out_file = os.path.join(
-            self.marshal_dir, f"{self.context.solid_handle}-output-{output_name}"
+        # pass output value cross process boundary using io manager
+        step_context = self.context._step_context  # pylint: disable=protected-access
+        # Note: yield_result currently does not support DynamicOutput
+        step_output_handle = StepOutputHandle(
+            step_key=step_context.step.key, output_name=output_name
         )
+        output_context = step_context.get_output_context(step_output_handle)
+        io_manager = step_context.get_io_manager(step_output_handle)
 
-        scrapbook.glue(output_name, write_value(dagster_type, value, out_file))
+        # Note that we assume io manager is symmetric, i.e handle_input(handle_output(X)) == X
+        io_manager.handle_output(output_context, value)
+
+        # record that the output has been yielded
+        scrapbook.glue(output_name, "")
 
     def yield_event(self, dagster_event):
         """Yield a dagster event directly from notebook code.

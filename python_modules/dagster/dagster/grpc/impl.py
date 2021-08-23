@@ -399,3 +399,16 @@ def get_partition_set_execution_param_data(recon_repo, partition_set_name, parti
         return ExternalPartitionExecutionErrorData(
             serializable_error_info_from_exc_info(sys.exc_info())
         )
+
+
+def get_notebook_data(notebook_path):
+    check.str_param(notebook_path, "notebook_path")
+
+    if not notebook_path.endswith(".ipynb"):
+        raise Exception(
+            "unexpected file extension for notebooks. Please provide a path that ends with '.ipynb'."
+        )
+
+    with open(os.path.abspath(notebook_path), "rb") as f:
+        content = f.read()
+        return content

@@ -9,7 +9,6 @@ from dagster import (
     PipelineExecutionResult,
     SolidExecutionResult,
     execute_pipeline,
-    execute_solid,
     pipeline,
     solid,
 )
@@ -73,20 +72,6 @@ def test_pipeline():
 
 
 # end_test_pipeline_marker
-
-
-# start_test_execute_solid_marker
-def test_solid():
-    result = execute_solid(add_one)
-
-    # return type is SolidExecutionResult
-    assert isinstance(result, SolidExecutionResult)
-    assert result.success
-    # check the solid output value
-    assert result.output_value() == 2
-
-
-# end_test_execute_solid_marker
 
 # start_invocation_solid_marker
 @solid

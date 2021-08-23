@@ -9,6 +9,7 @@ import {pluginForMetadata} from '../plugins';
 import {SolidTypeSignature, SOLID_TYPE_SIGNATURE_FRAGMENT} from '../solids/SolidTypeSignature';
 import {ConfigTypeSchema, CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
 import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from '../typeexplorer/TypeWithTooltip';
+import {RepoAddress} from '../workspace/types';
 
 import {Description} from './Description';
 import {
@@ -35,12 +36,13 @@ interface SidebarSolidDefinitionProps {
   getInvocations?: (definitionName: string) => {handleID: string}[];
   showingSubsolids: boolean;
   onClickInvocation: (arg: SidebarSolidInvocationInfo) => void;
+  repoAddress?: RepoAddress;
 }
 
 const DEFAULT_INVOCATIONS_SHOWN = 20;
 
 export const SidebarSolidDefinition: React.FC<SidebarSolidDefinitionProps> = (props) => {
-  const {definition, getInvocations, showingSubsolids, onClickInvocation} = props;
+  const {definition, getInvocations, showingSubsolids, onClickInvocation, repoAddress} = props;
   const Plugin = pluginForMetadata(definition.metadata);
   const isComposite = definition.__typename === 'CompositeSolidDefinition';
   const configField = definition.__typename === 'SolidDefinition' ? definition.configField : null;
@@ -86,7 +88,11 @@ export const SidebarSolidDefinition: React.FC<SidebarSolidDefinitionProps> = (pr
       )}
       {definition.metadata && Plugin && Plugin.SidebarComponent && (
         <SidebarSection title={'Metadata'}>
-          <Plugin.SidebarComponent definition={definition} rootServerURI={rootServerURI} />
+          <Plugin.SidebarComponent
+            definition={definition}
+            rootServerURI={rootServerURI}
+            repoAddress={repoAddress}
+          />
         </SidebarSection>
       )}
       {configField && (
