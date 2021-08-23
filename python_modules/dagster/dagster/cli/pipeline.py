@@ -39,6 +39,7 @@ from dagster.core.host_representation.selector import PipelineSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.instance.config import is_dagster_home_set
 from dagster.core.snap import PipelineSnapshot, SolidInvocationSnap
+from dagster.core.storage.pipeline_run import JobTarget, PipelineTarget
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 from dagster.core.telemetry import log_external_repo_stats, telemetry_wrapper
 from dagster.core.utils import make_new_backfill_id
@@ -493,6 +494,11 @@ def _create_external_pipeline_run(
 
     pipeline_mode = mode or external_pipeline_subset.get_default_mode_name()
 
+    if external_pipeline_subset.snapshot_represents_job:
+        target = JobTarget(name=external_pipeline_subset.name)
+    else:
+        target = PipelineTarget(name=external_pipeline_subset.name, mode=pipeline_mode)
+
     external_execution_plan = repo_location.get_external_execution_plan(
         external_pipeline_subset,
         run_config,
@@ -503,10 +509,9 @@ def _create_external_pipeline_run(
     execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
 
     return instance.create_run(
-        pipeline_name=pipeline_name,
+        target=target,
         run_id=run_id,
         run_config=run_config,
-        mode=pipeline_mode,
         solids_to_execute=external_pipeline_subset.solids_to_execute,
         step_keys_to_execute=execution_plan_snapshot.step_keys_to_execute,
         solid_selection=solid_selection,

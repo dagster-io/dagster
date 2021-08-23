@@ -290,6 +290,10 @@ class ExternalPipeline(RepresentedPipeline):
     def pipeline_snapshot(self):
         return self._pipeline_index.pipeline_snapshot
 
+    @property
+    def snapshot_represents_job(self):
+        return self.pipeline_snapshot.snapshot_represents_job
+
 
 class ExternalExecutionPlan:
     """

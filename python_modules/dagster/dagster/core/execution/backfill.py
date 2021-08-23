@@ -15,7 +15,13 @@ from dagster.core.host_representation.external_data import (
 )
 from dagster.core.host_representation.origin import ExternalPartitionSetOrigin
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.pipeline_run import (
+    JobTarget,
+    PipelineRun,
+    PipelineRunStatus,
+    PipelineRunsFilter,
+    PipelineTarget,
+)
 from dagster.core.storage.tags import (
     PARENT_RUN_ID_TAG,
     PARTITION_NAME_TAG,
@@ -247,15 +253,19 @@ def create_backfill_run(
         known_state=known_state,
     )
 
+    if external_pipeline.snapshot_represents_job:
+        target = JobTarget(name=external_pipeline.name)
+    else:
+        target = PipelineTarget(name=external_pipeline.name, mode=external_partition_set.mode)
+
     return instance.create_run(
         pipeline_snapshot=external_pipeline.pipeline_snapshot,
         execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
         parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
-        pipeline_name=external_pipeline.name,
+        target=target,
         run_id=make_new_run_id(),
         solids_to_execute=solids_to_execute,
         run_config=partition_data.run_config,
-        mode=external_partition_set.mode,
         step_keys_to_execute=step_keys_to_execute,
         tags=tags,
         root_run_id=root_run_id,

@@ -18,6 +18,7 @@ from dagster.config.snap import (
     ConfigType,
     ConfigTypeSnap,
 )
+from dagster.core.definitions.job import JobDefinition
 from dagster.core.definitions.pipeline import PipelineDefinition, PipelineSubsetDefinition
 from dagster.core.utils import toposort_flatten
 from dagster.serdes import (
@@ -65,6 +66,7 @@ def _pipeline_snapshot_from_storage(
     mode_def_snaps: List[ModeDefSnap],
     lineage_snapshot: Optional["PipelineSnapshotLineage"] = None,
     graph_def_name: Optional[str] = None,
+    snapshot_represents_job: Optional[bool] = False,
 ) -> "PipelineSnapshot":
     """
     v0
@@ -87,6 +89,7 @@ def _pipeline_snapshot_from_storage(
         mode_def_snaps=mode_def_snaps,
         lineage_snapshot=lineage_snapshot,
         graph_def_name=graph_def_name,
+        snapshot_represents_job=snapshot_represents_job,
     )
 
 
@@ -105,6 +108,7 @@ class PipelineSnapshot(
             ("mode_def_snaps", List[ModeDefSnap]),
             ("lineage_snapshot", Optional["PipelineSnapshotLineage"]),
             ("graph_def_name", str),
+            ("snapshot_represents_job", bool),
         ],
     )
 ):
@@ -120,6 +124,7 @@ class PipelineSnapshot(
         mode_def_snaps: List[ModeDefSnap],
         lineage_snapshot: Optional["PipelineSnapshotLineage"],
         graph_def_name: str,
+        snapshot_represents_job: bool,
     ):
         return super(PipelineSnapshot, cls).__new__(
             cls,
@@ -145,6 +150,9 @@ class PipelineSnapshot(
                 lineage_snapshot, "lineage_snapshot", PipelineSnapshotLineage
             ),
             graph_def_name=check.str_param(graph_def_name, "graph_def_name"),
+            snapshot_represents_job=check.bool_param(
+                snapshot_represents_job, "snapshot_represents_job"
+            ),
         )
 
     @classmethod
@@ -160,6 +168,8 @@ class PipelineSnapshot(
                 solid_selection=sorted(pipeline_def.solid_selection),
                 solids_to_execute=pipeline_def.solids_to_execute,
             )
+
+        snapshot_represents_job = isinstance(pipeline_def, JobDefinition)
 
         return PipelineSnapshot(
             name=pipeline_def.name,
@@ -177,6 +187,7 @@ class PipelineSnapshot(
             ],
             lineage_snapshot=lineage,
             graph_def_name=pipeline_def.graph.name,
+            snapshot_represents_job=snapshot_represents_job,
         )
 
     def get_node_def_snap(self, solid_def_name: str) -> Union[SolidDefSnap, CompositeSolidDefSnap]:

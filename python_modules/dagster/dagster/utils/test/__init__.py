@@ -243,11 +243,11 @@ def yield_empty_pipeline_context(run_id=None, instance=None):
 
     execution_plan = create_execution_plan(pipeline)
 
+    target = PipelineTarget(name="<empty>", mode="default")
     pipeline_run = instance.create_run(
-        pipeline_name="<empty>",
+        target=target,
         run_id=run_id,
         run_config=None,
-        mode=None,
         solids_to_execute=None,
         step_keys_to_execute=None,
         status=None,

@@ -17,7 +17,12 @@ from dagster.core.host_representation.origin import (
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
 from dagster.core.run_coordinator import RunCoordinator, SubmitRunContext
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.pipeline_run import (
+    PipelineRun,
+    PipelineRunStatus,
+    PipelineRunsFilter,
+    PipelineTarget,
+)
 from dagster.core.telemetry import cleanup_telemetry_logger
 from dagster.core.workspace.context import WorkspaceProcessContext
 from dagster.core.workspace.load_target import WorkspaceLoadTarget
@@ -157,11 +162,11 @@ def create_run_for_test(
     external_pipeline_origin=None,
     pipeline_code_origin=None,
 ):
+    target = PipelineTarget(name=pipeline_name, mode=mode)
     return instance.create_run(
-        pipeline_name,
+        target,
         run_id,
         run_config,
-        mode,
         solids_to_execute,
         step_keys_to_execute,
         status,

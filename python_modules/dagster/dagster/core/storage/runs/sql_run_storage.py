@@ -295,7 +295,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         query = db.select([RunsTable.c.run_body]).where(RunsTable.c.run_id == run_id)
         rows = self.fetchall(query)
-        return deserialize_as(rows[0][0], PipelineRun) if len(rows) else None
+        return deserialize_as(rows[0][0], DagsterRun) if len(rows) else None
 
     def get_run_records(
         self,

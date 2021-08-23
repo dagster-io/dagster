@@ -1,7 +1,7 @@
 from dagster import check
 from dagster.core.execution.plan.resume_retry import get_retry_steps_from_parent_run
 from dagster.core.execution.plan.state import KnownExecutionState
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.pipeline_run import JobTarget, PipelineRunStatus, PipelineTarget
 from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.core.utils import make_new_run_id
 from dagster.utils import merge_dicts
@@ -55,11 +55,18 @@ def create_valid_pipeline_run(graphene_info, external_pipeline, execution_params
     )
     tags = merge_dicts(external_pipeline.tags, execution_params.execution_metadata.tags)
 
+    if external_pipeline.snapshot_represents_job:
+        target = JobTarget(name=execution_params.selector.pipeline_name)
+    else:
+        target = PipelineTarget(
+            name=execution_params.selector.pipeline_name, mode=execution_params.mode
+        )
+
     pipeline_run = graphene_info.context.instance.create_run(
+        target=target,
         pipeline_snapshot=external_pipeline.pipeline_snapshot,
         execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
         parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
-        pipeline_name=execution_params.selector.pipeline_name,
         run_id=execution_params.execution_metadata.run_id
         if execution_params.execution_metadata.run_id
         else make_new_run_id(),
@@ -67,7 +74,6 @@ def create_valid_pipeline_run(graphene_info, external_pipeline, execution_params
         if execution_params.selector.solid_selection
         else None,
         run_config=execution_params.run_config,
-        mode=execution_params.mode,
         step_keys_to_execute=step_keys_to_execute,
         tags=tags,
         root_run_id=execution_params.execution_metadata.root_run_id,
