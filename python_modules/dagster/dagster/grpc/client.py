@@ -303,6 +303,15 @@ class DagsterGrpcClient:
 
         return "".join([chunk.serialized_chunk for chunk in chunks])
 
+    def external_notebook_data(self, notebook_path):
+        check.str_param(notebook_path, "notebook_path")
+        res = self._query(
+            "ExternalNotebookData",
+            api_pb2.ExternalNotebookDataRequest,
+            notebook_path=notebook_path,
+        )
+        return res.content
+
     def shutdown_server(self, timeout=15):
         res = self._query("ShutdownServer", api_pb2.Empty, timeout=timeout)
         return res.serialized_shutdown_server_result

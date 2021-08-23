@@ -9,7 +9,7 @@ import pytest
 from .utils import BUILDKITE
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def docker_compose_cm(test_directory):
     @contextmanager
     def docker_compose(

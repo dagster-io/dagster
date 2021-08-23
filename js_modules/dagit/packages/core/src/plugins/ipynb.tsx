@@ -25,6 +25,8 @@ export class SidebarComponent extends React.Component<IPluginSidebarProps> {
   render() {
     const metadata = this.props.definition.metadata;
     const notebookPath = metadata.find((m) => m.key === 'notebook_path');
+    const repoLocName = this.props.repoAddress?.location;
+
     if (!notebookPath) {
       return <span />;
     }
@@ -51,7 +53,7 @@ export class SidebarComponent extends React.Component<IPluginSidebarProps> {
               title={notebookPath.value}
               src={`${this.props.rootServerURI}/dagit/notebook?path=${encodeURIComponent(
                 notebookPath.value,
-              )}`}
+              )}&repoLocName=${repoLocName}`}
               sandbox=""
               style={{border: 0, background: 'white'}}
               seamless={true}

@@ -3,7 +3,7 @@ from typing import Any, Dict, Set
 from dagster import PipelineDefinition, PipelineRun, SolidDefinition, check
 from dagster.core.definitions.dependency import Node, NodeHandle
 from dagster.core.execution.context.compute import AbstractComputeExecutionContext
-from dagster.core.execution.context.system import PlanExecutionContext
+from dagster.core.execution.context.system import PlanExecutionContext, StepExecutionContext
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.system_config.objects import ResolvedRunConfig
 
@@ -141,4 +141,22 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
 
 
 class DagstermillRuntimeExecutionContext(DagstermillExecutionContext):
-    pass
+    def __init__(
+        self,
+        pipeline_context: PlanExecutionContext,
+        pipeline_def: PipelineDefinition,
+        resource_keys_to_init: Set[str],
+        solid_name: str,
+        step_context: StepExecutionContext,
+        solid_handle: NodeHandle,
+        solid_config: Any = None,
+    ):
+        self._step_context = check.inst_param(step_context, "step_context", StepExecutionContext)
+        super().__init__(
+            pipeline_context,
+            pipeline_def,
+            resource_keys_to_init,
+            solid_name,
+            solid_handle,
+            solid_config,
+        )

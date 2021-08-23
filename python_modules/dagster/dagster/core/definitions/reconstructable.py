@@ -425,11 +425,12 @@ def bootstrap_standalone_recon_pipeline(pointer):
 def _check_is_loadable(definition):
     from .pipeline import PipelineDefinition
     from .repository import RepositoryDefinition
+    from .graph import GraphDefinition
 
-    if not isinstance(definition, (PipelineDefinition, RepositoryDefinition)):
+    if not isinstance(definition, (PipelineDefinition, RepositoryDefinition, GraphDefinition)):
         raise DagsterInvariantViolationError(
             (
-                "Loadable attributes must be either a PipelineDefinition or a "
+                "Loadable attributes must be either a PipelineDefinition, GraphDefinition, or a "
                 "RepositoryDefinition. Got {definition}."
             ).format(definition=repr(definition))
         )
@@ -453,8 +454,11 @@ def def_from_pointer(pointer):
 
     from .pipeline import PipelineDefinition
     from .repository import RepositoryDefinition
+    from .graph import GraphDefinition
 
-    if isinstance(target, (PipelineDefinition, RepositoryDefinition)) or not callable(target):
+    if isinstance(
+        target, (PipelineDefinition, RepositoryDefinition, GraphDefinition)
+    ) or not callable(target):
         return _check_is_loadable(target)
 
     # if its a function invoke it - otherwise we are pointing to a
@@ -487,10 +491,11 @@ def pipeline_def_from_pointer(pointer):
 
 def repository_def_from_target_def(target):
     from .pipeline import PipelineDefinition
+    from .graph import GraphDefinition
     from .repository import CachingRepositoryData, RepositoryDefinition
 
     # special case - we can wrap a single pipeline in a repository
-    if isinstance(target, PipelineDefinition):
+    if isinstance(target, (PipelineDefinition, GraphDefinition)):
         # consider including pipeline name in generated repo name
         return RepositoryDefinition(
             name=get_ephemeral_repository_name(target.name),

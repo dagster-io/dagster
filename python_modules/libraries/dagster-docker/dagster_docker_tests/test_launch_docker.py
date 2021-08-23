@@ -245,6 +245,52 @@ def test_launch_docker_image_on_instance_config():
         "image": docker_image,
     }
 
+    _test_launch(docker_image, launcher_config)
+
+
+def test_launch_docker_image_multiple_networks():
+    docker_image = get_test_project_docker_image()
+    launcher_config = {
+        "env_vars": [
+            "AWS_ACCESS_KEY_ID",
+            "AWS_SECRET_ACCESS_KEY",
+        ],
+        "networks": [
+            "container:test-postgres-db-docker",
+            "postgres",
+        ],
+        "image": docker_image,
+    }
+    _test_launch(docker_image, launcher_config)
+
+
+def test_cant_combine_network_and_networks():
+    docker_image = get_test_project_docker_image()
+    launcher_config = {
+        "env_vars": [
+            "AWS_ACCESS_KEY_ID",
+            "AWS_SECRET_ACCESS_KEY",
+        ],
+        "network": "container:test-postgres-db-docker",
+        "networks": [
+            "postgres",
+        ],
+        "image": docker_image,
+    }
+    with pytest.raises(Exception, match="cannot set both `network` and `networks`"):
+        with docker_postgres_instance(
+            overrides={
+                "run_launcher": {
+                    "class": "DockerRunLauncher",
+                    "module": "dagster_docker",
+                    "config": launcher_config,
+                }
+            }
+        ):
+            pass
+
+
+def _test_launch(docker_image, launcher_config):
     if IS_BUILDKITE:
         launcher_config["registry"] = get_buildkite_registry_config()
     else:

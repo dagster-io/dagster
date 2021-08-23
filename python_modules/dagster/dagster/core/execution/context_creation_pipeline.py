@@ -1,3 +1,4 @@
+import logging
 import sys
 from abc import ABC, abstractproperty
 from contextlib import contextmanager
@@ -40,14 +41,14 @@ from dagster.core.execution.resources_init import (
 from dagster.core.execution.retries import RetryMode
 from dagster.core.executor.init import InitExecutorContext
 from dagster.core.instance import DagsterInstance
-from dagster.core.log_manager import DagsterLogManager
+from dagster.core.log_manager import DagsterLogManager, DagsterLoggingMetadata
 from dagster.core.storage.init import InitIntermediateStorageContext
 from dagster.core.storage.intermediate_storage import IntermediateStorage
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.type_storage import construct_type_storage_plugin_registry
 from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.loggers import default_loggers, default_system_loggers
-from dagster.utils import EventGenerationManager, merge_dicts
+from dagster.utils import EventGenerationManager
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .context.logger import InitLoggerContext
@@ -76,7 +77,10 @@ def initialize_console_manager(pipeline_run: Optional[PipelineRun]) -> DagsterLo
             )
         )
     return DagsterLogManager(
-        None, pipeline_run.tags if pipeline_run and pipeline_run.tags else {}, loggers
+        DagsterLoggingMetadata(
+            pipeline_tags=pipeline_run.tags if pipeline_run and pipeline_run.tags else {}
+        ),
+        loggers,
     )
 
 
@@ -389,10 +393,8 @@ def orchestration_context_event_generator(
             ),
             error_info=error_info,
         )
-        log_manager.error(
-            event.message,
-            dagster_event=event,
-            pipeline_name=pipeline_run.pipeline_name,
+        log_manager.log_dagster_event(
+            level=logging.ERROR, msg=event.message or "", dagster_event=event
         )
         yield event
 
@@ -578,13 +580,12 @@ def create_log_manager(context_creation_data: ContextCreationData) -> DagsterLog
                 )
             )
 
-    # should this be first in loggers list?
-    loggers.append(context_creation_data.instance.get_logger())
+    handlers = [context_creation_data.instance.get_event_log_handler()]
 
     return DagsterLogManager(
-        run_id=pipeline_run.run_id,
-        logging_tags=get_logging_tags(pipeline_run),
+        logging_metadata=get_logging_metadata(pipeline_run),
         loggers=loggers,
+        handlers=handlers,
     )
 
 
@@ -601,7 +602,7 @@ def _create_context_free_log_manager(
     check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
 
-    loggers = [instance.get_logger()]
+    loggers = []
     # Use the default logger
     for (logger_def, logger_config) in default_system_loggers():
         loggers += [
@@ -615,12 +616,15 @@ def _create_context_free_log_manager(
             )
         ]
 
-    return DagsterLogManager(pipeline_run.run_id, get_logging_tags(pipeline_run), loggers)
+    handlers = [instance.get_event_log_handler()]
+
+    return DagsterLogManager(get_logging_metadata(pipeline_run), loggers, handlers)
 
 
-def get_logging_tags(pipeline_run: PipelineRun) -> Dict[str, str]:
+def get_logging_metadata(pipeline_run: PipelineRun) -> DagsterLoggingMetadata:
     check.opt_inst_param(pipeline_run, "pipeline_run", PipelineRun)
-    return merge_dicts(
-        {"pipeline": pipeline_run.pipeline_name},
-        pipeline_run.tags if pipeline_run and pipeline_run.tags else {},
+    return DagsterLoggingMetadata(
+        run_id=pipeline_run.run_id,
+        pipeline_name=pipeline_run.pipeline_name,
+        pipeline_tags=pipeline_run.tags,
     )

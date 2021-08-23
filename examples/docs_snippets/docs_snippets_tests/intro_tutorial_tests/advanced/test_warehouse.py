@@ -2,7 +2,7 @@ import csv
 import os
 
 from dagster import execute_pipeline
-from dagster.utils import pushd, script_relative_path
+from dagster.utils import script_relative_path
 from docs_snippets.intro_tutorial.advanced.pipelines.modes import (
     SqlAlchemyPostgresWarehouse as sapw1,
 )
@@ -26,10 +26,7 @@ def test_warehouse(postgres):
 
 
 def test_warehouse_resource(postgres):
-    run_config = {
-        "solids": {"download_csv": {"inputs": {"url": {"value": "something"}}}},
-        "resources": {"warehouse": {"config": {"conn_str": postgres}}},
-    }
+    run_config = {"resources": {"warehouse": {"config": {"conn_str": postgres}}}}
 
     @patch_cereal_requests
     def execute_with_mode():
@@ -46,7 +43,7 @@ def test_warehouse_resource(postgres):
 
         @patch_cereal_requests
         def execute_with_presets():
-            result = execute_pipeline(presets_pipeline, preset="dev")
+            result = execute_pipeline(presets_pipeline, preset="unittest")
             assert result.success
 
         execute_with_presets()

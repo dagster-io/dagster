@@ -1,6 +1,15 @@
 from unittest.mock import Mock
 
-from dagster_mlflow.hooks import _cleanup_on_success
+from dagster import (
+    InputDefinition,
+    ModeDefinition,
+    Nothing,
+    ResourceDefinition,
+    execute_pipeline,
+    pipeline,
+    solid,
+)
+from dagster_mlflow.hooks import _cleanup_on_success, end_mlflow_run_on_pipeline_finished
 
 
 def test_cleanup_on_success():
@@ -32,3 +41,29 @@ def test_cleanup_on_success():
     mock_context.solid = mock_solid_1
     _cleanup_on_success(mock_context)
     mock_context.resources.mlflow.end_run.assert_not_called()
+
+
+def test_end_mlflow_run_on_pipeline_finished():
+    mock_mlflow = Mock()
+
+    @solid
+    def solid1():
+        pass
+
+    @solid(input_defs=[InputDefinition("start", Nothing)])
+    def solid2():
+        pass
+
+    @end_mlflow_run_on_pipeline_finished
+    @pipeline(
+        mode_defs=[
+            ModeDefinition(
+                resource_defs={"mlflow": ResourceDefinition.hardcoded_resource(mock_mlflow)}
+            )
+        ]
+    )
+    def mlf_pipeline():
+        solid2(solid1())
+
+    execute_pipeline(mlf_pipeline)
+    mock_mlflow.end_run.assert_called_once()
