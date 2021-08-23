@@ -85,11 +85,12 @@ def test_launch_run_grpc():
         with get_foo_pipeline_handle() as pipeline_handle:
             api_client = pipeline_handle.repository_handle.repository_location.client
 
+            target = PipelineTarget(name="foo", mode="default")
+
             pipeline_run = instance.create_run(
-                pipeline_name="foo",
+                target=target,
                 run_id=None,
                 run_config={},
-                mode="default",
                 solids_to_execute=None,
                 step_keys_to_execute=None,
                 status=None,
@@ -142,11 +143,11 @@ def test_launch_unloadable_run_grpc():
         with get_foo_pipeline_handle() as pipeline_handle:
             api_client = pipeline_handle.repository_handle.repository_location.client
 
+            target = PipelineTarget(name="foo", mode="default")
             pipeline_run = instance.create_run(
-                pipeline_name="foo",
+                target=target,
                 run_id=None,
                 run_config={},
-                mode="default",
                 solids_to_execute=None,
                 step_keys_to_execute=None,
                 status=None,

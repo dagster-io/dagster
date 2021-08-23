@@ -1175,6 +1175,7 @@ snapshots['test_all_snapshot_ids 1'] = '''{
     }
   ],
   "name": "asset_lineage_pipeline",
+  "snapshot_represents_job": false,
   "solid_definitions_snapshot": {
     "__class__": "SolidDefinitionsSnapshot",
     "composite_solid_def_snaps": [],
@@ -1279,7 +1280,7 @@ snapshots['test_all_snapshot_ids 1'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 10'] = 'a22d16e6fbbb5f38ebe44dab0d9317f5c80821bf'
+snapshots['test_all_snapshot_ids 10'] = '013073fe5fd43a34e054e851ad81a124ddc9cca5'
 
 snapshots['test_all_snapshot_ids 11'] = '''{
   "__class__": "PipelineSnapshot",
@@ -2669,6 +2670,7 @@ snapshots['test_all_snapshot_ids 11'] = '''{
     }
   ],
   "name": "composites_pipeline",
+  "snapshot_represents_job": false,
   "solid_definitions_snapshot": {
     "__class__": "SolidDefinitionsSnapshot",
     "composite_solid_def_snaps": [
@@ -2993,7 +2995,7 @@ snapshots['test_all_snapshot_ids 11'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 12'] = '7a0db62aacaf0858920713e542dc416535a063f5'
+snapshots['test_all_snapshot_ids 12'] = '0e38b3b12ca98acc20d119e145c50cc95231d722'
 
 snapshots['test_all_snapshot_ids 13'] = '''{
   "__class__": "PipelineSnapshot",
@@ -4222,6 +4224,7 @@ snapshots['test_all_snapshot_ids 13'] = '''{
     }
   ],
   "name": "csv_hello_world",
+  "snapshot_represents_job": false,
   "solid_definitions_snapshot": {
     "__class__": "SolidDefinitionsSnapshot",
     "composite_solid_def_snaps": [],
@@ -4299,7 +4302,7 @@ snapshots['test_all_snapshot_ids 13'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 14'] = '71da8227c5227b3e8a2d1ee30ba74b0e42aeca56'
+snapshots['test_all_snapshot_ids 14'] = 'a8c76187b1c18af435a7596cb63fc34e76369650'
 
 snapshots['test_all_snapshot_ids 15'] = '''{
   "__class__": "PipelineSnapshot",
@@ -5528,6 +5531,7 @@ snapshots['test_all_snapshot_ids 15'] = '''{
     }
   ],
   "name": "csv_hello_world_df_input",
+  "snapshot_represents_job": false,
   "solid_definitions_snapshot": {
     "__class__": "SolidDefinitionsSnapshot",
     "composite_solid_def_snaps": [],
@@ -5605,7 +5609,7 @@ snapshots['test_all_snapshot_ids 15'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 16'] = '325b0ea3ca89d8a20c4ff1596865baa2f0b2b46e'
+snapshots['test_all_snapshot_ids 16'] = '8709f0717a3b32ac9d635b89d60fc7dd50b40010'
 
 snapshots['test_all_snapshot_ids 17'] = '''{
   "__class__": "PipelineSnapshot",
@@ -6769,6 +6773,7 @@ snapshots['test_all_snapshot_ids 17'] = '''{
     }
   ],
   "name": "csv_hello_world_two",
+  "snapshot_represents_job": false,
   "solid_definitions_snapshot": {
     "__class__": "SolidDefinitionsSnapshot",
     "composite_solid_def_snaps": [],
@@ -6812,7 +6817,7 @@ snapshots['test_all_snapshot_ids 17'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 18'] = '897c5f29c14db09feacab1da4d08dadd2a4485fa'
+snapshots['test_all_snapshot_ids 18'] = 'd0968f6938cbca78fbe439cb3505d81c91357985'
 
 snapshots['test_all_snapshot_ids 19'] = '''{
   "__class__": "PipelineSnapshot",
@@ -8071,6 +8076,7 @@ snapshots['test_all_snapshot_ids 19'] = '''{
     }
   ],
   "name": "csv_hello_world_with_expectations",
+  "snapshot_represents_job": false,
   "solid_definitions_snapshot": {
     "__class__": "SolidDefinitionsSnapshot",
     "composite_solid_def_snaps": [],
@@ -8182,9 +8188,9 @@ snapshots['test_all_snapshot_ids 19'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 2'] = '021cef0ca767128d1b29ae424a935b13796048f7'
+snapshots['test_all_snapshot_ids 2'] = '71b86f0f96892a6f8dd3db45d697ce2680c34d1c'
 
-snapshots['test_all_snapshot_ids 20'] = 'e557e14c39e8fe705f11fbc1a4d3c75b3afe9f88'
+snapshots['test_all_snapshot_ids 20'] = '4785dfd70a811060c5e6ad46ceb99fb7e63a2612'
 
 snapshots['test_all_snapshot_ids 21'] = '''{
   "__class__": "PipelineSnapshot",
@@ -9517,6 +9523,7 @@ snapshots['test_all_snapshot_ids 21'] = '''{
     }
   ],
   "name": "dynamic_pipeline",
+  "snapshot_represents_job": false,
   "solid_definitions_snapshot": {
     "__class__": "SolidDefinitionsSnapshot",
     "composite_solid_def_snaps": [],
@@ -9694,7 +9701,7 @@ snapshots['test_all_snapshot_ids 21'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 22'] = '14d48a3bc2cfbb63e0f8bd4b6e809adaa65da7ba'
+snapshots['test_all_snapshot_ids 22'] = '8c00b5b4ea43edfda81ddc50e80aae2c1696ffa5'
 
 snapshots['test_all_snapshot_ids 23'] = '''{
   "__class__": "PipelineSnapshot",
@@ -11150,6 +11157,7 @@ snapshots['test_all_snapshot_ids 23'] = '''{
     }
   ],
   "name": "eventually_successful",
+  "snapshot_represents_job": false,
   "solid_definitions_snapshot": {
     "__class__": "SolidDefinitionsSnapshot",
     "composite_solid_def_snaps": [],
@@ -11290,7 +11298,7 @@ snapshots['test_all_snapshot_ids 23'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 24'] = 'f8c155b21204c32bfbfb3185def72ba1c33d8e32'
+snapshots['test_all_snapshot_ids 24'] = '14abb5afd1b086200f31b9e7c540dd52f52d6f89'
 
 snapshots['test_all_snapshot_ids 25'] = '''{
   "__class__": "PipelineSnapshot",
@@ -12489,6 +12497,7 @@ snapshots['test_all_snapshot_ids 25'] = '''{
     }
   ],
   "name": "hard_failer",
+  "snapshot_represents_job": false,
   "solid_definitions_snapshot": {
     "__class__": "SolidDefinitionsSnapshot",
     "composite_solid_def_snaps": [],
@@ -12559,7 +12568,7 @@ snapshots['test_all_snapshot_ids 25'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 26'] = '36c8169e2fa211de4c4b698e4a71c3de749d671f'
+snapshots['test_all_snapshot_ids 26'] = 'f7131e7e2ca71ef01aa1f8d9bea49efa8d644066'
 
 snapshots['test_all_snapshot_ids 27'] = '''{
   "__class__": "PipelineSnapshot",
@@ -13670,6 +13679,7 @@ snapshots['test_all_snapshot_ids 27'] = '''{
     }
   ],
   "name": "hello_world_with_tags",
+  "snapshot_represents_job": false,
   "solid_definitions_snapshot": {
     "__class__": "SolidDefinitionsSnapshot",
     "composite_solid_def_snaps": [],
@@ -13708,7 +13718,7 @@ snapshots['test_all_snapshot_ids 27'] = '''{
   }
 }'''
 
-snapshots['test_all_snapshot_ids 28'] = '61574d2f3f51995138b713d0161b39300a947e1f'
+snapshots['test_all_snapshot_ids 28'] = '653a1695cddcce62fbe993890c984958a941209e'
 
 snapshots['test_all_snapshot_ids 29'] = '''{
   "__class__": "PipelineSnapshot",
@@ -14842,6 +14852,7 @@ snapshots['test_all_snapshot_ids 29'] = '''{
     }
   ],
   "name": "infinite_loop_pipeline",
+  "snapshot_represents_job": false,
   "solid_definitions_snapshot": {
     "__class__": "SolidDefinitionsSnapshot",
     "composite_solid_def_snaps": [],
@@ -15987,6 +15998,7 @@ snapshots['test_all_snapshot_ids 3'] = '''{
     }
   ],
   "name": "asset_tag_pipeline",
+  "snapshot_represents_job": false,
   "solid_definitions_snapshot": {
     "__class__": "SolidDefinitionsSnapshot",
     "composite_solid_def_snaps": [],
@@ -16023,7 +16035,7 @@ snapshots['test_all_snapshot_ids 3'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 30'] = '752f480236dc4e66c2dbd2efddead99f6cd95191'
+snapshots['test_all_snapshot_ids 30'] = 'd80a04f9c6f8eee2d70d144febbcd49143516c82'
 
 snapshots['test_all_snapshot_ids 31'] = '''{
   "__class__": "PipelineSnapshot",
@@ -17134,6 +17146,7 @@ snapshots['test_all_snapshot_ids 31'] = '''{
     }
   ],
   "name": "materialization_pipeline",
+  "snapshot_represents_job": false,
   "solid_definitions_snapshot": {
     "__class__": "SolidDefinitionsSnapshot",
     "composite_solid_def_snaps": [],
@@ -17170,7 +17183,7 @@ snapshots['test_all_snapshot_ids 31'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 32'] = 'cef0b84cb61583fc390d27ef614907417df49a49'
+snapshots['test_all_snapshot_ids 32'] = '54292b14425eb14f08623593be4a00c01426a869'
 
 snapshots['test_all_snapshot_ids 33'] = '''{
   "__class__": "PipelineSnapshot",
@@ -18374,6 +18387,7 @@ snapshots['test_all_snapshot_ids 33'] = '''{
     }
   ],
   "name": "more_complicated_config",
+  "snapshot_represents_job": false,
   "solid_definitions_snapshot": {
     "__class__": "SolidDefinitionsSnapshot",
     "composite_solid_def_snaps": [],
@@ -18437,7 +18451,7 @@ snapshots['test_all_snapshot_ids 33'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 34'] = '40615c7b44da22ee3390682dea49d0c2521db9f9'
+snapshots['test_all_snapshot_ids 34'] = '9c3ad837385367cb007580e0992ea501d550b1bd'
 
 snapshots['test_all_snapshot_ids 35'] = '''{
   "__class__": "PipelineSnapshot",
@@ -19631,6 +19645,7 @@ snapshots['test_all_snapshot_ids 35'] = '''{
     }
   ],
   "name": "more_complicated_nested_config",
+  "snapshot_represents_job": false,
   "solid_definitions_snapshot": {
     "__class__": "SolidDefinitionsSnapshot",
     "composite_solid_def_snaps": [],
@@ -19658,7 +19673,7 @@ snapshots['test_all_snapshot_ids 35'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 36'] = '6d73f0938c2d6a7b68cfbec4a2d4bda17a4d1a05'
+snapshots['test_all_snapshot_ids 36'] = '6629c2326bfd75b63d5fc11fad12fbaac519c10f'
 
 snapshots['test_all_snapshot_ids 37'] = '''{
   "__class__": "PipelineSnapshot",
@@ -20799,6 +20814,7 @@ snapshots['test_all_snapshot_ids 37'] = '''{
     }
   ],
   "name": "multi_asset_pipeline",
+  "snapshot_represents_job": false,
   "solid_definitions_snapshot": {
     "__class__": "SolidDefinitionsSnapshot",
     "composite_solid_def_snaps": [],
@@ -20869,7 +20885,7 @@ snapshots['test_all_snapshot_ids 37'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 38'] = '022ca7832a80975732647856e44b2e83b70ce118'
+snapshots['test_all_snapshot_ids 38'] = '05cdb8e80f6cdd0726afecb9583bd07dc4006b6d'
 
 snapshots['test_all_snapshot_ids 39'] = '''{
   "__class__": "PipelineSnapshot",
@@ -22290,6 +22306,7 @@ snapshots['test_all_snapshot_ids 39'] = '''{
     }
   ],
   "name": "multi_mode_with_loggers",
+  "snapshot_represents_job": false,
   "solid_definitions_snapshot": {
     "__class__": "SolidDefinitionsSnapshot",
     "composite_solid_def_snaps": [],
@@ -22326,9 +22343,9 @@ snapshots['test_all_snapshot_ids 39'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 4'] = 'db650eaaa67afe25fc5e22c4f41df23b7905ea55'
+snapshots['test_all_snapshot_ids 4'] = '8e3f3468e1b3a6f0883b8bd99874a0b5e4abefba'
 
-snapshots['test_all_snapshot_ids 40'] = 'c52f74e84706c6329056c253e11477f9c8af4e5b'
+snapshots['test_all_snapshot_ids 40'] = 'a96a6ec9682824c8dd03216bb92b94961015bd94'
 
 snapshots['test_all_snapshot_ids 41'] = '''{
   "__class__": "PipelineSnapshot",
@@ -23747,6 +23764,7 @@ snapshots['test_all_snapshot_ids 41'] = '''{
     }
   ],
   "name": "multi_mode_with_resources",
+  "snapshot_represents_job": false,
   "solid_definitions_snapshot": {
     "__class__": "SolidDefinitionsSnapshot",
     "composite_solid_def_snaps": [],
@@ -23785,7 +23803,7 @@ snapshots['test_all_snapshot_ids 41'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 42'] = 'e8d1b441d9aaac212f0bc164346fc5fdc64cd4e0'
+snapshots['test_all_snapshot_ids 42'] = 'a7d985686a7b39b1f9c153ce8041853ab71f53d6'
 
 snapshots['test_all_snapshot_ids 43'] = '''{
   "__class__": "PipelineSnapshot",
@@ -24896,6 +24914,7 @@ snapshots['test_all_snapshot_ids 43'] = '''{
     }
   ],
   "name": "naughty_programmer_pipeline",
+  "snapshot_represents_job": false,
   "solid_definitions_snapshot": {
     "__class__": "SolidDefinitionsSnapshot",
     "composite_solid_def_snaps": [],
@@ -24932,7 +24951,7 @@ snapshots['test_all_snapshot_ids 43'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 44'] = 'c938ec5d970f58b04bf50a483f27953ebc31f687'
+snapshots['test_all_snapshot_ids 44'] = 'e8a27bc86882acce845a36a153be1ec191a14d0d'
 
 snapshots['test_all_snapshot_ids 45'] = '''{
   "__class__": "PipelineSnapshot",
@@ -26073,6 +26092,7 @@ snapshots['test_all_snapshot_ids 45'] = '''{
     }
   ],
   "name": "no_config_chain_pipeline",
+  "snapshot_represents_job": false,
   "solid_definitions_snapshot": {
     "__class__": "SolidDefinitionsSnapshot",
     "composite_solid_def_snaps": [],
@@ -26143,7 +26163,7 @@ snapshots['test_all_snapshot_ids 45'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 46'] = '6a9434705a881d3a63e4ca0ecb5881f140e44926'
+snapshots['test_all_snapshot_ids 46'] = '57c4329dbc8d905490a207f267a544f9605b5bf7'
 
 snapshots['test_all_snapshot_ids 47'] = '''{
   "__class__": "PipelineSnapshot",
@@ -27254,6 +27274,7 @@ snapshots['test_all_snapshot_ids 47'] = '''{
     }
   ],
   "name": "no_config_pipeline",
+  "snapshot_represents_job": false,
   "solid_definitions_snapshot": {
     "__class__": "SolidDefinitionsSnapshot",
     "composite_solid_def_snaps": [],
@@ -27290,7 +27311,7 @@ snapshots['test_all_snapshot_ids 47'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 48'] = 'a99fb62086111d8121b97fb29d1fc9a849121501'
+snapshots['test_all_snapshot_ids 48'] = 'f38beeebc60c2932a01efc7f0341300c49f17f57'
 
 snapshots['test_all_snapshot_ids 49'] = '''{
   "__class__": "PipelineSnapshot",
@@ -28401,6 +28422,7 @@ snapshots['test_all_snapshot_ids 49'] = '''{
     }
   ],
   "name": "noop_pipeline",
+  "snapshot_represents_job": false,
   "solid_definitions_snapshot": {
     "__class__": "SolidDefinitionsSnapshot",
     "composite_solid_def_snaps": [],
@@ -29546,6 +29568,7 @@ snapshots['test_all_snapshot_ids 5'] = '''{
     }
   ],
   "name": "backcompat_materialization_pipeline",
+  "snapshot_represents_job": false,
   "solid_definitions_snapshot": {
     "__class__": "SolidDefinitionsSnapshot",
     "composite_solid_def_snaps": [],
@@ -29582,7 +29605,7 @@ snapshots['test_all_snapshot_ids 5'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 50'] = '0965b76124e758660317760c7e9bbc66282f33b0'
+snapshots['test_all_snapshot_ids 50'] = '6444572f460a322245f924a506c14dc724468997'
 
 snapshots['test_all_snapshot_ids 51'] = '''{
   "__class__": "PipelineSnapshot",
@@ -30753,6 +30776,7 @@ snapshots['test_all_snapshot_ids 51'] = '''{
     }
   ],
   "name": "partitioned_asset_lineage_pipeline",
+  "snapshot_represents_job": false,
   "solid_definitions_snapshot": {
     "__class__": "SolidDefinitionsSnapshot",
     "composite_solid_def_snaps": [],
@@ -30857,7 +30881,7 @@ snapshots['test_all_snapshot_ids 51'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 52'] = '30099d2414fc896c225f202240997d12950d6835'
+snapshots['test_all_snapshot_ids 52'] = '5ffdf95a997beca656d2c3e2e1072e5de4eba655'
 
 snapshots['test_all_snapshot_ids 53'] = '''{
   "__class__": "PipelineSnapshot",
@@ -31968,6 +31992,7 @@ snapshots['test_all_snapshot_ids 53'] = '''{
     }
   ],
   "name": "partitioned_asset_pipeline",
+  "snapshot_represents_job": false,
   "solid_definitions_snapshot": {
     "__class__": "SolidDefinitionsSnapshot",
     "composite_solid_def_snaps": [],
@@ -32004,7 +32029,7 @@ snapshots['test_all_snapshot_ids 53'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 54'] = 'add65b837f2a576c75a652ddc9e963a50ab7c15d'
+snapshots['test_all_snapshot_ids 54'] = '51f0b2cbc04ee22d6dbd3b9f1ac65b14c9c52ed1'
 
 snapshots['test_all_snapshot_ids 55'] = '''{
   "__class__": "PipelineSnapshot",
@@ -33144,6 +33169,7 @@ snapshots['test_all_snapshot_ids 55'] = '''{
     }
   ],
   "name": "pipeline_with_enum_config",
+  "snapshot_represents_job": false,
   "solid_definitions_snapshot": {
     "__class__": "SolidDefinitionsSnapshot",
     "composite_solid_def_snaps": [],
@@ -33180,7 +33206,7 @@ snapshots['test_all_snapshot_ids 55'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 56'] = '37eeba13bfe6d0acdff7b5f5d0af26412328019d'
+snapshots['test_all_snapshot_ids 56'] = '2814991e4184646f70181cd591a59edd1822d8c0'
 
 snapshots['test_all_snapshot_ids 57'] = '''{
   "__class__": "PipelineSnapshot",
@@ -34278,6 +34304,7 @@ snapshots['test_all_snapshot_ids 57'] = '''{
     }
   ],
   "name": "pipeline_with_expectations",
+  "snapshot_represents_job": false,
   "solid_definitions_snapshot": {
     "__class__": "SolidDefinitionsSnapshot",
     "composite_solid_def_snaps": [],
@@ -34341,7 +34368,7 @@ snapshots['test_all_snapshot_ids 57'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 58'] = '164c63e77df00e62164363992831c060db1417ac'
+snapshots['test_all_snapshot_ids 58'] = 'b39462844a1b9b0111326c1ecee7b9a4b466b659'
 
 snapshots['test_all_snapshot_ids 59'] = '''{
   "__class__": "PipelineSnapshot",
@@ -35522,6 +35549,7 @@ snapshots['test_all_snapshot_ids 59'] = '''{
     }
   ],
   "name": "pipeline_with_invalid_definition_error",
+  "snapshot_represents_job": false,
   "solid_definitions_snapshot": {
     "__class__": "SolidDefinitionsSnapshot",
     "composite_solid_def_snaps": [],
@@ -35592,9 +35620,9 @@ snapshots['test_all_snapshot_ids 59'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 6'] = 'd54ba34c704219bbb4a8ac3d8b71e66a624701e8'
+snapshots['test_all_snapshot_ids 6'] = '8dfaf88b2c90fe887f53b59f1aa50a415e770da4'
 
-snapshots['test_all_snapshot_ids 60'] = '29c0fe37b9f414db648b6126dd5859d107d1ff06'
+snapshots['test_all_snapshot_ids 60'] = 'bbc6360a23dec9ba847d147e6cf5ba984a716504'
 
 snapshots['test_all_snapshot_ids 61'] = '''{
   "__class__": "PipelineSnapshot",
@@ -36673,6 +36701,7 @@ snapshots['test_all_snapshot_ids 61'] = '''{
     }
   ],
   "name": "pipeline_with_list",
+  "snapshot_represents_job": false,
   "solid_definitions_snapshot": {
     "__class__": "SolidDefinitionsSnapshot",
     "composite_solid_def_snaps": [],
@@ -36700,7 +36729,7 @@ snapshots['test_all_snapshot_ids 61'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 62'] = '66d7ae94cd0e8058c71fdb9bb0b7b9721a7b59a7'
+snapshots['test_all_snapshot_ids 62'] = '59f3a9bc22f7995173a62ac92034fdb51e3e6b64'
 
 snapshots['test_all_snapshot_ids 63'] = '''{
   "__class__": "PipelineSnapshot",
@@ -37857,6 +37886,7 @@ snapshots['test_all_snapshot_ids 63'] = '''{
     }
   ],
   "name": "required_resource_pipeline",
+  "snapshot_represents_job": false,
   "solid_definitions_snapshot": {
     "__class__": "SolidDefinitionsSnapshot",
     "composite_solid_def_snaps": [],
@@ -37895,7 +37925,7 @@ snapshots['test_all_snapshot_ids 63'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 64'] = 'a304ef599e2c67052319cc3a96fe1a1bb853ba5f'
+snapshots['test_all_snapshot_ids 64'] = '5ff72d4ba161dbfa40697f47161e2e3caaff339b'
 
 snapshots['test_all_snapshot_ids 65'] = '''{
   "__class__": "PipelineSnapshot",
@@ -39166,6 +39196,7 @@ snapshots['test_all_snapshot_ids 65'] = '''{
     }
   ],
   "name": "retry_multi_input_early_terminate_pipeline",
+  "snapshot_represents_job": false,
   "solid_definitions_snapshot": {
     "__class__": "SolidDefinitionsSnapshot",
     "composite_solid_def_snaps": [],
@@ -39310,7 +39341,7 @@ snapshots['test_all_snapshot_ids 65'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 66'] = 'f7cf6d6b9a0493df4cf540601af34d49115eced9'
+snapshots['test_all_snapshot_ids 66'] = 'b5e169daa6a7a5aee9451b559e6abb4dea50db26'
 
 snapshots['test_all_snapshot_ids 67'] = '''{
   "__class__": "PipelineSnapshot",
@@ -40784,6 +40815,7 @@ snapshots['test_all_snapshot_ids 67'] = '''{
     }
   ],
   "name": "retry_multi_output_pipeline",
+  "snapshot_represents_job": false,
   "solid_definitions_snapshot": {
     "__class__": "SolidDefinitionsSnapshot",
     "composite_solid_def_snaps": [],
@@ -40929,7 +40961,7 @@ snapshots['test_all_snapshot_ids 67'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 68'] = '47073266bd88972ce5190afc454f7cd6a3acc285'
+snapshots['test_all_snapshot_ids 68'] = '892d651daf992e3252b50c3828fb157f691ca99d'
 
 snapshots['test_all_snapshot_ids 69'] = '''{
   "__class__": "PipelineSnapshot",
@@ -42116,6 +42148,7 @@ snapshots['test_all_snapshot_ids 69'] = '''{
     }
   ],
   "name": "retry_resource_pipeline",
+  "snapshot_represents_job": false,
   "solid_definitions_snapshot": {
     "__class__": "SolidDefinitionsSnapshot",
     "composite_solid_def_snaps": [],
@@ -43359,6 +43392,7 @@ snapshots['test_all_snapshot_ids 7'] = '''{
     }
   ],
   "name": "chained_failure_pipeline",
+  "snapshot_represents_job": false,
   "solid_definitions_snapshot": {
     "__class__": "SolidDefinitionsSnapshot",
     "composite_solid_def_snaps": [],
@@ -43463,7 +43497,7 @@ snapshots['test_all_snapshot_ids 7'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 70'] = '6cb266c3a113bbc6328fc1104fdbf987c5515c34'
+snapshots['test_all_snapshot_ids 70'] = '991d85ba563e15ebae5f766e5aada2a7684d675a'
 
 snapshots['test_all_snapshot_ids 71'] = '''{
   "__class__": "PipelineSnapshot",
@@ -44625,6 +44659,7 @@ snapshots['test_all_snapshot_ids 71'] = '''{
     }
   ],
   "name": "scalar_output_pipeline",
+  "snapshot_represents_job": false,
   "solid_definitions_snapshot": {
     "__class__": "SolidDefinitionsSnapshot",
     "composite_solid_def_snaps": [],
@@ -44742,7 +44777,7 @@ snapshots['test_all_snapshot_ids 71'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 72'] = '3135a7ae3327aaa80de08dafaf4bdef3da3158e7'
+snapshots['test_all_snapshot_ids 72'] = '8ba96a5bbbb5488aeafc48664b443fba912fbf8f'
 
 snapshots['test_all_snapshot_ids 73'] = '''{
   "__class__": "PipelineSnapshot",
@@ -45789,6 +45824,7 @@ snapshots['test_all_snapshot_ids 73'] = '''{
     }
   ],
   "name": "simple_job_a",
+  "snapshot_represents_job": true,
   "solid_definitions_snapshot": {
     "__class__": "SolidDefinitionsSnapshot",
     "composite_solid_def_snaps": [],
@@ -45825,7 +45861,7 @@ snapshots['test_all_snapshot_ids 73'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 74'] = '5c9bb3ab67427ecad659f4d01355a987a097edd4'
+snapshots['test_all_snapshot_ids 74'] = '7f164d1a3987e365c255d8ab0c0b0b0670e4b7a7'
 
 snapshots['test_all_snapshot_ids 75'] = '''{
   "__class__": "PipelineSnapshot",
@@ -46872,6 +46908,7 @@ snapshots['test_all_snapshot_ids 75'] = '''{
     }
   ],
   "name": "simple_job_b",
+  "snapshot_represents_job": true,
   "solid_definitions_snapshot": {
     "__class__": "SolidDefinitionsSnapshot",
     "composite_solid_def_snaps": [],
@@ -46908,7 +46945,7 @@ snapshots['test_all_snapshot_ids 75'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 76'] = 'ed533d48bfe13a5b7b64450b5852281cc915658f'
+snapshots['test_all_snapshot_ids 76'] = '9af32a2caba0831b1ac6a01b94dae162514a9a75'
 
 snapshots['test_all_snapshot_ids 77'] = '''{
   "__class__": "PipelineSnapshot",
@@ -48019,6 +48056,7 @@ snapshots['test_all_snapshot_ids 77'] = '''{
     }
   ],
   "name": "single_asset_pipeline",
+  "snapshot_represents_job": false,
   "solid_definitions_snapshot": {
     "__class__": "SolidDefinitionsSnapshot",
     "composite_solid_def_snaps": [],
@@ -48055,7 +48093,7 @@ snapshots['test_all_snapshot_ids 77'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 78'] = '663053dd05fe134ec528669d4799efa519599e07'
+snapshots['test_all_snapshot_ids 78'] = 'b602dd06decc97c44010c8b16ea355ae0692ccc3'
 
 snapshots['test_all_snapshot_ids 79'] = '''{
   "__class__": "PipelineSnapshot",
@@ -49166,6 +49204,7 @@ snapshots['test_all_snapshot_ids 79'] = '''{
     }
   ],
   "name": "spew_pipeline",
+  "snapshot_represents_job": false,
   "solid_definitions_snapshot": {
     "__class__": "SolidDefinitionsSnapshot",
     "composite_solid_def_snaps": [],
@@ -49202,9 +49241,9 @@ snapshots['test_all_snapshot_ids 79'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 8'] = '05430a3d6b472c6f1efff1336c5e248878acafc6'
+snapshots['test_all_snapshot_ids 8'] = 'bff900fe947c2634be87d63d2c29d52c2db05a80'
 
-snapshots['test_all_snapshot_ids 80'] = '36e3484012959a7bfe86870bca98243911b880a9'
+snapshots['test_all_snapshot_ids 80'] = 'b03f4268c45c12e6748ae02a2c96cd650593eab7'
 
 snapshots['test_all_snapshot_ids 81'] = '''{
   "__class__": "PipelineSnapshot",
@@ -50315,6 +50354,7 @@ snapshots['test_all_snapshot_ids 81'] = '''{
     }
   ],
   "name": "tagged_pipeline",
+  "snapshot_represents_job": false,
   "solid_definitions_snapshot": {
     "__class__": "SolidDefinitionsSnapshot",
     "composite_solid_def_snaps": [],
@@ -50353,7 +50393,7 @@ snapshots['test_all_snapshot_ids 81'] = '''{
   }
 }'''
 
-snapshots['test_all_snapshot_ids 82'] = '8c4b6f22d91204d29cb93af764529c3885ccc541'
+snapshots['test_all_snapshot_ids 82'] = '7a83ad5551f5a94634a5b35926e4cefd5b052634'
 
 snapshots['test_all_snapshot_ids 9'] = '''{
   "__class__": "PipelineSnapshot",
@@ -51452,6 +51492,7 @@ snapshots['test_all_snapshot_ids 9'] = '''{
     }
   ],
   "name": "composed_graph",
+  "snapshot_represents_job": true,
   "solid_definitions_snapshot": {
     "__class__": "SolidDefinitionsSnapshot",
     "composite_solid_def_snaps": [

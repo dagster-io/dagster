@@ -66,7 +66,7 @@ def _pipeline_snapshot_from_storage(
     mode_def_snaps: List[ModeDefSnap],
     lineage_snapshot: Optional["PipelineSnapshotLineage"] = None,
     graph_def_name: Optional[str] = None,
-    snapshot_represents_job: Optional[bool] = False,
+    snapshot_represents_job: bool = False,
 ) -> "PipelineSnapshot":
     """
     v0

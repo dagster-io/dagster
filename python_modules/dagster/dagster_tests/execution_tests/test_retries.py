@@ -197,7 +197,7 @@ def test_step_retry_limit(environment):
 def test_retry_deferral():
     with instance_for_test() as instance:
         pipeline_def = define_retry_limit_pipeline()
-        target = PipelineTarget(name=pipeline_def.name, mode=pipeline_def.get_default_mode_name(0))
+        target = PipelineTarget(name=pipeline_def.name, mode=pipeline_def.get_default_mode_name())
         events = execute_plan(
             create_execution_plan(pipeline_def),
             InMemoryPipeline(pipeline_def),

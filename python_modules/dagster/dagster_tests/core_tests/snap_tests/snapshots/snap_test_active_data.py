@@ -1179,6 +1179,7 @@ snapshots['test_external_pipeline_data 1'] = '''{
       }
     ],
     "name": "a_pipeline",
+    "snapshot_represents_job": false,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -2401,6 +2402,7 @@ snapshots['test_external_repository_data 1'] = '''{
           }
         ],
         "name": "a_pipeline",
+        "snapshot_represents_job": false,
         "solid_definitions_snapshot": {
           "__class__": "SolidDefinitionsSnapshot",
           "composite_solid_def_snaps": [],
