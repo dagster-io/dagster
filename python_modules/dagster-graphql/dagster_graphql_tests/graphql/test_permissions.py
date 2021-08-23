@@ -3,7 +3,11 @@ from unittest.mock import Mock
 import pytest
 from dagster import check
 from dagster.core.workspace.permissions import EDITOR_PERMISSIONS, VIEWER_PERMISSIONS
-from dagster_graphql.implementation.utils import UserFacingGraphQLError, check_permission
+from dagster_graphql.implementation.utils import (
+    UserFacingGraphQLError,
+    assert_permission,
+    check_permission,
+)
 from dagster_graphql.test.utils import execute_dagster_graphql
 
 from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix
@@ -71,6 +75,20 @@ def test_check_permission_permission_does_not_exist(fake_graphene_info):
     mutation = FakeMissingPermissionMutation()
     with pytest.raises(check.CheckError):
         mutation.mutate(fake_graphene_info)
+
+
+def test_assert_permission_has_permission(fake_graphene_info):
+    assert_permission(fake_graphene_info, "fake_permission")
+
+
+def test_assert_permission_does_not_have_permission(fake_graphene_info):
+    with pytest.raises(UserFacingGraphQLError, match="GrapheneUnauthorizedError"):
+        assert_permission(fake_graphene_info, "fake_other_permission")
+
+
+def test_assert_permission_permission_does_not_exist(fake_graphene_info):
+    with pytest.raises(check.CheckError):
+        assert_permission(fake_graphene_info, "fake_missing_permission")
 
 
 class TestPermissionsQuery(NonLaunchableGraphQLContextTestMatrix):

@@ -470,30 +470,62 @@ def construct_dagster_k8s_job(
         for key, value in env_vars.items():
             additional_k8s_env_vars.append(kubernetes.client.V1EnvVar(name=key, value=value))
 
+    user_defined_k8s_env_vars = user_defined_k8s_config.container_config.pop("env", [])
+    for env_var in user_defined_k8s_env_vars:
+        additional_k8s_env_vars.append(
+            kubernetes.client.V1EnvVar(name=env_var["name"], value=env_var["value"])
+        )
+
+    user_defined_k8s_env_from = user_defined_k8s_config.container_config.pop("env_from", [])
+    additional_k8s_env_from = []
+    for env_from in user_defined_k8s_env_from:
+        config_map_ref_args = env_from.get("config_map_ref")
+        config_map_ref = (
+            kubernetes.client.V1ConfigMapEnvSource(**config_map_ref_args)
+            if config_map_ref_args
+            else None
+        )
+        secret_ref_args = env_from.get("secret_ref")
+        secret_ref = (
+            kubernetes.client.V1SecretEnvSource(**secret_ref_args) if secret_ref_args else None
+        )
+
+        additional_k8s_env_from.append(
+            kubernetes.client.V1EnvFromSource(
+                config_map_ref=config_map_ref, prefix=env_from.get("prefix"), secret_ref=secret_ref
+            )
+        )
+
+    volume_mounts = [
+        kubernetes.client.V1VolumeMount(
+            name="dagster-instance",
+            mount_path="{dagster_home}/dagster.yaml".format(dagster_home=job_config.dagster_home),
+            sub_path="dagster.yaml",
+        )
+    ] + [
+        kubernetes.client.V1VolumeMount(
+            name=mount["name"],
+            mount_path=mount["path"],
+            sub_path=mount["sub_path"],
+        )
+        for mount in job_config.volume_mounts
+    ]
+
+    user_defined_k8s_volume_mounts = user_defined_k8s_config.container_config.pop(
+        "volume_mounts", []
+    )
+    additional_k8s_volume_mounts = []
+    for volume_mount in user_defined_k8s_volume_mounts:
+        additional_k8s_volume_mounts.append(kubernetes.client.V1VolumeMount(**volume_mount))
+
     job_container = kubernetes.client.V1Container(
         name=job_name,
         image=job_config.job_image,
         args=args,
         image_pull_policy=job_config.image_pull_policy,
         env=env + job_config.env + additional_k8s_env_vars,
-        env_from=job_config.env_from_sources,
-        volume_mounts=[
-            kubernetes.client.V1VolumeMount(
-                name="dagster-instance",
-                mount_path="{dagster_home}/dagster.yaml".format(
-                    dagster_home=job_config.dagster_home
-                ),
-                sub_path="dagster.yaml",
-            )
-        ]
-        + [
-            kubernetes.client.V1VolumeMount(
-                name=mount["name"],
-                mount_path=mount["path"],
-                sub_path=mount["sub_path"],
-            )
-            for mount in job_config.volume_mounts
-        ],
+        env_from=job_config.env_from_sources + additional_k8s_env_from,
+        volume_mounts=volume_mounts + additional_k8s_volume_mounts,
         **user_defined_k8s_config.container_config,
     )
 

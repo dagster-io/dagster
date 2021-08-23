@@ -98,7 +98,7 @@ describe('LeftNav', () => {
 
       render(<Test mocks={[defaultMocks, mocks]} />);
       await waitFor(() => {
-        expect(screen.getByRole('link', {name: /status warnings found/i})).toBeVisible();
+        expect(screen.getByRole('link', {name: /workspace warnings found/i})).toBeVisible();
       });
     });
   });

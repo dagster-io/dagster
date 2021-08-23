@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
-from typing import NamedTuple
+from typing import NamedTuple, Optional
 
 from dagster.core.instance import MayHaveInstanceWeakref
+from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.workspace.workspace import IWorkspace
-from dagster.utils.external import external_pipeline_from_location
 
 
 class LaunchRunContext(NamedTuple):
@@ -13,26 +13,11 @@ class LaunchRunContext(NamedTuple):
     """
 
     pipeline_run: PipelineRun
-    workspace: IWorkspace
+    workspace: Optional[IWorkspace]
 
     @property
-    def pipeline_code_origin(self):
-        if self.pipeline_run.pipeline_code_origin:
-            return self.pipeline_run.pipeline_code_origin
-
-        # Back-compat for runs before 0.12.0 that did not include pipeline_code_origin
-
-        repository_location_origin = (
-            self.pipeline_run.external_pipeline_origin.external_repository_origin.repository_location_origin
-        )
-
-        location = self.workspace.get_location(repository_location_origin)
-
-        external_pipeline = external_pipeline_from_location(
-            location, self.pipeline_run.external_pipeline_origin, self.pipeline_run.solid_selection
-        )
-
-        return external_pipeline.get_python_origin()
+    def pipeline_code_origin(self) -> Optional[PipelinePythonOrigin]:
+        return self.pipeline_run.pipeline_code_origin
 
 
 class RunLauncher(ABC, MayHaveInstanceWeakref):

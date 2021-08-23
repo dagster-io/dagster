@@ -329,7 +329,7 @@ export const FeedbackModal = ({
 
 const Header = ({ openFeedback, isDarkMode, setDarkMode }) => {
   return (
-    <div className="sticky top-0 z-30 flex items-center bg-white dark:bg-gray-900 border-b">
+    <div className="sticky top-0 z-30 flex items-center bg-white dark:bg-gray-900 border-b overflow-x-auto">
       <div
         className="flex-1 relative z-0 cursor-pointer focus:outline-none"
         tabIndex={0}

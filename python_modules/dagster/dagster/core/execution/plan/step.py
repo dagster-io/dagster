@@ -105,8 +105,8 @@ class ExecutionStep(
             logging_tags=merge_dicts(
                 {
                     "step_key": handle.to_key(),
-                    "pipeline": pipeline_name,
-                    "solid": handle.solid_handle.name,
+                    "pipeline_name": pipeline_name,
+                    "solid_name": handle.solid_handle.name,
                 },
                 check.opt_dict_param(logging_tags, "logging_tags"),
             ),
