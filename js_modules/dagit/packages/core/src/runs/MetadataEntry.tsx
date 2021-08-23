@@ -2,9 +2,7 @@ import {gql} from '@apollo/client';
 import {Button, Classes, Colors, Dialog, Icon, Position} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
-import ReactMarkdown from 'react-markdown';
 import {Link} from 'react-router-dom';
-import gfm from 'remark-gfm';
 import styled from 'styled-components/macro';
 
 import {copyValue} from '../app/DomUtils';
@@ -117,7 +115,7 @@ export const MetadataEntry: React.FC<{
         <MetadataEntryModalAction
           label={entry.label}
           copyContent={() => entry.mdStr}
-          content={() => <ReactMarkdown remarkPlugins={[gfm]}>{entry.mdStr}</ReactMarkdown>}
+          content={() => <Markdown>{entry.mdStr}</Markdown>}
         >
           [Show Markdown]
         </MetadataEntryModalAction>
