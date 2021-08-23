@@ -6,6 +6,7 @@ import tempfile
 import threading
 import time
 from contextlib import contextmanager
+from dagster.core.instance import DagsterInstance
 
 import pendulum
 import pytest
@@ -198,13 +199,13 @@ def asset_job_sensor(context, _event):
 
 
 @pipeline_failure_sensor
-def my_pipeline_failure_sensor(_):
-    pass
+def my_pipeline_failure_sensor(context):
+    assert isinstance(context.instance, DagsterInstance)
 
 
 @run_status_sensor(pipeline_run_status=PipelineRunStatus.SUCCESS)
-def my_pipeline_success_sensor(_):
-    pass
+def my_pipeline_success_sensor(context):
+    assert isinstance(context.instance, DagsterInstance)
 
 
 @repository
