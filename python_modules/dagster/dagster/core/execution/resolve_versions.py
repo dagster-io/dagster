@@ -116,6 +116,10 @@ def resolve_step_versions(pipeline_def, execution_plan, resolved_run_config):
         resource_versions_for_solid = []
         for resource_key in solid_def.required_resource_keys:
             if resource_key not in resource_versions:
+
+                resource_config = resolved_run_config.resources[resource_key].config
+                resource_config_version = resolve_config_version(resource_config)
+
                 resource_def = resource_defs[resource_key]
                 resource_def_version = None
                 if resource_def.version is not None:
@@ -124,20 +128,19 @@ def resolve_step_versions(pipeline_def, execution_plan, resolved_run_config):
                     resource_def_version = pipeline_def.version_strategy.get_resource_version(
                         resource_def
                     )
-                if resource_def_version is None:
-                    raise DagsterInvariantViolationError(
-                        f"While using memoization, version for resource '{resource_key}' was None. Please "
-                        "either provide a versioning strategy for your job, or provide a version using the "
-                        "resource decorator."
-                    )
 
-                check_valid_version(resource_def_version)
-                resource_config = resolved_run_config.resources[resource_key].config
-                resource_config_version = resolve_config_version(resource_config)
-                resource_versions[resource_key] = join_and_hash(
-                    resource_config_version, resource_def_version
-                )
-            resource_versions_for_solid.append(resource_versions[resource_key])
+                if resource_def_version is not None:
+
+                    check_valid_version(resource_def_version)
+                    resource_versions[resource_key] = join_and_hash(
+                        resource_config_version, resource_def_version
+                    )
+                else:
+
+                    resource_versions[resource_key] = join_and_hash(resource_config)
+
+            if resource_versions[resource_key] is not None:
+                resource_versions_for_solid.append(resource_versions[resource_key])
         solid_resources_version = join_and_hash(*resource_versions_for_solid)
         solid_version = join_and_hash(
             solid_def_version, solid_config_version, solid_resources_version

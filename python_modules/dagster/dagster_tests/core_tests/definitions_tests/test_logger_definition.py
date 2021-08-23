@@ -11,7 +11,7 @@ from dagster import (
     logger,
     pipeline,
 )
-from dagster.core.log_manager import coerce_valid_log_level
+from dagster.core.utils import coerce_valid_log_level
 
 
 def assert_pipeline_runs_with_logger(logger_def, logger_config):

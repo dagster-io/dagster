@@ -26,6 +26,6 @@ def test_define_scheduler_repo():
             repo.get_pipeline(
                 "hello_cereal_pipeline",
             ),
-            {"solids": {"hello_cereal": {"inputs": {"date": {"value": "date"}}}}},
+            {"solids": {"hello_cereal": {"config": {"date": "date"}}}},
         )
     assert result.success

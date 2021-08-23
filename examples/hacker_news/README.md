@@ -40,3 +40,72 @@ The `dbt_pipeline` is triggered by a different sensor, which will fire a run whe
 Each pipeline has modes that allow them to be run in either a staging (or dev) environment, which will
 read data from the same sources as the production modes of these pipelines, but writes data to a different
 location than the production pipelines would.
+
+## Deploying
+
+The instructions below show you how to deploy this repository to a Dagster deployment in a Kubernetes cluster.
+
+You'll need access to Snowflake credentials, AWS credentials, and a Slack API token.
+
+- Build an image using the Dockerfile in this folder.
+
+```
+docker build . -t hacker-news:test
+```
+
+- Tag the image and push it to a Docker registry. For example, in ECR:
+
+```
+docker tag hacker-news:test <your aws account>.dkr.ecr.us-west-2.amazonaws.com/hacker-news:test
+docker push <your aws account>.dkr.ecr.us-west-2.amazonaws.com/hacker-news:test
+```
+
+- Create secrets in your k8s cluster containing values for the following environment variables:
+
+```
+# AWS credentials
+AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY
+AWS_ACCOUNT_ID
+AWS_DEFAULT_REGION
+
+# Snowflake credentials
+SNOWFLAKE_ACCOUNT
+SNOWFLAKE_USER
+SNOWFLAKE_PASSWORD
+
+# Slack API token
+SLACK_DAGSTER_ETL_BOT_TOKEN
+```
+
+- Follow the instructions in our [Helm chart documentation](https://docs.dagster.io/deployment/guides/kubernetes/deploying-with-helm) for deploying a user code deployment.
+
+The relevant part of your Helm `values.yaml` that loads the `hacker_news` package might look like:
+
+```
+dagster-user-deployments:
+  enabled: true
+  deployments:
+    - name: "hacker-news-example"
+      image:
+        repository: <your aws account>.dkr.ecr.us-west-2.amazonaws.com/hacker-news
+        tag: test
+        pullPolicy: Always
+      dagsterApiGrpcArgs:
+        - "--package-name"
+        - "hacker-news"
+      port: 3030
+      envSecrets:
+        - name: your-aws-secret-name
+        - name: your-snowflake-secret-name
+        - name: your-slack-secret-name
+
+runLauncher:
+  type: K8sRunLauncher
+  config:
+    k8sRunLauncher:
+      envSecrets:
+        - name: your-aws-secret-name
+        - name: your-snowflake-secret-name
+        - name: your-slack-secret-name
+```

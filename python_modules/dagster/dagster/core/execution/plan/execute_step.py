@@ -69,7 +69,7 @@ def _step_output_error_checked_user_event_sequence(
 
         # do additional processing on Outputs
         output = user_event
-        if not step.has_step_output(output.output_name):
+        if not step.has_step_output(cast(str, output.output_name)):
             raise DagsterInvariantViolationError(
                 'Core compute for solid "{handle}" returned an output '
                 '"{output.output_name}" that does not exist. The available '
@@ -78,7 +78,7 @@ def _step_output_error_checked_user_event_sequence(
                 )
             )
 
-        step_output = step.step_output_named(output.output_name)
+        step_output = step.step_output_named(cast(str, output.output_name))
         output_def = step_context.pipeline_def.get_solid(step_output.solid_handle).output_def_named(
             step_output.name
         )
@@ -441,7 +441,7 @@ def _get_output_asset_materializations(
     all_metadata = output.metadata_entries + io_manager_metadata_entries
 
     if asset_partitions:
-        metadata_mapping: Dict[str, List[Union[str, "EventMetadataEntry"]]] = {
+        metadata_mapping: Dict[str, List["EventMetadataEntry"]] = {
             partition: [] for partition in asset_partitions
         }
         for entry in all_metadata:
@@ -471,7 +471,9 @@ def _get_output_asset_materializations(
                     f"Output {output_def.name} got a PartitionMetadataEntry ({entry}), but "
                     "is not associated with any specific partitions."
                 )
-        yield AssetMaterialization(asset_key=asset_key, metadata_entries=all_metadata)
+        yield AssetMaterialization(
+            asset_key=asset_key, metadata_entries=cast(List["EventMetadataEntry"], all_metadata)
+        )
 
 
 def _store_output(

@@ -9,6 +9,7 @@ RESERVED_INPUT_NAMES = [
     "__dm_pipeline_run_dict",
     "__dm_solid_handle_kwargs",
     "__dm_instance_ref_dict",
+    "__dm_step_key",
 ]
 
 INJECTED_BOILERPLATE = """
@@ -33,6 +34,7 @@ class DagsterTranslator(papermill.translators.PythonTranslator):
         assert "__dm_pipeline_run_dict" in parameters
         assert "__dm_solid_handle_kwargs" in parameters
         assert "__dm_instance_ref_dict" in parameters
+        assert "__dm_step_key" in parameters
 
         context_args = parameters["__dm_context"]
         pipeline_context_args = dict(
@@ -40,6 +42,7 @@ class DagsterTranslator(papermill.translators.PythonTranslator):
             pipeline_run_dict=parameters["__dm_pipeline_run_dict"],
             solid_handle_kwargs=parameters["__dm_solid_handle_kwargs"],
             instance_ref_dict=parameters["__dm_instance_ref_dict"],
+            step_key=parameters["__dm_step_key"],
             **context_args,
         )
 

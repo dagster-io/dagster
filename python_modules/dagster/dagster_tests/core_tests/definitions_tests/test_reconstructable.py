@@ -88,7 +88,7 @@ def test_bad_target():
     with pytest.raises(
         DagsterInvariantViolationError,
         match=re.escape(
-            "Loadable attributes must be either a PipelineDefinition or a "
+            "Loadable attributes must be either a PipelineDefinition, GraphDefinition, or a "
             "RepositoryDefinition. Got None."
         ),
     ):

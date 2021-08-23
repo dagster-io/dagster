@@ -54,7 +54,7 @@ def test_non_partition_schedule_example():
     def pipeline_for_test():
         process_data()
 
-    run_config = non_partition_schedule_example(None)
+    run_config = non_partition_schedule_example()
     assert validate_run_config(pipeline_for_test, run_config)
 
 

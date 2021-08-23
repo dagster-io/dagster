@@ -1,0 +1,4 @@
+resources:
+  slack:
+    config:
+      token: "xoxp-1234123412341234-12341234-1234" # replace with your slack token
