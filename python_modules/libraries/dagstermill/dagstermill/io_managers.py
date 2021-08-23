@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import IO, Any, List, Optional
+from typing import Any, List, Optional
 
 from dagster import check
 from dagster.config.field import Field
