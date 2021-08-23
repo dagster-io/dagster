@@ -21,7 +21,9 @@ from dagster.core.definitions.events import Failure, RetryRequested
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.definitions.utils import validate_tags
 from dagster.core.execution.context.compute import SolidExecutionContext
+from dagster.core.execution.context.input import build_input_context
 from dagster.core.execution.context.system import StepExecutionContext
+from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.storage.file_manager import FileHandle
 from dagster.serdes import pack_value
 from dagster.seven import get_system_temp_directory
@@ -33,7 +35,7 @@ from papermill.iorw import load_notebook_node, write_ipynb
 from .compat import ExecutionError
 from .engine import DagstermillEngine
 from .errors import DagstermillError
-from .serialize import read_value, write_value
+from .serialize import write_value
 from .translator import RESERVED_INPUT_NAMES, DagsterTranslator
 
 
@@ -128,6 +130,7 @@ def get_papermill_parameters(step_context, inputs, output_log_path):
     }
 
     dm_solid_handle_kwargs = step_context.solid_handle._asdict()
+    dm_step_key = step_context.step.key
 
     parameters = {}
 
@@ -149,6 +152,7 @@ def get_papermill_parameters(step_context, inputs, output_log_path):
     parameters["__dm_pipeline_run_dict"] = pack_value(step_context.pipeline_run)
     parameters["__dm_solid_handle_kwargs"] = dm_solid_handle_kwargs
     parameters["__dm_instance_ref_dict"] = pack_value(step_context.instance.get_ref())
+    parameters["__dm_step_key"] = dm_step_key
 
     return parameters
 
@@ -198,35 +202,11 @@ def _dm_solid_compute(name, notebook_path, output_notebook=None, asset_key_prefi
                     )
 
                 except Exception as ex:  # pylint: disable=broad-except
-                    try:
-                        with open(executed_notebook_path, "rb") as fd:
-                            executed_notebook_file_handle = (
-                                step_context.resources.file_manager.write(
-                                    fd, mode="wb", ext="ipynb"
-                                )
-                            )
-                            executed_notebook_materialization_path = (
-                                executed_notebook_file_handle.path_desc
-                            )
-                    except Exception:  # pylint: disable=broad-except
-                        step_context.log.warning(
-                            "Error when attempting to materialize executed notebook using file manager (falling back to local): {exc}".format(
-                                exc=str(serializable_error_info_from_exc_info(sys.exc_info()))
-                            )
+                    step_execution_context.log.warn(
+                        "Error when attempting to materialize executed notebook: {exc}".format(
+                            exc=str(serializable_error_info_from_exc_info(sys.exc_info()))
                         )
-                        executed_notebook_materialization_path = executed_notebook_path
-
-                    yield AssetMaterialization(
-                        asset_key=(asset_key_prefix + [f"{name}_output_notebook"]),
-                        description="Location of output notebook in file manager",
-                        metadata_entries=[
-                            EventMetadataEntry.fspath(
-                                executed_notebook_materialization_path,
-                                label="executed_notebook_path",
-                            )
-                        ],
                     )
-
                     # pylint: disable=no-member
                     # compat:
                     if isinstance(ex, ExecutionError) and (
@@ -255,21 +235,27 @@ def _dm_solid_compute(name, notebook_path, output_notebook=None, asset_key_prefi
                         fd, mode="wb", ext="ipynb"
                     )
                     executed_notebook_materialization_path = executed_notebook_file_handle.path_desc
+
+                yield AssetMaterialization(
+                    asset_key=(asset_key_prefix + [f"{name}_output_notebook"]),
+                    description="Location of output notebook in file manager",
+                    metadata_entries=[
+                        EventMetadataEntry.fspath(executed_notebook_materialization_path)
+                    ],
+                )
+
             except Exception:  # pylint: disable=broad-except
+                # if file manager writing errors, e.g. file manager is not provided, we throw a warning
+                # and fall back to the previously stored temp executed notebook.
                 step_context.log.warning(
-                    "Error when attempting to materialize executed notebook using file manager (falling back to local): {exc}".format(
-                        exc=str(serializable_error_info_from_exc_info(sys.exc_info()))
-                    )
+                    "Error when attempting to materialize executed notebook using file manager: "
+                    f"{str(serializable_error_info_from_exc_info(sys.exc_info()))}"
+                    f"\nNow falling back to local: notebook execution was temporarily materialized at {executed_notebook_path}"
+                    "\nIf you have supplied a file manager and expect to use it for materializing the "
+                    'notebook, please include "file_manager" in the `required_resource_keys` argument '
+                    "to `define_dagstermill_solid`"
                 )
                 executed_notebook_materialization_path = executed_notebook_path
-
-            yield AssetMaterialization(
-                asset_key=(asset_key_prefix + [f"{name}_output_notebook"]),
-                description="Location of output notebook in file manager",
-                metadata_entries=[
-                    EventMetadataEntry.fspath(executed_notebook_materialization_path)
-                ],
-            )
 
             if output_notebook is not None:
                 yield Output(executed_notebook_file_handle, output_notebook)
@@ -279,11 +265,18 @@ def _dm_solid_compute(name, notebook_path, output_notebook=None, asset_key_prefi
 
             output_nb = scrapbook.read_notebook(executed_notebook_path)
 
-            for (output_name, output_def) in step_execution_context.solid_def.output_dict.items():
+            for (output_name, _) in step_execution_context.solid_def.output_dict.items():
                 data_dict = output_nb.scraps.data_dict
                 if output_name in data_dict:
-                    # read result that was written by the "yield_result" call
-                    value = read_value(output_def.dagster_type, data_dict[output_name])
+                    # read outputs that were passed out of process via io manager from `yield_result`
+                    step_output_handle = StepOutputHandle(
+                        step_key=step_execution_context.step.key, output_name=output_name
+                    )
+                    output_context = step_execution_context.get_output_context(step_output_handle)
+                    io_manager = step_execution_context.get_io_manager(step_output_handle)
+                    value = io_manager.load_input(
+                        build_input_context(upstream_output=output_context)
+                    )
 
                     yield Output(value, output_name)
 

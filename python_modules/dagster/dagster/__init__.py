@@ -102,6 +102,11 @@ from dagster.core.definitions.configurable import configured
 from dagster.core.definitions.policy import Backoff, Jitter, RetryPolicy
 from dagster.core.definitions.schedule import build_schedule_context
 from dagster.core.definitions.sensor import build_sensor_context
+from dagster.core.definitions.utils import (
+    config_from_files,
+    config_from_pkg_resources,
+    config_from_yaml_strings,
+)
 from dagster.core.definitions.version_strategy import VersionStrategy
 from dagster.core.errors import (
     DagsterConfigMappingFunctionError,
@@ -351,6 +356,9 @@ __all__ = [
     "execute_solid",
     "execute_solids_within_pipeline",
     "file_relative_path",
+    "config_from_files",
+    "config_from_pkg_resources",
+    "config_from_yaml_strings",
     "configured",
     # types
     "Any",

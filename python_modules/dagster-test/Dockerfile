@@ -26,6 +26,7 @@ RUN pip install \
     -e modules/dagster-celery-docker \
     -e modules/dagster-docker \
     -e modules/dagster-airflow \
+    -e modules/dagstermill \
     -e .
 
 WORKDIR /dagster_test/test_project/
