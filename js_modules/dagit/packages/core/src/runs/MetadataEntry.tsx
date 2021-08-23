@@ -8,6 +8,7 @@ import styled from 'styled-components/macro';
 
 import {copyValue} from '../app/DomUtils';
 import {assertUnreachable} from '../app/Util';
+import {Markdown} from '../ui/Markdown';
 
 import {MetadataEntryFragment} from './types/MetadataEntryFragment';
 
@@ -110,7 +111,7 @@ export const MetadataEntry: React.FC<{
       return <>{entry.text}</>;
     case 'EventMarkdownMetadataEntry':
       return expandSmallValues && entry.mdStr.length < 1000 ? (
-        <ReactMarkdown remarkPlugins={[gfm]}>{entry.mdStr}</ReactMarkdown>
+        <Markdown>{entry.mdStr}</Markdown>
       ) : (
         <MetadataEntryModalAction
           label={entry.label}

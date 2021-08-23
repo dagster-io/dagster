@@ -1189,7 +1189,7 @@ class ObjectStoreOperationResultData(
     NamedTuple(
         "_ObjectStoreOperationResultData",
         [
-            ("op", str),
+            ("op", ObjectStoreOperationType),
             ("value_name", Optional[str]),
             ("metadata_entries", List[EventMetadataEntry]),
             ("address", Optional[str]),
@@ -1200,7 +1200,7 @@ class ObjectStoreOperationResultData(
 ):
     def __new__(
         cls,
-        op: str,
+        op: ObjectStoreOperationType,
         value_name: Optional[str] = None,
         metadata_entries: Optional[List[EventMetadataEntry]] = None,
         address: Optional[str] = None,
@@ -1209,7 +1209,7 @@ class ObjectStoreOperationResultData(
     ):
         return super(ObjectStoreOperationResultData, cls).__new__(
             cls,
-            op=check.str_param(op, "op"),
+            op=cast(ObjectStoreOperationType, check.str_param(op, "op")),
             value_name=check.opt_str_param(value_name, "value_name"),
             metadata_entries=check.opt_list_param(
                 metadata_entries, "metadata_entries", of_type=EventMetadataEntry
