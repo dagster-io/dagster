@@ -1,5 +1,4 @@
 from typing import Any, Callable, List, NamedTuple, Optional, Union, cast
-from dagster.core.instance import DagsterInstance
 
 import pendulum
 from dagster import check
@@ -11,6 +10,7 @@ from dagster.core.definitions.sensor import (
 )
 from dagster.core.errors import RunStatusSensorExecutionError, user_code_error_boundary
 from dagster.core.events import PIPELINE_RUN_STATUS_TO_EVENT_TYPE, DagsterEvent
+from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.serdes import (
     deserialize_json_to_dagster_namedtuple,

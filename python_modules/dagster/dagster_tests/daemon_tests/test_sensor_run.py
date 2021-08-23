@@ -6,7 +6,6 @@ import tempfile
 import threading
 import time
 from contextlib import contextmanager
-from dagster.core.instance import DagsterInstance
 
 import pendulum
 import pytest
@@ -35,6 +34,7 @@ from dagster.core.host_representation import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
+from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import JobState, JobStatus, JobTickStatus
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import instance_for_test
