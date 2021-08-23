@@ -41,6 +41,7 @@ from .impl import (
     get_external_pipeline_subset_result,
     get_external_schedule_execution,
     get_external_sensor_execution,
+    get_notebook_data,
     get_partition_config,
     get_partition_names,
     get_partition_set_execution_param_data,
@@ -381,6 +382,11 @@ class DagsterApiServer(DagsterApiServicer):
                 )
             )
         )
+
+    def ExternalNotebookData(self, request, _context):
+        notebook_path = request.notebook_path
+        check.str_param(notebook_path, "notebook_path")
+        return api_pb2.ExternalNotebookDataReply(content=get_notebook_data(notebook_path))
 
     def ExternalPartitionSetExecutionParams(self, request, _context):
         args = deserialize_json_to_dagster_namedtuple(

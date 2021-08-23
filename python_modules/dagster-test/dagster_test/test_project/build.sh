@@ -58,6 +58,7 @@ copy_py $ROOT/python_modules/dagster \
         $ROOT/python_modules/libraries/dagster-postgres \
         $ROOT/python_modules/libraries/dagster-gcp \
         $ROOT/python_modules/libraries/dagster-k8s \
+        $ROOT/python_modules/libraries/dagstermill \
         modules/
 
 echo -e "--- \033[32m:docker: Building Docker image\033[0m"

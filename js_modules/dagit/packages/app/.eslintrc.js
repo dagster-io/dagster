@@ -38,6 +38,11 @@ module.exports = {
             message: 'Please use components in src/ui instead.',
           },
           {
+            name: '@blueprintjs/core',
+            importNames: ['Tooltip'],
+            message: 'Please use `Tooltip2` in `@blueprintjs/popover2` instead.',
+          },
+          {
             name: 'styled-components',
             message: 'Please import from `styled-components/macro`.',
           },

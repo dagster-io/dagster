@@ -12,7 +12,6 @@ Dagster enables you to build testable and maintainable data applications. It pro
 | Name                                       | Description                                                                                                           |
 | ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
 | <PyObject object="execute_pipeline"     /> | A method to execute a pipeline synchronously, typically for testing pipeline execution or running standalone scripts. |
-| <PyObject object="execute_solid" />        | A method to execute a single solid in an ephemeral pipeline, intended to support unit tests.                          |
 | <PyObject object="build_solid_context"  /> | A method to construct a `SolidExecutionContext`, typically to provide to the invocation of a solid for testing.       |
 
 ## Overview
@@ -120,22 +119,7 @@ For more information, you can check out the [Modes](/concepts/modes-resources) a
 
 ## Examples
 
-### Testing single solid execution
-
-You can execute a single solid without writing a pipeline using <PyObject object="execute_solid" />. Using this function you will a single solid in an ephemeral pipeline. You can then then test execution properties using the <PyObject object="SolidExecutionResult" /> object that it returns.
-
-```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_test_execute_solid_marker endbefore=end_test_execute_solid_marker
-def test_solid():
-    result = execute_solid(add_one)
-
-    # return type is SolidExecutionResult
-    assert isinstance(result, SolidExecutionResult)
-    assert result.success
-    # check the solid output value
-    assert result.output_value() == 2
-```
-
-### Testing solids with invocation
+### Testing solids
 
 While using the `@solid` decorator on a function does change its signature, the invocation mirrors closely the underlying decorated function.
 

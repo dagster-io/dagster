@@ -6,7 +6,6 @@ import {EXECUTION_PLAN_TO_GRAPH_FRAGMENT} from '../gantt/toGraphQueryItems';
 import {LOGS_SCROLLING_TABLE_MESSAGE_FRAGMENT} from './LogsScrollingTable';
 import {RUN_DETAILS_FRAGMENT} from './RunDetails';
 import {RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT} from './RunMetadataProvider';
-import {RUN_STATUS_PIPELINE_RUN_FRAGMENT} from './RunStatusToPageAttributes';
 
 export const RUN_FRAGMENT_FOR_REPOSITORY_MATCH = gql`
   fragment RunFragmentForRepositoryMatch on PipelineRun {
@@ -26,8 +25,6 @@ export const RUN_FRAGMENT_FOR_REPOSITORY_MATCH = gql`
 export const RunFragments = {
   RunFragment: gql`
     fragment RunFragment on PipelineRun {
-      ...RunStatusPipelineRunFragment
-
       id
       runConfigYaml
       runId
@@ -72,7 +69,6 @@ export const RunFragments = {
     }
 
     ${EXECUTION_PLAN_TO_GRAPH_FRAGMENT}
-    ${RUN_STATUS_PIPELINE_RUN_FRAGMENT}
     ${RUN_FRAGMENT_FOR_REPOSITORY_MATCH}
     ${RUN_DETAILS_FRAGMENT}
   `,

@@ -1,4 +1,5 @@
-import {Colors, Tooltip, Position} from '@blueprintjs/core';
+import {Colors, Position} from '@blueprintjs/core';
+import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 

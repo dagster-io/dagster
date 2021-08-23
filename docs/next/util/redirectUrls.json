@@ -426,5 +426,11 @@
     "source": "/concepts/executors",
     "destination": "/deployment/executors",
     "permanent": true
+  },
+  {
+    "source": "/integrations/pyspark",
+    "destination": "/integrations/spark",
+    "permanent": true
   }
+
 ]
