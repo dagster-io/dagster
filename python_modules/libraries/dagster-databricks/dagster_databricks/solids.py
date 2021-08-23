@@ -23,6 +23,43 @@ def create_databricks_job_solid(
 
     Returns:
         SolidDefinition: A solid definition.
+
+    Example:
+
+        .. code-block:: python
+
+            from dagster import ModeDefinition, pipeline
+            from dagster_databricks import create_databricks_job_solid, databricks_client
+
+            sparkpi = create_databricks_job_solid().configured(
+                {
+                    "job": {
+                        "name": "SparkPi Python job",
+                        "new_cluster": {
+                            "spark_version": "7.3.x-scala2.12",
+                            "node_type_id": "i3.xlarge",
+                            "num_workers": 2,
+                        },
+                        "spark_python_task": {"python_file": "dbfs:/docs/pi.py", "parameters": ["10"]},
+                    }
+                },
+                name="sparkspi",
+            )
+
+
+            @pipeline(
+                mode_defs=[
+                    ModeDefinition(
+                        resource_defs={
+                            "databricks_client": databricks_client.configured(
+                                {"host": "my.workspace.url", "token": "my.access.token"}
+                            )
+                        }
+                    )
+                ]
+            )
+            def my_pipeline():
+                sparkpi()
     """
     check.str_param(name, "name")
     check.opt_str_param(description, "description")
