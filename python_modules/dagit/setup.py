@@ -54,7 +54,7 @@ if __name__ == "__main__":
             "flask>=0.12.4,<2.0.0",
             "gevent-websocket>=0.10.1",
             "gevent",
-            "graphql-ws>=0.3.0",
+            "graphql-ws>=0.3.0,<0.4.0",
             "requests",
             # watchdog
             "watchdog>=0.8.3",
