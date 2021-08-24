@@ -170,7 +170,7 @@ class DbtCliResource(DbtResource):
             DbtCliOutput: An instance of :class:`DbtCliOutput<dagster_dbt.DbtCliOutput>` containing
                 parsed log output as well as the contents of run_results.json (if applicable).
         """
-        return self.cli("seed", show=show, **kwargs)
+        return self.cli("seed", show=show, select=select, exclude=exclude, **kwargs)
 
     def freshness(self, select: List[str] = None, **kwargs) -> DbtCliOutput:
         """
