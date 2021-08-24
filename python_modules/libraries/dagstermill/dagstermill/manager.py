@@ -19,6 +19,7 @@ from dagster.core.definitions.events import RetryRequested
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.definitions.resource import ScopedResourcesBuilder
+from dagster.core.events import DagsterEvent
 from dagster.core.execution.api import scoped_pipeline_context
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.plan import ExecutionPlan
@@ -32,7 +33,7 @@ from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.utils import make_new_run_id
 from dagster.loggers import colored_console_logger
 from dagster.serdes import unpack_value
-from dagster.utils import EventGenerationManager
+from dagster.utils import EventGenerationManager, ensure_gen
 
 from .context import DagstermillExecutionContext, DagstermillRuntimeExecutionContext
 from .errors import DagstermillError
@@ -359,6 +360,16 @@ class Manager:
     def load_parameter(self, input_name, input_value):
         input_def = self.solid_def.input_def_named(input_name)
         return read_value(input_def.dagster_type, seven.json.loads(input_value))
+
+    def load_input_parameter(self, input_name: str):
+        # load input from source
+        step_context = self.context._step_context  # pylint: disable=protected-access
+        step_input = step_context.step.step_input_named(input_name)
+        for event_or_input_value in ensure_gen(step_input.source.load_input_object(step_context)):
+            if isinstance(event_or_input_value, DagsterEvent):
+                continue
+            else:
+                return event_or_input_value
 
 
 MANAGER_FOR_NOTEBOOK_INSTANCE = Manager()
