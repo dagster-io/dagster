@@ -17,15 +17,10 @@ class DagsterSubscriptionServer(GeventSubscriptionServer):
         self.middleware = middleware or []
         super(DagsterSubscriptionServer, self).__init__(**kwargs)
 
-    def execute(self, request_context, params):
-        # https://github.com/graphql-python/graphql-ws/issues/7
-        params["context_value"] = request_context
+    def execute(self, params):
         params["middleware"] = self.middleware
 
-        # At this point, `on_start` has already executed and the request_context is
-        # actually a WorkspaceRequestContext that contains a snapshot of the data and repository
-        # locations for this request.
-        return super(DagsterSubscriptionServer, self).execute(request_context, params)
+        return super(DagsterSubscriptionServer, self).execute(params)
 
     def send_execution_result(self, connection_context, op_id, execution_result):
         if op_id not in connection_context.operations.keys():
@@ -39,14 +34,7 @@ class DagsterSubscriptionServer(GeventSubscriptionServer):
 
     def on_start(self, connection_context, op_id, params):
         try:
-            execution_result = self.execute(
-                # Even though this object is referred to as the "request_context", it is
-                # actually a IWorkspaceProcessContext. This is a naming restriction from the underlying
-                # GeventSubscriptionServer. Here, we create a new request context for every
-                # incoming GraphQL request
-                connection_context.request_context.create_request_context(),
-                params,
-            )
+            execution_result = self.execute(params)
             if not isinstance(execution_result, Observable):
                 # pylint cannot find of method
                 observable = Observable.of(execution_result, GQL_COMPLETE)  # pylint: disable=E1101
