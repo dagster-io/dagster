@@ -2,7 +2,7 @@ import json
 import os
 
 import docker
-from dagster import Field, Permissive, StringSource, check
+from dagster import Array, Field, Permissive, StringSource, check
 from dagster.core.launcher.base import LaunchRunContext, RunLauncher
 from dagster.core.storage.tags import DOCKER_IMAGE_TAG
 from dagster.grpc.types import ExecuteRunArgs
@@ -22,6 +22,8 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
         env_vars (Optional[List[str]]): The list of environment variables names to forward to the
             docker container.
         network (Optional[str]): Name of the network this container to which to connect the
+            launched container at creation time. DEPRECATED, prefer networks
+        networks (Optional[List[str]]): List of networks to which to connect the
             launched container at creation time.
         container_kwargs(Optional[Dict[str, Any]]): Additional kwargs to pass into
             containers.create. See https://docker-py.readthedocs.io/en/stable/containers.html
@@ -35,13 +37,19 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
         registry=None,
         env_vars=None,
         network=None,
+        networks=None,
         container_kwargs=None,
     ):
         self._inst_data = inst_data
         self._image = image
         self._registry = registry
         self._env_vars = env_vars
-        self._network = network
+        if network:
+            check.invariant(not networks, "cannot set both `network` and `networks`")
+            self._networks = [network]
+        elif networks:
+            self._networks = networks
+
         self._container_kwargs = check.opt_dict_param(
             container_kwargs, "container_kwargs", key_type=str
         )
@@ -56,9 +64,9 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
                 "Cannot specify both `env_vars` in DockerRunLauncher config and `environment` in `container_kwargs`. Choose one or the other."
             )
 
-        if "network" in self._container_kwargs and network:
+        if "network" in self._container_kwargs and self._networks:
             raise Exception(
-                "Cannot specify both `network` in DockerRunLauncher config and `network` in `container_kwargs`. Choose one or the other."
+                "Cannot specify both `networks` in DockerRunLauncher config and `network` in `container_kwargs`. Choose one or the other."
             )
 
         super().__init__()
@@ -92,7 +100,12 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
             "network": Field(
                 StringSource,
                 is_required=False,
-                description="Name of the network this container to which to connect the launched container at creation time",
+                description="Name of the network to which to connect the launched container at creation time",
+            ),
+            "networks": Field(
+                Array(StringSource),
+                is_required=False,
+                description="Names of the networks to which to connect the launched container at creation time",
             ),
             "container_kwargs": Field(
                 Permissive(),
@@ -163,7 +176,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
                 command=command,
                 detach=True,
                 environment=docker_env,
-                network=self._network,
+                network=self._networks[0] if len(self._networks) else None,
                 **self._container_kwargs,
             )
 
@@ -174,9 +187,14 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
                 command=command,
                 detach=True,
                 environment=docker_env,
-                network=self._network,
+                network=self._networks[0] if len(self._networks) else None,
                 **self._container_kwargs,
             )
+
+        if len(self._networks) > 1:
+            for network_name in self._networks[1:]:
+                network = client.networks.get(network_name)
+                network.connect(container)
 
         self._instance.report_engine_event(
             message="Launching run in a new container {container_id} with image {docker_image}".format(

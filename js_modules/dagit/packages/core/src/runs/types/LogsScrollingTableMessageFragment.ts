@@ -248,7 +248,7 @@ export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent {
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
-  error: LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_error;
+  error: LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_error | null;
   errorSource: ErrorSource | null;
   failureMetadata: LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata | null;
 }
@@ -948,7 +948,7 @@ export interface LogsScrollingTableMessageFragment_HookErroredEvent {
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
-  error: LogsScrollingTableMessageFragment_HookErroredEvent_error;
+  error: LogsScrollingTableMessageFragment_HookErroredEvent_error | null;
 }
 
 export interface LogsScrollingTableMessageFragment_LogsCapturedEvent {

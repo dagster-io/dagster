@@ -49,7 +49,7 @@ PROD_MODE = ModeDefinition(
 )
 def story_recommender():
     comment_stories = build_comment_stories()
-    row_users, col_stories, user_story_matrix = build_user_story_matrix(comment_stories)
+    user_story_matrix = build_user_story_matrix(comment_stories)
     recommender_model = build_recommender_model(user_story_matrix)
-    build_component_top_stories(recommender_model, col_stories)
-    build_user_top_recommended_stories(recommender_model, user_story_matrix, row_users, col_stories)
+    build_component_top_stories(recommender_model, user_story_matrix)
+    build_user_top_recommended_stories(recommender_model, user_story_matrix)

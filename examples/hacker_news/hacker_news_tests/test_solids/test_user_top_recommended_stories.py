@@ -1,4 +1,5 @@
 import numpy as np
+from hacker_news.solids.user_story_matrix import IndexedCooMatrix
 from hacker_news.solids.user_top_recommended_stories import build_user_top_recommended_stories
 from pandas import DataFrame, Series
 from scipy.sparse import coo_matrix
@@ -15,9 +16,7 @@ def test_build_user_top_recommended_stories():
     result = build_user_top_recommended_stories(
         None,
         model=model,
-        user_story_matrix=user_story_matrix,
-        row_users=row_users,
-        col_stories=col_stories,
+        user_story_matrix=IndexedCooMatrix(user_story_matrix, row_users, col_stories),
     )
 
     expected = DataFrame(

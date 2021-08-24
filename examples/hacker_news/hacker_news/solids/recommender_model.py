@@ -1,21 +1,21 @@
 import random
 
 from dagster import EventMetadata, InputDefinition, Output, OutputDefinition, solid
+from hacker_news.solids.user_story_matrix import IndexedCooMatrix
 from pandas import DataFrame, Series
-from scipy.sparse import coo_matrix
 from sklearn.decomposition import TruncatedSVD
 
 
 @solid(
     output_defs=[OutputDefinition(dagster_type=TruncatedSVD, metadata={"key": "recommender_model"})]
 )
-def build_recommender_model(user_story_matrix: coo_matrix):
+def build_recommender_model(user_story_matrix: IndexedCooMatrix):
     """
     Trains an SVD model for collaborative filtering-based recommendation.
     """
     n_components = random.randint(90, 110)
     svd = TruncatedSVD(n_components=n_components)
-    svd.fit(user_story_matrix)
+    svd.fit(user_story_matrix.matrix)
 
     total_explained_variance = svd.explained_variance_ratio_.sum()
 
@@ -47,7 +47,9 @@ def build_recommender_model(user_story_matrix: coo_matrix):
         )
     ],
 )
-def build_component_top_stories(model: TruncatedSVD, col_stories: Series, story_titles: DataFrame):
+def build_component_top_stories(
+    model: TruncatedSVD, user_story_matrix: IndexedCooMatrix, story_titles: DataFrame
+):
     """
     For each component in the collaborative filtering model, finds the titles of the top stories
     it's associated with.
@@ -62,7 +64,7 @@ def build_component_top_stories(model: TruncatedSVD, col_stories: Series, story_
     for i in range(model.components_.shape[0]):
         component = model.components_[i]
         top_story_indices = component.argsort()[-n_stories:][::-1]
-        top_story_ids = col_stories[top_story_indices]
+        top_story_ids = user_story_matrix.col_index[top_story_indices]
         top_story_titles = story_titles.loc[top_story_ids]
 
         for title in top_story_titles["title"]:

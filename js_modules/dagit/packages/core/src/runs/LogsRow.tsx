@@ -41,7 +41,7 @@ export class Structured extends React.Component<StructuredProps, StructuredState
         title: 'Error',
         body: (
           <PythonErrorInfo
-            error={node.error}
+            error={node.error ? node.error : node}
             failureMetadata={node.failureMetadata}
             errorSource={node.errorSource}
           />
@@ -50,7 +50,7 @@ export class Structured extends React.Component<StructuredProps, StructuredState
     } else if (node.__typename === 'HookErroredEvent') {
       showCustomAlert({
         title: 'Error',
-        body: <PythonErrorInfo error={node.error} />,
+        body: <PythonErrorInfo error={node.error ? node.error : node} />,
       });
     } else if (node.__typename === 'EngineEvent' && node.engineError) {
       showCustomAlert({
@@ -60,7 +60,9 @@ export class Structured extends React.Component<StructuredProps, StructuredState
     } else if (node.__typename === 'PipelineFailureEvent' && node.pipelineFailureError) {
       showCustomAlert({
         title: 'Error',
-        body: <PythonErrorInfo error={node.pipelineFailureError} />,
+        body: (
+          <PythonErrorInfo error={node.pipelineFailureError ? node.pipelineFailureError : node} />
+        ),
       });
     } else {
       showCustomAlert({
@@ -76,11 +78,7 @@ export class Structured extends React.Component<StructuredProps, StructuredState
 
   render() {
     return (
-      <CellTruncationProvider
-        style={this.props.style}
-        onExpand={this.onExpand}
-        forceExpandability={this.props.node.__typename === 'ExecutionStepFailureEvent'}
-      >
+      <CellTruncationProvider style={this.props.style} onExpand={this.onExpand}>
         <StructuredMemoizedContent
           node={this.props.node}
           metadata={this.props.metadata}
@@ -207,7 +205,7 @@ export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
   ${PYTHON_ERROR_FRAGMENT}
 `;
 
-const StructuredMemoizedContent: React.FunctionComponent<{
+const StructuredMemoizedContent: React.FC<{
   node: LogsRowStructuredFragment;
   metadata: IRunMetadataDict;
   highlighted: boolean;
@@ -225,6 +223,8 @@ const StructuredMemoizedContent: React.FunctionComponent<{
     <TimestampColumn time={'timestamp' in node ? node.timestamp : null} />
   </Row>
 ));
+
+StructuredMemoizedContent.displayName = 'StructuredMemoizedContent';
 
 interface UnstructuredProps {
   node: LogsRowUnstructuredFragment;
@@ -261,7 +261,7 @@ export const LOGS_ROW_UNSTRUCTURED_FRAGMENT = gql`
   }
 `;
 
-const UnstructuredMemoizedContent: React.FunctionComponent<{
+const UnstructuredMemoizedContent: React.FC<{
   node: LogsRowUnstructuredFragment;
   highlighted: boolean;
 }> = React.memo(({node, highlighted}) => (
@@ -279,3 +279,5 @@ const UnstructuredMemoizedContent: React.FunctionComponent<{
     <TimestampColumn time={node.timestamp} />
   </Row>
 ));
+
+UnstructuredMemoizedContent.displayName = 'UnstructuredMemoizedContent';

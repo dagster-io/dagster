@@ -36,7 +36,7 @@ if __name__ == "__main__":
             "boto3",
             f"dagster{pin}",
             "packaging",
-            "psycopg2-binary<2.9",
+            "psycopg2-binary",
             "requests",
         ],
         extras_require={

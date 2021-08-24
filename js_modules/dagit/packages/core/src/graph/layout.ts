@@ -1,6 +1,6 @@
 import * as dagre from 'dagre';
 
-import {titleOfIO} from '../app/Util';
+import {titleOfIO} from '../app/titleOfIO';
 
 type ILayoutConnectionMember = {
   point: IPoint;

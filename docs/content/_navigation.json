@@ -323,10 +323,6 @@
           {
             "title": "Executing on Dask",
             "path": "/deployment/guides/dask"
-          },
-          {
-            "title": "Executing on Airflow",
-            "path": "/deployment/guides/airflow"
           }
         ]
       }
@@ -353,8 +349,8 @@
             "path": "/integrations/great-expectations"
           },
           {
-            "title": "Dagster with PySpark",
-            "path": "/integrations/pyspark"
+            "title": "Dagster with Spark",
+            "path": "/integrations/spark"
           },
           {
             "title": "Dagster with Pandas",
@@ -399,6 +395,10 @@
           {
             "title": "Re-execution",
             "path": "/guides/dagster/re-execution"
+          },
+          {
+            "title": "Fully-Featured Example Project",
+            "path": "/guides/dagster/example_project"
           }
         ]
       }
@@ -479,6 +479,10 @@
           {
             "title": "Experimental Core APIs",
             "path": "/_apidocs/experimental"
+          },
+          {
+            "title": "Versioning & Memoization",
+            "path": "/_apidocs/memoization"
           },
           {
             "title": "Utilities",

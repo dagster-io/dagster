@@ -138,16 +138,12 @@ class DbtResource:
             DbtOutput: object containing parsed output from dbt
         """
 
-    @abstractmethod
-    def generate_docs(
-        self, models: List[str] = None, exclude: List[str] = None, **kwargs
-    ) -> DbtOutput:
+    def generate_docs(self, compile_project: bool = False, **kwargs) -> DbtOutput:
         """
         Run the ``docs generate`` command on a dbt project. kwargs are passed in as additional parameters.
 
         Args:
-            models (List[str], optional): the models to include in docs generation.
-            exclude (List[str], optional): the models to exclude from docs generation.
+            compile_project (bool, optional): If true, compile the project before generating a catalog.
 
         Returns:
             DbtOutput: object containing parsed output from dbt

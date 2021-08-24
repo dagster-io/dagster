@@ -8,7 +8,7 @@ build:
 	cd sphinx; make clean; make json; cd ..; python pack_json.py
 
 snapshot:
-	cd next; yarn snapshot; cd ..;
+	cd next; yarn snapshot && yarn crag-snapshot; cd ..;
 
 update_version:
 	echo "Saving version $(version)"

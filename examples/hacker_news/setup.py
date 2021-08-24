@@ -27,7 +27,6 @@ setup(
         "pyarrow>=4.0.0",
         "pyspark",
         "requests",
-        "gcsfs",
         "fsspec",
         "s3fs",
         "scipy",

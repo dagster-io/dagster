@@ -16,11 +16,12 @@ from typing import (
 from dagster import check
 from dagster.config import Field, Shape
 from dagster.config.config_type import ConfigType
+from dagster.config.validate import process_config
 from dagster.core.definitions.config import ConfigMapping
 from dagster.core.definitions.definition_config_schema import IDefinitionConfigSchema
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.resource import ResourceDefinition
-from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
 from dagster.core.storage.io_manager import io_manager
 from dagster.core.types.dagster_type import (
     DagsterType,
@@ -46,6 +47,7 @@ from .logger import LoggerDefinition
 from .output import OutputDefinition, OutputMapping
 from .preset import PresetDefinition
 from .solid_container import create_execution_structure, validate_dependency_dict
+from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
     from dagster.core.instance import DagsterInstance
@@ -362,10 +364,11 @@ class GraphDefinition(NodeDefinition):
         description: Optional[str] = None,
         resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
         config: Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"] = None,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[Dict[str, Any]] = None,
         logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
         executor_def: Optional["ExecutorDefinition"] = None,
         hooks: Optional[AbstractSet[HookDefinition]] = None,
+        version_strategy: Optional[VersionStrategy] = None,
     ) -> "PipelineDefinition":
         """
         Make this graph in to an executable Job by providing remaining components required for execution.
@@ -404,6 +407,9 @@ class GraphDefinition(NodeDefinition):
                 A dictionary of string logger identifiers to their implementations.
             executor_def (Optional[ExecutorDefinition]):
                 How this Job will be executed. Defaults to :py:class:`multiprocess_executor` .
+            version_strategy (Optional[VersionStrategy]):
+                Defines how each solid (and optionally, resource) in the job can be versioned. If
+                provided, memoizaton will be enabled for this job.
 
         Returns:
             PipelineDefinition: The "Job" currently implemented as a single-mode pipeline
@@ -412,7 +418,9 @@ class GraphDefinition(NodeDefinition):
         from .partition import PartitionedConfig
         from .executor import ExecutorDefinition, multiprocess_executor
 
-        tags = check.opt_dict_param(tags, "tags", key_type=str, value_type=str)
+        job_name = name or self.name
+
+        tags = check.opt_dict_param(tags, "tags", key_type=str)
         executor_def = check.opt_inst_param(
             executor_def, "executor_def", ExecutorDefinition, default=multiprocess_executor
         )
@@ -438,15 +446,16 @@ class GraphDefinition(NodeDefinition):
             # Using config mapping here is a trick to make it so that the preset will be used even
             # when no config is supplied for the job.
             config_mapping = _config_mapping_with_default_value(
-                self._get_config_schema(resource_defs_with_defaults, executor_def), config
+                self._get_config_schema(resource_defs_with_defaults, executor_def),
+                config,
+                job_name,
+                self.name,
             )
         elif config is not None:
             check.failed(
                 f"config param must be a ConfigMapping, a PartitionedConfig, or a dictionary, but "
                 f"is an object of type {type(config)}"
             )
-
-        job_name = name or self.name
 
         return PipelineDefinition(
             name=job_name,
@@ -464,6 +473,7 @@ class GraphDefinition(NodeDefinition):
             preset_defs=presets,
             tags=tags,
             hook_defs=hooks,
+            version_strategy=version_strategy,
         )
 
     def coerce_to_job(self):
@@ -747,6 +757,8 @@ def _validate_out_mappings(
 def _config_mapping_with_default_value(
     inner_schema: ConfigType,
     default_config: Dict[str, Any],
+    job_name: str,
+    graph_name: str,
 ) -> ConfigMapping:
     if not isinstance(inner_schema, Shape):
         check.failed("Only Shape (dictionary) config_schema allowed on Job ConfigMapping")
@@ -769,13 +781,25 @@ def _config_mapping_with_default_value(
                 default_value=default_config[field_aliases[name]],
                 description=field.description,
             )
+        else:
+            updated_fields[name] = field
+
+    config_schema = Shape(
+        fields=updated_fields,
+        description="run config schema with default values from default_config",
+        field_aliases=inner_schema.field_aliases,
+    )
+
+    config_evr = process_config(config_schema, default_config)
+    if not config_evr.success:
+        raise DagsterInvalidConfigError(
+            f"Error in config when building job '{job_name}' from graph '{graph_name}' ",
+            config_evr.errors,
+            default_config,
+        )
 
     return ConfigMapping(
-        config_fn=config_fn,
-        config_schema=Shape(
-            fields=updated_fields,
-            description="run config schema with default values from default_config",
-        ),
+        config_fn=config_fn, config_schema=config_schema, receive_processed_config_values=False
     )
 
 

@@ -64,6 +64,7 @@ export const ButtonLink = styled(({color, underline, ...rest}) => <button {...re
   font-size: inherit;
   line-height: 1;
   padding: 0;
+  text-align: left;
 
   &:active,
   &:focus {

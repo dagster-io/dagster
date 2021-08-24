@@ -1,7 +1,7 @@
 from datetime import datetime
 
 import pendulum
-from dagster import build_schedule_context, graph, solid
+from dagster import build_schedule_context, graph, repository, solid
 from dagster.core.definitions.partitioned_schedule import schedule_from_partitions
 from dagster.core.definitions.time_window_partitions import (
     TimeWindow,
@@ -55,6 +55,10 @@ def test_daily_schedule_from_partitions():
         "end": "2021-05-08T00:00:00+00:00",
     }
 
+    @repository
+    def _repo():
+        return [my_schedule]
+
 
 def test_hourly_schedule_from_partitions():
     @hourly_partitioned_config(start_date="2021-05-05")
@@ -72,6 +76,10 @@ def test_hourly_schedule_from_partitions():
         "start": "2021-05-07T23:00:00+00:00",
         "end": "2021-05-08T00:00:00+00:00",
     }
+
+    @repository
+    def _repo():
+        return [my_schedule]
 
 
 def test_weekly_schedule_from_partitions():
@@ -93,6 +101,10 @@ def test_weekly_schedule_from_partitions():
         "end": "2021-05-16T00:00:00+00:00",
     }
 
+    @repository
+    def _repo():
+        return [my_schedule]
+
 
 def test_monthly_schedule_from_partitions():
     @monthly_partitioned_config(start_date="2021-05-05")
@@ -112,3 +124,7 @@ def test_monthly_schedule_from_partitions():
         "start": "2021-06-01T00:00:00+00:00",
         "end": "2021-07-01T00:00:00+00:00",
     }
+
+    @repository
+    def _repo():
+        return [my_schedule]

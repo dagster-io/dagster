@@ -1,4 +1,5 @@
 import masterNavigation from "../../content/_navigation.json";
+import cragNavigation from "../../content-crag/_navigation.json";
 import { useVersion } from "./useVersion";
 import versionedNavigation from "../.versioned_content/_versioned_navigation.json";
 
@@ -19,7 +20,7 @@ export const useNavigation = () => {
   const { version } = useVersion();
 
   if (version === "master") {
-    return masterNavigation;
+    return __IS_CRAG__ ? cragNavigation : masterNavigation; // CRAG
   }
 
   return versionedNavigation[version];
@@ -56,19 +57,22 @@ export const allPaths = () => {
 
   paths = [...flattenedMasterNavigation, ...paths];
 
-  for (const [key, value] of Object.entries(versionedNavigation)) {
-    const flattenedVersionNavigation = flatten(value)
-      .filter((n: { path: any }) => n.path)
-      .map(({ path }) => [key, ...path.split("/").splice(1)])
-      .map((page: string[]) => {
-        return {
-          params: {
-            page: page,
-          },
-        };
-      });
+  // Always enable versioning when on Vercel
+  if (process.env.VERCEL || !__VERSIONING_DISABLED__) {
+    for (const [key, value] of Object.entries(versionedNavigation)) {
+      const flattenedVersionNavigation = flatten(value)
+        .filter((n: { path: any }) => n.path)
+        .map(({ path }) => [key, ...path.split("/").splice(1)])
+        .map((page: string[]) => {
+          return {
+            params: {
+              page: page,
+            },
+          };
+        });
 
-    paths = [...paths, ...flattenedVersionNavigation];
+      paths = [...paths, ...flattenedVersionNavigation];
+    }
   }
 
   return paths;

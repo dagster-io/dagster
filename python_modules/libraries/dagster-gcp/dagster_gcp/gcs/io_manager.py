@@ -18,7 +18,7 @@ class PickledObjectGCSIOManager(IOManager):
         self.prefix = check.str_param(prefix, "prefix")
 
     def _get_path(self, context):
-        parts = context.get_run_scoped_output_identifier()
+        parts = context.get_output_identifier()
         run_id = parts[0]
         output_parts = parts[1:]
         return "/".join([self.prefix, "storage", run_id, "files", *output_parts])

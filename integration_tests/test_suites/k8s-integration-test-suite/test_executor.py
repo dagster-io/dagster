@@ -9,10 +9,19 @@ from dagster.core.storage.tags import DOCKER_IMAGE_TAG
 from dagster.core.test_utils import create_run_for_test
 from dagster.utils import load_yaml_from_path, merge_dicts
 from dagster_k8s.client import DagsterKubernetesClient
+from dagster_k8s.job import get_k8s_job_name
 from dagster_k8s.launcher import K8sRunLauncher
 from dagster_k8s.test import wait_for_job_and_get_raw_logs
-from dagster_k8s.utils import wait_for_job
-from dagster_k8s_test_infra.helm import TEST_AWS_CONFIGMAP_NAME
+from dagster_k8s.utils import get_pods_in_job, wait_for_job
+from dagster_k8s_test_infra.helm import (
+    TEST_AWS_CONFIGMAP_NAME,
+    TEST_CONFIGMAP_NAME,
+    TEST_IMAGE_PULL_SECRET_NAME,
+    TEST_OTHER_CONFIGMAP_NAME,
+    TEST_OTHER_IMAGE_PULL_SECRET_NAME,
+    TEST_OTHER_SECRET_NAME,
+    TEST_SECRET_NAME,
+)
 from dagster_k8s_test_infra.integration_utils import image_pull_policy
 from dagster_test.test_project import (
     IS_BUILDKITE,
@@ -83,6 +92,70 @@ def test_k8s_executor_get_config_from_run_launcher(
     )
 
 
+@pytest.mark.integration
+def test_k8s_executor_combine_configs(
+    dagster_instance_for_k8s_run_launcher, helm_namespace_for_k8s_run_launcher, dagster_docker_image
+):
+    # Verifies that the step pods created by the k8s executor combine secrets
+    # from run launcher config and executor config. Also includes each executor secret
+    # twice to verify that duplicates within the combined config are acceptable
+    run_config = merge_dicts(
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml")),
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
+        {
+            "execution": {
+                "k8s": {
+                    "config": {
+                        "job_image": dagster_docker_image,
+                        "image_pull_secrets": [
+                            {"name": TEST_OTHER_IMAGE_PULL_SECRET_NAME},
+                            {"name": TEST_OTHER_IMAGE_PULL_SECRET_NAME},
+                        ],
+                        "env_config_maps": [TEST_OTHER_CONFIGMAP_NAME, TEST_OTHER_CONFIGMAP_NAME],
+                        "env_secrets": [TEST_OTHER_SECRET_NAME, TEST_OTHER_SECRET_NAME],
+                    }
+                }
+            },
+        },
+    )
+    run_id = _launch_executor_run(
+        run_config,
+        dagster_instance_for_k8s_run_launcher,
+        helm_namespace_for_k8s_run_launcher,
+    )
+
+    step_job_key = get_k8s_job_name(run_id, "count_letters")
+    step_job_name = f"dagster-job-{step_job_key}"
+
+    step_pods = get_pods_in_job(
+        job_name=step_job_name, namespace=helm_namespace_for_k8s_run_launcher
+    )
+
+    assert len(step_pods) == 1
+
+    step_pod = step_pods[0]
+
+    assert len(step_pod.spec.containers) == 1, str(step_pod)
+
+    env_from = step_pod.spec.containers[0].env_from
+
+    config_map_names = {env.config_map_ref.name for env in env_from if env.config_map_ref}
+    secret_names = {env.secret_ref.name for env in env_from if env.secret_ref}
+
+    # Run launcher secrets and config maps included
+    assert TEST_SECRET_NAME in secret_names
+    assert TEST_CONFIGMAP_NAME in config_map_names
+
+    # Executor secrets and config maps included
+    assert TEST_OTHER_SECRET_NAME in secret_names
+    assert TEST_OTHER_CONFIGMAP_NAME in config_map_names
+
+    image_pull_secrets_names = [secret.name for secret in step_pod.spec.image_pull_secrets]
+
+    assert TEST_IMAGE_PULL_SECRET_NAME in image_pull_secrets_names
+    assert TEST_OTHER_IMAGE_PULL_SECRET_NAME in image_pull_secrets_names
+
+
 def _launch_executor_run(
     run_config,
     dagster_instance_for_k8s_run_launcher,
@@ -135,6 +208,8 @@ def _launch_executor_run(
             )
             == 2
         )
+
+        return run.run_id
 
 
 @pytest.mark.integration

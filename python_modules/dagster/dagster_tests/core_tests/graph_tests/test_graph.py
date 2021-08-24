@@ -1,12 +1,27 @@
+import enum
+import json
+
 import pytest
-from dagster import ConfigMapping, Permissive, graph, logger, op, resource, success_hook
+from dagster import (
+    ConfigMapping,
+    Enum,
+    Field,
+    Permissive,
+    Shape,
+    graph,
+    logger,
+    op,
+    resource,
+    success_hook,
+)
+from dagster.check import CheckError
 from dagster.core.definitions.graph import GraphDefinition
 from dagster.core.definitions.partition import (
     Partition,
     PartitionedConfig,
     StaticPartitionsDefinition,
 )
-from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
 from dagster.core.execution.execute import execute_in_process
 
 
@@ -34,6 +49,28 @@ def test_basic_graph():
     result = execute_in_process(get_two)
 
     assert result.success
+
+    result = get_two.execute_in_process()
+    assert result.success
+
+
+def test_aliased_graph():
+    emit_one, add = get_ops()
+
+    @graph
+    def get_two():
+        return add(emit_one(), emit_one.alias("emit_one_part_two")())
+
+    assert isinstance(get_two, GraphDefinition)
+
+    result = execute_in_process(get_two)
+
+    assert result.success
+
+    result_for_non_aliased = result.result_for_node("emit_one")
+    assert result_for_non_aliased.output_values["result"] == 1
+    result_for_aliased = result.result_for_node("emit_one_part_two")
+    assert result_for_aliased.output_values["result"] == 1
 
     result = get_two.execute_in_process()
     assert result.success
@@ -74,6 +111,27 @@ def test_with_resources():
 
     result = my_graph.execute_in_process(resources={"a": "foo"})
     assert result.success
+
+
+def test_error_on_invalid_resource_key():
+    @resource
+    def test_resource():
+        return "test-resource"
+
+    @op(required_resource_keys={"test-resource"})
+    def needs_resource(_):
+        return ""
+
+    @graph
+    def test_graph():
+        needs_resource()
+
+    with pytest.raises(CheckError, match="test-resource"):
+        test_graph.to_job(
+            resource_defs={
+                "test-resource": test_resource,
+            }
+        )
 
 
 def test_config_mapping_fn():
@@ -201,6 +259,24 @@ def test_tags_on_job():
     assert result.success
 
 
+def test_non_string_tag():
+    @op
+    def basic():
+        pass
+
+    @graph
+    def basic_graph():
+        basic()
+
+    inner = {"a": "b"}
+    tags = {"my_tag": inner}
+    job = basic_graph.to_job(tags=tags)
+    assert job.tags == {"my_tag": json.dumps(inner)}
+
+    with pytest.raises(DagsterInvalidDefinitionError, match="Invalid value for tag"):
+        basic_graph.to_job(tags={"my_tag": basic_graph})
+
+
 def test_logger_defs():
     @op
     def my_op(_):
@@ -306,7 +382,7 @@ def test_desc():
     assert job.description == desc
 
 
-def test_op_config_recursive():
+def test_config_naming_collisions():
     @op(config_schema={"solids": Permissive(), "ops": Permissive()})
     def my_op(context):
         return context.op_config
@@ -334,3 +410,188 @@ def test_op_config_recursive():
     )
     assert result.success
     assert result.output_values["result"] == config
+
+
+def test_to_job_default_config_field_aliasing():
+    @op
+    def add_one(x):
+        return x + 1
+
+    @graph
+    def my_graph():
+        return add_one()
+
+    my_job = my_graph.to_job(config={"ops": {"add_one": {"inputs": {"x": {"value": 1}}}}})
+
+    result = my_job.execute_in_process()
+    assert result.success
+
+    result = my_job.execute_in_process({"solids": {"add_one": {"inputs": {"x": {"value": 1}}}}})
+    assert result.success
+
+    result = my_job.execute_in_process({"ops": {"add_one": {"inputs": {"x": {"value": 1}}}}})
+    assert result.success
+
+
+def test_to_job_incomplete_default_config():
+    @op(config_schema={"foo": str})
+    def my_op(_):
+        pass
+
+    @graph
+    def my_graph():
+        my_op()
+
+    default_config_error = "Error in config when building job 'my_job' from graph 'my_graph' "
+    invalid_default_error = "Invalid default_value for Field."
+    invalid_configs = [
+        (
+            {},
+            default_config_error,
+        ),  # Not providing required config nested into the op config schema.
+        (
+            {"ops": {"my_op": {"config": {"foo": "bar"}}, "not_my_op": {"config": {"foo": "bar"}}}},
+            invalid_default_error,
+        ),  # Providing extraneous config for an op that doesn't exist.
+        (
+            {
+                "ops": {"my_op": {"config": {"foo": "bar"}}},
+                "solids": {"my_op": {"config": {"foo": "bar"}}},
+            },
+            default_config_error,
+        ),  # Providing the same config with multiple aliases.
+    ]
+    # Ensure that errors nested into the config tree are caught
+    for invalid_config, error_msg in invalid_configs:
+        with pytest.raises(
+            DagsterInvalidConfigError,
+            match=error_msg,
+        ):
+            my_graph.to_job(name="my_job", config=invalid_config)
+
+
+class TestEnum(enum.Enum):
+    ONE = 1
+    TWO = 2
+
+
+def test_enum_config_mapping():
+    @op(
+        config_schema={
+            "my_enum": Field(
+                Enum.from_python_enum(TestEnum), is_required=False, default_value="ONE"
+            )
+        }
+    )
+    def my_op(context):
+        return context.op_config["my_enum"]
+
+    @graph
+    def my_graph():
+        my_op()
+
+    def _use_defaults_mapping(_):
+        return {}
+
+    use_defaults = my_graph.to_job(config=ConfigMapping(config_fn=_use_defaults_mapping))
+    result = use_defaults.execute_in_process()
+    assert result.success
+    assert result.result_for_node("my_op").output_values["result"] == TestEnum.ONE
+
+    def _override_defaults_mapping(_):
+        return {"ops": {"my_op": {"config": {"my_enum": "TWO"}}}}
+
+    override_defaults = my_graph.to_job(config=ConfigMapping(config_fn=_override_defaults_mapping))
+    result = override_defaults.execute_in_process()
+    assert result.success
+    assert result.result_for_node("my_op").output_values["result"] == TestEnum.TWO
+
+    def _ingest_config_mapping(x):
+        return {"ops": {"my_op": {"config": {"my_enum": x["my_field"]}}}}
+
+    default_config_mapping = ConfigMapping(
+        config_fn=_ingest_config_mapping,
+        config_schema=Shape(
+            {
+                "my_field": Field(
+                    Enum.from_python_enum(TestEnum), is_required=False, default_value="TWO"
+                )
+            }
+        ),
+        receive_processed_config_values=False,
+    )
+    ingest_mapping = my_graph.to_job(config=default_config_mapping)
+    result = ingest_mapping.execute_in_process()
+    assert result.success
+    assert result.result_for_node("my_op").output_values["result"] == TestEnum.TWO
+
+    no_default_config_mapping = ConfigMapping(
+        config_fn=_ingest_config_mapping,
+        config_schema=Shape({"my_field": Field(Enum.from_python_enum(TestEnum), is_required=True)}),
+        receive_processed_config_values=False,
+    )
+    ingest_mapping_no_default = my_graph.to_job(config=no_default_config_mapping)
+    result = ingest_mapping_no_default.execute_in_process(run_config={"my_field": "TWO"})
+    assert result.success
+    assert result.result_for_node("my_op").output_values["result"] == TestEnum.TWO
+
+    def _ingest_post_processed_config(x):
+        assert x["my_field"] == TestEnum.TWO
+        return {"ops": {"my_op": {"config": {"my_enum": "TWO"}}}}
+
+    config_mapping_with_preprocessing = ConfigMapping(
+        config_fn=_ingest_post_processed_config,
+        config_schema=Shape({"my_field": Field(Enum.from_python_enum(TestEnum), is_required=True)}),
+    )
+    ingest_preprocessing = my_graph.to_job(config=config_mapping_with_preprocessing)
+    result = ingest_preprocessing.execute_in_process(run_config={"my_field": "TWO"})
+    assert result.success
+    assert result.result_for_node("my_op").output_values["result"] == TestEnum.TWO
+
+
+def test_enum_default_config():
+    @op(
+        config_schema={
+            "my_enum": Field(
+                Enum.from_python_enum(TestEnum), is_required=False, default_value="ONE"
+            )
+        }
+    )
+    def my_op(context):
+        return context.op_config["my_enum"]
+
+    @graph
+    def my_graph():
+        my_op()
+
+    my_job = my_graph.to_job(config={"ops": {"my_op": {"config": {"my_enum": "TWO"}}}})
+    result = my_job.execute_in_process()
+    assert result.success
+    assert result.result_for_node("my_op").output_values["result"] == TestEnum.TWO
+
+
+def test_enum_to_execution():
+    @op(
+        config_schema={
+            "my_enum": Field(
+                Enum.from_python_enum(TestEnum), is_required=False, default_value="ONE"
+            )
+        }
+    )
+    def my_op(context):
+        return context.op_config["my_enum"]
+
+    @graph
+    def my_graph():
+        my_op()
+
+    my_job = my_graph.to_job()
+    result = my_job.execute_in_process()
+    assert result.success
+    assert result.result_for_node("my_op").output_values["result"] == TestEnum.ONE
+
+    result = my_graph.execute_in_process(
+        {"ops": {"my_graph": {"ops": {"my_op": {"config": {"my_enum": "TWO"}}}}}}
+    )
+    assert result.success
+    assert result.result_for_node("my_op").output_values["result"] == TestEnum.TWO

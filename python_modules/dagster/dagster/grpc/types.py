@@ -4,7 +4,11 @@ from dagster import check
 from dagster.core.code_pointer import CodePointer
 from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.execution.retries import RetryMode
-from dagster.core.host_representation.origin import ExternalPipelineOrigin, ExternalRepositoryOrigin
+from dagster.core.host_representation.origin import (
+    ExternalPipelineOrigin,
+    ExternalRepositoryOrigin,
+    RepositoryLocationOrigin,
+)
 from dagster.core.instance.ref import InstanceRef
 from dagster.core.origin import PipelinePythonOrigin
 from dagster.serdes import whitelist_for_serdes
@@ -230,6 +234,18 @@ class PipelineSubsetSnapshotArgs(
             solid_selection=check.list_param(solid_selection, "solid_selection", of_type=str)
             if solid_selection
             else None,
+        )
+
+
+@whitelist_for_serdes
+class NotebookPathArgs(namedtuple("_NotebookPathArgs", "repository_location_origin notebook_path")):
+    def __new__(cls, repository_location_origin, notebook_path):
+        return super(NotebookPathArgs, cls).__new__(
+            cls,
+            repository_location_origin=check.inst_param(
+                repository_location_origin, "repository_location_origin", RepositoryLocationOrigin
+            ),
+            notebook_path=check.str_param(notebook_path, "notebook_path"),
         )
 
 

@@ -97,15 +97,15 @@ class IPlanContext(ABC):
 
     @property
     def logging_tags(self) -> Dict[str, str]:
-        return self.log.logging_tags
+        return self.log.logging_metadata.to_tags()
 
     def has_tag(self, key: str) -> bool:
         check.str_param(key, "key")
-        return key in self.logging_tags
+        return key in self.log.logging_metadata.pipeline_tags
 
     def get_tag(self, key: str) -> Optional[str]:
         check.str_param(key, "key")
-        return self.logging_tags.get(key)
+        return self.log.logging_metadata.pipeline_tags.get(key)
 
 
 class PlanData(NamedTuple):
@@ -426,6 +426,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             log_manager=self.log,
             step_context=self,
             resources=None,
+            version=self.execution_plan.get_version_for_step_output_handle(step_output_handle),
         )
 
     def for_input_manager(

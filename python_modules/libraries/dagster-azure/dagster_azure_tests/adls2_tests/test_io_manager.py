@@ -1,6 +1,8 @@
 import pytest
 from dagster import (
     DagsterInstance,
+    DynamicOutput,
+    DynamicOutputDefinition,
     InputDefinition,
     Int,
     ModeDefinition,
@@ -8,14 +10,13 @@ from dagster import (
     PipelineRun,
     build_input_context,
     build_output_context,
-    lambda_solid,
     pipeline,
     resource,
+    solid,
 )
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import execute_plan
-from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.utils import make_new_run_id
@@ -45,16 +46,17 @@ def get_step_output(step_events, step_key, output_name="result"):
 
 
 def define_inty_pipeline():
-    @lambda_solid(output_def=OutputDefinition(Int, io_manager_key="io_manager"))
+    @solid(output_defs=[OutputDefinition(Int)])
     def return_one():
         return 1
 
-    @lambda_solid(
+    @solid(
         input_defs=[InputDefinition("num", Int)],
-        output_def=OutputDefinition(Int, io_manager_key="io_manager"),
+        output_defs=[DynamicOutputDefinition(Int)],
     )
     def add_one(num):
-        return num + 1
+        yield DynamicOutput(num + 1, "foo")
+        yield DynamicOutput(num + 1, "bar")
 
     @pipeline(
         mode_defs=[
@@ -109,11 +111,10 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
     )
 
     assert get_step_output(return_one_step_events, "return_one")
-    step_output_handle = StepOutputHandle("return_one")
     context = build_input_context(
         upstream_output=build_output_context(
-            step_key=step_output_handle.step_key,
-            name=step_output_handle.output_name,
+            step_key="return_one",
+            name="result",
             run_id=run_id,
         )
     )
@@ -135,12 +136,12 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
         )
     )
 
-    step_output_handle = StepOutputHandle("add_one")
     context = build_input_context(
         upstream_output=build_output_context(
-            step_key=step_output_handle.step_key,
-            name=step_output_handle.output_name,
+            step_key="add_one",
+            name="result",
             run_id=run_id,
+            mapping_key="foo",
         )
     )
 

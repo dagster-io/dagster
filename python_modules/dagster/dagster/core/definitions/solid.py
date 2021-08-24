@@ -346,6 +346,7 @@ class CompositeSolidDefinition(GraphDefinition):
             config_mapping=ConfigMapping(
                 config_mapping.config_fn,
                 config_schema=config_schema,
+                receive_processed_config_values=config_mapping.receive_processed_config_values,
             ),
             dependencies=self.dependencies,
             description=description or self.description,

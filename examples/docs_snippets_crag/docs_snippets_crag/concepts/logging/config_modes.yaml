@@ -1,0 +1,6 @@
+loggers:
+  cloudwatch:
+    config:
+      log_level: ERROR
+      log_group_name: /my/cool/cloudwatch/log/group
+      log_stream_name: very_good_log_stream

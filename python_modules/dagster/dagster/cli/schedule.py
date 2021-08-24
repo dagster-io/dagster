@@ -218,54 +218,42 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
                 print_fn(title)
                 print_fn("*" * len(title))
 
-            first = True
-
-            if running_filter:
-                schedules = [
-                    s
-                    for s in instance.all_stored_job_state(
-                        external_repo.get_external_origin_id(), job_type=JobType.SCHEDULE
-                    )
-                    if s.status == JobStatus.RUNNING
-                ]
-            elif stopped_filter:
-                schedules = [
-                    s
-                    for s in instance.all_stored_job_state(
-                        external_repo.get_external_origin_id(), job_type=JobType.SCHEDULE
-                    )
-                    if s.status == JobStatus.STOPPED
-                ]
-            else:
-                schedules = instance.all_stored_job_state(
+            repo_schedules = external_repo.get_external_schedules()
+            stored_schedules_by_origin_id = {
+                stored_schedule_state.job_origin_id: stored_schedule_state
+                for stored_schedule_state in instance.all_stored_job_state(
                     external_repo.get_external_origin_id(), job_type=JobType.SCHEDULE
                 )
+            }
 
-            for schedule_state in schedules:
-                # If --name filter is present, only print the schedule name
-                if name_filter:
-                    print_fn(schedule_state.job_name)
+            first = True
+
+            for external_schedule in repo_schedules:
+                stored_schedule_state = stored_schedules_by_origin_id.get(
+                    external_schedule.get_external_origin_id()
+                )
+                if running_filter and (
+                    not stored_schedule_state or stored_schedule_state.status == JobStatus.STOPPED
+                ):
+                    continue
+                if stopped_filter and stored_schedule_state and JobStatus.RUNNING:
                     continue
 
-                flag = (
-                    "[{status}]".format(status=schedule_state.status.value)
-                    if schedule_state
-                    else ""
-                )
-                schedule_title = "Schedule: {name} {flag}".format(
-                    name=schedule_state.job_name, flag=flag
-                )
+                if name_filter:
+                    print_fn(external_schedule.name)
+                    continue
 
+                status = (
+                    stored_schedule_state.status if stored_schedule_state else JobStatus.STOPPED
+                )
+                schedule_title = f"Schedule: {external_schedule.name} [{status.value}]"
                 if not first:
                     print_fn("*" * len(schedule_title))
+
                 first = False
 
                 print_fn(schedule_title)
-                print_fn(
-                    "Cron Schedule: {cron_schedule}".format(
-                        cron_schedule=schedule_state.job_specific_data.cron_schedule
-                    )
-                )
+                print_fn(f"Cron Schedule: {external_schedule.cron_schedule}")
 
 
 def extract_schedule_name(schedule_name):

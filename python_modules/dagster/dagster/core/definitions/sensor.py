@@ -277,16 +277,40 @@ class SensorDefinition:
             run_requests = [item] if isinstance(item, RunRequest) else []
             pipeline_run_reactions = [item] if isinstance(item, PipelineRunReaction) else []
             skip_message = item.skip_message if isinstance(item, SkipReason) else None
-        elif isinstance(result[0], RunRequest):
-            check.is_list(result, of_type=RunRequest)
-            run_requests = result
-            pipeline_run_reactions = []
-            skip_message = None
         else:
-            run_requests = []
-            check.is_list(result, of_type=PipelineRunReaction)
-            pipeline_run_reactions = result
+            check.is_list(result, (SkipReason, RunRequest, PipelineRunReaction))
+            has_skip = any(map(lambda x: isinstance(x, SkipReason), result))
+            has_run_request = any(map(lambda x: isinstance(x, RunRequest), result))
+            has_run_reaction = any(map(lambda x: isinstance(x, PipelineRunReaction), result))
             skip_message = None
+
+            if has_skip:
+                if has_run_request:
+                    check.failed(
+                        "Expected a single SkipReason or one or more RunRequests: received both "
+                        "RunRequest and SkipReason"
+                    )
+                if has_run_reaction:
+                    check.failed(
+                        "Expected a single SkipReason or one or more PipelineRunReaction: "
+                        "received both PipelineRunReaction and SkipReason"
+                    )
+                else:
+                    check.failed("Expected a single SkipReason: received multiple SkipReasons")
+
+            if has_run_request:
+                run_requests = result
+                pipeline_run_reactions = []
+                if has_run_reaction:
+                    check.failed(
+                        "Expected either one or more RunRequests or one or more "
+                        "PipelineRunReactions: received both"
+                    )
+
+            else:
+                # only run reactions
+                run_requests = []
+                pipeline_run_reactions = result
 
         return SensorExecutionData(
             run_requests,

@@ -3,17 +3,34 @@ import * as React from 'react';
 import {MemoryRouter, MemoryRouterProps} from 'react-router-dom';
 
 import {AppContext, AppContextValue} from '../app/AppContext';
-import {PERMISSIONS_ALLOW_ALL} from '../app/Permissions';
+import {PermissionsContext, PermissionsFromJSON} from '../app/Permissions';
 import {WebSocketContext} from '../app/WebSocketProvider';
+import {PermissionFragment} from '../app/types/PermissionFragment';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
 
 import {ApolloTestProps, ApolloTestProvider} from './ApolloTestProvider';
 
 const typeDefs = loader('../graphql/schema.graphql');
 
+export const PERMISSIONS_ALLOW_ALL: PermissionsFromJSON = {
+  launch_pipeline_execution: true,
+  launch_pipeline_reexecution: true,
+  reconcile_scheduler_state: true,
+  start_schedule: true,
+  stop_running_schedule: true,
+  start_sensor: true,
+  stop_sensor: true,
+  terminate_pipeline_execution: true,
+  delete_pipeline_run: true,
+  reload_repository_location: true,
+  reload_workspace: true,
+  wipe_assets: true,
+  launch_partition_backfill: true,
+  cancel_partition_backfill: true,
+};
+
 const testValue = {
   basePath: '',
-  permissions: PERMISSIONS_ALLOW_ALL,
   rootServerURI: '',
 };
 
@@ -23,22 +40,32 @@ const websocketValue = {
 };
 
 interface Props {
-  appContextProps?: Partial<AppContextValue>;
-  routerProps?: MemoryRouterProps;
   apolloProps?: ApolloTestProps;
+  appContextProps?: Partial<AppContextValue>;
+  permissionOverrides?: {[permission: string]: boolean};
+  routerProps?: MemoryRouterProps;
 }
 
 export const TestProvider: React.FC<Props> = (props) => {
-  const {apolloProps, appContextProps, routerProps} = props;
+  const {apolloProps, appContextProps, permissionOverrides, routerProps} = props;
+  const permissions: PermissionFragment[] = React.useMemo(() => {
+    return Object.keys(PERMISSIONS_ALLOW_ALL).map((permission) => {
+      const override = permissionOverrides ? permissionOverrides[permission] : null;
+      const value = typeof override === 'boolean' ? override : true;
+      return {__typename: 'GraphenePermission', permission, value};
+    });
+  }, [permissionOverrides]);
 
   return (
     <AppContext.Provider value={{...testValue, ...appContextProps}}>
       <WebSocketContext.Provider value={websocketValue}>
-        <MemoryRouter {...routerProps}>
-          <ApolloTestProvider {...apolloProps} typeDefs={typeDefs}>
-            <WorkspaceProvider>{props.children}</WorkspaceProvider>
-          </ApolloTestProvider>
-        </MemoryRouter>
+        <PermissionsContext.Provider value={permissions}>
+          <MemoryRouter {...routerProps}>
+            <ApolloTestProvider {...apolloProps} typeDefs={typeDefs}>
+              <WorkspaceProvider>{props.children}</WorkspaceProvider>
+            </ApolloTestProvider>
+          </MemoryRouter>
+        </PermissionsContext.Provider>
       </WebSocketContext.Provider>
     </AppContext.Provider>
   );

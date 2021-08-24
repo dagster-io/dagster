@@ -1,5 +1,6 @@
 import {gql, useApolloClient, useMutation} from '@apollo/client';
-import {Button, Icon, Intent, Tooltip} from '@blueprintjs/core';
+import {Button, Icon, Intent} from '@blueprintjs/core';
+import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 
 import {SharedToaster} from '../app/DomUtils';

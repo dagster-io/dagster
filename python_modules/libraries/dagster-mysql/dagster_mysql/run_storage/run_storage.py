@@ -88,12 +88,16 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
         return MySQLRunStorage(inst_data=inst_data, mysql_url=mysql_url_from_config(config_value))
 
     @staticmethod
-    def create_clean_storage(mysql_url):
+    def wipe_storage(mysql_url):
         engine = create_engine(mysql_url, isolation_level="AUTOCOMMIT", poolclass=db.pool.NullPool)
         try:
             RunStorageSqlMetadata.drop_all(engine)
         finally:
             engine.dispose()
+
+    @staticmethod
+    def create_clean_storage(mysql_url):
+        MySQLRunStorage.wipe_storage(mysql_url)
         return MySQLRunStorage(mysql_url)
 
     def connect(self, run_id=None):  # pylint: disable=arguments-differ, unused-argument

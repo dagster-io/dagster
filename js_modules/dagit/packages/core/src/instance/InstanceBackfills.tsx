@@ -554,7 +554,7 @@ const BACKFILLS_QUERY = gql`
           status
           numRequested
           numTotal
-          runs(limit: $limit) {
+          runs {
             id
             canTerminate
             status

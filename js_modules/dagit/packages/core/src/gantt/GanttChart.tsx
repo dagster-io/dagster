@@ -254,14 +254,13 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
       return;
     }
 
-    // time required for 2px shift in viz, but not more rapid than our CSS animation duration
     const renderInterval = Math.max(CSS_DURATION, 2 / scale);
     const now = Date.now();
 
     const timeUntilIntervalElasped = renderInterval - (now - nowMs);
     const timeout = setTimeout(() => setNowMs(now), timeUntilIntervalElasped);
     return () => clearTimeout(timeout);
-  }, [scale, metadata, nowMs, lostWebsocket]);
+  }, [scale, nowMs, lostWebsocket, metadata]);
 
   // Listen for events specifying hover time (eg: a marker at a particular timestamp)
   // and sync them to our React state for display.

@@ -264,18 +264,50 @@ function usePipelineAvailabilityErrorForRun(
   if (repoMatch) {
     const {type: matchType} = repoMatch;
 
-    // The run matches the active snapshot ID for the pipeline, so we're safe to execute the run.
-    if (matchType === 'snapshot') {
+    // The run matches the repository and active snapshot ID for the pipeline. This is the best
+    // we can do, so consider it safe to run as-is.
+    if (matchType === 'origin-and-snapshot') {
       return null;
     }
 
-    // A repo was found, but only because the pipeline name matched. The run might not work
-    // as expected.
+    // Beyond this point, we're just trying our best. Warn the user that behavior might not be what
+    // they expect.
+
+    if (matchType === 'origin-only') {
+      // Only the repo is a match.
+      return {
+        icon: IconNames.WARNING_SIGN,
+        tooltip: `The pipeline "${run.pipeline.name}" may be a different version from the original pipeline run.`,
+        disabled: false,
+      };
+    }
+
+    if (matchType === 'snapshot-only') {
+      // Only the snapshot ID matched, but not the repo.
+      return {
+        icon: IconNames.WARNING_SIGN,
+        tooltip: (
+          <Group direction="column" spacing={4}>
+            <div>{`The pipeline "${run.pipeline.name}" is not in the same repository as the original pipeline run.`}</div>
+            {run.repositoryOrigin ? (
+              <div>
+                Original repository:{' '}
+                <strong>
+                  {run.repositoryOrigin.repositoryName}@
+                  {run.repositoryOrigin.repositoryLocationName}
+                </strong>
+              </div>
+            ) : null}
+          </Group>
+        ),
+        disabled: false,
+      };
+    }
+
+    // Only the pipeline name matched. This could be from any repo in the workspace.
     return {
       icon: IconNames.WARNING_SIGN,
-      tooltip:
-        `The pipeline "${run.pipeline.name}" in the current repository is` +
-        ` a different version than the original pipeline run.`,
+      tooltip: `The pipeline "${run.pipeline.name}" may be a different version from the original pipeline run.`,
       disabled: false,
     };
   }

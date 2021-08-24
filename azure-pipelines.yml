@@ -2,6 +2,7 @@ trigger:
   branches:
     include:
       - master
+      - windows/*
 pr: none
 parameters:
   - name: py3_versions

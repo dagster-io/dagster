@@ -1,6 +1,4 @@
 # This image is used to bootstrap the test image building process
-# We do not have sophisticated machinery to update this
-# because we do not anticipate having to update it.
 ARG BASE_IMAGE
 FROM "${BASE_IMAGE}"
 
@@ -38,7 +36,7 @@ RUN sh install_docker.sh && \
     # Buildkite mounts the checkout to /workdir
     # Requires git in order to do that
     apt-get update && \
-    apt-get install -y git && \
+    apt-get install -y git rsync && \
     apt-get remove -yqq && \
     apt-get autoremove -yqq --purge && \
     apt-get clean && \

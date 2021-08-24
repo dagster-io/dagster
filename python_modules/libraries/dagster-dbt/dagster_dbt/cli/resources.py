@@ -172,6 +172,7 @@ class DbtCliResource(DbtResource):
         """
         return self.cli("seed", show=show, **kwargs)
 
+
     def freshness(
         self, select: List[str] = None, **kwargs
     ) -> DbtCliOutput:
@@ -187,21 +188,19 @@ class DbtCliResource(DbtResource):
         """
         return self.cli("source snapshot-freshness", **kwargs)
 
-    def generate_docs(
-        self, models: List[str] = None, exclude: List[str] = None, **kwargs
-    ) -> DbtCliOutput:
+
+    def generate_docs(self, compile_project: bool = False, **kwargs) -> DbtCliOutput:
         """
         Run the ``docs generate`` command on a dbt project. kwargs are passed in as additional parameters.
 
         Args:
-            models (List[str], optional): the models to include in docs generation.
-            exclude (List[str], optional): the models to exclude from docs generation.
+            compile_project (bool, optional): If true, compile the project before generating a catalog.
 
         Returns:
             DbtCliOutput: An instance of :class:`DbtCliOutput<dagster_dbt.DbtCliOutput>` containing
                 parsed log output as well as the contents of run_results.json (if applicable).
         """
-        return self.cli("docs generate", models=models, exclude=exclude, **kwargs)
+        return self.cli("docs generate", compile=compile_project, **kwargs)
 
     def run_operation(
         self, macro: str, args: Optional[Dict[str, Any]] = None, **kwargs

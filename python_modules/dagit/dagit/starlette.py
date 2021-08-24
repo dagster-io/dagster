@@ -12,6 +12,7 @@ from dagster import __version__ as dagster_version
 from dagster import check
 from dagster.cli.workspace.cli_target import get_workspace_process_context_from_kwargs
 from dagster.core.debug import DebugRunPayload
+from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.workspace.context import WorkspaceProcessContext
 from dagster_graphql import __version__ as dagster_graphql_version
 from dagster_graphql.schema import create_schema
@@ -24,6 +25,7 @@ from starlette import status
 from starlette.applications import Starlette
 from starlette.concurrency import run_in_threadpool
 from starlette.datastructures import QueryParams
+from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from starlette.responses import (
     FileResponse,
@@ -130,7 +132,7 @@ async def graphql_http_endpoint(
     operation_name = data.get("operationName")
 
     # context manager? scoping?
-    context = process_context.create_request_context()
+    context = process_context.create_request_context(request)
 
     result = await run_in_threadpool(  # threadpool = aio event loop
         schema.execute,
@@ -191,7 +193,7 @@ async def graphql_ws_endpoint(
                     operation_name = data.get("operation_name")
 
                     # correct scoping?
-                    request_context = process_context.create_request_context()
+                    request_context = process_context.create_request_context(websocket)
                     async_result = schema.execute(
                         query,
                         variables=variables,
@@ -313,6 +315,33 @@ async def download_debug_file_endpoint(
     return StreamingResponse(result, media_type="application/gzip")
 
 
+async def download_compute_logs_endpoint(
+    context: WorkspaceProcessContext,
+    request: Request,
+):
+    run_id = request.path_params["run_id"]
+    step_key = request.path_params["step_key"]
+    file_type = request.path_params["file_type"]
+
+    file = context.instance.compute_log_manager.get_local_path(
+        run_id,
+        step_key,
+        ComputeIOType(file_type),
+    )
+
+    if not path.exists(file):
+        raise HTTPException(404)
+
+    return FileResponse(
+        context.instance.compute_log_manager.get_local_path(
+            run_id,
+            step_key,
+            ComputeIOType(file_type),
+        ),
+        filename=f"{run_id}_{step_key}.{file_type}",
+    )
+
+
 def index_endpoint(
     base_dir: str,
     app_path_prefix: str,
@@ -333,12 +362,12 @@ def index_endpoint(
             )
     except FileNotFoundError:
         raise Exception(
-            """Can't find webapp files. Probably webapp isn't built. If you are using
-            dagit, then probably it's a corrupted installation or a bug. However, if you are
-            developing dagit locally, your problem can be fixed as follows:
-
-            cd ./python_modules/
-            make rebuild_dagit"""
+            """
+            Can't find webapp files.
+            If you are using dagit, then probably it's a corrupted installation or a bug.
+            However, if you are developing dagit locally, your problem can be fixed by running
+            "make rebuild_dagit" in the project root.
+            """
         )
 
 
@@ -352,53 +381,75 @@ def create_root_static_endpoints(base_dir: str) -> List[Route]:
     return [_static_file(f) for f in ROOT_ADDRESS_STATIC_RESOURCES]
 
 
+def create_routes(
+    process_context: WorkspaceProcessContext,
+    graphql_schema: Schema,
+    app_path_prefix: str,
+    static_resources_dir: str,
+):
+    bound_index_endpoint = partial(index_endpoint, static_resources_dir, app_path_prefix)
+
+    return [
+        Route("/dagit_info", dagit_info_endpoint),
+        Route(
+            "/graphql",
+            partial(graphql_http_endpoint, graphql_schema, process_context, app_path_prefix),
+            name="graphql-http",
+            methods=["GET", "POST"],
+        ),
+        WebSocketRoute(
+            "/graphql",
+            partial(graphql_ws_endpoint, graphql_schema, process_context),
+            name="graphql-ws",
+        ),
+        # static resources addressed at /static/
+        Mount(
+            "/static",
+            StaticFiles(
+                directory=path.join(static_resources_dir, "webapp/build/static"),
+                check_dir=False,
+            ),
+            name="static",
+        ),
+        # static resources addressed at /vendor/
+        Mount(
+            "/vendor",
+            StaticFiles(
+                directory=path.join(static_resources_dir, "webapp/build/vendor"),
+                check_dir=False,
+            ),
+            name="vendor",
+        ),
+        # specific static resources addressed at /
+        *create_root_static_endpoints(static_resources_dir),
+        # download file endpoints
+        Route(
+            "/download/{run_id:str}/{step_key:str}/{file_type:str}",
+            partial(download_compute_logs_endpoint, process_context),
+        ),
+        Route(
+            "/download_debug/{run_id:str}",
+            partial(download_debug_file_endpoint, process_context),
+        ),
+        Route("/{path:path}", bound_index_endpoint),
+        Route("/", bound_index_endpoint),
+    ]
+
+
 def create_app(
     process_context: WorkspaceProcessContext,
     debug: bool,
     app_path_prefix: str,
 ):
     graphql_schema = create_schema()
-    base_dir = path.dirname(__file__)
-
-    bound_index_endpoint = partial(index_endpoint, base_dir, app_path_prefix)
-
     return Starlette(
         debug=debug,
-        routes=[
-            Route("/dagit_info", dagit_info_endpoint),
-            Route(
-                "/graphql",
-                partial(graphql_http_endpoint, graphql_schema, process_context, app_path_prefix),
-                name="graphql-http",
-                methods=["GET", "POST"],
-            ),
-            WebSocketRoute(
-                "/graphql",
-                partial(graphql_ws_endpoint, graphql_schema, process_context),
-                name="graphql-ws",
-            ),
-            # static resources addressed at /static/
-            Mount(
-                "/static",
-                StaticFiles(directory=path.join(base_dir, "./webapp/build/static")),
-                name="static",
-            ),
-            # static resources addressed at /vendor/
-            Mount(
-                "/vendor",
-                StaticFiles(directory=path.join(base_dir, "./webapp/build/vendor")),
-                name="vendor",
-            ),
-            # specific static resources addressed at /
-            *create_root_static_endpoints(base_dir),
-            # download file endpoints
-            Route(
-                "/download_debug/{run_id:str}",
-                partial(download_debug_file_endpoint, process_context),
-            ),
-            Route("/{path:path}", bound_index_endpoint),
-            Route("/", bound_index_endpoint),
-        ],
+        routes=create_routes(
+            process_context,
+            graphql_schema,
+            app_path_prefix,
+            path.dirname(__file__),
+        ),
     )
 
 

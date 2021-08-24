@@ -1,4 +1,5 @@
-import {Icon, Colors, Tooltip} from '@blueprintjs/core';
+import {Icon, Colors} from '@blueprintjs/core';
+import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';

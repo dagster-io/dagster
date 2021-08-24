@@ -16,11 +16,15 @@
             "items": {
                 "$ref": "#/definitions/SecretRef"
             }
+        },
+        "serviceAccount": {
+            "$ref": "#/definitions/ServiceAccount"
         }
     },
     "required": [
         "deployments",
-        "imagePullSecrets"
+        "imagePullSecrets",
+        "serviceAccount"
     ],
     "definitions": {
         "PullPolicy": {
@@ -223,6 +227,28 @@
             "type": "object",
             "properties": {},
             "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.LocalObjectReference"
+        },
+        "ServiceAccount": {
+            "title": "ServiceAccount",
+            "type": "object",
+            "properties": {
+                "create": {
+                    "title": "Create",
+                    "type": "boolean"
+                },
+                "name": {
+                    "title": "Name",
+                    "type": "string"
+                },
+                "annotations": {
+                    "$ref": "#/definitions/Annotations"
+                }
+            },
+            "required": [
+                "create",
+                "name",
+                "annotations"
+            ]
         }
     }
 }

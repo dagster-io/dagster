@@ -2,7 +2,7 @@ import logging
 
 from dagster import PipelineDefinition
 from dagster.core.execution.context.logger import InitLoggerContext
-from dagster.core.log_manager import DagsterLogManager
+from dagster.core.log_manager import DagsterLogManager, DagsterLoggingMetadata
 from dagster.utils.log import construct_single_handler_logger
 
 
@@ -38,7 +38,7 @@ def test_log_level_filtering():
         for logger_def in [debug_logger_def, critical_logger_def]
     ]
 
-    log_manager = DagsterLogManager("", {}, loggers)
+    log_manager = DagsterLogManager(DagsterLoggingMetadata(), loggers)
 
     log_manager.debug("Hello, there!")
 

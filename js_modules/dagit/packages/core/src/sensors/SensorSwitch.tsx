@@ -1,4 +1,4 @@
-import {useMutation} from '@apollo/client';
+import {gql, useMutation} from '@apollo/client';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 
@@ -13,14 +13,14 @@ import {
   START_SENSOR_MUTATION,
   STOP_SENSOR_MUTATION,
 } from './SensorMutations';
-import {SensorFragment} from './types/SensorFragment';
+import {SensorSwitchFragment} from './types/SensorSwitchFragment';
 import {StartSensor} from './types/StartSensor';
 import {StopSensor} from './types/StopSensor';
 
 interface Props {
   large?: boolean;
   repoAddress: RepoAddress;
-  sensor: SensorFragment;
+  sensor: SensorSwitchFragment;
 }
 
 export const SensorSwitch: React.FC<Props> = (props) => {
@@ -81,3 +81,15 @@ export const SensorSwitch: React.FC<Props> = (props) => {
     </Tooltip>
   );
 };
+
+export const SENSOR_SWITCH_FRAGMENT = gql`
+  fragment SensorSwitchFragment on Sensor {
+    id
+    jobOriginId
+    name
+    sensorState {
+      id
+      status
+    }
+  }
+`;

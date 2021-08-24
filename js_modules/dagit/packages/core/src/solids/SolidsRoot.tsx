@@ -199,7 +199,7 @@ const SolidsRootWithData: React.FC<Props & {usedSolids: Solid[]}> = (props) => {
               />
             </div>
             <div style={{flex: 1}}>
-              <AutoSizer>
+              <AutoSizer nonce={window.__webpack_nonce__}>
                 {({height, width}) => (
                   <SolidList
                     height={height}

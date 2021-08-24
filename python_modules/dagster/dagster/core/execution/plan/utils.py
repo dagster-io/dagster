@@ -40,15 +40,16 @@ def solid_execution_error_boundary(error_cls, msg_fn, step_context, **kwargs):
     with raise_execution_interrupts():
         try:
             yield
-        except (RetryRequested, Failure) as cf:
-            # A control flow exception has occurred and should be propagated
-            raise cf
         except DagsterError as de:
             # The system has thrown an error that is part of the user-framework contract
             raise de
         except Exception as e:  # pylint: disable=W0703
             # An exception has been thrown by user code and computation should cease
             # with the error reported further up the stack
+
+            # Directly thrown RetryRequested escalate before evaluating the retry policy.
+            if isinstance(e, RetryRequested):
+                raise e
 
             policy = step_context.solid_retry_policy
             if policy:
@@ -59,6 +60,11 @@ def solid_execution_error_boundary(error_cls, msg_fn, step_context, **kwargs):
                     seconds_to_wait=policy.calculate_delay(step_context.previous_attempt_count + 1),
                 ) from e
 
+            # Failure exceptions get re-throw without wrapping
+            if isinstance(e, Failure):
+                raise e
+
+            # Otherwise wrap the user exception with context
             raise error_cls(
                 msg_fn(),
                 user_exception=e,

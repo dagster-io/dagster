@@ -2,7 +2,6 @@ import {MockList} from '@graphql-tools/mock';
 import {render, screen, waitFor} from '@testing-library/react';
 import * as React from 'react';
 
-import {PERMISSIONS_ALLOW_ALL} from '../app/Permissions';
 import {TestProvider} from '../testing/TestProvider';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
@@ -72,6 +71,7 @@ describe('PipelineRoot', () => {
       const routerProps = {
         initialEntries: [`${path}/playground`],
       };
+
       render(
         <TestProvider apolloProps={apolloProps} routerProps={routerProps}>
           <PipelineRoot repoAddress={repoAddress} />
@@ -91,11 +91,10 @@ describe('PipelineRoot', () => {
       const routerProps = {
         initialEntries: [`${path}/playground`],
       };
-      const permissions = {...PERMISSIONS_ALLOW_ALL, launch_pipeline_execution: false};
 
       render(
         <TestProvider
-          appContextProps={{permissions}}
+          permissionOverrides={{launch_pipeline_execution: false}}
           apolloProps={apolloProps}
           routerProps={routerProps}
         >

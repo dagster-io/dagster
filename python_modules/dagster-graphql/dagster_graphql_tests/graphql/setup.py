@@ -74,7 +74,7 @@ from dagster_graphql.test.utils import (
     main_repo_name,
 )
 
-LONG_INT = 29119888133298982934829348
+LONG_INT = 2875972244  # 32b unsigned, > 32b signed
 
 
 @dagster_type_loader(String)
@@ -913,7 +913,7 @@ def get_retry_multi_execution_params(graphql_context, should_fail, retry_id=None
         "executionMetadata": {
             "rootRunId": retry_id,
             "parentRunId": retry_id,
-            "tags": [{"key": RESUME_RETRY_TAG, "value": "true"}],
+            "tags": ([{"key": RESUME_RETRY_TAG, "value": "true"}] if retry_id else []),
         },
     }
 

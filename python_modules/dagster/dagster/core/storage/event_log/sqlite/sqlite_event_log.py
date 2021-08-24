@@ -414,7 +414,11 @@ class SqliteEventLogStorageWatchdog(PatternMatchingEventHandler):
         events = self._event_log_storage.get_logs_for_run(self._run_id, self._cursor)
         self._cursor += len(events)
         for event in events:
-            status = self._cb(event)
+            status = None
+            try:
+                status = self._cb(event)
+            except Exception:  # pylint: disable=broad-except
+                logging.exception("Exception in callback for event watch on run %s.", self._run_id)
 
             if (
                 status == PipelineRunStatus.SUCCESS

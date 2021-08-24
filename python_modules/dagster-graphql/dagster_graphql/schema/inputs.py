@@ -32,8 +32,7 @@ class GraphenePipelineRunsFilter(graphene.InputObjectType):
     mode = graphene.Field(graphene.String)
 
     class Meta:
-        description = """This type represents a filter on pipeline runs.
-        Currently, you may only pass one of the filter options."""
+        description = """This type represents a filter on pipeline runs."""
         name = "PipelineRunsFilter"
 
     def to_selector(self):

@@ -1,7 +1,12 @@
 import inspect
 from collections import namedtuple
 
-from dagster import DagsterInvariantViolationError, PipelineDefinition, RepositoryDefinition
+from dagster import (
+    DagsterInvariantViolationError,
+    GraphDefinition,
+    PipelineDefinition,
+    RepositoryDefinition,
+)
 from dagster.core.code_pointer import load_python_file, load_python_module
 
 LoadableTarget = namedtuple("LoadableTarget", "attribute target_definition")
@@ -31,17 +36,15 @@ def loadable_targets_from_loaded_module(module):
 
     loadable_pipelines = _loadable_targets_of_type(module, PipelineDefinition)
 
-    if not loadable_pipelines:
-        raise DagsterInvariantViolationError(
-            'No pipelines or repositories found in "{}".'.format(module.__name__)
-        )
+    if len(loadable_pipelines) == 1:
+        return loadable_pipelines
 
     elif len(loadable_pipelines) > 1:
         raise DagsterInvariantViolationError(
             (
                 'No repository and more than one pipeline found in "{module_name}". If you load '
-                "a file or module directly it must either have one repository or one "
-                "pipeline in scope. Found pipelines defined in variables or decorated "
+                "a file or module directly it must either have one repository, one pipeline, or "
+                "one graph in scope. Found pipelines defined in variables or decorated "
                 "functions: {pipeline_symbols}."
             ).format(
                 module_name=module.__name__,
@@ -49,8 +52,28 @@ def loadable_targets_from_loaded_module(module):
             )
         )
 
+    loadable_graphs = _loadable_targets_of_type(module, GraphDefinition)
+
+    if len(loadable_graphs) == 1:
+        return loadable_graphs
+
+    elif len(loadable_graphs) > 1:
+        raise DagsterInvariantViolationError(
+            (
+                'No repository, no pipeline, and more than one graph found in "{module_name}". '
+                "If you load a file or module directly it must either have one repository, one "
+                "pipeline, or one graph in scope. Found graphs defined in variables or "
+                "decorated functions: {graph_symbols}."
+            ).format(
+                module_name=module.__name__,
+                graph_symbols=repr([g.attribute for g in loadable_graphs]),
+            )
+        )
+
     else:
-        return loadable_pipelines
+        raise DagsterInvariantViolationError(
+            'No pipelines, graphs, or repositories found in "{}".'.format(module.__name__)
+        )
 
 
 def _loadable_targets_of_type(module, klass):
