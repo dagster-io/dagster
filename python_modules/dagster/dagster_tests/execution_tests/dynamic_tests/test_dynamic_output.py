@@ -99,7 +99,7 @@ def test_multi_output():
             OutputDefinition(str, "wildcard"),
         ]
     )
-    def should_work(_):
+    def multiout(_):
         yield DynamicOutput(1, output_name="numbers", mapping_key="1")
         yield DynamicOutput(2, output_name="numbers", mapping_key="2")
         yield DynamicOutput("a", output_name="letters", mapping_key="a")
@@ -107,9 +107,20 @@ def test_multi_output():
         yield DynamicOutput("c", output_name="letters", mapping_key="c")
         yield Output("*", "wildcard")
 
-    result = execute_solid(should_work)
+    @solid
+    def double(n):
+        return n * 2
 
-    assert result.success
+    @pipeline
+    def multi_dyn():
+        numbers, _, _ = multiout()
+        numbers.map(double)
+
+    pipe_result = execute_pipeline(multi_dyn)
+
+    assert pipe_result.success
+
+    result = pipe_result.result_for_solid("multiout")
     assert len(result.get_output_events_for_compute("numbers")) == 2
     assert len(result.get_output_events_for_compute("letters")) == 3
     assert result.get_output_event_for_compute("wildcard")
@@ -124,6 +135,8 @@ def test_multi_output():
     assert result.output_value("numbers") == {"1": 1, "2": 2}
     assert result.output_value("letters") == {"a": "a", "b": "b", "c": "c"}
     assert result.output_value("wildcard") == "*"
+
+    assert pipe_result.output_for_solid("double") == {"1": 2, "2": 4}
 
 
 def test_multi_out_map():
