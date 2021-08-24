@@ -64,7 +64,7 @@ def parse_metadata_entry(label: str, value: ParseableMetadataEntryData) -> "Even
             FloatMetadataEntryData,
             IntMetadataEntryData,
             PythonArtifactMetadataEntryData,
-            DagsterAssetMetadataEntryData
+            DagsterAssetMetadataEntryData,
         ),
     ):
         return EventMetadataEntry(label, None, value)
