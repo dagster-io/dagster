@@ -18,6 +18,8 @@ ParseableMetadataEntryData = Union[
     "FloatMetadataEntryData",
     "IntMetadataEntryData",
     "PythonArtifactMetadataEntryData",
+    "DagsterAssetMetadataEntryData",
+    "DagsterPipelineRunMetadataEntryData",
     str,
     float,
     int,
@@ -64,6 +66,8 @@ def parse_metadata_entry(label: str, value: ParseableMetadataEntryData) -> "Even
             FloatMetadataEntryData,
             IntMetadataEntryData,
             PythonArtifactMetadataEntryData,
+            DagsterAssetMetadataEntryData,
+            DagsterPipelineRunMetadataEntryData,
         ),
     ):
         return EventMetadataEntry(label, None, value)
