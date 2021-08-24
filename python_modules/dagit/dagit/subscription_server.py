@@ -1,7 +1,8 @@
 from collections import OrderedDict
 
+from graphql_ws.base_sync import SubscriptionObserver
 from graphql_ws.constants import GQL_COMPLETE, GQL_DATA
-from graphql_ws.gevent import GeventSubscriptionServer, SubscriptionObserver
+from graphql_ws.gevent import GeventSubscriptionServer
 from rx import Observable
 
 from .format_error import format_error_with_stack_trace
