@@ -2793,6 +2793,7 @@ __metadata:
     "@types/react-dom": ^17.0.3
     "@types/react-router": ^5.1.2
     "@types/react-router-dom": ^5.1.2
+    "@types/webpack-env": ^1.16.2
     "@typescript-eslint/eslint-plugin": 4.28.5
     "@typescript-eslint/parser": 4.28.5
     babel-eslint: ^10.1.0
@@ -6232,6 +6233,13 @@ __metadata:
   version: 1.16.0
   resolution: "@types/webpack-env@npm:1.16.0"
   checksum: 9d23191e48a6de17931685140aea701c8cf04f518ce20fc095085a2552bd2a7a4fd566060658e6c51306a5d0ceb0cb430057872a432707c61159340413d1f8b1
+  languageName: node
+  linkType: hard
+
+"@types/webpack-env@npm:^1.16.2":
+  version: 1.16.2
+  resolution: "@types/webpack-env@npm:1.16.2"
+  checksum: 122273f20e2bed6895aae2f03891f51ddacd826018e395d18aa5d833ad0462bb159637b83f8d202907234a6a48c66a8e4e9fdd703afc66f6afddb83eeac82b13
   languageName: node
   linkType: hard
 
