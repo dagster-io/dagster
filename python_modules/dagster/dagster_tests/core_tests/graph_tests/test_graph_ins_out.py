@@ -1,9 +1,8 @@
-from dagster.core.definitions.events import Output
-from dagster.core.definitions.input import InSpec, In
-from dagster.core.definitions.output import OutSpec, Out
-
 import pytest
 from dagster import graph, op
+from dagster.core.definitions.events import Output
+from dagster.core.definitions.input import In, InSpec
+from dagster.core.definitions.output import Out, OutSpec
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.execution.execute import execute_in_process
 
@@ -30,8 +29,7 @@ def adder(int_1, int_2):
 
 @op(out={"one": Out(int), "two": Out(int)})
 def return_mult():
-    yield Output(1, "one")
-    yield Output(2, "two")
+    return 1, 2
 
 
 def test_single_ins():

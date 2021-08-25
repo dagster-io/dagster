@@ -575,6 +575,8 @@ def do_something(arg1: str) -> Tuple[int, int]:
 
 ## Composite Solids
 
+### A simple composite solid
+
 With the pipeline APIs, if you want multiple layers of composition, you define a composite solid.
 
 ```python file=/guides/dagster/graph_job_op/composite_solid.py
@@ -637,4 +639,164 @@ def do_yet_more(arg1):
 @graph
 def do_it_all():
     do_yet_more(do_two_things())
+```
+
+### A composite solid with inputs and outputs
+
+With the pipeline APIs, if you want to pass inputs into and return outputs from a composite solid, you define the definitions of inputs and outputs it maps.
+
+```python file=/guides/dagster/graph_job_op/composite_solid_ins_out.py
+from dagster import composite_solid, pipeline, solid, OutputDefinition
+from dagster.core.definitions.input import InputDefinition
+
+
+@solid
+def do_something():
+    pass
+
+
+@solid
+def one():
+    return 1
+
+
+@solid(
+    input_defs=[InputDefinition("arg1", int)],
+    output_defs=[OutputDefinition(int)],
+)
+def do_something_else(arg1):
+    return arg1
+
+
+@composite_solid(
+    input_defs=[InputDefinition("arg1", int)],
+    output_defs=[OutputDefinition(int)],
+)
+def do_two_things(arg1):
+    do_something()
+    return do_something_else(arg1)
+
+
+@solid
+def do_yet_more(arg1):
+    assert arg1 == 1
+
+
+@pipeline
+def do_it_all():
+    do_yet_more(do_two_things(one()))
+```
+
+With the graph APIs, you can specify `ins` and `out` properties to do so:
+
+```python file=/guides/dagster/graph_job_op/nested_graphs_ins_out.py
+from dagster import graph, op, In, Out
+from dagster.core.definitions.input import InSpec
+from dagster.core.definitions.output import OutSpec
+
+
+@op
+def do_something():
+    pass
+
+
+@op
+def one():
+    return 1
+
+
+@op(ins={"arg1": In(int)}, out=Out(int))
+def do_something_else(arg1):
+    return arg1
+
+
+@graph(ins={"arg1": InSpec(int)}, out=OutSpec(int))
+def do_two_things(arg1):
+    do_something()
+    return do_something_else(arg1)
+
+
+@op
+def do_yet_more(arg1):
+    assert arg1 == 1
+
+
+@graph
+def do_it_all():
+    do_yet_more(do_two_things(one()))
+```
+
+### A composite solid with multiple outputs
+
+With the pipeline APIs, if you want to have multiple outputs from a composite solid, you define the output definitions it maps and return a dictionary, where the keys are the output names and the values are the output values.
+
+```python file=/guides/dagster/graph_job_op/composite_solid_multi_out.py
+from dagster import composite_solid, pipeline, solid, OutputDefinition, Output
+
+
+@solid
+def do_something():
+    pass
+
+
+@solid(output_defs=[OutputDefinition(int, "one"), OutputDefinition(int, "two")])
+def return_multi():
+    yield Output(1, "one")
+    yield Output(2, "two")
+
+
+@composite_solid(output_defs=[OutputDefinition(int, "one"), OutputDefinition(int, "two")])
+def do_two_things():
+    do_something()
+    one, two = return_multi()
+    return {"one": one, "two": two}
+
+
+@solid
+def do_yet_more(arg1, arg2):
+    assert arg1 == 1
+    assert arg2 == 2
+
+
+@pipeline
+def do_it_all():
+    one, two = do_two_things()
+    do_yet_more(one, two)
+```
+
+With the graph APIs, you can specify `out` property:
+
+```python file=/guides/dagster/graph_job_op/nested_graphs_multi_out.py
+from dagster import graph, op, Out, Output
+from dagster.core.definitions.output import OutSpec
+
+
+@op
+def do_something():
+    pass
+
+
+@op(out={"one": Out(int), "two": Out(int)})
+def return_multi():
+    yield Output(1, "one")
+    yield Output(2, "two")
+
+
+@graph(out={"one": OutSpec(int), "two": OutSpec(int)})
+def do_two_things():
+    do_something()
+    one, two = return_multi()
+    return {"one": one, "two": two}
+
+
+@op
+def do_yet_more(arg1, arg2):
+    assert arg1 == 1
+    assert arg2 == 2
+
+
+@graph
+def do_it_all():
+    one, two = do_two_things()
+    do_yet_more(one, two)
 ```
