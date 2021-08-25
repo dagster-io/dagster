@@ -704,8 +704,5 @@ def test_solid_invocation_nothing_deps():
     # Ensure that providing the Nothing-dependency input works
     assert install_deps(start="blah") == 5
 
-    # Ensure that if not provided, Dagster throws that input is expected.
-    with pytest.raises(
-        DagsterInvalidInvocationError, match='No value provided for required input "start"'
-    ):
-        install_deps()
+    # Ensure that not providing nothing dependency also works.
+    install_deps()

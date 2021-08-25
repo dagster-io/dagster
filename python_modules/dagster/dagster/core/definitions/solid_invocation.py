@@ -95,10 +95,14 @@ def _resolve_inputs(
         )
 
     input_dict = {
-        input_def.name: input_val for input_val, input_def in zip(args, input_defs[: len(args)])
+        input_def.name: input_val
+        for input_val, input_def in zip(args, input_defs[: len(args)])
+        if not input_def.dagster_type.is_nothing
     }
 
     for input_def in input_defs[len(args) :]:
+        if input_def.dagster_type.is_nothing:
+            continue
         if not input_def.has_default_value and input_def.name not in kwargs:
             raise DagsterInvalidInvocationError(
                 f'No value provided for required input "{input_def.name}".'
@@ -107,15 +111,6 @@ def _resolve_inputs(
         input_dict[input_def.name] = (
             kwargs[input_def.name] if input_def.name in kwargs else input_def.default_value
         )
-
-    input_defs_by_name = {input_def.name: input_def for input_def in input_defs}
-    # Now that we are sure that Nothing inputs have been provided, remove them before they are
-    # provided to the invocation.
-    input_dict = {
-        name: input_val
-        for name, input_val in input_dict.items()
-        if not input_defs_by_name[name].dagster_type.is_nothing
-    }
 
     # Type check inputs
     input_defs_by_name = {input_def.name: input_def for input_def in input_defs}
