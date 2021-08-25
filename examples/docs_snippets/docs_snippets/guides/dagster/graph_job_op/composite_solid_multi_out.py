@@ -1,4 +1,4 @@
-from dagster import composite_solid, pipeline, solid, OutputDefinition, Output
+from dagster import Output, OutputDefinition, composite_solid, pipeline, solid
 
 
 @solid

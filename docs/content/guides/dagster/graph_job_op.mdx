@@ -646,7 +646,7 @@ def do_it_all():
 With the pipeline APIs, if you want to pass inputs into and return outputs from a composite solid, you define the definitions of inputs and outputs it maps.
 
 ```python file=/guides/dagster/graph_job_op/composite_solid_ins_out.py
-from dagster import composite_solid, pipeline, solid, OutputDefinition
+from dagster import OutputDefinition, composite_solid, pipeline, solid
 from dagster.core.definitions.input import InputDefinition
 
 
@@ -690,7 +690,7 @@ def do_it_all():
 With the graph APIs, you can specify `ins` and `out` properties to do so:
 
 ```python file=/guides/dagster/graph_job_op/nested_graphs_ins_out.py
-from dagster import graph, op, In, Out
+from dagster import In, Out, graph, op
 from dagster.core.definitions.input import InSpec
 from dagster.core.definitions.output import OutSpec
 
@@ -731,7 +731,7 @@ def do_it_all():
 With the pipeline APIs, if you want to have multiple outputs from a composite solid, you define the output definitions it maps and return a dictionary, where the keys are the output names and the values are the output values.
 
 ```python file=/guides/dagster/graph_job_op/composite_solid_multi_out.py
-from dagster import composite_solid, pipeline, solid, OutputDefinition, Output
+from dagster import Output, OutputDefinition, composite_solid, pipeline, solid
 
 
 @solid
@@ -767,7 +767,7 @@ def do_it_all():
 With the graph APIs, you can specify `out` property:
 
 ```python file=/guides/dagster/graph_job_op/nested_graphs_multi_out.py
-from dagster import graph, op, Out, Output
+from dagster import Out, Output, graph, op
 from dagster.core.definitions.output import OutSpec
 
 

@@ -1,4 +1,4 @@
-from dagster import graph, op, Out, Output
+from dagster import Out, Output, graph, op
 from dagster.core.definitions.output import OutSpec
 
 
