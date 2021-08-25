@@ -110,7 +110,7 @@ def execute_script_file(shell_script_path, output_logging, log, cwd=None, env=No
 
         return output, sub_process.returncode
     finally:
-        # if parent process exits unexpectedly (e.g. pipeline terminated), kill subprocess
+        # Always terminate subprocess, including in cases where the pipeline run is terminated
         if sub_process:
             sub_process.terminate()
 

@@ -13,7 +13,8 @@ from dagster_shell.utils import execute
 
 @solid
 def sleepy_solid(context):
-    execute("sleep 1000", "NONE", context.log)
+    # execute a sleep in the background
+    execute("sleep 60", "NONE", context.log)
 
 
 @pipeline
