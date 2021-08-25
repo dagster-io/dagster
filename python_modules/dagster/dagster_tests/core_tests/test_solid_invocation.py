@@ -9,6 +9,7 @@ from dagster import (
     Field,
     InputDefinition,
     Noneable,
+    Nothing,
     Output,
     OutputDefinition,
     RetryRequested,
@@ -693,3 +694,18 @@ def test_coroutine_asyncio_invocation():
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(my_coroutine_test())
+
+
+def test_solid_invocation_nothing_deps():
+    @solid(input_defs=[InputDefinition("start", Nothing)])
+    def install_deps():
+        return 5
+
+    # Ensure that providing the Nothing-dependency input works
+    assert install_deps(start="blah") == 5
+
+    # Ensure that if not provided, Dagster throws that input is expected.
+    with pytest.raises(
+        DagsterInvalidInvocationError, match='No value provided for required input "start"'
+    ):
+        install_deps()

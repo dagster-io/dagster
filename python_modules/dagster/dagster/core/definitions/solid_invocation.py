@@ -108,6 +108,15 @@ def _resolve_inputs(
             kwargs[input_def.name] if input_def.name in kwargs else input_def.default_value
         )
 
+    input_defs_by_name = {input_def.name: input_def for input_def in input_defs}
+    # Now that we are sure that Nothing inputs have been provided, remove them before they are
+    # provided to the invocation.
+    input_dict = {
+        name: input_val
+        for name, input_val in input_dict.items()
+        if not input_defs_by_name[name].dagster_type.is_nothing
+    }
+
     # Type check inputs
     input_defs_by_name = {input_def.name: input_def for input_def in input_defs}
     for input_name, val in input_dict.items():
