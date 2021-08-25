@@ -1,4 +1,4 @@
-import {Colors, NonIdealState, Tag} from '@blueprintjs/core';
+import {Button, Colors, Icon, NonIdealState, Tag} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import React from 'react';
 
@@ -8,7 +8,6 @@ import {ReloadRepositoryLocationButton} from '../nav/ReloadRepositoryLocationBut
 import {useRepositoryLocationReload} from '../nav/useRepositoryLocationReload';
 import {ButtonLink} from '../ui/ButtonLink';
 import {Group} from '../ui/Group';
-import {Spinner} from '../ui/Spinner';
 import {Table} from '../ui/Table';
 import {Caption} from '../ui/Text';
 
@@ -86,12 +85,15 @@ const ReloadButton: React.FC<{
   return (
     <ReloadRepositoryLocationButton location={location}>
       {({reloading, tryReload}) => (
-        <ButtonLink onClick={() => tryReload()}>
-          <Group direction="row" spacing={4} alignItems="center">
-            Reload
-            {reloading ? <Spinner purpose="body-text" /> : null}
-          </Group>
-        </ButtonLink>
+        <Button
+          onClick={() => tryReload()}
+          loading={reloading}
+          icon={<Icon icon="refresh" iconSize={11} />}
+          text="Reload"
+          small
+          minimal
+          style={{marginTop: '-4px'}}
+        />
       )}
     </ReloadRepositoryLocationButton>
   );

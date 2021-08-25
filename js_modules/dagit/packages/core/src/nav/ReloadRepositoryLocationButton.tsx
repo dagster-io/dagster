@@ -20,11 +20,7 @@ export const ReloadRepositoryLocationButton: React.FC<Props> = (props) => {
 
   const {reloading, error, tryReload} = useRepositoryLocationReload(location);
 
-  React.useEffect(() => {
-    if (error) {
-      setShown(true);
-    }
-  }, [error]);
+  React.useEffect(() => setShown(!!error), [error]);
 
   return (
     <>

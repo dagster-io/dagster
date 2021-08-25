@@ -40,7 +40,12 @@ export const RepositoryLocationErrorDialog: React.FC<Props> = (props) => {
 export const RepositoryLocationNonBlockingErrorDialog: React.FC<Props> = (props) => {
   const {isOpen, error, location, reloading, onTryReload, onDismiss} = props;
   return (
-    <Dialog isOpen={isOpen} title="Repository location error" style={{width: '90%'}}>
+    <Dialog
+      isOpen={isOpen}
+      title="Repository location error"
+      style={{width: '90%'}}
+      onClose={onDismiss}
+    >
       <ErrorContents location={location} error={error} />
       <div className={Classes.DIALOG_FOOTER}>
         <div className={Classes.DIALOG_FOOTER_ACTIONS}>
