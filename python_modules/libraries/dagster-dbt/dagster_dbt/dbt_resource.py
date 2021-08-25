@@ -125,19 +125,6 @@ class DbtResource:
             DbtOutput: object containing parsed output from dbt
         """
 
-    @abstractmethod
-    def freshness(self, select: List[str] = None, **kwargs) -> DbtOutput:
-        """
-        Run the ``source snapshot-freshness`` command on a dbt project. kwargs are passed in as additional parameters.
-
-        Args:
-            select (List[str], optional): the sources to include in the run.
-
-
-        Returns:
-            DbtOutput: object containing parsed output from dbt
-        """
-
     def generate_docs(self, compile_project: bool = False, **kwargs) -> DbtOutput:
         """
         Run the ``docs generate`` command on a dbt project. kwargs are passed in as additional parameters.
