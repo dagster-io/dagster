@@ -49,13 +49,18 @@ def assert_user_deployment_template(
 
     for template, deployment_values in zip(templates, values.dagsterUserDeployments.deployments):
         # Assert simple stuff
-        assert template.metadata.labels["deployment"] == deployment_values.name
         assert len(template.spec.template.spec.containers) == 1
         assert template.spec.template.spec.containers[0].image == deployment_values.image.name
         assert (
             template.spec.template.spec.containers[0].image_pull_policy
             == deployment_values.image.pullPolicy
         )
+
+        # Assert labels
+        assert template.spec.template.metadata.labels["deployment"] == deployment_values.name
+        if deployment_values.labels:
+            pod_spec_labels = template.spec.template.metadata.labels
+            assert set(deployment_values.labels.items()).issubset(pod_spec_labels.items())
 
         # Assert annotations
         if deployment_values.annotations:

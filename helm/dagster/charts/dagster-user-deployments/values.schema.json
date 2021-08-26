@@ -227,6 +227,13 @@
                 },
                 "startupProbe": {
                     "$ref": "#/definitions/StartupProbe"
+                },
+                "labels": {
+                    "title": "Labels",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
                 }
             },
             "required": [
