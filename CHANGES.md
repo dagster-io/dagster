@@ -55,6 +55,8 @@ Bugfixes
 - Dagstermill notebook previews now works with remote user code deployment.
 - [dagster-shell] When a pipeline run fails, subprocesses spawned from dagster-shell utilities
   will now be properly terminated.
+- Fixed an issue associated with using `EventMetadata.asset` and `EventMetadata.pipeline_run` in
+  `AssetMaterialization` metadata. (Thanks @ymrzkrrs and @drewsonne!)
 
 Breaking Changes
 
