@@ -5,7 +5,6 @@ from typing import List
 import pytest
 from kubernetes.client import models
 from schema.charts.dagster.subschema.global_ import Global
-from schema.charts.dagster.subschema.service_account import ServiceAccount
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.charts.dagster_user_deployments.subschema.user_deployments import UserDeployments
 from schema.charts.dagster_user_deployments.values import DagsterUserDeploymentsHelmValues
