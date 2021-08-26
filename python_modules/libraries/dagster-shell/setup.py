@@ -32,5 +32,6 @@ if __name__ == "__main__":
         ],
         packages=find_packages(exclude=["test"]),
         install_requires=[f"dagster{pin}"],
+        extras_require={"test": ["psutil"]},
         zip_safe=False,
     )
