@@ -82,6 +82,17 @@ def test_solid_invocation_none_arg():
     assert result == 5
 
 
+def test_solid_invocation_out_of_order_input_defs():
+    @solid(input_defs=[InputDefinition("x"), InputDefinition("y")])
+    def check_correct_order(y, x):
+        assert y == 6
+        assert x == 5
+
+    check_correct_order(6, 5)
+    check_correct_order(x=5, y=6)
+    check_correct_order(6, x=5)
+
+
 def test_solid_invocation_with_resources():
     @solid(required_resource_keys={"foo"})
     def solid_requires_resources(context):
