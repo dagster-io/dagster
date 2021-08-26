@@ -1,6 +1,8 @@
 import random
 
 from dagster import EventMetadata, InputDefinition, Output, OutputDefinition, solid
+from dagster.utils import file_relative_path
+from dagstermill import define_dagstermill_solid
 from hacker_news.solids.user_story_matrix import IndexedCooMatrix
 from pandas import DataFrame, Series
 from sklearn.decomposition import TruncatedSVD
@@ -26,6 +28,14 @@ def build_recommender_model(user_story_matrix: IndexedCooMatrix):
             "Number of components": n_components,
         },
     )
+
+
+model_perf_notebook = define_dagstermill_solid(
+    "recommender_model_perf",
+    notebook_path=file_relative_path(__file__, "../notebooks/recommender_model_perf.ipynb"),
+    input_defs=[InputDefinition(dagster_type=TruncatedSVD, name="recommender_model")],
+    output_notebook="perf_notebook",
+)
 
 
 @solid(
