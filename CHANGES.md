@@ -1,5 +1,81 @@
 # Changelog
 
+# 0.12.8
+
+### New
+
+- Added `instance` on `RunStatusSensorContext` for accessing the Dagster Instance from within the
+  run status sensors.
+- The inputs of a Dagstermill solid now are loaded the same way all other inputs are loaded in the
+  framework. This allows rerunning output notebooks with properly loaded inputs outside Dagster
+  context. Previously, the IO handling depended on temporary marshal directory.
+- Previously, the Dagit CLI could not target a bare graph in a file, like so:
+
+  ```python
+  from dagster import op, graph
+    
+  @op
+  def my_op():
+      pass
+  
+  @graph
+  def my_graph():
+      my_op()
+  ```
+
+  This has been remedied. Now, a file `foo.py` containing just a graph can be targeted by the dagit
+  CLI: `dagit -f foo.py`.
+
+- When a solid, pipeline, schedule, etc. description or event metadata entry contains a
+  markdown-formatted table, that table is now rendered in Dagit with better spacing between elements.
+- The hacker-news example now includes
+  [instructions](https://github.com/dagster-io/dagster/tree/master/examples/hacker_news#deploying)
+  on how to deploy the repository in a Kubernetes cluster using the Dagster Helm chart. 
+- [dagster-dbt] The `dbt_cli_resource` now supports the `dbt source snapshot-freshness` command
+  (thanks @emilyhawkins-drizly!)
+- [helm] Labels are now configurable on user code deployments.
+
+Bugfixes
+
+- Dagit’s dependency on [graphql-ws](https://github.com/graphql-python/graphql-ws) is now pinned
+  to < 0.4.0 to avoid a breaking change in its latest release. We expect to remove this dependency
+  entirely in a future Dagster release.
+- Execution steps downstream of a solid that emits multiple dynamic outputs now correctly
+  resolve without error.
+- In Dagit, when repositories are loaded asynchronously, pipelines/jobs now appear immediately in
+  the left navigation.
+- Pipeline/job descriptions with markdown are now rendered correctly in Dagit, and styling is
+  improved for markdown-based tables.
+- The Dagit favicon now updates correctly during navigation to and from Run pages.
+- In Dagit, navigating to assets with keys that contain slashes would sometimes fail due to a lack
+  of URL encoding. This has been fixed.
+- When viewing the Runs list on a smaller viewport, tooltips on run tags no longer flash.
+- Dragging the split panel view in the Solid/Op explorer in Dagit would sometimes leave a broken
+  rendered state. This has been fixed.
+- Dagstermill notebook previews now works with remote user code deployment.
+- [dagster-shell] When a pipeline run fails, subprocesses spawned from dagster-shell utilities
+  will now be properly terminated.
+
+Breaking Changes
+
+* Dagstermill solids now require a shared-memory io manager, e.g. `fs_io_manager`, which allows
+  data to be passed out of the Jupyter process boundary.
+
+Community Contributions
+
+* [helm] Added missing documentation to fields in the Dagster User Deployments subchart
+  (thanks @jrouly!)
+
+Documentation
+
+* `objects.inv` is available at http://docs.dagster.io/objects.inv for other projects to link.
+* `execute_solid` has been removed from the testing (https://docs.dagster.io/concepts/testing)
+  section. Direct invocation is recommended for testing solids.
+* The Hacker News demo pipelines no longer include `gcsfs` as a dependency.
+* The documentation for `create_databricks_job_solid` now includes an example of how to use it.
+* The Airflow integration documentation now all lives at
+  https://docs.dagster.io/integrations/airflow, instead of being split across two pages
+
 # 0.12.7
 
 ### New
