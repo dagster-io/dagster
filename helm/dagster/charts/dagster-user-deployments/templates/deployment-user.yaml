@@ -21,6 +21,9 @@ spec:
         {{- include "dagster.selectorLabels" $ | nindent 8 }}
         component: user-deployments
         deployment: {{ $deployment.name }}
+        {{- with $deployment.labels }}
+        {{- . | toYaml | nindent 8 }}
+        {{- end }}
       annotations:
         checksum/dagster-user-deployment: {{ $deployment | toJson | sha256sum }}
         {{- with $deployment.annotations }}
