@@ -305,6 +305,24 @@ def test_solid_with_inputs():
     ):
         solid_with_inputs(5)
 
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="Too many input arguments were provided for solid 'solid_with_inputs'",
+    ):
+        solid_with_inputs(5, 6, 7)
+
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="Too many input arguments were provided for solid 'solid_with_inputs'",
+    ):
+        solid_with_inputs(5, 6, z=7)
+
+    # Check for proper error when incorrect number of inputs is provided.
+    with pytest.raises(
+        DagsterInvalidInvocationError, match='No value provided for required input "y".'
+    ):
+        solid_with_inputs(5, x=5)
+
 
 def test_failing_solid():
     @solid
@@ -698,11 +716,38 @@ def test_coroutine_asyncio_invocation():
 
 def test_solid_invocation_nothing_deps():
     @solid(input_defs=[InputDefinition("start", Nothing)])
-    def install_deps():
+    def nothing_dep():
         return 5
 
-    # Ensure that providing the Nothing-dependency input works
-    assert install_deps(start="blah") == 5
+    # Ensure that providing the Nothing-dependency input throws an error
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="Attempted to provide value for nothing input 'start'. Nothing dependencies are ignored "
+        "when directly invoking solids.",
+    ):
+        nothing_dep(start="blah")
+
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="Too many input arguments were provided for solid 'nothing_dep'. This may be because "
+        "you attempted to provide a value for a nothing dependency. Nothing dependencies are "
+        "ignored when directly invoking solids.",
+    ):
+        nothing_dep("blah")
 
     # Ensure that not providing nothing dependency also works.
-    install_deps()
+    assert nothing_dep() == 5
+
+    @solid(input_defs=[InputDefinition("x"), InputDefinition("y", Nothing), InputDefinition("z")])
+    def sandwiched_nothing_dep(x, z):
+        return x + z
+
+    assert sandwiched_nothing_dep(5, 6) == 11
+
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="Too many input arguments were provided for solid 'sandwiched_nothing_dep'. This may "
+        "be because you attempted to provide a value for a nothing dependency. Nothing "
+        "dependencies are ignored when directly invoking solids.",
+    ):
+        sandwiched_nothing_dep(5, 6, 7)

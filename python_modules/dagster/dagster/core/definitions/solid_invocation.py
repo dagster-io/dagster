@@ -84,14 +84,37 @@ def _resolve_inputs(
 ):
     from dagster.core.execution.plan.execute_step import do_type_check
 
-    input_defs = solid_def.input_defs
+    # Discard nothing dependencies - we ignore them during invocation.
+    input_defs = [
+        input_def for input_def in solid_def.input_defs if not input_def.dagster_type.is_nothing
+    ]
+
+    nothing_input_defs = [
+        input_def for input_def in solid_def.input_defs if input_def.dagster_type.is_nothing
+    ]
+
+    for input_def in nothing_input_defs:
+        if input_def.name in kwargs:
+            raise DagsterInvalidInvocationError(
+                f"Attempted to provide value for nothing input '{input_def.name}'. Nothing "
+                "dependencies are ignored when directly invoking solids."
+            )
 
     # Fail early if too many inputs were provided.
     if len(input_defs) < len(args) + len(kwargs):
+        if len(nothing_input_defs) > 0:
+            suggestion = (
+                "This may be because you attempted to provide a value for a nothing "
+                "dependency. Nothing dependencies are ignored when directly invoking solids."
+            )
+        else:
+            suggestion = (
+                "This may be because an argument was provided for the context parameter, "
+                "but no context parameter was defined for the solid."
+            )
+
         raise DagsterInvalidInvocationError(
-            f"Too many input arguments were provided for solid '{context.alias}'. This may be because "
-            "an argument was provided for the context parameter, but no context parameter was defined "
-            "for the solid."
+            f"Too many input arguments were provided for solid '{context.alias}'. {suggestion}"
         )
 
     input_dict = {
