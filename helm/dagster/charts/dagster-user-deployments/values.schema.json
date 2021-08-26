@@ -3,6 +3,14 @@
     "description": "@generated",
     "type": "object",
     "properties": {
+        "dagsterHome": {
+            "title": "Dagsterhome",
+            "type": "string"
+        },
+        "postgresqlSecretName": {
+            "title": "Postgresqlsecretname",
+            "type": "string"
+        },
         "deployments": {
             "title": "Deployments",
             "type": "array",
@@ -19,12 +27,18 @@
         },
         "serviceAccount": {
             "$ref": "#/definitions/ServiceAccount"
+        },
+        "global": {
+            "$ref": "#/definitions/Global"
         }
     },
     "required": [
+        "dagsterHome",
+        "postgresqlSecretName",
         "deployments",
         "imagePullSecrets",
-        "serviceAccount"
+        "serviceAccount",
+        "global"
     ],
     "definitions": {
         "PullPolicy": {
@@ -213,6 +227,13 @@
                 },
                 "startupProbe": {
                     "$ref": "#/definitions/StartupProbe"
+                },
+                "labels": {
+                    "title": "Labels",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
                 }
             },
             "required": [
@@ -248,6 +269,29 @@
                 "create",
                 "name",
                 "annotations"
+            ]
+        },
+        "Global": {
+            "title": "Global",
+            "type": "object",
+            "properties": {
+                "postgresqlSecretName": {
+                    "title": "Postgresqlsecretname",
+                    "type": "string"
+                },
+                "dagsterHome": {
+                    "title": "Dagsterhome",
+                    "type": "string"
+                },
+                "serviceAccountName": {
+                    "title": "Serviceaccountname",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "postgresqlSecretName",
+                "dagsterHome",
+                "serviceAccountName"
             ]
         }
     }
