@@ -5,6 +5,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
+import {SidebarSection} from '../pipelines/SidebarComponents';
 import {RunStatus} from '../runs/RunStatusDots';
 import {DagsterTag} from '../runs/RunTag';
 import {RunElapsed, RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
@@ -65,47 +66,52 @@ export const RunGroupPanel: React.FC<{runId: string}> = ({runId}) => {
   const runs = (group.runs || []).filter((g) => g !== null);
 
   return (
-    <RunGroupContainer>
-      {runs[0] && <RunGroupHeader>{runs[0].pipelineName}</RunGroupHeader>}
-      {runs.map((g, idx) =>
-        g ? (
-          <RunGroupRun key={g.runId} to={`/instance/runs/${g.runId}`} selected={g.runId === runId}>
-            {idx < runs.length - 1 && <ThinLine style={{height: 36}} />}
-            <Box padding={{top: 4}}>
-              <RunStatus status={g.status} />
-            </Box>
-
-            <div
-              style={{
-                flex: 1,
-                marginLeft: 5,
-                minWidth: 0,
-                color: Colors.DARK_GRAY5,
-              }}
+    <SidebarSection title={runs[0] ? runs[0].pipelineName : ''}>
+      <>
+        {runs.map((g, idx) =>
+          g ? (
+            <RunGroupRun
+              key={g.runId}
+              to={`/instance/runs/${g.runId}`}
+              selected={g.runId === runId}
             >
-              <div style={{display: 'flex', justifyContent: 'space-between'}}>
-                <RunTitle>
-                  {g.runId.split('-')[0]}
-                  {idx === 0 && RootTag}
-                </RunTitle>
-                <RunTime run={g} />
-              </div>
+              {idx < runs.length - 1 && <ThinLine style={{height: 36}} />}
+              <Box padding={{top: 4}}>
+                <RunStatus status={g.status} />
+              </Box>
 
               <div
                 style={{
-                  display: 'flex',
+                  flex: 1,
+                  marginLeft: 5,
+                  minWidth: 0,
                   color: Colors.DARK_GRAY5,
-                  justifyContent: 'space-between',
                 }}
               >
-                {subsetTitleForRun(g)}
-                <RunElapsed run={g} />
+                <div style={{display: 'flex', justifyContent: 'space-between'}}>
+                  <RunTitle>
+                    {g.runId.split('-')[0]}
+                    {idx === 0 && RootTag}
+                  </RunTitle>
+                  <RunTime run={g} />
+                </div>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    color: Colors.DARK_GRAY5,
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  {subsetTitleForRun(g)}
+                  <RunElapsed run={g} />
+                </div>
               </div>
-            </div>
-          </RunGroupRun>
-        ) : null,
-      )}
-    </RunGroupContainer>
+            </RunGroupRun>
+          ) : null,
+        )}
+      </>
+    </SidebarSection>
   );
 };
 
@@ -135,11 +141,6 @@ const RUN_GROUP_PANEL_QUERY = gql`
     }
   }
   ${RUN_TIME_FRAGMENT}
-`;
-
-const RunGroupContainer = styled.div`
-  border-bottom: 2px solid ${Colors.GRAY5};
-  overflow: scroll;
 `;
 
 const RunGroupRun = styled(Link)<{selected: boolean}>`
@@ -173,17 +174,6 @@ const RunTitle = styled.span`
   text-overflow: ellipsis;
   user-select: text;
   flex: 1;
-`;
-
-const RunGroupHeader = styled.div`
-  font-size: 11px;
-  line-height: 15px;
-  padding: 3px 6px;
-  text-transform: uppercase;
-  background: ${Colors.WHITE};
-  border-bottom: 1px solid ${Colors.LIGHT_GRAY1};
-  color: ${Colors.GRAY3};
-  height: 20px;
 `;
 
 const RootTag = (
