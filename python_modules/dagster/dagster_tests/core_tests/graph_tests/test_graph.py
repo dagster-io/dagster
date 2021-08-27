@@ -595,3 +595,32 @@ def test_enum_to_execution():
     )
     assert result.success
     assert result.result_for_node("my_op").output_values["result"] == TestEnum.TWO
+
+
+def test_config_mapping_on_graph():
+    @op(config_schema=str)
+    def my_op(context):
+        return context.op_config
+
+    def _construct_graph_for_mapping(config_mapping):
+        @graph(config_mapping=config_mapping)
+        def _graph():
+            my_op()
+
+        return _graph
+
+    config_mapping_from_dict = ConfigMapping(config_fn=lambda _: {"my_op": {"config": "foo"}})
+
+    config_mapping_from_schema = ConfigMapping(
+        config_fn=lambda s: {"my_op": {"config": s}}, config_schema=str
+    )
+
+    result = _construct_graph_for_mapping(config_mapping_from_dict).to_job().execute_in_process()
+    assert result.success
+
+    result = (
+        _construct_graph_for_mapping(config_mapping_from_schema)
+        .to_job()
+        .execute_in_process(run_config={"ops": "foo"})
+    )
+    assert result.success

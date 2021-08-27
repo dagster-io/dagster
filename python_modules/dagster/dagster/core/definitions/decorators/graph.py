@@ -4,6 +4,7 @@ from typing import Any, Callable, List, Optional, Union
 from dagster import check
 from dagster.utils.backcompat import experimental_decorator
 
+from ..config import ConfigMapping
 from ..graph import GraphDefinition
 from ..input import InputDefinition
 from ..output import OutputDefinition
@@ -16,6 +17,7 @@ class _Graph:
         description: Optional[str] = None,
         input_defs: Optional[List[InputDefinition]] = None,
         output_defs: Optional[List[OutputDefinition]] = None,
+        config_mapping: Optional[ConfigMapping] = None,
     ):
         self.name = check.opt_str_param(name, "name")
         self.description = check.opt_str_param(description, "description")
@@ -24,6 +26,7 @@ class _Graph:
         self.output_defs = check.opt_nullable_list_param(
             output_defs, "output_defs", of_type=OutputDefinition
         )
+        self.config_mapping = check.opt_inst_param(config_mapping, "config_mapping", ConfigMapping)
 
     def __call__(self, fn: Callable[..., Any]) -> GraphDefinition:
         check.callable_param(fn, "fn")
@@ -47,8 +50,8 @@ class _Graph:
             provided_input_defs=self.input_defs,
             provided_output_defs=self.output_defs,
             ignore_output_from_composition_fn=False,
-            config_schema=None,
-            config_fn=None,
+            config_schema=self.config_mapping.config_schema if self.config_mapping else None,
+            config_fn=self.config_mapping.config_fn if self.config_mapping else None,
         )
 
         graph_def = GraphDefinition(
@@ -71,6 +74,7 @@ def graph(
     description: Optional[str] = None,
     input_defs: Optional[List[InputDefinition]] = None,
     output_defs: Optional[List[OutputDefinition]] = None,
+    config_mapping: Optional[ConfigMapping] = None,
 ) -> Union[_Graph, GraphDefinition]:
     """Create a graph with the specified parameters from the decorated composition function.
 
@@ -99,6 +103,9 @@ def graph(
             :py:class:`GraphDefinition`.
 
             To map multiple outputs, return a dictionary from the composition function.
+        config_mapping (Optional[ConfigMapping]):
+            Config mapping for the graph. Maps a top level config to a config document for the
+            underlying graph config schema.
     """
     if callable(name):
         check.invariant(description is None)
@@ -109,4 +116,5 @@ def graph(
         description=description,
         input_defs=input_defs,
         output_defs=output_defs,
+        config_mapping=config_mapping,
     )

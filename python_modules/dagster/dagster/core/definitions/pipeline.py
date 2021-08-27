@@ -1060,6 +1060,7 @@ def _create_run_config_schema(
     run_config_schema_type = define_run_config_schema_type(
         RunConfigSchemaCreationData(
             pipeline_name=pipeline_def.name,
+            graph_def=pipeline_def.graph,
             solids=pipeline_def.graph.solids,
             dependency_structure=pipeline_def.graph.dependency_structure,
             mode_definition=mode_definition,

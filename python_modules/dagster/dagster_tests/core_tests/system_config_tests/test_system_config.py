@@ -36,6 +36,7 @@ def create_creation_data(pipeline_def):
         pipeline_def.solids,
         pipeline_def.dependency_structure,
         pipeline_def.mode_definition,
+        graph_def=pipeline_def.graph,
         logger_defs=default_loggers(),
         ignored_solids=[],
         required_resources=set(),

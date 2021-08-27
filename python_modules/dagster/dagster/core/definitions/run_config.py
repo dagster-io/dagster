@@ -65,6 +65,7 @@ def def_config_field(configurable_def: ConfigurableDefinition, is_required: bool
 class RunConfigSchemaCreationData(NamedTuple):
     pipeline_name: str
     solids: List[Node]
+    graph_def: GraphDefinition
     dependency_structure: DependencyStructure
     mode_definition: ModeDefinition
     logger_defs: Dict[str, LoggerDefinition]
@@ -149,15 +150,21 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
         ),
     }
 
-    nodes_field = Field(
-        define_solid_dictionary_cls(
-            solids=creation_data.solids,
-            ignored_solids=creation_data.ignored_solids,
-            dependency_structure=creation_data.dependency_structure,
-            resource_defs=creation_data.mode_definition.resource_defs,
-            is_using_graph_job_op_apis=creation_data.is_using_graph_job_op_apis,
+    if creation_data.graph_def.has_config_mapping:
+        if not creation_data.graph_def.config_schema:
+            nodes_field = Field(Shape({}))
+        else:
+            nodes_field = creation_data.graph_def.config_schema.as_field()
+    else:
+        nodes_field = Field(
+            define_solid_dictionary_cls(
+                solids=creation_data.solids,
+                ignored_solids=creation_data.ignored_solids,
+                dependency_structure=creation_data.dependency_structure,
+                resource_defs=creation_data.mode_definition.resource_defs,
+                is_using_graph_job_op_apis=creation_data.is_using_graph_job_op_apis,
+            )
         )
-    )
     if creation_data.is_using_graph_job_op_apis:
         fields["ops"] = nodes_field
         field_aliases = {"ops": "solids"}

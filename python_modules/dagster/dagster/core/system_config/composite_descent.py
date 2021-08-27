@@ -73,8 +73,10 @@ def composite_descent(pipeline_def, solids_config, resource_defs):
     """
 
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
-    check.dict_param(solids_config, "solids_config")
     check.dict_param(resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition)
+
+    if pipeline_def.graph.has_config_mapping:
+        solids_config = _top_level_graph_config_mapping(pipeline_def, solids_config, resource_defs)
 
     return {
         handle.to_string(): solid_config
@@ -157,6 +159,44 @@ def _composite_descent(parent_stack, solids_config_dict, resource_defs, is_using
         yield from _composite_descent(
             current_stack, solids_dict, resource_defs, is_using_graph_job_op_apis
         )
+
+
+def _top_level_graph_config_mapping(pipeline_def, top_level_config, resource_defs):
+
+    config_mapped_graph_config_evr = pipeline_def.graph.apply_config_mapping(top_level_config)
+    if not config_mapped_graph_config_evr.success:
+        raise DagsterInvalidConfigError(
+            "Error in config for top-level graph {}".format(pipeline_def.graph.name),
+            config_mapped_graph_config_evr.errors,
+            config_mapped_graph_config_evr,
+        )
+
+    # wrap in user error boundary
+    mapped_solids_config = pipeline_def.graph.config_mapping.resolve_from_validated_config(
+        config_mapped_graph_config_evr.value
+    )
+
+    # Dynamically construct the type that the output of the config mapping function will
+    # be evaluated against
+
+    type_to_evaluate_against = define_solid_dictionary_cls(
+        solids=pipeline_def.solids,
+        ignored_solids=None,
+        dependency_structure=pipeline_def.dependency_structure,
+        resource_defs=resource_defs,
+        is_using_graph_job_op_apis=pipeline_def._is_using_graph_job_op_apis,  # pylint: disable=protected-access
+    )
+
+    # process against that new type
+
+    evr = process_config(type_to_evaluate_against, mapped_solids_config)
+
+    if not evr.success:
+        raise DagsterInvalidConfigError(
+            f"Error in mapped config for pipeline {pipeline_def.name} ", evr.errors, evr
+        )
+
+    return evr.value
 
 
 def _get_mapped_solids_dict(
