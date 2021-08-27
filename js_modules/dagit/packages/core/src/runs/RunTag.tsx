@@ -1,4 +1,5 @@
-import {Position, Tooltip} from '@blueprintjs/core';
+import {Position} from '@blueprintjs/core';
+import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 
 import {Tag} from '../ui/Tag';
@@ -38,12 +39,7 @@ export const RunTag = ({tag, onClick}: IRunTagProps) => {
 
   if (isDagsterTag) {
     return (
-      <Tooltip
-        content={`${tag.key}=${tag.value}`}
-        wrapperTagName="div"
-        targetTagName="div"
-        position={Position.LEFT}
-      >
+      <Tooltip content={`${tag.key}=${tag.value}`} targetTagName="div" position={Position.LEFT}>
         <Tag isDagsterTag={isDagsterTag} onClick={onTagClick} tag={displayTag} />
       </Tooltip>
     );

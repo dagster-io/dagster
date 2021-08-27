@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import shutil
 from typing import Dict
 
 from dagster.utils import file_relative_path
@@ -105,6 +106,12 @@ def main():
         write_json(os.path.join(content_master_directory, output_file), data)
 
     copy_searchindex(content_master_directory, json_directory)
+
+    # objects.inv
+    shutil.copyfile(
+        os.path.join(json_directory, "objects.inv"),
+        file_relative_path(__file__, "next/public/objects.inv"),
+    )
 
 
 if __name__ == "__main__":

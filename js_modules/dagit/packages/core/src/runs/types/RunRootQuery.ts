@@ -86,10 +86,10 @@ export interface RunRootQuery_pipelineRunOrError_PipelineRun {
   __typename: "PipelineRun";
   id: string;
   pipeline: RunRootQuery_pipelineRunOrError_PipelineRun_pipeline;
-  runId: string;
-  status: PipelineRunStatus;
   runConfigYaml: string;
+  runId: string;
   canTerminate: boolean;
+  status: PipelineRunStatus;
   mode: string;
   tags: RunRootQuery_pipelineRunOrError_PipelineRun_tags[];
   rootRunId: string | null;

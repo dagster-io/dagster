@@ -22,7 +22,7 @@ For simplicity, we assume that you have only installed one release of the Dagste
 1. Before running the migration, check the [migration document](https://github.com/dagster-io/dagster/blob/master/MIGRATION.md) for any additional steps you may need to take as part of the migraiton.
 2. Make sure you backup the data in your PostgreSQL database!
 3. Run `helm upgrade` with your desired Dagster chart version and Helm values.
-4. Scale down the Dagit and Daemon Deployments. We do not want any ongoing pipeline runs to be writing to the database as the migration is happening. As we scale down the Deployments, we note each Deployment's replica count to scale each back up after the migration is complete.
+4. Scale down the Dagit and Daemon Deployments. We do not want any ongoing job runs to be writing to the database as the migration is happening. As we scale down the Deployments, we note each Deployment's replica count to scale each back up after the migration is complete.
 
 ```shell
 # Get the names of Dagster's Dagit and Daemon Deployments created by Helm

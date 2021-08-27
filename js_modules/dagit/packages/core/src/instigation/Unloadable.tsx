@@ -1,5 +1,6 @@
 import {useMutation} from '@apollo/client';
-import {Colors, Switch, Tooltip} from '@blueprintjs/core';
+import {Colors, Switch} from '@blueprintjs/core';
+import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 
 import {useConfirmation} from '../app/CustomConfirmationProvider';

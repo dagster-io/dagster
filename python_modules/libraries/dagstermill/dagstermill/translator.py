@@ -9,6 +9,8 @@ RESERVED_INPUT_NAMES = [
     "__dm_pipeline_run_dict",
     "__dm_solid_handle_kwargs",
     "__dm_instance_ref_dict",
+    "__dm_step_key",
+    "__dm_input_names",
 ]
 
 INJECTED_BOILERPLATE = """
@@ -33,6 +35,8 @@ class DagsterTranslator(papermill.translators.PythonTranslator):
         assert "__dm_pipeline_run_dict" in parameters
         assert "__dm_solid_handle_kwargs" in parameters
         assert "__dm_instance_ref_dict" in parameters
+        assert "__dm_step_key" in parameters
+        assert "__dm_input_names" in parameters
 
         context_args = parameters["__dm_context"]
         pipeline_context_args = dict(
@@ -40,6 +44,7 @@ class DagsterTranslator(papermill.translators.PythonTranslator):
             pipeline_run_dict=parameters["__dm_pipeline_run_dict"],
             solid_handle_kwargs=parameters["__dm_solid_handle_kwargs"],
             instance_ref_dict=parameters["__dm_instance_ref_dict"],
+            step_key=parameters["__dm_step_key"],
             **context_args,
         )
 
@@ -48,13 +53,9 @@ class DagsterTranslator(papermill.translators.PythonTranslator):
 
         content = INJECTED_BOILERPLATE.format(pipeline_context_args=pipeline_context_args)
 
-        for name, val in parameters.items():
-            if name in RESERVED_INPUT_NAMES:
-                continue
-            dm_unmarshal_call = "__dm_dagstermill._load_parameter('{name}', '{val}')".format(
-                name=name, val=seven.json.dumps(val)
-            )
-            content += "{}\n".format(cls.assign(name, dm_unmarshal_call))
+        for input_name in parameters["__dm_input_names"]:
+            dm_load_input_call = f"__dm_dagstermill._load_input_parameter('{input_name}')"
+            content += "{}\n".format(cls.assign(input_name, dm_load_input_call))
 
         return content
 

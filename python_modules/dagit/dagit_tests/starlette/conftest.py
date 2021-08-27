@@ -1,12 +1,12 @@
 import pytest
-from dagit.starlette import create_app
+from dagit.starlette import DagitWebserver
 from dagster import DagsterInstance, __version__
 from dagster.cli.workspace.cli_target import get_workspace_process_context_from_kwargs
 
 
 @pytest.fixture(scope="session")
 def instance():
-    return DagsterInstance.ephemeral()
+    return DagsterInstance.local_temp()
 
 
 @pytest.fixture(scope="session")
@@ -18,8 +18,4 @@ def empty_app(instance):
         read_only=False,
         kwargs={"empty_workspace": True},
     )
-    return create_app(
-        process_context,
-        debug=True,
-        app_path_prefix="",
-    )
+    return DagitWebserver(process_context).create_asgi_app(debug=True)

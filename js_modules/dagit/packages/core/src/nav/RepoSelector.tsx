@@ -12,7 +12,7 @@ import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
-import {useRepositoryLocationReload} from './ReloadRepositoryLocationButton';
+import {ReloadRepositoryLocationButton} from './ReloadRepositoryLocationButton';
 
 export type RepoDetails = {
   repoAddress: RepoAddress;
@@ -119,20 +119,23 @@ const BrowseLink = styled(Link)`
 `;
 
 const ReloadButton: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) => {
-  const {reloading, onClick} = useRepositoryLocationReload(repoAddress.location);
   return (
-    <ReloadButtonInner onClick={onClick}>
-      {reloading ? (
-        <Spinner purpose="body-text" />
-      ) : (
-        <Icon
-          icon="refresh"
-          iconSize={11}
-          color={Colors.GRAY5}
-          style={{position: 'relative', top: '-4px'}}
-        />
+    <ReloadRepositoryLocationButton location={repoAddress.location}>
+      {({tryReload, reloading}) => (
+        <ReloadButtonInner onClick={tryReload}>
+          {reloading ? (
+            <Spinner purpose="body-text" />
+          ) : (
+            <Icon
+              icon="refresh"
+              iconSize={11}
+              color={Colors.GRAY5}
+              style={{position: 'relative', top: '-4px'}}
+            />
+          )}
+        </ReloadButtonInner>
       )}
-    </ReloadButtonInner>
+    </ReloadRepositoryLocationButton>
   );
 };
 

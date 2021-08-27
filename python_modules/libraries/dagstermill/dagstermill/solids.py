@@ -21,7 +21,9 @@ from dagster.core.definitions.events import Failure, RetryRequested
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.definitions.utils import validate_tags
 from dagster.core.execution.context.compute import SolidExecutionContext
+from dagster.core.execution.context.input import build_input_context
 from dagster.core.execution.context.system import StepExecutionContext
+from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.storage.file_manager import FileHandle
 from dagster.serdes import pack_value
 from dagster.seven import get_system_temp_directory
@@ -33,8 +35,7 @@ from papermill.iorw import load_notebook_node, write_ipynb
 from .compat import ExecutionError
 from .engine import DagstermillEngine
 from .errors import DagstermillError
-from .serialize import read_value, write_value
-from .translator import RESERVED_INPUT_NAMES, DagsterTranslator
+from .translator import DagsterTranslator
 
 
 # https://github.com/nteract/papermill/blob/17d4bbb3960c30c263bca835e48baf34322a3530/papermill/parameterize.py
@@ -128,27 +129,17 @@ def get_papermill_parameters(step_context, inputs, output_log_path):
     }
 
     dm_solid_handle_kwargs = step_context.solid_handle._asdict()
+    dm_step_key = step_context.step.key
 
     parameters = {}
-
-    input_def_dict = step_context.solid_def.input_dict
-    for input_name, input_value in inputs.items():
-        assert (
-            input_name not in RESERVED_INPUT_NAMES
-        ), "Dagstermill solids cannot have inputs named {input_name}".format(input_name=input_name)
-        dagster_type = input_def_dict[input_name].dagster_type
-        parameter_value = write_value(
-            dagster_type,
-            input_value,
-            os.path.join(marshal_dir, f"{str(step_context.solid_handle)}-input-{input_name}"),
-        )
-        parameters[input_name] = parameter_value
 
     parameters["__dm_context"] = dm_context_dict
     parameters["__dm_executable_dict"] = dm_executable_dict
     parameters["__dm_pipeline_run_dict"] = pack_value(step_context.pipeline_run)
     parameters["__dm_solid_handle_kwargs"] = dm_solid_handle_kwargs
     parameters["__dm_instance_ref_dict"] = pack_value(step_context.instance.get_ref())
+    parameters["__dm_step_key"] = dm_step_key
+    parameters["__dm_input_names"] = list(inputs.keys())
 
     return parameters
 
@@ -261,11 +252,18 @@ def _dm_solid_compute(name, notebook_path, output_notebook=None, asset_key_prefi
 
             output_nb = scrapbook.read_notebook(executed_notebook_path)
 
-            for (output_name, output_def) in step_execution_context.solid_def.output_dict.items():
+            for (output_name, _) in step_execution_context.solid_def.output_dict.items():
                 data_dict = output_nb.scraps.data_dict
                 if output_name in data_dict:
-                    # read result that was written by the "yield_result" call
-                    value = read_value(output_def.dagster_type, data_dict[output_name])
+                    # read outputs that were passed out of process via io manager from `yield_result`
+                    step_output_handle = StepOutputHandle(
+                        step_key=step_execution_context.step.key, output_name=output_name
+                    )
+                    output_context = step_execution_context.get_output_context(step_output_handle)
+                    io_manager = step_execution_context.get_io_manager(step_output_handle)
+                    value = io_manager.load_input(
+                        build_input_context(upstream_output=output_context)
+                    )
 
                     yield Output(value, output_name)
 

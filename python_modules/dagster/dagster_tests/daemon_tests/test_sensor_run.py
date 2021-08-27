@@ -34,6 +34,7 @@ from dagster.core.host_representation import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
+from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import JobState, JobStatus, JobTickStatus
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import instance_for_test
@@ -198,13 +199,13 @@ def asset_job_sensor(context, _event):
 
 
 @pipeline_failure_sensor
-def my_pipeline_failure_sensor(_):
-    pass
+def my_pipeline_failure_sensor(context):
+    assert isinstance(context.instance, DagsterInstance)
 
 
 @run_status_sensor(pipeline_run_status=PipelineRunStatus.SUCCESS)
-def my_pipeline_success_sensor(_):
-    pass
+def my_pipeline_success_sensor(context):
+    assert isinstance(context.instance, DagsterInstance)
 
 
 @repository
