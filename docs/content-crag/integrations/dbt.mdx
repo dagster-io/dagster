@@ -122,7 +122,7 @@ def run_models(context, some_condition: bool):
 
 #### Using a different dbt profile for different dagster modes
 
-Dagster supports running pipelines in different [Modes](/concepts/modes-resources). dbt has a similar concept, [profiles](https://docs.getdbt.com/dbt-cli/configure-your-profile). You might want to run a dev version of your pipeline that targets the development-specific dbt profile, and then have a prod version that runs using the prod dbt profile. This example shows how to accomplish this.
+Dagster supports running pipelines in different modes. dbt has a similar concept, [profiles](https://docs.getdbt.com/dbt-cli/configure-your-profile). You might want to run a dev version of your pipeline that targets the development-specific dbt profile, and then have a prod version that runs using the prod dbt profile. This example shows how to accomplish this.
 
 ```python file=/integrations/dbt.py startafter=start_marker_dbt_cli_profile_modes endbefore=end_marker_dbt_cli_profile_modes dedent=4
 from dagster import pipeline, solid, ModeDefinition
@@ -216,7 +216,7 @@ def my_dbt_pipeline():
     dbt_rpc_run()
 ```
 
-The code snippet above shows a Dagster pipeline with a single solid `dbt_rpc_run`. The solid `dbt_rpc_run` has a required resource key `"dbt_rpc"`. So, any pipeline that uses `dbt_rpc_run` will need a [ModeDefinition](/concepts/modes-resources) that defines a resource under the key `"dbt_rpc"`.
+The code snippet above shows a Dagster pipeline with a single solid `dbt_rpc_run`. The solid `dbt_rpc_run` has a required resource key `"dbt_rpc"`. So, any pipeline that uses `dbt_rpc_run` will need a ModeDefinition that defines a resource under the key `"dbt_rpc"`.
 
 #### Using `dbt_rpc_run` to run specific models in a dbt project
 
