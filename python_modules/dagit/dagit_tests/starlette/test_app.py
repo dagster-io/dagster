@@ -1,7 +1,8 @@
 import gc
 
 import objgraph
-from dagit.starlette import ROOT_ADDRESS_STATIC_RESOURCES, GraphQLWS
+from dagit.graphql import GraphQLWS
+from dagit.starlette import ROOT_ADDRESS_STATIC_RESOURCES
 from dagster import execute_pipeline, graph, op, pipeline, reconstructable
 from starlette.testclient import TestClient
 

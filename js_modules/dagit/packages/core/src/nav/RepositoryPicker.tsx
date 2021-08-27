@@ -1,8 +1,10 @@
-import {Colors, Icon, Menu, MenuItem, Popover} from '@blueprintjs/core';
+import {Button, Colors, Icon, Menu, MenuItem, Popover} from '@blueprintjs/core';
+import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import React from 'react';
 import {useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {ShortcutHandler} from '../app/ShortcutHandler';
 import {Box} from '../ui/Box';
 import {Spinner} from '../ui/Spinner';
 import {RepositoryInformation} from '../workspace/RepositoryInformation';
@@ -92,10 +94,39 @@ export const RepositoryPicker: React.FC<RepositoryPickerProps> = (props) => {
           <RepoTitle>{titleContents()}</RepoTitle>
         </div>
         <ReloadRepositoryLocationButton
-          locations={selected
-            .filter((option) => option.repositoryLocation.isReloadSupported)
-            .map((option) => option.repositoryLocation.name)}
-        />
+          location={
+            selected
+              .filter((option) => option.repositoryLocation.isReloadSupported)
+              .map((option) => option.repositoryLocation.name)[0]
+          }
+        >
+          {({tryReload, reloading}) => (
+            <ShortcutHandler
+              onShortcut={tryReload}
+              shortcutLabel={`⌥R`}
+              shortcutFilter={(e) => e.keyCode === 82 && e.altKey}
+            >
+              <Tooltip
+                className="bp3-dark"
+                hoverOpenDelay={500}
+                hoverCloseDelay={0}
+                content="Reload metadata from this repository location."
+              >
+                <Button
+                  icon={
+                    reloading ? (
+                      <Spinner purpose="body-text" />
+                    ) : (
+                      <Icon icon="refresh" iconSize={12} />
+                    )
+                  }
+                  disabled={reloading}
+                  onClick={tryReload}
+                />
+              </Tooltip>
+            </ShortcutHandler>
+          )}
+        </ReloadRepositoryLocationButton>
       </Container>
     </Popover>
   );
