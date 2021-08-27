@@ -1,3 +1,4 @@
+import tempfile
 from dagster import (
     InputDefinition,
     ModeDefinition,
@@ -39,9 +40,9 @@ def reyielder(_context, res):
 )
 def hello_world_pandas_pipeline():
     return reyielder(
-        ge_validation_solid_factory("ge_validation_solid", "getest", "basic.warning")(
-            pandas_yielder()
-        )
+        ge_validation_solid_factory(
+            "ge_validation_solid", "getest", "basic.warning", batch_kwargs={"datasource_name": None}
+        )(pandas_yielder())
     )
 
 
@@ -62,7 +63,12 @@ def hello_world_pyspark_pipeline():
     return reyielder(validate(pyspark_yielder()))
 
 
-def test_yielded_results_config_pandas(snapshot):
+def test_fresh_project():
+    with tempfile.TemporaryDirectory() as tempdir:
+        pass
+
+
+def test_yielded_results_config_pandas_v2(snapshot):
     run_config = {
         "resources": {
             "ge_data_context": {
@@ -73,7 +79,7 @@ def test_yielded_results_config_pandas(snapshot):
     with instance_for_test() as instance:
         result = execute_pipeline(
             reconstructable(hello_world_pandas_pipeline),
-            run_config=run_config,
+            # run_config=run_config,
             mode="basic",
             instance=instance,
         )
@@ -89,7 +95,7 @@ def test_yielded_results_config_pandas(snapshot):
         snapshot.assert_match(metadata)
 
 
-def test_yielded_results_config_pyspark(snapshot):  # pylint:disable=unused-argument
+def test_yielded_results_config_pyspark_v2(snapshot):  # pylint:disable=unused-argument
     run_config = {
         "resources": {
             "ge_data_context": {
