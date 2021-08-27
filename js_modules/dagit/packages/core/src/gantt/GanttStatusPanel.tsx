@@ -73,7 +73,7 @@ export const GanttStatusPanel: React.FunctionComponent<GanttStatusPanelProps> = 
   return (
     <div style={{overflowY: 'auto'}}>
       <RunGroupPanel runId={runId} />
-      <SidebarSection title={isFinished ? 'Not Executed' : 'Preparing'}>
+      <SidebarSection title={`${isFinished ? 'Not Executed' : 'Preparing'} (${preparing.length})`}>
         <div>
           {preparing.length === 0 ? (
             <EmptyNotice>No steps are waiting to execute</EmptyNotice>
@@ -82,7 +82,7 @@ export const GanttStatusPanel: React.FunctionComponent<GanttStatusPanelProps> = 
           )}
         </div>
       </SidebarSection>
-      <SidebarSection title="Executing">
+      <SidebarSection title={`Executing (${executing.length})`}>
         <div>
           {executing.length === 0 ? (
             <EmptyNotice>No steps are executing</EmptyNotice>
@@ -91,7 +91,7 @@ export const GanttStatusPanel: React.FunctionComponent<GanttStatusPanelProps> = 
           )}
         </div>
       </SidebarSection>
-      <SidebarSection title="Errored">
+      <SidebarSection title={`Errored (${errored.length})`}>
         <div>
           {errored.length === 0 ? (
             <EmptyNotice>No steps have errored</EmptyNotice>

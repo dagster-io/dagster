@@ -66,7 +66,7 @@ export const RunGroupPanel: React.FC<{runId: string}> = ({runId}) => {
   const runs = (group.runs || []).filter((g) => g !== null);
 
   return (
-    <SidebarSection title={runs[0] ? runs[0].pipelineName : ''}>
+    <SidebarSection title={runs[0] ? `${runs[0].pipelineName} (${runs.length})` : ''}>
       <>
         {runs.map((g, idx) =>
           g ? (
