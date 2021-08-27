@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 
 from snapshottest import Snapshot
 
-
 snapshots = Snapshot()
 
 snapshots['test_yielded_results_config_pandas[hello_world_pandas_pipeline_v2-./great_expectations] 1'] = '''
