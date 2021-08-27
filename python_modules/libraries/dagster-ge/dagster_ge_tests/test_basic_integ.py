@@ -1,4 +1,4 @@
-import tempfile
+import pytest
 from dagster import (
     InputDefinition,
     ModeDefinition,
@@ -10,7 +10,11 @@ from dagster import (
 )
 from dagster.core.test_utils import instance_for_test
 from dagster.utils import file_relative_path
-from dagster_ge.factory import ge_data_context, ge_validation_solid_factory
+from dagster_ge.factory import (
+    ge_data_context,
+    ge_validation_solid_factory,
+    ge_validation_solid_factory_v3,
+)
 from dagster_pyspark import DataFrame as DagsterPySparkDataFrame
 from dagster_pyspark import pyspark_resource
 from pandas import read_csv
@@ -38,10 +42,26 @@ def reyielder(_context, res):
 @pipeline(
     mode_defs=[ModeDefinition("basic", resource_defs={"ge_data_context": ge_data_context})],
 )
-def hello_world_pandas_pipeline():
+def hello_world_pandas_pipeline_v2():
     return reyielder(
-        ge_validation_solid_factory(
-            "ge_validation_solid", "getest", "basic.warning", batch_kwargs={"datasource_name": None}
+        ge_validation_solid_factory("ge_validation_solid", "getest", "basic.warning")(
+            pandas_yielder()
+        )
+    )
+
+
+@pipeline(
+    mode_defs=[ModeDefinition("basic", resource_defs={"ge_data_context": ge_data_context})],
+)
+def hello_world_pandas_pipeline_v3():
+    return reyielder(
+        ge_validation_solid_factory_v3(
+            name="ge_validation_solid",
+            datasource_name="getest",
+            data_connector_name="my_runtime_data_connector",
+            data_asset_name="test_asset",
+            suite_name="basic.warning",
+            batch_identifiers={"foo": "bar"},
         )(pandas_yielder())
     )
 
@@ -63,23 +83,23 @@ def hello_world_pyspark_pipeline():
     return reyielder(validate(pyspark_yielder()))
 
 
-def test_fresh_project():
-    with tempfile.TemporaryDirectory() as tempdir:
-        pass
-
-
-def test_yielded_results_config_pandas_v2(snapshot):
+@pytest.mark.parametrize(
+    "pipe, ge_dir",
+    [
+        (hello_world_pandas_pipeline_v2, "./great_expectations"),
+        (hello_world_pandas_pipeline_v3, "./great_expectations_v3"),
+    ],
+)
+def test_yielded_results_config_pandas(snapshot, pipe, ge_dir):
     run_config = {
         "resources": {
-            "ge_data_context": {
-                "config": {"ge_root_dir": file_relative_path(__file__, "./great_expectations")}
-            }
+            "ge_data_context": {"config": {"ge_root_dir": file_relative_path(__file__, ge_dir)}}
         }
     }
     with instance_for_test() as instance:
         result = execute_pipeline(
-            reconstructable(hello_world_pandas_pipeline),
-            # run_config=run_config,
+            reconstructable(pipe),
+            run_config=run_config,
             mode="basic",
             instance=instance,
         )
