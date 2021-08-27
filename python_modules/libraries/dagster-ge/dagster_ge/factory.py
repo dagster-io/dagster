@@ -18,11 +18,11 @@ from great_expectations.render.renderer import ValidationResultsPageRenderer
 from great_expectations.render.view import DefaultMarkdownPageView
 
 try:
-    # ge >= v0.13.0
-    from great_expectations.core.util import convert_to_json_serializable
-except ImportError:
     # ge < v0.13.0
     from great_expectations.core import convert_to_json_serializable
+except ImportError:
+    # ge >= v0.13.0
+    from great_expectations.core.util import convert_to_json_serializable
 
 
 @resource(config_schema={"ge_root_dir": Noneable(StringSource)})
@@ -127,7 +127,7 @@ def ge_validation_solid_factory_v3(
         rendered_document_content_list = validation_results_page_renderer.render(
             validation_results=results
         )
-        md_str = " ".join(DefaultMarkdownPageView().render(rendered_document_content_list))
+        md_str = "".join(DefaultMarkdownPageView().render(rendered_document_content_list))
 
         meta_stats = EventMetadataEntry.md(md_str=md_str, label="Expectation Results")
         yield ExpectationResult(
@@ -148,27 +148,23 @@ def ge_validation_solid_factory(
     batch_kwargs=None,
 ):
     """
-        Generates solids for interacting with GE (v2 API).
-
+        Generates solids for interacting with GE.
     Args:
         name (str): the name of the solid
         datasource_name (str): the name of your DataSource, see your great_expectations.yml
         suite_name (str): the name of your expectation suite, see your great_expectations.yml
-        validation_operator_name (Optional[str]): what validation operator to run  -- defaults to
-                    None, which generates an ephemeral validator.  If you want to save data docs,
-                    use 'action_list_operator'.
+        validation_operator_name (Optional[str]): what validation operator to run  -- defaults to None,
+                    which generates an ephemeral validator.
+                    If you want to save data docs, use 'action_list_operator'.
                     See https://docs.greatexpectations.io/en/latest/reference/core_concepts/validation_operators_and_actions.html
         input_dagster_type (DagsterType): the Dagster type used to type check the input to the
                     solid. Defaults to `dagster_pandas.DataFrame`.
         batch_kwargs (Optional[dict]): overrides the `batch_kwargs` parameter when calling the
-                    `ge_data_context`'s `get_batch` method. Defaults to `{"dataset": dataset}` for
-                    v2 config, and `{"batch_data": dataset}` for v3 config, where `dataset` is the
-                    input to the generated solid.
-
+                    `ge_data_context`'s `get_batch` method. Defaults to `{"dataset": dataset}`,
+                    where `dataset` is the input to the generated solid.
     Returns:
         A solid that takes in a set of data and yields both an expectation with relevant metadata
         and an output with all the metadata (for user processing)
-
     """
 
     check.str_param(datasource_name, "datasource_name")
@@ -196,18 +192,6 @@ def ge_validation_solid_factory(
     )
     def ge_validation_solid(context, dataset):
         data_context = context.resources.ge_data_context
-        suite = data_context.get_expectation_suite(suite_name)
-        run_id = {
-            "run_name": datasource_name + " run",
-            "run_time": datetime.datetime.utcnow(),
-        }
-        final_batch_kwargs = batch_kwargs or {"dataset": dataset}
-        if "datasource" in final_batch_kwargs:
-            data_context.log.warning(
-                "`datasource` field of `batch_kwargs` will be ignored; use the `datasource_name` "
-                "parameter of the solid factory instead."
-            )
-        final_batch_kwargs["datasource"] = datasource_name
         if validation_operator_name is not None:
             validation_operator = validation_operator_name
         else:
@@ -216,23 +200,36 @@ def ge_validation_solid_factory(
                 {"class_name": "ActionListValidationOperator", "action_list": []},
             )
             validation_operator = "ephemeral_validation"
+        suite = data_context.get_expectation_suite(suite_name)
+        final_batch_kwargs = batch_kwargs or {"dataset": dataset}
+        if "datasource" in batch_kwargs:
+            context.log.warning(
+                "`datasource` field of `batch_kwargs` will be ignored; use the `datasource_name` "
+                "parameter of the solid factory instead."
+            )
+        final_batch_kwargs["datasource"] = datasource_name
         batch = data_context.get_batch(final_batch_kwargs, suite)
+        run_id = {
+            "run_name": datasource_name + " run",
+            "run_time": datetime.datetime.utcnow(),
+        }
         results = data_context.run_validation_operator(
             validation_operator, assets_to_validate=[batch], run_id=run_id
         )
+        res = convert_to_json_serializable(results.list_validation_results())[0]
         validation_results_page_renderer = ValidationResultsPageRenderer(run_info_at_end=True)
         rendered_document_content_list = (
-            validation_results_page_renderer.render_validation_operator_result(
-                validation_operator_result=results
-            )
+            validation_results_page_renderer.render_validation_operator_result(results)
         )
         md_str = " ".join(DefaultMarkdownPageView().render(rendered_document_content_list))
+
         meta_stats = EventMetadataEntry.md(md_str=md_str, label="Expectation Results")
         yield ExpectationResult(
-            success=results["success"],
-            metadata_entries=[meta_stats],
+            success=res["success"],
+            metadata_entries=[
+                meta_stats,
+            ],
         )
-        out = convert_to_json_serializable(results.list_validation_results())[0]
-        yield Output(out)
+        yield Output(res)
 
     return ge_validation_solid
