@@ -166,10 +166,8 @@ def get_dagster_meta_dict(
 
 
 class DagsterLogHandler(logging.Handler):
-    """Internal class used to handle logs that are not generated from within Dagster. It mirrors
-    the behavior of its corresponding DagsterLogManager, adding in Dagster-specific metadata to
-    each handled log record, and sending it to the same sinks (handlers and loggers) that the
-    DagsterLogManager uses.
+    """Internal class used to turn regular logs into Dagster logs by adding Dagster-specific
+    metadata (such as pipeline_name or step_key), as well as reformatting the underlying message.
 
     Note: The `loggers` argument will be populated with the set of @loggers supplied to the current
     pipeline run. These essentially work as handlers (they do not create their own log messages,
@@ -279,7 +277,7 @@ class DagsterLogManager(logging.Logger):
 
         handlers = check.opt_list_param(handlers, "handlers", of_type=logging.Handler)
         if instance:
-            handlers += [instance.get_event_log_handler()]
+            handlers += instance.get_handlers()
             managed_loggers = [
                 logging.getLogger(lname) if lname != "root" else logging.getLogger()
                 for lname in instance.managed_python_loggers
