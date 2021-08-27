@@ -57,4 +57,8 @@ def create_complex_user_deployment(name: str) -> UserDeployment:
                 "limits": {"memory": "128Mi", "cpu": "500m"},
             }
         ),
+        labels={
+            "label_one": "one",
+            "label_two": "two",
+        },
     )

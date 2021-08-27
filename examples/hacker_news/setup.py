@@ -33,6 +33,7 @@ setup(
         "scipy",
         "sklearn",
         "snowflake-sqlalchemy",
+        "matplotlib",
     ],
     extras_require={"tests": ["mypy", "pylint", "pytest"]},
 )
