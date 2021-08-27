@@ -7,6 +7,7 @@ from contextlib import contextmanager, redirect_stdout
 
 import pytest
 from dagster import (
+    DagsterInvalidConfigError,
     ModeDefinition,
     check,
     execute_pipeline,
@@ -21,6 +22,7 @@ from dagster.core.execution.context.logger import InitLoggerContext
 from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.log_manager import DagsterLogManager, DagsterLoggingMetadata
+from dagster.core.test_utils import instance_for_test
 from dagster.loggers import colored_console_logger, json_console_logger
 from dagster.utils.error import SerializableErrorInfo
 
@@ -196,16 +198,20 @@ def test_handler_in_log_manager_with_tags(capsys):
     assert len(re.findall(r"WARNING :: test_pipeline - 123 - test", out)) == 2
 
 
+class CaptureHandler(logging.Handler):
+    def __init__(self, output=None):
+        self.captured = []
+        self.output = output
+        super().__init__(logging.INFO)
+
+    def emit(self, record):
+        if self.output:
+            print(self.output + record.msg)
+        self.captured.append(record)
+
+
 def test_capture_handler_log_records():
-    class TestHandler(logging.Handler):
-        def __init__(self):
-            self.captured = []
-            super().__init__(logging.INFO)
-
-        def emit(self, record):
-            self.captured.append(record)
-
-    capture_handler = TestHandler()
+    capture_handler = CaptureHandler()
 
     dl = DagsterLogManager(
         logging_metadata=DagsterLoggingMetadata(
@@ -364,3 +370,85 @@ def test_io_context_logging(capsys):
 
     assert re.search("test OUTPUT debug logging from logged_solid.", captured.err, re.MULTILINE)
     assert re.search("test INPUT debug logging from logged_solid.", captured.err, re.MULTILINE)
+
+
+@solid
+def log_solid(context):
+    context.log.info("Hello world")
+    context.log.error("My test error")
+
+
+@pipeline
+def log_pipeline():
+    log_solid()
+
+
+def test_conf_file_logging(capsys):
+    config_settings = {
+        "python_logs": {
+            "dagster_handler_config": {
+                "handlers": {
+                    "handlerOne": {
+                        "class": "logging.StreamHandler",
+                        "level": "INFO",
+                        "stream": "ext://sys.stdout",
+                    },
+                    "handlerTwo": {
+                        "class": "logging.StreamHandler",
+                        "level": "ERROR",
+                        "stream": "ext://sys.stdout",
+                    },
+                },
+            }
+        }
+    }
+
+    with instance_for_test(overrides=config_settings) as instance:
+        execute_pipeline(log_pipeline, instance=instance)
+
+    out, _ = capsys.readouterr()
+
+    # currently the format of dict-inputted handlers is undetermined, so
+    # we only check for the expected message
+    assert re.search(r"Hello world", out)
+    assert len(re.findall(r"My test error", out)) == 2
+
+
+def test_custom_class_handler(capsys):
+    output_msg = "Record handled: "
+    config_settings = {
+        "python_logs": {
+            "dagster_handler_config": {
+                "handlers": {
+                    "handlerOne": {
+                        "()": "dagster_tests.core_tests.test_logging.CaptureHandler",
+                        "level": "INFO",
+                        "output": output_msg,
+                    }
+                },
+            },
+        }
+    }
+
+    with instance_for_test(overrides=config_settings) as instance:
+        execute_pipeline(log_pipeline, instance=instance)
+
+    out, _ = capsys.readouterr()
+
+    assert re.search(r".*Record handled: .*Hello world.*", out)
+
+
+def test_error_when_logger_defined_yaml():
+    config_settings = {
+        "python_logs": {
+            "dagster_handler_config": {
+                "loggers": {
+                    "my_logger": {"level": "WARNING", "propagate": False},
+                },
+            },
+        }
+    }
+
+    with pytest.raises(DagsterInvalidConfigError):
+        with instance_for_test(overrides=config_settings) as instance:
+            execute_pipeline(log_pipeline, instance=instance)
