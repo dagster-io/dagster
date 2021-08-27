@@ -1,5 +1,5 @@
 from dagster import Out, Output, graph, op
-from dagster.core.definitions.output import OutSpec
+from dagster.core.definitions.output import GraphOut
 
 
 @op
@@ -13,7 +13,7 @@ def return_multi():
     yield Output(2, "two")
 
 
-@graph(out={"one": OutSpec(int), "two": OutSpec(int)})
+@graph(out={"one": GraphOut(int), "two": GraphOut(int)})
 def do_two_things():
     do_something()
     one, two = return_multi()

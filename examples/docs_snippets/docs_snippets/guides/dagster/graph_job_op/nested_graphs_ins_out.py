@@ -1,6 +1,6 @@
 from dagster import In, Out, graph, op
-from dagster.core.definitions.input import InSpec
-from dagster.core.definitions.output import OutSpec
+from dagster.core.definitions.input import GraphIn
+from dagster.core.definitions.output import GraphOut
 
 
 @op
@@ -18,7 +18,7 @@ def do_something_else(arg1):
     return arg1
 
 
-@graph(ins={"arg1": InSpec(int)}, out=OutSpec(int))
+@graph(ins={"arg1": GraphIn(int)}, out=GraphOut(int))
 def do_two_things(arg1):
     do_something()
     return do_something_else(arg1)

@@ -691,8 +691,8 @@ With the graph APIs, you can specify `ins` and `out` properties to do so:
 
 ```python file=/guides/dagster/graph_job_op/nested_graphs_ins_out.py
 from dagster import In, Out, graph, op
-from dagster.core.definitions.input import InSpec
-from dagster.core.definitions.output import OutSpec
+from dagster.core.definitions.input import GraphIn
+from dagster.core.definitions.output import GraphOut
 
 
 @op
@@ -710,7 +710,7 @@ def do_something_else(arg1):
     return arg1
 
 
-@graph(ins={"arg1": InSpec(int)}, out=OutSpec(int))
+@graph(ins={"arg1": GraphIn(int)}, out=GraphOut(int))
 def do_two_things(arg1):
     do_something()
     return do_something_else(arg1)
@@ -768,7 +768,7 @@ With the graph APIs, you can specify `out` property:
 
 ```python file=/guides/dagster/graph_job_op/nested_graphs_multi_out.py
 from dagster import Out, Output, graph, op
-from dagster.core.definitions.output import OutSpec
+from dagster.core.definitions.output import GraphOut
 
 
 @op
@@ -782,7 +782,7 @@ def return_multi():
     yield Output(2, "two")
 
 
-@graph(out={"one": OutSpec(int), "two": OutSpec(int)})
+@graph(out={"one": GraphOut(int), "two": GraphOut(int)})
 def do_two_things():
     do_something()
     one, two = return_multi()

@@ -5,8 +5,8 @@ from dagster import check
 from dagster.utils.backcompat import experimental_decorator
 
 from ..graph import GraphDefinition
-from ..input import InSpec, InputDefinition
-from ..output import OutSpec, OutputDefinition
+from ..input import GraphIn, InputDefinition
+from ..output import GraphOut, OutputDefinition
 
 
 class _Graph:
@@ -16,8 +16,8 @@ class _Graph:
         description: Optional[str] = None,
         input_defs: Optional[List[InputDefinition]] = None,
         output_defs: Optional[List[OutputDefinition]] = None,
-        ins: Optional[Dict[str, InSpec]] = None,
-        out: Optional[Union[OutSpec, Dict[str, OutSpec]]] = None,
+        ins: Optional[Dict[str, GraphIn]] = None,
+        out: Optional[Union[GraphOut, Dict[str, GraphOut]]] = None,
     ):
         self.name = check.opt_str_param(name, "name")
         self.description = check.opt_str_param(description, "description")
@@ -44,10 +44,10 @@ class _Graph:
 
         if self.out is None:
             output_defs = self.output_defs
-        elif isinstance(self.out, OutSpec):
+        elif isinstance(self.out, GraphOut):
             output_defs = [self.out.to_definition(name=None)]
         else:
-            check.dict_param(self.out, "out", key_type=str, value_type=OutSpec)
+            check.dict_param(self.out, "out", key_type=str, value_type=GraphOut)
             output_defs = [out.to_definition(name=name) for name, out in self.out.items()]
 
         from dagster.core.definitions.decorators.composite_solid import do_composition
@@ -90,8 +90,8 @@ def graph(
     description: Optional[str] = None,
     input_defs: Optional[List[InputDefinition]] = None,
     output_defs: Optional[List[OutputDefinition]] = None,
-    ins: Optional[Dict[str, InSpec]] = None,
-    out: Optional[Union[OutSpec, Dict[str, OutSpec]]] = None,
+    ins: Optional[Dict[str, GraphIn]] = None,
+    out: Optional[Union[GraphOut, Dict[str, GraphOut]]] = None,
 ) -> Union[_Graph, GraphDefinition]:
     """Create a graph with the specified parameters from the decorated composition function.
 
@@ -120,11 +120,11 @@ def graph(
             :py:class:`GraphDefinition`.
 
             To map multiple outputs, return a dictionary from the composition function.
-        ins (Optional[Dict[str, InSpec]]):
+        ins (Optional[Dict[str, GraphIn]]):
             Information about the inputs that this graph maps. Information provided here
             will be combined with what can be inferred from the function signature, with these
-            explicit InSpec taking precedence.
-        out (Optional[Union[OutSpec, Dict[str, OutSpec]]]):
+            explicit GraphIn taking precedence.
+        out (Optional[Union[GraphOut, Dict[str, GraphOut]]]):
             Information about the outputs that this graph maps. Information provided here will be
             combined with what can be inferred from the return type signature if the function does
             not use yield.

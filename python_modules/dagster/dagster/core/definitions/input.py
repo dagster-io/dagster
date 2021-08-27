@@ -381,9 +381,9 @@ class In(
         )
 
 
-class InSpec(
+class GraphIn(
     NamedTuple(
-        "_InSpec",
+        "_GraphIn",
         [
             ("dagster_type", Union[DagsterType, Type[NoValueSentinel]]),
             ("description", Optional[str]),
@@ -391,8 +391,8 @@ class InSpec(
     )
 ):
     """
-    Experimental replacement for :py:class:`InputDefinition` on composite solids intended to
-    decrease verbosity. It represents the information about the inputs that the graph maps.
+    Experimental replacement for :py:class:`InputDefinition` on graphs intended to decrease verbosity.
+    It represents the information about the inputs that the graph maps.
 
     Args:
         dagster_type (Optional[Union[Type, DagsterType]]]):
@@ -402,7 +402,7 @@ class InSpec(
     """
 
     def __new__(cls, dagster_type=NoValueSentinel, description=None):
-        return super(InSpec, cls).__new__(
+        return super(GraphIn, cls).__new__(
             cls,
             dagster_type=dagster_type,
             description=description,
