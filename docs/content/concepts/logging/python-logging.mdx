@@ -1,0 +1,25 @@
+---
+title: Python Logging | Dagster
+description: Dagster is compatible and configurable with Python's logging module.
+---
+
+# Python Logging
+
+Dagster is compatible and configurable with [Python's logging module](https://docs.python.org/3/library/logging.html). You can specify and configure handlers and formatters to create custom log messages.
+
+## Configuring Python Logging
+
+In your config YAML, you can configure handlers and formatters
+```yaml file=/concepts/logging/python_logging_config.yaml
+python_logs:
+  dagster_handler_config:
+    handlers:
+      myHandler:
+        class: logging.StreamHandler
+        level: INFO
+        stream: ext://sys.stdout
+        formatter: myFormatter
+    formatters:
+      myFormatter:
+        format: '%(message)s'
+```
