@@ -36,7 +36,8 @@ ENV LANG=en_US.UTF-8 \
     KIND_VERSION=v0.9.0 \
     KUBECTL_VERSION=v1.20.1 \
     PYSPARK_VERSION=3.0.1 \
-    SBT_VERSION=1.4.6
+    SBT_VERSION=1.4.6 \
+    FOSSA_VERSION=v1.1.10
 
 # Install kubectl
 RUN echo "--- \033[32m:k8s: Install kubectl\033[0m" \
@@ -150,4 +151,4 @@ RUN wget http://download.redis.io/redis-stable.tar.gz \
 
 # Install FOSSA cli for analyzing our open-source dependencies
 # https://github.com/fossas/fossa-cli
-RUN curl -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/fossas/fossa-cli/master/install.sh | sh
+RUN curl -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/fossas/fossa-cli/master/install.sh | sh -s $FOSSA_VERSION
