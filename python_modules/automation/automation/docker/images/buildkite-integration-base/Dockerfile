@@ -102,7 +102,7 @@ RUN echo "--- \033[32m:linux: Misc installs and cleanup\033[0m" \
     && chmod +x /usr/local/bin/docker-compose \
     && curl -fsSL "https://download.docker.com/linux/ubuntu/gpg" | apt-key add - \
     # Add SBT debian pkg
-    && curl -LO "https://dl.bintray.com/sbt/debian/sbt-$SBT_VERSION.deb" \
+    && curl -LO "https://repo.scala-sbt.org/scalasbt/debian/sbt-$SBT_VERSION.deb" \
     && dpkg -i sbt-$SBT_VERSION.deb \
     && add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable" \
     && apt-get -yqq update \
@@ -147,3 +147,7 @@ RUN wget http://download.redis.io/redis-stable.tar.gz \
     && tar xvzf redis-stable.tar.gz \
     && cd redis-stable \
     && make install
+
+# Install FOSSA cli for analyzing our open-source dependencies
+# https://github.com/fossas/fossa-cli
+RUN curl -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/fossas/fossa-cli/master/install.sh | sh
