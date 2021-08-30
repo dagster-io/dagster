@@ -9,7 +9,8 @@ Dagster is compatible and configurable with [Python's logging module](https://do
 
 ## Configuring Python Logging
 
-In your config YAML, you can configure handlers and formatters
+In your config YAML, you can configure handlers and formatters that will apply to the Dagster instance, so all pipeline runs will share the same logging configuration.
+
 ```yaml file=/concepts/logging/python_logging_config.yaml
 python_logs:
   dagster_handler_config:
@@ -21,5 +22,10 @@ python_logs:
         formatter: myFormatter
     formatters:
       myFormatter:
-        format: '%(message)s'
+        format: 'My formatted message: %(message)s'
 ```
+
+Handler and formatter configuration follows the [dictionary config schema format](https://docs.python.org/3/library/logging.config.html#logging-config-dictschema) in the Python logging module. Only the
+`handlers` and `formatters` dictionary keys will be accepted, as Dagster creates loggers internally.
+
+From there, standard `context.log` calls will output with your configured handlers and formatters.
