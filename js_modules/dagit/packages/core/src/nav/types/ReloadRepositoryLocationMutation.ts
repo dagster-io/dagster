@@ -29,9 +29,17 @@ export interface ReloadRepositoryLocationMutation_reloadRepositoryLocation_Works
   repositories: ReloadRepositoryLocationMutation_reloadRepositoryLocation_WorkspaceLocationEntry_locationOrLoadError_RepositoryLocation_repositories[];
 }
 
+export interface ReloadRepositoryLocationMutation_reloadRepositoryLocation_WorkspaceLocationEntry_locationOrLoadError_PythonError_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
 export interface ReloadRepositoryLocationMutation_reloadRepositoryLocation_WorkspaceLocationEntry_locationOrLoadError_PythonError {
   __typename: "PythonError";
   message: string;
+  stack: string[];
+  cause: ReloadRepositoryLocationMutation_reloadRepositoryLocation_WorkspaceLocationEntry_locationOrLoadError_PythonError_cause | null;
 }
 
 export type ReloadRepositoryLocationMutation_reloadRepositoryLocation_WorkspaceLocationEntry_locationOrLoadError = ReloadRepositoryLocationMutation_reloadRepositoryLocation_WorkspaceLocationEntry_locationOrLoadError_RepositoryLocation | ReloadRepositoryLocationMutation_reloadRepositoryLocation_WorkspaceLocationEntry_locationOrLoadError_PythonError;

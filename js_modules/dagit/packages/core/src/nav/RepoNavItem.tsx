@@ -14,7 +14,7 @@ import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
-import {useRepositoryLocationReload} from './ReloadRepositoryLocationButton';
+import {ReloadRepositoryLocationButton} from './ReloadRepositoryLocationButton';
 import {RepoDetails, RepoSelector} from './RepoSelector';
 
 interface Props {
@@ -98,7 +98,6 @@ export const RepoNavItem: React.FC<Props> = (props) => {
 
 const SingleRepoSummary: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) => {
   const {canReloadRepositoryLocation} = usePermissions();
-  const {reloading, onClick} = useRepositoryLocationReload(repoAddress.location);
   return (
     <Group direction="row" spacing={8} alignItems="center">
       <SingleRepoNameLink
@@ -108,36 +107,40 @@ const SingleRepoSummary: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) 
         {repoAddress.name}
       </SingleRepoNameLink>
       {canReloadRepositoryLocation ? (
-        <ShortcutHandler
-          onShortcut={onClick}
-          shortcutLabel={`⌥R`}
-          shortcutFilter={(e) => e.code === 'KeyR' && e.altKey}
-        >
-          <Tooltip
-            inheritDarkTheme={false}
-            content={
-              <Reloading>
+        <ReloadRepositoryLocationButton location={repoAddress.location}>
+          {({tryReload, reloading}) => (
+            <ShortcutHandler
+              onShortcut={tryReload}
+              shortcutLabel={`⌥R`}
+              shortcutFilter={(e) => e.code === 'KeyR' && e.altKey}
+            >
+              <Tooltip
+                inheritDarkTheme={false}
+                content={
+                  <Reloading>
+                    {reloading ? (
+                      'Reloading…'
+                    ) : (
+                      <>
+                        Reload location <strong>{repoAddress.location}</strong>
+                      </>
+                    )}
+                  </Reloading>
+                }
+              >
                 {reloading ? (
-                  'Reloading…'
+                  <span style={{position: 'relative', top: '1px'}}>
+                    <Spinner purpose="body-text" />
+                  </span>
                 ) : (
-                  <>
-                    Reload location <strong>{repoAddress.location}</strong>
-                  </>
+                  <StyledButton onClick={tryReload}>
+                    <Icon icon="refresh" iconSize={11} color={Colors.GRAY4} />
+                  </StyledButton>
                 )}
-              </Reloading>
-            }
-          >
-            {reloading ? (
-              <span style={{position: 'relative', top: '1px'}}>
-                <Spinner purpose="body-text" />
-              </span>
-            ) : (
-              <StyledButton onClick={onClick}>
-                <Icon icon="refresh" iconSize={11} color={Colors.GRAY4} />
-              </StyledButton>
-            )}
-          </Tooltip>
-        </ShortcutHandler>
+              </Tooltip>
+            </ShortcutHandler>
+          )}
+        </ReloadRepositoryLocationButton>
       ) : null}
     </Group>
   );

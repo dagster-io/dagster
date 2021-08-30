@@ -53,7 +53,8 @@ def test_output_logging_stream(caplog):
     assert log_messages[0].startswith("Using temporary directory: ")
     assert log_messages[1].startswith("Temporary script location: ")
     assert log_messages[2] == "Running command:\nls"
-    assert log_messages[3]
+    assert log_messages[3].startswith("Command pid:")
+    assert log_messages[4]
     assert retcode == 0
 
     caplog.clear()
@@ -63,7 +64,8 @@ def test_output_logging_stream(caplog):
     assert log_messages[0].startswith("Using temporary directory: ")
     assert log_messages[1].startswith("Temporary script location: ")
     assert log_messages[2] == "Running command:\nls"
-    assert log_messages[3]
+    assert log_messages[3].startswith("Command pid:")
+    assert log_messages[4]
     assert retcode == 0
 
     caplog.clear()
@@ -75,7 +77,7 @@ def test_output_logging_stream(caplog):
     )
     log_messages = [r.message for r in caplog.records]
     assert retcode == 0
-    assert log_messages[3:6] == ["iter 1", "iter 2", "iter 3"]
+    assert log_messages[4:7] == ["iter 1", "iter 2", "iter 3"]
 
     caplog.clear()
 
@@ -86,4 +88,4 @@ def test_output_logging_stream(caplog):
     )
     log_messages = [r.message for r in caplog.records]
     assert retcode == 0
-    assert log_messages[3] == "iter 1\niter 2\niter 3\n"
+    assert log_messages[4] == "iter 1\niter 2\niter 3\n"

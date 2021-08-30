@@ -5,6 +5,7 @@ from dagster import (
     Field,
     InputDefinition,
     ModeDefinition,
+    Output,
     OutputDefinition,
     composite_solid,
     execute_pipeline,
@@ -329,3 +330,47 @@ def test_multi_collect():
     result = execute_pipeline(double)
     assert result.success
     assert result.result_for_solid("fan_in").output_value() == [0, 1, 2, 0, 1, 2]
+
+
+def test_fan_in_skips():
+    @solid(
+        output_defs=[
+            OutputDefinition(name="nums"),
+            OutputDefinition(name="empty"),
+            OutputDefinition(name="skip", is_required=False),
+        ]
+    )
+    def fork_logic():
+        yield Output([1, 2, 3], output_name="nums")
+        yield Output([], output_name="empty")
+
+    @solid(output_defs=[DynamicOutputDefinition(int)])
+    def emit_dyn(vector):
+        for i in vector:
+            yield DynamicOutput(value=i, mapping_key=f"input_{i}")
+
+    @solid
+    def total(items):
+        return sum(items)
+
+    @pipeline
+    def dyn_fork():
+        nums, empty, skip = fork_logic()
+        total.alias("grand_total")(
+            [
+                total.alias("nums_total")(emit_dyn(nums).map(echo).collect()),
+                total.alias("empty_total")(emit_dyn(empty).map(echo).collect()),
+                total.alias("skip_total")(emit_dyn(skip).map(echo).collect()),
+            ]
+        )
+
+    result = execute_pipeline(dyn_fork)
+    assert result.success
+
+    assert result.result_for_solid("nums_total").success
+    assert result.result_for_solid("empty_total").success
+
+    assert result.result_for_solid("skip_total").success  # arguably should be skip
+
+    assert result.result_for_solid("grand_total").success
+    assert result.result_for_solid("grand_total").output_value() == 6
