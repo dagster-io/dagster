@@ -21,7 +21,11 @@ from dagster.core.definitions.partition import (
     PartitionedConfig,
     StaticPartitionsDefinition,
 )
-from dagster.core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
+from dagster.core.errors import (
+    DagsterInvalidConfigError,
+    DagsterInvalidDefinitionError,
+    DagsterInvariantViolationError,
+)
 from dagster.core.execution.execute import execute_in_process
 
 
@@ -595,3 +599,19 @@ def test_enum_to_execution():
     )
     assert result.success
     assert result.result_for_node("my_op").output_values["result"] == TestEnum.TWO
+
+
+def test_job_subset_incompatibility():
+
+    # https://github.com/dagster-io/dagster/issues/4489
+    @graph
+    def basic():
+        pass
+
+    the_job = basic.to_job()
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Attempted to subset job 'basic'. Subsetting jobs is not supported at this time.",
+    ):
+        the_job.get_pipeline_subset_def({"foo"})

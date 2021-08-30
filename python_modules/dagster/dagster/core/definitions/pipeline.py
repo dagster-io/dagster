@@ -598,7 +598,6 @@ def _get_pipeline_subset_def(
     Build a pipeline which is a subset of another pipeline.
     Only includes the solids which are in solids_to_execute.
     """
-    from .job import JobDefinition, JobSubsetDefinition
 
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
     check.set_param(solids_to_execute, "solids_to_execute", of_type=str)
@@ -647,27 +646,15 @@ def _get_pipeline_subset_def(
                 )
 
     try:
-        if isinstance(pipeline_def, JobDefinition):
-            sub_pipeline_def: Union[
-                PipelineSubsetDefinition, JobSubsetDefinition
-            ] = JobSubsetDefinition(
-                name=pipeline_def.name,  # should we change the name for subsetted pipeline?
-                mode_def=pipeline_def.mode_definitions[0],
-                _parent_pipeline_def=pipeline_def,
-                tags=pipeline_def.tags,
-                hook_defs=pipeline_def.hook_defs,
-                graph_def=pipeline_def.graph,
-            )
-        else:
-            sub_pipeline_def = PipelineSubsetDefinition(
-                name=pipeline_def.name,  # should we change the name for subsetted pipeline?
-                solid_defs=list({solid.definition for solid in solids}),
-                mode_defs=pipeline_def.mode_definitions,
-                dependencies=deps,
-                _parent_pipeline_def=pipeline_def,
-                tags=pipeline_def.tags,
-                hook_defs=pipeline_def.hook_defs,
-            )
+        sub_pipeline_def = PipelineSubsetDefinition(
+            name=pipeline_def.name,  # should we change the name for subsetted pipeline?
+            solid_defs=list({solid.definition for solid in solids}),
+            mode_defs=pipeline_def.mode_definitions,
+            dependencies=deps,
+            _parent_pipeline_def=pipeline_def,
+            tags=pipeline_def.tags,
+            hook_defs=pipeline_def.hook_defs,
+        )
 
         return sub_pipeline_def
     except DagsterInvalidDefinitionError as exc:

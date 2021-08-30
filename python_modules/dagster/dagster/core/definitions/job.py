@@ -2,11 +2,12 @@ from typing import TYPE_CHECKING, AbstractSet, Any, Dict, List, Optional
 
 from dagster import check
 from dagster.core.definitions.policy import RetryPolicy
+from dagster.core.errors import DagsterInvariantViolationError
 
 from .graph import GraphDefinition
 from .hook import HookDefinition
 from .mode import ModeDefinition
-from .pipeline import PipelineDefinition, PipelineSubsetDefinition
+from .pipeline import PipelineDefinition
 from .preset import PresetDefinition
 from .resource import ResourceDefinition
 from .version_strategy import VersionStrategy
@@ -102,33 +103,11 @@ class JobDefinition(PipelineDefinition):
             output_capturing_enabled=True,
         )
 
+    def get_pipeline_subset_def(self, solids_to_execute: AbstractSet[str]) -> PipelineDefinition:
 
-class JobSubsetDefinition(PipelineSubsetDefinition):
-    def __init__(
-        self,
-        mode_def: ModeDefinition,
-        graph_def: GraphDefinition,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        preset_defs: Optional[List[PresetDefinition]] = None,
-        tags: Dict[str, Any] = None,
-        hook_defs: Optional[AbstractSet[HookDefinition]] = None,
-        solid_retry_policy: Optional[RetryPolicy] = None,
-        _parent_pipeline_def=None,  # https://github.com/dagster-io/dagster/issues/2115
-        version_strategy: Optional[VersionStrategy] = None,
-    ):
-
-        super(JobSubsetDefinition, self).__init__(
-            name=name,
-            description=description,
-            mode_defs=[mode_def],
-            preset_defs=preset_defs,
-            tags=tags,
-            hook_defs=hook_defs,
-            solid_retry_policy=solid_retry_policy,
-            graph_def=graph_def,
-            _parent_pipeline_def=_parent_pipeline_def,
-            version_strategy=version_strategy,
+        # https://github.com/dagster-io/dagster/issues/4489
+        raise DagsterInvariantViolationError(
+            f"Attempted to subset job '{self.name}'. Subsetting jobs is not supported at this time."
         )
 
 
