@@ -14,6 +14,7 @@ from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
     from dagster.core.instance import DagsterInstance
+    from dagster.core.host_representation import PipelineIndex
     from dagster.core.execution.execution_results import InProcessGraphResult
 
 
@@ -109,6 +110,12 @@ class JobDefinition(PipelineDefinition):
         raise DagsterInvariantViolationError(
             f"Attempted to subset job '{self.name}'. Subsetting jobs is not supported at this time."
         )
+
+    def get_pipeline_index(self) -> "PipelineIndex":
+        from dagster.core.snap import JobSnapshot
+        from dagster.core.host_representation import PipelineIndex
+
+        return PipelineIndex(JobSnapshot.from_job_def(self), None)
 
 
 def _swap_default_io_man(resources: Dict[str, ResourceDefinition], job: PipelineDefinition):

@@ -11,11 +11,14 @@ from dagster import (
     Shape,
     pipeline,
     solid,
+    op,
+    graph,
 )
 from dagster.config.config_type import Array, Enum, EnumValue, Int, Noneable, String
 from dagster.core.snap import (
     DependencyStructureIndex,
     PipelineSnapshot,
+    JobSnapshot,
     SolidInvocationSnap,
     create_pipeline_snapshot_id,
     snap_from_config_type,
@@ -476,3 +479,26 @@ def test_multi_type_config_nested_dicts(nested_dict_types, snapshot):
     _map_has_stable_hashes(
         recevied_config_type, pipeline_snapshot.config_schema_snapshot.all_config_snaps_by_key
     )
+
+
+def test_job_snap_all_props(snapshot):
+    @op
+    def noop():
+        pass
+
+    @graph
+    def noop_graph():
+        noop()
+
+    noop_job = noop_graph.to_job(name="noop_job", description="desc", tags={"key": "value"})
+
+    job_snapshot = JobSnapshot.from_job_def(noop_job)
+
+    assert job_snapshot.name == "noop_job"
+    assert job_snapshot.description == "desc"
+    assert job_snapshot.tags == {"key": "value"}
+
+    assert job_snapshot == serialize_rt(job_snapshot)
+
+    snapshot.assert_match(serialize_pp(job_snapshot))
+    snapshot.assert_match(create_pipeline_snapshot_id(job_snapshot))

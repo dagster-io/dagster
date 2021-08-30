@@ -19,6 +19,7 @@ from dagster.config.snap import (
     ConfigTypeSnap,
 )
 from dagster.core.definitions.pipeline import PipelineDefinition, PipelineSubsetDefinition
+from dagster.core.definitions.job import JobDefinition
 from dagster.core.utils import toposort_flatten
 from dagster.serdes import (
     DefaultNamedTupleSerializer,
@@ -42,8 +43,8 @@ from .solid import (
 )
 
 
-def create_pipeline_snapshot_id(snapshot: "PipelineSnapshot") -> str:
-    check.inst_param(snapshot, "snapshot", PipelineSnapshot)
+def create_pipeline_snapshot_id(snapshot: Union["PipelineSnapshot", "JobSnapshot"]) -> str:
+    check.inst_param(snapshot, "snapshot", (PipelineSnapshot, JobSnapshot))
     return create_snapshot_id(snapshot)
 
 
@@ -65,7 +66,8 @@ def _pipeline_snapshot_from_storage(
     mode_def_snaps: List[ModeDefSnap],
     lineage_snapshot: Optional["PipelineSnapshotLineage"] = None,
     graph_def_name: Optional[str] = None,
-) -> "PipelineSnapshot":
+    is_job: Optional[bool] = False,
+) -> Union["PipelineSnapshot", "JobSnapshot"]:
     """
     v0
     v1:
@@ -76,18 +78,31 @@ def _pipeline_snapshot_from_storage(
     if graph_def_name is None:
         graph_def_name = name
 
-    return PipelineSnapshot(
-        name=name,
-        description=description,
-        tags=tags,
-        config_schema_snapshot=config_schema_snapshot,
-        dagster_type_namespace_snapshot=dagster_type_namespace_snapshot,
-        solid_definitions_snapshot=solid_definitions_snapshot,
-        dep_structure_snapshot=dep_structure_snapshot,
-        mode_def_snaps=mode_def_snaps,
-        lineage_snapshot=lineage_snapshot,
-        graph_def_name=graph_def_name,
-    )
+    if not is_job:
+        return PipelineSnapshot(
+            name=name,
+            description=description,
+            tags=tags,
+            config_schema_snapshot=config_schema_snapshot,
+            dagster_type_namespace_snapshot=dagster_type_namespace_snapshot,
+            solid_definitions_snapshot=solid_definitions_snapshot,
+            dep_structure_snapshot=dep_structure_snapshot,
+            mode_def_snaps=mode_def_snaps,
+            lineage_snapshot=lineage_snapshot,
+            graph_def_name=graph_def_name,
+        )
+    else:
+        return JobSnapshot(
+            name=name,
+            description=description,
+            tags=tags,
+            config_schema_snapshot=config_schema_snapshot,
+            dagster_type_namespace_snapshot=dagster_type_namespace_snapshot,
+            solid_definitions_snapshot=solid_definitions_snapshot,
+            dep_structure_snapshot=dep_structure_snapshot,
+            mode_def_snaps=mode_def_snaps,
+            graph_def_name=graph_def_name,
+        )
 
 
 @whitelist_for_serdes(serializer=PipelineSnapshotSerializer)
@@ -105,6 +120,7 @@ class PipelineSnapshot(
             ("mode_def_snaps", List[ModeDefSnap]),
             ("lineage_snapshot", Optional["PipelineSnapshotLineage"]),
             ("graph_def_name", str),
+            ("is_job", bool),
         ],
     )
 ):
@@ -120,6 +136,7 @@ class PipelineSnapshot(
         mode_def_snaps: List[ModeDefSnap],
         lineage_snapshot: Optional["PipelineSnapshotLineage"],
         graph_def_name: str,
+        is_job: bool = False,
     ):
         return super(PipelineSnapshot, cls).__new__(
             cls,
@@ -145,6 +162,7 @@ class PipelineSnapshot(
                 lineage_snapshot, "lineage_snapshot", PipelineSnapshotLineage
             ),
             graph_def_name=check.str_param(graph_def_name, "graph_def_name"),
+            is_job=is_job,
         )
 
     @classmethod
@@ -177,6 +195,137 @@ class PipelineSnapshot(
             ],
             lineage_snapshot=lineage,
             graph_def_name=pipeline_def.graph.name,
+        )
+
+    def get_node_def_snap(self, solid_def_name: str) -> Union[SolidDefSnap, CompositeSolidDefSnap]:
+        check.str_param(solid_def_name, "solid_def_name")
+        for solid_def_snap in self.solid_definitions_snapshot.solid_def_snaps:
+            if solid_def_snap.name == solid_def_name:
+                return solid_def_snap
+
+        for comp_solid_def_snap in self.solid_definitions_snapshot.composite_solid_def_snaps:
+            if comp_solid_def_snap.name == solid_def_name:
+                return comp_solid_def_snap
+
+        check.failed("not found")
+
+    def has_solid_name(self, solid_name: str) -> bool:
+        check.str_param(solid_name, "solid_name")
+        for solid_snap in self.dep_structure_snapshot.solid_invocation_snaps:
+            if solid_snap.solid_name == solid_name:
+                return True
+        return False
+
+    def get_config_type_from_solid_def_snap(
+        self,
+        solid_def_snap: Union[SolidDefSnap, CompositeSolidDefSnap],
+    ) -> Optional[ConfigType]:
+        check.inst_param(solid_def_snap, "solid_def_snap", (SolidDefSnap, CompositeSolidDefSnap))
+        if solid_def_snap.config_field_snap:
+            config_type_key = solid_def_snap.config_field_snap.type_key
+            if self.config_schema_snapshot.has_config_snap(config_type_key):
+                return construct_config_type_from_snap(
+                    self.config_schema_snapshot.get_config_snap(config_type_key),
+                    self.config_schema_snapshot.all_config_snaps_by_key,
+                )
+        return None
+
+    @property
+    def solid_names(self) -> List[str]:
+        return [ss.solid_name for ss in self.dep_structure_snapshot.solid_invocation_snaps]
+
+    @property
+    def solid_names_in_topological_order(self) -> List[str]:
+        upstream_outputs = {}
+
+        for solid_invocation_snap in self.dep_structure_snapshot.solid_invocation_snaps:
+            solid_name = solid_invocation_snap.solid_name
+            upstream_outputs[solid_name] = {
+                upstream_output_snap.solid_name
+                for input_dep_snap in solid_invocation_snap.input_dep_snaps
+                for upstream_output_snap in input_dep_snap.upstream_output_snaps
+            }
+
+        return toposort_flatten(upstream_outputs)
+
+
+@whitelist_for_serdes(serializer=PipelineSnapshotSerializer)
+class JobSnapshot(
+    NamedTuple(
+        "_JobSnapshot",
+        [
+            ("name", str),
+            ("description", Optional[str]),
+            ("tags", Dict[str, Any]),
+            ("config_schema_snapshot", ConfigSchemaSnapshot),
+            ("dagster_type_namespace_snapshot", DagsterTypeNamespaceSnapshot),
+            ("solid_definitions_snapshot", SolidDefinitionsSnapshot),
+            ("dep_structure_snapshot", DependencyStructureSnapshot),
+            ("mode_def_snaps", List[ModeDefSnap]),
+            ("graph_def_name", str),
+            ("is_job", bool),
+        ],
+    )
+):
+    def __new__(
+        cls,
+        name: str,
+        description: Optional[str],
+        tags: Optional[Dict[str, Any]],
+        config_schema_snapshot: ConfigSchemaSnapshot,
+        dagster_type_namespace_snapshot: DagsterTypeNamespaceSnapshot,
+        solid_definitions_snapshot: SolidDefinitionsSnapshot,
+        dep_structure_snapshot: DependencyStructureSnapshot,
+        mode_def_snaps: List[ModeDefSnap],
+        graph_def_name: str,
+        is_job: bool = True,
+    ):
+        return super(JobSnapshot, cls).__new__(
+            cls,
+            name=check.str_param(name, "name"),
+            description=check.opt_str_param(description, "description"),
+            tags=check.opt_dict_param(tags, "tags"),
+            config_schema_snapshot=check.inst_param(
+                config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnapshot
+            ),
+            dagster_type_namespace_snapshot=check.inst_param(
+                dagster_type_namespace_snapshot,
+                "dagster_type_namespace_snapshot",
+                DagsterTypeNamespaceSnapshot,
+            ),
+            solid_definitions_snapshot=check.inst_param(
+                solid_definitions_snapshot, "solid_definitions_snapshot", SolidDefinitionsSnapshot
+            ),
+            dep_structure_snapshot=check.inst_param(
+                dep_structure_snapshot, "dep_structure_snapshot", DependencyStructureSnapshot
+            ),
+            mode_def_snaps=check.list_param(mode_def_snaps, "mode_def_snaps", of_type=ModeDefSnap),
+            graph_def_name=check.str_param(graph_def_name, "graph_def_name"),
+            is_job=is_job,
+        )
+
+    @classmethod
+    def from_job_def(cls, job_def: JobDefinition) -> "JobSnapshot":
+        check.inst_param(job_def, "job_def", JobDefinition)
+
+        mode_def = job_def.mode_definitions[0]
+
+        return JobSnapshot(
+            name=job_def.name,
+            description=job_def.description,
+            tags=job_def.tags,
+            config_schema_snapshot=build_config_schema_snapshot(job_def),
+            dagster_type_namespace_snapshot=build_dagster_type_namespace_snapshot(job_def),
+            solid_definitions_snapshot=build_solid_definitions_snapshot(job_def),
+            dep_structure_snapshot=build_dep_structure_snapshot_from_icontains_solids(
+                job_def.graph
+            ),
+            mode_def_snaps=[
+                build_mode_def_snap(
+                    mode_def, job_def.get_run_config_schema(mode_def.name).config_type.key
+                )
+            ],
+            graph_def_name=job_def.graph.name,
         )
 
     def get_node_def_snap(self, solid_def_name: str) -> Union[SolidDefSnap, CompositeSolidDefSnap]:

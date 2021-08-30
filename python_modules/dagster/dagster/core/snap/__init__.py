@@ -50,5 +50,5 @@ from .execution_plan_snapshot import (
     snapshot_from_execution_plan,
 )
 from .mode import LoggerDefSnap, ModeDefSnap, ResourceDefSnap
-from .pipeline_snapshot import PipelineSnapshot, create_pipeline_snapshot_id
+from .pipeline_snapshot import PipelineSnapshot, create_pipeline_snapshot_id, JobSnapshot
 from .solid import CompositeSolidDefSnap, SolidDefSnap, build_composite_solid_def_snap

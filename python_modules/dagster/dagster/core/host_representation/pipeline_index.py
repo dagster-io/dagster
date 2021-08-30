@@ -2,6 +2,7 @@ from dagster import check
 from dagster.core.snap import (
     DependencyStructureIndex,
     PipelineSnapshot,
+    JobSnapshot,
     create_pipeline_snapshot_id,
 )
 
@@ -9,7 +10,7 @@ from dagster.core.snap import (
 class PipelineIndex:
     def __init__(self, pipeline_snapshot, parent_pipeline_snapshot):
         self.pipeline_snapshot = check.inst_param(
-            pipeline_snapshot, "pipeline_snapshot", PipelineSnapshot
+            pipeline_snapshot, "pipeline_snapshot", (PipelineSnapshot, JobSnapshot)
         )
         self.parent_pipeline_snapshot = check.opt_inst_param(
             parent_pipeline_snapshot, "parent_pipeline_snapshot", PipelineSnapshot
