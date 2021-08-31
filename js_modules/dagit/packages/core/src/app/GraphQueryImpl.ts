@@ -98,7 +98,7 @@ export function filterByQuery<T extends GraphQueryItem>(items: T[], query: strin
       continue;
     }
     const [, parentsClause, itemName, descendentsClause] = parts;
-    const itemsMatching = items.filter((s) => itemName.length > 3 && s.name.includes(itemName));
+    const itemsMatching = items.filter((s) => s.name.includes(itemName));
 
     for (const item of itemsMatching) {
       const upDepth = expansionDepthForClause(parentsClause);
