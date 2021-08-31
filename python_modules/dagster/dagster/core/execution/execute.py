@@ -137,6 +137,7 @@ def core_execute_in_process(
                 run_config=run_config,
                 executor_defs=None,
                 output_capture=recorder if output_capturing_enabled else None,
+                raise_on_error=True,
             ),
         )
         event_list = list(_execute_run_iterable)

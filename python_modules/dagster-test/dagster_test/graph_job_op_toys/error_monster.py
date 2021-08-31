@@ -63,6 +63,8 @@ class ErrorableResource:
 
 
 def resource_init(init_context):
+    print("whaat")
+    print(init_context.resource_config)
     if init_context.resource_config["throw_on_resource_init"]:
         raise Exception("throwing from in resource_fn")
     return ErrorableResource()
