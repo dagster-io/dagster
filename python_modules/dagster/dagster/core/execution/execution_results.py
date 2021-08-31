@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional, cast
 
 from dagster import DagsterEvent, check
 from dagster.core.definitions import GraphDefinition, Node, NodeHandle, SolidDefinition
+from dagster.core.definitions.utils import DEFAULT_OUTPUT
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.step import StepKind
@@ -103,8 +104,50 @@ class InProcessSolidResult(NodeExecutionResult):
                             ] = value
                     else:
                         results[step_output_handle.output_name] = value
+        else:
+            raise DagsterInvariantViolationError(
+                "Trying to fetch output values, but output_capturing_enabled was False for the run"
+            )
 
         return results
+
+    def output_value(self, output_name=DEFAULT_OUTPUT):
+        """Get a computed output value.
+
+        Note that calling this method will reconstruct the pipeline context (including, e.g.,
+        resources) to retrieve materialized output values.
+
+        Args:
+            output_name(str): The output name for which to retrieve the value. (default: 'result')
+
+        Returns:
+            Union[None, Any, Dict[str, Any]]: ``None`` if execution did not succeed, the output value
+                in the normal case, and a dict of mapping keys to values in the mapped case.
+        """
+        check.str_param(output_name, "output_name")
+
+        if not self._output_capture:
+            raise DagsterInvariantViolationError(
+                "Trying to fetch output values, but output_capturing_enabled was False for the run"
+            )
+
+        solid_handle_as_str = str(self.handle)
+
+        # if the output isn't dynamic, we can do a fast version that's just a single lookup
+        non_mapped_output_handle = StepOutputHandle(solid_handle_as_str, output_name)
+        if non_mapped_output_handle in self._output_capture:
+            return self._output_capture[non_mapped_output_handle]
+
+        # otherwise, need to scan over all the outputs
+        mapped_result: Dict[str, Any] = {}
+        for step_output_handle, value in self._output_capture.items():
+            if (
+                step_output_handle.step_key == solid_handle_as_str
+                and step_output_handle.output_name == output_name
+            ):
+                mapped_result[step_output_handle.mapping_key] = value
+
+        return mapped_result
 
     @property
     def event_list(self) -> List[DagsterEvent]:
