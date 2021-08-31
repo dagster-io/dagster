@@ -204,8 +204,8 @@ class InstanceRef(
             defaults["run_launcher"],
         )
 
-        settings_keys = {"telemetry"}
-        settings = {key: config_value.get(key) for key in settings_keys}
+        settings_keys = {"telemetry", "python_logs"}
+        settings = {key: config_value.get(key) for key in settings_keys if config_value.get(key)}
 
         return InstanceRef(
             local_artifact_storage_data=local_artifact_storage_data,

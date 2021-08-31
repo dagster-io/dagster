@@ -13,6 +13,7 @@ def test_download():
                     "partition_start": {"config": "2020-12-30 00:00:00"},
                     "partition_end": {"config": "2020-12-30 01:00:00"},
                     "parquet_io_manager": {"config": {"base_path": temp_dir}},
+                    "warehouse_io_manager": {"config": {"base_path": temp_dir}},
                 }
             },
             mode="test_local_data",
