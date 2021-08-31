@@ -1,15 +1,15 @@
-from dagster import AssetKey, AssetMaterialization, EventMetadata, Field, Output, pipeline, solid
+from dagster import AssetKey, AssetMaterialization, EventMetadata, Field, Output, graph, op
 
 
-@solid(
+@op(
     config_schema={
         "bucket": Field(str, is_required=True),
         "s3_key": Field(str, is_required=True),
     }
 )
 def read_s3_key(context):
-    s3_key = context.solid_config["s3_key"]
-    bucket = context.solid_config["bucket"]
+    s3_key = context.op_config["s3_key"]
+    bucket = context.op_config["bucket"]
     path = f"s3://{bucket}/{s3_key}"
     context.log.info(f"Found file {path}")
     yield AssetMaterialization(
@@ -19,6 +19,11 @@ def read_s3_key(context):
     yield Output(path)
 
 
-@pipeline(description="Demo pipeline that spits out some file info, given a path")
-def log_s3_pipeline():
+@graph
+def log_s3_graph():
     read_s3_key()
+
+
+log_s3_job = log_s3_graph.to_job(
+    description="Demo pipeline that spits out some file info, given a path"
+)

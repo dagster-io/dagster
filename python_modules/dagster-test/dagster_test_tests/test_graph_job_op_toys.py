@@ -18,8 +18,8 @@ from dagster_test.graph_job_op_toys.error_monster import (
     error_monster,
     preset_run_config,
 )
-from dagster_test.graph_job_op_toys.hammer import hammer_pipeline
-from dagster_test.graph_job_op_toys.log_spew import log_spew
+from dagster_test.graph_job_op_toys.hammer import hammer_job
+from dagster_test.graph_job_op_toys.log_spew import log_spew_job
 from dagster_test.graph_job_op_toys.longitudinal import (
     IntentionalRandomFailure,
     longitudinal_pipeline,
@@ -68,12 +68,12 @@ def test_dynamic_job():
 #         assert execute_pipeline(reconstructable(get_sleepy), instance=instance).success
 
 
-# def test_spew_pipeline():
-#     assert execute_pipeline(log_spew).success
+def test_spew_pipeline():
+    assert log_spew_job.execute_in_process().success
 
 
-# def test_hammer_pipeline():
-#     assert execute_pipeline(hammer_pipeline).success
+def test_hammer_job():
+    assert hammer_job.execute_in_process().success
 
 
 # def test_resource_pipeline_no_config():
