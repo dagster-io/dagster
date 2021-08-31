@@ -1,10 +1,10 @@
 from dagster import execute_pipeline, pipeline, repository, solid
 from dagster.core.definitions.run_request import RunRequest
 from docs_snippets_crag.concepts.partitions_schedules_sensors.sensors.sensor_alert import (
-    email_on_pipeline_failure,
-    my_slack_on_pipeline_failure,
-    my_slack_on_pipeline_success,
-    slack_on_pipeline_failure,
+    email_on_job_failure,
+    my_slack_on_job_failure,
+    my_slack_on_job_success,
+    slack_on_job_failure,
 )
 from docs_snippets_crag.concepts.partitions_schedules_sensors.sensors.sensors import (
     isolated_run_request,
@@ -52,20 +52,20 @@ def test_interval_sensors():
     assert sensor_B
 
 
-def test_pipeline_failure_sensor_def():
+def test_job_failure_sensor_def():
     @repository
     def my_repo():
         return [
-            my_slack_on_pipeline_failure,
-            slack_on_pipeline_failure,
-            email_on_pipeline_failure,
-            my_slack_on_pipeline_success,
+            my_slack_on_job_failure,
+            slack_on_job_failure,
+            email_on_job_failure,
+            my_slack_on_job_success,
         ]
 
-    assert my_repo.has_sensor_def("my_slack_on_pipeline_failure")
-    assert my_repo.has_sensor_def("slack_on_pipeline_failure")
-    assert my_repo.has_sensor_def("email_on_pipeline_failure")
-    assert my_repo.has_sensor_def("my_slack_on_pipeline_success")
+    assert my_repo.has_sensor_def("my_slack_on_job_failure")
+    assert my_repo.has_sensor_def("slack_on_job_failure")
+    assert my_repo.has_sensor_def("email_on_job_failure")
+    assert my_repo.has_sensor_def("my_slack_on_job_success")
 
 
 def test_sensor_testing_example():
