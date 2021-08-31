@@ -1,12 +1,10 @@
 from dagster import (
     Field,
     Int,
-    ModeDefinition,
-    execute_pipeline,
-    pipeline,
     reconstructable,
     resource,
-    solid,
+    graph,
+    op,
 )
 
 
@@ -21,39 +19,35 @@ def define_resource(num):
 lots_of_resources = {"R" + str(r): define_resource(r) for r in range(20)}
 
 
-@solid(required_resource_keys=set(lots_of_resources.keys()))
-def all_resources(_):
+@op(required_resource_keys=set(lots_of_resources.keys()))
+def all_resources():
     return 1
 
 
-@solid(required_resource_keys={"R1"})
+@op(required_resource_keys={"R1"})
 def one(context):
     return 1 + context.resources.R1
 
 
-@solid(required_resource_keys={"R2"})
-def two(_):
+@op(required_resource_keys={"R2"})
+def two():
     return 1
 
 
-@solid(required_resource_keys={"R1", "R2", "R3"})
-def one_and_two_and_three(_):
+@op(required_resource_keys={"R1", "R2", "R3"})
+def one_and_two_and_three():
     return 1
 
 
-@pipeline(mode_defs=[ModeDefinition(resource_defs=lots_of_resources)])
-def resource_pipeline():
+@graph
+def resource_graph():
     all_resources()
     one()
     two()
     one_and_two_and_three()
 
 
+resource_job = resource_graph.to_job(resource_defs=lots_of_resources)
+
 if __name__ == "__main__":
-    result = execute_pipeline(
-        reconstructable(resource_pipeline),
-        run_config={
-            "intermediate_storage": {"filesystem": {}},
-            "execution": {"multiprocessing": {}},
-        },
-    )
+    result = reconstructable(resource_job).execute_in_process()

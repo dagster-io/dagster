@@ -6,6 +6,9 @@ from dagster.core.definitions.pipeline_sensor import (
     PipelineFailureSensorContext,
     pipeline_failure_sensor,
 )
+from dagster_test.graph_job_op_toys.log_file import log_file_job
+from dagster_test.graph_job_op_toys.log_s3 import log_s3_job
+from dagster_test.graph_job_op_toys.log_asset import log_asset_job
 from slack import WebClient
 
 
@@ -35,7 +38,7 @@ def get_toys_sensors():
 
     directory_name = os.environ.get("DAGSTER_TOY_SENSOR_DIRECTORY")
 
-    @sensor(pipeline_name="log_file_pipeline")
+    @sensor(job=log_file_job)
     def toy_file_sensor(context):
         if not directory_name:
             yield SkipReason(
@@ -66,7 +69,7 @@ def get_toys_sensors():
 
     from dagster_aws.s3.sensor import get_s3_keys
 
-    @sensor(pipeline_name="log_s3_pipeline")
+    @sensor(job=log_s3_job)
     def toy_s3_sensor(context):
         if not bucket:
             raise Exception(
@@ -110,14 +113,14 @@ def get_toys_sensors():
             blocks=[{"type": "section", "text": {"type": "mrkdwn", "text": message}}],
         )
 
-    @asset_sensor(asset_key=AssetKey("model"), pipeline_name="log_asset_pipeline")
+    @asset_sensor(asset_key=AssetKey("model"), job=log_asset_job)
     def toy_asset_sensor(context, asset_event):
         yield RunRequest(
             run_key=context.cursor,
             run_config={
-                "solids": {
+                "ops": {
                     "read_materialization": {
-                        "config": {"asset_key": ["model"], "pipeline": asset_event.pipeline_name}
+                        "config": {"asset_key": ["model"], "job": asset_event.pipeline_name}
                     }
                 }
             },
