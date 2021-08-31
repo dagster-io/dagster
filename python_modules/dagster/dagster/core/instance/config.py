@@ -1,7 +1,7 @@
 import os
 import warnings
 
-from dagster import Bool, check
+from dagster import Array, Bool, check
 from dagster.config import Field, Permissive
 from dagster.config.validate import validate_config
 from dagster.core.errors import DagsterInvalidConfigError
@@ -83,13 +83,15 @@ def configurable_class_schema():
 def python_logs_config_schema():
     return Field(
         {
+            "managed_python_loggers": Field(Array(str), is_required=False),
+            "python_log_level": Field(str, is_required=False),
             "dagster_handler_config": Field(
                 {
                     "handlers": Field(dict, is_required=False),
                     "formatters": Field(dict, is_required=False),
                 },
                 is_required=False,
-            )
+            ),
         },
         is_required=False,
     )

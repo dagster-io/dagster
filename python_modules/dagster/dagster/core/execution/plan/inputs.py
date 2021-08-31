@@ -367,6 +367,7 @@ class FromConfig(
                 f'Error occurred while loading input "{self.input_name}" of '
                 f'step "{step_context.step.key}":'
             ),
+            log_manager=step_context.log,
         ):
             dagster_type = self.get_input_def(step_context.pipeline_def).dagster_type
 
