@@ -1,5 +1,13 @@
 import pytest
-from dagster import DagsterInvariantViolationError, resource, solid
+from dagster import (
+    DagsterInvariantViolationError,
+    DynamicOut,
+    DynamicOutput,
+    Out,
+    op,
+    resource,
+    solid,
+)
 from dagster.core.definitions.decorators.graph import graph
 
 
@@ -13,6 +21,49 @@ def get_solids():
         return x + y
 
     return emit_one, add
+
+
+def test_output_value():
+    @graph
+    def a():
+        get_solids()[0]()
+
+    result = a.execute_in_process()
+
+    assert result.success
+    assert result.result_for_node("emit_one").output_value() == 1
+
+
+def test_output_values():
+    @op(out={"a": Out(), "b": Out()})
+    def two_outs():
+        return 1, 2
+
+    @graph
+    def a():
+        two_outs()
+
+    result = a.execute_in_process()
+
+    assert result.success
+    assert result.result_for_node("two_outs").output_values["a"] == 1
+    assert result.result_for_node("two_outs").output_values["b"] == 2
+
+
+def test_dynamic_output_values():
+    @op(out=DynamicOut())
+    def two_outs():
+        yield DynamicOutput(1, "a")
+        yield DynamicOutput(2, "b")
+
+    @graph
+    def a():
+        two_outs()
+
+    result = a.execute_in_process()
+
+    assert result.success
+    assert result.result_for_node("two_outs").output_value() == {"a": 1, "b": 2}
 
 
 def test_execute_graph():
