@@ -66,7 +66,7 @@ class JobDefinition(PipelineDefinition):
 
         """
         from dagster.core.definitions.executor import execute_in_process_executor
-        from dagster.core.execution.execute import core_execute_in_process
+        from dagster.core.execution.execute_in_process import core_execute_in_process
 
         run_config = check.opt_dict_param(run_config, "run_config")
         check.invariant(
