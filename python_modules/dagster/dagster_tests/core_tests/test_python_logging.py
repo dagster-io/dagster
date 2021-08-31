@@ -25,6 +25,7 @@ def get_log_records(pipe, managed_loggers=None, python_logging_level=None, run_c
 @pytest.mark.parametrize(
     "managed_logs,expect_output",
     [
+        (None, False),
         (["root"], True),
         (["python_logger"], True),
         (["some_logger"], False),
@@ -59,6 +60,7 @@ def test_logging_capture_logger_defined_outside(managed_logs, expect_output):
 @pytest.mark.parametrize(
     "managed_logs,expect_output",
     [
+        (None, False),
         (["root"], True),
         (["python_logger"], True),
         (["some_logger"], False),
@@ -92,6 +94,7 @@ def test_logging_capture_logger_defined_inside(managed_logs, expect_output):
 @pytest.mark.parametrize(
     "managed_logs,expect_output",
     [
+        (None, False),
         (["root"], True),
         (["python_logger"], True),
         (["some_logger"], False),
