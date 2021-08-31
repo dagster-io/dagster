@@ -38,6 +38,7 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
       <PipelineExplorerContainer
         repoAddress={repoAddress}
         explorerPath={explorerPath}
+        pageContext="job"
         onChangeExplorerPath={(path, action) => {
           history[action]({
             search: location.search,

@@ -64,6 +64,7 @@ const ROOT_REPOSITORIES_QUERY = gql`
                 name
                 pipelines {
                   id
+                  graphName
                   name
                   pipelineSnapshotId
                   modes {

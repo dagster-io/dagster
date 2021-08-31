@@ -46,6 +46,7 @@ export const SIDEBAR_PIPELINE_INFO_FRAGMENT = gql`
   fragment SidebarPipelineInfoFragment on IPipelineSnapshot {
     name
     description
+    graphName
     modes {
       id
       ...SidebarModeInfoFragment

@@ -28,7 +28,7 @@ import {
 } from './types/PipelineExplorerRootQuery';
 
 export const PipelineExplorerRegexRoot: React.FC<
-  RouteComponentProps & {repoAddress: RepoAddress}
+  RouteComponentProps & {repoAddress: RepoAddress; pageContext: 'graph' | 'job'}
 > = (props) => {
   const explorerPath = explorerPathFromString(props.match.params['0']);
   const {flagPipelineModeTuples} = useFeatureFlags();
@@ -40,6 +40,7 @@ export const PipelineExplorerRegexRoot: React.FC<
     <PipelineExplorerContainer
       explorerPath={explorerPath}
       repoAddress={props.repoAddress}
+      pageContext={props.pageContext}
       onChangeExplorerPath={(path, mode) => {
         const tab = flagPipelineModeTuples ? 'graphs' : 'pipelines';
         const fullPath = props.repoAddress
@@ -66,6 +67,7 @@ export const PipelineExplorerSnapshotRoot: React.FC<RouteComponentProps> = (prop
   return (
     <PipelineExplorerContainer
       explorerPath={explorerPath}
+      pageContext="job"
       onChangeExplorerPath={(path, mode) => {
         history[mode](`/instance/snapshots/${explorerPathToString(path)}`);
       }}
@@ -77,7 +79,8 @@ export const PipelineExplorerContainer: React.FC<{
   explorerPath: PipelineExplorerPath;
   onChangeExplorerPath: (path: PipelineExplorerPath, mode: 'replace' | 'push') => void;
   repoAddress?: RepoAddress;
-}> = ({explorerPath, repoAddress, onChangeExplorerPath}) => {
+  pageContext: 'graph' | 'job';
+}> = ({explorerPath, repoAddress, pageContext, onChangeExplorerPath}) => {
   const [options, setOptions] = React.useState<PipelineExplorerOptions>({
     explodeComposites: false,
   });
@@ -141,6 +144,7 @@ export const PipelineExplorerContainer: React.FC<{
             handles={displayedHandles}
             parentHandle={parentHandle ? parentHandle : undefined}
             selectedHandle={selectedHandle}
+            pageContext={pageContext}
             getInvocations={(definitionName) =>
               displayedHandles
                 .filter((s) => s.solid.definition.name === definitionName)

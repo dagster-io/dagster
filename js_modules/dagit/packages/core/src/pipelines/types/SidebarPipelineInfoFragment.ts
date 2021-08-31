@@ -715,5 +715,6 @@ export interface SidebarPipelineInfoFragment {
   __typename: "Pipeline" | "PipelineSnapshot";
   name: string;
   description: string | null;
+  graphName: string;
   modes: SidebarPipelineInfoFragment_modes[];
 }

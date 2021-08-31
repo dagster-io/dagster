@@ -715,5 +715,6 @@ export interface PipelineExplorerFragment {
   __typename: "Pipeline" | "PipelineSnapshot";
   name: string;
   description: string | null;
+  graphName: string;
   modes: PipelineExplorerFragment_modes[];
 }

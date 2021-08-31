@@ -715,5 +715,6 @@ export interface SidebarTabbedContainerPipelineFragment {
   __typename: "Pipeline" | "PipelineSnapshot";
   name: string;
   description: string | null;
+  graphName: string;
   modes: SidebarTabbedContainerPipelineFragment_modes[];
 }

@@ -25,6 +25,7 @@ export interface RootRepositoriesQuery_workspaceOrError_Workspace_locationEntrie
 export interface RootRepositoriesQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines {
   __typename: "Pipeline";
   id: string;
+  graphName: string;
   name: string;
   pipelineSnapshotId: string;
   modes: RootRepositoriesQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_modes[];

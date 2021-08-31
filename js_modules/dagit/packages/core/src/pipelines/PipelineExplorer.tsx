@@ -39,6 +39,7 @@ interface PipelineExplorerProps {
   selectedHandle?: PipelineExplorerSolidHandleFragment;
   parentHandle?: PipelineExplorerSolidHandleFragment;
   getInvocations?: (definitionName: string) => {handleID: string}[];
+  pageContext: 'graph' | 'job';
 }
 
 export const PipelineExplorer: React.FC<PipelineExplorerProps> = (props) => {
@@ -53,6 +54,7 @@ export const PipelineExplorer: React.FC<PipelineExplorerProps> = (props) => {
     selectedHandle,
     setOptions,
     repoAddress,
+    pageContext,
   } = props;
   const [highlighted, setHighlighted] = React.useState('');
 
@@ -228,6 +230,7 @@ export const PipelineExplorer: React.FC<PipelineExplorerProps> = (props) => {
             // eslint-disable-next-line react/no-children-prop
             children={({location}: {location: any}) => (
               <SidebarTabbedContainer
+                pageContext={pageContext}
                 pipeline={pipeline}
                 explorerPath={explorerPath}
                 solidHandleID={selectedHandle && selectedHandle.handleID}
