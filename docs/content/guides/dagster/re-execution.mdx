@@ -30,14 +30,14 @@ def unreliable_start(_):
 
 
 @solid()
-def unreliable(_, num):
+def unreliable(_, _num):
     failure_rate = 0.5
     if random() < failure_rate:
         raise Exception("blah")
 
 
 @solid()
-def unreliable_end(_, num):
+def unreliable_end(_, _num):
     return
 
 
