@@ -137,7 +137,7 @@ def num_to_str(context, num):
 
 
 @op(
-    ins={"string": In(String)},
+    ins={"string": In(str)},
     out=Out(Int),
     config_schema=op_throw_config,
     required_resource_keys={"errorable_resource"},

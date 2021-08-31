@@ -3,12 +3,15 @@ import time
 
 from dagster import (
     Field,
+    In,
     InputDefinition,
     ModeDefinition,
+    Out,
     Output,
     OutputDefinition,
     pipeline,
-    solid,
+    graph,
+    op,
 )
 from dagster.core.definitions.executor import default_executors
 
@@ -22,9 +25,9 @@ def get_executor_defs():
         return default_executors
 
 
-@solid(
-    input_defs=[InputDefinition("chase_duration", int)],
-    output_defs=[OutputDefinition(int, "total")],
+@op(
+    ins={"chase_duration": In(int)},
+    out=Out(int),
     config_schema={
         "chase_size": Field(
             int,
@@ -51,14 +54,9 @@ def hammer(context, chase_duration):
     return chase_duration
 
 
-@solid(
+@op(
     config_schema=Field(int, is_required=False, default_value=1),
-    output_defs=[
-        OutputDefinition(int, "out_1"),
-        OutputDefinition(int, "out_2"),
-        OutputDefinition(int, "out_3"),
-        OutputDefinition(int, "out_4"),
-    ],
+    out={"out_1": Out(int), "out_2": Out(int), "out_3": Out(int), "out_4": Out(int)},
 )
 def chase_giver(context):
     chase_duration = context.solid_config
@@ -69,24 +67,16 @@ def chase_giver(context):
     yield Output(chase_duration, "out_4")
 
 
-@solid(
-    input_defs=[
-        InputDefinition("in_1", int),
-        InputDefinition("in_2", int),
-        InputDefinition("in_3", int),
-        InputDefinition("in_4", int),
-    ],
-    output_defs=[OutputDefinition(int)],
+@op(
+    ins={"in_1": In(int), "in_2": In(int), "in_3": In(int), "in_4": In(int)},
+    out=Out(int),
 )
 def reducer(_, in_1, in_2, in_3, in_4):
     return in_1 + in_2 + in_3 + in_4
 
 
-@pipeline(
-    # Needed for Dask tests which use this pipeline
-    mode_defs=[ModeDefinition(executor_defs=get_executor_defs())]
-)
-def hammer_pipeline():
+@graph
+def hammer_graph():
     out_1, out_2, out_3, out_4 = chase_giver()
     reducer(
         in_1=hammer(chase_duration=out_1),
@@ -94,3 +84,7 @@ def hammer_pipeline():
         in_3=hammer(chase_duration=out_3),
         in_4=hammer(chase_duration=out_4),
     )
+
+
+# dask tests use mode w/ special executor defs
+hammer_job = hammer_graph.to_job()
