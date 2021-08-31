@@ -104,6 +104,34 @@ class TestQueuedRunCoordinator:
             ) as _:
                 pass
 
+    def test_config_unique_value(self):
+        with environ({"MAX_RUNS": "10", "DEQUEUE_INTERVAL": "7"}):
+            with instance_for_test(
+                overrides={
+                    "run_coordinator": {
+                        "module": "dagster.core.run_coordinator",
+                        "class": "QueuedRunCoordinator",
+                        "config": {
+                            "max_concurrent_runs": {
+                                "env": "MAX_RUNS",
+                            },
+                            "tag_concurrency_limits": [
+                                {
+                                    "key": "foo",
+                                    "value": {"applyLimitPerUniqueValue": True},
+                                    "limit": 3,
+                                },
+                                {"key": "backfill", "limit": 2},
+                            ],
+                            "dequeue_interval_seconds": {
+                                "env": "DEQUEUE_INTERVAL",
+                            },
+                        },
+                    }
+                }
+            ) as _:
+                pass
+
     def test_submit_run(
         self, instance, coordinator, workspace, external_pipeline
     ):  # pylint: disable=redefined-outer-name
