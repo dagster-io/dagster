@@ -555,6 +555,10 @@ def construct_dagster_k8s_job(
         "labels", {}
     )
 
+    service_account_name = user_defined_k8s_config.pod_spec_config.pop(
+        "service_account_name", job_config.service_account_name
+    )
+
     template = kubernetes.client.V1PodTemplateSpec(
         metadata=kubernetes.client.V1ObjectMeta(
             name=pod_name,
@@ -566,7 +570,7 @@ def construct_dagster_k8s_job(
                 kubernetes.client.V1LocalObjectReference(name=x["name"])
                 for x in job_config.image_pull_secrets
             ],
-            service_account_name=job_config.service_account_name,
+            service_account_name=service_account_name,
             restart_policy="Never",
             containers=[job_container],
             volumes=volumes,
