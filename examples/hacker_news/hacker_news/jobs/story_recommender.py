@@ -1,4 +1,4 @@
-from dagster import ModeDefinition, fs_io_manager, pipeline
+from dagster import fs_io_manager, graph
 from dagster.core.storage.file_manager import local_file_manager
 from dagster_aws.s3 import s3_file_manager
 from hacker_news.resources.fixed_s3_pickle_io_manager import fixed_s3_pickle_io_manager
@@ -22,31 +22,29 @@ snowflake_manager = snowflake_io_manager.configured(
     }
 )
 
-DEV_MODE = ModeDefinition(
-    "dev",
-    description="This mode reads from the same warehouse as the prod pipeline, but does all writes locally.",
-    resource_defs={
-        "io_manager": fs_io_manager,
-        "warehouse_io_manager": fs_io_manager,
-        "warehouse_loader": snowflake_manager,
-        "file_manager": local_file_manager,
-    },
-)
+STORY_RECOMMENDER_RESOURCES_DEV = {
+    "io_manager": fs_io_manager,
+    "warehouse_io_manager": fs_io_manager,
+    "warehouse_loader": snowflake_manager,
+    "file_manager": local_file_manager,
+}
 
-PROD_MODE = ModeDefinition(
-    "prod",
-    description="This mode writes some outputs to the production data warehouse.",
-    resource_defs={
-        "io_manager": fixed_s3_pickle_io_manager.configured({"bucket": "hackernews-elementl-prod"}),
-        "warehouse_io_manager": snowflake_manager,
-        "warehouse_loader": snowflake_manager,
-        "file_manager": s3_file_manager.configured({"s3_bucket": "hackernews-elementl-prod"}),
-    },
-)
+STORY_RECOMMENDER_RESOURCES_STAGING = {
+    "io_manager": fixed_s3_pickle_io_manager.configured({"bucket": "hackernews-elementl-dev"}),
+    "warehouse_io_manager": snowflake_manager,
+    "warehouse_loader": snowflake_manager,
+    "file_manager": s3_file_manager.configured({"s3_bucket": "hackernews-elementl-dev"}),
+}
+
+STORY_RECOMMENDER_RESOURCES_PROD = {
+    "io_manager": fixed_s3_pickle_io_manager.configured({"bucket": "hackernews-elementl-prod"}),
+    "warehouse_io_manager": snowflake_manager,
+    "warehouse_loader": snowflake_manager,
+    "file_manager": s3_file_manager.configured({"s3_bucket": "hackernews-elementl-prod"}),
+}
 
 
-@pipeline(
-    mode_defs=[DEV_MODE, PROD_MODE],
+@graph(
     description="""
     Trains a collaborative filtering model that can recommend HN stories to users based on what
     stories they've commented on in the past.
@@ -59,3 +57,14 @@ def story_recommender():
     model_perf_notebook(recommender_model)
     build_component_top_stories(recommender_model, user_story_matrix)
     build_user_top_recommended_stories(recommender_model, user_story_matrix)
+
+
+story_recommender_prod_job = story_recommender.to_job(
+    resource_defs=STORY_RECOMMENDER_RESOURCES_PROD
+)
+
+story_recommender_staging_job = story_recommender.to_job(
+    resource_defs=STORY_RECOMMENDER_RESOURCES_STAGING
+)
+
+story_recommender_dev_job = story_recommender.to_job(resource_defs=STORY_RECOMMENDER_RESOURCES_DEV)

@@ -1,28 +1,32 @@
-from dagster import repository
+from dagster import repository, schedule_from_partitions
 
-from .pipelines.dbt_pipeline import dbt_pipeline
-from .pipelines.download_pipeline import download_pipeline
-from .pipelines.story_recommender import story_recommender
-from .schedules.hourly_hn_download_schedule import hourly_hn_download_schedule
-from .sensors.download_pipeline_finished_sensor import dbt_on_hn_download_finished
-from .sensors.hn_tables_updated_sensor import story_recommender_on_hn_table_update
-from .sensors.slack_on_pipeline_failure_sensor import make_pipeline_failure_sensor
+from .jobs.download_job import download_prod_job, download_staging_job
+from .sensors.download_finished_sensor import (
+    dbt_on_hn_download_finished_prod,
+    dbt_on_hn_download_finished_staging,
+)
+from .sensors.hn_tables_updated_sensor import (
+    story_recommender_on_hn_table_update_prod,
+    story_recommender_on_hn_table_update_staging,
+)
+from .sensors.slack_on_failure_sensor import make_job_failure_sensor
 
 
 @repository
-def hacker_news_repository():
-    pipelines = [
-        download_pipeline,
-        story_recommender,
-        dbt_pipeline,
-    ]
-    schedules = [
-        hourly_hn_download_schedule,
-    ]
-    sensors = [
-        make_pipeline_failure_sensor(base_url="my_dagit_url.com"),
-        story_recommender_on_hn_table_update,
-        dbt_on_hn_download_finished,
+def hacker_news_prod():
+    return [
+        schedule_from_partitions(download_prod_job),
+        make_job_failure_sensor(base_url="my_dagit_url.com", job_selection=[download_prod_job]),
+        story_recommender_on_hn_table_update_prod,
+        dbt_on_hn_download_finished_prod,
     ]
 
-    return pipelines + schedules + sensors
+
+@repository
+def hacker_news_staging():
+    return [
+        schedule_from_partitions(download_staging_job),
+        make_job_failure_sensor(base_url="my_dagit_url.com", job_selection=[download_staging_job]),
+        story_recommender_on_hn_table_update_staging,
+        dbt_on_hn_download_finished_staging,
+    ]
