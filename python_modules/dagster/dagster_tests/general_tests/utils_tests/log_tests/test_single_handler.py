@@ -38,7 +38,7 @@ def test_log_level_filtering():
         for logger_def in [debug_logger_def, critical_logger_def]
     ]
 
-    log_manager = DagsterLogManager(DagsterLoggingMetadata(), loggers)
+    log_manager = DagsterLogManager.create(loggers=loggers)
 
     log_manager.debug("Hello, there!")
 

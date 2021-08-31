@@ -1,11 +1,12 @@
 import datetime
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Union
 
 from dagster import check
 from dagster.core.utils import coerce_valid_log_level, make_new_run_id
 
 if TYPE_CHECKING:
+    from dagster import DagsterInstance, PipelineRun
     from dagster.core.events import DagsterEvent
 
 DAGSTER_META_KEY = "dagster_meta"
@@ -148,83 +149,220 @@ def construct_log_string(
     )
 
 
-class DagsterLogManager(logging.Logger):
+def get_dagster_meta_dict(
+    logging_metadata: DagsterLoggingMetadata, dagster_message_props: DagsterMessageProps
+) -> Dict[str, Any]:
+    # combine all dagster meta information into a single dictionary
+    meta_dict = {
+        **logging_metadata._asdict(),
+        **dagster_message_props._asdict(),
+    }
+    # step-level events can be logged from a pipeline context. for these cases, pull the step
+    # key from the underlying DagsterEvent
+    if meta_dict["step_key"] is None:
+        meta_dict["step_key"] = dagster_message_props.step_key
+
+    return meta_dict
+
+
+class DagsterLogHandler(logging.Handler):
+    """Internal class used to turn regular logs into Dagster logs by adding Dagster-specific
+    metadata (such as pipeline_name or step_key), as well as reformatting the underlying message.
+
+    Note: The `loggers` argument will be populated with the set of @loggers supplied to the current
+    pipeline run. These essentially work as handlers (they do not create their own log messages,
+    they simply re-log messages that are created from context.log.x() calls), which is why they are
+    referenced from within this handler class.
+    """
+
     def __init__(
         self,
         logging_metadata: DagsterLoggingMetadata,
         loggers: List[logging.Logger],
-        handlers: Optional[List[logging.Handler]] = None,
+        handlers: List[logging.Handler],
     ):
-        self._logging_metadata = check.inst_param(
-            logging_metadata, "logging_metadata", DagsterLoggingMetadata
-        )
-        self._loggers = check.list_param(loggers, "loggers", of_type=logging.Logger)
+        self._logging_metadata = logging_metadata
+        self._loggers = loggers
+        self._handlers = handlers
+        super().__init__()
 
-        super().__init__(name="dagster", level=logging.DEBUG)
+    @property
+    def logging_metadata(self):
+        return self._logging_metadata
+
+    def with_tags(self, **new_tags):
+        return DagsterLogHandler(
+            logging_metadata=self.logging_metadata._replace(**new_tags),
+            loggers=self._loggers,
+            handlers=self._handlers,
+        )
+
+    def _extract_extra(self, record: logging.LogRecord) -> Dict[str, Any]:
+        """In the logging.Logger log() implementation, the elements of the `extra` dictionary
+        argument are smashed into the __dict__ of the underlying logging.LogRecord.
+        This function figures out what the original `extra` values of the log call were by
+        comparing the set of attributes in the received record to those of a default record.
+        """
+        ref_attrs = list(logging.makeLogRecord({}).__dict__.keys()) + ["message", "asctime"]
+        return {k: v for k, v in record.__dict__.items() if k not in ref_attrs}
+
+    def _convert_record(self, record: logging.LogRecord) -> logging.LogRecord:
+        # we store the originating DagsterEvent in the DAGSTER_META_KEY field, if applicable
+        dagster_meta = getattr(record, DAGSTER_META_KEY, None)
+
+        # generate some properties for this specific record
+        dagster_message_props = DagsterMessageProps(
+            orig_message=record.msg, dagster_event=dagster_meta
+        )
+
+        # set the dagster meta info for the record
+        setattr(
+            record,
+            DAGSTER_META_KEY,
+            get_dagster_meta_dict(self._logging_metadata, dagster_message_props),
+        )
+
+        # update the message to be formatted like other dagster logs
+        record.msg = construct_log_string(self._logging_metadata, dagster_message_props)
+
+        return record
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        """If you list multiple levels of a python logging hierarchy as managed loggers, and do not
+        set the propagate attribute to False, this will result in that record getting logged
+        multiple times, as the DagsterLogHandler will be invoked at each level of the hierarchy as
+        the message is propagated. This filter prevents this from happening.
+        """
+        return not isinstance(getattr(record, DAGSTER_META_KEY, None), dict)
+
+    def emit(self, record: logging.LogRecord):
+        """For any received record, add Dagster metadata, and have handlers handle it"""
+        dagster_record = self._convert_record(record)
+        # built-in handlers
+        for handler in self._handlers:
+            handler.handle(dagster_record)
+        # user-defined @loggers
+        for logger in self._loggers:
+            logger.log(
+                level=dagster_record.levelno,
+                msg=dagster_record.msg,
+                exc_info=dagster_record.exc_info,
+                extra=self._extract_extra(record),
+            )
+
+
+class DagsterLogManager(logging.Logger):
+    def __init__(
+        self,
+        dagster_handler: DagsterLogHandler,
+        level: int = logging.NOTSET,
+        managed_loggers: List[logging.Logger] = None,
+    ):
+        super().__init__(name="dagster", level=coerce_valid_log_level(level))
+        self._managed_loggers = check.opt_list_param(
+            managed_loggers, "managed_loggers", of_type=logging.Logger
+        )
+        self._dagster_handler = dagster_handler
+        self.addHandler(dagster_handler)
+
+    @classmethod
+    def create(
+        cls,
+        loggers: List[logging.Logger],
+        handlers: List[logging.Handler] = None,
+        instance: Optional["DagsterInstance"] = None,
+        pipeline_run: Optional["PipelineRun"] = None,
+    ) -> "DagsterLogManager":
+        """Create a DagsterLogManager with a set of subservient loggers."""
 
         handlers = check.opt_list_param(handlers, "handlers", of_type=logging.Handler)
-        for handler in handlers:
-            self.addHandler(handler)
+        if instance:
+            handlers += instance.get_handlers()
+            managed_loggers = [
+                logging.getLogger(lname) if lname != "root" else logging.getLogger()
+                for lname in instance.managed_python_loggers
+            ]
+            if instance.python_log_level is not None:
+                python_log_level = coerce_valid_log_level(instance.python_log_level)
+                # set all loggers to the declared logging level
+                for logger in managed_loggers:
+                    logger.setLevel(python_log_level)
+            else:
+                python_log_level = logging.NOTSET
+        else:
+            managed_loggers, python_log_level = [], logging.NOTSET
+
+        if pipeline_run:
+            logging_metadata = DagsterLoggingMetadata(
+                run_id=pipeline_run.run_id,
+                pipeline_name=pipeline_run.pipeline_name,
+                pipeline_tags=pipeline_run.tags,
+            )
+        else:
+            logging_metadata = DagsterLoggingMetadata()
+
+        return cls(
+            dagster_handler=DagsterLogHandler(
+                logging_metadata=logging_metadata,
+                loggers=loggers,
+                handlers=handlers,
+            ),
+            level=python_log_level,
+            managed_loggers=managed_loggers,
+        )
 
     @property
     def logging_metadata(self) -> DagsterLoggingMetadata:
-        return self._logging_metadata
+        return self._dagster_handler.logging_metadata
 
-    @property
-    def loggers(self) -> List[logging.Logger]:
-        return self._loggers
+    def begin_python_log_capture(self):
+        for logger in self._managed_loggers:
+            logger.addHandler(self._dagster_handler)
 
-    def log_dagster_event(self, level: int, msg: str, dagster_event: "DagsterEvent"):
+    def end_python_log_capture(self):
+        for logger in self._managed_loggers:
+            logger.removeHandler(self._dagster_handler)
+
+    def log_dagster_event(self, level: Union[str, int], msg: str, dagster_event: "DagsterEvent"):
+        """Log a DagsterEvent at the given level. Attributes about the context it was logged in
+        (such as the solid name or pipeline name) will be automatically attached to the created record.
+
+        Args:
+            level (str, int): either a string representing the desired log level ("INFO", "WARN"),
+                or an integer level such as logging.INFO or logging.DEBUG.
+            msg (str): message describing the event
+            dagster_event (DagsterEvent): DagsterEvent that will be logged
+        """
         self.log(level=level, msg=msg, extra={DAGSTER_META_KEY: dagster_event})
 
     def log(self, level, msg, *args, **kwargs):
-        # allow for string level names
-        super().log(coerce_valid_log_level(level), msg, *args, **kwargs)
+        """Log a message at the given level. Attributes about the context it was logged in (such as
+        the solid name or pipeline name) will be automatically attached to the created record.
 
-    def _log(
-        self, level, msg, args, exc_info=None, extra=None, stack_info=False
-    ):  # pylint: disable=arguments-differ
-
-        # we stash dagster meta information in the extra field
-        extra = extra or {}
-
-        dagster_message_props = DagsterMessageProps(
-            orig_message=msg, dagster_event=extra.get(DAGSTER_META_KEY)
-        )
-
-        # convert the message to our preferred format
-        msg = construct_log_string(self.logging_metadata, dagster_message_props)
-
-        # combine all dagster meta information into a single dictionary
-        meta_dict = {
-            **self.logging_metadata._asdict(),
-            **dagster_message_props._asdict(),
-        }
-        # step-level events can be logged from a pipeline context. for these cases, pull the step
-        # key from the underlying DagsterEvent
-        if meta_dict["step_key"] is None:
-            meta_dict["step_key"] = dagster_message_props.step_key
-
-        extra[DAGSTER_META_KEY] = meta_dict
-
-        for logger in self._loggers:
-            logger.log(level, msg, *args, extra=extra)
-
-        super()._log(level, msg, args, exc_info=exc_info, extra=extra, stack_info=stack_info)
+        Args:
+            level (str, int): either a string representing the desired log level ("INFO", "WARN"),
+                or an integer level such as logging.INFO or logging.DEBUG.
+            msg (str): the message to be logged
+            *args: the logged message will be msg % args
+        """
+        level = coerce_valid_log_level(level)
+        # log DagsterEvents regardless of level
+        if self.isEnabledFor(level) or ("extra" in kwargs and DAGSTER_META_KEY in kwargs["extra"]):
+            self._log(level, msg, args, **kwargs)
 
     def with_tags(self, **new_tags):
         """Add new tags in "new_tags" to the set of tags attached to this log manager instance, and
         return a new DagsterLogManager with the merged set of tags.
 
         Args:
-            tags (Dict[str,str]): Dictionary of tags
+            new_tags (Dict[str,str]): Dictionary of tags
 
         Returns:
             DagsterLogManager: a new DagsterLogManager namedtuple with updated tags for the same
                 run ID and loggers.
         """
         return DagsterLogManager(
-            logging_metadata=self.logging_metadata._replace(**new_tags),
-            loggers=self._loggers,
-            handlers=self.handlers,
+            dagster_handler=self._dagster_handler.with_tags(**new_tags),
+            managed_loggers=self._managed_loggers,
+            level=self.level,
         )

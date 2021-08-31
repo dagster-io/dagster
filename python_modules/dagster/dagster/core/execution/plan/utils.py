@@ -38,6 +38,8 @@ def solid_execution_error_boundary(error_cls, msg_fn, step_context, **kwargs):
     check.inst_param(step_context, "step_context", StepExecutionContext)
 
     with raise_execution_interrupts():
+
+        step_context.log.begin_python_log_capture()
         try:
             yield
         except DagsterError as de:
@@ -71,3 +73,5 @@ def solid_execution_error_boundary(error_cls, msg_fn, step_context, **kwargs):
                 original_exc_info=sys.exc_info(),
                 **kwargs,
             ) from e
+        finally:
+            step_context.log.end_python_log_capture()
