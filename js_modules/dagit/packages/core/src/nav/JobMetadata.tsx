@@ -309,11 +309,12 @@ const RelatedAssets: React.FC<{runs: RunMetadataFragment[]}> = ({runs}) => {
         canEscapeKeyClose
         isOpen={open}
         onClose={() => setOpen(false)}
+        style={{maxWidth: '80%', minWidth: '500px', width: 'auto'}}
       >
         <div className={Classes.DIALOG_BODY}>
           <Group direction="column" spacing={16}>
             {keys.map((key) => (
-              <Link key={key} to={`/instance/assets/${key}`}>
+              <Link key={key} to={`/instance/assets/${key}`} style={{wordBreak: 'break-word'}}>
                 {key}
               </Link>
             ))}
