@@ -7,8 +7,7 @@ description: Dagster is compatible and configurable with Python's logging module
 
 Dagster is compatible and configurable with [Python's logging module](https://docs.python.org/3/library/logging.html). You can specify and configure handlers and formatters to create custom log messages.
 
-## Configuring Python Logging
-<Experimental />
+## Configuring Python Logging <Experimental />
 
 In your config YAML, you can configure handlers and formatters that will apply to the Dagster instance, so all pipeline runs will share the same logging configuration.
 
@@ -23,17 +22,18 @@ python_logs:
         formatter: myFormatter
     formatters:
       myFormatter:
-        format: 'My formatted message: %(message)s'
+        format: "My formatted message: %(message)s"
 ```
 
-Handler and formatter configuration follows the [dictionary config schema format](https://docs.python.org/3/library/logging.config.html#logging-config-dictschema) in the Python logging module. Only the
-`handlers` and `formatters` dictionary keys will be accepted, as Dagster creates loggers internally.
+Handler and formatter configuration follows the [dictionary config schema format](https://docs.python.org/3/library/logging.config.html#logging-config-dictschema) in the Python logging module. Only the `handlers` and `formatters` dictionary keys will be accepted, as Dagster creates loggers internally.
 
 From there, standard `context.log` calls will output with your configured handlers and formatters.
 
 ### Example: Outputting Dagster Logs to a File
 
-Suppose we'd like to output all of our Dagster logs to a file. We can use the Python logging module's built-in [`logging.FileHandler`](https://docs.python.org/3/library/logging.handlers.html#logging.FileHandler) class to send log output to a disk file. We format our config YAML file by defining a new handler `myHandler` to be a `logging.FileHandler` object. Since we'd like our logs to appear with a timestamp, we define a custom formatter named `timeFormatter`, attaching it to `myHandler`.
+Suppose we'd like to output all of our Dagster logs to a file. We can use the Python logging module's built-in [`logging.FileHandler`](https://docs.python.org/3/library/logging.handlers.html#logging.FileHandler) class to send log output to a disk file. We format our config YAML file by defining a new handler `myHandler` to be a `logging.FileHandler` object.
+
+Optionally, we can configure a formatter to apply a custom format to our logs. Since we'd like our logs to appear with a timestamp, we define a custom formatter named `timeFormatter`, attaching it to `myHandler`.
 
 ```yaml file=/concepts/logging/python_logging_file_output_config.yaml
 python_logs:
@@ -42,14 +42,16 @@ python_logs:
       myHandler:
         class: logging.FileHandler
         level: INFO
-        filename: 'my_dagster_logs.log'
-        mode: 'a'
+        filename: "my_dagster_logs.log"
+        mode: "a"
         formatter: timeFormatter
     formatters:
       timeFormatter:
-        format: '%(asctime)s :: %(message)s'
+        format: "%(asctime)s :: %(message)s"
 ```
+
 Then, we execute the following pipeline:
+
 ```python file=/concepts/logging/file_output_pipeline.py
 @solid
 def file_log_solid(context):
@@ -60,7 +62,9 @@ def file_log_solid(context):
 def file_log_pipeline():
     file_log_solid()
 ```
+
 After execution, we can read the output log file `my_dagster_logs.log`. As expected, the log file contains the formatted log!
+
 <Image
 alt="log-file-output"
 src="/images/concepts/logging/log-file-output.png"
