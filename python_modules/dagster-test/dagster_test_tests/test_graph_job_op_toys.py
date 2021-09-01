@@ -30,26 +30,24 @@ from dagster_test.graph_job_op_toys.pyspark_assets.pyspark_assets_pipeline impor
     pyspark_assets_pipeline,
 )
 from dagster_test.graph_job_op_toys.repo import toys_repository
-from dagster_test.graph_job_op_toys.resources import resource_pipeline
-from dagster_test.graph_job_op_toys.retries import retry_pipeline
+from dagster_test.graph_job_op_toys.resources import resource_job
+from dagster_test.graph_job_op_toys.retries import retry_job
 from dagster_test.graph_job_op_toys.schedules import longitudinal_schedule
 from dagster_test.graph_job_op_toys.sleepy import sleepy_job
 from dagster_test.graph_job_op_toys.branches import branch_job, branch_failed_job
 from dagster_test.graph_job_op_toys.repo import toys_repository
 
-# def test_repo():
-#     assert toys_repository
+
+def test_repo():
+    assert toys_repository
 
 
 def test_toys_repo():
     with instance_for_test() as instance:
         recon_repo = ReconstructableRepository.for_file(__file__, "toys_repository")
-        # jobs = toys_repository.get_all_pipelines()
-        # for pipeline in jobs:
-        #     execute_pipeline(
-        #         recon_repo.get_reconstructable_pipeline(pipeline.name),
-        #         instance=instance,
-        #     )
+        jobs = toys_repository.get_all_pipelines()
+        for job in jobs:
+            recon_repo.get_reconstructable_pipeline(job.name).execute_in_process(instance=instance)
 
 
 def test_dynamic_job():
@@ -247,8 +245,5 @@ def test_asset_lineage_job():
     ).success
 
 
-# def test_retry_pipeline():
-#     assert execute_pipeline(
-#         retry_pipeline,
-#         run_config=retry_pipeline.get_preset("pass_after_retry").run_config,
-#     ).success
+def test_retry_job():
+    assert retry_job.execute_in_process().success

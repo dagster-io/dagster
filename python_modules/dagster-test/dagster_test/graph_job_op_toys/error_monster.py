@@ -17,6 +17,9 @@ from dagster import (
     op,
     graph,
 )
+from dagster.core.definitions.executor import (
+    in_process_executor,
+)
 from dagster.utils import segfault
 
 
@@ -63,8 +66,6 @@ class ErrorableResource:
 
 
 def resource_init(init_context):
-    print("whaat")
-    print(init_context.resource_config)
     if init_context.resource_config["throw_on_resource_init"]:
         raise Exception("throwing from in resource_fn")
     return ErrorableResource()
@@ -151,96 +152,45 @@ def str_to_num(context, string):
     return int(string)
 
 
-@graph
+@graph(
+    description="Demo pipeline that enables configurable types of errors thrown during pipeline execution, "
+    "including solid execution errors, type errors, and resource initialization errors."
+)
 def error_monster():
     start = emit_num.alias("start")()
     middle = num_to_str.alias("middle")(num=start)
     str_to_num.alias("end")(string=middle)
 
 
-# error_monster_job = error_monster.to_job(
-#         description="Demo pipeline that enables configurable types of errors thrown during pipeline execution, "
-#         "including solid execution errors, type errors, and resource initialization errors.",
-#         config={
-#             **{
-#                 "ops": {
-#                     "start": {"config": {"throw_in_op": False, "return_wrong_type": False}},
-#                     "middle": {"config": {"throw_in_op": False, "return_wrong_type": True}},
-#                     "end": {"config": {"throw_in_op": False, "return_wrong_type": False}},
-#                 },
-#                 "resources": {"errorable_resource": {"config": {"throw_on_resource_init": False}}},
-#             },
-#             **preset_run_config,
-#         },
-#         tags={"monster": "error"},
-#         resource_defs={
-#             "errorable_resource": define_errorable_resource(),
-#             "io_manager": errorable_io_manager,
-#         },
-#     )
-
-"""
-(
-    description=(
-        "Demo pipeline that enables configurable types of errors thrown during pipeline execution, "
-        "including solid execution errors, type errors, and resource initialization errors."
-    ),
-    mode_defs=[
-        ModeDefinition(
-            name="errorable_mode",
-            resource_defs={
-                "errorable_resource": define_errorable_resource(),
-                "io_manager": errorable_io_manager,
-            },
-        ),
-    ],
-    preset_defs=[
-        PresetDefinition.from_pkg_resources(
-            "passing",
-            pkg_resource_defs=[("dagster_test.toys.environments", "error.yaml")],
-            mode="errorable_mode",
-        )
-    ],
-    tags={"monster": "error"},
-)
-"""
-
 preset_run_config = PresetDefinition.from_pkg_resources(
     "passing",
-    pkg_resource_defs=[("dagster_test.toys.environments", "error.yaml")],
-    mode="errorable_mode",
+    pkg_resource_defs=[("dagster_test.graph_job_op_toys.environments", "error.yaml")],
 ).run_config
 
+error_monster_passing_job = error_monster.to_job(
+    resource_defs={
+        "errorable_resource": define_errorable_resource(),
+        "io_manager": errorable_io_manager,
+    },
+    config=preset_run_config,
+    tags={"monster": "error"},
+    executor_def=in_process_executor,
+)
+
 if __name__ == "__main__":
-    # result = error_monster.execute_in_process()
-    #     execute_pipeline(
-    #     error_monster,
-    #     {
-    #         "solids": {
-    #             "start": {"config": {"throw_in_solid": False, "return_wrong_type": False}},
-    #             "middle": {"config": {"throw_in_solid": False, "return_wrong_type": True}},
-    #             "end": {"config": {"throw_in_solid": False, "return_wrong_type": False}},
-    #         },
-    #         "resources": {"errorable_resource": {"config": {"throw_on_resource_init": False}}},
-    #     },
-    # )
     result = error_monster.to_job(
-        description="Demo pipeline that enables configurable types of errors thrown during pipeline execution, "
-        "including solid execution errors, type errors, and resource initialization errors.",
         config={
-            **{
-                "ops": {
-                    "start": {"config": {"throw_in_op": False, "return_wrong_type": False}},
-                    "middle": {"config": {"throw_in_op": False, "return_wrong_type": True}},
-                    "end": {"config": {"throw_in_op": False, "return_wrong_type": False}},
-                },
-                "resources": {"errorable_resource": {"config": {"throw_on_resource_init": False}}},
+            "ops": {
+                "start": {"config": {"throw_in_op": False, "return_wrong_type": False}},
+                "middle": {"config": {"throw_in_op": False, "return_wrong_type": True}},
+                "end": {"config": {"throw_in_op": False, "return_wrong_type": False}},
             },
-            **preset_run_config,
+            "resources": {"errorable_resource": {"config": {"throw_on_resource_init": False}}},
         },
         tags={"monster": "error"},
         resource_defs={
             "errorable_resource": define_errorable_resource(),
             "io_manager": errorable_io_manager,
         },
+        executor_def=in_process_executor,
     ).execute_in_process()

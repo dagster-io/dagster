@@ -3,16 +3,16 @@ resources:
     config:
       throw_on_resource_init: false
 
-solids:
+ops:
   end:
     config:
       return_wrong_type: false
-      throw_in_solid: false
+      throw_in_op: false
   middle:
     config:
       return_wrong_type: false
-      throw_in_solid: false
+      throw_in_op: false
   start:
     config:
       return_wrong_type: false
-      throw_in_solid: false
+      throw_in_op: false
