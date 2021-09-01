@@ -90,7 +90,7 @@ class SnowflakeIOManager(IOManager):
     def handle_output(self, context: OutputContext, obj: Union[PandasDataFrame, SparkDataFrame]):
         schema, table = context.metadata["table"].split(".")
 
-        with connect_snowflake(config=context.resource_config) as con:
+        with connect_snowflake(config=context.resource_config, schema=schema) as con:
             con.execute(self._get_cleanup_statement(table, context.resources))
 
         if isinstance(obj, SparkDataFrame):
