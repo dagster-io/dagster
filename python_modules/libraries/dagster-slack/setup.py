@@ -32,7 +32,6 @@ if __name__ == "__main__":
         install_requires=[
             f"dagster{pin}",
             "slack_sdk",
-            "aiohttp",
         ],
         zip_safe=False,
     )
