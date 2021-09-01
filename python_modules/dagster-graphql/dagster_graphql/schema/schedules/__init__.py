@@ -3,6 +3,7 @@ from dagster import check
 from dagster.core.host_representation import ExternalSchedule, ScheduleSelector
 from dagster.core.host_representation.selector import RepositorySelector
 from dagster.core.scheduler.job import JobTickStatsSnapshot
+from dagster.core.workspace.permissions import Permissions
 
 from ...implementation.fetch_schedules import (
     reconcile_scheduler_state,
@@ -96,7 +97,7 @@ class GrapheneReconcileSchedulerStateMutation(graphene.Mutation):
         name = "ReconcileSchedulerStateMutation"
 
     @capture_error
-    @check_permission("start_schedule")
+    @check_permission(Permissions.START_SCHEDULE)
     def mutate(self, graphene_info, repository_selector):
         return reconcile_scheduler_state(
             graphene_info, RepositorySelector.from_graphql_input(repository_selector)

@@ -6,12 +6,7 @@ from dagster.utils.error import serializable_error_info_from_exc_info
 from graphql.execution.base import ResolveInfo
 from rx import Observable
 
-from ..external import (
-    ExternalPipeline,
-    ensure_valid_config,
-    ensure_valid_step_keys,
-    get_external_pipeline_or_raise,
-)
+from ..external import ExternalPipeline, ensure_valid_config, get_external_pipeline_or_raise
 from ..fetch_runs import is_config_valid
 from ..pipeline_run_storage import PipelineRunObservableSubscribe
 from ..utils import ExecutionParams, UserFacingGraphQLError, capture_error

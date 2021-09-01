@@ -15,7 +15,7 @@ import {TimeElapsed} from './TimeElapsed';
 import {RunDetailsFragment} from './types/RunDetailsFragment';
 import {RunFragment} from './types/RunFragment';
 
-const timingStringForStatus = (status?: PipelineRunStatus) => {
+export const timingStringForStatus = (status?: PipelineRunStatus) => {
   switch (status) {
     case PipelineRunStatus.QUEUED:
       return 'Queued';

@@ -37,7 +37,18 @@ if TYPE_CHECKING:
     from .solid import NodeDefinition
 
 
-class SolidInvocation(namedtuple("Solid", "name alias tags hook_defs retry_policy")):
+class SolidInvocation(
+    NamedTuple(
+        "Solid",
+        [
+            ("name", str),
+            ("alias", Optional[str]),
+            ("tags", Dict[str, Any]),
+            ("hook_defs", AbstractSet[HookDefinition]),
+            ("retry_policy", Optional[RetryPolicy]),
+        ],
+    )
+):
     """Identifies an instance of a solid in a pipeline dependency structure.
 
     Args:
@@ -405,7 +416,9 @@ class NodeHandle(
 register_serdes_tuple_fallbacks({"SolidHandle": NodeHandle})
 
 
-class SolidInputHandle(namedtuple("_SolidInputHandle", "solid input_def")):
+class SolidInputHandle(
+    NamedTuple("_SolidInputHandle", [("solid", Node), ("input_def", InputDefinition)])
+):
     def __new__(cls, solid: Node, input_def: InputDefinition):
         return super(SolidInputHandle, cls).__new__(
             cls,
@@ -441,7 +454,9 @@ class SolidInputHandle(namedtuple("_SolidInputHandle", "solid input_def")):
         return self.input_def.name
 
 
-class SolidOutputHandle(namedtuple("_SolidOutputHandle", "solid output_def")):
+class SolidOutputHandle(
+    NamedTuple("_SolidOutputHandle", [("solid", Node), ("output_def", OutputDefinition)])
+):
     def __new__(cls, solid: Node, output_def: OutputDefinition):
         return super(SolidOutputHandle, cls).__new__(
             cls,
@@ -497,7 +512,10 @@ class IDependencyDefinition(ABC):  # pylint: disable=no-init
 
 
 class DependencyDefinition(
-    namedtuple("_DependencyDefinition", "solid output description"), IDependencyDefinition
+    NamedTuple(
+        "_DependencyDefinition", [("solid", str), ("output", str), ("description", Optional[str])]
+    ),
+    IDependencyDefinition,
 ):
     """Represents an edge in the DAG of solid instances forming a pipeline.
 
@@ -550,7 +568,11 @@ class DependencyDefinition(
 
 
 class MultiDependencyDefinition(
-    namedtuple("_MultiDependencyDefinition", "dependencies"), IDependencyDefinition
+    NamedTuple(
+        "_MultiDependencyDefinition",
+        [("dependencies", List[Union[DependencyDefinition, Type["MappedInputPlaceholder"]]])],
+    ),
+    IDependencyDefinition,
 ):
     """Represents a fan-in edge in the DAG of solid instances forming a pipeline.
 
@@ -812,7 +834,7 @@ class DependencyStructure:
         self,
         input_handle: SolidInputHandle,
         output_handle: SolidOutputHandle,
-    ):
+    ) -> None:
         if self._dynamic_fan_out_index.get(input_handle.solid_name):
             raise DagsterInvalidDefinitionError(
                 f'Solid "{input_handle.solid_name}" cannot both collect over dynamic output '

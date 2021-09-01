@@ -2,8 +2,6 @@ import LRU from 'lru-cache';
 
 import {featureEnabled, FeatureFlag} from './Flags';
 
-export const DEFAULT_RESULT_NAME = 'result';
-
 function twoDigit(v: number) {
   return `${v < 10 ? '0' : ''}${v}`;
 }
@@ -83,12 +81,6 @@ export function weakmapMemoize<T extends object, R>(
     cache.set(arg, r);
     return r;
   };
-}
-
-export function titleOfIO(i: {solid: {name: string}; definition: {name: string}}) {
-  return i.solid.name !== DEFAULT_RESULT_NAME
-    ? `${i.solid.name}:${i.definition.name}`
-    : i.solid.name;
 }
 
 export function assertUnreachable(_: never): never {

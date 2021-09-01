@@ -19,12 +19,14 @@ from dagster.core.definitions import (
     ExpectationResult,
     Failure,
     FloatMetadataEntryData,
+    GraphDefinition,
     HookDefinition,
     In,
     InputDefinition,
     InputMapping,
     IntMetadataEntryData,
     IntermediateStorageDefinition,
+    JobFailureSensorContext,
     JsonMetadataEntryData,
     LoggerDefinition,
     MarkdownMetadataEntryData,
@@ -43,10 +45,13 @@ from dagster.core.definitions import (
     PipelineFailureSensorContext,
     PresetDefinition,
     PythonArtifactMetadataEntryData,
+    RepositoryData,
     RepositoryDefinition,
     ResourceDefinition,
     RetryRequested,
     RunRequest,
+    RunStatusSensorContext,
+    RunStatusSensorDefinition,
     ScheduleDefinition,
     ScheduleEvaluationContext,
     ScheduleExecutionContext,
@@ -72,6 +77,7 @@ from dagster.core.definitions import (
     hourly_schedule,
     in_process_executor,
     intermediate_storage,
+    job_failure_sensor,
     lambda_solid,
     logger,
     make_values_resource,
@@ -85,6 +91,7 @@ from dagster.core.definitions import (
     reconstructable,
     repository,
     resource,
+    run_status_sensor,
     schedule,
     schedule_from_partitions,
     sensor,
@@ -97,6 +104,12 @@ from dagster.core.definitions.configurable import configured
 from dagster.core.definitions.policy import Backoff, Jitter, RetryPolicy
 from dagster.core.definitions.schedule import build_schedule_context
 from dagster.core.definitions.sensor import build_sensor_context
+from dagster.core.definitions.utils import (
+    config_from_files,
+    config_from_pkg_resources,
+    config_from_yaml_strings,
+)
+from dagster.core.definitions.version_strategy import VersionStrategy
 from dagster.core.errors import (
     DagsterConfigMappingFunctionError,
     DagsterError,
@@ -154,6 +167,7 @@ from dagster.core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io_
 from dagster.core.storage.init import InitIntermediateStorageContext
 from dagster.core.storage.io_manager import IOManager, IOManagerDefinition, io_manager
 from dagster.core.storage.mem_io_manager import mem_io_manager
+from dagster.core.storage.memoizable_io_manager import MemoizableIOManager
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.storage.root_input_manager import (
     RootInputManager,
@@ -167,6 +181,7 @@ from dagster.core.storage.system_storage import (
     io_manager_from_intermediate_storage,
     mem_intermediate_storage,
 )
+from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 from dagster.core.types.config_schema import (
     DagsterTypeLoader,
     DagsterTypeMaterializer,
@@ -216,6 +231,7 @@ __all__ = [
     "ExpectationResult",
     "Failure",
     "Field",
+    "GraphDefinition",
     "HookDefinition",
     "In",
     "InputDefinition",
@@ -238,6 +254,7 @@ __all__ = [
     "PipelineDefinition",
     "PresetDefinition",
     "PythonArtifactMetadataEntryData",
+    "RepositoryData",
     "RepositoryDefinition",
     "ResourceDefinition",
     "SolidDefinition",
@@ -248,8 +265,7 @@ __all__ = [
     "RetryPolicy",
     "Backoff",
     "Jitter",
-    "PipelineFailureSensorContext",
-    "pipeline_failure_sensor",
+    "RunStatusSensorDefinition",
     "DynamicOutput",
     "DynamicOut",
     "DynamicOutputDefinition",
@@ -270,6 +286,9 @@ __all__ = [
     "solid",
     "success_hook",
     "failure_hook",
+    "job_failure_sensor",
+    "pipeline_failure_sensor",
+    "run_status_sensor",
     # Execution
     "CompositeSolidExecutionResult",
     "DagsterEvent",
@@ -340,6 +359,9 @@ __all__ = [
     "execute_solid",
     "execute_solids_within_pipeline",
     "file_relative_path",
+    "config_from_files",
+    "config_from_pkg_resources",
+    "config_from_yaml_strings",
     "configured",
     # types
     "Any",
@@ -403,6 +425,9 @@ __all__ = [
     "SensorDefinition",
     "SensorEvaluationContext",
     "SensorExecutionContext",
+    "JobFailureSensorContext",
+    "PipelineFailureSensorContext",
+    "RunStatusSensorContext",
     "build_sensor_context",
     "SkipReason",
     "daily_schedule",
@@ -424,4 +449,8 @@ __all__ = [
     "custom_path_fs_io_manager",
     # warnings
     "ExperimentalWarning",
+    # Versioning / Memoization
+    "VersionStrategy",
+    "MEMOIZED_RUN_TAG",
+    "MemoizableIOManager",
 ]

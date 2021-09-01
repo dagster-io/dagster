@@ -1,6 +1,5 @@
 import memoize from 'lodash/memoize';
-// eslint-disable-next-line import/no-webpack-loader-syntax
-import LayoutWorker from 'worker-loader!../workers/dagre_layout.worker';
+import LayoutWorker from 'worker-loader!../workers/dagre_layout.worker.ts';
 
 import {asyncMemoize} from '../app/Util';
 
@@ -22,7 +21,7 @@ export const getDagrePipelineLayout = memoize(layoutPipeline, _layoutCacheKey);
 const _asyncDagrePipelineLayout = (solids: ILayoutSolid[], parentSolid?: ILayoutSolid) => {
   return new Promise((resolve) => {
     const worker = new LayoutWorker();
-    worker.addEventListener('message', function (event) {
+    worker.addEventListener('message', (event) => {
       resolve(event.data);
       worker.terminate();
     });

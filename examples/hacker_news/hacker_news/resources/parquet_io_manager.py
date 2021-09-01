@@ -46,7 +46,7 @@ class ParquetIOManager(IOManager):
         if context.dagster_type.typing_type == pyspark.sql.DataFrame:
             # return pyspark dataframe
             return context.resources.pyspark.spark_session.read.parquet(path)
-        elif context.dagster_type.key == "String":
+        elif context.dagster_type.typing_type == str:
             # return path to parquet files
             return path
         return check.failed(

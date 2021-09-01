@@ -23,6 +23,7 @@ class UserDeployment(BaseModel):
     resources: Optional[kubernetes.Resources]
     livenessProbe: Optional[kubernetes.LivenessProbe]
     startupProbe: Optional[kubernetes.StartupProbe]
+    labels: Optional[Dict[str, str]]
 
 
 class UserDeployments(BaseModel):

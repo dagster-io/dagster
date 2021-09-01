@@ -13,9 +13,8 @@ from dagster.core.execution.plan.execute_plan import inner_plan_execution_iterat
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.plan.state import KnownExecutionState
-from dagster.core.execution.resolve_versions import resolve_memoized_execution_plan
 from dagster.core.execution.retries import RetryMode
-from dagster.core.instance import DagsterInstance, is_memoized_run
+from dagster.core.instance import DagsterInstance
 from dagster.core.selector import parse_step_selection
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.system_config.objects import ResolvedRunConfig
@@ -186,19 +185,6 @@ def execute_run(
             )
 
     execution_plan = _get_execution_plan_from_run(pipeline, pipeline_run, instance)
-
-    if is_memoized_run(pipeline_run.tags):
-        resolved_run_config = ResolvedRunConfig.build(
-            pipeline.get_definition(), pipeline_run.run_config, pipeline_run.mode
-        )
-
-        execution_plan = resolve_memoized_execution_plan(
-            execution_plan,
-            pipeline.get_definition(),
-            pipeline_run.run_config,
-            instance,
-            resolved_run_config,
-        )
 
     output_capture: Optional[Dict[StepOutputHandle, Any]] = {}
 
@@ -717,13 +703,17 @@ def create_execution_plan(
     mode: Optional[str] = None,
     step_keys_to_execute: Optional[List[str]] = None,
     known_state: KnownExecutionState = None,
+    instance: Optional[DagsterInstance] = None,
+    tags: Optional[Dict[str, str]] = None,
 ) -> ExecutionPlan:
     pipeline = _check_pipeline(pipeline)
     pipeline_def = pipeline.get_definition()
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
     run_config = check.opt_dict_param(run_config, "run_config", key_type=str)
     mode = check.opt_str_param(mode, "mode", default=pipeline_def.get_default_mode_name())
-    check.opt_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
+    check.opt_nullable_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
+    check.opt_inst_param(instance, "instance", DagsterInstance)
+    tags = check.opt_dict_param(tags, "tags", key_type=str, value_type=str)
 
     resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config, mode=mode)
 
@@ -732,6 +722,8 @@ def create_execution_plan(
         resolved_run_config,
         step_keys_to_execute=step_keys_to_execute,
         known_state=known_state,
+        instance=instance,
+        tags=tags,
     )
 
 
@@ -978,5 +970,6 @@ def _resolve_reexecute_step_selection(
         mode,
         step_keys_to_execute=list(step_keys_to_execute),
         known_state=KnownExecutionState.for_reexecution(parent_logs, step_keys_to_execute),
+        tags=parent_pipeline_run.tags,
     )
     return execution_plan

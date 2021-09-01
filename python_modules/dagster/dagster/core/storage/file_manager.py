@@ -158,9 +158,12 @@ class FileManager(ABC):  # pylint: disable=no-init
         raise NotImplementedError()
 
 
-@resource(config_schema={"base_dir": Field(StringSource, default_value=".", is_required=False)})
+@resource(config_schema={"base_dir": Field(StringSource, is_required=False)})
 def local_file_manager(init_context):
     """FileManager that provides abstract access to a local filesystem.
+
+    By default, files will be stored in `<local_artifact_storage>/storage/file_manager` where
+    `<local_artifact_storage>` can be configured the ``dagster.yaml`` file in ``$DAGSTER_HOME``.
 
     Implements the :py:class:`~dagster.core.storage.file_manager.FileManager` API.
 
@@ -198,9 +201,29 @@ def local_file_manager(init_context):
         def files_pipeline():
             read_files(write_files())
 
+    Or to specify the file directory:
+
+    .. code-block:: python
+
+        @pipeline(
+            mode_defs=[
+                ModeDefinition(
+                    resource_defs={
+                        "file_manager": local_file_manager.configured({"base_dir": "/my/base/dir"})
+                    }
+                )
+            ]
+        )
+        def files_pipeline():
+            read_files(write_files())
+
     """
 
-    return LocalFileManager(init_context.resource_config["base_dir"])
+    return LocalFileManager(
+        base_dir=init_context.resource_config.get(
+            "base_dir", os.path.join(init_context.instance.storage_directory(), "file_manager")
+        )
+    )
 
 
 def check_file_like_obj(obj):

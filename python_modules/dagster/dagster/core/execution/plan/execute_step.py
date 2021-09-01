@@ -69,7 +69,7 @@ def _step_output_error_checked_user_event_sequence(
 
         # do additional processing on Outputs
         output = user_event
-        if not step.has_step_output(output.output_name):
+        if not step.has_step_output(cast(str, output.output_name)):
             raise DagsterInvariantViolationError(
                 'Core compute for solid "{handle}" returned an output '
                 '"{output.output_name}" that does not exist. The available '
@@ -78,7 +78,7 @@ def _step_output_error_checked_user_event_sequence(
                 )
             )
 
-        step_output = step.step_output_named(output.output_name)
+        step_output = step.step_output_named(cast(str, output.output_name))
         output_def = step_context.pipeline_def.get_solid(step_output.solid_handle).output_def_named(
             step_output.name
         )
@@ -177,6 +177,7 @@ def _type_checked_event_sequence_for_input(
     step_input = step_context.step.step_input_named(input_name)
     input_def = step_input.source.get_input_def(step_context.pipeline_def)
     dagster_type = input_def.dagster_type
+    type_check_context = step_context.for_type(dagster_type)
     with user_code_error_boundary(
         DagsterTypeCheckError,
         lambda: (
@@ -184,8 +185,9 @@ def _type_checked_event_sequence_for_input(
             f'"{str(step_context.step.solid_handle)}", with Python type {type(input_value)} and '
             f"Dagster type {dagster_type.display_name}"
         ),
+        log_manager=type_check_context.log,
     ):
-        type_check = do_type_check(step_context.for_type(dagster_type), dagster_type, input_value)
+        type_check = do_type_check(type_check_context, dagster_type, input_value)
 
     yield _create_step_input_event(
         step_context, input_name, type_check=type_check, success=type_check.success
@@ -196,7 +198,7 @@ def _type_checked_event_sequence_for_input(
             description=(
                 f'Type check failed for step input "{input_name}" - '
                 f'expected type "{dagster_type.display_name}". '
-                f"Description: {type_check.description}."
+                f"Description: {type_check.description}"
             ),
             metadata_entries=type_check.metadata_entries,
             dagster_type=dagster_type,
@@ -216,6 +218,7 @@ def _type_check_output(
     step_output_def = step_context.solid_def.output_def_named(step_output.name)
 
     dagster_type = step_output_def.dagster_type
+    type_check_context = step_context.for_type(dagster_type)
     with user_code_error_boundary(
         DagsterTypeCheckError,
         lambda: (
@@ -223,8 +226,9 @@ def _type_check_output(
             f'"{str(step_context.step.solid_handle)}", with Python type {type(output.value)} and '
             f"Dagster type {dagster_type.display_name}"
         ),
+        log_manager=type_check_context.log,
     ):
-        type_check = do_type_check(step_context.for_type(dagster_type), dagster_type, output.value)
+        type_check = do_type_check(type_check_context, dagster_type, output.value)
 
     yield DagsterEvent.step_output_event(
         step_context=step_context,
@@ -441,7 +445,7 @@ def _get_output_asset_materializations(
     all_metadata = output.metadata_entries + io_manager_metadata_entries
 
     if asset_partitions:
-        metadata_mapping: Dict[str, List[Union[str, "EventMetadataEntry"]]] = {
+        metadata_mapping: Dict[str, List["EventMetadataEntry"]] = {
             partition: [] for partition in asset_partitions
         }
         for entry in all_metadata:
@@ -471,7 +475,9 @@ def _get_output_asset_materializations(
                     f"Output {output_def.name} got a PartitionMetadataEntry ({entry}), but "
                     "is not associated with any specific partitions."
                 )
-        yield AssetMaterialization(asset_key=asset_key, metadata_entries=all_metadata)
+        yield AssetMaterialization(
+            asset_key=asset_key, metadata_entries=cast(List["EventMetadataEntry"], all_metadata)
+        )
 
 
 def _store_output(
@@ -576,6 +582,7 @@ def _create_type_materializations(
                         f'\n    solid invocation: "{step_context.solid.name}"'
                         f'\n    solid definition: "{step_context.solid_def.name}"'
                     ),
+                    log_manager=step_context.log,
                 ):
                     output_def = step_context.solid_def.output_def_named(step_output.name)
                     dagster_type = output_def.dagster_type

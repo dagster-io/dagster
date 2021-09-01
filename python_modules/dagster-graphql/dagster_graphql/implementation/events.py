@@ -18,6 +18,9 @@ from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventLogEntry
 from dagster.core.execution.plan.objects import StepFailureData
 
+MAX_INT = 2147483647
+MIN_INT = -2147483648
+
 
 def iterate_metadata_entries(metadata_entries):
     from ..schema.logs.events import (
@@ -87,7 +90,7 @@ def iterate_metadata_entries(metadata_entries):
         elif isinstance(metadata_entry.entry_data, IntMetadataEntryData):
             # coerce > 32 bit ints to null
             int_val = None
-            if metadata_entry.entry_data.value.bit_length() <= 32:
+            if MIN_INT <= metadata_entry.entry_data.value <= MAX_INT:
                 int_val = metadata_entry.entry_data.value
 
             yield GrapheneEventIntMetadataEntry(
@@ -204,7 +207,11 @@ def from_dagster_event_record(event_record, pipeline_name):
     elif dagster_event.event_type == DagsterEventType.STEP_FAILURE:
         check.inst(dagster_event.step_failure_data, StepFailureData)
         return GrapheneExecutionStepFailureEvent(
-            error=GraphenePythonError(dagster_event.step_failure_data.error),
+            error=(
+                GraphenePythonError(dagster_event.step_failure_data.error)
+                if dagster_event.step_failure_data.error
+                else None
+            ),
             failureMetadata=dagster_event.step_failure_data.user_failure_data,
             errorSource=dagster_event.step_failure_data.error_source,
             **basic_params,

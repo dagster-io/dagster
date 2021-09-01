@@ -1,8 +1,10 @@
-import {ProgressBar} from '@blueprintjs/core';
 import * as React from 'react';
+import styled from 'styled-components/macro';
 
 import {PipelineExplorerSolidHandleFragment} from '../pipelines/types/PipelineExplorerSolidHandleFragment';
 import {SolidNameOrPath} from '../solids/SolidNameOrPath';
+import {Box} from '../ui/Box';
+import {Spinner} from '../ui/Spinner';
 
 import {PipelineGraph} from './PipelineGraph';
 import {asyncDagrePipelineLayout, getDagrePipelineLayout} from './getFullSolidLayout';
@@ -11,7 +13,7 @@ import {PipelineGraphSolidFragment} from './types/PipelineGraphSolidFragment';
 
 const ASYNC_LAYOUT_SOLID_COUNT = 50;
 
-interface IPipelineGraphContainerProps {
+interface Props {
   pipelineName: string;
   backgroundColor: string;
   solids: PipelineGraphSolidFragment[];
@@ -25,7 +27,38 @@ interface IPipelineGraphContainerProps {
   onClickBackground?: () => void;
 }
 
-export function PipelineGraphContainer(props: IPipelineGraphContainerProps) {
+type State = {
+  loading: boolean;
+  layout: IFullPipelineLayout | null;
+  layoutSolidKey: string;
+};
+
+type Action =
+  | {type: 'loading'}
+  | {type: 'layout'; payload: {layout: IFullPipelineLayout; layoutSolidKey: string}};
+
+const reducer = (state: State, action: Action): State => {
+  switch (action.type) {
+    case 'loading':
+      return {loading: true, layout: null, layoutSolidKey: ''};
+    case 'layout':
+      return {
+        loading: false,
+        layout: action.payload.layout,
+        layoutSolidKey: action.payload.layoutSolidKey,
+      };
+    default:
+      return state;
+  }
+};
+
+const initialState: State = {
+  loading: false,
+  layout: null,
+  layoutSolidKey: '',
+};
+
+export const PipelineGraphContainer: React.FC<Props> = (props) => {
   const {
     pipelineName,
     backgroundColor,
@@ -39,33 +72,38 @@ export function PipelineGraphContainer(props: IPipelineGraphContainerProps) {
     onLeaveCompositeSolid,
     onClickBackground,
   } = props;
+  const [state, dispatch] = React.useReducer(reducer, initialState);
+
   const parentSolid = parentHandle && parentHandle.solid;
-  const [loading, setLoading] = React.useState(false);
-  const [layoutSolidKey, setLayoutSolidKey] = React.useState('');
-  const [layout, setLayout] = React.useState<IFullPipelineLayout | undefined>();
   const solidKey = solids.map((x) => x.name).join('|');
   const parentSolidKey = parentSolid && parentSolid.name;
 
   React.useEffect(() => {
     async function delegateDagrePipelineLayout() {
-      setLoading(true);
-      const _layout = (await asyncDagrePipelineLayout(solids, parentSolid)) as IFullPipelineLayout;
-      setLayout(_layout);
-      setLoading(false);
-      setLayoutSolidKey(solidKey);
+      dispatch({type: 'loading'});
+      const layout = await asyncDagrePipelineLayout(solids, parentSolid);
+      dispatch({
+        type: 'layout',
+        payload: {layout: layout as IFullPipelineLayout, layoutSolidKey: solidKey},
+      });
     }
+
     if (solids.length < ASYNC_LAYOUT_SOLID_COUNT) {
-      setLayout(getDagrePipelineLayout(solids, parentSolid));
-      setLayoutSolidKey(solidKey);
-      setLoading(false);
+      const layout = getDagrePipelineLayout(solids, parentSolid);
+      dispatch({type: 'layout', payload: {layout, layoutSolidKey: solidKey}});
     } else {
       delegateDagrePipelineLayout();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [solidKey, parentSolidKey]);
+  }, [solidKey, parentSolidKey, solids, parentSolid]);
 
+  const {loading, layout, layoutSolidKey} = state;
   if (loading || !layout || solidKey !== layoutSolidKey) {
-    return <PipelineGraphLoading backgroundColor={backgroundColor} />;
+    return (
+      <PipelineGraphLoading
+        backgroundColor={backgroundColor}
+        manySolids={solids.length > ASYNC_LAYOUT_SOLID_COUNT}
+      />
+    );
   }
 
   return (
@@ -86,26 +124,29 @@ export function PipelineGraphContainer(props: IPipelineGraphContainerProps) {
       layout={layout}
     />
   );
-}
+};
 
-function PipelineGraphLoading({backgroundColor}: {backgroundColor: string}) {
+const PipelineGraphLoading: React.FC<{backgroundColor: string; manySolids: boolean}> = (props) => {
+  const {backgroundColor, manySolids} = props;
   return (
-    <div
-      style={{
-        backgroundColor,
-        position: 'absolute',
-        top: 0,
-        bottom: 0,
-        left: 0,
-        right: 0,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <div style={{maxWidth: 600, width: '75%'}}>
-        <ProgressBar />
-      </div>
-    </div>
+    <LoadingContainer $backgroundColor={backgroundColor}>
+      {manySolids ? (
+        <Box margin={{bottom: 24}}>Rendering a large number of solids, please wait…</Box>
+      ) : null}
+      <Spinner purpose="page" />
+    </LoadingContainer>
   );
-}
+};
+
+const LoadingContainer = styled.div<{$backgroundColor: string}>`
+  background-color: ${({$backgroundColor}) => $backgroundColor};
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+`;

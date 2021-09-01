@@ -1,6 +1,7 @@
 import numpy as np
 from dagster import OutputDefinition, solid
-from pandas import DataFrame, Series
+from hacker_news.solids.user_story_matrix import IndexedCooMatrix
+from pandas import DataFrame
 from scipy.sparse import coo_matrix, csc_matrix, csr_matrix
 from sklearn.decomposition import TruncatedSVD
 
@@ -14,11 +15,7 @@ from sklearn.decomposition import TruncatedSVD
     ],
 )
 def build_user_top_recommended_stories(
-    context,
-    model: TruncatedSVD,
-    user_story_matrix: coo_matrix,
-    row_users: Series,
-    col_stories: Series,
+    context, model: TruncatedSVD, user_story_matrix: IndexedCooMatrix
 ) -> DataFrame:
     """
     Find the top stories for each commenter (user).
@@ -29,7 +26,7 @@ def build_user_top_recommended_stories(
         relevance (float)
     """
     # Compute XV, which has a row for each user and a column for each component
-    XV = model.transform(user_story_matrix)
+    XV = model.transform(user_story_matrix.matrix)
 
     # Now we want to project XV back into story-space.  As a dense matrix, the product would be way
     # too big - | # users * # stories|, so we sparsify both the multiplicands to make it more
@@ -48,8 +45,8 @@ def build_user_top_recommended_stories(
     X_hat = sparse_XV @ sparse_components
 
     coo = coo_matrix(X_hat)
-    story_ids = col_stories[coo.col].values
-    user_ids = row_users[coo.row].values
+    story_ids = user_story_matrix.col_index[coo.col].values
+    user_ids = user_story_matrix.row_index[coo.row].values
     context.log.info(f"recommendations: {len(story_ids)}")
 
     return DataFrame.from_dict({"user_id": user_ids, "story_id": story_ids, "relevance": coo.data})

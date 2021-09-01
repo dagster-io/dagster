@@ -1,6 +1,8 @@
 # pylint: disable=protected-access
+import dagster_aws
 import pytest
 from dagster.check import CheckError
+from dagster_aws.ecs import EcsEventualConsistencyTimeout
 
 
 def test_default_launcher(
@@ -123,3 +125,42 @@ def test_launching_custom_task_definition(
         assert override["name"] == container_name
         assert "execute_run" in override["command"]
         assert run.run_id in str(override["command"])
+
+
+def test_eventual_consistency(ecs, instance, workspace, run, monkeypatch):
+    initial_tasks = ecs.list_tasks()["taskArns"]
+
+    retries = 0
+    original_describe_tasks = instance.run_launcher.ecs.describe_tasks
+    original_backoff_retries = dagster_aws.ecs.launcher.BACKOFF_RETRIES
+
+    def describe_tasks(*_args, **_kwargs):
+        nonlocal retries
+        nonlocal original_describe_tasks
+
+        if retries > 1:
+            return original_describe_tasks(*_args, **_kwargs)
+        retries += 1
+        return {"tasks": []}
+
+    with pytest.raises(EcsEventualConsistencyTimeout):
+        monkeypatch.setattr(instance.run_launcher.ecs, "describe_tasks", describe_tasks)
+        monkeypatch.setattr(dagster_aws.ecs.launcher, "BACKOFF_RETRIES", 0)
+        instance.launch_run(run.run_id, workspace)
+
+    # Reset the mock
+    retries = 0
+    monkeypatch.setattr(dagster_aws.ecs.launcher, "BACKOFF_RETRIES", original_backoff_retries)
+    instance.launch_run(run.run_id, workspace)
+
+    tasks = ecs.list_tasks()["taskArns"]
+    assert len(tasks) == len(initial_tasks) + 1
+
+    # backoff fails for reasons unrelated to eventual consistency
+
+    def exploding_describe_tasks(*_args, **_kwargs):
+        raise Exception("boom")
+
+    with pytest.raises(Exception, match="boom"):
+        monkeypatch.setattr(instance.run_launcher.ecs, "describe_tasks", exploding_describe_tasks)
+        instance.launch_run(run.run_id, workspace)

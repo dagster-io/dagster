@@ -3,6 +3,7 @@ import {render, screen, waitFor} from '@testing-library/react';
 import * as React from 'react';
 
 import {TestProvider} from '../testing/TestProvider';
+import {LocationStateChangeEventType} from '../types/globalTypes';
 
 import {LAST_REPO_KEY, LeftNavRepositorySection, REPO_KEYS} from './LeftNavRepositorySection';
 
@@ -17,6 +18,9 @@ describe('Repository options', () => {
     }),
     Sensors: () => ({
       results: () => new MockList(0),
+    }),
+    LocationStateChangeEvent: () => ({
+      eventType: () => LocationStateChangeEventType.LOCATION_UPDATED,
     }),
   };
 
@@ -60,7 +64,25 @@ describe('Repository options', () => {
     const locationTwo = 'bar';
     const repoTwo = 'foo';
 
-    const mocks = {
+    const mocksWithOne = {
+      Workspace: () => ({
+        locationEntries: () => [
+          {
+            name: locationOne,
+            locationOrLoadError: {
+              name: locationOne,
+              repositories: () =>
+                new MockList(1, () => ({
+                  name: repoOne,
+                  pipelines: () => new MockList(2),
+                })),
+            },
+          },
+        ],
+      }),
+    };
+
+    const mocksWithTwo = {
       Workspace: () => ({
         locationEntries: () => [
           {
@@ -89,10 +111,10 @@ describe('Repository options', () => {
       }),
     };
 
-    it('initializes with first repo option, if no localStorage', async () => {
+    it('initializes with first repo option, if one option and no localStorage', async () => {
       render(
         <TestProvider
-          apolloProps={{mocks: [defaultMocks, mocks]}}
+          apolloProps={{mocks: [defaultMocks, mocksWithOne]}}
           routerProps={{initialEntries: ['/instance/runs']}}
         >
           <LeftNavRepositorySection />
@@ -105,11 +127,27 @@ describe('Repository options', () => {
       });
     });
 
+    it('initializes empty, if multiple options and no localStorage', async () => {
+      render(
+        <TestProvider
+          apolloProps={{mocks: [defaultMocks, mocksWithTwo]}}
+          routerProps={{initialEntries: ['/instance/runs']}}
+        >
+          <LeftNavRepositorySection />
+        </TestProvider>,
+      );
+
+      await waitFor(() => {
+        // We have multiple options and select none by default. Empty.
+        expect(screen.queryAllByRole('link')).toHaveLength(0);
+      });
+    });
+
     it('initializes with correct repo option, if `LAST_REPO_KEY` localStorage', async () => {
       window.localStorage.setItem(LAST_REPO_KEY, 'lorem:ipsum');
       render(
         <TestProvider
-          apolloProps={{mocks: [defaultMocks, mocks]}}
+          apolloProps={{mocks: [defaultMocks, mocksWithTwo]}}
           routerProps={{initialEntries: ['/instance/runs']}}
         >
           <LeftNavRepositorySection />
@@ -126,7 +164,7 @@ describe('Repository options', () => {
       window.localStorage.setItem(REPO_KEYS, '["foo:bar"]');
       render(
         <TestProvider
-          apolloProps={{mocks: [defaultMocks, mocks]}}
+          apolloProps={{mocks: [defaultMocks, mocksWithTwo]}}
           routerProps={{initialEntries: ['/instance/runs']}}
         >
           <LeftNavRepositorySection />
@@ -139,11 +177,11 @@ describe('Repository options', () => {
       });
     });
 
-    it('initializes with first repo option, if no matching `REPO_KEYS` localStorage', async () => {
+    it('initializes with first repo option, if one option and no matching `REPO_KEYS` localStorage', async () => {
       window.localStorage.setItem(REPO_KEYS, '["hello:world"]');
       render(
         <TestProvider
-          apolloProps={{mocks: [defaultMocks, mocks]}}
+          apolloProps={{mocks: [defaultMocks, mocksWithOne]}}
           routerProps={{initialEntries: ['/instance/runs']}}
         >
           <LeftNavRepositorySection />
@@ -160,7 +198,7 @@ describe('Repository options', () => {
       window.localStorage.setItem(REPO_KEYS, '["lorem:ipsum", "foo:bar"]');
       render(
         <TestProvider
-          apolloProps={{mocks: [defaultMocks, mocks]}}
+          apolloProps={{mocks: [defaultMocks, mocksWithTwo]}}
           routerProps={{initialEntries: ['/instance/runs']}}
         >
           <LeftNavRepositorySection />
@@ -170,6 +208,78 @@ describe('Repository options', () => {
       // Six total pipelines, and no link for single repo name.
       await waitFor(() => {
         expect(screen.getAllByRole('link')).toHaveLength(6);
+      });
+    });
+
+    it('initializes empty, then shows first option when options are added', async () => {
+      const initialMocks = {
+        Workspace: () => ({
+          locationEntries: () => [],
+        }),
+      };
+
+      const {rerender} = render(
+        <TestProvider
+          apolloProps={{mocks: [defaultMocks, initialMocks]}}
+          routerProps={{initialEntries: ['/instance/runs']}}
+        >
+          <LeftNavRepositorySection />
+        </TestProvider>,
+      );
+
+      // Zero repositories, so zero pipelines.
+      await waitFor(() => {
+        expect(screen.queryAllByRole('link')).toHaveLength(0);
+      });
+
+      rerender(
+        <TestProvider
+          apolloProps={{mocks: [defaultMocks, mocksWithOne]}}
+          routerProps={{initialEntries: ['/instance/runs']}}
+        >
+          <LeftNavRepositorySection />
+        </TestProvider>,
+      );
+
+      // After repositories are added, the first one becomes visible.
+      await waitFor(() => {
+        expect(screen.getAllByRole('link')).toHaveLength(3);
+      });
+    });
+
+    it('initializes with options, then shows empty if they are removed', async () => {
+      const mocksAfterRemoval = {
+        Workspace: () => ({
+          locationEntries: () => [],
+        }),
+      };
+
+      const {rerender} = render(
+        <TestProvider
+          apolloProps={{mocks: [defaultMocks, mocksWithOne]}}
+          routerProps={{initialEntries: ['/instance/runs']}}
+        >
+          <LeftNavRepositorySection />
+        </TestProvider>,
+      );
+
+      // One repo by default, so three pipelines.
+      await waitFor(() => {
+        expect(screen.queryAllByRole('link')).toHaveLength(3);
+      });
+
+      rerender(
+        <TestProvider
+          apolloProps={{mocks: [defaultMocks, mocksAfterRemoval]}}
+          routerProps={{initialEntries: ['/instance/runs']}}
+        >
+          <LeftNavRepositorySection />
+        </TestProvider>,
+      );
+
+      // After repositories are removed, there are none displayed.
+      await waitFor(() => {
+        expect(screen.queryAllByRole('link')).toHaveLength(0);
       });
     });
   });

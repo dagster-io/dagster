@@ -21,10 +21,6 @@ from .client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from .schema import create_schema
 from .version import __version__
 
-from future.standard_library import install_aliases  # isort:skip
-
-install_aliases()  # isort:skip
-
 
 def create_dagster_graphql_cli():
     return ui

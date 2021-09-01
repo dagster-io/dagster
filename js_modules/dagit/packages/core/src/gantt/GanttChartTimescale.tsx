@@ -107,7 +107,7 @@ export const GanttChartTimescale = ({
       const label = tickLabels(ms);
       lines.push(<div className="line" key={key} style={{left: x, transform}} />);
       ticks.push(
-        <div className="tick" key={key} style={{left: x - 20, transform}}>
+        <div className="tick" key={key} style={{left: x - TICK_LABEL_WIDTH / 2, transform}}>
           {label}
         </div>,
       );

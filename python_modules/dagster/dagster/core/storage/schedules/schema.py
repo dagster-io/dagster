@@ -30,5 +30,10 @@ JobTickTable = db.Table(
     db.Column("update_timestamp", db.DateTime, server_default=get_current_timestamp()),
 )
 
-db.Index("idx_job_tick_status", JobTickTable.c.job_origin_id, JobTickTable.c.status)
+db.Index(
+    "idx_job_tick_status",
+    JobTickTable.c.job_origin_id,
+    JobTickTable.c.status,
+    mysql_length=32,
+)
 db.Index("idx_job_tick_timestamp", JobTickTable.c.job_origin_id, JobTickTable.c.timestamp)

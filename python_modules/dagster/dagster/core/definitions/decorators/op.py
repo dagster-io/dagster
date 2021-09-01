@@ -1,3 +1,4 @@
+from functools import update_wrapper
 from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Union
 
 from dagster import check
@@ -5,12 +6,16 @@ from dagster import check
 from ....seven.typing import get_origin
 from ....utils.backcompat import experimental_decorator
 from ...errors import DagsterInvariantViolationError
-from ..inference import infer_output_props
+from ..inference import InferredOutputProps, infer_output_props
 from ..input import In, InputDefinition
 from ..output import Out, OutputDefinition
 from ..policy import RetryPolicy
 from ..solid import SolidDefinition
-from .solid import _Solid
+from .solid import (
+    DecoratedSolidFunction,
+    NoContextDecoratedSolidFunction,
+    resolve_checked_solid_fn_inputs,
+)
 
 
 class _Op:
@@ -30,7 +35,9 @@ class _Op:
         out: Optional[Union[Out, Dict[str, Out]]] = None,
     ):
         self.name = check.opt_str_param(name, "name")
-        self.input_defs = input_defs
+        self.input_defs = check.opt_nullable_list_param(
+            input_defs, "input_defs", of_type=InputDefinition
+        )
         self.output_defs = output_defs
         self.decorator_takes_context = check.bool_param(
             decorator_takes_context, "decorator_takes_context"
@@ -47,10 +54,12 @@ class _Op:
         # config will be checked within SolidDefinition
         self.config_schema = config_schema
 
-        self.ins = check.opt_dict_param(ins, "ins", key_type=str)
+        self.ins = ins
         self.out = out
 
     def __call__(self, fn: Callable[..., Any]) -> SolidDefinition:
+        from ..op import OpDefinition
+
         if self.input_defs is not None and self.ins is not None:
             check.failed("Values cannot be provided for both the 'input_defs' and 'ins' arguments")
 
@@ -59,59 +68,99 @@ class _Op:
 
         inferred_out = infer_output_props(fn)
 
-        input_defs = [inp.to_definition(name) for name, inp in self.ins.items()]
-
-        final_output_defs: Optional[Sequence[OutputDefinition]] = None
-        if self.out:
-            check.inst_param(self.out, "out", (Out, dict))
-
-            if isinstance(self.out, Out):
-                final_output_defs = [self.out.to_definition(inferred_out.annotation, name=None)]
-            else:
-                final_output_defs = []
-                # If only a single entry has been provided to the out dict, then slurp the
-                # annotation into the entry.
-                if len(self.out) == 1:
-                    name = list(self.out.keys())[0]
-                    out = list(self.out.values())[0]
-                    final_output_defs.append(out.to_definition(inferred_out.annotation, name))
-                else:
-                    # Introspection on type annotations is experimental, so checking
-                    # metaclass is the best we can do.
-                    if inferred_out.annotation and not get_origin(inferred_out.annotation) == tuple:
-                        raise DagsterInvariantViolationError(
-                            "Expected Tuple annotation for multiple outputs, but received non-tuple annotation."
-                        )
-                    if inferred_out.annotation and not len(inferred_out.annotation.__args__) == len(
-                        self.out
-                    ):
-                        raise DagsterInvariantViolationError(
-                            "Expected Tuple annotation to have number of entries matching the "
-                            f"number of outputs for more than one output. Expected {len(self.out)} "
-                            f"outputs but annotation has {len(inferred_out.annotation.__args__)}."
-                        )
-                    for idx, (name, out) in enumerate(self.out.items()):
-                        annotation_type = (
-                            inferred_out.annotation.__args__[idx]
-                            if inferred_out.annotation
-                            else None
-                        )
-                        final_output_defs.append(out.to_definition(annotation_type, name=name))
+        if self.ins is not None:
+            input_defs = [inp.to_definition(name) for name, inp in self.ins.items()]
         else:
-            final_output_defs = self.output_defs
+            input_defs = check.opt_list_param(
+                self.input_defs, "input_defs", of_type=InputDefinition
+            )
 
-        return _Solid(
+        output_defs_from_out = _resolve_output_defs_from_outs(
+            inferred_out=inferred_out, out=self.out
+        )
+        resolved_output_defs = (
+            output_defs_from_out if output_defs_from_out is not None else self.output_defs
+        )
+
+        if not self.name:
+            self.name = fn.__name__
+
+        if resolved_output_defs is None:
+            resolved_output_defs = [OutputDefinition.create_from_inferred(infer_output_props(fn))]
+        elif len(resolved_output_defs) == 1:
+            resolved_output_defs = [
+                resolved_output_defs[0].combine_with_inferred(infer_output_props(fn))
+            ]
+
+        compute_fn = (
+            DecoratedSolidFunction(decorated_fn=fn)
+            if self.decorator_takes_context
+            else NoContextDecoratedSolidFunction(decorated_fn=fn)
+        )
+
+        resolved_input_defs = resolve_checked_solid_fn_inputs(
+            decorator_name="@op",
+            fn_name=self.name,
+            compute_fn=compute_fn,
+            explicit_input_defs=input_defs,
+            context_required=bool(self.config_schema),
+            exclude_nothing=True,
+        )
+
+        op_def = OpDefinition(
             name=self.name,
-            input_defs=self.input_defs or input_defs,
-            output_defs=final_output_defs,
-            description=self.description,
-            required_resource_keys=self.required_resource_keys,
+            input_defs=resolved_input_defs,
+            output_defs=resolved_output_defs,
+            compute_fn=compute_fn,
             config_schema=self.config_schema,
+            description=self.description or fn.__doc__,
+            required_resource_keys=self.required_resource_keys,
             tags=self.tags,
             version=self.version,
-            decorator_takes_context=self.decorator_takes_context,
             retry_policy=self.retry_policy,
-        )(fn)
+        )
+        update_wrapper(op_def, compute_fn.decorated_fn)
+        return op_def
+
+
+def _resolve_output_defs_from_outs(
+    inferred_out: InferredOutputProps, out: Optional[Union[Out, dict]]
+) -> Optional[List[OutputDefinition]]:
+    if out is None:
+        return None
+    if isinstance(out, Out):
+        return [out.to_definition(inferred_out.annotation, name=None)]
+    else:
+        check.dict_param(out, "out", key_type=str, value_type=Out)
+
+        # If only a single entry has been provided to the out dict, then slurp the
+        # annotation into the entry.
+        if len(out) == 1:
+            name = list(out.keys())[0]
+            only_out = out[name]
+            return [only_out.to_definition(inferred_out.annotation, name)]
+
+        output_defs = []
+
+        # Introspection on type annotations is experimental, so checking
+        # metaclass is the best we can do.
+        if inferred_out.annotation and not get_origin(inferred_out.annotation) == tuple:
+            raise DagsterInvariantViolationError(
+                "Expected Tuple annotation for multiple outputs, but received non-tuple annotation."
+            )
+        if inferred_out.annotation and not len(inferred_out.annotation.__args__) == len(out):
+            raise DagsterInvariantViolationError(
+                "Expected Tuple annotation to have number of entries matching the "
+                f"number of outputs for more than one output. Expected {len(out)} "
+                f"outputs but annotation has {len(inferred_out.annotation.__args__)}."
+            )
+        for idx, (name, cur_out) in enumerate(out.items()):
+            annotation_type = (
+                inferred_out.annotation.__args__[idx] if inferred_out.annotation else None
+            )
+            output_defs.append(cur_out.to_definition(annotation_type, name=name))
+
+        return output_defs
 
 
 @experimental_decorator

@@ -26,12 +26,8 @@ from dagster.cli.workspace.cli_target import (
 )
 from dagster.core.definitions.pipeline_base import IPipeline
 from dagster.core.errors import DagsterBackfillFailedError, DagsterInvariantViolationError
+from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill, create_backfill_run
-from dagster.core.execution.plan.plan import ExecutionPlan
-from dagster.core.execution.resolve_versions import (
-    resolve_memoized_execution_plan,
-    resolve_step_output_versions,
-)
 from dagster.core.host_representation import (
     ExternalPipeline,
     ExternalRepository,
@@ -43,7 +39,7 @@ from dagster.core.host_representation.selector import PipelineSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.instance.config import is_dagster_home_set
 from dagster.core.snap import PipelineSnapshot, SolidInvocationSnap
-from dagster.core.system_config.objects import ResolvedRunConfig
+from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 from dagster.core.telemetry import log_external_repo_stats, telemetry_wrapper
 from dagster.core.utils import make_new_backfill_id
 from dagster.seven import IS_WINDOWS, JSONDecodeError, json
@@ -217,7 +213,7 @@ def print_solid(printer, pipeline_snapshot, solid_invocation_snap):
                 printer.line("Input: {name}".format(name=input_dep_snap.input_name))
 
         printer.line("Outputs:")
-        for output_def_snap in pipeline_snapshot.get_solid_def_snap(
+        for output_def_snap in pipeline_snapshot.get_node_def_snap(
             solid_invocation_snap.solid_def_name
         ).output_def_snaps:
             printer.line(output_def_snap.name)
@@ -259,19 +255,18 @@ def execute_list_versions_command(instance, kwargs):
     pipeline = recon_pipeline_from_origin(pipeline_origin)
     run_config = get_run_config_from_file_list(config)
 
-    resolved_run_config = ResolvedRunConfig.build(pipeline.get_definition(), run_config, mode=mode)
-    execution_plan = ExecutionPlan.build(pipeline, resolved_run_config)
+    memoized_plan = create_execution_plan(
+        pipeline,
+        run_config=run_config,
+        mode=mode,
+        instance=instance,
+        tags={MEMOIZED_RUN_TAG: "true"},
+    )
 
-    step_output_versions = resolve_step_output_versions(
-        pipeline.get_definition(), execution_plan, resolved_run_config
-    )
-    memoized_plan = resolve_memoized_execution_plan(
-        execution_plan, pipeline.get_definition(), run_config, instance, resolved_run_config
-    )
     # the step keys that we need to execute are those which do not have their inputs populated.
     step_keys_not_stored = set(memoized_plan.step_keys_to_execute)
     table = []
-    for step_output_handle, version in step_output_versions.items():
+    for step_output_handle, version in memoized_plan.step_output_versions.items():
         table.append(
             [
                 "{key}.{output}".format(
@@ -513,7 +508,7 @@ def _create_external_pipeline_run(
         run_config=run_config,
         mode=pipeline_mode,
         solids_to_execute=external_pipeline_subset.solids_to_execute,
-        step_keys_to_execute=None,
+        step_keys_to_execute=execution_plan_snapshot.step_keys_to_execute,
         solid_selection=solid_selection,
         status=None,
         root_run_id=None,

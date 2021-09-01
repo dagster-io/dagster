@@ -560,8 +560,11 @@ module.exports = function (webpackEnv) {
         {
           'default-src': `'none'`,
           'base-uri': `'self'`,
-          'connect-src': [`'self'`, isEnvDevelopment ? 'ws:' : null],
+          // It shouldn't be necessary to specify WS here, but Safari is broken.
+          // https://bugs.webkit.org/show_bug.cgi?id=201591
+          'connect-src': [`'self'`, 'ws:', 'wss:'],
           'font-src': `'self'`,
+          'frame-src': isEnvDevelopment ? [`http://localhost:*`, `'self'`] : `'self'`,
           'img-src': [`'self'`, 'data:'],
           'manifest-src': `'self'`,
           // Allow inline `script` and `style` in development because we don't generate a

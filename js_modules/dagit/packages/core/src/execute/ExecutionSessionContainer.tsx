@@ -687,19 +687,17 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
               onHighlightPath={(path) => editor.current?.moveCursorToPath(path)}
               onRemoveExtraPaths={(paths) => onRemoveExtraPaths(paths)}
               onScaffoldMissingConfig={onScaffoldMissingConfig}
-              actions={
-                <LaunchRootExecutionButton
-                  pipelineName={pipeline.name}
-                  getVariables={buildExecutionVariables}
-                  disabled={
-                    preview?.isPipelineConfigValid?.__typename !== 'PipelineConfigValidationValid'
-                  }
-                />
-              }
             />
           </>
         }
       />
+      <div style={{position: 'absolute', bottom: 14, right: 14, zIndex: 1}}>
+        <LaunchRootExecutionButton
+          pipelineName={pipeline.name}
+          getVariables={buildExecutionVariables}
+          disabled={preview?.isPipelineConfigValid?.__typename !== 'PipelineConfigValidationValid'}
+        />
+      </div>
     </>
   );
 };

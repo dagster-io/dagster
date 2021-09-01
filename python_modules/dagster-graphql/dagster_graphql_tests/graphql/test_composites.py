@@ -103,3 +103,12 @@ class TestComposites(NonLaunchableGraphQLContextTestMatrix):
             COMPOSITES_QUERY_NESTED_DEPENDS_ON_DEPENDS_BY_CORE + NESTED_OUTPUT_DEPENDED_BY,
             {"selector": selector},
         )
+
+    def test_composed_graph(self, graphql_context):
+        selector = infer_pipeline_selector(graphql_context, "composed_graph")
+        result = execute_dagster_graphql(graphql_context, COMPOSITES_QUERY, {"selector": selector})
+        handle_map = {}
+        for obj in result.data["pipelineOrError"]["solidHandles"]:
+            handle_map[obj["handleID"]] = obj["solid"]
+
+        assert len(handle_map) == 2

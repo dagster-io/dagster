@@ -35,6 +35,15 @@ CLIENT_HEARTBEAT_INTERVAL = 1
 DEFAULT_GRPC_TIMEOUT = 60
 
 
+def _max_rx_bytes():
+    env_set = os.getenv("DAGSTER_GRPC_MAX_RX_BYTES")
+    if env_set:
+        return int(env_set)
+
+    # default 10 MB
+    return 10_485_760
+
+
 def client_heartbeat_thread(client, shutdown_event):
     while True:
         shutdown_event.wait(CLIENT_HEARTBEAT_INTERVAL)
@@ -76,10 +85,22 @@ class DagsterGrpcClient:
 
     @contextmanager
     def _channel(self):
+        options = [
+            ("grpc.max_receive_message_length", _max_rx_bytes()),
+        ]
         with (
-            grpc.secure_channel(self._server_address, self._ssl_creds)
+            grpc.secure_channel(
+                self._server_address,
+                self._ssl_creds,
+                options=options,
+                compression=grpc.Compression.Gzip,
+            )
             if self._use_ssl
-            else grpc.insecure_channel(self._server_address)
+            else grpc.insecure_channel(
+                self._server_address,
+                options=options,
+                compression=grpc.Compression.Gzip,
+            )
         ) as channel:
             yield channel
 
@@ -282,6 +303,15 @@ class DagsterGrpcClient:
 
         return "".join([chunk.serialized_chunk for chunk in chunks])
 
+    def external_notebook_data(self, notebook_path):
+        check.str_param(notebook_path, "notebook_path")
+        res = self._query(
+            "ExternalNotebookData",
+            api_pb2.ExternalNotebookDataRequest,
+            notebook_path=notebook_path,
+        )
+        return res.content
+
     def shutdown_server(self, timeout=15):
         res = self._query("ShutdownServer", api_pb2.Empty, timeout=timeout)
         return res.serialized_shutdown_server_result
@@ -410,6 +440,5 @@ def ephemeral_grpc_api_client(
         force_port=force_port,
         max_retries=max_retries,
         max_workers=max_workers,
-        lazy_load_user_code=True,
     ).create_ephemeral_client() as client:
         yield client

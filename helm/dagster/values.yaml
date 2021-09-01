@@ -131,13 +131,14 @@ dagit:
 ####################################################################################################
 computeLogManager:
   # Type can be one of [
-  #   LocalComputeLogManager,
+  #   NoOpComputeLogManager,
+  #   LocalComputeLogManager (deprecated - if set, NoOpComputeLogManager will be used instead),
   #   AzureBlobComputeLogManager,
   #   GCSComputeLogManager,
   #   S3ComputeLogManager,
   #   CustomComputeLogManager,
   # ]
-  type: LocalComputeLogManager
+  type: NoOpComputeLogManager
   config: {}
   ##  Uncomment this configuration if the AzureBlobComputeLogManager is selected
   #   azureBlobComputeLogManager:
@@ -373,6 +374,14 @@ runLauncher:
       # envSecrets:
       #   - name: secret
       envSecrets: []
+
+      # Additional variables from the existing environment can be passed into the Job.
+      #
+      # Example:
+      #
+      # envVars:
+      #   - "ENV_VAR"
+      envVars: []
 
     # This configuration will only be used if the CeleryK8sRunLauncher is selected
     celeryK8sRunLauncher:

@@ -4,7 +4,7 @@ import React from 'react';
 import {Link, useRouteMatch} from 'react-router-dom';
 
 import {useFeatureFlags} from '../app/Flags';
-import {DISABLED_MESSAGE, PermissionSet, usePermissions} from '../app/Permissions';
+import {DISABLED_MESSAGE, PermissionsMap, usePermissions} from '../app/Permissions';
 import {
   explorerPathFromString,
   explorerPathToString,
@@ -25,7 +25,7 @@ interface TabConfig {
   title: string;
   pathComponent: string;
   icon: IconName;
-  isAvailable?: (permissions: PermissionSet) => boolean;
+  isAvailable?: (permissions: PermissionsMap) => boolean;
 }
 
 const pipelineTabs: {[key: string]: TabConfig} = {
@@ -34,7 +34,7 @@ const pipelineTabs: {[key: string]: TabConfig} = {
     title: 'Playground',
     pathComponent: 'playground',
     icon: 'manually-entered-data',
-    isAvailable: (permissions: PermissionSet) => permissions.canLaunchPipelineExecution,
+    isAvailable: (permissions: PermissionsMap) => permissions.canLaunchPipelineExecution,
   },
   runs: {
     title: 'Runs',

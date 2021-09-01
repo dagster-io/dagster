@@ -1,10 +1,7 @@
-import {ApolloClient, gql} from '@apollo/client';
+import {gql, useApolloClient, useSubscription} from '@apollo/client';
 import {Icon, Colors} from '@blueprintjs/core';
 import * as React from 'react';
-import {useEffect, useState} from 'react';
 
-import {AppContext} from '../app/AppContext';
-import {DirectGraphQLSubscription} from '../app/DirectGraphQLSubscription';
 import {LocationStateChangeEventType} from '../types/globalTypes';
 import {ButtonLink} from '../ui/ButtonLink';
 import {Group} from '../ui/Group';
@@ -26,26 +23,21 @@ const LOCATION_STATE_CHANGE_SUBSCRIPTION = gql`
   }
 `;
 
-interface StateObserverProps {
-  client: ApolloClient<any>;
-}
-
-export const RepositoryLocationStateObserver = ({client}: StateObserverProps) => {
+export const RepositoryLocationStateObserver = () => {
+  const client = useApolloClient();
   const {locationEntries, refetch} = React.useContext(WorkspaceContext);
-  const [updatedLocations, setUpdatedLocations] = useState<string[]>([]);
-  const [erroredLocations, setErroredLocations] = useState<string[]>([]);
-  const totalMessages = updatedLocations.length + erroredLocations.length;
+  const [updatedLocations, setUpdatedLocations] = React.useState<string[]>([]);
+  const totalMessages = updatedLocations.length;
 
-  const {websocketURI} = React.useContext(AppContext);
+  useSubscription<LocationStateChangeSubscription>(LOCATION_STATE_CHANGE_SUBSCRIPTION, {
+    fetchPolicy: 'no-cache',
+    onSubscriptionData: ({subscriptionData}) => {
+      const changeEvents = subscriptionData.data?.locationStateChangeEvents;
+      if (!changeEvents) {
+        return;
+      }
 
-  useEffect(() => {
-    const onHandleMessages = (
-      messages: LocationStateChangeSubscription[], //   isFirstResponse: boolean,
-    ) => {
-      const {
-        locationStateChangeEvents: {event},
-      } = messages[0];
-      const {locationName, eventType, serverId} = event;
+      const {locationName, eventType, serverId} = changeEvents.event;
 
       switch (eventType) {
         case LocationStateChangeEventType.LOCATION_ERROR:
@@ -63,22 +55,14 @@ export const RepositoryLocationStateObserver = ({client}: StateObserverProps) =>
           }
           return;
       }
-    };
+    },
+  });
 
-    const subscriptionToken = new DirectGraphQLSubscription<LocationStateChangeSubscription>(
-      websocketURI,
-      LOCATION_STATE_CHANGE_SUBSCRIPTION,
-      {},
-      onHandleMessages,
-      () => {}, // https://github.com/dagster-io/dagster/issues/2151
-    );
+  if (!totalMessages) {
+    return null;
+  }
 
-    return () => {
-      subscriptionToken.close();
-    };
-  }, [locationEntries, refetch, websocketURI]);
-
-  return totalMessages > 0 ? (
+  return (
     <Group background={Colors.GRAY5} direction="column" spacing={0}>
       {updatedLocations.length > 0 ? (
         <Group padding={{vertical: 8, horizontal: 12}} direction="row" spacing={8}>
@@ -89,11 +73,14 @@ export const RepositoryLocationStateObserver = ({client}: StateObserverProps) =>
               : 'One or more repository locations have been updated,'}{' '}
             and new data is available.{' '}
             <ButtonLink
-              color={{link: Colors.DARK_GRAY3, hover: Colors.DARK_GRAY1, active: Colors.DARK_GRAY1}}
+              color={{
+                link: Colors.DARK_GRAY3,
+                hover: Colors.DARK_GRAY1,
+                active: Colors.DARK_GRAY1,
+              }}
               underline="always"
               onClick={() => {
                 setUpdatedLocations([]);
-                setErroredLocations([]);
                 refetch();
                 client.resetStore();
               }}
@@ -104,5 +91,5 @@ export const RepositoryLocationStateObserver = ({client}: StateObserverProps) =>
         </Group>
       ) : null}
     </Group>
-  ) : null;
+  );
 };

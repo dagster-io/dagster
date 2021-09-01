@@ -8,7 +8,8 @@ from .config import StringSource
 
 
 class ComputeLogManagerType(str, Enum):
-    LOCAL = "LocalComputeLogManager"
+    NOOP = "NoOpComputeLogManager"
+    LOCAL = "LocalComputeLogManager"  # deprecated in favor of noop
     AZURE = "AzureBlobComputeLogManager"
     GCS = "GCSComputeLogManager"
     S3 = "S3ComputeLogManager"

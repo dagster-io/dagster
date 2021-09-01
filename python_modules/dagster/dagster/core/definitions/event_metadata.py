@@ -9,41 +9,43 @@ from dagster.utils.backcompat import experimental_class_warning
 if TYPE_CHECKING:
     from dagster.core.definitions.events import AssetKey
 
-    ParseableMetadataEntryData = Union[
-        "TextMetadataEntryData",
-        "UrlMetadataEntryData",
-        "PathMetadataEntryData",
-        "JsonMetadataEntryData",
-        "MarkdownMetadataEntryData",
-        "FloatMetadataEntryData",
-        "IntMetadataEntryData",
-        "PythonArtifactMetadataEntryData",
-        str,
-        float,
-        int,
-        list,
-        dict,
-    ]
+ParseableMetadataEntryData = Union[
+    "TextMetadataEntryData",
+    "UrlMetadataEntryData",
+    "PathMetadataEntryData",
+    "JsonMetadataEntryData",
+    "MarkdownMetadataEntryData",
+    "FloatMetadataEntryData",
+    "IntMetadataEntryData",
+    "PythonArtifactMetadataEntryData",
+    "DagsterAssetMetadataEntryData",
+    "DagsterPipelineRunMetadataEntryData",
+    str,
+    float,
+    int,
+    list,
+    dict,
+]
 
-    EventMetadataEntryData = Union[
-        "TextMetadataEntryData",
-        "UrlMetadataEntryData",
-        "PathMetadataEntryData",
-        "JsonMetadataEntryData",
-        "MarkdownMetadataEntryData",
-        "FloatMetadataEntryData",
-        "IntMetadataEntryData",
-        "PythonArtifactMetadataEntryData",
-        "DagsterAssetMetadataEntryData",
-        "DagsterPipelineRunMetadataEntryData",
-    ]
+EventMetadataEntryData = Union[
+    "TextMetadataEntryData",
+    "UrlMetadataEntryData",
+    "PathMetadataEntryData",
+    "JsonMetadataEntryData",
+    "MarkdownMetadataEntryData",
+    "FloatMetadataEntryData",
+    "IntMetadataEntryData",
+    "PythonArtifactMetadataEntryData",
+    "DagsterAssetMetadataEntryData",
+    "DagsterPipelineRunMetadataEntryData",
+]
 
 
 def last_file_comp(path: str) -> str:
     return os.path.basename(os.path.normpath(path))
 
 
-def parse_metadata_entry(label: str, value: "ParseableMetadataEntryData") -> "EventMetadataEntry":
+def parse_metadata_entry(label: str, value: ParseableMetadataEntryData) -> "EventMetadataEntry":
     check.str_param(label, "label")
 
     if isinstance(value, (EventMetadataEntry, PartitionMetadataEntry)):
@@ -64,6 +66,8 @@ def parse_metadata_entry(label: str, value: "ParseableMetadataEntryData") -> "Ev
             FloatMetadataEntryData,
             IntMetadataEntryData,
             PythonArtifactMetadataEntryData,
+            DagsterAssetMetadataEntryData,
+            DagsterPipelineRunMetadataEntryData,
         ),
     ):
         return EventMetadataEntry(label, None, value)
@@ -95,9 +99,9 @@ def parse_metadata_entry(label: str, value: "ParseableMetadataEntryData") -> "Ev
 
 
 def parse_metadata(
-    metadata: Dict[str, "ParseableMetadataEntryData"],
-    metadata_entries: List[Union["EventMetadataEntryData", "PartitionMetadataEntry"]],
-) -> List["EventMetadataEntry"]:
+    metadata: Dict[str, ParseableMetadataEntryData],
+    metadata_entries: List[Union["EventMetadataEntry", "PartitionMetadataEntry"]],
+) -> List[Union["EventMetadataEntry", "PartitionMetadataEntry"]]:
     if metadata and metadata_entries:
         raise DagsterInvalidEventMetadata(
             "Attempted to provide both `metadata` and `metadata_entries` arguments to an event. "
@@ -154,7 +158,7 @@ class UrlMetadataEntryData(
         url (Optional[str]): The URL as a string.
     """
 
-    def __new__(cls, url):
+    def __new__(cls, url: Optional[str]):
         return super(UrlMetadataEntryData, cls).__new__(
             cls, check.opt_str_param(url, "url", default="")
         )
@@ -484,7 +488,8 @@ class EventMetadata:
                 yield AssetMaterialization(
                     asset_key="my_dataset",
                     metadata={
-                        "size (bytes)": EventMetadata.float(calculate_bytes(df)),
+                        "class": EventMetadata.python_artifact(MyClass),
+                        "function": EventMetadata.python_artifact(my_function),
                     }
                 )
 

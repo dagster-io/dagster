@@ -71,14 +71,22 @@ from .partition import Partition, PartitionScheduleDefinition, PartitionSetDefin
 from .partitioned_schedule import schedule_from_partitions
 from .pipeline import PipelineDefinition
 from .pipeline_base import IPipeline
-from .pipeline_sensor import PipelineFailureSensorContext, pipeline_failure_sensor
+from .pipeline_sensor import (
+    JobFailureSensorContext,
+    PipelineFailureSensorContext,
+    RunStatusSensorContext,
+    RunStatusSensorDefinition,
+    job_failure_sensor,
+    pipeline_failure_sensor,
+    run_status_sensor,
+)
 from .preset import PresetDefinition
 from .reconstructable import (
     ReconstructablePipeline,
     build_reconstructable_pipeline,
     reconstructable,
 )
-from .repository import RepositoryDefinition
+from .repository import RepositoryData, RepositoryDefinition
 from .resource import ResourceDefinition, make_values_resource, resource
 from .run_config_schema import RunConfigSchema, create_run_config_schema
 from .run_request import JobType, RunRequest, SkipReason

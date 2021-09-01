@@ -2,10 +2,12 @@ import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
 import {useFeatureFlags} from '../app/Flags';
+import {Box} from '../ui/Box';
 import {Loading} from '../ui/Loading';
 import {usePipelineSelector} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
+import {Description} from './Description';
 import {NonIdealPipelineQueryResult} from './NonIdealPipelineQueryResult';
 import {PipelineExplorerPath} from './PipelinePathUtils';
 import {SidebarSection} from './SidebarComponents';
@@ -47,12 +49,18 @@ export const SidebarPipelineOrJobOverview: React.FC<{
         return (
           <div>
             <SidebarSection title={'Description'}>
-              {pipelineSnapshotOrError.description || 'No description provided'}
+              <Box padding={12}>
+                <Description
+                  description={pipelineSnapshotOrError.description || 'No description provided'}
+                />
+              </Box>
             </SidebarSection>
             <SidebarSection title={'Resources'}>
-              {modes.map((mode) => (
-                <SidebarModeSection mode={mode} key={mode.name} />
-              ))}
+              <Box padding={12}>
+                {modes.map((mode) => (
+                  <SidebarModeSection mode={mode} key={mode.name} />
+                ))}
+              </Box>
             </SidebarSection>
           </div>
         );

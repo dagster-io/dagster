@@ -27,6 +27,7 @@ type Query {
   assetOrError(assetKey: AssetKeyInput!): AssetOrError!
   partitionBackfillOrError(backfillId: String!): PartitionBackfillOrError!
   partitionBackfillsOrError(cursor: String, limit: Int): PartitionBackfillsOrError!
+  permissions: [GraphenePermission!]!
 }
 
 union RepositoriesOrError = RepositoryConnection | PythonError
@@ -525,7 +526,7 @@ type ExecutionStepFailureEvent implements MessageEvent & StepEvent {
   stepKey: String
   solidHandleID: String
   eventType: DagsterEventType
-  error: PythonError!
+  error: PythonError
   errorSource: ErrorSource
   failureMetadata: FailureMetadata
 }
@@ -615,7 +616,7 @@ type ExecutionStepUpForRetryEvent implements MessageEvent & StepEvent {
   stepKey: String
   solidHandleID: String
   eventType: DagsterEventType
-  error: PythonError!
+  error: PythonError
   secondsToWait: Int
 }
 
@@ -854,7 +855,7 @@ type HookErroredEvent implements MessageEvent & StepEvent {
   stepKey: String
   solidHandleID: String
   eventType: DagsterEventType
-  error: PythonError!
+  error: PythonError
 }
 
 type AlertStartEvent implements MessageEvent & PipelineEvent {
@@ -1386,6 +1387,11 @@ union PartitionBackfillsOrError = PartitionBackfills | PythonError
 
 type PartitionBackfills {
   results: [PartitionBackfill!]!
+}
+
+type GraphenePermission {
+  permission: String!
+  value: Boolean!
 }
 
 type Mutation {

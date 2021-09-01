@@ -173,6 +173,25 @@ def get_field_name_error(result, field_name):
     assert False
 
 
+FieldSubShape = Shape({"foo_field": dict, "bar_field": str}, field_aliases={"foo_field": "foo"})
+
+
+def test_shape_with_field_substitutions():
+    value = {"foo_field": {}, "bar_field": "world"}
+    result = validate_config(FieldSubShape, value)
+    assert result.success
+
+
+def test_shape_with_field_substitutions_collisions():
+    value = {"foo_field": {}, "bar_field": "world", "foo": {}}
+    result = validate_config(FieldSubShape, value)
+    assert not result.success
+    assert len(result.errors) == 1
+
+    collision_error = result.errors[0]
+    assert collision_error.reason == DagsterEvaluationErrorReason.FIELD_ALIAS_COLLISION
+
+
 MultiLevelShapeType = Shape(
     {
         "level_one_string_field": str,

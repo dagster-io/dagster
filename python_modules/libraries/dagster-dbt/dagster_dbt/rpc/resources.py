@@ -1,12 +1,13 @@
 import json
 import platform
 import sys
+import time
 import uuid
 from base64 import standard_b64encode as b64
 from typing import Any, Dict, List, Optional
 
 import requests
-from dagster import Field, IntSource, RetryRequested, StringSource, check, resource
+from dagster import Failure, Field, IntSource, RetryRequested, StringSource, check, resource
 
 from ..dbt_resource import DbtResource
 from .types import DbtRpcOutput
@@ -91,6 +92,14 @@ class DbtRpcClient(DbtResource):
             else:
                 raise RetryRequested(max_retries=5, seconds_to_wait=30)
         return DbtRpcOutput(response)
+
+    def _get_result(self, data: str = None) -> DbtRpcOutput:
+        """Constructs and sends a POST request to the dbt RPC server.
+
+        Returns:
+            Response: the HTTP response from the dbt RPC server.
+        """
+        return self._post(data)
 
     def _default_request(self, method: str, params: Dict[str, Any] = None) -> Dict[str, Any]:
         """Constructs a standard HTTP request body, to be sent to a dbt RPC server.
@@ -206,7 +215,7 @@ class DbtRpcClient(DbtResource):
         params = self._format_params({"cli": command, **kwargs})
         data = self._default_request(method="cli_args", params=params)
 
-        return self._post(data=json.dumps(data))
+        return self._get_result(data=json.dumps(data))
 
     def compile(
         self, models: List[str] = None, exclude: List[str] = None, **kwargs
@@ -227,7 +236,7 @@ class DbtRpcClient(DbtResource):
         params = self._format_params({**explicit_params, **kwargs})
         data = self._default_request(method="compile", params=params)
 
-        return self._post(data=json.dumps(data))
+        return self._get_result(data=json.dumps(data))
 
     def run(self, models: List[str] = None, exclude: List[str] = None, **kwargs) -> DbtRpcOutput:
         """Sends a request with the method ``run`` to the dbt RPC server, and returns the response.
@@ -245,7 +254,7 @@ class DbtRpcClient(DbtResource):
         params = self._format_params({**explicit_params, **kwargs})
         data = self._default_request(method="run", params=params)
 
-        return self._post(data=json.dumps(data))
+        return self._get_result(data=json.dumps(data))
 
     def snapshot(
         self, select: List[str] = None, exclude: List[str] = None, **kwargs
@@ -265,7 +274,7 @@ class DbtRpcClient(DbtResource):
         params = self._format_params({**explicit_params, **kwargs})
         data = self._default_request(method="snapshot", params=params)
 
-        return self._post(data=json.dumps(data))
+        return self._get_result(data=json.dumps(data))
 
     def test(
         self,
@@ -292,9 +301,11 @@ class DbtRpcClient(DbtResource):
         params = self._format_params({**explicit_params, **kwargs})
         data = self._default_request(method="test", params=params)
 
-        return self._post(data=json.dumps(data))
+        return self._get_result(data=json.dumps(data))
 
-    def seed(self, show: bool = False, **kwargs) -> DbtRpcOutput:
+    def seed(
+        self, show: bool = False, select: List[str] = None, exclude: List[str] = None, **kwargs
+    ) -> DbtRpcOutput:
         """Sends a request with the method ``seed`` to the dbt RPC server, and returns the response.
         For more details, see the dbt docs for the RPC method `seed
         <https://docs.getdbt.com/reference/commands/rpc/#run-seed>`_.
@@ -302,6 +313,8 @@ class DbtRpcClient(DbtResource):
         Args:
             show (bool, optional): If ``True``, then show a sample of the seeded data in the
                 response. Defaults to ``False``.
+            select (List[str], optional): the snapshots to include in the run.
+            exclude (List[str], optional): the snapshots to exclude from the run.
 
         Returns:
             Response: the HTTP response from the dbt RPC server.
@@ -312,12 +325,11 @@ class DbtRpcClient(DbtResource):
         if kwargs is not None:
             data["params"]["task_tags"] = kwargs
 
-        return self._post(data=json.dumps(data))
+        return self._get_result(data=json.dumps(data))
 
     def generate_docs(
         self,
-        models: List[str] = None,
-        exclude: List[str] = None,
+        compile_project: bool = False,
         **kwargs,
     ) -> DbtRpcOutput:
         """Sends a request with the method ``docs.generate`` to the dbt RPC server, and returns the
@@ -325,15 +337,14 @@ class DbtRpcClient(DbtResource):
         <https://docs.getdbt.com/reference/commands/rpc/#generate-docs>`_.
 
         Args:
-            models (List[str], optional): the models to include in docs generation.
-            exclude (List[str], optional): the models to exclude from docs generation.
+            compile_project (bool, optional): If true, compile the project before generating a catalog.
 
         """
-        explicit_params = dict(models=models, exclude=exclude)
+        explicit_params = dict(compile=compile_project)
         params = self._format_params({**explicit_params, **kwargs})
         data = self._default_request(method="docs.generate", params=params)
 
-        return self._post(data=json.dumps(data))
+        return self._get_result(data=json.dumps(data))
 
     def run_operation(
         self, macro: str, args: Optional[Dict[str, Any]] = None, **kwargs
@@ -353,7 +364,7 @@ class DbtRpcClient(DbtResource):
         params = self._format_params({**explicit_params, **kwargs})
         data = self._default_request(method="run-operation", params=params)
 
-        return self._post(data=json.dumps(data))
+        return self._get_result(data=json.dumps(data))
 
     def snapshot_freshness(self, select: Optional[List[str]] = None, **kwargs) -> DbtRpcOutput:
         """Sends a request with the method ``snapshot-freshness`` to the dbt RPC server, and returns
@@ -370,7 +381,7 @@ class DbtRpcClient(DbtResource):
         params = self._format_params({**explicit_params, **kwargs})
         data = self._default_request(method="snapshot-freshness", params=params)
 
-        return self._post(data=json.dumps(data))
+        return self._get_result(data=json.dumps(data))
 
     def compile_sql(self, sql: str, name: str) -> DbtRpcOutput:
         """Sends a request with the method ``compile_sql`` to the dbt RPC server, and returns the
@@ -388,7 +399,7 @@ class DbtRpcClient(DbtResource):
         params = self._format_params(explicit_params)
         data = self._default_request(method="compile_sql", params=params)
 
-        return self._post(data=json.dumps(data))
+        return self._get_result(data=json.dumps(data))
 
     def run_sql(self, sql: str, name: str) -> DbtRpcOutput:
         """Sends a request with the method ``run_sql`` to the dbt RPC server, and returns the
@@ -406,7 +417,7 @@ class DbtRpcClient(DbtResource):
         params = self._format_params(explicit_params)
         data = self._default_request(method="run_sql", params=params)
 
-        return self._post(data=json.dumps(data))
+        return self._get_result(data=json.dumps(data))
 
 
 @resource(
@@ -434,6 +445,102 @@ def dbt_rpc_resource(context) -> DbtRpcClient:
 
     """
     return DbtRpcClient(host=context.resource_config["host"], port=context.resource_config["port"])
+
+
+class DbtRpcSyncClient(DbtRpcClient):
+    def __init__(
+        self,
+        host: str = "0.0.0.0",
+        port: int = 8580,
+        jsonrpc_version: str = "2.0",
+        logger: Optional[Any] = None,
+        poll_interval: int = 1,
+        **_,
+    ):
+        """Constructor
+
+        Args:
+            host (str): The IP address of the host of the dbt RPC server. Default is ``"0.0.0.0"``.
+            port (int): The port of the dbt RPC server. Default is ``8580``.
+            jsonrpc_version (str): The JSON-RPC version to send in RPC requests.
+                Default is ``"2.0"``.
+            logger (Optional[Any]): A property for injecting a logger dependency.
+                Default is ``None``.
+            poll_interval (int): The polling interval in seconds.
+        """
+        super().__init__(host, port, jsonrpc_version, logger)
+        self.poll_interval = poll_interval
+
+    def _get_result(self, data: str = None) -> DbtRpcOutput:
+        """Sends a request to the dbt RPC server and continuously polls for the status of a request until the state is ``success``."""
+
+        out = super()._get_result(data)
+        request_token = out.result.get("request_token")
+
+        logs_start = 0
+
+        elapsed_time = -1
+        current_state = None
+
+        while True:
+            out = self.poll(
+                request_token=request_token,
+                logs=False,
+                logs_start=logs_start,
+            )
+
+            current_state = out.result.get("state")
+            # Stop polling if request's state is no longer "running".
+            if current_state != "running":
+                break
+
+            elapsed_time = out.result.get("elapsed", 0)
+            # Sleep for the configured time interval before polling again.
+            time.sleep(self.poll_interval)
+
+        if current_state != "success":
+            raise Failure(
+                description=(
+                    f"Request {request_token} finished with state '{current_state}' in "
+                    f"{elapsed_time} seconds"
+                ),
+            )
+
+        return out
+
+
+@resource(
+    description="A resource representing a synchronous dbt RPC client.",
+    config_schema={
+        "host": Field(StringSource),
+        "port": Field(IntSource, is_required=False, default_value=8580),
+        "poll_interval": Field(IntSource, is_required=False, default_value=1),
+    },
+)
+def dbt_rpc_sync_resource(
+    context,
+) -> DbtRpcClient:
+    """This resource defines a synchronous dbt RPC client.
+
+    To configure this resource, we recommend using the `configured
+    <https://docs.dagster.io/overview/configuration#configured>`_ method.
+
+    Examples:
+
+    .. code-block:: python
+
+        custom_sync_dbt_rpc_resource = dbt_rpc_sync_resource.configured({"host": "80.80.80.80","port": 8080,})
+
+        @pipeline(mode_defs=[ModeDefinition(resource_defs={"dbt_rpc": custom_dbt_rpc_sync_resource})])
+        def dbt_rpc_pipeline():
+            # Run solids with `required_resource_keys={"dbt_rpc", ...}`.
+
+    """
+    return DbtRpcSyncClient(
+        host=context.resource_config["host"],
+        port=context.resource_config["port"],
+        poll_interval=context.resource_config["poll_interval"],
+    )
 
 
 local_dbt_rpc_resource = dbt_rpc_resource.configured({"host": "0.0.0.0", "port": 8580})

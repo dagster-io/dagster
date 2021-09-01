@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 from dagster import Permissive, check, resource
 from dagster.utils.merger import merge_dicts
@@ -40,6 +40,14 @@ class DbtCliResource(DbtResource):
     def default_flags(self) -> Dict[str, Any]:
         return self._format_params(self._default_flags, replace_underscores=True)
 
+    @property
+    def strict_flags(self) -> Set[str]:
+        """
+        A set of flags that should not be auto-populated from the default flags unless they are
+            arguments to the associated function.
+        """
+        return {"models", "exclude", "select"}
+
     def cli(self, command: str, **kwargs) -> DbtCliOutput:
         """
         Executes a dbt CLI command. Params passed in as keyword arguments will be merged with the
@@ -55,8 +63,16 @@ class DbtCliResource(DbtResource):
         """
         command = check.str_param(command, "command")
         extra_flags = {} if kwargs is None else kwargs
+
+        # remove default flags that are declared as "strict" and not explicitly passed in
+        default_flags = {
+            k: v
+            for k, v in self.default_flags.items()
+            if not (k in self.strict_flags and k not in extra_flags)
+        }
+
         flags = merge_dicts(
-            self.default_flags, self._format_params(extra_flags, replace_underscores=True)
+            default_flags, self._format_params(extra_flags, replace_underscores=True)
         )
 
         return execute_cli(
@@ -138,35 +154,49 @@ class DbtCliResource(DbtResource):
         """
         return self.cli("test", models=models, exclude=exclude, data=data, schema=schema, **kwargs)
 
-    def seed(self, show: bool = False, **kwargs) -> DbtCliOutput:
+    def seed(
+        self, show: bool = False, select: List[str] = None, exclude: List[str] = None, **kwargs
+    ) -> DbtCliOutput:
         """
         Run the ``seed`` command on a dbt project. kwargs are passed in as additional parameters.
 
         Args:
             show (bool, optional): If ``True``, then show a sample of the seeded data in the
                 response. Defaults to ``False``.
+            select (List[str], optional): the snapshots to include in the run.
+            exclude (List[str], optional): the snapshots to exclude from the run.
 
         Returns:
             DbtCliOutput: An instance of :class:`DbtCliOutput<dagster_dbt.DbtCliOutput>` containing
                 parsed log output as well as the contents of run_results.json (if applicable).
         """
-        return self.cli("seed", show=show, **kwargs)
+        return self.cli("seed", show=show, select=select, exclude=exclude, **kwargs)
 
-    def generate_docs(
-        self, models: List[str] = None, exclude: List[str] = None, **kwargs
-    ) -> DbtCliOutput:
+    def freshness(self, select: List[str] = None, **kwargs) -> DbtCliOutput:
+        """
+        Run the ``source snapshot-freshness`` command on a dbt project. kwargs are passed in as additional parameters.
+
+        Args:
+            select (List[str], optional): the sources to include in the run.
+
+        Returns:
+            DbtCliOutput: An instance of :class:`DbtCliOutput<dagster_dbt.DbtCliOutput>` containing
+                parsed log output as well as the contents of run_results.json (if applicable).
+        """
+        return self.cli("source snapshot-freshness", select=select, **kwargs)
+
+    def generate_docs(self, compile_project: bool = False, **kwargs) -> DbtCliOutput:
         """
         Run the ``docs generate`` command on a dbt project. kwargs are passed in as additional parameters.
 
         Args:
-            models (List[str], optional): the models to include in docs generation.
-            exclude (List[str], optional): the models to exclude from docs generation.
+            compile_project (bool, optional): If true, compile the project before generating a catalog.
 
         Returns:
             DbtCliOutput: An instance of :class:`DbtCliOutput<dagster_dbt.DbtCliOutput>` containing
                 parsed log output as well as the contents of run_results.json (if applicable).
         """
-        return self.cli("docs generate", models=models, exclude=exclude, **kwargs)
+        return self.cli("docs generate", compile=compile_project, **kwargs)
 
     def run_operation(
         self, macro: str, args: Optional[Dict[str, Any]] = None, **kwargs

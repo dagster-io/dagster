@@ -57,6 +57,7 @@ from ..instigation import (
     GrapheneInstigationType,
 )
 from ..partition_sets import GraphenePartitionSetOrError, GraphenePartitionSetsOrError
+from ..permissions import GraphenePermission
 from ..pipelines.config_result import GraphenePipelineConfigValidationResult
 from ..pipelines.pipeline import GraphenePipelineRunOrError
 from ..pipelines.snapshot import GraphenePipelineSnapshotOrError
@@ -211,6 +212,8 @@ class GrapheneQuery(graphene.ObjectType):
         cursor=graphene.String(),
         limit=graphene.Int(),
     )
+
+    permissions = graphene.Field(non_null_list(GraphenePermission))
 
     class Meta:
         name = "Query"
@@ -374,3 +377,7 @@ class GrapheneQuery(graphene.ObjectType):
             cursor=kwargs.get("cursor"),
             limit=kwargs.get("limit"),
         )
+
+    def resolve_permissions(self, graphene_info):
+        permissions = graphene_info.context.permissions
+        return [GraphenePermission(permission, value) for permission, value in permissions.items()]

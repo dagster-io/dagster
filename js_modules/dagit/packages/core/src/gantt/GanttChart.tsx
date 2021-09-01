@@ -7,7 +7,7 @@ import styled from 'styled-components/macro';
 
 import {AppContext} from '../app/AppContext';
 import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
-import {WebsocketStatusContext} from '../app/WebsocketStatus';
+import {WebSocketContext} from '../app/WebSocketProvider';
 import {useWebsocketAvailability} from '../app/useWebsocketAvailability';
 import {EMPTY_RUN_METADATA, IRunMetadataDict, IStepMetadata} from '../runs/RunMetadataProvider';
 import {StepSelection} from '../runs/StepSelection';
@@ -218,8 +218,8 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
   const {rootServerURI} = React.useContext(AppContext);
 
   const websocketAvailability = useWebsocketAvailability();
-  const websocketStatus = React.useContext(WebsocketStatusContext);
-  const lostWebsocket = websocketAvailability === 'success' && websocketStatus === WebSocket.CLOSED;
+  const {status} = React.useContext(WebSocketContext);
+  const lostWebsocket = websocketAvailability === 'success' && status === WebSocket.CLOSED;
 
   // The slider in the UI updates `options.zoom` from 1-100. We convert that value
   // into a px-per-ms "scale", where the minimum is the value required to zoom-to-fit.
@@ -254,14 +254,13 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
       return;
     }
 
-    // time required for 2px shift in viz, but not more rapid than our CSS animation duration
     const renderInterval = Math.max(CSS_DURATION, 2 / scale);
     const now = Date.now();
 
     const timeUntilIntervalElasped = renderInterval - (now - nowMs);
     const timeout = setTimeout(() => setNowMs(now), timeUntilIntervalElasped);
     return () => clearTimeout(timeout);
-  }, [scale, metadata, nowMs, lostWebsocket]);
+  }, [scale, nowMs, lostWebsocket, metadata]);
 
   // Listen for events specifying hover time (eg: a marker at a particular timestamp)
   // and sync them to our React state for display.
@@ -336,7 +335,7 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
         />
       )}
       <div style={{overflow: 'scroll', flex: 1}} {...containerProps}>
-        <div style={{position: 'relative', ...layoutSize}}>
+        <div style={{position: 'relative', marginBottom: 50, ...layoutSize}}>
           {measurementComplete && (
             <GanttChartViewportContents
               options={options}

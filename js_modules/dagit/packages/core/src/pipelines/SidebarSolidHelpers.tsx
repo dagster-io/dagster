@@ -3,7 +3,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {titleOfIO} from '../app/Util';
+import {titleOfIO} from '../app/titleOfIO';
 import {SolidColumn} from '../runs/LogsRowComponents';
 import {Code} from '../ui/Text';
 import {FontFamily} from '../ui/styles';

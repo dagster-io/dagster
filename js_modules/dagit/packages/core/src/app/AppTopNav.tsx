@@ -12,7 +12,7 @@ import {Group} from '../ui/Group';
 
 import {LayoutContext} from './LayoutProvider';
 import {ShortcutHandler} from './ShortcutHandler';
-import {WebsocketStatus} from './WebsocketStatus';
+import {WebSocketStatus} from './WebSocketProvider';
 
 interface Props {
   searchPlaceholder: string;
@@ -92,7 +92,7 @@ const LogoContainer = styled.div`
   }
 `;
 
-const LogoWebsocketStatus = styled(WebsocketStatus)`
+const LogoWebsocketStatus = styled(WebSocketStatus)`
   position: absolute;
   top: 20px;
   left: 24px;

@@ -95,7 +95,7 @@ export const GraphQueryInput = React.memo(
       return lastElementName && !suffix
         ? uniq(available)
             .sort()
-            .filter((n) => n.startsWith(lastElementName) && n !== lastElementName)
+            .filter((n) => n.startsWith(lastElementName))
         : [];
     }, [lastElementName, props.items, suffix]);
 

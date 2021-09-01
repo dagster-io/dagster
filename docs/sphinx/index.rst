@@ -22,6 +22,7 @@
    sections/api/apidocs/types
    sections/api/apidocs/utilities
    sections/api/apidocs/experimental
+   sections/api/apidocs/memoization
    sections/api/apidocs/libraries/dagster-airflow
    sections/api/apidocs/libraries/dagster-aws
    sections/api/apidocs/libraries/dagster-azure

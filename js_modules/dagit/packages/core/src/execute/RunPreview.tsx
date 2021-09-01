@@ -1,5 +1,6 @@
 import {gql} from '@apollo/client';
-import {Button, Checkbox, Code, Colors, Icon, Intent, Position, Tooltip} from '@blueprintjs/core';
+import {Button, Checkbox, Code, Colors, Icon, Intent, Position} from '@blueprintjs/core';
+import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -176,7 +177,6 @@ interface RunPreviewProps {
   validation: RunPreviewValidationFragment | null;
   document: any | null;
 
-  actions?: React.ReactChild;
   runConfigSchema?: ConfigEditorRunConfigSchemaFragment;
   onHighlightPath: (path: string[]) => void;
   onRemoveExtraPaths: (paths: string[]) => void;
@@ -221,7 +221,6 @@ export class RunPreview extends React.Component<RunPreviewProps, RunPreviewState
 
   render() {
     const {
-      actions,
       document,
       validation,
       onHighlightPath,
@@ -420,7 +419,6 @@ export class RunPreview extends React.Component<RunPreviewProps, RunPreviewState
                 onChange={() => this.setState({errorsOnly: !errorsOnly})}
               />
             </div>
-            <div style={{position: 'absolute', bottom: 14, right: 14}}>{actions}</div>
           </>
         }
       />

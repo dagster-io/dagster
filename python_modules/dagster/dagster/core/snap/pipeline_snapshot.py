@@ -157,7 +157,7 @@ class PipelineSnapshot(
                 parent_snapshot_id=create_pipeline_snapshot_id(
                     cls.from_pipeline_def(pipeline_def.parent_pipeline_def)
                 ),
-                solid_selection=pipeline_def.solid_selection,
+                solid_selection=sorted(pipeline_def.solid_selection),
                 solids_to_execute=pipeline_def.solids_to_execute,
             )
 
@@ -179,7 +179,7 @@ class PipelineSnapshot(
             graph_def_name=pipeline_def.graph.name,
         )
 
-    def get_solid_def_snap(self, solid_def_name: str) -> Union[SolidDefSnap, CompositeSolidDefSnap]:
+    def get_node_def_snap(self, solid_def_name: str) -> Union[SolidDefSnap, CompositeSolidDefSnap]:
         check.str_param(solid_def_name, "solid_def_name")
         for solid_def_snap in self.solid_definitions_snapshot.solid_def_snaps:
             if solid_def_snap.name == solid_def_name:

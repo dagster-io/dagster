@@ -5,12 +5,12 @@ import '@blueprintjs/table/lib/css/table.css';
 import '@blueprintjs/popover2/lib/css/blueprint-popover2.css';
 
 import {
-  split,
   ApolloLink,
   ApolloClient,
   ApolloProvider,
   HttpLink,
   InMemoryCache,
+  split,
 } from '@apollo/client';
 import {WebSocketLink} from '@apollo/client/link/ws';
 import {getMainDefinition} from '@apollo/client/utilities';
@@ -18,20 +18,20 @@ import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import {BrowserRouter} from 'react-router-dom';
 import {createGlobalStyle} from 'styled-components/macro';
-import {SubscriptionClient} from 'subscriptions-transport-ws';
 
 import {FontFamily} from '../ui/styles';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
 
 import {AppContext} from './AppContext';
-import {AppErrorLink} from './AppError';
+import {errorLink} from './AppError';
 import {CustomAlertProvider} from './CustomAlertProvider';
 import {CustomConfirmationProvider} from './CustomConfirmationProvider';
 import {CustomTooltipProvider} from './CustomTooltipProvider';
 import {LayoutProvider} from './LayoutProvider';
-import {PermissionsFromJSON} from './Permissions';
-import {formatElapsedTime, patchCopyToRemoveZeroWidthUnderscores, debugLog} from './Util';
-import {WebsocketStatusProvider} from './WebsocketStatus';
+import {PermissionsProvider} from './Permissions';
+import {patchCopyToRemoveZeroWidthUnderscores} from './Util';
+import {WebSocketProvider} from './WebSocketProvider';
+import {logLink, timeStartLink} from './apolloLinks';
 import {TimezoneProvider} from './time/TimezoneContext';
 
 // The solid sidebar and other UI elements insert zero-width spaces so solid names
@@ -78,89 +78,83 @@ const GlobalStyle = createGlobalStyle`
 interface Props {
   appCache: InMemoryCache;
   config: {
+    // todo dish: Make this non-optional.
+    apolloLinks?: ApolloLink[];
     basePath?: string;
+    headers?: {[key: string]: string};
     origin: string;
-    permissions: PermissionsFromJSON;
-    subscriptionParams?: {[key: string]: string};
   };
 }
 
 export const AppProvider: React.FC<Props> = (props) => {
   const {appCache, config} = props;
-  const {basePath = '', origin, permissions, subscriptionParams = {}} = config;
+  const {
+    // todo dish: Remove this default array.
+    apolloLinks = [logLink, errorLink, timeStartLink],
+    basePath = '',
+    headers = {},
+    origin,
+  } = config;
 
   const graphqlPath = `${basePath}/graphql`;
   const rootServerURI = `${origin}${basePath}`;
   const websocketURI = `${rootServerURI.replace(/^http/, 'ws')}/graphql`;
 
-  const websocketClient = React.useMemo(() => {
-    return new SubscriptionClient(websocketURI, {
-      reconnect: true,
-      connectionParams: subscriptionParams,
-    });
-  }, [subscriptionParams, websocketURI]);
+  // Ensure that we use the same `headers` value.
+  const headersAsString = JSON.stringify(headers);
+  const headerObject = React.useMemo(() => JSON.parse(headersAsString), [headersAsString]);
 
   const apolloClient = React.useMemo(() => {
-    const logLink = new ApolloLink((operation, forward) =>
-      forward(operation).map((data) => {
-        const time = performance.now() - operation.getContext().start;
-        debugLog(`${operation.operationName} took ${formatElapsedTime(time)}`, {operation, data});
-        return data;
-      }),
-    );
-
-    const timeStartLink = new ApolloLink((operation, forward) => {
-      operation.setContext({start: performance.now()});
-      return forward(operation);
-    });
-
-    const httpLink = new HttpLink({uri: graphqlPath});
-    const websocketLink = new WebSocketLink(websocketClient);
-
-    // subscriptions should use the websocket link; queries & mutations should use HTTP
+    // Subscriptions use WebSocketLink, queries & mutations use HttpLink.
     const splitLink = split(
       ({query}) => {
         const definition = getMainDefinition(query);
         return definition.kind === 'OperationDefinition' && definition.operation === 'subscription';
       },
-      websocketLink,
-      httpLink,
+      new WebSocketLink({
+        uri: websocketURI,
+        options: {
+          reconnect: true,
+          connectionParams: {...headerObject},
+        },
+      }),
+      new HttpLink({uri: graphqlPath, headers: headerObject}),
     );
 
     return new ApolloClient({
       cache: appCache,
-      link: ApolloLink.from([logLink, AppErrorLink(), timeStartLink, splitLink]),
+      link: ApolloLink.from([...apolloLinks, splitLink]),
     });
-  }, [appCache, graphqlPath, websocketClient]);
+  }, [apolloLinks, appCache, graphqlPath, headerObject, websocketURI]);
 
   const appContextValue = React.useMemo(
     () => ({
       basePath,
-      permissions,
       rootServerURI,
-      websocketURI,
     }),
-    [basePath, permissions, rootServerURI, websocketURI],
+    [basePath, rootServerURI],
   );
 
   return (
     <AppContext.Provider value={appContextValue}>
-      <WebsocketStatusProvider websocket={websocketClient}>
+      <WebSocketProvider websocketURI={websocketURI} connectionParams={headerObject}>
         <GlobalStyle />
         <ApolloProvider client={apolloClient}>
-          <BrowserRouter basename={basePath || ''}>
-            <TimezoneProvider>
-              <WorkspaceProvider>
-                <CustomConfirmationProvider>
-                  <LayoutProvider>{props.children}</LayoutProvider>
-                </CustomConfirmationProvider>
-                <CustomTooltipProvider />
-                <CustomAlertProvider />
-              </WorkspaceProvider>
-            </TimezoneProvider>
-          </BrowserRouter>
+          <PermissionsProvider>
+            <BrowserRouter basename={basePath || ''}>
+              <TimezoneProvider>
+                <WorkspaceProvider>
+                  <CustomConfirmationProvider>
+                    <LayoutProvider>{props.children}</LayoutProvider>
+                  </CustomConfirmationProvider>
+                  <CustomTooltipProvider />
+                  <CustomAlertProvider />
+                </WorkspaceProvider>
+              </TimezoneProvider>
+            </BrowserRouter>
+          </PermissionsProvider>
         </ApolloProvider>
-      </WebsocketStatusProvider>
+      </WebSocketProvider>
     </AppContext.Provider>
   );
 };

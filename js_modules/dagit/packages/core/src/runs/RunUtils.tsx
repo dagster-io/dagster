@@ -240,7 +240,8 @@ export const LAUNCH_PIPELINE_REEXECUTION_MUTATION = gql`
 interface RunTimeProps {
   run: RunTimeFragment;
 }
-export const RunTime: React.FunctionComponent<RunTimeProps> = ({run}) => {
+
+export const RunTime: React.FC<RunTimeProps> = React.memo(({run}) => {
   const {stats, status} = run;
 
   if (stats.__typename !== 'PipelineRunStatsSnapshot') {
@@ -277,9 +278,9 @@ export const RunTime: React.FunctionComponent<RunTimeProps> = ({run}) => {
   };
 
   return <div>{content()}</div>;
-};
+});
 
-export const RunElapsed: React.FC<RunTimeProps> = ({run}) => {
+export const RunElapsed: React.FC<RunTimeProps> = React.memo(({run}) => {
   if (run.stats.__typename !== 'PipelineRunStatsSnapshot') {
     return (
       <Popover content={<PythonErrorInfo error={run.stats} />}>
@@ -291,7 +292,7 @@ export const RunElapsed: React.FC<RunTimeProps> = ({run}) => {
   }
 
   return <TimeElapsed startUnix={run.stats.startTime} endUnix={run.stats.endTime} />;
-};
+});
 
 export const RUN_TIME_FRAGMENT = gql`
   fragment RunTimeFragment on PipelineRun {

@@ -19,7 +19,9 @@ from dagster.core.definitions.events import RetryRequested
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.definitions.resource import ScopedResourcesBuilder
+from dagster.core.events import DagsterEvent
 from dagster.core.execution.api import scoped_pipeline_context
+from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.resources_init import (
     get_required_resource_keys_to_init,
@@ -31,11 +33,11 @@ from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.utils import make_new_run_id
 from dagster.loggers import colored_console_logger
 from dagster.serdes import unpack_value
-from dagster.utils import EventGenerationManager
+from dagster.utils import EventGenerationManager, ensure_gen
 
 from .context import DagstermillExecutionContext, DagstermillRuntimeExecutionContext
 from .errors import DagstermillError
-from .serialize import PICKLE_PROTOCOL, read_value, write_value
+from .serialize import PICKLE_PROTOCOL, read_value
 
 
 class DagstermillResourceEventGenerationManager(EventGenerationManager):
@@ -107,6 +109,7 @@ class Manager:
         pipeline_run_dict=None,
         solid_handle_kwargs=None,
         instance_ref_dict=None,
+        step_key=None,
     ):
         """Reconstitutes a context for dagstermill-managed execution.
 
@@ -126,6 +129,7 @@ class Manager:
         check.dict_param(executable_dict, "executable_dict")
         check.dict_param(solid_handle_kwargs, "solid_handle_kwargs")
         check.dict_param(instance_ref_dict, "instance_ref_dict")
+        check.str_param(step_key, "step_key")
 
         pipeline = ReconstructablePipeline.from_dict(executable_dict)
         pipeline_def = pipeline.get_definition()
@@ -180,6 +184,8 @@ class Manager:
                     pipeline_context.intermediate_storage_def,
                 ),
                 solid_name=solid.name,
+                solid_handle=solid_handle,
+                step_context=pipeline_context.for_step(execution_plan.get_step_by_key(step_key)),
             )
 
         return self.context
@@ -271,6 +277,7 @@ class Manager:
                     pipeline_context.intermediate_storage_def,
                 ),
                 solid_name=solid_def.name,
+                solid_handle=NodeHandle(solid_def.name, parent=None),
             )
 
         return self.context
@@ -296,10 +303,20 @@ class Manager:
                 f"Expected one of {[str(output_def.name) for output_def in self.solid_def.output_defs]}"
             )
 
-        dagster_type = self.solid_def.output_def_named(output_name).dagster_type
+        # pass output value cross process boundary using io manager
+        step_context = self.context._step_context  # pylint: disable=protected-access
+        # Note: yield_result currently does not support DynamicOutput
+        step_output_handle = StepOutputHandle(
+            step_key=step_context.step.key, output_name=output_name
+        )
+        output_context = step_context.get_output_context(step_output_handle)
+        io_manager = step_context.get_io_manager(step_output_handle)
 
-        out_file = os.path.join(self.marshal_dir, f"output-{output_name}")
-        scrapbook.glue(output_name, write_value(dagster_type, value, out_file))
+        # Note that we assume io manager is symmetric, i.e handle_input(handle_output(X)) == X
+        io_manager.handle_output(output_context, value)
+
+        # record that the output has been yielded
+        scrapbook.glue(output_name, "")
 
     def yield_event(self, dagster_event):
         """Yield a dagster event directly from notebook code.
@@ -343,6 +360,16 @@ class Manager:
     def load_parameter(self, input_name, input_value):
         input_def = self.solid_def.input_def_named(input_name)
         return read_value(input_def.dagster_type, seven.json.loads(input_value))
+
+    def load_input_parameter(self, input_name: str):
+        # load input from source
+        step_context = self.context._step_context  # pylint: disable=protected-access
+        step_input = step_context.step.step_input_named(input_name)
+        for event_or_input_value in ensure_gen(step_input.source.load_input_object(step_context)):
+            if isinstance(event_or_input_value, DagsterEvent):
+                continue
+            else:
+                return event_or_input_value
 
 
 MANAGER_FOR_NOTEBOOK_INSTANCE = Manager()

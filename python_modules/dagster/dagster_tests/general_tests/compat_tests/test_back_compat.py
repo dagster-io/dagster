@@ -454,6 +454,7 @@ def test_0_12_0_extract_asset_index_cols():
         yield AssetMaterialization(
             asset_key=AssetKey(["a"]), partition="partition_1", tags={"foo": "FOO"}
         )
+        yield AssetMaterialization(asset_key=AssetKey(["b"]), tags={"bar": "BAR"})
         yield Output(1)
 
     @pipeline
@@ -474,14 +475,21 @@ def test_0_12_0_extract_asset_index_cols():
             # make sure that executing the pipeline works
             execute_pipeline(asset_pipeline, instance=instance)
             assert storage.has_asset_key(AssetKey(["a"]))
+            assert storage.has_asset_key(AssetKey(["b"]))
 
             # make sure that wiping works
             storage.wipe_asset(AssetKey(["a"]))
             assert not storage.has_asset_key(AssetKey(["a"]))
+            assert storage.has_asset_key(AssetKey(["b"]))
 
             execute_pipeline(asset_pipeline, instance=instance)
             assert storage.has_asset_key(AssetKey(["a"]))
             old_tags = storage.get_asset_tags(AssetKey(["a"]))
+
+            # wipe and leave asset wiped
+            storage.wipe_asset(AssetKey(["b"]))
+            assert not storage.has_asset_key(AssetKey(["b"]))
+
             old_keys = storage.all_asset_keys()
 
             instance.upgrade()
@@ -493,6 +501,8 @@ def test_0_12_0_extract_asset_index_cols():
             assert "tags" in set(get_sqlite3_columns(db_path, "asset_keys"))
 
             assert storage.has_asset_key(AssetKey(["a"]))
+            assert not storage.has_asset_key(AssetKey(["b"]))
+
             new_tags = storage.get_asset_tags(AssetKey(["a"]))
             new_keys = storage.all_asset_keys()
             assert set(old_tags) == set(new_tags)

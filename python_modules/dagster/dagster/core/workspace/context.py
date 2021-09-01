@@ -75,6 +75,10 @@ class BaseWorkspaceRequestContext(IWorkspace):
     def version(self) -> Optional[str]:
         pass
 
+    @abstractproperty
+    def permissions(self) -> Dict[str, bool]:
+        pass
+
     def has_permission(self, permission: str) -> bool:
         pass
 
@@ -229,6 +233,12 @@ class BaseWorkspaceRequestContext(IWorkspace):
             partition_names=partition_names,
         )
 
+    def get_external_notebook_data(self, repository_location_name, notebook_path: str):
+        check.str_param(repository_location_name, "repository_location_name")
+        check.str_param(notebook_path, "notebook_path")
+        repository_location = self.get_repository_location(repository_location_name)
+        return repository_location.get_external_notebook_data(notebook_path=notebook_path)
+
 
 class WorkspaceRequestContext(BaseWorkspaceRequestContext):
     def __init__(
@@ -263,6 +273,10 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
     def read_only(self) -> bool:
         return self._process_context.read_only
 
+    @property
+    def permissions(self) -> Dict[str, bool]:
+        return self._process_context.permissions
+
     def has_permission(self, permission: str) -> bool:
         return self._process_context.has_permission(permission)
 
@@ -275,8 +289,15 @@ class IWorkspaceProcessContext(ABC):
     """
 
     @abstractmethod
-    def create_request_context(self) -> BaseWorkspaceRequestContext:
-        pass
+    def create_request_context(self, source=None) -> BaseWorkspaceRequestContext:
+        """
+        Create a usable fixed context for the scope of a request.
+
+        Args:
+            source (Optional[Any]):
+                The source of the request, such as an object representing the web request
+                or http connection.
+        """
 
     def has_permission(self, permission: str) -> bool:
         pass
@@ -429,8 +450,12 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
     def read_only(self):
         return self._read_only
 
+    @property
+    def permissions(self) -> Dict[str, bool]:
+        return get_user_permissions(self)
+
     def has_permission(self, permission: str) -> bool:
-        permissions = get_user_permissions(self)
+        permissions = self.permissions
         check.invariant(
             permission in permissions, f"Permission {permission} not listed in permissions map"
         )
@@ -565,7 +590,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
 
         self._location_entry_dict = OrderedDict()
 
-    def create_request_context(self) -> WorkspaceRequestContext:
+    def create_request_context(self, source=None) -> WorkspaceRequestContext:
         return WorkspaceRequestContext(
             instance=self._instance,
             workspace_snapshot=self.create_snapshot(),

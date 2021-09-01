@@ -3,7 +3,7 @@ import * as React from 'react';
 
 import {TestProvider} from '../testing/TestProvider';
 
-import {PermissionSet, PERMISSIONS_ALLOW_ALL, usePermissions} from './Permissions';
+import {PermissionsMap, usePermissions} from './Permissions';
 import {Switch} from './Switch';
 import {RenderConfig, RouteConfig} from './types';
 
@@ -15,7 +15,7 @@ describe('Switch', () => {
     },
     {
       path: '/baz/:id',
-      render: (config: RenderConfig<{id: string}, PermissionSet>) => (
+      render: (config: RenderConfig<{id: string}, PermissionsMap>) => (
         <div>{`Baz ${config.match.params.id}`}</div>
       ),
     },
@@ -38,7 +38,7 @@ describe('Switch', () => {
     },
     {
       path: '/gated/check',
-      isAvailable: (permissions: PermissionSet) => permissions.canReloadRepositoryLocation,
+      isAvailable: (permissions: PermissionsMap) => permissions.canReloadRepositoryLocation,
       render: () => <div>Welcome check!</div>,
     },
     {
@@ -82,7 +82,7 @@ describe('Switch', () => {
   ];
 
   interface Props {
-    routes: RouteConfig<any, PermissionSet>[];
+    routes: RouteConfig<any, PermissionsMap>[];
   }
 
   const Test: React.FC<Props> = ({routes}) => {
@@ -210,10 +210,8 @@ describe('Switch', () => {
         initialEntries: ['/gated/check'],
       };
 
-      const permissions = PERMISSIONS_ALLOW_ALL;
-
       render(
-        <TestProvider appContextProps={{permissions}} routerProps={routerProps}>
+        <TestProvider routerProps={routerProps}>
           <Test routes={routes} />
         </TestProvider>,
       );
@@ -228,10 +226,11 @@ describe('Switch', () => {
         initialEntries: ['/gated/check'],
       };
 
-      const permissions = {...PERMISSIONS_ALLOW_ALL, reload_repository_location: false};
-
       render(
-        <TestProvider appContextProps={{permissions}} routerProps={routerProps}>
+        <TestProvider
+          permissionOverrides={{reload_repository_location: false}}
+          routerProps={routerProps}
+        >
           <Test routes={routes} />
         </TestProvider>,
       );

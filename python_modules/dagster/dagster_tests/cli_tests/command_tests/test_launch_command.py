@@ -1,6 +1,7 @@
 import click
 import pytest
 from click.testing import CliRunner
+from dagster import execute_pipeline
 from dagster.cli.pipeline import execute_launch_command, pipeline_launch_command
 from dagster.core.errors import DagsterRunAlreadyExists
 from dagster.core.storage.pipeline_run import PipelineRunStatus
@@ -11,6 +12,7 @@ from .test_cli_commands import (
     default_cli_test_instance,
     grpc_server_bar_cli_args,
     launch_command_contexts,
+    memoizable_pipeline,
     non_existant_python_origin_target_args,
     python_bar_cli_args,
     valid_external_pipeline_target_cli_args_with_preset,
@@ -241,3 +243,24 @@ def test_empty_working_directory():
             assert result.exit_code == 0
             runs = instance.get_runs()
             assert len(runs) == 1
+
+
+def test_launch_using_memoization():
+    runner = CliRunner()
+    with default_cli_test_instance() as instance:
+        with python_bar_cli_args("memoizable") as args:
+            result = runner.invoke(pipeline_launch_command, args + ["--run-id", "first"])
+            assert result.exit_code == 0
+            run = instance.get_run_by_id("first")
+
+            # A None value of step_keys_to_execute indicates executing every step in the plan.
+            assert len(run.step_keys_to_execute) == 1
+
+            # Execute the pipeline to pretend that the launch went through and memoized some result.
+            result = execute_pipeline(memoizable_pipeline, instance=instance)
+            assert result.success
+
+            result = runner.invoke(pipeline_launch_command, args + ["--run-id", "second"])
+            assert result.exit_code == 0
+            run = instance.get_run_by_id("second")
+            assert len(run.step_keys_to_execute) == 0

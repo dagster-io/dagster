@@ -1,19 +1,21 @@
 import {gql, useQuery} from '@apollo/client';
 import {Button, Classes, Colors, Dialog, Icon} from '@blueprintjs/core';
+import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {useFeatureFlags} from '../app/Flags';
+import {timingStringForStatus} from '../runs/RunDetails';
 import {RunStatus} from '../runs/RunStatusDots';
-import {TimeElapsed} from '../runs/TimeElapsed';
-import {ScheduleSwitch} from '../schedules/ScheduleSwitch';
-import {SCHEDULE_FRAGMENT} from '../schedules/ScheduleUtils';
-import {SENSOR_FRAGMENT} from '../sensors/SensorFragment';
-import {SensorSwitch} from '../sensors/SensorSwitch';
+import {RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
+import {ScheduleSwitch, SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
+import {TimestampDisplay} from '../schedules/TimestampDisplay';
+import {SensorSwitch, SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
+import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
 import {Group} from '../ui/Group';
-import {MetadataTable} from '../ui/MetadataTable';
+import {MetadataTable, StyledTable} from '../ui/MetadataTable';
 import {FontFamily} from '../ui/styles';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -21,10 +23,10 @@ import {workspacePathFromAddress} from '../workspace/workspacePath';
 import {
   JobMetadataQuery,
   JobMetadataQuery_pipelineOrError_Pipeline as Job,
-  JobMetadataQuery_pipelineRunsOrError_PipelineRuns_results as Run,
   JobMetadataQuery_pipelineOrError_Pipeline_schedules as Schedule,
   JobMetadataQuery_pipelineOrError_Pipeline_sensors as Sensor,
 } from './types/JobMetadataQuery';
+import {RunMetadataFragment} from './types/RunMetadataFragment';
 
 interface Props {
   pipelineName: string;
@@ -34,6 +36,8 @@ interface Props {
 
 export const JobMetadata: React.FC<Props> = (props) => {
   const {pipelineName, pipelineMode, repoAddress} = props;
+  const {flagPipelineModeTuples} = useFeatureFlags();
+
   const {data, loading} = useQuery<JobMetadataQuery>(JOB_METADATA_QUERY, {
     variables: {
       params: {
@@ -43,7 +47,7 @@ export const JobMetadata: React.FC<Props> = (props) => {
       },
       runsFilter: {
         pipelineName,
-        mode: pipelineMode,
+        mode: flagPipelineModeTuples ? pipelineMode : undefined,
       },
     },
   });
@@ -220,10 +224,12 @@ const MatchingSensor: React.FC<{sensor: Sensor; repoAddress: RepoAddress}> = ({
   </Group>
 );
 
-const LatestRun: React.FC<{run: Run}> = ({run}) => {
+const TIME_FORMAT = {showSeconds: true, showTimezone: false};
+
+const LatestRun: React.FC<{run: RunMetadataFragment}> = ({run}) => {
   const stats = React.useMemo(() => {
     if (run.stats.__typename === 'PipelineRunStatsSnapshot') {
-      return {start: run.stats.startTime, end: run.stats.endTime};
+      return {start: run.stats.startTime, end: run.stats.endTime, status: run.status};
     }
     return null;
   }, [run]);
@@ -234,12 +240,46 @@ const LatestRun: React.FC<{run: Run}> = ({run}) => {
       <div style={{fontFamily: FontFamily.monospace}}>
         <Link to={`/instance/runs/${run.id}`}>{run.id.slice(0, 8)}</Link>
       </div>
-      {stats ? <TimeElapsed startUnix={stats.start} endUnix={stats.end} /> : null}
+      {stats ? (
+        <Tooltip
+          placement="bottom"
+          content={
+            <StyledTable>
+              <tbody>
+                <tr>
+                  <td style={{color: Colors.GRAY4}}>
+                    <Box padding={{right: 16}}>Started</Box>
+                  </td>
+                  <td>
+                    {stats.start ? (
+                      <TimestampDisplay timestamp={stats.start} timeFormat={TIME_FORMAT} />
+                    ) : (
+                      timingStringForStatus(stats.status)
+                    )}
+                  </td>
+                </tr>
+                <tr>
+                  <td style={{color: Colors.GRAY4}}>Ended</td>
+                  <td>
+                    {stats.end ? (
+                      <TimestampDisplay timestamp={stats.end} timeFormat={TIME_FORMAT} />
+                    ) : (
+                      timingStringForStatus(stats.status)
+                    )}
+                  </td>
+                </tr>
+              </tbody>
+            </StyledTable>
+          }
+        >
+          <RunTime run={run} />
+        </Tooltip>
+      ) : null}
     </Group>
   );
 };
 
-const RelatedAssets: React.FC<{runs: Run[]}> = ({runs}) => {
+const RelatedAssets: React.FC<{runs: RunMetadataFragment[]}> = ({runs}) => {
   const [open, setOpen] = React.useState(false);
 
   const assetMap = {};
@@ -269,11 +309,12 @@ const RelatedAssets: React.FC<{runs: Run[]}> = ({runs}) => {
         canEscapeKeyClose
         isOpen={open}
         onClose={() => setOpen(false)}
+        style={{maxWidth: '80%', minWidth: '500px', width: 'auto'}}
       >
         <div className={Classes.DIALOG_BODY}>
           <Group direction="column" spacing={16}>
             {keys.map((key) => (
-              <Link key={key} to={`/instance/assets/${key}`}>
+              <Link key={key} to={`/instance/assets/${key}`} style={{wordBreak: 'break-word'}}>
                 {key}
               </Link>
             ))}
@@ -293,6 +334,21 @@ const GrayText = styled.div`
   color: ${Colors.GRAY3};
 `;
 
+const RUN_METADATA_FRAGMENT = gql`
+  fragment RunMetadataFragment on PipelineRun {
+    id
+    status
+    assets {
+      id
+      key {
+        path
+      }
+    }
+    ...RunTimeFragment
+  }
+  ${RUN_TIME_FRAGMENT}
+`;
+
 const JOB_METADATA_QUERY = gql`
   query JobMetadataQuery($params: PipelineSelector!, $runsFilter: PipelineRunsFilter) {
     pipelineOrError(params: $params) {
@@ -300,11 +356,13 @@ const JOB_METADATA_QUERY = gql`
         id
         schedules {
           id
-          ...ScheduleFragment
+          mode
+          ...ScheduleSwitchFragment
         }
         sensors {
           id
-          ...SensorFragment
+          mode
+          ...SensorSwitchFragment
         }
       }
     }
@@ -312,24 +370,12 @@ const JOB_METADATA_QUERY = gql`
       ... on PipelineRuns {
         results {
           id
-          status
-          stats {
-            ... on PipelineRunStatsSnapshot {
-              id
-              startTime
-              endTime
-            }
-          }
-          assets {
-            id
-            key {
-              path
-            }
-          }
+          ...RunMetadataFragment
         }
       }
     }
   }
-  ${SCHEDULE_FRAGMENT}
-  ${SENSOR_FRAGMENT}
+  ${SCHEDULE_SWITCH_FRAGMENT}
+  ${SENSOR_SWITCH_FRAGMENT}
+  ${RUN_METADATA_FRAGMENT}
 `;

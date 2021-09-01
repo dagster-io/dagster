@@ -1,6 +1,6 @@
 from typing import Tuple
 
-from dagster import ExpectationResult, Output, OutputDefinition, solid
+from dagster import Output, OutputDefinition, solid
 from pandas import DataFrame
 from pyspark.sql import DataFrame as SparkDF
 from pyspark.sql.types import (
@@ -15,7 +15,6 @@ from pyspark.sql.types import (
 
 HN_ACTION_SCHEMA = StructType(
     [
-        StructField("deleted", BooleanType()),
         StructField("id", LongType()),
         StructField("parent", DoubleType()),
         StructField("time", LongType()),
@@ -30,6 +29,8 @@ HN_ACTION_SCHEMA = StructType(
         StructField("url", StringType()),
     ]
 )
+
+ACTION_FIELD_NAMES = [field.name for field in HN_ACTION_SCHEMA.fields]
 
 
 @solid(
@@ -65,41 +66,29 @@ def download_items(context, id_range: Tuple[int, int]) -> Output:
 
 @solid(
     output_defs=[
-        OutputDefinition(SparkDF, "comments", io_manager_key="parquet_io_manager"),
-        OutputDefinition(SparkDF, "stories", io_manager_key="parquet_io_manager"),
+        OutputDefinition(
+            name="comments",
+            io_manager_key="warehouse_io_manager",
+            metadata={"table": "hackernews.comments"},
+        )
     ],
-    required_resource_keys={"pyspark"},
-    description="Split raw the DataFrame by the 'type' column.",
+    description="Creates a dataset of all items that are comments",
 )
-def split_types(context, raw_df: SparkDF):
-    expected_df = context.resources.pyspark.spark_session.createDataFrame([], HN_ACTION_SCHEMA)
-    # Schema validation
-    yield ExpectationResult(
-        success=set(raw_df.schema) == set(expected_df.schema),
-        label="hn_data_schema_check",
-        description="Check if the source schema is expected",
-        metadata={
-            "Expected data schema": expected_df._jdf.schema().treeString(),  # type: ignore # pylint: disable=protected-access
-            "Actual data schema": raw_df._jdf.schema().treeString(),  # type: ignore # pylint: disable=protected-access
-        },
-    )
+def build_comments(context, items: SparkDF) -> SparkDF:
+    context.log.info(str(items.schema))
+    return items.where(items["type"] == "comment").select(ACTION_FIELD_NAMES)
 
-    # Split data based on the values in the 'type' column
-    type_values = raw_df.select("type").distinct().rdd.flatMap(lambda x: x).collect()
-    comment_df = raw_df.where(raw_df["type"] == "comment")
-    story_df = raw_df.where(raw_df["type"] == "story")
 
-    yield ExpectationResult(
-        success=comment_df.count() > 0 and story_df.count() > 0,
-        label="hn_data_split_types_check",
-        description="Expect the hacker news data has at least 1 'comment' entry and at least 1 'story' entry.",
-        metadata={
-            "number of raw rows": raw_df.count(),
-            "number of comment rows": comment_df.count(),
-            "number of story rows": story_df.count(),
-            "Unique values in the 'type' column": (", ").join(type_values),
-        },
-    )
-
-    yield Output(comment_df, "comments")
-    yield Output(story_df, "stories")
+@solid(
+    output_defs=[
+        OutputDefinition(
+            name="stories",
+            io_manager_key="warehouse_io_manager",
+            metadata={"table": "hackernews.stories"},
+        )
+    ],
+    description="Creates a dataset of all items that are stories",
+)
+def build_stories(context, items: SparkDF) -> SparkDF:
+    context.log.info(str(items.schema))
+    return items.where(items["type"] == "story").select(ACTION_FIELD_NAMES)

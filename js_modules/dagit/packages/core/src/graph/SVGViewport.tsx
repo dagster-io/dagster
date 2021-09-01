@@ -51,11 +51,19 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
     }
 
     const start = viewport.getOffsetXY(event);
+    if (!start) {
+      return;
+    }
+
     let lastX: number = start.x;
     let lastY: number = start.y;
 
     const onMove = (e: MouseEvent) => {
       const offset = viewport.getOffsetXY(e);
+      if (!offset) {
+        return;
+      }
+
       const delta = {x: offset.x - lastX, y: offset.y - lastY};
       viewport.setState({
         x: viewport.state.x + delta.x,
@@ -76,6 +84,10 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
 
   onWheel(viewport: SVGViewport, event: React.WheelEvent<HTMLDivElement>) {
     const cursorPosition = viewport.getOffsetXY(event);
+    if (!cursorPosition) {
+      return;
+    }
+
     const targetScale = viewport.state.scale * (1 - event.deltaY * 0.0025);
     const scale = Math.max(MIN_ZOOM, Math.min(DETAIL_ZOOM, targetScale));
     viewport.adjustZoomRelativeToScreenPoint(scale, cursorPosition);
@@ -208,8 +220,11 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
     };
   }
 
-  getOffsetXY(e: MouseEvent | React.MouseEvent): Point {
-    const el = this.element.current!;
+  getOffsetXY(e: MouseEvent | React.MouseEvent): Point | null {
+    const el = this.element.current;
+    if (!el) {
+      return null;
+    }
     const ownerRect = el.getBoundingClientRect();
     return {x: e.clientX - ownerRect.left, y: e.clientY - ownerRect.top};
   }
@@ -255,7 +270,11 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
   }
 
   onZoomAndCenter = (event: React.MouseEvent<HTMLDivElement>) => {
-    const offset = this.screenToSVGCoords(this.getOffsetXY(event));
+    const offsetXY = this.getOffsetXY(event);
+    if (!offsetXY) {
+      return;
+    }
+    const offset = this.screenToSVGCoords(offsetXY);
     if (Math.abs(DETAIL_ZOOM - this.state.scale) < 0.01) {
       this.smoothZoomToSVGCoords(offset.x, offset.y, this.state.minScale);
     } else {

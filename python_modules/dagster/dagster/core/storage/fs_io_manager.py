@@ -9,6 +9,7 @@ from dagster.core.definitions.events import AssetKey, AssetMaterialization
 from dagster.core.execution.context.input import InputContext
 from dagster.core.execution.context.output import OutputContext
 from dagster.core.storage.io_manager import IOManager, io_manager
+from dagster.core.storage.memoizable_io_manager import MemoizableIOManager
 from dagster.utils import PICKLE_PROTOCOL, mkdir_p
 from dagster.utils.backcompat import experimental
 
@@ -79,7 +80,7 @@ def fs_io_manager(init_context):
     return PickledObjectFilesystemIOManager(base_dir=base_dir)
 
 
-class PickledObjectFilesystemIOManager(IOManager):
+class PickledObjectFilesystemIOManager(MemoizableIOManager):
     """Built-in filesystem IO manager that stores and retrieves values using pickling.
 
     Args:
@@ -94,9 +95,14 @@ class PickledObjectFilesystemIOManager(IOManager):
 
     def _get_path(self, context):
         """Automatically construct filepath."""
-        keys = context.get_run_scoped_output_identifier()
+        keys = context.get_output_identifier()
 
         return os.path.join(self.base_dir, *keys)
+
+    def has_output(self, context):
+        filepath = self._get_path(context)
+
+        return os.path.exists(filepath)
 
     def handle_output(self, context, obj):
         """Pickle the data and store the object to a file.

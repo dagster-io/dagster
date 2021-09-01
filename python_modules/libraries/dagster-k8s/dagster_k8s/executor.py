@@ -29,13 +29,7 @@ from .utils import delete_job
     name="k8s",
     config_schema=merge_dicts(
         DagsterK8sJobConfig.config_type_pipeline_run(),
-        {
-            "job_namespace": Field(
-                StringSource,
-                is_required=False,
-                default_value="default",
-            )
-        },
+        {"job_namespace": Field(StringSource, is_required=False)},
         {"retries": get_retries_config()},
     ),
     requirements=multiple_process_executor_requirements(),
@@ -83,17 +77,30 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
         instance_config_map=run_launcher.instance_config_map,
         postgres_password_secret=run_launcher.postgres_password_secret,
         job_image=exc_cfg.get("job_image"),
-        image_pull_policy=exc_cfg.get("image_pull_policy"),
-        image_pull_secrets=exc_cfg.get("image_pull_secrets"),
-        service_account_name=exc_cfg.get("service_account_name"),
-        env_config_maps=exc_cfg.get("env_config_maps"),
-        env_secrets=exc_cfg.get("env_secrets"),
+        image_pull_policy=(
+            exc_cfg.get("image_pull_policy")
+            if exc_cfg.get("image_pull_policy") != None
+            else run_launcher.image_pull_policy
+        ),
+        image_pull_secrets=run_launcher.image_pull_secrets
+        + (exc_cfg.get("image_pull_secrets") or []),
+        service_account_name=(
+            exc_cfg.get("service_account_name")
+            if exc_cfg.get("service_account_name") != None
+            else run_launcher.service_account_name
+        ),
+        env_config_maps=run_launcher.env_config_maps + (exc_cfg.get("env_config_maps") or []),
+        env_secrets=run_launcher.env_secrets + (exc_cfg.get("env_secrets") or []),
     )
 
     return StepDelegatingExecutor(
         K8sStepHandler(
             job_config=job_config,
-            job_namespace=exc_cfg.get("job_namespace"),
+            job_namespace=(
+                exc_cfg.get("job_namespace")
+                if exc_cfg.get("job_namespace") != None
+                else run_launcher.job_namespace
+            ),
             load_incluster_config=run_launcher.load_incluster_config,
             kubeconfig_file=run_launcher.kubeconfig_file,
         )

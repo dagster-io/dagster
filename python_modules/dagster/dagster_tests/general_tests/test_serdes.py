@@ -433,14 +433,15 @@ def test_skip_when_empty():
                 cls, foo, bar
             )
 
-    new_tuple = SameSnapshotTuple(foo="A")
-    new_snapshot = hash_str(_serialize_dagster_namedtuple(new_tuple, whitelist_map=test_map))
+    for bar_val in [None, [], {}, set()]:
+        new_tuple = SameSnapshotTuple(foo="A", bar=bar_val)
+        new_snapshot = hash_str(_serialize_dagster_namedtuple(new_tuple, whitelist_map=test_map))
 
-    assert old_snapshot == new_snapshot
+        assert old_snapshot == new_snapshot
 
-    rehydrated_tuple = _deserialize_json(old_serialized, whitelist_map=test_map)
-    assert rehydrated_tuple.foo == "A"
-    assert rehydrated_tuple.bar is None
+        rehydrated_tuple = _deserialize_json(old_serialized, whitelist_map=test_map)
+        assert rehydrated_tuple.foo == "A"
+        assert rehydrated_tuple.bar is None
 
     new_tuple_with_bar = SameSnapshotTuple(foo="A", bar="B")
     assert new_tuple_with_bar.foo == "A"

@@ -105,8 +105,8 @@ class ExecutionStep(
             logging_tags=merge_dicts(
                 {
                     "step_key": handle.to_key(),
-                    "pipeline": pipeline_name,
-                    "solid": handle.solid_handle.name,
+                    "pipeline_name": pipeline_name,
+                    "solid_name": handle.solid_handle.name,
                 },
                 check.opt_dict_param(logging_tags, "logging_tags"),
             ),
@@ -291,36 +291,28 @@ class UnresolvedMappedExecutionStep(
         )
         execution_steps = []
 
-        for output_name, mapped_keys in mappings[self.resolved_by_step_key].items():
-            for mapped_key in mapped_keys:
-                # handle output_name alignment
-                resolved_inputs = [
-                    _resolved_input(inp, output_name, mapped_key) for inp in self.step_inputs
-                ]
+        for mapped_key in mappings[self.resolved_by_step_key][self.resolved_by_output_name]:
+            resolved_inputs = [_resolved_input(inp, mapped_key) for inp in self.step_inputs]
 
-                execution_steps.append(
-                    ExecutionStep(
-                        handle=ResolvedFromDynamicStepHandle(self.handle.solid_handle, mapped_key),
-                        pipeline_name=self.pipeline_name,
-                        step_inputs=resolved_inputs,
-                        step_outputs=self.step_outputs,
-                        tags=self.tags,
-                    )
+            execution_steps.append(
+                ExecutionStep(
+                    handle=ResolvedFromDynamicStepHandle(self.handle.solid_handle, mapped_key),
+                    pipeline_name=self.pipeline_name,
+                    step_inputs=resolved_inputs,
+                    step_outputs=self.step_outputs,
+                    tags=self.tags,
                 )
+            )
 
         return execution_steps
 
 
 def _resolved_input(
-    step_input: Union[StepInput, UnresolvedMappedStepInput], output_name: str, map_key: str
+    step_input: Union[StepInput, UnresolvedMappedStepInput],
+    map_key: str,
 ):
     if isinstance(step_input, StepInput):
         return step_input
-
-    check.invariant(
-        output_name == step_input.resolved_by_output_name,
-        "unexpected output name in dynamic mapped step resolution",
-    )
 
     return step_input.resolve(map_key)
 

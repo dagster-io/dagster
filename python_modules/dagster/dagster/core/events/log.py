@@ -2,7 +2,7 @@ from typing import NamedTuple, Optional, Union
 
 from dagster import check
 from dagster.core.events import DagsterEvent
-from dagster.core.log_manager import coerce_valid_log_level
+from dagster.core.utils import coerce_valid_log_level
 from dagster.serdes import (
     deserialize_json_to_dagster_namedtuple,
     register_serdes_tuple_fallbacks,

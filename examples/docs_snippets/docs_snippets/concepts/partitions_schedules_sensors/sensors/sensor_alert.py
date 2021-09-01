@@ -19,19 +19,6 @@ def my_slack_on_pipeline_failure(context: PipelineFailureSensorContext):
 
 # end_alert_sensor_marker
 
-my_pipelines = []
-
-# start_repo_marker
-from dagster import repository
-
-
-@repository
-def my_repository():
-    return my_pipelines + [my_slack_on_pipeline_failure]
-
-
-# end_repo_marker
-
 
 # start_slack_marker
 from dagster_slack import make_slack_on_pipeline_failure_sensor
@@ -55,3 +42,32 @@ email_on_pipeline_failure = make_email_on_pipeline_failure_sensor(
 )
 
 # end_email_marker
+
+# start_success_sensor_marker
+from dagster import run_status_sensor, RunStatusSensorContext, PipelineRunStatus
+
+
+@run_status_sensor(pipeline_run_status=PipelineRunStatus.SUCCESS)
+def my_slack_on_pipeline_success(context: RunStatusSensorContext):
+    slack_client = WebClient(token=os.environ["SLACK_DAGSTER_ETL_BOT_TOKEN"])
+
+    slack_client.chat_postMessage(
+        channel="#alert-channel",
+        message=f'Pipeline "{context.pipeline_run.pipeline_name}" succeeded.',
+    )
+
+
+# end_success_sensor_marker
+
+my_pipelines = []
+
+# start_repo_marker
+from dagster import repository
+
+
+@repository
+def my_repository():
+    return my_pipelines + [my_slack_on_pipeline_success]
+
+
+# end_repo_marker

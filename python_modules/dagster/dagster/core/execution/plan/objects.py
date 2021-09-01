@@ -74,7 +74,7 @@ class StepFailureData(
     NamedTuple(
         "_StepFailureData",
         [
-            ("error", SerializableErrorInfo),
+            ("error", Optional[SerializableErrorInfo]),
             ("user_failure_data", Optional[UserFailureData]),
             ("error_source", ErrorSource),
         ],
@@ -97,6 +97,8 @@ class StepFailureData(
         """
         Creates a display string that hides framework frames if the error arose in user code.
         """
+        if not self.error:
+            return ""
         if self.error_source == ErrorSource.USER_CODE_ERROR:
             user_code_error = self.error.cause
             check.invariant(

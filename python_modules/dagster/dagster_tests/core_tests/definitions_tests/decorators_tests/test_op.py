@@ -2,6 +2,7 @@ from typing import Dict, Generator, Tuple
 
 import pytest
 from dagster import (
+    DagsterInvalidConfigError,
     DagsterInvariantViolationError,
     DagsterType,
     DagsterTypeCheckDidNotPass,
@@ -9,11 +10,13 @@ from dagster import (
     Nothing,
     Out,
     Output,
+    SolidDefinition,
     build_op_context,
     graph,
     op,
+    solid,
 )
-from dagster.core.execution.execute import execute_in_process
+from dagster.core.definitions.op import OpDefinition
 
 
 def execute_op_in_graph(an_op):
@@ -21,7 +24,7 @@ def execute_op_in_graph(an_op):
     def my_graph():
         an_op()
 
-    result = execute_in_process(my_graph)
+    result = my_graph.execute_in_process()
     return result
 
 
@@ -30,7 +33,16 @@ def test_op():
     def my_op():
         pass
 
+    assert isinstance(my_op, OpDefinition)
     execute_op_in_graph(my_op)
+
+
+def test_solid_decorator_produces_solid():
+    @solid
+    def my_solid():
+        pass
+
+    assert isinstance(my_solid, SolidDefinition) and not isinstance(my_solid, OpDefinition)
 
 
 def test_ins():
@@ -50,7 +62,7 @@ def test_ins():
     def my_graph():
         my_op(a=upstream1(), b=upstream2())
 
-    result = execute_in_process(my_graph)
+    result = my_graph.execute_in_process()
     assert result.success
 
     assert upstream1() == 5
@@ -150,7 +162,7 @@ def test_ins_dict():
     def my_graph():
         my_op(a=upstream1(), b=upstream2())
 
-    result = execute_in_process(my_graph)
+    result = my_graph.execute_in_process()
     assert result.success
 
     assert my_op(a=1, b="2") == 3
@@ -190,7 +202,7 @@ def test_nothing_in():
     def nothing_test():
         on_complete(noop())
 
-    result = execute_in_process(nothing_test)
+    result = nothing_test.execute_in_process()
     assert result.success
 
 
@@ -200,6 +212,19 @@ def test_op_config():
         assert context.op_config == {"conf_str": "foo"}
 
     my_op(build_op_context(config={"conf_str": "foo"}))
+
+    @graph
+    def basic():
+        my_op()
+
+    result = basic.execute_in_process(config={"my_op": {"config": {"conf_str": "foo"}}})
+
+    assert result.success
+
+    result = basic.to_job(
+        config={"ops": {"my_op": {"config": {"conf_str": "foo"}}}}
+    ).execute_in_process()
+    assert result.success
 
 
 even_type = DagsterType(
@@ -322,3 +347,122 @@ def test_type_annotations_with_generator():
     assert list(my_op_yields_output())[0].value == 5
     result = execute_op_in_graph(my_op_yields_output)
     assert result.result_for_node("my_op_yields_output").output_values["result"] == 5
+
+
+def test_op_config_entry_collision():
+    @op(config_schema={"foo": str})
+    def my_op(_):
+        pass
+
+    @graph
+    def my_graph():
+        my_op()
+        my_op.alias("my_op2")()
+
+    my_job = my_graph.to_job()
+
+    with pytest.raises(DagsterInvalidConfigError, match="Received both field"):
+        my_job.execute_in_process(
+            run_config={
+                "solids": {"my_op": {"config": {"foo": "bar"}}},
+                "ops": {"my_op2": {"config": {"foo": "bar"}}},
+            }
+        )
+
+    @graph
+    def nest_collision():
+        my_graph()
+
+    my_nested_graph_job = nest_collision.to_job()
+
+    with pytest.raises(
+        DagsterInvalidConfigError,
+        match="Received both field 'ops' and field 'solids' in config. Please use one or the other.",
+    ):
+        my_nested_graph_job.execute_in_process(
+            run_config={
+                "ops": {
+                    "my_graph": {
+                        "solids": {"my_op": {"config": {"foo": "bar"}}},
+                        "ops": {"my_op2": {"config": {"foo": "bar"}}},
+                    }
+                }
+            }
+        )
+
+
+def test_solid_and_op_config_error_messages():
+    @op(config_schema={"foo": str})
+    def my_op(context):
+        return context.op_config["foo"]
+
+    @graph
+    def my_graph():
+        my_op()
+
+    with pytest.raises(
+        DagsterInvalidConfigError,
+        match='Missing required config entry "my_op" at path root:ops. Sample config for missing '
+        "entry: {'my_op': {'config': {'foo': '...'}}}",
+    ):
+        my_graph.execute_in_process()
+
+    @solid(config_schema={"foo": str})
+    def my_solid(context):
+        return context.solid_config["foo"]
+
+    @graph
+    def my_graph_with_solid():
+        my_solid()
+
+    # Document that for now, using graphs/jobs with only solids will result in config errors being
+    # in terms of solids.
+    with pytest.raises(
+        DagsterInvalidConfigError,
+        match='Missing required config entry "solids" at the root. Sample config for missing '
+        "entry: {'solids': {'my_solid': {'config': {'foo': '...'"
+        "}}}}",
+    ):
+        my_graph_with_solid.to_job().execute_in_process()
+
+
+def test_error_message_mixed_ops_and_solids():
+    # Document that opting into using ops at all (even one op) will switch error messages entirely
+    # to ops, including in the recursive case.
+
+    @op(config_schema={"foo": str})
+    def my_op(context):
+        return context.op_config["foo"]
+
+    @solid(config_schema={"foo": str})
+    def my_solid(context):
+        return context.solid_config["foo"]
+
+    @graph
+    def my_graph_with_both():
+        my_op()
+        my_solid()
+
+    my_job = my_graph_with_both.to_job()
+
+    with pytest.raises(
+        DagsterInvalidConfigError,
+        match='Missing required config entry "ops" at the root. Sample config for missing '
+        "entry: {'ops': {'my_op': {'config': {'foo': '...'}}, 'my_solid': "
+        "{'config': {'foo': '...'}}}",
+    ):
+        my_job.execute_in_process()
+
+    @graph
+    def nested_ops():
+        my_graph_with_both()
+
+    nested_job = nested_ops.to_job()
+
+    with pytest.raises(
+        DagsterInvalidConfigError,
+        match='Missing required config entry "ops" at the root. Sample config for missing '
+        "entry: {'ops': {'my_graph_with_both': {'ops': {'my_op': {'config': {'foo': '...'}}, 'my_solid': "
+        "{'config': {'foo': '...'}}}}}",
+    ):
+        nested_job.execute_in_process()

@@ -9,6 +9,7 @@ import mock
 import pytest
 from click.testing import CliRunner
 from dagster import (
+    ModeDefinition,
     Partition,
     PartitionSetDefinition,
     PresetDefinition,
@@ -24,6 +25,8 @@ from dagster.cli.pipeline import pipeline_execute_command
 from dagster.cli.run import run_delete_command, run_list_command, run_wipe_command
 from dagster.core.definitions.decorators.sensor import sensor
 from dagster.core.definitions.sensor import RunRequest
+from dagster.core.storage.memoizable_io_manager import versioned_filesystem_io_manager
+from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 from dagster.core.test_utils import instance_for_test
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.server import GrpcServerProcess
@@ -137,6 +140,20 @@ def define_bar_sensors():
     return {"foo_sensor": foo_sensor}
 
 
+@solid(version="foo")
+def my_solid():
+    return 5
+
+
+@pipeline(
+    name="memoizable",
+    mode_defs=[ModeDefinition(resource_defs={"io_manager": versioned_filesystem_io_manager})],
+    tags={MEMOIZED_RUN_TAG: "true"},
+)
+def memoizable_pipeline():
+    my_solid()
+
+
 @repository
 def bar():
     return {
@@ -144,6 +161,7 @@ def bar():
             "foo": foo_pipeline,
             "baz": baz_pipeline,
             "partitioned_scheduled_pipeline": partitioned_scheduled_pipeline,
+            "memoizable": memoizable_pipeline,
         },
         "schedules": define_bar_schedules(),
         "partition_sets": define_bar_partitions(),

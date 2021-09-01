@@ -254,7 +254,7 @@ class PipelineRun(
         # a list of solid queries provided by the user
         # possible to be None when only solids_to_execute is set by the user directly
         check.opt_list_param(solid_selection, "solid_selection", of_type=str)
-        check.opt_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
+        check.opt_nullable_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
 
         # Placing this with the other imports causes a cyclic import
         # https://github.com/dagster-io/dagster/issues/3181

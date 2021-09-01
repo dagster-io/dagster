@@ -7,14 +7,14 @@ import {FontFamily} from '../ui/styles';
 
 import {showCustomAlert} from './CustomAlertProvider';
 
-export interface DagsterGraphQLError extends GraphQLError {
+interface DagsterGraphQLError extends GraphQLError {
   stack_trace: string[];
   cause?: DagsterGraphQLError;
 }
 
 const ErrorToaster = Toaster.create({position: Position.TOP_RIGHT});
 
-export const showGraphQLError = (error: DagsterGraphQLError, operationName?: string) => {
+const showGraphQLError = (error: DagsterGraphQLError, operationName?: string) => {
   const message = (
     <div>
       Unexpected GraphQL error
@@ -25,24 +25,20 @@ export const showGraphQLError = (error: DagsterGraphQLError, operationName?: str
   console.error('[GraphQL error]', error);
 };
 
-export const AppErrorLink = () => {
-  return onError((response: ErrorResponse) => {
-    if (response.graphQLErrors) {
-      const {graphQLErrors, operation} = response;
-      const {operationName} = operation;
-      graphQLErrors.forEach((error) =>
-        showGraphQLError(error as DagsterGraphQLError, operationName),
-      );
-    }
-    if (response.networkError) {
-      ErrorToaster.show({
-        message: `[Network error] ${response.networkError.message}`,
-        intent: Intent.DANGER,
-      });
-      console.error('[Network error]', response.networkError);
-    }
-  });
-};
+export const errorLink = onError((response: ErrorResponse) => {
+  if (response.graphQLErrors) {
+    const {graphQLErrors, operation} = response;
+    const {operationName} = operation;
+    graphQLErrors.forEach((error) => showGraphQLError(error as DagsterGraphQLError, operationName));
+  }
+  if (response.networkError) {
+    ErrorToaster.show({
+      message: `[Network error] ${response.networkError.message}`,
+      intent: Intent.DANGER,
+    });
+    console.error('[Network error]', response.networkError);
+  }
+});
 
 interface AppStackTraceLinkProps {
   error: DagsterGraphQLError;

@@ -8,6 +8,7 @@ import pytest
 from dagster import (
     AssetKey,
     AssetMaterialization,
+    DagsterInstance,
     InputDefinition,
     ModeDefinition,
     Output,
@@ -47,11 +48,13 @@ from dagster.core.test_utils import instance_for_test
 from dagster.core.utils import make_new_run_id
 from dagster.loggers import colored_console_logger
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
-from watchdog.utils import platform
 
 DEFAULT_RUN_ID = "foo"
 
 TEST_TIMEOUT = 5
+
+# py36 & 37 list.append not hashable
+# pylint: disable=unnecessary-lambda
 
 
 def create_test_event_log_record(message: str, run_id: str = DEFAULT_RUN_ID):
@@ -182,7 +185,7 @@ def _synthesize_events(solids_fn, run_id=None, check_success=True, instance=None
 
     with ExitStack() as stack:
         if not instance:
-            instance = stack.enter_context(instance_for_test())
+            instance = stack.enter_context(DagsterInstance.ephemeral())
         pipeline_run = instance.create_run_for_pipeline(
             a_pipe, run_id=run_id, run_config={"loggers": {"callback": {}, "console": {}}}
         )
@@ -250,8 +253,7 @@ class TestEventLogStorage:
         return True
 
     def can_watch(self):
-        # whether the storage is allowed to subscribe to runs
-        # for event log updates
+        # Whether the storage is allowed to watch the event log
         return True
 
     def test_event_log_storage_store_events_and_wipe(self, storage):
@@ -307,12 +309,8 @@ class TestEventLogStorage:
             for run_id in runs:
                 assert len(storage.get_logs_for_run(run_id)) == 0
 
-    @pytest.mark.skipif(
-        platform.is_darwin(),
-        reason="watchdog's default MacOSX FSEventsObserver sometimes fails to pick up changes",
-    )
     def test_event_log_storage_watch(self, storage):
-        if self.can_watch():
+        if not self.can_watch():
             pytest.skip("storage cannot watch runs")
 
         watched = []
@@ -674,8 +672,8 @@ class TestEventLogStorage:
         assert set(map(lambda e: e.run_id, out_events_two)) == {result_two.run_id}
 
     def test_event_watcher_single_run_event(self, storage):
-        if not hasattr(storage, "event_watcher"):
-            pytest.skip("This test requires an event_watcher attribute")
+        if not self.can_watch():
+            pytest.skip("storage cannot watch runs")
 
         @solid
         def return_one(_):
@@ -688,7 +686,7 @@ class TestEventLogStorage:
 
         run_id = make_new_run_id()
 
-        storage.event_watcher.watch_run(run_id, -1, event_list.append)
+        storage.watch(run_id, -1, lambda x: event_list.append(x))
 
         events, _ = _synthesize_events(_solids, run_id=run_id)
         for event in events:
@@ -702,8 +700,8 @@ class TestEventLogStorage:
         assert all([isinstance(event, EventLogEntry) for event in event_list])
 
     def test_event_watcher_filter_run_event(self, storage):
-        if not hasattr(storage, "event_watcher"):
-            pytest.skip("This test requires an event_watcher attribute")
+        if not self.can_watch():
+            pytest.skip("storage cannot watch runs")
 
         @solid
         def return_one(_):
@@ -717,7 +715,7 @@ class TestEventLogStorage:
 
         # only watch one of the runs
         event_list = []
-        storage.event_watcher.watch_run(run_id_two, -1, event_list.append)
+        storage.watch(run_id_two, -1, lambda x: event_list.append(x))
 
         events_one, _result_one = _synthesize_events(_solids, run_id=run_id_one)
         for event in events_one:
@@ -735,8 +733,8 @@ class TestEventLogStorage:
         assert all([isinstance(event, EventLogEntry) for event in event_list])
 
     def test_event_watcher_filter_two_runs_event(self, storage):
-        if not hasattr(storage, "event_watcher"):
-            pytest.skip("This test requires an event_watcher attribute")
+        if not self.can_watch():
+            pytest.skip("storage cannot watch runs")
 
         @solid
         def return_one(_):
@@ -751,8 +749,8 @@ class TestEventLogStorage:
         run_id_one = make_new_run_id()
         run_id_two = make_new_run_id()
 
-        storage.event_watcher.watch_run(run_id_one, -1, event_list_one.append)
-        storage.event_watcher.watch_run(run_id_two, -1, event_list_two.append)
+        storage.watch(run_id_one, -1, lambda x: event_list_one.append(x))
+        storage.watch(run_id_two, -1, lambda x: event_list_two.append(x))
 
         events_one, _result_one = _synthesize_events(_solids, run_id=run_id_one)
         for event in events_one:
@@ -1175,3 +1173,92 @@ class TestEventLogStorage:
                 DagsterEventType.PIPELINE_SUCCESS,
             ]
             assert [r.event_log_entry.run_id for r in filtered_records] == ["2", "3"]
+
+    def test_watch_exc_recovery(self, storage):
+        if not self.can_watch():
+            pytest.skip("storage cannot watch runs")
+
+        # test that an exception in one watch doesn't fail out others
+
+        @solid
+        def return_one(_):
+            return 1
+
+        def _solids():
+            return_one()
+
+        err_run_id = make_new_run_id()
+        safe_run_id = make_new_run_id()
+
+        class CBException(Exception):
+            pass
+
+        def _throw(_):
+            raise CBException("problem in watch callback")
+
+        err_events, _ = _synthesize_events(_solids, run_id=err_run_id)
+        safe_events, _ = _synthesize_events(_solids, run_id=safe_run_id)
+
+        event_list = []
+
+        storage.watch(err_run_id, -1, _throw)
+        storage.watch(safe_run_id, -1, lambda x: event_list.append(x))
+
+        for event in err_events:
+            storage.store_event(event)
+
+        storage.end_watch(err_run_id, _throw)
+
+        for event in safe_events:
+            storage.store_event(event)
+
+        start = time.time()
+        while len(event_list) < len(safe_events) and time.time() - start < TEST_TIMEOUT:
+            time.sleep(0.01)
+
+        assert len(event_list) == len(safe_events)
+        assert all([isinstance(event, EventLogEntry) for event in event_list])
+
+    def test_watch_unwatch(self, storage):
+        if not self.can_watch():
+            pytest.skip("storage cannot watch runs")
+
+        # test for dead lock bug
+
+        @solid
+        def return_one(_):
+            return 1
+
+        def _solids():
+            return_one()
+
+        err_run_id = make_new_run_id()
+        safe_run_id = make_new_run_id()
+
+        def _unsub(_):
+            storage.end_watch(err_run_id, _unsub)
+
+        err_events, _ = _synthesize_events(_solids, run_id=err_run_id)
+        safe_events, _ = _synthesize_events(_solids, run_id=safe_run_id)
+
+        event_list = []
+
+        # Direct end_watch emulates behavior of clean up on exception downstream
+        # of the subscription in the dagit webserver.
+        storage.watch(err_run_id, -1, _unsub)
+
+        # Other active watches should proceed correctly.
+        storage.watch(safe_run_id, -1, lambda x: event_list.append(x))
+
+        for event in err_events:
+            storage.store_event(event)
+
+        for event in safe_events:
+            storage.store_event(event)
+
+        start = time.time()
+        while len(event_list) < len(safe_events) and time.time() - start < TEST_TIMEOUT:
+            time.sleep(0.01)
+
+        assert len(event_list) == len(safe_events)
+        assert all([isinstance(event, EventLogEntry) for event in event_list])

@@ -1,0 +1,2 @@
+load_from:
+  - python_package: docs_snippets_crag.intro_tutorial.advanced.repositories.repos

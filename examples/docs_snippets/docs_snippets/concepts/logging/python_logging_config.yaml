@@ -1,0 +1,11 @@
+python_logs:
+  dagster_handler_config:
+    handlers:
+      myHandler:
+        class: logging.StreamHandler
+        level: INFO
+        stream: ext://sys.stdout
+        formatter: myFormatter
+    formatters:
+      myFormatter:
+        format: 'My formatted message: %(message)s'

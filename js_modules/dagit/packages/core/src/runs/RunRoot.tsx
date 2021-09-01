@@ -1,4 +1,4 @@
-import {gql, useApolloClient, useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {Colors, NonIdealState} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
@@ -11,6 +11,7 @@ import {Group} from '../ui/Group';
 import {PageHeader} from '../ui/PageHeader';
 import {Heading} from '../ui/Text';
 import {FontFamily} from '../ui/styles';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {Run} from './Run';
 import {RunConfigDialog, RunDetails} from './RunDetails';
@@ -30,6 +31,14 @@ export const RunRoot = (props: RouteComponentProps<{runId: string}>) => {
   const run =
     data?.pipelineRunOrError.__typename === 'PipelineRun' ? data.pipelineRunOrError : null;
   const snapshotID = run?.pipelineSnapshotId;
+  const repoAddress = React.useMemo(() => {
+    const repositoryOrigin = run?.repositoryOrigin;
+    if (repositoryOrigin) {
+      const {repositoryLocationName, repositoryName} = repositoryOrigin;
+      return buildRepoAddress(repositoryName, repositoryLocationName);
+    }
+    return null;
+  }, [run]);
 
   return (
     <div
@@ -67,7 +76,7 @@ export const RunRoot = (props: RouteComponentProps<{runId: string}>) => {
               {run ? (
                 <PipelineReference
                   pipelineName={run?.pipeline.name}
-                  pipelineHrefContext={'repo-unknown'}
+                  pipelineHrefContext={repoAddress || 'repo-unknown'}
                   snapshotId={snapshotID}
                   mode={run?.mode}
                 />
@@ -89,10 +98,8 @@ const RunById: React.FC<{data: RunRootQuery | undefined; runId: string}> = (prop
   const {data, runId} = props;
   useDocumentTitle(`Run: ${runId}`);
 
-  const client = useApolloClient();
-
   if (!data || !data.pipelineRunOrError) {
-    return <Run client={client} run={undefined} runId={runId} />;
+    return <Run run={undefined} runId={runId} />;
   }
 
   if (data.pipelineRunOrError.__typename !== 'PipelineRun') {
@@ -105,7 +112,7 @@ const RunById: React.FC<{data: RunRootQuery | undefined; runId: string}> = (prop
     );
   }
 
-  return <Run client={client} run={data.pipelineRunOrError} runId={runId} />;
+  return <Run run={data.pipelineRunOrError} runId={runId} />;
 };
 
 const RUN_ROOT_QUERY = gql`

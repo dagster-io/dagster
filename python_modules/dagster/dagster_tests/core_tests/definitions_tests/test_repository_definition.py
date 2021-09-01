@@ -82,9 +82,6 @@ def test_repo_lazy_definition():
 
     assert set(["foo", "bar"]) == {pipeline.name for pipeline in pipelines}
 
-    assert lazy_repo.solid_def_named("foo_solid").name == "foo_solid"
-    assert lazy_repo.solid_def_named("bar_solid").name == "bar_solid"
-
 
 def test_dupe_solid_repo_definition():
     @lambda_solid(name="same")
@@ -224,41 +221,9 @@ def test_direct_schedule_target():
     def direct_schedule():
         return {}
 
-    @daily_schedule(
-        pipeline_name=None,
-        job=wonder,
-        start_date=datetime.datetime(2020, 1, 1),
-    )
-    def my_daily(_):
-        return {}
-
-    @monthly_schedule(
-        pipeline_name=None,
-        job=wonder,
-        start_date=datetime.datetime(2020, 1, 1),
-    )
-    def my_monthly(_):
-        return {}
-
-    @weekly_schedule(
-        pipeline_name=None,
-        job=wonder,
-        start_date=datetime.datetime(2020, 1, 1),
-    )
-    def my_weekly(_):
-        return {}
-
-    @hourly_schedule(
-        pipeline_name=None,
-        job=wonder,
-        start_date=datetime.datetime(2020, 1, 1),
-    )
-    def my_hourly(_):
-        return {}
-
     @repository
     def test():
-        return [direct_schedule, my_daily, my_monthly, my_weekly, my_hourly]
+        return [direct_schedule]
 
     assert test
 

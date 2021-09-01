@@ -1,5 +1,6 @@
 import inspect
 import logging
+import logging.config
 import os
 import sys
 import tempfile
@@ -30,7 +31,6 @@ from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.errors import (
     DagsterHomeNotSetError,
     DagsterInvariantViolationError,
-    DagsterNoStepsToExecuteException,
     DagsterRunAlreadyExists,
     DagsterRunConflict,
 )
@@ -46,6 +46,7 @@ from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.utils import str_format_list
 from dagster.serdes import ConfigurableClass
 from dagster.seven import get_current_datetime_in_utc
+from dagster.utils.backcompat import experimental_functionality_warning
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .config import DAGSTER_CONFIG_YAML_FILENAME, is_dagster_home_set
@@ -77,10 +78,6 @@ if TYPE_CHECKING:
     from dagster.core.launcher import RunLauncher
     from dagster.core.execution.stats import RunStepKeyStatsSnapshot
     from dagster.core.debug import DebugRunPayload
-
-
-def is_memoized_run(tags: Dict[str, Any]) -> bool:
-    return tags is not None and MEMOIZED_RUN_TAG in tags and tags.get(MEMOIZED_RUN_TAG) == "true"
 
 
 def _check_run_equality(
@@ -553,6 +550,18 @@ class DagsterInstance:
         else:
             return dagster_telemetry_enabled_default
 
+    # python logs
+
+    @property
+    def managed_python_loggers(self) -> List[str]:
+        python_log_settings = self.get_settings("python_logs") or {}
+        return python_log_settings.get("managed_python_loggers", [])
+
+    @property
+    def python_log_level(self) -> Optional[str]:
+        python_log_settings = self.get_settings("python_logs") or {}
+        return python_log_settings.get("python_log_level")
+
     def upgrade(self, print_fn=None):
         from dagster.core.storage.migration.utils import upgrading_instance
 
@@ -642,7 +651,6 @@ class DagsterInstance:
         run_config=None,
         mode=None,
         solids_to_execute=None,
-        step_keys_to_execute=None,
         status=None,
         tags=None,
         root_run_id=None,
@@ -682,48 +690,18 @@ class DagsterInstance:
                     solids_to_execute=solids_to_execute
                 )
 
+        step_keys_to_execute = None
+
         if execution_plan:
-            final_execution_plan = execution_plan
-            check.invariant(
-                step_keys_to_execute is None,
-                "Should not pass execution_plan and step_keys_to_execute to create_run",
-            )
             step_keys_to_execute = execution_plan.step_keys_to_execute
+
         else:
             resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config, mode)
-            full_execution_plan = ExecutionPlan.build(
+            execution_plan = ExecutionPlan.build(
                 InMemoryPipeline(pipeline_def),
                 resolved_run_config,
+                tags=tags,
             )
-
-            if is_memoized_run(tags):
-                from dagster.core.execution.resolve_versions import resolve_memoized_execution_plan
-
-                if step_keys_to_execute:
-                    raise DagsterInvariantViolationError(
-                        "step_keys_to_execute parameter cannot be used in conjunction with memoized "
-                        "pipeline runs."
-                    )
-
-                final_execution_plan = resolve_memoized_execution_plan(
-                    full_execution_plan,
-                    pipeline_def,
-                    run_config,
-                    self,
-                    resolved_run_config,
-                )  # TODO: tighter integration with existing step_keys_to_execute functionality
-                step_keys_to_execute = final_execution_plan.step_keys_to_execute
-                if not step_keys_to_execute:
-                    raise DagsterNoStepsToExecuteException(
-                        "No steps found to execute. "
-                        "This is because every step in the plan has already been memoized."
-                    )
-            elif step_keys_to_execute:
-                final_execution_plan = full_execution_plan.build_subset_plan(
-                    step_keys_to_execute, pipeline_def, resolved_run_config
-                )
-            else:
-                final_execution_plan = full_execution_plan
 
         return self.create_run(
             pipeline_name=pipeline_def.name,
@@ -739,7 +717,7 @@ class DagsterInstance:
             parent_run_id=parent_run_id,
             pipeline_snapshot=pipeline_def.get_pipeline_snapshot(),
             execution_plan_snapshot=snapshot_from_execution_plan(
-                final_execution_plan,
+                execution_plan,
                 pipeline_def.get_pipeline_snapshot_id(),
             ),
             parent_pipeline_snapshot=pipeline_def.get_parent_pipeline_snapshot(),
@@ -854,7 +832,7 @@ class DagsterInstance:
 
         check.inst_param(execution_plan_snapshot, "execution_plan_snapshot", ExecutionPlanSnapshot)
         check.str_param(pipeline_snapshot_id, "pipeline_snapshot_id")
-        check.opt_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
+        check.opt_nullable_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
 
         check.invariant(
             execution_plan_snapshot.pipeline_snapshot_id == pipeline_snapshot_id,
@@ -866,17 +844,6 @@ class DagsterInstance:
                 ep_pipeline_snapshot_id=execution_plan_snapshot.pipeline_snapshot_id,
                 pipeline_snapshot_id=pipeline_snapshot_id,
             ),
-        )
-
-        check.invariant(
-            set(step_keys_to_execute) == set(execution_plan_snapshot.step_keys_to_execute)
-            if step_keys_to_execute
-            else set(execution_plan_snapshot.step_keys_to_execute)
-            == set([step.key for step in execution_plan_snapshot.steps]),
-            "We encode step_keys_to_execute twice in our stack, unfortunately. This check "
-            "ensures that they are consistent. We check that step_keys_to_execute in the plan "
-            "matches the step_keys_to_execute params if it is set. If it is not, this indicates "
-            "a full execution plan, and so we verify that.",
         )
 
         execution_plan_snapshot_id = create_execution_plan_snapshot_id(execution_plan_snapshot)
@@ -1154,11 +1121,42 @@ records = instance.get_event_records(
 
     # event subscriptions
 
-    def get_logger(self):
-        logger = logging.Logger("__event_listener")
-        logger.addHandler(_EventListenerLogHandler(self))
-        logger.setLevel(10)
-        return logger
+    def _get_yaml_python_handlers(self):
+        if self._settings:
+            logging_config = self.get_settings("python_logs").get("dagster_handler_config", {})
+
+            if logging_config:
+                experimental_functionality_warning("Handling yaml-defined logging configuration")
+
+            # Handlers can only be retrieved from dictConfig configuration if they are attached
+            # to a logger. We add a dummy logger to the configuration that allows us to access user
+            # defined handlers.
+            handler_names = logging_config.get("handlers", {}).keys()
+
+            dagster_dummy_logger_name = "dagster_dummy_logger"
+
+            processed_dict_conf = {
+                "version": 1,
+                "disable_existing_loggers": False,
+                "loggers": {dagster_dummy_logger_name: {"handlers": handler_names}},
+            }
+            processed_dict_conf.update(logging_config)
+
+            logging.config.dictConfig(processed_dict_conf)
+
+            dummy_logger = logging.getLogger(dagster_dummy_logger_name)
+            return dummy_logger.handlers
+        return []
+
+    def _get_event_log_handler(self):
+        event_log_handler = _EventListenerLogHandler(self)
+        event_log_handler.setLevel(10)
+        return event_log_handler
+
+    def get_handlers(self):
+        handlers = [self._get_event_log_handler()]
+        handlers.extend(self._get_yaml_python_handlers())
+        return handlers
 
     def handle_new_event(self, event):
         run_id = event.run_id

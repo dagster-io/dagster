@@ -14,8 +14,6 @@ The replacement for :py:class:`composite_solid` / :py:class:`CompositeSolidDefin
 
 .. autodecorator:: graph
 
-.. currentmodule:: dagster.core.definitions.graph
-
 .. autoclass:: GraphDefinition
     :members:
 

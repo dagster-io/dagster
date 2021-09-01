@@ -108,28 +108,30 @@ class DbtResource:
         """
 
     @abstractmethod
-    def seed(self, show: bool = False, **kwargs) -> DbtOutput:
+    def seed(
+        self, show: bool = False, select: List[str] = None, exclude: List[str] = None, **kwargs
+    ) -> DbtOutput:
         """
         Run the ``seed`` command on a dbt project. kwargs are passed in as additional parameters.
 
         Args:
             show (bool, optional): If ``True``, then show a sample of the seeded data in the
                 response. Defaults to ``False``.
+            select (List[str], optional): the snapshots to include in the run.
+            exclude (List[str], optional): the snapshots to exclude from the run.
+
 
         Returns:
             DbtOutput: object containing parsed output from dbt
         """
 
     @abstractmethod
-    def generate_docs(
-        self, models: List[str] = None, exclude: List[str] = None, **kwargs
-    ) -> DbtOutput:
+    def generate_docs(self, compile_project: bool = False, **kwargs) -> DbtOutput:
         """
         Run the ``docs generate`` command on a dbt project. kwargs are passed in as additional parameters.
 
         Args:
-            models (List[str], optional): the models to include in docs generation.
-            exclude (List[str], optional): the models to exclude from docs generation.
+            compile_project (bool, optional): If true, compile the project before generating a catalog.
 
         Returns:
             DbtOutput: object containing parsed output from dbt

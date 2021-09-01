@@ -23,6 +23,7 @@ from dagstermill.manager import Manager
 def in_pipeline_manager(
     pipeline_name="hello_world_pipeline",
     solid_handle=NodeHandle("hello_world", None),
+    step_key="hello_world",
     executable_dict=None,
     mode=None,
     **kwargs,
@@ -59,6 +60,7 @@ def in_pipeline_manager(
                     "run_config": {},
                     "output_log_path": output_log_file_path,
                     "instance_ref_dict": pack_value(instance.get_ref()),
+                    "step_key": step_key,
                 }
 
                 manager.reconstitute_pipeline_context(**dict(context_dict, **kwargs))
@@ -112,6 +114,7 @@ def test_yield_unserializable_result():
             "dagstermill.examples.repository",
             "hello_world_output_pipeline",
         ).to_dict(),
+        step_key="hello_world_output",
     ) as manager:
         with pytest.raises(TypeError):
             manager.yield_result(threading.Lock())
@@ -157,6 +160,7 @@ def test_in_pipeline_manager_solid_config():
             "dagstermill.examples.repository",
             "hello_world_config_pipeline",
         ).to_dict(),
+        step_key="hello_world_config",
     ) as manager:
         assert manager.context.solid_config == {"greeting": "hello"}
 
@@ -173,6 +177,7 @@ def test_in_pipeline_manager_solid_config():
             "dagstermill.examples.repository",
             "hello_world_config_pipeline",
         ).to_dict(),
+        step_key="hello_world_config",
     ) as manager:
         assert manager.context.solid_config == {"greeting": "bonjour"}
 
@@ -191,6 +196,7 @@ def test_in_pipeline_manager_solid_config():
             "dagstermill.examples.repository",
             "hello_world_config_pipeline",
         ).to_dict(),
+        step_key="goodbye_config",
     ) as manager:
         assert manager.context.solid_config == {"farewell": "goodbye"}
 
@@ -209,6 +215,7 @@ def test_in_pipeline_manager_with_resources():
             solid_handle=NodeHandle("hello_world_resource", None),
             run_config={"resources": {"list": {"config": path}}},
             mode="prod",
+            step_key="hello_world_resource",
         ) as manager:
             assert "list" in manager.context.resources._asdict()
 

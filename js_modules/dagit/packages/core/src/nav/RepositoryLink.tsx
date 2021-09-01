@@ -1,4 +1,5 @@
-import {Icon, Colors, Tooltip} from '@blueprintjs/core';
+import {Icon, Colors} from '@blueprintjs/core';
+import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -11,11 +12,10 @@ import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
-import {useRepositoryLocationReload} from './ReloadRepositoryLocationButton';
+import {ReloadRepositoryLocationButton} from './ReloadRepositoryLocationButton';
 
 export const RepositoryLink: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) => {
   const {location} = repoAddress;
-  const {reloading, onClick} = useRepositoryLocationReload(repoAddress.location);
   const {canReloadRepositoryLocation} = usePermissions();
 
   return (
@@ -27,31 +27,35 @@ export const RepositoryLink: React.FC<{repoAddress: RepoAddress}> = ({repoAddres
         {repoAddressAsString(repoAddress)}
       </RepositoryName>
       {canReloadRepositoryLocation ? (
-        <ShortcutHandler
-          onShortcut={onClick}
-          shortcutLabel={`⌥R`}
-          shortcutFilter={(e) => e.code === 'KeyR' && e.altKey}
-        >
-          <ReloadTooltip
-            content={
-              reloading ? (
-                'Reloading…'
-              ) : (
-                <>
-                  Reload location <strong>{location}</strong>
-                </>
-              )
-            }
-          >
-            {reloading ? (
-              <Spinner purpose="body-text" />
-            ) : (
-              <StyledButton onClick={onClick}>
-                <Icon icon="refresh" iconSize={11} color={Colors.GRAY2} />
-              </StyledButton>
-            )}
-          </ReloadTooltip>
-        </ShortcutHandler>
+        <ReloadRepositoryLocationButton location={location}>
+          {({tryReload, reloading}) => (
+            <ShortcutHandler
+              onShortcut={tryReload}
+              shortcutLabel={`⌥R`}
+              shortcutFilter={(e) => e.code === 'KeyR' && e.altKey}
+            >
+              <ReloadTooltip
+                content={
+                  reloading ? (
+                    'Reloading…'
+                  ) : (
+                    <>
+                      Reload location <strong>{location}</strong>
+                    </>
+                  )
+                }
+              >
+                {reloading ? (
+                  <Spinner purpose="body-text" />
+                ) : (
+                  <StyledButton onClick={tryReload}>
+                    <Icon icon="refresh" iconSize={11} color={Colors.GRAY2} />
+                  </StyledButton>
+                )}
+              </ReloadTooltip>
+            </ShortcutHandler>
+          )}
+        </ReloadRepositoryLocationButton>
       ) : null}
     </Box>
   );

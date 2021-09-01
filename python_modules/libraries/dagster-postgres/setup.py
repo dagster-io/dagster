@@ -37,6 +37,6 @@ if __name__ == "__main__":
             ]
         },
         include_package_data=True,
-        install_requires=[f"dagster{pin}", "psycopg2-binary<2.9"],
+        install_requires=[f"dagster{pin}", "psycopg2-binary"],
         zip_safe=False,
     )

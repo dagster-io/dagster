@@ -6,6 +6,10 @@ import {TestProvider} from '../testing/TestProvider';
 
 import {LeftNav} from './LeftNav';
 
+jest.mock('./LeftNavRepositorySection', () => ({
+  LeftNavRepositorySection: () => null,
+}));
+
 describe('LeftNav', () => {
   const defaultMocks = {
     Workspace: () => ({
@@ -72,7 +76,6 @@ describe('LeftNav', () => {
       expect(runsLink.closest('a')).toHaveAttribute('href', '/instance/runs');
       expect(screen.getByText('Assets').closest('a')).toHaveAttribute('href', '/instance/assets');
       expect(screen.getByText('Status').closest('a')).toHaveAttribute('href', '/instance');
-      expect(screen.getByText('my_repository')).toBeVisible();
     });
   });
 
@@ -95,7 +98,7 @@ describe('LeftNav', () => {
 
       render(<Test mocks={[defaultMocks, mocks]} />);
       await waitFor(() => {
-        expect(screen.getByRole('link', {name: /status warnings found/i})).toBeVisible();
+        expect(screen.getByRole('link', {name: /workspace warnings found/i})).toBeVisible();
       });
     });
   });

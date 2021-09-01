@@ -269,9 +269,11 @@ class ActiveExecution:
         steps = []
         steps_to_skip = list(self._pending_skip)
         for key in steps_to_skip:
-            steps.append(self.get_step_by_key(key))
+            step = self.get_step_by_key(key)
+            steps.append(step)
             self._in_flight.add(key)
             self._pending_skip.remove(key)
+            self._prep_for_dynamic_outputs(step)
 
         return sorted(steps, key=self._sort_key_fn)
 
@@ -343,13 +345,12 @@ class ActiveExecution:
     def mark_success(self, step_key: str) -> None:
         self._success.add(step_key)
         self._mark_complete(step_key)
-        if step_key in self._gathering_dynamic_outputs:
-            self._successful_dynamic_outputs[step_key] = self._gathering_dynamic_outputs[step_key]
-            self._new_dynamic_mappings = True
+        self._resolve_any_dynamic_outputs(step_key)
 
     def mark_skipped(self, step_key: str) -> None:
         self._skipped.add(step_key)
         self._mark_complete(step_key)
+        self._resolve_any_dynamic_outputs(step_key)
 
     def mark_abandoned(self, step_key: str) -> None:
         self._abandoned.add(step_key)
@@ -465,3 +466,8 @@ class ActiveExecution:
 
         if dyn_outputs:
             self._gathering_dynamic_outputs[step.key] = {out.name: [] for out in dyn_outputs}
+
+    def _resolve_any_dynamic_outputs(self, step_key: str):
+        if step_key in self._gathering_dynamic_outputs:
+            self._successful_dynamic_outputs[step_key] = self._gathering_dynamic_outputs[step_key]
+            self._new_dynamic_mappings = True

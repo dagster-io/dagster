@@ -1,5 +1,5 @@
 import inspect
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 from dagster import check
 from dagster.core.errors import (
@@ -12,6 +12,7 @@ from .events import AssetMaterialization, ExpectationResult, Materialization, Ou
 
 if TYPE_CHECKING:
     from .solid import SolidDefinition
+    from .decorators.solid import DecoratedSolidFunction
     from .output import OutputDefinition
     from .composition import PendingNodeInvocation
     from ..execution.context.invocation import (
@@ -84,32 +85,62 @@ def _resolve_inputs(
 ):
     from dagster.core.execution.plan.execute_step import do_type_check
 
-    input_defs = solid_def.input_defs
+    nothing_input_defs = [
+        input_def for input_def in solid_def.input_defs if input_def.dagster_type.is_nothing
+    ]
 
-    # Fail early if too many inputs were provided.
-    if len(input_defs) < len(args) + len(kwargs):
-        raise DagsterInvalidInvocationError(
-            f"Too many input arguments were provided for solid '{context.alias}'. This may be because "
-            "an argument was provided for the context parameter, but no context parameter was defined "
-            "for the solid."
-        )
-
-    input_dict = {
-        input_def.name: input_val for input_val, input_def in zip(args, input_defs[: len(args)])
-    }
-
-    for input_def in input_defs[len(args) :]:
-        if not input_def.has_default_value and input_def.name not in kwargs:
+    # Check kwargs for nothing inputs, and error if someone provided one.
+    for input_def in nothing_input_defs:
+        if input_def.name in kwargs:
             raise DagsterInvalidInvocationError(
-                f'No value provided for required input "{input_def.name}".'
+                f"Attempted to provide value for nothing input '{input_def.name}'. Nothing "
+                "dependencies are ignored when directly invoking solids."
             )
 
-        input_dict[input_def.name] = (
-            kwargs[input_def.name] if input_def.name in kwargs else input_def.default_value
+    # Discard nothing dependencies - we ignore them during invocation.
+    input_defs_by_name = {
+        input_def.name: input_def
+        for input_def in solid_def.input_defs
+        if not input_def.dagster_type.is_nothing
+    }
+
+    # Fail early if too many inputs were provided.
+    if len(input_defs_by_name) < len(args) + len(kwargs):
+        if len(nothing_input_defs) > 0:
+            suggestion = (
+                "This may be because you attempted to provide a value for a nothing "
+                "dependency. Nothing dependencies are ignored when directly invoking solids."
+            )
+        else:
+            suggestion = (
+                "This may be because an argument was provided for the context parameter, "
+                "but no context parameter was defined for the solid."
+            )
+
+        raise DagsterInvalidInvocationError(
+            f"Too many input arguments were provided for solid '{context.alias}'. {suggestion}"
+        )
+
+    positional_inputs = cast("DecoratedSolidFunction", solid_def.compute_fn).positional_inputs()
+
+    input_dict = {}
+
+    for position, value in enumerate(args):
+        input_dict[positional_inputs[position]] = value
+
+    for positional_input in positional_inputs[len(args) :]:
+        input_def = input_defs_by_name[positional_input]
+
+        if not input_def.has_default_value and positional_input not in kwargs:
+            raise DagsterInvalidInvocationError(
+                f'No value provided for required input "{positional_input}".'
+            )
+
+        input_dict[positional_input] = (
+            kwargs[positional_input] if positional_input in kwargs else input_def.default_value
         )
 
     # Type check inputs
-    input_defs_by_name = {input_def.name: input_def for input_def in input_defs}
     for input_name, val in input_dict.items():
 
         input_def = input_defs_by_name[input_name]
@@ -120,7 +151,7 @@ def _resolve_inputs(
                 description=(
                     f'Type check failed for solid input "{input_def.name}" - '
                     f'expected type "{dagster_type.display_name}". '
-                    f"Description: {type_check.description}."
+                    f"Description: {type_check.description}"
                 ),
                 metadata_entries=type_check.metadata_entries,
                 dagster_type=dagster_type,
@@ -286,7 +317,7 @@ def _type_check_output(
                 description=(
                     f'Type check failed for solid output "{output.output_name}" - '
                     f'expected type "{dagster_type.display_name}". '
-                    f"Description: {type_check.description}."
+                    f"Description: {type_check.description}"
                 ),
                 metadata_entries=type_check.metadata_entries,
                 dagster_type=dagster_type,

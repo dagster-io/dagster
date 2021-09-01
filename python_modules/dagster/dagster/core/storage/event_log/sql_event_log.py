@@ -499,7 +499,7 @@ class SqlEventLogStorage(EventLogStorage):
         return True
 
     def update_event_log_record(self, record_id, event):
-        """ Utility method for migration scripts to update SQL representation of event records. """
+        """Utility method for migration scripts to update SQL representation of event records."""
         check.int_param(record_id, "record_id")
         check.inst_param(event, "event", EventLogEntry)
         dagster_event_type = None
@@ -674,9 +674,13 @@ class SqlEventLogStorage(EventLogStorage):
             query = query.limit(limit)
 
         if ascending:
-            query = query.order_by(SqlEventLogStorageTable.c.timestamp.asc())
+            query = query.order_by(
+                SqlEventLogStorageTable.c.timestamp.asc(), SqlEventLogStorageTable.c.id.asc()
+            )
         else:
-            query = query.order_by(SqlEventLogStorageTable.c.timestamp.desc())
+            query = query.order_by(
+                SqlEventLogStorageTable.c.timestamp.desc(), SqlEventLogStorageTable.c.id.desc()
+            )
 
         with self.index_connection() as conn:
             results = conn.execute(query).fetchall()

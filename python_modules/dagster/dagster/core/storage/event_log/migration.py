@@ -130,21 +130,38 @@ def migrate_asset_keys_index_columns(event_log_storage, print_fn=None):
                 if row:
                     event = deserialize_json_to_dagster_namedtuple(row[0])
 
-            tags = event.dagster_event.step_materialization_data.materialization.tags
-            conn.execute(
-                AssetKeyTable.update()
-                .values(  # pylint: disable=no-value-for-parameter
-                    last_materialization=serialize_dagster_namedtuple(event),
-                    last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
-                    wipe_timestamp=utc_datetime_from_timestamp(wipe_timestamp)
-                    if wipe_timestamp
-                    else None,
-                    tags=seven.json.dumps(tags) if tags else None,
+            if not event:
+                # this must be a wiped asset
+                conn.execute(
+                    AssetKeyTable.update()
+                    .values(  # pylint: disable=no-value-for-parameter
+                        last_materialization=None,
+                        last_materialization_timestamp=None,
+                        wipe_timestamp=utc_datetime_from_timestamp(wipe_timestamp)
+                        if wipe_timestamp
+                        else None,
+                        tags=None,
+                    )
+                    .where(
+                        AssetKeyTable.c.asset_key == asset_key.to_string(),
+                    )
                 )
-                .where(
-                    AssetKeyTable.c.asset_key == event.dagster_event.asset_key.to_string(),
+            else:
+                tags = event.dagster_event.step_materialization_data.materialization.tags
+                conn.execute(
+                    AssetKeyTable.update()
+                    .values(  # pylint: disable=no-value-for-parameter
+                        last_materialization=serialize_dagster_namedtuple(event),
+                        last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
+                        wipe_timestamp=utc_datetime_from_timestamp(wipe_timestamp)
+                        if wipe_timestamp
+                        else None,
+                        tags=seven.json.dumps(tags) if tags else None,
+                    )
+                    .where(
+                        AssetKeyTable.c.asset_key == asset_key.to_string(),
+                    )
                 )
-            )
 
 
 def sql_asset_event_generator(conn, cursor=None, batch_size=1000):

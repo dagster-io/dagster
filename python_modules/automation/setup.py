@@ -18,8 +18,6 @@ setup(
     install_requires=[
         "autoflake",
         "boto3",
-        "dagster",
-        "dagster-graphql",
         "packaging>=20.9",
         "pandas",
         "pytablereader",

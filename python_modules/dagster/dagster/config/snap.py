@@ -1,8 +1,8 @@
 from collections import namedtuple
-from typing import Any
+from typing import Any, Set
 
 from dagster import check
-from dagster.serdes import whitelist_for_serdes
+from dagster.serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
 
 from .config_type import ConfigScalarKind, ConfigType, ConfigTypeKind
 from .field import Field
@@ -47,7 +47,13 @@ class ConfigSchemaSnapshot(namedtuple("_ConfigSchemaSnapshot", "all_config_snaps
         return key in self.all_config_snaps_by_key
 
 
-@whitelist_for_serdes
+class ConfigTypeSnapSerializer(DefaultNamedTupleSerializer):
+    @classmethod
+    def skip_when_empty(cls) -> Set[str]:
+        return {"field_aliases"}  # Maintain stable snapshot ID for back-compat purposes
+
+
+@whitelist_for_serdes(serializer=ConfigTypeSnapSerializer)
 class ConfigTypeSnap(
     namedtuple(
         "_ConfigTypeSnap",
@@ -55,11 +61,13 @@ class ConfigTypeSnap(
         "type_param_keys "  # only valid for closed generics (Set, Tuple, List, Optional)
         "enum_values "  # only valid for enums
         "fields "  # only valid for dicts and selectors
-        "scalar_kind",  # only valid for scalars
+        "scalar_kind "  # only valid for scalars
+        "field_aliases",  # only valid for strict shapes
     )
 ):
     # serdes log
     # * Adding scalar_kind
+    # * Adding field_aliases
     def __new__(
         cls,
         kind,
@@ -69,7 +77,9 @@ class ConfigTypeSnap(
         type_param_keys,
         enum_values,
         fields,
-        scalar_kind=None,  # Old version of object will not have this property
+        # Old version of object will not have these properties
+        scalar_kind=None,
+        field_aliases=None,
     ):
         return super(ConfigTypeSnap, cls).__new__(
             cls,
@@ -89,6 +99,7 @@ class ConfigTypeSnap(
             ),
             description=check.opt_str_param(description, "description"),
             scalar_kind=check.opt_inst_param(scalar_kind, "scalar_kind", ConfigScalarKind),
+            field_aliases=check.opt_dict_param(field_aliases, "field_aliases"),
         )
 
     @property
@@ -216,6 +227,9 @@ def snap_from_config_type(config_type):
         if ConfigTypeKind.has_fields(config_type.kind)
         else None,
         scalar_kind=config_type.scalar_kind if config_type.kind == ConfigTypeKind.SCALAR else None,
+        field_aliases=config_type.field_aliases
+        if config_type.kind == ConfigTypeKind.STRICT_SHAPE
+        else None,
     )
 
 

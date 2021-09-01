@@ -1,6 +1,7 @@
 from dagster import PipelineDefinition, check
 from dagster.config.validate import validate_config
 from dagster.core.definitions import create_run_config_schema
+from dagster.core.errors import DagsterRunNotFoundError
 from dagster.core.host_representation import PipelineSelector
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from dagster.core.storage.tags import TagType, get_tag_type
@@ -69,15 +70,14 @@ def get_run_group(graphene_info, run_id):
     from ..schema.runs import GrapheneRunGroup
 
     instance = graphene_info.context.instance
-    result = instance.get_run_group(run_id)
-
-    if result is None:
+    try:
+        result = instance.get_run_group(run_id)
+    except DagsterRunNotFoundError:
         return GrapheneRunGroupNotFoundError(run_id)
-    else:
-        root_run_id, run_group = result
-        return GrapheneRunGroup(
-            root_run_id=root_run_id, runs=[GraphenePipelineRun(run) for run in run_group]
-        )
+    root_run_id, run_group = result
+    return GrapheneRunGroup(
+        root_run_id=root_run_id, runs=[GraphenePipelineRun(run) for run in run_group]
+    )
 
 
 def get_runs(graphene_info, filters, cursor=None, limit=None):

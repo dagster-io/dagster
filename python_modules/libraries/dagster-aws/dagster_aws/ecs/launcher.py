@@ -10,6 +10,22 @@ from dagster.core.launcher.base import LaunchRunContext, RunLauncher
 from dagster.grpc.types import ExecuteRunArgs
 from dagster.serdes import ConfigurableClass, serialize_dagster_namedtuple
 from dagster.utils.backcompat import experimental
+from dagster.utils.backoff import backoff
+
+
+# The ECS API is eventually consistent:
+# https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_RunTask.html
+# describe_tasks might initially return nothing even if a task exists.
+class EcsEventualConsistencyTimeout(Exception):
+    pass
+
+
+class EcsNoTasksFound(Exception):
+    pass
+
+
+# 9 retries polls for up to 51.1 seconds with exponential backoff.
+BACKOFF_RETRIES = 9
 
 
 @dataclass
@@ -74,12 +90,22 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
     def from_config_value(inst_data, config_value):
         return EcsRunLauncher(inst_data=inst_data, **config_value)
 
-    def _ecs_tags(self, run_id):
-        return [{"key": "dagster/run_id", "value": run_id}]
+    def _set_ecs_tags(self, run_id, task_arn):
+        tags = [{"key": "dagster/run_id", "value": run_id}]
+        self.ecs.tag_resource(resourceArn=task_arn, tags=tags)
 
-    def _run_tags(self, task_arn):
+    def _set_run_tags(self, run_id, task_arn):
         cluster = self._task_metadata().cluster
-        return {"ecs/task_arn": task_arn, "ecs/cluster": cluster}
+        tags = {"ecs/task_arn": task_arn, "ecs/cluster": cluster}
+        self._instance.add_run_tags(run_id, tags)
+
+    def _get_run_tags(self, run_id):
+        run = self._instance.get_run_by_id(run_id)
+        tags = run.tags if run else {}
+        arn = tags.get("ecs/task_arn")
+        cluster = tags.get("ecs/cluster")
+
+        return (arn, cluster)
 
     def launch_run(self, context: LaunchRunContext) -> None:
 
@@ -123,8 +149,8 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         )
 
         arn = response["tasks"][0]["taskArn"]
-        self._instance.add_run_tags(run.run_id, self._run_tags(task_arn=arn))
-        self.ecs.tag_resource(resourceArn=arn, tags=self._ecs_tags(run.run_id))
+        self._set_run_tags(run.run_id, task_arn=arn)
+        self._set_ecs_tags(run.run_id, task_arn=arn)
         self._instance.report_engine_event(
             message=f"Launching run in task {arn} on cluster {metadata.cluster}",
             pipeline_run=run,
@@ -132,19 +158,32 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         )
 
     def can_terminate(self, run_id):
-        arn = self._instance.get_run_by_id(run_id).tags.get("ecs/task_arn")
-        if arn:
-            cluster = self._task_metadata().cluster
-            status = self.ecs.describe_tasks(tasks=[arn], cluster=cluster)["tasks"][0]["lastStatus"]
-            if status != "STOPPED":
-                return True
+        arn, cluster = self._get_run_tags(run_id)
+
+        if not (arn and cluster):
+            return False
+
+        tasks = self.ecs.describe_tasks(tasks=[arn], cluster=cluster).get("tasks")
+        if not tasks:
+            return False
+
+        status = tasks[0].get("lastStatus")
+        if status and status != "STOPPED":
+            return True
 
         return False
 
     def terminate(self, run_id):
-        cluster = self._task_metadata().cluster
-        arn = self._instance.get_run_by_id(run_id).tags.get("ecs/task_arn")
-        status = self.ecs.describe_tasks(tasks=[arn], cluster=cluster)["tasks"][0]["lastStatus"]
+        arn, cluster = self._get_run_tags(run_id)
+
+        if not (arn and cluster):
+            return False
+
+        tasks = self.ecs.describe_tasks(tasks=[arn], cluster=cluster).get("tasks")
+        if not tasks:
+            return False
+
+        status = tasks[0].get("lastStatus")
         if status == "STOPPED":
             return False
 
@@ -229,7 +268,22 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         cluster = response.get("Cluster")
         task_arn = response.get("TaskARN")
 
-        task = self.ecs.describe_tasks(tasks=[task_arn], cluster=cluster)["tasks"][0]
+        def describe_task_or_raise(task_arn, cluster):
+            try:
+                return self.ecs.describe_tasks(tasks=[task_arn], cluster=cluster)["tasks"][0]
+            except IndexError:
+                raise EcsNoTasksFound
+
+        try:
+            task = backoff(
+                describe_task_or_raise,
+                retry_on=(EcsNoTasksFound,),
+                kwargs={"task_arn": task_arn, "cluster": cluster},
+                max_retries=BACKOFF_RETRIES,
+            )
+        except EcsNoTasksFound:
+            raise EcsEventualConsistencyTimeout
+
         enis = []
         subnets = []
         for attachment in task["attachments"]:

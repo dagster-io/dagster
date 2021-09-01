@@ -3,7 +3,7 @@ from typing import Any, Dict, List, NamedTuple, Optional, Union
 from dagster import check
 from dagster.config.snap import ConfigFieldSnap, snap_from_field
 from dagster.core.definitions import (
-    CompositeSolidDefinition,
+    GraphDefinition,
     InputDefinition,
     InputMapping,
     OutputDefinition,
@@ -331,32 +331,25 @@ class SolidDefinitionsSnapshot(
 
 def build_solid_definitions_snapshot(pipeline_def: PipelineDefinition) -> SolidDefinitionsSnapshot:
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+    solid_def_snaps = []
+    graph_def_snaps = []
+    for node_def in pipeline_def.all_node_defs:
+        if isinstance(node_def, SolidDefinition):
+            solid_def_snaps.append(build_core_solid_def_snap(node_def))
+        elif isinstance(node_def, GraphDefinition):
+            graph_def_snaps.append(build_composite_solid_def_snap(node_def))
+        else:
+            check.failed(f"Unexpected NodeDefinition type {node_def}")
+
     return SolidDefinitionsSnapshot(
-        solid_def_snaps=[
-            build_core_solid_def_snap(solid_def)
-            for solid_def in pipeline_def.all_node_defs
-            if isinstance(solid_def, SolidDefinition)
-        ],
-        composite_solid_def_snaps=[
-            build_composite_solid_def_snap(solid_def)
-            for solid_def in pipeline_def.all_node_defs
-            if isinstance(solid_def, CompositeSolidDefinition)
-        ],
-    )
-
-
-def build_i_solid_def_snap(
-    i_solid_def: Union[SolidDefinition, CompositeSolidDefinition]
-) -> Union[CompositeSolidDefSnap, SolidDefSnap]:
-    return (
-        build_composite_solid_def_snap(i_solid_def)
-        if isinstance(i_solid_def, CompositeSolidDefinition)
-        else build_core_solid_def_snap(i_solid_def)
+        solid_def_snaps=solid_def_snaps,
+        # update when snapshot renames happen
+        composite_solid_def_snaps=graph_def_snaps,
     )
 
 
 def build_composite_solid_def_snap(comp_solid_def):
-    check.inst_param(comp_solid_def, "comp_solid_def", CompositeSolidDefinition)
+    check.inst_param(comp_solid_def, "comp_solid_def", GraphDefinition)
     return CompositeSolidDefSnap(
         name=comp_solid_def.name,
         input_def_snaps=list(map(build_input_def_snap, comp_solid_def.input_defs)),

@@ -145,7 +145,7 @@ class GrapheneExecutionStepRestartEvent(graphene.ObjectType):
 
 
 class GrapheneExecutionStepUpForRetryEvent(graphene.ObjectType):
-    error = graphene.NonNull(GraphenePythonError)
+    error = graphene.Field(GraphenePythonError)
     secondsToWait = graphene.Field(graphene.Int)
 
     class Meta:
@@ -356,7 +356,7 @@ class GrapheneExecutionStepFailureEvent(graphene.ObjectType):
         interfaces = (GrapheneMessageEvent, GrapheneStepEvent)
         name = "ExecutionStepFailureEvent"
 
-    error = graphene.NonNull(GraphenePythonError)
+    error = graphene.Field(GraphenePythonError)
     errorSource = graphene.Field(graphene.Enum.from_enum(ErrorSource))
     failureMetadata = graphene.Field(GrapheneFailureMetadata)
 
@@ -378,7 +378,7 @@ class GrapheneHookErroredEvent(graphene.ObjectType):
         interfaces = (GrapheneMessageEvent, GrapheneStepEvent)
         name = "HookErroredEvent"
 
-    error = graphene.NonNull(GraphenePythonError)
+    error = graphene.Field(GraphenePythonError)
 
 
 class GrapheneLogsCapturedEvent(graphene.ObjectType):

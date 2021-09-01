@@ -202,6 +202,37 @@ def test_tag_limits(workspace, daemon):
         assert get_run_ids(instance.run_launcher.queue()) == ["tiny-1", "large-1"]
 
 
+def test_tag_limits_just_key(workspace, daemon):
+    with instance_for_queued_run_coordinator(
+        max_concurrent_runs=10,
+        tag_concurrency_limits=[
+            {"key": "database", "value": {"applyLimitPerUniqueValue": False}, "limit": 2}
+        ],
+    ) as instance:
+        create_run(
+            instance,
+            run_id="tiny-1",
+            status=PipelineRunStatus.QUEUED,
+            tags={"database": "tiny"},
+        )
+        create_run(
+            instance,
+            run_id="tiny-2",
+            status=PipelineRunStatus.QUEUED,
+            tags={"database": "tiny"},
+        )
+        create_run(
+            instance,
+            run_id="large-1",
+            status=PipelineRunStatus.QUEUED,
+            tags={"database": "large"},
+        )
+
+        list(daemon.run_iteration(instance, workspace))
+
+        assert get_run_ids(instance.run_launcher.queue()) == ["tiny-1", "tiny-2"]
+
+
 def test_multiple_tag_limits(workspace, daemon):
     with instance_for_queued_run_coordinator(
         max_concurrent_runs=10,
@@ -276,6 +307,125 @@ def test_overlapping_tag_limits(workspace, daemon):
         list(daemon.run_iteration(instance, workspace))
 
         assert get_run_ids(instance.run_launcher.queue()) == ["run-1", "run-3"]
+
+
+def test_limits_per_unique_value(workspace, daemon):
+    with instance_for_queued_run_coordinator(
+        max_concurrent_runs=10,
+        tag_concurrency_limits=[
+            {"key": "foo", "limit": 1, "value": {"applyLimitPerUniqueValue": True}},
+        ],
+    ) as instance:
+        create_run(
+            instance,
+            run_id="run-1",
+            status=PipelineRunStatus.QUEUED,
+            tags={"foo": "bar"},
+        )
+        create_run(
+            instance,
+            run_id="run-2",
+            status=PipelineRunStatus.QUEUED,
+            tags={"foo": "bar"},
+        )
+        list(daemon.run_iteration(instance, workspace))
+
+        create_run(
+            instance,
+            run_id="run-3",
+            status=PipelineRunStatus.QUEUED,
+            tags={"foo": "other"},
+        )
+        create_run(
+            instance,
+            run_id="run-4",
+            status=PipelineRunStatus.QUEUED,
+            tags={"foo": "other"},
+        )
+
+        list(daemon.run_iteration(instance, workspace))
+
+        assert get_run_ids(instance.run_launcher.queue()) == ["run-1", "run-3"]
+
+
+def test_limits_per_unique_value_overlapping_limits(workspace, daemon):
+    with instance_for_queued_run_coordinator(
+        max_concurrent_runs=10,
+        tag_concurrency_limits=[
+            {"key": "foo", "limit": 1, "value": {"applyLimitPerUniqueValue": True}},
+            {"key": "foo", "limit": 2},
+        ],
+    ) as instance:
+        create_run(
+            instance,
+            run_id="run-1",
+            status=PipelineRunStatus.QUEUED,
+            tags={"foo": "bar"},
+        )
+        create_run(
+            instance,
+            run_id="run-2",
+            status=PipelineRunStatus.QUEUED,
+            tags={"foo": "bar"},
+        )
+        create_run(
+            instance,
+            run_id="run-3",
+            status=PipelineRunStatus.QUEUED,
+            tags={"foo": "other"},
+        )
+        create_run(
+            instance,
+            run_id="run-4",
+            status=PipelineRunStatus.QUEUED,
+            tags={"foo": "other-2"},
+        )
+
+        list(daemon.run_iteration(instance, workspace))
+
+        assert get_run_ids(instance.run_launcher.queue()) == ["run-1", "run-3"]
+
+    with instance_for_queued_run_coordinator(
+        max_concurrent_runs=10,
+        tag_concurrency_limits=[
+            {"key": "foo", "limit": 2, "value": {"applyLimitPerUniqueValue": True}},
+            {"key": "foo", "limit": 1, "value": "bar"},
+        ],
+    ) as instance:
+        create_run(
+            instance,
+            run_id="run-1",
+            status=PipelineRunStatus.QUEUED,
+            tags={"foo": "bar"},
+        )
+        create_run(
+            instance,
+            run_id="run-2",
+            status=PipelineRunStatus.QUEUED,
+            tags={"foo": "baz"},
+        )
+        create_run(
+            instance,
+            run_id="run-3",
+            status=PipelineRunStatus.QUEUED,
+            tags={"foo": "bar"},
+        )
+        create_run(
+            instance,
+            run_id="run-4",
+            status=PipelineRunStatus.QUEUED,
+            tags={"foo": "baz"},
+        )
+        create_run(
+            instance,
+            run_id="run-5",
+            status=PipelineRunStatus.QUEUED,
+            tags={"foo": "baz"},
+        )
+
+        list(daemon.run_iteration(instance, workspace))
+
+        assert get_run_ids(instance.run_launcher.queue()) == ["run-1", "run-2", "run-4"]
 
 
 def test_locations_not_created(instance, monkeypatch, workspace, daemon):

@@ -1,10 +1,21 @@
 """System-provided config objects and constructors."""
 import warnings
-from typing import AbstractSet, Any, Dict, List, NamedTuple, Optional, Type, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Dict,
+    List,
+    NamedTuple,
+    Optional,
+    Type,
+    Union,
+    cast,
+)
 
 from dagster import check
 from dagster.core.definitions.configurable import ConfigurableDefinition
-from dagster.core.definitions.executor import ExecutorDefinition
+from dagster.core.definitions.executor import ExecutorDefinition, execute_in_process_executor
 from dagster.core.definitions.intermediate_storage import IntermediateStorageDefinition
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.pipeline import PipelineDefinition
@@ -12,6 +23,9 @@ from dagster.core.definitions.resource import ResourceDefinition
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.utils import ensure_single_item
 from dagster.utils.merger import deep_merge_dicts
+
+if TYPE_CHECKING:
+    from dagster.config import ConfigType
 
 
 class SolidConfig(
@@ -152,18 +166,10 @@ class ResolvedRunConfig(
         run_config_schema = pipeline_def.get_run_config_schema(mode)
 
         if run_config_schema.config_mapping:
-            outer_evr = process_config(
-                run_config_schema.config_mapping.config_schema.config_type,
-                run_config,
-            )
-            if not outer_evr.success:
-                raise DagsterInvalidConfigError(
-                    f"Error in config mapping for pipeline {pipeline_def.name} mode {mode}",
-                    outer_evr.errors,
-                    run_config,
-                )
             # add user code boundary
-            run_config = run_config_schema.config_mapping.config_fn(outer_evr.value)
+            run_config = run_config_schema.config_mapping.resolve_from_unvalidated_config(
+                run_config
+            )
 
         config_evr = process_config(
             run_config_schema.run_config_schema_type,
@@ -188,17 +194,31 @@ class ResolvedRunConfig(
             "intermediate storage",
         )
 
-        config_mapped_execution_configs = config_map_objects(
-            config_value, mode_def.executor_defs, "execution", ExecutorDefinition, "executor"
-        )
+        # If using the `execute_in_process` executor, we ignore the execution config value, since it
+        # may be pointing to the executor for the job rather than the `execute_in_process` executor.
+        if (
+            len(mode_def.executor_defs) == 1
+            and mode_def.executor_defs[0]  # pylint: disable=comparison-with-callable
+            == execute_in_process_executor
+        ):
+            config_mapped_execution_configs: Optional[Dict[str, Any]] = {}
+        else:
+            config_mapped_execution_configs = config_map_objects(
+                config_value, mode_def.executor_defs, "execution", ExecutorDefinition, "executor"
+            )
 
         resource_defs = pipeline_def.get_required_resource_defs_for_mode(mode)
         resource_configs = config_value.get("resources", {})
         config_mapped_resource_configs = config_map_resources(resource_defs, resource_configs)
         config_mapped_logger_configs = config_map_loggers(pipeline_def, config_value, mode)
 
+        node_key = (
+            "ops"
+            if pipeline_def._is_using_graph_job_op_apis  # pylint: disable=protected-access
+            else "solids"
+        )
         solid_config_dict = composite_descent(
-            pipeline_def, config_value.get("solids", {}), mode_def.resource_defs
+            pipeline_def, config_value.get(node_key, {}), mode_def.resource_defs
         )
 
         return ResolvedRunConfig(
