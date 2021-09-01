@@ -2,6 +2,7 @@ import logging
 import sys
 import time
 from collections import defaultdict
+from typing import Dict
 
 from dagster import DagsterEvent, DagsterEventType, check
 from dagster.core.events.log import EventLogEntry
@@ -27,52 +28,67 @@ class _TagConcurrencyLimitsCounter:
         check.opt_list_param(tag_concurrency_limits, "tag_concurrency_limits", of_type=dict)
         check.list_param(in_progress_runs, "in_progress_runs", of_type=PipelineRun)
 
-        # convert currency_limits to dict
-        self._tag_concurrency_limits = {}
+        self._key_limits: Dict[str, int] = {}
+        self._key_value_limits: Dict[(str, str), int] = {}
+        self._unique_value_limits: Dict[str, int] = {}
+
         for tag_limit in tag_concurrency_limits:
-            self._tag_concurrency_limits[(tag_limit["key"], tag_limit.get("value"))] = tag_limit[
-                "limit"
-            ]
+            key = tag_limit["key"]
+            value = tag_limit.get("value")
+            limit = tag_limit["limit"]
+
+            if isinstance(value, str):
+                self._key_value_limits[(key, value)] = limit
+            elif not value or not value["applyLimitPerUniqueValue"]:
+                self._key_limits[key] = limit
+            else:
+                self._unique_value_limits[key] = limit
+
+        self._key_counts: Dict[str, int] = defaultdict(lambda: 0)
+        self._key_value_counts: Dict[(str, str), int] = defaultdict(lambda: 0)
+        self._unique_value_counts: Dict[(str, str), int] = defaultdict(lambda: 0)
 
         # initialize counters based on current in progress runs
-        self._in_progress_limit_counts = defaultdict(lambda: 0)
         for run in in_progress_runs:
-            limited_tags = self._get_limited_tags(run)
-            for tag_value in limited_tags:
-                self._in_progress_limit_counts[tag_value] += 1
-
-    def _get_limited_tags(self, run):
-        """
-        Returns the tags on the run which match one of the limits
-        """
-        tags = []
-        for tag_key, tag_value in run.tags.items():
-            # Check for rules which match either just the tag key, or rules that match on both the
-            # key and value. Note that both may apply.
-            if (tag_key, None) in self._tag_concurrency_limits:
-                tags.append((tag_key, None))
-            if (tag_key, tag_value) in self._tag_concurrency_limits:
-                tags.append((tag_key, tag_value))
-        return tags
+            self.update_counters_with_launched_run(run)
 
     def is_run_blocked(self, run):
         """
         True if there are in progress runs which are blocking this run based on tag limits
         """
-        limited_tags = self._get_limited_tags(run)
-        return any(
-            tag_value
-            for tag_value in limited_tags
-            if self._in_progress_limit_counts[tag_value] >= self._tag_concurrency_limits[tag_value]
-        )
+        for key, value in run.tags.items():
+            if key in self._key_limits and self._key_counts[key] >= self._key_limits[key]:
+                return True
+
+            tag_tuple = (key, value)
+            if (
+                tag_tuple in self._key_value_limits
+                and self._key_value_counts[tag_tuple] >= self._key_value_limits[tag_tuple]
+            ):
+                return True
+
+            if (
+                key in self._unique_value_limits
+                and self._unique_value_counts[tag_tuple] >= self._unique_value_limits[key]
+            ):
+                return True
+
+            return False
 
     def update_counters_with_launched_run(self, run):
         """
         Add a new in progress run to the counters
         """
-        limited_tags = self._get_limited_tags(run)
-        for tag_value in limited_tags:
-            self._in_progress_limit_counts[tag_value] += 1
+        for key, value in run.tags.items():
+            if key in self._key_limits:
+                self._key_counts[key] += 1
+
+            tag_tuple = (key, value)
+            if tag_tuple in self._key_value_limits:
+                self._key_value_counts[tag_tuple] += 1
+
+            if key in self._unique_value_limits:
+                self._unique_value_counts[tag_tuple] += 1
 
 
 class QueuedRunCoordinatorDaemon(DagsterDaemon):
