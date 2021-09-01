@@ -3,14 +3,16 @@
 
 import os
 import re
+import time
 from contextlib import contextmanager
 
+import docker
 import pytest
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import environ, poll_for_finished_run, poll_for_step_start
 from dagster.utils.test.postgres_instance import postgres_instance_for_test
 from dagster.utils.yaml_utils import merge_yamls
-from dagster_docker.docker_run_launcher import DOCKER_IMAGE_TAG
+from dagster_docker.docker_run_launcher import DOCKER_CONTAINER_ID_TAG, DOCKER_IMAGE_TAG
 from dagster_test.test_project import (
     ReOriginatedExternalPipelineForTest,
     find_local_test_image,
@@ -30,6 +32,84 @@ def docker_postgres_instance(overrides=None):
         __file__, "test-postgres-db-docker", overrides=overrides
     ) as instance:
         yield instance
+
+
+def test_launch_docker_no_network():
+    docker_image = get_test_project_docker_image()
+    launcher_config = {
+        "env_vars": [
+            "AWS_ACCESS_KEY_ID",
+            "AWS_SECRET_ACCESS_KEY",
+        ],
+    }
+
+    if IS_BUILDKITE:
+        launcher_config["registry"] = get_buildkite_registry_config()
+    else:
+        find_local_test_image(docker_image)
+
+    run_config = merge_yamls(
+        [
+            os.path.join(get_test_project_environments_path(), "env.yaml"),
+            os.path.join(get_test_project_environments_path(), "env_s3.yaml"),
+        ]
+    )
+    with docker_postgres_instance(
+        overrides={
+            "run_launcher": {
+                "class": "DockerRunLauncher",
+                "module": "dagster_docker",
+                "config": launcher_config,
+            }
+        }
+    ) as instance:
+        recon_pipeline = get_test_project_recon_pipeline("demo_pipeline", docker_image)
+        with get_test_project_workspace_and_external_pipeline(
+            instance, "demo_pipeline", container_image=docker_image
+        ) as (workspace, orig_pipeline):
+
+            external_pipeline = ReOriginatedExternalPipelineForTest(
+                orig_pipeline,
+                container_image=docker_image,
+            )
+            run = instance.create_run_for_pipeline(
+                pipeline_def=recon_pipeline.get_definition(),
+                run_config=run_config,
+                external_pipeline_origin=external_pipeline.get_external_origin(),
+                pipeline_code_origin=external_pipeline.get_python_origin(),
+            )
+            instance.launch_run(run.run_id, workspace)
+
+            # Container launches, but run is stuck in STARTING state
+            # due to not being able to access the network
+            run = instance.get_run_by_id(run.run_id)
+            assert run.tags[DOCKER_IMAGE_TAG] == docker_image
+
+            container_id = run.tags[DOCKER_CONTAINER_ID_TAG]
+
+            run = instance.get_run_by_id(run.run_id)
+
+            assert run.status == PipelineRunStatus.STARTING
+            assert run.tags[DOCKER_IMAGE_TAG] == docker_image
+            client = docker.client.from_env()
+
+            container = None
+
+            try:
+                start_time = time.time()
+                while True:
+                    container = client.containers.get(container_id)
+                    if time.time() - start_time > 30:
+                        raise Exception("Timed out waiting for container to exit")
+
+                    if container.status == "exited":
+                        break
+
+                    time.sleep(3)
+
+            finally:
+                if container:
+                    container.remove()
 
 
 def test_launch_docker_image_on_pipeline_config():
