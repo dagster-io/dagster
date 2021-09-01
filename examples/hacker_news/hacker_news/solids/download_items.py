@@ -15,7 +15,6 @@ from pyspark.sql.types import (
 
 HN_ACTION_SCHEMA = StructType(
     [
-        StructField("deleted", BooleanType()),
         StructField("id", LongType()),
         StructField("parent", DoubleType()),
         StructField("time", LongType()),
@@ -30,6 +29,8 @@ HN_ACTION_SCHEMA = StructType(
         StructField("url", StringType()),
     ]
 )
+
+ACTION_FIELD_NAMES = [field.name for field in HN_ACTION_SCHEMA.fields]
 
 
 @solid(
@@ -75,7 +76,7 @@ def download_items(context, id_range: Tuple[int, int]) -> Output:
 )
 def build_comments(context, items: SparkDF) -> SparkDF:
     context.log.info(str(items.schema))
-    return items.where(items["type"] == "comment")
+    return items.where(items["type"] == "comment").select(ACTION_FIELD_NAMES)
 
 
 @solid(
@@ -90,4 +91,4 @@ def build_comments(context, items: SparkDF) -> SparkDF:
 )
 def build_stories(context, items: SparkDF) -> SparkDF:
     context.log.info(str(items.schema))
-    return items.where(items["type"] == "story")
+    return items.where(items["type"] == "story").select(ACTION_FIELD_NAMES)
