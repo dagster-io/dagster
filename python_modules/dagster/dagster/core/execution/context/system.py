@@ -321,7 +321,6 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             plan_data.pipeline.get_definition(),
             step,
             plan_data.execution_plan,
-            execution_data.resolved_run_config,
             execution_data.intermediate_storage_def,
         )
         self._resources = execution_data.scoped_resources_builder.build(
