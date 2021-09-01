@@ -8,6 +8,7 @@ from dagster import (
     SensorDefinition,
     SolidDefinition,
     daily_schedule,
+    daily_partitioned_config,
     graph,
     hourly_schedule,
     lambda_solid,
@@ -16,6 +17,7 @@ from dagster import (
     pipeline,
     repository,
     schedule,
+    schedule_from_partitions,
     sensor,
     solid,
     weekly_schedule,
@@ -334,9 +336,9 @@ def test_job_with_partitions():
             )
         ]
 
-    assert test.get_partition_set_def("bare_default_partition_set")
+    assert test.get_partition_set_def("bare_partition_set")
     # do it twice to make sure we don't overwrite cache on second time
-    assert test.get_partition_set_def("bare_default_partition_set")
+    assert test.get_partition_set_def("bare_partition_set")
     assert test.get_pipeline("bare")
 
 
@@ -394,6 +396,38 @@ def test_dict_jobs():
 
     assert jobs.get_pipeline("my_graph")
     assert jobs.get_pipeline("other_graph")
+
+
+def test_job_scheduled_partitions():
+    @graph
+    def my_graph():
+        pass
+
+    @daily_partitioned_config(start_date="2021-09-01")
+    def daily_schedule_config(_start, _end):
+        return {}
+
+    my_job = my_graph.to_job(config=daily_schedule_config)
+    my_schedule = schedule_from_partitions(my_job)
+
+    @repository
+    def schedule_repo():
+        return [my_schedule]
+
+    @repository
+    def job_repo():
+        return [my_job]
+
+    @repository
+    def schedule_job_repo():
+        return [my_job, my_schedule]
+
+    assert len(schedule_repo.partition_set_defs) == 1
+    assert schedule_repo.get_partition_set_def("my_graph_partition_set")
+    assert len(job_repo.partition_set_defs) == 1
+    assert job_repo.get_partition_set_def("my_graph_partition_set")
+    assert len(schedule_job_repo.partition_set_defs) == 1
+    assert schedule_job_repo.get_partition_set_def("my_graph_partition_set")
 
 
 def test_bad_job_pipeline():

@@ -388,22 +388,16 @@ class CachingRepositoryData(RepositoryData):
         ]
 
         def load_partition_sets_from_pipelines():
-            mode_partition_sets = []
-            schedule_partition_set_names = [
-                partition_set.name for partition_set in schedule_partition_sets
-            ]
+            job_partition_sets = []
             for pipeline in self.get_all_pipelines():
-                for mode_def in pipeline.mode_definitions:
-                    partition_set_def = mode_def.get_partition_set_def(pipeline.name)
-                    # kind of a hack, but we only want to explicitly extract partition sets from
-                    # pipelines if they were not already extracted via a partitioned schedule
-                    if (
-                        partition_set_def
-                        and partition_set_def.name not in schedule_partition_set_names
-                    ):
-                        mode_partition_sets.append(partition_set_def)
+                job_partition_set = pipeline.get_partition_set_def()
 
-            return mode_partition_sets
+                if job_partition_set:
+                    # should only return a partition set if this was constructed using the job API,
+                    # with a partitioned config
+                    job_partition_sets.append(job_partition_set)
+
+            return job_partition_sets
 
         self._partition_sets = _CacheingDefinitionIndex(
             PartitionSetDefinition,
