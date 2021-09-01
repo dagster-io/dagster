@@ -5,7 +5,7 @@ from dagster_slack import slack_resource
 from mock import patch
 
 
-@patch("slack_sdk.web.base_client.BaseClient.api_call")
+@patch("slack_sdk.WebClient.api_call")
 def test_slack_resource(mock_api_call):
     @solid(required_resource_keys={"slack"})
     def slack_solid(context):

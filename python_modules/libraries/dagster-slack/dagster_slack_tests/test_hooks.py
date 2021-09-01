@@ -8,7 +8,7 @@ class SomeUserException(Exception):
     pass
 
 
-@patch("slack_sdk.web.base_client.BaseClient.api_call")
+@patch("slack_sdk.WebClient.api_call")
 def test_failure_hook_on_solid_instance(mock_api_call):
     @solid
     def pass_solid(_):
@@ -38,7 +38,7 @@ def test_failure_hook_on_solid_instance(mock_api_call):
     assert mock_api_call.call_count == 1
 
 
-@patch("slack_sdk.web.base_client.BaseClient.api_call")
+@patch("slack_sdk.WebClient.api_call")
 def test_failure_hook_decorator(mock_api_call):
     @solid
     def pass_solid(_):
@@ -66,7 +66,7 @@ def test_failure_hook_decorator(mock_api_call):
     assert mock_api_call.call_count == 2
 
 
-@patch("slack_sdk.web.base_client.BaseClient.api_call")
+@patch("slack_sdk.WebClient.api_call")
 def test_success_hook_on_solid_instance(mock_api_call):
     def my_message_fn(_):
         return "Some custom text"
@@ -97,7 +97,7 @@ def test_success_hook_on_solid_instance(mock_api_call):
     assert mock_api_call.call_count == 2
 
 
-@patch("slack_sdk.web.base_client.BaseClient.api_call")
+@patch("slack_sdk.WebClient.api_call")
 def test_success_hook_decorator(mock_api_call):
     @solid
     def pass_solid(_):
