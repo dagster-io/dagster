@@ -32,7 +32,7 @@ from dagster_test.graph_job_op_toys.repo import toys_repository
 from dagster_test.graph_job_op_toys.resources import resource_pipeline
 from dagster_test.graph_job_op_toys.retries import retry_pipeline
 from dagster_test.graph_job_op_toys.schedules import longitudinal_schedule
-from dagster_test.graph_job_op_toys.sleepy import sleepy_pipeline
+from dagster_test.graph_job_op_toys.sleepy import sleepy_job
 
 
 # def test_repo():
@@ -58,13 +58,13 @@ def test_many_events_job():
     assert many_events_job.execute_in_process().success
 
 
-# def get_sleepy():
-#     return sleepy_pipeline
+def get_sleepy():
+    return sleepy_job
 
 
-# def test_sleepy_pipeline():
-#     with instance_for_test() as instance:
-#         assert execute_pipeline(reconstructable(get_sleepy), instance=instance).success
+def test_sleepy_pipeline():
+    with instance_for_test() as instance:
+        assert execute_pipeline(reconstructable(get_sleepy), instance=instance).success
 
 
 def test_spew_pipeline():
