@@ -90,9 +90,18 @@ class _CacheingDefinitionIndex(Generic[RepositoryLevelDefinition]):
         if self._definition_names:
             return self._definition_names
 
-        self._definition_names = list(self._definitions.keys()) + [
-            definition.name for definition in self._get_lazy_definitions()
-        ]
+        lazy_names = []
+        for definition in self._get_lazy_definitions():
+            strict_definition = self._definitions.get(definition.name)
+            if strict_definition:
+                check.invariant(
+                    strict_definition == definition,
+                    f"Duplicate definition found for {definition.name}",
+                )
+            else:
+                lazy_names.append(definition.name)
+
+        self._definition_names = list(self._definitions.keys()) + lazy_names
         return self._definition_names
 
     def has_definition(self, definition_name: str) -> bool:
@@ -380,10 +389,18 @@ class CachingRepositoryData(RepositoryData):
 
         def load_partition_sets_from_pipelines():
             mode_partition_sets = []
+            schedule_partition_set_names = [
+                partition_set.name for partition_set in schedule_partition_sets
+            ]
             for pipeline in self.get_all_pipelines():
                 for mode_def in pipeline.mode_definitions:
                     partition_set_def = mode_def.get_partition_set_def(pipeline.name)
-                    if partition_set_def:
+                    # kind of a hack, but we only want to explicitly extract partition sets from
+                    # pipelines if they were not already extracted via a partitioned schedule
+                    if (
+                        partition_set_def
+                        and partition_set_def.name not in schedule_partition_set_names
+                    ):
                         mode_partition_sets.append(partition_set_def)
 
             return mode_partition_sets
