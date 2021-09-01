@@ -339,21 +339,32 @@ def get_required_resource_keys_to_init(
 
         resource_keys = resource_keys.union(
             get_required_resource_keys_for_step(
-                pipeline_def, step, execution_plan, resolved_run_config, intermediate_storage_def
+                pipeline_def, step, execution_plan, intermediate_storage_def
             )
         )
 
-    return frozenset(resource_keys)
+    resource_defs = pipeline_def.get_mode_definition(resolved_run_config.mode).resource_defs
+    return frozenset(get_transitive_required_resource_keys(resource_keys, resource_defs))
+
+
+def get_transitive_required_resource_keys(required_resource_keys, resource_defs):
+
+    resource_dependencies = resolve_resource_dependencies(resource_defs)
+
+    transitive_required_resource_keys = set()
+
+    for resource_key in required_resource_keys:
+        transitive_required_resource_keys = transitive_required_resource_keys.union(
+            set(get_dependencies(resource_key, resource_dependencies))
+        )
+
+    return transitive_required_resource_keys
 
 
 def get_required_resource_keys_for_step(
-    pipeline_def, execution_step, execution_plan, resolved_run_config, intermediate_storage_def
+    pipeline_def, execution_step, execution_plan, intermediate_storage_def
 ):
     resource_keys = set()
-
-    mode_definition = pipeline_def.get_mode_definition(resolved_run_config.mode)
-
-    resource_dependencies = resolve_resource_dependencies(mode_definition.resource_defs)
 
     # add all the intermediate storage resource keys
     if intermediate_storage_def is not None:
@@ -406,8 +417,4 @@ def get_required_resource_keys_for_step(
                 if auto_plugin.compatible_with_storage_def(intermediate_storage_def):
                     resource_keys = resource_keys.union(auto_plugin.required_resource_keys())
 
-    for resource_name in resource_keys:
-        resource_keys = resource_keys.union(
-            set(get_dependencies(resource_name, resource_dependencies))
-        )
     return frozenset(resource_keys)
