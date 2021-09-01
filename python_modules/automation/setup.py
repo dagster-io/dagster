@@ -22,7 +22,6 @@ setup(
         "pandas",
         "pytablereader",
         "requests",
-        "slack_sdk",
         "twine==1.15.0",
         "virtualenv==16.5.0",
         "wheel==0.33.6",
