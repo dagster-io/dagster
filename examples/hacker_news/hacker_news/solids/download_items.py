@@ -64,7 +64,13 @@ def download_items(context, id_range: Tuple[int, int]) -> Output:
 
 
 @solid(
-    output_defs=[OutputDefinition(name="comments", io_manager_key="warehouse_io_manager")],
+    output_defs=[
+        OutputDefinition(
+            name="comments",
+            io_manager_key="warehouse_io_manager",
+            metadata={"table": "hackernews.comments"},
+        )
+    ],
     description="Creates a dataset of all items that are comments",
 )
 def build_comments(context, items: SparkDF) -> SparkDF:
@@ -73,7 +79,13 @@ def build_comments(context, items: SparkDF) -> SparkDF:
 
 
 @solid(
-    output_defs=[OutputDefinition(name="stories", io_manager_key="warehouse_io_manager")],
+    output_defs=[
+        OutputDefinition(
+            name="stories",
+            io_manager_key="warehouse_io_manager",
+            metadata={"table": "hackernews.stories"},
+        )
+    ],
     description="Creates a dataset of all items that are stories",
 )
 def build_stories(context, items: SparkDF) -> SparkDF:
