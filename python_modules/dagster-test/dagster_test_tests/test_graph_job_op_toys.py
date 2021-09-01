@@ -22,9 +22,9 @@ from dagster_test.graph_job_op_toys.hammer import hammer_job
 from dagster_test.graph_job_op_toys.log_spew import log_spew_job
 from dagster_test.graph_job_op_toys.longitudinal import (
     IntentionalRandomFailure,
-    longitudinal_pipeline,
+    longitudinal_job,
 )
-from dagster_test.graph_job_op_toys.many_events import many_events
+from dagster_test.graph_job_op_toys.many_events import many_events_job
 from dagster_test.graph_job_op_toys.pyspark_assets.pyspark_assets_pipeline import (
     pyspark_assets_pipeline,
 )
@@ -43,20 +43,19 @@ def test_dynamic_job():
     assert dynamic_job.execute_in_process().success
 
 
-# def test_longitudinal_pipeline():
-#     partition_set = longitudinal_schedule().get_partition_set()
-#     try:
-#         result = execute_pipeline(
-#             longitudinal_pipeline,
-#             run_config=partition_set.run_config_for_partition(partition_set.get_partitions()[0]),
-#         )
-#         assert result.success
-#     except IntentionalRandomFailure:
-#         pass
+def test_longitudinal_job():
+    partition_set = longitudinal_schedule().get_partition_set()
+    try:
+        result = longitudinal_job.execute_in_process(
+            run_config=partition_set.run_config_for_partition(partition_set.get_partitions()[0]),
+        )
+        assert result.success
+    except IntentionalRandomFailure:
+        pass
 
 
-# def test_many_events_pipeline():
-#     assert execute_pipeline(many_events).success
+def test_many_events_job():
+    assert many_events_job.execute_in_process().success
 
 
 # def get_sleepy():
