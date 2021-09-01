@@ -3,10 +3,10 @@ Shell (dagster-shell)
 
 .. currentmodule:: dagster_shell
 
-The Dagster shell library provides solid factories for executing inline shell scripts or script files.
+The Dagster shell library provides op factories for executing inline shell scripts or script files.
 
-.. autofunction:: create_shell_command_solid
+.. autofunction:: create_shell_command_op
 
-.. autofunction:: create_shell_script_solid
+.. autofunction:: create_shell_script_op
 
-.. autofunction:: shell_solid
+.. autofunction:: shell_op
