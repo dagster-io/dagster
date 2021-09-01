@@ -1,0 +1,15 @@
+FROM python:3.8-slim
+
+COPY . /
+RUN pip install \
+    dagster \
+    dagster-postgres \
+    dagster-docker
+
+# Run dagster gRPC server on port 8090
+
+EXPOSE 8090
+
+# CMD allows this to be overridden from run launchers or executors that want
+# to run other commands against your repository
+CMD ["dagster", "api", "grpc", "-h", "0.0.0.0", "-p", "8090", "-f", "repo.py"]
