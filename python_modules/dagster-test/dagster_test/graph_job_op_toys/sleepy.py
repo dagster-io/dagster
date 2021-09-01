@@ -27,16 +27,13 @@ def sleeper(context, units: List[int]) -> int:
         "out_4": Out(List[int]),
     },
 )
-def giver(context) -> Iterator[Out]:
+def giver(context):
     units = context.op_config
     queues: List[List[int]] = [[], [], [], []]
     for i, sec in enumerate(units):
         queues[i % 4].append(sec)
 
-    yield Output(queues[0], "out_1")
-    yield Output(queues[1], "out_2")
-    yield Output(queues[2], "out_3")
-    yield Output(queues[3], "out_4")
+    return queues[0], queues[1], queues[2], queues[3]
 
 
 @op(
