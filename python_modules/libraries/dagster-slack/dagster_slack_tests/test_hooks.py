@@ -8,7 +8,7 @@ class SomeUserException(Exception):
     pass
 
 
-@patch("slack.web.base_client.BaseClient._perform_urllib_http_request")
+@patch("slack_sdk.web.base_client.BaseClient._perform_urllib_http_request")
 def test_failure_hook_on_solid_instance(mock_urllib_http_request):
     @solid
     def pass_solid(_):
@@ -38,7 +38,7 @@ def test_failure_hook_on_solid_instance(mock_urllib_http_request):
     assert mock_urllib_http_request.call_count == 1
 
 
-@patch("slack.web.base_client.BaseClient._perform_urllib_http_request")
+@patch("slack_sdk.web.base_client.BaseClient._perform_urllib_http_request")
 def test_failure_hook_decorator(mock_urllib_http_request):
     @solid
     def pass_solid(_):
@@ -66,7 +66,7 @@ def test_failure_hook_decorator(mock_urllib_http_request):
     assert mock_urllib_http_request.call_count == 2
 
 
-@patch("slack.web.base_client.BaseClient._perform_urllib_http_request")
+@patch("slack_sdk.web.base_client.BaseClient._perform_urllib_http_request")
 def test_success_hook_on_solid_instance(mock_urllib_http_request):
     def my_message_fn(_):
         return "Some custom text"
@@ -97,7 +97,7 @@ def test_success_hook_on_solid_instance(mock_urllib_http_request):
     assert mock_urllib_http_request.call_count == 2
 
 
-@patch("slack.web.base_client.BaseClient._perform_urllib_http_request")
+@patch("slack_sdk.web.base_client.BaseClient._perform_urllib_http_request")
 def test_success_hook_decorator(mock_urllib_http_request):
     @solid
     def pass_solid(_):

@@ -5,7 +5,7 @@ from dagster_slack import slack_resource
 from mock import patch
 
 
-@patch("slack.web.base_client.BaseClient._perform_urllib_http_request")
+@patch("slack_sdk.web.base_client.BaseClient._perform_urllib_http_request")
 def test_slack_resource(mock_urllib_http_request):
     @solid(required_resource_keys={"slack"})
     def slack_solid(context):
