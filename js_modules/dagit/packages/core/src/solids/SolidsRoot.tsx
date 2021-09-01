@@ -41,14 +41,14 @@ function flatUniq(arrs: string[][]) {
 
 type Solid = SolidsRootQuery_repositoryOrError_Repository_usedSolids;
 
-function searchSuggestionsForSolids(solids: Solid[]): SuggestionProvider[] {
+function searchSuggestionsForSolids(solids: Solid[], crag: boolean): SuggestionProvider[] {
   return [
     {
       token: 'name',
       values: () => solids.map((s) => s.definition.name),
     },
     {
-      token: 'pipeline',
+      token: crag ? 'job' : 'pipeline',
       values: () => flatUniq(solids.map((s) => s.invocations.map((i) => i.pipeline.name))),
     },
     {
@@ -73,7 +73,10 @@ function filterSolidsWithSearch(solids: Solid[], search: TokenizingFieldValue[])
       ) {
         return false;
       }
-      if (item.token === 'pipeline' && !s.invocations.some((i) => i.pipeline.name === item.value)) {
+      if (
+        (item.token === 'pipeline' || item.token === 'job') &&
+        !s.invocations.some((i) => i.pipeline.name === item.value)
+      ) {
         return false;
       }
       if (
@@ -135,7 +138,7 @@ const SolidsRootWithData: React.FC<Props & {usedSolids: Solid[]}> = (props) => {
   const {flagPipelineModeTuples} = useFeatureFlags();
 
   const {q, typeExplorer} = querystring.parse(location.search);
-  const suggestions = searchSuggestionsForSolids(usedSolids);
+  const suggestions = searchSuggestionsForSolids(usedSolids, flagPipelineModeTuples);
   const search = tokenizedValuesFromString((q as string) || '', suggestions);
   const filtered = filterSolidsWithSearch(usedSolids, search);
 

@@ -126,8 +126,8 @@ export const RunTable = (props: RunTableProps) => {
         {nonIdealState || (
           <NonIdealState
             icon="history"
-            title="Pipeline Runs"
-            description="No runs to display. Use the Playground to launch a pipeline."
+            title="No runs to display"
+            description="Use the Playground to launch a run."
           />
         )}
       </Box>

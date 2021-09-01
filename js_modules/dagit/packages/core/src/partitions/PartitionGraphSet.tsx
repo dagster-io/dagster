@@ -36,7 +36,7 @@ export const PartitionGraphSet: React.FunctionComponent<{
     setHiddenStepKeys(hiddenKeys);
 
     graphs.forEach((graph) => {
-      const chart = graph?.current?.chart?.current?.chartInstance;
+      const chart = graph?.current?.getChartInstance();
       const datasets = chart?.data?.datasets || [];
       datasets.forEach((dataset: any, idx: number) => {
         const meta = chart.getDatasetMeta(idx);

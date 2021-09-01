@@ -14,6 +14,7 @@ import * as ReactDOM from 'react-dom';
 import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
+import {useFeatureFlags} from '../app/Flags';
 import {IExecutionSession} from '../app/LocalStorage';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {ShortcutHandler} from '../app/ShortcutHandler';
@@ -251,8 +252,9 @@ interface ConfigEditorConfigGeneratorPickerProps {
 const ConfigEditorConfigGeneratorPicker: React.FC<ConfigEditorConfigGeneratorPickerProps> = React.memo(
   (props) => {
     const {configGenerators, label, onSelect} = props;
-
-    const select: React.RefObject<Select<ConfigGenerator>> = React.createRef();
+    const {flagPipelineModeTuples} = useFeatureFlags();
+    const select = React.useRef<Select<ConfigGenerator>>(null);
+    const itemLabel = flagPipelineModeTuples ? 'Ops' : 'Solids';
 
     return (
       <div>
@@ -303,9 +305,9 @@ const ConfigEditorConfigGeneratorPicker: React.FC<ConfigEditorConfigGeneratorPic
                       {[
                         item.solidSelection
                           ? item.solidSelection.length === 1
-                            ? `Solids: ${item.solidSelection[0]}`
-                            : `Solids: ${item.solidSelection.length}`
-                          : `Solids: All`,
+                            ? `${itemLabel}: ${item.solidSelection[0]}`
+                            : `${itemLabel}: ${item.solidSelection.length}`
+                          : `${itemLabel}: All`,
                         `Mode: ${item.mode}`,
                       ].join(' - ')}
                     </div>

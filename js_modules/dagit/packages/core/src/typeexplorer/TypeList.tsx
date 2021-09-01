@@ -3,6 +3,7 @@ import {H3, UL} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {useFeatureFlags} from '../app/Flags';
 import {SidebarSection, SidebarSubhead, SidebarTitle} from '../pipelines/SidebarComponents';
 import {Box} from '../ui/Box';
 
@@ -29,12 +30,13 @@ function groupTypes(types: TypeListFragment[]): {[key: string]: TypeListFragment
 }
 
 export const TypeList: React.FC<ITypeListProps> = (props) => {
+  const {flagPipelineModeTuples} = useFeatureFlags();
   const groups = groupTypes(props.types);
   return (
     <>
       <SidebarSubhead />
       <Box padding={12}>
-        <SidebarTitle>Pipeline Types</SidebarTitle>
+        <SidebarTitle>{flagPipelineModeTuples ? 'Graph types' : 'Pipeline types'}</SidebarTitle>
       </Box>
       {Object.keys(groups).map((title, idx) => (
         <SidebarSection key={idx} title={title} collapsedByDefault={idx !== 0}>
