@@ -4,7 +4,7 @@
 # start_alert_sensor_marker
 import os
 from dagster import job_failure_sensor, JobFailureSensorContext
-from slack import WebClient
+from slack_sdk import WebClient
 
 
 @job_failure_sensor
