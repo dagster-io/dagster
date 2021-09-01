@@ -1,6 +1,7 @@
 from time import sleep
 
 from dagster import Field, Int, Output, OutputDefinition, PresetDefinition, pipeline, solid
+from dagster.core.definitions.decorators.graph import graph
 
 
 @solid(
@@ -31,28 +32,22 @@ def branch(name, arg, solid_num):
     return out
 
 
-@pipeline(
-    description=("Demo fork-shaped pipeline that has two-path parallel structure of solids."),
-    preset_defs=[
-        PresetDefinition(
-            "sleep_failed",
-            {
-                "intermediate_storage": {"filesystem": {}},
-                "execution": {"multiprocess": {}},
-                "solids": {"root": {"config": {"sleep_secs": [-10, 30]}}},
-            },
-        ),
-        PresetDefinition(
-            "sleep",
-            {
-                "intermediate_storage": {"filesystem": {}},
-                "execution": {"multiprocess": {}},
-                "solids": {"root": {"config": {"sleep_secs": [0, 10]}}},
-            },
-        ),
-    ],
-)
-def branch_pipeline():
+@graph(description="Demo fork-shaped pipeline that has two-path parallel structure of solids.")
+def branch_graph():
     out_1, out_2 = root()
     branch("branch_1", out_1, 3)
     branch("branch_2", out_2, 5)
+
+
+branch_failed_job = branch_graph.to_job(
+    name="branch_failed",
+    config={
+        "solids": {"root": {"config": {"sleep_secs": [-10, 30]}}},
+    },
+)
+
+branch_job = branch_graph.to_job(
+    config={
+        "solids": {"root": {"config": {"sleep_secs": [0, 10]}}},
+    },
+)

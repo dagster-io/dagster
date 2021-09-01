@@ -1,3 +1,4 @@
+from dagster.core.definitions.reconstructable import ReconstructableRepository
 import pytest
 from dagster import (
     DagsterInvariantViolationError,
@@ -33,10 +34,22 @@ from dagster_test.graph_job_op_toys.resources import resource_pipeline
 from dagster_test.graph_job_op_toys.retries import retry_pipeline
 from dagster_test.graph_job_op_toys.schedules import longitudinal_schedule
 from dagster_test.graph_job_op_toys.sleepy import sleepy_job
-
+from dagster_test.graph_job_op_toys.branches import branch_job, branch_failed_job
+from dagster_test.graph_job_op_toys.repo import toys_repository
 
 # def test_repo():
 #     assert toys_repository
+
+
+def test_toys_repo():
+    with instance_for_test() as instance:
+        recon_repo = ReconstructableRepository.for_file(__file__, "toys_repository")
+        # jobs = toys_repository.get_all_pipelines()
+        # for pipeline in jobs:
+        #     execute_pipeline(
+        #         recon_repo.get_reconstructable_pipeline(pipeline.name),
+        #         instance=instance,
+        #     )
 
 
 def test_dynamic_job():
@@ -62,9 +75,27 @@ def get_sleepy():
     return sleepy_job
 
 
-def test_sleepy_pipeline():
+def test_sleepy_job():
     with instance_for_test() as instance:
         assert execute_pipeline(reconstructable(get_sleepy), instance=instance).success
+
+
+def get_branch():
+    return branch_job
+
+
+def test_branch_job():
+    with instance_for_test() as instance:
+        assert execute_pipeline(reconstructable(get_branch), instance=instance).success
+
+
+def get_branch_failed():
+    return branch_failed_job
+
+
+def test_branch_job_failed():
+    with instance_for_test() as instance:
+        assert not execute_pipeline(reconstructable(get_branch_failed), instance=instance).success
 
 
 def test_spew_pipeline():
