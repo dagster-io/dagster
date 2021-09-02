@@ -16,10 +16,10 @@ from dagster import (
     Field,
     Output,
     graph,
-    job_failure_sensor,
     pipeline,
     pipeline_failure_sensor,
     repository,
+    run_failure_sensor,
     solid,
 )
 from dagster.core.definitions.decorators.sensor import asset_sensor, sensor
@@ -212,8 +212,8 @@ def my_pipeline_failure_sensor(context):
     assert isinstance(context.instance, DagsterInstance)
 
 
-@job_failure_sensor(job_selection=[failure_job])
-def my_job_failure_sensor_filtered(context):
+@run_failure_sensor(job_selection=[failure_job])
+def my_run_failure_sensor_filtered(context):
     assert isinstance(context.instance, DagsterInstance)
 
 
@@ -241,7 +241,7 @@ def the_repo():
         asset_foo_sensor,
         asset_job_sensor,
         my_pipeline_failure_sensor,
-        my_job_failure_sensor_filtered,
+        my_run_failure_sensor_filtered,
         my_pipeline_success_sensor,
         failure_pipeline,
         failure_job,
@@ -1213,7 +1213,7 @@ def test_pipeline_failure_sensor(external_repo_context):
 
 
 @pytest.mark.parametrize("external_repo_context", repos())
-def test_job_failure_sensor_filtered(external_repo_context):
+def test_run_failure_sensor_filtered(external_repo_context):
     freeze_datetime = pendulum.now()
     with instance_with_sensors(external_repo_context) as (
         instance,
@@ -1221,7 +1221,7 @@ def test_job_failure_sensor_filtered(external_repo_context):
         external_repo,
     ):
         with pendulum.test(freeze_datetime):
-            failure_sensor = external_repo.get_external_sensor("my_job_failure_sensor_filtered")
+            failure_sensor = external_repo.get_external_sensor("my_run_failure_sensor_filtered")
             instance.start_sensor(failure_sensor)
 
             evaluate_sensors(instance, workspace)
