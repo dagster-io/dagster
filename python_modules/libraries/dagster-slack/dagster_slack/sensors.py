@@ -7,7 +7,7 @@ from dagster.core.definitions.pipeline_sensor import (
     job_failure_sensor,
     pipeline_failure_sensor,
 )
-from slack import WebClient
+from slack_sdk import WebClient
 
 
 def _default_failure_message(context: PipelineFailureSensorContext) -> str:

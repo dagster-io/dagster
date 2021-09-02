@@ -1,5 +1,5 @@
 from dagster import Field, StringSource, resource
-from slack import WebClient
+from slack_sdk import WebClient
 
 
 @resource(
@@ -21,7 +21,7 @@ from slack import WebClient
 def slack_resource(context):
     """This resource is for connecting to Slack.
 
-    The resource object is a `slack.WebClient`.
+    The resource object is a `slack_sdk.WebClient`.
 
     By configuring this Slack resource, you can post messages to Slack from any Dagster solid:
 

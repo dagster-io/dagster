@@ -6,7 +6,7 @@ from dagster.core.definitions.pipeline_sensor import (
     PipelineFailureSensorContext,
     pipeline_failure_sensor,
 )
-from slack import WebClient
+from slack_sdk import WebClient
 
 
 def get_directory_files(directory_name, since=None):

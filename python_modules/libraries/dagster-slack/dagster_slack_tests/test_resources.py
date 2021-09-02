@@ -5,13 +5,13 @@ from dagster_slack import slack_resource
 from mock import patch
 
 
-@patch("slack.web.base_client.BaseClient._perform_urllib_http_request")
-def test_slack_resource(mock_urllib_http_request):
+@patch("slack_sdk.WebClient.api_call")
+def test_slack_resource(mock_api_call):
     @solid(required_resource_keys={"slack"})
     def slack_solid(context):
         assert context.resources.slack
         body = {"ok": True}
-        mock_urllib_http_request.return_value = {
+        mock_api_call.return_value = {
             "status": 200,
             "body": json.dumps(body),
             "headers": "",
@@ -19,7 +19,7 @@ def test_slack_resource(mock_urllib_http_request):
 
         context.resources.slack.chat_postMessage(channel="#random", text=":wave: hey there!")
 
-        assert mock_urllib_http_request.called
+        assert mock_api_call.called
 
     result = execute_solid(
         slack_solid,

@@ -4,7 +4,7 @@
 # start_alert_sensor_marker
 import os
 from dagster import pipeline_failure_sensor, PipelineFailureSensorContext
-from slack import WebClient
+from slack_sdk import WebClient
 
 
 @pipeline_failure_sensor
