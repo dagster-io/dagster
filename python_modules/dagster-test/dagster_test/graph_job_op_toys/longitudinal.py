@@ -133,7 +133,7 @@ def longitudinal_graph():
 
 longitudinal_job = longitudinal_graph.to_job(
     description=(
-        "Demo pipeline that simulates updating tables of users and video views and training a "
+        "Demo job that simulates updating tables of users and video views and training a "
         "video recommendation model. The growth of execution-time and data-throughput follows"
         "a sigmoidal curve."
     ),

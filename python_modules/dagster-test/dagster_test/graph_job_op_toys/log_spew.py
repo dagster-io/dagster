@@ -1,12 +1,12 @@
 import time
 
-from dagster import In, InputDefinition, Out, Output, OutputDefinition, graph, op
+from dagster import In, Out, Output, graph, op
 
 
 def nonce_op(name, n_inputs, n_outputs):
     """Creates an op with the given number of (meaningless) inputs and outputs.
 
-    Config controls the behavior of the nonce solid."""
+    Config controls the behavior of the nonce op."""
 
     @op(
         name=name,
@@ -17,15 +17,13 @@ def nonce_op(name, n_inputs, n_outputs):
         for i in range(200):
             time.sleep(0.02)
             if i % 1000 == 420:
-                context.log.error("Error message seq={i} from solid {name}".format(i=i, name=name))
+                context.log.error("Error message seq={i} from op {name}".format(i=i, name=name))
             elif i % 100 == 0:
-                context.log.warning(
-                    "Warning message seq={i} from solid {name}".format(i=i, name=name)
-                )
+                context.log.warning("Warning message seq={i} from op {name}".format(i=i, name=name))
             elif i % 10 == 0:
-                context.log.info("Info message seq={i} from solid {name}".format(i=i, name=name))
+                context.log.info("Info message seq={i} from op {name}".format(i=i, name=name))
             else:
-                context.log.debug("Debug message seq={i} from solid {name}".format(i=i, name=name))
+                context.log.debug("Debug message seq={i} from op {name}".format(i=i, name=name))
         for i in range(n_outputs):
             yield Output(value="foo", output_name="output_{}".format(i))
 
@@ -55,5 +53,5 @@ def log_spew():
 
 
 log_spew_job = log_spew.to_job(
-    description="Demo pipeline that spits out different types of log messages to the event log."
+    description="Demo job that spits out different types of log messages to the event log."
 )

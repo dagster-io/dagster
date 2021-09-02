@@ -41,6 +41,4 @@ def composition():
     div_four(int_to_float(add_four()))
 
 
-composition_job = composition.to_job(
-    description="Demo pipeline that makes use of composite solids."
-)
+composition_job = composition.to_job(description="Demo job that makes use of composite ops.")

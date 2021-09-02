@@ -1,6 +1,5 @@
 from dagster import Field, DynamicOut, graph, op
 from dagster.core.definitions.events import DynamicOutput
-from dagster.core.definitions.output import DynamicOutputDefinition
 
 
 @op
@@ -11,7 +10,7 @@ def multiply_by_two(context, y):
 
 @op(config_schema={"fail_on_first_try": Field(bool, default_value=False)})
 def multiply_inputs(context, y, ten):
-    if context.solid_config["fail_on_first_try"]:
+    if context.op_config["fail_on_first_try"]:
         current_run = context.instance.get_run_by_id(context.run_id)
         if y == 2 and current_run.parent_run_id is None:
             raise Exception()

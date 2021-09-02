@@ -2,17 +2,12 @@ from dagster import (
     Failure,
     Field,
     IOManager,
-    InputDefinition,
     Int,
-    ModeDefinition,
     In,
     Out,
-    OutputDefinition,
-    PresetDefinition,
     ResourceDefinition,
     RetryRequested,
     String,
-    execute_pipeline,
     io_manager,
     op,
     graph,
@@ -153,8 +148,8 @@ def str_to_num(context, string):
 
 
 @graph(
-    description="Demo pipeline that enables configurable types of errors thrown during pipeline execution, "
-    "including solid execution errors, type errors, and resource initialization errors."
+    description="Demo graph that enables configurable types of errors thrown during job execution, "
+    "including op execution errors, type errors, and resource initialization errors."
 )
 def error_monster():
     start = emit_num.alias("start")()
@@ -162,20 +157,25 @@ def error_monster():
     str_to_num.alias("end")(string=middle)
 
 
-preset_run_config = PresetDefinition.from_pkg_resources(
-    "passing",
-    pkg_resource_defs=[("dagster_test.graph_job_op_toys.environments", "error.yaml")],
-).run_config
+config = {
+    "resources": {"errorable_resource": {"config": {"throw_on_resource_init": False}}},
+    "ops": {
+        "end": {"config": {"return_wrong_type": False, "throw_in_op": False}},
+        "middle": {"config": {"return_wrong_type": False, "throw_in_op": False}},
+        "start": {"config": {"return_wrong_type": False, "throw_in_op": False}},
+    },
+}
 
 error_monster_passing_job = error_monster.to_job(
     resource_defs={
         "errorable_resource": define_errorable_resource(),
         "io_manager": errorable_io_manager,
     },
-    config=preset_run_config,
+    config=config,
     tags={"monster": "error"},
     executor_def=in_process_executor,
 )
+
 
 if __name__ == "__main__":
     result = error_monster.to_job(

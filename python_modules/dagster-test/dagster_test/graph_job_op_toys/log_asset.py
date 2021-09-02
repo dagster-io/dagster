@@ -9,9 +9,11 @@ def read_materialization(context):
     yield Output(asset_key)
 
 
-@graph(description="Demo pipeline that logs asset materializations from other graphs")
+@graph
 def log_asset_graph():
     read_materialization()
 
 
-log_asset_job = log_asset_graph.to_job()
+log_asset_job = log_asset_graph.to_job(
+    description="Demo job that logs asset materializations from graphs"
+)

@@ -17,9 +17,8 @@ from dagster_test.graph_job_op_toys.error_monster import (
     define_errorable_resource,
     errorable_io_manager,
     error_monster,
-    preset_run_config,
 )
-from dagster_test.graph_job_op_toys.hammer import hammer_job
+from dagster_test.graph_job_op_toys.hammer import hammer_default_executor_job
 from dagster_test.graph_job_op_toys.log_spew import log_spew_job
 from dagster_test.graph_job_op_toys.longitudinal import (
     IntentionalRandomFailure,
@@ -42,14 +41,6 @@ from dagster_test.graph_job_op_toys.repo import toys_repository
 
 def test_repo():
     assert toys_repository
-
-
-def test_toys_repo():
-    with instance_for_test() as instance:
-        recon_repo = ReconstructableRepository.for_file(__file__, "toys_repository")
-        jobs = toys_repository.get_all_pipelines()
-        for job in jobs:
-            recon_repo.get_reconstructable_pipeline(job.name).execute_in_process(instance=instance)
 
 
 def test_dynamic_job():
@@ -80,22 +71,15 @@ def test_sleepy_job():
         assert execute_pipeline(reconstructable(get_sleepy), instance=instance).success
 
 
-def get_branch():
-    return branch_job
-
-
 def test_branch_job():
     with instance_for_test() as instance:
-        assert execute_pipeline(reconstructable(get_branch), instance=instance).success
-
-
-def get_branch_failed():
-    return branch_failed_job
+        assert branch_job.execute_in_process(instance=instance).success
 
 
 def test_branch_job_failed():
-    with instance_for_test() as instance:
-        assert not execute_pipeline(reconstructable(get_branch_failed), instance=instance).success
+    with pytest.raises(Exception):
+        with instance_for_test() as instance:
+            assert not branch_failed_job.execute_in_process(instance=instance).success
 
 
 def test_spew_pipeline():
@@ -103,7 +87,7 @@ def test_spew_pipeline():
 
 
 def test_hammer_job():
-    assert hammer_job.execute_in_process().success
+    assert hammer_default_executor_job.execute_in_process().success
 
 
 def test_resource_job_no_config():

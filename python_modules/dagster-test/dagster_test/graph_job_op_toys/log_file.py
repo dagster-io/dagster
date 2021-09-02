@@ -38,5 +38,5 @@ def log_file_graph():
 
 
 log_file_job = log_file_graph.to_job(
-    description="Demo pipeline that spits out some file info, given a path"
+    description="Demo job that spits out some file info, given a path"
 )

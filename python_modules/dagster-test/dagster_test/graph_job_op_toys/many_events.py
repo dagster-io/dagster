@@ -96,9 +96,9 @@ def many_table_materializations(_context):
 @op(
     ins={"start": In(Nothing)},
     out=Out(Nothing),
-    description="This simulates a solid that would wrap something like dbt, "
+    description="This simulates a op that would wrap something like dbt, "
     "where it emits a bunch of tables and then say an expectation on each table, "
-    "all in one solid",
+    "all in one op",
 )
 def many_materializations_and_passing_expectations(_context):
     tables = [
@@ -129,7 +129,7 @@ def many_materializations_and_passing_expectations(_context):
 @op(
     ins={"start": In(Nothing)},
     out=Out(dagster_type=Nothing),
-    description="A solid that just does a couple inline expectations, one of which fails",
+    description="A op that just does a couple inline expectations, one of which fails",
 )
 def check_users_and_groups_one_fails_one_succeeds(_context):
     yield ExpectationResult(
@@ -183,7 +183,7 @@ def many_events():
 
 many_events_job = many_events.to_job(
     description=(
-        "Demo pipeline that yields AssetMaterializations and ExpectationResults, along with the "
+        "Demo job that yields AssetMaterializations and ExpectationResults, along with the "
         "various forms of metadata that can be attached to them."
     )
 )

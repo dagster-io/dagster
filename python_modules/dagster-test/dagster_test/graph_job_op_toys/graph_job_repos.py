@@ -114,7 +114,7 @@ content_recommender_training_prod = content_recommender_training.to_job(
 
 @graph
 def process_customer_data_dump():
-    """Customer success managers run this pipeline for a particular customers when those customers
+    """Customer success managers run this graph for a particular customers when those customers
     have data to upload."""
     process_customer = make_op("process_customer", config_schema={"customer_id": str})
     process_customer()

@@ -24,6 +24,4 @@ def log_s3_graph():
     read_s3_key()
 
 
-log_s3_job = log_s3_graph.to_job(
-    description="Demo pipeline that spits out some file info, given a path"
-)
+log_s3_job = log_s3_graph.to_job(description="Demo job that spits out some file info, given a path")

@@ -12,7 +12,7 @@ def unreliable_start():
 
 @op(config_schema={"rate": Field(float, is_required=False, default_value=DEFAULT_EXCEPTION_RATE)})
 def unreliable(context, num):
-    if random() < context.solid_config["rate"]:
+    if random() < context.op_config["rate"]:
         raise Exception("blah")
 
     return num
@@ -31,5 +31,5 @@ def unreliable_graph():
 
 
 unreliable_job = unreliable_graph.to_job(
-    description="Demo graph of chained solids that fail with a configurable probability."
+    description="Demo graph of chained ops that fail with a configurable probability."
 )

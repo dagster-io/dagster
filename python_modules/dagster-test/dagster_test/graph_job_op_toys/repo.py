@@ -8,7 +8,9 @@ from dagster_test.graph_job_op_toys.branches import branch_job, branch_failed_jo
 from dagster_test.graph_job_op_toys.composition import composition
 from dagster_test.graph_job_op_toys.dynamic import dynamic_job
 from dagster_test.graph_job_op_toys.error_monster import error_monster_passing_job
-from dagster_test.graph_job_op_toys.hammer import hammer_job
+from dagster_test.graph_job_op_toys.hammer import (
+    hammer_default_executor_job,
+)
 from dagster_test.graph_job_op_toys.log_asset import log_asset_job
 from dagster_test.graph_job_op_toys.log_file import log_file_job
 from dagster_test.graph_job_op_toys.log_s3 import log_s3_job
@@ -25,7 +27,7 @@ from .sensors import get_toys_sensors
 
 
 @op
-def materialization_solid():
+def materialization_op():
     timestamp = pendulum.now("UTC").timestamp()
     yield AssetMaterialization(asset_key="model", metadata={"timestamp": timestamp})
     yield Output(1)
@@ -33,7 +35,7 @@ def materialization_solid():
 
 @graph
 def model_graph():
-    materialization_solid()
+    materialization_op()
 
 
 model_job = model_graph.to_job()
@@ -45,7 +47,7 @@ def toys_repository():
         [
             composition,
             error_monster_passing_job,
-            hammer_job,
+            hammer_default_executor_job,
             log_asset_job,
             log_file_job,
             log_s3_job,

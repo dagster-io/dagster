@@ -4,22 +4,11 @@ import time
 from dagster import (
     Field,
     In,
-    ModeDefinition,
     Out,
     Output,
     graph,
     op,
 )
-from dagster.core.definitions.executor import default_executors
-
-
-def get_executor_defs():
-    try:
-        from dagster_dask import dask_executor
-
-        return default_executors + [dask_executor]
-    except ImportError:
-        return default_executors
 
 
 @op(
@@ -36,7 +25,7 @@ def get_executor_defs():
 )
 def hammer(context, chase_duration):
     """what better way to do a lot of gnarly work than to pointer chase?"""
-    ptr_length = context.solid_config["chase_size"]
+    ptr_length = context.op_config["chase_size"]
 
     data = list(range(0, ptr_length))
     random.shuffle(data)
@@ -56,7 +45,7 @@ def hammer(context, chase_duration):
     out={"out_1": Out(int), "out_2": Out(int), "out_3": Out(int), "out_4": Out(int)},
 )
 def chase_giver(context):
-    chase_duration = context.solid_config
+    chase_duration = context.op_config
 
     yield Output(chase_duration, "out_1")
     yield Output(chase_duration, "out_2")
@@ -83,5 +72,4 @@ def hammer_graph():
     )
 
 
-# dask tests use mode w/ special executor defs
-hammer_job = hammer_graph.to_job()
+hammer_default_executor_job = hammer_graph.to_job()
