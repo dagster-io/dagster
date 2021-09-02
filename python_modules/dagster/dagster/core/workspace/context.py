@@ -67,6 +67,10 @@ class BaseWorkspaceRequestContext(IWorkspace):
     def workspace_snapshot(self) -> Dict[str, WorkspaceLocationEntry]:
         pass
 
+    @abstractmethod
+    def get_location_entry(self, name: str) -> Optional[WorkspaceLocationEntry]:
+        pass
+
     @abstractproperty
     def process_context(self) -> "IWorkspaceProcessContext":
         pass
@@ -84,7 +88,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
 
     def get_location(self, origin):
         location_name = origin.location_name
-        location_entry = self.workspace_snapshot.get(location_name)
+        location_entry = self.get_location_entry(location_name)
         if not location_entry:
             raise DagsterInvariantViolationError(
                 f"Location {location_name} does not exist in workspace"
@@ -115,31 +119,32 @@ class BaseWorkspaceRequestContext(IWorkspace):
         return [entry.load_error for entry in self.workspace_snapshot.values() if entry.load_error]
 
     def get_repository_location(self, name: str) -> RepositoryLocation:
-        if not self.has_repository_location(name):
+        location_entry = self.get_location_entry(name)
+        if not location_entry or not location_entry.repository_location:
             raise Exception(f"Location {name} not in workspace")
-        return cast(RepositoryLocation, self.workspace_snapshot[name].repository_location)
-
-    def get_load_status(self, name: str) -> WorkspaceLocationLoadStatus:
-        return self.workspace_snapshot[name].load_status
+        return cast(RepositoryLocation, location_entry.repository_location)
 
     def has_repository_location_error(self, name: str) -> bool:
         return self.get_repository_location_error(name) != None
 
     def get_repository_location_error(self, name: str) -> Optional[SerializableErrorInfo]:
-        return self.workspace_snapshot[name].load_error
+        entry = self.get_location_entry(name)
+        return entry.load_error if entry else None
 
     def has_repository_location_name(self, name: str) -> bool:
-        return bool(self.workspace_snapshot.get(name))
+        return bool(self.get_location_entry(name))
 
     def has_repository_location(self, name: str) -> bool:
-        location_entry = self.workspace_snapshot.get(name)
+        location_entry = self.get_location_entry(name)
         return bool(location_entry and location_entry.repository_location != None)
 
     def is_reload_supported(self, name: str) -> bool:
-        return self.workspace_snapshot[name].origin.is_reload_supported
+        entry = self.get_location_entry(name)
+        return entry.origin.is_reload_supported if entry else False
 
     def is_shutdown_supported(self, name: str) -> bool:
-        return self.workspace_snapshot[name].origin.is_shutdown_supported
+        entry = self.get_location_entry(name)
+        return entry.origin.is_shutdown_supported if entry else False
 
     def reload_repository_location(self, name: str) -> "BaseWorkspaceRequestContext":
         # This method reloads the location on the process context, and returns a new
@@ -260,6 +265,9 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
     @property
     def workspace_snapshot(self) -> Dict[str, WorkspaceLocationEntry]:
         return self._workspace_snapshot
+
+    def get_location_entry(self, name) -> Optional[WorkspaceLocationEntry]:
+        return self._workspace_snapshot.get(name)
 
     @property
     def process_context(self) -> "IWorkspaceProcessContext":
