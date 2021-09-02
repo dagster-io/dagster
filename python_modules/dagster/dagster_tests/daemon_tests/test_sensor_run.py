@@ -22,7 +22,7 @@ from dagster import (
     repository,
     solid,
 )
-from dagster.core.definitions.decorators.sensor import asset_sensor, sensor
+from dagster.core.definitions.decorators.sensor import asset_sensor, multi_target_sensor, sensor
 from dagster.core.definitions.pipeline_sensor import run_status_sensor
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.definitions.run_request import JobType
@@ -35,7 +35,7 @@ from dagster.core.host_representation import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
-from dagster.core.instance import DagsterInstance
+from dagster.core.instance import DagsterInstance, config
 from dagster.core.scheduler.job import JobState, JobStatus, JobTickStatus
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import instance_for_test
@@ -76,6 +76,11 @@ def config_solid(_):
 
 @pipeline
 def config_pipeline():
+    config_solid()
+
+
+@graph
+def config_graph():
     config_solid()
 
 
@@ -222,12 +227,27 @@ def my_pipeline_success_sensor(context):
     assert isinstance(context.instance, DagsterInstance)
 
 
+@multi_target_sensor(jobs=[the_job, config_graph.to_job()])
+def multi_job_sensor(context):
+    counter = int(context.cursor) if context.cursor else 0
+    if counter % 2 == 0:
+        yield RunRequest(run_key=str(counter), job_name="the_graph")
+    else:
+        yield RunRequest(
+            run_key=str(counter),
+            job_name="config_graph",
+            run_config={"solids": {"config_solid": {"config": {"foo": "blah"}}}},
+        )
+    context.update_cursor(str(counter + 1))
+
+
 @repository
 def the_repo():
     return [
         the_pipeline,
         the_job,
         config_pipeline,
+        config_graph,
         foo_pipeline,
         large_sensor,
         simple_sensor,
@@ -246,6 +266,7 @@ def the_repo():
         failure_pipeline,
         failure_job,
         hanging_pipeline,
+        multi_job_sensor,
     ]
 
 
@@ -1499,3 +1520,54 @@ def test_run_status_sensor_interleave(external_repo_context, storage_config_fn):
                 )
                 assert len(ticks[0].origin_run_ids) == 1
                 assert ticks[0].origin_run_ids[0] == run1.run_id
+
+
+@pytest.mark.parametrize("external_repo_context", repos())
+def test_multi_job_sensor(external_repo_context):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+    with instance_with_sensors(external_repo_context) as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+            job_sensor = external_repo.get_external_sensor("multi_job_sensor")
+            instance.start_sensor(job_sensor)
+
+            evaluate_sensors(instance, workspace)
+
+            ticks = instance.get_job_ticks(job_sensor.get_external_origin_id())
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                job_sensor,
+                freeze_datetime,
+                JobTickStatus.SUCCESS,
+            )
+
+            run = instance.get_runs()[0]
+            assert run.run_config == {}
+            assert run.tags.get("dagster/sensor_name") == "multi_job_sensor"
+            assert run.pipeline_name == "the_graph"
+
+            freeze_datetime = freeze_datetime.add(seconds=60)
+        with pendulum.test(freeze_datetime):
+
+            # should fire the asset sensor
+            evaluate_sensors(instance, workspace)
+            ticks = instance.get_job_ticks(job_sensor.get_external_origin_id())
+            assert len(ticks) == 2
+            validate_tick(
+                ticks[0],
+                job_sensor,
+                freeze_datetime,
+                JobTickStatus.SUCCESS,
+            )
+            run = instance.get_runs()[0]
+            assert run.run_config == {"solids": {"config_solid": {"config": {"foo": "blah"}}}}
+            assert run.tags
+            assert run.tags.get("dagster/sensor_name") == "multi_job_sensor"
+            assert run.pipeline_name == "config_graph"

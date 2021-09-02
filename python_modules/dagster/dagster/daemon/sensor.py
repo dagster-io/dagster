@@ -318,20 +318,22 @@ def _evaluate_sensor(
         yield
         return
 
-    pipeline_selector = PipelineSelector(
-        location_name=repo_location.name,
-        repository_name=external_repo.name,
-        pipeline_name=external_sensor.pipeline_name,
-        solid_selection=external_sensor.solid_selection,
-    )
-    subset_pipeline_result = repo_location.get_subset_external_pipeline_result(pipeline_selector)
-    external_pipeline = ExternalPipeline(
-        subset_pipeline_result.external_pipeline_data,
-        external_repo.handle,
-    )
-
     skipped_runs = []
     for run_request in sensor_runtime_data.run_requests:
+
+        pipeline_selector = PipelineSelector(
+            location_name=repo_location.name,
+            repository_name=external_repo.name,
+            pipeline_name=external_sensor.pipeline_name or run_request.job_name,
+            solid_selection=external_sensor.solid_selection,  # TODO yuhan
+        )
+        subset_pipeline_result = repo_location.get_subset_external_pipeline_result(
+            pipeline_selector
+        )
+        external_pipeline = ExternalPipeline(
+            subset_pipeline_result.external_pipeline_data,
+            external_repo.handle,
+        )
         run = _get_or_create_sensor_run(
             context, instance, repo_location, external_sensor, external_pipeline, run_request
         )
@@ -457,7 +459,7 @@ def _create_sensor_run(instance, repo_location, external_sensor, external_pipeli
         tags[RUN_KEY_TAG] = run_request.run_key
 
     return instance.create_run(
-        pipeline_name=external_sensor.pipeline_name,
+        pipeline_name=external_sensor.pipeline_name or run_request.job_name,
         run_id=None,
         run_config=run_request.run_config,
         mode=external_sensor.mode,

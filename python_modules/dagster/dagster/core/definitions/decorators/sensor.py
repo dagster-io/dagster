@@ -12,7 +12,13 @@ from ...errors import DagsterInvariantViolationError
 from ..events import AssetKey
 from ..graph import GraphDefinition
 from ..pipeline import PipelineDefinition
-from ..sensor import AssetSensorDefinition, RunRequest, SensorDefinition, SkipReason
+from ..sensor import (
+    AssetSensorDefinition,
+    MultiTargetSensorDefinition,
+    RunRequest,
+    SensorDefinition,
+    SkipReason,
+)
 
 if TYPE_CHECKING:
     from ..sensor import SensorEvaluationContext
@@ -206,5 +212,82 @@ def asset_sensor(
             description=description,
             job=job,
         )
+
+    return inner
+
+
+def multi_target_sensor(
+    jobs: List[Union[GraphDefinition, PipelineDefinition]],
+    name: Optional[str] = None,
+    minimum_interval_seconds: Optional[int] = None,
+    description: Optional[str] = None,
+) -> Callable[
+    [
+        Callable[
+            ["SensorEvaluationContext"],
+            Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
+        ]
+    ],
+    MultiTargetSensorDefinition,
+]:
+    """
+    Creates a multi-target sensor where the decorated function is used as the sensor's evaluation
+    function. The decorated function may:
+
+    1. Return a `RunRequest` object.
+    2. Yield multiple of `RunRequest` objects.
+    3. Return or yield a `SkipReason` object, providing a descriptive message of why no runs were
+       requested.
+    4. Return or yield nothing (skipping without providing a reason)
+
+    Takes a :py:class:`~dagster.SensorEvaluationContext`.
+
+    Args:
+        jobs (List[PipelineDefinition]): (Experimental) The target jobs.
+        minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
+            between sensor evaluations.
+        description (Optional[str]): A human-readable description of the sensor.
+    """
+    check.opt_str_param(name, "name")
+
+    def inner(
+        fn: Callable[
+            ["SensorEvaluationContext"],
+            Union[Generator[Union[SkipReason, RunRequest], None, None], SkipReason, RunRequest],
+        ]
+    ) -> MultiTargetSensorDefinition:
+        check.callable_param(fn, "fn")
+        sensor_name = name or fn.__name__
+
+        def _wrapped_fn(context):
+            result = fn(context) if is_context_provided(get_function_params(fn)) else fn()
+
+            if inspect.isgenerator(result):
+                for item in result:
+                    yield item
+            elif isinstance(result, (SkipReason, RunRequest)):
+                yield result
+
+            elif result is not None:
+                raise DagsterInvariantViolationError(
+                    (
+                        "Error in sensor {sensor_name}: Sensor unexpectedly returned output "
+                        "{result} of type {type_}.  Should only return SkipReason or "
+                        "RunRequest objects."
+                    ).format(sensor_name=sensor_name, result=result, type_=type(result))
+                )
+
+        sensor_def = MultiTargetSensorDefinition(
+            name=sensor_name,
+            jobs=jobs,
+            evaluation_fn=_wrapped_fn,
+            minimum_interval_seconds=minimum_interval_seconds,
+            description=description,
+            decorated_fn=fn,
+        )
+
+        update_wrapper(sensor_def, wrapped=fn)
+
+        return sensor_def
 
     return inner

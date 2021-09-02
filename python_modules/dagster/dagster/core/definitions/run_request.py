@@ -32,7 +32,7 @@ class SkipReason(namedtuple("_SkipReason", "skip_message")):
 
 
 @whitelist_for_serdes
-class RunRequest(namedtuple("_RunRequest", "run_key run_config tags")):
+class RunRequest(namedtuple("_RunRequest", "run_key run_config tags job_name")):
     """
     Represents all the information required to launch a single run.  Must be returned by a
     SensorDefinition or ScheduleDefinition's evaluation function for a run to be launched.
@@ -48,12 +48,13 @@ class RunRequest(namedtuple("_RunRequest", "run_key run_config tags")):
             to the launched run.
     """
 
-    def __new__(cls, run_key, run_config=None, tags=None):
+    def __new__(cls, run_key, run_config=None, tags=None, job_name=None):
         return super(RunRequest, cls).__new__(
             cls,
             run_key=check.opt_str_param(run_key, "run_key"),
             run_config=check.opt_dict_param(run_config, "run_config"),
             tags=check.opt_dict_param(tags, "tags"),
+            job_name=check.opt_str_param(job_name, "job_name"),
         )
 
 

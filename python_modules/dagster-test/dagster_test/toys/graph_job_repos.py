@@ -10,6 +10,8 @@ from dagster import (
     solid,
 )
 from dagster.core.definitions.decorators.graph import graph
+from dagster.core.definitions.decorators.sensor import multi_target_sensor
+from dagster.core.definitions.run_request import RunRequest
 
 
 def make_solid(
@@ -57,6 +59,25 @@ def event_reports_sensor():
 
 
 event_reports_dev = event_reports.to_job(resource_defs={"mode": ResourceDefinition.none_resource()})
+
+event_reports_prod1 = event_reports.to_job(
+    name="event_reports_prod1",
+    resource_defs={"mode": ResourceDefinition.hardcoded_resource("prod1")},
+)
+event_reports_prod2 = event_reports.to_job(
+    name="event_reports_prod2",
+    resource_defs={"mode": ResourceDefinition.hardcoded_resource("prod2")},
+)
+
+
+@multi_target_sensor(jobs=[event_reports_prod1, event_reports_prod2])
+def multi_job_sensor(context):
+    counter = int(context.cursor) if context.cursor else 0
+    if counter % 2 == 0:
+        yield RunRequest(run_key=str(counter), job_name="event_reports_prod1")
+    else:
+        yield RunRequest(run_key=str(counter), job_name="event_reports_prod2")
+    context.update_cursor(str(counter + 1))
 
 
 @graph
@@ -141,6 +162,9 @@ def graph_job_prod_repo():
     return [
         event_tables_schedule,
         event_reports_sensor,
+        event_reports_prod1,
+        event_reports_prod2,
+        multi_job_sensor,
         crm_ingest_instance1_schedule,
         crm_ingest_instance2_schedule,
         content_recommender_training_prod,

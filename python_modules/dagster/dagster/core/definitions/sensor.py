@@ -136,6 +136,7 @@ class SensorDefinition:
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
         job (Optional[PipelineDefinition]): Experimental
+        jobs (Optional[List[PipelineDefinition]]): (Experimental) The target jobs.
     """
 
     def __init__(
@@ -151,6 +152,7 @@ class SensorDefinition:
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
         job: Optional[Union[GraphDefinition, PipelineDefinition]] = None,
+        jobs: Optional[List[Union[GraphDefinition, PipelineDefinition]]] = None,
         decorated_fn: Optional[
             Callable[
                 ["SensorEvaluationContext"],
@@ -163,6 +165,12 @@ class SensorDefinition:
 
         if pipeline_name is None and job is None:
             self._target: Optional[Union[DirectTarget, RepoRelativeTarget]] = None
+        elif jobs is not None:
+            check.invariant(job is None, "cannot specify both job and jobs")
+            check.invariant(pipeline_name is None, "cannot specify both pipeline_name and jobs")
+            check.invariant(solid_selection is None, "cannot specify both solid_selection and jobs")
+            check.invariant(mode is None, "cannot specify both mode and jobs")
+            self._targets = [DirectTarget(j) for j in jobs]
         elif job is not None:
             experimental_arg_warning("target", "SensorDefinition.__init__")
             self._target = DirectTarget(job)
@@ -517,3 +525,70 @@ class AssetSensorDefinition(SensorDefinition):
     @property
     def asset_key(self):
         return self._asset_key
+
+
+class MultiTargetSensorDefinition(SensorDefinition):
+    """Define a sensor that targets multiple jobs.
+
+    Args:
+        name (str): The name of the sensor to create.
+        evaluation_fn (Callable[[SensorEvaluationContext]]): The core evaluation function for the
+            sensor, which is run at an interval to determine whether a run should be launched or
+            not. Takes a :py:class:`~dagster.SensorEvaluationContext`.
+
+            This function must return a generator, which must yield either a single SkipReason
+            or one or more RunRequest objects.
+        jobs (List[Union[GraphDefinition, PipelineDefinition]]): The target jobs.
+        minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
+            between sensor evaluations.
+        description (Optional[str]): A human-readable description of the sensor.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        evaluation_fn: Callable[
+            ["SensorEvaluationContext"],
+            Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
+        ],
+        jobs: List[Union[GraphDefinition, PipelineDefinition]] = None,
+        minimum_interval_seconds: Optional[int] = None,
+        description: Optional[str] = None,
+        decorated_fn: Optional[
+            Callable[
+                ["SensorEvaluationContext"],
+                Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
+            ]
+        ] = None,
+    ):
+
+        super(MultiTargetSensorDefinition, self).__init__(
+            name=check_valid_name(name),
+            evaluation_fn=check.callable_param(evaluation_fn, "evaluation_fn"),
+            jobs=check.list_param(jobs, "jobs", (GraphDefinition, PipelineDefinition)),
+            minimum_interval_seconds=check.opt_int_param(
+                minimum_interval_seconds, "minimum_interval_seconds", DEFAULT_SENSOR_DAEMON_INTERVAL
+            ),
+            description=check.opt_str_param(description, "description"),
+            decorated_fn=check.opt_callable_param(decorated_fn, "decorated_fn"),
+        )
+
+    @property
+    def pipeline_name(self) -> Optional[str]:
+        return None
+
+    @property
+    def solid_selection(self) -> Optional[List[Any]]:
+        return None
+
+    @property
+    def mode(self) -> Optional[str]:
+        return DEFAULT_MODE_NAME
+
+    def load_targets(self):
+        targets = []
+        for target in self._targets:
+            if isinstance(target, DirectTarget):
+                targets.append(target.load())
+
+            check.failed("Target is not loadable")
