@@ -1,40 +1,40 @@
 from typing import AbstractSet, Any, Optional
 
 from dagster import (
-    In,
+    InputDefinition,
     ResourceDefinition,
+    SolidDefinition,
     repository,
     schedule,
     sensor,
-    op,
+    solid,
 )
 from dagster.core.definitions.decorators.graph import graph
-from dagster.core.definitions.op import OpDefinition
 
 
-def make_op(
+def make_solid(
     name: str,
     required_resource_keys: Optional[AbstractSet[str]] = None,
     config_schema: Optional[Any] = None,
     num_inputs: int = 0,
-) -> OpDefinition:
-    @op(
+) -> SolidDefinition:
+    @solid(
         name=name,
-        ins={f"input{i}": In() for i in range(num_inputs)},
+        input_defs=[InputDefinition(f"input{i}") for i in range(num_inputs)],
         required_resource_keys=required_resource_keys,
         config_schema=config_schema,
     )
-    def _op(_, **_kwargs):
+    def _solid(_, **_kwargs):
         return None
 
-    return _op
+    return _solid
 
 
 @graph
 def event_tables():
     """A graph with no resources"""
-    make_raw_events = make_op("make_raw_events")
-    clean_events = make_op("clean_events", num_inputs=1)
+    make_raw_events = make_solid("make_raw_events")
+    clean_events = make_solid("clean_events", num_inputs=1)
 
     raw_events = make_raw_events()
     clean_events(raw_events)
@@ -47,7 +47,7 @@ def event_tables_schedule(_):
 
 @graph
 def event_reports():
-    make_event_reports = make_op("make_event_reports", required_resource_keys={"mode"})
+    make_event_reports = make_solid("make_event_reports", required_resource_keys={"mode"})
     make_event_reports()
 
 
@@ -62,8 +62,8 @@ event_reports_dev = event_reports.to_job(resource_defs={"mode": ResourceDefiniti
 @graph
 def crm_ingest():
     """A graph with multiple production jobs"""
-    ingest_users = make_op("ingest_users", required_resource_keys={"crm"})
-    ingest_interactions = make_op("ingest_interactions", required_resource_keys={"crm"})
+    ingest_users = make_solid("ingest_users", required_resource_keys={"crm"})
+    ingest_interactions = make_solid("ingest_interactions", required_resource_keys={"crm"})
 
     ingest_users()
     ingest_interactions()
@@ -95,10 +95,10 @@ def crm_ingest_instance2_schedule(_):
 @graph
 def content_recommender_training():
     """A graph with a production job, but no schedule"""
-    build_user_features = make_op("build_user_features")
-    build_item_features = make_op("build_item_features")
-    train_model = make_op("train_model", required_resource_keys={"mlflow"}, num_inputs=2)
-    evaluate_model = make_op("evaluate_model", num_inputs=1)
+    build_user_features = make_solid("build_user_features")
+    build_item_features = make_solid("build_item_features")
+    train_model = make_solid("train_model", required_resource_keys={"mlflow"}, num_inputs=2)
+    evaluate_model = make_solid("evaluate_model", num_inputs=1)
 
     evaluate_model(train_model(input0=build_user_features(), input1=build_item_features()))
 
@@ -114,14 +114,14 @@ content_recommender_training_prod = content_recommender_training.to_job(
 
 @graph
 def process_customer_data_dump():
-    """Customer success managers run this graph for a particular customers when those customers
+    """Customer success managers run this pipeline for a particular customers when those customers
     have data to upload."""
-    process_customer = make_op("process_customer", config_schema={"customer_id": str})
+    process_customer = make_solid("process_customer", config_schema={"customer_id": str})
     process_customer()
 
 
 process_customer_data_dump_dev = process_customer_data_dump.to_job(
-    config={"ops": {"process_customer": {"config": {"customer_id": "test_customer"}}}}
+    config={"solids": {"process_customer": {"config": {"customer_id": "test_customer"}}}}
 )
 
 

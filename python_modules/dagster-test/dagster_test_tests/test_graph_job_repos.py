@@ -3,8 +3,6 @@ from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.test_utils import instance_for_test
 from dagster_test.toys.graph_job_repos import graph_job_dev_repo, graph_job_prod_repo
 
-# NOTE: this tests an old set of crag prototypes, currently living in the main toys repo
-
 
 def test_dev_pipelines():
     with instance_for_test() as instance:
