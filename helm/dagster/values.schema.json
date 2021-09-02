@@ -321,6 +321,17 @@
                 "enableReadOnly": {
                     "title": "Enablereadonly",
                     "type": "boolean"
+                },
+                "dbStatementTimeout": {
+                    "title": "Dbstatementtimeout",
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
