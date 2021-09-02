@@ -34,7 +34,7 @@ cli_args = [
     (
         "basics/single_solid_pipeline/",
         "hello_cereal.py",
-        "hello_cereal_pipeline",
+        "hello_cereal_graph",
         None,
         None,
         None,
@@ -44,7 +44,7 @@ cli_args = [
     (
         "basics/connecting_solids/",
         "serial_pipeline.py",
-        "serial_pipeline",
+        "serial",
         None,
         None,
         None,
@@ -54,7 +54,7 @@ cli_args = [
     (
         "basics/connecting_solids/",
         "complex_pipeline.py",
-        "complex_pipeline",
+        "diamond",
         None,
         None,
         None,
