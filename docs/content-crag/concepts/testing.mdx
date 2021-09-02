@@ -62,11 +62,11 @@ As noted above, data applications often rely on and encode their business logic 
 
 To make local testing possible, you may structure your software to, as much as possible, cleanly separate this business logic from your operating environment. This is one of the reasons why Dagster flows through a context object throughout its entire computation.
 
-Attached to the context is a set of user-defined [resources](/concepts/modes-resources). Examples of resources include APIs to data warehouses, Spark clusters, s3 sessions, or some other external dependency or service. We can then configure pipelines to be in different "modes", which can alter what version of the resource is vented to the user.
+Attached to the context is a set of user-defined [resources](/concepts/resources). Examples of resources include APIs to data warehouses, Spark clusters, s3 sessions, or some other external dependency or service. We can then configure pipelines to be in different "modes", which can alter what version of the resource is vented to the user.
 
 For example, in order to skip external dependencies in tests, you may find yourself needing to constantly comment and uncomment like:
 
-```python file=/concepts/modes_resources/tests.py startafter=start_mode_test_before_marker endbefore=end_mode_test_before_marker
+```python file=/concepts/resources/tests.py startafter=start_mode_test_before_marker endbefore=end_mode_test_before_marker
 @solid
 def get_data_without_resource(context):
     dummy_data = [1, 2, 3]
@@ -79,7 +79,7 @@ def get_data_without_resource(context):
 
 Dagster allows you to execute the same pipeline in different "modes". With modes and resources, you can modify the solid above to:
 
-```python file=/concepts/modes_resources/tests.py startafter=start_mode_test_after_marker endbefore=end_mode_test_after_marker
+```python file=/concepts/resources/tests.py startafter=start_mode_test_after_marker endbefore=end_mode_test_after_marker
 @solid(required_resource_keys={"api"})
 def get_data(context):
     return context.resources.api.call()
@@ -101,11 +101,11 @@ def download_pipeline():
     do_something(get_data())
 ```
 
-In this example, the business logic (i.e., pipelines and solids) remains the same in two different environments (i.e., resources), while the `api` resource gets mocked in the test mode using a helper method [`mock_resource`](/\_apidocs/modes-resources#dagster.ResourceDefinition.mock_resource) from the <PyObject object="ResourceDefinition" /> class.
+In this example, the business logic (i.e., pipelines and solids) remains the same in two different environments (i.e., resources), while the `api` resource gets mocked in the test mode using a helper method [`mock_resource`](/\_apidocs/resources#dagster.ResourceDefinition.mock_resource) from the <PyObject object="ResourceDefinition" /> class.
 
 This is extremely helpful when it comes to testing, because to toggle between unit-testing the pipeline and running it in production, you can simply switch the mode name:
 
-```python file=/concepts/modes_resources/tests.py startafter=start_execution_marker endbefore=end_execution_marker
+```python file=/concepts/resources/tests.py startafter=start_execution_marker endbefore=end_execution_marker
 def test_local():
     result = execute_pipeline(download_pipeline, mode="unit_test")
     assert result.success
@@ -115,7 +115,7 @@ def run_in_prod():
     execute_pipeline(download_pipeline, mode="prod")
 ```
 
-For more information, you can check out the [Modes](/concepts/modes-resources) and [Resources](/concepts/modes-resources) sections.
+For more information, you can check out the [Modes](/concepts/resources) and [Resources](/concepts/resources) sections.
 
 ## Examples
 

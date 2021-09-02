@@ -119,11 +119,11 @@
         ]
       },
       {
-        "title": "Modes & Resources",
+        "title": "Resources",
         "children": [
           {
-            "title": "Modes & Resources",
-            "path": "/concepts/modes-resources"
+            "title": "Resources",
+            "path": "/concepts/resources"
           }
         ]
       },
