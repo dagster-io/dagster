@@ -118,7 +118,7 @@ def test_resource_job_with_config():
     assert result.result_for_node("one").output_values['result'] == 3
 
 
-def test_pyspark_assets_pipeline():
+def test_pyspark_assets_job():
     with get_temp_dir() as temp_dir:
         run_config = {
             "solids": {
