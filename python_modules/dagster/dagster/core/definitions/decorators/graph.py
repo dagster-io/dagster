@@ -1,12 +1,12 @@
 from functools import update_wrapper
-from typing import Any, Callable, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from dagster import check
 from dagster.utils.backcompat import experimental_decorator
 
 from ..graph import GraphDefinition
-from ..input import InputDefinition
-from ..output import OutputDefinition
+from ..input import GraphIn, InputDefinition
+from ..output import GraphOut, OutputDefinition
 
 
 class _Graph:
@@ -16,20 +16,39 @@ class _Graph:
         description: Optional[str] = None,
         input_defs: Optional[List[InputDefinition]] = None,
         output_defs: Optional[List[OutputDefinition]] = None,
+        ins: Optional[Dict[str, GraphIn]] = None,
+        out: Optional[Union[GraphOut, Dict[str, GraphOut]]] = None,
     ):
         self.name = check.opt_str_param(name, "name")
         self.description = check.opt_str_param(description, "description")
         self.input_defs = check.opt_list_param(input_defs, "input_defs", of_type=InputDefinition)
-        self.did_pass_outputs = output_defs is not None
+        self.did_pass_outputs = output_defs is not None or out is not None
         self.output_defs = check.opt_nullable_list_param(
             output_defs, "output_defs", of_type=OutputDefinition
         )
+        self.ins = ins
+        self.out = out
 
     def __call__(self, fn: Callable[..., Any]) -> GraphDefinition:
         check.callable_param(fn, "fn")
 
         if not self.name:
             self.name = fn.__name__
+
+        if self.ins is not None:
+            input_defs = [inp.to_definition(name) for name, inp in self.ins.items()]
+        else:
+            input_defs = check.opt_list_param(
+                self.input_defs, "input_defs", of_type=InputDefinition
+            )
+
+        if self.out is None:
+            output_defs = self.output_defs
+        elif isinstance(self.out, GraphOut):
+            output_defs = [self.out.to_definition(name=None)]
+        else:
+            check.dict_param(self.out, "out", key_type=str, value_type=GraphOut)
+            output_defs = [out.to_definition(name=name) for name, out in self.out.items()]
 
         from dagster.core.definitions.decorators.composite_solid import do_composition
 
@@ -44,8 +63,8 @@ class _Graph:
             decorator_name="@graph",
             graph_name=self.name,
             fn=fn,
-            provided_input_defs=self.input_defs,
-            provided_output_defs=self.output_defs,
+            provided_input_defs=input_defs,
+            provided_output_defs=output_defs,
             ignore_output_from_composition_fn=False,
             config_schema=None,
             config_fn=None,
@@ -71,6 +90,8 @@ def graph(
     description: Optional[str] = None,
     input_defs: Optional[List[InputDefinition]] = None,
     output_defs: Optional[List[OutputDefinition]] = None,
+    ins: Optional[Dict[str, GraphIn]] = None,
+    out: Optional[Union[GraphOut, Dict[str, GraphOut]]] = None,
 ) -> Union[_Graph, GraphDefinition]:
     """Create a graph with the specified parameters from the decorated composition function.
 
@@ -99,6 +120,16 @@ def graph(
             :py:class:`GraphDefinition`.
 
             To map multiple outputs, return a dictionary from the composition function.
+        ins (Optional[Dict[str, GraphIn]]):
+            Information about the inputs that this graph maps. Information provided here
+            will be combined with what can be inferred from the function signature, with these
+            explicit GraphIn taking precedence.
+        out (Optional[Union[GraphOut, Dict[str, GraphOut]]]):
+            Information about the outputs that this graph maps. Information provided here will be
+            combined with what can be inferred from the return type signature if the function does
+            not use yield.
+
+            To map multiple outputs, return a dictionary from the composition function.
     """
     if callable(name):
         check.invariant(description is None)
@@ -109,4 +140,6 @@ def graph(
         description=description,
         input_defs=input_defs,
         output_defs=output_defs,
+        ins=ins,
+        out=out,
     )
