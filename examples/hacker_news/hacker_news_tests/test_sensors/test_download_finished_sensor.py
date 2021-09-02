@@ -4,8 +4,8 @@ import uuid
 from dagster import build_sensor_context, validate_run_config
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
-from hacker_news.jobs.dbt_job import dbt_prod_job
-from hacker_news.jobs.download_job import DEFAULT_PARTITION_RESOURCE_CONFIG
+from hacker_news.jobs.dbt_metrics import dbt_prod_job
+from hacker_news.jobs.hacker_news_api_download import DEFAULT_PARTITION_RESOURCE_CONFIG
 from hacker_news.sensors.download_finished_sensor import dbt_on_hn_download_finished_prod
 
 

@@ -49,9 +49,9 @@ DBT_RESOURCES_STAGING = {
 
 
 @graph
-def dbt_graph():
+def dbt_metrics():
     hn_dbt_test(hn_dbt_run())
 
 
-dbt_prod_job = dbt_graph.to_job(resource_defs=DBT_RESOURCES_PROD)
-dbt_staging_job = dbt_graph.to_job(resource_defs=DBT_RESOURCES_STAGING)
+dbt_prod_job = dbt_metrics.to_job(resource_defs=DBT_RESOURCES_PROD)
+dbt_staging_job = dbt_metrics.to_job(resource_defs=DBT_RESOURCES_STAGING)

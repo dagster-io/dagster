@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from dagster import Partition
 from dagster.core.definitions import PipelineDefinition
 from dagster.core.execution.api import create_execution_plan
-from hacker_news.jobs.download_job import download_prod_job, download_staging_job
+from hacker_news.jobs.hacker_news_api_download import download_prod_job, download_staging_job
 
 
 def assert_partitioned_schedule_builds(

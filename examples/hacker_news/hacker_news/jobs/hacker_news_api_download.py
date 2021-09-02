@@ -85,19 +85,19 @@ DOWNLOAD_TAGS = {
     "splits the items into stories and comment types using Spark, and uploads filtered items to "
     "the corresponding stories or comments Snowflake table",
 )
-def download_graph():
+def hacker_news_api_download():
     items = download_items(id_range_for_time())
     build_comments(items)
     build_stories(items)
 
 
-download_prod_job = download_graph.to_job(
+download_prod_job = hacker_news_api_download.to_job(
     resource_defs=DOWNLOAD_RESOURCES_PROD,
     tags=DOWNLOAD_TAGS,
     config=hourly_download_schedule_config,
 )
 
-download_staging_job = download_graph.to_job(
+download_staging_job = hacker_news_api_download.to_job(
     resource_defs=DOWNLOAD_RESOURCES_STAGING,
     tags=DOWNLOAD_TAGS,
     config=hourly_download_schedule_config,

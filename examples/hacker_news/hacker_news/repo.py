@@ -1,6 +1,6 @@
 from dagster import repository, schedule_from_partitions
 
-from .jobs.download_job import download_prod_job, download_staging_job
+from .jobs.hacker_news_api_download import download_prod_job, download_staging_job
 from .sensors.download_finished_sensor import (
     dbt_on_hn_download_finished_prod,
     dbt_on_hn_download_finished_staging,

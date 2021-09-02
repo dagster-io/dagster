@@ -1,7 +1,7 @@
 from dagster import RunRequest, sensor
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
 
-from ..jobs.dbt_job import dbt_prod_job, dbt_staging_job
+from ..jobs.dbt_metrics import dbt_prod_job, dbt_staging_job
 
 
 def _dbt_on_hn_download_finished(context):
