@@ -1,16 +1,14 @@
 import pendulum
 from dagster import AssetMaterialization, Output, graph, op, repository
 from dagster_test.graph_job_op_toys.asset_lineage import (
-    asset_lineage_partition_set,
     asset_lineage_job,
+    asset_lineage_partition_set,
 )
-from dagster_test.graph_job_op_toys.branches import branch_job, branch_failed_job
+from dagster_test.graph_job_op_toys.branches import branch_failed_job, branch_job
 from dagster_test.graph_job_op_toys.composition import composition
 from dagster_test.graph_job_op_toys.dynamic import dynamic_job
 from dagster_test.graph_job_op_toys.error_monster import error_monster_passing_job
-from dagster_test.graph_job_op_toys.hammer import (
-    hammer_default_executor_job,
-)
+from dagster_test.graph_job_op_toys.hammer import hammer_default_executor_job
 from dagster_test.graph_job_op_toys.log_asset import log_asset_job
 from dagster_test.graph_job_op_toys.log_file import log_file_job
 from dagster_test.graph_job_op_toys.log_s3 import log_s3_job

@@ -1,6 +1,6 @@
 from time import sleep
 
-from dagster import Field, In, Int, Out, Output, op, graph
+from dagster import Field, In, Int, Out, Output, graph, op
 from dagster.core.definitions.decorators.graph import graph
 
 

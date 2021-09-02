@@ -1,11 +1,4 @@
-from dagster import (
-    Field,
-    Int,
-    reconstructable,
-    resource,
-    graph,
-    op,
-)
+from dagster import Field, Int, graph, op, reconstructable, resource
 
 
 def define_resource(num):

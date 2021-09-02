@@ -1,4 +1,4 @@
-from dagster import Field, DynamicOut, graph, op
+from dagster import DynamicOut, Field, graph, op
 from dagster.core.definitions.events import DynamicOutput
 
 

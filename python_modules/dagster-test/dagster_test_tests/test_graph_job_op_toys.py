@@ -1,4 +1,3 @@
-from dagster.core.definitions.reconstructable import ReconstructableRepository
 import pytest
 from dagster import (
     DagsterInvariantViolationError,
@@ -7,36 +6,33 @@ from dagster import (
     execute_pipeline,
     reconstructable,
 )
+from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.test_utils import instance_for_test
 from dagster.utils import file_relative_path
 from dagster.utils.temp_file import get_temp_dir
 from dagster_test.graph_job_op_toys.asset_lineage import asset_lineage_job
+from dagster_test.graph_job_op_toys.branches import branch_failed_job, branch_job
 from dagster_test.graph_job_op_toys.composition import composition_job
 from dagster_test.graph_job_op_toys.dynamic import dynamic_job
 from dagster_test.graph_job_op_toys.error_monster import (
     define_errorable_resource,
-    errorable_io_manager,
     error_monster,
+    errorable_io_manager,
 )
 from dagster_test.graph_job_op_toys.hammer import hammer_default_executor_job
 from dagster_test.graph_job_op_toys.log_spew import log_spew_job
-from dagster_test.graph_job_op_toys.longitudinal import (
-    IntentionalRandomFailure,
-    longitudinal_job,
-)
+from dagster_test.graph_job_op_toys.longitudinal import IntentionalRandomFailure, longitudinal_job
 from dagster_test.graph_job_op_toys.many_events import many_events_job
 from dagster_test.graph_job_op_toys.pyspark_assets.pyspark_assets_job import (
-    pyspark_assets_job,
-    pyspark_assets_graph,
     dir_resources,
+    pyspark_assets_graph,
+    pyspark_assets_job,
 )
 from dagster_test.graph_job_op_toys.repo import toys_repository
-from dagster_test.graph_job_op_toys.resources import resource_graph, resource_job, lots_of_resources
+from dagster_test.graph_job_op_toys.resources import lots_of_resources, resource_graph, resource_job
 from dagster_test.graph_job_op_toys.retries import retry_job
 from dagster_test.graph_job_op_toys.schedules import longitudinal_schedule
 from dagster_test.graph_job_op_toys.sleepy import sleepy_job
-from dagster_test.graph_job_op_toys.branches import branch_job, branch_failed_job
-from dagster_test.graph_job_op_toys.repo import toys_repository
 
 
 def test_repo():
@@ -92,14 +88,14 @@ def test_hammer_job():
 
 def test_resource_job_no_config():
     result = resource_job.execute_in_process()
-    assert result.result_for_node("one").output_values['result'] == 2
+    assert result.result_for_node("one").output_values["result"] == 2
 
 
 def test_resource_job_with_config():
     result = resource_graph.to_job(
         config={"resources": {"R1": {"config": 2}}}, resource_defs=lots_of_resources
     ).execute_in_process()
-    assert result.result_for_node("one").output_values['result'] == 3
+    assert result.result_for_node("one").output_values["result"] == 3
 
 
 def test_pyspark_assets_job():

@@ -3,7 +3,7 @@ import time
 from datetime import datetime
 from random import random
 
-from dagster import AssetMaterialization, Nothing, In, Out, fs_io_manager, graph, op
+from dagster import AssetMaterialization, In, Nothing, Out, fs_io_manager, graph, op
 from dagster.utils.partitions import DEFAULT_DATE_FORMAT
 
 TRAFFIC_CONSTANTS = {

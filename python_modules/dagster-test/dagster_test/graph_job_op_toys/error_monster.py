@@ -2,19 +2,17 @@ from dagster import (
     Failure,
     Field,
     IOManager,
-    Int,
     In,
+    Int,
     Out,
     ResourceDefinition,
     RetryRequested,
     String,
+    graph,
     io_manager,
     op,
-    graph,
 )
-from dagster.core.definitions.executor import (
-    in_process_executor,
-)
+from dagster.core.definitions.executor import in_process_executor
 from dagster.utils import segfault
 
 
