@@ -27,9 +27,12 @@ IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 
 @contextmanager
-def docker_postgres_instance(overrides=None):
+def docker_postgres_instance(overrides=None, conn_args=None):
     with postgres_instance_for_test(
-        __file__, "test-postgres-db-docker", overrides=overrides
+        __file__,
+        "test-postgres-db-docker",
+        overrides=overrides,
+        conn_args=conn_args,
     ) as instance:
         yield instance
 
@@ -61,7 +64,11 @@ def test_launch_docker_no_network():
                 "module": "dagster_docker",
                 "config": launcher_config,
             }
-        }
+        },
+        # Ensure the container will time out and fail quickly
+        conn_args={
+            "params": {"connect_timeout": 2},
+        },
     ) as instance:
         recon_pipeline = get_test_project_recon_pipeline("demo_pipeline", docker_image)
         with get_test_project_workspace_and_external_pipeline(
@@ -99,7 +106,7 @@ def test_launch_docker_no_network():
                 start_time = time.time()
                 while True:
                     container = client.containers.get(container_id)
-                    if time.time() - start_time > 30:
+                    if time.time() - start_time > 60:
                         raise Exception("Timed out waiting for container to exit")
 
                     if container.status == "exited":
@@ -109,7 +116,7 @@ def test_launch_docker_no_network():
 
             finally:
                 if container:
-                    container.remove()
+                    container.remove(force=True)
 
 
 def test_launch_docker_image_on_pipeline_config():
