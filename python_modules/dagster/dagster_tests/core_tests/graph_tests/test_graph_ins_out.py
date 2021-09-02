@@ -1,10 +1,8 @@
 import pytest
 from dagster import graph, op
-from dagster.core.definitions.events import Output
 from dagster.core.definitions.input import GraphIn, In
 from dagster.core.definitions.output import GraphOut, Out
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.core.execution.execute import execute_in_process
 
 
 @op(out=Out(int))
