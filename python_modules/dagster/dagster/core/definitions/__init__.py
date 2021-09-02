@@ -72,12 +72,12 @@ from .partitioned_schedule import schedule_from_partitions
 from .pipeline import PipelineDefinition
 from .pipeline_base import IPipeline
 from .pipeline_sensor import (
-    JobFailureSensorContext,
     PipelineFailureSensorContext,
+    RunFailureSensorContext,
     RunStatusSensorContext,
     RunStatusSensorDefinition,
-    job_failure_sensor,
     pipeline_failure_sensor,
+    run_failure_sensor,
     run_status_sensor,
 )
 from .preset import PresetDefinition
