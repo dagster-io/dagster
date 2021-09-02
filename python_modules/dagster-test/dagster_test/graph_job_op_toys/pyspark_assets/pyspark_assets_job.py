@@ -1,15 +1,6 @@
 import os
 
-from dagster import (
-    Field,
-    InputDefinition,
-    ModeDefinition,
-    String,
-    execute_pipeline,
-    pipeline,
-    resource,
-    solid,
-)
+from dagster import Field, In, String, resource, graph, op
 from pyspark.sql import SparkSession, Window
 from pyspark.sql.functions import col, concat, lit
 from pyspark.sql.functions import max as pyspark_max
@@ -38,7 +29,7 @@ def savedir(context):
     return context.resource_config["dir"]
 
 
-@solid(
+@op(
     config_schema={
         "temperature_file": Field(String),
         "version_salt": Field(String),
@@ -46,9 +37,7 @@ def savedir(context):
     required_resource_keys={"source_data_dir", "savedir"},
 )
 def get_max_temp_per_station(context):
-    fpath = os.path.join(
-        context.resources.source_data_dir, context.solid_config["temperature_file"]
-    )
+    fpath = os.path.join(context.resources.source_data_dir, context.op_config["temperature_file"])
     tmpf_df = df_from_csv(fpath)
     w = Window.partitionBy("station")
     max_df = (
@@ -64,12 +53,12 @@ def get_max_temp_per_station(context):
     return outpath
 
 
-@solid(
+@op(
     config_schema={"station_file": Field(String), "version_salt": Field(String)},
     required_resource_keys={"source_data_dir", "savedir"},
 )
 def get_consolidated_location(context):
-    fpath = os.path.join(context.resources.source_data_dir, context.solid_config["station_file"])
+    fpath = os.path.join(context.resources.source_data_dir, context.op_config["station_file"])
     station_df = df_from_csv(fpath)
     consolidated_df = station_df.withColumn(
         "full_address",
@@ -88,12 +77,9 @@ def get_consolidated_location(context):
     return outpath
 
 
-@solid(
+@op(
     config_schema={"version_salt": Field(String)},
-    input_defs=[
-        InputDefinition(name="maxtemp_path", dagster_type=String),
-        InputDefinition(name="stationcons_path", dagster_type=String),
-    ],
+    ins={"maxtemp_path": In(str), "stationcons_path": In(str)},
     required_resource_keys={"savedir"},
 )
 def combine_dfs(context, maxtemp_path, stationcons_path):
@@ -107,11 +93,9 @@ def combine_dfs(context, maxtemp_path, stationcons_path):
     return outpath
 
 
-@solid(
+@op(
     config_schema={"version_salt": Field(String)},
-    input_defs=[
-        InputDefinition(name="path", dagster_type=String),
-    ],
+    ins={"path": In(str)},
     required_resource_keys={"savedir"},
 )
 def pretty_output(context, path):
@@ -126,18 +110,17 @@ def pretty_output(context, path):
     return outpath
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(resource_defs={"source_data_dir": source_data_dir, "savedir": savedir})
-    ]
-)
-def pyspark_assets_pipeline():
+@graph
+def pyspark_assets_graph():
     pretty_output(combine_dfs(get_max_temp_per_station(), get_consolidated_location()))
 
 
+dir_resources = {"source_data_dir": source_data_dir, "savedir": savedir}
+pyspark_assets_job = pyspark_assets_graph.to_job(resource_defs=dir_resources)
+
 if __name__ == "__main__":
     run_config = {
-        "solids": {
+        "ops": {
             "get_max_temp_per_station": {
                 "config": {
                     "temperature_file": "temperature.csv",
@@ -162,12 +145,13 @@ if __name__ == "__main__":
             },
         },
         "resources": {
-            "source_data_dir": {"config": {"dir": "asset_pipeline_files"}},
-            "savedir": {"config": {"dir": "asset_pipeline_files"}},
+            "source_data_dir": {"config": {"dir": "asset_job_files"}},
+            "savedir": {"config": {"dir": "asset_job_files"}},
         },
     }
 
-    result = execute_pipeline(
-        pyspark_assets_pipeline,
-        run_config=run_config,
+    pyspark_assets_config_job = pyspark_assets_graph.to_job(
+        resource_defs={"source_data_dir": source_data_dir, "savedir": savedir}, config=run_config
     )
+
+    result = pyspark_assets_config_job.execute_in_process()
