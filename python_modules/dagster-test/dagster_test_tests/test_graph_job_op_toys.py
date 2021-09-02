@@ -26,11 +26,13 @@ from dagster_test.graph_job_op_toys.longitudinal import (
     longitudinal_job,
 )
 from dagster_test.graph_job_op_toys.many_events import many_events_job
-from dagster_test.graph_job_op_toys.pyspark_assets.pyspark_assets_pipeline import (
-    pyspark_assets_pipeline,
+from dagster_test.graph_job_op_toys.pyspark_assets.pyspark_assets_job import (
+    pyspark_assets_job,
+    pyspark_assets_graph,
+    dir_resources,
 )
 from dagster_test.graph_job_op_toys.repo import toys_repository
-from dagster_test.graph_job_op_toys.resources import resource_job
+from dagster_test.graph_job_op_toys.resources import resource_graph, resource_job, lots_of_resources
 from dagster_test.graph_job_op_toys.retries import retry_job
 from dagster_test.graph_job_op_toys.schedules import longitudinal_schedule
 from dagster_test.graph_job_op_toys.sleepy import sleepy_job
@@ -104,61 +106,61 @@ def test_hammer_job():
     assert hammer_job.execute_in_process().success
 
 
-# def test_resource_pipeline_no_config():
-#     result = execute_pipeline(resource_pipeline)
-#     assert result.result_for_solid("one").output_value() == 2
+def test_resource_job_no_config():
+    result = resource_job.execute_in_process()
+    assert result.result_for_node("one").output_values['result'] == 2
 
 
-# def test_resource_pipeline_with_config():
-#     result = execute_pipeline(resource_pipeline, run_config={"resources": {"R1": {"config": 2}}})
-#     assert result.result_for_solid("one").output_value() == 3
+def test_resource_job_with_config():
+    result = resource_graph.to_job(
+        config={"resources": {"R1": {"config": 2}}}, resource_defs=lots_of_resources
+    ).execute_in_process()
+    assert result.result_for_node("one").output_values['result'] == 3
 
 
-# def test_pyspark_assets_pipeline():
+def test_pyspark_assets_pipeline():
+    with get_temp_dir() as temp_dir:
+        run_config = {
+            "solids": {
+                "get_max_temp_per_station": {
+                    "config": {
+                        "temperature_file": "temperature.csv",
+                        "version_salt": "foo",
+                    }
+                },
+                "get_consolidated_location": {
+                    "config": {
+                        "station_file": "stations.csv",
+                        "version_salt": "foo",
+                    }
+                },
+                "combine_dfs": {
+                    "config": {
+                        "version_salt": "foo",
+                    }
+                },
+                "pretty_output": {
+                    "config": {
+                        "version_salt": "foo",
+                    }
+                },
+            },
+            "resources": {
+                "source_data_dir": {
+                    "config": {
+                        "dir": file_relative_path(
+                            __file__, "../dagster_test/toys/pyspark_assets/asset_job_files"
+                        ),
+                    }
+                },
+                "savedir": {"config": {"dir": temp_dir}},
+            },
+        }
 
-#     with get_temp_dir() as temp_dir:
-#         run_config = {
-#             "solids": {
-#                 "get_max_temp_per_station": {
-#                     "config": {
-#                         "temperature_file": "temperature.csv",
-#                         "version_salt": "foo",
-#                     }
-#                 },
-#                 "get_consolidated_location": {
-#                     "config": {
-#                         "station_file": "stations.csv",
-#                         "version_salt": "foo",
-#                     }
-#                 },
-#                 "combine_dfs": {
-#                     "config": {
-#                         "version_salt": "foo",
-#                     }
-#                 },
-#                 "pretty_output": {
-#                     "config": {
-#                         "version_salt": "foo",
-#                     }
-#                 },
-#             },
-#             "resources": {
-#                 "source_data_dir": {
-#                     "config": {
-#                         "dir": file_relative_path(
-#                             __file__, "../dagster_test/toys/pyspark_assets/asset_pipeline_files"
-#                         ),
-#                     }
-#                 },
-#                 "savedir": {"config": {"dir": temp_dir}},
-#             },
-#         }
-
-#         result = execute_pipeline(
-#             pyspark_assets_pipeline,
-#             run_config=run_config,
-#         )
-#         assert result.success
+        result = pyspark_assets_graph.to_job(
+            config=run_config, resource_defs=dir_resources
+        ).execute_in_process()
+        assert result.success
 
 
 def test_error_monster_success():
