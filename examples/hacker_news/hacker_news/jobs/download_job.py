@@ -3,11 +3,11 @@ import os
 from dagster import ResourceDefinition, graph
 from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 from dagster_pyspark import pyspark_resource
+from hacker_news.ops.download_items import build_comments, build_stories, download_items
+from hacker_news.ops.id_range_for_time import id_range_for_time
 from hacker_news.resources.hn_resource import hn_api_subsample_client
 from hacker_news.resources.parquet_io_manager import partitioned_parquet_io_manager
 from hacker_news.resources.snowflake_io_manager import time_partitioned_snowflake_io_manager
-from hacker_news.solids.download_items import build_comments, build_stories, download_items
-from hacker_news.solids.id_range_for_time import id_range_for_time
 
 from ..schedules.hourly_hn_download_schedule import hourly_download_schedule_config
 

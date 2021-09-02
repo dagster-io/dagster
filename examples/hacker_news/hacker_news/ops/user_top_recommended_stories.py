@@ -1,18 +1,16 @@
 import numpy as np
-from dagster import OutputDefinition, solid
-from hacker_news.solids.user_story_matrix import IndexedCooMatrix
+from dagster import Out, op
+from hacker_news.ops.user_story_matrix import IndexedCooMatrix
 from pandas import DataFrame
 from scipy.sparse import coo_matrix, csc_matrix, csr_matrix
 from sklearn.decomposition import TruncatedSVD
 
 
-@solid(
-    output_defs=[
-        OutputDefinition(
-            io_manager_key="warehouse_io_manager",
-            metadata={"table": "hackernews.user_top_recommended_stories"},
-        )
-    ],
+@op(
+    out=Out(
+        io_manager_key="warehouse_io_manager",
+        metadata={"table": "hackernews.user_top_recommended_stories"},
+    ),
 )
 def build_user_top_recommended_stories(
     context, model: TruncatedSVD, user_story_matrix: IndexedCooMatrix

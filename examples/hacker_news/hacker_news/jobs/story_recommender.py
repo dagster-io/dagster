@@ -1,16 +1,16 @@
 from dagster import fs_io_manager, graph
 from dagster.core.storage.file_manager import local_file_manager
 from dagster_aws.s3 import s3_file_manager
-from hacker_news.resources.fixed_s3_pickle_io_manager import fixed_s3_pickle_io_manager
-from hacker_news.resources.snowflake_io_manager import snowflake_io_manager
-from hacker_news.solids.comment_stories import build_comment_stories
-from hacker_news.solids.recommender_model import (
+from hacker_news.ops.comment_stories import build_comment_stories
+from hacker_news.ops.recommender_model import (
     build_component_top_stories,
     build_recommender_model,
     model_perf_notebook,
 )
-from hacker_news.solids.user_story_matrix import build_user_story_matrix
-from hacker_news.solids.user_top_recommended_stories import build_user_top_recommended_stories
+from hacker_news.ops.user_story_matrix import build_user_story_matrix
+from hacker_news.ops.user_top_recommended_stories import build_user_top_recommended_stories
+from hacker_news.resources.fixed_s3_pickle_io_manager import fixed_s3_pickle_io_manager
+from hacker_news.resources.snowflake_io_manager import snowflake_io_manager
 
 snowflake_manager = snowflake_io_manager.configured(
     {

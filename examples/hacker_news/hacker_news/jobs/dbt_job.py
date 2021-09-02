@@ -4,8 +4,8 @@ from dagster import ResourceDefinition, graph
 from dagster.utils import file_relative_path
 from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 from dagster_dbt import dbt_cli_resource
+from hacker_news.ops.dbt import hn_dbt_run, hn_dbt_test
 from hacker_news.resources.dbt_asset_resource import SnowflakeQueryDbtAssetResource
-from hacker_news.solids.dbt import hn_dbt_run, hn_dbt_test
 
 DBT_PROJECT_DIR = file_relative_path(__file__, "../../hacker_news_dbt")
 DBT_PROFILES_DIR = "config"
