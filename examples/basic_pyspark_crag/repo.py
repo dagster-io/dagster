@@ -1,8 +1,8 @@
 # start_repo_marker_0
 import os
 
-from dagster import IOManager, ModeDefinition, io_manager, pipeline, repository, solid
-from pyspark.sql import Row, SparkSession
+from dagster import IOManager, graph, io_manager, op, repository
+from pyspark.sql import DataFrame, Row, SparkSession
 from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 
 
@@ -19,26 +19,31 @@ class LocalParquetStore(IOManager):
 
 
 @io_manager
-def local_parquet_store(_):
+def local_parquet_store():
     return LocalParquetStore()
 
 
-@solid
-def make_people():
+@op
+def make_people() -> DataFrame:
     schema = StructType([StructField("name", StringType()), StructField("age", IntegerType())])
     rows = [Row(name="Thom", age=51), Row(name="Jonny", age=48), Row(name="Nigel", age=49)]
     spark = SparkSession.builder.getOrCreate()
     return spark.createDataFrame(rows, schema)
 
 
-@solid
-def filter_over_50(people):
+@op
+def filter_over_50(people: DataFrame) -> DataFrame:
     return people.filter(people["age"] > 50)
 
 
-@pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": local_parquet_store})])
-def my_pipeline():
+@graph
+def make_and_filter_data():
     filter_over_50(make_people())
+
+
+make_and_filter_data_job = make_and_filter_data.to_job(
+    resource_defs={"io_manager": local_parquet_store}
+)
 
 
 # end_repo_marker_0
@@ -46,4 +51,4 @@ def my_pipeline():
 
 @repository
 def basic_pyspark_repo():
-    return [my_pipeline]
+    return [make_and_filter_data_job]
