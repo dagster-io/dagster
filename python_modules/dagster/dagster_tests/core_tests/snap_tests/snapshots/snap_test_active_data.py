@@ -1218,6 +1218,7 @@ snapshots['test_external_pipeline_data 1'] = '''{
 
 snapshots['test_external_repository_data 1'] = '''{
   "__class__": "ExternalRepositoryData",
+  "external_asset_graph_data": [],
   "external_partition_set_datas": [
     {
       "__class__": "ExternalPartitionSetData",
