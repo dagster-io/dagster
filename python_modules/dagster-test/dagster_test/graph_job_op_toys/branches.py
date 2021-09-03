@@ -1,21 +1,20 @@
 from time import sleep
 
-from dagster import Field, In, Int, Out, Output, op, graph
-from dagster.core.definitions.decorators.graph import graph
+from dagster import Field, Int, Output, OutputDefinition, PresetDefinition, pipeline, solid
 
 
-@op(
+@solid(
     config_schema={"sleep_secs": Field([int], is_required=False, default_value=[0, 0])},
-    out={"out_1": Out(Int), "out_2": Out(Int)},
+    output_defs=[OutputDefinition(Int, "out_1"), OutputDefinition(Int, "out_2")],
 )
 def root(context):
-    sleep_secs = context.op_config["sleep_secs"]
+    sleep_secs = context.solid_config["sleep_secs"]
     yield Output(sleep_secs[0], "out_1")
     yield Output(sleep_secs[1], "out_2")
 
 
-@op
-def branch_op(context, sec):
+@solid
+def branch_solid(context, sec):
     if sec < 0:
         sleep(-sec)
         raise Exception("fail")
@@ -24,30 +23,36 @@ def branch_op(context, sec):
     return sec
 
 
-def branch(name, arg, op_num):
+def branch(name, arg, solid_num):
     out = arg
-    for i in range(op_num):
-        out = branch_op.alias(f"{name}_{i}")(out)
+    for i in range(solid_num):
+        out = branch_solid.alias(f"{name}_{i}")(out)
 
     return out
 
 
-@graph(description="Demo fork-shaped graph that has two-path parallel structure of ops.")
-def branch_graph():
+@pipeline(
+    description=("Demo fork-shaped pipeline that has two-path parallel structure of solids."),
+    preset_defs=[
+        PresetDefinition(
+            "sleep_failed",
+            {
+                "intermediate_storage": {"filesystem": {}},
+                "execution": {"multiprocess": {}},
+                "solids": {"root": {"config": {"sleep_secs": [-10, 30]}}},
+            },
+        ),
+        PresetDefinition(
+            "sleep",
+            {
+                "intermediate_storage": {"filesystem": {}},
+                "execution": {"multiprocess": {}},
+                "solids": {"root": {"config": {"sleep_secs": [0, 10]}}},
+            },
+        ),
+    ],
+)
+def branch_pipeline():
     out_1, out_2 = root()
     branch("branch_1", out_1, 3)
     branch("branch_2", out_2, 5)
-
-
-branch_failed_job = branch_graph.to_job(
-    name="branch_failed",
-    config={
-        "ops": {"root": {"config": {"sleep_secs": [-10, 30]}}},
-    },
-)
-
-branch_job = branch_graph.to_job(
-    config={
-        "ops": {"root": {"config": {"sleep_secs": [0, 10]}}},
-    },
-)

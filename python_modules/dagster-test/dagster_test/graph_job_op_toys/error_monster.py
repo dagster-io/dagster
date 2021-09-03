@@ -2,18 +2,18 @@ from dagster import (
     Failure,
     Field,
     IOManager,
+    InputDefinition,
     Int,
-    In,
-    Out,
+    ModeDefinition,
+    OutputDefinition,
+    PresetDefinition,
     ResourceDefinition,
     RetryRequested,
     String,
+    execute_pipeline,
     io_manager,
-    op,
-    graph,
-)
-from dagster.core.definitions.executor import (
-    in_process_executor,
+    pipeline,
+    solid,
 )
 from dagster.utils import segfault
 
@@ -75,19 +75,19 @@ def define_errorable_resource():
     )
 
 
-op_throw_config = {
-    "throw_in_op": Field(bool, is_required=False, default_value=False),
-    "failure_in_op": Field(bool, is_required=False, default_value=False),
-    "crash_in_op": Field(bool, is_required=False, default_value=False),
+solid_throw_config = {
+    "throw_in_solid": Field(bool, is_required=False, default_value=False),
+    "failure_in_solid": Field(bool, is_required=False, default_value=False),
+    "crash_in_solid": Field(bool, is_required=False, default_value=False),
     "return_wrong_type": Field(bool, is_required=False, default_value=False),
     "request_retry": Field(bool, is_required=False, default_value=False),
 }
 
 
-def _act_on_config(op_config):
-    if op_config["crash_in_op"]:
+def _act_on_config(solid_config):
+    if solid_config["crash_in_solid"]:
         segfault()
-    if op_config["failure_in_op"]:
+    if solid_config["failure_in_solid"]:
         try:
             raise ExampleException("sample cause exception")
         except ExampleException as e:
@@ -97,59 +97,78 @@ def _act_on_config(op_config):
                     "metadata_label": "I am metadata text",
                 },
             ) from e
-    elif op_config["throw_in_op"]:
+    elif solid_config["throw_in_solid"]:
         raise ExampleException("I threw up")
-    elif op_config["request_retry"]:
+    elif solid_config["request_retry"]:
         raise RetryRequested()
 
 
-@op(
-    out=Out(Int),
-    config_schema=op_throw_config,
+@solid(
+    output_defs=[OutputDefinition(Int)],
+    config_schema=solid_throw_config,
     required_resource_keys={"errorable_resource"},
 )
 def emit_num(context):
-    _act_on_config(context.op_config)
+    _act_on_config(context.solid_config)
 
-    if context.op_config["return_wrong_type"]:
+    if context.solid_config["return_wrong_type"]:
         return "wow"
 
     return 13
 
 
-@op(
-    ins={"num": In(Int)},
-    out=Out(String),
-    config_schema=op_throw_config,
+@solid(
+    input_defs=[InputDefinition("num", Int)],
+    output_defs=[OutputDefinition(String)],
+    config_schema=solid_throw_config,
     required_resource_keys={"errorable_resource"},
 )
 def num_to_str(context, num):
-    _act_on_config(context.op_config)
+    _act_on_config(context.solid_config)
 
-    if context.op_config["return_wrong_type"]:
+    if context.solid_config["return_wrong_type"]:
         return num + num
 
     return str(num)
 
 
-@op(
-    ins={"string": In(str)},
-    out=Out(Int),
-    config_schema=op_throw_config,
+@solid(
+    input_defs=[InputDefinition("string", String)],
+    output_defs=[OutputDefinition(Int)],
+    config_schema=solid_throw_config,
     required_resource_keys={"errorable_resource"},
 )
 def str_to_num(context, string):
-    _act_on_config(context.op_config)
+    _act_on_config(context.solid_config)
 
-    if context.op_config["return_wrong_type"]:
+    if context.solid_config["return_wrong_type"]:
         return string + string
 
     return int(string)
 
 
-@graph(
-    description="Demo graph that enables configurable types of errors thrown during job execution, "
-    "including op execution errors, type errors, and resource initialization errors."
+@pipeline(
+    description=(
+        "Demo pipeline that enables configurable types of errors thrown during pipeline execution, "
+        "including solid execution errors, type errors, and resource initialization errors."
+    ),
+    mode_defs=[
+        ModeDefinition(
+            name="errorable_mode",
+            resource_defs={
+                "errorable_resource": define_errorable_resource(),
+                "io_manager": errorable_io_manager,
+            },
+        ),
+    ],
+    preset_defs=[
+        PresetDefinition.from_pkg_resources(
+            "passing",
+            pkg_resource_defs=[("dagster_test.toys.environments", "error.yaml")],
+            mode="errorable_mode",
+        )
+    ],
+    tags={"monster": "error"},
 )
 def error_monster():
     start = emit_num.alias("start")()
@@ -157,40 +176,15 @@ def error_monster():
     str_to_num.alias("end")(string=middle)
 
 
-config = {
-    "resources": {"errorable_resource": {"config": {"throw_on_resource_init": False}}},
-    "ops": {
-        "end": {"config": {"return_wrong_type": False, "throw_in_op": False}},
-        "middle": {"config": {"return_wrong_type": False, "throw_in_op": False}},
-        "start": {"config": {"return_wrong_type": False, "throw_in_op": False}},
-    },
-}
-
-error_monster_passing_job = error_monster.to_job(
-    resource_defs={
-        "errorable_resource": define_errorable_resource(),
-        "io_manager": errorable_io_manager,
-    },
-    config=config,
-    tags={"monster": "error"},
-    executor_def=in_process_executor,
-)
-
-
 if __name__ == "__main__":
-    result = error_monster.to_job(
-        config={
-            "ops": {
-                "start": {"config": {"throw_in_op": False, "return_wrong_type": False}},
-                "middle": {"config": {"throw_in_op": False, "return_wrong_type": True}},
-                "end": {"config": {"throw_in_op": False, "return_wrong_type": False}},
+    result = execute_pipeline(
+        error_monster,
+        {
+            "solids": {
+                "start": {"config": {"throw_in_solid": False, "return_wrong_type": False}},
+                "middle": {"config": {"throw_in_solid": False, "return_wrong_type": True}},
+                "end": {"config": {"throw_in_solid": False, "return_wrong_type": False}},
             },
             "resources": {"errorable_resource": {"config": {"throw_on_resource_init": False}}},
         },
-        tags={"monster": "error"},
-        resource_defs={
-            "errorable_resource": define_errorable_resource(),
-            "io_manager": errorable_io_manager,
-        },
-        executor_def=in_process_executor,
-    ).execute_in_process()
+    )

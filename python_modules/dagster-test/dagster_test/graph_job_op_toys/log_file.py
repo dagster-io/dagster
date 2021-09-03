@@ -1,17 +1,17 @@
 import os
 
-from dagster import AssetKey, AssetMaterialization, EventMetadata, Field, Output, graph, op
+from dagster import AssetKey, AssetMaterialization, EventMetadata, Field, Output, pipeline, solid
 
 
-@op(
+@solid(
     config_schema={
         "filename": Field(str, is_required=True),
         "directory": Field(str, is_required=True),
     }
 )
 def read_file(context):
-    relative_filename = context.op_config["filename"]
-    directory = context.op_config["directory"]
+    relative_filename = context.solid_config["filename"]
+    directory = context.solid_config["directory"]
     filename = os.path.join(directory, relative_filename)
     try:
         fstats = os.stat(filename)
@@ -32,11 +32,6 @@ def read_file(context):
         context.log.error("No file found: {}".format(relative_filename))
 
 
-@graph
-def log_file_graph():
+@pipeline(description="Demo pipeline that spits out some file info, given a path")
+def log_file_pipeline():
     read_file()
-
-
-log_file_job = log_file_graph.to_job(
-    description="Demo job that spits out some file info, given a path"
-)

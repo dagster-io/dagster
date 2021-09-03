@@ -1,25 +1,27 @@
 from random import random
 
-from dagster import Field, graph, op
+from dagster import Field, pipeline, solid
 
 DEFAULT_EXCEPTION_RATE = 0.3
 
 
-@op
-def unreliable_start():
+@solid
+def unreliable_start(_):
     return 1
 
 
-@op(config_schema={"rate": Field(float, is_required=False, default_value=DEFAULT_EXCEPTION_RATE)})
+@solid(
+    config_schema={"rate": Field(float, is_required=False, default_value=DEFAULT_EXCEPTION_RATE)}
+)
 def unreliable(context, num):
-    if random() < context.op_config["rate"]:
+    if random() < context.solid_config["rate"]:
         raise Exception("blah")
 
     return num
 
 
-@graph
-def unreliable_graph():
+@pipeline(description="Demo pipeline of chained solids that fail with a configurable probability.")
+def unreliable_pipeline():
     one = unreliable.alias("one")
     two = unreliable.alias("two")
     three = unreliable.alias("three")
@@ -28,8 +30,3 @@ def unreliable_graph():
     six = unreliable.alias("six")
     seven = unreliable.alias("seven")
     seven(six(five(four(three(two(one(unreliable_start())))))))
-
-
-unreliable_job = unreliable_graph.to_job(
-    description="Demo graph of chained ops that fail with a configurable probability."
-)

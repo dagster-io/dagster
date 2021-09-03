@@ -2,13 +2,13 @@ from dagster import (
     AssetMaterialization,
     EventMetadata,
     ExpectationResult,
-    In,
+    InputDefinition,
     Nothing,
-    Out,
     Output,
+    OutputDefinition,
     file_relative_path,
-    graph,
-    op,
+    pipeline,
+    solid,
 )
 
 MARKDOWN_EXAMPLE = "markdown_example.md"
@@ -25,7 +25,7 @@ raw_files = [
 ]
 
 
-def create_raw_file_op(name):
+def create_raw_file_solid(name):
     def do_expectation(_context, _value):
         return ExpectationResult(
             success=True,
@@ -33,13 +33,13 @@ def create_raw_file_op(name):
             description="Checked {name} exists".format(name=name),
         )
 
-    @op(
+    @solid(
         name=name,
         description="Inject raw file for input to table {} and do expectation on output".format(
             name
         ),
     )
-    def raw_file_op(_context):
+    def raw_file_solid(_context):
         yield AssetMaterialization(
             asset_key="table_info",
             metadata={"table_path": EventMetadata.path("/path/to/{}.raw".format(name))},
@@ -47,7 +47,7 @@ def create_raw_file_op(name):
         yield do_expectation(_context, name)
         yield Output(name)
 
-    return raw_file_op
+    return raw_file_solid
 
 
 raw_tables = [
@@ -62,17 +62,17 @@ raw_tables = [
 ]
 
 
-def create_raw_file_ops():
-    return list(map(create_raw_file_op, raw_files))
+def create_raw_file_solids():
+    return list(map(create_raw_file_solid, raw_files))
 
 
 def input_name_for_raw_file(raw_file):
     return raw_file + "_ready"
 
 
-@op(
-    ins={"start": In(Nothing)},
-    out=Out(dagster_type=Nothing),
+@solid(
+    input_defs=[InputDefinition("start", Nothing)],
+    output_defs=[OutputDefinition(Nothing)],
     description="Load a bunch of raw tables from corresponding files",
 )
 def many_table_materializations(_context):
@@ -93,12 +93,12 @@ def many_table_materializations(_context):
             )
 
 
-@op(
-    ins={"start": In(Nothing)},
-    out=Out(Nothing),
-    description="This simulates a op that would wrap something like dbt, "
+@solid(
+    input_defs=[InputDefinition("start", Nothing)],
+    output_defs=[OutputDefinition(Nothing)],
+    description="This simulates a solid that would wrap something like dbt, "
     "where it emits a bunch of tables and then say an expectation on each table, "
-    "all in one op",
+    "all in one solid",
 )
 def many_materializations_and_passing_expectations(_context):
     tables = [
@@ -126,10 +126,10 @@ def many_materializations_and_passing_expectations(_context):
         )
 
 
-@op(
-    ins={"start": In(Nothing)},
-    out=Out(dagster_type=Nothing),
-    description="A op that just does a couple inline expectations, one of which fails",
+@solid(
+    input_defs=[InputDefinition("start", Nothing)],
+    output_defs=[],
+    description="A solid that just does a couple inline expectations, one of which fails",
 )
 def check_users_and_groups_one_fails_one_succeeds(_context):
     yield ExpectationResult(
@@ -161,29 +161,26 @@ def check_users_and_groups_one_fails_one_succeeds(_context):
     )
 
 
-@op(
-    ins={"start": In(Nothing)},
-    out=Out(dagster_type=Nothing),
-    description="An op that just does a couple inline expectations",
+@solid(
+    input_defs=[InputDefinition("start", Nothing)],
+    output_defs=[],
+    description="A solid that just does a couple inline expectations",
 )
 def check_admins_both_succeed(_context):
     yield ExpectationResult(success=True, label="Group admins check out")
     yield ExpectationResult(success=True, label="Event admins check out")
 
 
-@graph
-def many_events():
-    raw_files_ops = [raw_file_op() for raw_file_op in create_raw_file_ops()]
-
-    mtm = many_table_materializations(raw_files_ops)
-    mmape = many_materializations_and_passing_expectations(mtm)
-    check_users_and_groups_one_fails_one_succeeds(mmape)
-    check_admins_both_succeed(mmape)
-
-
-many_events_job = many_events.to_job(
+@pipeline(
     description=(
-        "Demo job that yields AssetMaterializations and ExpectationResults, along with the "
+        "Demo pipeline that yields AssetMaterializations and ExpectationResults, along with the "
         "various forms of metadata that can be attached to them."
     )
 )
+def many_events():
+    raw_files_solids = [raw_file_solid() for raw_file_solid in create_raw_file_solids()]
+
+    mtm = many_table_materializations(raw_files_solids)
+    mmape = many_materializations_and_passing_expectations(mtm)
+    check_users_and_groups_one_fails_one_succeeds(mmape)
+    check_admins_both_succeed(mmape)
