@@ -35,9 +35,9 @@ def emit():
 
 
 @graph
-def dynamic_graph():
+def dynamic():
     result = emit().map(lambda num: multiply_by_two(multiply_inputs(num, emit_ten())))
     multiply_by_two.alias("double_total")(sum_numbers(emit_ten(), result.collect()))
 
 
-dynamic_job = dynamic_graph.to_job()
+dynamic_job = dynamic.to_job()

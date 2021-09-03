@@ -111,12 +111,12 @@ def pretty_output(context, path):
 
 
 @graph
-def pyspark_assets_graph():
+def pyspark_assets():
     pretty_output(combine_dfs(get_max_temp_per_station(), get_consolidated_location()))
 
 
 dir_resources = {"source_data_dir": source_data_dir, "savedir": savedir}
-pyspark_assets_job = pyspark_assets_graph.to_job(resource_defs=dir_resources)
+pyspark_assets_job = pyspark_assets.to_job(resource_defs=dir_resources)
 
 if __name__ == "__main__":
     run_config = {

@@ -33,10 +33,8 @@ def read_file(context):
 
 
 @graph
-def log_file_graph():
+def log_file():
     read_file()
 
 
-log_file_job = log_file_graph.to_job(
-    description="Demo job that spits out some file info, given a path"
-)
+log_file_job = log_file.to_job(description="Demo job that spits out some file info, given a path")

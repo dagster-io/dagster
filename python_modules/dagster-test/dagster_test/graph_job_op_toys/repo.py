@@ -32,11 +32,11 @@ def materialization_op():
 
 
 @graph
-def model_graph():
+def model():
     materialization_op()
 
 
-model_job = model_graph.to_job()
+model_job = model.to_job()
 
 
 @repository

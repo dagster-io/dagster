@@ -19,7 +19,7 @@ def unreliable(context, num):
 
 
 @graph
-def unreliable_graph():
+def unreliable():
     one = unreliable.alias("one")
     two = unreliable.alias("two")
     three = unreliable.alias("three")
@@ -30,6 +30,6 @@ def unreliable_graph():
     seven(six(five(four(three(two(one(unreliable_start())))))))
 
 
-unreliable_job = unreliable_graph.to_job(
+unreliable_job = unreliable.to_job(
     description="Demo graph of chained ops that fail with a configurable probability."
 )

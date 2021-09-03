@@ -33,14 +33,14 @@ def one_and_two_and_three():
 
 
 @graph
-def resource_graph():
+def resource():
     all_resources()
     one()
     two()
     one_and_two_and_three()
 
 
-resource_job = resource_graph.to_job(resource_defs=lots_of_resources)
+resource_job = resource.to_job(resource_defs=lots_of_resources)
 
 if __name__ == "__main__":
     result = reconstructable(resource_job).execute_in_process()

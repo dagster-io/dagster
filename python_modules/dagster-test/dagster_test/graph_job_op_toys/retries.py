@@ -21,11 +21,11 @@ def retry_op(context):
 
 
 @graph
-def retry_graph():
+def retry():
     echo(retry_op())
 
 
-retry_job = retry_graph.to_job(
+retry_job = retry.to_job(
     config={
         "ops": {
             "retry_op": {

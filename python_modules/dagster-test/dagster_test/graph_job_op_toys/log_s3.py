@@ -20,8 +20,8 @@ def read_s3_key(context):
 
 
 @graph
-def log_s3_graph():
+def log_s3():
     read_s3_key()
 
 
-log_s3_job = log_s3_graph.to_job(description="Demo job that spits out some file info, given a path")
+log_s3_job = log_s3.to_job(description="Demo job that spits out some file info, given a path")

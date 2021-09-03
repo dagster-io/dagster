@@ -88,7 +88,7 @@ def make_op(
 
 
 @graph
-def longitudinal_graph():
+def longitudinal():
     ingest_raw_video_views = make_op(
         "ingest_raw_video_views",
         asset_key="raw_video_views",
@@ -131,7 +131,7 @@ def longitudinal_graph():
     train_video_recommender_model([video_views, users])
 
 
-longitudinal_job = longitudinal_graph.to_job(
+longitudinal_job = longitudinal.to_job(
     description=(
         "Demo job that simulates updating tables of users and video views and training a "
         "video recommendation model. The growth of execution-time and data-throughput follows"

@@ -24,7 +24,7 @@ def branch_op(context, sec):
     return sec
 
 
-def branch(name, arg, op_num):
+def make_branch(name, arg, op_num):
     out = arg
     for i in range(op_num):
         out = branch_op.alias(f"{name}_{i}")(out)
@@ -33,20 +33,20 @@ def branch(name, arg, op_num):
 
 
 @graph(description="Demo fork-shaped graph that has two-path parallel structure of ops.")
-def branch_graph():
+def branch():
     out_1, out_2 = root()
-    branch("branch_1", out_1, 3)
-    branch("branch_2", out_2, 5)
+    make_branch("branch_1", out_1, 3)
+    make_branch("branch_2", out_2, 5)
 
 
-branch_failed_job = branch_graph.to_job(
+branch_failed_job = branch.to_job(
     name="branch_failed",
     config={
         "ops": {"root": {"config": {"sleep_secs": [-10, 30]}}},
     },
 )
 
-branch_job = branch_graph.to_job(
+branch_job = branch.to_job(
     config={
         "ops": {"root": {"config": {"sleep_secs": [0, 10]}}},
     },

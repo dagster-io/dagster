@@ -190,5 +190,4 @@ if __name__ == "__main__":
             "errorable_resource": define_errorable_resource(),
             "io_manager": errorable_io_manager,
         },
-        executor_def=in_process_executor,
     ).execute_in_process()

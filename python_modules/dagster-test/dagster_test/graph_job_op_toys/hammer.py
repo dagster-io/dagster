@@ -55,7 +55,7 @@ def reducer(_, in_1, in_2, in_3, in_4):
 
 
 @graph
-def hammer_graph():
+def hammer():
     out_1, out_2, out_3, out_4 = chase_giver()
     reducer(
         in_1=hammer(chase_duration=out_1),
@@ -65,4 +65,4 @@ def hammer_graph():
     )
 
 
-hammer_default_executor_job = hammer_graph.to_job()
+hammer_default_executor_job = hammer.to_job()

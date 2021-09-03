@@ -167,15 +167,15 @@ top_10_comments = best_n_actions(10, "comments")
 )
 def daily_top_action(df1, df2):
     df = pd.concat([df1, df2]).nlargest(1, "score")
-    return Out(df, metadata={"data": EventMetadata.md(df.to_markdown())})
+    return Output(df, metadata={"data": EventMetadata.md(df.to_markdown())})
 
 
 @graph
-def asset_lineage_graph():
+def asset_lineage():
     reviews, comments = split_action_types(download_data())
     daily_top_action(top_10_reviews(reviews), top_10_comments(comments))
 
 
-asset_lineage_job = asset_lineage_graph.to_job(resource_defs={"my_db_io_manager": my_db_io_manager})
+asset_lineage_job = asset_lineage.to_job(resource_defs={"my_db_io_manager": my_db_io_manager})
 
 warnings.resetwarnings()

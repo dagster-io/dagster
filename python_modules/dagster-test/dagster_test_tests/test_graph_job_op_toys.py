@@ -25,11 +25,11 @@ from dagster_test.graph_job_op_toys.longitudinal import IntentionalRandomFailure
 from dagster_test.graph_job_op_toys.many_events import many_events_job
 from dagster_test.graph_job_op_toys.pyspark_assets.pyspark_assets_job import (
     dir_resources,
-    pyspark_assets_graph,
+    pyspark_assets,
     pyspark_assets_job,
 )
 from dagster_test.graph_job_op_toys.repo import toys_repository
-from dagster_test.graph_job_op_toys.resources import lots_of_resources, resource_graph, resource_job
+from dagster_test.graph_job_op_toys.resources import lots_of_resources, resource, resource_job
 from dagster_test.graph_job_op_toys.retries import retry_job
 from dagster_test.graph_job_op_toys.schedules import longitudinal_schedule
 from dagster_test.graph_job_op_toys.sleepy import sleepy_job
@@ -68,14 +68,12 @@ def test_sleepy_job():
 
 
 def test_branch_job():
-    with instance_for_test() as instance:
-        assert branch_job.execute_in_process(instance=instance).success
+    assert branch_job.execute_in_process().success
 
 
 def test_branch_job_failed():
     with pytest.raises(Exception):
-        with instance_for_test() as instance:
-            assert not branch_failed_job.execute_in_process(instance=instance).success
+        assert not branch_failed_job.execute_in_process().success
 
 
 def test_spew_pipeline():
@@ -92,7 +90,7 @@ def test_resource_job_no_config():
 
 
 def test_resource_job_with_config():
-    result = resource_graph.to_job(
+    result = resource.to_job(
         config={"resources": {"R1": {"config": 2}}}, resource_defs=lots_of_resources
     ).execute_in_process()
     assert result.result_for_node("one").output_values["result"] == 3
@@ -137,7 +135,7 @@ def test_pyspark_assets_job():
             },
         }
 
-        result = pyspark_assets_graph.to_job(
+        result = pyspark_assets.to_job(
             config=run_config, resource_defs=dir_resources
         ).execute_in_process()
         assert result.success
