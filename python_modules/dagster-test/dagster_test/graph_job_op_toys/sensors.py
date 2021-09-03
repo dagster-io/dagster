@@ -3,12 +3,13 @@ import os
 from dagster import AssetKey, RunRequest, SkipReason, check, sensor
 from dagster.core.definitions.decorators.sensor import asset_sensor
 from dagster.core.definitions.pipeline_sensor import (
-    PipelineFailureSensorContext,
-    pipeline_failure_sensor,
+    JobFailureSensorContext,
+    job_failure_sensor,
 )
 from dagster_test.graph_job_op_toys.log_file import log_file_job
 from dagster_test.graph_job_op_toys.log_s3 import log_s3_job
 from dagster_test.graph_job_op_toys.log_asset import log_asset_job
+from dagster_test.graph_job_op_toys.error_monster import error_monster_failing_job
 from slack import WebClient
 
 
@@ -89,8 +90,8 @@ def get_toys_sensors():
                 },
             )
 
-    @pipeline_failure_sensor(pipeline_selection=["error_monster"])
-    def custom_slack_on_pipeline_failure(context: PipelineFailureSensorContext):
+    @job_failure_sensor(job_selection=[error_monster_failing_job])
+    def custom_slack_on_job_failure(context: JobFailureSensorContext):
 
         base_url = "http://localhost:3000"
 
@@ -120,7 +121,7 @@ def get_toys_sensors():
             run_config={
                 "ops": {
                     "read_materialization": {
-                        "config": {"asset_key": ["model"], "job": asset_event.pipeline_name}
+                        "config": {"asset_key": ["model"], "graph": asset_event.pipeline_name}
                     }
                 }
             },
@@ -130,5 +131,5 @@ def get_toys_sensors():
         toy_file_sensor,
         toy_asset_sensor,
         toy_s3_sensor,
-        custom_slack_on_pipeline_failure,
+        custom_slack_on_job_failure,
     ]
