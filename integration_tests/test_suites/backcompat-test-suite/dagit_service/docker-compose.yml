@@ -15,7 +15,7 @@ services:
     image: dagster_grpc_image
     build:
       context: .
-      dockerfile: ./Dockerfile_grpc
+      dockerfile: ${USER_CODE_DOCKERFILE}
     environment:
       DAGSTER_POSTGRES_USER: "postgres_user"
       DAGSTER_POSTGRES_PASSWORD: "postgres_password"
@@ -30,7 +30,7 @@ services:
       - dagit_service_network
     build:
       context: .
-      dockerfile: ./Dockerfile_dagit
+      dockerfile: ${DAGIT_DOCKERFILE}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
@@ -51,12 +51,13 @@ services:
       DAGSTER_POSTGRES_DB: "postgres_db"
     depends_on:
       - dagster_grpc_server
+      - docker_daemon
       - docker_postgresql
 
   docker_daemon:
     build:
       context: .
-      dockerfile: ./Dockerfile_dagit
+      dockerfile: ${DAGIT_DOCKERFILE}
     entrypoint:
       - dagster-daemon
       - run

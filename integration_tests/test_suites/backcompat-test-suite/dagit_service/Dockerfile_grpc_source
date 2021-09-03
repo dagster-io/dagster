@@ -1,10 +1,17 @@
 FROM python:3.8-slim
 
-COPY . /
+COPY ./python_modules/ /tmp/python_modules/
+
+WORKDIR /tmp
+
 RUN pip install \
-    dagster \
-    dagster-postgres \
-    dagster-docker
+    -e python_modules/dagster \
+    -e python_modules/libraries/dagster-postgres \
+    -e python_modules/libraries/dagster-docker
+
+WORKDIR /opt/dagster/app
+
+COPY repo.py /opt/dagster/app
 
 # Run dagster gRPC server on port 8090
 
