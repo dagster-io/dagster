@@ -1,6 +1,4 @@
 import pytest
-import requests
-import time
 from contextlib import contextmanager
 from dagster import file_relative_path
 from dagster_graphql import DagsterGraphQLClient
@@ -9,7 +7,10 @@ import subprocess
 pytest_plugins = ["dagster_test.fixtures"]
 
 # pylint: disable=redefined-outer-name
-RELEASE_TEST_MAP = {"master": ["master", "master"], "0.12.x": ["0.12.5", "master"]}
+RELEASE_TEST_MAP = {
+    "dagit__0.12.0": ["0.12.0", "current_branch"],
+    "user_code__0.12.0": ["current_branch", "0.12.0"],
+}
 
 
 @pytest.fixture(
@@ -25,7 +26,6 @@ def release_test_map(request):
     return {"dagit": dagit_version, "user_code": user_code_version}
 
 
-# TODO: switch to using dagster_test.fixtures
 @contextmanager
 def docker_service_up(docker_compose_file, build_args=None):
 
@@ -57,12 +57,15 @@ def docker_service_up(docker_compose_file, build_args=None):
 
 
 @pytest.fixture
-def graphql_client(retrying_requests):
+def graphql_client(release_test_map, retrying_requests):
+    dagit_version = release_test_map["dagit"]
+    user_code_version = release_test_map["user_code"]
+
     with docker_service_up(file_relative_path(__file__, "./dagit_service/docker-compose.yml")):
         result = retrying_requests.get("http://127.0.0.1:3000/dagit_info")
         assert result.json().get("dagit_version")
         yield DagsterGraphQLClient("127.0.0.1", port_number=3000)
 
 
-def test_backcompat_deploy(release_test_map, graphql_client):
-    assert release_test_map, graphql_client
+def test_backcompat_deploy(graphql_client):
+    assert graphql_client
