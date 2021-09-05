@@ -21,11 +21,8 @@ from dagster.core.definitions.partition import (
     PartitionedConfig,
     StaticPartitionsDefinition,
 )
-from dagster.core.errors import (
-    DagsterInvalidConfigError,
-    DagsterInvalidDefinitionError,
-    DagsterInvariantViolationError,
-)
+from dagster.core.definitions.pipeline import PipelineSubsetDefinition
+from dagster.core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
 
 
 def get_ops():
@@ -606,17 +603,16 @@ def test_raise_on_error_execute_in_process():
     assert not result.success
 
 
-def test_job_subset_incompatibility():
+def test_job_subset():
+    @op
+    def my_op():
+        pass
 
-    # https://github.com/dagster-io/dagster/issues/4489
     @graph
     def basic():
-        pass
+        my_op()
+        my_op()
 
     the_job = basic.to_job()
 
-    with pytest.raises(
-        DagsterInvariantViolationError,
-        match="Attempted to subset job 'basic'. Subsetting jobs is not supported at this time.",
-    ):
-        the_job.get_pipeline_subset_def({"foo"})
+    assert isinstance(the_job.get_pipeline_subset_def({"my_op"}), PipelineSubsetDefinition)

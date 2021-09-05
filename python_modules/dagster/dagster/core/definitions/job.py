@@ -1,8 +1,8 @@
+import warnings
 from typing import TYPE_CHECKING, AbstractSet, Any, Dict, List, Optional
 
 from dagster import check
 from dagster.core.definitions.policy import RetryPolicy
-from dagster.core.errors import DagsterInvariantViolationError
 
 from .graph import GraphDefinition
 from .hook import HookDefinition
@@ -105,10 +105,12 @@ class JobDefinition(PipelineDefinition):
 
     def get_pipeline_subset_def(self, solids_to_execute: AbstractSet[str]) -> PipelineDefinition:
 
-        # https://github.com/dagster-io/dagster/issues/4489
-        raise DagsterInvariantViolationError(
-            f"Attempted to subset job '{self.name}'. Subsetting jobs is not supported at this time."
+        warnings.warn(
+            f"Attempted to subset job {self.name}. The subsetted job will be represented by a "
+            "PipelineDefinition."
         )
+
+        return super(JobDefinition, self).get_pipeline_subset_def(solids_to_execute)
 
 
 def _swap_default_io_man(resources: Dict[str, ResourceDefinition], job: PipelineDefinition):
