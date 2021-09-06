@@ -1,3 +1,4 @@
+from typing import Optional
 import warnings
 from collections import OrderedDict
 from typing import Sequence
@@ -20,6 +21,7 @@ from .external_data import (
     ExternalRepositoryData,
     ExternalScheduleData,
     ExternalSensorData,
+    ExternalTargetData,
 )
 from .handle import JobHandle, PartitionSetHandle, PipelineHandle, RepositoryHandle
 from .pipeline_index import PipelineIndex
@@ -486,17 +488,11 @@ class ExternalSensor:
     def name(self):
         return self._external_sensor_data.name
 
-    @property
-    def pipeline_name(self):
-        return self._external_sensor_data.pipeline_name
-
-    @property
-    def solid_selection(self):
-        return self._external_sensor_data.solid_selection
-
-    @property
-    def mode(self):
-        return self._external_sensor_data.mode
+    def get_target_data(self, pipeline_name: Optional[str]) -> ExternalTargetData:
+        if pipeline_name:
+            return self._external_sensor_data.target_dict[pipeline_name]
+        else:
+            return list(self._external_sensor_data.target_dict.values())[0]
 
     @property
     def description(self):
