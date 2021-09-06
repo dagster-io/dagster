@@ -514,9 +514,10 @@ def construct_dagster_k8s_job(
     user_defined_k8s_volume_mounts = user_defined_k8s_config.container_config.pop(
         "volume_mounts", []
     )
-    additional_k8s_volume_mounts = []
-    for volume_mount in user_defined_k8s_volume_mounts:
-        additional_k8s_volume_mounts.append(kubernetes.client.V1VolumeMount(**volume_mount))
+    additional_k8s_volume_mounts = [
+        kubernetes.client.V1VolumeMount(**volume_mount)
+        for volume_mount in user_defined_k8s_volume_mounts
+    ]
 
     job_container = kubernetes.client.V1Container(
         name=job_name,
@@ -549,6 +550,12 @@ def construct_dagster_k8s_job(
         for mount in job_config.volume_mounts
     ]
 
+    user_defined_volumes = user_defined_k8s_config.pod_spec_config.pop("volumes", [])
+    additional_volumes = [
+        kubernetes.client.V1Volume(**volume)
+        for volume in user_defined_volumes
+    ]
+
     # If the user has defined custom labels, remove them from the pod_template_spec_metadata
     # key and merge them with the dagster labels
     user_defined_pod_template_labels = user_defined_k8s_config.pod_template_spec_metadata.pop(
@@ -573,7 +580,7 @@ def construct_dagster_k8s_job(
             service_account_name=service_account_name,
             restart_policy="Never",
             containers=[job_container],
-            volumes=volumes,
+            volumes=volumes + additional_volumes,
             **user_defined_k8s_config.pod_spec_config,
         ),
     )

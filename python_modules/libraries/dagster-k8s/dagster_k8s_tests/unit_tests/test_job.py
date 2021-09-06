@@ -301,6 +301,49 @@ def test_construct_dagster_k8s_job_with_user_defined_volume_mounts():
     assert volume_mounts_mapping["a_volume_mount_two"]
 
 
+def test_construct_dagster_k8s_job_with_user_defined_volumes():
+    @graph
+    def user_defined_k8s_volumes_tags_graph():
+        pass
+
+    user_defined_k8s_config = get_user_defined_k8s_config(
+        user_defined_k8s_volumes_tags_graph.to_job(
+            tags={
+                USER_DEFINED_K8S_CONFIG_KEY: {
+                    "pod_spec_config": {
+                        "volumes": [
+                            {
+                                "name": "volume-a",
+                                "empty_dir": {},
+                            },
+                            {
+                                "name": "volume-b",
+                                "empty_dir": {},
+                            },
+                        ],
+                    },
+                },
+            },
+        ).tags
+    )
+
+    cfg = DagsterK8sJobConfig(
+        job_image="test/foo:latest",
+        dagster_home="/opt/dagster/dagster_home",
+        instance_config_map="some-instance-configmap",
+    )
+
+    job = construct_dagster_k8s_job(
+        cfg, ["foo", "bar"], "job", user_defined_k8s_config=user_defined_k8s_config
+    ).to_dict()
+
+    pod_spec = job["spec"]["template"]["spec"]
+    volumes_mapping = {v["name"]: v for v in pod_spec["volumes"]}
+    assert volumes_mapping["dagster-instance"]["config_map"]["name"] == "some-instance-configmap"
+    assert volumes_mapping["volume-a"]["empty_dir"] == {}
+    assert volumes_mapping["volume-b"]["empty_dir"] == {}
+
+
 def test_construct_dagster_k8s_job_with_user_defined_service_account_name():
     @graph
     def user_defined_k8s_service_account_name_tags_graph():
