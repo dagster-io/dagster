@@ -342,9 +342,14 @@ runLauncher:
   config:
     # This configuration will only be used if the K8sRunLauncher is selected
     k8sRunLauncher:
+
+      # Change with caution! If you're using a fixed tag for pipeline run images, changing the
+      # image pull policy to anything other than "Always" will use a cached/stale image, which is
+      # almost certainly not what you want.
+      imagePullPolicy: "Always"
+
       ## The image to use for the launched Job's Dagster container.
-      ## This image should only be specified when user code deployments are disabled. Otherwise,
-      ## it will be ignored.
+      ## The `pullPolicy` field is ignored. Use`imagePullPolicy` instead.
       # image:
       #   repository: ""
       #   tag: ""

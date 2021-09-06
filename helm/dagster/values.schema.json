@@ -1499,6 +1499,9 @@
                         }
                     ]
                 },
+                "imagePullPolicy": {
+                    "$ref": "#/definitions/PullPolicy"
+                },
                 "loadInclusterConfig": {
                     "title": "Loadinclusterconfig",
                     "type": "boolean"
@@ -1537,6 +1540,7 @@
                 }
             },
             "required": [
+                "imagePullPolicy",
                 "loadInclusterConfig",
                 "envConfigMaps",
                 "envSecrets",
