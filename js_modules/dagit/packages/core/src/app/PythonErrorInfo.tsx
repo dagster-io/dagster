@@ -103,7 +103,7 @@ const ErrorHeader = styled.h3`
 const Trace = styled.div`
   color: rgb(41, 50, 56);
   font-family: ${FontFamily.monospace};
-  font-size: 0.85em;
+  font-size: 1em;
   white-space: pre;
   padding-bottom: 1em;
 `;

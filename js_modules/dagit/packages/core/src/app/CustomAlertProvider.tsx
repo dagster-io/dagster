@@ -77,7 +77,7 @@ export class CustomAlertProvider extends React.Component {
 const Body = styled.div`
   white-space: pre-line;
   font-family: ${FontFamily.monospace};
-  font-size: 13px;
+  font-size: 16px;
   overflow: scroll;
   background: ${Colors.WHITE};
   border-top: 1px solid ${Colors.LIGHT_GRAY3};

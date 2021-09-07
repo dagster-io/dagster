@@ -180,7 +180,7 @@ const TypeSchemaContainer = styled.code`
   color: ${Colors.GRAY3};
   display: block;
   white-space: pre-wrap;
-  font-size: smaller;
+  font-size: 14px;
   line-height: 18px;
 `;
 

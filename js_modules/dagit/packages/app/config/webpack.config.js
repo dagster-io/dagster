@@ -563,7 +563,7 @@ module.exports = function (webpackEnv) {
           // It shouldn't be necessary to specify WS here, but Safari is broken.
           // https://bugs.webkit.org/show_bug.cgi?id=201591
           'connect-src': [`'self'`, 'ws:', 'wss:'],
-          'font-src': `'self'`,
+          'font-src': [`'self'`, 'fonts.gstatic.com'],
           'frame-src': isEnvDevelopment ? [`http://localhost:*`, `'self'`] : `'self'`,
           'img-src': [`'self'`, 'data:'],
           'manifest-src': `'self'`,
@@ -573,8 +573,8 @@ module.exports = function (webpackEnv) {
             ? [`'unsafe-inline'`, `'self'`, `'unsafe-eval'`]
             : [`'self'`, `'nonce-NONCE-PLACEHOLDER'`],
           'style-src': isEnvDevelopment
-            ? [`'unsafe-inline'`, `'self'`, `'unsafe-eval'`]
-            : [`'self'`, `'nonce-NONCE-PLACEHOLDER'`],
+            ? [`'unsafe-inline'`, `'self'`, `'unsafe-eval'`, 'fonts.googleapis.com']
+            : [`'self'`, `'nonce-NONCE-PLACEHOLDER'`, 'fonts.googleapis.com'],
         },
         {
           hashEnabled: {

@@ -1,7 +1,7 @@
 import React from 'react';
 import {Link, useHistory, useRouteMatch} from 'react-router-dom';
 
-import {FontFamily} from '../ui/styles';
+import {Mono} from '../ui/Text';
 import {useRepositoryOptions} from '../workspace/WorkspaceContext';
 import {repoAddressFromPath} from '../workspace/repoAddressFromPath';
 
@@ -121,8 +121,8 @@ export const PipelineSnapshotLink: React.FunctionComponent<{
   })}`;
 
   return (
-    <span style={{fontFamily: FontFamily.monospace}}>
+    <Mono>
       <Link to={snapshotLink}>{props.snapshotId.slice(0, 8)}</Link>
-    </span>
+    </Mono>
   );
 };

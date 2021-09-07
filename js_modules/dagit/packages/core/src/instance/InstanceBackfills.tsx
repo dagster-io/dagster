@@ -38,8 +38,8 @@ import {CursorPaginationControls} from '../ui/CursorControls';
 import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
 import {Table} from '../ui/Table';
+import {Mono} from '../ui/Text';
 import {stringFromValue} from '../ui/TokenizingField';
-import {FontFamily} from '../ui/styles';
 import {workspacePipelinePath} from '../workspace/workspacePath';
 
 import {BackfillTerminationDialog} from './BackfillTerminationDialog';
@@ -291,12 +291,14 @@ const BackfillRow = ({
 
   return (
     <tr>
-      <td style={{width: '120px', fontFamily: FontFamily.monospace}}>
-        {partitionSetBackfillUrl ? (
-          <Link to={partitionSetBackfillUrl}>{backfill.backfillId}</Link>
-        ) : (
-          backfill.backfillId
-        )}
+      <td style={{width: '120px'}}>
+        <Mono>
+          {partitionSetBackfillUrl ? (
+            <Link to={partitionSetBackfillUrl}>{backfill.backfillId}</Link>
+          ) : (
+            backfill.backfillId
+          )}
+        </Mono>
       </td>
       <td>
         {backfill.partitionSet ? (

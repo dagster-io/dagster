@@ -3,7 +3,7 @@ import {Button, Classes, Colors, Dialog, Icon, ProgressBar} from '@blueprintjs/c
 import * as React from 'react';
 
 import {Group} from '../ui/Group';
-import {FontFamily} from '../ui/styles';
+import {Mono} from '../ui/Text';
 
 import {NavigationBlock} from './NavitationBlock';
 import {DELETE_MUTATION} from './RunUtils';
@@ -250,7 +250,7 @@ export const DeletionDialog = (props: Props) => {
               {Object.keys(errors).map((runId) => (
                 <li key={runId}>
                   <Group direction="row" spacing={8}>
-                    <span style={{fontFamily: FontFamily.monospace}}>{runId.slice(0, 8)}</span>
+                    <Mono>{runId.slice(0, 8)}</Mono>
                     {errors[runId] ? <div>{errors[runId]?.message}</div> : null}
                   </Group>
                 </li>

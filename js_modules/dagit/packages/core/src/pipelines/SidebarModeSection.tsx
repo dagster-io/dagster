@@ -88,7 +88,8 @@ export const SIDEBAR_MODE_INFO_FRAGMENT = gql`
 `;
 
 const ContextResourceHeader = styled(SectionHeader)`
-  font-size: 13px;
+  font-size: 16px;
+  margin: 4px 0;
 `;
 
 const ContextResourceContainer = styled.div`
@@ -102,7 +103,8 @@ const ContextResourceContainer = styled.div`
 `;
 
 const ContextLoggerHeader = styled(SectionHeader)`
-  font-size: 13px;
+  font-size: 16px;
+  margin: 4px 0;
 `;
 
 const ContextLoggerContainer = styled.div`

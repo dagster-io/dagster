@@ -70,6 +70,7 @@ const GlobalStyle = createGlobalStyle`
 
   code, pre {
     font-family: ${FontFamily.monospace};
+    font-size: 16px;
   }
 `;
 
