@@ -525,6 +525,33 @@ class TestEventLogStorage:
 
         assert _event_types(out_events) == _event_types(events)
 
+    def test_get_logs_for_run_cursor_limit(self, storage):
+        @solid
+        def return_one(_):
+            return 1
+
+        def _solids():
+            return_one()
+
+        events, result = _synthesize_events(_solids)
+
+        for event in events:
+            storage.store_event(event)
+
+        out_events = []
+        cursor = -1
+        fuse = 0
+        while fuse < 50:
+            fuse += 1
+            # fetch in batches w/ limit & cursor
+            chunk = storage.get_logs_for_run(result.run_id, cursor=cursor, limit=2)
+            if not chunk:
+                break
+            out_events += chunk
+            cursor += len(chunk)
+
+        assert _event_types(out_events) == _event_types(events)
+
     def test_wipe_sql_backed_event_log(self, storage):
         @solid
         def return_one(_):
