@@ -16,7 +16,7 @@ from dagster import Field, In, Out, Output, graph, op
         )
     },
 )
-def hammer(context, chase_duration):
+def hammer_op(context, chase_duration):
     """what better way to do a lot of gnarly work than to pointer chase?"""
     ptr_length = context.op_config["chase_size"]
 
@@ -58,10 +58,10 @@ def reducer(_, in_1, in_2, in_3, in_4):
 def hammer():
     out_1, out_2, out_3, out_4 = chase_giver()
     reducer(
-        in_1=hammer(chase_duration=out_1),
-        in_2=hammer(chase_duration=out_2),
-        in_3=hammer(chase_duration=out_3),
-        in_4=hammer(chase_duration=out_4),
+        in_1=hammer_op(chase_duration=out_1),
+        in_2=hammer_op(chase_duration=out_2),
+        in_3=hammer_op(chase_duration=out_3),
+        in_4=hammer_op(chase_duration=out_4),
     )
 
 

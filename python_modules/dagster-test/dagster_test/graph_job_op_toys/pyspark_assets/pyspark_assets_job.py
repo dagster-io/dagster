@@ -150,7 +150,7 @@ if __name__ == "__main__":
         },
     }
 
-    pyspark_assets_config_job = pyspark_assets_graph.to_job(
+    pyspark_assets_config_job = pyspark_assets.to_job(
         resource_defs={"source_data_dir": source_data_dir, "savedir": savedir}, config=run_config
     )
 

@@ -29,7 +29,7 @@ from dagster_test.graph_job_op_toys.pyspark_assets.pyspark_assets_job import (
     pyspark_assets_job,
 )
 from dagster_test.graph_job_op_toys.repo import toys_repository
-from dagster_test.graph_job_op_toys.resources import lots_of_resources, resource, resource_job
+from dagster_test.graph_job_op_toys.resources import lots_of_resources, resource_ops, resource_job
 from dagster_test.graph_job_op_toys.retries import retry_job
 from dagster_test.graph_job_op_toys.schedules import longitudinal_schedule
 from dagster_test.graph_job_op_toys.sleepy import sleepy_job
@@ -90,7 +90,7 @@ def test_resource_job_no_config():
 
 
 def test_resource_job_with_config():
-    result = resource.to_job(
+    result = resource_ops.to_job(
         config={"resources": {"R1": {"config": 2}}}, resource_defs=lots_of_resources
     ).execute_in_process()
     assert result.result_for_node("one").output_values["result"] == 3

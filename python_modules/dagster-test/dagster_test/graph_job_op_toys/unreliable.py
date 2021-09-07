@@ -11,7 +11,7 @@ def unreliable_start():
 
 
 @op(config_schema={"rate": Field(float, is_required=False, default_value=DEFAULT_EXCEPTION_RATE)})
-def unreliable(context, num):
+def unreliable_op(context, num):
     if random() < context.op_config["rate"]:
         raise Exception("blah")
 
@@ -20,13 +20,13 @@ def unreliable(context, num):
 
 @graph
 def unreliable():
-    one = unreliable.alias("one")
-    two = unreliable.alias("two")
-    three = unreliable.alias("three")
-    four = unreliable.alias("four")
-    five = unreliable.alias("five")
-    six = unreliable.alias("six")
-    seven = unreliable.alias("seven")
+    one = unreliable_op.alias("one")
+    two = unreliable_op.alias("two")
+    three = unreliable_op.alias("three")
+    four = unreliable_op.alias("four")
+    five = unreliable_op.alias("five")
+    six = unreliable_op.alias("six")
+    seven = unreliable_op.alias("seven")
     seven(six(five(four(three(two(one(unreliable_start())))))))
 
 
