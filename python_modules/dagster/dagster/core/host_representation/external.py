@@ -1,7 +1,9 @@
 import warnings
 from collections import OrderedDict
+from typing import Sequence
 
 from dagster import check
+from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.run_request import JobType
 from dagster.core.definitions.sensor import DEFAULT_SENSOR_DAEMON_INTERVAL
 from dagster.core.errors import DagsterInvariantViolationError
@@ -12,6 +14,7 @@ from dagster.core.utils import toposort
 from dagster.utils.schedules import schedule_execution_time_iterator
 
 from .external_data import (
+    ExternalAssetNode,
     ExternalPartitionSetData,
     ExternalPipelineData,
     ExternalRepositoryData,
@@ -144,6 +147,17 @@ class ExternalRepository:
         where it came from.
         """
         return self.get_external_origin().get_id()
+
+    def get_external_asset_nodes(self) -> Sequence[ExternalAssetNode]:
+        return self.external_repository_data.external_asset_graph_data
+
+    def get_external_asset_node(self, asset_key: AssetKey) -> ExternalAssetNode:
+        matching = [
+            asset_node
+            for asset_node in self.external_repository_data.external_asset_graph_data
+            if asset_node.asset_key == asset_key
+        ]
+        return matching[0] if matching else None
 
     def get_display_metadata(self):
         return self.handle.repository_location.get_display_metadata()
