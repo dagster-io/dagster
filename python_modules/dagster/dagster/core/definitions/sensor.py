@@ -286,7 +286,7 @@ class ISensorDefinition:
         return self._min_interval
 
     @property
-    def targets(self) -> str:
+    def targets(self) -> Optional[List[Union[DirectTarget, RepoRelativeTarget]]]:
         return self._targets
 
     def has_loadable_targets(self) -> bool:
@@ -373,7 +373,7 @@ class SensorDefinition(ISensorDefinition):
         )
 
     @property
-    def _target(self) -> str:
+    def _target(self) -> Optional[Union[DirectTarget, RepoRelativeTarget]]:
         return self._targets[0] if self._targets else None
 
     @property
@@ -611,7 +611,7 @@ class MultiJobSensorDefinition(ISensorDefinition):
             ["SensorEvaluationContext"],
             Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
         ],
-        jobs: List[Union[GraphDefinition, PipelineDefinition]] = None,
+        jobs: List[Union[GraphDefinition, PipelineDefinition]],
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
         decorated_fn: Optional[
@@ -622,7 +622,9 @@ class MultiJobSensorDefinition(ISensorDefinition):
         ] = None,
     ):
         check.list_param(jobs, "jobs", (GraphDefinition, PipelineDefinition))
-        targets = [DirectTarget(job) for job in jobs]
+        targets: Optional[List[Union[DirectTarget, RepoRelativeTarget]]] = [
+            DirectTarget(job) for job in jobs
+        ]
 
         super(MultiJobSensorDefinition, self).__init__(
             name=name,
