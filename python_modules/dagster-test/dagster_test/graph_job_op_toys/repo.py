@@ -20,9 +20,6 @@ from dagster_test.graph_job_op_toys.retries import retry_job
 from dagster_test.graph_job_op_toys.sleepy import sleepy_job
 from dagster_test.graph_job_op_toys.unreliable import unreliable_job
 
-from .schedules import get_toys_schedules
-from .sensors import get_toys_sensors
-
 
 @op
 def materialization_op():
