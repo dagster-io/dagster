@@ -8,9 +8,11 @@ from dagster import (
     hourly_schedule,
     monthly_schedule,
     weekly_schedule,
+    schedule_from_partitions,
 )
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
 from dagster.utils.partitions import date_partition_range
+from dagster_test.graph_job_op_toys.unreliable import unreliable
 
 
 def _fetch_runs_by_partition(instance, partition_set_def, status_filters=None):
@@ -77,6 +79,13 @@ def backfill_should_execute(context, partition_set_def, retry_failed=False):
 
 
 def backfill_test_schedule():
+    # @weekly_partitioned_config(start_date="2020-01-05", timezone=_toys_tz_info())
+    # def backfill_unreliable_config(start, _):
+    #     return {"start": str(start)}
+
+    # unreliable_weekly_job = unreliable.to_job(config=backfill_unreliable_config)
+    # unreliable_weekly_schedule = schedule_from_partitions(unreliable_weekly_job)
+
     schedule_name = "backfill_unreliable_weekly"
     # create weekly partition set
     partition_set = PartitionSetDefinition(
