@@ -4,7 +4,7 @@ import styled from 'styled-components/macro';
 import {ColorsWIP} from './Colors';
 
 // Based directly on Material Icons font names.
-type IconName =
+export type IconName =
   | 'account_tree'
   | 'alternate_email'
   | 'arrow_left'
