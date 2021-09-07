@@ -64,6 +64,10 @@ def integration_steps():
                 "-markdaemon",
             ]
             upload_coverage = True
+        elif integration_suite == os.path.join(
+            "integration_tests", "test_suites", "backcompat-test-suite"
+        ):
+            tox_env_suffixes = ["-backcompat_dagit_on__0_12_8", "-backcompat_user_code_on__0_12_8"]
 
         tests += ModuleBuildSpec(
             integration_suite,
