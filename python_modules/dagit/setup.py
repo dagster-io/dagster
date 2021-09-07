@@ -64,7 +64,11 @@ if __name__ == "__main__":
             "nbconvert>=5.4.0,<6.0.0",
         ],
         extras_require={
-            "starlette": ["starlette"],
+            "starlette": [
+                "starlette",
+                "uvicorn[standard]",
+                "gunicorn",
+            ],
         },
         entry_points={
             "console_scripts": ["dagit = dagit.cli:main", "dagit-debug = dagit.debug:main"]
