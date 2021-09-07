@@ -3,6 +3,8 @@ from datetime import datetime
 from dagster import build_schedule_context, execute_pipeline
 from docs_snippets.guides.dagster.graph_job_op import (
     composite_solid,
+    composite_solid_ins_out,
+    composite_solid_multi_out,
     graph_job_test,
     graph_with_config,
     graph_with_config_and_schedule,
@@ -12,6 +14,8 @@ from docs_snippets.guides.dagster.graph_job_op import (
     graph_with_schedule,
     graph_with_schedule_return_config,
     nested_graphs,
+    nested_graphs_ins_out,
+    nested_graphs_multi_out,
     op_in_out,
     op_multi_out,
     pipeline_mode_test,
@@ -33,6 +37,8 @@ jobs = [
     (graph_with_config, "do_it_all_job"),
     (graph_job_test, "do_it_all_job"),
     (nested_graphs, "do_it_all"),
+    (nested_graphs_ins_out, "do_it_all"),
+    (nested_graphs_multi_out, "do_it_all"),
 ]
 job_repos = [
     (prod_dev_jobs, "prod_repo"),
@@ -59,6 +65,8 @@ pipelines = [
     (pipeline_with_schedule, "do_it_all"),
     (pipeline_with_preset_and_schedule, "do_it_all"),
     (composite_solid, "do_it_all"),
+    (composite_solid_ins_out, "do_it_all"),
+    (composite_solid_multi_out, "do_it_all"),
 ]
 pipeline_schedules = [
     (pipeline_with_partition_schedule, ("do_it_all_schedule", "do_it_all"), None),

@@ -1,28 +1,28 @@
 ---
-title: Connecting Solids in Pipelines | Dagster
-description: A Dagster pipeline is a set of solids which have data dependencies on each other to create a directed acyclic graph.
+title: Connecting Ops in Graphs | Dagster
+description: A Dagster graph is a set of ops which have data dependencies on each other to create a directed acyclic graph.
 ---
 
-# Connecting Solids in Pipelines
+# Connecting Ops in Graphs
 
 <CodeReferenceLink filePath="examples/docs_snippets/docs_snippets/intro_tutorial/basics/connecting_solids/" />
 
-Our pipelines wouldn't be very interesting if they were limited to single solids. Pipelines connect solids into arbitrary [DAGs](https://en.wikipedia.org/wiki/Directed_acyclic_graph) of computation.
+Our graphs wouldn't be very interesting if they were limited to single ops. Graphs connect ops into arbitrary [DAGs](https://en.wikipedia.org/wiki/Directed_acyclic_graph) of computation.
 
-Why split up code into solids instead of splitting it up into regular Python functions? There are a few reasons:
+Why split up code into ops instead of splitting it up into regular Python functions? There are a few reasons:
 
-- Dagster can execute sets of solids without executing the entire pipeline. This means that, if we hit a failure in our pipeline, we can re-run just the steps that didn't complete successfully, which often allows us to avoid re-executing expensive steps.
-- When two solids don't depend on each other, Dagster can execute them simultaneously.
-- Dagster can materialize the output of a solid to persistent storage. [IOManagers](/concepts/io-management/io-managers) let us separate business logic from IO, which lets us write code that's more testable and portable across environments.
+- Dagster can execute sets of ops without executing the entire graph. This means that, if we hit a failure in our graph, we can re-run just the steps that didn't complete successfully, which often allows us to avoid re-executing expensive steps.
+- When two ops don't depend on each other, Dagster can execute them simultaneously.
+- Dagster can materialize the output of an op to persistent storage. [IOManagers](/concepts/io-management/io-managers) let us separate business logic from IO, which lets us write code that's more testable and portable across environments.
 
-Dagster pipelines model a _dataflow_ graph. In data pipelines, the reason that a later step comes after an earlier step is almost always that it uses data produced by the earlier step. Dagster models these dataflow dependencies with _inputs_ and _outputs_.
+Dagster graphs model a _dataflow_ graph. In data pipelines, the reason that a later step comes after an earlier step is almost always that it uses data produced by the earlier step. Dagster models these dataflow dependencies with _inputs_ and _outputs_.
 
 ## Let's Get Serial
 
-We'll expand the pipeline we worked with in the first section of the tutorial into two solids:
+We'll expand the graph we worked with in the first section of the tutorial into two ops:
 
-- The first solid will download the cereal data and return it as an output.
-- The second solid will consume the cereal data produced by the first solid and find the cereal with the most sugar.
+- The first op will download the cereal data and return it as an output.
+- The second op will consume the cereal data produced by the first op and find the cereal with the most sugar.
 
 This will allow us to re-run the code that finds the sugariest cereal without re-running the code that downloads the cereal data. If we spot a bug in our sugariness code, or if we decide we want to compute some other statistics about the cereal data, we won't need to re-download the data.
 
@@ -30,44 +30,44 @@ This will allow us to re-run the code that finds the sugariest cereal without re
 import csv
 
 import requests
-from dagster import pipeline, solid
+from dagster import graph, op
 
 
-@solid
+@op
 def download_cereals():
     response = requests.get("https://docs.dagster.io/assets/cereal.csv")
     lines = response.text.split("\n")
     return [row for row in csv.DictReader(lines)]
 
 
-@solid
+@op
 def find_sugariest(context, cereals):
     sorted_by_sugar = sorted(cereals, key=lambda cereal: cereal["sugars"])
     context.log.info(f'{sorted_by_sugar[-1]["name"]} is the sugariest cereal')
 
 
-@pipeline
-def serial_pipeline():
+@graph
+def serial():
     find_sugariest(download_cereals())
 ```
 
-You'll see that we've modified our existing `download_cereals` solid to return an output, in this case the data frame representing the cereals dataset. We no longer log from this solid, so we no longer need the context argument here.
+You'll see that we've modified our existing `download_cereals` op to return an output, in this case the data frame representing the cereals dataset. We no longer log from this op, so we no longer need the context argument here.
 
-We've defined our new solid, `find_sugariest`, to take a user-defined input, `cereals`, in addition to the system-provided <PyObject module="dagster" object="SolidExecutionContext"
+We've defined our new op, `find_sugariest`, to take a user-defined input, `cereals`, in addition to the system-provided <PyObject module="dagster" object="SolidExecutionContext"
 displayText="context" /> object.
 
-We can use inputs and outputs to connect solids to each other. Here we tell Dagster that:
+We can use inputs and outputs to connect ops to each other. Here we tell Dagster that:
 
-- `download_cereals` doesn't depend on the output of any other solid.
+- `download_cereals` doesn't depend on the output of any other op.
 - `find_sugariest` depends on the output of `download_cereals`.
 
-Let's visualize this pipeline in Dagit:
+Let's visualize this graph in Dagit:
 
 ```bash
 dagit -f serial_pipeline.py
 ```
 
-Navigate to <http://127.0.0.1:3000/pipeline/serial_pipeline/> or choose "serial_pipeline" from the left sidebar:
+Navigate to <http://127.0.0.1:3000/pipeline/serial_pipeline/> or choose "serial_graph" from the left sidebar:
 
 <Image
 alt="serial_pipeline_figure_one.png"
@@ -80,17 +80,23 @@ height={946}
 
 ## A More Complex DAG
 
-Solids don't need to be wired together serially. The output of one solid can be consumed by any number of other solids, and the outputs of several different solids can be consumed by a single solid.
+Ops don't need to be wired together serially. The output of one op can be consumed by any number of other ops, and the outputs of several different ops can be consumed by a single op.
 
-```python file=/intro_tutorial/basics/connecting_solids/complex_pipeline.py startafter=start_complex_pipeline_marker_0 endbefore=end_complex_pipeline_marker_0
-@solid
+```python file=/intro_tutorial/basics/connecting_solids/complex_pipeline.py
+import csv
+
+import requests
+from dagster import graph, op
+
+
+@op
 def download_cereals():
     response = requests.get("https://docs.dagster.io/assets/cereal.csv")
     lines = response.text.split("\n")
     return [row for row in csv.DictReader(lines)]
 
 
-@solid
+@op
 def find_highest_calorie_cereal(cereals):
     sorted_cereals = list(
         sorted(cereals, key=lambda cereal: cereal["calories"])
@@ -98,7 +104,7 @@ def find_highest_calorie_cereal(cereals):
     return sorted_cereals[-1]["name"]
 
 
-@solid
+@op
 def find_highest_protein_cereal(cereals):
     sorted_cereals = list(
         sorted(cereals, key=lambda cereal: cereal["protein"])
@@ -106,14 +112,14 @@ def find_highest_protein_cereal(cereals):
     return sorted_cereals[-1]["name"]
 
 
-@solid
+@op
 def display_results(context, most_calories, most_protein):
     context.log.info(f"Most caloric cereal: {most_calories}")
     context.log.info(f"Most protein-rich cereal: {most_protein}")
 
 
-@pipeline
-def complex_pipeline():
+@graph
+def diamond():
     cereals = download_cereals()
     display_results(
         most_calories=find_highest_calorie_cereal(cereals),
@@ -121,9 +127,9 @@ def complex_pipeline():
     )
 ```
 
-First we introduce the intermediate variable `cereals` into our pipeline definition to represent the output of the `download_cereals` solid. Then we make both `find_highest_calorie_cereal` and `find_highest_protein_cereal` consume this output. Their outputs are in turn both consumed by `display_results`.
+First we introduce the intermediate variable `cereals` into our graph definition to represent the output of the `download_cereals` op. Then we make both `find_highest_calorie_cereal` and `find_highest_protein_cereal` consume this output. Their outputs are in turn both consumed by `display_results`.
 
-Let's visualize this pipeline in Dagit:
+Let's visualize this graph in Dagit:
 
 ```bash
 dagit -f complex_pipeline.py

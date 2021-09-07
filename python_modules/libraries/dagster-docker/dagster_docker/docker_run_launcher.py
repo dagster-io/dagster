@@ -49,6 +49,8 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
             self._networks = [network]
         elif networks:
             self._networks = networks
+        else:
+            self._networks = []
 
         self._container_kwargs = check.opt_dict_param(
             container_kwargs, "container_kwargs", key_type=str

@@ -161,3 +161,15 @@ def test_dagit_service_read_only(service_template):
         "dagit",
         "dagit-read-only",
     ]
+
+
+def test_dagit_db_statement_timeout(deployment_template: HelmTemplate):
+    db_statement_timeout_ms = 9000
+    helm_values = DagsterHelmValues.construct(
+        dagit=Dagit.construct(dbStatementTimeout=db_statement_timeout_ms)
+    )
+
+    dagit_deployments = deployment_template.render(helm_values)
+    command = " ".join(dagit_deployments[0].spec.template.spec.containers[0].command)
+
+    assert f"--db-statement-timeout {db_statement_timeout_ms}" in command

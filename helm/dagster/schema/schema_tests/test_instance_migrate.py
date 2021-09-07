@@ -33,3 +33,14 @@ def test_job_instance_migrate_renders(template: HelmTemplate):
     jobs = template.render(helm_values_migrate_enabled)
 
     assert len(jobs) == 1
+
+
+@pytest.mark.parametrize("chart_version", ["0.12.0", "0.12.1"])
+def test_job_instance_migrate_image(template: HelmTemplate, chart_version: str):
+    helm_values_migrate_enabled = DagsterHelmValues.construct(migrate=Migrate(enabled=True))
+
+    [job] = template.render(helm_values_migrate_enabled, chart_version=chart_version)
+    image = job.spec.template.spec.containers[0].image
+    _, tag = image.split(":")
+
+    assert tag == chart_version

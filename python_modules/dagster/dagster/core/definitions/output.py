@@ -387,3 +387,39 @@ class DynamicOut(Out):
             asset_key=self.asset_key,
             asset_partitions=self.asset_partitions,
         )
+
+
+class GraphOut(
+    NamedTuple(
+        "_GraphOut",
+        [
+            ("dagster_type", Union[DagsterType, Type[NoValueSentinel]]),
+            ("description", Optional[str]),
+        ],
+    )
+):
+    """
+    Experimental replacement for :py:class:`OutputDefinition` on graphs intended to decrease verbosity.
+    It represents the information about the outputs that the graph maps.
+
+    Args:
+        dagster_type (Optional[Union[Type, DagsterType]]]):
+            The type of this output. Should only be set if the correct type can not
+            be inferred directly from the type signature of the decorated function.
+        description (Optional[str]): Human-readable description of the output.
+    """
+
+    def __new__(cls, dagster_type=NoValueSentinel, description=None):
+        return super(GraphOut, cls).__new__(
+            cls,
+            dagster_type=dagster_type,
+            description=description,
+        )
+
+    def to_definition(self, name: Optional[str]) -> "OutputDefinition":
+        dagster_type = self.dagster_type if self.dagster_type is not NoValueSentinel else None
+        return OutputDefinition(
+            dagster_type=dagster_type,
+            name=name,
+            description=self.description,
+        )

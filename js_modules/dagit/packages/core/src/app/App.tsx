@@ -3,7 +3,6 @@ import styled from 'styled-components/macro';
 
 import {LeftNav} from '../nav/LeftNav';
 
-import {ContentRoot} from './ContentRoot';
 import {LayoutContext} from './LayoutProvider';
 
 export const App: React.FC = (props) => {
@@ -17,8 +16,7 @@ export const App: React.FC = (props) => {
     <Container>
       <LeftNav />
       <Main $navOpen={nav.isOpen} onClick={onClickMain}>
-        {/* todo dish: Remove `ContentRoot`. */}
-        {props.children || <ContentRoot />}
+        {props.children}
       </Main>
     </Container>
   );

@@ -386,3 +386,44 @@ def test_hook_decorator():
     retry_policy = a_pipeline.get_retry_policy_for_handle(NodeHandle("a_solid", parent=None))
     assert isinstance(retry_policy, RetryPolicy)
     assert retry_policy.max_retries == 3
+
+
+def test_hook_with_resource_to_resource_dep():
+    called = {}
+
+    @resource(required_resource_keys={"resource_a"})
+    def resource_b(context):
+        return context.resources.resource_a
+
+    @event_list_hook(required_resource_keys={"resource_b"})
+    def hook_requires_b(context, _):
+        called[context.solid.name] = True
+        assert context.resources.resource_b == 1
+        return HookExecutionResult(hook_name="a_hook")
+
+    @solid
+    def basic_solid():
+        pass
+
+    mode_def = ModeDefinition(resource_defs={"resource_a": resource_a, "resource_b": resource_b})
+
+    # Check that resource-to-resource dependency is caught when providing hook to solid
+    @pipeline(mode_defs=[mode_def])
+    def basic_pipeline():
+        basic_solid.with_hooks({hook_requires_b})()
+
+    result = execute_pipeline(basic_pipeline)
+    assert result.success
+    assert called.get("basic_solid")
+
+    # Check that resource-to-resource dependency is caught when providing hook to pipeline
+    @pipeline(mode_defs=[mode_def])
+    def basic_pipeline_gonna_use_hooks():
+        basic_solid()
+
+    called = {}
+    basic_hook_pipeline = basic_pipeline_gonna_use_hooks.with_hooks({hook_requires_b})
+
+    result = execute_pipeline(basic_hook_pipeline)
+    assert result.success
+    assert called.get("basic_solid")

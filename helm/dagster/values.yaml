@@ -51,6 +51,9 @@ dagit:
   # Deploy a separate instance of Dagit in --read-only mode (can't launch runs, disable schedules, etc.)
   enableReadOnly: false
 
+  # The timeout in milliseconds to set on database statements sent to the Dagster instance.
+  dbStatementTimeout: ~
+
   # Additional environment variables to set.
   # A Kubernetes ConfigMap will be created with these environment variables. See:
   # https://kubernetes.io/docs/concepts/configuration/configmap/
