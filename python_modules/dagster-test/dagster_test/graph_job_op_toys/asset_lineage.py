@@ -12,7 +12,6 @@ from dagster import (
     EventMetadataEntry,
     ExperimentalWarning,
     Field,
-    In,
     Out,
     Output,
     Partition,

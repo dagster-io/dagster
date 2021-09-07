@@ -1,12 +1,10 @@
 import pytest
 from dagster import (
-    DagsterInvariantViolationError,
     DagsterResourceFunctionError,
     DagsterTypeCheckDidNotPass,
     execute_pipeline,
     reconstructable,
 )
-from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.test_utils import instance_for_test
 from dagster.utils import file_relative_path
 from dagster.utils.temp_file import get_temp_dir
@@ -26,10 +24,9 @@ from dagster_test.graph_job_op_toys.many_events import many_events_job
 from dagster_test.graph_job_op_toys.pyspark_assets.pyspark_assets_job import (
     dir_resources,
     pyspark_assets,
-    pyspark_assets_job,
 )
 from dagster_test.graph_job_op_toys.repo import toys_repository
-from dagster_test.graph_job_op_toys.resources import lots_of_resources, resource_ops, resource_job
+from dagster_test.graph_job_op_toys.resources import lots_of_resources, resource_job, resource_ops
 from dagster_test.graph_job_op_toys.retries import retry_job
 from dagster_test.graph_job_op_toys.schedules import longitudinal_schedule
 from dagster_test.graph_job_op_toys.sleepy import sleepy_job
