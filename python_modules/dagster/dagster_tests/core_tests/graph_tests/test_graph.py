@@ -22,7 +22,6 @@ from dagster.core.definitions.partition import (
     StaticPartitionsDefinition,
 )
 from dagster.core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
-from dagster.core.execution.execute import execute_in_process
 
 
 def get_ops():
@@ -46,10 +45,6 @@ def test_basic_graph():
 
     assert isinstance(get_two, GraphDefinition)
 
-    result = execute_in_process(get_two)
-
-    assert result.success
-
     result = get_two.execute_in_process()
     assert result.success
 
@@ -63,17 +58,13 @@ def test_aliased_graph():
 
     assert isinstance(get_two, GraphDefinition)
 
-    result = execute_in_process(get_two)
-
+    result = get_two.execute_in_process()
     assert result.success
 
     result_for_non_aliased = result.result_for_node("emit_one")
     assert result_for_non_aliased.output_values["result"] == 1
     result_for_aliased = result.result_for_node("emit_one_part_two")
     assert result_for_aliased.output_values["result"] == 1
-
-    result = get_two.execute_in_process()
-    assert result.success
 
 
 def test_composite_graph():
@@ -395,9 +386,7 @@ def test_config_naming_collisions():
         "solids": {"solids": {"foo": {"config": {"foobar": "bar"}}}},
         "ops": {"solids": {"foo": {"config": {"foobar": "bar"}}}},
     }
-    result = my_graph.execute_in_process(
-        run_config={"ops": {"my_graph": {"ops": {"my_op": {"config": config}}}}}
-    )
+    result = my_graph.execute_in_process(config={"my_op": {"config": config}})
     assert result.success
     assert result.output_values["result"] == config
 
@@ -405,9 +394,7 @@ def test_config_naming_collisions():
     def solids():
         return my_op()
 
-    result = solids.execute_in_process(
-        run_config={"ops": {"solids": {"ops": {"my_op": {"config": config}}}}}
-    )
+    result = solids.execute_in_process(config={"my_op": {"config": config}})
     assert result.success
     assert result.output_values["result"] == config
 
@@ -590,8 +577,26 @@ def test_enum_to_execution():
     assert result.success
     assert result.result_for_node("my_op").output_values["result"] == TestEnum.ONE
 
-    result = my_graph.execute_in_process(
-        {"ops": {"my_graph": {"ops": {"my_op": {"config": {"my_enum": "TWO"}}}}}}
-    )
+    result = my_graph.execute_in_process(config={"my_op": {"config": {"my_enum": "TWO"}}})
     assert result.success
     assert result.result_for_node("my_op").output_values["result"] == TestEnum.TWO
+
+
+def test_raise_on_error_execute_in_process():
+    error_str = "My error"
+
+    @op
+    def emit_error():
+        raise Exception(error_str)
+
+    @graph
+    def error_graph():
+        emit_error()
+
+    error_job = error_graph.to_job()
+
+    with pytest.raises(Exception, match=error_str):
+        error_job.execute_in_process()
+
+    result = error_job.execute_in_process(raise_on_error=False)
+    assert not result.success

@@ -1,40 +1,63 @@
+from enum import Enum, unique
 from typing import TYPE_CHECKING, Dict
 
 if TYPE_CHECKING:
     from .context import WorkspaceProcessContext
 
-VIEWER_PERMISSIONS = {
-    "launch_pipeline_execution": False,
-    "launch_pipeline_reexecution": False,
-    "reconcile_scheduler_state": False,
-    "start_schedule": False,
-    "stop_running_schedule": False,
-    "start_sensor": False,
-    "stop_sensor": False,
-    "terminate_pipeline_execution": False,
-    "delete_pipeline_run": False,
-    "reload_repository_location": False,
-    "reload_workspace": False,
-    "wipe_assets": False,
-    "launch_partition_backfill": False,
-    "cancel_partition_backfill": False,
+
+@unique
+class Permissions(str, Enum):
+    LAUNCH_PIPELINE_EXECUTION = "launch_pipeline_execution"
+    LAUNCH_PIPELINE_REEXECUTION = "launch_pipeline_reexecution"
+    RECONCILE_SCHEDULER_STATE = "reconcile_scheduler_state"
+    START_SCHEDULE = "start_schedule"
+    STOP_RUNNING_SCHEDULE = "stop_running_schedule"
+    START_SENSOR = "start_sensor"
+    STOP_SENSOR = "stop_sensor"
+    TERMINATE_PIPELINE_EXECUTION = "terminate_pipeline_execution"
+    DELETE_PIPELINE_RUN = "delete_pipeline_run"
+    RELOAD_REPOSITORY_LOCATION = "reload_repository_location"
+    RELOAD_WORKSPACE = "reload_workspace"
+    WIPE_ASSETS = "wipe_assets"
+    LAUNCH_PARTITION_BACKFILL = "launch_partition_backfill"
+    CANCEL_PARTITION_BACKFILL = "cancel_partition_backfill"
+
+    def __str__(self) -> str:
+        return str.__str__(self)
+
+
+VIEWER_PERMISSIONS: Dict[str, bool] = {
+    Permissions.LAUNCH_PIPELINE_EXECUTION: False,
+    Permissions.LAUNCH_PIPELINE_REEXECUTION: False,
+    Permissions.RECONCILE_SCHEDULER_STATE: False,
+    Permissions.START_SCHEDULE: False,
+    Permissions.STOP_RUNNING_SCHEDULE: False,
+    Permissions.START_SENSOR: False,
+    Permissions.STOP_SENSOR: False,
+    Permissions.TERMINATE_PIPELINE_EXECUTION: False,
+    Permissions.DELETE_PIPELINE_RUN: False,
+    Permissions.RELOAD_REPOSITORY_LOCATION: False,
+    Permissions.RELOAD_WORKSPACE: False,
+    Permissions.WIPE_ASSETS: False,
+    Permissions.LAUNCH_PARTITION_BACKFILL: False,
+    Permissions.CANCEL_PARTITION_BACKFILL: False,
 }
 
-EDITOR_PERMISSIONS = {
-    "launch_pipeline_execution": True,
-    "launch_pipeline_reexecution": True,
-    "reconcile_scheduler_state": True,
-    "start_schedule": True,
-    "stop_running_schedule": True,
-    "start_sensor": True,
-    "stop_sensor": True,
-    "terminate_pipeline_execution": True,
-    "delete_pipeline_run": True,
-    "reload_repository_location": True,
-    "reload_workspace": True,
-    "wipe_assets": True,
-    "launch_partition_backfill": True,
-    "cancel_partition_backfill": True,
+EDITOR_PERMISSIONS: Dict[str, bool] = {
+    Permissions.LAUNCH_PIPELINE_EXECUTION: True,
+    Permissions.LAUNCH_PIPELINE_REEXECUTION: True,
+    Permissions.RECONCILE_SCHEDULER_STATE: True,
+    Permissions.START_SCHEDULE: True,
+    Permissions.STOP_RUNNING_SCHEDULE: True,
+    Permissions.START_SENSOR: True,
+    Permissions.STOP_SENSOR: True,
+    Permissions.TERMINATE_PIPELINE_EXECUTION: True,
+    Permissions.DELETE_PIPELINE_RUN: True,
+    Permissions.RELOAD_REPOSITORY_LOCATION: True,
+    Permissions.RELOAD_WORKSPACE: True,
+    Permissions.WIPE_ASSETS: True,
+    Permissions.LAUNCH_PARTITION_BACKFILL: True,
+    Permissions.CANCEL_PARTITION_BACKFILL: True,
 }
 
 

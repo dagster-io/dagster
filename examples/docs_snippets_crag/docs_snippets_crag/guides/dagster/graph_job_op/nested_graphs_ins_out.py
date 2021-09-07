@@ -1,0 +1,34 @@
+from dagster import In, Out, graph, op
+from dagster.core.definitions.input import GraphIn
+from dagster.core.definitions.output import GraphOut
+
+
+@op
+def do_something():
+    pass
+
+
+@op
+def one():
+    return 1
+
+
+@op(ins={"arg1": In(int)}, out=Out(int))
+def do_something_else(arg1):
+    return arg1
+
+
+@graph(ins={"arg1": GraphIn(int)}, out=GraphOut(int))
+def do_two_things(arg1):
+    do_something()
+    return do_something_else(arg1)
+
+
+@op
+def do_yet_more(arg1):
+    assert arg1 == 1
+
+
+@graph
+def do_it_all():
+    do_yet_more(do_two_things(one()))

@@ -33,7 +33,6 @@ class InputContext:
         resources (Optional[Resources]): The resources required by the resource that initializes the
             input manager. If using the :py:func:`@root_input_manager` decorator, these resources
             correspond to those requested with the `required_resource_keys` parameter.
-        asset_key (Optional[AssetKey]): The asset key attached to the InputDefinition.
     """
 
     def __init__(
@@ -48,7 +47,6 @@ class InputContext:
         log_manager: Optional["DagsterLogManager"] = None,
         resource_config: Optional[Dict[str, Any]] = None,
         resources: Optional[Union["Resources", Dict[str, Any]]] = None,
-        asset_key: Optional[AssetKey] = None,
         step_context: Optional["StepExecutionContext"] = None,
     ):
         from dagster.core.definitions.resource import Resources, IContainsGenerator
@@ -63,7 +61,6 @@ class InputContext:
         self._dagster_type = dagster_type
         self._log = log_manager
         self._resource_config = resource_config
-        self._asset_key = asset_key
         self._step_context = step_context
 
         if isinstance(resources, Resources):

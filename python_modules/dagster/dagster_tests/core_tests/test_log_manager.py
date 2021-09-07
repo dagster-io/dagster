@@ -1,12 +1,16 @@
+import logging
 import sys
 import textwrap
 
+import pytest
 from dagster import DagsterEvent
 from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.errors import DagsterUserCodeExecutionError, user_code_error_boundary
 from dagster.core.execution.plan.objects import ErrorSource, StepFailureData
 from dagster.core.execution.plan.outputs import StepOutputData, StepOutputHandle
 from dagster.core.log_manager import (
+    DagsterLogHandler,
+    DagsterLogManager,
     DagsterLoggingMetadata,
     DagsterMessageProps,
     construct_log_string,
@@ -157,3 +161,51 @@ def test_construct_log_string_with_error_raise_from():
     ).strip()
 
     assert expected_substr in log_string
+
+
+@pytest.mark.parametrize("use_handler", [True, False])
+def test_user_code_error_boundary_python_capture(use_handler):
+    class TestHandler(logging.Handler):
+        def __init__(self):
+            self.captured = []
+            super().__init__()
+
+        def emit(self, record):
+            self.captured.append(record)
+
+    capture_handler = TestHandler()
+    user_logger = logging.getLogger("user_logger")
+    user_logger.addHandler(capture_handler)
+
+    test_extra = {"foo": 1, "bar": {2: 3, "baz": 4}}
+
+    with user_code_error_boundary(
+        DagsterUserCodeExecutionError,
+        lambda: "Some Error Message",
+        log_manager=DagsterLogManager(
+            dagster_handler=DagsterLogHandler(
+                logging_metadata=DagsterLoggingMetadata(
+                    run_id="123456", pipeline_name="pipeline", step_key="some_step"
+                ),
+                loggers=[user_logger] if not use_handler else [],
+                handlers=[capture_handler] if use_handler else [],
+            ),
+            managed_loggers=[logging.getLogger("python_log")],
+        ),
+    ):
+        python_log = logging.getLogger("python_log")
+        python_log.setLevel(logging.INFO)
+
+        python_log.debug("debug")
+        python_log.critical("critical msg", extra=test_extra)
+
+    assert len(capture_handler.captured) == 1
+    captured_record = capture_handler.captured[0]
+
+    assert captured_record.name == "python_log" if use_handler else "user_logger"
+    assert captured_record.msg == "pipeline - 123456 - some_step - critical msg"
+    assert captured_record.levelno == logging.CRITICAL
+    assert captured_record.dagster_meta["orig_message"] == "critical msg"
+
+    for k, v in test_extra.items():
+        assert getattr(captured_record, k) == v

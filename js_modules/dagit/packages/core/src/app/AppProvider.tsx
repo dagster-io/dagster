@@ -23,7 +23,6 @@ import {FontFamily} from '../ui/styles';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
 
 import {AppContext} from './AppContext';
-import {errorLink} from './AppError';
 import {CustomAlertProvider} from './CustomAlertProvider';
 import {CustomConfirmationProvider} from './CustomConfirmationProvider';
 import {CustomTooltipProvider} from './CustomTooltipProvider';
@@ -31,7 +30,6 @@ import {LayoutProvider} from './LayoutProvider';
 import {PermissionsProvider} from './Permissions';
 import {patchCopyToRemoveZeroWidthUnderscores} from './Util';
 import {WebSocketProvider} from './WebSocketProvider';
-import {logLink, timeStartLink} from './apolloLinks';
 import {TimezoneProvider} from './time/TimezoneContext';
 
 // The solid sidebar and other UI elements insert zero-width spaces so solid names
@@ -78,8 +76,7 @@ const GlobalStyle = createGlobalStyle`
 interface Props {
   appCache: InMemoryCache;
   config: {
-    // todo dish: Make this non-optional.
-    apolloLinks?: ApolloLink[];
+    apolloLinks: ApolloLink[];
     basePath?: string;
     headers?: {[key: string]: string};
     origin: string;
@@ -88,13 +85,7 @@ interface Props {
 
 export const AppProvider: React.FC<Props> = (props) => {
   const {appCache, config} = props;
-  const {
-    // todo dish: Remove this default array.
-    apolloLinks = [logLink, errorLink, timeStartLink],
-    basePath = '',
-    headers = {},
-    origin,
-  } = config;
+  const {apolloLinks, basePath = '', headers = {}, origin} = config;
 
   const graphqlPath = `${basePath}/graphql`;
   const rootServerURI = `${origin}${basePath}`;

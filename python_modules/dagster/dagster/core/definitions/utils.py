@@ -2,6 +2,7 @@ import keyword
 import os
 import re
 from glob import glob
+from typing import Any, Dict, List, Tuple
 
 import pkg_resources
 import yaml
@@ -108,7 +109,7 @@ def validate_tags(tags):
     return frozentags(valid_tags)
 
 
-def config_from_files(config_files):
+def config_from_files(config_files: List[str]) -> Dict[str, Any]:
     """Constructs run config from YAML files.
 
     Args:
@@ -116,7 +117,7 @@ def config_from_files(config_files):
             to load and parse as the run config.
 
     Returns:
-        Dict[Str, Any]: A run config dictionary constructed from provided YAML files.
+        Dict[str, Any]: A run config dictionary constructed from provided YAML files.
 
     Raises:
         FileNotFoundError: When a config file produces no results
@@ -147,7 +148,7 @@ def config_from_files(config_files):
     return run_config
 
 
-def config_from_yaml_strings(yaml_strings):
+def config_from_yaml_strings(yaml_strings: List[str]) -> Dict[str, Any]:
     """Static constructor for run configs from YAML strings.
 
     Args:
@@ -160,7 +161,7 @@ def config_from_yaml_strings(yaml_strings):
         DagsterInvariantViolationError: When one of the YAML documents is invalid and has a
             parse error.
     """
-    yaml_strings = check.opt_list_param(yaml_strings, "yaml_strings", of_type=str)
+    yaml_strings = check.list_param(yaml_strings, "yaml_strings", of_type=str)
 
     try:
         run_config = merge_yaml_strings(yaml_strings)
@@ -172,7 +173,7 @@ def config_from_yaml_strings(yaml_strings):
     return run_config
 
 
-def config_from_pkg_resources(pkg_resource_defs):
+def config_from_pkg_resources(pkg_resource_defs: List[Tuple[str, str]]) -> Dict[str, Any]:
     """Load a run config from a package resource, using :py:func:`pkg_resources.resource_string`.
 
     Example:
@@ -198,7 +199,7 @@ def config_from_pkg_resources(pkg_resource_defs):
         DagsterInvariantViolationError: When one of the YAML documents is invalid and has a
             parse error.
     """
-    pkg_resource_defs = check.opt_list_param(pkg_resource_defs, "pkg_resource_defs", of_type=tuple)
+    pkg_resource_defs = check.list_param(pkg_resource_defs, "pkg_resource_defs", of_type=tuple)
 
     try:
         yaml_strings = [

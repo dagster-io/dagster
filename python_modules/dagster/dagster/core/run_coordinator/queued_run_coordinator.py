@@ -2,8 +2,9 @@ import logging
 import time
 
 from dagster import DagsterEvent, DagsterEventType, IntSource, String, check
+from dagster.builtins import Bool
 from dagster.config import Field
-from dagster.config.config_type import Array, Noneable
+from dagster.config.config_type import Array, Noneable, ScalarUnion
 from dagster.config.field_utils import Shape
 from dagster.core.events.log import EventLogEntry
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
@@ -53,7 +54,13 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
                         Shape(
                             {
                                 "key": String,
-                                "value": Field(String, is_required=False),
+                                "value": Field(
+                                    ScalarUnion(
+                                        scalar_type=String,
+                                        non_scalar_schema=Shape({"applyLimitPerUniqueValue": Bool}),
+                                    ),
+                                    is_required=False,
+                                ),
                                 "limit": Field(int),
                             }
                         )

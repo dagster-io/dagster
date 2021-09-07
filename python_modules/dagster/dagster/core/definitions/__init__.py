@@ -73,9 +73,11 @@ from .pipeline import PipelineDefinition
 from .pipeline_base import IPipeline
 from .pipeline_sensor import (
     PipelineFailureSensorContext,
+    RunFailureSensorContext,
     RunStatusSensorContext,
     RunStatusSensorDefinition,
     pipeline_failure_sensor,
+    run_failure_sensor,
     run_status_sensor,
 )
 from .preset import PresetDefinition

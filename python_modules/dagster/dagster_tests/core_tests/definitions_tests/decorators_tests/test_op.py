@@ -17,7 +17,6 @@ from dagster import (
     solid,
 )
 from dagster.core.definitions.op import OpDefinition
-from dagster.core.execution.execute import execute_in_process
 
 
 def execute_op_in_graph(an_op):
@@ -25,7 +24,7 @@ def execute_op_in_graph(an_op):
     def my_graph():
         an_op()
 
-    result = execute_in_process(my_graph)
+    result = my_graph.execute_in_process()
     return result
 
 
@@ -63,7 +62,7 @@ def test_ins():
     def my_graph():
         my_op(a=upstream1(), b=upstream2())
 
-    result = execute_in_process(my_graph)
+    result = my_graph.execute_in_process()
     assert result.success
 
     assert upstream1() == 5
@@ -163,7 +162,7 @@ def test_ins_dict():
     def my_graph():
         my_op(a=upstream1(), b=upstream2())
 
-    result = execute_in_process(my_graph)
+    result = my_graph.execute_in_process()
     assert result.success
 
     assert my_op(a=1, b="2") == 3
@@ -203,7 +202,7 @@ def test_nothing_in():
     def nothing_test():
         on_complete(noop())
 
-    result = execute_in_process(nothing_test)
+    result = nothing_test.execute_in_process()
     assert result.success
 
 
@@ -218,9 +217,8 @@ def test_op_config():
     def basic():
         my_op()
 
-    result = execute_in_process(
-        basic, run_config={"ops": {"basic": {"ops": {"my_op": {"config": {"conf_str": "foo"}}}}}}
-    )
+    result = basic.execute_in_process(config={"my_op": {"config": {"conf_str": "foo"}}})
+
     assert result.success
 
     result = basic.to_job(
@@ -404,8 +402,8 @@ def test_solid_and_op_config_error_messages():
 
     with pytest.raises(
         DagsterInvalidConfigError,
-        match='Missing required config entry "ops" at the root. Sample config for missing '
-        "entry: {'ops': {'my_graph': {'ops': {'my_op': {'config': {'foo': '...'}}}}}}",
+        match='Missing required config entry "my_op" at path root:ops. Sample config for missing '
+        "entry: {'my_op': {'config': {'foo': '...'}}}",
     ):
         my_graph.execute_in_process()
 
@@ -422,10 +420,10 @@ def test_solid_and_op_config_error_messages():
     with pytest.raises(
         DagsterInvalidConfigError,
         match='Missing required config entry "solids" at the root. Sample config for missing '
-        "entry: {'solids': {'my_graph_with_solid': {'solids': {'my_solid': {'config': {'foo': '...'"
-        "}}}}}}",
+        "entry: {'solids': {'my_solid': {'config': {'foo': '...'"
+        "}}}}",
     ):
-        my_graph_with_solid.execute_in_process()
+        my_graph_with_solid.to_job().execute_in_process()
 
 
 def test_error_message_mixed_ops_and_solids():

@@ -555,6 +555,7 @@ class PipelineDefinition:
         self,
         run_config: Optional[Dict[str, Any]] = None,
         instance: Optional["DagsterInstance"] = None,
+        raise_on_error: bool = True,
     ) -> "InProcessGraphResult":
         """
         (Experimental) Execute the "Job" (single mode pipeline) in-process, gathering results in-memory.
@@ -574,7 +575,7 @@ class PipelineDefinition:
 
         """
         from dagster.core.definitions.executor import execute_in_process_executor
-        from dagster.core.execution.execute import core_execute_in_process
+        from dagster.core.execution.execute_in_process import core_execute_in_process
 
         run_config = check.opt_dict_param(run_config, "run_config")
         check.invariant(
@@ -588,7 +589,7 @@ class PipelineDefinition:
         in_proc_mode = ModeDefinition(
             name="in_process",
             executor_defs=[execute_in_process_executor],
-            resource_defs=_swap_default_io_man(base_mode.resource_defs, self),
+            resource_defs=swap_default_io_man(base_mode.resource_defs, self),
             logger_defs=base_mode.loggers,
             _config_mapping=base_mode.config_mapping,
             _partitioned_config=base_mode.partitioned_config,
@@ -609,6 +610,7 @@ class PipelineDefinition:
             run_config=run_config,
             instance=instance,
             output_capturing_enabled=True,
+            raise_on_error=raise_on_error,
         )
 
 
@@ -1091,7 +1093,7 @@ def _create_run_config_schema(
     )
 
 
-def _swap_default_io_man(resources: Dict[str, ResourceDefinition], job: PipelineDefinition):
+def swap_default_io_man(resources: Dict[str, ResourceDefinition], job: PipelineDefinition):
     """
     Used to create the user facing experience of the default io_manager
     switching to in-memory when using execute_in_process.

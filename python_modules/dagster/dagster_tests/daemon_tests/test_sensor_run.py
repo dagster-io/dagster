@@ -19,6 +19,7 @@ from dagster import (
     pipeline,
     pipeline_failure_sensor,
     repository,
+    run_failure_sensor,
     solid,
 )
 from dagster.core.definitions.decorators.sensor import asset_sensor, sensor
@@ -113,6 +114,14 @@ def failure_pipeline():
     failure_solid()
 
 
+@graph
+def failure_graph():
+    failure_solid()
+
+
+failure_job = failure_graph.to_job()
+
+
 @sensor(pipeline_name="the_pipeline")
 def simple_sensor(context):
     if not context.last_completion_time or not int(context.last_completion_time) % 2:
@@ -203,6 +212,11 @@ def my_pipeline_failure_sensor(context):
     assert isinstance(context.instance, DagsterInstance)
 
 
+@run_failure_sensor(job_selection=[failure_job])
+def my_run_failure_sensor_filtered(context):
+    assert isinstance(context.instance, DagsterInstance)
+
+
 @run_status_sensor(pipeline_run_status=PipelineRunStatus.SUCCESS)
 def my_pipeline_success_sensor(context):
     assert isinstance(context.instance, DagsterInstance)
@@ -227,8 +241,10 @@ def the_repo():
         asset_foo_sensor,
         asset_job_sensor,
         my_pipeline_failure_sensor,
+        my_run_failure_sensor_filtered,
         my_pipeline_success_sensor,
         failure_pipeline,
+        failure_job,
         hanging_pipeline,
     ]
 
@@ -1188,6 +1204,91 @@ def test_pipeline_failure_sensor(external_repo_context):
 
             ticks = instance.get_job_ticks(failure_sensor.get_external_origin_id())
             assert len(ticks) == 2
+            validate_tick(
+                ticks[0],
+                failure_sensor,
+                freeze_datetime,
+                JobTickStatus.SUCCESS,
+            )
+
+
+@pytest.mark.parametrize("external_repo_context", repos())
+def test_run_failure_sensor_filtered(external_repo_context):
+    freeze_datetime = pendulum.now()
+    with instance_with_sensors(external_repo_context) as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+            failure_sensor = external_repo.get_external_sensor("my_run_failure_sensor_filtered")
+            instance.start_sensor(failure_sensor)
+
+            evaluate_sensors(instance, workspace)
+
+            ticks = instance.get_job_ticks(failure_sensor.get_external_origin_id())
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                failure_sensor,
+                freeze_datetime,
+                JobTickStatus.SKIPPED,
+            )
+
+            freeze_datetime = freeze_datetime.add(seconds=60)
+            time.sleep(1)
+
+        with pendulum.test(freeze_datetime):
+            external_pipeline = external_repo.get_full_external_pipeline("failure_pipeline")
+            run = instance.create_run_for_pipeline(
+                failure_pipeline,
+                external_pipeline_origin=external_pipeline.get_external_origin(),
+                pipeline_code_origin=external_pipeline.get_python_origin(),
+            )
+            instance.submit_run(run.run_id, workspace)
+            wait_for_all_runs_to_finish(instance)
+            run = instance.get_runs()[0]
+            assert run.status == PipelineRunStatus.FAILURE
+            freeze_datetime = freeze_datetime.add(seconds=60)
+
+        with pendulum.test(freeze_datetime):
+
+            # should not fire the failure sensor (filtered to failure job)
+            evaluate_sensors(instance, workspace)
+
+            ticks = instance.get_job_ticks(failure_sensor.get_external_origin_id())
+            assert len(ticks) == 2
+            validate_tick(
+                ticks[0],
+                failure_sensor,
+                freeze_datetime,
+                JobTickStatus.SKIPPED,
+            )
+
+            freeze_datetime = freeze_datetime.add(seconds=60)
+            time.sleep(1)
+
+        with pendulum.test(freeze_datetime):
+            external_pipeline = external_repo.get_full_external_pipeline("failure_graph")
+            run = instance.create_run_for_pipeline(
+                failure_job,
+                external_pipeline_origin=external_pipeline.get_external_origin(),
+                pipeline_code_origin=external_pipeline.get_python_origin(),
+            )
+            instance.submit_run(run.run_id, workspace)
+            wait_for_all_runs_to_finish(instance)
+            run = instance.get_runs()[0]
+            assert run.status == PipelineRunStatus.FAILURE
+
+            freeze_datetime = freeze_datetime.add(seconds=60)
+
+        with pendulum.test(freeze_datetime):
+
+            # should not fire the failure sensor (filtered to failure job)
+            evaluate_sensors(instance, workspace)
+
+            ticks = instance.get_job_ticks(failure_sensor.get_external_origin_id())
+            assert len(ticks) == 3
             validate_tick(
                 ticks[0],
                 failure_sensor,

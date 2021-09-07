@@ -103,6 +103,7 @@ def _trigger_hook(
                 HookExecutionError,
                 lambda: "Error occurred during the execution of hook_fn triggered for solid "
                 '"{solid_name}"'.format(solid_name=step_context.solid.name),
+                log_manager=hook_context.log,
             ):
                 hook_execution_result = hook_def.hook_fn(hook_context, step_event_list)
 

@@ -1,22 +1,14 @@
 import os
 
-from dagster import (
-    ModeDefinition,
-    PresetDefinition,
-    ResourceDefinition,
-    fs_io_manager,
-    mem_io_manager,
-    pipeline,
-)
+from dagster import ModeDefinition, PresetDefinition, ResourceDefinition, fs_io_manager, pipeline
 from dagster.seven.temp_dir import get_system_temp_directory
 from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 from dagster_pyspark import pyspark_resource
 from hacker_news.resources.hn_resource import hn_api_subsample_client, hn_snapshot_client
 from hacker_news.resources.parquet_io_manager import partitioned_parquet_io_manager
 from hacker_news.resources.snowflake_io_manager import time_partitioned_snowflake_io_manager
-from hacker_news.solids.download_items import HN_ACTION_SCHEMA, download_items, split_types
+from hacker_news.solids.download_items import build_comments, build_stories, download_items
 from hacker_news.solids.id_range_for_time import id_range_for_time
-from hacker_news.solids.upload_to_database import make_upload_to_database_solid
 
 # the configuration we'll need to make our Snowflake-based IOManager work
 SNOWFLAKE_CONF = {
@@ -28,16 +20,23 @@ SNOWFLAKE_CONF = {
 }
 
 # the configuration we'll need to make spark able to read from / write to s3
-S3_SPARK_CONF = {
-    "spark_conf": {
-        "spark.jars.packages": "com.amazonaws:aws-java-sdk:1.7.4,org.apache.hadoop:hadoop-aws:2.7.7",
-        "spark.hadoop.fs.s3.impl": "org.apache.hadoop.fs.s3native.NativeS3FileSystem",
-        "spark.hadoop.fs.s3.awsAccessKeyId": os.getenv("AWS_ACCESS_KEY_ID", ""),
-        "spark.hadoop.fs.s3.awsSecretAccessKey": os.getenv("AWS_SECRET_ACCESS_KEY", ""),
-        "spark.hadoop.fs.s3.buffer.dir": "/tmp",
+configured_pyspark = pyspark_resource.configured(
+    {
+        "spark_conf": {
+            "spark.jars.packages": ",".join(
+                [
+                    "net.snowflake:snowflake-jdbc:3.8.0",
+                    "net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0",
+                    "com.amazonaws:aws-java-sdk:1.7.4,org.apache.hadoop:hadoop-aws:2.7.7",
+                ]
+            ),
+            "spark.hadoop.fs.s3.impl": "org.apache.hadoop.fs.s3native.NativeS3FileSystem",
+            "spark.hadoop.fs.s3.awsAccessKeyId": os.getenv("AWS_ACCESS_KEY_ID", ""),
+            "spark.hadoop.fs.s3.awsSecretAccessKey": os.getenv("AWS_SECRET_ACCESS_KEY", ""),
+            "spark.hadoop.fs.s3.buffer.dir": "/tmp",
+        }
     }
-}
-
+)
 
 MODE_TEST = ModeDefinition(
     name="test_local_data",
@@ -47,29 +46,9 @@ MODE_TEST = ModeDefinition(
         "partition_start": ResourceDefinition.string_resource(),
         "partition_end": ResourceDefinition.string_resource(),
         "parquet_io_manager": partitioned_parquet_io_manager,
-        "db_io_manager": mem_io_manager,
-        "pyspark": pyspark_resource,
+        "warehouse_io_manager": partitioned_parquet_io_manager,
+        "pyspark": configured_pyspark,
         "hn_client": hn_snapshot_client,
-    },
-)
-
-
-MODE_LOCAL = ModeDefinition(
-    name="local_live_data",
-    description=(
-        "This mode queries live HN data but does all writes locally. "
-        "It is meant to be used on a local machine"
-    ),
-    resource_defs={
-        "io_manager": fs_io_manager,
-        "partition_start": ResourceDefinition.string_resource(),
-        "partition_end": ResourceDefinition.string_resource(),
-        "parquet_io_manager": partitioned_parquet_io_manager.configured(
-            {"base_path": get_system_temp_directory()}
-        ),
-        "db_io_manager": fs_io_manager,
-        "pyspark": pyspark_resource,
-        "hn_client": hn_api_subsample_client.configured({"sample_rate": 10}),
     },
 )
 
@@ -88,8 +67,8 @@ MODE_STAGING = ModeDefinition(
         "parquet_io_manager": partitioned_parquet_io_manager.configured(
             {"base_path": "s3://hackernews-elementl-dev"}
         ),
-        "db_io_manager": time_partitioned_snowflake_io_manager.configured(SNOWFLAKE_CONF),
-        "pyspark": pyspark_resource.configured(S3_SPARK_CONF),
+        "warehouse_io_manager": time_partitioned_snowflake_io_manager.configured(SNOWFLAKE_CONF),
+        "pyspark": configured_pyspark,
         "hn_client": hn_api_subsample_client.configured({"sample_rate": 10}),
         "base_url": ResourceDefinition.hardcoded_resource("http://demo.elementl.dev", "Dagit URL"),
     },
@@ -110,8 +89,8 @@ MODE_PROD = ModeDefinition(
         "parquet_io_manager": partitioned_parquet_io_manager.configured(
             {"base_path": "s3://hackernews-elementl-prod"}
         ),
-        "db_io_manager": time_partitioned_snowflake_io_manager.configured(SNOWFLAKE_CONF),
-        "pyspark": pyspark_resource.configured(S3_SPARK_CONF),
+        "warehouse_io_manager": time_partitioned_snowflake_io_manager.configured(SNOWFLAKE_CONF),
+        "pyspark": configured_pyspark,
         "hn_client": hn_api_subsample_client.configured({"sample_rate": 10}),
     },
 )
@@ -127,23 +106,11 @@ PRESET_TEST = PresetDefinition(
     run_config={
         "resources": dict(
             parquet_io_manager={"config": {"base_path": get_system_temp_directory()}},
+            warehouse_io_manager={"config": {"base_path": get_system_temp_directory()}},
             **DEFAULT_PARTITION_RESOURCE_CONFIG,
         ),
     },
     mode="test_local_data",
-)
-
-# Here, we generate solids by use of the make_upload_to_database_solid factory method. This pattern
-# is used to create solids with similar properties (in this case, they perform the same exact
-# function, only differing in what table name they attach to their Output's metadata), without having
-# to duplicate our code.
-upload_comments = make_upload_to_database_solid(
-    table="hackernews.comments",
-    schema=HN_ACTION_SCHEMA,
-)
-upload_stories = make_upload_to_database_solid(
-    table="hackernews.stories",
-    schema=HN_ACTION_SCHEMA,
 )
 
 
@@ -156,7 +123,6 @@ upload_stories = make_upload_to_database_solid(
     "the corresponding stories or comments Snowflake table",
     mode_defs=[
         MODE_TEST,
-        MODE_LOCAL,
         MODE_STAGING,
         MODE_PROD,
     ],
@@ -172,6 +138,6 @@ upload_stories = make_upload_to_database_solid(
     preset_defs=[PRESET_TEST],
 )
 def download_pipeline():
-    comments, stories = split_types(download_items(id_range_for_time()))
-    upload_comments(comments)
-    upload_stories(stories)
+    items = download_items(id_range_for_time())
+    build_comments(items)
+    build_stories(items)

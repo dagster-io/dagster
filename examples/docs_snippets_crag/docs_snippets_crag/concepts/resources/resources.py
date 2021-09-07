@@ -1,9 +1,13 @@
 """isort:skip_file"""
 # pylint: disable=unused-argument
-from dagster import ModeDefinition, ResourceDefinition, execute_pipeline, pipeline, resource, solid
+# pylint: disable=reimported
+from dagster import ResourceDefinition, graph
 
 
 # start_resource_example
+from dagster import resource
+
+
 class ExternalCerealFetcher:
     def fetch_new_cereals(self, start_ts, end_ts):
         pass
@@ -16,19 +20,23 @@ def cereal_fetcher(init_context):
 
 # end_resource_example
 
-# start_solid_with_resources_example
+# start_op_with_resources_example
+from dagster import op
 
 CREATE_TABLE_1_QUERY = "create table_1 as select * from table_0"
 
 
-@solid(required_resource_keys={"database"})
-def solid_requires_resources(context):
+@op(required_resource_keys={"database"})
+def op_requires_resources(context):
     context.resources.database.execute_query(CREATE_TABLE_1_QUERY)
 
 
-# end_solid_with_resources_example
+# end_op_with_resources_example
 
 # start_resource_testing
+from dagster import resource
+
+
 @resource
 def my_resource(_):
     return "foo"
@@ -41,12 +49,12 @@ def test_my_resource():
 # end_resource_testing
 
 # start_resource_testing_with_context
+from dagster import build_init_resource_context, resource
+
+
 @resource(required_resource_keys={"foo"}, config_schema={"bar": str})
 def my_resource_requires_context(init_context):
     return init_context.resources.foo, init_context.resource_config["bar"]
-
-
-from dagster import build_init_resource_context
 
 
 def test_my_resource_with_context():
@@ -60,6 +68,7 @@ def test_my_resource_with_context():
 
 # start_cm_resource_testing
 from contextlib import contextmanager
+from dagster import resource
 
 
 @resource
@@ -78,52 +87,69 @@ def test_cm_resource():
 resource_a = ResourceDefinition.hardcoded_resource(1)
 resource_b = ResourceDefinition.hardcoded_resource(2)
 
-# start_mode_example
-mode_def_ab = ModeDefinition(
-    "ab_mode",
-    resource_defs={
-        "a": resource_a,
-        "b": resource_b,
-    },
-)
-# end_mode_example
 
-mode_def_c = ModeDefinition("c_mode", resource_defs={"a": resource_a})
-
-
-@solid(required_resource_keys={"a"})
-def basic_solid(_):
+@op(required_resource_keys={"a", "b"})
+def basic_op(_):
     pass
 
 
-# start_pipeline_example
-@pipeline(mode_defs=[mode_def_ab, mode_def_c])
-def pipeline_with_mode():
-    basic_solid()
+# start_job_example
+from dagster import graph
 
 
-# end_pipeline_example
+@graph
+def basic_graph():
+    basic_op()
 
-# start_execute_example
-execute_pipeline(pipeline_with_mode, mode="ab_mode")
-# end_execute_example
+
+job = basic_graph.to_job(resource_defs={"a": resource_a, "b": resource_b})
+
+# end_job_example
+
+
+class Client:
+    def __init__(self, _user, _password):
+        pass
+
 
 # start_resource_dep_example
+from dagster import resource
+
+
 @resource
-def foo_resource(_):
-    return "foo"
+def credentials():
+    return ("bad_username", "easy_password")
 
 
-@resource(required_resource_keys={"foo"})
-def emit_foo(init_context):
-    return init_context.resources.foo
+@resource(required_resource_keys={"credentials"})
+def client(init_context):
+    username, password = init_context.resources.credentials
+    return Client(username, password)
 
 
 # end_resource_dep_example
 
-# start_resource_dep_mode
-ModeDefinition(resource_defs={"foo": foo_resource, "emit": emit_foo})
-# end_resource_dep_mode
+# start_resource_dep_graph
+from dagster import graph, op
+
+
+@op(required_resource_keys={"client"})
+def get_client(context):
+    return context.resources.client
+
+
+@graph
+def connect():
+    return get_client()
+
+
+# end_resource_dep_graph
+
+# start_resource_dep_job
+
+connect_job = connect.to_job(resource_defs={"credentials": credentials, "client": client})
+
+# end_resource_dep_job
 
 # start_resource_config
 class DatabaseConnection:

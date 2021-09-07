@@ -36,7 +36,7 @@ from dagster.core.errors import DagsterExecutionInterruptedError, DagsterInvaria
 from dagster.seven import IS_WINDOWS, multiprocessing
 from dagster.seven.abc import Mapping
 
-from .alert import make_email_on_pipeline_failure_sensor
+from .alert import make_email_on_pipeline_failure_sensor, make_email_on_run_failure_sensor
 from .merger import merge_dicts
 from .yaml_utils import load_yaml_from_glob_list, load_yaml_from_globs, load_yaml_from_path
 
