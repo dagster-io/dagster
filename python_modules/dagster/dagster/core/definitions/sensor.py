@@ -366,7 +366,7 @@ class SensorDefinition(ISensorDefinition):
         super(SensorDefinition, self).__init__(
             name=name,
             evaluation_fn=evaluation_fn,
-            targets=[target],
+            targets=[target] if target else None,
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
             decorated_fn=decorated_fn,

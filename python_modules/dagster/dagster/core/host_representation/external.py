@@ -1,7 +1,6 @@
-from typing import Optional
 import warnings
 from collections import OrderedDict
-from typing import Sequence
+from typing import Optional, Sequence
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
@@ -488,11 +487,30 @@ class ExternalSensor:
     def name(self):
         return self._external_sensor_data.name
 
+    @property
+    def pipeline_name(self):
+        target = self._get_single_target()
+        return target.pipeline_name
+
+    @property
+    def mode(self):
+        target = self._get_single_target()
+        return target.mode
+
+    @property
+    def solid_selection(self):
+        target = self._get_single_target()
+        return target.solid_selection
+
+    def _get_single_target(self):
+        check.invariant(len(self._external_sensor_data.target_dict.values()) <= 1)
+        return list(self._external_sensor_data.target_dict.values())[0]
+
     def get_target_data(self, pipeline_name: Optional[str]) -> ExternalTargetData:
         if pipeline_name:
             return self._external_sensor_data.target_dict[pipeline_name]
         else:
-            return list(self._external_sensor_data.target_dict.values())[0]
+            return self._get_single_target()
 
     @property
     def description(self):
