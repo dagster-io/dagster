@@ -514,6 +514,7 @@ class GraphDefinition(NodeDefinition):
         config: Any = None,
         instance: Optional["DagsterInstance"] = None,
         resources: Optional[Dict[str, Any]] = None,
+        raise_on_error: bool = True,
     ):
         """
         Execute this graph in-process, collecting results in-memory.
@@ -571,6 +572,7 @@ class GraphDefinition(NodeDefinition):
             run_config=run_config,
             instance=instance,
             output_capturing_enabled=True,
+            raise_on_error=raise_on_error,
         )
 
 

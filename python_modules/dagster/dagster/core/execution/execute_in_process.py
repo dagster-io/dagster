@@ -31,6 +31,7 @@ def core_execute_in_process(
     ephemeral_pipeline: PipelineDefinition,
     instance: Optional[DagsterInstance],
     output_capturing_enabled: bool,
+    raise_on_error: bool,
 ):
     pipeline_def = ephemeral_pipeline
     mode_def = pipeline_def.get_mode_definition()
@@ -59,6 +60,7 @@ def core_execute_in_process(
                 run_config=run_config,
                 executor_defs=None,
                 output_capture=recorder if output_capturing_enabled else None,
+                raise_on_error=raise_on_error,
             ),
         )
         event_list = list(_execute_run_iterable)
