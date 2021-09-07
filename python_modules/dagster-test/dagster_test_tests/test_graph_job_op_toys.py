@@ -127,7 +127,8 @@ def test_pyspark_assets_job():
                 "source_data_dir": {
                     "config": {
                         "dir": file_relative_path(
-                            __file__, "../dagster_test/toys/pyspark_assets/asset_job_files"
+                            __file__,
+                            "../dagster_test/graph_job_op_toys/pyspark_assets/asset_job_files",
                         ),
                     }
                 },
