@@ -58,7 +58,7 @@ if TYPE_CHECKING:
     from .solid import SolidDefinition
     from .partition import PartitionedConfig
     from .executor import ExecutorDefinition
-    from .pipeline import PipelineDefinition
+    from .job import JobDefinition
     from dagster.core.execution.execute_in_process import InProcessGraphResult
 
 
@@ -373,7 +373,7 @@ class GraphDefinition(NodeDefinition):
         executor_def: Optional["ExecutorDefinition"] = None,
         hooks: Optional[AbstractSet[HookDefinition]] = None,
         version_strategy: Optional[VersionStrategy] = None,
-    ) -> "PipelineDefinition":
+    ) -> "JobDefinition":
         """
         Make this graph in to an executable Job by providing remaining components required for execution.
 
@@ -418,7 +418,7 @@ class GraphDefinition(NodeDefinition):
         Returns:
             PipelineDefinition: The "Job" currently implemented as a single-mode pipeline
         """
-        from .pipeline import PipelineDefinition
+        from .job import JobDefinition
         from .partition import PartitionedConfig
         from .executor import ExecutorDefinition, multiprocess_executor
 
@@ -461,19 +461,17 @@ class GraphDefinition(NodeDefinition):
                 f"is an object of type {type(config)}"
             )
 
-        return PipelineDefinition(
+        return JobDefinition(
             name=job_name,
             description=description,
             graph_def=self,
-            mode_defs=[
-                ModeDefinition(
-                    resource_defs=resource_defs_with_defaults,
-                    logger_defs=logger_defs,
-                    executor_defs=[executor_def],
-                    _config_mapping=config_mapping,
-                    _partitioned_config=partitioned_config,
-                )
-            ],
+            mode_def=ModeDefinition(
+                resource_defs=resource_defs_with_defaults,
+                logger_defs=logger_defs,
+                executor_defs=[executor_def],
+                _config_mapping=config_mapping,
+                _partitioned_config=partitioned_config,
+            ),
             preset_defs=presets,
             tags=tags,
             hook_defs=hooks,
@@ -514,6 +512,7 @@ class GraphDefinition(NodeDefinition):
         config: Any = None,
         instance: Optional["DagsterInstance"] = None,
         resources: Optional[Dict[str, Any]] = None,
+        raise_on_error: bool = True,
     ):
         """
         Execute this graph in-process, collecting results in-memory.
@@ -571,6 +570,7 @@ class GraphDefinition(NodeDefinition):
             run_config=run_config,
             instance=instance,
             output_capturing_enabled=True,
+            raise_on_error=raise_on_error,
         )
 
 

@@ -55,6 +55,7 @@ export const PipelineExplorer: React.FC<PipelineExplorerProps> = (props) => {
     repoAddress,
   } = props;
   const [highlighted, setHighlighted] = React.useState('');
+  const {flagPipelineModeTuples} = useFeatureFlags();
 
   const handleQueryChange = (solidsQuery: string) => {
     onChangeExplorerPath({...explorerPath, solidsQuery}, 'replace');
@@ -172,7 +173,7 @@ export const PipelineExplorer: React.FC<PipelineExplorerProps> = (props) => {
               <GraphQueryInput
                 items={solids}
                 value={explorerPath.solidsQuery}
-                placeholder="Type a Solid Subset"
+                placeholder={flagPipelineModeTuples ? 'Type an op subset' : 'Type a solid subset'}
                 onChange={handleQueryChange}
               />
             </PipelineGraphQueryInputContainer>

@@ -2,6 +2,7 @@ import {gql} from '@apollo/client';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {useFeatureFlags} from '../app/Flags';
 import {Description} from '../pipelines/Description';
 import {SidebarSection, SidebarSubhead, SidebarTitle} from '../pipelines/SidebarComponents';
 import {Box} from '../ui/Box';
@@ -15,12 +16,14 @@ interface ITypeExplorerProps {
 
 export const TypeExplorer: React.FC<ITypeExplorerProps> = (props) => {
   const {name, inputSchemaType, outputSchemaType, description} = props.type;
+  const {flagPipelineModeTuples} = useFeatureFlags();
   return (
     <div>
       <SidebarSubhead />
       <Box padding={12}>
         <SidebarTitle>
-          <Link to="?tab=types">Pipeline Types</Link> {'>'} {name}
+          <Link to="?tab=types">{flagPipelineModeTuples ? 'Graph types' : 'Pipeline types'}</Link>{' '}
+          {'>'} {name}
         </SidebarTitle>
       </Box>
       <SidebarSection title={'Description'}>

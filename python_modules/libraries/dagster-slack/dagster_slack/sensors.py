@@ -2,12 +2,12 @@ from typing import Callable, Dict, List, Optional, Union
 
 from dagster.core.definitions import GraphDefinition, PipelineDefinition
 from dagster.core.definitions.pipeline_sensor import (
-    JobFailureSensorContext,
     PipelineFailureSensorContext,
-    job_failure_sensor,
+    RunFailureSensorContext,
     pipeline_failure_sensor,
+    run_failure_sensor,
 )
-from slack import WebClient
+from slack_sdk import WebClient
 
 
 def _default_failure_message(context: PipelineFailureSensorContext) -> str:
@@ -102,11 +102,11 @@ def make_slack_on_pipeline_failure_sensor(
     return slack_on_pipeline_failure
 
 
-def make_slack_on_job_failure_sensor(
+def make_slack_on_run_failure_sensor(
     channel: str,
     slack_token: str,
-    text_fn: Callable[[JobFailureSensorContext], str] = _default_failure_message,
-    blocks_fn: Callable[[JobFailureSensorContext], List[Dict]] = None,
+    text_fn: Callable[[RunFailureSensorContext], str] = _default_failure_message,
+    blocks_fn: Callable[[RunFailureSensorContext], List[Dict]] = None,
     name: Optional[str] = None,
     dagit_base_url: Optional[str] = None,
     job_selection: Optional[List[Union[PipelineDefinition, GraphDefinition]]] = None,
@@ -118,16 +118,16 @@ def make_slack_on_job_failure_sensor(
         slack_token (str): The slack token.
             Tokens are typically either user tokens or bot tokens. More in the Slack API
             documentation here: https://api.slack.com/docs/token-types
-        text_fn (Optional(Callable[[JobFailureSensorContext], str])): Function which
-            takes in the ``JobFailureSensorContext`` and outputs the message you want to send.
+        text_fn (Optional(Callable[[RunFailureSensorContext], str])): Function which
+            takes in the ``RunFailureSensorContext`` and outputs the message you want to send.
             Defaults to a text message that contains error message, pipeline name, and run ID.
             The usage of the `text_fn` changes depending on whether you're using `blocks_fn`. If you
             are using `blocks_fn`, this is used as a fallback string to display in notifications. If
             you aren't, this is the main body text of the message. It can be formatted as plain text,
             or with mrkdwn.
             See more details in https://api.slack.com/methods/chat.postMessage#text_usage
-        blocks_fn (Callable[[JobFailureSensorContext], List[Dict]]): Function which takes in
-            the ``JobFailureSensorContext`` and outputs the message blocks you want to send.
+        blocks_fn (Callable[[RunFailureSensorContext], List[Dict]]): Function which takes in
+            the ``RunFailureSensorContext`` and outputs the message blocks you want to send.
             See information about Blocks in https://api.slack.com/reference/block-kit/blocks
         name: (Optional[str]): The name of the sensor. Defaults to "slack_on_pipeline_failure".
         dagit_base_url: (Optional[str]): The base url of your Dagit instance. Specify this to allow
@@ -140,24 +140,24 @@ def make_slack_on_job_failure_sensor(
 
         .. code-block:: python
 
-            slack_on_job_failure = make_slack_on_job_failure_sensor(
+            slack_on_run_failure = make_slack_on_run_failure_sensor(
                 "#my_channel",
                 os.getenv("MY_SLACK_TOKEN")
             )
 
             @repository
             def my_repo():
-                return [my_job + slack_on_job_failure]
+                return [my_job + slack_on_run_failure]
 
         .. code-block:: python
 
-            def my_message_fn(context: JobFailureSensorContext) -> str:
+            def my_message_fn(context: RunFailureSensorContext) -> str:
                 return (
                     f"Job {context.pipeline_run.pipeline_name} failed!"
                     f"Error: {context.failure_event.message}"
                 )
 
-            slack_on_job_failure = make_slack_on_job_failure_sensor(
+            slack_on_run_failure = make_slack_on_run_failure_sensor(
                 channel="#my_channel",
                 slack_token=os.getenv("MY_SLACK_TOKEN"),
                 message_fn=my_message_fn,
@@ -169,8 +169,8 @@ def make_slack_on_job_failure_sensor(
 
     slack_client = WebClient(token=slack_token)
 
-    @job_failure_sensor(name=name, job_selection=job_selection)
-    def slack_on_job_failure(context: JobFailureSensorContext):
+    @run_failure_sensor(name=name, job_selection=job_selection)
+    def slack_on_run_failure(context: RunFailureSensorContext):
         text = text_fn(context)
         blocks = blocks_fn(context) if blocks_fn else None
         if dagit_base_url:
@@ -180,4 +180,4 @@ def make_slack_on_job_failure_sensor(
 
         slack_client.chat_postMessage(channel=channel, text=text, blocks=blocks)
 
-    return slack_on_job_failure
+    return slack_on_run_failure

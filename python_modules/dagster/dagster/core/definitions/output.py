@@ -79,13 +79,10 @@ class OutputDefinition:
         if asset_key:
             experimental_arg_warning("asset_key", "OutputDefinition.__init__")
 
-        if callable(asset_key):
-            self._asset_key_fn = asset_key
-        elif asset_key is not None:
-            asset_key = check.opt_inst_param(asset_key, "asset_key", AssetKey)
-            self._asset_key_fn = lambda _: asset_key
-        else:
-            self._asset_key_fn = None
+        if not callable(asset_key):
+            check.opt_inst_param(asset_key, "asset_key", AssetKey)
+
+        self._asset_key = asset_key
 
         if asset_partitions:
             experimental_arg_warning("asset_partitions", "OutputDefinition.__init__")
@@ -137,7 +134,14 @@ class OutputDefinition:
 
     @property
     def is_asset(self):
-        return self._asset_key_fn is not None
+        return self._asset_key is not None
+
+    @property
+    def hardcoded_asset_key(self) -> Optional[AssetKey]:
+        if not callable(self._asset_key):
+            return self._asset_key
+        else:
+            return None
 
     def get_asset_key(self, context) -> Optional[AssetKey]:
         """Get the AssetKey associated with this OutputDefinition for the given
@@ -145,12 +149,12 @@ class OutputDefinition:
 
         Args:
             context (OutputContext): The OutputContext that this OutputDefinition is being evaluated
-            in
+                in
         """
-        if self._asset_key_fn is None:
-            return None
-
-        return self._asset_key_fn(context)
+        if callable(self._asset_key):
+            return self._asset_key(context)
+        else:
+            return self.hardcoded_asset_key
 
     def get_asset_partitions(self, context) -> Optional[Set[str]]:
         """Get the set of partitions associated with this OutputDefinition for the given
@@ -206,7 +210,7 @@ class OutputDefinition:
             is_required=self._is_required,
             io_manager_key=self._manager_key,
             metadata=self._metadata,
-            asset_key=self._asset_key_fn,
+            asset_key=self._asset_key,
             asset_partitions=self._asset_partitions_fn,
         )
 
@@ -386,4 +390,40 @@ class DynamicOut(Out):
             metadata=self.metadata,
             asset_key=self.asset_key,
             asset_partitions=self.asset_partitions,
+        )
+
+
+class GraphOut(
+    NamedTuple(
+        "_GraphOut",
+        [
+            ("dagster_type", Union[DagsterType, Type[NoValueSentinel]]),
+            ("description", Optional[str]),
+        ],
+    )
+):
+    """
+    Experimental replacement for :py:class:`OutputDefinition` on graphs intended to decrease verbosity.
+    It represents the information about the outputs that the graph maps.
+
+    Args:
+        dagster_type (Optional[Union[Type, DagsterType]]]):
+            The type of this output. Should only be set if the correct type can not
+            be inferred directly from the type signature of the decorated function.
+        description (Optional[str]): Human-readable description of the output.
+    """
+
+    def __new__(cls, dagster_type=NoValueSentinel, description=None):
+        return super(GraphOut, cls).__new__(
+            cls,
+            dagster_type=dagster_type,
+            description=description,
+        )
+
+    def to_definition(self, name: Optional[str]) -> "OutputDefinition":
+        dagster_type = self.dagster_type if self.dagster_type is not NoValueSentinel else None
+        return OutputDefinition(
+            dagster_type=dagster_type,
+            name=name,
+            description=self.description,
         )

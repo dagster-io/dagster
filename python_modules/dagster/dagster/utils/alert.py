@@ -8,7 +8,7 @@ from dagster.core.errors import DagsterInvalidDefinitionError
 if TYPE_CHECKING:
     from dagster.core.definitions.pipeline_sensor import (
         PipelineFailureSensorContext,
-        JobFailureSensorContext,
+        RunFailureSensorContext,
     )
     from dagster.core.definitions.graph import GraphDefinition
     from dagster.core.definitions.pipeline import PipelineDefinition
@@ -176,12 +176,12 @@ def make_email_on_pipeline_failure_sensor(
     return email_on_pipeline_failure
 
 
-def make_email_on_job_failure_sensor(
+def make_email_on_run_failure_sensor(
     email_from: str,
     email_password: str,
     email_to: List[str],
-    email_body_fn: Callable[["JobFailureSensorContext"], str] = _default_failure_email_body,
-    email_subject_fn: Callable[["JobFailureSensorContext"], str] = _default_failure_email_subject,
+    email_body_fn: Callable[["RunFailureSensorContext"], str] = _default_failure_email_body,
+    email_subject_fn: Callable[["RunFailureSensorContext"], str] = _default_failure_email_subject,
     smtp_host: str = "smtp.gmail.com",
     smtp_type: str = "SSL",
     smtp_port: Optional[int] = None,
@@ -195,11 +195,11 @@ def make_email_on_job_failure_sensor(
         email_from (str): The sender email address to send the message from.
         email_password (str): The password of the sender.
         email_to (List[str]): The receipt email addresses to send the message to.
-        email_body_fn (Optional(Callable[[JobFailureSensorContext], str])): Function which
-            takes in the ``JobFailureSensorContext`` outputs the email body you want to send.
+        email_body_fn (Optional(Callable[[RunFailureSensorContext], str])): Function which
+            takes in the ``RunFailureSensorContext`` outputs the email body you want to send.
             Defaults to the plain text that contains error message, pipeline name, and run ID.
-        email_subject_fn (Optional(Callable[[JobFailureSensorContext], str])): Function which
-            takes in the ``JobFailureSensorContext`` outputs the email subject you want to send.
+        email_subject_fn (Optional(Callable[[RunFailureSensorContext], str])): Function which
+            takes in the ``RunFailureSensorContext`` outputs the email subject you want to send.
             Defaults to "Dagster Pipeline Failed: <pipeline_name>".
         smtp_host (str): The hostname of the SMTP server. Defaults to "smtp.gmail.com".
         smtp_type (str): The protocol; either "SSL" or "STARTTLS". Defaults to SSL.
@@ -215,7 +215,7 @@ def make_email_on_job_failure_sensor(
 
         .. code-block:: python
 
-            email_on_job_failure = make_email_on_job_failure_sensor(
+            email_on_run_failure = make_email_on_run_failure_sensor(
                 email_from="no-reply@example.com",
                 email_password=os.getenv("ALERT_EMAIL_PASSWORD"),
                 email_to=["xxx@example.com"],
@@ -223,17 +223,17 @@ def make_email_on_job_failure_sensor(
 
             @repository
             def my_repo():
-                return [my_job + email_on_job_failure]
+                return [my_job + email_on_run_failure]
 
         .. code-block:: python
 
-            def my_message_fn(context: JobFailureSensorContext) -> str:
+            def my_message_fn(context: RunFailureSensorContext) -> str:
                 return (
                     f"Job {context.pipeline_run.pipeline_name} failed!"
                     f"Error: {context.failure_event.message}"
                 )
 
-            email_on_job_failure = make_email_on_job_failure_sensor(
+            email_on_run_failure = make_email_on_run_failure_sensor(
                 email_from="no-reply@example.com",
                 email_password=os.getenv("ALERT_EMAIL_PASSWORD"),
                 email_to=["xxx@example.com"],
@@ -246,12 +246,12 @@ def make_email_on_job_failure_sensor(
     """
 
     from dagster.core.definitions.pipeline_sensor import (
-        JobFailureSensorContext,
-        job_failure_sensor,
+        RunFailureSensorContext,
+        run_failure_sensor,
     )
 
-    @job_failure_sensor(name=name, job_selection=job_selection)
-    def email_on_job_failure(context: JobFailureSensorContext):
+    @run_failure_sensor(name=name, job_selection=job_selection)
+    def email_on_run_failure(context: RunFailureSensorContext):
 
         email_body = email_body_fn(context)
         if dagit_base_url:
@@ -276,4 +276,4 @@ def make_email_on_job_failure_sensor(
         else:
             raise DagsterInvalidDefinitionError(f'smtp_type "{smtp_type}" is not supported.')
 
-    return email_on_job_failure
+    return email_on_run_failure

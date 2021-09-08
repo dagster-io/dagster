@@ -4,6 +4,7 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import styled from 'styled-components/macro';
 
+import {useFeatureFlags} from '../app/Flags';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 
 import {PipelineExplorerSolidHandleFragment_solid} from './types/PipelineExplorerSolidHandleFragment';
@@ -14,35 +15,39 @@ interface SolidJumpBarProps {
   onChange: (solid: PipelineExplorerSolidHandleFragment_solid) => void;
 }
 
-export class SolidJumpBar extends React.Component<SolidJumpBarProps> {
-  select: React.RefObject<Select<string>> = React.createRef();
+export const SolidJumpBar: React.FC<SolidJumpBarProps> = (props) => {
+  const {flagPipelineModeTuples} = useFeatureFlags();
+  const select = React.useRef<Select<string>>(null);
+  const {solids, selectedSolid, onChange} = props;
 
-  render() {
-    const {solids, selectedSolid, onChange} = this.props;
-
-    return (
-      <ShortcutHandler
-        onShortcut={() => activateSelect(this.select.current)}
-        shortcutLabel={`⌥S`}
-        shortcutFilter={(e) => e.keyCode === 83 && e.altKey}
+  return (
+    <ShortcutHandler
+      onShortcut={() => activateSelect(select.current)}
+      shortcutLabel="⌥S"
+      shortcutFilter={(e) => e.code === 'KeyS' && e.altKey}
+    >
+      <StringSelectNoIntrinsicWidth
+        ref={select}
+        items={solids.map((s) => s.name)}
+        itemRenderer={BasicStringRenderer}
+        itemListPredicate={BasicStringPredicate}
+        noResults={<MenuItem disabled={true} text="No results." />}
+        onItemSelect={(name) => onChange(solids.find((s) => s.name === name)!)}
       >
-        <StringSelectNoIntrinsicWidth
-          ref={this.select}
-          items={solids.map((s) => s.name)}
-          itemRenderer={BasicStringRenderer}
-          itemListPredicate={BasicStringPredicate}
-          noResults={<MenuItem disabled={true} text="No results." />}
-          onItemSelect={(name) => onChange(solids.find((s) => s.name === name)!)}
-        >
-          <Button
-            text={selectedSolid ? selectedSolid.name : 'Select a Solid...'}
-            rightIcon="double-caret-vertical"
-          />
-        </StringSelectNoIntrinsicWidth>
-      </ShortcutHandler>
-    );
-  }
-}
+        <Button
+          text={
+            selectedSolid
+              ? selectedSolid.name
+              : flagPipelineModeTuples
+              ? 'Select an op…'
+              : 'Select a solid…'
+          }
+          rightIcon="double-caret-vertical"
+        />
+      </StringSelectNoIntrinsicWidth>
+    </ShortcutHandler>
+  );
+};
 
 // By default, Blueprint's Select component has an intrinsic size determined by the length of
 // it's content, which in our case can be wildly long and unruly. Giving the Select a min-width

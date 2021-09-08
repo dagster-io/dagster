@@ -403,7 +403,7 @@ For example, you can write a sensor that sends a slack message when it runs usin
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_alert_sensor_marker endbefore=end_alert_sensor_marker
 import os
 from dagster import pipeline_failure_sensor, PipelineFailureSensorContext
-from slack import WebClient
+from slack_sdk import WebClient
 
 
 @pipeline_failure_sensor

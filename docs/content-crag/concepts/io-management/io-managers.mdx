@@ -53,7 +53,7 @@ This diagram shows a pipeline with two IO managers, each of which is shared acro
 
 The default IOManager, <PyObject module="dagster" object="mem_io_manager" />, stores outputs in memory, but this only works for the single process executor. Dagster provides out-of-the-box IOManagers that pickle objects and save them. These are <PyObject module="dagster" object="fs_io_manager"/> , <PyObject module="dagster_aws.s3" object="s3_pickle_io_manager"/> , <PyObject module="dagster_azure.adls2" object="adls2_pickle_io_manager"/> , or <PyObject module="dagster_gcp.gcs" object="gcs_pickle_io_manager"/>.
 
-IOManagers are [resources](/concepts/modes-resources), which means users can supply different IOManagers for the same solid outputs in different situations. For example, you might use an in-memory IOManager for unit-testing a pipeline and an S3IOManager in production.
+IOManagers are [resources](/concepts/resources), which means users can supply different IOManagers for the same solid outputs in different situations. For example, you might use an in-memory IOManager for unit-testing a pipeline and an S3IOManager in production.
 
 ---
 

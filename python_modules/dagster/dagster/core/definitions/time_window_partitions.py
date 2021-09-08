@@ -32,9 +32,18 @@ class TimeWindowPartitionsDefinition(
             ("start", datetime),
             ("timezone", str),
             ("fmt", str),
+            ("end_offset", int),
         ],
     ),
 ):
+    def __new__(
+        cls, schedule_type: ScheduleType, start: datetime, timezone: str, fmt: str, end_offset: int
+    ):
+        check.param_invariant(end_offset >= 0, "end_offset", "end_offset must be non-negative")
+        return super(TimeWindowPartitionsDefinition, cls).__new__(
+            cls, schedule_type, start, timezone, fmt, end_offset
+        )
+
     def get_partitions(
         self, current_time: Optional[datetime] = None
     ) -> List[Partition[TimeWindow]]:
@@ -53,18 +62,28 @@ class TimeWindowPartitionsDefinition(
 
         partitions: List[Partition[TimeWindow]] = []
         prev_time = next(iterator)
-        while prev_time.timestamp() <= current_timestamp:
-            next_time = next(iterator)
+        while prev_time.timestamp() < start_timestamp:
+            prev_time = next(iterator)
 
+        end_offset = self.end_offset
+        partitions_past_current_time = 0
+        while True:
+            next_time = next(iterator)
             if (
-                prev_time.timestamp() >= start_timestamp
-                and next_time.timestamp() <= current_timestamp
+                next_time.timestamp() <= current_timestamp
+                or partitions_past_current_time < end_offset
             ):
                 partitions.append(
                     Partition(
-                        value=TimeWindow(prev_time, next_time), name=prev_time.strftime(self.fmt)
+                        value=TimeWindow(prev_time, next_time),
+                        name=prev_time.strftime(self.fmt),
                     )
                 )
+
+                if next_time.timestamp() > current_timestamp:
+                    partitions_past_current_time += 1
+            else:
+                break
 
             prev_time = next_time
 
@@ -75,21 +94,28 @@ def daily_partitioned_config(
     start_date: Union[datetime, str],
     timezone: Optional[str] = None,
     fmt: Optional[str] = None,
+    end_offset: int = 0,
 ) -> Callable[[Callable[[datetime, datetime], Dict[str, Any]]], PartitionedConfig]:
     """Defines run config over a set of daily partitions.
 
-    The decorated function should accept a start datetime and end datetime, which represent the date
-    partition the config should delineate.
+    The decorated function should accept a start datetime and end datetime, which represent the bounds
+    of the date partition the config should delineate.
 
     The decorated function should return a run config dictionary.
 
     The resulting object created by this decorator can be provided to the config argument of a Job.
+    The first partition in the set will start at the start_date. The last partition in the set will
+    end before the current time, unless the end_offset argument is set to a positive number.
 
     Args:
         start_date (Union[datetime.datetime, str]): The date from which to run the schedule. Can
             provide in either a datetime or string format.
         timezone (Optional[str]): The timezone in which each date should exist.
         fmt (Optional[str]): The date format to use. Defaults to `%Y-%m-%d`.
+        end_offset (int): Extends the partition set by a number of partitions equal to the value
+            passed. If end_offset is 0 (the default), the last partition ends before the current
+            time. If end_offset is 1, the second-to-last partition ends before the current time,
+            and so on.
     """
 
     experimental_fn_warning("daily_partitioned_config")
@@ -114,6 +140,7 @@ def daily_partitioned_config(
                 start=_start_date,
                 timezone=_timezone,
                 fmt=_fmt,
+                end_offset=end_offset,
             ),
         )
 
@@ -124,6 +151,7 @@ def hourly_partitioned_config(
     start_date: Union[datetime, str],
     timezone: Optional[str] = None,
     fmt: Optional[str] = None,
+    end_offset: int = 0,
 ) -> Callable[[Callable[[datetime, datetime], Dict[str, Any]]], PartitionedConfig]:
     """Defines run config over a set of hourly partitions.
 
@@ -133,6 +161,8 @@ def hourly_partitioned_config(
     The decorated function should return a run config dictionary.
 
     The resulting object created by this decorator can be provided to the config argument of a Job.
+    The first partition in the set will start at the start_date. The last partition in the set will
+    end before the current time, unless the end_offset argument is set to a positive number.
 
     Args:
         start_date (Union[datetime.datetime, str]): The date from which to run the schedule. Can
@@ -163,6 +193,7 @@ def hourly_partitioned_config(
                 start=_start_date,
                 timezone=_timezone,
                 fmt=_fmt,
+                end_offset=end_offset,
             ),
         )
 
@@ -173,6 +204,7 @@ def monthly_partitioned_config(
     start_date: Union[datetime, str],
     timezone: Optional[str] = None,
     fmt: Optional[str] = None,
+    end_offset: int = 0,
 ) -> Callable[[Callable[[datetime, datetime], Dict[str, Any]]], PartitionedConfig]:
     """Defines run config over a set of monthly partitions.
 
@@ -182,12 +214,18 @@ def monthly_partitioned_config(
     The decorated function should return a run config dictionary.
 
     The resulting object created by this decorator can be provided to the config argument of a Job.
+    The first partition in the set will start at the start_date. The last partition in the set will
+    end before the current time, unless the end_offset argument is set to a positive number.
 
     Args:
         start_date (Union[datetime.datetime, str]): The date from which to run the schedule. Can
             provide in either a datetime or string format.
         timezone (Optional[str]): The timezone in which each date should exist.
         fmt (Optional[str]): The date format to use. Defaults to `%Y-%m-%d`.
+        end_offset (int): Extends the partition set by a number of partitions equal to the value
+            passed. If end_offset is 0 (the default), the last partition ends before the current
+            time. If end_offset is 1, the second-to-last partition ends before the current time,
+            and so on.
     """
     experimental_fn_warning("monthly_partitioned_config")
 
@@ -211,6 +249,7 @@ def monthly_partitioned_config(
                 start=_start_date,
                 timezone=_timezone,
                 fmt=_fmt,
+                end_offset=end_offset,
             ),
         )
 
@@ -221,6 +260,7 @@ def weekly_partitioned_config(
     start_date: Union[datetime, str],
     timezone: Optional[str] = None,
     fmt: Optional[str] = None,
+    end_offset: int = 0,
 ) -> Callable[[Callable[[datetime, datetime], Dict[str, Any]]], PartitionedConfig]:
     """Defines run config over a set of weekly partitions.
 
@@ -230,13 +270,18 @@ def weekly_partitioned_config(
     The decorated function should return a run config dictionary.
 
     The resulting object created by this decorator can be provided to the config argument of a Job.
-
+    The first partition in the set will start at the start_date. The last partition in the set will
+    end before the current time, unless the end_offset argument is set to a positive number.
 
     Args:
         start_date (Union[datetime.datetime, str]): The date from which to run the schedule. Can
             provide in either a datetime or string format.
         timezone (Optional[str]): The timezone in which each date should exist.
         fmt (Optional[str]): The date format to use. Defaults to `%Y-%m-%d`.
+        end_offset (int): Extends the partition set by a number of partitions equal to the value
+            passed. If end_offset is 0 (the default), the last partition ends before the current
+            time. If end_offset is 1, the second-to-last partition ends before the current time,
+            and so on.
     """
 
     experimental_fn_warning("weekly_partitioned_config")
@@ -261,6 +306,7 @@ def weekly_partitioned_config(
                 start=_start_date,
                 timezone=_timezone,
                 fmt=_fmt,
+                end_offset=end_offset,
             ),
         )
 

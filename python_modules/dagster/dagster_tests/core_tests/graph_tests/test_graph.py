@@ -21,6 +21,7 @@ from dagster.core.definitions.partition import (
     PartitionedConfig,
     StaticPartitionsDefinition,
 )
+from dagster.core.definitions.pipeline import PipelineSubsetDefinition
 from dagster.core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
 
 
@@ -580,3 +581,38 @@ def test_enum_to_execution():
     result = my_graph.execute_in_process(config={"my_op": {"config": {"my_enum": "TWO"}}})
     assert result.success
     assert result.result_for_node("my_op").output_values["result"] == TestEnum.TWO
+
+
+def test_raise_on_error_execute_in_process():
+    error_str = "My error"
+
+    @op
+    def emit_error():
+        raise Exception(error_str)
+
+    @graph
+    def error_graph():
+        emit_error()
+
+    error_job = error_graph.to_job()
+
+    with pytest.raises(Exception, match=error_str):
+        error_job.execute_in_process()
+
+    result = error_job.execute_in_process(raise_on_error=False)
+    assert not result.success
+
+
+def test_job_subset():
+    @op
+    def my_op():
+        pass
+
+    @graph
+    def basic():
+        my_op()
+        my_op()
+
+    the_job = basic.to_job()
+
+    assert isinstance(the_job.get_pipeline_subset_def({"my_op"}), PipelineSubsetDefinition)

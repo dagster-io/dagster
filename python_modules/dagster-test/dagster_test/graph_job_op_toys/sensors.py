@@ -10,7 +10,7 @@ from dagster_test.graph_job_op_toys.log_file import log_file_job
 from dagster_test.graph_job_op_toys.log_s3 import log_s3_job
 from dagster_test.graph_job_op_toys.log_asset import log_asset_job
 from dagster_test.graph_job_op_toys.error_monster import error_monster_failing_job
-from slack import WebClient
+from slack_sdk import WebClient
 
 
 def get_directory_files(directory_name, since=None):

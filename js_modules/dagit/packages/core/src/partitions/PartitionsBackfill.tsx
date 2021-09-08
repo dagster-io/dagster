@@ -15,6 +15,7 @@ import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {SharedToaster} from '../app/DomUtils';
+import {useFeatureFlags} from '../app/Flags';
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {PipelineRunTag} from '../app/LocalStorage';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
@@ -138,6 +139,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
     reexecute: false,
     fromFailure: false,
   });
+  const {flagPipelineModeTuples} = useFeatureFlags();
 
   const {containerProps} = useViewport({
     initialOffset: React.useCallback((el) => ({left: el.scrollWidth - el.clientWidth, top: 0}), []),
@@ -204,7 +206,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
     return (
       <NonIdealState
         icon={IconNames.ERROR}
-        title="Pipeline Not Found"
+        title={flagPipelineModeTuples ? 'Job not found' : 'Pipeline not found'}
         description={data.pipelineSnapshotOrError.message}
       />
     );
@@ -213,7 +215,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
     return (
       <NonIdealState
         icon={IconNames.ERROR}
-        title="Pipeline Not Found"
+        title={flagPipelineModeTuples ? 'Job not found' : 'Pipeline not found'}
         description={data.pipelineSnapshotOrError.message}
       />
     );

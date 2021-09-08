@@ -66,18 +66,19 @@ from .input import In, InputDefinition, InputMapping
 from .intermediate_storage import IntermediateStorageDefinition, intermediate_storage
 from .logger import LoggerDefinition, build_init_logger_context, logger
 from .mode import ModeDefinition
+from .op import OpDefinition
 from .output import DynamicOut, DynamicOutputDefinition, Out, OutputDefinition, OutputMapping
 from .partition import Partition, PartitionScheduleDefinition, PartitionSetDefinition
 from .partitioned_schedule import schedule_from_partitions
 from .pipeline import PipelineDefinition
 from .pipeline_base import IPipeline
 from .pipeline_sensor import (
-    JobFailureSensorContext,
     PipelineFailureSensorContext,
+    RunFailureSensorContext,
     RunStatusSensorContext,
     RunStatusSensorDefinition,
-    job_failure_sensor,
     pipeline_failure_sensor,
+    run_failure_sensor,
     run_status_sensor,
 )
 from .preset import PresetDefinition
