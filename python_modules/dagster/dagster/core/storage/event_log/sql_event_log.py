@@ -629,10 +629,7 @@ class SqlEventLogStorage(EventLogStorage):
                     if isinstance(event_records_filter.after_cursor, RunShardedEventsCursor)
                     else event_records_filter.after_cursor
                 )
-                after_query = db.select([SqlEventLogStorageTable.c.id]).where(
-                    SqlEventLogStorageTable.c.id == after_cursor_id
-                )
-                query = query.where(SqlEventLogStorageTable.c.id > after_query)
+                query = query.where(SqlEventLogStorageTable.c.id > after_cursor_id)
 
         if event_records_filter.before_timestamp:
             query = query.where(
