@@ -519,7 +519,7 @@ def construct_dagster_k8s_job(
         additional_k8s_volume_mounts.append(kubernetes.client.V1VolumeMount(**volume_mount))
 
     job_container = kubernetes.client.V1Container(
-        name=job_name,
+        name=component.replace("_", "-") if component else job_name,
         image=job_config.job_image,
         args=args,
         image_pull_policy=job_config.image_pull_policy,
