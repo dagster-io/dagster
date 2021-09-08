@@ -27,6 +27,16 @@ def integration_suite_extra_cmds_fn(version):
         network_buildkite_container("rabbitmq"),
         connect_sibling_docker_container("rabbitmq", "test-rabbitmq", "DAGSTER_CELERY_BROKER_HOST"),
         "popd",
+        "pushd integration_tests/test_suites/backcompat-test-suite/dagit_service",
+        "./build.sh",
+        "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
+        network_buildkite_container("dagit_service_network"),
+        connect_sibling_docker_container(
+            "dagit_service_network",
+            "dagit_service_dagit",
+            "BACKCOMPAT_TESTS_DAGIT_HOST",
+        ),
+        "popd",
     ]
 
 
