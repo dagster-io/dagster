@@ -78,6 +78,7 @@ def docker_service_up(docker_compose_file, build_args=None):
 
 @pytest.fixture
 def graphql_client(release_test_map, retrying_requests):
+    dagit_host = os.environ.get("BACKCOMPAT_TESTS_DAGIT_HOST", "localhost")
     dagit_version = release_test_map["dagit"]
     user_code_version = release_test_map["user_code"]
 
@@ -95,9 +96,9 @@ def graphql_client(release_test_map, retrying_requests):
         file_relative_path(__file__, "./dagit_service/docker-compose.yml"),
         build_args=[dagit_version, user_code_version],
     ):
-        result = retrying_requests.get("http://127.0.0.1:3000/dagit_info")
+        result = retrying_requests.get(f"http://{dagit_host}:3000/dagit_info")
         assert result.json().get("dagit_version")
-        yield DagsterGraphQLClient("127.0.0.1", port_number=3000)
+        yield DagsterGraphQLClient(dagit_host, port_number=3000)
 
 
 def test_backcompat_deployed_pipeline(graphql_client):
