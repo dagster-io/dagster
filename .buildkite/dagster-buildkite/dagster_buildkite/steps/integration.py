@@ -54,7 +54,7 @@ def backcompat_suite_extra_cmds_fn(release_mapping):
             network_buildkite_container("dagit_service_network"),
             connect_sibling_docker_container(
                 "dagit_service_network",
-                "dagit_service_dagit",
+                "dagit",
                 "BACKCOMPAT_TESTS_DAGIT_HOST",
             ),
             "popd",
