@@ -29,6 +29,6 @@ def toys_repository():
             error_monster_failing_job,
             log_s3_job,
         ]
-        # + get_toys_schedules()
+        + get_toys_schedules()
         + get_toys_sensors()
     )
