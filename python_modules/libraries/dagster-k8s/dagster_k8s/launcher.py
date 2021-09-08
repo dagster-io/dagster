@@ -3,6 +3,8 @@ import sys
 import kubernetes
 from dagster import EventMetadataEntry, Field, Noneable, StringSource, check
 from dagster.cli.api import ExecuteRunArgs
+from dagster.config.field import resolve_to_config_type
+from dagster.config.validate import process_config
 from dagster.core.events import EngineEventData
 from dagster.core.launcher import LaunchRunContext, RunLauncher
 from dagster.core.storage.pipeline_run import PipelineRunStatus
@@ -13,8 +15,10 @@ from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .job import (
     DagsterK8sJobConfig,
+    K8S_EXECUTOR_CONFIG_KEY,
     construct_dagster_k8s_job,
     get_job_name_from_run_id,
+    get_k8s_executor_config_schema,
     get_user_defined_k8s_config,
 )
 from .utils import delete_job
@@ -254,10 +258,26 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         pipeline_origin = context.pipeline_code_origin
         repository_origin = pipeline_origin.repository_origin
 
+        job_image = repository_origin.container_image
+        exc_config = _get_validated_k8s_executor_config(run.run_config)
+        job_image_from_executor_config = exc_config.get("job_image")
+
+        if job_image:
+            if job_image_from_executor_config:
+                job_image = job_image_from_executor_config
+                self._instance.report_engine_event(
+                    f"You have specified a job_image {job_image_from_executor_config} in your executor configuration, "
+                    f"but also {job_image} in your user-code deployment. Using the job image {job_image_from_executor_config} "
+                    f"from executor configuration as it takes precedence.",
+                    run,
+                    cls=self.__class__,
+                )
+
         job_config = (
-            self._get_grpc_job_config(repository_origin.container_image)
-            if repository_origin.container_image
-            else self.get_static_job_config()
+            (self._get_grpc_job_config(job_image) if job_image else self.get_static_job_config())
+            .with_env_config_maps((exc_config.get("env_config_maps") or []))
+            .with_env_secrets((exc_config.get("env_secrets") or []))
+            .with_env_vars((exc_config.get("env_vars") or []))
         )
 
         self._instance.add_run_tags(
@@ -368,3 +388,19 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                 ),
                 cls=self.__class__,
             )
+
+
+def _get_validated_k8s_executor_config(run_config):
+    check.dict_param(run_config, "run_config")
+
+    execution_config_schema = resolve_to_config_type(get_k8s_executor_config_schema())
+    execution_run_config = (
+        run_config.get("execution", {}).get(K8S_EXECUTOR_CONFIG_KEY, {}).get("config", {})
+    )
+    res = process_config(execution_config_schema, execution_run_config)
+
+    check.invariant(
+        res.success, "Incorrect {} execution schema provided".format(K8S_EXECUTOR_CONFIG_KEY)
+    )
+
+    return res.value

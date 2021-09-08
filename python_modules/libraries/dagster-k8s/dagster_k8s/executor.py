@@ -18,7 +18,9 @@ from dagster_k8s.launcher import K8sRunLauncher
 
 from .job import (
     DagsterK8sJobConfig,
+    K8S_EXECUTOR_CONFIG_KEY,
     construct_dagster_k8s_job,
+    get_k8s_executor_config_schema,
     get_k8s_job_name,
     get_user_defined_k8s_config,
 )
@@ -26,12 +28,8 @@ from .utils import delete_job
 
 
 @executor(
-    name="k8s",
-    config_schema=merge_dicts(
-        DagsterK8sJobConfig.config_type_pipeline_run(),
-        {"job_namespace": Field(StringSource, is_required=False)},
-        {"retries": get_retries_config()},
-    ),
+    name=K8S_EXECUTOR_CONFIG_KEY,
+    config_schema=get_k8s_executor_config_schema(),
     requirements=multiple_process_executor_requirements(),
 )
 @experimental

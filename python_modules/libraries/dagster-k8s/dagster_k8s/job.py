@@ -13,6 +13,7 @@ from dagster import check
 from dagster.config.field_utils import Permissive, Shape
 from dagster.config.validate import validate_config
 from dagster.core.errors import DagsterInvalidConfigError
+from dagster.core.execution.retries import get_retries_config
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils import frozentags, merge_dicts
 
@@ -58,6 +59,8 @@ DEFAULT_JOB_SPEC_CONFIG = {
     "ttl_seconds_after_finished": DEFAULT_K8S_JOB_TTL_SECONDS_AFTER_FINISHED,
     "backoff_limit": DEFAULT_K8S_JOB_BACKOFF_LIMIT,
 }
+
+K8S_EXECUTOR_CONFIG_KEY = "k8s"
 
 
 class UserDefinedDagsterK8sConfig(
@@ -383,6 +386,15 @@ class DagsterK8sJobConfig(
     def with_image(self, image):
         return self._replace(job_image=image)
 
+    def with_env_config_maps(self, env_config_maps):
+        return self._replace(env_config_maps=self.env_config_maps + env_config_maps)
+
+    def with_env_secrets(self, env_secrets):
+        return self._replace(env_secrets=self.env_secrets + env_secrets)
+
+    def with_env_vars(self, env_vars):
+        return self._replace(env_vars=self.env_vars + env_vars)
+
     @staticmethod
     def from_dict(config=None):
         check.opt_dict_param(config, "config")
@@ -615,3 +627,11 @@ def get_k8s_job_name(input_1, input_2=None):
     name_hash = hashlib.md5((input_1 + input_2).encode("utf-8"))
 
     return name_hash.hexdigest()
+
+
+def get_k8s_executor_config_schema():
+    return merge_dicts(
+        DagsterK8sJobConfig.config_type_pipeline_run(),
+        {"job_namespace": Field(StringSource, is_required=False)},
+        {"retries": get_retries_config()},
+    )

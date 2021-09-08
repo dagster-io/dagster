@@ -139,6 +139,99 @@ def test_no_postgres(kubeconfig_file):
         ]
 
 
+def test_k8s_executor_config_override(kubeconfig_file):
+    # Construct a K8s run launcher in a fake k8s environment.
+    mock_k8s_client_batch_api = mock.MagicMock()
+    k8s_run_launcher = K8sRunLauncher(
+        service_account_name="dagit-admin",
+        instance_config_map="dagster-instance",
+        dagster_home="/opt/dagster/dagster_home",
+        job_image="fake_job_image",
+        load_incluster_config=False,
+        kubeconfig_file=kubeconfig_file,
+        k8s_client_batch_api=mock_k8s_client_batch_api,
+    )
+
+    # Create fake external pipeline.
+    recon_pipeline = reconstructable(fake_pipeline)
+    recon_repo = recon_pipeline.repository
+    repo_def = recon_repo.get_definition()
+    with instance_for_test() as instance:
+        with in_process_test_workspace(instance, recon_repo) as workspace:
+            location = workspace.get_repository_location(workspace.repository_location_names[0])
+            repo_handle = RepositoryHandle(
+                repository_name=repo_def.name,
+                repository_location=location,
+            )
+            fake_external_pipeline = external_pipeline_from_recon_pipeline(
+                recon_pipeline,
+                solid_selection=None,
+                repository_handle=repo_handle,
+            )
+
+            k8s_run_launcher.register_instance(instance)
+
+            # Launch the run without custom job_image and env.
+            pipeline_name = "demo_pipeline"
+            run = create_run_for_test(
+                instance,
+                pipeline_name=pipeline_name,
+                external_pipeline_origin=fake_external_pipeline.get_external_origin(),
+                pipeline_code_origin=fake_external_pipeline.get_python_origin(),
+            )
+            k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
+
+            # Launch the run with custom job_image and env.
+            pipeline_name = "demo_pipeline"
+            run = create_run_for_test(
+                instance,
+                pipeline_name=pipeline_name,
+                external_pipeline_origin=fake_external_pipeline.get_external_origin(),
+                pipeline_code_origin=fake_external_pipeline.get_python_origin(),
+                run_config={
+                    "execution": {
+                        "k8s": {
+                            "config": {
+                                "job_image": "fake_execution_job_image",
+                                "env_config_maps": ["fake_configmap"],
+                                "env_secrets": ["fake_secret"],
+                                "env_vars": ["FAKE_ENV_VAR"],
+                            }
+                        }
+                    }
+                },
+            )
+            k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
+
+        # Check that user defined k8s config was passed down to the k8s job.
+        mock_method_calls = mock_k8s_client_batch_api.method_calls
+        assert len(mock_method_calls) > 0
+
+        method_name, _args, kwargs = mock_method_calls[0]
+        assert method_name == "create_namespaced_job"
+        assert kwargs["body"].spec.template.spec.containers[0].image == "fake_job_image"
+        env_from = kwargs["body"].spec.template.spec.containers[0].env_from
+        config_map_names = {env.config_map_ref.name for env in env_from if env.config_map_ref}
+        secret_names = {env.secret_ref.name for env in env_from if env.secret_ref}
+        assert len(config_map_names) == 0
+        assert len(secret_names) == 0
+        assert "FAKE_ENV_VAR" not in [
+            env.name for env in kwargs["body"].spec.template.spec.containers[0].env
+        ]
+
+        method_name, _args, kwargs = mock_method_calls[1]
+        assert method_name == "create_namespaced_job"
+        # assert kwargs["body"].spec.template.spec.containers[0].image == "fake_execution_job_image"
+        env_from = kwargs["body"].spec.template.spec.containers[0].env_from
+        config_map_names = {env.config_map_ref.name for env in env_from if env.config_map_ref}
+        secret_names = {env.secret_ref.name for env in env_from if env.secret_ref}
+        assert "fake_configmap" in config_map_names
+        assert "fake_secret" in secret_names
+        assert "FAKE_ENV_VAR" in [
+            env.name for env in kwargs["body"].spec.template.spec.containers[0].env
+        ]
+
+
 @pipeline
 def fake_pipeline():
     pass
