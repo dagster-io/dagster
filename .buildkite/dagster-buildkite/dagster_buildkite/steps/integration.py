@@ -34,8 +34,20 @@ def backcompat_suite_extra_cmds_fn(release_mapping):
     dagit_version = release_mapping["dagit"]
     user_code_version = release_mapping["user_code"]
 
+    if dagit_version == "current_branch":
+        dagit_dockerfile = "./Dockerfile_dagit_source"
+    else:
+        dagit_dockerfile = "./Dockerfile_dagit_release"
+
+    if user_code_version == "current_branch":
+        user_code_dockerfile = "./Dockerfile_grpc_source"
+    else:
+        user_code_dockerfile = "./Dockerfile_grpc_release"
+
     def _extra_cmds_fn(_):
         return [
+            f'export DAGIT_DOCKERFILE="{dagit_dockerfile}"',
+            f'export USER_CODE_DOCKERFILE="{user_code_dockerfile}"',
             "pushd integration_tests/test_suites/backcompat-test-suite/dagit_service",
             f"./build.sh {dagit_version} {user_code_version}",
             "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
