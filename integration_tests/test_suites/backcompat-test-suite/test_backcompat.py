@@ -9,6 +9,7 @@ from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster_graphql import DagsterGraphQLClient
 
 MAX_TIMEOUT_SECONDS = 20
+IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 pytest_plugins = ["dagster_test.fixtures"]
 
@@ -48,6 +49,9 @@ def release_test_map(request):
 
 @contextmanager
 def docker_service_up(docker_compose_file, build_args=None):
+    if IS_BUILDKITE:
+        yield  # buildkite pipeline handles the service
+        return
 
     try:
         subprocess.check_output(["docker-compose", "-f", docker_compose_file, "stop"])

@@ -27,17 +27,28 @@ def integration_suite_extra_cmds_fn(version):
         network_buildkite_container("rabbitmq"),
         connect_sibling_docker_container("rabbitmq", "test-rabbitmq", "DAGSTER_CELERY_BROKER_HOST"),
         "popd",
-        "pushd integration_tests/test_suites/backcompat-test-suite/dagit_service",
-        "./build.sh",
-        "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
-        network_buildkite_container("dagit_service_network"),
-        connect_sibling_docker_container(
-            "dagit_service_network",
-            "dagit_service_dagit",
-            "BACKCOMPAT_TESTS_DAGIT_HOST",
-        ),
-        "popd",
     ]
+
+
+def backcompat_suite_extra_cmds_fn(release_mapping):
+    dagit_version = release_mapping["dagit"]
+    user_code_version = release_mapping["user_code"]
+
+    def _extra_cmds_fn(_):
+        return [
+            "pushd integration_tests/test_suites/backcompat-test-suite/dagit_service",
+            f"./build.sh {dagit_version} {user_code_version}",
+            "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
+            network_buildkite_container("dagit_service_network"),
+            connect_sibling_docker_container(
+                "dagit_service_network",
+                "dagit_service_dagit",
+                "BACKCOMPAT_TESTS_DAGIT_HOST",
+            ),
+            "popd",
+        ]
+
+    return _extra_cmds_fn
 
 
 def integration_steps():
@@ -74,26 +85,46 @@ def integration_steps():
                 "-markdaemon",
             ]
             upload_coverage = True
-        elif integration_suite == os.path.join(
+
+        if integration_suite == os.path.join(
             "integration_tests", "test_suites", "backcompat-test-suite"
         ):
-            tox_env_suffixes = ["-backcompat_dagit_on__0_12_8", "-backcompat_user_code_on__0_12_8"]
+            tox_env_suffix_map = {
+                "-backcompat_dagit_on__0_12_8": {"dagit": "0.12.8", "user_code": "current_branch"},
+                "-backcompat_user_code_on__0_12_8": {
+                    "dagit": "current_branch",
+                    "user_code": "0.12.8",
+                },
+            }
 
-        tests += ModuleBuildSpec(
-            integration_suite,
-            env_vars=[
-                "AIRFLOW_HOME",
-                "AWS_ACCOUNT_ID",
-                "AWS_ACCESS_KEY_ID",
-                "AWS_SECRET_ACCESS_KEY",
-                "BUILDKITE_SECRETS_BUCKET",
-                "GOOGLE_APPLICATION_CREDENTIALS",
-            ],
-            upload_coverage=upload_coverage,
-            extra_cmds_fn=integration_suite_extra_cmds_fn,
-            depends_on_fn=test_image_depends_fn,
-            tox_env_suffixes=tox_env_suffixes,
-            retries=2,
-        ).get_tox_build_steps()
+            for tox_env_suffix, release_mapping in tox_env_suffix_map.items():
+
+                tests += ModuleBuildSpec(
+                    integration_suite,
+                    upload_coverage=upload_coverage,
+                    extra_cmds_fn=backcompat_suite_extra_cmds_fn(release_mapping),
+                    tox_env_suffixes=[tox_env_suffix],
+                    buildkite_label=tox_env_suffix[1:],
+                    retries=2,
+                ).get_tox_build_steps()
+
+        else:
+
+            tests += ModuleBuildSpec(
+                integration_suite,
+                env_vars=[
+                    "AIRFLOW_HOME",
+                    "AWS_ACCOUNT_ID",
+                    "AWS_ACCESS_KEY_ID",
+                    "AWS_SECRET_ACCESS_KEY",
+                    "BUILDKITE_SECRETS_BUCKET",
+                    "GOOGLE_APPLICATION_CREDENTIALS",
+                ],
+                upload_coverage=upload_coverage,
+                extra_cmds_fn=integration_suite_extra_cmds_fn,
+                depends_on_fn=test_image_depends_fn,
+                tox_env_suffixes=tox_env_suffixes,
+                retries=2,
+            ).get_tox_build_steps()
 
     return tests
