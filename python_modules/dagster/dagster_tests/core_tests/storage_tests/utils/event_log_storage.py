@@ -541,12 +541,14 @@ class TestEventLogStorage:
         out_events = []
         cursor = -1
         fuse = 0
+        chunk_size = 2
         while fuse < 50:
             fuse += 1
             # fetch in batches w/ limit & cursor
-            chunk = storage.get_logs_for_run(result.run_id, cursor=cursor, limit=2)
+            chunk = storage.get_logs_for_run(result.run_id, cursor=cursor, limit=chunk_size)
             if not chunk:
                 break
+            assert len(chunk) <= chunk_size
             out_events += chunk
             cursor += len(chunk)
 

@@ -204,7 +204,7 @@ class SqlEventLogStorage(EventLogStorage):
         query = query.offset(cursor + 1)
 
         if limit:
-            query.limit(limit)
+            query = query.limit(limit)
 
         with self.run_connection(run_id) as conn:
             results = conn.execute(query).fetchall()
