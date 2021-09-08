@@ -88,8 +88,13 @@ def longitudinal_schedule():
     from .longitudinal import longitudinal_job
 
     @daily_partitioned_config(start_date="2020-01-01", timezone=_toys_tz_info())
-    def longitudinal_config(_start, _end):
-        return {}
+    def longitudinal_config(start, _end):
+        return {
+            "ops": {
+                op.name: {"config": {"partition": start.to_date_string()}}
+                for op in longitudinal_job.solids
+            }
+        }
 
     longitudinal_job = longitudinal.to_job(config=longitudinal_config)
     return schedule_from_partitions(longitudinal_job)

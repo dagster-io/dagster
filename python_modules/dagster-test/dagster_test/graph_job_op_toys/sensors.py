@@ -3,8 +3,8 @@ import os
 from dagster import AssetKey, RunRequest, SkipReason, check, sensor
 from dagster.core.definitions.decorators.sensor import asset_sensor
 from dagster.core.definitions.pipeline_sensor import (
-    JobFailureSensorContext,
-    job_failure_sensor,
+    RunFailureSensorContext,
+    run_failure_sensor,
 )
 from dagster_test.graph_job_op_toys.log_file import log_file_job
 from dagster_test.graph_job_op_toys.log_s3 import log_s3_job
@@ -90,8 +90,8 @@ def get_toys_sensors():
                 },
             )
 
-    @job_failure_sensor(job_selection=[error_monster_failing_job])
-    def custom_slack_on_job_failure(context: JobFailureSensorContext):
+    @run_failure_sensor(job_selection=[error_monster_failing_job])
+    def custom_slack_on_job_failure(context: RunFailureSensorContext):
 
         base_url = "http://localhost:3000"
 

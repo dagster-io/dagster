@@ -29,7 +29,6 @@ def read_file(context):
         )
         yield Output(relative_filename)
     except FileNotFoundError:
-        print(os.getcwd())
         context.log.error("No file found: {}".format(relative_filename))
 
 
