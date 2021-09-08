@@ -6,6 +6,7 @@ import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
+import {useFeatureFlags} from '../app/Flags';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {errorStackToYamlPath} from '../configeditor/ConfigEditorUtils';
 import {
@@ -184,21 +185,25 @@ interface RunPreviewProps {
   solidSelection: string[] | null;
 }
 
-interface RunPreviewState {
-  errorsOnly: boolean;
-}
+export const RunPreview: React.FC<RunPreviewProps> = (props) => {
+  const {
+    document,
+    validation,
+    onHighlightPath,
+    onRemoveExtraPaths,
+    onScaffoldMissingConfig,
+    solidSelection,
+    runConfigSchema,
+  } = props;
+  const [errorsOnly, setErrorsOnly] = React.useState(false);
+  const {flagPipelineModeTuples} = useFeatureFlags();
 
-export class RunPreview extends React.Component<RunPreviewProps, RunPreviewState> {
-  state: RunPreviewState = {
-    errorsOnly: false,
-  };
-
-  getRootCompositeChildren = () => {
-    if (!this.props.runConfigSchema) {
+  const rootCompositeChildren = React.useMemo(() => {
+    if (!runConfigSchema) {
       return {};
     }
 
-    const {allConfigTypes, rootConfigType} = this.props.runConfigSchema;
+    const {allConfigTypes, rootConfigType} = runConfigSchema;
     const children: {
       [fieldName: string]: ConfigEditorRunConfigSchemaFragment_allConfigTypes_CompositeConfigType;
     } = {};
@@ -217,214 +222,202 @@ export class RunPreview extends React.Component<RunPreviewProps, RunPreviewState
     });
 
     return children;
-  };
+  }, [runConfigSchema]);
 
-  render() {
-    const {
-      document,
-      validation,
-      onHighlightPath,
-      onRemoveExtraPaths,
-      onScaffoldMissingConfig,
-      solidSelection,
-    } = this.props;
-    const {errorsOnly} = this.state;
+  const extraNodes: string[] = [];
+  const missingNodes: string[] = [];
+  const errorsAndPaths: {
+    pathKey: string;
+    error: ValidationErrorOrNode;
+  }[] = [];
 
-    const extraNodes: string[] = [];
-    const missingNodes: string[] = [];
-    const errorsAndPaths: {
-      pathKey: string;
-      error: ValidationErrorOrNode;
-    }[] = [];
+  if (validation && validation.__typename === 'PipelineConfigValidationInvalid') {
+    validation.errors.forEach((e) => {
+      const path = errorStackToYamlPath(e.stack.entries);
 
-    if (validation && validation.__typename === 'PipelineConfigValidationInvalid') {
-      validation.errors.forEach((e) => {
-        const path = errorStackToYamlPath(e.stack.entries);
+      errorsAndPaths.push({pathKey: path.join('.'), error: e});
 
-        errorsAndPaths.push({pathKey: path.join('.'), error: e});
-
-        if (e.__typename === 'MissingFieldConfigError') {
-          missingNodes.push([...path, e.field.name].join('.'));
-        } else if (e.__typename === 'MissingFieldsConfigError') {
-          for (const field of e.fields) {
-            missingNodes.push([...path, field.name].join('.'));
-          }
-        } else if (e.__typename === 'FieldNotDefinedConfigError') {
-          extraNodes.push([...path, e.fieldName].join('.'));
-        } else if (e.__typename === 'FieldsNotDefinedConfigError') {
-          for (const fieldName of e.fieldNames) {
-            extraNodes.push([...path, fieldName].join('.'));
-          }
-        } else if (e.__typename === 'RuntimeMismatchConfigError') {
-          // If an entry at a path is the wrong type,
-          // it is equivalent to it being missing
-          missingNodes.push(path.join('.'));
+      if (e.__typename === 'MissingFieldConfigError') {
+        missingNodes.push([...path, e.field.name].join('.'));
+      } else if (e.__typename === 'MissingFieldsConfigError') {
+        for (const field of e.fields) {
+          missingNodes.push([...path, field.name].join('.'));
         }
-      });
-    }
-
-    if (validation?.__typename === 'InvalidSubsetError') {
-      errorsAndPaths.push({pathKey: '', error: validation.message});
-    }
-
-    if (validation?.__typename === 'PythonError') {
-      const info = <PythonErrorInfo error={validation} />;
-      errorsAndPaths.push({
-        pathKey: '',
-        error: (
-          <span>
-            PythonError:{' '}
-            <ButtonLink onClick={() => showCustomAlert({body: info})}>Click for details</ButtonLink>
-          </span>
-        ),
-      });
-    }
-
-    const {resources, solids, ...rest} = this.getRootCompositeChildren();
-
-    const itemsIn = (parents: string[], items: {name: string; isRequired: boolean}[]) => {
-      const boxes = items
-        .map((item) => {
-          // If a solid selection is in use, discard anything not in it.
-          if (solidSelection?.length && !solidSelection?.includes(item.name)) {
-            return null;
-          }
-
-          const path = [...parents, item.name];
-          const pathKey = path.join('.');
-          const pathErrors = errorsAndPaths
-            .filter((e) => e.pathKey === pathKey || e.pathKey.startsWith(`${pathKey}.`))
-            .map((e) => e.error);
-
-          const isPresent = pathExistsInObject(path, document);
-          const containsMissing = missingNodes.some((missingNode) =>
-            missingNode.includes(path.join('.')),
-          );
-          const isInvalid = pathErrors.length || containsMissing;
-          const isMissing = path.some((_, idx) =>
-            missingNodes.includes(path.slice(0, idx + 1).join('.')),
-          );
-          if (errorsOnly && !isInvalid) {
-            return false;
-          }
-          const state =
-            isMissing && item.isRequired
-              ? 'missing'
-              : isInvalid
-              ? 'invalid'
-              : isPresent
-              ? 'present'
-              : 'none';
-
-          return (
-            <Tooltip
-              position={Position.BOTTOM}
-              content={stateToHint[state].title}
-              intent={stateToHint[state].intent}
-              key={item.name}
-            >
-              <Item
-                key={item.name}
-                state={state}
-                onClick={() => {
-                  const first = pathErrors.find(isValidationError);
-                  onHighlightPath(first ? errorStackToYamlPath(first.stack.entries) : path);
-                }}
-              >
-                {item.name}
-              </Item>
-            </Tooltip>
-          );
-        })
-        .filter(Boolean);
-
-      if (!boxes.length) {
-        return <ItemsEmptyNotice>Nothing to display.</ItemsEmptyNotice>;
+      } else if (e.__typename === 'FieldNotDefinedConfigError') {
+        extraNodes.push([...path, e.fieldName].join('.'));
+      } else if (e.__typename === 'FieldsNotDefinedConfigError') {
+        for (const fieldName of e.fieldNames) {
+          extraNodes.push([...path, fieldName].join('.'));
+        }
+      } else if (e.__typename === 'RuntimeMismatchConfigError') {
+        // If an entry at a path is the wrong type,
+        // it is equivalent to it being missing
+        missingNodes.push(path.join('.'));
       }
-      return boxes;
-    };
+    });
+  }
 
-    return (
-      <SplitPanelContainer
-        identifier="run-preview"
-        axis="horizontal"
-        first={
-          <ErrorListContainer>
-            <Section>
-              <SectionTitle>Errors</SectionTitle>
-              {errorsAndPaths.map((item, idx) => (
-                <ErrorRow key={idx} error={item.error} onHighlight={onHighlightPath} />
-              ))}
-            </Section>
+  if (validation?.__typename === 'InvalidSubsetError') {
+    errorsAndPaths.push({pathKey: '', error: validation.message});
+  }
 
-            {(extraNodes.length > 0 || missingNodes.length > 0) && (
-              <Section>
-                <SectionTitle>Bulk Actions:</SectionTitle>
-                {extraNodes.length ? (
-                  <RemoveExtraConfigButton
-                    onRemoveExtraPaths={onRemoveExtraPaths}
-                    extraNodes={extraNodes}
-                  />
-                ) : null}
-                {missingNodes.length ? (
-                  <ScaffoldConfigButton
-                    onScaffoldMissingConfig={onScaffoldMissingConfig}
-                    missingNodes={missingNodes}
-                  />
-                ) : null}
-              </Section>
-            )}
-          </ErrorListContainer>
+  if (validation?.__typename === 'PythonError') {
+    const info = <PythonErrorInfo error={validation} />;
+    errorsAndPaths.push({
+      pathKey: '',
+      error: (
+        <span>
+          PythonError:{' '}
+          <ButtonLink onClick={() => showCustomAlert({body: info})}>Click for details</ButtonLink>
+        </span>
+      ),
+    });
+  }
+
+  const {resources, solids, ...rest} = rootCompositeChildren;
+
+  const itemsIn = (parents: string[], items: {name: string; isRequired: boolean}[]) => {
+    const boxes = items
+      .map((item) => {
+        // If a solid selection is in use, discard anything not in it.
+        if (solidSelection?.length && !solidSelection?.includes(item.name)) {
+          return null;
         }
-        firstInitialPercent={50}
-        firstMinSize={150}
-        second={
-          <>
-            <div style={{overflowY: 'scroll', width: '100%', height: '100%'}}>
-              <RuntimeAndResourcesSection>
-                <Section>
-                  <SectionTitle>Runtime</SectionTitle>
-                  <ItemSet>
-                    {itemsIn(
-                      [],
-                      Object.keys(rest).map((name) => ({name, isRequired: false})),
-                    )}
-                  </ItemSet>
-                </Section>
-                {(resources?.fields.length || 0) > 0 && (
-                  <Section>
-                    <SectionTitle>Resources</SectionTitle>
-                    <ItemSet>{itemsIn(['resources'], resources?.fields || [])}</ItemSet>
-                  </Section>
-                )}
-              </RuntimeAndResourcesSection>
-              <Section>
-                <SectionTitle>Solids</SectionTitle>
-                <ItemSet>{itemsIn(['solids'], solids?.fields || [])}</ItemSet>
-              </Section>
-              <div style={{height: 50}} />
-            </div>
-            <div
-              style={{
-                position: 'absolute',
-                top: 0,
-                right: 0,
-                padding: '12px 15px 0px 10px',
-                background: 'rgba(255,255,255,0.7)',
+
+        const path = [...parents, item.name];
+        const pathKey = path.join('.');
+        const pathErrors = errorsAndPaths
+          .filter((e) => e.pathKey === pathKey || e.pathKey.startsWith(`${pathKey}.`))
+          .map((e) => e.error);
+
+        const isPresent = pathExistsInObject(path, document);
+        const containsMissing = missingNodes.some((missingNode) =>
+          missingNode.includes(path.join('.')),
+        );
+        const isInvalid = pathErrors.length || containsMissing;
+        const isMissing = path.some((_, idx) =>
+          missingNodes.includes(path.slice(0, idx + 1).join('.')),
+        );
+        if (errorsOnly && !isInvalid) {
+          return false;
+        }
+        const state =
+          isMissing && item.isRequired
+            ? 'missing'
+            : isInvalid
+            ? 'invalid'
+            : isPresent
+            ? 'present'
+            : 'none';
+
+        return (
+          <Tooltip
+            position={Position.BOTTOM}
+            content={stateToHint[state].title}
+            intent={stateToHint[state].intent}
+            key={item.name}
+          >
+            <Item
+              key={item.name}
+              state={state}
+              onClick={() => {
+                const first = pathErrors.find(isValidationError);
+                onHighlightPath(first ? errorStackToYamlPath(first.stack.entries) : path);
               }}
             >
-              <Checkbox
-                label="Errors Only"
-                checked={errorsOnly}
-                onChange={() => this.setState({errorsOnly: !errorsOnly})}
-              />
-            </div>
-          </>
-        }
-      />
-    );
-  }
-}
+              {item.name}
+            </Item>
+          </Tooltip>
+        );
+      })
+      .filter(Boolean);
+
+    if (!boxes.length) {
+      return <ItemsEmptyNotice>Nothing to display.</ItemsEmptyNotice>;
+    }
+    return boxes;
+  };
+
+  return (
+    <SplitPanelContainer
+      identifier="run-preview"
+      axis="horizontal"
+      first={
+        <ErrorListContainer>
+          <Section>
+            <SectionTitle>Errors</SectionTitle>
+            {errorsAndPaths.map((item, idx) => (
+              <ErrorRow key={idx} error={item.error} onHighlight={onHighlightPath} />
+            ))}
+          </Section>
+
+          {(extraNodes.length > 0 || missingNodes.length > 0) && (
+            <Section>
+              <SectionTitle>Bulk Actions:</SectionTitle>
+              {extraNodes.length ? (
+                <RemoveExtraConfigButton
+                  onRemoveExtraPaths={onRemoveExtraPaths}
+                  extraNodes={extraNodes}
+                />
+              ) : null}
+              {missingNodes.length ? (
+                <ScaffoldConfigButton
+                  onScaffoldMissingConfig={onScaffoldMissingConfig}
+                  missingNodes={missingNodes}
+                />
+              ) : null}
+            </Section>
+          )}
+        </ErrorListContainer>
+      }
+      firstInitialPercent={50}
+      firstMinSize={150}
+      second={
+        <>
+          <div style={{overflowY: 'scroll', width: '100%', height: '100%'}}>
+            <RuntimeAndResourcesSection>
+              <Section>
+                <SectionTitle>Runtime</SectionTitle>
+                <ItemSet>
+                  {itemsIn(
+                    [],
+                    Object.keys(rest).map((name) => ({name, isRequired: false})),
+                  )}
+                </ItemSet>
+              </Section>
+              {(resources?.fields.length || 0) > 0 && (
+                <Section>
+                  <SectionTitle>Resources</SectionTitle>
+                  <ItemSet>{itemsIn(['resources'], resources?.fields || [])}</ItemSet>
+                </Section>
+              )}
+            </RuntimeAndResourcesSection>
+            <Section>
+              <SectionTitle>{flagPipelineModeTuples ? 'Ops' : 'Solids'}</SectionTitle>
+              <ItemSet>{itemsIn(['solids'], solids?.fields || [])}</ItemSet>
+            </Section>
+            <div style={{height: 50}} />
+          </div>
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              right: 0,
+              padding: '12px 15px 0px 10px',
+              background: 'rgba(255,255,255,0.7)',
+            }}
+          >
+            <Checkbox
+              label="Errors Only"
+              checked={errorsOnly}
+              onChange={() => setErrorsOnly(!errorsOnly)}
+            />
+          </div>
+        </>
+      }
+    />
+  );
+};
 
 export const RUN_PREVIEW_VALIDATION_FRAGMENT = gql`
   fragment RunPreviewValidationFragment on PipelineConfigValidationResult {

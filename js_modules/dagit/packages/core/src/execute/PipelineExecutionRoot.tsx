@@ -57,11 +57,14 @@ export const PipelineExecutionRoot: React.FC<Props> = (props) => {
     return pipelineName !== '' ? (
       <ExecutionSessionContainerError
         icon={IconNames.FLOW_BRANCH}
-        title="Pipeline not found"
+        title={flagPipelineModeTuples ? 'Job not found' : 'Pipeline not found'}
         description={message}
       />
     ) : (
-      <ExecutionSessionContainerError icon={IconNames.FLOW_BRANCH} title="Select a Pipeline" />
+      <ExecutionSessionContainerError
+        icon={IconNames.FLOW_BRANCH}
+        title={flagPipelineModeTuples ? 'Select a job' : 'Select a pipeline'}
+      />
     );
   }
 

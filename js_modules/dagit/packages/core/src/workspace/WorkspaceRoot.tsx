@@ -115,25 +115,37 @@ const RepoRouteContainer: React.FC<{repoPath: string}> = (props) => {
   );
 };
 
-export const WorkspaceRoot = () => (
-  <MainContent>
-    <Switch>
-      <Route path="/workspace" exact component={WorkspaceOverviewRoot} />
-      <Route
-        path={['/workspace/pipelines/:pipelinePath', '/workspace/jobs/:pipelinePath']}
-        render={(props: RouteComponentProps<{pipelinePath: string}>) => (
-          <WorkspacePipelineRoot pipelinePath={props.match.params.pipelinePath} />
-        )}
-      />
-      <Route
-        path="/workspace/:repoPath"
-        render={(props: RouteComponentProps<{repoPath: string}>) => (
-          <RepoRouteContainer repoPath={props.match.params.repoPath} />
-        )}
-      />
-    </Switch>
-  </MainContent>
-);
+export const WorkspaceRoot = () => {
+  const {flagPipelineModeTuples} = useFeatureFlags();
+  return (
+    <MainContent>
+      <Switch>
+        <Route path="/workspace" exact component={WorkspaceOverviewRoot} />
+        <Route
+          path="/workspace/jobs/:pipelinePath"
+          render={(props: RouteComponentProps<{pipelinePath: string}>) => (
+            <WorkspacePipelineRoot pipelinePath={props.match.params.pipelinePath} />
+          )}
+        />
+        <Route
+          path="/workspace/pipelines/:pipelinePath"
+          render={(props: RouteComponentProps<{pipelinePath: string}>) => {
+            if (flagPipelineModeTuples) {
+              return <Redirect to={props.match.url.replace('/pipelines/', '/jobs/')} />;
+            }
+            return <WorkspacePipelineRoot pipelinePath={props.match.params.pipelinePath} />;
+          }}
+        />
+        <Route
+          path="/workspace/:repoPath"
+          render={(props: RouteComponentProps<{repoPath: string}>) => (
+            <RepoRouteContainer repoPath={props.match.params.repoPath} />
+          )}
+        />
+      </Switch>
+    </MainContent>
+  );
+};
 
 // Imported via React.lazy, which requires a default export.
 // eslint-disable-next-line import/no-default-export

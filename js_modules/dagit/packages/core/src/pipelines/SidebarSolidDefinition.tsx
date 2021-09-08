@@ -4,6 +4,7 @@ import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
 import {AppContext} from '../app/AppContext';
+import {useFeatureFlags} from '../app/Flags';
 import {breakOnUnderscores} from '../app/Util';
 import {pluginForMetadata} from '../plugins';
 import {SolidTypeSignature, SOLID_TYPE_SIGNATURE_FRAGMENT} from '../solids/SolidTypeSignature';
@@ -44,6 +45,7 @@ const DEFAULT_INVOCATIONS_SHOWN = 20;
 
 export const SidebarSolidDefinition: React.FC<SidebarSolidDefinitionProps> = (props) => {
   const {definition, getInvocations, showingSubsolids, onClickInvocation, repoAddress} = props;
+  const {flagPipelineModeTuples} = useFeatureFlags();
   const Plugin = pluginForMetadata(definition.metadata);
   const isComposite = definition.__typename === 'CompositeSolidDefinition';
   const configField = definition.__typename === 'SolidDefinition' ? definition.configField : null;
@@ -75,11 +77,18 @@ export const SidebarSolidDefinition: React.FC<SidebarSolidDefinitionProps> = (pr
     requiredResources = definition.requiredResources;
   }
 
+  const subheadString = React.useMemo(() => {
+    if (flagPipelineModeTuples) {
+      return isComposite ? 'Graph' : 'Op';
+    }
+    return isComposite ? 'Composite solid' : 'Solid';
+  }, [flagPipelineModeTuples, isComposite]);
+
   return (
     <div>
       <SidebarSection title={'Definition'}>
         <Box padding={12}>
-          <SidebarSubhead>{isComposite ? 'Composite Solid' : 'Solid'}</SidebarSubhead>
+          <SidebarSubhead>{subheadString}</SidebarSubhead>
           <SidebarTitle>{breakOnUnderscores(definition.name)}</SidebarTitle>
           <SolidTypeSignature definition={definition} />
         </Box>

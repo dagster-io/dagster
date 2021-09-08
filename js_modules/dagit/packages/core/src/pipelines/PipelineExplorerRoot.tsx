@@ -34,7 +34,9 @@ export const PipelineExplorerRegexRoot: React.FC<
   const {flagPipelineModeTuples} = useFeatureFlags();
   const history = useHistory();
 
-  useDocumentTitle(`Pipeline: ${explorerPath.pipelineName}`);
+  useDocumentTitle(
+    `${flagPipelineModeTuples ? 'Graph' : 'Pipeline'}: ${explorerPath.pipelineName}`,
+  );
 
   return (
     <PipelineExplorerContainer
