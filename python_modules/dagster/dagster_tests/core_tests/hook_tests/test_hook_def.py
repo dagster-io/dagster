@@ -7,6 +7,7 @@ from dagster import (
     PipelineDefinition,
     SolidInvocation,
     build_hook_context,
+    check,
     execute_pipeline,
     graph,
     op,
@@ -452,7 +453,7 @@ def test_hook_graph_job_op():
     def hook_op(_):
         return op_output
 
-    ctx = build_hook_context(resources={"resource_a": resource_a}, solid=hook_op)
+    ctx = build_hook_context(resources={"resource_a": resource_a}, op=hook_op)
     hook_one(ctx)
     assert called.get("hook_one") == 1
 
@@ -465,3 +466,17 @@ def test_hook_graph_job_op():
 
     assert called.get("hook_one") == 2
     assert called.get("hook_two") == 1
+
+
+def test_hook_context_op_solid_provided():
+    @success_hook()
+    def hook_one(context):
+        pass
+
+    @op
+    def hook_op(_):
+        pass
+
+    with pytest.raises(check.CheckError):
+        ctx = build_hook_context(op=hook_op, solid=hook_op)
+        hook_one(ctx)
