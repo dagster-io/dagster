@@ -71,72 +71,74 @@ def integration_steps():
         upload_coverage=True,
     ).get_tox_build_steps()
 
-    integration_suites_root = os.path.join(
-        SCRIPT_PATH, "..", "..", "..", "..", "integration_tests", "test_suites"
-    )
-    integration_suites = [
-        os.path.join("integration_tests", "test_suites", suite)
-        for suite in os.listdir(integration_suites_root)
-    ]
-
-    for integration_suite in integration_suites:
-        tox_env_suffixes = None
-        upload_coverage = False
-        if integration_suite == os.path.join(
-            "integration_tests", "test_suites", "k8s-integration-test-suite"
-        ):
-            tox_env_suffixes = ["-default"]
-            upload_coverage = True
-        elif integration_suite == os.path.join(
-            "integration_tests", "test_suites", "celery-k8s-integration-test-suite"
-        ):
-            tox_env_suffixes = [
-                "-default",
-                "-markusercodedeployment",
-                "-markusercodedeploymentsubchart",
-                "-markdaemon",
-            ]
-            upload_coverage = True
-
-        if integration_suite == os.path.join(
-            "integration_tests", "test_suites", "backcompat-test-suite"
-        ):
-            tox_env_suffix_map = {
-                "-backcompat_dagit_on__0_12_8": {"dagit": "0.12.8", "user_code": "current_branch"},
-                "-backcompat_user_code_on__0_12_8": {
-                    "dagit": "current_branch",
-                    "user_code": "0.12.8",
-                },
-            }
-
-            for tox_env_suffix, release_mapping in tox_env_suffix_map.items():
-
-                tests += ModuleBuildSpec(
-                    integration_suite,
-                    upload_coverage=upload_coverage,
-                    extra_cmds_fn=backcompat_suite_extra_cmds_fn(release_mapping),
-                    tox_env_suffixes=[tox_env_suffix],
-                    buildkite_label=tox_env_suffix[1:],
-                    retries=2,
-                ).get_tox_build_steps()
-
-        else:
-
-            tests += ModuleBuildSpec(
-                integration_suite,
-                env_vars=[
-                    "AIRFLOW_HOME",
-                    "AWS_ACCOUNT_ID",
-                    "AWS_ACCESS_KEY_ID",
-                    "AWS_SECRET_ACCESS_KEY",
-                    "BUILDKITE_SECRETS_BUCKET",
-                    "GOOGLE_APPLICATION_CREDENTIALS",
-                ],
-                upload_coverage=upload_coverage,
-                extra_cmds_fn=integration_suite_extra_cmds_fn,
-                depends_on_fn=test_image_depends_fn,
-                tox_env_suffixes=tox_env_suffixes,
-                retries=2,
-            ).get_tox_build_steps()
+    tests += build_spec_backcompat_suite()
+    tests += build_spec_celery_k8s_suite()
+    tests += build_spec_k8s_suite()
+    tests += build_spec_daemon_suite()
 
     return tests
+
+
+def build_spec_backcompat_suite():
+    tox_env_suffix_map = {
+        "-backcompat_dagit_on__0_12_8": {"dagit": "0.12.8", "user_code": "current_branch"},
+        "-backcompat_user_code_on__0_12_8": {
+            "dagit": "current_branch",
+            "user_code": "0.12.8",
+        },
+    }
+
+    backcompat_build_steps = []
+    for tox_env_suffix, release_mapping in tox_env_suffix_map.items():
+        backcompat_build_steps += ModuleBuildSpec(
+            os.path.join("integration_tests", "test_suites", "backcompat-test-suite"),
+            extra_cmds_fn=backcompat_suite_extra_cmds_fn(release_mapping),
+            tox_env_suffixes=[tox_env_suffix],
+            buildkite_label="backcompat_tests",
+            retries=2,
+        ).get_tox_build_steps()
+    return backcompat_build_steps
+
+
+def build_spec_celery_k8s_suite():
+    tox_env_suffixes = [
+        "-default",
+        "-markusercodedeployment",
+        "-markusercodedeploymentsubchart",
+        "-markdaemon",
+    ]
+    directory = os.path.join(
+        "integration_tests", "test_suites", "celery-k8s-integration-test-suite"
+    )
+    return build_steps_integration_suite(directory, tox_env_suffixes, upload_coverage=True)
+
+
+def build_spec_daemon_suite():
+    tox_env_suffixes = None
+    directory = os.path.join("integration_tests", "test_suites", "daemon-test-suite")
+    return build_steps_integration_suite(directory, tox_env_suffixes, upload_coverage=False)
+
+
+def build_spec_k8s_suite():
+    tox_env_suffixes = ["-default"]
+    directory = os.path.join("integration_tests", "test_suites", "k8s-integration-test-suite")
+    return build_steps_integration_suite(directory, tox_env_suffixes, upload_coverage=True)
+
+
+def build_steps_integration_suite(directory, tox_env_suffixes, upload_coverage):
+    return ModuleBuildSpec(
+        directory,
+        env_vars=[
+            "AIRFLOW_HOME",
+            "AWS_ACCOUNT_ID",
+            "AWS_ACCESS_KEY_ID",
+            "AWS_SECRET_ACCESS_KEY",
+            "BUILDKITE_SECRETS_BUCKET",
+            "GOOGLE_APPLICATION_CREDENTIALS",
+        ],
+        upload_coverage=upload_coverage,
+        extra_cmds_fn=integration_suite_extra_cmds_fn,
+        depends_on_fn=test_image_depends_fn,
+        tox_env_suffixes=tox_env_suffixes,
+        retries=2,
+    ).get_tox_build_steps()
