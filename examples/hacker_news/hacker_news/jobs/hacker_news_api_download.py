@@ -97,6 +97,7 @@ download_prod_job = hacker_news_api_download.to_job(
     config=hourly_download_schedule_config,
 )
 
+
 download_staging_job = hacker_news_api_download.to_job(
     resource_defs=DOWNLOAD_RESOURCES_STAGING,
     tags=DOWNLOAD_TAGS,

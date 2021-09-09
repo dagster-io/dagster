@@ -21,6 +21,6 @@ def test_slack_on_failure_def():
             make_job_failure_sensor("https://prod.something.com"),
         ]
 
-    assert my_repo_local.has_sensor_def("slack_on_job_failure")
-    assert my_repo_staging.has_sensor_def("slack_on_job_failure")
-    assert my_repo_prod.has_sensor_def("slack_on_job_failure")
+    assert my_repo_local.has_sensor_def("slack_on_run_failure")
+    assert my_repo_staging.has_sensor_def("slack_on_run_failure")
+    assert my_repo_prod.has_sensor_def("slack_on_run_failure")

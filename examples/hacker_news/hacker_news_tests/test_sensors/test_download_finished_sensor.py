@@ -5,7 +5,10 @@ from dagster import build_sensor_context, validate_run_config
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from hacker_news.jobs.dbt_metrics import dbt_prod_job
-from hacker_news.jobs.hacker_news_api_download import DEFAULT_PARTITION_RESOURCE_CONFIG
+from hacker_news.jobs.hacker_news_api_download import (
+    DEFAULT_PARTITION_RESOURCE_CONFIG,
+    hacker_news_api_download,
+)
 from hacker_news.sensors.download_finished_sensor import dbt_on_hn_download_finished_prod
 
 
@@ -35,7 +38,7 @@ def test_no_runs_for_failed_run():
         instance.add_run(
             PipelineRun(
                 status=PipelineRunStatus.FAILURE,
-                pipeline_name="download_graph",
+                pipeline_name=hacker_news_api_download.name,
                 run_config={"resources": DEFAULT_PARTITION_RESOURCE_CONFIG},
             )
         )
@@ -51,7 +54,7 @@ def test_no_runs_for_invalid_config():
         instance.add_run(
             PipelineRun(
                 status=PipelineRunStatus.FAILURE,
-                pipeline_name="download_graph",
+                pipeline_name=hacker_news_api_download.name,
                 run_config={"I'm some config": {"that is not": "valid"}},
             )
         )
@@ -66,7 +69,7 @@ def test_multiple_runs_for_successful_runs():
         return PipelineRun(
             run_id=str(uuid.uuid4()),
             status=PipelineRunStatus.SUCCESS,
-            pipeline_name="download_graph",
+            pipeline_name=hacker_news_api_download.name,
             run_config={"resources": DEFAULT_PARTITION_RESOURCE_CONFIG},
         )
 
@@ -74,7 +77,9 @@ def test_multiple_runs_for_successful_runs():
         instance = DagsterInstance.local_temp(temp_dir)
         for run in [
             get_should_launch_run(),
-            PipelineRun(status=PipelineRunStatus.FAILURE, pipeline_name="download_graph"),
+            PipelineRun(
+                status=PipelineRunStatus.FAILURE, pipeline_name=hacker_news_api_download.name
+            ),
             PipelineRun(status=PipelineRunStatus.SUCCESS, pipeline_name="weird_pipeline"),
             PipelineRun(status=PipelineRunStatus.SUCCESS, pipeline_name="other"),
             get_should_launch_run(),

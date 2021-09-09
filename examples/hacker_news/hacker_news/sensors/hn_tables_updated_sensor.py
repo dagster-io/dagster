@@ -46,3 +46,9 @@ def _story_recommender_on_hn_table_update(context):
     run_key = f"{last_comments_record_id}|{last_stories_record_id}"
 
     yield RunRequest(run_key=run_key)
+
+
+# legacy
+@sensor(pipeline_name="story_recommender", mode="prod")
+def story_recommender_on_hn_table_update(context):
+    yield from _story_recommender_on_hn_table_update(context)

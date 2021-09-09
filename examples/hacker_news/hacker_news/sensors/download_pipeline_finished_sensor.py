@@ -1,11 +1,9 @@
 from dagster import RunRequest, sensor
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
 
-from ..jobs.dbt_metrics import dbt_prod_job, dbt_staging_job
-from ..jobs.hacker_news_api_download import hacker_news_api_download
 
-
-def _dbt_on_hn_download_finished(context):
+@sensor(pipeline_name="dbt_pipeline", mode="prod")
+def dbt_on_hn_download_finished(context):
     # This is a bit of a hacky solution. We search through the run log for any successful pipeline
     # runs of the trigger_on_name, with the requested mode, and fire off a RunRequest for each one
     # we find (taking advantage of the run_key deduplication to avoid kicking off multiple runs for
@@ -14,12 +12,15 @@ def _dbt_on_hn_download_finished(context):
     # This is not a recommended pattern as it can put a lot of pressure on your log database.
     runs = context.instance.get_runs(
         filters=PipelineRunsFilter(
-            statuses=[PipelineRunStatus.SUCCESS], pipeline_name=hacker_news_api_download.name
+            statuses=[PipelineRunStatus.SUCCESS], pipeline_name="download_pipeline"
         ),
         limit=5,
     )
 
     for run in runs:
+        if run.mode != "prod":
+            continue
+
         # guard against runs launched with different config schema
         date = run.run_config.get("resources", {}).get("partition_start", {}).get("config", {})
         if not date:
@@ -30,13 +31,3 @@ def _dbt_on_hn_download_finished(context):
         yield RunRequest(
             run_key=str(run.run_id), run_config=dbt_config, tags={"source_run_id": run.run_id}
         )
-
-
-@sensor(job=dbt_prod_job)
-def dbt_on_hn_download_finished_prod(context):
-    yield from _dbt_on_hn_download_finished(context)
-
-
-@sensor(job=dbt_staging_job)
-def dbt_on_hn_download_finished_staging(context):
-    yield from _dbt_on_hn_download_finished(context)

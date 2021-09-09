@@ -1,7 +1,7 @@
 import tempfile
 
 from dagster import ResourceDefinition, fs_io_manager
-from hacker_news.jobs.hacker_news_api_download import configured_pyspark, download_graph
+from hacker_news.jobs.hacker_news_api_download import configured_pyspark, hacker_news_api_download
 from hacker_news.resources.hn_resource import hn_snapshot_client
 from hacker_news.resources.parquet_io_manager import partitioned_parquet_io_manager
 
@@ -9,7 +9,7 @@ from hacker_news.resources.parquet_io_manager import partitioned_parquet_io_mana
 def test_download():
 
     with tempfile.TemporaryDirectory() as temp_dir:
-        result = download_graph.to_job(
+        result = hacker_news_api_download.to_job(
             resource_defs={
                 "io_manager": fs_io_manager,
                 "partition_start": ResourceDefinition.string_resource(),

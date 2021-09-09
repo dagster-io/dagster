@@ -16,7 +16,9 @@ from .sensors.slack_on_failure_sensor import make_job_failure_sensor
 def hacker_news_prod():
     return [
         schedule_from_partitions(download_prod_job),
-        make_job_failure_sensor(base_url="my_dagit_url.com", job_selection=[download_prod_job]),
+        make_job_failure_sensor(
+            base_url="my_dagit_url.com", job_selection=[download_prod_job.name]
+        ),
         story_recommender_on_hn_table_update_prod,
         dbt_on_hn_download_finished_prod,
     ]
@@ -26,7 +28,9 @@ def hacker_news_prod():
 def hacker_news_staging():
     return [
         schedule_from_partitions(download_staging_job),
-        make_job_failure_sensor(base_url="my_dagit_url.com", job_selection=[download_staging_job]),
+        make_job_failure_sensor(
+            base_url="my_dagit_url.com", job_selection=[download_staging_job.name]
+        ),
         story_recommender_on_hn_table_update_staging,
         dbt_on_hn_download_finished_staging,
     ]
