@@ -1,26 +1,15 @@
 import datetime
-from collections import defaultdict
 
-from dagster import (
-    PartitionSetDefinition,
-    ScheduleEvaluationContext,
-    daily_schedule,
-    hourly_schedule,
-    monthly_schedule,
-    weekly_schedule,
-    schedule_from_partitions,
-)
-from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
-from dagster.utils.partitions import date_partition_range
-from dagster_test.graph_job_op_toys.unreliable import unreliable
-from dagster_test.graph_job_op_toys.many_events import many_events
-from dagster_test.graph_job_op_toys.longitudinal import longitudinal
+from dagster import schedule_from_partitions
 from dagster.core.definitions.time_window_partitions import (
     daily_partitioned_config,
-    weekly_partitioned_config,
     hourly_partitioned_config,
     monthly_partitioned_config,
+    weekly_partitioned_config,
 )
+from dagster_test.graph_job_op_toys.longitudinal import longitudinal
+from dagster_test.graph_job_op_toys.many_events import many_events
+from dagster_test.graph_job_op_toys.unreliable import unreliable
 
 
 def _toys_tz_info():
@@ -97,8 +86,6 @@ def longitudinal_schedule():
 
 
 def get_toys_schedules():
-    from dagster import ScheduleDefinition
-
     return [
         unreliable_job_test_schedule(),
         hourly_materialization_schedule(),
