@@ -391,7 +391,7 @@ def build_hook_context(
         experimental_arg_warning("op", "build_hook_context")
         return UnboundHookContext(
             resources=check.opt_dict_param(resources, "resources", key_type=str),
-            mode_def=ModeDefinition,
+            mode_def=None,
             solid=check.opt_inst_param(op, "op", (OpDefinition, PendingNodeInvocation)),
         )
     return UnboundHookContext(

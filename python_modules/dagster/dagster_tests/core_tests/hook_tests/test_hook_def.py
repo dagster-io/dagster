@@ -445,7 +445,7 @@ def test_hook_graph_job_op():
     def hook_two(context):
         assert not context.op_config
         assert not context.op_exception
-        assert context.op_output_values['result'] == op_output
+        assert context.op_output_values["result"] == op_output
         called[context.hook_def.name] = called.get(context.hook_def.name, 0) + 1
 
     @op
