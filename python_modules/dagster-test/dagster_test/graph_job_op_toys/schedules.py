@@ -46,8 +46,7 @@ def hourly_materialization_schedule():
         return {}
 
     return schedule_from_partitions(
-        many_events.to_job("many_events_hourly_config", config=hourly_materialization_config),
-        name="many_events_hourly",
+        many_events.to_job("many_events_hourly", config=hourly_materialization_config),
     )
 
 
@@ -57,8 +56,7 @@ def daily_materialization_schedule():
         return {}
 
     return schedule_from_partitions(
-        many_events.to_job("many_events_daily_config", config=daily_materialization_config),
-        name="many_events_daily",
+        many_events.to_job("many_events_daily", config=daily_materialization_config),
     )
 
 
@@ -68,8 +66,7 @@ def weekly_materialization_schedule():
         return {}
 
     return schedule_from_partitions(
-        many_events.to_job("many_events_weekly_config", config=weekly_materialization_config),
-        name="many_events_weekly",
+        many_events.to_job("many_events_weekly", config=weekly_materialization_config),
     )
 
 
@@ -79,8 +76,7 @@ def monthly_materialization_schedule():
         return {}
 
     return schedule_from_partitions(
-        many_events.to_job("many_events_monthly_config", config=monthly_materialization_config),
-        name="many_events_monthly",
+        many_events.to_job("many_events_monthly", config=monthly_materialization_config),
     )
 
 
