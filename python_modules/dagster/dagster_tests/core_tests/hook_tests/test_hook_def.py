@@ -6,7 +6,10 @@ from dagster import (
     ModeDefinition,
     PipelineDefinition,
     SolidInvocation,
+    build_hook_context,
     execute_pipeline,
+    graph,
+    op,
     pipeline,
     reconstructable,
     resource,
@@ -427,3 +430,36 @@ def test_hook_with_resource_to_resource_dep():
     result = execute_pipeline(basic_hook_pipeline)
     assert result.success
     assert called.get("basic_solid")
+
+
+def test_hook_graph_job_op():
+    called = {}
+
+    @success_hook(required_resource_keys={"resource_a"})
+    def hook_one(context):
+        assert context.op.name
+        called[context.hook_def.name] = called.get(context.hook_def.name, 0) + 1
+
+    @success_hook()
+    def hook_two(context):
+        assert not context.op_config
+        assert not context.op_exception
+        called[context.hook_def.name] = called.get(context.hook_def.name, 0) + 1
+
+    @op
+    def hook_op(_):
+        pass
+
+    ctx = build_hook_context(resources={"resource_a": resource_a}, solid=hook_op)
+    hook_one(ctx)
+    assert called.get("hook_one") == 1
+
+    @graph
+    def run_success_hook():
+        hook_op.with_hooks({hook_one, hook_two})()
+
+    success_hook_job = run_success_hook.to_job(resource_defs={"resource_a": resource_a})
+    assert success_hook_job.execute_in_process().success
+
+    assert called.get("hook_one") == 2
+    assert called.get("hook_two") == 1

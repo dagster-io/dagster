@@ -2,12 +2,14 @@ import warnings
 from typing import Any, Dict, Optional, Set, Union, cast
 
 from dagster import check
+from dagster.utils.backcompat import experimental_arg_warning
 
 from ...definitions.composition import PendingNodeInvocation
 from ...definitions.decorators.graph import graph
 from ...definitions.dependency import Node
 from ...definitions.hook import HookDefinition
 from ...definitions.mode import ModeDefinition
+from ...definitions.op import OpDefinition
 from ...definitions.resource import IContainsGenerator, Resources
 from ...definitions.solid import SolidDefinition
 from ...errors import DagsterInvalidPropertyError, DagsterInvariantViolationError
@@ -67,6 +69,10 @@ class HookContext:
         return self._step_execution_context.solid
 
     @property
+    def op(self) -> Node:
+        return self.solid
+
+    @property
     def step(self) -> ExecutionStep:
         warnings.warn(
             "The step property of HookContext has been deprecated, and will be removed "
@@ -97,6 +103,10 @@ class HookContext:
         )
         return solid_config.config if solid_config else None
 
+    @property
+    def op_config(self) -> Any:
+        return self.solid_config
+
     # Because of the fact that we directly use the log manager of the step, if a user calls
     # hook_context.log.with_tags, then they will end up mutating the step's logging tags as well.
     # This is not problematic because the hook only runs after the step has been completed.
@@ -113,6 +123,10 @@ class HookContext:
         """
 
         return self._step_execution_context.step_exception
+
+    @property
+    def op_exception(self):
+        return self.solid_exception
 
     @property
     def solid_output_values(self) -> Dict[str, Union[Any, Dict[str, Any]]]:
@@ -137,6 +151,10 @@ class HookContext:
                 results[step_output_handle.output_name] = value
 
         return results
+
+    @property
+    def op_output_values(self):
+        return self.solid_output_values
 
 
 class UnboundHookContext(HookContext):
@@ -343,6 +361,7 @@ def build_hook_context(
     resources: Optional[Dict[str, Any]] = None,
     mode_def: Optional[ModeDefinition] = None,
     solid: Optional[Union[SolidDefinition, PendingNodeInvocation]] = None,
+    op: Optional[Union[OpDefinition, PendingNodeInvocation]] = None,
 ) -> UnboundHookContext:
     """Builds hook context from provided parameters.
 
@@ -367,6 +386,13 @@ def build_hook_context(
             with build_hook_context(resources={"foo": context_manager_resource}) as context:
                 hook_to_invoke(context)
     """
+    if op:
+        experimental_arg_warning("op", "build_hook_context")
+        return UnboundHookContext(
+            resources=check.opt_dict_param(resources, "resources", key_type=str),
+            mode_def=ModeDefinition,
+            solid=check.opt_inst_param(op, "op", (OpDefinition, PendingNodeInvocation)),
+        )
     return UnboundHookContext(
         resources=check.opt_dict_param(resources, "resources", key_type=str),
         mode_def=check.opt_inst_param(mode_def, "mode_def", ModeDefinition),
