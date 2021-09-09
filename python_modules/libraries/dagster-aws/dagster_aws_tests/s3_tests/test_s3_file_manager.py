@@ -18,15 +18,8 @@ from dagster_aws.s3 import (
     S3FileHandle,
     S3FileManager,
     s3_file_manager,
-    s3_plus_default_intermediate_storage_defs,
     s3_resource,
 )
-
-
-def build_key(run_id, step_key, output_name):
-    return "dagster/storage/{run_id}/intermediates/{step_key}/{output_name}".format(
-        run_id=run_id, step_key=step_key, output_name=output_name
-    )
 
 
 def test_s3_file_manager_write(mock_s3_resource, mock_s3_bucket):
@@ -58,46 +51,6 @@ def test_s3_file_manager_read(mock_s3_resource, mock_s3_bucket):
         assert file_obj.read() == body
 
 
-def test_depends_on_s3_resource_intermediates(mock_s3_bucket):
-    @solid(
-        input_defs=[InputDefinition("num_one", Int), InputDefinition("num_two", Int)],
-        output_defs=[OutputDefinition(Int)],
-    )
-    def add_numbers(_, num_one, num_two):
-        return num_one + num_two
-
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(
-                intermediate_storage_defs=s3_plus_default_intermediate_storage_defs,
-                resource_defs={"s3": s3_resource},
-            )
-        ]
-    )
-    def s3_internal_pipeline():
-        return add_numbers()
-
-    result = execute_pipeline(
-        s3_internal_pipeline,
-        run_config={
-            "solids": {
-                "add_numbers": {"inputs": {"num_one": {"value": 2}, "num_two": {"value": 4}}}
-            },
-            "intermediate_storage": {"s3": {"config": {"s3_bucket": mock_s3_bucket.name}}},
-        },
-    )
-
-    keys_in_bucket = [obj.key for obj in mock_s3_bucket.objects.all()]
-    assert result.success
-    assert result.result_for_solid("add_numbers").output_value() == 6
-
-    keys = set()
-    for step_key, output_name in [("add_numbers", "result")]:
-        keys.add(build_key(result.run_id, step_key, output_name))
-
-    assert set(keys_in_bucket) == keys
-
-
 def test_depends_on_s3_resource_file_manager(mock_s3_bucket):
     bar_bytes = b"bar"
 
@@ -117,7 +70,6 @@ def test_depends_on_s3_resource_file_manager(mock_s3_bucket):
     @pipeline(
         mode_defs=[
             ModeDefinition(
-                intermediate_storage_defs=s3_plus_default_intermediate_storage_defs,
                 resource_defs={"s3": s3_resource, "file_manager": s3_file_manager},
             )
         ]
@@ -133,19 +85,12 @@ def test_depends_on_s3_resource_file_manager(mock_s3_bucket):
                     "config": {"s3_bucket": mock_s3_bucket.name, "s3_prefix": "some-prefix"}
                 }
             },
-            "intermediate_storage": {"s3": {"config": {"s3_bucket": mock_s3_bucket.name}}},
         },
     )
 
     assert result.success
 
     keys_in_bucket = [obj.key for obj in mock_s3_bucket.objects.all()]
-
-    for step_key, output_name in [
-        ("emit_file", "result"),
-        ("accept_file", "result"),
-    ]:
-        keys_in_bucket.remove(build_key(result.run_id, step_key, output_name))
 
     assert len(keys_in_bucket) == 1
 

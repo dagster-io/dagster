@@ -195,20 +195,22 @@ def cloudwatch_logger(init_context):
         .. code-block:: python
 
             from dagster import ModeDefinition, execute_pipeline, pipeline, solid
+            from dagster import graph, op
             from dagster_aws.cloudwatch import cloudwatch_logger
 
-            @solid
-            def hello_cloudwatch(context):
+            @op
+            def hello_op(context):
                 context.log.info('Hello, Cloudwatch!')
                 context.log.error('This is an error')
 
-            @pipeline(mode_defs=[ModeDefinition(logger_defs={'cloudwatch': cloudwatch_logger})])
-            def hello_cloudwatch_pipeline():
-                hello_cloudwatch()
+            @graph
+            def hello_cloudwatch():
+                hello_op()
 
-            execute_pipeline(
-                hello_cloudwatch_pipeline,
-                {
+            hello_cloudwatch.to_job(
+                logger_defs={'cloudwatch': cloudwatch_logger}
+            ).execute_in_process(
+                run_config={
                     'loggers': {
                         'cloudwatch': {
                             'config': {
@@ -218,7 +220,7 @@ def cloudwatch_logger(init_context):
                             }
                         }
                     }
-                },
+                }
             )
     """
     level = coerce_valid_log_level(init_context.logger_config["log_level"])

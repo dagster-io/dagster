@@ -92,12 +92,8 @@ def s3_pickle_io_manager(init_context):
 
     .. code-block:: python
 
-        pipeline_def = PipelineDefinition(
-            mode_defs=[
-                ModeDefinition(
-                    resource_defs={'io_manager': s3_pickle_io_manager, "s3": s3_resource, ...},
-                ), ...
-            ], ...
+        my_job = my_graph.to_job(
+            resource_defs={'io_manager': s3_pickle_io_manager, "s3": s3_resource, ...},
         )
 
     You may configure this storage as follows:

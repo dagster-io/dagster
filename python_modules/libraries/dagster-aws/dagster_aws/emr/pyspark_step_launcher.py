@@ -62,13 +62,13 @@ CODE_ZIP_NAME = "code.zip"
         "local_pipeline_package_path": Field(
             StringSource,
             is_required=True,
-            description="Absolute path to the package that contains the pipeline definition(s) "
+            description="Absolute path to the package that contains the job/pipeline definition(s) "
             "whose steps will execute remotely on EMR. This is a path on the local fileystem of "
-            "the process executing the pipeline. The expectation is that this package will also be "
-            "available on the python path of the launched process running the Spark step on EMR, "
-            "either deployed on step launch via the deploy_pipeline_package option, referenced on "
-            "s3 via the s3_pipeline_package_path option, or installed on the cluster via bootstrap "
-            "actions.",
+            "the process executing the job/pipeline. The expectation is that this package will "
+            "also be available on the python path of the launched process running the Spark step "
+            "on EMR, either deployed on step launch via the deploy_local_pipeline_package option, "
+            "referenced on s3 via the s3_pipeline_package_path option, or installed on the cluster "
+            "via bootstrap actions.",
         ),
         "deploy_local_pipeline_package": Field(
             bool,
@@ -329,7 +329,7 @@ class EmrPySparkStepLauncher(StepLauncher):
         )
 
         return EmrJobRunner.construct_step_dict_for_command(
-            "Execute Solid %s" % solid_name, command, action_on_failure=action_on_failure
+            "Execute Solid/Op %s" % solid_name, command, action_on_failure=action_on_failure
         )
 
     def _main_file_name(self):

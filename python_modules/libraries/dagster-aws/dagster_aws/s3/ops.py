@@ -3,13 +3,13 @@ from dagster import (
     EventMetadataEntry,
     Field,
     FileHandle,
-    InputDefinition,
+    In,
+    Out,
     Output,
-    OutputDefinition,
     StringSource,
     check,
     dagster_type_loader,
-    solid,
+    op,
 )
 from dagster.core.types.dagster_type import PythonObjectDagsterType
 
@@ -50,7 +50,7 @@ def last_key(key):
     return comps[-1]
 
 
-@solid(
+@op(
     config_schema={
         "Bucket": Field(
             StringSource, description="The name of the bucket to upload to.", is_required=True
@@ -59,8 +59,8 @@ def last_key(key):
             StringSource, description="The name of the key to upload to.", is_required=True
         ),
     },
-    input_defs=[InputDefinition("file_handle", FileHandle, description="The file to upload.")],
-    output_defs=[OutputDefinition(name="s3_file_handle", dagster_type=S3FileHandle)],
+    ins={"file_handle": In(FileHandle, description="The file to upload.")},
+    out={"s3_file_handle": Out(S3FileHandle)},
     description="""Take a file handle and upload it to s3. Returns an S3FileHandle.""",
     required_resource_keys={"s3", "file_manager"},
 )
