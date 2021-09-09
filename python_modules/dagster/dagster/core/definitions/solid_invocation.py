@@ -8,7 +8,8 @@ from dagster.core.errors import (
     DagsterTypeCheckDidNotPass,
 )
 
-from .events import AssetMaterialization, ExpectationResult, Materialization, Output
+from .events import AssetMaterialization, DynamicOutput, ExpectationResult, Materialization, Output
+from .output import DynamicOutputDefinition
 
 if TYPE_CHECKING:
     from .solid import SolidDefinition
@@ -181,14 +182,16 @@ def _type_check_output_wrapper(
                 if isinstance(event, (AssetMaterialization, Materialization, ExpectationResult)):
                     yield event
                 else:
-                    if not isinstance(event, Output):
+                    if not isinstance(event, (Output, DynamicOutput)):
                         raise DagsterInvariantViolationError(
                             "When yielding outputs from a solid generator, they should be wrapped in an `Output` object."
                         )
                     else:
                         output_def = output_defs[event.output_name]
                         _type_check_output(output_def, event, context)
-                        if output_def.name in outputs_seen:
+                        if output_def.name in outputs_seen and not isinstance(
+                            output_def, DynamicOutputDefinition
+                        ):
                             raise DagsterInvariantViolationError(
                                 f"Invocation of solid '{context.alias}' yielded an output '{output_def.name}' multiple times."
                             )
@@ -220,14 +223,16 @@ def _type_check_output_wrapper(
                 if isinstance(event, (AssetMaterialization, Materialization, ExpectationResult)):
                     yield event
                 else:
-                    if not isinstance(event, Output):
+                    if not isinstance(event, (Output, DynamicOutput)):
                         raise DagsterInvariantViolationError(
                             "When yielding outputs from a solid generator, they should be wrapped in an `Output` object."
                         )
                     else:
                         output_def = output_defs[event.output_name]
                         output = _type_check_output(output_def, event, context)
-                        if output_def.name in outputs_seen:
+                        if output_def.name in outputs_seen and not isinstance(
+                            output_def, DynamicOutputDefinition
+                        ):
                             raise DagsterInvariantViolationError(
                                 f"Invocation of solid '{context.alias}' yielded an output '{output_def.name}' multiple times."
                             )
@@ -253,10 +258,15 @@ def _type_check_function_output(
     if isinstance(result, (AssetMaterialization, Materialization, ExpectationResult)):
         raise DagsterInvariantViolationError(
             (
-                f"Error in solid {solid_def.name}: If you are returning an AssetMaterialization "
+                f"Error in solid '{solid_def.name}'': If you are returning an AssetMaterialization "
                 "or an ExpectationResult from solid you must yield them to avoid "
                 "ambiguity with an implied result from returning a value."
             )
+        )
+    if isinstance(result, DynamicOutput):
+        raise DagsterInvariantViolationError(
+            f"Error in solid '{solid_def.name}': Attempted to return a DynamicOutput from solid. "
+            "DynamicOutputs are only supported using yield syntax."
         )
     if (
         not isinstance(result, Output)
@@ -267,13 +277,13 @@ def _type_check_function_output(
             _type_check_output(output_def, result[i], context)
         return result
 
-    if len(solid_def.output_defs) > 1 and not isinstance(result, Output):
+    if len(solid_def.output_defs) > 1 and not isinstance(result, (Output, DynamicOutput)):
         raise DagsterInvariantViolationError(
             "Multiple output definitions but no Output wrapper provided is ambiguous."
         )
     received_output = None
     output_defs = {output_def.name: output_def for output_def in solid_def.output_defs}
-    if isinstance(result, Output):
+    if isinstance(result, (Output, DynamicOutput)):
         if result.output_name not in output_defs:
             raise DagsterInvariantViolationError(
                 f'Invocation of solid "{solid_def.name}" returned an output "{result.output_name}" '
@@ -309,7 +319,7 @@ def _type_check_output(
     """
     from ..execution.plan.execute_step import do_type_check
 
-    if isinstance(output, Output):
+    if isinstance(output, (Output, DynamicOutput)):
         dagster_type = output_def.dagster_type
         type_check = do_type_check(context.for_type(dagster_type), dagster_type, output.value)
         if not type_check.success:
