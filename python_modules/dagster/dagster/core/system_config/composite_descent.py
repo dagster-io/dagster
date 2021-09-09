@@ -4,6 +4,8 @@ from dagster import check
 from dagster.config.evaluate_value_result import EvaluateValueResult
 from dagster.config.validate import process_config
 from dagster.core.definitions.dependency import NodeHandle
+from dagster.core.definitions.solid import CompositeSolidDefinition
+from dagster.core.definitions.job import JobDefinition
 from dagster.core.definitions.graph import GraphDefinition
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.definitions.resource import ResourceDefinition
@@ -218,12 +220,28 @@ def _get_mapped_solids_dict(
 
 
 def _get_error_lambda(current_stack):
+    # If definition is a composite solid, or definition is a graph but execution target is pipeline,
+    # then orient error messages around solid/pipeline APIs.
+    if isinstance(
+        current_stack.current_solid.definition, CompositeSolidDefinition
+    ) or not isinstance(current_stack.pipeline_def, JobDefinition):
+        definition_type = "composite solid"
+        container_type = "solid"
+        execution_target = "pipeline"
+    else:
+        definition_type = "graph"
+        container_type = "node"
+        execution_target = "job"
+
     return lambda: (
-        "The config mapping function on the composite solid definition "
-        '"{definition_name}" at solid "{solid_name}" in pipeline "{pipeline_name}" '
+        "The config mapping function on the {definition_type} definition "
+        '"{definition_name}" at {container_type} "{solid_name}" in {execution_target} "{pipeline_name}" '
         "has thrown an unexpected error during its execution. The definition is "
         'instantiated at stack "{stack_str}".'
     ).format(
+        definition_type=definition_type,
+        container_type=container_type,
+        execution_target=execution_target,
         definition_name=current_stack.current_solid.definition.name,
         solid_name=current_stack.current_solid.name,
         pipeline_name=current_stack.pipeline_def.name,
