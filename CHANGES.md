@@ -4,7 +4,7 @@
 
 ### Community Contributions
 
-- [helm] The Kubernetes run launcher image pull policy is now configurable in a separate field (thanks [@yamrzou](https://github.com/yamrzou)!).
+- [helm] The `KubernetesRunLauncher` image pull policy is now configurable in a separate field (thanks [@yamrzou](https://github.com/yamrzou)!).
 - The `dagster-github` package is now usable for GitHub Enterprise users (thanks [@metinsenturk](https://github.com/metinsenturk)!) A hostname can now be provided via config to the dagster-github resource with the key `github_hostname`:
 
 ```
