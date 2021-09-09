@@ -386,6 +386,7 @@ def build_hook_context(
             with build_hook_context(resources={"foo": context_manager_resource}) as context:
                 hook_to_invoke(context)
     """
+    check.invariant(not (solid and op))
     if op:
         experimental_arg_warning("op", "build_hook_context")
         return UnboundHookContext(
