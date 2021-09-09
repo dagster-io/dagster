@@ -95,6 +95,7 @@ def test_storage_postgres_db_config(template: HelmTemplate, storage: str):
 
 def test_k8s_run_launcher_config(template: HelmTemplate):
     job_namespace = "namespace"
+    image_pull_policy = "Always"
     load_incluster_config = True
     env_config_maps = [{"name": "env_config_map"}]
     env_secrets = [{"name": "secret"}]
@@ -105,6 +106,7 @@ def test_k8s_run_launcher_config(template: HelmTemplate):
             config=RunLauncherConfig.construct(
                 k8sRunLauncher=K8sRunLauncherConfig.construct(
                     jobNamespace=job_namespace,
+                    imagePullPolicy=image_pull_policy,
                     loadInclusterConfig=load_incluster_config,
                     envConfigMaps=env_config_maps,
                     envSecrets=env_secrets,
@@ -122,6 +124,7 @@ def test_k8s_run_launcher_config(template: HelmTemplate):
     assert run_launcher_config["class"] == "K8sRunLauncher"
     assert run_launcher_config["config"]["job_namespace"] == job_namespace
     assert run_launcher_config["config"]["load_incluster_config"] == load_incluster_config
+    assert run_launcher_config["config"]["image_pull_policy"] == image_pull_policy
     assert run_launcher_config["config"]["env_config_maps"][1:] == [
         configmap["name"] for configmap in env_config_maps
     ]
