@@ -81,8 +81,8 @@ def integration_steps():
 
 def build_spec_backcompat_suite():
     tox_env_suffix_map = {
-        "-backcompat_dagit_on__0_12_8": {"dagit": "0.12.8", "user_code": "current_branch"},
-        "-backcompat_user_code_on__0_12_8": {
+        "-old-dagit": {"dagit": "0.12.8", "user_code": "current_branch"},
+        "-old-user-code": {
             "dagit": "current_branch",
             "user_code": "0.12.8",
         },
