@@ -1488,6 +1488,9 @@
                         }
                     ]
                 },
+                "imagePullPolicy": {
+                    "$ref": "#/definitions/PullPolicy"
+                },
                 "jobNamespace": {
                     "title": "Jobnamespace",
                     "anyOf": [
@@ -1498,9 +1501,6 @@
                             "type": "null"
                         }
                     ]
-                },
-                "imagePullPolicy": {
-                    "$ref": "#/definitions/PullPolicy"
                 },
                 "loadInclusterConfig": {
                     "title": "Loadinclusterconfig",
