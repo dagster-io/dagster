@@ -83,6 +83,8 @@ def docker_service_up(docker_compose_file, build_args=None):
 @pytest.fixture
 def graphql_client(release_test_map, retrying_requests):
     dagit_host = os.environ.get("BACKCOMPAT_TESTS_DAGIT_HOST", "localhost")
+    assert dagit_host
+    assert len(dagit_host) > 0
     dagit_version = release_test_map["dagit"]
     user_code_version = release_test_map["user_code"]
 
