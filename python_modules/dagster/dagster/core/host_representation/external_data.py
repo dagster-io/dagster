@@ -438,7 +438,7 @@ def external_asset_graph_from_defs(
             for input_def in node_def.input_defs:
                 upstream_asset_key = input_def.hardcoded_asset_key
 
-                if asset_key:
+                if upstream_asset_key:
                     for node_asset_key in node_asset_keys:
                         deps[node_asset_key][input_def.name] = ExternalAssetDependency(
                             upstream_asset_key=upstream_asset_key,
