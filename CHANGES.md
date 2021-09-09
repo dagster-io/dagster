@@ -25,7 +25,7 @@ execute_pipeline(
 ### Bugfixes
 
 - Performance improvements have been made to allow dagit to more gracefully load a run that has a large number of events.
-- Fixed an issue where DockerRunLauncher would raise an exception when no networks were specified in its configuration.
+- Fixed an issue where `DockerRunLauncher` would raise an exception when no networks were specified in its configuration.
 
 ### Breaking Changes
 
