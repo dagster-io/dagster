@@ -3,6 +3,7 @@ from dagster.core.test_utils import environ
 from dagster_k8s import DagsterK8sJobConfig, construct_dagster_k8s_job
 from dagster_k8s.job import (
     DAGSTER_PG_PASSWORD_ENV_VAR,
+    DEFAULT_K8S_JOB_TTL_SECONDS_AFTER_FINISHED,
     USER_DEFINED_K8S_CONFIG_KEY,
     UserDefinedDagsterK8sConfig,
     get_user_defined_k8s_config,
@@ -331,3 +332,21 @@ def test_construct_dagster_k8s_job_with_user_defined_service_account_name():
 
     service_account_name = job["spec"]["template"]["spec"]["service_account_name"]
     assert service_account_name == "this-should-take-precedence"
+
+
+def test_construct_dagster_k8s_job_with_ttl():
+    cfg = DagsterK8sJobConfig(
+        job_image="test/foo:latest",
+        dagster_home="/opt/dagster/dagster_home",
+        instance_config_map="test",
+    )
+    job = construct_dagster_k8s_job(cfg, [], "job123").to_dict()
+    assert job["spec"]["ttl_seconds_after_finished"] == DEFAULT_K8S_JOB_TTL_SECONDS_AFTER_FINISHED
+
+    user_defined_cfg = UserDefinedDagsterK8sConfig(
+        job_spec_config={"ttl_seconds_after_finished": 0},
+    )
+    job = construct_dagster_k8s_job(
+        cfg, [], "job123", user_defined_k8s_config=user_defined_cfg
+    ).to_dict()
+    assert job["spec"]["ttl_seconds_after_finished"] == 0
