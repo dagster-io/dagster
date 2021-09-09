@@ -127,6 +127,7 @@ class GraphDefinition(NodeDefinition):
         input_mappings: Optional[List[InputMapping]],
         output_mappings: Optional[List[OutputMapping]],
         config_mapping: Optional[ConfigMapping],
+        tags: Optional[Dict[str, Any]] = None,
         **kwargs,
     ):
         self._node_defs = _check_node_defs_arg(name, node_defs)
@@ -160,6 +161,7 @@ class GraphDefinition(NodeDefinition):
             description=description,
             input_defs=input_defs,
             output_defs=[output_mapping.definition for output_mapping in self._output_mappings],
+            tags=tags,
             **kwargs,
         )
 

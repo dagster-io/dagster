@@ -18,6 +18,7 @@ class _Graph:
         output_defs: Optional[List[OutputDefinition]] = None,
         ins: Optional[Dict[str, GraphIn]] = None,
         out: Optional[Union[GraphOut, Dict[str, GraphOut]]] = None,
+        tags: Optional[Dict[str, Any]] = None,
     ):
         self.name = check.opt_str_param(name, "name")
         self.description = check.opt_str_param(description, "description")
@@ -28,6 +29,7 @@ class _Graph:
         )
         self.ins = ins
         self.out = out
+        self.tags = tags
 
     def __call__(self, fn: Callable[..., Any]) -> GraphDefinition:
         check.callable_param(fn, "fn")
@@ -79,6 +81,7 @@ class _Graph:
             output_mappings=output_mappings,
             config_mapping=config_mapping,
             positional_inputs=positional_inputs,
+            tags=self.tags,
         )
         update_wrapper(graph_def, fn)
         return graph_def
@@ -92,6 +95,7 @@ def graph(
     output_defs: Optional[List[OutputDefinition]] = None,
     ins: Optional[Dict[str, GraphIn]] = None,
     out: Optional[Union[GraphOut, Dict[str, GraphOut]]] = None,
+    tags: Optional[Dict[str, Any]] = None,
 ) -> Union[_Graph, GraphDefinition]:
     """Create a graph with the specified parameters from the decorated composition function.
 
@@ -130,6 +134,10 @@ def graph(
             not use yield.
 
             To map multiple outputs, return a dictionary from the composition function.
+       tags (Optional[Dict[str, Any]]): Arbitrary metadata for any execution run of the graph.
+            Values that are not strings will be json encoded and must meet the criteria that
+            `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
+            values provided at invocation time.
     """
     if callable(name):
         check.invariant(description is None)
@@ -142,4 +150,5 @@ def graph(
         output_defs=output_defs,
         ins=ins,
         out=out,
+        tags=tags,
     )

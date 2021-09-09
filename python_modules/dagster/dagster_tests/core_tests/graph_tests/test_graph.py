@@ -616,3 +616,21 @@ def test_job_subset():
     the_job = basic.to_job()
 
     assert isinstance(the_job.get_pipeline_subset_def({"my_op"}), PipelineSubsetDefinition)
+
+
+def test_tags():
+    @graph(tags={"a": "x"})
+    def mygraphic():
+        pass
+
+    assert mygraphic.to_job().tags == {"a": "x"}
+
+
+def test_job_and_graph_tags():
+    @graph(tags={"a": "x", "c": "q"})
+    def mygraphic():
+        pass
+
+    job = mygraphic.to_job(tags={"a": "y", "b": "z"})
+
+    assert job.tags == {"a": "y", "b": "z", "c": "q"}
