@@ -77,10 +77,8 @@ export const useRepositoryLocationReload = (location: string) => {
       onCompleted: (data: RepositoryLocationStatusQuery) => {
         const workspace = data.workspaceOrError;
 
-        // On any failure, immediately show the error dialog. This is a blocking failure that must be
-        // either retried after repairing the issue or dismissed manually.
-        if (workspace.__typename !== 'Workspace') {
-          dispatch({type: 'error', error: {message: 'Failed to load workspace.'}});
+        if (workspace.__typename === 'PythonError') {
+          dispatch({type: 'error', error: workspace});
           stopPolling();
           return;
         }
@@ -151,8 +149,11 @@ export const useRepositoryLocationReload = (location: string) => {
       // If the mutation occurs successfully, begin polling.
       dispatch({type: 'finish-mutation-and-start-polling'});
       startPolling(5000);
+    } else if (data?.reloadRepositoryLocation.__typename === 'PythonError') {
+      // If a Python error occurs during mutation, show it.
+      dispatch({type: 'error', error: data.reloadRepositoryLocation});
     } else {
-      // Otherwise, surface the error.
+      // Otherwise, we have some other kind of error. Show it.
       dispatch({
         type: 'error',
         error: {message: data?.reloadRepositoryLocation.message || 'An unexpected error occurred.'},
@@ -183,10 +184,11 @@ const RELOAD_REPOSITORY_LOCATION_MUTATION = gql`
         message
       }
       ... on PythonError {
-        message
+        ...PythonErrorFragment
       }
     }
   }
+  ${PYTHON_ERROR_FRAGMENT}
 `;
 
 const REPOSITORY_LOCATION_STATUS_QUERY = gql`
@@ -215,6 +217,9 @@ const REPOSITORY_LOCATION_STATUS_QUERY = gql`
             }
           }
         }
+      }
+      ... on PythonError {
+        ...PythonErrorFragment
       }
     }
   }

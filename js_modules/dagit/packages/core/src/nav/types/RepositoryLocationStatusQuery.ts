@@ -10,10 +10,6 @@ import { RepositoryLocationLoadStatus } from "./../../types/globalTypes";
 // GraphQL query operation: RepositoryLocationStatusQuery
 // ====================================================
 
-export interface RepositoryLocationStatusQuery_workspaceOrError_PythonError {
-  __typename: "PythonError";
-}
-
 export interface RepositoryLocationStatusQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines {
   __typename: "Pipeline";
   id: string;
@@ -60,7 +56,20 @@ export interface RepositoryLocationStatusQuery_workspaceOrError_Workspace {
   locationEntries: RepositoryLocationStatusQuery_workspaceOrError_Workspace_locationEntries[];
 }
 
-export type RepositoryLocationStatusQuery_workspaceOrError = RepositoryLocationStatusQuery_workspaceOrError_PythonError | RepositoryLocationStatusQuery_workspaceOrError_Workspace;
+export interface RepositoryLocationStatusQuery_workspaceOrError_PythonError_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface RepositoryLocationStatusQuery_workspaceOrError_PythonError {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: RepositoryLocationStatusQuery_workspaceOrError_PythonError_cause | null;
+}
+
+export type RepositoryLocationStatusQuery_workspaceOrError = RepositoryLocationStatusQuery_workspaceOrError_Workspace | RepositoryLocationStatusQuery_workspaceOrError_PythonError;
 
 export interface RepositoryLocationStatusQuery {
   workspaceOrError: RepositoryLocationStatusQuery_workspaceOrError;
