@@ -13,6 +13,7 @@ from dagster.core.test_utils import (
 from dagster.utils.hosted_user_process import external_pipeline_from_recon_pipeline
 from dagster_k8s import K8sRunLauncher
 from dagster_k8s.job import DAGSTER_PG_PASSWORD_ENV_VAR, UserDefinedDagsterK8sConfig
+from dagster_test.test_project import ReOriginatedExternalPipelineForTest
 
 
 def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
@@ -146,10 +147,13 @@ def test_k8s_executor_config_override(kubeconfig_file):
         service_account_name="dagit-admin",
         instance_config_map="dagster-instance",
         dagster_home="/opt/dagster/dagster_home",
-        job_image="fake_job_image",
+        job_image="fake_launcher_job_image",
         load_incluster_config=False,
         kubeconfig_file=kubeconfig_file,
         k8s_client_batch_api=mock_k8s_client_batch_api,
+        env_config_maps=["fake_launcher_env_configmap"],
+        env_secrets=["fake_launcher_env_secret"],
+        env_vars=["FAKE_LAUNCHER_ENV_VAR"],
     )
 
     # Create fake external pipeline.
@@ -168,10 +172,13 @@ def test_k8s_executor_config_override(kubeconfig_file):
                 solid_selection=None,
                 repository_handle=repo_handle,
             )
+            reoriginated_pipeline = ReOriginatedExternalPipelineForTest(
+                fake_external_pipeline, container_image="fake_repository_origin_image"
+            )
 
             k8s_run_launcher.register_instance(instance)
 
-            # Launch the run without custom job_image and env.
+            # Launch the run with the k8s_run_launcher job_image
             pipeline_name = "demo_pipeline"
             run = create_run_for_test(
                 instance,
@@ -181,7 +188,16 @@ def test_k8s_executor_config_override(kubeconfig_file):
             )
             k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
 
-            # Launch the run with custom job_image and env.
+            # Launch the run with a custom repository_origin.container_image
+            run = create_run_for_test(
+                instance,
+                pipeline_name=pipeline_name,
+                external_pipeline_origin=reoriginated_pipeline.get_external_origin(),
+                pipeline_code_origin=reoriginated_pipeline.get_python_origin(),
+            )
+            k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
+
+            # Launch the run with the k8s_run_launcher job_image and a custom execution job_image
             pipeline_name = "demo_pipeline"
             run = create_run_for_test(
                 instance,
@@ -193,9 +209,45 @@ def test_k8s_executor_config_override(kubeconfig_file):
                         "k8s": {
                             "config": {
                                 "job_image": "fake_execution_job_image",
-                                "env_config_maps": ["fake_configmap"],
-                                "env_secrets": ["fake_secret"],
-                                "env_vars": ["FAKE_ENV_VAR"],
+                            }
+                        }
+                    }
+                },
+            )
+            k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
+
+            # Launch the run with a custom repository_origin.container_image and a custom execution job_image
+            run = create_run_for_test(
+                instance,
+                pipeline_name=pipeline_name,
+                external_pipeline_origin=reoriginated_pipeline.get_external_origin(),
+                pipeline_code_origin=reoriginated_pipeline.get_python_origin(),
+                run_config={
+                    "execution": {
+                        "k8s": {
+                            "config": {
+                                "job_image": "fake_execution_job_image",
+                            }
+                        }
+                    }
+                },
+            )
+            k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
+
+            # Launch the run with the env from the execution config.
+            pipeline_name = "demo_pipeline"
+            run = create_run_for_test(
+                instance,
+                pipeline_name=pipeline_name,
+                external_pipeline_origin=fake_external_pipeline.get_external_origin(),
+                pipeline_code_origin=fake_external_pipeline.get_python_origin(),
+                run_config={
+                    "execution": {
+                        "k8s": {
+                            "config": {
+                                "env_config_maps": ["fake_execution_env_configmap"],
+                                "env_secrets": ["fake_execution_env_secret"],
+                                "env_vars": ["FAKE_EXECUTION_ENV_VAR"],
                             }
                         }
                     }
@@ -209,27 +261,34 @@ def test_k8s_executor_config_override(kubeconfig_file):
 
         method_name, _args, kwargs = mock_method_calls[0]
         assert method_name == "create_namespaced_job"
-        assert kwargs["body"].spec.template.spec.containers[0].image == "fake_job_image"
-        env_from = kwargs["body"].spec.template.spec.containers[0].env_from
-        config_map_names = {env.config_map_ref.name for env in env_from if env.config_map_ref}
-        secret_names = {env.secret_ref.name for env in env_from if env.secret_ref}
-        assert len(config_map_names) == 0
-        assert len(secret_names) == 0
-        assert "FAKE_ENV_VAR" not in [
-            env.name for env in kwargs["body"].spec.template.spec.containers[0].env
-        ]
+        assert kwargs["body"].spec.template.spec.containers[0].image == "fake_launcher_job_image"
 
         method_name, _args, kwargs = mock_method_calls[1]
         assert method_name == "create_namespaced_job"
-        # assert kwargs["body"].spec.template.spec.containers[0].image == "fake_execution_job_image"
+        assert (
+            kwargs["body"].spec.template.spec.containers[0].image == "fake_repository_origin_image"
+        )
+
+        method_name, _args, kwargs = mock_method_calls[2]
+        assert method_name == "create_namespaced_job"
+        assert kwargs["body"].spec.template.spec.containers[0].image == "fake_execution_job_image"
+
+        method_name, _args, kwargs = mock_method_calls[3]
+        assert method_name == "create_namespaced_job"
+        assert kwargs["body"].spec.template.spec.containers[0].image == "fake_execution_job_image"
+
+        method_name, _args, kwargs = mock_method_calls[4]
+        assert method_name == "create_namespaced_job"
         env_from = kwargs["body"].spec.template.spec.containers[0].env_from
         config_map_names = {env.config_map_ref.name for env in env_from if env.config_map_ref}
         secret_names = {env.secret_ref.name for env in env_from if env.secret_ref}
-        assert "fake_configmap" in config_map_names
-        assert "fake_secret" in secret_names
-        assert "FAKE_ENV_VAR" in [
-            env.name for env in kwargs["body"].spec.template.spec.containers[0].env
-        ]
+        env_var_names = [env.name for env in kwargs["body"].spec.template.spec.containers[0].env]
+        assert "fake_launcher_env_configmap" in config_map_names
+        assert "fake_execution_env_configmap" in config_map_names
+        assert "fake_launcher_env_secret" in secret_names
+        assert "fake_execution_env_secret" in secret_names
+        assert "FAKE_LAUNCHER_ENV_VAR" in env_var_names
+        assert "FAKE_EXECUTION_ENV_VAR" in env_var_names
 
 
 @pipeline

@@ -225,28 +225,6 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             )
             return self._job_config
 
-    def _get_grpc_job_config(self, job_image):
-        return DagsterK8sJobConfig(
-            job_image=check.str_param(job_image, "job_image"),
-            dagster_home=check.str_param(self.dagster_home, "dagster_home"),
-            image_pull_policy=check.str_param(self._image_pull_policy, "image_pull_policy"),
-            image_pull_secrets=check.opt_list_param(
-                self._image_pull_secrets, "image_pull_secrets", of_type=dict
-            ),
-            service_account_name=check.str_param(
-                self._service_account_name, "service_account_name"
-            ),
-            instance_config_map=check.str_param(self.instance_config_map, "instance_config_map"),
-            postgres_password_secret=check.opt_str_param(
-                self.postgres_password_secret, "postgres_password_secret"
-            ),
-            env_config_maps=check.opt_list_param(
-                self._env_config_maps, "env_config_maps", of_type=str
-            ),
-            env_secrets=check.opt_list_param(self._env_secrets, "env_secrets", of_type=str),
-            env_vars=check.opt_list_param(self._env_vars, "env_vars", of_type=str),
-        )
-
     def launch_run(self, context: LaunchRunContext) -> None:
         run = context.pipeline_run
 
@@ -262,9 +240,8 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         exc_config = _get_validated_k8s_executor_config(run.run_config)
         job_image_from_executor_config = exc_config.get("job_image")
 
-        if job_image:
-            if job_image_from_executor_config:
-                job_image = job_image_from_executor_config
+        if job_image_from_executor_config:
+            if job_image:
                 self._instance.report_engine_event(
                     f"You have specified a job_image {job_image_from_executor_config} in your executor configuration, "
                     f"but also {job_image} in your user-code deployment. Using the job image {job_image_from_executor_config} "
@@ -272,9 +249,14 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                     run,
                     cls=self.__class__,
                 )
+            job_image = job_image_from_executor_config
 
         job_config = (
-            (self._get_grpc_job_config(job_image) if job_image else self.get_static_job_config())
+            (
+                self.get_static_job_config().with_image(job_image)
+                if job_image
+                else self.get_static_job_config()
+            )
             .with_env_config_maps((exc_config.get("env_config_maps") or []))
             .with_env_secrets((exc_config.get("env_secrets") or []))
             .with_env_vars((exc_config.get("env_vars") or []))
