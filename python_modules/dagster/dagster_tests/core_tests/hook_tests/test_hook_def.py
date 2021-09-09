@@ -434,6 +434,7 @@ def test_hook_with_resource_to_resource_dep():
 
 def test_hook_graph_job_op():
     called = {}
+    op_output = "hook_op_output"
 
     @success_hook(required_resource_keys={"resource_a"})
     def hook_one(context):
@@ -444,11 +445,12 @@ def test_hook_graph_job_op():
     def hook_two(context):
         assert not context.op_config
         assert not context.op_exception
+        assert context.op_output_values['result'] == op_output
         called[context.hook_def.name] = called.get(context.hook_def.name, 0) + 1
 
     @op
     def hook_op(_):
-        pass
+        return op_output
 
     ctx = build_hook_context(resources={"resource_a": resource_a}, solid=hook_op)
     hook_one(ctx)
