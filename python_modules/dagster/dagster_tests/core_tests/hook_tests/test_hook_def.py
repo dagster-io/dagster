@@ -478,5 +478,4 @@ def test_hook_context_op_solid_provided():
         pass
 
     with pytest.raises(check.CheckError):
-        ctx = build_hook_context(op=hook_op, solid=hook_op)
-        hook_one(ctx)
+        build_hook_context(op=hook_op, solid=hook_op)
