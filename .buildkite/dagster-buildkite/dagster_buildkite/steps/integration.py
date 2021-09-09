@@ -95,6 +95,7 @@ def build_spec_backcompat_suite():
             extra_cmds_fn=backcompat_suite_extra_cmds_fn(release_mapping),
             tox_env_suffixes=[tox_env_suffix],
             buildkite_label="backcompat_tests",
+            upload_coverage=False,
             retries=2,
         ).get_tox_build_steps()
     return backcompat_build_steps
