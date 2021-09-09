@@ -5,6 +5,8 @@ import pytest
 from dagster import (
     AssetKey,
     AssetMaterialization,
+    DynamicOutput,
+    DynamicOutputDefinition,
     Failure,
     Field,
     InputDefinition,
@@ -762,3 +764,82 @@ def test_solid_invocation_nothing_deps():
         "dependencies are ignored when directly invoking solids.",
     ):
         sandwiched_nothing_dep(5, 6, 7)
+
+
+def test_dynamic_output_gen():
+    @solid(
+        output_defs=[
+            DynamicOutputDefinition(name="a", is_required=False),
+            OutputDefinition(name="b", is_required=False),
+        ]
+    )
+    def my_dynamic():
+        yield DynamicOutput(value=1, mapping_key="1", output_name="a")
+        yield DynamicOutput(value=2, mapping_key="2", output_name="a")
+        yield Output(value="foo", output_name="b")
+
+    a1, a2, b = my_dynamic()
+    assert a1.value == 1
+    assert a1.mapping_key == "1"
+    assert a2.value == 2
+    assert a2.mapping_key == "2"
+
+    assert b.value == "foo"
+
+
+def test_dynamic_output_async_gen():
+    @solid(
+        output_defs=[
+            DynamicOutputDefinition(name="a", is_required=False),
+            OutputDefinition(name="b", is_required=False),
+        ]
+    )
+    async def aio_gen():
+        yield DynamicOutput(value=1, mapping_key="1", output_name="a")
+        yield DynamicOutput(value=2, mapping_key="2", output_name="a")
+        await asyncio.sleep(0.01)
+        yield Output(value="foo", output_name="b")
+
+    async def get_results():
+        res = []
+        async for output in aio_gen():
+            res.append(output)
+        return res
+
+    loop = asyncio.get_event_loop()
+    a1, a2, b = loop.run_until_complete(get_results())
+
+    assert a1.value == 1
+    assert a1.mapping_key == "1"
+    assert a2.value == 2
+    assert a2.mapping_key == "2"
+
+    assert b.value == "foo"
+
+
+def test_dynamic_output_non_gen():
+    @solid(output_defs=[DynamicOutputDefinition(name="a", is_required=False)])
+    def should_not_work():
+        return DynamicOutput(value=1, mapping_key="1", output_name="a")
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Attempted to return a DynamicOutput from solid. DynamicOutputs are only supported "
+        "using yield syntax.",
+    ):
+        should_not_work()
+
+
+def test_dynamic_output_async_non_gen():
+    @solid(output_defs=[DynamicOutputDefinition(name="a", is_required=False)])
+    def should_not_work():
+        asyncio.sleep(0.01)
+        return DynamicOutput(value=1, mapping_key="1", output_name="a")
+
+    loop = asyncio.get_event_loop()
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Attempted to return a DynamicOutput from solid. DynamicOutputs are only supported "
+        "using yield syntax.",
+    ):
+        loop.run_until_complete(should_not_work())
