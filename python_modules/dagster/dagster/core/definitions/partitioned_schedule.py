@@ -42,7 +42,7 @@ def schedule_from_partitions(
     )
 
     partitioned_config = cast(PartitionedConfig, job.mode_definitions[0].partitioned_config)
-    partition_set = job.get_partition_set_def()
+    partition_set = cast(PartitionSetDefinition, job.get_partition_set_def())
 
     check.inst(partitioned_config.partitions_def, TimeWindowPartitionsDefinition)
     partitions_def = cast(TimeWindowPartitionsDefinition, partitioned_config.partitions_def)
