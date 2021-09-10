@@ -1,3 +1,4 @@
+from .config_mapping import config_mapping
 from .composite_solid import composite_solid
 from .graph import graph
 from .hook import failure_hook, success_hook
