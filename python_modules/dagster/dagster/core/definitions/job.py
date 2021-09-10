@@ -50,7 +50,7 @@ class JobDefinition(PipelineDefinition):
         raise_on_error: bool = True,
     ) -> "InProcessGraphResult":
         """
-        (Experimental) Execute the "Job" (single mode pipeline) in-process, gathering results in-memory.
+        (Experimental) Execute the Job in-process, gathering results in-memory.
 
         The executor_def on the Job will be ignored, and replaced with the in-process executor.
         If using the default io_manager, it will switch from filesystem to in-memory.
@@ -61,6 +61,8 @@ class JobDefinition(PipelineDefinition):
                 The configuration for the run
             instance (Optional[DagsterInstance]):
                 The instance to execute against, an ephemeral one will be used if none provided.
+            raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
+                Defaults to ``True``.
 
         Returns:
             InProcessGraphResult

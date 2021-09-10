@@ -70,7 +70,7 @@ class NodeExecutionResult:
         raise NotImplementedError()
 
 
-class InProcessSolidResult(NodeExecutionResult):
+class InProcessOpResult(NodeExecutionResult):
     def __init__(
         self,
         solid_def: SolidDefinition,
@@ -188,7 +188,7 @@ class InProcessGraphResult(NodeExecutionResult):
             raise DagsterInvariantViolationError(f"No handle provided for solid {solid.name}")
 
         if isinstance(node_def, SolidDefinition):
-            return InProcessSolidResult(
+            return InProcessOpResult(
                 solid_def=node_def,
                 handle=handle_with_ancestor,
                 all_events=events_for_handle,
