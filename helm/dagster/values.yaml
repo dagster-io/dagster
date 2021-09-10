@@ -667,6 +667,10 @@ ingress:
     # See: https://github.com/dagster-io/dagster/issues/2073
     host: ""
 
+    tls:
+      enabled: false
+      secretName: ""
+
     # Different http paths to add to the ingress before the default dagit path
     # Example:
     #
@@ -695,6 +699,10 @@ ingress:
     # See: https://github.com/dagster-io/dagster/issues/2073
     host: ""
 
+    tls:
+      enabled: false
+      secretName: ""
+
     # Different http paths to add to the ingress before the default dagit path
     # Example:
     #
@@ -719,6 +727,10 @@ ingress:
     # if path is '/flower', Flower will be accessible at 'mycompany.com/flower'
     # NOTE: do NOT keep trailing slash. For root configuration, set as empty string
     path: ""
+
+    tls:
+      enabled: false
+      secretName: ""
 
     # Different http paths to add to the ingress before the default flower path
     # Example:
