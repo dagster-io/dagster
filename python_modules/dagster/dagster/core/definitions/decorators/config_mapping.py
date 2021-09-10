@@ -3,6 +3,25 @@ from typing import Any, Callable, Optional, Union
 from dagster import check
 from ..config import ConfigMapping
 
+class _ConfigMapping:
+    def __init__(
+        self,
+        config_schema: Optional[Any] = None,
+        receive_processed_config_values: Optional[bool] = None,
+    ):
+        self.config_schema = config_schema
+        self.receive_processed_config_values = check.opt_bool_param(receive_processed_config_values, "receive_processed_config_values")
+
+    def __call__(self, fn: Callable[..., Any]) -> ConfigMapping:
+        check.callable_param(fn, "fn")
+
+        config_mapping_def = ConfigMapping(
+            config_fn=fn,
+            config_schema=self.config_schema,
+            receive_processed_config_values=self.receive_processed_config_values,
+        )
+        return config_mapping_def
+
 def config_mapping(
     config_fn: Callable[..., Any] = None,
     config_schema: Optional[Any] = None,
@@ -55,22 +74,3 @@ def config_mapping(
         config_schema=config_schema,
         receive_processed_config_values=receive_processed_config_values,
     )
-
-class _ConfigMapping:
-    def __init__(
-        self,
-        config_schema: Optional[Any] = None,
-        receive_processed_config_values: Optional[bool] = None,
-    ):
-        self.config_schema = config_schema
-        self.receive_processed_config_values = check.opt_bool_param(receive_processed_config_values, "receive_processed_config_values")
-
-    def __call__(self, fn: Callable[..., Any]) -> ConfigMapping:
-        check.callable_param(fn, "fn")
-
-        config_mapping_def = ConfigMapping(
-            config_fn=fn,
-            config_schema=self.config_schema,
-            receive_processed_config_values=self.receive_processed_config_values,
-        )
-        return config_mapping_def
