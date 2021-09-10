@@ -3,13 +3,11 @@ import yaml
 from unittest import mock
 from dagster_slack import slack_resource
 from dagster import (
-    ModeDefinition,
     ResourceDefinition,
-    execute_pipeline,
     file_relative_path,
-    pipeline,
+    graph,
+    op,
     repository,
-    solid,
 )
 
 # start_repo_marker_0
@@ -18,13 +16,13 @@ from dagster import HookContext, failure_hook, success_hook
 
 @success_hook(required_resource_keys={"slack"})
 def slack_message_on_success(context: HookContext):
-    message = f"Solid {context.solid.name} finished successfully"
+    message = f"Op {context.op.name} finished successfully"
     context.resources.slack.chat.post_message(channel="#foo", text=message)
 
 
 @failure_hook(required_resource_keys={"slack"})
 def slack_message_on_failure(context: HookContext):
-    message = f"Solid {context.solid.name} failed"
+    message = f"Op {context.op.name} failed"
     context.resources.slack.chat.post_message(channel="#foo", text=message)
 
 
@@ -33,12 +31,12 @@ def slack_message_on_failure(context: HookContext):
 slack_resource_mock = mock.MagicMock()
 
 
-@solid
+@op
 def a():
     pass
 
 
-@solid
+@op
 def b():
     raise Exception()
 
@@ -59,9 +57,9 @@ mode_defs = [
 
 # start_repo_marker_1
 @slack_message_on_failure
-@pipeline(mode_defs=mode_defs)
+@graph
 def notif_all():
-    # the hook "slack_message_on_failure" is applied on every solid instance within this pipeline
+    # the hook "slack_message_on_failure" is applied on every op instance within this graph
     a()
     b()
 
@@ -69,11 +67,11 @@ def notif_all():
 # end_repo_marker_1
 
 # start_repo_marker_2
-@pipeline(mode_defs=mode_defs)
+@graph
 def selective_notif():
-    # only solid "a" triggers hooks: a slack message will be sent when it fails or succeeds
+    # only op "a" triggers hooks: a slack message will be sent when it fails or succeeds
     a.with_hooks({slack_message_on_failure, slack_message_on_success})()
-    # solid "b" won't trigger any hooks
+    # op "b" won't trigger any hooks
     b()
 
 
