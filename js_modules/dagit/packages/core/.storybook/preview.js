@@ -24,6 +24,10 @@ const GlobalStyle = createGlobalStyle`
   body ul, body li {
     margin: 0;
   }
+
+  .material-icons {
+    display: block;
+  }
 `;
 
 // Global decorator to apply the styles to all stories
