@@ -110,7 +110,7 @@ def test_cloudwatch_logging_bad_region(log_group, log_stream):
 
 
 def test_cloudwatch_logging(region, cloudwatch_client, log_group, log_stream):
-    res = hello_job.execute_in_process(
+    hello_job.execute_in_process(
         {
             "loggers": {
                 "cloudwatch": {
