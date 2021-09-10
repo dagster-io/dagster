@@ -2,6 +2,7 @@ import {Button, Classes, Colors, Dialog} from '@blueprintjs/core';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
+import {useFeatureFlags} from '../app/Flags';
 import {Timestamp} from '../app/time/Timestamp';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {MetadataEntries} from '../runs/MetadataEntry';
@@ -22,6 +23,7 @@ export const AssetMaterializationTable: React.FC<{
   materializations: HistoricalMaterialization[];
   shouldBucketPartitions?: boolean;
 }> = ({isPartitioned, hasLineage, materializations, shouldBucketPartitions = true}) => {
+  const {flagPipelineModeTuples} = useFeatureFlags();
   const list = React.useMemo(() => {
     if (shouldBucketPartitions) {
       return materializations;
@@ -37,7 +39,7 @@ export const AssetMaterializationTable: React.FC<{
           <th style={{paddingLeft: 0}}>Materialization Metadata</th>
           {hasLineage && <th style={{minWidth: 100}}>Parent Materializations</th>}
           <th style={{minWidth: 150}}>Timestamp</th>
-          <th style={{minWidth: 150}}>Pipeline</th>
+          <th style={{minWidth: 150}}>{flagPipelineModeTuples ? 'Job' : 'Pipeline'}</th>
           <th style={{width: 200}}>Run</th>
         </tr>
       </thead>

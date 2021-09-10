@@ -4,11 +4,11 @@ import {isEqual} from 'lodash';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {useFeatureFlags} from '../app/Flags';
 import {colorHash} from '../app/Util';
 
 import {PartitionGraphFragment} from './types/PartitionGraphFragment';
 
-export const PIPELINE_LABEL = 'Total pipeline';
 export const PARTITION_GRAPH_FRAGMENT = gql`
   fragment PartitionGraphFragment on PipelineRun {
     id
@@ -152,6 +152,9 @@ export const StepSelector: React.FC<{
   hidden: string[];
   onChangeHidden: (hidden: string[]) => void;
 }> = ({all, hidden, onChangeHidden}) => {
+  const {flagPipelineModeTuples} = useFeatureFlags();
+  const jobLabel = flagPipelineModeTuples ? 'Total job' : 'Total pipeline';
+
   const onStepClick = (stepKey: string) => {
     return (evt: React.MouseEvent) => {
       if (evt.shiftKey) {
@@ -180,12 +183,12 @@ export const StepSelector: React.FC<{
         <span style={{fontSize: 13, opacity: 0.5}}>Tip: Shift-click to multi-select</span>
       </NavSectionHeader>
       <NavSection>
-        {[PIPELINE_LABEL, ...all].map((stepKey) => (
+        {[jobLabel, ...all].map((stepKey) => (
           <Item
             key={stepKey}
             shown={!hidden.includes(stepKey)}
             onClick={onStepClick(stepKey)}
-            color={stepKey === PIPELINE_LABEL ? Colors.GRAY2 : colorHash(stepKey)}
+            color={stepKey === jobLabel ? Colors.GRAY2 : colorHash(stepKey)}
           >
             <div
               style={{
@@ -195,7 +198,7 @@ export const StepSelector: React.FC<{
                 height: 10,
                 width: 10,
                 backgroundColor: !hidden.includes(stepKey)
-                  ? stepKey === PIPELINE_LABEL
+                  ? stepKey === jobLabel
                     ? Colors.GRAY2
                     : colorHash(stepKey)
                   : '#aaaaaa',

@@ -350,7 +350,7 @@
           },
           {
             "title": "Dagster with PySpark",
-            "path": "/integrations/pyspark"
+            "path": "/integrations/spark"
           },
           {
             "title": "Dagster with Pandas",

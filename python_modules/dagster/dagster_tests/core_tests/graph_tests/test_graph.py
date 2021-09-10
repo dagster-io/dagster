@@ -21,6 +21,7 @@ from dagster.core.definitions.partition import (
     PartitionedConfig,
     StaticPartitionsDefinition,
 )
+from dagster.core.definitions.pipeline import PipelineSubsetDefinition
 from dagster.core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
 
 
@@ -600,3 +601,18 @@ def test_raise_on_error_execute_in_process():
 
     result = error_job.execute_in_process(raise_on_error=False)
     assert not result.success
+
+
+def test_job_subset():
+    @op
+    def my_op():
+        pass
+
+    @graph
+    def basic():
+        my_op()
+        my_op()
+
+    the_job = basic.to_job()
+
+    assert isinstance(the_job.get_pipeline_subset_def({"my_op"}), PipelineSubsetDefinition)

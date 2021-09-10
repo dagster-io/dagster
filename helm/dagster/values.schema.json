@@ -713,6 +713,24 @@
                 "startupProbe"
             ]
         },
+        "IngressTLSConfiguration": {
+            "title": "IngressTLSConfiguration",
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "title": "Enabled",
+                    "type": "boolean"
+                },
+                "secretName": {
+                    "title": "Secretname",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "enabled",
+                "secretName"
+            ]
+        },
         "IngressPath": {
             "title": "IngressPath",
             "type": "object",
@@ -751,38 +769,12 @@
                     "title": "Host",
                     "type": "string"
                 },
-                "precedingPaths": {
-                    "title": "Precedingpaths",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/IngressPath"
-                    }
-                },
-                "succeedingPaths": {
-                    "title": "Succeedingpaths",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/IngressPath"
-                    }
-                }
-            },
-            "required": [
-                "host",
-                "precedingPaths",
-                "succeedingPaths"
-            ]
-        },
-        "FlowerIngressConfiguration": {
-            "title": "FlowerIngressConfiguration",
-            "type": "object",
-            "properties": {
-                "host": {
-                    "title": "Host",
-                    "type": "string"
-                },
                 "path": {
                     "title": "Path",
                     "type": "string"
+                },
+                "tls": {
+                    "$ref": "#/definitions/IngressTLSConfiguration"
                 },
                 "precedingPaths": {
                     "title": "Precedingpaths",
@@ -802,6 +794,45 @@
             "required": [
                 "host",
                 "path",
+                "tls",
+                "precedingPaths",
+                "succeedingPaths"
+            ]
+        },
+        "FlowerIngressConfiguration": {
+            "title": "FlowerIngressConfiguration",
+            "type": "object",
+            "properties": {
+                "host": {
+                    "title": "Host",
+                    "type": "string"
+                },
+                "path": {
+                    "title": "Path",
+                    "type": "string"
+                },
+                "tls": {
+                    "$ref": "#/definitions/IngressTLSConfiguration"
+                },
+                "precedingPaths": {
+                    "title": "Precedingpaths",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/IngressPath"
+                    }
+                },
+                "succeedingPaths": {
+                    "title": "Succeedingpaths",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/IngressPath"
+                    }
+                }
+            },
+            "required": [
+                "host",
+                "path",
+                "tls",
                 "precedingPaths",
                 "succeedingPaths"
             ]
@@ -1488,6 +1519,9 @@
                         }
                     ]
                 },
+                "imagePullPolicy": {
+                    "$ref": "#/definitions/PullPolicy"
+                },
                 "jobNamespace": {
                     "title": "Jobnamespace",
                     "anyOf": [
@@ -1537,6 +1571,7 @@
                 }
             },
             "required": [
+                "imagePullPolicy",
                 "loadInclusterConfig",
                 "envConfigMaps",
                 "envSecrets",

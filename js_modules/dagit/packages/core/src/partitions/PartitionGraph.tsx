@@ -2,10 +2,10 @@ import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import {Line} from 'react-chartjs-2';
 
+import {useFeatureFlags} from '../app/Flags';
 import {colorHash} from '../app/Util';
 import {RowContainer} from '../ui/ListComponents';
 
-import {PIPELINE_LABEL} from './PartitionGraphUtils';
 import {PartitionGraphFragment} from './types/PartitionGraphFragment';
 
 type PointValue = number | null | undefined;
@@ -18,48 +18,21 @@ interface PartitionGraphProps {
   title?: string;
   yLabel?: string;
 }
-interface PartitionGraphState {
-  hiddenPartitions: {[name: string]: boolean};
-}
 
-export class PartitionGraph extends React.Component<PartitionGraphProps, PartitionGraphState> {
-  constructor(props: PartitionGraphProps) {
-    super(props);
-    this.state = {hiddenPartitions: {}};
-  }
+export const PartitionGraph = React.forwardRef((props: PartitionGraphProps, ref) => {
+  const {runsByPartitionName, getPipelineDataForRun, getStepDataForRun, title, yLabel} = props;
+  const {flagPipelineModeTuples} = useFeatureFlags();
+  const [hiddenPartitions, setHiddenPartitions] = React.useState<{[name: string]: boolean}>(
+    () => ({}),
+  );
+  const chart = React.useRef<any>(null);
 
-  chart = React.createRef<any>();
+  React.useImperativeHandle(ref, () => ({
+    getChartInstance: () => chart.current?.chartInstance,
+  }));
 
-  getDefaultOptions = () => {
-    const {title, yLabel} = this.props;
-    const titleOptions = title ? {display: true, text: title} : undefined;
-    const scales = yLabel
-      ? {
-          y: {
-            id: 'y',
-            title: {display: true, text: yLabel},
-          },
-          x: {
-            id: 'x',
-            title: {display: true, text: 'Partition'},
-          },
-        }
-      : undefined;
-    return {
-      title: titleOptions,
-      scales,
-      plugins: {
-        legend: {
-          display: false,
-          onClick: (_e: MouseEvent, _legendItem: any) => {},
-        },
-      },
-      onClick: this.onGraphClick,
-    };
-  };
-
-  onGraphClick = (event: MouseEvent) => {
-    const instance = this.chart?.current?.chartInstance;
+  const onGraphClick = React.useCallback((event: MouseEvent) => {
+    const instance = chart.current?.chartInstance;
     if (!instance) {
       return;
     }
@@ -83,16 +56,40 @@ export class PartitionGraph extends React.Component<PartitionGraphProps, Partiti
     // category scale returns index here for some reason
     const labelIndex = xAxis.getValueForPixel(offsetX);
     const partitionName = instance.data.labels[labelIndex];
-    const {hiddenPartitions} = this.state;
-    this.setState({
-      hiddenPartitions: {
-        ...hiddenPartitions,
-        [partitionName]: !hiddenPartitions[partitionName],
-      },
-    });
-  };
+    setHiddenPartitions((current) => ({
+      ...current,
+      [partitionName]: !current[partitionName],
+    }));
+  }, []);
 
-  selectRun(runs?: PartitionGraphFragment[]) {
+  const defaultOptions = React.useMemo(() => {
+    const titleOptions = title ? {display: true, text: title} : undefined;
+    const scales = yLabel
+      ? {
+          y: {
+            id: 'y',
+            title: {display: true, text: yLabel},
+          },
+          x: {
+            id: 'x',
+            title: {display: true, text: 'Partition'},
+          },
+        }
+      : undefined;
+    return {
+      title: titleOptions,
+      scales,
+      plugins: {
+        legend: {
+          display: false,
+          onClick: (_e: MouseEvent, _legendItem: any) => {},
+        },
+      },
+      onClick: onGraphClick,
+    };
+  }, [onGraphClick, title, yLabel]);
+
+  const selectRun = (runs?: PartitionGraphFragment[]) => {
     if (!runs || !runs.length) {
       return null;
     }
@@ -101,18 +98,16 @@ export class PartitionGraph extends React.Component<PartitionGraphProps, Partiti
     const toSort = runs.slice();
     toSort.sort(_reverseSortRunCompare);
     return toSort[0];
-  }
+  };
 
-  buildDatasetData() {
-    const {runsByPartitionName, getPipelineDataForRun, getStepDataForRun} = this.props;
-
+  const buildDatasetData = () => {
     const pipelineData: Point[] = [];
     const stepData = {};
 
     const partitionNames = Object.keys(runsByPartitionName);
     partitionNames.forEach((partitionName) => {
-      const run = this.selectRun(runsByPartitionName[partitionName]);
-      const hidden = !!this.state.hiddenPartitions[partitionName];
+      const run = selectRun(runsByPartitionName[partitionName]);
+      const hidden = !!hiddenPartitions[partitionName];
       pipelineData.push({
         x: partitionName,
         y: run && !hidden ? getPipelineDataForRun(run) : undefined,
@@ -138,36 +133,33 @@ export class PartitionGraph extends React.Component<PartitionGraphProps, Partiti
     });
 
     return {pipelineData, stepData};
-  }
+  };
 
-  render() {
-    const {runsByPartitionName} = this.props;
-    const {pipelineData, stepData} = this.buildDatasetData();
-    const graphData = {
-      labels: Object.keys(runsByPartitionName),
-      datasets: [
-        {
-          label: PIPELINE_LABEL,
-          data: pipelineData,
-          borderColor: Colors.GRAY2,
-          backgroundColor: 'rgba(0,0,0,0)',
-        },
-        ...Object.keys(stepData).map((stepKey) => ({
-          label: stepKey,
-          data: stepData[stepKey],
-          borderColor: colorHash(stepKey),
-          backgroundColor: 'rgba(0,0,0,0)',
-        })),
-      ],
-    };
-    const options = this.getDefaultOptions();
-    return (
-      <RowContainer style={{margin: '20px 0'}}>
-        <Line type="line" data={graphData} height={100} options={options} ref={this.chart} />
-      </RowContainer>
-    );
-  }
-}
+  const {pipelineData, stepData} = buildDatasetData();
+  const graphData = {
+    labels: Object.keys(runsByPartitionName),
+    datasets: [
+      {
+        label: flagPipelineModeTuples ? 'Total job' : 'Total pipeline',
+        data: pipelineData,
+        borderColor: Colors.GRAY2,
+        backgroundColor: 'rgba(0,0,0,0)',
+      },
+      ...Object.keys(stepData).map((stepKey) => ({
+        label: stepKey,
+        data: stepData[stepKey],
+        borderColor: colorHash(stepKey),
+        backgroundColor: 'rgba(0,0,0,0)',
+      })),
+    ],
+  };
+
+  return (
+    <RowContainer style={{margin: '20px 0'}}>
+      <Line type="line" data={graphData} height={100} options={defaultOptions} ref={chart} />
+    </RowContainer>
+  );
+});
 
 const _fillPartitions = (partitionNames: string[], points: Point[]) => {
   const pointData = {};

@@ -1020,8 +1020,19 @@ class DagsterInstance:
 
     # event storage
 
-    def logs_after(self, run_id, cursor, of_type: "DagsterEventType" = None):
-        return self._event_storage.get_logs_for_run(run_id, cursor=cursor, of_type=of_type)
+    def logs_after(
+        self,
+        run_id,
+        cursor,
+        of_type: "DagsterEventType" = None,
+        limit: Optional[int] = None,
+    ):
+        return self._event_storage.get_logs_for_run(
+            run_id,
+            cursor=cursor,
+            of_type=of_type,
+            limit=limit,
+        )
 
     def all_logs(self, run_id, of_type: "DagsterEventType" = None):
         return self._event_storage.get_logs_for_run(run_id, of_type=of_type)

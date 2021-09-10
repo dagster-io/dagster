@@ -85,37 +85,32 @@ function filterLogs(logs: LogsProviderLogs, filter: LogFilter, filterStepKeys: s
   };
 }
 
-export class LogsScrollingTable extends React.Component<ILogsScrollingTableProps> {
-  table = React.createRef<LogsScrollingTableSized>();
+export const LogsScrollingTable: React.FC<ILogsScrollingTableProps> = (props) => {
+  const {filterKey, filterStepKeys, metadata, filter, logs} = props;
+  const table = React.useRef<LogsScrollingTableSized>(null);
 
-  render() {
-    const {filterKey, filterStepKeys, metadata, filter, logs} = this.props;
-
-    return (
-      <ColumnWidthsProvider
-        onWidthsChanged={() => this.table.current && this.table.current.didResize()}
-      >
-        <Headers />
-        <div style={{flex: 1, minHeight: 0}}>
-          <AutoSizer>
-            {({width, height}) => (
-              <LogsScrollingTableSized
-                width={width}
-                height={height}
-                ref={this.table}
-                filterKey={filterKey}
-                loading={logs.loading}
-                metadata={metadata}
-                focusedTime={filter.focusedTime}
-                {...filterLogs(logs, filter, filterStepKeys)}
-              />
-            )}
-          </AutoSizer>
-        </div>
-      </ColumnWidthsProvider>
-    );
-  }
-}
+  return (
+    <ColumnWidthsProvider onWidthsChanged={() => table.current && table.current.didResize()}>
+      <Headers />
+      <div style={{flex: 1, minHeight: 0}}>
+        <AutoSizer>
+          {({width, height}) => (
+            <LogsScrollingTableSized
+              width={width}
+              height={height}
+              ref={table}
+              filterKey={filterKey}
+              loading={logs.loading}
+              metadata={metadata}
+              focusedTime={filter.focusedTime}
+              {...filterLogs(logs, filter, filterStepKeys)}
+            />
+          )}
+        </AutoSizer>
+      </div>
+    </ColumnWidthsProvider>
+  );
+};
 
 export const LOGS_SCROLLING_TABLE_MESSAGE_FRAGMENT = gql`
   fragment LogsScrollingTableMessageFragment on PipelineRunEvent {

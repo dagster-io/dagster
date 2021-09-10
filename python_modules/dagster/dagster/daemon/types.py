@@ -16,7 +16,7 @@ class DaemonType(Enum):
 
 class DaemonBackcompat(DefaultNamedTupleSerializer):
     @classmethod
-    def value_from_storage_dict(cls, storage_dict, klass):
+    def value_from_storage_dict(cls, storage_dict, klass, args_for_class):
         # Handle case where daemon_type used to be an enum (e.g. DaemonType.SCHEDULER)
         return DaemonHeartbeat(
             timestamp=storage_dict.get("timestamp"),
