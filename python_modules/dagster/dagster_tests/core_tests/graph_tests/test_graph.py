@@ -64,10 +64,8 @@ def test_aliased_graph():
     result = get_two.execute_in_process()
     assert result.success
 
-    result_for_non_aliased = result.result_for_node("emit_one")
-    assert result_for_non_aliased.output_values["result"] == 1
-    result_for_aliased = result.result_for_node("emit_one_part_two")
-    assert result_for_aliased.output_values["result"] == 1
+    assert result.output_for_node("emit_one") == 1
+    assert result.output_for_node("emit_one_part_two") == 1
 
 
 def test_composite_graph():
@@ -160,7 +158,7 @@ def test_config_mapping_fn():
 
     result = job.execute_in_process(run_config={"date": "6/4"})
     assert result.success
-    assert result.result_for_node("do_stuff").output_values["result"] == "i am here on 6/4"
+    assert result.output_for_node("do_stuff") == "i am here on 6/4"
 
 
 def test_default_config():
@@ -189,7 +187,7 @@ def test_default_config():
 
     result = job.execute_in_process()
     assert result.success
-    assert result.result_for_node("do_stuff").output_values["result"] == "i am here on 6/3"
+    assert result.output_for_node("do_stuff") == "i am here on 6/3"
 
 
 def test_suffix():
@@ -390,7 +388,7 @@ def test_config_naming_collisions():
     }
     result = my_graph.execute_in_process(run_config={"ops": {"my_op": {"config": config}}})
     assert result.success
-    assert result.output_values["result"] == config
+    assert result.output_value() == config
 
     @graph
     def ops():
@@ -398,7 +396,7 @@ def test_config_naming_collisions():
 
     result = ops.execute_in_process(run_config={"ops": {"my_op": {"config": config}}})
     assert result.success
-    assert result.output_values["result"] == config
+    assert result.output_value() == config
 
 
 def test_to_job_default_config_field_aliasing():
@@ -512,7 +510,7 @@ def test_enum_config_mapping():
     ingest_mapping = my_graph.to_job(config=default_config_mapping)
     result = ingest_mapping.execute_in_process()
     assert result.success
-    assert result.result_for_node("my_op").output_values["result"] == TestEnum.TWO
+    assert result.output_for_node("my_op") == TestEnum.TWO
 
     no_default_config_mapping = ConfigMapping(
         config_fn=_ingest_config_mapping,
@@ -522,7 +520,7 @@ def test_enum_config_mapping():
     ingest_mapping_no_default = my_graph.to_job(config=no_default_config_mapping)
     result = ingest_mapping_no_default.execute_in_process(run_config={"my_field": "TWO"})
     assert result.success
-    assert result.result_for_node("my_op").output_values["result"] == TestEnum.TWO
+    assert result.output_for_node("my_op") == TestEnum.TWO
 
     def _ingest_post_processed_config(x):
         assert x["my_field"] == TestEnum.TWO
@@ -535,7 +533,7 @@ def test_enum_config_mapping():
     ingest_preprocessing = my_graph.to_job(config=config_mapping_with_preprocessing)
     result = ingest_preprocessing.execute_in_process(run_config={"my_field": "TWO"})
     assert result.success
-    assert result.result_for_node("my_op").output_values["result"] == TestEnum.TWO
+    assert result.output_for_node("my_op") == TestEnum.TWO
 
 
 def test_enum_default_config():
@@ -556,7 +554,7 @@ def test_enum_default_config():
     my_job = my_graph.to_job(config={"ops": {"my_op": {"config": {"my_enum": "TWO"}}}})
     result = my_job.execute_in_process()
     assert result.success
-    assert result.result_for_node("my_op").output_values["result"] == TestEnum.TWO
+    assert result.output_for_node("my_op") == TestEnum.TWO
 
 
 def test_enum_to_execution():
@@ -577,13 +575,13 @@ def test_enum_to_execution():
     my_job = my_graph.to_job()
     result = my_job.execute_in_process()
     assert result.success
-    assert result.result_for_node("my_op").output_values["result"] == TestEnum.ONE
+    assert result.output_for_node("my_op") == TestEnum.ONE
 
     result = my_graph.execute_in_process(
         run_config={"ops": {"my_op": {"config": {"my_enum": "TWO"}}}}
     )
     assert result.success
-    assert result.result_for_node("my_op").output_values["result"] == TestEnum.TWO
+    assert result.output_for_node("my_op") == TestEnum.TWO
 
 
 def test_raise_on_error_execute_in_process():

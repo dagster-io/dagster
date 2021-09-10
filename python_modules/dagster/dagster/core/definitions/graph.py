@@ -59,7 +59,7 @@ if TYPE_CHECKING:
     from .partition import PartitionedConfig
     from .executor import ExecutorDefinition
     from .job import JobDefinition
-    from dagster.core.execution.execute_in_process import InProcessGraphResult
+    from dagster.core.execution.execute_in_process_result import InProcessResult
 
 
 def _check_node_defs_arg(graph_name: str, node_defs: Optional[List[NodeDefinition]]):
@@ -536,7 +536,7 @@ class GraphDefinition(NodeDefinition):
                 Defaults to ``True``.
 
         Returns:
-            InProcessGraphResult
+            InProcessResult
         """
         from dagster.core.execution.build_resources import wrap_resources_for_execution
         from dagster.core.execution.execute_in_process import core_execute_in_process
