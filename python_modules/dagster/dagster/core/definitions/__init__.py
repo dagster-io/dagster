@@ -1,8 +1,8 @@
 from .config import ConfigMapping
 from .decorators import (
     asset_sensor,
-    config_mapping,
     composite_solid,
+    config_mapping,
     daily_schedule,
     failure_hook,
     graph,

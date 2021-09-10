@@ -1,7 +1,9 @@
 from typing import Any, Callable, Optional, Union
 
 from dagster import check
+
 from ..config import ConfigMapping
+
 
 class _ConfigMapping:
     def __init__(
