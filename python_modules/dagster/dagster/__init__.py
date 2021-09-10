@@ -275,6 +275,7 @@ __all__ = [
     # Decorators
     "asset_sensor",
     "composite_solid",
+    "config_mapping",
     "executor",
     "graph",
     "intermediate_storage",

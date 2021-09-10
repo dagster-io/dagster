@@ -59,10 +59,10 @@ def test_conf_schema_typing_config_mapping():
         return {"ops": {"my_op": {"config": {"foo": val["foo"]}}}}
 
     with pytest.raises(DagsterInvalidConfigError):
-        assert not my_graph.to_job(config=my_config_mapping).execute_in_process(run_config={"foo": 1}).success
+        my_graph.to_job(config=my_config_mapping).execute_in_process(run_config={"foo": 1})
         
     with pytest.raises(DagsterInvalidConfigError):
-        assert not my_graph.to_job(config=my_config_mapping).execute_in_process().success
+        my_graph.to_job(config=my_config_mapping).execute_in_process()
 
     result = my_graph.to_job(config=my_config_mapping).execute_in_process(run_config={"foo": "bar"})
     assert result.success

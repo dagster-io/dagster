@@ -15,23 +15,20 @@ class _ConfigMapping:
     def __call__(self, fn: Callable[..., Any]) -> ConfigMapping:
         check.callable_param(fn, "fn")
 
-        config_mapping_def = ConfigMapping(
+        return ConfigMapping(
             config_fn=fn,
             config_schema=self.config_schema,
             receive_processed_config_values=self.receive_processed_config_values,
         )
-        return config_mapping_def
 
 def config_mapping(
     config_fn: Callable[..., Any] = None,
-    config_schema: Optional[Any] = None,
+    config_schema: Any = None,
     receive_processed_config_values: Optional[bool] = None,
 ) -> Union[_ConfigMapping, ConfigMapping]:
     """Create a config mapping with the specified parameters from the decorated function.
 
-    This shortcut simplifies the core :class:`ConfigMapping` API by omitting additional
-    parameters when they are not needed. The config schema will be inferred from the type
-    signature of the decorated function if not explicitly provided.
+    The config schema will be inferred from the type signature of the decorated function if not explicitly provided.
 
     Args:
         config_schema (ConfigSchema): The schema of the composite config.
