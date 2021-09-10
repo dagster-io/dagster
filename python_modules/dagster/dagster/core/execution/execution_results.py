@@ -55,7 +55,7 @@ def _filter_outputs_by_handle(
     return outputs
 
 
-class NodeExecutionResult:
+class InProcessNodeResult:
     @property
     def success(self):
         """bool: Whether all steps in the execution were successful."""
@@ -70,7 +70,7 @@ class NodeExecutionResult:
         raise NotImplementedError()
 
 
-class InProcessOpResult(NodeExecutionResult):
+class InProcessOpResult(InProcessNodeResult):
     def __init__(
         self,
         solid_def: SolidDefinition,
@@ -158,7 +158,7 @@ class InProcessOpResult(NodeExecutionResult):
         return self._handle
 
 
-class InProcessGraphResult(NodeExecutionResult):
+class InProcessGraphResult(InProcessNodeResult):
     def __init__(
         self,
         graph_def: GraphDefinition,
@@ -171,7 +171,7 @@ class InProcessGraphResult(NodeExecutionResult):
         self._event_list = all_events
         self._output_capture = output_capture
 
-    def _result_for_handle(self, solid: Node, handle: NodeHandle) -> NodeExecutionResult:
+    def _result_for_handle(self, solid: Node, handle: NodeHandle) -> InProcessNodeResult:
         node_def = solid.definition
         events_for_handle = _filter_step_events_by_handle(self.event_list, self.handle, handle)
         outputs_for_handle = (
@@ -233,7 +233,7 @@ class InProcessGraphResult(NodeExecutionResult):
     def handle(self) -> Optional[NodeHandle]:
         return self._handle
 
-    def result_for_node(self, name: str) -> NodeExecutionResult:
+    def result_for_node(self, name: str) -> InProcessNodeResult:
         """
         The inner result for a node within the graph.
         """
@@ -246,3 +246,20 @@ class InProcessGraphResult(NodeExecutionResult):
         handle = NodeHandle(name, None)
         solid = self._graph_def.get_solid(handle)
         return self._result_for_handle(solid, handle)
+
+    def output_for_node(self, handle_str, output_name=DEFAULT_OUTPUT):
+        """Get the output of a node by its node handle string and output name.
+
+        Args:
+            handle_str (str): The string handle for the node.
+            output_name (str): Optional. The name of the output, default to DEFAULT_OUTPUT.
+
+        Returns:
+            The output value for the handle and output_name.
+        """
+
+        check.str_param(handle_str, "handle_str")
+        check.str_param(output_name, "output_name")
+        handle = NodeHandle.from_string(handle_str)
+        node = self._graph_def.get_solid(handle)
+        return self._result_for_handle(node, handle).output_value(output_name)

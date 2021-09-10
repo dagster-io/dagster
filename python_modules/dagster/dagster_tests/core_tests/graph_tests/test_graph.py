@@ -7,6 +7,7 @@ from dagster import (
     DagsterInstance,
     Enum,
     Field,
+    Out,
     Permissive,
     Shape,
     graph,
@@ -387,15 +388,15 @@ def test_config_naming_collisions():
         "solids": {"solids": {"foo": {"config": {"foobar": "bar"}}}},
         "ops": {"solids": {"foo": {"config": {"foobar": "bar"}}}},
     }
-    result = my_graph.execute_in_process(config={"my_op": {"config": config}})
+    result = my_graph.execute_in_process(run_config={"ops": {"my_op": {"config": config}}})
     assert result.success
     assert result.output_values["result"] == config
 
     @graph
-    def solids():
+    def ops():
         return my_op()
 
-    result = solids.execute_in_process(config={"my_op": {"config": config}})
+    result = ops.execute_in_process(run_config={"ops": {"my_op": {"config": config}}})
     assert result.success
     assert result.output_values["result"] == config
 
@@ -484,7 +485,7 @@ def test_enum_config_mapping():
     use_defaults = my_graph.to_job(config=ConfigMapping(config_fn=_use_defaults_mapping))
     result = use_defaults.execute_in_process()
     assert result.success
-    assert result.result_for_node("my_op").output_values["result"] == TestEnum.ONE
+    assert result.output_for_node("my_op") == TestEnum.ONE
 
     def _override_defaults_mapping(_):
         return {"ops": {"my_op": {"config": {"my_enum": "TWO"}}}}
@@ -492,7 +493,7 @@ def test_enum_config_mapping():
     override_defaults = my_graph.to_job(config=ConfigMapping(config_fn=_override_defaults_mapping))
     result = override_defaults.execute_in_process()
     assert result.success
-    assert result.result_for_node("my_op").output_values["result"] == TestEnum.TWO
+    assert result.output_for_node("my_op") == TestEnum.TWO
 
     def _ingest_config_mapping(x):
         return {"ops": {"my_op": {"config": {"my_enum": x["my_field"]}}}}
@@ -578,7 +579,9 @@ def test_enum_to_execution():
     assert result.success
     assert result.result_for_node("my_op").output_values["result"] == TestEnum.ONE
 
-    result = my_graph.execute_in_process(config={"my_op": {"config": {"my_enum": "TWO"}}})
+    result = my_graph.execute_in_process(
+        run_config={"ops": {"my_op": {"config": {"my_enum": "TWO"}}}}
+    )
     assert result.success
     assert result.result_for_node("my_op").output_values["result"] == TestEnum.TWO
 
@@ -645,3 +648,17 @@ def test_job_and_graph_tags():
         assert result.success
         run = instance.get_runs()[0]
         assert run.tags == {"a": "y", "b": "z", "c": "q"}
+
+
+def test_result_for_node_non_standard_name():
+    @op(out={"foo": Out()})
+    def my_op():
+        return 5
+
+    @graph
+    def basic():
+        my_op()
+
+    result = basic.execute_in_process()
+
+    assert result.output_for_node("my_op", "foo") == 5
