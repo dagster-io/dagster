@@ -251,7 +251,7 @@ class PipelineDefinition:
         )
         self._cached_run_config_schemas: Dict[str, "RunConfigSchema"] = {}
         self._cached_external_pipeline = None
-        self._cached_partition_set = None
+        self._cached_partition_set: Optional["PartitionSetDefinition"] = None
 
         self.version_strategy = check.opt_inst_param(
             version_strategy, "version_strategy", VersionStrategy
