@@ -1,14 +1,13 @@
-from dagster import (
+from dagster import (  # InputDefinition,; ModeDefinition,; OutputDefinition,; lambda_solid,; pipeline,
     DagsterInstance,
-    InputDefinition,
+    In,
     Int,
-    ModeDefinition,
-    OutputDefinition,
+    Out,
     PipelineRun,
     build_input_context,
     build_output_context,
-    lambda_solid,
-    pipeline,
+    graph,
+    op,
     resource,
 )
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
@@ -33,60 +32,54 @@ def get_step_output(step_events, step_key, output_name="result"):
     return None
 
 
-def define_inty_pipeline():
+def define_inty_job():
     @resource
     def test_s3_resource(_):
         return construct_s3_client(max_attempts=5)
 
-    @lambda_solid(output_def=OutputDefinition(Int, io_manager_key="io_manager"))
+    @op(out=Out(Int, io_manager_key="io_manager"))
     def return_one():
         return 1
 
-    @lambda_solid(
-        input_defs=[InputDefinition("num", Int)],
-        output_def=OutputDefinition(Int, io_manager_key="io_manager"),
+    @op(
+        ins={"num": In(Int)},
+        out=Out(Int, io_manager_key="io_manager"),
     )
     def add_one(num):
         return num + 1
 
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={
-                    "io_manager": s3_pickle_io_manager,
-                    "s3": test_s3_resource,
-                },
-            )
-        ]
-    )
+    @graph
     def basic_external_plan_execution():
         add_one(return_one())
 
-    return basic_external_plan_execution
+    return basic_external_plan_execution.to_job(
+        resource_defs={
+            "io_manager": s3_pickle_io_manager,
+            "s3": test_s3_resource,
+        },
+    )
 
 
 def test_s3_pickle_io_manager_execution(mock_s3_bucket):
-    pipeline_def = define_inty_pipeline()
+    job = define_inty_job()
 
     run_config = {"resources": {"io_manager": {"config": {"s3_bucket": mock_s3_bucket.name}}}}
 
     run_id = make_new_run_id()
 
-    resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config=run_config)
-    execution_plan = ExecutionPlan.build(InMemoryPipeline(pipeline_def), resolved_run_config)
+    resolved_run_config = ResolvedRunConfig.build(job, run_config=run_config)
+    execution_plan = ExecutionPlan.build(InMemoryPipeline(job), resolved_run_config)
 
     assert execution_plan.get_step_by_key("return_one")
 
     step_keys = ["return_one"]
     instance = DagsterInstance.ephemeral()
-    pipeline_run = PipelineRun(
-        pipeline_name=pipeline_def.name, run_id=run_id, run_config=run_config
-    )
+    pipeline_run = PipelineRun(pipeline_name=job.name, run_id=run_id, run_config=run_config)
 
     return_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(step_keys, pipeline_def, resolved_run_config),
-            pipeline=InMemoryPipeline(pipeline_def),
+            execution_plan.build_subset_plan(step_keys, job, resolved_run_config),
+            pipeline=InMemoryPipeline(job),
             run_config=run_config,
             pipeline_run=pipeline_run,
             instance=instance,
@@ -110,8 +103,8 @@ def test_s3_pickle_io_manager_execution(mock_s3_bucket):
 
     add_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(["add_one"], pipeline_def, resolved_run_config),
-            pipeline=InMemoryPipeline(pipeline_def),
+            execution_plan.build_subset_plan(["add_one"], job, resolved_run_config),
+            pipeline=InMemoryPipeline(job),
             run_config=run_config,
             pipeline_run=pipeline_run,
             instance=instance,

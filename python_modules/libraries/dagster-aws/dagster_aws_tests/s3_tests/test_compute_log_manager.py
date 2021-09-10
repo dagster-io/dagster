@@ -4,7 +4,7 @@ import tempfile
 
 import pytest
 from botocore.exceptions import ClientError
-from dagster import DagsterEventType, execute_pipeline, pipeline, solid
+from dagster import DagsterEventType, graph, op
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher import DefaultRunLauncher
 from dagster.core.run_coordinator import DefaultRunCoordinator
@@ -24,14 +24,14 @@ EXPECTED_LOGS = [
 
 
 def test_compute_log_manager(mock_s3_bucket):
-    @pipeline
-    def simple():
-        @solid
-        def easy(context):
-            context.log.info("easy")
-            print(HELLO_WORLD)  # pylint: disable=print-call
-            return "easy"
+    @op
+    def easy(context):
+        context.log.info("easy")
+        print(HELLO_WORLD)  # pylint: disable=print-call
+        return "easy"
 
+    @graph
+    def simple():
         easy()
 
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -49,26 +49,27 @@ def test_compute_log_manager(mock_s3_bucket):
             run_coordinator=DefaultRunCoordinator(),
             run_launcher=DefaultRunLauncher(),
         )
-        result = execute_pipeline(simple, instance=instance)
+        result = simple.execute_in_process(instance=instance)
+        run = instance.get_runs(limit=1)[0]
         compute_steps = [
             event.step_key
-            for event in result.step_event_list
+            for event in result.event_list
             if event.event_type == DagsterEventType.STEP_START
         ]
         assert len(compute_steps) == 1
         step_key = compute_steps[0]
 
-        stdout = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDOUT)
+        stdout = manager.read_logs_file(run.run_id, step_key, ComputeIOType.STDOUT)
         assert stdout.data == HELLO_WORLD + SEPARATOR
 
-        stderr = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDERR)
+        stderr = manager.read_logs_file(run.run_id, step_key, ComputeIOType.STDERR)
         for expected in EXPECTED_LOGS:
             assert expected in stderr.data
 
         # Check S3 directly
         s3_object = mock_s3_bucket.Object(
             key="{prefix}/storage/{run_id}/compute_logs/easy.err".format(
-                prefix="my_prefix", run_id=result.run_id
+                prefix="my_prefix", run_id=run.run_id
             ),
         )
         stderr_s3 = s3_object.get()["Body"].read().decode("utf-8")
@@ -76,14 +77,14 @@ def test_compute_log_manager(mock_s3_bucket):
             assert expected in stderr_s3
 
         # Check download behavior by deleting locally cached logs
-        compute_logs_dir = os.path.join(temp_dir, result.run_id, "compute_logs")
+        compute_logs_dir = os.path.join(temp_dir, run.run_id, "compute_logs")
         for filename in os.listdir(compute_logs_dir):
             os.unlink(os.path.join(compute_logs_dir, filename))
 
-        stdout = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDOUT)
+        stdout = manager.read_logs_file(run.run_id, step_key, ComputeIOType.STDOUT)
         assert stdout.data == HELLO_WORLD + SEPARATOR
 
-        stderr = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDERR)
+        stderr = manager.read_logs_file(run.run_id, step_key, ComputeIOType.STDERR)
         for expected in EXPECTED_LOGS:
             assert expected in stderr.data
 
@@ -116,12 +117,12 @@ compute_logs:
 
 
 def test_compute_log_manager_skip_empty_upload(mock_s3_bucket):
-    @pipeline
-    def simple():
-        @solid
-        def easy(context):
-            context.log.info("easy")
+    @op
+    def easy(context):
+        context.log.info("easy")
 
+    @graph
+    def simple():
         easy()
 
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -140,15 +141,14 @@ def test_compute_log_manager_skip_empty_upload(mock_s3_bucket):
             run_coordinator=DefaultRunCoordinator(),
             run_launcher=DefaultRunLauncher(),
         )
-        result = execute_pipeline(simple, instance=instance)
+        simple.execute_in_process(instance=instance)
+        run = instance.get_runs(limit=1)[0]
 
         stderr_object = mock_s3_bucket.Object(
-            key=f"{PREFIX}/storage/{result.run_id}/compute_logs/easy.err"
+            key=f"{PREFIX}/storage/{run.run_id}/compute_logs/easy.err"
         ).get()
         assert stderr_object
 
         with pytest.raises(ClientError):
             # stdout is not uploaded because we do not print anything to stdout
-            mock_s3_bucket.Object(
-                key=f"{PREFIX}/storage/{result.run_id}/compute_logs/easy.out"
-            ).get()
+            mock_s3_bucket.Object(key=f"{PREFIX}/storage/{run.run_id}/compute_logs/easy.out").get()

@@ -3,7 +3,7 @@ import json
 
 import boto3
 import pytest
-from dagster import op, graph
+from dagster import graph, op
 from dagster_aws.cloudwatch import cloudwatch_logger
 from moto import mock_logs
 

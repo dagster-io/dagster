@@ -110,6 +110,7 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
         return self.local_manager.get_local_path(run_id, key, io_type)
 
     def on_watch_start(self, pipeline_run, step_key):
+        print("START WATCH", pipeline_run.run_id)
         self.local_manager.on_watch_start(pipeline_run, step_key)
 
     def on_watch_finish(self, pipeline_run, step_key):

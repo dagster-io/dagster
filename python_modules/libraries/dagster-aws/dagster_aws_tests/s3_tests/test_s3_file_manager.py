@@ -3,23 +3,8 @@ from unittest import mock
 
 import pytest
 from botocore import exceptions
-from dagster import (
-    DagsterResourceFunctionError,
-    InputDefinition,
-    Int,
-    ModeDefinition,
-    OutputDefinition,
-    configured,
-    execute_pipeline,
-    pipeline,
-    solid,
-)
-from dagster_aws.s3 import (
-    S3FileHandle,
-    S3FileManager,
-    s3_file_manager,
-    s3_resource,
-)
+from dagster import DagsterResourceFunctionError, In, Out, build_op_context, configured, graph, op
+from dagster_aws.s3 import S3FileHandle, S3FileManager, s3_file_manager, s3_resource
 
 
 def test_s3_file_manager_write(mock_s3_resource, mock_s3_bucket):
@@ -54,12 +39,12 @@ def test_s3_file_manager_read(mock_s3_resource, mock_s3_bucket):
 def test_depends_on_s3_resource_file_manager(mock_s3_bucket):
     bar_bytes = b"bar"
 
-    @solid(output_defs=[OutputDefinition(S3FileHandle)], required_resource_keys={"file_manager"})
+    @op(out=Out(S3FileHandle), required_resource_keys={"file_manager"})
     def emit_file(context):
         return context.resources.file_manager.write_data(bar_bytes)
 
-    @solid(
-        input_defs=[InputDefinition("file_handle", S3FileHandle)],
+    @op(
+        ins={"file_handle": In(S3FileHandle)},
         required_resource_keys={"file_manager"},
     )
     def accept_file(context, file_handle):
@@ -67,18 +52,13 @@ def test_depends_on_s3_resource_file_manager(mock_s3_bucket):
         assert isinstance(local_path, str)
         assert open(local_path, "rb").read() == bar_bytes
 
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={"s3": s3_resource, "file_manager": s3_file_manager},
-            )
-        ]
-    )
+    @graph
     def s3_file_manager_test():
         accept_file(emit_file())
 
-    result = execute_pipeline(
-        s3_file_manager_test,
+    result = s3_file_manager_test.to_job(
+        resource_defs={"s3": s3_resource, "file_manager": s3_file_manager},
+    ).execute_in_process(
         run_config={
             "resources": {
                 "file_manager": {
@@ -117,8 +97,8 @@ def test_s3_file_manager_resource(MockS3FileManager, mock_boto3_resource):
 
     mock_s3_session = mock_boto3_resource.return_value.meta.client
 
-    @solid(required_resource_keys={"file_manager"})
-    def test_solid(context):
+    @op(required_resource_keys={"file_manager"})
+    def test_op(context):
         # test that we got back a S3FileManager
         assert context.resources.file_manager == MockS3FileManager.return_value
 
@@ -143,17 +123,11 @@ def test_s3_file_manager_resource(MockS3FileManager, mock_boto3_resource):
 
         did_it_run["it_ran"] = True
 
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={"file_manager": configured(s3_file_manager)(resource_config)},
-            )
-        ]
+    context = build_op_context(
+        resources={"file_manager": configured(s3_file_manager)(resource_config)}
     )
-    def test_pipeline():
-        test_solid()
+    test_op(context)
 
-    execute_pipeline(test_pipeline)
     assert did_it_run["it_ran"]
 
 
@@ -168,23 +142,16 @@ def test_s3_file_manager_resource_with_profile():
         "profile_name": "some-profile",
     }
 
-    @solid(required_resource_keys={"file_manager"})
-    def test_solid(context):
+    @op(required_resource_keys={"file_manager"})
+    def test_op(context):
         # placeholder function to test resource initialization
         return context.log.info("return from test_solid")
 
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={"file_manager": configured(s3_file_manager)(resource_config)},
-            )
-        ]
-    )
-    def test_pipeline():
-        test_solid()
-
     with pytest.raises(DagsterResourceFunctionError) as e:
-        execute_pipeline(test_pipeline)
+        context = build_op_context(
+            resources={"file_manager": configured(s3_file_manager)(resource_config)},
+        )
+        test_op(context)
 
     assert isinstance(e.value.user_exception, exceptions.ProfileNotFound)
     assert str(e.value.user_exception) == "The config profile (some-profile) could not be found"
