@@ -12,7 +12,9 @@ class _ConfigMapping:
         receive_processed_config_values: Optional[bool] = None,
     ):
         self.config_schema = config_schema
-        self.receive_processed_config_values = check.opt_bool_param(receive_processed_config_values, "receive_processed_config_values")
+        self.receive_processed_config_values = check.opt_bool_param(
+            receive_processed_config_values, "receive_processed_config_values"
+        )
 
     def __call__(self, fn: Callable[..., Any]) -> ConfigMapping:
         check.callable_param(fn, "fn")
@@ -22,6 +24,7 @@ class _ConfigMapping:
             config_schema=self.config_schema,
             receive_processed_config_values=self.receive_processed_config_values,
         )
+
 
 def config_mapping(
     config_fn: Callable[..., Any] = None,
@@ -55,7 +58,7 @@ def config_mapping(
             @config_mapping
             def my_config_mapping(val):
                 return {"ops": {"my_op": {"config": {"foo": val["foo"]}}}}
-            
+
             @config_mapping(config_schema={"foo": str})
             def my_config_mapping(val):
                 return {"ops": {"my_op": {"config": {"foo": val["foo"]}}}}
