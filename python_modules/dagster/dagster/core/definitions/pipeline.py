@@ -46,6 +46,7 @@ if TYPE_CHECKING:
     from dagster.core.snap import PipelineSnapshot, ConfigSchemaSnapshot
     from dagster.core.host_representation import PipelineIndex
     from dagster.core.instance import DagsterInstance
+    from dagster.core.definitions.partition import PartitionSetDefinition
     from dagster.core.execution.execution_results import InProcessGraphResult
 
 
