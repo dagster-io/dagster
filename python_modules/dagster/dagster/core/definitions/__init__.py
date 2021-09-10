@@ -64,6 +64,7 @@ from .graph import GraphDefinition
 from .hook import HookDefinition
 from .input import In, InputDefinition, InputMapping
 from .intermediate_storage import IntermediateStorageDefinition, intermediate_storage
+from .job import JobDefinition
 from .logger import LoggerDefinition, build_init_logger_context, logger
 from .mode import ModeDefinition
 from .op import OpDefinition

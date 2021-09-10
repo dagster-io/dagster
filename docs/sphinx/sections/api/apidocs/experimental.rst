@@ -48,11 +48,13 @@ The replacement for :py:class:`solid`, has a more intuitive name and offers a mo
 Testing
 -------
 
+.. currentmodule:: dagster
+
+.. autofunction:: build_op_context
+
 Explicit in-process execution APIs have been added to better facilitate testing of Graphs and Jobs.
 
 Jobs can be tested with :py:meth:`JobDefinition.execute_in_process`, and Graphs with :py:meth:`GraphDefinition.execute_in_process`
-
-.. currentmodule:: dagster
 
 .. currentmodule:: dagster.core.execution.execution_results
 
