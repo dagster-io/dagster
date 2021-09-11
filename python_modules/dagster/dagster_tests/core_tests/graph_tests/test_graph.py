@@ -648,7 +648,7 @@ def test_job_and_graph_tags():
         assert run.tags == {"a": "y", "b": "z", "c": "q"}
 
 
-def test_result_for_node_non_standard_name():
+def test_output_for_node_non_standard_name():
     @op(out={"foo": Out()})
     def my_op():
         return 5
