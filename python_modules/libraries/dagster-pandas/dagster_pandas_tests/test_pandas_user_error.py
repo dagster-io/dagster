@@ -5,42 +5,42 @@ import pandas as pd
 import pytest
 from dagster import (
     DagsterTypeCheckDidNotPass,
-    InputDefinition,
-    OutputDefinition,
-    execute_pipeline,
-    lambda_solid,
-    pipeline,
+    In,
+    Out,
+    graph,
+    op,
 )
-from dagster.core.utility_solids import define_stub_solid
 
 
 def test_wrong_output_value():
-    csv_input = InputDefinition("num_csv", dagster_pd.DataFrame)
-
-    @lambda_solid(input_defs=[csv_input], output_def=OutputDefinition(dagster_pd.DataFrame))
-    def test_wrong_output(num_csv):
+    @op(ins={"num_csv": In(dagster_pd.DataFrame)}, out=Out(dagster_pd.DataFrame))
+    def wrong_output(num_csv):
         return "not a dataframe"
 
-    pass_solid = define_stub_solid("pass_solid", pd.DataFrame())
+    @op
+    def pass_df():
+        return pd.DataFrame()
 
-    @pipeline
-    def test_pipeline():
-        return test_wrong_output(pass_solid())
+    @graph
+    def test_graph():
+        return wrong_output(pass_df())
 
     with pytest.raises(DagsterTypeCheckDidNotPass):
-        execute_pipeline(test_pipeline)
+        test_graph.execute_in_process()
 
 
 def test_wrong_input_value():
-    @lambda_solid(input_defs=[InputDefinition("foo", dagster_pd.DataFrame)])
-    def test_wrong_input(foo):
+    @op(ins={"foo": In(dagster_pd.DataFrame)})
+    def wrong_input(foo):
         return foo
 
-    pass_solid = define_stub_solid("pass_solid", "not a dataframe")
+    @op
+    def pass_str():
+        "not a dataframe"
 
-    @pipeline
-    def test_pipeline():
-        test_wrong_input(pass_solid())
+    @graph
+    def test_graph():
+        wrong_input(pass_str())
 
     with pytest.raises(DagsterTypeCheckDidNotPass):
-        execute_pipeline(test_pipeline)
+        test_graph.execute_in_process()

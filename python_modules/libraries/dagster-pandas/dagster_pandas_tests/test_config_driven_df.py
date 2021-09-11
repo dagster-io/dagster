@@ -4,11 +4,10 @@ import pandas as pd
 import pytest
 from dagster import (
     DagsterInvalidConfigError,
-    InputDefinition,
-    OutputDefinition,
-    execute_pipeline,
-    pipeline,
-    solid,
+    In,
+    Out,
+    graph,
+    op,
 )
 from dagster.utils import file_relative_path
 from dagster.utils.test import get_temp_file_name
@@ -34,22 +33,19 @@ def check_parquet_support():
 def test_dataframe_csv_from_inputs():
     called = {}
 
-    @solid(input_defs=[InputDefinition("df", DataFrame)])
+    @op(ins={"df": In(DataFrame)})
     def df_as_config(_context, df):
         assert df.to_dict("list") == {"num1": [1, 3], "num2": [2, 4]}
         called["yup"] = True
 
-    @pipeline
-    def test_pipeline():
+    @graph
+    def test_graph():
         return df_as_config()
 
-    result = execute_pipeline(
-        test_pipeline,
-        {
-            "solids": {
-                "df_as_config": {
-                    "inputs": {"df": {"csv": {"path": file_relative_path(__file__, "num.csv")}}}
-                }
+    result = test_graph.execute_in_process(
+        config={
+            "df_as_config": {
+                "inputs": {"df": {"csv": {"path": file_relative_path(__file__, "num.csv")}}}
             }
         },
     )
@@ -61,24 +57,21 @@ def test_dataframe_csv_from_inputs():
 def test_dataframe_wrong_sep_from_inputs():
     called = {}
 
-    @solid(input_defs=[InputDefinition("df", DataFrame)])
+    @op(ins={"df": In(DataFrame)})
     def df_as_config(_context, df):
         # this is the pandas behavior
         assert df.to_dict("list") == {"num1,num2": ["1,2", "3,4"]}
         called["yup"] = True
 
-    @pipeline
-    def test_pipeline():
+    @graph
+    def test_graph():
         return df_as_config()
 
-    result = execute_pipeline(
-        test_pipeline,
-        {
-            "solids": {
-                "df_as_config": {
-                    "inputs": {
-                        "df": {"csv": {"path": file_relative_path(__file__, "num.csv"), "sep": "|"}}
-                    }
+    result = test_graph.execute_in_process(
+        config={
+            "df_as_config": {
+                "inputs": {
+                    "df": {"csv": {"path": file_relative_path(__file__, "num.csv"), "sep": "|"}}
                 }
             }
         },
@@ -91,26 +84,23 @@ def test_dataframe_wrong_sep_from_inputs():
 def test_dataframe_pipe_sep_csv_from_inputs():
     called = {}
 
-    @solid(input_defs=[InputDefinition("df", DataFrame)])
+    @op(ins={"df": In(DataFrame)})
     def df_as_config(_context, df):
         assert df.to_dict("list") == {"num1": [1, 3], "num2": [2, 4]}
         called["yup"] = True
 
-    @pipeline
-    def test_pipeline():
+    @graph
+    def test_graph():
         return df_as_config()
 
-    result = execute_pipeline(
-        test_pipeline,
-        {
-            "solids": {
-                "df_as_config": {
-                    "inputs": {
-                        "df": {
-                            "csv": {
-                                "path": file_relative_path(__file__, "num_pipes.csv"),
-                                "sep": "|",
-                            }
+    result = test_graph.execute_in_process(
+        config={
+            "df_as_config": {
+                "inputs": {
+                    "df": {
+                        "csv": {
+                            "path": file_relative_path(__file__, "num_pipes.csv"),
+                            "sep": "|",
                         }
                     }
                 }
@@ -125,22 +115,22 @@ def test_dataframe_pipe_sep_csv_from_inputs():
 def test_dataframe_csv_missing_inputs():
     called = {}
 
-    @solid(input_defs=[InputDefinition("df", DataFrame)])
+    @op(ins={"df": In(DataFrame)})
     def df_as_input(_context, df):  # pylint: disable=W0613
         called["yup"] = True
 
-    @pipeline
+    @graph
     def missing_inputs():
         return df_as_input()
 
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
-        execute_pipeline(missing_inputs)
+        missing_inputs.execute_in_process()
 
     assert len(exc_info.value.errors) == 1
 
-    expected_suggested_config = {"solids": {"df_as_input": {"inputs": {"df": "<selector>"}}}}
+    expected_suggested_config = {"df_as_input": {"inputs": {"df": "<selector>"}}}
     assert exc_info.value.errors[0].message.startswith(
-        'Missing required config entry "solids" at the root.'
+        'Missing required config entry "df_as_input" at path root:ops.'
     )
     assert str(expected_suggested_config) in exc_info.value.errors[0].message
 
@@ -150,32 +140,29 @@ def test_dataframe_csv_missing_inputs():
 def test_dataframe_csv_missing_input_collision():
     called = {}
 
-    @solid(output_defs=[OutputDefinition(DataFrame)])
+    @op(out=Out(DataFrame))
     def df_as_output(_context):
         return pd.DataFrame()
 
-    @solid(input_defs=[InputDefinition("df", DataFrame)])
+    @op(ins={"df": In(DataFrame)})
     def df_as_input(_context, df):  # pylint: disable=W0613
         called["yup"] = True
 
-    @pipeline
+    @graph
     def overlapping():
         return df_as_input(df_as_output())
 
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
-        execute_pipeline(
-            overlapping,
-            {
-                "solids": {
-                    "df_as_input": {
-                        "inputs": {"df": {"csv": {"path": file_relative_path(__file__, "num.csv")}}}
-                    }
+        overlapping.execute_in_process(
+            config={
+                "df_as_input": {
+                    "inputs": {"df": {"csv": {"path": file_relative_path(__file__, "num.csv")}}}
                 }
             },
         )
 
     assert (
-        'Error 1: Received unexpected config entry "inputs" at path root:solids:df_as_input.'
+        'Error 1: Received unexpected config entry "inputs" at path root:ops:df_as_input.'
         in str(exc_info.value)
     )
 
@@ -187,24 +174,19 @@ def test_dataframe_parquet_from_inputs():
 
     called = {}
 
-    @solid(input_defs=[InputDefinition("df", DataFrame)])
+    @op(ins={"df": In(DataFrame)})
     def df_as_config(_context, df):
         assert df.to_dict("list") == {"num1": [1, 3], "num2": [2, 4]}
         called["yup"] = True
 
-    @pipeline
-    def test_pipeline():
+    @graph
+    def test_graph():
         df_as_config()
 
-    result = execute_pipeline(
-        test_pipeline,
-        {
-            "solids": {
-                "df_as_config": {
-                    "inputs": {
-                        "df": {"parquet": {"path": file_relative_path(__file__, "num.parquet")}}
-                    }
-                }
+    result = test_graph.execute_in_process(
+        config={
+            "df_as_config": {
+                "inputs": {"df": {"parquet": {"path": file_relative_path(__file__, "num.parquet")}}}
             }
         },
     )
@@ -216,24 +198,19 @@ def test_dataframe_parquet_from_inputs():
 def test_dataframe_table_from_inputs():
     called = {}
 
-    @solid(input_defs=[InputDefinition("df", DataFrame)])
+    @op(ins={"df": In(DataFrame)})
     def df_as_config(_context, df):
         assert df.to_dict("list") == {"num1": [1, 3], "num2": [2, 4]}
         called["yup"] = True
 
-    @pipeline
-    def test_pipeline():
+    @graph
+    def test_graph():
         df_as_config()
 
-    result = execute_pipeline(
-        test_pipeline,
-        {
-            "solids": {
-                "df_as_config": {
-                    "inputs": {
-                        "df": {"table": {"path": file_relative_path(__file__, "num_table.txt")}}
-                    }
-                }
+    result = test_graph.execute_in_process(
+        config={
+            "df_as_config": {
+                "inputs": {"df": {"table": {"path": file_relative_path(__file__, "num_table.txt")}}}
             }
         },
     )
@@ -250,18 +227,17 @@ def test_dataframe_pickle_from_inputs():
 
     called = {}
 
-    @solid(input_defs=[InputDefinition("df", DataFrame)])
+    @op(ins={"df": In(DataFrame)})
     def df_as_config(_context, df):
         assert df.to_dict("list") == {"num1": [1, 3], "num2": [2, 4]}
         called["yup"] = True
 
-    @pipeline
-    def test_pipeline():
+    @graph
+    def test_graph():
         df_as_config()
 
-    result = execute_pipeline(
-        test_pipeline,
-        {"solids": {"df_as_config": {"inputs": {"df": {"pickle": {"path": pickle_path}}}}}},
+    result = test_graph.execute_in_process(
+        config={"df_as_config": {"inputs": {"df": {"pickle": {"path": pickle_path}}}}}
     )
 
     assert result.success
@@ -271,18 +247,17 @@ def test_dataframe_pickle_from_inputs():
 
 
 def test_dataframe_csv_materialization():
-    @solid(output_defs=[OutputDefinition(DataFrame)])
+    @op(out=Out(DataFrame))
     def return_df(_context):
         return pd.DataFrame({"num1": [1, 3], "num2": [2, 4]})
 
-    @pipeline
-    def return_df_pipeline():
+    @graph
+    def return_df_graph():
         return_df()
 
     with get_temp_file_name() as filename:
-        result = execute_pipeline(
-            return_df_pipeline,
-            {"solids": {"return_df": {"outputs": [{"result": {"csv": {"path": filename}}}]}}},
+        result = return_df_graph.execute_in_process(
+            config={"return_df": {"outputs": [{"result": {"csv": {"path": filename}}}]}},
         )
 
         assert result.success
@@ -294,18 +269,17 @@ def test_dataframe_csv_materialization():
 def test_dataframe_parquet_materialization():
     check_parquet_support()
 
-    @solid(output_defs=[OutputDefinition(DataFrame)])
+    @op(out=Out(DataFrame))
     def return_df(_context):
         return pd.DataFrame({"num1": [1, 3], "num2": [2, 4]})
 
-    @pipeline
-    def return_df_pipeline():
+    @graph
+    def return_df_graph():
         return_df()
 
     with get_temp_file_name() as filename:
-        result = execute_pipeline(
-            return_df_pipeline,
-            {"solids": {"return_df": {"outputs": [{"result": {"parquet": {"path": filename}}}]}}},
+        result = return_df_graph.execute_in_process(
+            config={"return_df": {"outputs": [{"result": {"parquet": {"path": filename}}}]}},
         )
 
         assert result.success
@@ -315,19 +289,18 @@ def test_dataframe_parquet_materialization():
 
 
 def test_dataframe_table_materialization():
-    @solid(output_defs=[OutputDefinition(DataFrame)])
+    @op(out=Out(DataFrame))
     def return_df(_context):
         return pd.DataFrame({"num1": [1, 3], "num2": [2, 4]})
 
-    @pipeline
-    def return_df_pipeline():
+    @graph
+    def return_df_graph():
         return_df()
 
     with get_temp_file_name() as filename:
         filename = "/tmp/table_test.txt"
-        result = execute_pipeline(
-            return_df_pipeline,
-            {"solids": {"return_df": {"outputs": [{"result": {"table": {"path": filename}}}]}}},
+        result = return_df_graph.execute_in_process(
+            config={"return_df": {"outputs": [{"result": {"table": {"path": filename}}}]}},
         )
 
         assert result.success
@@ -337,19 +310,18 @@ def test_dataframe_table_materialization():
 
 
 def test_dataframe_pickle_materialization():
-    @solid(output_defs=[OutputDefinition(DataFrame)])
+    @op(out=Out(DataFrame))
     def return_df(_context):
         return pd.DataFrame({"num1": [1, 3], "num2": [2, 4]})
 
-    @pipeline
-    def return_df_pipeline():
+    @graph
+    def return_df_graph():
         return_df()
 
     with get_temp_file_name() as filename:
         filename = "/tmp/num.pickle"
-        result = execute_pipeline(
-            return_df_pipeline,
-            {"solids": {"return_df": {"outputs": [{"result": {"pickle": {"path": filename}}}]}}},
+        result = return_df_graph.execute_in_process(
+            config={"return_df": {"outputs": [{"result": {"pickle": {"path": filename}}}]}},
         )
 
         assert result.success
