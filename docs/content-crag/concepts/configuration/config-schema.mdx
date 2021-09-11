@@ -1,11 +1,11 @@
 ---
 title: Run Configuration | Dagster
-description: Pipeline run configuration allows providing parameters to pipelines at the time they're executed.
+description: Job run configuration allows providing parameters to jobs at the time they're executed.
 ---
 
 # Run Configuration
 
-Pipeline run configuration allows providing parameters to pipelines at the time they're executed.
+Run configuration allows providing parameters to jobs at the time they're executed.
 
 ## Relevant APIs
 
@@ -15,70 +15,75 @@ Pipeline run configuration allows providing parameters to pipelines at the time 
 
 ## Overview
 
-It's often useful to configure pipelines at run time. For example, you might want someone to manually operate a deployed pipeline and choose what dataset it operates on when they run it. In general, you should use Dagster's config system when you want the person or software that is executing a pipeline to be able to make choices about what the pipeline does, without needing to modify the pipeline definition.
+It's often useful to configure jobs at run time. For example, you might want someone to manually operate a deployed job and choose what dataset it operates on when they run it. In general, you should use Dagster's config system when you want the person or software that is executing a job to be able to make choices about what the job does, without needing to modify the job definition.
 
-The objects that compose a pipeline - solids and resources - are each individually configurable. When executing a pipeline, you can supply "run configuration" that specifies the configuration for each of the objects in the pipeline. When you execute a pipeline with the Python API, you supply run configuration as a Python dictionary. When you execute a pipeline from Dagit or the CLI, you can provide config in a YAML document.
+The objects that compose a job - nodes and resources - are each individually configurable. When executing a job, you can supply "run configuration" that specifies the configuration for each of the objects in the job. When you execute a job with Dagster's Python API, you supply run configuration as a Python dictionary. When you execute a job from Dagit or the CLI, you can provide config in a YAML document.
 
-A common use of configuration is for a [schedule](/concepts/partitions-schedules-sensors/schedules) or [sensor](/concepts/partitions-schedules-sensors/schedules) to provide configuration to the pipeline run it is launching. For example, a daily schedule might provide the day it's running on to one of the solids as a config value, and that solid might use that config value to decide what day's data to read.
+A common use of configuration is for a [schedule](/concepts/partitions-schedules-sensors/schedules) or [sensor](/concepts/partitions-schedules-sensors/schedules) to provide configuration to the job run it is launching. For example, a daily schedule might provide the day it's running on to one of the ops as a config value, and that op might use that config value to decide what day's data to read.
 
-Dagster includes a system for gradually-typed configuration schemas. These make it easy to catch configuration errors before pipeline execution, as well as to learn what configuration is required to execute a pipeline.
+Dagster includes a system for gradually-typed configuration schemas. These make it easy to catch configuration errors before job execution, as well as to learn what configuration is required to execute a job.
 
-## Using Configuration Inside a Solid
+## Using Configuration Inside an Op
 
-This example shows how to write a solid whose behavior is based on values that are passed in via configuration:
+This example shows how to write an op whose behavior is based on values that are passed in via configuration:
 
-```python file=/concepts/configuration/configurable_solid.py
-from dagster import pipeline, solid
+```python file=/concepts/configuration/configurable_op.py
+from dagster import graph, op
 
 
-@solid
-def config_example_solid(context):
-    for _ in range(context.solid_config["iterations"]):
+@op
+def uses_config(context):
+    for _ in range(context.op_config["iterations"]):
         context.log.info("hello")
 
 
-@pipeline
-def config_example_pipeline():
-    config_example_solid()
+@graph
+def config_example():
+    uses_config()
 ```
 
 ## Providing Run Configuration
 
-How you specify config values depends on how you're running your pipeline:
+How you specify config values depends on how you're running your job:
 
 ### Python API
 
-When executing a pipeline with <PyObject module="dagster" object="execute_pipeline" />, you can specify the config values through `run_config` argument:
+Default run config can be provided when defining a job using the `run_config` parameter on <PyObject module="dagster" object="GraphDefinition" method="to_job"/>.
+
+```python file=/concepts/configuration/execute_with_config.py startafter=start_define_job_with_config endbefore=end_define_job_with_config
+config_example_job = config_example.to_job(
+        run_config={"ops": {"config_example": {"config": {"iterations": 1}}}}
+    )
+```
+
+When executing a job with <PyObject module="dagster" object="JobDefinition" method="execute_in_process"/>, you can specify the config values through `run_config` argument:
 
 ```python file=/concepts/configuration/execute_with_config.py startafter=start_execute_with_config endbefore=end_execute_with_config
-from dagster import execute_pipeline
-
-    execute_pipeline(
-        config_example_pipeline,
-        run_config={"solids": {"config_example_solid": {"config": {"iterations": 1}}}},
+result = config_example.execute_in_process(
+        run_config={"ops": {"config_example": {"config": {"iterations": 1}}}}
     )
 ```
 
 ### Dagster CLI
 
-When executing a pipeline from the command line, the easiest way to provide config is to put it into a YAML file, like:
+When executing a job from the command line, the easiest way to provide config is to put it into a YAML file, like:
 
 ```YAML file=/concepts/configuration/good.yaml
-solids:
-  config_example_solid:
+ops:
+  uses_config:
     config:
       iterations: 1
 ```
 
-When you invoke [dagster pipeline execute](/\_apidocs/cli#dagster-pipeline-execute), you can point to that YAML file using the `--config` option:
+When you invoke [dagster job execute](/\_apidocs/cli#dagster-job-execute), you can point to that YAML file using the `--config` option:
 
 ```bash
-dagster pipeline execute --config my_config.yaml
+dagster job execute --config my_config.yaml
 ```
 
 ### Dagit
 
-When executing a pipeline from Dagit's [Playground](/concepts/dagit/dagit#playground), you can supply config as YAML using the config editor:
+When executing a job from Dagit's [Playground](/concepts/dagit/dagit#playground), you can supply config as YAML using the config editor:
 
 <Image
 alt="Config in Dagit"
@@ -89,32 +94,32 @@ height={2414}
 
 ## Config Schema
 
-Dagster includes a system for gradually-typed configuration schemas. For example, you can specify that a particular solid accepts configuration for a particular set of keys, and that values provided for a particular key must be integers. Before executing a pipeline, Dagster will compare the provided run configuration to the config schema for the objects in the pipeline and fail early if they don't match.
+Dagster includes a system for gradually-typed configuration schemas. For example, you can specify that a particular solid accepts configuration for a particular set of keys, and that values provided for a particular key must be integers. Before executing a job, Dagster will compare the provided run configuration to the config schema for the objects in the job and fail early if they don't match.
 
 Configuration schema helps:
 
-- Catch configuration errors before pipeline execution.
-- Make deployed pipelines self documenting, so that it's easy to learn what configuration is required to launch them.
+- Catch configuration errors before job execution.
+- Make deployed jobs self documenting, so that it's easy to learn what configuration is required to launch them.
 
 The full range of config types and ways to specify config schema are [documented in the API Reference with examples](/\_apidocs/config).
 
 The most common objects to specify <PyObject module="dagster" object="ConfigSchema" /> for are <PyObject module="dagster" object="SolidDefinition" /> and <PyObject module="dagster" object="ResourceDefinition" /> (see example code in [Configuring a Resource](#configuring-a-resource)).
 
-Here's an example of a solid that defines a config schema:
+Here's an example of an op that defines a config schema:
 
-```python file=/concepts/configuration/configurable_solid_with_schema.py
-from dagster import pipeline, solid
-
-
-@solid(config_schema={"iterations": int})
-def configurable_solid_with_schema(context):
-    for _ in range(context.solid_config["iterations"]):
-        context.log.info(context.solid_config["word"])
+```python file=/concepts/configuration/configurable_op_with_schema.py
+from dagster import graph, op
 
 
-@pipeline
-def configurable_pipeline_with_schema():
-    configurable_solid_with_schema()
+@op(config_schema={"iterations": int})
+def configurable_with_schema(context):
+    for _ in range(context.op_config["iterations"]):
+        context.log.info(context.op_config["word"])
+
+
+@graph
+def nests_configurable():
+    configurable_with_schema()
 ```
 
 Dagster validates the `run_config` against the `config_schema`. If the values violate the schema, it will fail at execution time. For example, the following will raise a <PyObject module="dagster" object="DagsterInvalidConfigError" />:
@@ -125,9 +130,7 @@ from dagster import execute_pipeline
     execute_pipeline(
         configurable_pipeline_with_schema,
         run_config={
-            "solids": {
-                "configurable_solid_with_schema": {"config": {"nonexistent_config_value": 1}}
-            }
+            "ops": {"configurable_with_schema": {"config": {"nonexistent_config_value": 1}}}
         },
     )
 ```
@@ -141,9 +144,7 @@ The config editor in Dagit the page comes with typeaheads, schema validation, an
 You can also configure a <PyObject module="dagster" object="ResourceDefinition" />:
 
 ```python file=/concepts/configuration/configured_example.py startafter=start_solid_marker endbefore=end_solid_marker
-@resource(config_schema={"region": str, "use_unsigned_session": bool})
-def s3_session(_init_context):
-    """Connect to S3"""
+No match for startAfter value "start_solid_marker"
 ```
 
 And specify the configurations at runtime via a run config like:
@@ -156,63 +157,67 @@ resources:
       use_unsigned_session: False
 ```
 
-### Passing Configuration to Multiple Solids in a Pipeline
+### Passing Configuration to Multiple Ops in a Job
 
-If you want multiple solids to share values, You can use <PyObject module="dagster" object="make_values_resource" /> to pass the values via a resource and reference that resource from any solid that wants to use it.
+If you want multiple ops to share values, You can use <PyObject module="dagster" object="make_values_resource" /> to pass the values via a resource and reference that resource from any op that needs it.
 
 It defaults to <PyObject module="dagster" object="Any" /> type, meaning Dagster will accept any config value provided for the resource:
 
 ```python file=/concepts/configuration/make_values_resource_any.py
-from dagster import ModeDefinition, execute_pipeline, make_values_resource, pipeline, solid
+from dagster import make_values_resource, op, graph
 
 
-@solid(required_resource_keys={"value"})
-def solid1(context):
+@op(required_resource_keys={"value"})
+def needs_value(context):
     context.log.info(f"value: {context.resources.value}")
 
 
-@solid(required_resource_keys={"value"})
-def solid2(context):
+@op(required_resource_keys={"value"})
+def also_needs_value(context):
     context.log.info(f"value: {context.resources.value}")
 
 
-@pipeline(mode_defs=[ModeDefinition(resource_defs={"value": make_values_resource()})])
-def my_pipeline():
-    solid1()
-    solid2()
+@graph
+def basic():
+    needs_value()
+    also_needs_value()
 
 
-execute_pipeline(my_pipeline, run_config={"resources": {"value": {"config": "some_value"}}})
+basic_job = basic.to_job(resource_defs={"value": make_values_resource()})
+
+basic_result = basic_job.execute_in_process(
+    run_config={"resources": {"value": {"config": "some_value"}}}
+)
 ```
 
 You can also specify the schema of the values like:
 
 ```python file=/concepts/configuration/make_values_resource_config_schema.py
-from dagster import ModeDefinition, execute_pipeline, make_values_resource, pipeline, solid
+from dagster import make_values_resource, graph, op
 
 
-@solid(required_resource_keys={"values"})
-def solid1(context):
+@op(required_resource_keys={"values"})
+def needs_value(context):
     context.log.info(f"my str: {context.resources.values['my_str']}")
 
 
-@solid(required_resource_keys={"values"})
-def solid2(context):
+@op(required_resource_keys={"values"})
+def needs_different_value(context):
     context.log.info(f"my int: {context.resources.values['my_int']}")
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(resource_defs={"values": make_values_resource(my_str=str, my_int=int)})
-    ]
+@graph
+def different_values_required():
+    needs_value()
+    needs_different_value()
+
+
+different_values_job = different_values_required.to_job(
+    resource_defs={"values": make_values_resource(my_str=str, my_int=int)}
 )
-def my_pipeline():
-    solid1()
-    solid2()
 
-
-execute_pipeline(
-    my_pipeline, run_config={"resources": {"values": {"config": {"my_str": "foo", "my_int": 1}}}}
+result = different_values_job.execute_in_process(
+    run_config={"resources": {"values": {"config": {"my_str": "foo", "my_int": 1}}}}
 )
 ```
 

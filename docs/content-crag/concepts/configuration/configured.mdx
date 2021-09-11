@@ -91,28 +91,7 @@ def unsigned_s3_session(config):
 You can use the `configured` API with any definition type in the same way. For example, to configure a solid, you can simply invoke `configured` on the solid definition:
 
 ```python file=/concepts/configuration/configured_solid_example.py
-from dagster import Field, configured, solid
-
-
-@solid(
-    config_schema={"iterations": int, "word": Field(str, is_required=False, default_value="hello")}
-)
-def example_solid(context):
-    for _ in range(context.solid_config["iterations"]):
-        context.log.info(context.solid_config["word"])
-
-
-# This example is fully configured. With this syntax, a name must be explicitly provided.
-configured_example = configured(example_solid, name="configured_example")(
-    {"iterations": 6, "word": "wheaties"}
-)
-
-# This example is partially configured: `iterations` is passed through
-# The decorator yields a solid named 'another_configured_example' (from the decorated function)
-# with `int` as the `config_schema`.
-@configured(example_solid, int)
-def another_configured_example(config):
-    return {"iterations": config, "word": "wheaties"}
+ENOENT: no such file or directory, open '/Users/christopherdecarolis/dagster/examples/docs_snippets_crag/docs_snippets_crag/concepts/configuration/configured_solid_example.py'
 ```
 
 ## Patterns
@@ -122,27 +101,27 @@ def another_configured_example(config):
 When using the decorator syntax (`@configured`), the resulting solid definition will inherit the name of the function being decorated (like `another_configured_example` in the above example). When configuring a solid completely with a config dictionary rather than with a function (as with `configured_example`), you must add the positional argument `name` in the call to `configured`. When naming solids, remember that solid definitions must have unique names within a repository or pipeline.
 
 ```python file=/concepts/configuration/configured_named_solid_example.py startafter=start_configured_named endbefore=end_configured_named
-@solid(
+@op(
     config_schema={
         "is_sample": Field(bool, is_required=False, default_value=False),
     },
-    input_defs=[InputDefinition("xs", List[Int])],
+    ins={"xs": In(List[Int])},
 )
 def get_dataset(context, xs):
-    if context.solid_config["is_sample"]:
+    if context.op_config["is_sample"]:
         return xs[:5]
     else:
         return xs
 
 
-# If we want to use the same solid configured in multiple ways in the same pipeline,
+# If we want to use the same op configured in multiple ways in the same pipeline,
 # we have to specify unique names when configuring them:
 sample_dataset = configured(get_dataset, name="sample_dataset")({"is_sample": True})
 full_dataset = configured(get_dataset, name="full_dataset")({"is_sample": False})
 
 
-@pipeline
-def dataset_pipeline():
+@graph
+def datasets():
     sample_dataset()
     full_dataset()
 ```

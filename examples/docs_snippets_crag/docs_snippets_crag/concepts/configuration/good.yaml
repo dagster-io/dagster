@@ -1,4 +1,4 @@
-solids:
-  config_example_solid:
+ops:
+  uses_config:
     config:
       iterations: 1
