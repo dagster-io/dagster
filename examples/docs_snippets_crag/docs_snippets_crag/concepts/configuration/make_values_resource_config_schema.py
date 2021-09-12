@@ -1,4 +1,4 @@
-from dagster import make_values_resource, graph, op
+from dagster import graph, make_values_resource, op
 
 
 @op(required_resource_keys={"values"})

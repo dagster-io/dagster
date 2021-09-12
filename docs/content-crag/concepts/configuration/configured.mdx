@@ -16,18 +16,18 @@ The `configured` API offers a way to configure a Dagster entity at definition ti
 
 ## Overview
 
-The primary purpose of Dagster config is to provide values to solids and resources when running a pipeline. Sometimes, however, you may find yourself with a solid or configuration that requires configuration, and you might not want whoever is running the pipeline to need to provide that configuration. I.e. you may know the values of the config you want to provide at definition time instead of runtime.
+The primary purpose of Dagster config is to provide values to ops and resources when running a job. Sometimes, however, you may find yourself with an op or configuration that requires configuration, and you might not want whoever is running the job to need to provide that configuration. I.e. you may know the values of the config you want to provide at definition time instead of runtime.
 
-When is this useful? Often library authors provide very flexible and configurable solids that can be used in a wide variety of operational contexts. For example, in our dbt integration, there is a solid that could allow a user to run arbitrary dbt commands on a deployed instance, and leverage our config editor to make this easier.
+When is this useful? Often library authors provide very flexible and configurable ops that can be used in a wide variety of operational contexts. For example, in our dbt integration, there is an op that could allow a user to run arbitrary dbt commands on a deployed instance, and leverage our config editor to make this easier.
 
-However, typically you do not want this level of flexibility in a deployed pipeline. You want most configuration options set in code and fixed for deployed. `configured` provides the bridge between these worlds by offering a way to provide configuration at definition time. When invoked on a Dagster entity, it returns an interchangeable object with the given configuration "baked in".
+However, typically you do not want this level of flexibility in a deployed job. You want most configuration options set in code and fixed for deployed. `configured` provides the bridge between these worlds by offering a way to provide configuration at definition time. When invoked on a Dagster entity, it returns an interchangeable object with the given configuration "baked in".
 
 `configured` is available with the following definitions:
 
 - <PyObject module="dagster" object="ResourceDefinition" />
 - <PyObject module="dagster" object="ExecutorDefinition" />
-- <PyObject module="dagster" object="SolidDefinition" />
-- <PyObject module="dagster" object="CompositeSolidDefinition" />
+- <PyObject module="dagster" object="OpDefinition" />
+- <PyObject module="dagster" object="CompositeOpDefinition" />
 - <PyObject module="dagster" object="LoggerDefinition" />
 
 ---
@@ -86,21 +86,40 @@ def unsigned_s3_session(config):
     return {"region": config["region"], "use_unsigned_session": False}
 ```
 
-### Specifying solid configuration
+### Specifying op configuration
 
-You can use the `configured` API with any definition type in the same way. For example, to configure a solid, you can simply invoke `configured` on the solid definition:
+You can use the `configured` API with any definition type in the same way. For example, to configure an op, you can simply invoke `configured` on the op definition:
 
-```python file=/concepts/configuration/configured_solid_example.py
-ENOENT: no such file or directory, open '/Users/christopherdecarolis/dagster/examples/docs_snippets_crag/docs_snippets_crag/concepts/configuration/configured_solid_example.py'
+```python file=/concepts/configuration/configured_op_example.py
+from dagster import Field, configured, op
+
+
+@op(config_schema={"iterations": int, "word": Field(str, is_required=False, default_value="hello")})
+def example(context):
+    for _ in range(context.op_config["iterations"]):
+        context.log.info(context.op_config["word"])
+
+
+# This example is fully configured. With this syntax, a name must be explicitly provided.
+configured_example = configured(example, name="configured_example")(
+    {"iterations": 6, "word": "wheaties"}
+)
+
+# This example is partially configured: `iterations` is passed through
+# The decorator yields an op named 'another_configured_example' (from the decorated function)
+# with `int` as the `config_schema`.
+@configured(example, int)
+def another_configured_example(config):
+    return {"iterations": config, "word": "wheaties"}
 ```
 
 ## Patterns
 
-### <Check/> Reusing a solid definition with configured
+### <Check/> Reusing an op definition with configured
 
-When using the decorator syntax (`@configured`), the resulting solid definition will inherit the name of the function being decorated (like `another_configured_example` in the above example). When configuring a solid completely with a config dictionary rather than with a function (as with `configured_example`), you must add the positional argument `name` in the call to `configured`. When naming solids, remember that solid definitions must have unique names within a repository or pipeline.
+When using the decorator syntax (`@configured`), the resulting op definition will inherit the name of the function being decorated (like `another_configured_example` in the above example). When configuring an op completely with a config dictionary rather than with a function (as with `configured_example`), you must add the positional argument `name` in the call to `configured`. When naming ops, remember that op definitions must have unique names within a repository or job.
 
-```python file=/concepts/configuration/configured_named_solid_example.py startafter=start_configured_named endbefore=end_configured_named
+```python file=/concepts/configuration/configured_named_op_example.py startafter=start_configured_named endbefore=end_configured_named
 @op(
     config_schema={
         "is_sample": Field(bool, is_required=False, default_value=False),
