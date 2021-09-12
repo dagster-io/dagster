@@ -263,6 +263,10 @@ class PipelineDefinition:
         return self._name
 
     @property
+    def describe_target(self):
+        return f"pipeline '{self.name}'"
+
+    @property
     def tags(self):
         # could merge with graph level tags here
         return self._tags

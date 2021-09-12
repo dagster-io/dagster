@@ -184,8 +184,8 @@ def test_config_mapper_throws():
         )
 
     assert (
-        'The config mapping function on the composite solid definition "bad_wrap" at solid '
-        '"do_stuff" in pipeline "wrap_pipeline" has thrown an unexpected error during its '
+        "The config mapping function on composite solid 'do_stuff' "
+        "in pipeline 'wrap_pipeline' has thrown an unexpected error during its "
         'execution. The definition is instantiated at stack "do_stuff"'
     ) in str(exc_info.value)
 
@@ -216,8 +216,8 @@ def test_config_mapper_throws_nested():
         )
 
     assert (
-        'The config mapping function on the composite solid definition "bad_wrap" '
-        'at solid "layer1" in pipeline "wrap_pipeline" has thrown an unexpected '
+        "The config mapping function on composite solid 'layer1' "
+        "in pipeline 'wrap_pipeline' has thrown an unexpected "
         'error during its execution. The definition is instantiated at stack "layer0:layer1".'
     ) in str(exc_info.value)
 

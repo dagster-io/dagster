@@ -43,6 +43,10 @@ class JobDefinition(PipelineDefinition):
             version_strategy=version_strategy,
         )
 
+    @property
+    def describe_target(self):
+        return f"job '{self.name}'"
+
     def execute_in_process(
         self,
         run_config: Optional[Dict[str, Any]] = None,
