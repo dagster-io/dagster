@@ -393,10 +393,6 @@ def test_0_10_0_schedule_wipe():
         assert "jobs" not in get_sqlite3_tables(db_path)
         assert "job_ticks" not in get_sqlite3_tables(db_path)
 
-        with pytest.raises(DagsterInstanceMigrationRequired):
-            with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
-                instance.optimize_for_dagit(statement_timeout=500)
-
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
             instance.upgrade()
 

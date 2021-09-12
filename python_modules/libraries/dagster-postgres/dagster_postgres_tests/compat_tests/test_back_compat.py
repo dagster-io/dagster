@@ -162,10 +162,6 @@ def test_0_10_0_schedule_wipe(hostname, conn_string):
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
-        with pytest.raises(DagsterInstanceMigrationRequired):
-            with DagsterInstance.from_config(tempdir) as instance:
-                instance.optimize_for_dagit(statement_timeout=500)
-
         with DagsterInstance.from_config(tempdir) as instance:
             instance.upgrade()
 
