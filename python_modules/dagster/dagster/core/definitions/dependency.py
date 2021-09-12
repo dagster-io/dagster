@@ -182,6 +182,20 @@ class Node:
         return isinstance(self.definition, GraphDefinition)
 
     @property
+    def describe_node(self) -> str:
+        from .solid import CompositeSolidDefinition, SolidDefinition
+        from .op import OpDefinition
+
+        if isinstance(self.definition, CompositeSolidDefinition):
+            return f"composite solid '{self.name}'"
+        elif isinstance(self.definition, OpDefinition):
+            return f"op '{self.name}'"
+        elif isinstance(self.definition, SolidDefinition):
+            return f"solid '{self.name}'"
+        else:
+            return f"graph '{self.name}'"
+
+    @property
     def input_dict(self):
         return self.definition.input_dict
 
