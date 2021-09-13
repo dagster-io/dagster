@@ -223,7 +223,7 @@ def _get_error_lambda(current_stack):
         "has thrown an unexpected error during its execution. The definition is "
         'instantiated at stack "{stack_str}".'
     ).format(
-        described_node=current_stack.current_solid.describe_node,
+        described_node=current_stack.current_solid.describe_node(),
         described_target=current_stack.pipeline_def.describe_target,
         stack_str=":".join(current_stack.handle.path),
     )

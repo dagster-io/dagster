@@ -181,7 +181,6 @@ class Node:
 
         return isinstance(self.definition, GraphDefinition)
 
-    @property
     def describe_node(self) -> str:
         from .solid import CompositeSolidDefinition, SolidDefinition
         from .op import OpDefinition
