@@ -18,7 +18,7 @@ from dagster import (
 from .utils import execute, execute_script_file
 
 
-def shell_solid_config():
+def shell_op_config():
     return {
         "env": Field(
             Noneable(Permissive()),
@@ -62,12 +62,12 @@ def core_shell(dagster_decorator, decorator_name):
         ),
         input_defs=[InputDefinition("shell_command", str)],
         output_defs=[OutputDefinition(str, "result")],
-        config_schema=shell_solid_config(),
+        config_schema=shell_op_config(),
     )
     def shell_fn(context, shell_command):
 
         output, return_code = execute(
-            shell_command=shell_command, log=context.log, **context.solid_config
+            shell_command=shell_command, log=context.log, **context.op_config
         )
 
         if return_code:
@@ -196,13 +196,13 @@ def core_create_shell_command(
         description=description,
         input_defs=[InputDefinition("start", Nothing)],
         output_defs=[OutputDefinition(str, "result")],
-        config_schema=shell_solid_config(),
+        config_schema=shell_op_config(),
         required_resource_keys=required_resource_keys,
         tags=tags,
     )
     def _shell_fn(context):
         output, return_code = execute(
-            shell_command=shell_command, log=context.log, **context.solid_config
+            shell_command=shell_command, log=context.log, **context.op_config
         )
 
         if return_code:
@@ -218,7 +218,7 @@ def core_create_shell_command(
 
 
 def create_shell_script_op(
-    shell_script_path, name="create_shell_script_solid", input_defs=None, **kwargs
+    shell_script_path, name="create_shell_script_op", input_defs=None, **kwargs
 ):
     """This function is a factory which constructs an op that will execute a shell command read
     from a script file.
@@ -324,12 +324,12 @@ def core_create_shell_script(
         description=kwargs.pop("description", f"A {decorator_name} to invoke a shell command."),
         input_defs=input_defs or [InputDefinition("start", Nothing)],
         output_defs=[OutputDefinition(str, "result")],
-        config_schema=shell_solid_config(),
+        config_schema=shell_op_config(),
         **kwargs,
     )
     def _shell_script_fn(context):
         output, return_code = execute_script_file(
-            shell_script_path=shell_script_path, log=context.log, **context.solid_config
+            shell_script_path=shell_script_path, log=context.log, **context.op_config
         )
 
         if return_code:
