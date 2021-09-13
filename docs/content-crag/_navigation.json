@@ -109,8 +109,8 @@
             "path": "/concepts/solids-pipelines/composite-solids"
           },
           {
-            "title": "Solid Events",
-            "path": "/concepts/solids-pipelines/solid-events"
+            "title": "Op Events",
+            "path": "/concepts/solids-pipelines/op-events"
           },
           {
             "title": "Solid Hooks",

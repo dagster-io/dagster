@@ -106,9 +106,9 @@ def my_partitioned_asset_solid(context):
 # end_partitioned_asset_materialization
 
 
-# start_materialization_solids_marker_2
-@solid
-def my_metadata_materialization_solid(context):
+# start_materialization_ops_marker_2
+@op
+def my_metadata_materialization_op(context):
     df = read_df()
     remote_storage_path = persist_to_storage(df)
     yield AssetMaterialization(
@@ -124,7 +124,7 @@ def my_metadata_materialization_solid(context):
     yield Output(remote_storage_path)
 
 
-# end_materialization_solids_marker_2
+# end_materialization_ops_marker_2
 
 
 # start_materialization_solids_marker_3
