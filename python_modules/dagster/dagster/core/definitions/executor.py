@@ -303,14 +303,17 @@ def check_cross_process_constraints(init_context):
 
 
 def _check_intra_process_pipeline(pipeline):
+    from dagster.core.definitions import JobDefinition
+
     if not isinstance(pipeline, ReconstructablePipeline):
+        target = "job" if isinstance(pipeline.get_definition(), JobDefinition) else "pipeline"
         raise DagsterUnmetExecutorRequirementsError(
-            'You have attempted to use an executor that uses multiple processes with the pipeline "{name}" '
-            "that is not reconstructable. Pipelines must be loaded in a way that allows dagster to reconstruct "
+            'You have attempted to use an executor that uses multiple processes with the {target} "{name}" '
+            "that is not reconstructable. {target_cap} must be loaded in a way that allows dagster to reconstruct "
             "them in a new process. This means: \n"
             "  * using the file, module, or repository.yaml arguments of dagit/dagster-graphql/dagster\n"
-            "  * loading the pipeline through the reconstructable() function\n".format(
-                name=pipeline.get_definition().name
+            "  * loading the job/pipeline through the reconstructable() function\n".format(
+                target=target, name=pipeline.get_definition().name, target_cap=target.capitalize()
             )
         )
 
