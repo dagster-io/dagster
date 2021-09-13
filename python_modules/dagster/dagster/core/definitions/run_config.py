@@ -226,15 +226,15 @@ def get_input_manager_input_field(
 ) -> Optional[Field]:
     if input_def.root_manager_key not in resource_defs:
         raise DagsterInvalidDefinitionError(
-            f'Input "{input_def.name}" for solid "{solid.name}" requires root_manager_key '
+            f'Input "{input_def.name}" for {solid.describe_node} requires root_manager_key '
             f'"{input_def.root_manager_key}", but no resource has been provided. Please include a '
-            f"resource definition for that key in the resource_defs of your ModeDefinition."
+            f"resource definition for that key in the provided resource_defs."
         )
 
     root_manager = resource_defs[input_def.root_manager_key]
     if not isinstance(root_manager, IInputManagerDefinition):
         raise DagsterInvalidDefinitionError(
-            f'Input "{input_def.name}" for solid "{solid.name}" requires root_manager_key '
+            f'Input "{input_def.name}" for {solid.describe_node} requires root_manager_key '
             f'"{input_def.root_manager_key}", but the resource definition provided is not an '
             "IInputManagerDefinition"
         )
@@ -291,13 +291,13 @@ def get_output_manager_output_field(
 ) -> Optional[ConfigType]:
     if output_def.io_manager_key not in resource_defs:
         raise DagsterInvalidDefinitionError(
-            f'Output "{output_def.name}" for solid "{solid.name}" requires io_manager_key '
+            f'Output "{output_def.name}" for {solid.describe_node} requires io_manager_key '
             f'"{output_def.io_manager_key}", but no resource has been provided. Please include a '
-            f"resource definition for that key in the resource_defs of your ModeDefinition."
+            f"resource definition for that key in the provided resource_defs."
         )
     if not isinstance(resource_defs[output_def.io_manager_key], IOutputManagerDefinition):
         raise DagsterInvalidDefinitionError(
-            f'Output "{output_def.name}" for solid "{solid.name}" requires io_manager_key '
+            f'Output "{output_def.name}" for {solid.describe_node} requires io_manager_key '
             f'"{output_def.io_manager_key}", but the resource definition provided is not an '
             "IOutputManagerDefinition"
         )
