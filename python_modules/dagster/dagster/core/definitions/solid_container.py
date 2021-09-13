@@ -34,7 +34,7 @@ def validate_dependency_dict(
     for key, dep_dict in dependencies.items():
         if not (isinstance(key, str) or isinstance(key, SolidInvocation)):
             raise DagsterInvalidDefinitionError(
-                prelude + "Expected str or SolidInvocation key in the top level dict. "
+                prelude + "Expected str or NodeInvocation key in the top level dict. "
                 "Received value {val} of type {type}".format(val=key, type=type(key))
             )
         if not isinstance(dep_dict, dict):
@@ -202,7 +202,7 @@ def _validate_dependencies(dependencies, solid_dict, alias_to_name):
                 if from_solid == dep.solid:
                     raise DagsterInvalidDefinitionError(
                         (
-                            "Invalid dependencies: circular reference detected in solid "
+                            "Invalid dependencies: circular reference detected in node "
                             '"{from_solid}" input "{from_input}"'
                         ).format(from_solid=from_solid, from_input=from_input)
                     )
@@ -211,14 +211,14 @@ def _validate_dependencies(dependencies, solid_dict, alias_to_name):
                     aliased_solid = alias_to_name.get(from_solid)
                     if aliased_solid == from_solid:
                         raise DagsterInvalidDefinitionError(
-                            'Invalid dependencies: solid "{solid}" in dependency dictionary not '
-                            "found in solid list".format(solid=from_solid)
+                            'Invalid dependencies: node "{solid}" in dependency dictionary not '
+                            "found in node list".format(solid=from_solid)
                         )
                     else:
                         raise DagsterInvalidDefinitionError(
                             (
-                                'Invalid dependencies: solid "{aliased_solid}" (aliased by '
-                                '"{from_solid}" in dependency dictionary) not found in solid list'
+                                'Invalid dependencies: node "{aliased_solid}" (aliased by '
+                                '"{from_solid}" in dependency dictionary) not found in node list'
                             ).format(aliased_solid=aliased_solid, from_solid=from_solid)
                         )
                 if not solid_dict[from_solid].definition.has_input(from_input):
@@ -240,16 +240,16 @@ def _validate_dependencies(dependencies, solid_dict, alias_to_name):
 
                 if not dep.solid in solid_dict:
                     raise DagsterInvalidDefinitionError(
-                        'Invalid dependencies: solid "{dep.solid}" not found in solid list. '
-                        'Listed as dependency for solid "{from_solid}" input "{from_input}" '.format(
+                        'Invalid dependencies: node "{dep.solid}" not found in node list. '
+                        'Listed as dependency for node "{from_solid}" input "{from_input}" '.format(
                             dep=dep, from_solid=from_solid, from_input=from_input
                         )
                     )
 
                 if not solid_dict[dep.solid].definition.has_output(dep.output):
                     raise DagsterInvalidDefinitionError(
-                        'Invalid dependencies: solid "{dep.solid}" does not have output '
-                        '"{dep.output}". Listed as dependency for solid "{from_solid} input '
+                        'Invalid dependencies: node "{dep.solid}" does not have output '
+                        '"{dep.output}". Listed as dependency for node "{from_solid} input '
                         '"{from_input}"'.format(
                             dep=dep, from_solid=from_solid, from_input=from_input
                         )
@@ -260,7 +260,7 @@ def _validate_dependencies(dependencies, solid_dict, alias_to_name):
 
                 if dep_def.is_fan_in() and not input_def.dagster_type.supports_fan_in:
                     raise DagsterInvalidDefinitionError(
-                        f'Invalid dependencies: for solid "{dep.solid}" input "{input_def.name}", the '
+                        f'Invalid dependencies: for node "{dep.solid}" input "{input_def.name}", the '
                         f'DagsterType "{input_def.dagster_type.display_name}" does not support fanning in '
                         "(MultiDependencyDefinition). Use the List type, since fanning in will result in a list."
                     )
@@ -278,8 +278,8 @@ def _validate_input_output_pair(input_def, output_def, from_solid, dep):
     ):
         raise DagsterInvalidDefinitionError(
             (
-                'Input "{input_def.name}" to solid "{from_solid}" can not depend on the output '
-                '"{output_def.name}" from solid "{dep.solid}". '
+                'Input "{input_def.name}" to node "{from_solid}" can not depend on the output '
+                '"{output_def.name}" from node "{dep.solid}". '
                 'Input "{input_def.name}" expects a value of type '
                 '{input_def.dagster_type.display_name} and output "{output_def.name}" returns '
                 "type {output_def.dagster_type.display_name}{extra}."
