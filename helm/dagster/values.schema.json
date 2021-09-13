@@ -1422,6 +1422,17 @@
                             "type": "null"
                         }
                     ]
+                },
+                "configSource": {
+                    "title": "Configsource",
+                    "anyOf": [
+                        {
+                            "type": "object"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [

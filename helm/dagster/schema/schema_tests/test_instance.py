@@ -30,6 +30,7 @@ from schema.charts.dagster.subschema.daemon import (
 )
 from schema.charts.dagster.subschema.postgresql import PostgreSQL, Service
 from schema.charts.dagster.subschema.run_launcher import (
+    CeleryK8sRunLauncherConfig,
     K8sRunLauncherConfig,
     RunLauncher,
     RunLauncherConfig,
@@ -154,6 +155,42 @@ def test_k8s_run_launcher_config(template: HelmTemplate):
     assert run_launcher_config["config"]["env_vars"] == env_vars
     assert run_launcher_config["config"]["volume_mounts"] == volume_mounts
     assert run_launcher_config["config"]["volumes"] == volumes
+
+
+def test_celery_k8s_run_launcher_config(template: HelmTemplate):
+    image = {"repository": "test_repo", "tag": "test_tag", "pullPolicy": "Always"}
+
+    configSource = {
+        "broker_transport_options": {"priority_steps": [9]},
+        "worker_concurrency": 1,
+    }
+
+    workerQueues = [
+        {"name": "dagster", "replicaCount": 2},
+        {"name": "extra-queue-1", "replicaCount": 1},
+    ]
+
+    helm_values = DagsterHelmValues.construct(
+        runLauncher=RunLauncher.construct(
+            type=RunLauncherType.CELERY,
+            config=RunLauncherConfig.construct(
+                celeryK8sRunLauncher=CeleryK8sRunLauncherConfig.construct(
+                    image=image,
+                    configSource=configSource,
+                    workerQueues=workerQueues,
+                )
+            ),
+        )
+    )
+
+    configmaps = template.render(helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    run_launcher_config = instance["run_launcher"]
+
+    assert run_launcher_config["module"] == "dagster_celery_k8s"
+    assert run_launcher_config["class"] == "CeleryK8sRunLauncher"
+
+    assert run_launcher_config["config"]["config_source"] == configSource
 
 
 @pytest.mark.parametrize("enabled", [True, False])
