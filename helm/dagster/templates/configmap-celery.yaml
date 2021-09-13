@@ -1,22 +1,31 @@
+
 {{- if eq .Values.runLauncher.type "CeleryK8sRunLauncher" }}
 {{- $celeryK8sRunLauncherConfig := .Values.runLauncher.config.celeryK8sRunLauncher }}
+{{ range $queue := $celeryK8sRunLauncherConfig.workerQueues }}
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ template "dagster.fullname" . }}-celery
+  name: {{ template "dagster.fullname" $ }}-celery-{{- $queue.name }}
   labels:
-    app: {{ template "dagster.name" . }}
-    chart: {{ template "dagster.chart" . }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
+    app: {{ template "dagster.name" $ }}
+    chart: {{ template "dagster.chart" $ }}
+    release: {{ $.Release.Name }}
+    heritage: {{ $.Release.Service }}
 data:
   celery.yaml: |
     execution:
       celery:
-        broker: {{ include "dagster.celery.broker_url" . | quote }}
-        backend: {{ include "dagster.celery.backend_url" . | quote }}
+        broker: {{ include "dagster.celery.broker_url" $ | quote }}
+        backend: {{ include "dagster.celery.backend_url" $ | quote }}
 
-        {{- if $celeryK8sRunLauncherConfig.configSource }}
-        config_source: {{- $celeryK8sRunLauncherConfig.configSource | toYaml | nindent 10 }}
+        {{- if and ($celeryK8sRunLauncherConfig.configSource) ($queue.configSource) }}
+        config_source: {{ merge $celeryK8sRunLauncherConfig.configSource | default dict $queue.configSource | default dict | toYaml | nindent 10 }} 
+        {{- else if $celeryK8sRunLauncherConfig.configSource }}
+        config_source: {{ $celeryK8sRunLauncherConfig.configSource | toYaml | nindent 10 }}
+        {{- else if $queue.configSource }}
+        config_source: {{ $queue.configSource | toYaml | nindent 10 }}
         {{- end }}
+---
+{{- end }}
 {{- end }}

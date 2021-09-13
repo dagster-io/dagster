@@ -1377,11 +1377,16 @@
                             "type": "null"
                         }
                     ]
+                },
+                "configSource": {
+                    "title": "Configsource",
+                    "type": "object"
                 }
             },
             "required": [
                 "replicaCount",
-                "name"
+                "name",
+                "configSource"
             ],
             "additionalProperties": false
         },

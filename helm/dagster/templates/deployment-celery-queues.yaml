@@ -125,7 +125,7 @@ spec:
             name: {{ template "dagster.fullname" $ }}-instance
         - name: dagster-celery
           configMap:
-            name: {{ template "dagster.fullname" $ }}-celery
+            name: {{ template "dagster.fullname" $ }}-celery-{{- $queue.name }}
     {{- with $celeryK8sRunLauncherConfig.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}

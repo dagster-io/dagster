@@ -419,6 +419,7 @@ runLauncher:
           replicaCount: 2
           labels: {}
           nodeSelector: {}
+          configSource: {}
 
       # Additional environment variables to set on the celery/job containers
       # A Kubernetes ConfigMap will be created with these environment variables. See:
