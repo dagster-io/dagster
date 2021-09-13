@@ -17,9 +17,7 @@ def test_execute_pipeline():
     }
 
     result = execute_pipeline(
-        ReconstructablePipeline.for_module(
-            "dagster_pandas.examples.pandas_hello_world.job", "pandas_hello_world_test"
-        ),
+        ReconstructablePipeline.for_module("dagster_pandas.examples", "pandas_hello_world_test"),
         run_config=environment,
     )
 
@@ -50,7 +48,7 @@ def test_cli_execute():
         with instance_for_test() as instance:
             do_execute_command(
                 pipeline=ReconstructablePipeline.for_module(
-                    "dagster_pandas.examples.pandas_hello_world.job", "pandas_hello_world_test"
+                    "dagster_pandas.examples", "pandas_hello_world_test"
                 ),
                 instance=instance,
                 config=[
@@ -76,7 +74,7 @@ def test_cli_execute_failure():
         with instance_for_test() as instance:
             result = do_execute_command(
                 pipeline=ReconstructablePipeline.for_module(
-                    "dagster_pandas.examples.pandas_hello_world.job",
+                    "dagster_pandas.examples",
                     "pandas_hello_world_fails_test",
                 ),
                 instance=instance,

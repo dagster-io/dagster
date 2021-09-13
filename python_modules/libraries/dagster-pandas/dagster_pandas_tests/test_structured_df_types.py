@@ -1,10 +1,4 @@
-from dagster import (
-    DagsterType,
-    Out,
-    Output,
-    graph,
-    op,
-)
+from dagster import DagsterType, Out, Output, graph, op
 from dagster_pandas.constraints import (
     ColumnWithMetadataException,
     ConstraintWithMetadataException,

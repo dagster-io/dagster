@@ -1,15 +1,7 @@
 import datetime
 
 import pandas as pd
-from dagster import (
-    DependencyDefinition,
-    In,
-    Out,
-    GraphDefinition,
-    check,
-    op,
-    graph,
-)
+from dagster import DependencyDefinition, GraphDefinition, In, Out, check, graph, op
 from dagster_pandas import DataFrame
 
 

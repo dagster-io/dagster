@@ -2,13 +2,7 @@ import os
 
 import pandas as pd
 import pytest
-from dagster import (
-    DagsterInvalidConfigError,
-    In,
-    Out,
-    graph,
-    op,
-)
+from dagster import DagsterInvalidConfigError, In, Out, graph, op
 from dagster.utils import file_relative_path
 from dagster.utils.test import get_temp_file_name
 from dagster_pandas import DataFrame

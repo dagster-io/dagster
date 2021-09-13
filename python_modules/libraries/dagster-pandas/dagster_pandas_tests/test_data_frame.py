@@ -9,7 +9,6 @@ from dagster import (
     Out,
     Output,
     Selector,
-    build_op_context,
     check_dagster_type,
     dagster_type_loader,
     dagster_type_materializer,
