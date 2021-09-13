@@ -51,9 +51,9 @@ EvenDagsterType = DagsterType(
 Once created, types can be attached to solid <PyObject module="dagster" object="InputDefinition" pluralize /> and <PyObject module="dagster" object="OutputDefinition" pluralize />.
 
 ```python file=/concepts/types/types.py startafter=start_basic_even_type_no_annotations endbefore=end_basic_even_type_no_annotations
-@solid(
-    input_defs=[InputDefinition("num", EvenDagsterType)],
-    output_defs=[OutputDefinition(EvenDagsterType)],
+@op(
+    ins={"num": In(EvenDagsterType)},
+    out=Out(EvenDagsterType),
 )
 def double_even(num):
     return num
@@ -75,8 +75,8 @@ class MyClass:
     pass
 
 
-@solid
-def my_solid() -> MyClass:
+@op
+def my_op() -> MyClass:
     return MyClass()
 ```
 
@@ -132,9 +132,9 @@ def test_dagster_type():
 Dagster types peacefully coexist with Python type annotations. In this example, the inputs and outputs of the solid compute function are integers, and the type check function for `EvenDagsterType` will be invoked at runtime to verify that they are even.
 
 ```python file=/concepts/types/types.py startafter=start_basic_even_type_with_annotations endbefore=end_basic_even_type_with_annotations
-@solid(
-    input_defs=[InputDefinition("num", EvenDagsterType)],
-    output_defs=[OutputDefinition(EvenDagsterType)],
+@op(
+    ins={"num": In(EvenDagsterType)},
+    out=Out(EvenDagsterType),
 )
 def double_even_with_annotations(num: int) -> int:
     return num
@@ -160,7 +160,7 @@ This is designed for importing python types libraries that cannot be altered and
 #### Decorating class declarations
 
 ```python file=/concepts/types/usable_as.py
-from dagster import solid, usable_as_dagster_type
+from dagster import op, usable_as_dagster_type
 
 
 @usable_as_dagster_type
@@ -170,7 +170,7 @@ class EvenType:
         self.num = num
 
 
-@solid
+@op
 def double_even(even_num: EvenType) -> EvenType:
     return EvenType(even_num.num * 2)
 ```
@@ -178,7 +178,7 @@ def double_even(even_num: EvenType) -> EvenType:
 #### Mapping existing classes
 
 ```python file=/concepts/types/make_usable.py
-from dagster import PythonObjectDagsterType, make_python_type_usable_as_dagster_type, solid
+from dagster import PythonObjectDagsterType, make_python_type_usable_as_dagster_type, op
 
 
 class EvenType:
@@ -192,7 +192,7 @@ EvenDagsterType = PythonObjectDagsterType(EvenType, name="EvenDagsterType")
 make_python_type_usable_as_dagster_type(EvenType, EvenDagsterType)
 
 
-@solid
+@op
 def double_even(even_num: EvenType) -> EvenType:
     return EvenType(even_num.num * 2)
 ```
