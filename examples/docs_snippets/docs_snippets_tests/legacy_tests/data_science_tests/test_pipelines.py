@@ -12,16 +12,16 @@ from dagster.utils.yaml_utils import load_yaml_from_path
     "file_path,run_config_path",
     [
         [
-            "iris_pipeline.py",
+            "iris_classify.py",
             None,
         ],
         [
-            "iris_pipeline_2.py",
-            "iris_pipeline_dev.yaml",
+            "iris_classify_2.py",
+            "iris_classify_dev.yaml",
         ],
         [
-            "iris_pipeline_3.py",
-            "iris_pipeline_dev.yaml",
+            "iris_classify_3.py",
+            "iris_classify_dev.yaml",
         ],
     ],
 )
@@ -30,7 +30,7 @@ def test_pipelines_success(file_path, run_config_path):
     with pushd(file_relative_path(__file__, "../../../docs_snippets/legacy/data_science/")):
         with instance_for_test() as instance:
             run_config = load_yaml_from_path(run_config_path) if run_config_path else {}
-            recon_pipeline = ReconstructablePipeline.for_file(file_path, "iris_pipeline")
+            recon_pipeline = ReconstructablePipeline.for_file(file_path, "iris_classify")
 
             with tempfile.TemporaryDirectory() as temp_dir:
                 run_config["resources"] = {"io_manager": {"config": {"base_dir": temp_dir}}}

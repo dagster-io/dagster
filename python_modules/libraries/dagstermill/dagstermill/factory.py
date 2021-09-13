@@ -4,10 +4,19 @@ import pickle
 import sys
 import tempfile
 import uuid
+from typing import Any, Dict, List, Optional, Sequence, Set, Union
 
 import nbformat
 import papermill
-from dagster import InputDefinition, Output, OutputDefinition, SolidDefinition, check, seven
+from dagster import (
+    InputDefinition,
+    OpDefinition,
+    Output,
+    OutputDefinition,
+    SolidDefinition,
+    check,
+    seven,
+)
 from dagster.core.definitions.event_metadata import EventMetadataEntry
 from dagster.core.definitions.events import AssetMaterialization, Failure, RetryRequested
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
@@ -93,7 +102,7 @@ def replace_parameters(context, nb, parameters):
     return nb
 
 
-def get_papermill_parameters(step_context, inputs, output_log_path):
+def get_papermill_parameters(step_context, inputs, output_log_path, compute_descriptor):
     check.inst_param(step_context, "step_context", StepExecutionContext)
     check.param_invariant(
         isinstance(step_context.run_config, dict),
@@ -108,10 +117,16 @@ def get_papermill_parameters(step_context, inputs, output_log_path):
     mkdir_p(marshal_dir)
 
     if not isinstance(step_context.pipeline, ReconstructablePipeline):
-        raise DagstermillError(
-            "Can't execute a dagstermill solid from a pipeline that is not reconstructable. "
-            "Use the reconstructable() function if executing from python"
-        )
+        if compute_descriptor == "solid":
+            raise DagstermillError(
+                "Can't execute a dagstermill solid from a pipeline that is not reconstructable. "
+                "Use the reconstructable() function if executing from python"
+            )
+        else:
+            raise DagstermillError(
+                "Can't execute a dagstermill op from a job that is not reconstructable. "
+                "Use the reconstructable() function if executing from python"
+            )
 
     dm_executable_dict = step_context.pipeline.to_dict()
 
@@ -137,8 +152,13 @@ def get_papermill_parameters(step_context, inputs, output_log_path):
     return parameters
 
 
-def _dm_solid_compute(
-    name, notebook_path, output_notebook_name=None, asset_key_prefix=None, output_notebook=None
+def _dm_compute(
+    dagster_factory_name,
+    name,
+    notebook_path,
+    output_notebook_name=None,
+    asset_key_prefix=None,
+    output_notebook=None,
 ):
     check.str_param(name, "name")
     check.str_param(notebook_path, "notebook_path")
@@ -168,10 +188,15 @@ def _dm_solid_compute(
 
                 # Scaffold the registration here
                 nb = load_notebook_node(notebook_path)
+                compute_descriptor = (
+                    "solid" if dagster_factory_name == "define_dagstermill_solid" else "op"
+                )
                 nb_no_parameters = replace_parameters(
                     step_execution_context,
                     nb,
-                    get_papermill_parameters(step_execution_context, inputs, output_log_path),
+                    get_papermill_parameters(
+                        step_execution_context, inputs, output_log_path, compute_descriptor
+                    ),
                 )
                 write_ipynb(nb_no_parameters, parameterized_notebook_path)
 
@@ -212,6 +237,7 @@ def _dm_solid_compute(
                 # yield output notebook binary stream as a solid output
                 with open(executed_notebook_path, "rb") as fd:
                     yield Output(fd.read(), output_notebook_name)
+
             else:
                 # backcompat
                 executed_notebook_file_handle = None
@@ -243,9 +269,8 @@ def _dm_solid_compute(
                         f"\nNow falling back to local: notebook execution was temporarily materialized at {executed_notebook_path}"
                         "\nIf you have supplied a file manager and expect to use it for materializing the "
                         'notebook, please include "file_manager" in the `required_resource_keys` argument '
-                        "to `define_dagstermill_solid`"
+                        f"to `{dagster_factory_name}`"
                     )
-                    executed_notebook_materialization_path = executed_notebook_path
 
                 if output_notebook is not None:
                     yield Output(executed_notebook_file_handle, output_notebook)
@@ -283,17 +308,17 @@ def _dm_solid_compute(
 
 
 def define_dagstermill_solid(
-    name,
-    notebook_path,
-    input_defs=None,
-    output_defs=None,
-    config_schema=None,
-    required_resource_keys=None,
-    output_notebook=None,
-    output_notebook_name=None,
-    asset_key_prefix=None,
-    description=None,
-    tags=None,
+    name: str,
+    notebook_path: str,
+    input_defs: Optional[Sequence[InputDefinition]] = None,
+    output_defs: Optional[Sequence[OutputDefinition]] = None,
+    config_schema: Optional[Union[Any, Dict[str, Any]]] = None,
+    required_resource_keys: Optional[Set[str]] = None,
+    output_notebook: Optional[str] = None,
+    output_notebook_name: Optional[str] = None,
+    asset_key_prefix: Optional[Union[List[str], str]] = None,
+    description: Optional[str] = None,
+    tags: Optional[Dict[str, Any]] = None,
 ):
     """Wrap a Jupyter notebook in a solid.
 
@@ -371,12 +396,102 @@ def define_dagstermill_solid(
     return SolidDefinition(
         name=name,
         input_defs=input_defs,
-        compute_fn=_dm_solid_compute(
+        compute_fn=_dm_compute(
+            "define_dagstermill_solid",
             name,
             notebook_path,
             output_notebook_name,
             asset_key_prefix=asset_key_prefix,
             output_notebook=output_notebook,  # backcompact
+        ),
+        output_defs=output_defs + extra_output_defs,
+        config_schema=config_schema,
+        required_resource_keys=required_resource_keys,
+        description=description,
+        tags={**user_tags, **default_tags},
+    )
+
+
+def define_dagstermill_op(
+    name: str,
+    notebook_path: str,
+    input_defs: Optional[Sequence[InputDefinition]] = None,
+    output_defs: Optional[Sequence[OutputDefinition]] = None,
+    config_schema: Optional[Union[Any, Dict[str, Any]]] = None,
+    required_resource_keys: Optional[Set[str]] = None,
+    output_notebook_name: Optional[str] = None,
+    asset_key_prefix: Optional[Union[List[str], str]] = None,
+    description: Optional[str] = None,
+    tags: Optional[Dict[str, Any]] = None,
+):
+    """Wrap a Jupyter notebook in a solid.
+
+    Arguments:
+        name (str): The name of the solid.
+        notebook_path (str): Path to the backing notebook.
+        input_defs (Optional[List[InputDefinition]]): The solid's inputs.
+        output_defs (Optional[List[OutputDefinition]]): The solid's outputs. Your notebook should
+            call :py:func:`~dagstermill.yield_result` to yield each of these outputs.
+        required_resource_keys (Optional[Set[str]]): The string names of any required resources.
+        output_notebook_name: (Optional[str]): If set, will be used as the name of an injected output
+            of type of :py:class:`~dagster.BufferedIOBase` that is the file object of the executed
+            notebook (in addition to the :py:class:`~dagster.AssetMaterialization` that is always
+            created). It allows the downstream solids to access the executed notebook via a file
+            object.
+        asset_key_prefix (Optional[Union[List[str], str]]): If set, will be used to prefix the
+            asset keys for materialized notebooks.
+        description (Optional[str]): If set, description used for solid.
+        tags (Optional[Dict[str, str]]): If set, additional tags used to annotate solid.
+            Dagster uses the tag keys `notebook_path` and `kind`, which cannot be
+            overwritten by the user.
+
+    Returns:
+        :py:class:`~dagster.SolidDefinition`
+    """
+    check.str_param(name, "name")
+    check.str_param(notebook_path, "notebook_path")
+    input_defs = check.opt_list_param(input_defs, "input_defs", of_type=InputDefinition)
+    output_defs = check.opt_list_param(output_defs, "output_defs", of_type=OutputDefinition)
+    required_resource_keys = check.opt_set_param(
+        required_resource_keys, "required_resource_keys", of_type=str
+    )
+
+    extra_output_defs = []
+    if output_notebook_name is not None:
+        required_resource_keys.add("output_notebook_io_manager")
+        extra_output_defs.append(
+            OutputDefinition(name=output_notebook_name, io_manager_key="output_notebook_io_manager")
+        )
+
+    if isinstance(asset_key_prefix, str):
+        asset_key_prefix = [asset_key_prefix]
+
+    asset_key_prefix = check.opt_list_param(asset_key_prefix, "asset_key_prefix", of_type=str)
+
+    default_description = f"This op is backed by the notebook at {notebook_path}"
+    description = check.opt_str_param(description, "description", default=default_description)
+
+    user_tags = validate_tags(tags)
+    if tags is not None:
+        check.invariant(
+            "notebook_path" not in tags,
+            "user-defined solid tags contains the `notebook_path` key, but the `notebook_path` key is reserved for use by Dagster",
+        )
+        check.invariant(
+            "kind" not in tags,
+            "user-defined solid tags contains the `kind` key, but the `kind` key is reserved for use by Dagster",
+        )
+    default_tags = {"notebook_path": notebook_path, "kind": "ipynb"}
+
+    return OpDefinition(
+        name=name,
+        input_defs=input_defs,
+        compute_fn=_dm_compute(
+            "define_dagstermill_op",
+            name,
+            notebook_path,
+            output_notebook_name,
+            asset_key_prefix=asset_key_prefix,
         ),
         output_defs=output_defs + extra_output_defs,
         config_schema=config_schema,
