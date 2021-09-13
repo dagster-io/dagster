@@ -491,8 +491,8 @@ class CachingRepositoryData(RepositoryData):
             if isinstance(definition, PipelineDefinition):
                 if definition.name in pipelines and pipelines[definition.name] != definition:
                     raise DagsterInvalidDefinitionError(
-                        "Duplicate pipeline definition found for pipeline {pipeline_name}".format(
-                            pipeline_name=definition.name
+                        "Duplicate {target_type} definition found for {target}".format(
+                            target_type=definition.target_type, target=definition.describe_target
                         )
                     )
                 pipelines[definition.name] = definition
@@ -729,7 +729,7 @@ class CachingRepositoryData(RepositoryData):
 
         if schedule.pipeline_name not in pipelines:
             raise DagsterInvalidDefinitionError(
-                f'ScheduleDefinition "{schedule.name}" targets pipeline "{schedule.pipeline_name}" '
+                f'ScheduleDefinition "{schedule.name}" targets job/pipeline "{schedule.pipeline_name}" '
                 "which was not found in this repository."
             )
 
@@ -743,7 +743,7 @@ class CachingRepositoryData(RepositoryData):
 
         if sensor.pipeline_name not in pipelines:
             raise DagsterInvalidDefinitionError(
-                f'SensorDefinition "{sensor.name}" targets pipeline "{sensor.pipeline_name}" '
+                f'SensorDefinition "{sensor.name}" targets job/pipeline "{sensor.pipeline_name}" '
                 "which was not found in this repository."
             )
 

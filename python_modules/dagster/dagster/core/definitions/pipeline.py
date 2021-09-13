@@ -263,8 +263,12 @@ class PipelineDefinition:
         return self._name
 
     @property
+    def target_type(self):
+        return "pipeline"
+
+    @property
     def describe_target(self):
-        return f"pipeline '{self.name}'"
+        return f"{self.target_type} '{self.name}'"
 
     @property
     def tags(self):
