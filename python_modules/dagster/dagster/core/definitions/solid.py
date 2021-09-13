@@ -171,6 +171,10 @@ class SolidDefinition(NodeDefinition):
                 return solid_invocation_result(self, None, *args, **kwargs)
 
     @property
+    def node_as_str(self) -> str:
+        return "solid"
+
+    @property
     def compute_fn(self) -> Union[Callable[..., Any], "DecoratedSolidFunction"]:
         return self._compute_fn
 
@@ -353,6 +357,10 @@ class CompositeSolidDefinition(GraphDefinition):
             tags=self.tags,
             positional_inputs=self.positional_inputs,
         )
+
+    @property
+    def node_as_str(self):
+        return "composite solid"
 
 
 def _check_io_managers_on_composite_solid(

@@ -187,6 +187,10 @@ class GraphDefinition(NodeDefinition):
         return [self.solid_named(solid_name) for solid_name in order]
 
     @property
+    def node_as_str(self) -> str:
+        return "graph"
+
+    @property
     def solids(self) -> List[Node]:
         return list(set(self._node_dict.values()))
 
