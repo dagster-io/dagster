@@ -7,6 +7,7 @@ from dagster.core.definitions.policy import RetryPolicy
 from .graph import GraphDefinition
 from .hook import HookDefinition
 from .mode import ModeDefinition
+from .partition import PartitionSetDefinition
 from .pipeline import PipelineDefinition
 from .preset import PresetDefinition
 from .resource import ResourceDefinition
@@ -125,7 +126,6 @@ class JobDefinition(PipelineDefinition):
             return None
 
         if not self._cached_partition_set:
-            from dagster.core.definitions.partition import PartitionSetDefinition
 
             self._cached_partition_set = PartitionSetDefinition(
                 pipeline_name=self.name,
