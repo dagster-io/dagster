@@ -41,22 +41,7 @@ def b():
     raise Exception()
 
 
-# start_repo_marker_3
-mode_defs = [
-    ModeDefinition(
-        "dev",
-        resource_defs={
-            "slack": ResourceDefinition.hardcoded_resource(
-                slack_resource_mock, "do not send messages in dev"
-            )
-        },
-    ),
-    ModeDefinition("prod", resource_defs={"slack": slack_resource}),
-]
-# end_repo_marker_3
-
 # start_repo_marker_1
-@slack_message_on_failure
 @graph
 def notif_all():
     # the hook "slack_message_on_failure" is applied on every op instance within this graph
@@ -64,7 +49,27 @@ def notif_all():
     b()
 
 
+notif_all_job = notif_all.to_job(
+    hooks={slack_message_on_failure}, resource_defs={"slack": slack_resource}
+)
 # end_repo_marker_1
+
+
+# start_repo_marker_3
+notif_all_prod = notif_all.to_job(
+    name="notif_all_prod",
+    resource_defs={
+        "slack": ResourceDefinition.hardcoded_resource(
+            slack_resource_mock, "do not send messages in dev"
+        )
+    },
+    hooks={slack_message_on_failure},
+)
+notif_all_dev = notif_all.to_job(
+    name="notif_all_dev", resource_defs={"slack": slack_resource}, hooks={slack_message_on_failure}
+)
+# end_repo_marker_3
+
 
 # start_repo_marker_2
 @graph
@@ -75,22 +80,23 @@ def selective_notif():
     b()
 
 
+selective_notif_job = selective_notif.to_job(resource_defs={"slack": slack_resource})
 # end_repo_marker_2
 
 
 @repository
 def repo():
-    return [notif_all, selective_notif]
+    return [notif_all_job, selective_notif_job]
 
 
 # start_repo_main
 if __name__ == "__main__":
     with open(
-        file_relative_path(__file__, "prod.yaml"),
+        file_relative_path(__file__, "prod_op_hooks.yaml"),
         "r",
     ) as fd:
         run_config = yaml.safe_load(fd.read())
-    result = execute_pipeline(notif_all, run_config=run_config, mode="prod")
+    result = notif_all_dev.execute_in_process(run_config=run_config, raise_on_error=False)
 # end_repo_main
 
 
