@@ -1,5 +1,6 @@
 import gzip
 import io
+import uuid
 from os import path
 from typing import List
 
@@ -115,6 +116,7 @@ class DagitWebserver(GraphQLServer):
                     rendered_template.replace('href="/', f'href="{self._app_path_prefix}/')
                     .replace('src="/', f'src="{self._app_path_prefix}/')
                     .replace("__PATH_PREFIX__", self._app_path_prefix)
+                    .replace("NONCE-PLACEHOLDER", uuid.uuid4().hex)
                 )
         except FileNotFoundError:
             raise Exception(
