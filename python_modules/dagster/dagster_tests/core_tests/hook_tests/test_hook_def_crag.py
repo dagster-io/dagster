@@ -75,6 +75,7 @@ def test_hook_context_op_solid_provided():
     with pytest.raises(check.CheckError):
         build_hook_context(op=hook_op, solid=hook_op)
 
+
 def test_hook_decorator_graph_job_op():
     called_hook_to_solids = defaultdict(list)
 
@@ -86,9 +87,23 @@ def test_hook_decorator_graph_job_op():
     def my_op(_):
         pass
 
-    @a_success_hook
     @graph
     def a_graph():
         my_op()
 
-    assert a_graph.to_job().execute_in_process().success
+    assert a_graph.to_job(hooks={a_success_hook}).execute_in_process().success
+    assert called_hook_to_solids["a_success_hook"][0] == "my_op"
+
+
+def test_job_hook_context_job_name():
+    my_job_name = "my_test_job_name"
+
+    @success_hook
+    def a_success_hook(context):
+        assert context.job_name == my_job_name
+
+    @graph
+    def a_graph():
+        pass
+
+    assert a_graph.to_job(name=my_job_name, hooks={a_success_hook}).execute_in_process().success
