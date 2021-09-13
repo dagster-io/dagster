@@ -5,9 +5,9 @@ from dagster.core.execution.context.hook import HookContext
 
 
 def _default_status_message(context: HookContext, status: str) -> str:
-    return "Solid {solid_name} on pipeline {pipeline_name} {status}!\nRun ID: {run_id}".format(
-        solid_name=context.solid.name,
-        pipeline_name=context.pipeline_name,
+    return "{described_node} on {described_target} {status}!\nRun ID: {run_id}".format(
+        described_node=context.solid.describe_node(),
+        described_target=context.describe_target(),
         run_id=context.run_id,
         status=status,
     )
@@ -33,9 +33,29 @@ def slack_on_failure(
         message_fn (Optional(Callable[[HookContext], str])): Function which takes in the HookContext
             outputs the message you want to send.
         dagit_base_url: (Optional[str]): The base url of your Dagit instance. Specify this to allow
-            messages to include deeplinks to the specific pipeline run that triggered the hook.
+            messages to include deeplinks to the specific run that triggered the hook.
 
     Examples:
+        .. code-block:: python
+
+            my_graph.to_job(hooks={slack_on_failure("#foo", dagit_base_url="http://localhost:3000")})
+
+        .. code-block:: python
+
+            def my_message_fn(context: HookContext) -> str:
+                return "Op {op_name} failed!".format(
+                    op_name=context.op.name
+                )
+
+            @op
+            def a_op(context):
+                pass
+
+            @graph(...)
+            def my_graph():
+                a_op.with_hooks(hook_defs={slack_on_failure("#foo", my_message_fn)})
+
+    Legacy Examples:
         .. code-block:: python
 
             @slack_on_failure("#foo", dagit_base_url="http://localhost:3000")
@@ -85,9 +105,29 @@ def slack_on_success(
         message_fn (Optional(Callable[[HookContext], str])): Function which takes in the HookContext
             outputs the message you want to send.
         dagit_base_url: (Optional[str]): The base url of your Dagit instance. Specify this to allow
-            messages to include deeplinks to the specific pipeline run that triggered the hook.
+            messages to include deeplinks to the specific run that triggered the hook.
 
     Examples:
+        .. code-block:: python
+
+            my_graph.to_job(hooks={slack_on_success("#foo", dagit_base_url="http://localhost:3000")})
+
+        .. code-block:: python
+
+            def my_message_fn(context: HookContext) -> str:
+                return "Op {op_name} worked!".format(
+                    op_name=context.op.name
+                )
+
+            @op
+            def a_op(context):
+                pass
+
+            @graph(...)
+            def my_graph():
+                a_op.with_hooks(hook_defs={slack_on_success("#foo", my_message_fn)})
+
+    Legacy Examples:
         .. code-block:: python
 
             @slack_on_success("#foo", dagit_base_url="http://localhost:3000")

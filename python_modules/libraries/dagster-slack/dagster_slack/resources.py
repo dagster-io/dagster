@@ -31,6 +31,30 @@ def slack_resource(context):
 
         import os
 
+        from dagster import op, graph
+        from dagster_slack import slack_resource
+
+
+        @op(required_resource_keys={'slack'})
+        def slack_op(context):
+            context.resources.slack.chat_postMessage(channel='#noise', text=':wave: hey there!')
+
+        @graph
+        def do_slack():
+            slack_op()
+
+        slack_job = do_slack.to_job(resource_defs={'slack': slack_resource})
+
+        slack_job.execute_in_process(
+            run_config={'resources': {'slack': {'config': {'token': os.getenv('SLACK_TOKEN')}}}}
+        )
+
+    Legacy Examples:
+
+    .. code-block:: python
+
+        import os
+
         from dagster import solid, execute_pipeline, ModeDefinition
         from dagster_slack import slack_resource
 

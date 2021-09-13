@@ -395,6 +395,9 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         return f'solid "{str(self.solid_handle)}"'
 
+    def describe_target(self):
+        return self._execution_data.pipeline_def.describe_target()
+
     def get_io_manager(self, step_output_handle) -> IOManager:
         step_output = self.execution_plan.get_step_output(step_output_handle)
         io_manager_key = (

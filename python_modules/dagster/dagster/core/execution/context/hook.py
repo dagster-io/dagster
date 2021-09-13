@@ -156,6 +156,9 @@ class HookContext:
     def op_output_values(self):
         return self.solid_output_values
 
+    def describe_target(self) -> str:
+        return self._step_execution_context.describe_target()
+
 
 class UnboundHookContext(HookContext):
     def __init__(

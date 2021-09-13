@@ -35,6 +35,8 @@ To use this integration, you'll first need to create a Slack App for it.
 Copy this bot token and put it somewhere safe; see `Safely Storing Credentials
 <https://api.slack.com/docs/oauth-safety>`_ for more on this topic.
 
+APIs
+----
 
 .. currentmodule:: dagster_slack
 
@@ -46,5 +48,10 @@ Copy this bot token and put it somewhere safe; see `Safely Storing Credentials
 
 .. autodata:: slack_on_success
   :annotation: HookDefinition
+
+.. autofunction:: make_slack_on_run_failure_sensor
+
+Legacy APIs
+-----------
 
 .. autofunction:: make_slack_on_pipeline_failure_sensor
