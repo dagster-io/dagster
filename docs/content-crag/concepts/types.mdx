@@ -1,11 +1,11 @@
 ---
 title: Types | Dagster
-description: The Dagster type system helps you describe what kind of values your solids accept and produce.
+description: The Dagster type system helps you describe what kind of values your ops accept and produce.
 ---
 
 # Dagster Types
 
-The Dagster type system helps you describe what kind of values your solids accept and produce.
+The Dagster type system helps you describe what kind of values your ops accept and produce.
 
 ## Relevant APIs
 
@@ -19,19 +19,19 @@ The Dagster type system helps you describe what kind of values your solids accep
 
 ## Overview
 
-Each solid input and output can be given a Dagster Type.
+Each op input and output can be given a Dagster Type.
 
 The type system:
 
-- Is _gradual_ and _optional_. Pipelines can run without types specified explicitly, and specifying types in some places doesn't require that types be specified everywhere. Inputs and outputs default to the <PyObject module="dagster" object="Any" /> type.
+- Is _gradual_ and _optional_. Jobs can run without types specified explicitly, and specifying types in some places doesn't require that types be specified everywhere. Inputs and outputs default to the <PyObject module="dagster" object="Any" /> type.
 
-- Happens at solid execution time - each type defines a `type_check_fn` that knows how to check whether values match what it expects. When a type is specified for a solid's input, then the type check occurs immediately before the solid is executed. When a type is specified for a solid's output, then the type check occurs immediately after the solid is executed.
+- Happens at op execution time - each type defines a `type_check_fn` that knows how to check whether values match what it expects. When a type is specified for a op's input, then the type check occurs immediately before the op is executed. When a type is specified for a op's output, then the type check occurs immediately after the op is executed.
 
 - Is complimentary to the [PEP 484](https://www.python.org/dev/peps/pep-0484/) Python type system. PEP 484 annotations enable static checks that verify variables and return values match particular Python types, while the Dagster type system enables runtime checks that include arbitrary validation logic.
 
 ### DagsterTypes vs Python Types (mypy type-checking)
 
-You should not use manually-defined <PyObject module="dagster" object="DagsterType" /> objects in your python type annotations. The simple rule of thumb is to annotate solid bodies just as you would a regular function, and if you wish to use a <PyObject module="dagster" object="DagsterType" /> alongside your annotations (to perform more complex validation than the default runtime typechecks), you should include this information in the relevant <PyObject module="dagster" object="InputDefinition" /> or <PyObject module="dagster" object="OutputDefinition" />.
+You should not use manually-defined <PyObject module="dagster" object="DagsterType" /> objects in your python type annotations. The simple rule of thumb is to annotate op bodies just as you would a regular function, and if you wish to use a <PyObject module="dagster" object="DagsterType" /> alongside your annotations (to perform more complex validation than the default runtime typechecks), you should include this information in the relevant <PyObject module="dagster" object="InputDefinition" /> or <PyObject module="dagster" object="OutputDefinition" />.
 
 You can see an example of this pattern [below](#using-dagster-types-with-pep-484-type-annotations).
 
@@ -48,7 +48,7 @@ EvenDagsterType = DagsterType(
 )
 ```
 
-Once created, types can be attached to solid <PyObject module="dagster" object="InputDefinition" pluralize /> and <PyObject module="dagster" object="OutputDefinition" pluralize />.
+Once created, types can be attached to op <PyObject module="dagster" object="InputDefinition" pluralize /> and <PyObject module="dagster" object="OutputDefinition" pluralize />.
 
 ```python file=/concepts/types/types.py startafter=start_basic_even_type_no_annotations endbefore=end_basic_even_type_no_annotations
 @op(
@@ -65,10 +65,10 @@ The type system truly shines once the type check expresses richer behavior, such
 
 If a Python input or output has a PEP 484 type annotation, and a DagsterType is not provided on the corresponding input or output definition, then Dagster will automatically generate a DagsterType that corresponds to the annotated Python type.
 
-In this example, the defined solid will end up with a DagsterType named "MyClass" that:
+In this example, the defined op will end up with a DagsterType named "MyClass" that:
 
-- Shows up in Dagit in the representation of the solid.
-- Is checked at runtime on the value returned by the solid.
+- Shows up in Dagit in the representation of the op.
+- Is checked at runtime on the value returned by the op.
 
 ```python file=/concepts/types/types.py startafter=start_auto_type endbefore=end_auto_type
 class MyClass:
@@ -80,7 +80,7 @@ def my_op() -> MyClass:
     return MyClass()
 ```
 
-If the solid in the above example returned an object that was not an instance of MyClass, Dagster would raise an error after executing the solid.
+If the op in the above example returned an object that was not an instance of MyClass, Dagster would raise an error after executing the op.
 
 ## Built-in Types
 
@@ -129,7 +129,7 @@ def test_dagster_type():
 
 ### Using Dagster Types with PEP 484 Type Annotations
 
-Dagster types peacefully coexist with Python type annotations. In this example, the inputs and outputs of the solid compute function are integers, and the type check function for `EvenDagsterType` will be invoked at runtime to verify that they are even.
+Dagster types peacefully coexist with Python type annotations. In this example, the inputs and outputs of the op compute function are integers, and the type check function for `EvenDagsterType` will be invoked at runtime to verify that they are even.
 
 ```python file=/concepts/types/types.py startafter=start_basic_even_type_with_annotations endbefore=end_basic_even_type_with_annotations
 @op(
@@ -144,7 +144,7 @@ def double_even_with_annotations(num: int) -> int:
 
 ### Associating Dagster Types with Python Types
 
-As mentioned earlier, any Python type used to annotate an argument or return value of solid-decorated function has a corresponding Dagster type that will be used for the corresponding input or output definition.
+As mentioned earlier, any Python type used to annotate an argument or return value of op-decorated function has a corresponding Dagster type that will be used for the corresponding input or output definition.
 
 By default, Dagster will generate Dagster types for Python types that it's not aware of, but you can also explicitly control the Dagster type that will be used for a particular Python type.
 
