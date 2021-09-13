@@ -3,6 +3,7 @@ from typing import Optional, Union, cast
 
 from dagster import check
 
+from .job import JobDefinition
 from .partition import (
     Partition,
     PartitionSetDefinition,
@@ -10,7 +11,6 @@ from .partition import (
     ScheduleTimeBasedPartitionsDefinition,
     ScheduleType,
 )
-from .job import JobDefinition
 from .run_request import SkipReason
 from .schedule import ScheduleDefinition, ScheduleEvaluationContext
 from .time_window_partitions import TimeWindow, TimeWindowPartitionsDefinition
