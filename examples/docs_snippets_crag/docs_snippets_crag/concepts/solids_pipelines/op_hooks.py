@@ -65,6 +65,7 @@ notif_all_prod = notif_all.to_job(
     },
     hooks={slack_message_on_failure},
 )
+
 notif_all_dev = notif_all.to_job(
     name="notif_all_dev", resource_defs={"slack": slack_resource}, hooks={slack_message_on_failure}
 )

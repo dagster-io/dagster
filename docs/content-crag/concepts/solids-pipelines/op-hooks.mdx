@@ -157,6 +157,7 @@ notif_all_prod = notif_all.to_job(
     },
     hooks={slack_message_on_failure},
 )
+
 notif_all_dev = notif_all.to_job(
     name="notif_all_dev", resource_defs={"slack": slack_resource}, hooks={slack_message_on_failure}
 )
@@ -164,8 +165,11 @@ notif_all_dev = notif_all.to_job(
 
 When we switch to production, we can provide the real slack token in the `run_config` and therefore enable sending messages to a certain slack channel when a hook is triggered.
 
-```yaml file=/concepts/solids_pipelines/prod_solid_hooks.yaml
-ENOENT: no such file or directory, open '/Users/claire/dagster/examples/docs_snippets_crag/docs_snippets_crag/concepts/solids_pipelines/prod_solid_hooks.yaml'
+```yaml file=/concepts/solids_pipelines/prod_op_hooks.yaml
+resources:
+  slack:
+    config:
+      token: "xoxp-1234123412341234-12341234-1234" # replace with your slack token
 ```
 
 Then, we can execute a job with the config through Python API, CLI, or the Dagit UI. Here's an example of using the Python API.
