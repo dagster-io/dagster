@@ -182,7 +182,7 @@ class CompleteCompositionContext(NamedTuple):
             def_name = invocation.node_def.name
             if def_name in node_def_dict and node_def_dict[def_name] is not invocation.node_def:
                 raise DagsterInvalidDefinitionError(
-                    'Detected conflicting solid definitions with the same name "{name}"'.format(
+                    'Detected conflicting node definitions with the same name "{name}"'.format(
                         name=def_name
                     )
                 )
@@ -369,20 +369,24 @@ class PendingNodeInvocation:
             output_def = self.node_def.output_defs[0]
             output_name = output_def.name
             if output_def.is_dynamic:
-                return InvokedSolidDynamicOutputWrapper(resolved_node_name, output_name)
+                return InvokedSolidDynamicOutputWrapper(
+                    resolved_node_name, output_name, self.node_def.node_as_str
+                )
             else:
-                return InvokedSolidOutputHandle(resolved_node_name, output_name)
+                return InvokedSolidOutputHandle(
+                    resolved_node_name, output_name, self.node_def.node_as_str
+                )
 
         outputs = [output_def for output_def in self.node_def.output_defs]
         invoked_output_handles = {}
         for output_def in outputs:
             if output_def.is_dynamic:
                 invoked_output_handles[output_def.name] = InvokedSolidDynamicOutputWrapper(
-                    resolved_node_name, output_def.name
+                    resolved_node_name, output_def.name, self.node_def.node_as_str
                 )
             else:
                 invoked_output_handles[output_def.name] = InvokedSolidOutputHandle(
-                    resolved_node_name, output_def.name
+                    resolved_node_name, output_def.name, self.node_def.node_as_str
                 )
 
         return namedtuple(
@@ -390,7 +394,7 @@ class PendingNodeInvocation:
             " ".join([output_def.name for output_def in outputs]),
         )(**invoked_output_handles)
 
-    def _process_argument_node(self, solid_name, output_node, input_name, input_bindings, arg_desc):
+    def _process_argument_node(self, node_name, output_node, input_name, input_bindings, arg_desc):
 
         if isinstance(output_node, (InvokedSolidOutputHandle, InputMappingNode, DynamicFanIn)):
             input_bindings[input_name] = output_node
@@ -404,14 +408,15 @@ class PendingNodeInvocation:
                     raise DagsterInvalidDefinitionError(
                         "In {source} {name}, received a list containing an invalid type "
                         'at index {idx} for input "{input_name}" {arg_desc} in '
-                        "solid invocation {solid_name}. Lists can only contain the "
+                        "{node_type} invocation {node_name}. Lists can only contain the "
                         "output from previous solid invocations or input mappings, "
                         "received {type}".format(
                             source=current_context().source,
                             name=current_context().name,
                             arg_desc=arg_desc,
                             input_name=input_name,
-                            solid_name=solid_name,
+                            node_type=self.node_def.node_as_str,
+                            node_name=node_name,
                             idx=idx,
                             type=type(output_node),
                         )
@@ -422,20 +427,21 @@ class PendingNodeInvocation:
         ):
             raise DagsterInvalidDefinitionError(
                 "In {source} {name}, received a tuple of multiple outputs for "
-                'input "{input_name}" {arg_desc} in solid invocation {solid_name}. '
+                'input "{input_name}" {arg_desc} in {node_type} invocation {node_name}. '
                 "Must pass individual output, available from tuple: {options}".format(
                     source=current_context().source,
                     name=current_context().name,
                     arg_desc=arg_desc,
                     input_name=input_name,
-                    solid_name=solid_name,
+                    node_name=node_name,
+                    node_type=self.node_def.node_as_str,
                     options=output_node._fields,
                 )
             )
         elif isinstance(output_node, InvokedSolidDynamicOutputWrapper):
             raise DagsterInvalidDefinitionError(
                 f"In {current_context().source} {current_context().name}, received the dynamic output "
-                f"{output_node.output_name} from solid {output_node.solid_name} directly. Dynamic "
+                f"{output_node.output_name} from {output_node.describe_node()} directly. Dynamic "
                 "output must be unpacked by invoking map or collect."
             )
 
@@ -443,28 +449,33 @@ class PendingNodeInvocation:
             output_node, NodeDefinition
         ):
             raise DagsterInvalidDefinitionError(
-                "In {source} {name}, received an un-invoked solid for input "
-                '"{input_name}" {arg_desc} in solid invocation "{solid_name}". '
+                "In {source} {name}, received an un-invoked {uninvoked_node_type} "
+                "'{uninvoked_node_name}' for input "
+                '"{input_name}" {arg_desc} in {node_type} invocation "{node_name}". '
                 "Did you forget parentheses?".format(
                     source=current_context().source,
+                    uninvoked_node_type=output_node.node_as_str,
+                    uninvoked_node_name=output_node.name,
                     name=current_context().name,
                     arg_desc=arg_desc,
                     input_name=input_name,
-                    solid_name=solid_name,
+                    node_name=node_name,
+                    node_type=output_node.describe_node(),
                 )
             )
         else:
             raise DagsterInvalidDefinitionError(
                 "In {source} {name}, received invalid type {type} for input "
-                '"{input_name}" {arg_desc} in solid invocation "{solid_name}". '
-                "Must pass the output from previous solid invocations or inputs to the "
-                "composition function as inputs when invoking solids during composition.".format(
+                '"{input_name}" {arg_desc} in {node_type} invocation "{node_name}". '
+                "Must pass the output from previous node invocations or inputs to the "
+                "composition function as inputs when invoking nodes during composition.".format(
                     source=current_context().source,
                     name=current_context().name,
                     type=type(output_node),
                     arg_desc=arg_desc,
                     input_name=input_name,
-                    solid_name=solid_name,
+                    node_name=node_name,
+                    node_type=output_node.describe_node(),
                 )
             )
 
@@ -519,11 +530,12 @@ class InvokedNode(NamedTuple):
 
 
 class InvokedSolidOutputHandle:
-    """The return value for an output when invoking a solid in a composition function."""
+    """The return value for an output when invoking a node in a composition function."""
 
-    def __init__(self, solid_name, output_name):
+    def __init__(self, solid_name, output_name, node_type):
         self.solid_name = check.str_param(solid_name, "solid_name")
         self.output_name = check.str_param(output_name, "output_name")
+        self.node_type = check.str_param(node_type, "node_type")
 
     def __iter__(self):
         raise DagsterInvariantViolationError(
@@ -586,23 +598,29 @@ class InvokedSolidDynamicOutputWrapper:
     Must be unwrapped by invoking map or collect.
     """
 
-    def __init__(self, solid_name: str, output_name: str):
+    def __init__(self, solid_name: str, output_name: str, node_type: str):
         self.solid_name = check.str_param(solid_name, "solid_name")
         self.output_name = check.str_param(output_name, "output_name")
+        self.node_type = check.str_param(node_type, "node_type")
+
+    def describe_node(self):
+        return f"{self.node_type} '{self.solid_name}'"
 
     def map(self, fn):
         check.is_callable(fn)
-        result = fn(InvokedSolidOutputHandle(self.solid_name, self.output_name))
+        result = fn(InvokedSolidOutputHandle(self.solid_name, self.output_name, self.node_type))
 
         if isinstance(result, InvokedSolidOutputHandle):
-            return InvokedSolidDynamicOutputWrapper(result.solid_name, result.output_name)
+            return InvokedSolidDynamicOutputWrapper(
+                result.solid_name, result.output_name, result.node_type
+            )
         elif isinstance(result, tuple) and all(
             map(lambda item: isinstance(item, InvokedSolidOutputHandle), result)
         ):
             return tuple(
                 map(
                     lambda item: InvokedSolidDynamicOutputWrapper(
-                        item.solid_name, item.output_name
+                        item.solid_name, item.output_name, item.node_type
                     ),
                     result,
                 )
@@ -621,7 +639,7 @@ class InvokedSolidDynamicOutputWrapper:
         return DynamicFanIn(self.solid_name, self.output_name)
 
     def unwrap_for_composite_mapping(self) -> InvokedSolidOutputHandle:
-        return InvokedSolidOutputHandle(self.solid_name, self.output_name)
+        return InvokedSolidOutputHandle(self.solid_name, self.output_name, self.node_type)
 
     def __iter__(self):
         raise DagsterInvariantViolationError(
@@ -678,6 +696,7 @@ def composite_mapping_from_output(
     output: Any,
     output_defs: List[OutputDefinition],
     solid_name: str,
+    decorator_name: str,
 ) -> Optional[Dict[str, OutputMapping]]:
     # output can be different types
     check.list_param(output_defs, "output_defs", OutputDefinition)
@@ -691,10 +710,11 @@ def composite_mapping_from_output(
         else:
             raise DagsterInvalidDefinitionError(
                 "Returned a single output ({solid_name}.{output_name}) in "
-                "@composite_solid {name} but {num} outputs are defined. "
+                "{decorator_name} '{name}' but {num} outputs are defined. "
                 "Return a dict to map defined outputs.".format(
                     solid_name=output.solid_name,
                     output_name=output.output_name,
+                    decorator_name=decorator_name,
                     name=solid_name,
                     num=len(output_defs),
                 )
@@ -710,9 +730,11 @@ def composite_mapping_from_output(
         for handle in output:
             if handle.output_name not in output_def_dict:
                 raise DagsterInvalidDefinitionError(
-                    "Output name mismatch returning output tuple in @composite_solid {name}. "
+                    "Output name mismatch returning output tuple in {decorator_name} '{name}'. "
                     "No matching OutputDefinition named {output_name} for {solid_name}.{output_name}."
                     "Return a dict to map to the desired OutputDefinition".format(
+                        node_type=handle.node_type,
+                        decorator_name=decorator_name,
                         name=solid_name,
                         output_name=handle.output_name,
                         solid_name=handle.solid_name,
@@ -729,9 +751,12 @@ def composite_mapping_from_output(
         for name, handle in output.items():
             if name not in output_def_dict:
                 raise DagsterInvalidDefinitionError(
-                    "@composite_solid {name} referenced key {key} which does not match any "
+                    "{decorator_name} '{name}' referenced key {key} which does not match any "
                     "OutputDefinitions. Valid options are: {options}".format(
-                        name=solid_name, key=name, options=list(output_def_dict.keys())
+                        decorator_name=decorator_name,
+                        name=solid_name,
+                        key=name,
+                        options=list(output_def_dict.keys()),
                     )
                 )
 
@@ -746,25 +771,27 @@ def composite_mapping_from_output(
                 )
             else:
                 raise DagsterInvalidDefinitionError(
-                    "@composite_solid {name} returned problematic dict entry under "
+                    "{decorator_name} '{name}' returned problematic dict entry under "
                     "key {key} of type {type}. Dict values must be outputs of "
-                    "invoked solids".format(name=solid_name, key=name, type=type(handle))
+                    "invoked solids".format(
+                        decorator_name=decorator_name, name=solid_name, key=name, type=type(handle)
+                    )
                 )
 
         return output_mapping_dict
 
     elif isinstance(output, InvokedSolidDynamicOutputWrapper):
         return composite_mapping_from_output(
-            output.unwrap_for_composite_mapping(), output_defs, solid_name
+            output.unwrap_for_composite_mapping(), output_defs, solid_name, decorator_name
         )
 
     # error
     if output is not None:
         raise DagsterInvalidDefinitionError(
-            "@composite_solid {name} returned problematic value "
+            "{decorator_name} '{name}' returned problematic value "
             "of type {type}. Expected return value from invoked solid or dict mapping "
             "output name to return values from invoked solids".format(
-                name=solid_name, type=type(output)
+                decorator_name=decorator_name, name=solid_name, type=type(output)
             )
         )
 
@@ -897,7 +924,9 @@ def do_composition(
             )
         output_mappings.append(mapping)
 
-    config_mapping = _get_validated_config_mapping(graph_name, config_schema, config_fn)
+    config_mapping = _get_validated_config_mapping(
+        graph_name, config_schema, config_fn, decorator_name
+    )
 
     return (
         input_mappings,
@@ -910,9 +939,7 @@ def do_composition(
 
 
 def _get_validated_config_mapping(
-    name: str,
-    config_schema: Any,
-    config_fn: Optional[Callable[[Any], Any]],
+    name: str, config_schema: Any, config_fn: Optional[Callable[[Any], Any]], decorator_name: str
 ) -> Optional[ConfigMapping]:
     if config_fn is None and config_schema is None:
         return None
@@ -920,6 +947,6 @@ def _get_validated_config_mapping(
         return ConfigMapping(config_fn=config_fn, config_schema=config_schema)
     else:
         raise DagsterInvalidDefinitionError(
-            f"@composite_solid '{name}' defines a configuration schema but does not "
+            f"{decorator_name} '{name}' defines a configuration schema but does not "
             "define a configuration function."
         )

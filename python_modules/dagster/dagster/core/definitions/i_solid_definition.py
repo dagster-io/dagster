@@ -1,4 +1,4 @@
-from abc import abstractmethod
+from abc import abstractmethod, abstractproperty
 from typing import TYPE_CHECKING
 
 from dagster import check
@@ -42,6 +42,10 @@ class NodeDefinition(NamedConfigurableDefinition):
             if positional_inputs is not None
             else list(map(lambda inp: inp.name, input_defs))
         )
+
+    @abstractproperty
+    def node_as_str(self):
+        raise NotImplementedError()
 
     @property
     def name(self):
