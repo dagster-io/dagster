@@ -16,7 +16,7 @@ import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
 import {Group} from '../ui/Group';
 import {MetadataTable, StyledTable} from '../ui/MetadataTable';
-import {FontFamily} from '../ui/styles';
+import {Mono} from '../ui/Text';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -235,11 +235,11 @@ const LatestRun: React.FC<{run: RunMetadataFragment}> = ({run}) => {
   }, [run]);
 
   return (
-    <Group direction="row" spacing={8} alignItems="center">
-      <RunStatus status={run.status} />
-      <div style={{fontFamily: FontFamily.monospace}}>
+    <Group direction="row" spacing={8} alignItems="baseline">
+      <RunStatus status={run.status} size={10} />
+      <Mono>
         <Link to={`/instance/runs/${run.id}`}>{run.id.slice(0, 8)}</Link>
-      </div>
+      </Mono>
       {stats ? (
         <Tooltip
           placement="bottom"

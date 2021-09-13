@@ -107,7 +107,7 @@ const AppStackTraceLink = ({error, operationName}: AppStackTraceLinkProps) => {
           overflow: 'auto',
           color: 'rgb(41, 50, 56)',
           fontFamily: FontFamily.monospace,
-          fontSize: '0.85em',
+          fontSize: '1em',
           whiteSpace: 'pre',
           overflowX: 'auto',
         }}

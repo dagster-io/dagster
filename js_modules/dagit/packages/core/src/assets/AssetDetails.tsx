@@ -13,8 +13,7 @@ import {Box} from '../ui/Box';
 import {Group} from '../ui/Group';
 import {MetadataTable} from '../ui/MetadataTable';
 import {Spinner} from '../ui/Spinner';
-import {Subheading} from '../ui/Text';
-import {FontFamily} from '../ui/styles';
+import {Mono, Subheading} from '../ui/Text';
 
 import {AssetLineageElements} from './AssetLineageElements';
 import {ASSET_QUERY} from './queries';
@@ -103,10 +102,9 @@ export const AssetDetails: React.FC<Props> = ({assetKey, asOf}) => {
                 <div>
                   {'Run '}
                   <Link
-                    style={{fontFamily: FontFamily.monospace}}
                     to={`/instance/runs/${latestEvent.runId}?timestamp=${latestEvent.timestamp}`}
                   >
-                    {titleForRun({runId: latestEvent.runId})}
+                    <Mono>{titleForRun({runId: latestEvent.runId})}</Mono>
                   </Link>
                 </div>
                 <div style={{paddingLeft: 10, paddingTop: 4}}>
