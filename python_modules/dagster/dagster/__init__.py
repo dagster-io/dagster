@@ -69,6 +69,7 @@ from dagster.core.definitions import (
     asset_sensor,
     build_init_logger_context,
     composite_solid,
+    config_mapping,
     daily_partitioned_config,
     daily_schedule,
     default_executors,
@@ -276,6 +277,7 @@ __all__ = [
     # Decorators
     "asset_sensor",
     "composite_solid",
+    "config_mapping",
     "executor",
     "graph",
     "intermediate_storage",

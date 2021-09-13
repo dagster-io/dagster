@@ -2,6 +2,7 @@ from .config import ConfigMapping
 from .decorators import (
     asset_sensor,
     composite_solid,
+    config_mapping,
     daily_schedule,
     failure_hook,
     graph,
