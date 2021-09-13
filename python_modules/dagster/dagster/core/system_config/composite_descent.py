@@ -224,7 +224,7 @@ def _get_error_lambda(current_stack):
         'instantiated at stack "{stack_str}".'
     ).format(
         described_node=current_stack.current_solid.describe_node(),
-        described_target=current_stack.pipeline_def.describe_target,
+        described_target=current_stack.pipeline_def.describe_target(),
         stack_str=":".join(current_stack.handle.path),
     )
 
