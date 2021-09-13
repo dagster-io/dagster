@@ -525,6 +525,8 @@ class GraphDefinition(NodeDefinition):
             resources (Optional[Dict[str, Any]]):
                 The resources needed if any are required. Can provide resource instances directly,
                 or resource definitions.
+            raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
+                Defaults to ``True``.
 
         Returns:
             InProcessGraphResult
