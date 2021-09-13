@@ -18,7 +18,7 @@ from dagster.core.storage.root_input_manager import (
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 from dagster.core.types.dagster_type import DagsterType, DagsterTypeKind
 from dagster.core.utils import str_format_set
-from dagster.utils import merge_dicts
+from dagster.utils import frozentags, merge_dicts
 from dagster.utils.backcompat import experimental_class_warning
 
 from .dependency import (
@@ -264,8 +264,7 @@ class PipelineDefinition:
 
     @property
     def tags(self):
-        # could merge with graph level tags here
-        return self._tags
+        return frozentags(**merge_dicts(self._graph_def.tags, self._tags))
 
     @property
     def description(self):
