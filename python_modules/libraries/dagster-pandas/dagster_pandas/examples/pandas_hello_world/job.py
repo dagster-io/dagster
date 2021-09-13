@@ -31,7 +31,7 @@ def sum_sq_op(sum_df):
 
 
 @op(
-    ins={"sum_sq_solid": In(dagster_pd.DataFrame)},
+    ins={"sum_sq_sop": In(dagster_pd.DataFrame)},
     out=Out(dagster_pd.DataFrame),
 )
 def always_fails_op(**_kwargs):
@@ -40,7 +40,7 @@ def always_fails_op(**_kwargs):
 
 @graph
 def pandas_hello_world_fails():
-    always_fails_op(sum_sq_solid=sum_sq_op(sum_df=sum_op()))
+    always_fails_op(sum_sq_op=sum_sq_op(sum_df=sum_op()))
 
 
 pandas_hello_world_fails_test = pandas_hello_world_fails.to_job(executor_def=in_process_executor)
