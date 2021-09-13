@@ -10,14 +10,14 @@ from .partition import (
     ScheduleTimeBasedPartitionsDefinition,
     ScheduleType,
 )
-from .pipeline import PipelineDefinition
+from .job import JobDefinition
 from .run_request import SkipReason
 from .schedule import ScheduleDefinition, ScheduleEvaluationContext
 from .time_window_partitions import TimeWindow, TimeWindowPartitionsDefinition
 
 
 def schedule_from_partitions(
-    job: PipelineDefinition,
+    job: JobDefinition,
     description: Optional[str] = None,
     name: Optional[str] = None,
     minute_of_hour: Optional[int] = None,
@@ -31,11 +31,9 @@ def schedule_from_partitions(
     The schedule executes at the cadence specified by the partitioning of the given job.
     """
     check.invariant(len(job.mode_definitions) == 1, "job must only have one mode")
-
     check.invariant(
         job.mode_definitions[0].partitioned_config is not None, "job must be a partitioned job"
     )
-
     check.invariant(
         not (day_of_week and day_of_month),
         "Cannot provide both day_of_month and day_of_week parameter to schedule_from_partitions.",

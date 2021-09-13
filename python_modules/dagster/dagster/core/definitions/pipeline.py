@@ -251,7 +251,6 @@ class PipelineDefinition:
         )
         self._cached_run_config_schemas: Dict[str, "RunConfigSchema"] = {}
         self._cached_external_pipeline = None
-        self._cached_partition_set: Optional["PartitionSetDefinition"] = None
 
         self.version_strategy = check.opt_inst_param(
             version_strategy, "version_strategy", VersionStrategy
@@ -452,27 +451,6 @@ class PipelineDefinition:
         return PipelineIndex(
             PipelineSnapshot.from_pipeline_def(self), self.get_parent_pipeline_snapshot()
         )
-
-    def get_partition_set_def(self) -> Optional["PartitionSetDefinition"]:
-        if not self.is_single_mode:
-            return None
-
-        mode = self.get_mode_definition()
-        if not mode.partitioned_config:
-            return None
-
-        if not self._cached_partition_set:
-            from dagster.core.definitions.partition import PartitionSetDefinition
-
-            self._cached_partition_set = PartitionSetDefinition(
-                pipeline_name=self.name,
-                name=f"{self.name}_partition_set",
-                partitions_def=mode.partitioned_config.partitions_def,
-                run_config_fn_for_partition=mode.partitioned_config.run_config_for_partition_fn,
-                mode=mode.name,
-            )
-
-        return self._cached_partition_set
 
     def get_config_schema_snapshot(self) -> "ConfigSchemaSnapshot":
         return self.get_pipeline_snapshot().config_schema_snapshot

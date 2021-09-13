@@ -6,6 +6,7 @@ from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantV
 from dagster.utils import merge_dicts
 
 from .graph import GraphDefinition
+from .job import JobDefinition
 from .partition import PartitionScheduleDefinition, PartitionSetDefinition
 from .pipeline import PipelineDefinition
 from .schedule import ScheduleDefinition
@@ -390,12 +391,13 @@ class CachingRepositoryData(RepositoryData):
         def load_partition_sets_from_pipelines():
             job_partition_sets = []
             for pipeline in self.get_all_pipelines():
-                job_partition_set = pipeline.get_partition_set_def()
+                if isinstance(pipeline, JobDefinition):
+                    job_partition_set = pipeline.get_partition_set_def()
 
-                if job_partition_set:
-                    # should only return a partition set if this was constructed using the job API,
-                    # with a partitioned config
-                    job_partition_sets.append(job_partition_set)
+                    if job_partition_set:
+                        # should only return a partition set if this was constructed using the job
+                        # API, with a partitioned config
+                        job_partition_sets.append(job_partition_set)
 
             return job_partition_sets
 
