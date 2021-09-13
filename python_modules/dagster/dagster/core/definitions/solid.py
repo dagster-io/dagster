@@ -337,9 +337,9 @@ class CompositeSolidDefinition(GraphDefinition):
         config_mapping = self._config_mapping
         if config_mapping is None:
             raise DagsterInvalidDefinitionError(
-                "Only composite solids utilizing config mapping can be pre-configured. The solid "
-                '"{graph_name}" does not have a config mapping, and thus has nothing to be '
-                "configured.".format(graph_name=self.name)
+                "Only composite solids utilizing config mapping can be pre-configured. The "
+                'composite solid "{graph_name}" does not have a config mapping, and thus has '
+                "nothing to be configured.".format(graph_name=self.name)
             )
 
         return CompositeSolidDefinition(
