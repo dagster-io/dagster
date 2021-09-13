@@ -212,7 +212,7 @@ class DagsterLogHandler(logging.Handler):
 
         # generate some properties for this specific record
         dagster_message_props = DagsterMessageProps(
-            orig_message=record.msg, dagster_event=dagster_meta
+            orig_message=record.getMessage(), dagster_event=dagster_meta
         )
 
         # set the dagster meta info for the record
