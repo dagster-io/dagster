@@ -63,6 +63,8 @@ def config_mapping(
             def my_config_mapping(val):
                 return {"ops": {"my_op": {"config": {"foo": val["foo"]}}}}
 
+            result = my_graph.to_job(config=my_config_mapping).execute_in_process()
+
     """
     # This case is for when decorator is used bare, without arguments. e.g. @config_mapping versus @config_mapping()
     if callable(config_fn):
