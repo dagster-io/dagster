@@ -841,7 +841,6 @@ def composite_mapping_from_output(
                     "Output name mismatch returning output tuple in {decorator_name} '{name}'. "
                     "No matching OutputDefinition named {output_name} for {solid_name}.{output_name}."
                     "Return a dict to map to the desired OutputDefinition".format(
-                        node_type=handle.node_type,
                         decorator_name=decorator_name,
                         name=solid_name,
                         output_name=handle.output_name,
@@ -985,7 +984,9 @@ def do_composition(
                 )
             output = None
 
-        returned_mapping = composite_mapping_from_output(output, actual_output_defs, graph_name)
+        returned_mapping = composite_mapping_from_output(
+            output, actual_output_defs, graph_name, decorator_name
+        )
     finally:
         context = exit_composition(returned_mapping)
 
