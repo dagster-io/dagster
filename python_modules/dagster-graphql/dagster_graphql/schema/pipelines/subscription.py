@@ -8,6 +8,7 @@ from .pipeline import GraphenePipelineRun
 class GraphenePipelineRunLogsSubscriptionSuccess(graphene.ObjectType):
     run = graphene.NonNull(GraphenePipelineRun)
     messages = non_null_list(GraphenePipelineRunEvent)
+    hasMorePastEvents = graphene.NonNull(graphene.Boolean)
 
     class Meta:
         name = "PipelineRunLogsSubscriptionSuccess"

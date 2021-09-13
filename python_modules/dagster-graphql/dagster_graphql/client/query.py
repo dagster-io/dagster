@@ -207,6 +207,7 @@ subscription subscribeTest($runId: ID!) {
       messages {
         ...messageEventFragment
       }
+      hasMorePastEvents
     }
     ... on PipelineRunLogsSubscriptionFailure {
       missingRunId

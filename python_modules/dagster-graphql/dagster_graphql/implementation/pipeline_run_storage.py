@@ -35,14 +35,16 @@ class PipelineRunObservableSubscribe:
         check.invariant(self.state is State.NULL, f"unexpected state {self.state}")
         chunk_size = get_chunk_size()
         events = self.instance.logs_after(self.run_id, self.after_cursor, limit=chunk_size)
+        done_loading = len(events) < chunk_size
+
         if events:
-            self.observer.on_next(events)
+            self.observer.on_next((events, not done_loading))
             self.after_cursor = len(events) + int(self.after_cursor)
 
-        if len(events) == chunk_size:
-            self.load_events()
-        else:
+        if done_loading:
             self.watch_events()
+        else:
+            self.load_events()
 
         return self
 
@@ -72,13 +74,15 @@ class PipelineRunObservableSubscribe:
 
         while not self.stopping.is_set():
             events = self.instance.logs_after(self.run_id, self.after_cursor, limit=chunk_size)
-            if not events or self.observer is None:
+            if self.observer is None:
                 break
 
-            self.observer.on_next(events)
+            done_loading = len(events) < chunk_size
+
+            self.observer.on_next((events, not done_loading))
             self.after_cursor = len(events) + int(self.after_cursor)
 
-            if len(events) < chunk_size:
+            if done_loading:
                 break
 
             sleep_fn(0)
@@ -101,4 +105,4 @@ class PipelineRunObservableSubscribe:
 
     def handle_new_event(self, new_event):
         if self.observer:
-            self.observer.on_next([new_event])
+            self.observer.on_next(([new_event], False))
