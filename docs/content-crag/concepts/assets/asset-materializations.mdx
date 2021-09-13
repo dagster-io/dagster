@@ -144,16 +144,27 @@ Check our API docs for <PyObject module="dagster" object="EventMetadataEntry" />
 
 If you are materializing a single slice of an asset (e.g. a single day's worth of data on a larger table), rather than mutating or creating it entirely, you can indicate this to Dagster by including the `partition` argument on the object.
 
-```python file=/concepts/assets/materialization_solids.py startafter=start_partitioned_asset_materialization endbefore=end_partitioned_asset_materialization
-ENOENT: no such file or directory, open '/Users/claire/dagster/examples/docs_snippets_crag/docs_snippets_crag/concepts/assets/materialization_solids.py'
+```python file=/concepts/assets/materialization_ops.py startafter=start_partitioned_asset_materialization endbefore=end_partitioned_asset_materialization
+@solid(config_schema={"date": str})
+def my_partitioned_asset_solid(context):
+    partition_date = context.solid_config["date"]
+    df = read_df_for_date(partition_date)
+    remote_storage_path = persist_to_storage(df)
+    yield AssetMaterialization(asset_key="my_dataset", partition=partition_date)
+    yield Output(remote_storage_path)
 ```
 
 ## Linking Solid Outputs to Assets <Experimental />
 
 It is fairly common for an asset to correspond to a solid output. In the following simplified example, our solid produces a dataframe, persists it to storage, and then passes the dataframe along as an output:
 
-```python file=concepts/assets/materialization_solids.py startafter=start_simple_asset_solid endbefore=end_simple_asset_solid
-ENOENT: no such file or directory, open '/Users/claire/dagster/examples/docs_snippets_crag/docs_snippets_crag/concepts/assets/materialization_solids.py'
+```python file=concepts/assets/materialization_ops.py startafter=start_simple_asset_solid endbefore=end_simple_asset_solid
+@solid
+def my_asset_solid(context):
+    df = read_df()
+    persist_to_storage(df)
+    yield AssetMaterialization(asset_key="my_dataset")
+    yield Output(df)
 ```
 
 In this case, the <PyObject object="AssetMaterialization" /> and the <PyObject object="Output" /> events both correspond to the same data, the dataframe that we have created. With this in mind, we can simplify the above code, and provide useful information to the Dagster framework, by making this link between the `my_dataset` asset and the output of this solid explicit.
@@ -168,14 +179,27 @@ For cases where you are storing your asset within the body of a solid, the easie
 
 This parameter can be one of two things. For simple cases, where a solid will always be writing to the same asset, you can define a constant <PyObject object="AssetKey"/> that identifies the asset you are linking.
 
-```python file=/concepts/assets/materialization_solids.py startafter=start_output_def_mat_solid_0 endbefore=end_output_def_mat_solid_0
-ENOENT: no such file or directory, open '/Users/claire/dagster/examples/docs_snippets_crag/docs_snippets_crag/concepts/assets/materialization_solids.py'
+```python file=/concepts/assets/materialization_ops.py startafter=start_output_def_mat_solid_0 endbefore=end_output_def_mat_solid_0
+@solid(output_defs=[OutputDefinition(asset_key=AssetKey("my_dataset"))])
+def my_constant_asset_solid(context):
+    df = read_df()
+    persist_to_storage(df)
+    yield Output(df)
 ```
 
 For cases where the asset that you want to link to an output might change based on some context in the pipeline (such as the mode), you can pass in a function that takes <PyObject object="OutputContext"/> and returns an <PyObject object="AssetKey"/>.
 
-```python file=/concepts/assets/materialization_solids.py startafter=start_output_def_mat_solid_1 endbefore=end_output_def_mat_solid_1
-ENOENT: no such file or directory, open '/Users/claire/dagster/examples/docs_snippets_crag/docs_snippets_crag/concepts/assets/materialization_solids.py'
+```python file=/concepts/assets/materialization_ops.py startafter=start_output_def_mat_solid_1 endbefore=end_output_def_mat_solid_1
+def get_asset_key(context: OutputContext):
+    mode = context.step_context.mode_def.name
+    return AssetKey(f"my_dataset_{mode}")
+
+
+@solid(output_defs=[OutputDefinition(asset_key=get_asset_key)])
+def my_variable_asset_solid(context):
+    df = read_df()
+    persist_to_storage(df)
+    yield Output(df)
 ```
 
 ### Linking assets to outputs with an IOManager <Experimental />
