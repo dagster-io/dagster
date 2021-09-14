@@ -6,7 +6,7 @@ from dagster_pandas import DataFrame
 
 
 def get_op_result_value(op_inst):
-    pipe = GraphDefinition(
+    single_op_graph = GraphDefinition(
         name="test",
         description=None,
         node_defs=[load_num_csv_op("load_csv"), op_inst],
@@ -20,7 +20,7 @@ def get_op_result_value(op_inst):
         config_mapping=None,
     )
 
-    result = pipe.execute_in_process()
+    result = single_op_graph.execute_in_process()
 
     execution_result = result.result_for_node(op_inst.name)
 

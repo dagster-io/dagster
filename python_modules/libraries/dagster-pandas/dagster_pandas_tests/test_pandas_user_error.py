@@ -16,11 +16,11 @@ def test_wrong_output_value():
         return pd.DataFrame()
 
     @graph
-    def test_graph():
+    def output_fails():
         return wrong_output(pass_df())
 
     with pytest.raises(DagsterTypeCheckDidNotPass):
-        test_graph.execute_in_process()
+        output_fails.execute_in_process()
 
 
 def test_wrong_input_value():
@@ -33,8 +33,8 @@ def test_wrong_input_value():
         "not a dataframe"
 
     @graph
-    def test_graph():
+    def input_fails():
         wrong_input(pass_str())
 
     with pytest.raises(DagsterTypeCheckDidNotPass):
-        test_graph.execute_in_process()
+        input_fails.execute_in_process()
