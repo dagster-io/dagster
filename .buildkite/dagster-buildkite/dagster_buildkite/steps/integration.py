@@ -168,7 +168,7 @@ def _get_latest_dagster_release():
     res = requests.get("https://pypi.org/pypi/dagster/json")
     module_json = res.json()
     releases = module_json["releases"]
-    for release_version in reversed(releases):
+    for release_version in reversed(list(releases.keys())):
         parsed_version = packaging.version.parse(release_version)
         if not parsed_version.is_prerelease:
             return release_version
