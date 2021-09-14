@@ -8,6 +8,7 @@ from dagster import file_relative_path
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster_graphql import DagsterGraphQLClient
 
+DAGSTER_FROM_SOURCE = "current_branch"
 MAX_TIMEOUT_SECONDS = 20
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
@@ -15,8 +16,8 @@ pytest_plugins = ["dagster_test.fixtures"]
 
 # pylint: disable=redefined-outer-name
 RELEASE_TEST_MAP = {
-    "dagit__0.12.8": ["0.12.8", "current_branch"],
-    "user_code__0.12.8": ["current_branch", "0.12.8"],
+    "dagit__0.12.8": ["0.12.8", DAGSTER_FROM_SOURCE],
+    "user_code__0.12.8": [DAGSTER_FROM_SOURCE, "0.12.8"],
 }
 
 
@@ -87,15 +88,15 @@ def graphql_client(release_test_map, retrying_requests):
     dagit_version = release_test_map["dagit"]
     user_code_version = release_test_map["user_code"]
 
-    if dagit_version == "current_branch":
+    if dagit_version == DAGSTER_FROM_SOURCE:
         os.environ["DAGIT_DOCKERFILE"] = "./Dockerfile_dagit_source"
     else:
         os.environ["DAGIT_DOCKERFILE"] = "./Dockerfile_dagit_release"
 
-    if user_code_version == "current_branch":
-        os.environ["USER_CODE_DOCKERFILE"] = "./Dockerfile_grpc_source"
+    if user_code_version == DAGSTER_FROM_SOURCE:
+        os.environ["USER_CODE_DOCKERFILE"] = "./Dockerfile_user_code_source"
     else:
-        os.environ["USER_CODE_DOCKERFILE"] = "./Dockerfile_grpc_release"
+        os.environ["USER_CODE_DOCKERFILE"] = "./Dockerfile_user_code_release"
 
     with docker_service_up(
         file_relative_path(__file__, "./dagit_service/docker-compose.yml"),
