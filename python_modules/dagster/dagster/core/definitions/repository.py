@@ -10,7 +10,7 @@ from .job import JobDefinition
 from .partition import PartitionScheduleDefinition, PartitionSetDefinition
 from .pipeline import PipelineDefinition
 from .schedule import ScheduleDefinition
-from .sensor import SensorDefinition
+from .sensor import ISensorDefinition
 from .utils import check_valid_name
 
 VALID_REPOSITORY_DATA_DICT_KEYS = {
@@ -22,7 +22,11 @@ VALID_REPOSITORY_DATA_DICT_KEYS = {
 }
 
 RepositoryLevelDefinition = TypeVar(
-    "RepositoryLevelDefinition", PipelineDefinition, PartitionSetDefinition, ScheduleDefinition
+    "RepositoryLevelDefinition",
+    PipelineDefinition,
+    PartitionSetDefinition,
+    ScheduleDefinition,
+    ISensorDefinition,
 )
 
 
@@ -358,7 +362,7 @@ class CachingRepositoryData(RepositoryData):
                 The partition sets belonging to the repository.
             schedules (Dict[str, Union[ScheduleDefinition, Callable[[], ScheduleDefinition]]]):
                 The schedules belonging to the repository.
-            sensors (Dict[str, Union[SensorDefinition, Callable[[], SensorDefinition]]]):
+            sensors (Dict[str, Union[ISensorDefinition, Callable[[], ISensorDefinition]]]):
                 The sensors belonging to a repository.
 
         """
@@ -413,8 +417,8 @@ class CachingRepositoryData(RepositoryData):
             load_partition_sets_from_pipelines,
         )
         self._sensors = _CacheingDefinitionIndex(
-            SensorDefinition,
-            "SensorDefinition",
+            ISensorDefinition,
+            "ISensorDefinition",
             "sensor",
             sensors,
             self._validate_sensor,
@@ -516,16 +520,17 @@ class CachingRepositoryData(RepositoryData):
                         "{partition_set_name}".format(partition_set_name=definition.name)
                     )
                 partition_sets[definition.name] = definition
-            elif isinstance(definition, SensorDefinition):
+            elif isinstance(definition, ISensorDefinition):
                 if definition.name in jobs:
                     raise DagsterInvalidDefinitionError(
                         f"Duplicate definition found for {definition.name}"
                     )
                 jobs[definition.name] = definition
                 sensors[definition.name] = definition
-                if definition.has_loadable_target():
-                    target = definition.load_target()
-                    pipelines[target.name] = target
+                if definition.has_loadable_targets():
+                    targets = definition.load_targets()
+                    for target in targets:
+                        pipelines[target.name] = target
             elif isinstance(definition, ScheduleDefinition):
                 if definition.name in jobs:
                     raise DagsterInvalidDefinitionError(
@@ -750,15 +755,16 @@ class CachingRepositoryData(RepositoryData):
 
     def _validate_sensor(self, sensor):
         pipelines = self.get_pipeline_names()
-        if sensor.pipeline_name is None:
+        if len(sensor.targets) == 0:
             # skip validation when the sensor does not target a pipeline
             return sensor
 
-        if sensor.pipeline_name not in pipelines:
-            raise DagsterInvalidDefinitionError(
-                f'SensorDefinition "{sensor.name}" targets pipeline "{sensor.pipeline_name}" '
-                "which was not found in this repository."
-            )
+        for target in sensor.targets:
+            if target.pipeline_name not in pipelines:
+                raise DagsterInvalidDefinitionError(
+                    f'SensorDefinition "{sensor.name}" targets pipeline "{target.pipeline_name}" '
+                    "which was not found in this repository."
+                )
 
         return sensor
 

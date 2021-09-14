@@ -1,6 +1,6 @@
 import warnings
 from collections import OrderedDict
-from typing import Sequence
+from typing import Optional, Sequence
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
@@ -20,6 +20,7 @@ from .external_data import (
     ExternalRepositoryData,
     ExternalScheduleData,
     ExternalSensorData,
+    ExternalTargetData,
 )
 from .handle import JobHandle, PartitionSetHandle, PipelineHandle, RepositoryHandle
 from .pipeline_index import PipelineIndex
@@ -488,15 +489,28 @@ class ExternalSensor:
 
     @property
     def pipeline_name(self):
-        return self._external_sensor_data.pipeline_name
-
-    @property
-    def solid_selection(self):
-        return self._external_sensor_data.solid_selection
+        target = self._get_single_target()
+        return target.pipeline_name
 
     @property
     def mode(self):
-        return self._external_sensor_data.mode
+        target = self._get_single_target()
+        return target.mode
+
+    @property
+    def solid_selection(self):
+        target = self._get_single_target()
+        return target.solid_selection
+
+    def _get_single_target(self):
+        check.invariant(len(self._external_sensor_data.target_dict.values()) <= 1)
+        return list(self._external_sensor_data.target_dict.values())[0]
+
+    def get_target_data(self, pipeline_name: Optional[str]) -> ExternalTargetData:
+        if pipeline_name:
+            return self._external_sensor_data.target_dict[pipeline_name]
+        else:
+            return self._get_single_target()
 
     @property
     def description(self):

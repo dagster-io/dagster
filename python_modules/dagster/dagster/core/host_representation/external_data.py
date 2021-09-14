@@ -211,27 +211,44 @@ class ExternalScheduleExecutionErrorData(
 
 
 @whitelist_for_serdes
+class ExternalTargetData(
+    namedtuple(
+        "_ExternalTargetData",
+        "pipeline_name solid_selection mode",
+    )
+):
+    def __new__(
+        cls,
+        pipeline_name,
+        solid_selection,
+        mode,
+    ):
+        return super(ExternalTargetData, cls).__new__(
+            cls,
+            pipeline_name=check.opt_str_param(pipeline_name, "pipeline_name"),
+            solid_selection=check.opt_nullable_list_param(solid_selection, "solid_selection", str),
+            mode=check.opt_str_param(mode, "mode"),
+        )
+
+
+@whitelist_for_serdes
 class ExternalSensorData(
     namedtuple(
         "_ExternalSensorData",
-        "name pipeline_name solid_selection mode min_interval description",
+        "name target_dict min_interval description",
     )
 ):
     def __new__(
         cls,
         name,
-        pipeline_name,
-        solid_selection,
-        mode,
+        target_dict,
         min_interval=None,
         description=None,
     ):
         return super(ExternalSensorData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
-            pipeline_name=check.opt_str_param(pipeline_name, "pipeline_name"),
-            solid_selection=check.opt_nullable_list_param(solid_selection, "solid_selection", str),
-            mode=check.opt_str_param(mode, "mode"),
+            target_dict=check.opt_dict_param(target_dict, "target_dict", str, ExternalTargetData),
             min_interval=check.opt_int_param(min_interval, "min_interval"),
             description=check.opt_str_param(description, "description"),
         )
@@ -510,9 +527,14 @@ def external_partition_set_data_from_def(partition_set_def):
 def external_sensor_data_from_def(sensor_def):
     return ExternalSensorData(
         name=sensor_def.name,
-        pipeline_name=sensor_def.pipeline_name,
-        solid_selection=sensor_def.solid_selection,
-        mode=sensor_def.mode,
+        target_dict={
+            target.pipeline_name: ExternalTargetData(
+                pipeline_name=target.pipeline_name,
+                solid_selection=target.solid_selection,
+                mode=target.mode,
+            )
+            for target in sensor_def.targets
+        },
         min_interval=sensor_def.minimum_interval_seconds,
         description=sensor_def.description,
     )
