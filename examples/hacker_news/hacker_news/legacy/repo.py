@@ -8,6 +8,9 @@ from .pipelines.dbt_pipeline import dbt_pipeline
 from .pipelines.download_pipeline import download_pipeline
 from .pipelines.story_recommender import story_recommender
 
+# Creates a hacker news reference repository using the legacy dagster APIs of pipeline, solid,
+# and mode.
+
 
 @repository
 def hacker_news_legacy():

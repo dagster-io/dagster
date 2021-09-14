@@ -18,8 +18,8 @@ SNOWFLAKE_CONF = {
     "warehouse": "TINY_WAREHOUSE",
 }
 
-# We define two sets of resources, one for the prod mode, which writes to production schemas and
-# s3 buckets, and one for dev mode, which writes to alternate schemas and s3 buckets.
+# We define two sets of resources, one for the prod job, which writes to production schemas and
+# s3 buckets, and one for dev job, which writes to alternate schemas and s3 buckets.
 DBT_RESOURCES_PROD = {
     "io_manager": s3_pickle_io_manager.configured({"s3_bucket": "hackernews-elementl-prod"}),
     "s3": s3_resource,
