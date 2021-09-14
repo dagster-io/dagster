@@ -62,7 +62,7 @@ or, if you have a specific output name other than the default `result`:
 ```python file=/concepts/solids_pipelines/op_events.py startafter=start_op_output_2 endbefore=end_op_output_2
 @op(
     output_defs=[
-        OutputDefinition(name="my_output"),
+        Out(name="my_output"),
     ]
 )
 def my_named_yield_op(context):

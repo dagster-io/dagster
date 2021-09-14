@@ -5,7 +5,7 @@ from dagster import (
     ExpectationResult,
     Failure,
     Output,
-    OutputDefinition,
+    Out,
     RetryRequested,
 )
 
@@ -63,7 +63,7 @@ def my_simple_return_op(context):
 
 @op(
     output_defs=[
-        OutputDefinition(name="my_output"),
+        Out(name="my_output"),
     ]
 )
 def my_named_yield_op(context):
