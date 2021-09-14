@@ -435,7 +435,6 @@ class GraphDefinition(NodeDefinition):
         default_executor = check.opt_inst_param(
             executor_def, "executor_def", ExecutorDefinition, default=multiprocess_executor
         )
-
         executor_defs = [default_executor]
         for executor in default_executors:
             if executor not in executor_defs:
@@ -462,9 +461,7 @@ class GraphDefinition(NodeDefinition):
             # Using config mapping here is a trick to make it so that the preset will be used even
             # when no config is supplied for the job.
             config_mapping = _config_mapping_with_default_value(
-                self._get_config_schema(
-                    resource_defs_with_defaults, executor_defs, default_executor
-                ),
+                self._get_config_schema(resource_defs_with_defaults, executor_defs),
                 config,
                 job_name,
                 self.name,
@@ -506,7 +503,6 @@ class GraphDefinition(NodeDefinition):
         self,
         resource_defs: Optional[Dict[str, ResourceDefinition]],
         executor_defs: List[ExecutorDefinition],
-        default_executor: "ExecutorDefinition",
     ) -> ConfigType:
         from .pipeline import PipelineDefinition
 
@@ -518,7 +514,7 @@ class GraphDefinition(NodeDefinition):
                     ModeDefinition(resource_defs=resource_defs, executor_defs=executor_defs)
                 ],
             )
-            .get_run_config_schema("default", default_executor)
+            .get_run_config_schema("default")
             .run_config_schema_type
         )
 

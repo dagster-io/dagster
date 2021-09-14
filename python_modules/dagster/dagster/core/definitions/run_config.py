@@ -84,16 +84,16 @@ def define_logger_dictionary_cls(creation_data: RunConfigSchemaCreationData) -> 
 
 
 def define_execution_field(
-    executor_defs: List[ExecutorDefinition], default_executor: Optional[ExecutorDefinition]
+    executor_defs: List[ExecutorDefinition], is_using_graph_job_op_apis: bool
 ) -> Field:
     selector = selector_for_named_defs(executor_defs)
 
-    if default_executor:
+    if is_using_graph_job_op_apis:
         check.invariant(
-            default_executor in executor_defs,
-            f"executor {default_executor.name} must be defined when using graph-job-op APIs.",
+            len(executor_defs) > 1,
+            f"executors must be defined when using graph-job-op APIs.",
         )
-        return Field(selector, default_value={default_executor.name: {}})
+        return Field(selector, default_value={executor_defs[0].name: {}})
 
     default_in_process = False
     for executor_def in executor_defs:
@@ -132,9 +132,7 @@ def define_storage_field(
         return Field(storage_selector, default_value=default_storage)
 
 
-def define_run_config_schema_type(
-    creation_data: RunConfigSchemaCreationData, default_executor: Optional[ExecutorDefinition]
-) -> ConfigType:
+def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) -> ConfigType:
     intermediate_storage_field = define_storage_field(
         selector_for_named_defs(creation_data.mode_definition.intermediate_storage_defs),
         storage_names=[dfn.name for dfn in creation_data.mode_definition.intermediate_storage_defs],
@@ -152,7 +150,7 @@ def define_run_config_schema_type(
         "storage": storage_field,
         "intermediate_storage": intermediate_storage_field,
         "execution": define_execution_field(
-            creation_data.mode_definition.executor_defs, default_executor
+            creation_data.mode_definition.executor_defs, creation_data.is_using_graph_job_op_apis
         ),
         "loggers": Field(define_logger_dictionary_cls(creation_data)),
         "resources": Field(
