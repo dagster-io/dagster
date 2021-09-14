@@ -29,6 +29,7 @@ from dagster.core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvalidPropertyError,
     DagsterInvariantViolationError,
+    DagsterResourceFunctionError,
     DagsterStepOutputNotFoundError,
     DagsterTypeCheckDidNotPass,
 )
@@ -843,3 +844,26 @@ def test_dynamic_output_async_non_gen():
         "using yield syntax.",
     ):
         loop.run_until_complete(should_not_work())
+
+
+def test_solid_invocation_with_bad_resources(capsys):
+    @resource
+    def bad_resource(_):
+        if 1 == 1:
+            raise Exception("oopsy daisy")
+        yield "foo"
+
+    @solid(required_resource_keys={"my_resource"})
+    def solid_requires_resource(context):
+        return context.resources.my_resource
+
+    with pytest.raises(
+        DagsterResourceFunctionError,
+        match="Error executing resource_fn on ResourceDefinition my_resource",
+    ):
+        with build_solid_context(resources={"my_resource": bad_resource}) as context:
+            assert solid_requires_resource(context) == "foo"
+
+    captured = capsys.readouterr()
+    # make sure there are no exceptions in the context destructor (__del__)
+    assert "Exception ignored in" not in captured.err
