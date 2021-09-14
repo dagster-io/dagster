@@ -2,21 +2,16 @@ from unittest import mock
 
 import pytest
 from dagster import ModeDefinition, execute_pipeline, pipeline
-from dagster_databricks import (
-    create_databricks_job_op,
-    create_databricks_job_solid,
-    databricks_client,
-)
+from dagster_databricks import create_databricks_job_solid, databricks_client
 from dagster_databricks.databricks import DatabricksRunState
 from dagster_databricks.solids import create_ui_url
 from dagster_databricks.types import DatabricksRunLifeCycleState, DatabricksRunResultState
 
 
-@pytest.mark.parametrize("job_creator", [create_databricks_job_solid, create_databricks_job_op])
 @mock.patch("dagster_databricks.databricks.DatabricksClient.get_run_state")
 @mock.patch("dagster_databricks.databricks.DatabricksClient.submit_run")
 def test_run_create_databricks_job_solid(
-    mock_submit_run, mock_get_run_state, databricks_run_config, job_creator
+    mock_submit_run, mock_get_run_state, databricks_run_config
 ):
     @pipeline(
         mode_defs=[
@@ -30,7 +25,7 @@ def test_run_create_databricks_job_solid(
         ]
     )
     def test_pipe():
-        job_creator(num_inputs=0).configured(
+        create_databricks_job_solid(num_inputs=0).configured(
             {"job": databricks_run_config, "poll_interval_sec": 0.01}, "test"
         )()
 
@@ -51,13 +46,12 @@ def test_run_create_databricks_job_solid(
     assert mock_get_run_state.call_args[0][0] == RUN_ID
 
 
-@pytest.mark.parametrize("job_creator", [create_databricks_job_solid, create_databricks_job_op])
-def test_create_databricks_job_args(job_creator):
-    assert job_creator().name == "databricks_job"
-    assert job_creator("my_name").name == "my_name"
-    assert len(job_creator().input_defs) == 1
-    assert len(job_creator(num_inputs=2).input_defs) == 2
-    assert len(job_creator().output_defs) == 1
+def test_create_databricks_job_solid_args():
+    assert create_databricks_job_solid().name == "databricks_job"
+    assert create_databricks_job_solid("my_name").name == "my_name"
+    assert len(create_databricks_job_solid().input_defs) == 1
+    assert len(create_databricks_job_solid(num_inputs=2).input_defs) == 2
+    assert len(create_databricks_job_solid().output_defs) == 1
 
 
 @pytest.mark.parametrize(

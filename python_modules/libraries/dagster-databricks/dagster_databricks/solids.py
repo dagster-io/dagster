@@ -1,4 +1,4 @@
-from dagster import Field, InputDefinition, Nothing, OutputDefinition, Permissive, check, op, solid
+from dagster import Field, InputDefinition, Nothing, OutputDefinition, Permissive, check, solid
 
 from .databricks import wait_for_run_to_complete
 
@@ -7,64 +7,6 @@ _START = "start"
 _DEFAULT_POLL_INTERVAL = 10
 # wait at most 24 hours by default for run execution
 _DEFAULT_RUN_MAX_WAIT_TIME_SEC = 24 * 60 * 60
-
-
-def create_databricks_job_op(
-    name="databricks_job",
-    num_inputs=1,
-    description=None,
-    required_resource_keys=frozenset(["databricks_client"]),
-):
-    """
-    Creates an op that launches a databricks job (not to be confused with Dagster's job API).
-
-    As config, the op accepts a blob of the form described in Databricks' job API:
-    https://docs.databricks.com/dev-tools/api/latest/jobs.html.
-
-    Returns:
-        OpDefinition: An op definition.
-
-    Example:
-
-        .. code-block:: python
-
-            from dagster import graph
-            from dagster_databricks import create_databricks_job_op, databricks_client
-
-            sparkpi = create_databricks_job_op().configured(
-                {
-                    "job": {
-                        "name": "SparkPi Python job",
-                        "new_cluster": {
-                            "spark_version": "7.3.x-scala2.12",
-                            "node_type_id": "i3.xlarge",
-                            "num_workers": 2,
-                        },
-                        "spark_python_task": {"python_file": "dbfs:/docs/pi.py", "parameters": ["10"]},
-                    }
-                },
-                name="sparkpi",
-            )
-
-            @graph
-            def my_spark():
-                sparkpi()
-
-            my_spark.to_job(
-                resource_defs={
-                    "databricks_client": databricks_client.configured(
-                        {"host": "my.workspace.url", "token": "my.access.token"}
-                    )
-                }
-            )
-    """
-    return core_create_databricks_job(
-        dagster_decorator=op,
-        name=name,
-        num_inputs=num_inputs,
-        description=description,
-        required_resource_keys=required_resource_keys,
-    )
 
 
 def create_databricks_job_solid(
@@ -119,22 +61,6 @@ def create_databricks_job_solid(
             def my_pipeline():
                 sparkpi()
     """
-    return core_create_databricks_job(
-        dagster_decorator=solid,
-        name=name,
-        num_inputs=num_inputs,
-        description=description,
-        required_resource_keys=required_resource_keys,
-    )
-
-
-def core_create_databricks_job(
-    dagster_decorator,
-    name="databricks_job",
-    num_inputs=1,
-    description=None,
-    required_resource_keys=frozenset(["databricks_client"]),
-):
     check.str_param(name, "name")
     check.opt_str_param(description, "description")
     check.int_param(num_inputs, "num_inputs")
@@ -142,7 +68,7 @@ def core_create_databricks_job(
 
     input_defs = [InputDefinition("input_" + str(i), Nothing) for i in range(num_inputs)]
 
-    @dagster_decorator(
+    @solid(
         name=name,
         description=description,
         config_schema={
@@ -167,35 +93,35 @@ def core_create_databricks_job(
         required_resource_keys=required_resource_keys,
         tags={"kind": "databricks"},
     )
-    def databricks_fn(context):
-        job_config = context.op_config["job"]
+    def databricks_solid(context):
+        job_config = context.solid_config["job"]
         databricks_client = context.resources.databricks_client
         run_id = databricks_client.submit_run(**job_config)
 
         context.log.info(
             "Launched databricks job with run id {run_id}. UI: {url}. Waiting to run to completion...".format(
-                run_id=run_id, url=create_ui_url(databricks_client, context.op_config)
+                run_id=run_id, url=create_ui_url(databricks_client, context.solid_config)
             )
         )
         wait_for_run_to_complete(
             databricks_client,
             context.log,
             run_id,
-            context.op_config["poll_interval_sec"],
-            context.op_config["max_wait_time_sec"],
+            context.solid_config["poll_interval_sec"],
+            context.solid_config["max_wait_time_sec"],
         )
 
-    return databricks_fn
+    return databricks_solid
 
 
-def create_ui_url(databricks_client, op_config):
+def create_ui_url(databricks_client, solid_config):
     host = databricks_client.host
     workspace_id = databricks_client.workspace_id or "<workspace_id>"
-    if "existing_cluster_id" in op_config["job"]:
+    if "existing_cluster_id" in solid_config["job"]:
         return "https://{host}/?o={workspace_id}#/setting/clusters/{cluster_id}/sparkUi".format(
             host=host,
             workspace_id=workspace_id,
-            cluster_id=op_config["job"]["existing_cluster_id"],
+            cluster_id=solid_config["job"]["existing_cluster_id"],
         )
     else:
         return "https://{host}/?o={workspace_id}#joblist".format(
