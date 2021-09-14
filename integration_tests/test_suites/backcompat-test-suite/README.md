@@ -4,7 +4,12 @@ This test suite ensures that the branch Dagster code can successfully communicat
 
 ## Running tests locally
 
-Two environment variables need to be set: `DAGIT_DOCKERFILE` and `USER_CODE_DOCKERFILE`.
+Three environment variables need to be set: `DAGSTER_EARLIEST_RELEASE`, `DAGIT_DOCKERFILE` and `USER_CODE_DOCKERFILE`.
+
+    - Set `DAGSTER_EARLIEST_RELEASE` to match the earliest release to test:
+    ```bash
+    export DAGSTER_EARLIEST_RELEASE="0.12.4"
+    ```
 
     - If running with dagit from release and user code deployment from source:
     ```bash

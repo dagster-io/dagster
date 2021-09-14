@@ -1,5 +1,8 @@
 import os
 
+import packaging
+import requests
+
 from ..defines import GCP_CREDS_LOCAL_FILE
 from ..module_build_spec import ModuleBuildSpec
 from ..utils import connect_sibling_docker_container, network_buildkite_container
@@ -7,6 +10,7 @@ from .test_images import publish_test_images, test_image_depends_fn
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 DAGSTER_FROM_SOURCE = "current_branch"
+DAGSTER_EARLIEST_RELEASE = "0.12.4"
 
 
 def integration_suite_extra_cmds_fn(version):
@@ -48,6 +52,7 @@ def backcompat_suite_extra_cmds_fn(release_mapping):
 
     def _extra_cmds_fn(_):
         return [
+            f"export DAGSTER_EARLIEST_RELEASE={DAGSTER_EARLIEST_RELEASE}"
             f'export DAGIT_DOCKERFILE="{dagit_dockerfile}"',
             f'export USER_CODE_DOCKERFILE="{user_code_dockerfile}"',
             "pushd integration_tests/test_suites/backcompat-test-suite/dagit_service",
@@ -82,11 +87,23 @@ def integration_steps():
 
 
 def build_spec_backcompat_suite():
+    most_recent_dagster_release = _get_latest_dagster_release()
     tox_env_suffix_map = {
-        "-old-dagit": {"dagit": "0.12.8", "user_code": DAGSTER_FROM_SOURCE},
-        "-old-user-code": {
+        "-dagit-latest-release": {
+            "dagit": most_recent_dagster_release,
+            "user_code": DAGSTER_FROM_SOURCE,
+        },
+        "-dagit-earliest-release": {
+            "dagit": DAGSTER_EARLIEST_RELEASE,
+            "user_code": DAGSTER_FROM_SOURCE,
+        },
+        "-user-code-latest-release": {
             "dagit": DAGSTER_FROM_SOURCE,
-            "user_code": "0.12.8",
+            "user_code": most_recent_dagster_release,
+        },
+        "-user-code-earliest-release": {
+            "dagit": DAGSTER_FROM_SOURCE,
+            "user_code": DAGSTER_EARLIEST_RELEASE,
         },
     }
 
@@ -145,3 +162,13 @@ def build_steps_integration_suite(directory, tox_env_suffixes, upload_coverage):
         tox_env_suffixes=tox_env_suffixes,
         retries=2,
     ).get_tox_build_steps()
+
+
+def _get_latest_dagster_release():
+    res = requests.get("https://pypi.org/pypi/dagster/json")
+    module_json = res.json()
+    releases = module_json["releases"]
+    for release_version in reversed(releases):
+        parsed_version = packaging.version.parse(release_version)
+        if not parsed_version.is_prerelease:
+            return release_version
