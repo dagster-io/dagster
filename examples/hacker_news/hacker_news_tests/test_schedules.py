@@ -2,18 +2,17 @@ import os
 from datetime import datetime, timedelta
 
 from dagster import Partition
-from dagster.core.definitions import PipelineDefinition
+from dagster.core.definitions import JobDefinition
 from dagster.core.execution.api import create_execution_plan
 from hacker_news.jobs.hacker_news_api_download import download_prod_job, download_staging_job
 
 
 def assert_partitioned_schedule_builds(
-    job_def: PipelineDefinition,
+    job_def: JobDefinition,
     start: datetime,
     end: datetime,
 ):
-    mode = job_def.mode_definitions[0]
-    partition_set = mode.get_partition_set_def(job_def.name)
+    partition_set = job_def.get_partition_set_def()
     run_config = partition_set.run_config_for_partition(Partition((start, end)))
     create_execution_plan(job_def, run_config=run_config)
 
