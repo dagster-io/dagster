@@ -606,7 +606,7 @@ def test_backfill_from_partitioned_job(external_repo_context):
         external_repo,
     ):
         external_partition_set = external_repo.get_external_partition_set(
-            "comp_always_succeed_default_partition_set"
+            "comp_always_succeed_partition_set"
         )
         instance.add_backfill(
             PartitionBackfill(
@@ -633,7 +633,7 @@ def test_backfill_from_partitioned_job(external_repo_context):
         for idx, run in enumerate(runs):
             assert run.tags[BACKFILL_ID_TAG] == "partition_schedule_from_job"
             assert run.tags[PARTITION_NAME_TAG] == partition_name_list[idx]
-            assert run.tags[PARTITION_SET_TAG] == "comp_always_succeed_default_partition_set"
+            assert run.tags[PARTITION_SET_TAG] == "comp_always_succeed_partition_set"
 
 
 @pytest.mark.parametrize("external_repo_context", repos())

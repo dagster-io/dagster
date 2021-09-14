@@ -7,6 +7,7 @@ from dagster.core.definitions.policy import RetryPolicy
 from .graph import GraphDefinition
 from .hook import HookDefinition
 from .mode import ModeDefinition
+from .partition import PartitionSetDefinition
 from .pipeline import PipelineDefinition
 from .preset import PresetDefinition
 from .resource import ResourceDefinition
@@ -30,6 +31,8 @@ class JobDefinition(PipelineDefinition):
         solid_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
     ):
+
+        self._cached_partition_set: Optional["PartitionSetDefinition"] = None
 
         super(JobDefinition, self).__init__(
             name=name,
@@ -115,6 +118,26 @@ class JobDefinition(PipelineDefinition):
         )
 
         return super(JobDefinition, self).get_pipeline_subset_def(solids_to_execute)
+
+    def get_partition_set_def(self) -> Optional["PartitionSetDefinition"]:
+        if not self.is_single_mode:
+            return None
+
+        mode = self.get_mode_definition()
+        if not mode.partitioned_config:
+            return None
+
+        if not self._cached_partition_set:
+
+            self._cached_partition_set = PartitionSetDefinition(
+                pipeline_name=self.name,
+                name=f"{self.name}_partition_set",
+                partitions_def=mode.partitioned_config.partitions_def,
+                run_config_fn_for_partition=mode.partitioned_config.run_config_for_partition_fn,
+                mode=mode.name,
+            )
+
+        return self._cached_partition_set
 
 
 def _swap_default_io_man(resources: Dict[str, ResourceDefinition], job: PipelineDefinition):
