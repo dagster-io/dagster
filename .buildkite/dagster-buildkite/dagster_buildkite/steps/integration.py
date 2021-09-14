@@ -1,6 +1,6 @@
 import os
 
-import packaging
+import packaging.version
 import requests
 
 from ..defines import GCP_CREDS_LOCAL_FILE
