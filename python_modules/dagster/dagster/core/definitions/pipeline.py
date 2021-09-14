@@ -2,6 +2,7 @@ from functools import update_wrapper
 from typing import TYPE_CHECKING, AbstractSet, Any, Dict, FrozenSet, List, Optional, Set, Union
 
 from dagster import check
+from dagster.core.definitions.executor import ExecutorDefinition
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.definitions.resource import ResourceDefinition
 from dagster.core.definitions.solid import NodeDefinition
@@ -282,7 +283,9 @@ class PipelineDefinition:
     def dependencies(self):
         return self._graph_def.dependencies
 
-    def get_run_config_schema(self, mode: Optional[str] = None) -> "RunConfigSchema":
+    def get_run_config_schema(
+        self, mode: Optional[str] = None, default_executor: Optional[ExecutorDefinition] = None
+    ) -> "RunConfigSchema":
         check.str_param(mode, "mode")
 
         mode_def = self.get_mode_definition(mode)
@@ -291,9 +294,7 @@ class PipelineDefinition:
             return self._cached_run_config_schemas[mode_def.name]
 
         self._cached_run_config_schemas[mode_def.name] = _create_run_config_schema(
-            self,
-            mode_def,
-            self._resource_requirements[mode_def.name],
+            self, mode_def, self._resource_requirements[mode_def.name], default_executor
         )
         return self._cached_run_config_schemas[mode_def.name]
 
@@ -973,6 +974,7 @@ def _create_run_config_schema(
     pipeline_def: PipelineDefinition,
     mode_definition: ModeDefinition,
     required_resources: Set[str],
+    default_executor: Optional[ExecutorDefinition],
 ) -> "RunConfigSchema":
     from .run_config import (
         RunConfigSchemaCreationData,
@@ -1006,7 +1008,8 @@ def _create_run_config_schema(
             ignored_solids=ignored_solids,
             required_resources=required_resources,
             is_using_graph_job_op_apis=pipeline_def._is_using_graph_job_op_apis,  # pylint: disable=protected-access
-        )
+        ),
+        default_executor=default_executor,
     )
 
     if mode_definition.config_mapping:

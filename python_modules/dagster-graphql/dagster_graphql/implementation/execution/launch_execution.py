@@ -30,7 +30,6 @@ def do_launch(graphene_info, execution_params, is_reexecuted=False):
         check.str_param(execution_metadata.parent_run_id, "parent_run_id")
 
     external_pipeline = get_external_pipeline_or_raise(graphene_info, execution_params.selector)
-
     pipeline_run = create_valid_pipeline_run(graphene_info, external_pipeline, execution_params)
 
     return graphene_info.context.instance.submit_run(

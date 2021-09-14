@@ -8,6 +8,7 @@ from dagster.core.definitions.executor import (
     ExecutorDefinition,
     execute_in_process_executor,
     in_process_executor,
+    multiprocess_executor,
 )
 from dagster.core.definitions.input import InputDefinition
 from dagster.core.definitions.output import OutputDefinition
@@ -82,13 +83,22 @@ def define_logger_dictionary_cls(creation_data: RunConfigSchemaCreationData) -> 
     )
 
 
-def define_execution_field(executor_defs: List[ExecutorDefinition]) -> Field:
+def define_execution_field(
+    executor_defs: List[ExecutorDefinition], default_executor: Optional[ExecutorDefinition]
+) -> Field:
+    selector = selector_for_named_defs(executor_defs)
+
+    if default_executor:
+        check.invariant(
+            default_executor in executor_defs,
+            f"executor {default_executor.name} must be defined when using graph-job-op APIs.",
+        )
+        return Field(selector, default_value={default_executor.name: {}})
+
     default_in_process = False
     for executor_def in executor_defs:
         if executor_def == in_process_executor:  # pylint: disable=comparison-with-callable
             default_in_process = True
-
-    selector = selector_for_named_defs(executor_defs)
 
     if default_in_process:
         return Field(selector, default_value={in_process_executor.name: {}})
@@ -122,7 +132,9 @@ def define_storage_field(
         return Field(storage_selector, default_value=default_storage)
 
 
-def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) -> ConfigType:
+def define_run_config_schema_type(
+    creation_data: RunConfigSchemaCreationData, default_executor: Optional[ExecutorDefinition]
+) -> ConfigType:
     intermediate_storage_field = define_storage_field(
         selector_for_named_defs(creation_data.mode_definition.intermediate_storage_defs),
         storage_names=[dfn.name for dfn in creation_data.mode_definition.intermediate_storage_defs],
@@ -139,7 +151,9 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
     fields = {
         "storage": storage_field,
         "intermediate_storage": intermediate_storage_field,
-        "execution": define_execution_field(creation_data.mode_definition.executor_defs),
+        "execution": define_execution_field(
+            creation_data.mode_definition.executor_defs, default_executor
+        ),
         "loggers": Field(define_logger_dictionary_cls(creation_data)),
         "resources": Field(
             define_resource_dictionary_cls(

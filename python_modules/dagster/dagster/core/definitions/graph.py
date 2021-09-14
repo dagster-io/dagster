@@ -19,6 +19,12 @@ from dagster.config.config_type import ConfigType
 from dagster.config.validate import process_config
 from dagster.core.definitions.config import ConfigMapping
 from dagster.core.definitions.definition_config_schema import IDefinitionConfigSchema
+from dagster.core.definitions.executor import (
+    ExecutorDefinition,
+    default_executors,
+    in_process_executor,
+    multiprocess_executor,
+)
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.resource import ResourceDefinition
 from dagster.core.errors import (
@@ -422,14 +428,18 @@ class GraphDefinition(NodeDefinition):
         """
         from .job import JobDefinition
         from .partition import PartitionedConfig
-        from .executor import ExecutorDefinition, multiprocess_executor
 
         job_name = name or self.name
 
         tags = check.opt_dict_param(tags, "tags", key_type=str)
-        executor_def = check.opt_inst_param(
+        default_executor = check.opt_inst_param(
             executor_def, "executor_def", ExecutorDefinition, default=multiprocess_executor
         )
+
+        executor_defs = [default_executor]
+        for executor in default_executors:
+            if executor not in executor_defs:
+                executor_defs.append(executor)
 
         if resource_defs and "io_manager" in resource_defs:
             resource_defs_with_defaults = resource_defs
@@ -452,7 +462,9 @@ class GraphDefinition(NodeDefinition):
             # Using config mapping here is a trick to make it so that the preset will be used even
             # when no config is supplied for the job.
             config_mapping = _config_mapping_with_default_value(
-                self._get_config_schema(resource_defs_with_defaults, executor_def),
+                self._get_config_schema(
+                    resource_defs_with_defaults, executor_defs, default_executor
+                ),
                 config,
                 job_name,
                 self.name,
@@ -470,7 +482,7 @@ class GraphDefinition(NodeDefinition):
             mode_def=ModeDefinition(
                 resource_defs=resource_defs_with_defaults,
                 logger_defs=logger_defs,
-                executor_defs=[executor_def],
+                executor_defs=executor_defs,
                 _config_mapping=config_mapping,
                 _partitioned_config=partitioned_config,
             ),
@@ -493,7 +505,8 @@ class GraphDefinition(NodeDefinition):
     def _get_config_schema(
         self,
         resource_defs: Optional[Dict[str, ResourceDefinition]],
-        executor_def: "ExecutorDefinition",
+        executor_defs: List[ExecutorDefinition],
+        default_executor: "ExecutorDefinition",
     ) -> ConfigType:
         from .pipeline import PipelineDefinition
 
@@ -502,10 +515,10 @@ class GraphDefinition(NodeDefinition):
                 name=self.name,
                 graph_def=self,
                 mode_defs=[
-                    ModeDefinition(resource_defs=resource_defs, executor_defs=[executor_def])
+                    ModeDefinition(resource_defs=resource_defs, executor_defs=executor_defs)
                 ],
             )
-            .get_run_config_schema("default")
+            .get_run_config_schema("default", default_executor)
             .run_config_schema_type
         )
 
