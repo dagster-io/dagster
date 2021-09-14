@@ -6,6 +6,7 @@ from ..utils import connect_sibling_docker_container, network_buildkite_containe
 from .test_images import publish_test_images, test_image_depends_fn
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
+DAGSTER_FROM_SOURCE = "current_branch"
 
 
 def integration_suite_extra_cmds_fn(version):
@@ -31,18 +32,19 @@ def integration_suite_extra_cmds_fn(version):
 
 
 def backcompat_suite_extra_cmds_fn(release_mapping):
+
     dagit_version = release_mapping["dagit"]
     user_code_version = release_mapping["user_code"]
 
-    if dagit_version == "current_branch":
+    if dagit_version == DAGSTER_FROM_SOURCE:
         dagit_dockerfile = "./Dockerfile_dagit_source"
     else:
         dagit_dockerfile = "./Dockerfile_dagit_release"
 
-    if user_code_version == "current_branch":
-        user_code_dockerfile = "./Dockerfile_grpc_source"
+    if user_code_version == DAGSTER_FROM_SOURCE:
+        user_code_dockerfile = "./Dockerfile_user_code_source"
     else:
-        user_code_dockerfile = "./Dockerfile_grpc_release"
+        user_code_dockerfile = "./Dockerfile_user_code_release"
 
     def _extra_cmds_fn(_):
         return [
@@ -81,9 +83,9 @@ def integration_steps():
 
 def build_spec_backcompat_suite():
     tox_env_suffix_map = {
-        "-old-dagit": {"dagit": "0.12.8", "user_code": "current_branch"},
+        "-old-dagit": {"dagit": "0.12.8", "user_code": DAGSTER_FROM_SOURCE},
         "-old-user-code": {
-            "dagit": "current_branch",
+            "dagit": DAGSTER_FROM_SOURCE,
             "user_code": "0.12.8",
         },
     }
