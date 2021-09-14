@@ -1583,6 +1583,7 @@ union PipelineRunLogsSubscriptionPayload = PipelineRunLogsSubscriptionSuccess | 
 type PipelineRunLogsSubscriptionSuccess {
   run: PipelineRun!
   messages: [PipelineRunEvent!]!
+  hasMorePastEvents: Boolean!
 }
 
 type PipelineRunLogsSubscriptionFailure {

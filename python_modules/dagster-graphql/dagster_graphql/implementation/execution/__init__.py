@@ -136,15 +136,18 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
 
         return Observable.create(_get_error_observable)  # pylint: disable=E1101
 
+    def _handle_events(payload):
+        events, loading_past = payload
+        return GraphenePipelineRunLogsSubscriptionSuccess(
+            run=GraphenePipelineRun(run),
+            messages=[from_event_record(event, run.pipeline_name) for event in events],
+            hasMorePastEvents=loading_past,
+        )
+
     # pylint: disable=E1101
     return Observable.create(
         PipelineRunObservableSubscribe(instance, run_id, after_cursor=after)
-    ).map(
-        lambda events: GraphenePipelineRunLogsSubscriptionSuccess(
-            run=GraphenePipelineRun(run),
-            messages=[from_event_record(event, run.pipeline_name) for event in events],
-        )
-    )
+    ).map(_handle_events)
 
 
 def get_compute_log_observable(graphene_info, run_id, step_key, io_type, cursor=None):
