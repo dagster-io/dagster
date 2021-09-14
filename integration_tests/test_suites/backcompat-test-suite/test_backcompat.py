@@ -3,7 +3,9 @@ import subprocess
 import time
 from contextlib import contextmanager
 
+import packaging
 import pytest
+import requests
 from dagster import file_relative_path
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster_graphql import DagsterGraphQLClient
@@ -11,13 +13,18 @@ from dagster_graphql import DagsterGraphQLClient
 DAGSTER_FROM_SOURCE = "current_branch"
 MAX_TIMEOUT_SECONDS = 20
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
+DAGSTER_EARLIEST_RELEASE = os.getenv("DAGSTER_EARLIEST_RELEASE")
+MOST_RECENT_RELEASE_PLACEHOLDER = "most_recent"
 
 pytest_plugins = ["dagster_test.fixtures"]
 
+
 # pylint: disable=redefined-outer-name
 RELEASE_TEST_MAP = {
-    "dagit__0.12.8": ["0.12.8", DAGSTER_FROM_SOURCE],
-    "user_code__0.12.8": [DAGSTER_FROM_SOURCE, "0.12.8"],
+    "dagit-earliest-release": [DAGSTER_EARLIEST_RELEASE, DAGSTER_FROM_SOURCE],
+    "user-code-earliest-release": [DAGSTER_FROM_SOURCE, DAGSTER_EARLIEST_RELEASE],
+    "dagit-latest-release": [MOST_RECENT_RELEASE_PLACEHOLDER, DAGSTER_FROM_SOURCE],
+    "user-code-latest-release": [DAGSTER_FROM_SOURCE, MOST_RECENT_RELEASE_PLACEHOLDER],
 }
 
 
@@ -35,15 +42,30 @@ def assert_run_success(client, run_id: int):
         time.sleep(1)
 
 
+@pytest.fixture(name="dagster_most_recent_release", scope="session")
+def dagster_most_recent_release():
+    res = requests.get("https://pypi.org/pypi/dagster/json")
+    module_json = res.json()
+    releases = module_json["releases"]
+    for release_version in reversed(releases):
+        parsed_version = packaging.version.parse(release_version)
+        if not parsed_version.is_prerelease:
+            return release_version
+
+
 @pytest.fixture(
     params=[
         pytest.param(value, marks=getattr(pytest.mark, key), id=key)
         for key, value in RELEASE_TEST_MAP.items()
     ],
 )
-def release_test_map(request):
+def release_test_map(request, dagster_most_recent_release):
     dagit_version = request.param[0]
+    if dagit_version == MOST_RECENT_RELEASE_PLACEHOLDER:
+        dagit_version = dagster_most_recent_release
     user_code_version = request.param[1]
+    if user_code_version == MOST_RECENT_RELEASE_PLACEHOLDER:
+        user_code_version = dagster_most_recent_release
 
     return {"dagit": dagit_version, "user_code": user_code_version}
 
