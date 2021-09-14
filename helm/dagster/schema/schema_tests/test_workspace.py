@@ -1,4 +1,5 @@
 import subprocess
+from typing import List
 
 import pytest
 import yaml
@@ -122,7 +123,7 @@ def test_workspace_renders_from_helm_dagit(template: HelmTemplate):
 
 
 def test_workspace_renders_empty(template: HelmTemplate):
-    servers = []
+    servers: List[Server] = []
     helm_values = DagsterHelmValues.construct(
         dagit=Dagit.construct(workspace=Workspace(enabled=True, servers=servers)),
         dagsterUserDeployments=UserDeployments(
