@@ -1,13 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {
-  Button,
-  HTMLInputProps,
-  Icon,
-  IInputGroupProps,
-  Intent,
-  Menu,
-  MenuItem,
-} from '@blueprintjs/core';
+import {Button, HTMLInputProps, IInputGroupProps, Intent, Menu, MenuItem} from '@blueprintjs/core';
 import {Select, Suggest} from '@blueprintjs/select';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
@@ -20,6 +12,8 @@ import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
 import {RepositorySelector} from '../types/globalTypes';
+import {ColorsWIP} from '../ui/Colors';
+import {IconWIP} from '../ui/Icon';
 import {Spinner} from '../ui/Spinner';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -176,9 +170,11 @@ const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = 
     }, []);
 
     const rightElement = partitions.length ? (
-      <Button text={undefined} minimal onMouseDown={onClickSort}>
-        <Icon icon={sortOrder === 'asc' ? 'sort-alphabetical' : 'sort-alphabetical-desc'} />
-      </Button>
+      <Button
+        icon={<IconWIP name="sort_by_alpha" color={ColorsWIP.Gray400} />}
+        minimal
+        onMouseDown={onClickSort}
+      ></Button>
     ) : undefined;
 
     const inputProps: IInputGroupProps & HTMLInputProps = {

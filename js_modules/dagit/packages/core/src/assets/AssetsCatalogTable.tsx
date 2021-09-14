@@ -4,14 +4,12 @@ import {
   Checkbox,
   Menu,
   MenuItem,
-  Icon,
   Popover,
   InputGroup as BlueprintInputGroup,
   NonIdealState,
   Colors,
   ButtonGroup,
 } from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import {useHistory, Link} from 'react-router-dom';
@@ -23,6 +21,7 @@ import {QueryCountdown} from '../app/QueryCountdown';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {Box} from '../ui/Box';
 import {Group} from '../ui/Group';
+import {IconWIP} from '../ui/Icon';
 import {Loading} from '../ui/Loading';
 import {Table} from '../ui/Table';
 import {Tag} from '../ui/Tag';
@@ -444,11 +443,7 @@ const AssetsTable = ({
                 <Group direction="row" spacing={8} alignItems="center">
                   Tags
                   <Tooltip position="top" content={EXPERIMENTAL_TAGS_WARNING}>
-                    <Icon
-                      icon={IconNames.INFO_SIGN}
-                      iconSize={12}
-                      style={{position: 'relative', top: '-2px'}}
-                    />
+                    <IconWIP name="info" />
                   </Tooltip>
                 </Group>
               </th>
@@ -527,13 +522,7 @@ const AssetEntryRow: React.FC<{
             <Box flex={{alignItems: 'center'}}>
               {path
                 .map<React.ReactNode>((p, i) => <span key={i}>{p}</span>)
-                .reduce((prev, curr, i) => [
-                  prev,
-                  <Box key={`separator_${i}`} padding={{horizontal: 2}}>
-                    <Icon icon={IconNames.CHEVRON_RIGHT} iconSize={12} />
-                  </Box>,
-                  curr,
-                ])}
+                .reduce((prev, curr) => [prev, <>&nbsp;{'>'}&nbsp;</>, curr])}
               {isAssetEntry || isFlattened ? null : '/'}
             </Box>
           </Link>

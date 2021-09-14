@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Button, Checkbox, Code, Colors, Icon, Intent, Position} from '@blueprintjs/core';
+import {Button, Checkbox, Code, Colors, Intent, Position} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -14,6 +14,8 @@ import {
   ConfigEditorRunConfigSchemaFragment_allConfigTypes_CompositeConfigType,
 } from '../configeditor/types/ConfigEditorRunConfigSchemaFragment';
 import {ButtonLink} from '../ui/ButtonLink';
+import {ColorsWIP} from '../ui/Colors';
+import {IconWIP} from '../ui/Icon';
 import {SplitPanelContainer} from '../ui/SplitPanelContainer';
 
 import {
@@ -599,8 +601,8 @@ const ErrorRow: React.FunctionComponent<{
       hoverable={!!target}
       onClick={() => target && onHighlight(errorStackToYamlPath(target.stack.entries))}
     >
-      <div style={{paddingRight: 8}}>
-        <Icon icon="error" iconSize={14} color={Colors.RED4} />
+      <div style={{paddingRight: 4}}>
+        <IconWIP name="error" color={ColorsWIP.Red500} />
       </div>
       <div>
         {displayed}

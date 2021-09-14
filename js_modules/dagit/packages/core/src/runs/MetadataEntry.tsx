@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Button, Classes, Colors, Dialog, Icon, Position} from '@blueprintjs/core';
+import {Button, Classes, Colors, Dialog, Position} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -7,6 +7,9 @@ import styled from 'styled-components/macro';
 
 import {copyValue} from '../app/DomUtils';
 import {assertUnreachable} from '../app/Util';
+import {ColorsWIP} from '../ui/Colors';
+import {Group} from '../ui/Group';
+import {IconWIP} from '../ui/Icon';
 import {Markdown} from '../ui/Markdown';
 
 import {MetadataEntryFragment} from './types/MetadataEntryFragment';
@@ -59,21 +62,17 @@ export const MetadataEntry: React.FC<{
   switch (entry.__typename) {
     case 'EventPathMetadataEntry':
       return (
-        <>
+        <Group direction="row" spacing={8} alignItems="center">
           <MetadataEntryAction
             title={'Copy to clipboard'}
             onClick={(e) => copyValue(e, entry.path)}
           >
             {entry.path}
-          </MetadataEntryAction>{' '}
-          <Icon
-            icon="clipboard"
-            iconSize={10}
-            color={'#a88860'}
-            style={{verticalAlign: 'initial'}}
-            onClick={(e) => copyValue(e, entry.path)}
-          />
-        </>
+          </MetadataEntryAction>
+          <IconButton onClick={(e) => copyValue(e, entry.path)}>
+            <IconWIP name="assignment" color={ColorsWIP.Gray500} />
+          </IconButton>
+        </Group>
       );
 
     case 'EventJsonMetadataEntry':
@@ -97,14 +96,14 @@ export const MetadataEntry: React.FC<{
 
     case 'EventUrlMetadataEntry':
       return (
-        <>
-          <MetadataEntryAction href={entry.url} title={`Open in a new tab`} target="__blank">
+        <Group direction="row" spacing={8} alignItems="center">
+          <MetadataEntryAction href={entry.url} title={`Open in a new tab`} target="_blank">
             {entry.url}
-          </MetadataEntryAction>{' '}
-          <a href={entry.url} target="__blank">
-            <Icon icon="link" iconSize={10} color={'#a88860'} />
+          </MetadataEntryAction>
+          <a href={entry.url} target="_blank" rel="noreferrer">
+            <IconWIP name="link" color={ColorsWIP.Gray500} />
           </a>
-        </>
+        </Group>
       );
     case 'EventTextMetadataEntry':
       return <>{entry.text}</>;
@@ -189,6 +188,14 @@ export const METADATA_ENTRY_FRAGMENT = gql`
       }
     }
   }
+`;
+
+const IconButton = styled.button`
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  display: block;
+  padding: 0;
 `;
 
 const PythonArtifactLink = ({

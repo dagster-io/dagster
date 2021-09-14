@@ -1,5 +1,4 @@
-import {Colors, Icon} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
+import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import {useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -8,7 +7,9 @@ import navBarImage from '../images/nav-logo-icon.png';
 import navTitleImage from '../images/nav-title.png';
 import {VersionNumber} from '../nav/VersionNumber';
 import {SearchDialog} from '../search/SearchDialog';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
+import {IconWIP, IconWrapper} from '../ui/Icon';
 
 import {LayoutContext} from './LayoutProvider';
 import {ShortcutHandler} from './ShortcutHandler';
@@ -46,7 +47,7 @@ export const AppTopNav: React.FC<Props> = ({children, searchPlaceholder}) => {
           shortcutFilter={(e) => e.key === '.'}
         >
           <NavButton onClick={onToggle} onKeyDown={onKeyDown} ref={navButton}>
-            <Icon color={Colors.WHITE} icon={IconNames.MENU} iconSize={16} />
+            <IconWIP name="menu" color={ColorsWIP.White} size={24} />
           </NavButton>
         </ShortcutHandler>
         <Group direction="row" alignItems="center" spacing={12} margin={{left: 8}}>
@@ -99,7 +100,7 @@ const LogoWebsocketStatus = styled(WebSocketStatus)`
 `;
 
 const NavButton = styled.button`
-  border-radius: 16px;
+  border-radius: 20px;
   cursor: pointer;
   margin-left: 4px;
   outline: none;
@@ -108,16 +109,16 @@ const NavButton = styled.button`
   background: transparent;
   display: none;
 
-  .bp3-icon svg {
-    transition: fill 100ms linear;
+  ${IconWrapper} {
+    transition: color 100ms linear;
   }
 
-  :hover .bp3-icon svg {
-    fill: ${Colors.GRAY5};
+  :hover ${IconWrapper} {
+    color: ${ColorsWIP.Gray500};
   }
 
-  :active .bp3-icon svg {
-    fill: ${Colors.BLUE5};
+  :active ${IconWrapper} {
+    color: ${ColorsWIP.Blue200};
   }
 
   :focus {

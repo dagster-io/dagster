@@ -1,7 +1,11 @@
-import {Colors, Icon, Slider} from '@blueprintjs/core';
+import {Slider} from '@blueprintjs/core';
 import animate from 'amator';
 import * as React from 'react';
 import styled from 'styled-components/macro';
+
+import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
+import {IconWIP} from '../ui/Icon';
 
 export interface SVGViewportInteractor {
   onMouseDown(viewport: SVGViewport, event: React.MouseEvent<HTMLDivElement>): void;
@@ -96,16 +100,17 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
   render(viewport: SVGViewport) {
     return (
       <ZoomSliderContainer id="zoom-slider-container">
-        <Icon
-          iconSize={17}
-          icon="zoom-in"
-          style={{color: Colors.LIGHT_GRAY1, marginBottom: 12}}
-          onClick={() => {
-            const x = viewport.element.current!.clientWidth / 2;
-            const y = viewport.element.current!.clientHeight / 2;
-            viewport.adjustZoomRelativeToScreenPoint(DETAIL_ZOOM, {x, y});
-          }}
-        />
+        <Box margin={{bottom: 8}}>
+          <IconButton
+            onClick={() => {
+              const x = viewport.element.current!.clientWidth / 2;
+              const y = viewport.element.current!.clientHeight / 2;
+              viewport.adjustZoomRelativeToScreenPoint(DETAIL_ZOOM, {x, y});
+            }}
+          >
+            <IconWIP size={24} name="zoom_in" color={ColorsWIP.Gray300} />
+          </IconButton>
+        </Box>
         <Slider
           vertical
           min={MIN_ZOOM}
@@ -119,20 +124,30 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
             viewport.adjustZoomRelativeToScreenPoint(scale, {x, y});
           }}
         />
-        <Icon
-          iconSize={17}
-          icon="zoom-out"
-          style={{color: Colors.LIGHT_GRAY1, marginTop: 12}}
-          onClick={() => {
-            const x = viewport.element.current!.clientWidth / 2;
-            const y = viewport.element.current!.clientHeight / 2;
-            viewport.adjustZoomRelativeToScreenPoint(MIN_ZOOM, {x, y});
-          }}
-        />
+        <Box margin={{top: 8}}>
+          <IconButton
+            onClick={() => {
+              const x = viewport.element.current!.clientWidth / 2;
+              const y = viewport.element.current!.clientHeight / 2;
+              viewport.adjustZoomRelativeToScreenPoint(MIN_ZOOM, {x, y});
+            }}
+          >
+            <IconWIP size={24} name="zoom_out" color={ColorsWIP.Gray300} />
+          </IconButton>
+        </Box>
       </ZoomSliderContainer>
     );
   },
 };
+
+const IconButton = styled.button`
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  position: relative;
+  left: -4px;
+`;
 
 const NoneInteractor: SVGViewportInteractor = {
   onMouseDown(viewport: SVGViewport, event: React.MouseEvent<HTMLDivElement>) {

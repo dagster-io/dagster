@@ -71,8 +71,9 @@ export const RunRoot = (props: RouteComponentProps<{runId: string}>) => {
           }
           icon="history"
           description={
-            <>
-              <Link to="/instance/runs">Run</Link> of{' '}
+            <Group direction="row" spacing={4} alignItems="baseline">
+              <Link to="/instance/runs">Run</Link>
+              <span>of </span>
               {run ? (
                 <PipelineReference
                   pipelineName={run?.pipeline.name}
@@ -83,7 +84,7 @@ export const RunRoot = (props: RouteComponentProps<{runId: string}>) => {
               ) : (
                 <span>…</span>
               )}
-            </>
+            </Group>
           }
           metadata={run ? <RunDetails run={run} loading={loading} /> : null}
           right={run ? <RunConfigDialog run={run} /> : null}

@@ -115,7 +115,7 @@ describe('RunDetails', () => {
     await waitFor(() => {
       expect(screen.getByRole('row', {name: /started feb 17, 6:24:30 am/i})).toBeVisible();
       expect(screen.getByRole('row', {name: /ended feb 17, 6:25:16 am/i})).toBeVisible();
-      expect(screen.getByRole('row', {name: /duration time 0:00:46/i})).toBeVisible();
+      expect(screen.getByRole('row', {name: /duration schedule 0:00:46/i})).toBeVisible();
     });
   });
 
@@ -144,7 +144,7 @@ describe('RunDetails', () => {
       jest.runTimersToTime(5000);
       expect(screen.getByRole('row', {name: /started feb 17, 6:24:30 am/i})).toBeVisible();
       expect(screen.getByRole('row', {name: /ended canceling/i})).toBeVisible();
-      expect(screen.getByRole('row', {name: /duration time 0:01:01/i})).toBeVisible();
+      expect(screen.getByRole('row', {name: /duration schedule 0:01:01/i})).toBeVisible();
     });
   });
 
@@ -158,7 +158,7 @@ describe('RunDetails', () => {
     await waitFor(() => {
       expect(screen.getByRole('row', {name: /started feb 17, 6:24:30 am/i})).toBeVisible();
       expect(screen.getByRole('row', {name: /ended feb 17, 6:25:16 am/i})).toBeVisible();
-      expect(screen.getByRole('row', {name: /duration time 0:00:46/i})).toBeVisible();
+      expect(screen.getByRole('row', {name: /duration schedule 0:00:46/i})).toBeVisible();
     });
   });
 
@@ -200,7 +200,7 @@ describe('RunDetails', () => {
     await waitFor(() => {
       expect(screen.getByRole('row', {name: /started feb 17, 6:24:30 am/i})).toBeVisible();
       expect(screen.getByRole('row', {name: /ended started…/i})).toBeVisible();
-      expect(screen.getByRole('row', {name: /duration time 0:01:01/i})).toBeVisible();
+      expect(screen.getByRole('row', {name: /duration schedule 0:01:01/i})).toBeVisible();
     });
   });
 
@@ -214,7 +214,7 @@ describe('RunDetails', () => {
     await waitFor(() => {
       expect(screen.getByRole('row', {name: /started feb 17, 6:24:30 am/i})).toBeVisible();
       expect(screen.getByRole('row', {name: /ended starting…/i})).toBeVisible();
-      expect(screen.getByRole('row', {name: /duration time 0:01:01/i})).toBeVisible();
+      expect(screen.getByRole('row', {name: /duration schedule 0:01:01/i})).toBeVisible();
     });
   });
 
@@ -232,7 +232,7 @@ describe('RunDetails', () => {
     });
   });
 
-  it('renders SUCCEESS details', async () => {
+  it('renders SUCCESS details', async () => {
     renderAll({
       status: PipelineRunStatus.SUCCESS,
       startTime: START_TIME,
@@ -242,7 +242,7 @@ describe('RunDetails', () => {
     await waitFor(() => {
       expect(screen.getByRole('row', {name: /started feb 17, 6:24:30 am/i})).toBeVisible();
       expect(screen.getByRole('row', {name: /ended feb 17, 6:25:16 am/i})).toBeVisible();
-      expect(screen.getByRole('row', {name: /duration time 0:00:46/i})).toBeVisible();
+      expect(screen.getByRole('row', {name: /duration schedule 0:00:46/i})).toBeVisible();
     });
   });
 });

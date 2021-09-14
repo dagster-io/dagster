@@ -1,5 +1,3 @@
-import {Icon} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import qs from 'qs';
 import React from 'react';
@@ -46,17 +44,7 @@ const AssetLineageInfoElement: React.FC<{
           <Box flex={{display: 'inline-flex', alignItems: 'center'}}>
             {lineage_info.assetKey.path
               .map<React.ReactNode>((p, i) => <span key={i}>{p}</span>)
-              .reduce((prev, curr, i) => [
-                prev,
-                <Box key={`separator_${i}`} padding={{horizontal: 2}}>
-                  <Icon
-                    icon={IconNames.CHEVRON_RIGHT}
-                    iconSize={11}
-                    style={{position: 'relative', top: '-1px'}}
-                  />
-                </Box>,
-                curr,
-              ])}
+              .reduce((prev, curr) => [prev, <>&nbsp;{'>'}&nbsp;</>, curr])}
           </Box>
         </Link>
       </Tooltip>

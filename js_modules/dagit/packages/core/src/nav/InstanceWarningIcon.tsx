@@ -1,8 +1,9 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors, Icon} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
+import {ColorsWIP} from '../ui/Colors';
+import {IconWIP} from '../ui/Icon';
 
 import {WarningTooltip} from './WarningTooltip';
 import {InstanceWarningQuery} from './types/InstanceWarningQuery';
@@ -28,7 +29,7 @@ export const InstanceWarningIcon = React.memo(() => {
         }
         position="right"
       >
-        <Icon icon="warning-sign" iconSize={14} color={Colors.GOLD4} title="Warnings found" />
+        <IconWIP name="warning" color={ColorsWIP.Yellow500} />
       </WarningTooltip>
     );
   }

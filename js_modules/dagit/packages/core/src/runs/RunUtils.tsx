@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Icon, Popover} from '@blueprintjs/core';
+import {Popover} from '@blueprintjs/core';
 import * as React from 'react';
 import * as yaml from 'yaml';
 
@@ -7,6 +7,9 @@ import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {Timestamp} from '../app/time/Timestamp';
 import {ExecutionParams, PipelineRunStatus} from '../types/globalTypes';
+import {ColorsWIP} from '../ui/Colors';
+import {Group} from '../ui/Group';
+import {IconWIP} from '../ui/Icon';
 
 import {DagsterTag} from './RunTag';
 import {StepSelection} from './StepSelection';
@@ -242,14 +245,15 @@ interface RunTimeProps {
 }
 
 export const RunTime: React.FC<RunTimeProps> = React.memo(({run}) => {
-  const {stats, status} = run;
+  const {stats} = run;
 
   if (stats.__typename !== 'PipelineRunStatsSnapshot') {
     return (
       <Popover content={<PythonErrorInfo error={stats} />}>
-        <div>
-          <Icon icon="error" /> Failed to load times
-        </div>
+        <Group direction="row" spacing={4} alignItems="center">
+          <IconWIP name="error" color={ColorsWIP.Red500} />
+          <div>Failed to load times</div>
+        </Group>
       </Popover>
     );
   }
@@ -284,9 +288,10 @@ export const RunElapsed: React.FC<RunTimeProps> = React.memo(({run}) => {
   if (run.stats.__typename !== 'PipelineRunStatsSnapshot') {
     return (
       <Popover content={<PythonErrorInfo error={run.stats} />}>
-        <div>
-          <Icon icon="error" /> Failed to load times
-        </div>
+        <Group direction="row" spacing={4} alignItems="center">
+          <IconWIP name="error" color={ColorsWIP.Red500} />
+          <div>Failed to load times</div>
+        </Group>
       </Popover>
     );
   }

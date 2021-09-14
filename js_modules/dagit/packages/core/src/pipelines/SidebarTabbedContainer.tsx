@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Colors, Icon, IconName} from '@blueprintjs/core';
+import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -7,6 +7,8 @@ import styled from 'styled-components/macro';
 import {SolidNameOrPath} from '../solids/SolidNameOrPath';
 import {TypeExplorerContainer} from '../typeexplorer/TypeExplorerContainer';
 import {TypeListContainer} from '../typeexplorer/TypeListContainer';
+import {Group} from '../ui/Group';
+import {IconName, IconWIP} from '../ui/Icon';
 import {RepoAddress} from '../workspace/types';
 
 import {PipelineExplorerJobContext} from './PipelineExplorerJobContext';
@@ -58,7 +60,7 @@ export const SidebarTabbedContainer: React.FC<ISidebarTabbedContainerProps> = (p
   const TabDefinitions: Array<TabDefinition> = [
     {
       name: 'Info',
-      icon: 'data-lineage',
+      icon: 'schema',
       key: 'info',
       content: () =>
         solidHandleID ? (
@@ -91,7 +93,7 @@ export const SidebarTabbedContainer: React.FC<ISidebarTabbedContainerProps> = (p
     },
     {
       name: 'Types',
-      icon: 'manual',
+      icon: 'menu_book',
       key: 'types',
       content: () =>
         typeName ? (
@@ -110,12 +112,14 @@ export const SidebarTabbedContainer: React.FC<ISidebarTabbedContainerProps> = (p
     <>
       <TabContainer>
         {TabDefinitions.map(({name, icon, key}) => (
-          <Link to={{search: `?tab=${key}`}} key={key}>
-            <Tab key={key} active={key === activeTab}>
-              <Icon icon={icon} style={{marginRight: 8}} />
-              {name}
-            </Tab>
-          </Link>
+          <Tab key={key} active={key === activeTab}>
+            <Link to={{search: `?tab=${key}`}} key={key}>
+              <Group direction="row" spacing={8} alignItems="center">
+                <IconWIP name={icon} color={Colors.BLUE3} />
+                {name}
+              </Group>
+            </Link>
+          </Tab>
         ))}
       </TabContainer>
       {TabDefinitions.find((t) => t.key === activeTab)?.content()}
@@ -152,4 +156,8 @@ const Tab = styled.div<{active: boolean}>`
   display: flex;
   height: 36px;
   align-items: center;
+
+  :hover > * {
+    text-decoration: none;
+  }
 `;

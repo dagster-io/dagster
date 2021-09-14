@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Breadcrumbs, Checkbox, Colors, Icon, InputGroup, NonIdealState} from '@blueprintjs/core';
+import {Breadcrumbs, Checkbox, Colors, InputGroup, NonIdealState} from '@blueprintjs/core';
 import Color from 'color';
 import * as querystring from 'query-string';
 import * as React from 'react';
@@ -12,6 +12,7 @@ import {PIPELINE_GRAPH_SOLID_FRAGMENT} from '../graph/PipelineGraph';
 import {PipelineGraphContainer} from '../graph/PipelineGraphContainer';
 import {SolidNameOrPath} from '../solids/SolidNameOrPath';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
+import {IconWIP} from '../ui/Icon';
 import {SplitPanelContainer} from '../ui/SplitPanelContainer';
 import {RepoAddress} from '../workspace/types';
 
@@ -333,7 +334,7 @@ const LargeDAGNotice = () => (
         </li>
       </ul>
     </LargeDAGInstructionBox>
-    <Icon icon="arrow-down" iconSize={40} />
+    <IconWIP name="arrow_downward" size={24} />
   </LargeDAGContainer>
 );
 

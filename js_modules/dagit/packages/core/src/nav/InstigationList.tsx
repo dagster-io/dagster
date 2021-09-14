@@ -1,12 +1,14 @@
 import {gql, useApolloClient} from '@apollo/client';
-import {Colors, Icon} from '@blueprintjs/core';
+import {Colors} from '@blueprintjs/core';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {InstigationStatus, InstigationType} from '../types/globalTypes';
 import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
+import {IconWIP} from '../ui/Icon';
 import {BorderSetting} from '../ui/types';
 import {DagsterRepoOption} from '../workspace/WorkspaceContext';
 import {buildRepoPath} from '../workspace/buildRepoAddress';
@@ -167,7 +169,7 @@ export const InstigationList: React.FC<InstigationListProps> = ({repos, repoPath
       >
         <Item to="/instance/schedules">
           <Group direction="row" spacing={8} alignItems="center">
-            <Icon icon="time" iconSize={14} />
+            <IconWIP name="schedule" color={ColorsWIP.Gray200} />
             <div>All schedules</div>
           </Group>
         </Item>
@@ -176,7 +178,7 @@ export const InstigationList: React.FC<InstigationListProps> = ({repos, repoPath
         </Box>
         <Item to="/instance/sensors">
           <Group direction="row" spacing={8} alignItems="center">
-            <Icon icon="automatic-updates" iconSize={14} />
+            <IconWIP name="sensors" color={ColorsWIP.Gray200} />
             <div>All sensors</div>
           </Group>
         </Item>
@@ -187,8 +189,7 @@ export const InstigationList: React.FC<InstigationListProps> = ({repos, repoPath
           const border: BorderSetting | null = isSelected
             ? {side: 'left', width: 4, color: isSelected ? Colors.COBALT3 : Colors.GRAY3}
             : null;
-          const icon =
-            p.instigationType === InstigationType.SCHEDULE ? 'time' : 'automatic-updates';
+          const icon = p.instigationType === InstigationType.SCHEDULE ? 'schedule' : 'sensors';
 
           return (
             <Item key={p.to} className={`${isSelected ? 'selected' : ''}`} to={p.to}>
@@ -202,7 +203,7 @@ export const InstigationList: React.FC<InstigationListProps> = ({repos, repoPath
                   flex={{alignItems: 'center', justifyContent: 'flex-start'}}
                   style={{overflow: 'hidden'}}
                 >
-                  <Icon icon={icon} iconSize={14} />
+                  <IconWIP name={icon} color={ColorsWIP.Gray200} />
                   <Label
                     data-tooltip={p.label}
                     data-tooltip-style={isSelected ? SelectedItemTooltipStyle : ItemTooltipStyle}
