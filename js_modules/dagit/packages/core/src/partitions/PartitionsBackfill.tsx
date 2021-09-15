@@ -429,9 +429,9 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
           onBlur={(e) => {
             try {
               setSelected(textToPartitions(e.target.value, partitionNames));
-            } catch (err) {
+            } catch (err: any) {
               e.preventDefault();
-              alert(err.message);
+              showCustomAlert({body: err.message});
             }
           }}
         />
