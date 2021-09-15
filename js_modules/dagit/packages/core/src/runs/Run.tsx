@@ -230,7 +230,7 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
       const result = await launchPipelineReexecution({variables});
       handleLaunchResult(basePath, run.pipeline.name, result);
     } catch (error) {
-      showLaunchError(error);
+      showLaunchError(error as Error);
     }
   };
 

@@ -41,6 +41,7 @@ module.exports = {
         'newlines-between': 'always',
       },
     ],
+    'no-alert': 'error',
     'no-restricted-imports': [
       'error',
       {
