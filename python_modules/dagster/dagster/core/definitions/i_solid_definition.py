@@ -51,7 +51,6 @@ class NodeDefinition(NamedConfigurableDefinition):
     def name(self):
         return self._name
 
-    @property
     def describe_node(self):
         return f"{self.node_as_str} '{self.name}'"
 
