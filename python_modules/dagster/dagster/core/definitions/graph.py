@@ -734,7 +734,7 @@ def _validate_out_mappings(
                 raise DagsterInvalidDefinitionError(
                     "In {class_name} {name} output mapping from {described_node} "
                     "which contains no output named '{mapping.maps_from.output_name}'".format(
-                        described_node=target_solid.describe_node,
+                        described_node=target_solid.describe_node(),
                         name=name,
                         mapping=mapping,
                         class_name=class_name,
@@ -774,7 +774,7 @@ def _validate_out_mappings(
             if dynamic_handle and not mapping.definition.is_dynamic:
                 raise DagsterInvalidDefinitionError(
                     f'In {class_name} "{name}" output "{mapping.definition.name}" mapping from '
-                    f"{target_solid.describe_node} must be a DynamicOutputDefinition since it is "
+                    f"{target_solid.describe_node()} must be a DynamicOutputDefinition since it is "
                     f'downstream of dynamic output "{dynamic_handle.describe()}".'
                 )
 

@@ -710,7 +710,7 @@ def _checked_resource_reqs_for_mode(
                     error_msg = _get_missing_resource_error_msg(
                         resource_type="resource",
                         resource_key=required_resource,
-                        descriptor=solid_def.describe_node,
+                        descriptor=solid_def.describe_node(),
                         mode_def=mode_def,
                         resource_defs_of_type=mode_resources,
                     )
@@ -722,7 +722,7 @@ def _checked_resource_reqs_for_mode(
                     error_msg = _get_missing_resource_error_msg(
                         resource_type="IO manager",
                         resource_key=output_def.io_manager_key,
-                        descriptor=f"output '{output_def.name}' of {solid_def.describe_node}",
+                        descriptor=f"output '{output_def.name}' of {solid_def.describe_node()}",
                         mode_def=mode_def,
                         resource_defs_of_type=mode_output_managers,
                     )
@@ -938,9 +938,9 @@ def _checked_input_resource_reqs_for_mode(
                     output_manager_def = mode_def.resource_defs[output_manager_key]
                     if not isinstance(output_manager_def, IInputManagerDefinition):
                         raise DagsterInvalidDefinitionError(
-                            f'Input "{handle.input_def.name}" of {node.describe_node} is '
+                            f'Input "{handle.input_def.name}" of {node.describe_node()} is '
                             f'connected to output "{source_output_handle.output_def.name}" '
-                            f'of {source_output_handle.solid.describe_node}. That output does not '
+                            f'of {source_output_handle.solid.describe_node()}. That output does not '
                             'have an output '
                             f"manager that knows how to load inputs, so we don't know how "
                             f"to load the input. To address this, assign an IOManager to "
@@ -961,7 +961,7 @@ def _checked_input_resource_reqs_for_mode(
                         "Possible solutions are:\n"
                         '  * add a dagster_type_loader for the type "{dagster_type}"\n'
                         '  * connect "{input_name}" to the output of another node\n'.format(
-                            described_node=node.describe_node,
+                            described_node=node.describe_node(),
                             input_name=input_def.name,
                             dagster_type=input_def.dagster_type.display_name,
                         )
@@ -976,7 +976,7 @@ def _checked_input_resource_reqs_for_mode(
                         error_msg = _get_missing_resource_error_msg(
                             resource_type="root input manager",
                             resource_key=input_def.root_manager_key,
-                            descriptor=f"unsatisfied input '{input_def.name}' of {node.describe_node}",
+                            descriptor=f"unsatisfied input '{input_def.name}' of {node.describe_node()}",
                             mode_def=mode_def,
                             resource_defs_of_type=mode_root_input_managers,
                         )

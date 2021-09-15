@@ -509,7 +509,7 @@ class CachingRepositoryData(RepositoryData):
                 if definition.name in pipelines and pipelines[definition.name] != definition:
                     raise DagsterInvalidDefinitionError(
                         "Duplicate {target_type} definition found for {target}".format(
-                            target_type=definition.target_type, target=definition.describe_target
+                            target_type=definition.target_type, target=definition.describe_target()
                         )
                     )
                 pipelines[definition.name] = definition
