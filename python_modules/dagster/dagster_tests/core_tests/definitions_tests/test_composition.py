@@ -165,7 +165,7 @@ def test_composite_with_duplicate_solids():
     solid_1, solid_2 = get_duplicate_solids()
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Detected conflicting solid definitions with the same name",
+        match="Detected conflicting node definitions with the same name",
     ):
 
         @composite_solid

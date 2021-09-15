@@ -356,8 +356,8 @@ def test_attempted_invocation_in_composition():
         pass
 
     msg = (
-        "Must pass the output from previous solid invocations or inputs to the composition "
-        "function as inputs when invoking solids during composition."
+        "Must pass the output from previous node invocations or inputs to the composition "
+        "function as inputs when invoking nodes during composition."
     )
     with pytest.raises(
         DagsterInvalidDefinitionError,

@@ -500,7 +500,7 @@ class PendingNodeInvocation:
                     arg_desc=arg_desc,
                     input_name=input_name,
                     node_name=node_name,
-                    node_type=output_node.describe_node(),
+                    node_type=self.node_def.node_as_str,
                 )
             )
 

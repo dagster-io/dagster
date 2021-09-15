@@ -840,7 +840,7 @@ class DependencyStructure:
 
         if self._dynamic_fan_out_index[input_handle.solid_name] != output_handle:
             raise DagsterInvalidDefinitionError(
-                f'{input_handle.solid_describe_node} cannot be downstream of more than one dynamic output. '
+                f'{input_handle.solid.describe_node()} cannot be downstream of more than one dynamic output. '
                 f'It is downstream of both "{output_handle.describe()}" and '
                 f'"{self._dynamic_fan_out_index[input_handle.solid_name].describe()}"'
             )

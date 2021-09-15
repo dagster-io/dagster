@@ -860,7 +860,8 @@ def _checked_type_resource_reqs_for_mode(
                         error_msg = _get_missing_resource_error_msg(
                             resource_type="resource",
                             resource_key=required_resource,
-                            descriptor=f"the plugin on type '{dagster_type.display_name}'",
+                            descriptor=f"the plugin '{plugin.__name__}' on type "
+                            f"'{dagster_type.display_name}' (used with storages {used_by_storage})",
                             mode_def=mode_def,
                             resource_defs_of_type=mode_resources,
                         )
