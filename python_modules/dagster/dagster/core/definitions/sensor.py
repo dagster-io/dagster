@@ -125,206 +125,7 @@ class SensorEvaluationContext:
 SensorExecutionContext = SensorEvaluationContext
 
 
-class BaseSensorDefinition(ABC):
-    """Base class for all types of SensorDefinitions.
-
-    Args:
-        name (str): The name of the sensor to create.
-        targets (List[Union[DirectTarget, RepoRelativeTarget]]): The targets.
-        evaluation_fn (Callable[[SensorEvaluationContext]]): The core evaluation function for the
-            sensor, which is run at an interval to determine whether a run should be launched or
-            not. Takes a :py:class:`~dagster.SensorEvaluationContext`.
-
-            This function must return a generator, which must yield either a single SkipReason
-            or one or more RunRequest objects.
-        description (Optional[str]): A human-readable description of the sensor.
-        minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
-            between sensor evaluations.
-    """
-
-    def __init__(
-        self,
-        name: str,
-        evaluation_fn: Callable[
-            ["SensorEvaluationContext"],
-            Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
-        ],
-        minimum_interval_seconds: Optional[int] = None,
-        description: Optional[str] = None,
-        targets: Optional[List[Union[DirectTarget, RepoRelativeTarget]]] = None,
-    ):
-
-        self._name = check_valid_name(name)
-        self._raw_fn = check.callable_param(evaluation_fn, "evaluation_fn")
-        self._evaluation_fn: Callable[
-            [SensorEvaluationContext], Generator[Union[RunRequest, SkipReason], None, None]
-        ] = wrap_sensor_evaluation(name, evaluation_fn)
-        self._min_interval = check.opt_int_param(
-            minimum_interval_seconds, "minimum_interval_seconds", DEFAULT_SENSOR_DAEMON_INTERVAL
-        )
-        self._description = check.opt_str_param(description, "description")
-        self._targets = check.opt_list_param(targets, "targets", (DirectTarget, RepoRelativeTarget))
-
-    def __call__(self, *args, **kwargs):
-        context_provided = is_context_provided(get_function_params(self._raw_fn))
-
-        if context_provided:
-            if len(args) + len(kwargs) == 0:
-                raise DagsterInvalidInvocationError(
-                    "Sensor evaluation function expected context argument, but no context argument "
-                    "was provided when invoking."
-                )
-            if len(args) + len(kwargs) > 1:
-                raise DagsterInvalidInvocationError(
-                    "Sensor invocation received multiple arguments. Only a first "
-                    "positional context parameter should be provided when invoking."
-                )
-
-            context_param_name = get_function_params(self._raw_fn)[0].name
-
-            if args:
-                context = check.opt_inst_param(args[0], context_param_name, SensorEvaluationContext)
-            else:
-                if context_param_name not in kwargs:
-                    raise DagsterInvalidInvocationError(
-                        f"Sensor invocation expected argument '{context_param_name}'."
-                    )
-                context = check.opt_inst_param(
-                    kwargs[context_param_name], context_param_name, SensorEvaluationContext
-                )
-
-            context = context if context else build_sensor_context()
-
-            return self._raw_fn(context)
-
-        else:
-            if len(args) + len(kwargs) > 0:
-                raise DagsterInvalidInvocationError(
-                    "Sensor decorated function has no arguments, but arguments were provided to "
-                    "invocation."
-                )
-
-            return self._raw_fn()
-
-    @property
-    def name(self) -> str:
-        return self._name
-
-    @property
-    def job_type(self) -> JobType:
-        return JobType.SENSOR
-
-    @property
-    def description(self) -> Optional[str]:
-        return self._description
-
-    def evaluate_tick(self, context: "SensorEvaluationContext") -> "SensorExecutionData":
-        """Evaluate sensor using the provided context.
-
-        Args:
-            context (SensorEvaluationContext): The context with which to evaluate this sensor.
-        Returns:
-            SensorExecutionData: Contains list of run requests, or skip message if present.
-
-        """
-
-        check.inst_param(context, "context", SensorEvaluationContext)
-        result = list(ensure_gen(self._evaluation_fn(context)))
-
-        if not result or result == [None]:
-            run_requests = []
-            pipeline_run_reactions = []
-            skip_message = None
-        elif len(result) == 1:
-            item = result[0]
-            check.inst(item, (SkipReason, RunRequest, PipelineRunReaction))
-            run_requests = [item] if isinstance(item, RunRequest) else []
-            pipeline_run_reactions = [item] if isinstance(item, PipelineRunReaction) else []
-            skip_message = item.skip_message if isinstance(item, SkipReason) else None
-        else:
-            check.is_list(result, (SkipReason, RunRequest, PipelineRunReaction))
-            has_skip = any(map(lambda x: isinstance(x, SkipReason), result))
-            has_run_request = any(map(lambda x: isinstance(x, RunRequest), result))
-            has_run_reaction = any(map(lambda x: isinstance(x, PipelineRunReaction), result))
-            skip_message = None
-
-            if has_skip:
-                if has_run_request:
-                    check.failed(
-                        "Expected a single SkipReason or one or more RunRequests: received both "
-                        "RunRequest and SkipReason"
-                    )
-                if has_run_reaction:
-                    check.failed(
-                        "Expected a single SkipReason or one or more PipelineRunReaction: "
-                        "received both PipelineRunReaction and SkipReason"
-                    )
-                else:
-                    check.failed("Expected a single SkipReason: received multiple SkipReasons")
-
-            if has_run_request:
-                run_requests = result
-                pipeline_run_reactions = []
-                self.check_valid_run_requests(run_requests)
-
-            else:
-                # only run reactions
-                run_requests = []
-                pipeline_run_reactions = result
-
-        return SensorExecutionData(
-            run_requests,
-            skip_message,
-            context.cursor,
-            pipeline_run_reactions,
-        )
-
-    @property
-    def minimum_interval_seconds(self) -> Optional[int]:
-        return self._min_interval
-
-    @property
-    def targets(self) -> Optional[List[Union[DirectTarget, RepoRelativeTarget]]]:
-        return self._targets
-
-    def has_loadable_targets(self) -> bool:
-        for target in self._targets:
-            if isinstance(target, DirectTarget):
-                return True
-        return False
-
-    def load_targets(self) -> List[DirectTarget]:
-        targets = []
-        for target in self._targets:
-            if isinstance(target, DirectTarget):
-                targets.append(target.load())
-        return targets
-
-    def check_valid_run_requests(self, run_requests: List[RunRequest]):
-        has_multiple_targets = len(self._targets) > 1
-        target_names = [target.pipeline_name for target in self._targets]
-
-        if run_requests and not self._targets:
-            raise DagsterInvariantViolationError(
-                f"Error in sensor {self._name}: Sensor evaluation function returned a RunRequest "
-                "for a sensor without a specified target. Targets can be specified by providing "
-                "a job or pipeline_name."
-            )
-
-        for run_request in run_requests:
-            if run_request.job_name is None and has_multiple_targets:
-                raise DagsterInvariantViolationError(
-                    f"Error in sensor {self._name}: Sensor returned a RunRequest that did not "
-                    f"specify job_name for the requested run.  Expected one of: {target_names}"
-                )
-            elif run_request.job_name and run_request.job_name not in target_names:
-                raise DagsterInvariantViolationError(
-                    f"Error in sensor {self._name}: Sensor returned a RunRequest with job_name "
-                    f"{run_request.job_name}. Expected one of: {target_names}"
-                )
-
-
-class SensorDefinition(BaseSensorDefinition):
+class SensorDefinition:
     """Define a sensor that initiates a set of runs based on some external state
 
     Args:
@@ -404,13 +205,175 @@ class SensorDefinition(BaseSensorDefinition):
         elif jobs:
             targets = [DirectTarget(job) for job in jobs]
 
-        super(SensorDefinition, self).__init__(
-            name=name,
-            evaluation_fn=evaluation_fn,
-            targets=targets,
-            minimum_interval_seconds=minimum_interval_seconds,
-            description=description,
+        self._name = check_valid_name(name)
+        self._raw_fn = check.callable_param(evaluation_fn, "evaluation_fn")
+        self._evaluation_fn: Callable[
+            [SensorEvaluationContext], Generator[Union[RunRequest, SkipReason], None, None]
+        ] = wrap_sensor_evaluation(name, evaluation_fn)
+        self._min_interval = check.opt_int_param(
+            minimum_interval_seconds, "minimum_interval_seconds", DEFAULT_SENSOR_DAEMON_INTERVAL
         )
+        self._description = check.opt_str_param(description, "description")
+        self._targets = check.opt_list_param(targets, "targets", (DirectTarget, RepoRelativeTarget))
+
+    def __call__(self, *args, **kwargs):
+        context_provided = is_context_provided(get_function_params(self._raw_fn))
+
+        if context_provided:
+            if len(args) + len(kwargs) == 0:
+                raise DagsterInvalidInvocationError(
+                    "Sensor evaluation function expected context argument, but no context argument "
+                    "was provided when invoking."
+                )
+            if len(args) + len(kwargs) > 1:
+                raise DagsterInvalidInvocationError(
+                    "Sensor invocation received multiple arguments. Only a first "
+                    "positional context parameter should be provided when invoking."
+                )
+
+            context_param_name = get_function_params(self._raw_fn)[0].name
+
+            if args:
+                context = check.opt_inst_param(args[0], context_param_name, SensorEvaluationContext)
+            else:
+                if context_param_name not in kwargs:
+                    raise DagsterInvalidInvocationError(
+                        f"Sensor invocation expected argument '{context_param_name}'."
+                    )
+                context = check.opt_inst_param(
+                    kwargs[context_param_name], context_param_name, SensorEvaluationContext
+                )
+
+            context = context if context else build_sensor_context()
+
+            return self._raw_fn(context)
+
+        else:
+            if len(args) + len(kwargs) > 0:
+                raise DagsterInvalidInvocationError(
+                    "Sensor decorated function has no arguments, but arguments were provided to "
+                    "invocation."
+                )
+
+            return self._raw_fn()
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def job_type(self) -> JobType:
+        return JobType.SENSOR
+
+    @property
+    def description(self) -> Optional[str]:
+        return self._description
+
+    @property
+    def minimum_interval_seconds(self) -> Optional[int]:
+        return self._min_interval
+
+    @property
+    def targets(self) -> Optional[List[Union[DirectTarget, RepoRelativeTarget]]]:
+        return self._targets
+
+    def evaluate_tick(self, context: "SensorEvaluationContext") -> "SensorExecutionData":
+        """Evaluate sensor using the provided context.
+
+        Args:
+            context (SensorEvaluationContext): The context with which to evaluate this sensor.
+        Returns:
+            SensorExecutionData: Contains list of run requests, or skip message if present.
+
+        """
+
+        check.inst_param(context, "context", SensorEvaluationContext)
+        result = list(ensure_gen(self._evaluation_fn(context)))
+
+        if not result or result == [None]:
+            run_requests = []
+            pipeline_run_reactions = []
+            skip_message = None
+        elif len(result) == 1:
+            item = result[0]
+            check.inst(item, (SkipReason, RunRequest, PipelineRunReaction))
+            run_requests = [item] if isinstance(item, RunRequest) else []
+            pipeline_run_reactions = [item] if isinstance(item, PipelineRunReaction) else []
+            skip_message = item.skip_message if isinstance(item, SkipReason) else None
+        else:
+            check.is_list(result, (SkipReason, RunRequest, PipelineRunReaction))
+            has_skip = any(map(lambda x: isinstance(x, SkipReason), result))
+            has_run_request = any(map(lambda x: isinstance(x, RunRequest), result))
+            has_run_reaction = any(map(lambda x: isinstance(x, PipelineRunReaction), result))
+            skip_message = None
+
+            if has_skip:
+                if has_run_request:
+                    check.failed(
+                        "Expected a single SkipReason or one or more RunRequests: received both "
+                        "RunRequest and SkipReason"
+                    )
+                if has_run_reaction:
+                    check.failed(
+                        "Expected a single SkipReason or one or more PipelineRunReaction: "
+                        "received both PipelineRunReaction and SkipReason"
+                    )
+                else:
+                    check.failed("Expected a single SkipReason: received multiple SkipReasons")
+
+            if has_run_request:
+                run_requests = result
+                pipeline_run_reactions = []
+
+            else:
+                # only run reactions
+                run_requests = []
+                pipeline_run_reactions = result
+
+        self.check_valid_run_requests(run_requests)
+
+        return SensorExecutionData(
+            run_requests,
+            skip_message,
+            context.cursor,
+            pipeline_run_reactions,
+        )
+
+    def has_loadable_targets(self) -> bool:
+        for target in self._targets:
+            if isinstance(target, DirectTarget):
+                return True
+        return False
+
+    def load_targets(self) -> List[DirectTarget]:
+        targets = []
+        for target in self._targets:
+            if isinstance(target, DirectTarget):
+                targets.append(target.load())
+        return targets
+
+    def check_valid_run_requests(self, run_requests: List[RunRequest]):
+        has_multiple_targets = len(self._targets) > 1
+        target_names = [target.pipeline_name for target in self._targets]
+
+        if run_requests and not self._targets:
+            raise DagsterInvariantViolationError(
+                f"Error in sensor {self._name}: Sensor evaluation function returned a RunRequest "
+                "for a sensor without a specified target. Targets can be specified by providing "
+                "a job or pipeline_name."
+            )
+
+        for run_request in run_requests:
+            if run_request.job_name is None and has_multiple_targets:
+                raise DagsterInvariantViolationError(
+                    f"Error in sensor {self._name}: Sensor returned a RunRequest that did not "
+                    f"specify job_name for the requested run. Expected one of: {target_names}"
+                )
+            elif run_request.job_name and run_request.job_name not in target_names:
+                raise DagsterInvariantViolationError(
+                    f"Error in sensor {self._name}: Sensor returned a RunRequest with job_name "
+                    f"{run_request.job_name}. Expected one of: {target_names}"
+                )
 
     @property
     def _target(self) -> Optional[Union[DirectTarget, RepoRelativeTarget]]:
@@ -427,12 +390,6 @@ class SensorDefinition(BaseSensorDefinition):
     @property
     def mode(self) -> Optional[str]:
         return self._target.mode if self._target else None
-
-    def load_target(self):
-        if isinstance(self._target, DirectTarget):
-            return self._target.load()
-
-        check.failed("Target is not loadable")
 
 
 @whitelist_for_serdes

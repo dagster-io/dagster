@@ -227,10 +227,10 @@ def my_pipeline_success_sensor(context):
     assert isinstance(context.instance, DagsterInstance)
 
 
-config_graph_job = config_graph.to_job()
+config_job = config_graph.to_job()
 
 
-@sensor(jobs=[the_job, config_graph_job])
+@sensor(jobs=[the_job, config_job])
 def two_job_sensor(context):
     counter = int(context.cursor) if context.cursor else 0
     if counter % 2 == 0:
@@ -238,10 +238,25 @@ def two_job_sensor(context):
     else:
         yield RunRequest(
             run_key=str(counter),
-            job_name=config_graph_job.name,
+            job_name=config_job.name,
             run_config={"solids": {"config_solid": {"config": {"foo": "blah"}}}},
         )
     context.update_cursor(str(counter + 1))
+
+
+@sensor()
+def bad_request_untargeted():
+    yield RunRequest(run_key=None, job_name="should_fail")
+
+
+@sensor(job=the_job)
+def bad_request_mismatch():
+    yield RunRequest(run_key=None, job_name="config_pipeline")
+
+
+@sensor(jobs=[the_job, config_job])
+def bad_request_unspecified():
+    yield RunRequest(run_key=None)
 
 
 @repository
@@ -270,6 +285,9 @@ def the_repo():
         failure_job,
         hanging_pipeline,
         two_job_sensor,
+        bad_request_untargeted,
+        bad_request_mismatch,
+        bad_request_unspecified,
     ]
 
 
@@ -1574,3 +1592,100 @@ def test_multi_job_sensor(external_repo_context):
             assert run.tags
             assert run.tags.get("dagster/sensor_name") == "two_job_sensor"
             assert run.pipeline_name == "config_graph"
+
+
+@pytest.mark.parametrize("external_repo_context", repos())
+def test_bad_run_request_untargeted(external_repo_context):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+    with instance_with_sensors(external_repo_context) as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+            job_sensor = external_repo.get_external_sensor("bad_request_untargeted")
+            instance.start_sensor(job_sensor)
+
+            evaluate_sensors(instance, workspace)
+
+            ticks = instance.get_job_ticks(job_sensor.get_external_origin_id())
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                job_sensor,
+                freeze_datetime,
+                JobTickStatus.FAILURE,
+                None,
+                (
+                    "Error in sensor bad_request_untargeted: Sensor evaluation function returned a "
+                    "RunRequest for a sensor without a specified target."
+                ),
+            )
+
+
+@pytest.mark.parametrize("external_repo_context", repos())
+def test_bad_run_request_mismatch(external_repo_context):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+    with instance_with_sensors(external_repo_context) as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+            job_sensor = external_repo.get_external_sensor("bad_request_mismatch")
+            instance.start_sensor(job_sensor)
+
+            evaluate_sensors(instance, workspace)
+
+            ticks = instance.get_job_ticks(job_sensor.get_external_origin_id())
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                job_sensor,
+                freeze_datetime,
+                JobTickStatus.FAILURE,
+                None,
+                (
+                    "Error in sensor bad_request_mismatch: Sensor returned a RunRequest with "
+                    "job_name config_pipeline. Expected one of: ['the_graph']"
+                ),
+            )
+
+
+@pytest.mark.parametrize("external_repo_context", repos())
+def test_bad_run_request_unspecified(external_repo_context):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+    with instance_with_sensors(external_repo_context) as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+            job_sensor = external_repo.get_external_sensor("bad_request_unspecified")
+            instance.start_sensor(job_sensor)
+
+            evaluate_sensors(instance, workspace)
+
+            ticks = instance.get_job_ticks(job_sensor.get_external_origin_id())
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                job_sensor,
+                freeze_datetime,
+                JobTickStatus.FAILURE,
+                None,
+                (
+                    "Error in sensor bad_request_unspecified: Sensor returned a RunRequest that "
+                    "did not specify job_name for the requested run. Expected one of: "
+                    "['the_graph', 'config_graph']"
+                ),
+            )
