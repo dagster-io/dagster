@@ -44,6 +44,11 @@ Note that all GraphQL methods on the API are not yet available in Python - the `
   object="DagsterGraphQLClient"
   method="shutdown_repository_location"
   />
+- <PyObject
+  module="dagster_graphql"
+  object="DagsterGraphQLClient"
+  method="terminate_pipeline"
+  />
 
 ## Using the GraphQL Client
 
@@ -176,6 +181,21 @@ try:
         mode="default",
     )
     do_something_on_success(new_run_id)
+except DagsterGraphQLClientError as exc:
+    do_something_with_exc(exc)
+    raise exc
+```
+
+### Terminating a Pipeline Run
+
+You can use the client to terminate a pipeline run as follows:
+
+```python file=/concepts/dagit/graphql/client_example.py startafter=start_terminate_pipeline_marker endbefore=end_terminate_pipeline_marker
+from dagster_graphql import DagsterGraphQLClientError
+
+try:
+    run_id: str = client.terminate_pipeline(RUN_ID)
+    do_something_on_success(run_id)
 except DagsterGraphQLClientError as exc:
     do_something_with_exc(exc)
     raise exc

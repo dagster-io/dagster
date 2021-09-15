@@ -122,3 +122,14 @@ if shutdown_info.status == ShutdownRepositoryLocationStatus.SUCCESS:
 else:
     raise Exception(f"Repository location shutdown failed: {shutdown_info.message}")
 # end_shutdown_repo_location_marker
+
+# start_terminate_pipeline_marker
+from dagster_graphql import DagsterGraphQLClientError
+
+try:
+    run_id: str = client.terminate_pipeline(RUN_ID)
+    do_something_on_success(run_id)
+except DagsterGraphQLClientError as exc:
+    do_something_with_exc(exc)
+    raise exc
+# end_terminate_pipeline_marker
