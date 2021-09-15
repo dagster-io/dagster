@@ -22,7 +22,7 @@ from dagster import (
     run_failure_sensor,
     solid,
 )
-from dagster.core.definitions.decorators.sensor import asset_sensor, multi_job_sensor, sensor
+from dagster.core.definitions.decorators.sensor import asset_sensor, sensor
 from dagster.core.definitions.pipeline_sensor import run_status_sensor
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.definitions.run_request import JobType
@@ -227,15 +227,18 @@ def my_pipeline_success_sensor(context):
     assert isinstance(context.instance, DagsterInstance)
 
 
-@multi_job_sensor(jobs=[the_job, config_graph.to_job()])
+config_graph_job = config_graph.to_job()
+
+
+@sensor(jobs=[the_job, config_graph_job])
 def two_job_sensor(context):
     counter = int(context.cursor) if context.cursor else 0
     if counter % 2 == 0:
-        yield RunRequest(run_key=str(counter), job_name="the_graph")
+        yield RunRequest(run_key=str(counter), job_name=the_job.name)
     else:
         yield RunRequest(
             run_key=str(counter),
-            job_name="config_graph",
+            job_name=config_graph_job.name,
             run_config={"solids": {"config_solid": {"config": {"foo": "blah"}}}},
         )
     context.update_cursor(str(counter + 1))

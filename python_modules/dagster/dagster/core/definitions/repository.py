@@ -10,7 +10,7 @@ from .job import JobDefinition
 from .partition import PartitionScheduleDefinition, PartitionSetDefinition
 from .pipeline import PipelineDefinition
 from .schedule import ScheduleDefinition
-from .sensor import ISensorDefinition
+from .sensor import SensorDefinition
 from .utils import check_valid_name
 
 VALID_REPOSITORY_DATA_DICT_KEYS = {
@@ -26,7 +26,7 @@ RepositoryLevelDefinition = TypeVar(
     PipelineDefinition,
     PartitionSetDefinition,
     ScheduleDefinition,
-    ISensorDefinition,
+    SensorDefinition,
 )
 
 
@@ -362,7 +362,7 @@ class CachingRepositoryData(RepositoryData):
                 The partition sets belonging to the repository.
             schedules (Dict[str, Union[ScheduleDefinition, Callable[[], ScheduleDefinition]]]):
                 The schedules belonging to the repository.
-            sensors (Dict[str, Union[ISensorDefinition, Callable[[], ISensorDefinition]]]):
+            sensors (Dict[str, Union[SensorDefinition, Callable[[], SensorDefinition]]]):
                 The sensors belonging to a repository.
 
         """
@@ -417,8 +417,8 @@ class CachingRepositoryData(RepositoryData):
             load_partition_sets_from_pipelines,
         )
         self._sensors = _CacheingDefinitionIndex(
-            ISensorDefinition,
-            "ISensorDefinition",
+            SensorDefinition,
+            "SensorDefinition",
             "sensor",
             sensors,
             self._validate_sensor,
@@ -520,7 +520,7 @@ class CachingRepositoryData(RepositoryData):
                         "{partition_set_name}".format(partition_set_name=definition.name)
                     )
                 partition_sets[definition.name] = definition
-            elif isinstance(definition, ISensorDefinition):
+            elif isinstance(definition, SensorDefinition):
                 if definition.name in jobs:
                     raise DagsterInvalidDefinitionError(
                         f"Duplicate definition found for {definition.name}"
