@@ -312,7 +312,7 @@ def _check_intra_process_pipeline(pipeline):
             "that is not reconstructable. {target_cap} must be loaded in a way that allows dagster to reconstruct "
             "them in a new process. This means: \n"
             "  * using the file, module, or repository.yaml arguments of dagit/dagster-graphql/dagster\n"
-            "  * loading the job/pipeline through the reconstructable() function\n".format(
+            "  * loading the {target} through the reconstructable() function\n".format(
                 target=target, name=pipeline.get_definition().name, target_cap=target.capitalize()
             )
         )

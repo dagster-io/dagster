@@ -16,8 +16,8 @@ from dagster import check
 from dagster.core.definitions import (
     GraphDefinition,
     IPipeline,
-    JobDefinition,
     InputDefinition,
+    JobDefinition,
     Node,
     NodeHandle,
     SolidDefinition,
