@@ -1,6 +1,17 @@
 import inspect
 from contextlib import ExitStack
-from typing import TYPE_CHECKING, Any, Callable, Generator, List, NamedTuple, Optional, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Generator,
+    List,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+)
 
 from dagster import check
 from dagster.core.errors import (
@@ -144,7 +155,7 @@ class SensorDefinition:
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
         job (Optional[GraphDefinition, JobDefinition]): Experimental
-        jobs (Optional[List[GraphDefinition, JobDefinition]]): Experimental
+        jobs (Optional[Sequence[GraphDefinition, JobDefinition]]): Experimental
     """
 
     def __init__(
@@ -160,7 +171,7 @@ class SensorDefinition:
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
         job: Optional[Union[GraphDefinition, JobDefinition]] = None,
-        jobs: Optional[List[Union[GraphDefinition, JobDefinition]]] = None,
+        jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
     ):
 
         if job and jobs:
