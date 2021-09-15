@@ -85,18 +85,18 @@ export const IconColors = () => {
       <Icon name="error" color={ColorsWIP.Gray200} />
       <Icon name="expand_more" color={ColorsWIP.Gray100} />
       <Icon name="filter_alt" color={ColorsWIP.Gray50} />
-      <Icon name="folder" color={ColorsWIP.Blue1} />
-      <Icon name="folder_open" color={ColorsWIP.Blue2} />
-      <Icon name="history" color={ColorsWIP.Blue3} />
-      <Icon name="search" color={ColorsWIP.Blue4} />
-      <Icon name="sensors" color={ColorsWIP.Red1} />
-      <Icon name="settings" color={ColorsWIP.Red2} />
-      <Icon name="source" color={ColorsWIP.Red3} />
-      <Icon name="star" color={ColorsWIP.Red4} />
-      <Icon name="toggle_off" color={ColorsWIP.Yellow1} />
-      <Icon name="toggle_on" color={ColorsWIP.Yellow2} />
-      <Icon name="warning" color={ColorsWIP.Yellow3} />
-      <Icon name="workspaces" color={ColorsWIP.Yellow4} />
+      <Icon name="folder" color={ColorsWIP.Blue700} />
+      <Icon name="folder_open" color={ColorsWIP.Blue500} />
+      <Icon name="history" color={ColorsWIP.Blue200} />
+      <Icon name="search" color={ColorsWIP.Blue50} />
+      <Icon name="sensors" color={ColorsWIP.Red700} />
+      <Icon name="settings" color={ColorsWIP.Red500} />
+      <Icon name="source" color={ColorsWIP.Red200} />
+      <Icon name="star" color={ColorsWIP.Red50} />
+      <Icon name="toggle_off" color={ColorsWIP.Yellow700} />
+      <Icon name="toggle_on" color={ColorsWIP.Yellow500} />
+      <Icon name="warning" color={ColorsWIP.Yellow200} />
+      <Icon name="workspaces" color={ColorsWIP.Yellow50} />
     </Group>
   );
 };
