@@ -505,3 +505,28 @@ def test_skip_error_runs(instance, workspace, daemon):
 
     assert get_run_ids(instance.run_launcher.queue()) == ["good-run"]
     assert instance.get_run_by_id("bad-run").status == PipelineRunStatus.FAILURE
+
+
+def test_key_limit_with_extra_tags(workspace, daemon):
+    with instance_for_queued_run_coordinator(
+        max_concurrent_runs=2,
+        tag_concurrency_limits=[
+            {"key": "test", "limit": 1},
+        ],
+    ) as instance:
+        create_run(
+            instance,
+            run_id="run-1",
+            status=PipelineRunStatus.QUEUED,
+            tags={"other-tag": "value", "test": "value"},
+        )
+
+        create_run(
+            instance,
+            run_id="run-2",
+            status=PipelineRunStatus.QUEUED,
+            tags={"other-tag": "value", "test": "value"},
+        )
+
+        list(daemon.run_iteration(instance, workspace))
+        assert get_run_ids(instance.run_launcher.queue()) == ["run-1"]

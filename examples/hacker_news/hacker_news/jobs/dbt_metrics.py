@@ -1,11 +1,11 @@
 import os
 
-from dagster import ModeDefinition, ResourceDefinition, pipeline
+from dagster import ResourceDefinition, graph
 from dagster.utils import file_relative_path
 from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 from dagster_dbt import dbt_cli_resource
+from hacker_news.ops.dbt import hn_dbt_run, hn_dbt_test
 from hacker_news.resources.dbt_asset_resource import SnowflakeQueryDbtAssetResource
-from hacker_news.solids.dbt import hn_dbt_run, hn_dbt_test
 
 DBT_PROJECT_DIR = file_relative_path(__file__, "../../hacker_news_dbt")
 DBT_PROFILES_DIR = "config"
@@ -18,9 +18,9 @@ SNOWFLAKE_CONF = {
     "warehouse": "TINY_WAREHOUSE",
 }
 
-# We define two sets of resources, one for the prod mode, which writes to production schemas and
-# s3 buckets, and one for dev mode, which writes to alternate schemas and s3 buckets.
-PROD_RESOURCES = {
+# We define two sets of resources, one for the prod job, which writes to production schemas and
+# s3 buckets, and one for dev job, which writes to alternate schemas and s3 buckets.
+DBT_RESOURCES_PROD = {
     "io_manager": s3_pickle_io_manager.configured({"s3_bucket": "hackernews-elementl-prod"}),
     "s3": s3_resource,
     "dbt": dbt_cli_resource.configured(
@@ -35,7 +35,7 @@ PROD_RESOURCES = {
     "run_date": ResourceDefinition.string_resource(),
 }
 
-DEV_RESOURCES = {
+DBT_RESOURCES_STAGING = {
     "io_manager": s3_pickle_io_manager.configured({"s3_bucket": "hackernews-elementl-dev"}),
     "s3": s3_resource,
     "dbt": dbt_cli_resource.configured(
@@ -48,14 +48,10 @@ DEV_RESOURCES = {
 }
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition("prod", resource_defs=PROD_RESOURCES),
-        ModeDefinition("dev", resource_defs=DEV_RESOURCES),
-    ]
-)
-def dbt_pipeline():
-    """
-    Runs and then tests dbt models.
-    """
+@graph
+def dbt_metrics():
     hn_dbt_test(hn_dbt_run())
+
+
+dbt_prod_job = dbt_metrics.to_job(resource_defs=DBT_RESOURCES_PROD)
+dbt_staging_job = dbt_metrics.to_job(resource_defs=DBT_RESOURCES_STAGING)
