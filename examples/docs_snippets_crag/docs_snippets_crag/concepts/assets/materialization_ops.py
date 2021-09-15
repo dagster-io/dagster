@@ -7,6 +7,7 @@ from dagster import (
     Output,
     OutputContext,
     OutputDefinition,
+    op,
     pipeline,
     solid,
 )

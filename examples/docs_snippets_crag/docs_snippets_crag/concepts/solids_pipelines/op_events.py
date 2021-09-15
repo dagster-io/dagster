@@ -1,12 +1,14 @@
 # pylint: disable=unused-argument
+from typing import Any
 from dagster import (
     AssetMaterialization,
     EventMetadata,
     ExpectationResult,
     Failure,
-    Output,
     Out,
+    Output,
     RetryRequested,
+    op,
 )
 
 
@@ -61,11 +63,7 @@ def my_simple_return_op(context):
 # start_op_output_2
 
 
-@op(
-    output_defs=[
-        Out(name="my_output"),
-    ]
-)
+@op(out={"my_output": Out(int)})
 def my_named_yield_op(context):
     yield Output(1, output_name="my_output")
 
