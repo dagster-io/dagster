@@ -263,9 +263,6 @@ class PipelineDefinition:
     def name(self):
         return self._name
 
-    def describe_target(self):
-        return f"pipeline '{self.name}'"
-
     @property
     def target_type(self):
         return "pipeline"
