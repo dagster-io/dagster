@@ -5,7 +5,6 @@ from dagster import check
 from dagster.core.definitions import GraphDefinition, PipelineDefinition
 from dagster.core.definitions.run_request import RunRequest
 from dagster.core.definitions.sensor import (
-    ISensorDefinition,
     PipelineRunReaction,
     SensorDefinition,
     SensorEvaluationContext,
@@ -249,7 +248,7 @@ def run_failure_sensor(
     return inner
 
 
-class RunStatusSensorDefinition(ISensorDefinition):
+class RunStatusSensorDefinition(SensorDefinition):
     """
     Define a sensor that reacts to a given status of pipeline execution, where the decorated
     function will be run when a pipeline is at the given status.
@@ -408,15 +407,7 @@ class RunStatusSensorDefinition(ISensorDefinition):
             evaluation_fn=_wrapped_fn,
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
-            targets=None,
         )
-
-    def check_valid_run_requests(self, run_requests: List[RunRequest]):
-        if len(run_requests) > 0:
-            check.failed(
-                "Expected either one or more RunRequests or one or more "
-                "PipelineRunReactions: received both"
-            )
 
 
 def run_status_sensor(

@@ -14,7 +14,7 @@ from ..repository import (
     RepositoryDefinition,
 )
 from ..schedule import ScheduleDefinition
-from ..sensor import ISensorDefinition
+from ..sensor import SensorDefinition
 
 
 class _Repository:
@@ -48,7 +48,7 @@ class _Repository:
                     isinstance(definition, PipelineDefinition)
                     or isinstance(definition, PartitionSetDefinition)
                     or isinstance(definition, ScheduleDefinition)
-                    or isinstance(definition, ISensorDefinition)
+                    or isinstance(definition, SensorDefinition)
                     or isinstance(definition, GraphDefinition)
                 ):
                     bad_definitions.append((i, type(definition)))

@@ -47,7 +47,7 @@ class RunRequest(namedtuple("_RunRequest", "run_key run_config tags job_name")):
         tags (Optional[Dict[str, str]]): A dictionary of tags (string key-value pairs) to attach
             to the launched run.
         job_name (Optional[str]): (Experimental) The name of the job this run request will launch.
-            Only applicable to sensors that target multiple jobs.
+            Required for sensors that target multiple jobs.
     """
 
     def __new__(cls, run_key, run_config=None, tags=None, job_name=None):

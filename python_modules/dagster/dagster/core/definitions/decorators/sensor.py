@@ -6,27 +6,15 @@ from dagster import check
 from dagster.core.definitions.sensor import RunRequest, SensorDefinition, SkipReason
 from dagster.core.errors import DagsterInvariantViolationError
 
-from ....seven import funcsigs
-from ...decorator_utils import get_function_params
 from ...errors import DagsterInvariantViolationError
 from ..events import AssetKey
 from ..graph import GraphDefinition
-from ..pipeline import PipelineDefinition
-from ..sensor import (
-    AssetSensorDefinition,
-    MultiJobSensorDefinition,
-    RunRequest,
-    SensorDefinition,
-    SkipReason,
-)
+from ..job import JobDefinition
+from ..sensor import AssetSensorDefinition, RunRequest, SensorDefinition, SkipReason
 
 if TYPE_CHECKING:
     from ..sensor import SensorEvaluationContext
     from ...events.log import EventLogEntry
-
-
-def is_context_provided(params: List[funcsigs.Parameter]) -> bool:
-    return len(params) == 1
 
 
 def sensor(
@@ -36,7 +24,8 @@ def sensor(
     mode: Optional[str] = None,
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
-    job: Optional[Union[PipelineDefinition, GraphDefinition]] = None,
+    job: Optional[Union[GraphDefinition, JobDefinition]] = None,
+    jobs: Optional[List[Union[GraphDefinition, JobDefinition]]] = None,
 ) -> Callable[
     [
         Callable[
@@ -70,7 +59,8 @@ def sensor(
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
-        job (Optional[PipelineDefinition]): Experimental
+        job (Optional[Union[GraphDefinition, JobDefinition]]): Experimental
+        jobs (Optional[List[Union[GraphDefinition, JobDefinition]]]): Experimental
     """
     check.opt_str_param(name, "name")
 
@@ -83,34 +73,16 @@ def sensor(
         check.callable_param(fn, "fn")
         sensor_name = name or fn.__name__
 
-        def _wrapped_fn(context):
-            result = fn(context) if is_context_provided(get_function_params(fn)) else fn()
-
-            if inspect.isgenerator(result):
-                for item in result:
-                    yield item
-            elif isinstance(result, (SkipReason, RunRequest)):
-                yield result
-
-            elif result is not None:
-                raise DagsterInvariantViolationError(
-                    (
-                        "Error in sensor {sensor_name}: Sensor unexpectedly returned output "
-                        "{result} of type {type_}.  Should only return SkipReason or "
-                        "RunRequest objects."
-                    ).format(sensor_name=sensor_name, result=result, type_=type(result))
-                )
-
         sensor_def = SensorDefinition(
             name=sensor_name,
             pipeline_name=pipeline_name,
-            evaluation_fn=_wrapped_fn,
+            evaluation_fn=fn,
             solid_selection=solid_selection,
             mode=mode,
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
             job=job,
-            decorated_fn=fn,
+            jobs=jobs,
         )
 
         update_wrapper(sensor_def, wrapped=fn)
@@ -128,7 +100,7 @@ def asset_sensor(
     mode: Optional[str] = None,
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
-    job: Optional[Union[PipelineDefinition, GraphDefinition]] = None,
+    job: Optional[Union[GraphDefinition, JobDefinition]] = None,
 ) -> Callable[
     [
         Callable[
@@ -212,82 +184,5 @@ def asset_sensor(
             description=description,
             job=job,
         )
-
-    return inner
-
-
-def multi_job_sensor(
-    jobs: List[Union[GraphDefinition, PipelineDefinition]],
-    name: Optional[str] = None,
-    minimum_interval_seconds: Optional[int] = None,
-    description: Optional[str] = None,
-) -> Callable[
-    [
-        Callable[
-            ["SensorEvaluationContext"],
-            Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
-        ]
-    ],
-    MultiJobSensorDefinition,
-]:
-    """
-    Creates a multi-target sensor where the decorated function is used as the sensor's evaluation
-    function. The decorated function may:
-
-    1. Return a `RunRequest` object.
-    2. Yield multiple of `RunRequest` objects.
-    3. Return or yield a `SkipReason` object, providing a descriptive message of why no runs were
-       requested.
-    4. Return or yield nothing (skipping without providing a reason)
-
-    Takes a :py:class:`~dagster.SensorEvaluationContext`.
-
-    Args:
-        jobs (List[PipelineDefinition]): (Experimental) The target jobs.
-        minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
-            between sensor evaluations.
-        description (Optional[str]): A human-readable description of the sensor.
-    """
-    check.opt_str_param(name, "name")
-
-    def inner(
-        fn: Callable[
-            ["SensorEvaluationContext"],
-            Union[Generator[Union[SkipReason, RunRequest], None, None], SkipReason, RunRequest],
-        ]
-    ) -> MultiJobSensorDefinition:
-        check.callable_param(fn, "fn")
-        sensor_name = name or fn.__name__
-
-        def _wrapped_fn(context):
-            result = fn(context) if is_context_provided(get_function_params(fn)) else fn()
-
-            if inspect.isgenerator(result):
-                for item in result:
-                    yield item
-            elif isinstance(result, (SkipReason, RunRequest)):
-                yield result
-
-            elif result is not None:
-                raise DagsterInvariantViolationError(
-                    (
-                        "Error in sensor {sensor_name}: Sensor unexpectedly returned output "
-                        "{result} of type {type_}.  Should only return SkipReason or "
-                        "RunRequest objects."
-                    ).format(sensor_name=sensor_name, result=result, type_=type(result))
-                )
-
-        sensor_def = MultiJobSensorDefinition(
-            name=sensor_name,
-            jobs=jobs,
-            evaluation_fn=_wrapped_fn,
-            minimum_interval_seconds=minimum_interval_seconds,
-            description=description,
-            decorated_fn=fn,
-        )
-
-        update_wrapper(sensor_def, wrapped=fn)
-
-        return sensor_def
 
     return inner
