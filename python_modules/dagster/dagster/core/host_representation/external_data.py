@@ -264,9 +264,13 @@ class ExternalSensorData(
         return super(ExternalSensorData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
-            pipeline_name=None,
-            solid_selection=None,
-            mode=None,
+            pipeline_name=check.opt_str_param(
+                pipeline_name, "pipeline_name"
+            ),  # keep legacy field populated
+            solid_selection=check.opt_nullable_list_param(
+                solid_selection, "solid_selection", str
+            ),  # keep legacy field populated
+            mode=check.opt_str_param(mode, "mode"),  # keep legacy field populated
             min_interval=check.opt_int_param(min_interval, "min_interval"),
             description=check.opt_str_param(description, "description"),
             target_dict=check.opt_dict_param(target_dict, "target_dict", str, ExternalTargetData),

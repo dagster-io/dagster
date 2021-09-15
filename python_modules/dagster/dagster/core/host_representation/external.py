@@ -503,7 +503,6 @@ class ExternalSensor:
 
     def _get_single_target(self):
         if self._external_sensor_data.target_dict:
-            check.invariant(len(self._external_sensor_data.target_dict.values()) == 1)
             return list(self._external_sensor_data.target_dict.values())[0]
         else:
             return None
