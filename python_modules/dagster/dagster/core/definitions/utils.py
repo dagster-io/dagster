@@ -2,7 +2,7 @@ import keyword
 import os
 import re
 from glob import glob
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import pkg_resources
 import yaml
@@ -78,7 +78,7 @@ def struct_to_string(name, **kwargs):
     return "{name}({props_str})".format(name=name, props_str=props_str)
 
 
-def validate_tags(tags):
+def validate_tags(tags: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     valid_tags = {}
     for key, value in check.opt_dict_param(tags, "tags", key_type=str).items():
         if not isinstance(value, str):

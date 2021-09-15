@@ -3,14 +3,18 @@ import re
 import pytest
 from dagster.api.snapshot_execution_plan import sync_get_external_execution_plan_grpc
 from dagster.core.errors import DagsterUserCodeProcessError
+from dagster.core.host_representation.handle import PipelineHandle
 from dagster.core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
 
-from .utils import get_foo_pipeline_handle
+from .utils import get_bar_repo_repository_location
 
 
 def test_execution_plan_error_grpc():
-    with get_foo_pipeline_handle() as pipeline_handle:
-        api_client = pipeline_handle.repository_handle.repository_location.client
+    with get_bar_repo_repository_location() as repository_location:
+        pipeline_handle = PipelineHandle(
+            "foo", repository_location.get_repository("bar_repo").handle
+        )
+        api_client = repository_location.client
 
         with pytest.raises(
             DagsterUserCodeProcessError,
@@ -26,8 +30,11 @@ def test_execution_plan_error_grpc():
 
 
 def test_execution_plan_snapshot_api_grpc():
-    with get_foo_pipeline_handle() as pipeline_handle:
-        api_client = pipeline_handle.repository_handle.repository_location.client
+    with get_bar_repo_repository_location() as repository_location:
+        pipeline_handle = PipelineHandle(
+            "foo", repository_location.get_repository("bar_repo").handle
+        )
+        api_client = repository_location.client
 
         execution_plan_snapshot = sync_get_external_execution_plan_grpc(
             api_client,
@@ -46,8 +53,11 @@ def test_execution_plan_snapshot_api_grpc():
 
 
 def test_execution_plan_with_step_keys_to_execute_snapshot_api_grpc():
-    with get_foo_pipeline_handle() as pipeline_handle:
-        api_client = pipeline_handle.repository_handle.repository_location.client
+    with get_bar_repo_repository_location() as repository_location:
+        pipeline_handle = PipelineHandle(
+            "foo", repository_location.get_repository("bar_repo").handle
+        )
+        api_client = repository_location.client
 
         execution_plan_snapshot = sync_get_external_execution_plan_grpc(
             api_client,
@@ -66,8 +76,11 @@ def test_execution_plan_with_step_keys_to_execute_snapshot_api_grpc():
 
 
 def test_execution_plan_with_subset_snapshot_api_grpc():
-    with get_foo_pipeline_handle() as pipeline_handle:
-        api_client = pipeline_handle.repository_handle.repository_location.client
+    with get_bar_repo_repository_location() as repository_location:
+        pipeline_handle = PipelineHandle(
+            "foo", repository_location.get_repository("bar_repo").handle
+        )
+        api_client = repository_location.client
 
         execution_plan_snapshot = sync_get_external_execution_plan_grpc(
             api_client,

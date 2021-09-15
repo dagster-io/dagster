@@ -1,6 +1,6 @@
 from typing import Tuple
 
-from dagster import Output, OutputDefinition, solid
+from dagster import Out, Output, op
 from pandas import DataFrame
 from pyspark.sql import DataFrame as SparkDF
 from pyspark.sql.types import (
@@ -33,10 +33,8 @@ HN_ACTION_SCHEMA = StructType(
 ACTION_FIELD_NAMES = [field.name for field in HN_ACTION_SCHEMA.fields]
 
 
-@solid(
-    output_defs=[
-        OutputDefinition(name="items", io_manager_key="parquet_io_manager", dagster_type=DataFrame)
-    ],
+@op(
+    out={"items": Out(io_manager_key="parquet_io_manager", dagster_type=DataFrame)},
     required_resource_keys={"hn_client"},
     description="Downloads all of the items for the id range passed in as input and creates a DataFrame with all the entries.",
 )
@@ -64,14 +62,11 @@ def download_items(context, id_range: Tuple[int, int]) -> Output:
     )
 
 
-@solid(
-    output_defs=[
-        OutputDefinition(
-            name="comments",
-            io_manager_key="warehouse_io_manager",
-            metadata={"table": "hackernews.comments"},
-        )
-    ],
+@op(
+    out=Out(
+        io_manager_key="warehouse_io_manager",
+        metadata={"table": "hackernews.comments"},
+    ),
     description="Creates a dataset of all items that are comments",
 )
 def build_comments(context, items: SparkDF) -> SparkDF:
@@ -79,14 +74,11 @@ def build_comments(context, items: SparkDF) -> SparkDF:
     return items.where(items["type"] == "comment").select(ACTION_FIELD_NAMES)
 
 
-@solid(
-    output_defs=[
-        OutputDefinition(
-            name="stories",
-            io_manager_key="warehouse_io_manager",
-            metadata={"table": "hackernews.stories"},
-        )
-    ],
+@op(
+    out=Out(
+        io_manager_key="warehouse_io_manager",
+        metadata={"table": "hackernews.stories"},
+    ),
     description="Creates a dataset of all items that are stories",
 )
 def build_stories(context, items: SparkDF) -> SparkDF:

@@ -1,10 +1,10 @@
-"""The main entrypoint for solids executed using the DatabricksPySparkStepLauncher.
+"""The main entrypoint for ops executed using the DatabricksPySparkStepLauncher.
 
 This script is launched on Databricks using a `spark_python_task` and is passed the following
 parameters:
 
 - the DBFS path to the pickled `step_run_ref` file
-- the DBFS path to the zipped pipeline
+- the DBFS path to the zipped dagster job
 - paths to any other zipped packages which have been uploaded to DBFS.
 """
 
@@ -28,7 +28,7 @@ if "DATABRICKS_TOKEN" not in os.environ:
 def main(
     step_run_ref_filepath,
     setup_filepath,
-    pipeline_zip,
+    dagster_job_zip,
 ):
     # Extract any zip files to a temporary directory and add that temporary directory
     # to the site path so the contained files can be imported.
@@ -37,7 +37,7 @@ def main(
     # even be Python packages.
     with tempfile.TemporaryDirectory() as tmp:
 
-        with zipfile.ZipFile(pipeline_zip) as zf:
+        with zipfile.ZipFile(dagster_job_zip) as zf:
             zf.extractall(tmp)
         site.addsitedir(tmp)
 
@@ -50,7 +50,7 @@ def main(
 
         with open(step_run_ref_filepath, "rb") as handle:
             step_run_ref = pickle.load(handle)
-        print("Running pipeline")  # noqa pylint: disable=print-call
+        print("Running dagster job")  # noqa pylint: disable=print-call
         with DagsterInstance.ephemeral() as instance:
             events = list(run_step_from_ref(step_run_ref, instance))
 

@@ -1,16 +1,14 @@
 import random
 
-from dagster import EventMetadata, InputDefinition, Output, OutputDefinition, solid
+from dagster import EventMetadata, In, InputDefinition, Out, Output, op
 from dagster.utils import file_relative_path
 from dagstermill import define_dagstermill_solid
-from hacker_news.solids.user_story_matrix import IndexedCooMatrix
+from hacker_news.ops.user_story_matrix import IndexedCooMatrix
 from pandas import DataFrame, Series
 from sklearn.decomposition import TruncatedSVD
 
 
-@solid(
-    output_defs=[OutputDefinition(dagster_type=TruncatedSVD, metadata={"key": "recommender_model"})]
-)
+@op(out=Out(dagster_type=TruncatedSVD, metadata={"key": "recommender_model"}))
 def build_recommender_model(user_story_matrix: IndexedCooMatrix):
     """
     Trains an SVD model for collaborative filtering-based recommendation.
@@ -38,24 +36,21 @@ model_perf_notebook = define_dagstermill_solid(
 )
 
 
-@solid(
-    input_defs=[
-        InputDefinition(
-            "story_titles",
+@op(
+    ins={
+        "story_titles": In(
             root_manager_key="warehouse_loader",
             metadata={
                 "table": "hackernews.stories",
                 "columns": ["id", "title"],
             },
         ),
-    ],
-    output_defs=[
-        OutputDefinition(
-            dagster_type=DataFrame,
-            io_manager_key="warehouse_io_manager",
-            metadata={"table": "hackernews.component_top_stories"},
-        )
-    ],
+    },
+    out=Out(
+        dagster_type=DataFrame,
+        io_manager_key="warehouse_io_manager",
+        metadata={"table": "hackernews.component_top_stories"},
+    ),
 )
 def build_component_top_stories(
     model: TruncatedSVD, user_story_matrix: IndexedCooMatrix, story_titles: DataFrame

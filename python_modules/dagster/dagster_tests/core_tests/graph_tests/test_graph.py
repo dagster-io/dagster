@@ -223,8 +223,7 @@ def test_partitions():
             ),
         ),
     )
-    mode = job.mode_definitions[0]
-    partition_set = mode.get_partition_set_def("my_graph")
+    partition_set = job.get_partition_set_def()
     partitions = partition_set.get_partitions()
     assert len(partitions) == 2
     assert partitions[0].value == "2020-02-25"
@@ -616,3 +615,21 @@ def test_job_subset():
     the_job = basic.to_job()
 
     assert isinstance(the_job.get_pipeline_subset_def({"my_op"}), PipelineSubsetDefinition)
+
+
+def test_tags():
+    @graph(tags={"a": "x"})
+    def mygraphic():
+        pass
+
+    assert mygraphic.to_job().tags == {"a": "x"}
+
+
+def test_job_and_graph_tags():
+    @graph(tags={"a": "x", "c": "q"})
+    def mygraphic():
+        pass
+
+    job = mygraphic.to_job(tags={"a": "y", "b": "z"})
+
+    assert job.tags == {"a": "y", "b": "z", "c": "q"}

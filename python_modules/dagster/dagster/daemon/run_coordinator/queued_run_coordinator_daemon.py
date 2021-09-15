@@ -73,7 +73,7 @@ class _TagConcurrencyLimitsCounter:
             ):
                 return True
 
-            return False
+        return False
 
     def update_counters_with_launched_run(self, run):
         """
@@ -107,6 +107,7 @@ class QueuedRunCoordinatorDaemon(DagsterDaemon):
 
         max_concurrent_runs = instance.run_coordinator.max_concurrent_runs
         tag_concurrency_limits = instance.run_coordinator.tag_concurrency_limits
+
         in_progress_runs = self._get_in_progress_runs(instance)
         max_runs_to_launch = max_concurrent_runs - len(in_progress_runs)
 

@@ -152,3 +152,10 @@ RUN wget http://download.redis.io/redis-stable.tar.gz \
 # Install FOSSA cli for analyzing our open-source dependencies
 # https://github.com/fossas/fossa-cli
 RUN curl -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/fossas/fossa-cli/master/install.sh | sh -s $FOSSA_VERSION
+
+# Install libxmlsec to use xmlsec
+RUN apt-get update -yqq \
+    && apt-get upgrade -yqq \
+    && apt-get install -yqq --no-install-recommends \
+    libxmlsec1-dev \
+    pkg-config

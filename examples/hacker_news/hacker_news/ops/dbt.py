@@ -1,10 +1,10 @@
-from dagster import Output, OutputDefinition, solid
+from dagster import Out, Output, op
 from dagster_dbt import DbtCliOutput
 
 
-@solid(
+@op(
     required_resource_keys={"dbt", "run_date", "dbt_assets"},
-    output_defs=[OutputDefinition(dagster_type=DbtCliOutput)],
+    out=Out(dagster_type=DbtCliOutput),
     tags={"kind": "dbt"},
 )
 def hn_dbt_run(context):
@@ -19,6 +19,6 @@ def hn_dbt_run(context):
     yield Output(dbt_cli_output)
 
 
-@solid(required_resource_keys={"dbt"}, tags={"kind": "dbt"})
+@op(required_resource_keys={"dbt"}, tags={"kind": "dbt"})
 def hn_dbt_test(context, _dbt_output):
     context.resources.dbt.test()

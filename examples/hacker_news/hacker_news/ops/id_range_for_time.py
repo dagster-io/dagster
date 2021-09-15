@@ -1,15 +1,7 @@
 from datetime import datetime, timezone
 from typing import Tuple
 
-from dagster import (
-    DynamicOutput,
-    DynamicOutputDefinition,
-    EventMetadataEntry,
-    Field,
-    Output,
-    OutputDefinition,
-    solid,
-)
+from dagster import DynamicOut, DynamicOutput, EventMetadataEntry, Field, Out, Output, op
 
 
 def binary_search_nearest_left(get_value, start, end, min_target):
@@ -94,14 +86,12 @@ def _id_range_for_time(start, end, hn_client):
     return id_range, metadata_entries
 
 
-@solid(
+@op(
     required_resource_keys={"hn_client", "partition_start", "partition_end"},
-    output_defs=[
-        OutputDefinition(
-            Tuple[int, int],
-            description="The lower (inclusive) and upper (exclusive) ids that bound the range for the partition",
-        )
-    ],
+    out=Out(
+        Tuple[int, int],
+        description="The lower (inclusive) and upper (exclusive) ids that bound the range for the partition",
+    ),
 )
 def id_range_for_time(context):
     """
@@ -115,15 +105,13 @@ def id_range_for_time(context):
     yield Output(id_range, metadata_entries=metadata_entries)
 
 
-@solid(
+@op(
     config_schema={"batch_size": Field(int, is_required=False)},
     required_resource_keys={"hn_client", "partition_start", "partition_end"},
-    output_defs=[
-        DynamicOutputDefinition(
-            Tuple[int, int],
-            description="A dynamic set of id ranges that cover the range for the partition, divided by batch_size config if provided.",
-        )
-    ],
+    out=DynamicOut(
+        Tuple[int, int],
+        description="A dynamic set of id ranges that cover the range for the partition, divided by batch_size config if provided.",
+    ),
 )
 def dynamic_id_ranges_for_time(context):
     """
@@ -137,7 +125,7 @@ def dynamic_id_ranges_for_time(context):
 
     start_id, end_id = id_range
 
-    batch_size = context.solid_config.get("batch_size")
+    batch_size = context.op_config.get("batch_size")
     if batch_size is not None and batch_size > 1:
         start = start_id
         while start < end_id:

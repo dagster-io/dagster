@@ -1,4 +1,3 @@
 load_from:
   - python_module:
       module_name: dagster_pandas.examples
-      attribute: define_pandas_repository

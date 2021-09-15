@@ -5,17 +5,15 @@ from dagster import (
     DagsterType,
     EventMetadataEntry,
     Field,
-    InputDefinition,
+    In,
+    Out,
     Output,
-    OutputDefinition,
     Selector,
     check_dagster_type,
     dagster_type_loader,
     dagster_type_materializer,
-    execute_pipeline,
-    execute_solid,
-    pipeline,
-    solid,
+    graph,
+    op,
 )
 from dagster.utils import safe_tempfile_path
 from dagster_pandas.constraints import (
@@ -49,18 +47,18 @@ def test_basic_pipeline_with_pandas_dataframe_dagster_type():
         event_metadata_fn=compute_event_metadata,
     )
 
-    @solid(output_defs=[OutputDefinition(name="basic_dataframe", dagster_type=BasicDF)])
+    @op(out={"basic_dataframe": Out(dagster_type=BasicDF)})
     def create_dataframe(_):
         yield Output(
             DataFrame({"pid": [1, 2, 3], "names": ["foo", "bar", "baz"]}),
             output_name="basic_dataframe",
         )
 
-    @pipeline
-    def basic_pipeline():
+    @graph
+    def basic_graph():
         return create_dataframe()
 
-    result = execute_pipeline(basic_pipeline)
+    result = basic_graph.execute_in_process()
     assert result.success
     for event in result.event_list:
         if event.event_type_value == "STEP_OUTPUT":
@@ -179,31 +177,31 @@ def test_custom_dagster_dataframe_loading_ok():
             ],
         )
 
-        @solid(
-            input_defs=[InputDefinition("test_df", TestDataFrame)],
-            output_defs=[OutputDefinition(TestDataFrame)],
+        @op(
+            ins={"test_df": In(TestDataFrame)},
+            out=Out(TestDataFrame),
         )
         def use_test_dataframe(_, test_df):
             test_df["bar"] = [2, 4, 6]
             return test_df
 
-        solid_result = execute_solid(
-            use_test_dataframe,
-            run_config={
-                "solids": {
-                    "use_test_dataframe": {
-                        "inputs": {"test_df": {"csv": {"path": input_csv_fp}}},
-                        "outputs": [
-                            {"result": {"csv": {"path": output_csv_fp}}},
-                        ],
-                    }
-                }
-            },
-        )
+        @graph
+        def basic_graph():
+            use_test_dataframe()
 
-        assert solid_result.success
-        solid_output_df = read_csv(output_csv_fp)
-        assert all(solid_output_df["bar"] == [2, 4, 6])
+        result = basic_graph.execute_in_process(
+            config={
+                "use_test_dataframe": {
+                    "inputs": {"test_df": {"csv": {"path": input_csv_fp}}},
+                    "outputs": [
+                        {"result": {"csv": {"path": output_csv_fp}}},
+                    ],
+                }
+            }
+        )
+        assert result.success
+        output_df = read_csv(output_csv_fp)
+        assert all(output_df["bar"] == [2, 4, 6])
 
 
 def test_custom_dagster_dataframe_parametrizable_input():
@@ -241,29 +239,30 @@ def test_custom_dagster_dataframe_parametrizable_input():
         materializer=silly_materializer,
     )
 
-    @solid(
-        input_defs=[InputDefinition("df", TestDataFrame)],
-        output_defs=[OutputDefinition(TestDataFrame)],
+    @op(
+        ins={"df": In(TestDataFrame)},
+        out=Out(TestDataFrame),
     )
     def did_i_win(_, df):
         return df
 
-    solid_result = execute_solid(
-        did_i_win,
-        run_config={
-            "solids": {
-                "did_i_win": {
-                    "inputs": {"df": {"door_a": "bar"}},
-                    "outputs": [{"result": {"devnull": "baz"}}],
-                }
+    @graph
+    def basic_graph():
+        did_i_win()
+
+    result = basic_graph.execute_in_process(
+        config={
+            "did_i_win": {
+                "inputs": {"df": {"door_a": "bar"}},
+                "outputs": [{"result": {"devnull": "baz"}}],
             }
-        },
+        }
     )
-    assert solid_result.success
-    output_df = solid_result.output_value()
+    assert result.success
+    output_df = result.result_for_node("did_i_win").output_value()
     assert isinstance(output_df, DataFrame)
     assert output_df["foo"].tolist() == ["goat"]
-    materialization_events = solid_result.materialization_events_during_compute
+    materialization_events = [event for event in result.event_list if event.is_step_materialization]
     assert len(materialization_events) == 1
     assert materialization_events[0].event_specific_data.materialization.label == "nothing"
 
@@ -283,18 +282,18 @@ def test_basic_pipeline_with_pandas_dataframe_dagster_type_metadata_entries():
         event_metadata_fn=compute_event_metadata,
     )
 
-    @solid(output_defs=[OutputDefinition(name="basic_dataframe", dagster_type=BasicDF)])
+    @op(out={"basic_dataframe": Out(dagster_type=BasicDF)})
     def create_dataframe(_):
         yield Output(
             DataFrame({"pid": [1, 2, 3], "names": ["foo", "bar", "baz"]}),
             output_name="basic_dataframe",
         )
 
-    @pipeline
-    def basic_pipeline():
+    @graph
+    def basic_graph():
         return create_dataframe()
 
-    result = execute_pipeline(basic_pipeline)
+    result = basic_graph.execute_in_process()
     assert result.success
     for event in result.event_list:
         if event.event_type_value == "STEP_OUTPUT":

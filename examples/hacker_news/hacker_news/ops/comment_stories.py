@@ -1,28 +1,24 @@
-from dagster import InputDefinition, OutputDefinition, solid
+from dagster import In, Out, op
 from pandas import DataFrame, Series
 
 
-@solid(
-    input_defs=[
-        InputDefinition(
-            "stories",
+@op(
+    ins={
+        "stories": In(
             root_manager_key="warehouse_loader",
             metadata={"table": "hackernews.stories", "columns": ["id"]},
         ),
-        InputDefinition(
-            "comments",
+        "comments": In(
             root_manager_key="warehouse_loader",
             metadata={
                 "table": "hackernews.comments",
                 "columns": ["id", "by", "parent"],
             },
         ),
-    ],
-    output_defs=[
-        OutputDefinition(
-            io_manager_key="warehouse_io_manager", metadata={"table": "hackernews.comment_stories"}
-        )
-    ],
+    },
+    out=Out(
+        io_manager_key="warehouse_io_manager", metadata={"table": "hackernews.comment_stories"}
+    ),
 )
 def build_comment_stories(stories: DataFrame, comments: DataFrame) -> DataFrame:
     """

@@ -136,7 +136,7 @@ class ActiveExecution:
                 )
             else:
                 raise DagsterUnknownStepStateError(
-                    "Execution of pipeline exited with steps {step_list} in an unknown state to this process.\n"
+                    "Execution exited with steps {step_list} in an unknown state to this process.\n"
                     "This was likely caused by losing communication with the process performing step execution.".format(
                         step_list=self._unknown_state
                     )
