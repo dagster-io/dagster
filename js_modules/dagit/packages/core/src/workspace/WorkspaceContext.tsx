@@ -1,13 +1,13 @@
-import { ApolloQueryResult, gql, useQuery } from '@apollo/client';
+import {ApolloQueryResult, gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
-import { PYTHON_ERROR_FRAGMENT } from '../app/PythonErrorInfo';
-import { PipelineSelector } from '../types/globalTypes';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PipelineSelector} from '../types/globalTypes';
 
-import { REPOSITORY_INFO_FRAGMENT } from './RepositoryInformation';
-import { buildRepoAddress } from './buildRepoAddress';
-import { findRepoContainingPipeline } from './findRepoContainingPipeline';
-import { RepoAddress } from './types';
+import {REPOSITORY_INFO_FRAGMENT} from './RepositoryInformation';
+import {buildRepoAddress} from './buildRepoAddress';
+import {findRepoContainingPipeline} from './findRepoContainingPipeline';
+import {RepoAddress} from './types';
 import {
   RootRepositoriesQuery,
   RootRepositoriesQuery_workspaceOrError_PythonError,
@@ -134,7 +134,7 @@ export const getRepositoryOptionHash = (a: DagsterRepoOption) =>
  * in the workspace, and loading/error state for the relevant query.
  */
 const useWorkspaceState = () => {
-  const { data, loading, refetch } = useQuery<RootRepositoriesQuery>(ROOT_REPOSITORIES_QUERY, {
+  const {data, loading, refetch} = useQuery<RootRepositoriesQuery>(ROOT_REPOSITORIES_QUERY, {
     fetchPolicy: 'cache-and-network',
   });
 
@@ -145,14 +145,14 @@ const useWorkspaceState = () => {
     [workspaceOrError],
   );
 
-  const { options, error } = React.useMemo(() => {
+  const {options, error} = React.useMemo(() => {
     let options: DagsterRepoOption[] = [];
     if (!workspaceOrError) {
-      return { options, error: null };
+      return {options, error: null};
     }
 
     if (workspaceOrError.__typename === 'PythonError') {
-      return { options, error: workspaceOrError };
+      return {options, error: workspaceOrError};
     }
 
     options = workspaceOrError.locationEntries.reduce((accum, locationEntry) => {
@@ -161,12 +161,12 @@ const useWorkspaceState = () => {
       }
       const repositoryLocation = locationEntry.locationOrLoadError;
       const reposForLocation = repositoryLocation.repositories.map((repository) => {
-        return { repository, repositoryLocation };
+        return {repository, repositoryLocation};
       });
       return [...accum, ...reposForLocation];
     }, [] as DagsterRepoOption[]);
 
-    return { error: null, options };
+    return {error: null, options};
   }, [workspaceOrError]);
 
   return {
@@ -179,18 +179,18 @@ const useWorkspaceState = () => {
 };
 
 export const WorkspaceProvider: React.FC = (props) => {
-  const { children } = props;
+  const {children} = props;
   const workspaceState = useWorkspaceState();
   return <WorkspaceContext.Provider value={workspaceState}>{children}</WorkspaceContext.Provider>;
 };
 
 export const useRepositoryOptions = () => {
-  const { allRepos: options, loading, error } = React.useContext(WorkspaceContext);
-  return { options, loading, error };
+  const {allRepos: options, loading, error} = React.useContext(WorkspaceContext);
+  return {options, loading, error};
 };
 
 export const useRepository = (repoAddress: RepoAddress) => {
-  const { options } = useRepositoryOptions();
+  const {options} = useRepositoryOptions();
   return options.find(
     (option) =>
       option.repository.name === repoAddress.name &&
@@ -199,7 +199,7 @@ export const useRepository = (repoAddress: RepoAddress) => {
 };
 
 export const useActivePipelineForName = (pipelineName: string, snapshotId?: string) => {
-  const { options } = useRepositoryOptions();
+  const {options} = useRepositoryOptions();
   const reposWithMatch = findRepoContainingPipeline(options, pipelineName, snapshotId);
   if (reposWithMatch.length) {
     const match = reposWithMatch[0];
