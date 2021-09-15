@@ -3,6 +3,7 @@ FROM python:3.8-slim
 ARG DAGIT_BACKCOMPAT_VERSION
 
 RUN pip install \
+    graphql-ws>=0.3.0,<0.4.0 \
     dagster=="${DAGIT_BACKCOMPAT_VERSION}" \
     dagster-postgres=="${DAGIT_BACKCOMPAT_VERSION}" \
     dagster-docker=="${DAGIT_BACKCOMPAT_VERSION}" \
