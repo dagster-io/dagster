@@ -20,7 +20,6 @@ from .external_data import (
     ExternalRepositoryData,
     ExternalScheduleData,
     ExternalSensorData,
-    ExternalTargetData,
 )
 from .handle import JobHandle, PartitionSetHandle, PipelineHandle, RepositoryHandle
 from .pipeline_index import PipelineIndex

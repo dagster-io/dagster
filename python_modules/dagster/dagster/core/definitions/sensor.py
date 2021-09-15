@@ -1,5 +1,4 @@
 import inspect
-from abc import ABC
 from contextlib import ExitStack
 from typing import TYPE_CHECKING, Any, Callable, Generator, List, NamedTuple, Optional, Union, cast
 
@@ -18,8 +17,8 @@ from dagster.utils import ensure_gen
 from ..decorator_utils import get_function_params
 from .events import AssetKey
 from .graph import GraphDefinition
-from .mode import DEFAULT_MODE_NAME
 from .job import JobDefinition
+from .mode import DEFAULT_MODE_NAME
 from .run_request import JobType, PipelineRunReaction, RunRequest, SkipReason
 from .target import DirectTarget, RepoRelativeTarget
 from .utils import check_valid_name

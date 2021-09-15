@@ -245,17 +245,17 @@ def two_job_sensor(context):
 
 
 @sensor()
-def bad_request_untargeted():
+def bad_request_untargeted(_ctx):
     yield RunRequest(run_key=None, job_name="should_fail")
 
 
 @sensor(job=the_job)
-def bad_request_mismatch():
+def bad_request_mismatch(_ctx):
     yield RunRequest(run_key=None, job_name="config_pipeline")
 
 
 @sensor(jobs=[the_job, config_job])
-def bad_request_unspecified():
+def bad_request_unspecified(_ctx):
     yield RunRequest(run_key=None)
 
 
