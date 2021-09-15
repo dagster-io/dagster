@@ -40,7 +40,7 @@ interface Props {
 }
 
 export const IconWIP = (props: Props) => {
-  const {color = ColorsWIP.Gray1000, name, size = 16} = props;
+  const {color = ColorsWIP.Dark, name, size = 16} = props;
   return (
     <IconWrapper $size={size} $color={color} className="material-icons">
       {name}

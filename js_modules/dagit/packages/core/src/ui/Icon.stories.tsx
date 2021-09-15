@@ -74,7 +74,7 @@ export const Size24 = () => {
 export const IconColors = () => {
   return (
     <Group direction="row" spacing={2}>
-      <Icon name="account_tree" color={ColorsWIP.Gray1000} />
+      <Icon name="account_tree" color={ColorsWIP.Dark} />
       <Icon name="alternate_email" color={ColorsWIP.Gray900} />
       <Icon name="arrow_drop_down" color={ColorsWIP.Gray800} />
       <Icon name="assignment" color={ColorsWIP.Gray700} />
@@ -93,10 +93,10 @@ export const IconColors = () => {
       <Icon name="settings" color={ColorsWIP.Red2} />
       <Icon name="source" color={ColorsWIP.Red3} />
       <Icon name="star" color={ColorsWIP.Red4} />
-      <Icon name="toggle_off" color={ColorsWIP.Gold1} />
-      <Icon name="toggle_on" color={ColorsWIP.Gold2} />
-      <Icon name="warning" color={ColorsWIP.Gold3} />
-      <Icon name="workspaces" color={ColorsWIP.Gold4} />
+      <Icon name="toggle_off" color={ColorsWIP.Yellow1} />
+      <Icon name="toggle_on" color={ColorsWIP.Yellow2} />
+      <Icon name="warning" color={ColorsWIP.Yellow3} />
+      <Icon name="workspaces" color={ColorsWIP.Yellow4} />
     </Group>
   );
 };
