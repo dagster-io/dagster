@@ -3,7 +3,6 @@ from typing import Any, Callable, List, NamedTuple, Optional, Union, cast
 import pendulum
 from dagster import check
 from dagster.core.definitions import GraphDefinition, PipelineDefinition
-from dagster.core.definitions.run_request import RunRequest
 from dagster.core.definitions.sensor import (
     PipelineRunReaction,
     SensorDefinition,
