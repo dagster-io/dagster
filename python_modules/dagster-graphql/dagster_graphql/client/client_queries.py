@@ -123,3 +123,26 @@ mutation ($repositoryLocationName: String!) {
    }
 }
 """
+
+TERMINATE_PIPELINE_MUTATION = """
+mutation TerminatePipeline($runId: String!) {
+  terminatePipelineExecution(runId: $runId){
+    __typename
+    ... on TerminatePipelineExecutionSuccess{
+      run {
+        runId
+      }
+    }
+    ... on TerminatePipelineExecutionFailure {
+      message
+    }
+    ... on PipelineRunNotFoundError {
+      runId
+    }
+    ... on PythonError {
+      message
+      stack
+    }
+  }
+}
+"""
