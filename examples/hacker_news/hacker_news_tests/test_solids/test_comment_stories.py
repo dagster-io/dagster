@@ -1,5 +1,5 @@
 import pytest
-from hacker_news.solids.comment_stories import build_comment_stories
+from hacker_news.ops.comment_stories import build_comment_stories
 from pandas import DataFrame
 
 

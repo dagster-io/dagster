@@ -1,8 +1,19 @@
 from dagster import AssetKey, EventRecordsFilter, RunRequest, sensor
 
+from ..jobs.story_recommender import story_recommender_prod_job, story_recommender_staging_job
 
-@sensor(pipeline_name="story_recommender", mode="prod")
-def story_recommender_on_hn_table_update(context):
+
+@sensor(job=story_recommender_prod_job)
+def story_recommender_on_hn_table_update_prod(context):
+    yield from _story_recommender_on_hn_table_update(context)
+
+
+@sensor(job=story_recommender_staging_job)
+def story_recommender_on_hn_table_update_staging(context):
+    yield from _story_recommender_on_hn_table_update(context)
+
+
+def _story_recommender_on_hn_table_update(context):
     """Kick off a run if both the stories and comments tables have received updates"""
     if context.last_run_key:
         last_comments_key, last_stories_key = list(map(int, context.last_run_key.split("|")))
@@ -35,3 +46,9 @@ def story_recommender_on_hn_table_update(context):
     run_key = f"{last_comments_record_id}|{last_stories_record_id}"
 
     yield RunRequest(run_key=run_key)
+
+
+# legacy
+@sensor(pipeline_name="story_recommender", mode="prod")
+def story_recommender_on_hn_table_update(context):
+    yield from _story_recommender_on_hn_table_update(context)

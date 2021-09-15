@@ -1,7 +1,11 @@
 import tempfile
 
 from dagster import execute_pipeline
-from hacker_news.pipelines.download_pipeline import download_pipeline
+from hacker_news.legacy.pipelines.download_pipeline import download_pipeline
+from hacker_news.legacy.pipelines.story_recommender import (  # pylint: disable=unused-import
+    story_recommender,
+)
+from hacker_news.legacy.repo import hacker_news_legacy  # pylint: disable=unused-import
 
 
 def test_download():
