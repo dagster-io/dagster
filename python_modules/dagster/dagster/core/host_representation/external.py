@@ -490,23 +490,26 @@ class ExternalSensor:
     @property
     def pipeline_name(self):
         target = self._get_single_target()
-        return target.pipeline_name
+        return target.pipeline_name if target else None
 
     @property
     def mode(self):
         target = self._get_single_target()
-        return target.mode
+        return target.mode if target else None
 
     @property
     def solid_selection(self):
         target = self._get_single_target()
-        return target.solid_selection
+        return target.solid_selection if target else None
 
     def _get_single_target(self):
-        check.invariant(len(self._external_sensor_data.target_dict.values()) <= 1)
-        return list(self._external_sensor_data.target_dict.values())[0]
+        if self._external_sensor_data.target_dict:
+            check.invariant(len(self._external_sensor_data.target_dict.values()) == 1)
+            return list(self._external_sensor_data.target_dict.values())[0]
+        else:
+            return None
 
-    def get_target_data(self, pipeline_name: Optional[str]) -> ExternalTargetData:
+    def get_target_data(self, pipeline_name: Optional[str] = None):
         if pipeline_name:
             return self._external_sensor_data.target_dict[pipeline_name]
         else:

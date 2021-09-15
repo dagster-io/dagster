@@ -235,22 +235,41 @@ class ExternalTargetData(
 class ExternalSensorData(
     namedtuple(
         "_ExternalSensorData",
-        "name target_dict min_interval description",
+        "name pipeline_name solid_selection mode min_interval description target_dict",
     )
 ):
     def __new__(
         cls,
         name,
-        target_dict,
+        pipeline_name=None,
+        solid_selection=None,
+        mode=None,
         min_interval=None,
         description=None,
+        target_dict=None,
     ):
+        if pipeline_name and not target_dict:
+            # handle the legacy case where the ExternalSensorData was constructed from an earlier
+            # version of dagster
+            target_dict = {
+                pipeline_name: ExternalTargetData(
+                    pipeline_name=check.opt_str_param(pipeline_name, "pipeline_name"),
+                    solid_selection=check.opt_nullable_list_param(
+                        solid_selection, "solid_selection", str
+                    ),
+                    mode=check.opt_str_param(mode, "mode"),
+                )
+            }
+
         return super(ExternalSensorData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
-            target_dict=check.opt_dict_param(target_dict, "target_dict", str, ExternalTargetData),
+            pipeline_name=None,
+            solid_selection=None,
+            mode=None,
             min_interval=check.opt_int_param(min_interval, "min_interval"),
             description=check.opt_str_param(description, "description"),
+            target_dict=check.opt_dict_param(target_dict, "target_dict", str, ExternalTargetData),
         )
 
 
