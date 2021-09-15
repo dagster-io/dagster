@@ -1,6 +1,6 @@
 import inspect
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Callable, Generator, List, Optional, Union
+from typing import TYPE_CHECKING, Callable, Generator, List, Optional, Sequence, Union
 
 from dagster import check
 from dagster.core.definitions.sensor import RunRequest, SensorDefinition, SkipReason
@@ -25,7 +25,7 @@ def sensor(
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
     job: Optional[Union[GraphDefinition, JobDefinition]] = None,
-    jobs: Optional[List[Union[GraphDefinition, JobDefinition]]] = None,
+    jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
 ) -> Callable[
     [
         Callable[
@@ -60,7 +60,7 @@ def sensor(
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
         job (Optional[Union[GraphDefinition, JobDefinition]]): Experimental
-        jobs (Optional[List[Union[GraphDefinition, JobDefinition]]]): Experimental
+        jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): Experimental
     """
     check.opt_str_param(name, "name")
 
