@@ -433,11 +433,6 @@ def test_hook_with_resource_to_resource_dep():
     assert called.get("basic_solid")
 
 
-@resource
-def resource_a(_init_context):
-    return 1
-
-
 def test_hook_graph_job_op():
     called = {}
     op_output = "hook_op_output"
