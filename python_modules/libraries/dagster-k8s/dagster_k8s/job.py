@@ -422,7 +422,7 @@ def construct_dagster_k8s_job(
         user_defined_k8s_config,
         "user_defined_k8s_config",
         UserDefinedDagsterK8sConfig,
-        UserDefinedDagsterK8sConfig(),
+        default=UserDefinedDagsterK8sConfig(),
     )
 
     pod_name = check.opt_str_param(pod_name, "pod_name", default=job_name + "-pod")
@@ -511,6 +511,8 @@ def construct_dagster_k8s_job(
         for mount in job_config.volume_mounts
     ]
 
+    job_image = user_defined_k8s_config.container_config.pop("image", job_config.job_image)
+
     user_defined_k8s_volume_mounts = user_defined_k8s_config.container_config.pop(
         "volume_mounts", []
     )
@@ -520,7 +522,7 @@ def construct_dagster_k8s_job(
 
     job_container = kubernetes.client.V1Container(
         name=job_name,
-        image=job_config.job_image,
+        image=job_image,
         args=args,
         image_pull_policy=job_config.image_pull_policy,
         env=env + job_config.env + additional_k8s_env_vars,

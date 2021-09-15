@@ -1,58 +1,90 @@
-import dagstermill
 from dagster import (
+    In,
     InputDefinition,
-    ModeDefinition,
+    Out,
     OutputDefinition,
-    PresetDefinition,
+    config_from_files,
     file_relative_path,
     fs_io_manager,
-    pipeline,
+    graph,
+    in_process_executor,
     repository,
 )
 
 from ..data_frame import DataFrame
-from .pandas_hello_world.pipeline import pandas_hello_world
+from .pandas_hello_world.ops import always_fails_op, papermill_pandas_hello_world, sum_op, sum_sq_op
 
 
-def nb_test_path(name):
-    return file_relative_path(__file__, "notebooks/{name}.ipynb".format(name=name))
+@graph
+def pandas_hello_world_fails():
+    always_fails_op(sum_sq_op=sum_sq_op(sum_df=sum_op()))
 
 
-hello_world = dagstermill.define_dagstermill_solid(
-    name="papermill_pandas_hello_world",
-    notebook_path=nb_test_path("papermill_pandas_hello_world"),
-    input_defs=[InputDefinition(name="df", dagster_type=DataFrame)],
-    output_defs=[OutputDefinition(DataFrame)],
+pandas_hello_world_fails_test = pandas_hello_world_fails.to_job(executor_def=in_process_executor)
+
+
+@graph
+def pandas_hello_world():
+    sum_sq_op(sum_op())
+
+
+pandas_hello_world_test = pandas_hello_world.to_job(
+    config=config_from_files(
+        [
+            file_relative_path(
+                __file__, "pandas_hello_world/environments/pandas_hello_world_test.yaml"
+            )
+        ]
+    ),
+    executor_def=in_process_executor,
+)
+
+pandas_hello_world_prod = pandas_hello_world.to_job(
+    config=config_from_files(
+        [
+            file_relative_path(
+                __file__, "pandas_hello_world/environments/pandas_hello_world_prod.yaml"
+            )
+        ]
+    )
 )
 
 
-@pipeline(
-    mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})],
-    preset_defs=[
-        PresetDefinition.from_files(
-            "test",
-            config_files=[
-                file_relative_path(
-                    __file__,
-                    "pandas_hello_world/environments/papermill_pandas_hello_world_test.yaml",
-                )
-            ],
-        ),
-        PresetDefinition.from_files(
-            "prod",
-            config_files=[
-                file_relative_path(
-                    __file__,
-                    "pandas_hello_world/environments/papermill_pandas_hello_world_prod.yaml",
-                )
-            ],
-        ),
-    ],
+@graph
+def papermill_pandas_hello_world_graph():
+    papermill_pandas_hello_world()
+
+
+papermill_pandas_hello_world_test = papermill_pandas_hello_world_graph.to_job(
+    resource_defs={"io_manager": fs_io_manager},
+    config=config_from_files(
+        [
+            file_relative_path(
+                __file__,
+                "pandas_hello_world/environments/papermill_pandas_hello_world_test.yaml",
+            )
+        ]
+    ),
 )
-def papermill_pandas_hello_world_pipeline():
-    hello_world()
+
+papermill_pandas_hello_world_prod = papermill_pandas_hello_world_graph.to_job(
+    resource_defs={"io_manager": fs_io_manager},
+    config=config_from_files(
+        [
+            file_relative_path(
+                __file__,
+                "pandas_hello_world/environments/papermill_pandas_hello_world_prod.yaml",
+            )
+        ]
+    ),
+)
 
 
 @repository
-def test_dagstermill_pandas_solids():
-    return [papermill_pandas_hello_world_pipeline, pandas_hello_world]
+def dagstermill_pandas_test_repo():
+    return [papermill_pandas_hello_world_test, pandas_hello_world_test]
+
+
+@repository
+def dagstermill_pandas_prod_repo():
+    return [papermill_pandas_hello_world_prod, pandas_hello_world_prod]

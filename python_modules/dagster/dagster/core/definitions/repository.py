@@ -6,6 +6,7 @@ from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantV
 from dagster.utils import merge_dicts
 
 from .graph import GraphDefinition
+from .job import JobDefinition
 from .partition import PartitionScheduleDefinition, PartitionSetDefinition
 from .pipeline import PipelineDefinition
 from .schedule import ScheduleDefinition
@@ -90,9 +91,18 @@ class _CacheingDefinitionIndex(Generic[RepositoryLevelDefinition]):
         if self._definition_names:
             return self._definition_names
 
-        self._definition_names = list(self._definitions.keys()) + [
-            definition.name for definition in self._get_lazy_definitions()
-        ]
+        lazy_names = []
+        for definition in self._get_lazy_definitions():
+            strict_definition = self._definitions.get(definition.name)
+            if strict_definition:
+                check.invariant(
+                    strict_definition == definition,
+                    f"Duplicate definition found for {definition.name}",
+                )
+            else:
+                lazy_names.append(definition.name)
+
+        self._definition_names = list(self._definitions.keys()) + lazy_names
         return self._definition_names
 
     def has_definition(self, definition_name: str) -> bool:
@@ -379,14 +389,17 @@ class CachingRepositoryData(RepositoryData):
         ]
 
         def load_partition_sets_from_pipelines():
-            mode_partition_sets = []
+            job_partition_sets = []
             for pipeline in self.get_all_pipelines():
-                for mode_def in pipeline.mode_definitions:
-                    partition_set_def = mode_def.get_partition_set_def(pipeline.name)
-                    if partition_set_def:
-                        mode_partition_sets.append(partition_set_def)
+                if isinstance(pipeline, JobDefinition):
+                    job_partition_set = pipeline.get_partition_set_def()
 
-            return mode_partition_sets
+                    if job_partition_set:
+                        # should only return a partition set if this was constructed using the job
+                        # API, with a partitioned config
+                        job_partition_sets.append(job_partition_set)
+
+            return job_partition_sets
 
         self._partition_sets = _CacheingDefinitionIndex(
             PartitionSetDefinition,

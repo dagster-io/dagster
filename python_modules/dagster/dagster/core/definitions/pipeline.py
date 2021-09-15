@@ -46,6 +46,7 @@ if TYPE_CHECKING:
     from dagster.core.snap import PipelineSnapshot, ConfigSchemaSnapshot
     from dagster.core.host_representation import PipelineIndex
     from dagster.core.instance import DagsterInstance
+    from dagster.core.definitions.partition import PartitionSetDefinition
     from dagster.core.execution.execution_results import InProcessGraphResult
 
 
@@ -261,6 +262,9 @@ class PipelineDefinition:
     @property
     def name(self):
         return self._name
+
+    def describe_target(self):
+        return f"pipeline '{self.name}'"
 
     @property
     def tags(self):

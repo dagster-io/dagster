@@ -223,8 +223,7 @@ def test_partitions():
             ),
         ),
     )
-    mode = job.mode_definitions[0]
-    partition_set = mode.get_partition_set_def("my_graph")
+    partition_set = job.get_partition_set_def()
     partitions = partition_set.get_partitions()
     assert len(partitions) == 2
     assert partitions[0].value == "2020-02-25"

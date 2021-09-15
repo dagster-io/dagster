@@ -62,6 +62,7 @@ class UnboundSolidExecutionContext(SolidExecutionContext):
         self._instance = self._instance_cm.__enter__()  # pylint: disable=no-member
 
         # Open resource context manager
+        self._resources_contain_cm = False
         self._resources_cm = build_resources(
             check.opt_dict_param(resources_dict, "resources_dict", key_type=str), instance
         )

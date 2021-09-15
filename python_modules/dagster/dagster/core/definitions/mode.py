@@ -137,20 +137,6 @@ class ModeDefinition(
 
         check.failed("{} storage definition not found".format(name))
 
-    def get_partition_set_def(self, pipeline_name: str) -> Optional["PartitionSetDefinition"]:
-        from dagster.core.definitions.partition import PartitionSetDefinition
-
-        if not self.partitioned_config:
-            return None
-
-        return PartitionSetDefinition(
-            pipeline_name=pipeline_name,
-            name=pipeline_name + "_" + self.name + "_partition_set",
-            partitions_def=self.partitioned_config.partitions_def,
-            run_config_fn_for_partition=self.partitioned_config.run_config_for_partition_fn,
-            mode=self.name,
-        )
-
     @staticmethod
     def from_resources(resources, name=None):
         check.dict_param(resources, "resources", key_type=str)
