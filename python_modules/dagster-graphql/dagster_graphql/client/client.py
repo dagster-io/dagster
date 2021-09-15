@@ -345,7 +345,7 @@ class DagsterGraphQLClient:
             run_id (str): run id of the pipeline run to terminate.
 
         Raises:
-            DagsterGraphQLClientError("PipelineNotFoundError", message): if the requested run id is not found
+            DagsterGraphQLClientError("PipelineRunNotFoundError", message): if the requested run id is not found
             DagsterGraphQLClientError("TerminatePipelineExecutionFailure", message): if the requested run is not active
             DagsterGraphQLClientError("PythonError", message): on internal framework errors
 
@@ -359,10 +359,10 @@ class DagsterGraphQLClient:
         )
         query_result: Dict[str, Any] = res_data["terminatePipelineExecution"]
         query_result_type: str = query_result["__typename"]
+
         if query_result_type == "TerminatePipelineExecutionSuccess":
             return query_result["run"]["runId"]
-        elif query_result_type == "PipelineRunNotFoundError":
-            raise DagsterGraphQLClientError(query_result_type, query_result["run_id"])
-        else:
-            raise DagsterGraphQLClientError(query_result_type, query_result["message"])
-
+        if query_result_type == "PipelineRunNotFoundError":
+            raise DagsterGraphQLClientError(query_result_type, query_result["runId"])
+        # query_result_type is either TerminatePipelineExecutionFailure or PythonError
+        raise DagsterGraphQLClientError(query_result_type, query_result["message"])
