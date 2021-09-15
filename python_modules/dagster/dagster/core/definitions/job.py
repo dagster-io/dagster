@@ -46,6 +46,9 @@ class JobDefinition(PipelineDefinition):
             version_strategy=version_strategy,
         )
 
+    def describe_target(self):
+        return f"job '{self.name}'"
+
     def execute_in_process(
         self,
         run_config: Optional[Dict[str, Any]] = None,
@@ -92,10 +95,10 @@ class JobDefinition(PipelineDefinition):
             _partitioned_config=base_mode.partitioned_config,
         )
 
-        ephemeral_pipeline = PipelineDefinition(
+        ephemeral_job = JobDefinition(
             name=self._name,
             graph_def=self._graph_def,
-            mode_defs=[in_proc_mode],
+            mode_def=in_proc_mode,
             hook_defs=self.hook_defs,
             tags=self.tags,
             version_strategy=self.version_strategy,
@@ -103,7 +106,7 @@ class JobDefinition(PipelineDefinition):
 
         return core_execute_in_process(
             node=self._graph_def,
-            ephemeral_pipeline=ephemeral_pipeline,
+            ephemeral_pipeline=ephemeral_job,
             run_config=run_config,
             instance=instance,
             output_capturing_enabled=True,

@@ -263,6 +263,9 @@ class PipelineDefinition:
     def name(self):
         return self._name
 
+    def describe_target(self):
+        return f"pipeline '{self.name}'"
+
     @property
     def tags(self):
         return frozentags(**merge_dicts(self._graph_def.tags, self._tags))

@@ -219,14 +219,12 @@ def _get_mapped_solids_dict(
 
 def _get_error_lambda(current_stack):
     return lambda: (
-        "The config mapping function on the composite solid definition "
-        '"{definition_name}" at solid "{solid_name}" in pipeline "{pipeline_name}" '
+        "The config mapping function on {described_node} in {described_target} "
         "has thrown an unexpected error during its execution. The definition is "
         'instantiated at stack "{stack_str}".'
     ).format(
-        definition_name=current_stack.current_solid.definition.name,
-        solid_name=current_stack.current_solid.name,
-        pipeline_name=current_stack.pipeline_def.name,
+        described_node=current_stack.current_solid.describe_node(),
+        described_target=current_stack.pipeline_def.describe_target(),
         stack_str=":".join(current_stack.handle.path),
     )
 

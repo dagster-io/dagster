@@ -536,7 +536,7 @@ class GraphDefinition(NodeDefinition):
         from dagster.core.execution.execute_in_process import core_execute_in_process
         from dagster.core.instance import DagsterInstance
         from dagster.core.storage.io_manager import IOManagerDefinition, IOManager
-        from .pipeline import PipelineDefinition
+        from .job import JobDefinition
         from .executor import execute_in_process_executor
 
         if len(self.input_defs) > 0:
@@ -562,15 +562,13 @@ class GraphDefinition(NodeDefinition):
             executor_defs=[execute_in_process_executor], resource_defs=resource_defs
         )
 
-        ephemeral_pipeline = PipelineDefinition(
-            name=self._name, graph_def=self, mode_defs=[in_proc_mode]
-        )
+        ephemeral_job = JobDefinition(name=self._name, graph_def=self, mode_def=in_proc_mode)
 
         run_config = {"ops": config if config is not None else {}}
 
         return core_execute_in_process(
             node=self,
-            ephemeral_pipeline=ephemeral_pipeline,
+            ephemeral_pipeline=ephemeral_job,
             run_config=run_config,
             instance=instance,
             output_capturing_enabled=True,
