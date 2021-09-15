@@ -3,6 +3,7 @@ FROM python:3.8-slim
 ARG USER_CODE_BACKCOMPAT_VERSION
 
 RUN pip install \
+    graphql-ws>=0.3.0,<0.4.0 \
     dagster=="${USER_CODE_BACKCOMPAT_VERSION}" \
     dagster-postgres=="${USER_CODE_BACKCOMPAT_VERSION}" \
     dagster-docker=="${USER_CODE_BACKCOMPAT_VERSION}"
