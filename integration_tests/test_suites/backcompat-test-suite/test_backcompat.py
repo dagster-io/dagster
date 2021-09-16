@@ -110,16 +110,6 @@ def graphql_client(release_test_map, retrying_requests):
     dagit_version = release_test_map["dagit"]
     user_code_version = release_test_map["user_code"]
 
-    if dagit_version == DAGSTER_CURRENT_BRANCH:
-        os.environ["DAGIT_DOCKERFILE"] = "./Dockerfile_dagit_source"
-    else:
-        os.environ["DAGIT_DOCKERFILE"] = "./Dockerfile_dagit_release"
-
-    if user_code_version == DAGSTER_CURRENT_BRANCH:
-        os.environ["USER_CODE_DOCKERFILE"] = "./Dockerfile_user_code_source"
-    else:
-        os.environ["USER_CODE_DOCKERFILE"] = "./Dockerfile_user_code_release"
-
     with docker_service_up(
         file_relative_path(__file__, "./dagit_service/docker-compose.yml"),
         build_args=[dagit_version, user_code_version],

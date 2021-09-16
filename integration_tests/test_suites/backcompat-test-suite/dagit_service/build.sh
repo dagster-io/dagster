@@ -2,6 +2,18 @@
 DAGIT_BACKCOMPAT_VERSION=$1
 USER_CODE_BACKCOMPAT_VERSION=$2
 
+if [${DAGIT_BACKCOMPAT_VERSION} == "current_branch"]; then
+    export DAGIT_DOCKERFILE="./Dockerfile_dagit_source"
+else
+    export DAGIT_DOCKERFILE="./Dockerfile_dagit_release"
+fi
+
+if [${USER_CODE_BACKCOMPAT_VERSION} == "current_branch"]; then
+    export USER_CODE_DOCKERFILE="./Dockerfile_user_code_source"
+else
+    export USER_CODE_DOCKERFILE="./Dockerfile_user_code_release"
+fi
+
 
 ROOT=$(git rev-parse --show-toplevel)
 BASE_DIR="${ROOT}/integration_tests/test_suites/backcompat-test-suite/dagit_service"
