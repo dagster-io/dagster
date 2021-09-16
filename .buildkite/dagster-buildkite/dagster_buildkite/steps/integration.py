@@ -159,4 +159,4 @@ def _get_latest_dagster_release():
     release_versions = [packaging.version.parse(release) for release in releases.keys()]
     for release_version in reversed(sorted(release_versions)):
         if not release_version.is_prerelease:
-            return release_version
+            return str(release_version)
