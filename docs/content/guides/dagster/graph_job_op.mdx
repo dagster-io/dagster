@@ -56,7 +56,14 @@ In both cases, you can load the pipeline / graph in Dagit with:
 If you want to execute the graph in process, instead of using <PyObject module="dagster" object="execute_pipeline" />, you can invoke its <PyObject module="dagster" object="GraphDefinition" method="execute_in_process" /> method.
 
 ```python file=/guides/dagster/graph_job_op/execute_simple_graph.py startafter=start_execute endbefore=end_execute
-do_it_all.execute_in_process()
+result = do_it_all.execute_in_process()
+```
+
+A call to <PyObject module="dagster" object="GraphDefinition" method="execute_in_process" /> creates an <PyObject module="dagster" object="InProcessResult" /> object. Outputs can be retrieved using the <PyObject module="dagster" object="InProcessResult" method="output_for_node" /> method, and events can be retrieved using the <PyObject module="dagster" object="InProcessResult" method="events_for_node" /> method.
+
+```python file=/guides/dagster/graph_job_op/execute_simple_graph.py startafter=start_retrieve_output endbefore=end_retrieve_output
+output = result.output_for_node("do_something")
+    events = result.events_for_node("do_something")
 ```
 
 ## Resources
