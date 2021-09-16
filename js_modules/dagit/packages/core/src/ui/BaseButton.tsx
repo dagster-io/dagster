@@ -51,51 +51,25 @@ interface StyledButtonProps {
   $textColor: string;
 }
 
-const backgroundColorCSS = (props: StyledButtonProps) => {
-  const {$fillColor} = props;
-  if ($fillColor) {
-    return $fillColor;
-  }
-  return 'transparent';
-};
-
 const DEFAULT_STROKE = css`
-  box-shadow: rgba(0, 0, 0, 0) 0px 1px 1px 0px, ${ColorsWIP.Gray300} 0px 0px 0px 1px;
+  box-shadow: ${ColorsWIP.Gray300} 0px 0px 0px 1px;
 `;
 const NO_STROKE = css`
-  box-shadow: rgba(0, 0, 0, 0) 0px 1px 1px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 1px;
+  box-shadow: none;
 `;
 const DEFAULT_STROKE_PLUS_HOVER = css`
-  box-shadow: rgb(0, 0, 0, 0) 0px 1px 1px 0px, ${ColorsWIP.Gray400} 0px 0px 0px 1px,
-    rgba(0, 0, 0, 0.12) 0px 2px 12px 0px;
+  box-shadow: ${ColorsWIP.Gray400} 0px 0px 0px 1px, rgba(0, 0, 0, 0.12) 0px 2px 12px 0px;
 `;
 const NO_STROKE_PLUS_HOVER = css`
-  box-shadow: rgba(0, 0, 0, 0) 0px 1px 1px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 1px,
-    rgba(0, 0, 0, 0.12) 0px 2px 12px 0px;
+  box-shadow: rgba(0, 0, 0, 0.12) 0px 2px 12px 0px;
 `;
-
-const boxShadowCSS = (props: StyledButtonProps) => {
-  const {$stroke} = props;
-  if ($stroke) {
-    return DEFAULT_STROKE;
-  }
-  return NO_STROKE;
-};
-
-const textColorCSS = (props: StyledButtonProps) => {
-  const {$textColor} = props;
-  if ($textColor) {
-    return $textColor;
-  }
-  return ColorsWIP.Dark;
-};
 
 const StyledButton = styled.button<StyledButtonProps>`
   align-items: center;
-  background-color: ${backgroundColorCSS};
+  background-color: ${({$fillColor}) => $fillColor || 'transparent'};
   border: none;
   border-radius: 8px;
-  color: ${textColorCSS};
+  color: ${({$textColor}) => $textColor};
   cursor: pointer;
   display: inline-flex;
   flex-direction: row;
@@ -105,14 +79,14 @@ const StyledButton = styled.button<StyledButtonProps>`
   transition: background 100ms, box-shadow 150ms;
   user-select: none;
 
-  ${boxShadowCSS}
+  ${({$stroke}) => ($stroke ? DEFAULT_STROKE : NO_STROKE)}
 
   :hover {
     ${({$stroke}) => ($stroke ? DEFAULT_STROKE_PLUS_HOVER : NO_STROKE_PLUS_HOVER)};
   }
 
   :focus {
-    box-shadow: rgba(0, 0, 0, 0) 0px 1px 1px 0px, rgba(58, 151, 212, 0.6) 0 0 0 3px;
+    box-shadow: rgba(58, 151, 212, 0.6) 0 0 0 3px;
     outline: none;
   }
 
@@ -126,7 +100,7 @@ const StyledButton = styled.button<StyledButtonProps>`
   }
 
   ${IconWrapper} {
-    color: ${textColorCSS};
+    color: ${({$textColor}) => $textColor};
     align-self: center;
     display: block;
   }
