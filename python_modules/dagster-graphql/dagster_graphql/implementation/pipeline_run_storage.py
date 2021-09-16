@@ -26,8 +26,8 @@ class PipelineRunObservableSubscribe:
         self.run_id = run_id
         self.observer = None
         self.state = State.NULL
-        self.load_thread = None
         self.stopping = None
+        self.stopped = None
         self.after_cursor = after_cursor if after_cursor is not None else -1
 
     def __call__(self, observer):
@@ -54,16 +54,18 @@ class PipelineRunObservableSubscribe:
         # support for gevent based dagit server
         if gevent.get_hub().gr_frame:
             self.stopping = gevent.event.Event()
-            self.load_thread = gevent.Greenlet(self.background_event_loading, gevent.sleep)
+            self.stopped = gevent.event.Event()
+            load_thread = gevent.Greenlet(self.background_event_loading, gevent.sleep)
         else:
             self.stopping = Event()
-            self.load_thread = Thread(
+            self.stopped = Event()
+            load_thread = Thread(
                 target=self.background_event_loading,
                 args=(sleep,),
                 name=f"load-events-{self.run_id}",
             )
 
-        self.load_thread.start()
+        load_thread.start()
 
     def watch_events(self):
         self.state = State.WATCHING
@@ -90,6 +92,7 @@ class PipelineRunObservableSubscribe:
         if not self.stopping.is_set():
             self.watch_events()
 
+        self.stopped.set()
         return
 
     def dispose(self):
