@@ -24,6 +24,7 @@ from dagster.serdes import (
     DefaultNamedTupleSerializer,
     create_snapshot_id,
     deserialize_value,
+    unpack_inner_value,
     whitelist_for_serdes,
 )
 
@@ -49,9 +50,21 @@ def create_pipeline_snapshot_id(snapshot: "PipelineSnapshot") -> str:
 
 class PipelineSnapshotSerializer(DefaultNamedTupleSerializer):
     @classmethod
-    def value_from_storage_dict(cls, storage_dict, klass, args_for_class):
+    def value_from_storage_dict(
+        cls,
+        storage_dict,
+        klass,
+        args_for_class,
+        whitelist_map,
+        descent_path,
+    ):
+        # unpack all stored fields
+        unpacked_dict = {
+            key: unpack_inner_value(value, whitelist_map, f"{descent_path}.{key}")
+            for key, value in storage_dict.items()
+        }
         # called by the serdes layer, delegates to helper method with expanded kwargs
-        return _pipeline_snapshot_from_storage(**storage_dict)
+        return _pipeline_snapshot_from_storage(**unpacked_dict)
 
 
 def _pipeline_snapshot_from_storage(
