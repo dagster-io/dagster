@@ -1,7 +1,8 @@
-
 {{- if eq .Values.runLauncher.type "CeleryK8sRunLauncher" }}
 {{- $celeryK8sRunLauncherConfig := .Values.runLauncher.config.celeryK8sRunLauncher }}
 {{ range $queue := $celeryK8sRunLauncherConfig.workerQueues }}
+{{- $sharedConfig := $celeryK8sRunLauncherConfig.configSource | default dict }}
+{{- $individualConfig := $queue.configSource | default dict }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -18,9 +19,8 @@ data:
       celery:
         broker: {{ include "dagster.celery.broker_url" $ | quote }}
         backend: {{ include "dagster.celery.backend_url" $ | quote }}
-
         {{- if and ($celeryK8sRunLauncherConfig.configSource) ($queue.configSource) }}
-        config_source: {{ merge $celeryK8sRunLauncherConfig.configSource | default dict $queue.configSource | default dict | toYaml | nindent 10 }} 
+        config_source: {{ merge $individualConfig $sharedConfig | toYaml | nindent 10 }} 
         {{- else if $celeryK8sRunLauncherConfig.configSource }}
         config_source: {{ $celeryK8sRunLauncherConfig.configSource | toYaml | nindent 10 }}
         {{- else if $queue.configSource }}
