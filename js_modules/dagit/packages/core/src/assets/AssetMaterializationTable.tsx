@@ -11,7 +11,7 @@ import {titleForRun} from '../runs/RunUtils';
 import {ButtonLink} from '../ui/ButtonLink';
 import {Group} from '../ui/Group';
 import {Table} from '../ui/Table';
-import {FontFamily} from '../ui/styles';
+import {Mono} from '../ui/Text';
 
 import {AssetLineageElements} from './AssetLineageElements';
 import {AssetQuery_assetOrError_Asset_assetMaterializations as Materialization} from './types/AssetQuery';
@@ -107,13 +107,12 @@ const AssetMaterializationRow: React.FC<{
         />
       </td>
       <td>
-        <Link
-          style={{marginRight: 5, fontFamily: FontFamily.monospace}}
-          to={`/instance/runs/${run.runId}?timestamp=${timestamp}`}
-        >
-          {titleForRun(run)}
-        </Link>
-        <RunStatusTagWithStats status={run.status} runId={run.runId} />
+        <Group direction="row" spacing={4}>
+          <Link to={`/instance/runs/${run.runId}?timestamp=${timestamp}`}>
+            <Mono>{titleForRun(run)}</Mono>
+          </Link>
+          <RunStatusTagWithStats status={run.status} runId={run.runId} />
+        </Group>
       </td>
     </tr>
   );

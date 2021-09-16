@@ -1,5 +1,5 @@
-solids:
-  sum_solid:
+ops:
+  sum_op:
     inputs:
       num:
         csv:

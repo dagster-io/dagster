@@ -9,29 +9,27 @@ from dagster.utils import file_relative_path
 
 def test_execute_pipeline():
     environment = {
-        "solids": {
-            "sum_solid": {
+        "ops": {
+            "sum_op": {
                 "inputs": {"num": {"csv": {"path": file_relative_path(__file__, "num.csv")}}}
             }
         }
     }
 
     result = execute_pipeline(
-        ReconstructablePipeline.for_module(
-            "dagster_pandas.examples.pandas_hello_world.pipeline", "pandas_hello_world"
-        ),
+        ReconstructablePipeline.for_module("dagster_pandas.examples", "pandas_hello_world_test"),
         run_config=environment,
     )
 
     assert result.success
 
-    assert result.result_for_solid("sum_solid").output_value().to_dict("list") == {
+    assert result.result_for_solid("sum_op").output_value().to_dict("list") == {
         "num1": [1, 3],
         "num2": [2, 4],
         "sum": [3, 7],
     }
 
-    assert result.result_for_solid("sum_sq_solid").output_value().to_dict("list") == {
+    assert result.result_for_solid("sum_sq_op").output_value().to_dict("list") == {
         "num1": [1, 3],
         "num2": [2, 4],
         "sum": [3, 7],
@@ -50,7 +48,7 @@ def test_cli_execute():
         with instance_for_test() as instance:
             do_execute_command(
                 pipeline=ReconstructablePipeline.for_module(
-                    "dagster_pandas.examples.pandas_hello_world.pipeline", "pandas_hello_world"
+                    "dagster_pandas.examples", "pandas_hello_world_test"
                 ),
                 instance=instance,
                 config=[
@@ -76,8 +74,8 @@ def test_cli_execute_failure():
         with instance_for_test() as instance:
             result = do_execute_command(
                 pipeline=ReconstructablePipeline.for_module(
-                    "dagster_pandas.examples.pandas_hello_world.pipeline",
-                    "pandas_hello_world_fails",
+                    "dagster_pandas.examples",
+                    "pandas_hello_world_fails_test",
                 ),
                 instance=instance,
                 config=[

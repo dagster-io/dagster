@@ -9,10 +9,8 @@ snapshots = Snapshot()
 snapshots['TestSensors.test_get_sensor[non_launchable_in_memory_instance_lazy_repository] 1'] = {
     '__typename': 'Sensor',
     'minIntervalSeconds': 30,
-    'mode': 'default',
     'name': 'always_no_config_sensor',
     'nextTick': None,
-    'pipelineName': 'no_config_pipeline',
     'sensorState': {
         'runs': [
         ],
@@ -21,16 +19,20 @@ snapshots['TestSensors.test_get_sensor[non_launchable_in_memory_instance_lazy_re
         'ticks': [
         ]
     },
-    'solidSelection': None
+    'targets': [
+        {
+            'mode': 'default',
+            'pipelineName': 'no_config_pipeline',
+            'solidSelection': None
+        }
+    ]
 }
 
 snapshots['TestSensors.test_get_sensor[non_launchable_in_memory_instance_managed_grpc_env] 1'] = {
     '__typename': 'Sensor',
     'minIntervalSeconds': 30,
-    'mode': 'default',
     'name': 'always_no_config_sensor',
     'nextTick': None,
-    'pipelineName': 'no_config_pipeline',
     'sensorState': {
         'runs': [
         ],
@@ -39,16 +41,20 @@ snapshots['TestSensors.test_get_sensor[non_launchable_in_memory_instance_managed
         'ticks': [
         ]
     },
-    'solidSelection': None
+    'targets': [
+        {
+            'mode': 'default',
+            'pipelineName': 'no_config_pipeline',
+            'solidSelection': None
+        }
+    ]
 }
 
 snapshots['TestSensors.test_get_sensor[non_launchable_in_memory_instance_multi_location] 1'] = {
     '__typename': 'Sensor',
     'minIntervalSeconds': 30,
-    'mode': 'default',
     'name': 'always_no_config_sensor',
     'nextTick': None,
-    'pipelineName': 'no_config_pipeline',
     'sensorState': {
         'runs': [
         ],
@@ -57,16 +63,20 @@ snapshots['TestSensors.test_get_sensor[non_launchable_in_memory_instance_multi_l
         'ticks': [
         ]
     },
-    'solidSelection': None
+    'targets': [
+        {
+            'mode': 'default',
+            'pipelineName': 'no_config_pipeline',
+            'solidSelection': None
+        }
+    ]
 }
 
 snapshots['TestSensors.test_get_sensor[non_launchable_postgres_instance_lazy_repository] 1'] = {
     '__typename': 'Sensor',
     'minIntervalSeconds': 30,
-    'mode': 'default',
     'name': 'always_no_config_sensor',
     'nextTick': None,
-    'pipelineName': 'no_config_pipeline',
     'sensorState': {
         'runs': [
         ],
@@ -75,16 +85,20 @@ snapshots['TestSensors.test_get_sensor[non_launchable_postgres_instance_lazy_rep
         'ticks': [
         ]
     },
-    'solidSelection': None
+    'targets': [
+        {
+            'mode': 'default',
+            'pipelineName': 'no_config_pipeline',
+            'solidSelection': None
+        }
+    ]
 }
 
 snapshots['TestSensors.test_get_sensor[non_launchable_postgres_instance_managed_grpc_env] 1'] = {
     '__typename': 'Sensor',
     'minIntervalSeconds': 30,
-    'mode': 'default',
     'name': 'always_no_config_sensor',
     'nextTick': None,
-    'pipelineName': 'no_config_pipeline',
     'sensorState': {
         'runs': [
         ],
@@ -93,16 +107,20 @@ snapshots['TestSensors.test_get_sensor[non_launchable_postgres_instance_managed_
         'ticks': [
         ]
     },
-    'solidSelection': None
+    'targets': [
+        {
+            'mode': 'default',
+            'pipelineName': 'no_config_pipeline',
+            'solidSelection': None
+        }
+    ]
 }
 
 snapshots['TestSensors.test_get_sensor[non_launchable_postgres_instance_multi_location] 1'] = {
     '__typename': 'Sensor',
     'minIntervalSeconds': 30,
-    'mode': 'default',
     'name': 'always_no_config_sensor',
     'nextTick': None,
-    'pipelineName': 'no_config_pipeline',
     'sensorState': {
         'runs': [
         ],
@@ -111,16 +129,20 @@ snapshots['TestSensors.test_get_sensor[non_launchable_postgres_instance_multi_lo
         'ticks': [
         ]
     },
-    'solidSelection': None
+    'targets': [
+        {
+            'mode': 'default',
+            'pipelineName': 'no_config_pipeline',
+            'solidSelection': None
+        }
+    ]
 }
 
 snapshots['TestSensors.test_get_sensor[non_launchable_sqlite_instance_deployed_grpc_env] 1'] = {
     '__typename': 'Sensor',
     'minIntervalSeconds': 30,
-    'mode': 'default',
     'name': 'always_no_config_sensor',
     'nextTick': None,
-    'pipelineName': 'no_config_pipeline',
     'sensorState': {
         'runs': [
         ],
@@ -129,16 +151,20 @@ snapshots['TestSensors.test_get_sensor[non_launchable_sqlite_instance_deployed_g
         'ticks': [
         ]
     },
-    'solidSelection': None
+    'targets': [
+        {
+            'mode': 'default',
+            'pipelineName': 'no_config_pipeline',
+            'solidSelection': None
+        }
+    ]
 }
 
 snapshots['TestSensors.test_get_sensor[non_launchable_sqlite_instance_lazy_repository] 1'] = {
     '__typename': 'Sensor',
     'minIntervalSeconds': 30,
-    'mode': 'default',
     'name': 'always_no_config_sensor',
     'nextTick': None,
-    'pipelineName': 'no_config_pipeline',
     'sensorState': {
         'runs': [
         ],
@@ -147,16 +173,20 @@ snapshots['TestSensors.test_get_sensor[non_launchable_sqlite_instance_lazy_repos
         'ticks': [
         ]
     },
-    'solidSelection': None
+    'targets': [
+        {
+            'mode': 'default',
+            'pipelineName': 'no_config_pipeline',
+            'solidSelection': None
+        }
+    ]
 }
 
 snapshots['TestSensors.test_get_sensor[non_launchable_sqlite_instance_managed_grpc_env] 1'] = {
     '__typename': 'Sensor',
     'minIntervalSeconds': 30,
-    'mode': 'default',
     'name': 'always_no_config_sensor',
     'nextTick': None,
-    'pipelineName': 'no_config_pipeline',
     'sensorState': {
         'runs': [
         ],
@@ -165,16 +195,20 @@ snapshots['TestSensors.test_get_sensor[non_launchable_sqlite_instance_managed_gr
         'ticks': [
         ]
     },
-    'solidSelection': None
+    'targets': [
+        {
+            'mode': 'default',
+            'pipelineName': 'no_config_pipeline',
+            'solidSelection': None
+        }
+    ]
 }
 
 snapshots['TestSensors.test_get_sensor[non_launchable_sqlite_instance_multi_location] 1'] = {
     '__typename': 'Sensor',
     'minIntervalSeconds': 30,
-    'mode': 'default',
     'name': 'always_no_config_sensor',
     'nextTick': None,
-    'pipelineName': 'no_config_pipeline',
     'sensorState': {
         'runs': [
         ],
@@ -183,16 +217,20 @@ snapshots['TestSensors.test_get_sensor[non_launchable_sqlite_instance_multi_loca
         'ticks': [
         ]
     },
-    'solidSelection': None
+    'targets': [
+        {
+            'mode': 'default',
+            'pipelineName': 'no_config_pipeline',
+            'solidSelection': None
+        }
+    ]
 }
 
 snapshots['TestSensors.test_get_sensors[non_launchable_in_memory_instance_lazy_repository] 1'] = [
     {
         'description': None,
         'minIntervalSeconds': 30,
-        'mode': 'default',
         'name': 'always_no_config_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -201,14 +239,18 @@ snapshots['TestSensors.test_get_sensors[non_launchable_in_memory_instance_lazy_r
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     },
     {
         'description': None,
         'minIntervalSeconds': 60,
-        'mode': 'default',
         'name': 'custom_interval_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -217,14 +259,18 @@ snapshots['TestSensors.test_get_sensors[non_launchable_in_memory_instance_lazy_r
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     },
     {
         'description': None,
         'minIntervalSeconds': 30,
-        'mode': 'default',
         'name': 'multi_no_config_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -233,14 +279,18 @@ snapshots['TestSensors.test_get_sensors[non_launchable_in_memory_instance_lazy_r
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     },
     {
         'description': None,
         'minIntervalSeconds': 30,
-        'mode': 'default',
         'name': 'never_no_config_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -249,14 +299,18 @@ snapshots['TestSensors.test_get_sensors[non_launchable_in_memory_instance_lazy_r
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     },
     {
         'description': None,
         'minIntervalSeconds': 30,
-        'mode': 'default',
         'name': 'once_no_config_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -265,7 +319,13 @@ snapshots['TestSensors.test_get_sensors[non_launchable_in_memory_instance_lazy_r
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     }
 ]
 
@@ -273,9 +333,7 @@ snapshots['TestSensors.test_get_sensors[non_launchable_in_memory_instance_manage
     {
         'description': None,
         'minIntervalSeconds': 30,
-        'mode': 'default',
         'name': 'always_no_config_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -284,14 +342,18 @@ snapshots['TestSensors.test_get_sensors[non_launchable_in_memory_instance_manage
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     },
     {
         'description': None,
         'minIntervalSeconds': 60,
-        'mode': 'default',
         'name': 'custom_interval_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -300,14 +362,18 @@ snapshots['TestSensors.test_get_sensors[non_launchable_in_memory_instance_manage
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     },
     {
         'description': None,
         'minIntervalSeconds': 30,
-        'mode': 'default',
         'name': 'multi_no_config_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -316,14 +382,18 @@ snapshots['TestSensors.test_get_sensors[non_launchable_in_memory_instance_manage
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     },
     {
         'description': None,
         'minIntervalSeconds': 30,
-        'mode': 'default',
         'name': 'never_no_config_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -332,14 +402,18 @@ snapshots['TestSensors.test_get_sensors[non_launchable_in_memory_instance_manage
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     },
     {
         'description': None,
         'minIntervalSeconds': 30,
-        'mode': 'default',
         'name': 'once_no_config_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -348,7 +422,13 @@ snapshots['TestSensors.test_get_sensors[non_launchable_in_memory_instance_manage
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     }
 ]
 
@@ -356,9 +436,7 @@ snapshots['TestSensors.test_get_sensors[non_launchable_in_memory_instance_multi_
     {
         'description': None,
         'minIntervalSeconds': 30,
-        'mode': 'default',
         'name': 'always_no_config_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -367,14 +445,18 @@ snapshots['TestSensors.test_get_sensors[non_launchable_in_memory_instance_multi_
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     },
     {
         'description': None,
         'minIntervalSeconds': 60,
-        'mode': 'default',
         'name': 'custom_interval_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -383,14 +465,18 @@ snapshots['TestSensors.test_get_sensors[non_launchable_in_memory_instance_multi_
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     },
     {
         'description': None,
         'minIntervalSeconds': 30,
-        'mode': 'default',
         'name': 'multi_no_config_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -399,14 +485,18 @@ snapshots['TestSensors.test_get_sensors[non_launchable_in_memory_instance_multi_
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     },
     {
         'description': None,
         'minIntervalSeconds': 30,
-        'mode': 'default',
         'name': 'never_no_config_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -415,14 +505,18 @@ snapshots['TestSensors.test_get_sensors[non_launchable_in_memory_instance_multi_
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     },
     {
         'description': None,
         'minIntervalSeconds': 30,
-        'mode': 'default',
         'name': 'once_no_config_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -431,7 +525,13 @@ snapshots['TestSensors.test_get_sensors[non_launchable_in_memory_instance_multi_
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     }
 ]
 
@@ -439,9 +539,7 @@ snapshots['TestSensors.test_get_sensors[non_launchable_postgres_instance_lazy_re
     {
         'description': None,
         'minIntervalSeconds': 30,
-        'mode': 'default',
         'name': 'always_no_config_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -450,14 +548,18 @@ snapshots['TestSensors.test_get_sensors[non_launchable_postgres_instance_lazy_re
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     },
     {
         'description': None,
         'minIntervalSeconds': 60,
-        'mode': 'default',
         'name': 'custom_interval_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -466,14 +568,18 @@ snapshots['TestSensors.test_get_sensors[non_launchable_postgres_instance_lazy_re
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     },
     {
         'description': None,
         'minIntervalSeconds': 30,
-        'mode': 'default',
         'name': 'multi_no_config_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -482,14 +588,18 @@ snapshots['TestSensors.test_get_sensors[non_launchable_postgres_instance_lazy_re
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     },
     {
         'description': None,
         'minIntervalSeconds': 30,
-        'mode': 'default',
         'name': 'never_no_config_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -498,14 +608,18 @@ snapshots['TestSensors.test_get_sensors[non_launchable_postgres_instance_lazy_re
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     },
     {
         'description': None,
         'minIntervalSeconds': 30,
-        'mode': 'default',
         'name': 'once_no_config_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -514,7 +628,13 @@ snapshots['TestSensors.test_get_sensors[non_launchable_postgres_instance_lazy_re
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     }
 ]
 
@@ -522,9 +642,7 @@ snapshots['TestSensors.test_get_sensors[non_launchable_postgres_instance_managed
     {
         'description': None,
         'minIntervalSeconds': 30,
-        'mode': 'default',
         'name': 'always_no_config_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -533,14 +651,18 @@ snapshots['TestSensors.test_get_sensors[non_launchable_postgres_instance_managed
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     },
     {
         'description': None,
         'minIntervalSeconds': 60,
-        'mode': 'default',
         'name': 'custom_interval_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -549,14 +671,18 @@ snapshots['TestSensors.test_get_sensors[non_launchable_postgres_instance_managed
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     },
     {
         'description': None,
         'minIntervalSeconds': 30,
-        'mode': 'default',
         'name': 'multi_no_config_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -565,14 +691,18 @@ snapshots['TestSensors.test_get_sensors[non_launchable_postgres_instance_managed
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     },
     {
         'description': None,
         'minIntervalSeconds': 30,
-        'mode': 'default',
         'name': 'never_no_config_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -581,14 +711,18 @@ snapshots['TestSensors.test_get_sensors[non_launchable_postgres_instance_managed
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     },
     {
         'description': None,
         'minIntervalSeconds': 30,
-        'mode': 'default',
         'name': 'once_no_config_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -597,7 +731,13 @@ snapshots['TestSensors.test_get_sensors[non_launchable_postgres_instance_managed
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     }
 ]
 
@@ -605,9 +745,7 @@ snapshots['TestSensors.test_get_sensors[non_launchable_postgres_instance_multi_l
     {
         'description': None,
         'minIntervalSeconds': 30,
-        'mode': 'default',
         'name': 'always_no_config_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -616,14 +754,18 @@ snapshots['TestSensors.test_get_sensors[non_launchable_postgres_instance_multi_l
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     },
     {
         'description': None,
         'minIntervalSeconds': 60,
-        'mode': 'default',
         'name': 'custom_interval_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -632,14 +774,18 @@ snapshots['TestSensors.test_get_sensors[non_launchable_postgres_instance_multi_l
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     },
     {
         'description': None,
         'minIntervalSeconds': 30,
-        'mode': 'default',
         'name': 'multi_no_config_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -648,14 +794,18 @@ snapshots['TestSensors.test_get_sensors[non_launchable_postgres_instance_multi_l
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     },
     {
         'description': None,
         'minIntervalSeconds': 30,
-        'mode': 'default',
         'name': 'never_no_config_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -664,14 +814,18 @@ snapshots['TestSensors.test_get_sensors[non_launchable_postgres_instance_multi_l
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     },
     {
         'description': None,
         'minIntervalSeconds': 30,
-        'mode': 'default',
         'name': 'once_no_config_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -680,7 +834,13 @@ snapshots['TestSensors.test_get_sensors[non_launchable_postgres_instance_multi_l
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     }
 ]
 
@@ -688,9 +848,7 @@ snapshots['TestSensors.test_get_sensors[non_launchable_sqlite_instance_deployed_
     {
         'description': None,
         'minIntervalSeconds': 30,
-        'mode': 'default',
         'name': 'always_no_config_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -699,14 +857,18 @@ snapshots['TestSensors.test_get_sensors[non_launchable_sqlite_instance_deployed_
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     },
     {
         'description': None,
         'minIntervalSeconds': 60,
-        'mode': 'default',
         'name': 'custom_interval_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -715,14 +877,18 @@ snapshots['TestSensors.test_get_sensors[non_launchable_sqlite_instance_deployed_
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     },
     {
         'description': None,
         'minIntervalSeconds': 30,
-        'mode': 'default',
         'name': 'multi_no_config_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -731,14 +897,18 @@ snapshots['TestSensors.test_get_sensors[non_launchable_sqlite_instance_deployed_
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     },
     {
         'description': None,
         'minIntervalSeconds': 30,
-        'mode': 'default',
         'name': 'never_no_config_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -747,14 +917,18 @@ snapshots['TestSensors.test_get_sensors[non_launchable_sqlite_instance_deployed_
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     },
     {
         'description': None,
         'minIntervalSeconds': 30,
-        'mode': 'default',
         'name': 'once_no_config_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -763,7 +937,13 @@ snapshots['TestSensors.test_get_sensors[non_launchable_sqlite_instance_deployed_
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     }
 ]
 
@@ -771,9 +951,7 @@ snapshots['TestSensors.test_get_sensors[non_launchable_sqlite_instance_lazy_repo
     {
         'description': None,
         'minIntervalSeconds': 30,
-        'mode': 'default',
         'name': 'always_no_config_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -782,14 +960,18 @@ snapshots['TestSensors.test_get_sensors[non_launchable_sqlite_instance_lazy_repo
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     },
     {
         'description': None,
         'minIntervalSeconds': 60,
-        'mode': 'default',
         'name': 'custom_interval_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -798,14 +980,18 @@ snapshots['TestSensors.test_get_sensors[non_launchable_sqlite_instance_lazy_repo
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     },
     {
         'description': None,
         'minIntervalSeconds': 30,
-        'mode': 'default',
         'name': 'multi_no_config_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -814,14 +1000,18 @@ snapshots['TestSensors.test_get_sensors[non_launchable_sqlite_instance_lazy_repo
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     },
     {
         'description': None,
         'minIntervalSeconds': 30,
-        'mode': 'default',
         'name': 'never_no_config_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -830,14 +1020,18 @@ snapshots['TestSensors.test_get_sensors[non_launchable_sqlite_instance_lazy_repo
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     },
     {
         'description': None,
         'minIntervalSeconds': 30,
-        'mode': 'default',
         'name': 'once_no_config_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -846,7 +1040,13 @@ snapshots['TestSensors.test_get_sensors[non_launchable_sqlite_instance_lazy_repo
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     }
 ]
 
@@ -854,9 +1054,7 @@ snapshots['TestSensors.test_get_sensors[non_launchable_sqlite_instance_managed_g
     {
         'description': None,
         'minIntervalSeconds': 30,
-        'mode': 'default',
         'name': 'always_no_config_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -865,14 +1063,18 @@ snapshots['TestSensors.test_get_sensors[non_launchable_sqlite_instance_managed_g
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     },
     {
         'description': None,
         'minIntervalSeconds': 60,
-        'mode': 'default',
         'name': 'custom_interval_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -881,14 +1083,18 @@ snapshots['TestSensors.test_get_sensors[non_launchable_sqlite_instance_managed_g
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     },
     {
         'description': None,
         'minIntervalSeconds': 30,
-        'mode': 'default',
         'name': 'multi_no_config_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -897,14 +1103,18 @@ snapshots['TestSensors.test_get_sensors[non_launchable_sqlite_instance_managed_g
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     },
     {
         'description': None,
         'minIntervalSeconds': 30,
-        'mode': 'default',
         'name': 'never_no_config_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -913,14 +1123,18 @@ snapshots['TestSensors.test_get_sensors[non_launchable_sqlite_instance_managed_g
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     },
     {
         'description': None,
         'minIntervalSeconds': 30,
-        'mode': 'default',
         'name': 'once_no_config_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -929,7 +1143,13 @@ snapshots['TestSensors.test_get_sensors[non_launchable_sqlite_instance_managed_g
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     }
 ]
 
@@ -937,9 +1157,7 @@ snapshots['TestSensors.test_get_sensors[non_launchable_sqlite_instance_multi_loc
     {
         'description': None,
         'minIntervalSeconds': 30,
-        'mode': 'default',
         'name': 'always_no_config_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -948,14 +1166,18 @@ snapshots['TestSensors.test_get_sensors[non_launchable_sqlite_instance_multi_loc
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     },
     {
         'description': None,
         'minIntervalSeconds': 60,
-        'mode': 'default',
         'name': 'custom_interval_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -964,14 +1186,18 @@ snapshots['TestSensors.test_get_sensors[non_launchable_sqlite_instance_multi_loc
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     },
     {
         'description': None,
         'minIntervalSeconds': 30,
-        'mode': 'default',
         'name': 'multi_no_config_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -980,14 +1206,18 @@ snapshots['TestSensors.test_get_sensors[non_launchable_sqlite_instance_multi_loc
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     },
     {
         'description': None,
         'minIntervalSeconds': 30,
-        'mode': 'default',
         'name': 'never_no_config_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -996,14 +1226,18 @@ snapshots['TestSensors.test_get_sensors[non_launchable_sqlite_instance_multi_loc
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     },
     {
         'description': None,
         'minIntervalSeconds': 30,
-        'mode': 'default',
         'name': 'once_no_config_sensor',
-        'pipelineName': 'no_config_pipeline',
         'sensorState': {
             'runs': [
             ],
@@ -1012,6 +1246,12 @@ snapshots['TestSensors.test_get_sensors[non_launchable_sqlite_instance_multi_loc
             'ticks': [
             ]
         },
-        'solidSelection': None
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
     }
 ]

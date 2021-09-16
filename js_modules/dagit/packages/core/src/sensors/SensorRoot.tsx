@@ -75,7 +75,7 @@ export const SensorRoot: React.FC<{
                 showRecent={true}
                 onHighlightRunIds={(runIds: string[]) => setSelectedRunIds(runIds)}
               />
-              {sensorOrError.pipelineName ? (
+              {sensorOrError.targets && sensorOrError.targets.length ? (
                 <SensorPreviousRuns
                   repoAddress={repoAddress}
                   sensor={sensorOrError}

@@ -16,7 +16,7 @@ import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
 import {Group} from '../ui/Group';
 import {MetadataTable, StyledTable} from '../ui/MetadataTable';
-import {FontFamily} from '../ui/styles';
+import {Mono} from '../ui/Text';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -121,7 +121,11 @@ const ScheduleOrSensor: React.FC<{job: Job; mode: string; repoAddress: RepoAddre
   const matchingSensors = React.useMemo(() => {
     if (job?.__typename === 'Pipeline' && job.sensors.length) {
       return flagPipelineModeTuples
-        ? job.sensors.filter((sensor) => sensor.mode === mode)
+        ? job.sensors.filter((sensor) =>
+            sensor.targets?.some(
+              (target) => target.mode === mode && target.pipelineName === job.name,
+            ),
+          )
         : job.sensors;
     }
     return [];
@@ -235,11 +239,11 @@ const LatestRun: React.FC<{run: RunMetadataFragment}> = ({run}) => {
   }, [run]);
 
   return (
-    <Group direction="row" spacing={8} alignItems="center">
-      <RunStatus status={run.status} />
-      <div style={{fontFamily: FontFamily.monospace}}>
+    <Group direction="row" spacing={8} alignItems="baseline">
+      <RunStatus status={run.status} size={10} />
+      <Mono>
         <Link to={`/instance/runs/${run.id}`}>{run.id.slice(0, 8)}</Link>
-      </div>
+      </Mono>
       {stats ? (
         <Tooltip
           placement="bottom"
@@ -354,6 +358,7 @@ const JOB_METADATA_QUERY = gql`
     pipelineOrError(params: $params) {
       ... on Pipeline {
         id
+        name
         schedules {
           id
           mode
@@ -361,7 +366,10 @@ const JOB_METADATA_QUERY = gql`
         }
         sensors {
           id
-          mode
+          targets {
+            pipelineName
+            mode
+          }
           ...SensorSwitchFragment
         }
       }

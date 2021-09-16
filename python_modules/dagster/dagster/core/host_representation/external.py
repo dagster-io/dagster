@@ -1,6 +1,6 @@
 import warnings
 from collections import OrderedDict
-from typing import Sequence
+from typing import Optional, Sequence
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
@@ -137,9 +137,7 @@ class ExternalRepository:
         return self.handle.get_external_origin()
 
     def get_python_origin(self):
-        return self.handle.repository_location.get_repository_python_origin(
-            self.name,
-        )
+        return self.handle.get_python_origin()
 
     def get_external_origin_id(self):
         """
@@ -160,7 +158,7 @@ class ExternalRepository:
         return matching[0] if matching else None
 
     def get_display_metadata(self):
-        return self.handle.repository_location.get_display_metadata()
+        return self.handle.display_metadata
 
 
 class ExternalPipeline(RepresentedPipeline):
@@ -287,11 +285,7 @@ class ExternalPipeline(RepresentedPipeline):
         return self.get_python_origin()
 
     def get_python_origin(self):
-        repository_python_origin = (
-            self.repository_handle.repository_location.get_repository_python_origin(
-                self.repository_handle.repository_name,
-            )
-        )
+        repository_python_origin = self.repository_handle.get_python_origin()
         return PipelinePythonOrigin(self.name, repository_python_origin)
 
     def get_external_origin(self):
@@ -494,15 +488,33 @@ class ExternalSensor:
 
     @property
     def pipeline_name(self):
-        return self._external_sensor_data.pipeline_name
-
-    @property
-    def solid_selection(self):
-        return self._external_sensor_data.solid_selection
+        target = self._get_single_target()
+        return target.pipeline_name if target else None
 
     @property
     def mode(self):
-        return self._external_sensor_data.mode
+        target = self._get_single_target()
+        return target.mode if target else None
+
+    @property
+    def solid_selection(self):
+        target = self._get_single_target()
+        return target.solid_selection if target else None
+
+    def _get_single_target(self):
+        if self._external_sensor_data.target_dict:
+            return list(self._external_sensor_data.target_dict.values())[0]
+        else:
+            return None
+
+    def get_target_data(self, pipeline_name: Optional[str] = None):
+        if pipeline_name:
+            return self._external_sensor_data.target_dict[pipeline_name]
+        else:
+            return self._get_single_target()
+
+    def get_external_targets(self):
+        return self._external_sensor_data.target_dict.values()
 
     @property
     def description(self):

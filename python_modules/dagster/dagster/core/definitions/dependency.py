@@ -181,6 +181,19 @@ class Node:
 
         return isinstance(self.definition, GraphDefinition)
 
+    def describe_node(self) -> str:
+        from .solid import CompositeSolidDefinition, SolidDefinition
+        from .op import OpDefinition
+
+        if isinstance(self.definition, CompositeSolidDefinition):
+            return f"composite solid '{self.name}'"
+        elif isinstance(self.definition, OpDefinition):
+            return f"op '{self.name}'"
+        elif isinstance(self.definition, SolidDefinition):
+            return f"solid '{self.name}'"
+        else:
+            return f"graph '{self.name}'"
+
     @property
     def input_dict(self):
         return self.definition.input_dict
@@ -785,7 +798,9 @@ class DependencyStructure:
                         self._dynamic_fan_out_index[output_handle.solid_name],
                     )
                 else:
-                    check.failed("Unexpected dynamic fan in dep created")
+                    check.failed(
+                        f"Unexpected dynamic fan in dep created {output_handle} -> {input_handle}"
+                    )
 
                 output_handle_list = [output_handle]
             else:

@@ -1,4 +1,4 @@
-from dagster import DagsterType, Output, OutputDefinition, execute_pipeline, pipeline, solid
+from dagster import DagsterType, Out, Output, graph, op
 from dagster_pandas.constraints import (
     ColumnWithMetadataException,
     ConstraintWithMetadataException,
@@ -54,18 +54,18 @@ def test_successful_type_eval():
         dataframe_validator=dataframe_validator,
     )
 
-    @solid(output_defs=[OutputDefinition(name="basic_dataframe", dagster_type=ntype)])
+    @op(out={"basic_dataframe": Out(dagster_type=ntype)})
     def create_dataframe(_):
         yield Output(
             DataFrame({"foo": [1, 2, 3], "bar": [9, 10, 11]}),
             output_name="basic_dataframe",
         )
 
-    @pipeline
-    def basic_pipeline():
+    @graph
+    def basic_graph():
         return create_dataframe()
 
-    result = execute_pipeline(basic_pipeline)
+    result = basic_graph.execute_in_process()
     assert result.success
 
 
@@ -77,19 +77,19 @@ def test_failing_type_eval_column():
         dataframe_validator=dataframe_validator,
     )
 
-    @solid(output_defs=[OutputDefinition(name="basic_dataframe", dagster_type=ntype)])
+    @op(out={"basic_dataframe": Out(dagster_type=ntype)})
     def create_dataframe(_):
         yield Output(
             DataFrame({"foo": [1, "a", 7], "bar": [9, 10, 11]}),
             output_name="basic_dataframe",
         )
 
-    @pipeline
-    def basic_pipeline():
+    @graph
+    def basic_graph():
         return create_dataframe()
 
-    result = execute_pipeline(basic_pipeline, raise_on_error=False)
-    output = [item for item in result.step_event_list if item.is_successful_output][0]
+    result = basic_graph.execute_in_process(raise_on_error=False)
+    output = [item for item in result.event_list if item.is_successful_output][0]
     output_data = output.event_specific_data.type_check_data
     output_metadata = output_data.metadata_entries
     assert len(output_metadata) == 1
@@ -121,19 +121,19 @@ def test_failing_type_eval_aggregate():
         dataframe_validator=dataframe_validator,
     )
 
-    @solid(output_defs=[OutputDefinition(name="basic_dataframe", dagster_type=ntype)])
+    @op(out={"basic_dataframe": Out(dagster_type=ntype)})
     def create_dataframe(_):
         yield Output(
             DataFrame({"foo": [1, 2, 3], "bar": [9, 10, 10]}),
             output_name="basic_dataframe",
         )
 
-    @pipeline
-    def basic_pipeline():
+    @graph
+    def basic_graph():
         return create_dataframe()
 
-    result = execute_pipeline(basic_pipeline, raise_on_error=False)
-    output = [item for item in result.step_event_list if item.is_successful_output][0]
+    result = basic_graph.execute_in_process(raise_on_error=False)
+    output = [item for item in result.event_list if item.is_successful_output][0]
     output_data = output.event_specific_data.type_check_data
     output_metadata = output_data.metadata_entries
     assert len(output_metadata) == 1
@@ -155,19 +155,19 @@ def test_failing_type_eval_dataframe():
         dataframe_validator=dataframe_validator,
     )
 
-    @solid(output_defs=[OutputDefinition(name="basic_dataframe", dagster_type=ntype)])
+    @op(out={"basic_dataframe": Out(dagster_type=ntype)})
     def create_dataframe(_):
         yield Output(
             DataFrame({"foo": [1, 2, 3], "baz": [9, 10, 10]}),
             output_name="basic_dataframe",
         )
 
-    @pipeline
-    def basic_pipeline():
+    @graph
+    def basic_graph():
         return create_dataframe()
 
-    result = execute_pipeline(basic_pipeline, raise_on_error=False)
-    output = [item for item in result.step_event_list if item.is_successful_output][0]
+    result = basic_graph.execute_in_process(raise_on_error=False)
+    output = [item for item in result.event_list if item.is_successful_output][0]
     output_data = output.event_specific_data.type_check_data
     output_metadata = output_data.metadata_entries
     assert len(output_metadata) == 1
@@ -186,19 +186,19 @@ def test_failing_type_eval_multi_error():
         dataframe_validator=dataframe_validator,
     )
 
-    @solid(output_defs=[OutputDefinition(name="basic_dataframe", dagster_type=ntype)])
+    @op(out={"basic_dataframe": Out(dagster_type=ntype)})
     def create_dataframe(_):
         yield Output(
             DataFrame({"foo": [1, "a", 7], "baz": [9, 10, 10], "bar": [9, 10, 10]}),
             output_name="basic_dataframe",
         )
 
-    @pipeline
-    def basic_pipeline():
+    @graph
+    def basic_graph():
         return create_dataframe()
 
-    result = execute_pipeline(basic_pipeline, raise_on_error=False)
-    output = [item for item in result.step_event_list if item.is_successful_output][0]
+    result = basic_graph.execute_in_process(raise_on_error=False)
+    output = [item for item in result.event_list if item.is_successful_output][0]
     output_data = output.event_specific_data.type_check_data
     output_metadata = output_data.metadata_entries
     assert len(output_metadata) == 3

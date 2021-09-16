@@ -142,6 +142,8 @@ def _resolve_inputs(
         )
 
     # Type check inputs
+    op_label = context.describe_op()
+
     for input_name, val in input_dict.items():
 
         input_def = input_defs_by_name[input_name]
@@ -150,7 +152,7 @@ def _resolve_inputs(
         if not type_check.success:
             raise DagsterTypeCheckDidNotPass(
                 description=(
-                    f'Type check failed for solid input "{input_def.name}" - '
+                    f'Type check failed for {op_label} input "{input_def.name}" - '
                     f'expected type "{dagster_type.display_name}". '
                     f"Description: {type_check.description}"
                 ),
@@ -319,13 +321,15 @@ def _type_check_output(
     """
     from ..execution.plan.execute_step import do_type_check
 
+    op_label = context.describe_op()
+
     if isinstance(output, (Output, DynamicOutput)):
         dagster_type = output_def.dagster_type
         type_check = do_type_check(context.for_type(dagster_type), dagster_type, output.value)
         if not type_check.success:
             raise DagsterTypeCheckDidNotPass(
                 description=(
-                    f'Type check failed for solid output "{output.output_name}" - '
+                    f'Type check failed for {op_label} output "{output.output_name}" - '
                     f'expected type "{dagster_type.display_name}". '
                     f"Description: {type_check.description}"
                 ),
@@ -339,7 +343,7 @@ def _type_check_output(
         if not type_check.success:
             raise DagsterTypeCheckDidNotPass(
                 description=(
-                    f'Type check failed for solid output "{output_def.name}" - '
+                    f'Type check failed for {op_label} output "{output_def.name}" - '
                     f'expected type "{dagster_type.display_name}". '
                     f"Description: {type_check.description}"
                 ),

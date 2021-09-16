@@ -150,8 +150,8 @@ class ResourceDefinition(AnonymousConfigurableDefinition):
         """
         from unittest import mock
 
-        return ResourceDefinition.hardcoded_resource(
-            value=mock.MagicMock(), description=description
+        return ResourceDefinition(
+            resource_fn=lambda _init_context: mock.MagicMock(), description=description
         )
 
     @staticmethod

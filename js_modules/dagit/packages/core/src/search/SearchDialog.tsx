@@ -253,7 +253,7 @@ const SlashShortcut = styled.div<{$theme: 'light' | 'dark'}>`
   background-color: ${({$theme}) => ($theme === 'light' ? Colors.LIGHT_GRAY4 : Colors.DARK_GRAY3)};
   border-radius: 3px;
   color: ${({$theme}) => ($theme === 'light' ? Colors.DARK_GRAY1 : Colors.LIGHT_GRAY4)};
-  font-size: 10px;
+  font-size: 14px;
   font-family: ${FontFamily.monospace};
   padding: 2px 6px;
 `;

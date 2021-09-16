@@ -101,18 +101,23 @@ export interface SensorsRootQuery_sensorsOrError_Sensors_results_sensorState {
   runningCount: number;
 }
 
+export interface SensorsRootQuery_sensorsOrError_Sensors_results_targets {
+  __typename: "Target";
+  pipelineName: string;
+  solidSelection: string[] | null;
+  mode: string;
+}
+
 export interface SensorsRootQuery_sensorsOrError_Sensors_results {
   __typename: "Sensor";
   id: string;
   jobOriginId: string;
   name: string;
-  pipelineName: string | null;
-  solidSelection: (string | null)[] | null;
-  mode: string | null;
   description: string | null;
   minIntervalSeconds: number;
   nextTick: SensorsRootQuery_sensorsOrError_Sensors_results_nextTick | null;
   sensorState: SensorsRootQuery_sensorsOrError_Sensors_results_sensorState;
+  targets: SensorsRootQuery_sensorsOrError_Sensors_results_targets[] | null;
 }
 
 export interface SensorsRootQuery_sensorsOrError_Sensors {

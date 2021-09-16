@@ -11,7 +11,7 @@ class ParquetIOManager(IOManager):
     This IOManager will take in a pandas or pyspark dataframe and store it in parquet at the
     specified path.
 
-    Downstream solids can either load this dataframe into a spark session or simply retrieve a path
+    Downstream ops can either load this dataframe into a spark session or simply retrieve a path
     to where the data is stored.
     """
 

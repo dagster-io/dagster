@@ -18,7 +18,7 @@ from dagster.core.storage.root_input_manager import (
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 from dagster.core.types.dagster_type import DagsterType, DagsterTypeKind
 from dagster.core.utils import str_format_set
-from dagster.utils import merge_dicts
+from dagster.utils import frozentags, merge_dicts
 from dagster.utils.backcompat import experimental_class_warning
 
 from .dependency import (
@@ -46,6 +46,7 @@ if TYPE_CHECKING:
     from dagster.core.snap import PipelineSnapshot, ConfigSchemaSnapshot
     from dagster.core.host_representation import PipelineIndex
     from dagster.core.instance import DagsterInstance
+    from dagster.core.definitions.partition import PartitionSetDefinition
     from dagster.core.execution.execution_results import InProcessGraphResult
 
 
@@ -262,10 +263,12 @@ class PipelineDefinition:
     def name(self):
         return self._name
 
+    def describe_target(self):
+        return f"pipeline '{self.name}'"
+
     @property
     def tags(self):
-        # could merge with graph level tags here
-        return self._tags
+        return frozentags(**merge_dicts(self._graph_def.tags, self._tags))
 
     @property
     def description(self):
@@ -592,7 +595,8 @@ def _dep_key_of(solid: Node) -> SolidInvocation:
 
 
 def _get_pipeline_subset_def(
-    pipeline_def, solids_to_execute: AbstractSet[str]
+    pipeline_def: PipelineDefinition,
+    solids_to_execute: AbstractSet[str],
 ) -> "PipelineSubsetDefinition":
     """
     Build a pipeline which is a subset of another pipeline.
@@ -610,7 +614,11 @@ def _get_pipeline_subset_def(
                 ),
             )
 
-    solids = list(map(graph.solid_named, solids_to_execute))
+    # go in topo order to ensure deps dict is ordered
+    solids = list(
+        filter(lambda solid: solid.name in solids_to_execute, graph.solids_in_topological_order)
+    )
+
     deps: Dict[
         Union[str, SolidInvocation],
         Dict[str, IDependencyDefinition],
@@ -624,7 +632,7 @@ def _get_pipeline_subset_def(
                     deps[_dep_key_of(solid)][input_handle.input_def.name] = DependencyDefinition(
                         solid=output_handle.solid.name, output=output_handle.output_def.name
                     )
-            if graph.dependency_structure.has_dynamic_fan_in_dep(input_handle):
+            elif graph.dependency_structure.has_dynamic_fan_in_dep(input_handle):
                 output_handle = graph.dependency_structure.get_dynamic_fan_in_dep(input_handle)
                 if output_handle.solid.name in solids_to_execute:
                     deps[_dep_key_of(solid)][
@@ -644,6 +652,7 @@ def _get_pipeline_subset_def(
                         if output_handle.solid.name in solids_to_execute
                     ]
                 )
+            # else input is unconnected
 
     try:
         sub_pipeline_def = PipelineSubsetDefinition(

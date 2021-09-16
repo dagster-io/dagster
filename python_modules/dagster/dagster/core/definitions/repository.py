@@ -6,6 +6,7 @@ from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantV
 from dagster.utils import merge_dicts
 
 from .graph import GraphDefinition
+from .job import JobDefinition
 from .partition import PartitionScheduleDefinition, PartitionSetDefinition
 from .pipeline import PipelineDefinition
 from .schedule import ScheduleDefinition
@@ -21,7 +22,11 @@ VALID_REPOSITORY_DATA_DICT_KEYS = {
 }
 
 RepositoryLevelDefinition = TypeVar(
-    "RepositoryLevelDefinition", PipelineDefinition, PartitionSetDefinition, ScheduleDefinition
+    "RepositoryLevelDefinition",
+    PipelineDefinition,
+    PartitionSetDefinition,
+    ScheduleDefinition,
+    SensorDefinition,
 )
 
 
@@ -90,9 +95,18 @@ class _CacheingDefinitionIndex(Generic[RepositoryLevelDefinition]):
         if self._definition_names:
             return self._definition_names
 
-        self._definition_names = list(self._definitions.keys()) + [
-            definition.name for definition in self._get_lazy_definitions()
-        ]
+        lazy_names = []
+        for definition in self._get_lazy_definitions():
+            strict_definition = self._definitions.get(definition.name)
+            if strict_definition:
+                check.invariant(
+                    strict_definition == definition,
+                    f"Duplicate definition found for {definition.name}",
+                )
+            else:
+                lazy_names.append(definition.name)
+
+        self._definition_names = list(self._definitions.keys()) + lazy_names
         return self._definition_names
 
     def has_definition(self, definition_name: str) -> bool:
@@ -379,14 +393,17 @@ class CachingRepositoryData(RepositoryData):
         ]
 
         def load_partition_sets_from_pipelines():
-            mode_partition_sets = []
+            job_partition_sets = []
             for pipeline in self.get_all_pipelines():
-                for mode_def in pipeline.mode_definitions:
-                    partition_set_def = mode_def.get_partition_set_def(pipeline.name)
-                    if partition_set_def:
-                        mode_partition_sets.append(partition_set_def)
+                if isinstance(pipeline, JobDefinition):
+                    job_partition_set = pipeline.get_partition_set_def()
 
-            return mode_partition_sets
+                    if job_partition_set:
+                        # should only return a partition set if this was constructed using the job
+                        # API, with a partitioned config
+                        job_partition_sets.append(job_partition_set)
+
+            return job_partition_sets
 
         self._partition_sets = _CacheingDefinitionIndex(
             PartitionSetDefinition,
@@ -510,9 +527,10 @@ class CachingRepositoryData(RepositoryData):
                     )
                 jobs[definition.name] = definition
                 sensors[definition.name] = definition
-                if definition.has_loadable_target():
-                    target = definition.load_target()
-                    pipelines[target.name] = target
+                if definition.has_loadable_targets():
+                    targets = definition.load_targets()
+                    for target in targets:
+                        pipelines[target.name] = target
             elif isinstance(definition, ScheduleDefinition):
                 if definition.name in jobs:
                     raise DagsterInvalidDefinitionError(
@@ -737,15 +755,16 @@ class CachingRepositoryData(RepositoryData):
 
     def _validate_sensor(self, sensor):
         pipelines = self.get_pipeline_names()
-        if sensor.pipeline_name is None:
+        if len(sensor.targets) == 0:
             # skip validation when the sensor does not target a pipeline
             return sensor
 
-        if sensor.pipeline_name not in pipelines:
-            raise DagsterInvalidDefinitionError(
-                f'SensorDefinition "{sensor.name}" targets pipeline "{sensor.pipeline_name}" '
-                "which was not found in this repository."
-            )
+        for target in sensor.targets:
+            if target.pipeline_name not in pipelines:
+                raise DagsterInvalidDefinitionError(
+                    f'SensorDefinition "{sensor.name}" targets pipeline "{target.pipeline_name}" '
+                    "which was not found in this repository."
+                )
 
         return sensor
 

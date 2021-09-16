@@ -5,6 +5,7 @@ import styled from 'styled-components/macro';
 
 import {titleOfIO} from '../app/titleOfIO';
 import {SolidColumn} from '../runs/LogsRowComponents';
+import {Group} from '../ui/Group';
 import {Code} from '../ui/Text';
 import {FontFamily} from '../ui/styles';
 
@@ -80,8 +81,12 @@ export const DependencyRow = ({
     <tr>
       <Cell>{typeof from === 'string' ? <Code>{from}</Code> : <SolidLink {...from} />}</Cell>
       <td style={{whiteSpace: 'nowrap', textAlign: 'right'}}>
-        {isDynamic && <Icon icon="asterisk" iconSize={12} color={Colors.GRAY1} />}
-        <Icon icon="arrow-right" iconSize={12} color={Colors.GRAY1} />
+        <Group direction="row" spacing={2} alignItems="center">
+          {isDynamic && (
+            <Icon icon="asterisk" iconSize={12} color={Colors.GRAY1} style={{display: 'block'}} />
+          )}
+          <Icon icon="arrow-right" iconSize={12} color={Colors.GRAY1} style={{display: 'block'}} />
+        </Group>
       </td>
       <Cell>{typeof to === 'string' ? <Code>{to}</Code> : <SolidLink {...to} />}</Cell>
     </tr>

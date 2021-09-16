@@ -49,23 +49,24 @@ const DisclosureIcon = styled(Icon)`
 
 export const SidebarTitle = styled.h3`
   font-family: ${FontFamily.monospace};
+  font-size: 16px;
   margin: 0;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
   overflow: hidden;
   text-overflow: ellipsis;
 `;
 
 export const SectionHeader = styled.h4`
   font-family: ${FontFamily.monospace};
-  font-size: 15px;
-  margin: 6px 0;
+  font-size: 18px;
+  margin: 2px 0 0 0;
 `;
 
 export const SectionSmallHeader = styled.h4`
   font-family: ${FontFamily.monospace};
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 500;
-  margin: 6px 0;
+  margin: 2px 0;
 `;
 
 export const SidebarSubhead = styled.div`

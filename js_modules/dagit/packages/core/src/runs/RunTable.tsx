@@ -12,8 +12,8 @@ import {PipelineReference} from '../pipelines/PipelineReference';
 import {Box} from '../ui/Box';
 import {Group} from '../ui/Group';
 import {Table} from '../ui/Table';
+import {Mono} from '../ui/Text';
 import {TokenizingFieldValue} from '../ui/TokenizingField';
-import {FontFamily} from '../ui/styles';
 import {workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
 import {RunActionsMenu, RunBulkActionsMenu} from './RunActionsMenu';
@@ -243,8 +243,10 @@ const RunRow: React.FC<{
       <td>
         <RunStatusTagWithStats status={run.status} runId={run.runId} />
       </td>
-      <td style={{fontFamily: FontFamily.monospace}}>
-        <Link to={`/instance/runs/${run.runId}`}>{titleForRun(run)}</Link>
+      <td>
+        <Link to={`/instance/runs/${run.runId}`}>
+          <Mono>{titleForRun(run)}</Mono>
+        </Link>
       </td>
       <td>
         <Group direction="column" spacing={8}>

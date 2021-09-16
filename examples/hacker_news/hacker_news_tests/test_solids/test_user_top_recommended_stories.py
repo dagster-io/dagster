@@ -1,6 +1,6 @@
 import numpy as np
-from hacker_news.solids.user_story_matrix import IndexedCooMatrix
-from hacker_news.solids.user_top_recommended_stories import build_user_top_recommended_stories
+from hacker_news.ops.user_story_matrix import IndexedCooMatrix
+from hacker_news.ops.user_top_recommended_stories import build_user_top_recommended_stories
 from pandas import DataFrame, Series
 from scipy.sparse import coo_matrix
 from sklearn.decomposition import TruncatedSVD

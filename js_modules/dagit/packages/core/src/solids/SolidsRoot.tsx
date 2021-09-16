@@ -329,7 +329,7 @@ const SolidListItem = styled.div<{selected: boolean}>`
   & > code.bp3-code {
     color: ${({selected}) => (selected ? Colors.WHITE : Colors.DARK_GRAY3)};
     background: transparent;
-    fontfamily: ${FontFamily.monospace};
+    font-family: ${FontFamily.monospace};
     padding: 5px 0 0 0;
   }
 `;

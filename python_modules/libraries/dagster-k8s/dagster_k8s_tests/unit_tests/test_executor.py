@@ -118,3 +118,44 @@ def test_step_handler_user_defined_config(kubeconfig_file):
         assert kwargs["body"].spec.template.spec.containers[0].image == "bizbuz"
         job_resources = kwargs["body"].spec.template.spec.containers[0].resources
         assert job_resources == expected_resources
+
+
+def test_step_handler_image_override(kubeconfig_file):
+
+    mock_k8s_client_batch_api = mock.MagicMock()
+    handler = K8sStepHandler(
+        job_config=DagsterK8sJobConfig(instance_config_map="foobar", job_image="bizbuz"),
+        job_namespace="foo",
+        load_incluster_config=False,
+        kubeconfig_file=kubeconfig_file,
+        k8s_client_batch_api=mock_k8s_client_batch_api,
+    )
+
+    # Construct Dagster solid tags with user defined k8s config.
+    user_defined_k8s_config = UserDefinedDagsterK8sConfig(
+        container_config={"image": "new-image"},
+    )
+    user_defined_k8s_config_json = json.dumps(user_defined_k8s_config.to_dict())
+    tags = {"dagster-k8s/config": user_defined_k8s_config_json}
+
+    with instance_for_test() as instance:
+        run = create_run_for_test(
+            instance,
+            pipeline_name="bar",
+        )
+        handler.launch_step(
+            StepHandlerContext(
+                instance,
+                ExecuteStepArgs(
+                    reconstructable(bar).get_python_origin(), run.run_id, ["foo_solid"]
+                ),
+                {"foo_solid": tags},
+            )
+        )
+
+        # Check that user defined k8s config was passed down to the k8s job.
+        mock_method_calls = mock_k8s_client_batch_api.method_calls
+        assert len(mock_method_calls) > 0
+        method_name, _args, kwargs = mock_method_calls[0]
+        assert method_name == "create_namespaced_job"
+        assert kwargs["body"].spec.template.spec.containers[0].image == "new-image"

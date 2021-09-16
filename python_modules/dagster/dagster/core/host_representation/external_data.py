@@ -18,6 +18,7 @@ from dagster.core.definitions import (
 )
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.i_solid_definition import NodeDefinition
+from dagster.core.definitions.mode import DEFAULT_MODE_NAME
 from dagster.core.definitions.partition import PartitionScheduleDefinition
 from dagster.core.snap import PipelineSnapshot
 from dagster.serdes import whitelist_for_serdes
@@ -211,29 +212,69 @@ class ExternalScheduleExecutionErrorData(
 
 
 @whitelist_for_serdes
+class ExternalTargetData(
+    namedtuple(
+        "_ExternalTargetData",
+        "pipeline_name mode solid_selection",
+    )
+):
+    def __new__(
+        cls,
+        pipeline_name,
+        mode,
+        solid_selection,
+    ):
+        return super(ExternalTargetData, cls).__new__(
+            cls,
+            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
+            mode=check.str_param(mode, "mode"),
+            solid_selection=check.opt_nullable_list_param(solid_selection, "solid_selection", str),
+        )
+
+
+@whitelist_for_serdes
 class ExternalSensorData(
     namedtuple(
         "_ExternalSensorData",
-        "name pipeline_name solid_selection mode min_interval description",
+        "name pipeline_name solid_selection mode min_interval description target_dict",
     )
 ):
     def __new__(
         cls,
         name,
-        pipeline_name,
-        solid_selection,
-        mode,
+        pipeline_name=None,
+        solid_selection=None,
+        mode=None,
         min_interval=None,
         description=None,
+        target_dict=None,
     ):
+        if pipeline_name and not target_dict:
+            # handle the legacy case where the ExternalSensorData was constructed from an earlier
+            # version of dagster
+            target_dict = {
+                pipeline_name: ExternalTargetData(
+                    pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
+                    mode=check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME),
+                    solid_selection=check.opt_nullable_list_param(
+                        solid_selection, "solid_selection", str
+                    ),
+                )
+            }
+
         return super(ExternalSensorData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
-            pipeline_name=check.opt_str_param(pipeline_name, "pipeline_name"),
-            solid_selection=check.opt_nullable_list_param(solid_selection, "solid_selection", str),
-            mode=check.opt_str_param(mode, "mode"),
+            pipeline_name=check.opt_str_param(
+                pipeline_name, "pipeline_name"
+            ),  # keep legacy field populated
+            solid_selection=check.opt_nullable_list_param(
+                solid_selection, "solid_selection", str
+            ),  # keep legacy field populated
+            mode=check.opt_str_param(mode, "mode"),  # keep legacy field populated
             min_interval=check.opt_int_param(min_interval, "min_interval"),
             description=check.opt_str_param(description, "description"),
+            target_dict=check.opt_dict_param(target_dict, "target_dict", str, ExternalTargetData),
         )
 
 
@@ -438,7 +479,7 @@ def external_asset_graph_from_defs(
             for input_def in node_def.input_defs:
                 upstream_asset_key = input_def.hardcoded_asset_key
 
-                if asset_key:
+                if upstream_asset_key:
                     for node_asset_key in node_asset_keys:
                         deps[node_asset_key][input_def.name] = ExternalAssetDependency(
                             upstream_asset_key=upstream_asset_key,
@@ -508,11 +549,20 @@ def external_partition_set_data_from_def(partition_set_def):
 
 
 def external_sensor_data_from_def(sensor_def):
+    first_target = sensor_def.targets[0] if sensor_def.targets else None
     return ExternalSensorData(
         name=sensor_def.name,
-        pipeline_name=sensor_def.pipeline_name,
-        solid_selection=sensor_def.solid_selection,
-        mode=sensor_def.mode,
+        pipeline_name=first_target.pipeline_name if first_target else None,
+        mode=first_target.mode if first_target else None,
+        solid_selection=first_target.solid_selection if first_target else None,
+        target_dict={
+            target.pipeline_name: ExternalTargetData(
+                pipeline_name=target.pipeline_name,
+                mode=target.mode,
+                solid_selection=target.solid_selection,
+            )
+            for target in sensor_def.targets
+        },
         min_interval=sensor_def.minimum_interval_seconds,
         description=sensor_def.description,
     )

@@ -7,6 +7,7 @@ from dagster.core.definitions.policy import RetryPolicy
 from .graph import GraphDefinition
 from .hook import HookDefinition
 from .mode import ModeDefinition
+from .partition import PartitionSetDefinition
 from .pipeline import PipelineDefinition
 from .preset import PresetDefinition
 from .resource import ResourceDefinition
@@ -31,6 +32,8 @@ class JobDefinition(PipelineDefinition):
         version_strategy: Optional[VersionStrategy] = None,
     ):
 
+        self._cached_partition_set: Optional["PartitionSetDefinition"] = None
+
         super(JobDefinition, self).__init__(
             name=name,
             description=description,
@@ -43,6 +46,9 @@ class JobDefinition(PipelineDefinition):
             version_strategy=version_strategy,
         )
 
+    def describe_target(self):
+        return f"job '{self.name}'"
+
     def execute_in_process(
         self,
         run_config: Optional[Dict[str, Any]] = None,
@@ -50,7 +56,7 @@ class JobDefinition(PipelineDefinition):
         raise_on_error: bool = True,
     ) -> "InProcessGraphResult":
         """
-        (Experimental) Execute the "Job" (single mode pipeline) in-process, gathering results in-memory.
+        (Experimental) Execute the Job in-process, gathering results in-memory.
 
         The executor_def on the Job will be ignored, and replaced with the in-process executor.
         If using the default io_manager, it will switch from filesystem to in-memory.
@@ -61,6 +67,8 @@ class JobDefinition(PipelineDefinition):
                 The configuration for the run
             instance (Optional[DagsterInstance]):
                 The instance to execute against, an ephemeral one will be used if none provided.
+            raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
+                Defaults to ``True``.
 
         Returns:
             InProcessGraphResult
@@ -87,10 +95,10 @@ class JobDefinition(PipelineDefinition):
             _partitioned_config=base_mode.partitioned_config,
         )
 
-        ephemeral_pipeline = PipelineDefinition(
+        ephemeral_job = JobDefinition(
             name=self._name,
             graph_def=self._graph_def,
-            mode_defs=[in_proc_mode],
+            mode_def=in_proc_mode,
             hook_defs=self.hook_defs,
             tags=self.tags,
             version_strategy=self.version_strategy,
@@ -98,7 +106,7 @@ class JobDefinition(PipelineDefinition):
 
         return core_execute_in_process(
             node=self._graph_def,
-            ephemeral_pipeline=ephemeral_pipeline,
+            ephemeral_pipeline=ephemeral_job,
             run_config=run_config,
             instance=instance,
             output_capturing_enabled=True,
@@ -113,6 +121,26 @@ class JobDefinition(PipelineDefinition):
         )
 
         return super(JobDefinition, self).get_pipeline_subset_def(solids_to_execute)
+
+    def get_partition_set_def(self) -> Optional["PartitionSetDefinition"]:
+        if not self.is_single_mode:
+            return None
+
+        mode = self.get_mode_definition()
+        if not mode.partitioned_config:
+            return None
+
+        if not self._cached_partition_set:
+
+            self._cached_partition_set = PartitionSetDefinition(
+                pipeline_name=self.name,
+                name=f"{self.name}_partition_set",
+                partitions_def=mode.partitioned_config.partitions_def,
+                run_config_fn_for_partition=mode.partitioned_config.run_config_for_partition_fn,
+                mode=mode.name,
+            )
+
+        return self._cached_partition_set
 
 
 def _swap_default_io_man(resources: Dict[str, ResourceDefinition], job: PipelineDefinition):
