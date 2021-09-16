@@ -10,10 +10,10 @@ from dagster import file_relative_path
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster_graphql import DagsterGraphQLClient
 
-DAGSTER_FROM_SOURCE = "current_branch"
+DAGSTER_CURRENT_BRANCH = "current_branch"
 MAX_TIMEOUT_SECONDS = 20
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
-DAGSTER_EARLIEST_RELEASE = os.getenv("DAGSTER_EARLIEST_RELEASE")
+EARLIEST_TESTED_RELEASE = os.getenv("EARLIEST_TESTED_RELEASE")
 MOST_RECENT_RELEASE_PLACEHOLDER = "most_recent"
 
 pytest_plugins = ["dagster_test.fixtures"]
@@ -21,10 +21,10 @@ pytest_plugins = ["dagster_test.fixtures"]
 
 # pylint: disable=redefined-outer-name
 RELEASE_TEST_MAP = {
-    "dagit-earliest-release": [DAGSTER_EARLIEST_RELEASE, DAGSTER_FROM_SOURCE],
-    "user-code-earliest-release": [DAGSTER_FROM_SOURCE, DAGSTER_EARLIEST_RELEASE],
-    "dagit-latest-release": [MOST_RECENT_RELEASE_PLACEHOLDER, DAGSTER_FROM_SOURCE],
-    "user-code-latest-release": [DAGSTER_FROM_SOURCE, MOST_RECENT_RELEASE_PLACEHOLDER],
+    "dagit-earliest-release": [EARLIEST_TESTED_RELEASE, DAGSTER_CURRENT_BRANCH],
+    "user-code-earliest-release": [DAGSTER_CURRENT_BRANCH, EARLIEST_TESTED_RELEASE],
+    "dagit-latest-release": [MOST_RECENT_RELEASE_PLACEHOLDER, DAGSTER_CURRENT_BRANCH],
+    "user-code-latest-release": [DAGSTER_CURRENT_BRANCH, MOST_RECENT_RELEASE_PLACEHOLDER],
 }
 
 
@@ -110,12 +110,12 @@ def graphql_client(release_test_map, retrying_requests):
     dagit_version = release_test_map["dagit"]
     user_code_version = release_test_map["user_code"]
 
-    if dagit_version == DAGSTER_FROM_SOURCE:
+    if dagit_version == DAGSTER_CURRENT_BRANCH:
         os.environ["DAGIT_DOCKERFILE"] = "./Dockerfile_dagit_source"
     else:
         os.environ["DAGIT_DOCKERFILE"] = "./Dockerfile_dagit_release"
 
-    if user_code_version == DAGSTER_FROM_SOURCE:
+    if user_code_version == DAGSTER_CURRENT_BRANCH:
         os.environ["USER_CODE_DOCKERFILE"] = "./Dockerfile_user_code_source"
     else:
         os.environ["USER_CODE_DOCKERFILE"] = "./Dockerfile_user_code_release"
