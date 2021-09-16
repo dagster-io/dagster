@@ -226,16 +226,16 @@ def get_input_manager_input_field(
 ) -> Optional[Field]:
     if input_def.root_manager_key not in resource_defs:
         raise DagsterInvalidDefinitionError(
-            f'Input "{input_def.name}" for {solid.describe_node()} requires root_manager_key '
-            f'"{input_def.root_manager_key}", but no resource has been provided. Please include a '
+            f"Input '{input_def.name}' for {solid.describe_node()} requires root_manager_key "
+            f"'{input_def.root_manager_key}', but no resource has been provided. Please include a "
             f"resource definition for that key in the provided resource_defs."
         )
 
     root_manager = resource_defs[input_def.root_manager_key]
     if not isinstance(root_manager, IInputManagerDefinition):
         raise DagsterInvalidDefinitionError(
-            f'Input "{input_def.name}" for {solid.describe_node()} requires root_manager_key '
-            f'"{input_def.root_manager_key}", but the resource definition provided is not an '
+            f"Input '{input_def.name}' for {solid.describe_node()} requires root_manager_key "
+            f"'{input_def.root_manager_key}', but the resource definition provided is not an "
             "IInputManagerDefinition"
         )
 

@@ -941,8 +941,8 @@ def _checked_input_resource_reqs_for_mode(
                         raise DagsterInvalidDefinitionError(
                             f'Input "{handle.input_def.name}" of {node.describe_node()} is '
                             f'connected to output "{source_output_handle.output_def.name}" '
-                            f'of {source_output_handle.solid.describe_node()}. That output does not '
-                            'have an output '
+                            f"of {source_output_handle.solid.describe_node()}. That output does not "
+                            "have an output "
                             f"manager that knows how to load inputs, so we don't know how "
                             f"to load the input. To address this, assign an IOManager to "
                             f"the upstream output."
@@ -956,12 +956,12 @@ def _checked_input_resource_reqs_for_mode(
                     and not input_def.root_manager_key
                 ):
                     raise DagsterInvalidDefinitionError(
-                        'Input "{input_name}" in {described_node} is not connected to '
+                        "Input '{input_name}' in {described_node} is not connected to "
                         "the output of a previous node and can not be loaded from configuration, "
-                        "creating an impossible to execute job. "
+                        "making it impossible to execute. "
                         "Possible solutions are:\n"
-                        '  * add a dagster_type_loader for the type "{dagster_type}"\n'
-                        '  * connect "{input_name}" to the output of another node\n'.format(
+                        "  * add a dagster_type_loader for the type '{dagster_type}'\n"
+                        "  * connect '{input_name}' to the output of another node\n".format(
                             described_node=node.describe_node(),
                             input_name=input_def.name,
                             dagster_type=input_def.dagster_type.display_name,

@@ -419,6 +419,10 @@ class PendingNodeInvocation:
             " ".join([output_def.name for output_def in outputs]),
         )(**invoked_output_handles)
 
+    def describe_node(self):
+        node_name = self.given_alias if self.given_alias else self.node_def.name
+        return f"{self.node_def.node_as_str} '{node_name}'"
+
     def _process_argument_node(self, node_name, output_node, input_name, input_bindings, arg_desc):
 
         if isinstance(output_node, (InvokedSolidOutputHandle, InputMappingNode, DynamicFanIn)):
@@ -474,13 +478,12 @@ class PendingNodeInvocation:
             output_node, NodeDefinition
         ):
             raise DagsterInvalidDefinitionError(
-                "In {source} {name}, received an un-invoked {uninvoked_node_type} "
-                "'{uninvoked_node_name}' for input "
+                "In {source} {name}, received an un-invoked {described_node} "
+                " for input "
                 '"{input_name}" {arg_desc} in {node_type} invocation "{node_name}". '
                 "Did you forget parentheses?".format(
                     source=current_context().source,
-                    uninvoked_node_type=output_node.node_as_str,
-                    uninvoked_node_name=output_node.name,
+                    described_node=output_node.describe_node(),
                     name=current_context().name,
                     arg_desc=arg_desc,
                     input_name=input_name,
