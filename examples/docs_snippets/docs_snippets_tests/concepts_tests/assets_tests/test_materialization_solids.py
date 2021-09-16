@@ -1,5 +1,5 @@
 from dagster import execute_solid
-from docs_snippets.concepts.assets.materialization_ops import (
+from docs_snippets.concepts.assets.materialization_solids import (
     my_asset_key_materialization_solid,
     my_asset_solid,
     my_constant_asset_solid,

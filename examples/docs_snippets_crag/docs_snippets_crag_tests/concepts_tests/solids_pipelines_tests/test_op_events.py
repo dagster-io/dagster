@@ -1,5 +1,5 @@
 import pytest
-from dagster import Failure, graph, op
+from dagster import Failure, graph
 from docs_snippets_crag.concepts.solids_pipelines.op_events import (
     my_asset_op,
     my_failure_metadata_op,
