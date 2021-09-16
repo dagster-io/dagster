@@ -5,10 +5,13 @@ import pytest
 from dagster import (
     AssetKey,
     AssetMaterialization,
+    DynamicOutput,
+    DynamicOutputDefinition,
     Failure,
     Field,
     InputDefinition,
     Noneable,
+    Nothing,
     Output,
     OutputDefinition,
     RetryRequested,
@@ -26,6 +29,7 @@ from dagster.core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvalidPropertyError,
     DagsterInvariantViolationError,
+    DagsterResourceFunctionError,
     DagsterStepOutputNotFoundError,
     DagsterTypeCheckDidNotPass,
 )
@@ -79,6 +83,17 @@ def test_solid_invocation_none_arg():
 
     result = basic_solid(None)
     assert result == 5
+
+
+def test_solid_invocation_out_of_order_input_defs():
+    @solid(input_defs=[InputDefinition("x"), InputDefinition("y")])
+    def check_correct_order(y, x):
+        assert y == 6
+        assert x == 5
+
+    check_correct_order(6, 5)
+    check_correct_order(x=5, y=6)
+    check_correct_order(6, x=5)
 
 
 def test_solid_invocation_with_resources():
@@ -303,6 +318,24 @@ def test_solid_with_inputs():
         DagsterInvalidInvocationError, match='No value provided for required input "y".'
     ):
         solid_with_inputs(5)
+
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="Too many input arguments were provided for solid 'solid_with_inputs'",
+    ):
+        solid_with_inputs(5, 6, 7)
+
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="Too many input arguments were provided for solid 'solid_with_inputs'",
+    ):
+        solid_with_inputs(5, 6, z=7)
+
+    # Check for proper error when incorrect number of inputs is provided.
+    with pytest.raises(
+        DagsterInvalidInvocationError, match='No value provided for required input "y".'
+    ):
+        solid_with_inputs(5, x=5)
 
 
 def test_failing_solid():
@@ -693,3 +726,144 @@ def test_coroutine_asyncio_invocation():
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(my_coroutine_test())
+
+
+def test_solid_invocation_nothing_deps():
+    @solid(input_defs=[InputDefinition("start", Nothing)])
+    def nothing_dep():
+        return 5
+
+    # Ensure that providing the Nothing-dependency input throws an error
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="Attempted to provide value for nothing input 'start'. Nothing dependencies are ignored "
+        "when directly invoking solids.",
+    ):
+        nothing_dep(start="blah")
+
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="Too many input arguments were provided for solid 'nothing_dep'. This may be because "
+        "you attempted to provide a value for a nothing dependency. Nothing dependencies are "
+        "ignored when directly invoking solids.",
+    ):
+        nothing_dep("blah")
+
+    # Ensure that not providing nothing dependency also works.
+    assert nothing_dep() == 5
+
+    @solid(input_defs=[InputDefinition("x"), InputDefinition("y", Nothing), InputDefinition("z")])
+    def sandwiched_nothing_dep(x, z):
+        return x + z
+
+    assert sandwiched_nothing_dep(5, 6) == 11
+
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="Too many input arguments were provided for solid 'sandwiched_nothing_dep'. This may "
+        "be because you attempted to provide a value for a nothing dependency. Nothing "
+        "dependencies are ignored when directly invoking solids.",
+    ):
+        sandwiched_nothing_dep(5, 6, 7)
+
+
+def test_dynamic_output_gen():
+    @solid(
+        output_defs=[
+            DynamicOutputDefinition(name="a", is_required=False),
+            OutputDefinition(name="b", is_required=False),
+        ]
+    )
+    def my_dynamic():
+        yield DynamicOutput(value=1, mapping_key="1", output_name="a")
+        yield DynamicOutput(value=2, mapping_key="2", output_name="a")
+        yield Output(value="foo", output_name="b")
+
+    a1, a2, b = my_dynamic()
+    assert a1.value == 1
+    assert a1.mapping_key == "1"
+    assert a2.value == 2
+    assert a2.mapping_key == "2"
+
+    assert b.value == "foo"
+
+
+def test_dynamic_output_async_gen():
+    @solid(
+        output_defs=[
+            DynamicOutputDefinition(name="a", is_required=False),
+            OutputDefinition(name="b", is_required=False),
+        ]
+    )
+    async def aio_gen():
+        yield DynamicOutput(value=1, mapping_key="1", output_name="a")
+        yield DynamicOutput(value=2, mapping_key="2", output_name="a")
+        await asyncio.sleep(0.01)
+        yield Output(value="foo", output_name="b")
+
+    async def get_results():
+        res = []
+        async for output in aio_gen():
+            res.append(output)
+        return res
+
+    loop = asyncio.get_event_loop()
+    a1, a2, b = loop.run_until_complete(get_results())
+
+    assert a1.value == 1
+    assert a1.mapping_key == "1"
+    assert a2.value == 2
+    assert a2.mapping_key == "2"
+
+    assert b.value == "foo"
+
+
+def test_dynamic_output_non_gen():
+    @solid(output_defs=[DynamicOutputDefinition(name="a", is_required=False)])
+    def should_not_work():
+        return DynamicOutput(value=1, mapping_key="1", output_name="a")
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Attempted to return a DynamicOutput from solid. DynamicOutputs are only supported "
+        "using yield syntax.",
+    ):
+        should_not_work()
+
+
+def test_dynamic_output_async_non_gen():
+    @solid(output_defs=[DynamicOutputDefinition(name="a", is_required=False)])
+    def should_not_work():
+        asyncio.sleep(0.01)
+        return DynamicOutput(value=1, mapping_key="1", output_name="a")
+
+    loop = asyncio.get_event_loop()
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Attempted to return a DynamicOutput from solid. DynamicOutputs are only supported "
+        "using yield syntax.",
+    ):
+        loop.run_until_complete(should_not_work())
+
+
+def test_solid_invocation_with_bad_resources(capsys):
+    @resource
+    def bad_resource(_):
+        if 1 == 1:
+            raise Exception("oopsy daisy")
+        yield "foo"
+
+    @solid(required_resource_keys={"my_resource"})
+    def solid_requires_resource(context):
+        return context.resources.my_resource
+
+    with pytest.raises(
+        DagsterResourceFunctionError,
+        match="Error executing resource_fn on ResourceDefinition my_resource",
+    ):
+        with build_solid_context(resources={"my_resource": bad_resource}) as context:
+            assert solid_requires_resource(context) == "foo"
+
+    captured = capsys.readouterr()
+    # make sure there are no exceptions in the context destructor (__del__)
+    assert "Exception ignored in" not in captured.err

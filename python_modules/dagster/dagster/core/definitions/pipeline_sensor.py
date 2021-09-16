@@ -2,6 +2,7 @@ from typing import Any, Callable, List, NamedTuple, Optional, Union, cast
 
 import pendulum
 from dagster import check
+from dagster.core.definitions import GraphDefinition, PipelineDefinition
 from dagster.core.definitions.sensor import (
     PipelineRunReaction,
     SensorDefinition,
@@ -88,8 +89,16 @@ class RunStatusSensorContext(
             instance=check.inst_param(instance, "instance", DagsterInstance),
         )
 
-    def for_failure(self):
+    def for_pipeline_failure(self):
         return PipelineFailureSensorContext(
+            sensor_name=self.sensor_name,
+            pipeline_run=self.pipeline_run,
+            dagster_event=self.dagster_event,
+            instance=self.instance,
+        )
+
+    def for_run_failure(self):
+        return RunFailureSensorContext(
             sensor_name=self.sensor_name,
             pipeline_run=self.pipeline_run,
             dagster_event=self.dagster_event,
@@ -99,6 +108,20 @@ class RunStatusSensorContext(
 
 class PipelineFailureSensorContext(RunStatusSensorContext):
     """The ``context`` object available to a decorated function of ``pipeline_failure_sensor``.
+
+    Attributes:
+        sensor_name (str): the name of the sensor.
+        pipeline_run (PipelineRun): the failed pipeline run.
+        failure_event (DagsterEvent): the pipeline failure event.
+    """
+
+    @property
+    def failure_event(self):
+        return self.dagster_event
+
+
+class RunFailureSensorContext(RunStatusSensorContext):
+    """The ``context`` object available to a decorated function of ``run_failure_sensor``.
 
     Attributes:
         sensor_name (str): the name of the sensor.
@@ -154,9 +177,68 @@ def pipeline_failure_sensor(
             description=description,
         )
         def _pipeline_failure_sensor(context: RunStatusSensorContext):
-            fn(context.for_failure())
+            fn(context.for_pipeline_failure())
 
         return _pipeline_failure_sensor
+
+    # This case is for when decorator is used bare, without arguments, i.e. @pipeline_failure_sensor
+    if callable(name):
+        return inner(name)
+
+    return inner
+
+
+def run_failure_sensor(
+    name: Union[Callable[..., Any], Optional[str]] = None,
+    minimum_interval_seconds: Optional[int] = None,
+    description: Optional[str] = None,
+    job_selection: Optional[List[Union[PipelineDefinition, GraphDefinition]]] = None,
+    pipeline_selection: Optional[List[str]] = None,
+) -> Callable[
+    [Callable[[RunFailureSensorContext], Union[SkipReason, PipelineRunReaction]]],
+    SensorDefinition,
+]:
+    """
+    Creates a sensor that reacts to job failure events, where the decorated function will be
+    run when a run fails.
+
+    Takes a :py:class:`~dagster.RunFailureSensorContext`.
+
+    Args:
+        name (Optional[str]): The name of the pipeline failure sensor. Defaults to the name of the
+            decorated function.
+        minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
+            between sensor evaluations.
+        description (Optional[str]): A human-readable description of the sensor.
+        job_selection (Optional[List[Union[PipelineDefinition, GraphDefinition]]]): The jobs that
+            will be monitored by this failure sensor. Defaults to None, which means the alert will
+            be sent when any job in the repository fails.
+        pipeline_selection (Optional[List[str]]): Names of the pipelines that will be monitored by
+            this sensor. Defaults to None, which means the alert will be sent when any pipeline in
+            the repository fails.
+    """
+
+    def inner(
+        fn: Callable[[RunFailureSensorContext], Union[SkipReason, PipelineRunReaction]]
+    ) -> SensorDefinition:
+        check.callable_param(fn, "fn")
+        if name is None or callable(name):
+            sensor_name = fn.__name__
+        else:
+            sensor_name = name
+
+        @run_status_sensor(
+            pipeline_run_status=PipelineRunStatus.FAILURE,
+            name=sensor_name,
+            minimum_interval_seconds=minimum_interval_seconds,
+            description=description,
+            job_selection=job_selection,
+            pipeline_selection=pipeline_selection,
+        )
+        def _run_failure_sensor(context: RunStatusSensorContext):
+            fn(context.for_run_failure())
+
+        return _run_failure_sensor
 
     # This case is for when decorator is used bare, without arguments, i.e. @pipeline_failure_sensor
     if callable(name):
@@ -182,6 +264,9 @@ class RunStatusSensorDefinition(SensorDefinition):
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
+        job_selection (Optional[List[Union[PipelineDefinition, GraphDefinition]]]): The jobs that
+            will be monitored by this sensor. Defaults to None, which means the alert will be sent
+            when any job in the repository fails.
     """
 
     def __init__(
@@ -194,6 +279,7 @@ class RunStatusSensorDefinition(SensorDefinition):
         pipeline_selection: Optional[List[str]] = None,
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
+        job_selection: Optional[List[Union[PipelineDefinition, GraphDefinition]]] = None,
     ):
 
         from dagster.core.storage.event_log.base import RunShardedEventsCursor, EventRecordsFilter
@@ -264,6 +350,12 @@ class RunStatusSensorDefinition(SensorDefinition):
                     or
                     # if pipeline is not selected
                     (pipeline_selection and pipeline_run.pipeline_name not in pipeline_selection)
+                    or
+                    # if job not selected
+                    (
+                        job_selection
+                        and pipeline_run.pipeline_name not in map(lambda x: x.name, job_selection)
+                    )
                 ):
                     context.update_cursor(
                         RunStatusSensorCursor(
@@ -323,6 +415,7 @@ def run_status_sensor(
     name: Optional[str] = None,
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
+    job_selection: Optional[List[Union[PipelineDefinition, GraphDefinition]]] = None,
 ) -> Callable[
     [Callable[[RunStatusSensorContext], Union[SkipReason, PipelineRunReaction]]],
     RunStatusSensorDefinition,
@@ -343,6 +436,9 @@ def run_status_sensor(
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
+        job_selection (Optional[List[Union[PipelineDefinition, GraphDefinition]]]): Jobs that will
+            be monitored by this sensor. Defaults to None, which means the alert will be sent when
+            any job in the repository fails.
     """
 
     def inner(
@@ -362,6 +458,7 @@ def run_status_sensor(
             pipeline_selection=pipeline_selection,
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
+            job_selection=job_selection,
         )
 
     return inner

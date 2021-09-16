@@ -96,7 +96,7 @@ const AllSchedules: React.FC<{data: InstanceSchedulesQuery}> = ({data}) => {
               >
                 scheduler documentation
               </a>{' '}
-              for more information about scheduling pipeline runs in Dagster.
+              for more information about scheduling runs in Dagster.
             </div>
           }
         />

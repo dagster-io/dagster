@@ -1,6 +1,6 @@
 """isort:skip_file"""
 
-from dagster import DagsterType, InputDefinition, OutputDefinition, solid
+from dagster import DagsterType, In, Out, op
 
 
 # start_basic_even_type
@@ -12,9 +12,9 @@ EvenDagsterType = DagsterType(
 
 
 # start_basic_even_type_no_annotations
-@solid(
-    input_defs=[InputDefinition("num", EvenDagsterType)],
-    output_defs=[OutputDefinition(EvenDagsterType)],
+@op(
+    ins={"num": In(EvenDagsterType)},
+    out=Out(EvenDagsterType),
 )
 def double_even(num):
     return num
@@ -23,9 +23,9 @@ def double_even(num):
 # end_basic_even_type_no_annotations
 
 # start_basic_even_type_with_annotations
-@solid(
-    input_defs=[InputDefinition("num", EvenDagsterType)],
-    output_defs=[OutputDefinition(EvenDagsterType)],
+@op(
+    ins={"num": In(EvenDagsterType)},
+    out=Out(EvenDagsterType),
 )
 def double_even_with_annotations(num: int) -> int:
     return num
@@ -41,8 +41,8 @@ class MyClass:
     pass
 
 
-@solid
-def my_solid() -> MyClass:
+@op
+def my_op() -> MyClass:
     return MyClass()
 
 

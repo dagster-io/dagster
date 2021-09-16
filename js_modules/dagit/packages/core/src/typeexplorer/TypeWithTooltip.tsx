@@ -40,6 +40,6 @@ const TypeName = styled.code`
   padding: 1px 4px;
   border-bottom: 1px solid #2491eb;
   border-radius: 0.25em;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
 `;

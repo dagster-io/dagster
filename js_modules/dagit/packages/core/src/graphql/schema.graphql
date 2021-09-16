@@ -47,6 +47,7 @@ type Repository {
   partitionSets: [PartitionSet!]!
   schedules: [Schedule!]!
   sensors: [Sensor!]!
+  assetNodes: [AssetNode!]!
   displayMetadata: [RepositoryMetadata!]!
 }
 
@@ -1072,6 +1073,21 @@ type SolidInvocationSite {
   solidHandle: SolidHandle!
 }
 
+type AssetNode {
+  id: ID!
+  assetKey: AssetKey!
+  description: String
+  opName: String
+  jobName: String
+  dependencies: [AssetDependency!]!
+  assetMaterializations(partitions: [String], beforeTimestampMillis: String, limit: Int): [AssetMaterialization!]!
+}
+
+type AssetDependency {
+  inputName: String!
+  upstreamAsset: AssetNode!
+}
+
 union RepositoryOrError = PythonError | Repository | RepositoryNotFoundError
 
 type RepositoryNotFoundError implements Error {
@@ -1567,6 +1583,7 @@ union PipelineRunLogsSubscriptionPayload = PipelineRunLogsSubscriptionSuccess | 
 type PipelineRunLogsSubscriptionSuccess {
   run: PipelineRun!
   messages: [PipelineRunEvent!]!
+  hasMorePastEvents: Boolean!
 }
 
 type PipelineRunLogsSubscriptionFailure {

@@ -192,3 +192,15 @@ def extract_asset_keys_idx_columns():
     op.add_column("asset_keys", db.Column("wipe_timestamp", db.types.TIMESTAMP))
     op.add_column("asset_keys", db.Column("last_materialization_timestamp", db.types.TIMESTAMP))
     op.add_column("asset_keys", db.Column("tags", db.TEXT))
+
+
+def create_event_log_event_idx():
+    if not has_table("event_logs"):
+        return
+
+    op.create_index(
+        "idx_event_type",
+        "event_logs",
+        ["dagster_event_type", "id"],
+        mysql_length={"dagster_event_type": 64},
+    )

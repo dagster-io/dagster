@@ -17,6 +17,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {copyValue} from '../app/DomUtils';
+import {useFeatureFlags} from '../app/Flags';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunTags} from '../runs/RunTags';
@@ -50,6 +51,7 @@ interface ScheduleTick {
 export const SchedulesNextTicks: React.FC<{
   repos: RepositorySchedulesFragment[];
 }> = React.memo(({repos}) => {
+  const {flagPipelineModeTuples} = useFeatureFlags();
   const nextTicks: ScheduleTick[] = [];
 
   repos.forEach((repo) => {
@@ -100,7 +102,7 @@ export const SchedulesNextTicks: React.FC<{
         <tr>
           <th style={{width: '200px'}}>Timestamp</th>
           <th style={{width: '30%'}}>Schedule</th>
-          <th>Pipeline</th>
+          <th>{flagPipelineModeTuples ? 'Job' : 'Pipeline'}</th>
           <th style={{textAlign: 'right'}}>Metadata</th>
         </tr>
       </thead>
@@ -452,7 +454,7 @@ const SCHEDULE_TICK_CONFIG_QUERY = gql`
 const ConfigBody = styled.div`
   white-space: pre-line;
   font-family: ${FontFamily.monospace};
-  font-size: 13px;
+  font-size: 14px;
   overflow: scroll;
   background: ${Colors.WHITE};
   border-top: 1px solid ${Colors.LIGHT_GRAY3};

@@ -3,6 +3,7 @@ import {Colors, Intent, Popover} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {useFeatureFlags} from '../app/Flags';
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {PipelineGraph, PIPELINE_GRAPH_SOLID_FRAGMENT} from '../graph/PipelineGraph';
@@ -101,6 +102,8 @@ export const SolidSelector = (props: ISolidSelectorProps) => {
     pipelineName,
   };
 
+  const {flagPipelineModeTuples} = useFeatureFlags();
+
   const {data, loading} = useQuery<SolidSelectorQuery>(SOLID_SELECTOR_QUERY, {
     variables: {selector},
     fetchPolicy: 'cache-and-network',
@@ -122,12 +125,17 @@ export const SolidSelector = (props: ISolidSelectorProps) => {
     console.error(`Could not load pipeline ${props.pipelineName}`);
   }
 
-  const errorMessage =
-    !loading && (queryResultSolids.length === 0 || pending.length === 0)
-      ? `You must provide a valid solid query or * to execute the entire pipeline.`
-      : serverProvidedSubsetError
-      ? serverProvidedSubsetError.message
-      : pipelineErrorMessage;
+  const invalidResult = !loading && (queryResultSolids.length === 0 || pending.length === 0);
+
+  const errorMessage = React.useMemo(() => {
+    if (invalidResult) {
+      return flagPipelineModeTuples
+        ? `You must provide a valid op query or * to execute the entire job.`
+        : `You must provide a valid solid query or * to execute the entire pipeline.`;
+    }
+
+    return serverProvidedSubsetError ? serverProvidedSubsetError.message : pipelineErrorMessage;
+  }, [flagPipelineModeTuples, invalidResult, pipelineErrorMessage, serverProvidedSubsetError]);
 
   const onCommitPendingValue = (applied: string) => {
     if (data?.pipelineOrError.__typename !== 'Pipeline') {
@@ -168,7 +176,7 @@ export const SolidSelector = (props: ISolidSelectorProps) => {
               data?.pipelineOrError.__typename === 'Pipeline' ? data?.pipelineOrError.solids : []
             }
             value={pending}
-            placeholder="Type a Solid Subset"
+            placeholder={flagPipelineModeTuples ? 'Type an op subset' : 'Type a solid subset'}
             onChange={setPending}
             onBlur={(pending) => {
               onCommitPendingValue(pending);

@@ -431,6 +431,10 @@
     "source": "/integrations/pyspark",
     "destination": "/integrations/spark",
     "permanent": true
+  },
+  {
+    "source": "/deployment/guides/airflow",
+    "destination": "/integrations/airflow",
+    "permanent": true
   }
-
 ]

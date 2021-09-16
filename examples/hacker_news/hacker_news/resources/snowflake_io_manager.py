@@ -1,4 +1,3 @@
-import os
 import textwrap
 from contextlib import contextmanager
 from typing import Any, Dict, Union
@@ -12,9 +11,10 @@ from dagster import (
     io_manager,
 )
 from dagster.core.storage.io_manager import IOManager
-from hacker_news.resources.parquet_pointer import ParquetPointer
-from pandas import DataFrame, read_sql
-from pyspark.sql.types import StructField
+from pandas import DataFrame as PandasDataFrame
+from pandas import read_sql
+from pyspark.sql import DataFrame as SparkDataFrame
+from pyspark.sql.types import StructField, StructType
 from snowflake.connector.pandas_tools import pd_writer
 from snowflake.sqlalchemy import URL  # pylint: disable=no-name-in-module,import-error
 from sqlalchemy import create_engine
@@ -87,27 +87,29 @@ class SnowflakeIOManager(IOManager):
     def get_output_asset_key(self, context: OutputContext):
         return AssetKey(["snowflake", *context.metadata["table"].split(".")])
 
-    def handle_output(self, context: OutputContext, obj: Union[ParquetPointer, DataFrame]):
+    def handle_output(self, context: OutputContext, obj: Union[PandasDataFrame, SparkDataFrame]):
+        schema, table = context.metadata["table"].split(".")
 
-        if isinstance(obj, ParquetPointer) and "s3:" in obj.path:
-            yield from self._handle_pointer_output(context, obj)
-        elif isinstance(obj, DataFrame):
-            yield from self._handle_dataframe_output(context, obj)
+        with connect_snowflake(config=context.resource_config, schema=schema) as con:
+            con.execute(self._get_cleanup_statement(table, context.resources))
+
+        if isinstance(obj, SparkDataFrame):
+            yield from self._handle_spark_output(context.resource_config, obj, schema, table)
+        elif isinstance(obj, PandasDataFrame):
+            yield from self._handle_pandas_output(context.resource_config, obj, schema, table)
         else:
             raise Exception(
-                "SnowflakeIOManager only supports pandas DataFrames and s3 ParquetPointers"
+                "SnowflakeIOManager only supports pandas DataFrames and spark DataFrames"
             )
 
-    def _handle_dataframe_output(self, context: OutputContext, obj: DataFrame):
+    def _handle_pandas_output(self, config: Dict, obj: PandasDataFrame, schema: str, table: str):
         from snowflake import connector  # pylint: disable=no-name-in-module
 
         yield EventMetadataEntry.int(obj.shape[0], "Rows")
-        yield EventMetadataEntry.md(columns_to_markdown(obj), "DataFrame columns")
+        yield EventMetadataEntry.md(pandas_columns_to_markdown(obj), "DataFrame columns")
 
         connector.paramstyle = "pyformat"
-
-        schema, table = context.metadata["table"].split(".")
-        with connect_snowflake(config=context.resource_config, schema=schema) as con:
+        with connect_snowflake(config=config, schema=schema) as con:
             with_uppercase_cols = obj.rename(str.upper, copy=False, axis="columns")
             with_uppercase_cols.to_sql(
                 table,
@@ -117,46 +119,23 @@ class SnowflakeIOManager(IOManager):
                 method=pd_writer,
             )
 
-    def _handle_pointer_output(self, context: OutputContext, parquet_pointer: ParquetPointer):
+    def _handle_spark_output(self, config: Dict, df: SparkDataFrame, schema: str, table: str):
+        options = {
+            "sfURL": f"{config['account']}.snowflakecomputing.com",
+            "sfUser": config["user"],
+            "sfPassword": config["password"],
+            "sfDatabase": config["database"],
+            "sfSchema": schema,
+            "sfWarehouse": config["warehouse"],
+            "dbtable": table,
+        }
+        yield EventMetadataEntry.md(spark_columns_to_markdown(df.schema), "DataFrame columns")
 
-        yield EventMetadataEntry.path(parquet_pointer.path, "Source Parquet Path")
-        with connect_snowflake(config=context.resource_config) as con:
-            # stage the data stored at the given path
-            con.execute(
-                f"""
-            CREATE TEMPORARY STAGE tmp_s3_stage
-                URL = '{parquet_pointer.path}'
-                FILE_FORMAT=(TYPE=PARQUET COMPRESSION=SNAPPY)
-                CREDENTIALS=(
-                    AWS_KEY_ID='{os.getenv("AWS_ACCESS_KEY_ID")}',
-                    AWS_SECRET_KEY='{os.getenv("AWS_SECRET_ACCESS_KEY")}'
-                );
-            """
-            )
-            con.execute(self._get_create_table_statement(context, parquet_pointer))
-            con.execute(self._get_cleanup_statement(context))
-            con.execute(self._get_copy_statement(context, parquet_pointer))
+        df.write.format("net.snowflake.spark.snowflake").options(**options).mode("append").save()
 
-    def _get_create_table_statement(self, context: OutputContext, parquet_pointer: ParquetPointer):
-        column_str = ",".join(
-            f'"{field.name}" {spark_field_to_snowflake_type(field)}'
-            for field in parquet_pointer.schema.fields
-        )
+    def _get_cleanup_statement(self, table: str, _resources):
         return f"""
-        CREATE TABLE IF NOT EXISTS {context.metadata["table"]} ({column_str});
-        """
-
-    def _get_copy_statement(self, context: OutputContext, parquet_pointer: ParquetPointer):
-        # need to expand out the single parquet value into separate columns
-        select_str = ",".join(f'$1:"{field.name}"' for field in parquet_pointer.schema.fields)
-        return f"""
-        COPY INTO {context.metadata["table"]} FROM ( SELECT {select_str} FROM @tmp_s3_stage )
-            PATTERN='.*parquet';
-        """
-
-    def _get_cleanup_statement(self, context: OutputContext):
-        return f"""
-        DELETE FROM {context.metadata["table"]} WHERE true;
+        DELETE FROM {table} WHERE true;
         """
 
     def _get_select_statement(self, _resources, metadata: Dict[str, Any]):
@@ -165,7 +144,7 @@ class SnowflakeIOManager(IOManager):
         SELECT {col_str} FROM {metadata["table"]};
         """
 
-    def load_input(self, context: InputContext) -> DataFrame:
+    def load_input(self, context: InputContext) -> PandasDataFrame:
         resources = context.resources
         if context.upstream_output is not None:
             # loading from an upstream output
@@ -195,11 +174,11 @@ class TimePartitionedSnowflakeIOManager(SnowflakeIOManager):
     def get_output_asset_partitions(self, context: OutputContext):
         return [context.resources.partition_start]
 
-    def _get_cleanup_statement(self, context: OutputContext):
+    def _get_cleanup_statement(self, table: str, resources):
         return f"""
-        DELETE FROM {context.metadata["table"]} WHERE
+        DELETE FROM {table} WHERE
             TO_TIMESTAMP("time") BETWEEN
-                '{context.resources.partition_start}' AND '{context.resources.partition_end}';
+                '{resources.partition_start}' AND '{resources.partition_end}';
         """
 
     def _get_select_statement(self, resources, metadata: Dict[str, Any]):
@@ -210,7 +189,7 @@ class TimePartitionedSnowflakeIOManager(SnowflakeIOManager):
         """
 
 
-def columns_to_markdown(dataframe: DataFrame) -> str:
+def pandas_columns_to_markdown(dataframe: PandasDataFrame) -> str:
     return (
         textwrap.dedent(
             """
@@ -218,5 +197,17 @@ def columns_to_markdown(dataframe: DataFrame) -> str:
         | ---- | ---- |
     """
         )
-        + "\n".join([f"| {name} | {dtype}" for name, dtype in dataframe.dtypes.iteritems()])
+        + "\n".join([f"| {name} | {dtype} |" for name, dtype in dataframe.dtypes.iteritems()])
+    )
+
+
+def spark_columns_to_markdown(schema: StructType) -> str:
+    return (
+        textwrap.dedent(
+            """
+        | Name | Type |
+        | ---- | ---- |
+    """
+        )
+        + "\n".join([f"| {field.name} | {field.dataType.typeName()} |" for field in schema.fields])
     )

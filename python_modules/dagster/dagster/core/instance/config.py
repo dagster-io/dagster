@@ -1,7 +1,7 @@
 import os
 import warnings
 
-from dagster import Bool, check
+from dagster import Array, Bool, check
 from dagster.config import Field, Permissive
 from dagster.config.validate import validate_config
 from dagster.core.errors import DagsterInvalidConfigError
@@ -80,6 +80,23 @@ def configurable_class_schema():
     return {"module": str, "class": str, "config": Field(Permissive())}
 
 
+def python_logs_config_schema():
+    return Field(
+        {
+            "managed_python_loggers": Field(Array(str), is_required=False),
+            "python_log_level": Field(str, is_required=False),
+            "dagster_handler_config": Field(
+                {
+                    "handlers": Field(dict, is_required=False),
+                    "formatters": Field(dict, is_required=False),
+                },
+                is_required=False,
+            ),
+        },
+        is_required=False,
+    )
+
+
 def dagster_instance_config_schema():
     return {
         "local_artifact_storage": config_field_for_configurable_class(),
@@ -92,4 +109,5 @@ def dagster_instance_config_schema():
         "run_launcher": config_field_for_configurable_class(),
         "telemetry": Field({"enabled": Field(Bool, is_required=False)}),
         "instance_class": config_field_for_configurable_class(),
+        "python_logs": python_logs_config_schema(),
     }

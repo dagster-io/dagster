@@ -21,7 +21,11 @@ from dagster.core.definitions.config import ConfigMapping
 from dagster.core.definitions.definition_config_schema import IDefinitionConfigSchema
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.resource import ResourceDefinition
-from dagster.core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
+from dagster.core.errors import (
+    DagsterInvalidConfigError,
+    DagsterInvalidDefinitionError,
+    DagsterInvariantViolationError,
+)
 from dagster.core.storage.io_manager import io_manager
 from dagster.core.types.dagster_type import (
     DagsterType,
@@ -54,8 +58,8 @@ if TYPE_CHECKING:
     from .solid import SolidDefinition
     from .partition import PartitionedConfig
     from .executor import ExecutorDefinition
-    from .pipeline import PipelineDefinition
-    from dagster.core.execution.execute import InProcessGraphResult
+    from .job import JobDefinition
+    from dagster.core.execution.execute_in_process import InProcessGraphResult
 
 
 def _check_node_defs_arg(graph_name: str, node_defs: List[NodeDefinition]):
@@ -123,6 +127,7 @@ class GraphDefinition(NodeDefinition):
         input_mappings: Optional[List[InputMapping]],
         output_mappings: Optional[List[OutputMapping]],
         config_mapping: Optional[ConfigMapping],
+        tags: Optional[Dict[str, Any]] = None,
         **kwargs,
     ):
         self._node_defs = _check_node_defs_arg(name, node_defs)
@@ -156,6 +161,7 @@ class GraphDefinition(NodeDefinition):
             description=description,
             input_defs=input_defs,
             output_defs=[output_mapping.definition for output_mapping in self._output_mappings],
+            tags=tags,
             **kwargs,
         )
 
@@ -369,7 +375,7 @@ class GraphDefinition(NodeDefinition):
         executor_def: Optional["ExecutorDefinition"] = None,
         hooks: Optional[AbstractSet[HookDefinition]] = None,
         version_strategy: Optional[VersionStrategy] = None,
-    ) -> "PipelineDefinition":
+    ) -> "JobDefinition":
         """
         Make this graph in to an executable Job by providing remaining components required for execution.
 
@@ -414,7 +420,7 @@ class GraphDefinition(NodeDefinition):
         Returns:
             PipelineDefinition: The "Job" currently implemented as a single-mode pipeline
         """
-        from .pipeline import PipelineDefinition
+        from .job import JobDefinition
         from .partition import PartitionedConfig
         from .executor import ExecutorDefinition, multiprocess_executor
 
@@ -457,19 +463,17 @@ class GraphDefinition(NodeDefinition):
                 f"is an object of type {type(config)}"
             )
 
-        return PipelineDefinition(
+        return JobDefinition(
             name=job_name,
             description=description,
             graph_def=self,
-            mode_defs=[
-                ModeDefinition(
-                    resource_defs=resource_defs_with_defaults,
-                    logger_defs=logger_defs,
-                    executor_defs=[executor_def],
-                    _config_mapping=config_mapping,
-                    _partitioned_config=partitioned_config,
-                )
-            ],
+            mode_def=ModeDefinition(
+                resource_defs=resource_defs_with_defaults,
+                logger_defs=logger_defs,
+                executor_defs=[executor_def],
+                _config_mapping=config_mapping,
+                _partitioned_config=partitioned_config,
+            ),
             preset_defs=presets,
             tags=tags,
             hook_defs=hooks,
@@ -507,34 +511,68 @@ class GraphDefinition(NodeDefinition):
 
     def execute_in_process(
         self,
-        run_config: Optional[Dict[str, Any]] = None,
+        config: Any = None,
         instance: Optional["DagsterInstance"] = None,
         resources: Optional[Dict[str, Any]] = None,
+        raise_on_error: bool = True,
     ):
         """
         Execute this graph in-process, collecting results in-memory.
 
         Args:
-            run_config (Optional[Dict[str, Any]]):
-                Configuration for the run.
+            config (Optional[Dict[str, Any]]):
+                Configuration for the graph.
             instance (Optional[DagsterInstance]):
                 The instance to execute against, an ephemeral one will be used if none provided.
             resources (Optional[Dict[str, Any]]):
                 The resources needed if any are required. Can provide resource instances directly,
                 or resource definitions.
+            raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
+                Defaults to ``True``.
 
         Returns:
             InProcessGraphResult
         """
-        from dagster.core.execution.execute import execute_in_process
+        from dagster.core.execution.execute_in_process import core_execute_in_process
+        from dagster.core.instance import DagsterInstance
+        from dagster.core.storage.io_manager import IOManagerDefinition, IOManager
+        from .job import JobDefinition
+        from .executor import execute_in_process_executor
 
-        run_config = check.opt_dict_param(run_config, "run_config")
+        if len(self.input_defs) > 0:
+            raise DagsterInvariantViolationError(
+                "Graphs with inputs cannot be used with execute_in_process at this time."
+            )
 
-        return execute_in_process(
+        instance = check.opt_inst_param(instance, "instance", DagsterInstance)
+        resources = check.opt_dict_param(resources, "resources", key_type=str)
+
+        resource_defs = {}
+        # Wrap instantiated resource values in a resource definition.
+        # If an instantiated IO manager is provided, wrap it in an IO manager definition.
+        for resource_key, resource in resources.items():
+            if isinstance(resource, ResourceDefinition):
+                resource_defs[resource_key] = resource
+            elif isinstance(resource, IOManager):
+                resource_defs[resource_key] = IOManagerDefinition.hardcoded_io_manager(resource)
+            else:
+                resource_defs[resource_key] = ResourceDefinition.hardcoded_resource(resource)
+
+        in_proc_mode = ModeDefinition(
+            executor_defs=[execute_in_process_executor], resource_defs=resource_defs
+        )
+
+        ephemeral_job = JobDefinition(name=self._name, graph_def=self, mode_def=in_proc_mode)
+
+        run_config = {"ops": config if config is not None else {}}
+
+        return core_execute_in_process(
             node=self,
+            ephemeral_pipeline=ephemeral_job,
             run_config=run_config,
             instance=instance,
-            resources=resources,
+            output_capturing_enabled=True,
+            raise_on_error=raise_on_error,
         )
 
 

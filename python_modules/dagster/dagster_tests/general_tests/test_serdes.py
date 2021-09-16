@@ -5,7 +5,7 @@ from enum import Enum
 from typing import NamedTuple, Set
 
 import pytest
-from dagster.check import CheckError, ParameterCheckError, inst_param, set_param
+from dagster.check import ParameterCheckError, inst_param, set_param
 from dagster.serdes.errors import DeserializationError, SerdesUsageError, SerializationError
 from dagster.serdes.serdes import (
     DefaultEnumSerializer,
@@ -18,7 +18,6 @@ from dagster.serdes.serdes import (
     _whitelist_for_serdes,
     deserialize_json_to_dagster_namedtuple,
     deserialize_value,
-    serialize_dagster_namedtuple,
     serialize_value,
 )
 from dagster.serdes.utils import hash_str
@@ -77,7 +76,7 @@ def test_forward_compat_serdes_new_field_with_default():
             return super(Quux, cls).__new__(cls, foo, bar)  # pylint: disable=bad-super-call
 
     assert test_map.has_tuple_entry("Quux")
-    klass, _ = test_map.get_tuple_entry("Quux")
+    klass, _, _ = test_map.get_tuple_entry("Quux")
     assert klass is Quux
 
     quux = Quux("zip", "zow")
@@ -92,7 +91,7 @@ def test_forward_compat_serdes_new_field_with_default():
 
     assert test_map.has_tuple_entry("Quux")
 
-    klass, _ = test_map.get_tuple_entry("Quux")
+    klass, _, _ = test_map.get_tuple_entry("Quux")
     assert klass is Quux
 
     deserialized = _deserialize_json(serialized, whitelist_map=test_map)
@@ -366,7 +365,7 @@ def test_from_storage_dict():
 
     class CompatSerializer(DefaultNamedTupleSerializer):
         @classmethod
-        def value_from_storage_dict(cls, storage_dict, klass):
+        def value_from_storage_dict(cls, storage_dict, klass, args_for_class):
             return DeprecatedAlphabet.legacy_load(storage_dict)
 
     @_whitelist_for_serdes(whitelist_map=test_map, serializer=CompatSerializer)

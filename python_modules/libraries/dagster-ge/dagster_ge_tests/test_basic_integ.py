@@ -1,3 +1,4 @@
+import pytest
 from dagster import (
     InputDefinition,
     ModeDefinition,
@@ -9,7 +10,11 @@ from dagster import (
 )
 from dagster.core.test_utils import instance_for_test
 from dagster.utils import file_relative_path
-from dagster_ge.factory import ge_data_context, ge_validation_solid_factory
+from dagster_ge.factory import (
+    ge_data_context,
+    ge_validation_solid_factory,
+    ge_validation_solid_factory_v3,
+)
 from dagster_pyspark import DataFrame as DagsterPySparkDataFrame
 from dagster_pyspark import pyspark_resource
 from pandas import read_csv
@@ -37,11 +42,27 @@ def reyielder(_context, res):
 @pipeline(
     mode_defs=[ModeDefinition("basic", resource_defs={"ge_data_context": ge_data_context})],
 )
-def hello_world_pandas_pipeline():
+def hello_world_pandas_pipeline_v2():
     return reyielder(
         ge_validation_solid_factory("ge_validation_solid", "getest", "basic.warning")(
             pandas_yielder()
         )
+    )
+
+
+@pipeline(
+    mode_defs=[ModeDefinition("basic", resource_defs={"ge_data_context": ge_data_context})],
+)
+def hello_world_pandas_pipeline_v3():
+    return reyielder(
+        ge_validation_solid_factory_v3(
+            name="ge_validation_solid",
+            datasource_name="getest",
+            data_connector_name="my_runtime_data_connector",
+            data_asset_name="test_asset",
+            suite_name="basic.warning",
+            batch_identifiers={"foo": "bar"},
+        )(pandas_yielder())
     )
 
 
@@ -62,17 +83,22 @@ def hello_world_pyspark_pipeline():
     return reyielder(validate(pyspark_yielder()))
 
 
-def test_yielded_results_config_pandas(snapshot):
+@pytest.mark.parametrize(
+    "pipe, ge_dir",
+    [
+        (hello_world_pandas_pipeline_v2, "./great_expectations"),
+        (hello_world_pandas_pipeline_v3, "./great_expectations_v3"),
+    ],
+)
+def test_yielded_results_config_pandas(snapshot, pipe, ge_dir):
     run_config = {
         "resources": {
-            "ge_data_context": {
-                "config": {"ge_root_dir": file_relative_path(__file__, "./great_expectations")}
-            }
+            "ge_data_context": {"config": {"ge_root_dir": file_relative_path(__file__, ge_dir)}}
         }
     }
     with instance_for_test() as instance:
         result = execute_pipeline(
-            reconstructable(hello_world_pandas_pipeline),
+            reconstructable(pipe),
             run_config=run_config,
             mode="basic",
             instance=instance,
@@ -89,7 +115,7 @@ def test_yielded_results_config_pandas(snapshot):
         snapshot.assert_match(metadata)
 
 
-def test_yielded_results_config_pyspark(snapshot):  # pylint:disable=unused-argument
+def test_yielded_results_config_pyspark_v2(snapshot):  # pylint:disable=unused-argument
     run_config = {
         "resources": {
             "ge_data_context": {
@@ -111,3 +137,6 @@ def test_yielded_results_config_pyspark(snapshot):  # pylint:disable=unused-argu
         assert len(expectations) == 1
         mainexpect = expectations[0]
         assert mainexpect.success
+        # purge system specific metadata for testing
+        metadata = mainexpect.metadata_entries[0].entry_data.md_str.split("### Info")[0]
+        snapshot.assert_match(metadata)

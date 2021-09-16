@@ -7,6 +7,7 @@ from dagster.core.definitions.composition import PendingNodeInvocation
 from dagster.core.definitions.dependency import Node, NodeHandle
 from dagster.core.definitions.hook import HookDefinition
 from dagster.core.definitions.mode import ModeDefinition
+from dagster.core.definitions.op import OpDefinition
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.definitions.resource import IContainsGenerator, Resources, ScopedResourcesBuilder
 from dagster.core.definitions.solid import SolidDefinition
@@ -61,6 +62,7 @@ class UnboundSolidExecutionContext(SolidExecutionContext):
         self._instance = self._instance_cm.__enter__()  # pylint: disable=no-member
 
         # Open resource context manager
+        self._resources_contain_cm = False
         self._resources_cm = build_resources(
             check.opt_dict_param(resources_dict, "resources_dict", key_type=str), instance
         )
@@ -376,6 +378,12 @@ class BoundSolidExecutionContext(SolidExecutionContext):
 
     def get_mapping_key(self) -> Optional[str]:
         return None
+
+    def describe_op(self):
+        if isinstance(self.solid_def, OpDefinition):
+            return f'op "{self.solid_def.name}"'
+
+        return f'solid "{self.solid_def.name}"'
 
 
 def build_op_context(

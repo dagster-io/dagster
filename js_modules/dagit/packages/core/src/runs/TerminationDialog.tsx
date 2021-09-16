@@ -5,7 +5,7 @@ import * as React from 'react';
 import {TerminatePipelinePolicy} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {Group} from '../ui/Group';
-import {FontFamily} from '../ui/styles';
+import {Mono} from '../ui/Text';
 
 import {NavigationBlock} from './NavitationBlock';
 import {TERMINATE_MUTATION} from './RunUtils';
@@ -314,7 +314,7 @@ export const TerminationDialog = (props: Props) => {
               {Object.keys(errors).map((runId) => (
                 <li key={runId}>
                   <Group direction="row" spacing={8}>
-                    <span style={{fontFamily: FontFamily.monospace}}>{runId.slice(0, 8)}</span>
+                    <Mono>{runId.slice(0, 8)}</Mono>
                     {errors[runId] ? <div>{errors[runId]?.message}</div> : null}
                   </Group>
                 </li>

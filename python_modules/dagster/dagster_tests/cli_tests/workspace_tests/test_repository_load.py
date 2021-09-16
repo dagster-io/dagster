@@ -100,7 +100,7 @@ MULTI_LOCATION_WORKSPACE = file_relative_path(__file__, "multi_location/multi_lo
 def test_valid_multi_location_from_file():
     def the_assert(external_repository):
         assert external_repository.name == "hello_world_repository"
-        assert external_repository.handle.repository_location.name == "loaded_from_file"
+        assert external_repository.handle.location_name == "loaded_from_file"
 
     successfully_load_repository_via_cli(
         ["-w", MULTI_LOCATION_WORKSPACE, "-l", "loaded_from_file"], the_assert
@@ -110,7 +110,7 @@ def test_valid_multi_location_from_file():
 def test_valid_multi_location_from_module():
     def the_assert(external_repository):
         assert external_repository.name == "hello_world_repository"
-        assert external_repository.handle.repository_location.name == "loaded_from_module"
+        assert external_repository.handle.location_name == "loaded_from_module"
 
     successfully_load_repository_via_cli(
         ["-w", MULTI_LOCATION_WORKSPACE, "-l", "loaded_from_module"], the_assert

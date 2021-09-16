@@ -4,6 +4,7 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {formatElapsedTime} from '../app/Util';
+import {SidebarSection} from '../pipelines/SidebarComponents';
 import {IRunMetadataDict, IStepState} from '../runs/RunMetadataProvider';
 import {StepSelection} from '../runs/StepSelection';
 import {Spinner} from '../ui/Spinner';
@@ -32,15 +33,28 @@ export const GanttStatusPanel: React.FunctionComponent<GanttStatusPanelProps> = 
   onDoubleClickStep,
   onHighlightStep,
 }) => {
-  const preparing = Object.keys(metadata.steps).filter(
-    (key) => metadata.steps[key].state === IStepState.PREPARING,
-  );
-  const executing = Object.keys(metadata.steps).filter((key) =>
-    [IStepState.RUNNING, IStepState.UNKNOWN].includes(metadata.steps[key].state),
-  );
-  const errored = Object.keys(metadata.steps).filter(
-    (key) => metadata.steps[key].state === IStepState.FAILED,
-  );
+  const {preparing, executing, errored} = React.useMemo(() => {
+    const keys = Object.keys(metadata.steps);
+    const preparing = [];
+    const executing = [];
+    const errored = [];
+    for (const key of keys) {
+      const state = metadata.steps[key].state;
+      switch (state) {
+        case IStepState.PREPARING:
+          preparing.push(key);
+          break;
+        case IStepState.RUNNING:
+        case IStepState.UNKNOWN:
+          executing.push(key);
+          break;
+        case IStepState.FAILED:
+          errored.push(key);
+      }
+    }
+    return {preparing, executing, errored};
+  }, [metadata]);
+
   const renderStepItem = (stepName: string) => (
     <StepItem
       nowMs={nowMs}
@@ -53,18 +67,39 @@ export const GanttStatusPanel: React.FunctionComponent<GanttStatusPanelProps> = 
       onHover={onHighlightStep}
     />
   );
+
   const isFinished = metadata?.exitedAt && metadata.exitedAt > 0;
+
   return (
-    <div style={{display: 'flex', flexDirection: 'column', minHeight: 0, overflowY: 'auto'}}>
+    <div style={{overflowY: 'auto'}}>
       <RunGroupPanel runId={runId} />
-      <SectionHeader>{isFinished ? 'Not Executed' : 'Preparing'}</SectionHeader>
-      <Section>{preparing.map(renderStepItem)}</Section>
-      {preparing.length === 0 && <EmptyNotice>No steps are waiting to execute</EmptyNotice>}
-      <SectionHeader>Executing</SectionHeader>
-      <Section>{executing.map(renderStepItem)}</Section>
-      {executing.length === 0 && <EmptyNotice>No steps are executing</EmptyNotice>}
-      <SectionHeader>Errored</SectionHeader>
-      <Section>{errored.map(renderStepItem)}</Section>
+      <SidebarSection title={`${isFinished ? 'Not Executed' : 'Preparing'} (${preparing.length})`}>
+        <div>
+          {preparing.length === 0 ? (
+            <EmptyNotice>No steps are waiting to execute</EmptyNotice>
+          ) : (
+            preparing.map(renderStepItem)
+          )}
+        </div>
+      </SidebarSection>
+      <SidebarSection title={`Executing (${executing.length})`}>
+        <div>
+          {executing.length === 0 ? (
+            <EmptyNotice>No steps are executing</EmptyNotice>
+          ) : (
+            executing.map(renderStepItem)
+          )}
+        </div>
+      </SidebarSection>
+      <SidebarSection title={`Errored (${errored.length})`}>
+        <div>
+          {errored.length === 0 ? (
+            <EmptyNotice>No steps have errored</EmptyNotice>
+          ) : (
+            errored.map(renderStepItem)
+          )}
+        </div>
+      </SidebarSection>
     </div>
   );
 };
@@ -121,20 +156,6 @@ const StepItem: React.FunctionComponent<{
   );
 };
 
-const SectionHeader = styled.div`
-  font-size: 11px;
-  padding: 3px 6px;
-  text-transform: uppercase;
-  background: ${Colors.LIGHT_GRAY4};
-  border-bottom: 1px solid ${Colors.LIGHT_GRAY1};
-  color: ${Colors.GRAY3};
-  height: 20px;
-`;
-
-const Section = styled.div`
-  overflow-y: auto;
-`;
-
 const StepLabel = styled.div`
   margin-left: 5px;
   overflow: hidden;
@@ -170,6 +191,6 @@ const Elapsed = styled.div`
 `;
 
 const EmptyNotice = styled.div`
-  padding: 7px 24px;
-  font-size: 13px;
+  font-size: 12px;
+  padding: 12px;
 `;

@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterable, NamedTuple, Optional, Set
 from dagster import check
 from dagster.core.definitions.hook import HookDefinition
 from dagster.core.definitions.mode import ModeDefinition
+from dagster.core.definitions.op import OpDefinition
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.definitions.pipeline_base import IPipeline
 from dagster.core.definitions.policy import RetryPolicy
@@ -321,7 +322,6 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             plan_data.pipeline.get_definition(),
             step,
             plan_data.execution_plan,
-            execution_data.resolved_run_config,
             execution_data.intermediate_storage_def,
         )
         self._resources = execution_data.scoped_resources_builder.build(
@@ -388,6 +388,12 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     @property
     def solid_retry_policy(self) -> Optional[RetryPolicy]:
         return self.pipeline_def.get_retry_policy_for_handle(self.solid_handle)
+
+    def describe_op(self):
+        if isinstance(self.solid_def, OpDefinition):
+            return f'op "{str(self.solid_handle)}"'
+
+        return f'solid "{str(self.solid_handle)}"'
 
     def get_io_manager(self, step_output_handle) -> IOManager:
         step_output = self.execution_plan.get_step_output(step_output_handle)

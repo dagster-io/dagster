@@ -2,13 +2,10 @@ import {gql} from '@apollo/client';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {useFeatureFlags} from '../app/Flags';
 import {Description} from '../pipelines/Description';
-import {
-  SectionInner,
-  SidebarSection,
-  SidebarSubhead,
-  SidebarTitle,
-} from '../pipelines/SidebarComponents';
+import {SidebarSection, SidebarSubhead, SidebarTitle} from '../pipelines/SidebarComponents';
+import {Box} from '../ui/Box';
 
 import {ConfigTypeSchema, CONFIG_TYPE_SCHEMA_FRAGMENT} from './ConfigTypeSchema';
 import {TypeExplorerFragment} from './types/TypeExplorerFragment';
@@ -19,31 +16,39 @@ interface ITypeExplorerProps {
 
 export const TypeExplorer: React.FC<ITypeExplorerProps> = (props) => {
   const {name, inputSchemaType, outputSchemaType, description} = props.type;
+  const {flagPipelineModeTuples} = useFeatureFlags();
   return (
     <div>
       <SidebarSubhead />
-      <SectionInner>
+      <Box padding={12}>
         <SidebarTitle>
-          <Link to="?tab=types">Pipeline Types</Link> {'>'} {name}
+          <Link to="?tab=types">{flagPipelineModeTuples ? 'Graph types' : 'Pipeline types'}</Link>{' '}
+          {'>'} {name}
         </SidebarTitle>
-      </SectionInner>
+      </Box>
       <SidebarSection title={'Description'}>
-        <Description description={description || 'No Description Provided'} />
+        <Box padding={12}>
+          <Description description={description || 'No Description Provided'} />
+        </Box>
       </SidebarSection>
       {inputSchemaType && (
         <SidebarSection title={'Input'}>
-          <ConfigTypeSchema
-            type={inputSchemaType}
-            typesInScope={inputSchemaType.recursiveConfigTypes}
-          />
+          <Box padding={12}>
+            <ConfigTypeSchema
+              type={inputSchemaType}
+              typesInScope={inputSchemaType.recursiveConfigTypes}
+            />
+          </Box>
         </SidebarSection>
       )}
       {outputSchemaType && (
         <SidebarSection title={'Output'}>
-          <ConfigTypeSchema
-            type={outputSchemaType}
-            typesInScope={outputSchemaType.recursiveConfigTypes}
-          />
+          <Box padding={12}>
+            <ConfigTypeSchema
+              type={outputSchemaType}
+              typesInScope={outputSchemaType.recursiveConfigTypes}
+            />
+          </Box>
         </SidebarSection>
       )}
     </div>

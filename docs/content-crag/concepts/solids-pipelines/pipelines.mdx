@@ -20,7 +20,6 @@ height={1040}
 | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | <PyObject module="dagster" object="pipeline" displayText="@pipeline" /> | The decorator used to define a pipeline.                                                                                                                                                                         |
 | <PyObject module="dagster" object="PipelineDefinition" />               | Class for pipelines. You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="pipeline" decorator /> which returns a <PyObject object="PipelineDefinition"  /> |
-| <PyObject module="dagster" object="ModeDefinition" />                   | Modes allow you to vary pipeline behavior between different deployment environments. For more info, see the [Modes](/concepts/modes-resources) section.                                                          |
 | <PyObject module="dagster" object="PresetDefinition" />                 | Presets allow you to predefine pipeline configurations.                                                                                                                                                          |
 
 ## Overview
@@ -93,7 +92,7 @@ def tag_pipeline():
 
 ### Pipeline Modes
 
-Pipeline definitions do not expose a configuration schema. Instead, they specify a set of <PyObject object="ModeDefinition" pluralize/> that can be used with the pipeline. For more information on Modes, see the [Modes](/concepts/modes-resources) section.
+Pipeline definitions do not expose a configuration schema. Instead, they specify a set of <PyObject object="ModeDefinition" pluralize/> that can be used with the pipeline.
 
 ```python file=/concepts/solids_pipelines/pipelines.py startafter=start_modes_pipeline endbefore=end_modes_pipeline
 dev_mode = ModeDefinition("dev")

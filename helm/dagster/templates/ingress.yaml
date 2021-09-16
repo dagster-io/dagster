@@ -11,6 +11,22 @@ metadata:
     {{- end }}
 spec:
   # See: https://github.com/helm/charts/blob/master/stable/airflow/templates/ingress-web.yaml
+  tls:
+    {{- if .Values.ingress.dagit.tls.enabled }}
+    - hosts:
+        - {{ .Values.ingress.dagit.host }}
+      secretName: {{ .Values.ingress.dagit.tls.secretName }}
+    {{- end }}
+    {{- if .Values.ingress.readOnlyDagit.tls.enabled }}
+    - hosts:
+        - {{ .Values.ingress.readOnlyDagit.host }}
+      secretName: {{ .Values.ingress.readOnlyDagit.tls.secretName }}
+    {{- end }}
+    {{- if .Values.ingress.flower.tls.enabled }}
+    - hosts:
+        - {{ .Values.ingress.flower.host }}
+      secretName: {{ .Values.ingress.flower.tls.secretName }}
+    {{- end }}
   rules:
     - host: {{ .Values.ingress.dagit.host }}
       http:

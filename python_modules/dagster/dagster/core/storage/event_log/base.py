@@ -119,6 +119,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         run_id: str,
         cursor: Optional[int] = -1,
         of_type: Optional[DagsterEventType] = None,
+        limit: Optional[int] = None,
     ) -> Iterable[EventLogEntry]:
         """Get all of the logs corresponding to a run.
 

@@ -10,48 +10,37 @@ interface ISidebarSectionProps {
   collapsedByDefault?: boolean;
 }
 
-interface ISidebarSectionState {
-  isOpen: boolean;
-}
+export const SidebarSection: React.FC<ISidebarSectionProps> = (props) => {
+  const {title, collapsedByDefault, children} = props;
+  const storageKey = `sidebar-${title}`;
 
-export class SidebarSection extends React.Component<ISidebarSectionProps, ISidebarSectionState> {
-  storageKey: string;
+  const [open, setOpen] = React.useState(() => {
+    const stored = window.localStorage.getItem(storageKey);
+    if (stored === 'true' || stored === 'false') {
+      return stored === 'true';
+    }
+    return !collapsedByDefault;
+  });
 
-  constructor(props: ISidebarSectionProps) {
-    super(props);
+  const onToggle = React.useCallback(() => {
+    setOpen((current) => {
+      window.localStorage.setItem(storageKey, `${!current}`);
+      return !current;
+    });
+  }, [storageKey]);
 
-    this.storageKey = `sidebar-${props.title}`;
-    this.state = {
-      isOpen: {
-        true: true,
-        false: false,
-        null: this.props.collapsedByDefault === true ? false : true,
-      }[`${window.localStorage.getItem(this.storageKey)}`] as boolean,
-    };
-  }
-
-  onToggle = () => {
-    const isOpen = !this.state.isOpen;
-    this.setState({isOpen});
-    window.localStorage.setItem(this.storageKey, `${isOpen}`);
-  };
-
-  render() {
-    const {isOpen} = this.state;
-
-    return (
-      <div>
-        <CollapsingHeaderBar onClick={this.onToggle}>
-          {this.props.title}
-          <DisclosureIcon icon={isOpen ? IconNames.CHEVRON_DOWN : IconNames.CHEVRON_UP} />
-        </CollapsingHeaderBar>
-        <Collapse isOpen={isOpen}>
-          <SectionInner>{this.props.children}</SectionInner>
-        </Collapse>
-      </div>
-    );
-  }
-}
+  return (
+    <div>
+      <CollapsingHeaderBar onClick={onToggle}>
+        {title}
+        <DisclosureIcon icon={open ? IconNames.CHEVRON_DOWN : IconNames.CHEVRON_UP} />
+      </CollapsingHeaderBar>
+      <Collapse isOpen={open}>
+        <div>{children}</div>
+      </Collapse>
+    </div>
+  );
+};
 
 const DisclosureIcon = styled(Icon)`
   float: right;
@@ -60,23 +49,24 @@ const DisclosureIcon = styled(Icon)`
 
 export const SidebarTitle = styled.h3`
   font-family: ${FontFamily.monospace};
+  font-size: 16px;
   margin: 0;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
   overflow: hidden;
   text-overflow: ellipsis;
 `;
 
 export const SectionHeader = styled.h4`
   font-family: ${FontFamily.monospace};
-  font-size: 15px;
-  margin: 6px 0;
+  font-size: 18px;
+  margin: 2px 0 0 0;
 `;
 
 export const SectionSmallHeader = styled.h4`
   font-family: ${FontFamily.monospace};
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 500;
-  margin: 6px 0;
+  margin: 2px 0;
 `;
 
 export const SidebarSubhead = styled.div`
@@ -107,8 +97,4 @@ const CollapsingHeaderBar = styled.div`
   color: ${Colors.GRAY1};
   text-transform: uppercase;
   font-size: 0.75rem;
-`;
-
-export const SectionInner = styled.div`
-  padding: 12px;
 `;

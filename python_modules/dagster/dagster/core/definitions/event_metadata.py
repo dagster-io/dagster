@@ -18,6 +18,8 @@ ParseableMetadataEntryData = Union[
     "FloatMetadataEntryData",
     "IntMetadataEntryData",
     "PythonArtifactMetadataEntryData",
+    "DagsterAssetMetadataEntryData",
+    "DagsterPipelineRunMetadataEntryData",
     str,
     float,
     int,
@@ -64,6 +66,8 @@ def parse_metadata_entry(label: str, value: ParseableMetadataEntryData) -> "Even
             FloatMetadataEntryData,
             IntMetadataEntryData,
             PythonArtifactMetadataEntryData,
+            DagsterAssetMetadataEntryData,
+            DagsterPipelineRunMetadataEntryData,
         ),
     ):
         return EventMetadataEntry(label, None, value)
@@ -89,8 +93,9 @@ def parse_metadata_entry(label: str, value: ParseableMetadataEntryData) -> "Even
             )
 
     raise DagsterInvalidEventMetadata(
-        f'Could not resolve the metadata value for "{label}" to a known type. Consider '
-        "wrapping the value with the appropriate EventMetadata type."
+        f'Could not resolve the metadata value for "{label}" to a known type. '
+        f"Its type was {type(value)}. Consider wrapping the value with the appropriate "
+        "EventMetadata type."
     )
 
 

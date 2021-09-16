@@ -63,8 +63,12 @@ class BaseWorkspaceRequestContext(IWorkspace):
     def instance(self) -> DagsterInstance:
         pass
 
-    @abstractproperty
-    def workspace_snapshot(self) -> Dict[str, WorkspaceLocationEntry]:
+    @abstractmethod
+    def get_workspace_snapshot(self) -> Dict[str, WorkspaceLocationEntry]:
+        pass
+
+    @abstractmethod
+    def get_location_entry(self, name: str) -> Optional[WorkspaceLocationEntry]:
         pass
 
     @abstractproperty
@@ -84,7 +88,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
 
     def get_location(self, origin):
         location_name = origin.location_name
-        location_entry = self.workspace_snapshot.get(location_name)
+        location_entry = self.get_location_entry(location_name)
         if not location_entry:
             raise DagsterInvariantViolationError(
                 f"Location {location_name} does not exist in workspace"
@@ -103,43 +107,46 @@ class BaseWorkspaceRequestContext(IWorkspace):
     def repository_locations(self) -> List[RepositoryLocation]:
         return [
             entry.repository_location
-            for entry in self.workspace_snapshot.values()
+            for entry in self.get_workspace_snapshot().values()
             if entry.repository_location
         ]
 
     @property
     def repository_location_names(self) -> List[str]:
-        return list(self.workspace_snapshot)
+        return list(self.get_workspace_snapshot())
 
     def repository_location_errors(self) -> List[SerializableErrorInfo]:
-        return [entry.load_error for entry in self.workspace_snapshot.values() if entry.load_error]
+        return [
+            entry.load_error for entry in self.get_workspace_snapshot().values() if entry.load_error
+        ]
 
     def get_repository_location(self, name: str) -> RepositoryLocation:
-        if not self.has_repository_location(name):
+        location_entry = self.get_location_entry(name)
+        if not location_entry or not location_entry.repository_location:
             raise Exception(f"Location {name} not in workspace")
-        return cast(RepositoryLocation, self.workspace_snapshot[name].repository_location)
-
-    def get_load_status(self, name: str) -> WorkspaceLocationLoadStatus:
-        return self.workspace_snapshot[name].load_status
+        return cast(RepositoryLocation, location_entry.repository_location)
 
     def has_repository_location_error(self, name: str) -> bool:
         return self.get_repository_location_error(name) != None
 
     def get_repository_location_error(self, name: str) -> Optional[SerializableErrorInfo]:
-        return self.workspace_snapshot[name].load_error
+        entry = self.get_location_entry(name)
+        return entry.load_error if entry else None
 
     def has_repository_location_name(self, name: str) -> bool:
-        return bool(self.workspace_snapshot.get(name))
+        return bool(self.get_location_entry(name))
 
     def has_repository_location(self, name: str) -> bool:
-        location_entry = self.workspace_snapshot.get(name)
+        location_entry = self.get_location_entry(name)
         return bool(location_entry and location_entry.repository_location != None)
 
     def is_reload_supported(self, name: str) -> bool:
-        return self.workspace_snapshot[name].origin.is_reload_supported
+        entry = self.get_location_entry(name)
+        return entry.origin.is_reload_supported if entry else False
 
     def is_shutdown_supported(self, name: str) -> bool:
-        return self.workspace_snapshot[name].origin.is_shutdown_supported
+        entry = self.get_location_entry(name)
+        return entry.origin.is_shutdown_supported if entry else False
 
     def reload_repository_location(self, name: str) -> "BaseWorkspaceRequestContext":
         # This method reloads the location on the process context, and returns a new
@@ -194,7 +201,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
         self, repository_handle: RepositoryHandle, partition_set_name: str, partition_name: str
     ) -> Union["ExternalPartitionConfigData", "ExternalPartitionExecutionErrorData"]:
         return self.get_repository_location(
-            repository_handle.repository_location.name
+            repository_handle.location_name
         ).get_external_partition_config(
             repository_handle=repository_handle,
             partition_set_name=partition_set_name,
@@ -205,7 +212,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
         self, repository_handle: RepositoryHandle, partition_set_name: str, partition_name: str
     ) -> Union["ExternalPartitionTagsData", "ExternalPartitionExecutionErrorData"]:
         return self.get_repository_location(
-            repository_handle.repository_location.name
+            repository_handle.location_name
         ).get_external_partition_tags(
             repository_handle=repository_handle,
             partition_set_name=partition_set_name,
@@ -216,7 +223,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
         self, repository_handle: RepositoryHandle, partition_set_name: str
     ) -> Union["ExternalPartitionNamesData", "ExternalPartitionExecutionErrorData"]:
         return self.get_repository_location(
-            repository_handle.repository_location.name
+            repository_handle.location_name
         ).get_external_partition_names(repository_handle, partition_set_name)
 
     def get_external_partition_set_execution_param_data(
@@ -226,7 +233,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
         partition_names: List[str],
     ) -> Union["ExternalPartitionSetExecutionParamData", "ExternalPartitionExecutionErrorData"]:
         return self.get_repository_location(
-            repository_handle.repository_location.name
+            repository_handle.location_name
         ).get_external_partition_set_execution_param_data(
             repository_handle=repository_handle,
             partition_set_name=partition_set_name,
@@ -257,9 +264,11 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
     def instance(self) -> DagsterInstance:
         return self._instance
 
-    @property
-    def workspace_snapshot(self) -> Dict[str, WorkspaceLocationEntry]:
+    def get_workspace_snapshot(self) -> Dict[str, WorkspaceLocationEntry]:
         return self._workspace_snapshot
+
+    def get_location_entry(self, name) -> Optional[WorkspaceLocationEntry]:
+        return self._workspace_snapshot.get(name)
 
     @property
     def process_context(self) -> "IWorkspaceProcessContext":
@@ -323,6 +332,12 @@ class IWorkspaceProcessContext(ABC):
 
     @abstractproperty
     def instance(self):
+        pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exception_type, exception_value, traceback):
         pass
 
 

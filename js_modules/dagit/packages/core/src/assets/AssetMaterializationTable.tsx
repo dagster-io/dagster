@@ -2,6 +2,7 @@ import {Button, Classes, Colors, Dialog} from '@blueprintjs/core';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
+import {useFeatureFlags} from '../app/Flags';
 import {Timestamp} from '../app/time/Timestamp';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {MetadataEntries} from '../runs/MetadataEntry';
@@ -10,7 +11,7 @@ import {titleForRun} from '../runs/RunUtils';
 import {ButtonLink} from '../ui/ButtonLink';
 import {Group} from '../ui/Group';
 import {Table} from '../ui/Table';
-import {FontFamily} from '../ui/styles';
+import {Mono} from '../ui/Text';
 
 import {AssetLineageElements} from './AssetLineageElements';
 import {AssetQuery_assetOrError_Asset_assetMaterializations as Materialization} from './types/AssetQuery';
@@ -22,6 +23,7 @@ export const AssetMaterializationTable: React.FC<{
   materializations: HistoricalMaterialization[];
   shouldBucketPartitions?: boolean;
 }> = ({isPartitioned, hasLineage, materializations, shouldBucketPartitions = true}) => {
+  const {flagPipelineModeTuples} = useFeatureFlags();
   const list = React.useMemo(() => {
     if (shouldBucketPartitions) {
       return materializations;
@@ -37,7 +39,7 @@ export const AssetMaterializationTable: React.FC<{
           <th style={{paddingLeft: 0}}>Materialization Metadata</th>
           {hasLineage && <th style={{minWidth: 100}}>Parent Materializations</th>}
           <th style={{minWidth: 150}}>Timestamp</th>
-          <th style={{minWidth: 150}}>Pipeline</th>
+          <th style={{minWidth: 150}}>{flagPipelineModeTuples ? 'Job' : 'Pipeline'}</th>
           <th style={{width: 200}}>Run</th>
         </tr>
       </thead>
@@ -105,13 +107,12 @@ const AssetMaterializationRow: React.FC<{
         />
       </td>
       <td>
-        <Link
-          style={{marginRight: 5, fontFamily: FontFamily.monospace}}
-          to={`/instance/runs/${run.runId}?timestamp=${timestamp}`}
-        >
-          {titleForRun(run)}
-        </Link>
-        <RunStatusTagWithStats status={run.status} runId={run.runId} />
+        <Group direction="row" spacing={4}>
+          <Link to={`/instance/runs/${run.runId}?timestamp=${timestamp}`}>
+            <Mono>{titleForRun(run)}</Mono>
+          </Link>
+          <RunStatusTagWithStats status={run.status} runId={run.runId} />
+        </Group>
       </td>
     </tr>
   );

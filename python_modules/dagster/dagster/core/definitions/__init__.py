@@ -2,6 +2,7 @@ from .config import ConfigMapping
 from .decorators import (
     asset_sensor,
     composite_solid,
+    config_mapping,
     daily_schedule,
     failure_hook,
     graph,
@@ -64,8 +65,10 @@ from .graph import GraphDefinition
 from .hook import HookDefinition
 from .input import In, InputDefinition, InputMapping
 from .intermediate_storage import IntermediateStorageDefinition, intermediate_storage
+from .job import JobDefinition
 from .logger import LoggerDefinition, build_init_logger_context, logger
 from .mode import ModeDefinition
+from .op import OpDefinition
 from .output import DynamicOut, DynamicOutputDefinition, Out, OutputDefinition, OutputMapping
 from .partition import Partition, PartitionScheduleDefinition, PartitionSetDefinition
 from .partitioned_schedule import schedule_from_partitions
@@ -73,9 +76,11 @@ from .pipeline import PipelineDefinition
 from .pipeline_base import IPipeline
 from .pipeline_sensor import (
     PipelineFailureSensorContext,
+    RunFailureSensorContext,
     RunStatusSensorContext,
     RunStatusSensorDefinition,
     pipeline_failure_sensor,
+    run_failure_sensor,
     run_status_sensor,
 )
 from .preset import PresetDefinition

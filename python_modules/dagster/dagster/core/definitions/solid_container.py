@@ -56,8 +56,8 @@ def validate_dependency_dict(
         for input_key, dep in dep_dict.items():
             if not isinstance(input_key, str):
                 raise DagsterInvalidDefinitionError(
-                    prelude
-                    + "Received non-sting key in the inner dict for key {key}.".format(key=key)
+                    prelude + f"Received non-string key in the inner dict for key {key}. "
+                    f"Unexpected inner dict key type: {type(input_key)}"
                 )
             if not isinstance(dep, IDependencyDefinition):
                 raise DagsterInvalidDefinitionError(

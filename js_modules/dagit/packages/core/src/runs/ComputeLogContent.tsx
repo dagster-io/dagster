@@ -355,6 +355,7 @@ const RelativeContainer = styled.div`
 const LogContent = styled(ScrollContainer)`
   color: #eeeeee;
   font-family: ${FontFamily.monospace};
+  font-size: 16px;
   white-space: pre;
   overflow: auto;
   position: absolute;

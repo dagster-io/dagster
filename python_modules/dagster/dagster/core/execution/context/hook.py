@@ -2,12 +2,14 @@ import warnings
 from typing import Any, Dict, Optional, Set, Union, cast
 
 from dagster import check
+from dagster.utils.backcompat import experimental_arg_warning
 
 from ...definitions.composition import PendingNodeInvocation
 from ...definitions.decorators.graph import graph
 from ...definitions.dependency import Node
 from ...definitions.hook import HookDefinition
 from ...definitions.mode import ModeDefinition
+from ...definitions.op import OpDefinition
 from ...definitions.resource import IContainsGenerator, Resources
 from ...definitions.solid import SolidDefinition
 from ...errors import DagsterInvalidPropertyError, DagsterInvariantViolationError
@@ -30,12 +32,20 @@ class HookContext:
         log (DagsterLogManager): Centralized log dispatch from user code.
         hook_def (HookDefinition): The hook that the context object belongs to.
         solid (Solid): The solid instance associated with the hook.
+        op (Op): The op instance associated with the hook.
         step_key (str): The key for the step where this hook is being triggered.
+        required_resource_keys (Set[str]): Resources required by this hook.
         resources (Resources): Resources available in the hook context.
         solid_config (Any): The parsed config specific to this solid.
+        op_config (Any): The parsed config specific to this op.
         pipeline_name (str): The name of the pipeline where this hook is being triggered.
+        job_name (str): The name of the job where this hook is being triggered.
         run_id (str): The id of the run where this hook is being triggered.
         mode_def (ModeDefinition): The mode with which the pipeline is being run.
+        solid_exception (Optional[BaseException]): The thrown exception in a failed solid.
+        op_exception (Optional[BaseException]): The thrown exception in a failed op.
+        solid_output_values (Dict): Computed output values in a solid.
+        op_output_values (Dict): Computed output values in an op.
     """
 
     def __init__(
@@ -55,6 +65,10 @@ class HookContext:
         return self._step_execution_context.pipeline_name
 
     @property
+    def job_name(self) -> str:
+        return self.pipeline_name
+
+    @property
     def run_id(self) -> str:
         return self._step_execution_context.run_id
 
@@ -65,6 +79,10 @@ class HookContext:
     @property
     def solid(self) -> Node:
         return self._step_execution_context.solid
+
+    @property
+    def op(self) -> Node:
+        return self.solid
 
     @property
     def step(self) -> ExecutionStep:
@@ -97,6 +115,10 @@ class HookContext:
         )
         return solid_config.config if solid_config else None
 
+    @property
+    def op_config(self) -> Any:
+        return self.solid_config
+
     # Because of the fact that we directly use the log manager of the step, if a user calls
     # hook_context.log.with_tags, then they will end up mutating the step's logging tags as well.
     # This is not problematic because the hook only runs after the step has been completed.
@@ -113,6 +135,10 @@ class HookContext:
         """
 
         return self._step_execution_context.step_exception
+
+    @property
+    def op_exception(self):
+        return self.solid_exception
 
     @property
     def solid_output_values(self) -> Dict[str, Union[Any, Dict[str, Any]]]:
@@ -137,6 +163,10 @@ class HookContext:
                 results[step_output_handle.output_name] = value
 
         return results
+
+    @property
+    def op_output_values(self):
+        return self.solid_output_values
 
 
 class UnboundHookContext(HookContext):
@@ -343,6 +373,7 @@ def build_hook_context(
     resources: Optional[Dict[str, Any]] = None,
     mode_def: Optional[ModeDefinition] = None,
     solid: Optional[Union[SolidDefinition, PendingNodeInvocation]] = None,
+    op: Optional[Union[OpDefinition, PendingNodeInvocation]] = None,
 ) -> UnboundHookContext:
     """Builds hook context from provided parameters.
 
@@ -367,6 +398,14 @@ def build_hook_context(
             with build_hook_context(resources={"foo": context_manager_resource}) as context:
                 hook_to_invoke(context)
     """
+    check.invariant(not (solid and op), "cannot set both `solid` and `op`")
+    if op:
+        experimental_arg_warning("op", "build_hook_context")
+        return UnboundHookContext(
+            resources=check.opt_dict_param(resources, "resources", key_type=str),
+            mode_def=None,
+            solid=check.opt_inst_param(op, "op", (OpDefinition, PendingNodeInvocation)),
+        )
     return UnboundHookContext(
         resources=check.opt_dict_param(resources, "resources", key_type=str),
         mode_def=check.opt_inst_param(mode_def, "mode_def", ModeDefinition),

@@ -59,3 +59,9 @@ db.Index(
     SqlEventLogStorageTable.c.partition,
     mysql_length=64,
 )
+db.Index(
+    "idx_event_type",
+    SqlEventLogStorageTable.c.dagster_event_type,
+    SqlEventLogStorageTable.c.id,
+    mysql_length={"dagster_event_type": 64},
+)

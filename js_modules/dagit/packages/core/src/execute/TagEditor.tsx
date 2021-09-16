@@ -77,7 +77,7 @@ export const TagEditor: React.FC<ITagEditorProps> = ({
       icon="info-sign"
       onClose={onRequestClose}
       style={{minWidth: 500}}
-      title={'Add tags to pipeline run'}
+      title="Add tags to run"
       usePortal={true}
       isOpen={open}
     >

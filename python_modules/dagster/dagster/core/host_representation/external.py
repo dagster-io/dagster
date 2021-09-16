@@ -1,7 +1,9 @@
 import warnings
 from collections import OrderedDict
+from typing import Sequence
 
 from dagster import check
+from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.run_request import JobType
 from dagster.core.definitions.sensor import DEFAULT_SENSOR_DAEMON_INTERVAL
 from dagster.core.errors import DagsterInvariantViolationError
@@ -12,6 +14,7 @@ from dagster.core.utils import toposort
 from dagster.utils.schedules import schedule_execution_time_iterator
 
 from .external_data import (
+    ExternalAssetNode,
     ExternalPartitionSetData,
     ExternalPipelineData,
     ExternalRepositoryData,
@@ -134,9 +137,7 @@ class ExternalRepository:
         return self.handle.get_external_origin()
 
     def get_python_origin(self):
-        return self.handle.repository_location.get_repository_python_origin(
-            self.name,
-        )
+        return self.handle.get_python_origin()
 
     def get_external_origin_id(self):
         """
@@ -145,8 +146,19 @@ class ExternalRepository:
         """
         return self.get_external_origin().get_id()
 
+    def get_external_asset_nodes(self) -> Sequence[ExternalAssetNode]:
+        return self.external_repository_data.external_asset_graph_data
+
+    def get_external_asset_node(self, asset_key: AssetKey) -> ExternalAssetNode:
+        matching = [
+            asset_node
+            for asset_node in self.external_repository_data.external_asset_graph_data
+            if asset_node.asset_key == asset_key
+        ]
+        return matching[0] if matching else None
+
     def get_display_metadata(self):
-        return self.handle.repository_location.get_display_metadata()
+        return self.handle.display_metadata
 
 
 class ExternalPipeline(RepresentedPipeline):
@@ -273,11 +285,7 @@ class ExternalPipeline(RepresentedPipeline):
         return self.get_python_origin()
 
     def get_python_origin(self):
-        repository_python_origin = (
-            self.repository_handle.repository_location.get_repository_python_origin(
-                self.repository_handle.repository_name,
-            )
-        )
+        repository_python_origin = self.repository_handle.get_python_origin()
         return PipelinePythonOrigin(self.name, repository_python_origin)
 
     def get_external_origin(self):

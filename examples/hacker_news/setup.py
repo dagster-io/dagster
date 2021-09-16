@@ -21,6 +21,7 @@ setup(
         "dagster-pyspark",
         "dagster-slack",
         "dagster-postgres",
+        "dagstermill",
         "dbt==0.19.0",
         "mock",
         "pandas",
@@ -32,6 +33,7 @@ setup(
         "scipy",
         "sklearn",
         "snowflake-sqlalchemy",
+        "matplotlib",
     ],
     extras_require={"tests": ["mypy", "pylint", "pytest"]},
 )

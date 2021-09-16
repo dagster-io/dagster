@@ -105,11 +105,18 @@ class ReconstructablePipeline(
 
     @lru_cache(maxsize=1)
     def get_definition(self):
-        return (
-            self.repository.get_definition()
-            .get_pipeline(self.pipeline_name)
-            .get_pipeline_subset_def(self.solids_to_execute)
-        )
+        from dagster.core.definitions.job import JobDefinition
+
+        defn = self.repository.get_definition().get_pipeline(self.pipeline_name)
+
+        if isinstance(defn, JobDefinition):
+            return self.repository.get_definition().get_pipeline(self.pipeline_name)
+        else:
+            return (
+                self.repository.get_definition()
+                .get_pipeline(self.pipeline_name)
+                .get_pipeline_subset_def(self.solids_to_execute)
+            )
 
     def _resolve_solid_selection(self, solid_selection):
         # resolve a list of solid selection queries to a frozenset of qualified solid names

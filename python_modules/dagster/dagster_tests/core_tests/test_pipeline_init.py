@@ -83,9 +83,7 @@ def test_clean_event_generator_exit():
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline_def, execution_plan=execution_plan
     )
-    log_manager = DagsterLogManager(
-        logging_metadata=DagsterLoggingMetadata(run_id=pipeline_run.run_id), loggers=[]
-    )
+    log_manager = DagsterLogManager.create(loggers=[], pipeline_run=pipeline_run)
     resolved_run_config = ResolvedRunConfig.build(pipeline_def)
     execution_plan = create_execution_plan(pipeline_def)
 

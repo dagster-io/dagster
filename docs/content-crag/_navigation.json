@@ -119,11 +119,11 @@
         ]
       },
       {
-        "title": "Modes & Resources",
+        "title": "Resources",
         "children": [
           {
-            "title": "Modes & Resources",
-            "path": "/concepts/modes-resources"
+            "title": "Resources",
+            "path": "/concepts/resources"
           }
         ]
       },
@@ -323,10 +323,6 @@
           {
             "title": "Executing on Dask",
             "path": "/deployment/guides/dask"
-          },
-          {
-            "title": "Executing on Airflow",
-            "path": "/deployment/guides/airflow"
           }
         ]
       }
@@ -354,7 +350,7 @@
           },
           {
             "title": "Dagster with PySpark",
-            "path": "/integrations/pyspark"
+            "path": "/integrations/spark"
           },
           {
             "title": "Dagster with Pandas",

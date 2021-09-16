@@ -3,9 +3,10 @@ import * as React from 'react';
 
 import {useFeatureFlags} from '../app/Flags';
 import {breakOnUnderscores} from '../app/Util';
+import {Box} from '../ui/Box';
 
 import {Description} from './Description';
-import {SectionInner, SidebarSection, SidebarSubhead, SidebarTitle} from './SidebarComponents';
+import {SidebarSection, SidebarSubhead, SidebarTitle} from './SidebarComponents';
 import {SidebarModeSection, SIDEBAR_MODE_INFO_FRAGMENT} from './SidebarModeSection';
 import {SidebarPipelineInfoFragment} from './types/SidebarPipelineInfoFragment';
 
@@ -19,18 +20,22 @@ export const SidebarPipelineInfo: React.FC<ISidebarPipelineInfoProps> = ({pipeli
   const {flagPipelineModeTuples} = useFeatureFlags();
   return (
     <div>
-      <SectionInner>
+      <Box padding={12}>
         <SidebarSubhead>{flagPipelineModeTuples ? 'Graph' : 'Pipeline'}</SidebarSubhead>
         <SidebarTitle>{breakOnUnderscores(pipeline.name)}</SidebarTitle>
-      </SectionInner>
+      </Box>
       <SidebarSection title={'Description'}>
-        <Description description={pipeline ? pipeline.description : NO_DESCRIPTION} />
+        <Box padding={12}>
+          <Description description={pipeline ? pipeline.description : NO_DESCRIPTION} />
+        </Box>
       </SidebarSection>
       {!flagPipelineModeTuples && (
         <SidebarSection title={'Modes'} collapsedByDefault={true}>
-          {pipeline.modes.map((mode) => (
-            <SidebarModeSection key={mode.name} mode={mode} />
-          ))}
+          <Box padding={12}>
+            {pipeline.modes.map((mode) => (
+              <SidebarModeSection key={mode.name} mode={mode} />
+            ))}
+          </Box>
         </SidebarSection>
       )}
     </div>

@@ -1,5 +1,6 @@
 import inspect
 import logging
+import logging.config
 import os
 import sys
 import tempfile
@@ -45,6 +46,7 @@ from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.utils import str_format_list
 from dagster.serdes import ConfigurableClass
 from dagster.seven import get_current_datetime_in_utc
+from dagster.utils.backcompat import experimental_functionality_warning
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .config import DAGSTER_CONFIG_YAML_FILENAME, is_dagster_home_set
@@ -548,6 +550,18 @@ class DagsterInstance:
         else:
             return dagster_telemetry_enabled_default
 
+    # python logs
+
+    @property
+    def managed_python_loggers(self) -> List[str]:
+        python_log_settings = self.get_settings("python_logs") or {}
+        return python_log_settings.get("managed_python_loggers", [])
+
+    @property
+    def python_log_level(self) -> Optional[str]:
+        python_log_settings = self.get_settings("python_logs") or {}
+        return python_log_settings.get("python_log_level")
+
     def upgrade(self, print_fn=None):
         from dagster.core.storage.migration.utils import upgrading_instance
 
@@ -569,7 +583,6 @@ class DagsterInstance:
 
     def optimize_for_dagit(self, statement_timeout):
         if self._schedule_storage:
-            self._schedule_storage.validate_stored_schedules(self.scheduler_class)
             self._schedule_storage.optimize_for_dagit(statement_timeout=statement_timeout)
         self._run_storage.optimize_for_dagit(statement_timeout=statement_timeout)
         self._event_storage.optimize_for_dagit(statement_timeout=statement_timeout)
@@ -1006,8 +1019,19 @@ class DagsterInstance:
 
     # event storage
 
-    def logs_after(self, run_id, cursor, of_type: "DagsterEventType" = None):
-        return self._event_storage.get_logs_for_run(run_id, cursor=cursor, of_type=of_type)
+    def logs_after(
+        self,
+        run_id,
+        cursor,
+        of_type: "DagsterEventType" = None,
+        limit: Optional[int] = None,
+    ):
+        return self._event_storage.get_logs_for_run(
+            run_id,
+            cursor=cursor,
+            of_type=of_type,
+            limit=limit,
+        )
 
     def all_logs(self, run_id, of_type: "DagsterEventType" = None):
         return self._event_storage.get_logs_for_run(run_id, of_type=of_type)
@@ -1107,10 +1131,42 @@ records = instance.get_event_records(
 
     # event subscriptions
 
-    def get_event_log_handler(self):
+    def _get_yaml_python_handlers(self):
+        if self._settings:
+            logging_config = self.get_settings("python_logs").get("dagster_handler_config", {})
+
+            if logging_config:
+                experimental_functionality_warning("Handling yaml-defined logging configuration")
+
+            # Handlers can only be retrieved from dictConfig configuration if they are attached
+            # to a logger. We add a dummy logger to the configuration that allows us to access user
+            # defined handlers.
+            handler_names = logging_config.get("handlers", {}).keys()
+
+            dagster_dummy_logger_name = "dagster_dummy_logger"
+
+            processed_dict_conf = {
+                "version": 1,
+                "disable_existing_loggers": False,
+                "loggers": {dagster_dummy_logger_name: {"handlers": handler_names}},
+            }
+            processed_dict_conf.update(logging_config)
+
+            logging.config.dictConfig(processed_dict_conf)
+
+            dummy_logger = logging.getLogger(dagster_dummy_logger_name)
+            return dummy_logger.handlers
+        return []
+
+    def _get_event_log_handler(self):
         event_log_handler = _EventListenerLogHandler(self)
         event_log_handler.setLevel(10)
         return event_log_handler
+
+    def get_handlers(self):
+        handlers = [self._get_event_log_handler()]
+        handlers.extend(self._get_yaml_python_handlers())
+        return handlers
 
     def handle_new_event(self, event):
         run_id = event.run_id

@@ -3,7 +3,7 @@
 Solids
 ======
 
-The foundational unit of composition in Dagster.
+The foundational unit of computation in Dagster.
 
 -----
 

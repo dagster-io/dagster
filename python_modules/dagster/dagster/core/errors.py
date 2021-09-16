@@ -153,7 +153,7 @@ def raise_execution_interrupts():
 
 
 @contextmanager
-def user_code_error_boundary(error_cls, msg_fn, **kwargs):
+def user_code_error_boundary(error_cls, msg_fn, log_manager=None, **kwargs):
     """
     Wraps the execution of user-space code in an error boundary. This places a uniform
     policy around any user code invoked by the framework. This ensures that all user
@@ -179,6 +179,8 @@ def user_code_error_boundary(error_cls, msg_fn, **kwargs):
     check.subclass_param(error_cls, "error_cls", DagsterUserCodeExecutionError)
 
     with raise_execution_interrupts():
+        if log_manager:
+            log_manager.begin_python_log_capture()
         try:
             yield
         except DagsterError as de:
@@ -190,6 +192,9 @@ def user_code_error_boundary(error_cls, msg_fn, **kwargs):
             raise error_cls(
                 msg_fn(), user_exception=e, original_exc_info=sys.exc_info(), **kwargs
             ) from e
+        finally:
+            if log_manager:
+                log_manager.end_python_log_capture()
 
 
 class DagsterUserCodeExecutionError(DagsterError):
@@ -418,10 +423,6 @@ class DagsterBackfillFailedError(DagsterError):
             SerializableErrorInfo,
         )
         super(DagsterBackfillFailedError, self).__init__(*args, **kwargs)
-
-
-class DagsterScheduleWipeRequired(DagsterError):
-    """Indicates that the user must wipe their stored schedule state."""
 
 
 class DagsterInstanceMigrationRequired(DagsterError):

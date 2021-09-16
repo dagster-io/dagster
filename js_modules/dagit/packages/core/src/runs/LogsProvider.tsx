@@ -241,6 +241,7 @@ const PIPELINE_RUN_LOGS_SUBSCRIPTION = gql`
           }
           ...RunPipelineRunEventFragment
         }
+        hasMorePastEvents
       }
       ... on PipelineRunLogsSubscriptionFailure {
         missingRunId

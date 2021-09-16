@@ -54,7 +54,7 @@ if __name__ == "__main__":
             "flask>=0.12.4,<2.0.0",
             "gevent-websocket>=0.10.1",
             "gevent",
-            "graphql-ws>=0.3.0",
+            "graphql-ws>=0.3.0,<0.4.0",
             "requests",
             # watchdog
             "watchdog>=0.8.3",
@@ -64,7 +64,11 @@ if __name__ == "__main__":
             "nbconvert>=5.4.0,<6.0.0",
         ],
         extras_require={
-            "starlette": ["starlette"],
+            "starlette": [
+                "starlette",
+                "uvicorn[standard]",
+                "gunicorn",
+            ],
         },
         entry_points={
             "console_scripts": ["dagit = dagit.cli:main", "dagit-debug = dagit.debug:main"]

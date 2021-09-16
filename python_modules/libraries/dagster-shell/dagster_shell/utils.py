@@ -18,8 +18,6 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
-
 import os
 import signal
 from subprocess import PIPE, STDOUT, Popen
@@ -45,7 +43,7 @@ def execute_script_file(shell_script_path, output_logging, log, cwd=None, env=No
             Unused by default.
 
     Raises:
-        Exception: When an invalid output_logging is selected. Unreachable from solid-based
+        Exception: When an invalid output_logging is selected. Unreachable from op-based
             invocation since the config system will check output_logging against the config
             enum.
 
@@ -67,47 +65,54 @@ def execute_script_file(shell_script_path, output_logging, log, cwd=None, env=No
     with open(shell_script_path, "rb") as f:
         shell_command = f.read().decode("utf-8")
 
-    log.info("Running command:\n{command}".format(command=shell_command))
+    log.info(f"Running command:\n{shell_command}")
 
     # pylint: disable=subprocess-popen-preexec-fn
-    sub_process = Popen(
-        ["bash", shell_script_path],
-        stdout=PIPE,
-        stderr=STDOUT,
-        cwd=cwd,
-        env=env,
-        preexec_fn=pre_exec,
-    )
-
-    # Will return the string result of reading stdout of the shell command
-    output = ""
-
-    if output_logging not in ["STREAM", "BUFFER", "NONE"]:
-        raise Exception("Unrecognized output_logging %s" % output_logging)
-
-    # Stream back logs as they are emitted
-    if output_logging == "STREAM":
-        for raw_line in iter(sub_process.stdout.readline, b""):
-            line = raw_line.decode("utf-8")
-            log.info(line.rstrip())
-            output += line
-
-    sub_process.wait()
-
-    # Collect and buffer all logs, then emit
-    if output_logging == "BUFFER":
-        output = "".join(
-            [raw_line.decode("utf-8") for raw_line in iter(sub_process.stdout.readline, b"")]
+    try:
+        sub_process = Popen(
+            ["bash", shell_script_path],
+            stdout=PIPE,
+            stderr=STDOUT,
+            cwd=cwd,
+            env=env,
+            preexec_fn=pre_exec,
         )
-        log.info(output)
 
-    # no logging in this case
-    elif output_logging == "NONE":
-        pass
+        log.info(f"Command pid: {sub_process.pid}")
 
-    log.info("Command exited with return code {retcode}".format(retcode=sub_process.returncode))
+        # Will return the string result of reading stdout of the shell command
+        output = ""
 
-    return output, sub_process.returncode
+        if output_logging not in ["STREAM", "BUFFER", "NONE"]:
+            raise Exception("Unrecognized output_logging %s" % output_logging)
+
+        # Stream back logs as they are emitted
+        if output_logging == "STREAM":
+            for raw_line in iter(sub_process.stdout.readline, b""):
+                line = raw_line.decode("utf-8")
+                log.info(line.rstrip())
+                output += line
+
+        sub_process.wait()
+
+        # Collect and buffer all logs, then emit
+        if output_logging == "BUFFER":
+            output = "".join(
+                [raw_line.decode("utf-8") for raw_line in iter(sub_process.stdout.readline, b"")]
+            )
+            log.info(output)
+
+        # no logging in this case
+        elif output_logging == "NONE":
+            pass
+
+        log.info("Command exited with return code {retcode}".format(retcode=sub_process.returncode))
+
+        return output, sub_process.returncode
+    finally:
+        # Always terminate subprocess, including in cases where the pipeline run is terminated
+        if sub_process:
+            sub_process.terminate()
 
 
 def execute(shell_command, output_logging, log, cwd=None, env=None):

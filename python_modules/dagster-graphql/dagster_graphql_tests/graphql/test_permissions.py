@@ -2,7 +2,7 @@ from unittest.mock import Mock
 
 import pytest
 from dagster import check
-from dagster.core.workspace.permissions import EDITOR_PERMISSIONS, VIEWER_PERMISSIONS
+from dagster.core.workspace.permissions import EDITOR_PERMISSIONS, VIEWER_PERMISSIONS, Permissions
 from dagster_graphql.implementation.utils import (
     UserFacingGraphQLError,
     assert_permission,
@@ -40,6 +40,24 @@ class FakeMissingPermissionMutation:
         pass
 
 
+class FakeEnumPermissionMutation:
+    @check_permission(Permissions.LAUNCH_PIPELINE_EXECUTION)
+    def mutate(self, graphene_info, **_kwargs):
+        pass
+
+
+class FakeOtherEnumPermisisonMutation:
+    @check_permission(Permissions.LAUNCH_PIPELINE_REEXECUTION)
+    def mutate(self, graphene_info, **_kwargs):
+        pass
+
+
+class FakeMissingEnumPermisisonMutation:
+    @check_permission(Permissions.LAUNCH_PARTITION_BACKFILL)
+    def mutate(self, graphene_info, **_kwargs):
+        pass
+
+
 @pytest.fixture(name="fake_graphene_info")
 def fake_graphene_info_fixture():
     context = Mock()
@@ -48,6 +66,8 @@ def fake_graphene_info_fixture():
         permission_map = {
             "fake_permission": True,
             "fake_other_permission": False,
+            Permissions.LAUNCH_PIPELINE_EXECUTION: True,
+            Permissions.LAUNCH_PIPELINE_REEXECUTION: False,
         }
         check.invariant(permission in permission_map, "Permission does not exist in map")
         return permission_map[permission]
@@ -60,35 +80,46 @@ def fake_graphene_info_fixture():
     return graphene_info
 
 
-def test_check_permission_has_permission(fake_graphene_info):
-    mutation = FakeMutation()
+@pytest.mark.parametrize("mutation", [FakeMutation(), FakeEnumPermissionMutation()])
+def test_check_permission_has_permission(fake_graphene_info, mutation):
     mutation.mutate(fake_graphene_info)
 
 
-def test_check_permission_does_not_have_permission(fake_graphene_info):
-    mutation = FakeOtherPermissionMutation()
+@pytest.mark.parametrize(
+    "mutation", [FakeOtherPermissionMutation(), FakeOtherEnumPermisisonMutation()]
+)
+def test_check_permission_does_not_have_permission(fake_graphene_info, mutation):
     with pytest.raises(UserFacingGraphQLError, match="GrapheneUnauthorizedError"):
         mutation.mutate(fake_graphene_info)
 
 
-def test_check_permission_permission_does_not_exist(fake_graphene_info):
-    mutation = FakeMissingPermissionMutation()
+@pytest.mark.parametrize(
+    "mutation", [FakeMissingPermissionMutation(), FakeMissingEnumPermisisonMutation()]
+)
+def test_check_permission_permission_does_not_exist(fake_graphene_info, mutation):
     with pytest.raises(check.CheckError):
         mutation.mutate(fake_graphene_info)
 
 
-def test_assert_permission_has_permission(fake_graphene_info):
-    assert_permission(fake_graphene_info, "fake_permission")
+@pytest.mark.parametrize("permission", ["fake_permission", Permissions.LAUNCH_PIPELINE_EXECUTION])
+def test_assert_permission_has_permission(fake_graphene_info, permission):
+    assert_permission(fake_graphene_info, permission)
 
 
-def test_assert_permission_does_not_have_permission(fake_graphene_info):
+@pytest.mark.parametrize(
+    "permission", ["fake_other_permission", Permissions.LAUNCH_PIPELINE_REEXECUTION]
+)
+def test_assert_permission_does_not_have_permission(fake_graphene_info, permission):
     with pytest.raises(UserFacingGraphQLError, match="GrapheneUnauthorizedError"):
-        assert_permission(fake_graphene_info, "fake_other_permission")
+        assert_permission(fake_graphene_info, permission)
 
 
-def test_assert_permission_permission_does_not_exist(fake_graphene_info):
+@pytest.mark.parametrize(
+    "permission", ["fake_missing_permission", Permissions.LAUNCH_PARTITION_BACKFILL]
+)
+def test_assert_permission_permission_does_not_exist(fake_graphene_info, permission):
     with pytest.raises(check.CheckError):
-        assert_permission(fake_graphene_info, "fake_missing_permission")
+        assert_permission(fake_graphene_info, permission)
 
 
 class TestPermissionsQuery(NonLaunchableGraphQLContextTestMatrix):

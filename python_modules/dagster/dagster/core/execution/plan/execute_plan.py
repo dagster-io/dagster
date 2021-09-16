@@ -93,6 +93,8 @@ def _trigger_hook(
     if hook_defs is None:
         return
 
+    op_label = step_context.describe_op()
+
     # when there are multiple hooks set on a solid, the hooks will run sequentially for the solid.
     # * we will not able to execute hooks asynchronously until we drop python 2.
     for hook_def in hook_defs:
@@ -101,8 +103,8 @@ def _trigger_hook(
         try:
             with user_code_error_boundary(
                 HookExecutionError,
-                lambda: "Error occurred during the execution of hook_fn triggered for solid "
-                '"{solid_name}"'.format(solid_name=step_context.solid.name),
+                lambda: f"Error occurred during the execution of hook_fn triggered for {op_label}",
+                log_manager=hook_context.log,
             ):
                 hook_execution_result = hook_def.hook_fn(hook_context, step_event_list)
 
