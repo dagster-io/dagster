@@ -60,7 +60,7 @@ def test_sensor_invocation_args():
     # pass context with no args
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Sensor decorated function has context argument, but no context argument was "
+        match="Sensor evaluation function expected context argument, but no context argument was "
         "provided when invoking.",
     ):
         basic_sensor_with_context()  # pylint: disable=no-value-for-parameter
