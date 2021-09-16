@@ -83,7 +83,14 @@ export const PipelineTable: React.FC<Props> = (props) => {
               {pipeline.sensors?.length ? (
                 <Group direction="column" spacing={2}>
                   {pipeline.sensors
-                    .filter((s) => !mode || s.mode === mode)
+                    .filter(
+                      (s) =>
+                        !mode ||
+                        s.targets?.some(
+                          (target) =>
+                            target.mode === mode && target?.pipelineName === pipeline.name,
+                        ),
+                    )
                     .map((sensor) => (
                       <Link
                         key={sensor.name}
@@ -144,7 +151,10 @@ export const PIPELINE_TABLE_FRAGMENT = gql`
     sensors {
       id
       name
-      mode
+      targets {
+        mode
+        pipelineName
+      }
     }
   }
 `;

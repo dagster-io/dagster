@@ -84,16 +84,21 @@ export interface SensorFragment_sensorState {
   runningCount: number;
 }
 
+export interface SensorFragment_targets {
+  __typename: "Target";
+  pipelineName: string;
+  solidSelection: string[] | null;
+  mode: string;
+}
+
 export interface SensorFragment {
   __typename: "Sensor";
   id: string;
   jobOriginId: string;
   name: string;
-  pipelineName: string | null;
-  solidSelection: (string | null)[] | null;
-  mode: string | null;
   description: string | null;
   minIntervalSeconds: number;
   nextTick: SensorFragment_nextTick | null;
   sensorState: SensorFragment_sensorState;
+  targets: SensorFragment_targets[] | null;
 }

@@ -181,18 +181,23 @@ export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_n
   runningCount: number;
 }
 
+export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_targets {
+  __typename: "Target";
+  pipelineName: string;
+  solidSelection: string[] | null;
+  mode: string;
+}
+
 export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors {
   __typename: "Sensor";
   id: string;
   jobOriginId: string;
   name: string;
-  pipelineName: string | null;
-  solidSelection: (string | null)[] | null;
-  mode: string | null;
   description: string | null;
   minIntervalSeconds: number;
   nextTick: InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_nextTick | null;
   sensorState: InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState;
+  targets: InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_targets[] | null;
 }
 
 export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes {

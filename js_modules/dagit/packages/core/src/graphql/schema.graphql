@@ -1046,13 +1046,17 @@ type Sensor {
   id: ID!
   jobOriginId: String!
   name: String!
-  pipelineName: String
-  solidSelection: [String]
-  mode: String
+  targets: [Target!]
   sensorState: InstigationState!
   minIntervalSeconds: Int!
   description: String
   nextTick: FutureInstigationTick
+}
+
+type Target {
+  pipelineName: String!
+  mode: String!
+  solidSelection: [String!]
 }
 
 type PipelinePreset {

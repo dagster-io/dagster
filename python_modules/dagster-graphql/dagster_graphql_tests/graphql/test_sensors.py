@@ -29,10 +29,12 @@ query SensorsQuery($repositorySelector: RepositorySelector!) {
     ... on Sensors {
       results {
         name
-        pipelineName
-        solidSelection
+        targets {
+          pipelineName
+          solidSelection
+          mode
+        }
         description
-        mode
         minIntervalSeconds
         sensorState {
           status
@@ -69,9 +71,11 @@ query SensorQuery($sensorSelector: SensorSelector!) {
     }
     ... on Sensor {
       name
-      pipelineName
-      solidSelection
-      mode
+      targets {
+        pipelineName
+        solidSelection
+        mode
+      }
       minIntervalSeconds
       nextTick {
         timestamp
