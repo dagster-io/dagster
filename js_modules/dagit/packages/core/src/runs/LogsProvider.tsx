@@ -58,10 +58,39 @@ const pipelineStatusFromMessages = (messages: RunPipelineRunEventFragment[]) => 
 
 const BATCH_INTERVAL = 100;
 
+type State = {
+  nodes: Nodes;
+  loading: boolean;
+};
+
+type Action =
+  | {type: 'append'; queued: RunPipelineRunEventFragment[]; hasMore: boolean}
+  | {type: 'reset'};
+
+const reducer = (state: State, action: Action) => {
+  switch (action.type) {
+    case 'append':
+      const nodes = [...state.nodes, ...action.queued].map((m, idx) => ({
+        ...m,
+        clientsideKey: `csk${idx}`,
+      }));
+      return {...state, nodes, loading: action.hasMore};
+    case 'reset':
+      return {nodes: [], loading: true};
+    default:
+      return state;
+  }
+};
+
+const initialState = {
+  nodes: [],
+  loading: true,
+};
+
 const useLogsProviderWithSubscription = (runId: string) => {
   const client = useApolloClient();
   const queue = React.useRef<RunPipelineRunEventFragment[]>([]);
-  const [nodes, setNodes] = React.useState<Nodes>(() => []);
+  const [state, dispatch] = React.useReducer(reducer, initialState);
 
   const syncPipelineStatusToApolloCache = React.useCallback(
     (status: PipelineRunStatus) => {
@@ -95,24 +124,16 @@ const useLogsProviderWithSubscription = (runId: string) => {
 
   React.useEffect(() => {
     queue.current = [];
-    setNodes([]);
+    dispatch({type: 'reset'});
   }, [runId]);
 
   // Batch the nodes together so they don't overwhelm the animation of the Gantt,
   // which depends on a bit of a timing delay to maintain smoothness.
   const throttledSetNodes = React.useMemo(() => {
-    return throttle(() => {
-      setNodes((current) => {
-        if (queue.current.length) {
-          const update = [...current, ...queue.current].map((m, idx) => ({
-            ...m,
-            clientsideKey: `csk${idx}`,
-          }));
-          queue.current = [];
-          return update;
-        }
-        return current;
-      });
+    return throttle((hasMore: boolean) => {
+      const queued = [...queue.current];
+      queue.current = [];
+      dispatch({type: 'append', queued, hasMore});
     }, BATCH_INTERVAL);
   }, []);
 
@@ -125,21 +146,26 @@ const useLogsProviderWithSubscription = (runId: string) => {
         return;
       }
 
-      const {messages} = logs;
+      const {messages, hasMorePastEvents} = logs;
       const nextPipelineStatus = pipelineStatusFromMessages(messages);
-      if (nextPipelineStatus) {
+
+      // If we're still loading past events, don't sync to the cache -- event chunks could
+      // give us `status` values that don't match the actual state of the run.
+      if (nextPipelineStatus && !hasMorePastEvents) {
         syncPipelineStatusToApolloCache(nextPipelineStatus);
       }
 
       // Maintain a queue of messages as they arrive, and call the throttled setter.
       queue.current = [...queue.current, ...messages];
-      throttledSetNodes();
+      throttledSetNodes(hasMorePastEvents);
     },
   });
 
+  const {nodes, loading} = state;
+
   return React.useMemo(
-    () => (nodes !== null ? {allNodes: nodes, loading: false} : {allNodes: [], loading: true}),
-    [nodes],
+    () => (nodes !== null ? {allNodes: nodes, loading} : {allNodes: [], loading}),
+    [loading, nodes],
   );
 };
 
