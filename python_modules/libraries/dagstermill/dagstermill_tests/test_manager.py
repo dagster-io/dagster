@@ -144,9 +144,8 @@ def test_out_of_pipeline_yield_event():
 
 def test_in_pipeline_manager_resources():
     with in_pipeline_manager() as manager:
-        assert "file_manager" in manager.context.resources._asdict()
-        assert "io_manager" in manager.context.resources._asdict()
-        assert len(manager.context.resources._asdict()) == 2
+        assert "output_notebook_io_manager" in manager.context.resources._asdict()
+        assert len(manager.context.resources._asdict()) == 1
 
 
 def test_in_pipeline_manager_solid_config():
