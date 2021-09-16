@@ -549,8 +549,12 @@ def external_partition_set_data_from_def(partition_set_def):
 
 
 def external_sensor_data_from_def(sensor_def):
+    first_target = sensor_def.targets[0] if sensor_def.targets else None
     return ExternalSensorData(
         name=sensor_def.name,
+        pipeline_name=first_target.pipeline_name if first_target else None,
+        mode=first_target.mode if first_target else None,
+        solid_selection=first_target.solid_selection if first_target else None,
         target_dict={
             target.pipeline_name: ExternalTargetData(
                 pipeline_name=target.pipeline_name,
