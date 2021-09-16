@@ -24,7 +24,7 @@ export const SensorPreviousRuns: React.FC<{
     variables: {
       limit: RUNS_LIMIT,
       filter: {
-        pipelineName: sensor.pipelineName,
+        pipelineName: sensor.targets?.length === 1 ? sensor.targets[0].pipelineName : undefined,
         tags: [{key: DagsterTag.SensorName, value: sensor.name}],
       },
     },

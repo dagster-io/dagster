@@ -31,11 +31,17 @@ export interface PipelineTableFragment_schedules {
   mode: string;
 }
 
+export interface PipelineTableFragment_sensors_targets {
+  __typename: "Target";
+  mode: string;
+  pipelineName: string;
+}
+
 export interface PipelineTableFragment_sensors {
   __typename: "Sensor";
   id: string;
   name: string;
-  mode: string | null;
+  targets: PipelineTableFragment_sensors_targets[] | null;
 }
 
 export interface PipelineTableFragment {
