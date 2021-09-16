@@ -60,12 +60,18 @@ const backgroundColorCSS = (props: StyledButtonProps) => {
 };
 
 const DEFAULT_STROKE = css`
-  box-shadow: rgba(0, 0, 0, 0.12) 0px 1px 1px 0px, rgba(60, 66, 87, 0.16) 0px 0px 0px 1px,
-    rgba(60, 66, 87, 0.08) 0px 2px 5px 0px;
+  box-shadow: rgba(0, 0, 0, 0) 0px 1px 1px 0px, ${ColorsWIP.Gray300} 0px 0px 0px 1px;
 `;
-const HOVER_STROKE = css`
-  box-shadow: rgb(0, 0, 0, 0.12) 0px 1px 1px 0px, rgba(60, 66, 87, 0.16) 0px 0px 0px 1px,
-    rgba(60, 66, 87, 0.08) 0px 3px 9px 0px, rgba(60, 66, 87, 0.08) 0px 2px 5px 0px;
+const NO_STROKE = css`
+  box-shadow: rgba(0, 0, 0, 0) 0px 1px 1px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 1px;
+`;
+const DEFAULT_STROKE_PLUS_HOVER = css`
+  box-shadow: rgb(0, 0, 0, 0) 0px 1px 1px 0px, ${ColorsWIP.Gray400} 0px 0px 0px 1px,
+    rgba(0, 0, 0, 0.12) 0px 2px 12px 0px;
+`;
+const NO_STROKE_PLUS_HOVER = css`
+  box-shadow: rgba(0, 0, 0, 0) 0px 1px 1px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 1px,
+    rgba(0, 0, 0, 0.12) 0px 2px 12px 0px;
 `;
 
 const boxShadowCSS = (props: StyledButtonProps) => {
@@ -73,7 +79,7 @@ const boxShadowCSS = (props: StyledButtonProps) => {
   if ($stroke) {
     return DEFAULT_STROKE;
   }
-  return null;
+  return NO_STROKE;
 };
 
 const textColorCSS = (props: StyledButtonProps) => {
@@ -102,11 +108,11 @@ const StyledButton = styled.button<StyledButtonProps>`
   ${boxShadowCSS}
 
   :hover {
-    ${({$stroke}) => ($stroke ? HOVER_STROKE : null)};
+    ${({$stroke}) => ($stroke ? DEFAULT_STROKE_PLUS_HOVER : NO_STROKE_PLUS_HOVER)};
   }
 
   :focus {
-    box-shadow: 0 0 0 3px rgba(58, 151, 212, 0.6);
+    box-shadow: rgba(0, 0, 0, 0) 0px 1px 1px 0px, rgba(58, 151, 212, 0.6) 0 0 0 3px;
     outline: none;
   }
 

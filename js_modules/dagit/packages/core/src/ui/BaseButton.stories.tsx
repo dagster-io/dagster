@@ -40,28 +40,35 @@ export const Fill = () => {
       />
       <BaseButton
         label="Button"
-        fillColor={ColorsWIP.Blue700}
+        fillColor={ColorsWIP.Blue500}
         textColor={ColorsWIP.White}
         stroke={false}
         icon={<Icon name="star" />}
       />
       <BaseButton
         label="Button"
-        fillColor={ColorsWIP.Green700}
+        fillColor={ColorsWIP.Green500}
         textColor={ColorsWIP.White}
         stroke={false}
         rightIcon={<Icon name="close" />}
       />
       <BaseButton
         label="Button"
-        fillColor={ColorsWIP.Red700}
+        fillColor={ColorsWIP.Red500}
         textColor={ColorsWIP.White}
         stroke={false}
         icon={<Icon name="source" />}
         rightIcon={<Icon name="expand_more" />}
       />
       <BaseButton
-        fillColor={ColorsWIP.Yellow700}
+        label="Button"
+        fillColor={ColorsWIP.Olive500}
+        textColor={ColorsWIP.White}
+        stroke={false}
+        icon={<Icon name="folder_open" />}
+      />
+      <BaseButton
+        fillColor={ColorsWIP.Yellow500}
         textColor={ColorsWIP.White}
         stroke={false}
         icon={<Icon name="cached" />}
