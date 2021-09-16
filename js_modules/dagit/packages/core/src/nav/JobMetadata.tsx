@@ -123,7 +123,7 @@ const ScheduleOrSensor: React.FC<{job: Job; mode: string; repoAddress: RepoAddre
       return flagPipelineModeTuples
         ? job.sensors.filter((sensor) =>
             sensor.targets?.some(
-              (target) => target.mode === mode && target?.pipelineName === job.name,
+              (target) => target.mode === mode && target.pipelineName === job.name,
             ),
           )
         : job.sensors;
