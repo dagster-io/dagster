@@ -148,7 +148,10 @@ const useLogsProviderWithSubscription = (runId: string) => {
 
       const {messages, hasMorePastEvents} = logs;
       const nextPipelineStatus = pipelineStatusFromMessages(messages);
-      if (nextPipelineStatus) {
+
+      // If we're still loading past events, don't sync to the cache -- event chunks could
+      // give us `status` values that don't match the actual state of the run.
+      if (nextPipelineStatus && !hasMorePastEvents) {
         syncPipelineStatusToApolloCache(nextPipelineStatus);
       }
 
