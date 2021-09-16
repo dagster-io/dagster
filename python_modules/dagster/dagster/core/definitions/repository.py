@@ -22,7 +22,11 @@ VALID_REPOSITORY_DATA_DICT_KEYS = {
 }
 
 RepositoryLevelDefinition = TypeVar(
-    "RepositoryLevelDefinition", PipelineDefinition, PartitionSetDefinition, ScheduleDefinition
+    "RepositoryLevelDefinition",
+    PipelineDefinition,
+    PartitionSetDefinition,
+    ScheduleDefinition,
+    SensorDefinition,
 )
 
 
@@ -523,9 +527,10 @@ class CachingRepositoryData(RepositoryData):
                     )
                 jobs[definition.name] = definition
                 sensors[definition.name] = definition
-                if definition.has_loadable_target():
-                    target = definition.load_target()
-                    pipelines[target.name] = target
+                if definition.has_loadable_targets():
+                    targets = definition.load_targets()
+                    for target in targets:
+                        pipelines[target.name] = target
             elif isinstance(definition, ScheduleDefinition):
                 if definition.name in jobs:
                     raise DagsterInvalidDefinitionError(
@@ -750,15 +755,16 @@ class CachingRepositoryData(RepositoryData):
 
     def _validate_sensor(self, sensor):
         pipelines = self.get_pipeline_names()
-        if sensor.pipeline_name is None:
+        if len(sensor.targets) == 0:
             # skip validation when the sensor does not target a pipeline
             return sensor
 
-        if sensor.pipeline_name not in pipelines:
-            raise DagsterInvalidDefinitionError(
-                f'SensorDefinition "{sensor.name}" targets pipeline "{sensor.pipeline_name}" '
-                "which was not found in this repository."
-            )
+        for target in sensor.targets:
+            if target.pipeline_name not in pipelines:
+                raise DagsterInvalidDefinitionError(
+                    f'SensorDefinition "{sensor.name}" targets pipeline "{target.pipeline_name}" '
+                    "which was not found in this repository."
+                )
 
         return sensor
 
