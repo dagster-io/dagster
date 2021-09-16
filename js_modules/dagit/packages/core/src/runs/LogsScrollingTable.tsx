@@ -308,11 +308,11 @@ class LogsScrollingTableSized extends React.Component<ILogsScrollingTableSizedPr
     const {filteredNodes, height, loading, width} = this.props;
     return (
       <div>
-        {loading && (
+        {loading ? (
           <ListEmptyState>
             <NonIdealState icon={<Spinner purpose="section" />} title="Fetching logs..." />
           </ListEmptyState>
-        )}
+        ) : null}
         <List
           ref={this.list}
           deferredMeasurementCache={this.cache}
@@ -385,6 +385,7 @@ class AutoSizer extends React.Component<{
 }
 
 const ListEmptyState = styled.div`
+  background-color: rgba(255, 255, 255, 0.7);
   z-index: 100;
   position: absolute;
   width: 100%;
