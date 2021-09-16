@@ -798,7 +798,9 @@ class DependencyStructure:
                         self._dynamic_fan_out_index[output_handle.solid_name],
                     )
                 else:
-                    check.failed("Unexpected dynamic fan in dep created")
+                    check.failed(
+                        f"Unexpected dynamic fan in dep created {output_handle} -> {input_handle}"
+                    )
 
                 output_handle_list = [output_handle]
             else:
