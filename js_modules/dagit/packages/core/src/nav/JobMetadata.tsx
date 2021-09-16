@@ -121,7 +121,11 @@ const ScheduleOrSensor: React.FC<{job: Job; mode: string; repoAddress: RepoAddre
   const matchingSensors = React.useMemo(() => {
     if (job?.__typename === 'Pipeline' && job.sensors.length) {
       return flagPipelineModeTuples
-        ? job.sensors.filter((sensor) => sensor.mode === mode)
+        ? job.sensors.filter((sensor) =>
+            sensor.targets?.some(
+              (target) => target.mode === mode && target.pipelineName === job.name,
+            ),
+          )
         : job.sensors;
     }
     return [];
@@ -354,6 +358,7 @@ const JOB_METADATA_QUERY = gql`
     pipelineOrError(params: $params) {
       ... on Pipeline {
         id
+        name
         schedules {
           id
           mode
@@ -361,7 +366,10 @@ const JOB_METADATA_QUERY = gql`
         }
         sensors {
           id
-          mode
+          targets {
+            pipelineName
+            mode
+          }
           ...SensorSwitchFragment
         }
       }

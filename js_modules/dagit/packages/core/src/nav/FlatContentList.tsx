@@ -76,7 +76,12 @@ export const FlatContentList: React.FC<Props> = (props) => {
             const modeName = mode.name;
             const tuple: [string, string] = [name, modeName];
             const schedule = schedules.find((schedule) => schedule.mode === modeName) || null;
-            const sensor = sensors.find((sensor) => sensor.mode === modeName) || null;
+            const sensor =
+              sensors.find((sensor) =>
+                sensor.targets?.some(
+                  (target) => target.mode === modeName && target.pipelineName === name,
+                ),
+              ) || null;
             items.push({
               job: tuple,
               label: (
@@ -190,8 +195,11 @@ const NAV_SCHEDULE_FRAGMENT = gql`
 const NAV_SENSOR_FRAGMENT = gql`
   fragment NavSensorFragment on Sensor {
     id
-    mode
     name
+    targets {
+      mode
+      pipelineName
+    }
     sensorState {
       id
       status

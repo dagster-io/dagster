@@ -114,7 +114,8 @@ def get_sensors_for_pipeline(graphene_info, pipeline_selector):
     return [
         GrapheneSensor(graphene_info, external_sensor)
         for external_sensor in external_sensors
-        if external_sensor.pipeline_name == pipeline_selector.pipeline_name
+        if pipeline_selector.pipeline_name
+        in [target.pipeline_name for target in external_sensor.get_external_targets()]
     ]
 
 
