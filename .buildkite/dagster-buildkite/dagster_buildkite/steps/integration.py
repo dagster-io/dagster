@@ -9,8 +9,8 @@ from ..utils import connect_sibling_docker_container, network_buildkite_containe
 from .test_images import publish_test_images, test_image_depends_fn
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
-DAGSTER_FROM_SOURCE = "current_branch"
-DAGSTER_EARLIEST_RELEASE = "0.12.4"
+DAGSTER_CURRENT_BRANCH = "current_branch"
+EARLIEST_TESTED_RELEASE = "0.12.4"
 
 
 def integration_suite_extra_cmds_fn(version):
@@ -40,19 +40,19 @@ def backcompat_suite_extra_cmds_fn(release_mapping):
     dagit_version = release_mapping["dagit"]
     user_code_version = release_mapping["user_code"]
 
-    if dagit_version == DAGSTER_FROM_SOURCE:
+    if dagit_version == DAGSTER_CURRENT_BRANCH:
         dagit_dockerfile = "./Dockerfile_dagit_source"
     else:
         dagit_dockerfile = "./Dockerfile_dagit_release"
 
-    if user_code_version == DAGSTER_FROM_SOURCE:
+    if user_code_version == DAGSTER_CURRENT_BRANCH:
         user_code_dockerfile = "./Dockerfile_user_code_source"
     else:
         user_code_dockerfile = "./Dockerfile_user_code_release"
 
     def _extra_cmds_fn(_):
         return [
-            f"export DAGSTER_EARLIEST_RELEASE={DAGSTER_EARLIEST_RELEASE}"
+            f"export EARLIEST_TESTED_RELEASE={EARLIEST_TESTED_RELEASE}"
             f'export DAGIT_DOCKERFILE="{dagit_dockerfile}"',
             f'export USER_CODE_DOCKERFILE="{user_code_dockerfile}"',
             "pushd integration_tests/test_suites/backcompat-test-suite/dagit_service",
@@ -91,19 +91,19 @@ def build_spec_backcompat_suite():
     tox_env_suffix_map = {
         "-dagit-latest-release": {
             "dagit": most_recent_dagster_release,
-            "user_code": DAGSTER_FROM_SOURCE,
+            "user_code": DAGSTER_CURRENT_BRANCH,
         },
         "-dagit-earliest-release": {
-            "dagit": DAGSTER_EARLIEST_RELEASE,
-            "user_code": DAGSTER_FROM_SOURCE,
+            "dagit": EARLIEST_TESTED_RELEASE,
+            "user_code": DAGSTER_CURRENT_BRANCH,
         },
         "-user-code-latest-release": {
-            "dagit": DAGSTER_FROM_SOURCE,
+            "dagit": DAGSTER_CURRENT_BRANCH,
             "user_code": most_recent_dagster_release,
         },
         "-user-code-earliest-release": {
-            "dagit": DAGSTER_FROM_SOURCE,
-            "user_code": DAGSTER_EARLIEST_RELEASE,
+            "dagit": DAGSTER_CURRENT_BRANCH,
+            "user_code": EARLIEST_TESTED_RELEASE,
         },
     }
 
