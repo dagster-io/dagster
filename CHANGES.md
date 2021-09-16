@@ -1,4 +1,32 @@
 # Changelog
+# 0.12.11
+## Community Contributions
+
+- [helm] The ingress now supports TLS (thanks @cpmoser!)
+- [helm] Fixed an issue where dagit could not be configured with an empty workspace (thanks @yamrzou!)
+
+### New
+
+- [dagstermill] You can now have more precise IO control over the output notebooks by specifying `output_notebook_name` in `define_dagstermill_solid` and providing your own IO manager via "output_notebook_io_manager" resource key.
+  - We've deprecated `output_notebook` argument in `define_dagstermill_solid` in favor of `output_notebook_name`.
+  - Previously, the output notebook functionality requires “file_manager“ resource and result in a FileHandle output. Now, when specifying output_notebook_name, it requires "output_notebook_io_manager" resource and results in a bytes output.
+  - You can now customize your own "output_notebook_io_manager" by extending OutputNotebookIOManager. A built-in `local_output_notebook_io_manager` is provided for handling local output notebook materialization.
+  - See detailed migration guide in https://github.com/dagster-io/dagster/pull/4490.
+
+- Dagit fonts have been updated.
+
+### Bugfixes
+
+- Fixed a bug where log messages of the form `context.log.info("foo %s", "bar")` would not get formatted as expected.
+- Fixed a bug that caused the `QueuedRunCoordinator`’s `tag_concurrency_limits` to not be respected in some cases
+- When loading a Run with a large volume of logs in Dagit, a loading state is shown while logs are retrieved, clarifying the loading experience and improving render performance of the Gantt chart.
+- Using solid selection with pipelines containing dynamic outputs no longer causes unexpected errors.
+
+### Experimental
+
+- You can now set tags on a graph by passing in a dictionary to the `tags` argument of the `@graph` decorator or `GraphDefinition` constructor. These tags will be set on any runs of jobs are built from invoking `to_job` on the graph.
+- You can now set separate images per solid when using the `k8s_job_executor` or `celery_k8s_job_executor`. Use the key `image` inside the `container_config` block of the [k8s solid tag](https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment#solid-or-pipeline-kubernetes-configuration).
+- You can now target multiple jobs with a single sensor, by using the `jobs` argument. Each `RunRequest` emitted from a multi-job sensor’s evaluation function must specify a `job_name`.
 
 # 0.12.10
 
