@@ -7,9 +7,6 @@ export const SENSOR_FRAGMENT = gql`
     id
     jobOriginId
     name
-    pipelineName
-    solidSelection
-    mode
     description
     minIntervalSeconds
     nextTick {
@@ -18,6 +15,11 @@ export const SENSOR_FRAGMENT = gql`
     sensorState {
       id
       ...InstigationStateFragment
+    }
+    targets {
+      pipelineName
+      solidSelection
+      mode
     }
   }
   ${INSTIGATION_STATE_FRAGMENT}

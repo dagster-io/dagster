@@ -119,11 +119,11 @@ class ActiveExecution:
             )
             if self._interrupted:
                 raise DagsterExecutionInterruptedError(
-                    f"Execution of pipeline was interrupted before completing the execution plan. {state_str}"
+                    f"Execution was interrupted before completing the execution plan. {state_str}"
                 )
             else:
                 raise DagsterInvariantViolationError(
-                    f"Execution of pipeline finished without completing the execution plan. {state_str}"
+                    f"Execution finished without completing the execution plan. {state_str}"
                 )
 
         # See verify_complete - steps for which we did not observe a failure/success event are in an unknown
@@ -131,7 +131,7 @@ class ActiveExecution:
         if len(self._unknown_state) > 0:
             if self._interrupted:
                 raise DagsterExecutionInterruptedError(
-                    "Execution of pipeline exited with steps {step_list} in an unknown state after "
+                    "Execution exited with steps {step_list} in an unknown state after "
                     "being interrupted.".format(step_list=self._unknown_state)
                 )
             else:

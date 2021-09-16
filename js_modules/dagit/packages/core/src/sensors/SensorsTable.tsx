@@ -70,7 +70,7 @@ const SensorRow: React.FC<{
   repoAddress: RepoAddress;
   sensor: SensorFragment;
 }> = ({repoAddress, sensor}) => {
-  const {name, mode, pipelineName, sensorState} = sensor;
+  const {name, sensorState} = sensor;
   const {ticks} = sensorState;
   const latestTick = ticks.length ? ticks[0] : null;
 
@@ -84,15 +84,20 @@ const SensorRow: React.FC<{
           <span style={{fontWeight: 500}}>
             <Link to={workspacePathFromAddress(repoAddress, `/sensors/${name}`)}>{name}</Link>
           </span>
-          {pipelineName && mode !== null && (
-            <PipelineReference
-              showIcon
-              fontSize={13}
-              pipelineName={pipelineName}
-              pipelineHrefContext={repoAddress}
-              mode={mode}
-            />
-          )}
+          {sensor.targets && sensor.targets.length ? (
+            <Group direction="column" spacing={2}>
+              {sensor.targets.map((target) => (
+                <PipelineReference
+                  key={`${target.pipelineName}:${target.mode}`}
+                  showIcon
+                  fontSize={13}
+                  pipelineName={target.pipelineName}
+                  pipelineHrefContext={repoAddress}
+                  mode={target.mode}
+                />
+              ))}
+            </Group>
+          ) : null}
         </Group>
       </td>
       <td>{humanizeSensorInterval(sensor.minIntervalSeconds)}</td>

@@ -44,18 +44,26 @@ def echo(_, x: int) -> int:
 
 
 @solid(
-    output_defs=[DynamicOutputDefinition()],
     config_schema={
         "range": Field(int, is_required=False, default_value=3),
+    }
+)
+def num_range(context) -> int:
+    return context.solid_config["range"]
+
+
+@solid(
+    output_defs=[DynamicOutputDefinition()],
+    config_schema={
         "fail": Field(bool, is_required=False, default_value=False),
     },
     tags={"first": "1"},
 )
-def emit(context):
+def emit(context, num: int = 3):
     if context.solid_config["fail"]:
         raise Exception("FAILURE")
 
-    for i in range(context.solid_config["range"]):
+    for i in range(num):
         yield DynamicOutput(value=i, mapping_key=str(i))
 
 
@@ -72,7 +80,8 @@ def dynamic_echo(_, nums):
 
 @pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})])
 def dynamic_pipeline():
-    numbers = emit()
+
+    numbers = emit(num_range())
     dynamic = numbers.map(lambda num: multiply_by_two(multiply_inputs(num, emit_ten())))
     n = multiply_by_two.alias("double_total")(sum_numbers(dynamic.collect()))
     echo(n)  # test transitive downstream of collect
@@ -80,7 +89,7 @@ def dynamic_pipeline():
 
 @pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})])
 def fan_repeat():
-    one = emit().map(multiply_by_two)
+    one = emit(num_range()).map(multiply_by_two)
     two = dynamic_echo(one.collect()).map(multiply_by_two).map(echo)
     three = dynamic_echo(two.collect()).map(multiply_by_two)
     sum_numbers(three.collect())
@@ -130,10 +139,26 @@ def test_map_empty(run_config):
         result = execute_pipeline(
             reconstructable(dynamic_pipeline),
             instance=instance,
-            run_config=merge_dicts({"solids": {"emit": {"config": {"range": 0}}}}, run_config),
+            run_config=merge_dicts({"solids": {"num_range": {"config": {"range": 0}}}}, run_config),
         )
         assert result.success
         assert result.result_for_solid("double_total").output_value() == 0
+
+
+@pytest.mark.parametrize(
+    "run_config",
+    _run_configs(),
+)
+def test_map_selection(run_config):
+    with instance_for_test() as instance:
+        result = execute_pipeline(
+            reconstructable(dynamic_pipeline),
+            instance=instance,
+            run_config=merge_dicts({"solids": {"emit": {"inputs": {"num": 2}}}}, run_config),
+            solid_selection=["emit*", "emit_ten"],
+        )
+        assert result.success
+        assert result.result_for_solid("double_total").output_value() == 40
 
 
 def test_composite_wrapping():
@@ -253,7 +278,7 @@ def test_fan_out_in_out_in(run_config):
         empty_result = execute_pipeline(
             reconstructable(fan_repeat),
             instance=instance,
-            run_config={"solids": {"emit": {"config": {"range": 0}}}},
+            run_config={"solids": {"num_range": {"config": {"range": 0}}}},
         )
         assert empty_result.success
         assert empty_result.result_for_solid("sum_numbers").output_value() == 0

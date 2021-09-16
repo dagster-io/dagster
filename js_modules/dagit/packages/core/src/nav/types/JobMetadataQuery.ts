@@ -28,6 +28,12 @@ export interface JobMetadataQuery_pipelineOrError_Pipeline_schedules {
   scheduleState: JobMetadataQuery_pipelineOrError_Pipeline_schedules_scheduleState;
 }
 
+export interface JobMetadataQuery_pipelineOrError_Pipeline_sensors_targets {
+  __typename: "Target";
+  pipelineName: string;
+  mode: string;
+}
+
 export interface JobMetadataQuery_pipelineOrError_Pipeline_sensors_sensorState {
   __typename: "InstigationState";
   id: string;
@@ -37,7 +43,7 @@ export interface JobMetadataQuery_pipelineOrError_Pipeline_sensors_sensorState {
 export interface JobMetadataQuery_pipelineOrError_Pipeline_sensors {
   __typename: "Sensor";
   id: string;
-  mode: string | null;
+  targets: JobMetadataQuery_pipelineOrError_Pipeline_sensors_targets[] | null;
   jobOriginId: string;
   name: string;
   sensorState: JobMetadataQuery_pipelineOrError_Pipeline_sensors_sensorState;
@@ -46,6 +52,7 @@ export interface JobMetadataQuery_pipelineOrError_Pipeline_sensors {
 export interface JobMetadataQuery_pipelineOrError_Pipeline {
   __typename: "Pipeline";
   id: string;
+  name: string;
   schedules: JobMetadataQuery_pipelineOrError_Pipeline_schedules[];
   sensors: JobMetadataQuery_pipelineOrError_Pipeline_sensors[];
 }

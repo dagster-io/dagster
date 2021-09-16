@@ -1,6 +1,6 @@
 import graphene
 from dagster import check
-from dagster.core.host_representation import ExternalSensor, SensorSelector
+from dagster.core.host_representation import ExternalSensor, ExternalTargetData, SensorSelector
 from dagster.core.scheduler.job import JobState
 from dagster.core.workspace.permissions import Permissions
 from dagster_graphql.implementation.utils import capture_error, check_permission
@@ -17,13 +17,30 @@ from .instigation import GrapheneFutureInstigationTick, GrapheneInstigationState
 from .util import non_null_list
 
 
+class GrapheneTarget(graphene.ObjectType):
+    pipelineName = graphene.NonNull(graphene.String)
+    mode = graphene.NonNull(graphene.String)
+    solidSelection = graphene.List(graphene.NonNull(graphene.String))
+
+    class Meta:
+        name = "Target"
+
+    def __init__(self, external_target):
+        self._external_target = check.inst_param(
+            external_target, "external_target", ExternalTargetData
+        )
+        super().__init__(
+            pipelineName=external_target.pipeline_name,
+            mode=external_target.mode,
+            solidSelection=external_target.solid_selection,
+        )
+
+
 class GrapheneSensor(graphene.ObjectType):
     id = graphene.NonNull(graphene.ID)
     jobOriginId = graphene.NonNull(graphene.String)
     name = graphene.NonNull(graphene.String)
-    pipelineName = graphene.String()
-    solidSelection = graphene.List(graphene.String)
-    mode = graphene.String()
+    targets = graphene.List(graphene.NonNull(GrapheneTarget))
     sensorState = graphene.NonNull(GrapheneInstigationState)
     minIntervalSeconds = graphene.NonNull(graphene.Int)
     description = graphene.String()
@@ -48,11 +65,9 @@ class GrapheneSensor(graphene.ObjectType):
         super().__init__(
             name=external_sensor.name,
             jobOriginId=external_sensor.get_external_origin_id(),
-            pipelineName=external_sensor.pipeline_name,
-            solidSelection=external_sensor.solid_selection,
-            mode=external_sensor.mode,
             minIntervalSeconds=external_sensor.min_interval_seconds,
             description=external_sensor.description,
+            targets=[GrapheneTarget(target) for target in external_sensor.get_external_targets()],
         )
 
     def resolve_id(self, _):

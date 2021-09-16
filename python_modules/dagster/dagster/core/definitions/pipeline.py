@@ -595,7 +595,8 @@ def _dep_key_of(solid: Node) -> SolidInvocation:
 
 
 def _get_pipeline_subset_def(
-    pipeline_def, solids_to_execute: AbstractSet[str]
+    pipeline_def: PipelineDefinition,
+    solids_to_execute: AbstractSet[str],
 ) -> "PipelineSubsetDefinition":
     """
     Build a pipeline which is a subset of another pipeline.
@@ -613,7 +614,11 @@ def _get_pipeline_subset_def(
                 ),
             )
 
-    solids = list(map(graph.solid_named, solids_to_execute))
+    # go in topo order to ensure deps dict is ordered
+    solids = list(
+        filter(lambda solid: solid.name in solids_to_execute, graph.solids_in_topological_order)
+    )
+
     deps: Dict[
         Union[str, SolidInvocation],
         Dict[str, IDependencyDefinition],
@@ -627,7 +632,7 @@ def _get_pipeline_subset_def(
                     deps[_dep_key_of(solid)][input_handle.input_def.name] = DependencyDefinition(
                         solid=output_handle.solid.name, output=output_handle.output_def.name
                     )
-            if graph.dependency_structure.has_dynamic_fan_in_dep(input_handle):
+            elif graph.dependency_structure.has_dynamic_fan_in_dep(input_handle):
                 output_handle = graph.dependency_structure.get_dynamic_fan_in_dep(input_handle)
                 if output_handle.solid.name in solids_to_execute:
                     deps[_dep_key_of(solid)][
@@ -647,6 +652,7 @@ def _get_pipeline_subset_def(
                         if output_handle.solid.name in solids_to_execute
                     ]
                 )
+            # else input is unconnected
 
     try:
         sub_pipeline_def = PipelineSubsetDefinition(

@@ -53,7 +53,6 @@ export const SensorDetails: React.FC<{
 }> = ({sensor, repoAddress, daemonHealth, countdownDuration, countdownStatus, onRefresh}) => {
   const {
     name,
-    pipelineName,
     sensorState: {status, ticks},
   } = sensor;
   const {flagPipelineModeTuples} = useFeatureFlags();
@@ -67,6 +66,7 @@ export const SensorDetails: React.FC<{
   const seconds = Math.floor(timeRemaining / 1000);
 
   const latestTick = ticks.length ? ticks[0] : null;
+  const hasMultipleTargets = sensor.targets && sensor.targets.length > 1;
 
   return (
     <Group direction="column" spacing={16}>
@@ -122,14 +122,27 @@ export const SensorDetails: React.FC<{
             ),
           },
           {
-            key: flagPipelineModeTuples ? 'Job' : 'Pipeline',
+            key: flagPipelineModeTuples
+              ? hasMultipleTargets
+                ? 'Jobs'
+                : 'Job'
+              : hasMultipleTargets
+              ? 'Pipelines'
+              : 'Pipeline',
             value:
-              pipelineName && sensor.mode !== null ? (
-                <PipelineReference
-                  pipelineName={pipelineName}
-                  pipelineHrefContext={repoAddress}
-                  mode={sensor.mode}
-                />
+              sensor.targets && sensor.targets.length ? (
+                <Group direction="column" spacing={2}>
+                  {sensor.targets.map((target) =>
+                    target.pipelineName ? (
+                      <PipelineReference
+                        key={`${target.pipelineName}:${target.mode}`}
+                        pipelineName={target.pipelineName}
+                        pipelineHrefContext={repoAddress}
+                        mode={target.mode}
+                      />
+                    ) : null,
+                  )}
+                </Group>
               ) : (
                 'Sensor does not target a pipeline'
               ),

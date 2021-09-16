@@ -6,8 +6,11 @@ from dagster.core.definitions.decorators.op import _Op
 from dagster.core.host_representation.external_data import (
     ExternalAssetDependency,
     ExternalAssetNode,
+    ExternalSensorData,
+    ExternalTargetData,
     external_asset_graph_from_defs,
 )
+from dagster.serdes import deserialize_json_to_dagster_namedtuple
 
 
 def asset(fn):
@@ -147,3 +150,14 @@ def test_same_asset_in_multiple_pipelines():
             job_names=["graph1", "graph2"],
         ),
     ]
+
+
+def test_back_compat_external_sensor():
+    SERIALIZED_0_12_10_SENSOR = '{"__class__": "ExternalSensorData", "description": null, "min_interval": null, "mode": "default", "name": "my_sensor", "pipeline_name": "my_pipeline", "solid_selection": null}'
+    external_sensor_data = deserialize_json_to_dagster_namedtuple(SERIALIZED_0_12_10_SENSOR)
+    assert isinstance(external_sensor_data, ExternalSensorData)
+    assert len(external_sensor_data.target_dict) == 1
+    assert "my_pipeline" in external_sensor_data.target_dict
+    target = external_sensor_data.target_dict["my_pipeline"]
+    assert isinstance(target, ExternalTargetData)
+    assert target.pipeline_name == "my_pipeline"
