@@ -1,4 +1,5 @@
 import subprocess
+from typing import List
 
 import pytest
 import yaml
@@ -119,3 +120,26 @@ def test_workspace_renders_from_helm_dagit(template: HelmTemplate):
         assert grpc_server["grpc_server"]["host"] == server.host
         assert grpc_server["grpc_server"]["port"] == server.port
         assert grpc_server["grpc_server"]["location_name"] == server.host
+
+
+def test_workspace_renders_empty(template: HelmTemplate):
+    servers: List[Server] = []
+    helm_values = DagsterHelmValues.construct(
+        dagit=Dagit.construct(workspace=Workspace(enabled=True, servers=servers)),
+        dagsterUserDeployments=UserDeployments(
+            enabled=True,
+            enableSubchart=True,
+            deployments=[],
+        ),
+    )
+
+    workspace_templates = template.render(helm_values)
+
+    assert len(workspace_templates) == 1
+
+    workspace_template = workspace_templates[0]
+
+    workspace = yaml.full_load(workspace_template.data["workspace.yaml"])
+    grpc_servers = workspace["load_from"]
+
+    assert len(grpc_servers) == len(servers)

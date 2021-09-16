@@ -363,7 +363,7 @@ def test_incomplete_execution_plan():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Execution of pipeline finished without completing the execution plan.",
+        match="Execution finished without completing the execution plan.",
     ):
         with plan.start(retry_mode=(RetryMode.DISABLED)) as active_execution:
 

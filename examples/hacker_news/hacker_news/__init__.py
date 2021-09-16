@@ -1,1 +1,1 @@
-from .repo import hacker_news_repository
+from .repo import hacker_news_prod

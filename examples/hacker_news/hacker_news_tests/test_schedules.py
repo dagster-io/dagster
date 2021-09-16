@@ -1,25 +1,34 @@
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from dagster import Partition
-from dagster.core.definitions import PipelineDefinition
-from dagster.core.definitions.partition import PartitionScheduleDefinition
+from dagster.core.definitions import JobDefinition
 from dagster.core.execution.api import create_execution_plan
-from hacker_news.pipelines.download_pipeline import download_pipeline
-from hacker_news.schedules.hourly_hn_download_schedule import hourly_hn_download_schedule
+from hacker_news.jobs.hacker_news_api_download import download_prod_job, download_staging_job
 
 
 def assert_partitioned_schedule_builds(
-    schedule_def: PartitionScheduleDefinition,
-    pipeline_def: PipelineDefinition,
-    partition: datetime,
+    job_def: JobDefinition,
+    start: datetime,
+    end: datetime,
 ):
-    run_config = schedule_def.get_partition_set().run_config_for_partition(Partition(partition))
-    create_execution_plan(pipeline_def, run_config=run_config, mode=schedule_def.mode)
+    partition_set = job_def.get_partition_set_def()
+    run_config = partition_set.run_config_for_partition(Partition((start, end)))
+    create_execution_plan(job_def, run_config=run_config)
 
 
 def test_daily_download_schedule():
     os.environ["SLACK_DAGSTER_ETL_BOT_TOKEN"] = "something"
+    start = datetime.strptime("2020-10-01", "%Y-%m-%d")
+    end = start + timedelta(hours=1)
+
     assert_partitioned_schedule_builds(
-        hourly_hn_download_schedule, download_pipeline, datetime.strptime("2020-10-01", "%Y-%m-%d")
+        download_prod_job,
+        start,
+        end,
+    )
+    assert_partitioned_schedule_builds(
+        download_staging_job,
+        start,
+        end,
     )
