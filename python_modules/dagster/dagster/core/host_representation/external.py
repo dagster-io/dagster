@@ -513,6 +513,9 @@ class ExternalSensor:
         else:
             return self._get_single_target()
 
+    def get_external_targets(self):
+        return self._external_sensor_data.target_dict.values()
+
     @property
     def description(self):
         return self._external_sensor_data.description

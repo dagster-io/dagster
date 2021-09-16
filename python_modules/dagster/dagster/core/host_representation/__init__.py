@@ -30,6 +30,7 @@ from .external_data import (
     ExternalScheduleData,
     ExternalScheduleExecutionErrorData,
     ExternalSensorExecutionErrorData,
+    ExternalTargetData,
     external_pipeline_data_from_def,
     external_repository_data_from_def,
 )

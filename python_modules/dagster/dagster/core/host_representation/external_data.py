@@ -18,6 +18,7 @@ from dagster.core.definitions import (
 )
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.i_solid_definition import NodeDefinition
+from dagster.core.definitions.mode import DEFAULT_MODE_NAME
 from dagster.core.definitions.partition import PartitionScheduleDefinition
 from dagster.core.snap import PipelineSnapshot
 from dagster.serdes import whitelist_for_serdes
@@ -214,20 +215,20 @@ class ExternalScheduleExecutionErrorData(
 class ExternalTargetData(
     namedtuple(
         "_ExternalTargetData",
-        "pipeline_name solid_selection mode",
+        "pipeline_name mode solid_selection",
     )
 ):
     def __new__(
         cls,
         pipeline_name,
-        solid_selection,
         mode,
+        solid_selection,
     ):
         return super(ExternalTargetData, cls).__new__(
             cls,
-            pipeline_name=check.opt_str_param(pipeline_name, "pipeline_name"),
+            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
+            mode=check.str_param(mode, "mode"),
             solid_selection=check.opt_nullable_list_param(solid_selection, "solid_selection", str),
-            mode=check.opt_str_param(mode, "mode"),
         )
 
 
@@ -253,11 +254,11 @@ class ExternalSensorData(
             # version of dagster
             target_dict = {
                 pipeline_name: ExternalTargetData(
-                    pipeline_name=check.opt_str_param(pipeline_name, "pipeline_name"),
+                    pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
+                    mode=check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME),
                     solid_selection=check.opt_nullable_list_param(
                         solid_selection, "solid_selection", str
                     ),
-                    mode=check.opt_str_param(mode, "mode"),
                 )
             }
 
@@ -553,8 +554,8 @@ def external_sensor_data_from_def(sensor_def):
         target_dict={
             target.pipeline_name: ExternalTargetData(
                 pipeline_name=target.pipeline_name,
-                solid_selection=target.solid_selection,
                 mode=target.mode,
+                solid_selection=target.solid_selection,
             )
             for target in sensor_def.targets
         },
