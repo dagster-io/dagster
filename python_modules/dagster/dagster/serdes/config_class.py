@@ -128,6 +128,7 @@ class ConfigurableClass(ABC):
         """dagster.ConfigType: The config type against which to validate a config yaml fragment
         serialized in an instance of ``ConfigurableClassData``.
         """
+        raise NotImplementedError(f"{cls.__name__} must implement the config_type classmethod")
 
     @staticmethod
     @abstractmethod
@@ -152,6 +153,9 @@ class ConfigurableClass(ABC):
                 return MyConfigurableClass(inst_data=inst_data, **config_value)
 
         """
+        raise NotImplementedError(
+            "ConfigurableClass subclasses must implement the from_config_value staticmethod"
+        )
 
 
 def class_from_code_pointer(module_name, class_name):
