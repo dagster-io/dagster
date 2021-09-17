@@ -62,7 +62,9 @@ if TYPE_CHECKING:
     from dagster.core.execution.execute_in_process import InProcessGraphResult
 
 
-def _check_node_defs_arg(graph_name: str, node_defs: List[NodeDefinition]):
+def _check_node_defs_arg(graph_name: str, node_defs: Optional[List[NodeDefinition]]):
+    node_defs = node_defs or []
+
     if not isinstance(node_defs, list):
         raise DagsterInvalidDefinitionError(
             '"solids" arg to "{name}" is not a list. Got {val}.'.format(
@@ -121,12 +123,14 @@ class GraphDefinition(NodeDefinition):
     def __init__(
         self,
         name: str,
-        description: Optional[str],
-        node_defs: List[NodeDefinition],
-        dependencies: Optional[Dict[Union[str, SolidInvocation], Dict[str, IDependencyDefinition]]],
-        input_mappings: Optional[List[InputMapping]],
-        output_mappings: Optional[List[OutputMapping]],
-        config_mapping: Optional[ConfigMapping],
+        description: Optional[str] = None,
+        node_defs: Optional[List[NodeDefinition]] = None,
+        dependencies: Optional[
+            Dict[Union[str, SolidInvocation], Dict[str, IDependencyDefinition]]
+        ] = None,
+        input_mappings: Optional[List[InputMapping]] = None,
+        output_mappings: Optional[List[OutputMapping]] = None,
+        config_mapping: Optional[ConfigMapping] = None,
         tags: Optional[Dict[str, Any]] = None,
         **kwargs,
     ):
@@ -134,7 +138,7 @@ class GraphDefinition(NodeDefinition):
         self._dagster_type_dict = construct_dagster_type_dictionary(self._node_defs)
         self._dependencies = validate_dependency_dict(dependencies)
         self._dependency_structure, self._node_dict = create_execution_structure(
-            node_defs, self._dependencies, graph_definition=self
+            self._node_defs, self._dependencies, graph_definition=self
         )
 
         # List[InputMapping]
