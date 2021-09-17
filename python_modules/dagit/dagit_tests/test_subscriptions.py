@@ -1,5 +1,4 @@
 import gc
-import time
 from contextlib import contextmanager
 from unittest import mock
 
@@ -126,17 +125,14 @@ def test_event_log_subscription_chunked():
             start_subscription(server, context, EVENT_LOG_SUBSCRIPTION, {"runId": run.run_id})
             gc.collect()
             assert len(objgraph.by_type("SubscriptionObserver")) == 1
-            assert len(objgraph.by_type("PipelineRunObservableSubscribe")) == 1
-
+            subs = objgraph.by_type("PipelineRunObservableSubscribe")
+            assert len(subs) == 1
+            subscription_obj = subs[0]
             end_subscription(server, context)
+            subscription_obj.stopped.wait(30)
+            subs = None
+            subscription_obj = None
             gc.collect()
-
-            # give time for bg loading thread to stop
-            start = time.time()
-            while time.time() - start < 15:
-                if len(objgraph.by_type("SubscriptionObserver")) == 0:
-                    break
-                time.sleep(0.01)
 
             assert len(objgraph.by_type("SubscriptionObserver")) == 0
             assert len(objgraph.by_type("PipelineRunObservableSubscribe")) == 0
