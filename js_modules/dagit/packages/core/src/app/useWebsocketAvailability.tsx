@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import {WebSocketContext, WebSocketStatus} from './WebSocketProvider';
+import {WebSocketContext} from './WebSocketProvider';
 
 export const useWebsocketAvailability = () => {
   const {websocketClient} = React.useContext(WebSocketContext);

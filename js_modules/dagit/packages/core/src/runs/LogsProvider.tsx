@@ -3,6 +3,7 @@ import throttle from 'lodash/throttle';
 import * as React from 'react';
 
 import {useWebsocketAvailability} from '../app/useWebsocketAvailability';
+import {WebSocketContext} from '../app/WebSocketProvider';
 import {PipelineRunStatus} from '../types/globalTypes';
 import {TokenizingFieldValue} from '../ui/TokenizingField';
 
@@ -90,7 +91,11 @@ const initialState = {
 const useLogsProviderWithSubscription = (runId: string) => {
   const client = useApolloClient();
   const queue = React.useRef<RunPipelineRunEventFragment[]>([]);
+  const messageCount = React.useRef<number>(0);
   const [state, dispatch] = React.useReducer(reducer, initialState);
+
+  const {websocketClient} = React.useContext(WebSocketContext);
+  const [messageStreamCursor, setMessageStreamCursor] = React.useState<number | null>(null);
 
   const syncPipelineStatusToApolloCache = React.useCallback(
     (status: PipelineRunStatus) => {
@@ -139,7 +144,7 @@ const useLogsProviderWithSubscription = (runId: string) => {
 
   useSubscription<PipelineRunLogsSubscription>(PIPELINE_RUN_LOGS_SUBSCRIPTION, {
     fetchPolicy: 'no-cache',
-    variables: {runId: runId, after: null},
+    variables: {runId: runId, after: messageStreamCursor},
     onSubscriptionData: ({subscriptionData}) => {
       const logs = subscriptionData.data?.pipelineRunLogs;
       if (!logs || logs.__typename === 'PipelineRunLogsSubscriptionFailure') {
@@ -147,6 +152,7 @@ const useLogsProviderWithSubscription = (runId: string) => {
       }
 
       const {messages, hasMorePastEvents} = logs;
+      messageCount.current += messages.length;
       const nextPipelineStatus = pipelineStatusFromMessages(messages);
 
       // If we're still loading past events, don't sync to the cache -- event chunks could
@@ -160,6 +166,20 @@ const useLogsProviderWithSubscription = (runId: string) => {
       throttledSetNodes(hasMorePastEvents);
     },
   });
+
+  // If the websocket reconnects, ensure the newly recreated subscription resumes from
+  // after the messages we have already loaded
+  React.useEffect(() => {
+    if (!websocketClient) {
+      return;
+    }
+    const unlisten = websocketClient.onReconnecting(() => {
+      setMessageStreamCursor(messageCount.current - 1);
+    });
+    return () => {
+      unlisten();
+    };
+  }, [websocketClient]);
 
   const {nodes, loading} = state;
 
