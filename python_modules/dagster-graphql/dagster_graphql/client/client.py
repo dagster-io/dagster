@@ -234,6 +234,18 @@ class DagsterGraphQLClient:
             # a PipelineNotFoundError, a PipelineRunConflict, or a PythonError
             raise DagsterGraphQLClientError(query_result_type, query_result["message"])
 
+    def submit_job_execution(
+        self,
+        job_name: str,
+        repository_location_name: Optional[str] = None,
+        repository_name: Optional[str] = None,
+        run_config: Optional[Any] = {},
+        tags: Optional[Dict[str, Any]] = None,
+    ) -> str:
+        return self.submit_pipeline_execution(
+            job_name, repository_location_name, repository_name, run_config, "default", None, tags
+        )
+
     def get_run_status(self, run_id: str) -> PipelineRunStatus:
         """Get the status of a given Pipeline Run
 

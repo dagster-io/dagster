@@ -6,16 +6,17 @@ from .conftest import MockClient, python_client_test_suite
 
 EXPECTED_RUN_ID = "foo"
 
+launch_pipeline_success_response = {
+    "launchPipelineExecution": {
+        "__typename": "LaunchPipelineRunSuccess",
+        "run": {"runId": EXPECTED_RUN_ID},
+    }
+}
+
 
 @python_client_test_suite
 def test_success(mock_client: MockClient):
-    response = {
-        "launchPipelineExecution": {
-            "__typename": "LaunchPipelineRunSuccess",
-            "run": {"runId": EXPECTED_RUN_ID},
-        }
-    }
-    mock_client.mock_gql_client.execute.return_value = response
+    mock_client.mock_gql_client.execute.return_value = launch_pipeline_success_response
     actual_run_id = mock_client.python_client.submit_pipeline_execution(
         "bar",
         repository_location_name="baz",
@@ -27,14 +28,19 @@ def test_success(mock_client: MockClient):
 
 
 @python_client_test_suite
+def test_job_success(mock_client: MockClient):
+    mock_client.mock_gql_client.execute.return_value = launch_pipeline_success_response
+    actual_run_id = mock_client.python_client.submit_job_execution(
+        "bar",
+        repository_location_name="baz",
+        repository_name="quux",
+    )
+    assert actual_run_id == EXPECTED_RUN_ID
+
+
+@python_client_test_suite
 def test_preset_success(mock_client: MockClient):
-    response = {
-        "launchPipelineExecution": {
-            "__typename": "LaunchPipelineRunSuccess",
-            "run": {"runId": EXPECTED_RUN_ID},
-        }
-    }
-    mock_client.mock_gql_client.execute.return_value = response
+    mock_client.mock_gql_client.execute.return_value = launch_pipeline_success_response
     actual_run_id = mock_client.python_client.submit_pipeline_execution(
         "bar", repository_location_name="baz", repository_name="quux", preset="cool_preset"
     )
@@ -43,19 +49,25 @@ def test_preset_success(mock_client: MockClient):
 
 @python_client_test_suite
 def test_tags_success(mock_client: MockClient):
-    response = {
-        "launchPipelineExecution": {
-            "__typename": "LaunchPipelineRunSuccess",
-            "run": {"runId": EXPECTED_RUN_ID},
-        }
-    }
-    mock_client.mock_gql_client.execute.return_value = response
+    mock_client.mock_gql_client.execute.return_value = launch_pipeline_success_response
     actual_run_id = mock_client.python_client.submit_pipeline_execution(
         "bar",
         repository_location_name="baz",
         repository_name="quuz",
         run_config={},
         mode="default",
+        tags={"my_tag": "a", "my_other_tag": "b"},
+    )
+    assert actual_run_id == EXPECTED_RUN_ID
+
+
+@python_client_test_suite
+def test_job_tags_success(mock_client: MockClient):
+    mock_client.mock_gql_client.execute.return_value = launch_pipeline_success_response
+    actual_run_id = mock_client.python_client.submit_job_execution(
+        "bar",
+        repository_location_name="baz",
+        repository_name="quuz",
         tags={"my_tag": "a", "my_other_tag": "b"},
     )
     assert actual_run_id == EXPECTED_RUN_ID
