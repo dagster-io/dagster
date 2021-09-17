@@ -155,12 +155,18 @@ class NamedTupleSerializer(Serializer):
         storage_dict: Dict[str, Any],
         klass: Type,
         args_for_class: Mapping[str, Parameter],
+        whitelist_map: WhitelistMap,
+        descent_path: str,
     ) -> NamedTuple:
         """
+        Load the target value from the object tree output of json parsing.
+
         Args:
             storage_dict: The parsed json object to hydrate
             klass: The namedtuple class object
             args_for_class: the inspect.signature paramaters for __new__
+            whitelist_map: current map of whitelisted serdes objects
+            descent_path: the path to the current node from the root
         """
         raise NotImplementedError()
 
@@ -172,6 +178,15 @@ class NamedTupleSerializer(Serializer):
         whitelist_map: WhitelistMap,
         descent_path: str,
     ) -> Dict[str, Any]:
+        """
+        Transform the object in to a form that can be json serialized.
+
+        Args:
+            value: the instance of the object
+            whitelist_map: current map of whitelisted serdes objects
+            descent_path: the path to the current node from the root
+        """
+
         raise NotImplementedError()
 
 
@@ -192,12 +207,26 @@ class DefaultNamedTupleSerializer(NamedTupleSerializer):
         storage_dict: Dict[str, Any],
         klass: Type,
         args_for_class: Mapping[str, Parameter],
+        whitelist_map: WhitelistMap,
+        descent_path: str,
     ) -> NamedTuple:
         # Naively implements backwards compatibility by filtering arguments that aren't present in
         # the constructor. If a property is present in the serialized object, but doesn't exist in
         # the version of the class loaded into memory, that property will be completely ignored.
-        filtered_val = {k: v for k, v in storage_dict.items() if k in args_for_class}
-        return klass(**filtered_val)
+        unpacked_dict = {
+            key: unpack_inner_value(value, whitelist_map, f"{descent_path}.{key}")
+            for key, value in storage_dict.items()
+            if key in args_for_class
+        }
+        return cls.value_from_unpacked(unpacked_dict, klass)
+
+    @classmethod
+    def value_from_unpacked(
+        cls,
+        unpacked_dict: Dict[str, Any],
+        klass: Type,
+    ):
+        return klass(**unpacked_dict)
 
     @classmethod
     def value_to_storage_dict(
@@ -212,7 +241,7 @@ class DefaultNamedTupleSerializer(NamedTupleSerializer):
         for key, inner_value in value._asdict().items():
             if key in skip_when_empty_fields and inner_value in EMPTY_VALUES_TO_SKIP:
                 continue
-            base_dict[key] = _pack_value(inner_value, whitelist_map, f"{descent_path}.{key}")
+            base_dict[key] = pack_inner_value(inner_value, whitelist_map, f"{descent_path}.{key}")
 
         base_dict["__class__"] = value.__class__.__name__
         return base_dict
@@ -230,12 +259,14 @@ def serialize_dagster_namedtuple(nt: tuple, **json_kwargs) -> str:
 
 
 def _serialize_dagster_namedtuple(nt: tuple, whitelist_map: WhitelistMap, **json_kwargs) -> str:
-    return seven.json.dumps(_pack_value(nt, whitelist_map, _root(nt)), **json_kwargs)
+    return seven.json.dumps(pack_inner_value(nt, whitelist_map, _root(nt)), **json_kwargs)
 
 
 def serialize_value(val: Any) -> str:
     """Serialize a value to a json encoded string."""
-    return seven.json.dumps(_pack_value(val, whitelist_map=_WHITELIST_MAP, descent_path=_root(val)))
+    return seven.json.dumps(
+        pack_inner_value(val, whitelist_map=_WHITELIST_MAP, descent_path=_root(val))
+    )
 
 
 def pack_value(val: Any) -> Any:
@@ -246,13 +277,13 @@ def pack_value(val: Any) -> Any:
         * set
         * frozenset
     """
-    return _pack_value(val, whitelist_map=_WHITELIST_MAP, descent_path=_root(val))
+    return pack_inner_value(val, whitelist_map=_WHITELIST_MAP, descent_path=_root(val))
 
 
-def _pack_value(val: Any, whitelist_map: WhitelistMap, descent_path: str) -> Any:
+def pack_inner_value(val: Any, whitelist_map: WhitelistMap, descent_path: str) -> Any:
     if isinstance(val, list):
         return [
-            _pack_value(item, whitelist_map, f"{descent_path}[{idx}]")
+            pack_inner_value(item, whitelist_map, f"{descent_path}[{idx}]")
             for idx, item in enumerate(val)
         ]
     if isinstance(val, tuple):
@@ -275,20 +306,21 @@ def _pack_value(val: Any, whitelist_map: WhitelistMap, descent_path: str) -> Any
         set_path = descent_path + "{}"
         return {
             "__set__": [
-                _pack_value(item, whitelist_map, set_path) for item in sorted(list(val), key=str)
+                pack_inner_value(item, whitelist_map, set_path)
+                for item in sorted(list(val), key=str)
             ]
         }
     if isinstance(val, frozenset):
         frz_set_path = descent_path + "{}"
         return {
             "__frozenset__": [
-                _pack_value(item, whitelist_map, frz_set_path)
+                pack_inner_value(item, whitelist_map, frz_set_path)
                 for item in sorted(list(val), key=str)
             ]
         }
     if isinstance(val, dict):
         return {
-            key: _pack_value(value, whitelist_map, f"{descent_path}.{key}")
+            key: pack_inner_value(value, whitelist_map, f"{descent_path}.{key}")
             for key, value in val.items()
         }
 
@@ -328,12 +360,12 @@ def deserialize_as(json_str: str, cls: Type[T]) -> T:
 
 def _deserialize_json(json_str: str, whitelist_map: WhitelistMap):
     value = seven.json.loads(json_str)
-    return _unpack_value(value, whitelist_map=whitelist_map, descent_path=_root(value))
+    return unpack_inner_value(value, whitelist_map=whitelist_map, descent_path=_root(value))
 
 
 def deserialize_value(val: str) -> Any:
     """Deserialize a json encoded string in to its original value"""
-    return _unpack_value(
+    return unpack_inner_value(
         seven.json.loads(check.str_param(val, "val")),
         whitelist_map=_WHITELIST_MAP,
         descent_path="",
@@ -342,17 +374,17 @@ def deserialize_value(val: str) -> Any:
 
 def unpack_value(val: Any) -> Any:
     """Convert a packed value in to its original form"""
-    return _unpack_value(
+    return unpack_inner_value(
         val,
         whitelist_map=_WHITELIST_MAP,
         descent_path="",
     )
 
 
-def _unpack_value(val: Any, whitelist_map: WhitelistMap, descent_path: str) -> Any:
+def unpack_inner_value(val: Any, whitelist_map: WhitelistMap, descent_path: str) -> Any:
     if isinstance(val, list):
         return [
-            _unpack_value(item, whitelist_map, f"{descent_path}[{idx}]")
+            unpack_inner_value(item, whitelist_map, f"{descent_path}[{idx}]")
             for idx, item in enumerate(val)
         ]
     if isinstance(val, dict) and val.get("__class__"):
@@ -364,17 +396,15 @@ def _unpack_value(val: Any, whitelist_map: WhitelistMap, descent_path: str) -> A
                 f"expected versions.{_path_msg(descent_path)}"
             )
 
-        klass, serializer, sig_params = whitelist_map.get_tuple_entry(klass_name)
+        klass, serializer, args_for_class = whitelist_map.get_tuple_entry(klass_name)
 
         # Target class being set to none, likely by
         if klass is None:
             return None
 
-        unpacked_val = {
-            key: _unpack_value(value, whitelist_map, f"{descent_path}.{key}")
-            for key, value in val.items()
-        }
-        return serializer.value_from_storage_dict(unpacked_val, klass, sig_params)
+        return serializer.value_from_storage_dict(
+            val, klass, args_for_class, whitelist_map, descent_path
+        )
     if isinstance(val, dict) and val.get("__enum__"):
         name, member = val["__enum__"].split(".")
         if not whitelist_map.has_enum_entry(name):
@@ -387,15 +417,15 @@ def _unpack_value(val: Any, whitelist_map: WhitelistMap, descent_path: str) -> A
         return enum_serializer.value_from_storage_str(member, enum_class)
     if isinstance(val, dict) and val.get("__set__") is not None:
         set_path = descent_path + "{}"
-        return set([_unpack_value(item, whitelist_map, set_path) for item in val["__set__"]])
+        return set([unpack_inner_value(item, whitelist_map, set_path) for item in val["__set__"]])
     if isinstance(val, dict) and val.get("__frozenset__") is not None:
         frz_set_path = descent_path + "{}"
         return frozenset(
-            [_unpack_value(item, whitelist_map, frz_set_path) for item in val["__frozenset__"]]
+            [unpack_inner_value(item, whitelist_map, frz_set_path) for item in val["__frozenset__"]]
         )
     if isinstance(val, dict):
         return {
-            key: _unpack_value(value, whitelist_map, f"{descent_path}.{key}")
+            key: unpack_inner_value(value, whitelist_map, f"{descent_path}.{key}")
             for key, value in val.items()
         }
 
