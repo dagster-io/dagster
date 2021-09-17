@@ -18,6 +18,7 @@ import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import {BrowserRouter} from 'react-router-dom';
 import {createGlobalStyle} from 'styled-components/macro';
+import {SubscriptionClient} from 'subscriptions-transport-ws';
 
 import {ColorsWIP} from '../ui/Colors';
 import {FontFamily} from '../ui/styles';
@@ -112,6 +113,15 @@ export const AppProvider: React.FC<Props> = (props) => {
   const headersAsString = JSON.stringify(headers);
   const headerObject = React.useMemo(() => JSON.parse(headersAsString), [headersAsString]);
 
+  const websocketClient = React.useMemo(
+    () =>
+      new SubscriptionClient(websocketURI, {
+        reconnect: true,
+        connectionParams: {...headerObject},
+      }),
+    [headerObject, websocketURI],
+  );
+
   const apolloClient = React.useMemo(() => {
     // Subscriptions use WebSocketLink, queries & mutations use HttpLink.
     const splitLink = split(
@@ -119,13 +129,7 @@ export const AppProvider: React.FC<Props> = (props) => {
         const definition = getMainDefinition(query);
         return definition.kind === 'OperationDefinition' && definition.operation === 'subscription';
       },
-      new WebSocketLink({
-        uri: websocketURI,
-        options: {
-          reconnect: true,
-          connectionParams: {...headerObject},
-        },
-      }),
+      new WebSocketLink(websocketClient),
       new HttpLink({uri: graphqlPath, headers: headerObject}),
     );
 
@@ -133,7 +137,7 @@ export const AppProvider: React.FC<Props> = (props) => {
       cache: appCache,
       link: ApolloLink.from([...apolloLinks, splitLink]),
     });
-  }, [apolloLinks, appCache, graphqlPath, headerObject, websocketURI]);
+  }, [apolloLinks, appCache, graphqlPath, headerObject, websocketClient]);
 
   const appContextValue = React.useMemo(
     () => ({
@@ -145,7 +149,7 @@ export const AppProvider: React.FC<Props> = (props) => {
 
   return (
     <AppContext.Provider value={appContextValue}>
-      <WebSocketProvider websocketURI={websocketURI} connectionParams={headerObject}>
+      <WebSocketProvider websocketClient={websocketClient}>
         <GlobalStyle />
         <ApolloProvider client={apolloClient}>
           <PermissionsProvider>

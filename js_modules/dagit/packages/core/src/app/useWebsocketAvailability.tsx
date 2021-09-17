@@ -1,9 +1,9 @@
 import * as React from 'react';
 
-import {WebSocketContext} from './WebSocketProvider';
+import {WebSocketContext, WebSocketStatus} from './WebSocketProvider';
 
 export const useWebsocketAvailability = () => {
-  const {websocketURI} = React.useContext(WebSocketContext);
+  const {websocketClient} = React.useContext(WebSocketContext);
   const [status, setStatus] = React.useState<'attempting-to-connect' | 'error' | 'success'>(
     'attempting-to-connect',
   );
@@ -11,15 +11,29 @@ export const useWebsocketAvailability = () => {
   // Determine whether WebSockets are available at all. If not, fall back to a version
   // that uses a polling query.
   React.useEffect(() => {
-    const ws = new WebSocket(websocketURI, 'graphql-ws');
-    ws.addEventListener('error', () => setStatus('error'));
-    ws.addEventListener('open', () => {
-      setStatus('success');
-      ws.close();
-    });
+    if (!websocketClient) {
+      return;
+    }
 
-    return () => ws.close();
-  }, [websocketURI]);
+    let cleanup = () => {};
+
+    if (websocketClient.status === WebSocket.OPEN) {
+      setStatus('success');
+    } else if (websocketClient.status === WebSocket.CLOSED) {
+      setStatus('error');
+    } else {
+      const errUnlisten = websocketClient.onError(() => setStatus('error'));
+      const connUnlisten = websocketClient.onConnected(() => setStatus('success'));
+      cleanup = () => {
+        errUnlisten();
+        connUnlisten();
+      };
+    }
+
+    return () => {
+      cleanup();
+    };
+  }, [websocketClient]);
 
   return status;
 };
