@@ -3,16 +3,13 @@ import debounce from 'lodash/debounce';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
-
 type WebSocketContextType = {
-  connectionParams?: {[key: string]: string};
-  websocketURI: string;
   status: number;
+  websocketClient?: SubscriptionClient;
 };
 
 export const WebSocketContext = React.createContext<WebSocketContextType>({
   status: WebSocket.CONNECTING,
-  websocketURI: '',
 });
 
 const WS_EVENTS = [
@@ -28,37 +25,28 @@ const WS_EVENTS = [
 const DEBOUNCE_TIME = 5000;
 
 interface Props {
-  connectionParams?: {[key: string]: string};
-  websocketURI: string;
+  websocketClient: SubscriptionClient;
 }
 
 export const WebSocketProvider: React.FC<Props> = (props) => {
-  const {children, connectionParams, websocketURI} = props;
+  const {children, websocketClient} = props;
   const [status, setStatus] = React.useState(WebSocket.CONNECTING);
-
-  const websocketClient = React.useMemo(
-    () =>
-      new SubscriptionClient(websocketURI, {
-        reconnect: true,
-        connectionParams,
-      }),
-    [connectionParams, websocketURI],
-  );
 
   const value = React.useMemo(
     () => ({
-      connectionParams,
       status,
-      websocketURI,
+      websocketClient,
     }),
-    [connectionParams, status, websocketURI],
+    [status, websocketClient],
   );
 
   const debouncedSetter = React.useMemo(() => debounce(setStatus, DEBOUNCE_TIME), []);
 
   React.useEffect(() => {
     const unlisteners = WS_EVENTS.map((eventName) =>
-      websocketClient.on(eventName, () => debouncedSetter(websocketClient.status)),
+      websocketClient.on(eventName, () => {
+        debouncedSetter(websocketClient.status);
+      }),
     );
 
     return () => {
