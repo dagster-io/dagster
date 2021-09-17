@@ -594,7 +594,7 @@ const AssetNode: React.FC<{
       });
       handleLaunchResult(basePath, definition.jobName, result, true);
     } catch (error) {
-      showLaunchError(error);
+      showLaunchError(error as Error);
     }
   };
   return (
