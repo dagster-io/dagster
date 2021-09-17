@@ -137,9 +137,11 @@ const useLogsProviderWithSubscription = (runId: string) => {
     }, BATCH_INTERVAL);
   }, []);
 
+  const {nodes, loading} = state;
+
   useSubscription<PipelineRunLogsSubscription>(PIPELINE_RUN_LOGS_SUBSCRIPTION, {
     fetchPolicy: 'no-cache',
-    variables: {runId: runId, after: null},
+    variables: {runId: runId, after: nodes.length - 1},
     onSubscriptionData: ({subscriptionData}) => {
       const logs = subscriptionData.data?.pipelineRunLogs;
       if (!logs || logs.__typename === 'PipelineRunLogsSubscriptionFailure') {
@@ -160,8 +162,6 @@ const useLogsProviderWithSubscription = (runId: string) => {
       throttledSetNodes(hasMorePastEvents);
     },
   });
-
-  const {nodes, loading} = state;
 
   return React.useMemo(
     () => (nodes !== null ? {allNodes: nodes, loading} : {allNodes: [], loading}),
