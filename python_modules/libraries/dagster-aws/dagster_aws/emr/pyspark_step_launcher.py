@@ -282,11 +282,14 @@ class EmrPySparkStepLauncher(StepLauncher):
         # Dagster's logging system.
         records = parse_hadoop_log4j_records(stderr_log)
         for record in records:
-            log._log(  # pylint: disable=protected-access
-                record.level,
-                "".join(["Spark Driver stderr: ", record.logger, ": ", record.message]),
-                {},
-            )
+            if record.level:
+                log._log(  # pylint: disable=protected-access
+                    record.level,
+                    "".join(["Spark Driver stderr: ", record.logger, ": ", record.message]),
+                    {},
+                )
+            else:
+                log.debug(f"Spark Driver stderr: {record.message}")
         log.info("Spark Driver stdout: " + stdout_log)
 
     def _get_emr_step_def(self, run_id, step_key, solid_name):
