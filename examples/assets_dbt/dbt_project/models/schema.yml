@@ -1,0 +1,33 @@
+
+version: 2
+
+models:
+  - name: cereal_stats
+    description: "Statistics for each cereal"
+    columns:
+      - name: name
+        description: Name of the cereal
+      - name: type
+        description: Type of the cereal (hot or cold)
+      - name: protein_per_calorie
+        description: Grams of protein per calorie
+      - name: fat_per_calorie
+        description: Grams of fat per calorie
+  - name: hot_cereal_stats
+    description: "Statistics for each hot cereal"
+    columns:
+      - name: name
+        description: Name of the cereal
+      - name: protein_per_calorie
+        description: Grams of protein per calorie
+      - name: fat_per_calorie
+        description: Grams of fat per calorie
+  - name: cold_cereal_stats
+    description: "Statistics for each cold cereal"
+    columns:
+      - name: name
+        description: Name of the cereal
+      - name: protein_per_calorie
+        description: Grams of protein per calorie
+      - name: fat_per_calorie
+        description: Grams of fat per calorie
