@@ -15,7 +15,7 @@ export const RefreshableCountdown = (props: Props) => {
   const {refreshing, seconds, onRefresh} = props;
   return (
     <Group direction="row" spacing={8} alignItems="center">
-      <span style={{color: Colors.GRAY3, fontVariantNumeric: 'tabular-nums'}}>
+      <span style={{color: Colors.GRAY3, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap'}}>
         {refreshing ? 'Refreshing data…' : `0:${seconds < 10 ? `0${seconds}` : seconds}`}
       </span>
       <Tooltip content="Refresh now" position="bottom">

@@ -71,6 +71,15 @@ const SettingsRoot = () => {
                   />
                 ),
               },
+              {
+                key: 'Experimental Asset APIs',
+                value: (
+                  <Switch
+                    checked={flags.includes(FeatureFlag.flagAssetGraph)}
+                    onChange={() => toggleFlag(FeatureFlag.flagAssetGraph)}
+                  />
+                ),
+              },
             ]}
           />
         </Group>

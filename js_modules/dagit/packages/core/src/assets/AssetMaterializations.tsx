@@ -24,9 +24,10 @@ import {HistoricalMaterialization, useMaterializationBuckets} from './useMateria
 interface Props {
   assetKey: AssetKey;
   asOf: string | null;
+  asSidebarSection?: boolean;
 }
 
-export const AssetMaterializations: React.FC<Props> = ({assetKey, asOf}) => {
+export const AssetMaterializations: React.FC<Props> = ({assetKey, asOf, asSidebarSection}) => {
   const before = React.useMemo(() => (asOf ? `${Number(asOf) + 1}` : ''), [asOf]);
   const {data, loading} = useQuery<AssetQuery, AssetQueryVariables>(ASSET_QUERY, {
     variables: {
@@ -86,9 +87,14 @@ export const AssetMaterializations: React.FC<Props> = ({assetKey, asOf}) => {
         assetMaterializations={reversed}
         isPartitioned={isPartitioned}
         xAxis={xAxis}
+        asSidebarSection={asSidebarSection}
       />
     );
   };
+
+  if (asSidebarSection) {
+    return content();
+  }
 
   return (
     <div>
@@ -124,6 +130,7 @@ const AssetMaterializationMatrixAndGraph: React.FC<{
   assetMaterializations: HistoricalMaterialization[];
   isPartitioned: boolean;
   xAxis: 'partition' | 'time';
+  asSidebarSection?: boolean;
 }> = (props) => {
   const {assetMaterializations, isPartitioned, xAxis} = props;
   const [xHover, setXHover] = React.useState<string | number | null>(null);
@@ -136,22 +143,32 @@ const AssetMaterializationMatrixAndGraph: React.FC<{
 
   return (
     <>
-      <AssetMaterializationMatrix
-        isPartitioned={isPartitioned}
-        materializations={assetMaterializations}
-        xAxis={xAxis}
-        xHover={xHover}
-        onHoverX={(x) => x !== xHover && setXHover(x)}
-        graphDataByMetadataLabel={graphDataByMetadataLabel}
-        graphedLabels={graphedLabels}
-        setGraphedLabels={setGraphedLabels}
-      />
-      <div style={{display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between'}}>
+      {!props.asSidebarSection && (
+        <AssetMaterializationMatrix
+          isPartitioned={isPartitioned}
+          materializations={assetMaterializations}
+          xAxis={xAxis}
+          xHover={xHover}
+          onHoverX={(x) => x !== xHover && setXHover(x)}
+          graphDataByMetadataLabel={graphDataByMetadataLabel}
+          graphedLabels={graphedLabels}
+          setGraphedLabels={setGraphedLabels}
+        />
+      )}
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          justifyContent: 'space-between',
+          flexDirection: props.asSidebarSection ? 'column' : 'row',
+          marginTop: props.asSidebarSection ? 0 : 30,
+        }}
+      >
         {[...graphedLabels].sort().map((label) => (
           <AssetValueGraph
             key={label}
             label={label}
-            width={graphedLabels.length === 1 ? '100%' : '48%'}
+            width={graphedLabels.length === 1 || props.asSidebarSection ? '100%' : '48%'}
             data={graphDataByMetadataLabel[label]}
             xHover={xHover}
             onHoverX={(x) => x !== xHover && setXHover(x)}

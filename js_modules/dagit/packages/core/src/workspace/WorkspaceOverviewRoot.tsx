@@ -18,7 +18,7 @@ import {workspacePath} from './workspacePath';
 
 export const WorkspaceOverviewRoot = () => {
   const {loading, error, options} = useRepositoryOptions();
-  const {flagPipelineModeTuples} = useFeatureFlags();
+  const {flagPipelineModeTuples, flagAssetGraph} = useFeatureFlags();
 
   const content = () => {
     if (loading) {
@@ -59,6 +59,7 @@ export const WorkspaceOverviewRoot = () => {
               <th>Pipelines</th>
             )}
             <th>{flagPipelineModeTuples ? 'Ops' : 'Solids'}</th>
+            {flagAssetGraph ? <th>Assets</th> : null}
             <th>Schedules</th>
             <th>Sensors</th>
           </tr>
@@ -94,6 +95,11 @@ export const WorkspaceOverviewRoot = () => {
                     {flagPipelineModeTuples ? 'Ops' : 'Solids'}
                   </Link>
                 </td>
+                {flagAssetGraph ? (
+                  <td>
+                    <Link to={workspacePath(name, location, '/assets')}>Assets</Link>
+                  </td>
+                ) : null}
                 <td>
                   <Link to={workspacePath(name, location, '/schedules')}>Schedules</Link>
                 </td>
