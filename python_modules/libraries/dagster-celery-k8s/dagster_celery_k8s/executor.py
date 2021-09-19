@@ -125,6 +125,8 @@ def celery_k8s_job_executor(init_context):
         service_account_name=exc_cfg.get("service_account_name"),
         env_config_maps=exc_cfg.get("env_config_maps"),
         env_secrets=exc_cfg.get("env_secrets"),
+        volume_mounts=exc_cfg.get("volume_mounts"),
+        volumes=exc_cfg.get("volumes"),
     )
 
     # Set on the instance but overrideable here

@@ -391,6 +391,31 @@ runLauncher:
       #   - "ENV_VAR"
       envVars: []
 
+      # Additional volumes that should be included in the Job's Pod. Each
+      # volume is expressed as a dict that can be used to construct a V1Volume
+      # using the Kubernetes Python client. See:
+      # https://github.com/kubernetes-client/python/blob/master/kubernetes/docs/V1Volume.md
+      #
+      # Example:
+      #
+      # volumes:
+      #   - name: my-volume
+      #     config_map: my-config-map
+      volumes: []
+
+      # Additional volume mounts that should be included in the container in the Job's Pod. Each
+      # volume mount is expressed as a dict that can be used to construct a V1VolumeMount
+      # using the Kubernetes Python client. See:
+      # https://github.com/kubernetes-client/python/blob/master/kubernetes/docs/V1VolumeMount.md
+      # Example:
+      #
+      # volumeMounts:
+      #   - name: test-volume
+      #     mount_path: /opt/dagster/test_folder
+      #     sub_path: test_file.yaml
+      volumeMounts: []
+
+
     # This configuration will only be used if the CeleryK8sRunLauncher is selected
     celeryK8sRunLauncher:
       # The Celery workers can be deployed with a fixed image (no user code included)

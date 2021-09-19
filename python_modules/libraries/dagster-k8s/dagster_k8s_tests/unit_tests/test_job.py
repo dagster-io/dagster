@@ -1,3 +1,4 @@
+import pytest
 from dagster import graph
 from dagster.core.test_utils import environ
 from dagster_k8s import DagsterK8sJobConfig, construct_dagster_k8s_job
@@ -97,8 +98,9 @@ def test_construct_dagster_k8s_job_with_mounts():
         postgres_password_secret=None,
         env_config_maps=None,
         env_secrets=None,
-        volume_mounts=[
-            {"name": "foo", "path": "biz/buz", "sub_path": "file.txt", "configmap": "settings-cm"}
+        volume_mounts=[{"name": "foo", "mount_path": "biz/buz", "sub_path": "file.txt"}],
+        volumes=[
+            {"name": "foo", "config_map": {"name": "settings-cm"}},
         ],
     )
     job = construct_dagster_k8s_job(cfg, ["foo", "bar"], "job123").to_dict()
@@ -108,6 +110,7 @@ def test_construct_dagster_k8s_job_with_mounts():
         volume for volume in job["spec"]["template"]["spec"]["volumes"] if volume["name"] == "foo"
     ]
     assert len(foo_volumes) == 1
+    assert foo_volumes[0]["config_map"]["name"] == "settings-cm"
 
     assert len(job["spec"]["template"]["spec"]["containers"][0]["volume_mounts"]) == 2
     foo_volumes_mounts = [
@@ -127,11 +130,36 @@ def test_construct_dagster_k8s_job_with_mounts():
         postgres_password_secret=None,
         env_config_maps=None,
         env_secrets=None,
-        volume_mounts=[
-            {"name": "foo", "path": "biz/buz", "sub_path": "file.txt", "secret": "settings-secret"}
+        volume_mounts=[{"name": "foo", "mount_path": "biz/buz", "sub_path": "file.txt"}],
+        volumes=[
+            {"name": "foo", "secret": {"secret_name": "settings-secret"}},
         ],
     )
-    construct_dagster_k8s_job(cfg, ["foo", "bar"], "job123").to_dict()
+    job = construct_dagster_k8s_job(cfg, ["foo", "bar"], "job123").to_dict()
+    assert len(job["spec"]["template"]["spec"]["volumes"]) == 2
+    foo_volumes = [
+        volume for volume in job["spec"]["template"]["spec"]["volumes"] if volume["name"] == "foo"
+    ]
+    assert len(foo_volumes) == 1
+    assert foo_volumes[0]["secret"]["secret_name"] == "settings-secret"
+
+    cfg_with_invalid_volume_key = DagsterK8sJobConfig(
+        job_image="test/foo:latest",
+        dagster_home="/opt/dagster/dagster_home",
+        image_pull_policy="Always",
+        image_pull_secrets=[{"name": "my_secret"}],
+        service_account_name=None,
+        instance_config_map="some-instance-configmap",
+        postgres_password_secret=None,
+        env_config_maps=None,
+        env_secrets=None,
+        volume_mounts=[{"name": "foo", "mount_path": "biz/buz", "sub_path": "file.txt"}],
+        volumes=[
+            {"name": "foo", "invalid_key": "settings-secret"},
+        ],
+    )
+    with pytest.raises(Exception, match="Unexpected keys in model class V1Volume: {'invalid_key'}"):
+        construct_dagster_k8s_job(cfg_with_invalid_volume_key, ["foo", "bar"], "job123").to_dict()
 
 
 def test_construct_dagster_k8s_job_with_env():

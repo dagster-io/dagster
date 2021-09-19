@@ -88,6 +88,11 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables
         env_vars (Optional[List[str]]): A list of environment variables to inject into the Job.
             Default: ``[]``. See: https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables
+        volume_mounts (Optional[List[Permissive]]): A list of volume mounts to include in the job's
+            container. Default: ``[]``. See:
+            https://github.com/kubernetes-client/python/blob/master/kubernetes/docs/V1VolumeMount.md
+        volumes (Optional[List[Permissive]]): A list of volumes to include in the Job's Pod. Default: ``[]``. See:
+            https://github.com/kubernetes-client/python/blob/master/kubernetes/docs/V1Volume.md
     """
 
     def __init__(
@@ -107,6 +112,8 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         env_secrets=None,
         env_vars=None,
         k8s_client_batch_api=None,
+        volume_mounts=None,
+        volumes=None,
     ):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self.job_namespace = check.str_param(job_namespace, "job_namespace")
@@ -144,6 +151,8 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         )
         self._env_secrets = check.opt_list_param(env_secrets, "env_secrets", of_type=str)
         self._env_vars = check.opt_list_param(env_vars, "env_vars", of_type=str)
+        self._volume_mounts = check.opt_list_param(volume_mounts, "volume_mounts")
+        self._volumes = check.opt_list_param(volumes, "volumes")
 
         super().__init__()
 
@@ -166,6 +175,14 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     @property
     def env_secrets(self):
         return self._env_secrets
+
+    @property
+    def volume_mounts(self):
+        return self._volume_mounts
+
+    @property
+    def volumes(self):
+        return self._volumes
 
     @property
     def _batch_api(self):
@@ -218,6 +235,8 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                 ),
                 env_secrets=check.opt_list_param(self._env_secrets, "env_secrets", of_type=str),
                 env_vars=check.opt_list_param(self._env_vars, "env_vars", of_type=str),
+                volume_mounts=self._volume_mounts,
+                volumes=self._volumes,
             )
             return self._job_config
 
@@ -241,6 +260,8 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             ),
             env_secrets=check.opt_list_param(self._env_secrets, "env_secrets", of_type=str),
             env_vars=check.opt_list_param(self._env_vars, "env_vars", of_type=str),
+            volume_mounts=self._volume_mounts,
+            volumes=self._volumes,
         )
 
     def launch_run(self, context: LaunchRunContext) -> None:

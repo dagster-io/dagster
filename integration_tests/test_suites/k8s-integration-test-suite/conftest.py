@@ -16,6 +16,7 @@ from dagster_k8s_test_infra.helm import (
     TEST_AWS_CONFIGMAP_NAME,
     TEST_IMAGE_PULL_SECRET_NAME,
     TEST_SECRET_NAME,
+    TEST_VOLUME_CONFIGMAP_NAME,
 )
 from dagster_k8s_test_infra.integration_utils import image_pull_policy
 from dagster_test.test_project import build_and_tag_test_image, get_test_project_docker_image
@@ -64,6 +65,14 @@ def run_launcher(
         env_config_maps=["dagster-pipeline-env", "test-env-configmap"]
         + ([TEST_AWS_CONFIGMAP_NAME] if not IS_BUILDKITE else []),
         env_secrets=["test-env-secret"],
+        volume_mounts=[
+            {
+                "name": "test-volume",
+                "mount_path": "/opt/dagster/test_mount_path/volume_mounted_file.yaml",
+                "sub_path": "volume_mounted_file.yaml",
+            }
+        ],
+        volumes=[{"name": "test-volume", "config_map": {"name": TEST_VOLUME_CONFIGMAP_NAME}}],
     )
 
 
