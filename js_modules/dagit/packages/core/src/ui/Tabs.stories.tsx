@@ -1,9 +1,9 @@
 import {Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
+
 import {ColorsWIP} from './Colors';
 import {Group} from './Group';
 import {IconWIP} from './Icon';
-
 import {Tabs, Tab} from './Tabs';
 
 // eslint-disable-next-line import/no-default-export
