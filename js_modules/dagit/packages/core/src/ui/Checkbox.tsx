@@ -47,7 +47,7 @@ const StarIcon: React.FC<IconProps> = ({checked, fillColor}) => (
 );
 
 const SwitchIcon: React.FC<IconProps> = ({checked, indeterminate, disabled, fillColor}) => (
-  <svg width="42px" height="28px" viewBox="-3 -3 42 28" version="1.1">
+  <svg width="42px" height="28px" viewBox="-3 -3 42 28">
     <defs>
       <linearGradient x1="50%" y1="0%" x2="50%" y2="100%" id="innerShadow">
         <stop stopColor="#000" stopOpacity="0.2" offset="0%" />
@@ -84,7 +84,7 @@ const CheckIcon: React.FC<IconProps> = ({checked, indeterminate, fillColor}) => 
   <svg width="24px" height="24px" viewBox="-3 -3 24 24">
     <path
       d="M16,0 C17.1,0 18,0.9 18,2 L18,2 L18,16 C18,17.1 17.1,18 16,18 L16,18 L2,18 C0.9,18 0,17.1 0,16 L0,16 L0,2 C0,0.9 0.9,0 2,0 L2,0 Z"
-      id="Fill"
+      id="Background"
       className=" interaction-focus-outline"
       style={{transition: 'fill 100ms linear'}}
       fill={ColorsWIP.White}
@@ -118,6 +118,7 @@ const CheckIcon: React.FC<IconProps> = ({checked, indeterminate, fillColor}) => 
       points="3.5 9 7 12.5 14.5 5.0"
     />
     <line
+      id="Indeterminate"
       x1="5"
       y1="9"
       x2="13"
@@ -131,7 +132,6 @@ const CheckIcon: React.FC<IconProps> = ({checked, indeterminate, fillColor}) => 
       strokeDasharray="8"
       strokeLinecap="round"
       strokeDashoffset={indeterminate ? '0' : '8'}
-      id="Indeterminate"
     />
   </svg>
 );
