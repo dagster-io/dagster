@@ -18,7 +18,7 @@ def do_something_else(arg1):
     return arg1
 
 
-@graph(ins={"arg1": GraphIn(int)}, out=GraphOut(int))
+@graph(ins={"arg1": GraphIn()}, out=GraphOut())
 def do_two_things(arg1):
     do_something()
     return do_something_else(arg1)

@@ -65,6 +65,7 @@ class _Graph:
             decorator_name="@graph",
             graph_name=self.name,
             fn=fn,
+            # TODO: yuhan - ins, out -> input_defs, output_defs
             provided_input_defs=input_defs,
             provided_output_defs=output_defs,
             ignore_output_from_composition_fn=False,

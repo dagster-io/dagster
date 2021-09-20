@@ -389,7 +389,7 @@ class GraphIn(
     NamedTuple(
         "_GraphIn",
         [
-            ("dagster_type", Union[DagsterType, Type[NoValueSentinel]]),
+            # ("dagster_type", Union[DagsterType, Type[NoValueSentinel]]),
             ("description", Optional[str]),
         ],
     )
@@ -405,17 +405,17 @@ class GraphIn(
         description (Optional[str]): Human-readable description of the input.
     """
 
-    def __new__(cls, dagster_type=NoValueSentinel, description=None):
+    def __new__(cls, description=None):
         return super(GraphIn, cls).__new__(
             cls,
-            dagster_type=dagster_type,
+            # dagster_type=dagster_type,
             description=description,
         )
 
     def to_definition(self, name: str) -> InputDefinition:
-        dagster_type = self.dagster_type if self.dagster_type is not NoValueSentinel else None
+        # dagster_type = self.dagster_type if self.dagster_type is not NoValueSentinel else None
         return InputDefinition(
             name=name,
-            dagster_type=dagster_type,
+            # dagster_type=dagster_type,
             description=self.description,
         )

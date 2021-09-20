@@ -397,7 +397,7 @@ class GraphOut(
     NamedTuple(
         "_GraphOut",
         [
-            ("dagster_type", Union[DagsterType, Type[NoValueSentinel]]),
+            # ("dagster_type", Union[DagsterType, Type[NoValueSentinel]]),
             ("description", Optional[str]),
         ],
     )
@@ -413,17 +413,17 @@ class GraphOut(
         description (Optional[str]): Human-readable description of the output.
     """
 
-    def __new__(cls, dagster_type=NoValueSentinel, description=None):
+    def __new__(cls, description=None):
         return super(GraphOut, cls).__new__(
             cls,
-            dagster_type=dagster_type,
+            # dagster_type=dagster_type,
             description=description,
         )
 
     def to_definition(self, name: Optional[str]) -> "OutputDefinition":
-        dagster_type = self.dagster_type if self.dagster_type is not NoValueSentinel else None
+        # dagster_type = self.dagster_type if self.dagster_type is not NoValueSentinel else None
         return OutputDefinition(
-            dagster_type=dagster_type,
+            # dagster_type=dagster_type,
             name=name,
             description=self.description,
         )

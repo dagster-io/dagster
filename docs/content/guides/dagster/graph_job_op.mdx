@@ -710,7 +710,7 @@ def do_something_else(arg1):
     return arg1
 
 
-@graph(ins={"arg1": GraphIn(int)}, out=GraphOut(int))
+@graph(ins={"arg1": GraphIn()}, out=GraphOut())
 def do_two_things(arg1):
     do_something()
     return do_something_else(arg1)
@@ -725,6 +725,8 @@ def do_yet_more(arg1):
 def do_it_all():
     do_yet_more(do_two_things(one()))
 ```
+
+Note that `GraphIn` and `GraphOut` no longer take Dagster types, and they now respect the types specified on the corresponding `Op` instead.
 
 ### A composite solid with multiple outputs
 
