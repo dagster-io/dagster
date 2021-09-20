@@ -190,11 +190,19 @@ export const Checkbox = styled(
     height: 0;
     width: 0;
   }
+
   input:focus + svg {
     .interaction-focus-outline {
       stroke: rgba(58, 151, 212, 0.6);
       stroke-width: 6px;
       paint-order: stroke fill;
+    }
+  }
+  /* Focus outline only when using keyboard, not when focusing via mouse,
+     if focus-visible is supported and this rule is understood. */
+  input:focus:not(input:focus-visible) + svg {
+    .interaction-focus-outline {
+      stroke-width: 0;
     }
   }
 
