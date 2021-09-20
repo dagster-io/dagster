@@ -1,0 +1,5 @@
+solids:
+  read_csv:
+    inputs:
+      csv_path:
+        value: 2343

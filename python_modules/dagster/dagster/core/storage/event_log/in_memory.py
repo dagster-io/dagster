@@ -1,3 +1,4 @@
+import logging
 import time
 from collections import OrderedDict, defaultdict
 from typing import Dict, Iterable, Optional
@@ -48,7 +49,13 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
     def from_config_value(cls, inst_data, config_value):
         return cls(inst_data)
 
-    def get_logs_for_run(self, run_id, cursor=-1, of_type=None):
+    def get_logs_for_run(
+        self,
+        run_id,
+        cursor=-1,
+        of_type=None,
+        limit=None,
+    ):
         check.str_param(run_id, "run_id")
         check.int_param(cursor, "cursor")
         check.invariant(
@@ -59,7 +66,7 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
 
         cursor = cursor + 1
         if of_type:
-            return list(
+            events = list(
                 filter(
                     lambda r: r.is_dagster_event
                     and r.dagster_event.event_type_value == of_type.value,
@@ -67,7 +74,12 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
                 )
             )
         else:
-            return self._logs[run_id][cursor:]
+            events = self._logs[run_id][cursor:]
+
+        if limit:
+            events = events[:limit]
+
+        return events
 
     def store_event(self, event):
         check.inst_param(event, "event", EventLogEntry)
@@ -78,8 +90,14 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
             materialization = event.dagster_event.step_materialization_data.materialization
             self._asset_tags[event.dagster_event.asset_key] = materialization.tags or {}
 
-        for handler in self._handlers[run_id]:
-            handler(event)
+        # snapshot handlers
+        handlers = list(self._handlers[run_id])
+
+        for handler in handlers:
+            try:
+                handler(event)
+            except Exception:  # pylint: disable=broad-except
+                logging.exception("Exception in callback for event watch on run %s.", run_id)
 
     def delete_events(self, run_id):
         del self._logs[run_id]
@@ -87,7 +105,10 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
     def upgrade(self):
         pass
 
-    def reindex(self, print_fn=lambda _: None, force=False):
+    def reindex_events(self, print_fn=None, force=False):
+        pass
+
+    def reindex_assets(self, print_fn=None, force=False):
         pass
 
     def wipe(self):
@@ -108,7 +129,7 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
         self,
         event_records_filter: Optional[EventRecordsFilter] = None,
         limit: Optional[int] = None,
-        ascending: Optional[bool] = False,
+        ascending: bool = False,
     ) -> Iterable[EventLogRecord]:
         after_id = (
             (

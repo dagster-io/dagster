@@ -18,7 +18,12 @@ from typing import (
 from dagster import check
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.serdes import whitelist_for_serdes
+from dagster.serdes.serdes import (
+    DefaultNamedTupleSerializer,
+    WhitelistMap,
+    register_serdes_tuple_fallbacks,
+    whitelist_for_serdes,
+)
 from dagster.utils import frozentags
 
 from .hook import HookDefinition
@@ -32,7 +37,18 @@ if TYPE_CHECKING:
     from .solid import NodeDefinition
 
 
-class SolidInvocation(namedtuple("Solid", "name alias tags hook_defs retry_policy")):
+class SolidInvocation(
+    NamedTuple(
+        "Solid",
+        [
+            ("name", str),
+            ("alias", Optional[str]),
+            ("tags", Dict[str, Any]),
+            ("hook_defs", AbstractSet[HookDefinition]),
+            ("retry_policy", Optional[RetryPolicy]),
+        ],
+    )
+):
     """Identifies an instance of a solid in a pipeline dependency structure.
 
     Args:
@@ -93,15 +109,9 @@ class SolidInvocation(namedtuple("Solid", "name alias tags hook_defs retry_polic
         )
 
 
-class Solid:
+class Node:
     """
-    Solid invocation within a pipeline. Defined by its name inside the pipeline.
-
-    Attributes:
-        name (str):
-            Name of the solid inside the pipeline. Must be unique per-pipeline.
-        definition (NodeDefinition):
-            Definition of the Node.
+    Node invocation within a graph. Identified by its name inside the graph.
     """
 
     def __init__(
@@ -166,10 +176,23 @@ class Solid:
         return self.definition.output_def_named(name)
 
     @property
-    def is_composite(self) -> bool:
+    def is_graph(self) -> bool:
         from .graph import GraphDefinition
 
         return isinstance(self.definition, GraphDefinition)
+
+    def describe_node(self) -> str:
+        from .solid import CompositeSolidDefinition, SolidDefinition
+        from .op import OpDefinition
+
+        if isinstance(self.definition, CompositeSolidDefinition):
+            return f"composite solid '{self.name}'"
+        elif isinstance(self.definition, OpDefinition):
+            return f"op '{self.name}'"
+        elif isinstance(self.definition, SolidDefinition):
+            return f"solid '{self.name}'"
+        else:
+            return f"graph '{self.name}'"
 
     @property
     def input_dict(self):
@@ -190,7 +213,14 @@ class Solid:
         )
 
     def container_mapped_input(self, input_name: str) -> InputMapping:
-        return self.graph_definition.input_mapping_for_pointer(InputPointer(self.name, input_name))
+        mapping = self.graph_definition.input_mapping_for_pointer(
+            InputPointer(self.name, input_name)
+        )
+        if mapping is None:
+            check.failed(
+                f"container does not map input {input_name}, check container_maps_input first"
+            )
+        return mapping
 
     def container_maps_fan_in_input(self, input_name: str, fan_in_index: int) -> bool:
         return (
@@ -201,9 +231,16 @@ class Solid:
         )
 
     def container_mapped_fan_in_input(self, input_name: str, fan_in_index: int) -> InputMapping:
-        return self.graph_definition.input_mapping_for_pointer(
+        mapping = self.graph_definition.input_mapping_for_pointer(
             FanInInputPointer(self.name, input_name, fan_in_index)
         )
+        if mapping is None:
+            check.failed(
+                f"container does not map fan-in {input_name} idx {fan_in_index}, check "
+                "container_maps_fan_in_input first"
+            )
+
+        return mapping
 
     @property
     def hook_defs(self) -> AbstractSet[HookDefinition]:
@@ -214,13 +251,38 @@ class Solid:
         return self._retry_policy
 
 
-@whitelist_for_serdes
-class SolidHandle(namedtuple("_SolidHandle", "name parent")):
-    def __new__(cls, name: str, parent: Optional["SolidHandle"]):
-        return super(SolidHandle, cls).__new__(
+class NodeHandleSerializer(DefaultNamedTupleSerializer):
+    @classmethod
+    def value_to_storage_dict(
+        cls,
+        value: NamedTuple,
+        whitelist_map: WhitelistMap,
+        descent_path: str,
+    ) -> Dict[str, Any]:
+        storage = super().value_to_storage_dict(
+            value,
+            whitelist_map,
+            descent_path,
+        )
+        # persist using legacy name SolidHandle
+        storage["__class__"] = "SolidHandle"
+        return storage
+
+
+@whitelist_for_serdes(serializer=NodeHandleSerializer)
+class NodeHandle(
+    # mypy does not yet support recursive types
+    namedtuple("_NodeHandle", "name parent")
+):
+    """
+    A structured object to identify nodes in the potentially recursive graph structure.
+    """
+
+    def __new__(cls, name: str, parent: Optional["NodeHandle"]):
+        return super(NodeHandle, cls).__new__(
             cls,
             check.str_param(name, "name"),
-            check.opt_inst_param(parent, "parent", SolidHandle),
+            check.opt_inst_param(parent, "parent", NodeHandle),
         )
 
     def __str__(self):
@@ -230,7 +292,7 @@ class SolidHandle(namedtuple("_SolidHandle", "name parent")):
     def path(self) -> List[str]:
         """Return a list representation of the handle.
 
-        Inverse of SolidHandle.from_path.
+        Inverse of NodeHandle.from_path.
 
         Returns:
             List[str]:
@@ -246,20 +308,20 @@ class SolidHandle(namedtuple("_SolidHandle", "name parent")):
     def to_string(self) -> str:
         """Return a unique string representation of the handle.
 
-        Inverse of SolidHandle.from_string.
+        Inverse of NodeHandle.from_string.
         """
         return self.parent.to_string() + "." + self.name if self.parent else self.name
 
-    def is_or_descends_from(self, handle: "SolidHandle") -> bool:
+    def is_or_descends_from(self, handle: "NodeHandle") -> bool:
         """Check if the handle is or descends from another handle.
 
         Args:
-            handle (SolidHandle): The handle to check against.
+            handle (NodeHandle): The handle to check against.
 
         Returns:
             bool:
         """
-        check.inst_param(handle, "handle", SolidHandle)
+        check.inst_param(handle, "handle", NodeHandle)
 
         for idx in range(len(handle.path)):
             if idx >= len(self.path):
@@ -268,25 +330,25 @@ class SolidHandle(namedtuple("_SolidHandle", "name parent")):
                 return False
         return True
 
-    def pop(self, ancestor: "SolidHandle") -> Optional["SolidHandle"]:
+    def pop(self, ancestor: "NodeHandle") -> Optional["NodeHandle"]:
         """Return a copy of the handle with some of its ancestors pruned.
 
         Args:
-            ancestor (SolidHandle): Handle to an ancestor of the current handle.
+            ancestor (NodeHandle): Handle to an ancestor of the current handle.
 
         Returns:
-            SolidHandle:
+            NodeHandle:
 
         Example:
 
         .. code-block:: python
 
-            handle = SolidHandle('baz', SolidHandle('bar', SolidHandle('foo', None)))
-            ancestor = SolidHandle('bar', SolidHandle('foo', None))
-            assert handle.pop(ancestor) == SolidHandle('baz', None)
+            handle = NodeHandle('baz', NodeHandle('bar', NodeHandle('foo', None)))
+            ancestor = NodeHandle('bar', NodeHandle('foo', None))
+            assert handle.pop(ancestor) == NodeHandle('baz', None)
         """
 
-        check.inst_param(ancestor, "ancestor", SolidHandle)
+        check.inst_param(ancestor, "ancestor", NodeHandle)
         check.invariant(
             self.is_or_descends_from(ancestor),
             "Handle {handle} does not descend from {ancestor}".format(
@@ -294,76 +356,86 @@ class SolidHandle(namedtuple("_SolidHandle", "name parent")):
             ),
         )
 
-        return SolidHandle.from_path(self.path[len(ancestor.path) :])
+        return NodeHandle.from_path(self.path[len(ancestor.path) :])
 
-    def with_ancestor(self, ancestor: "SolidHandle") -> Optional["SolidHandle"]:
+    def with_ancestor(self, ancestor: "NodeHandle") -> Optional["NodeHandle"]:
         """Returns a copy of the handle with an ancestor grafted on.
 
         Args:
-            ancestor (SolidHandle): Handle to the new ancestor.
+            ancestor (NodeHandle): Handle to the new ancestor.
 
         Returns:
-            SolidHandle:
+            NodeHandle:
 
         Example:
 
         .. code-block:: python
 
-            handle = SolidHandle('baz', SolidHandle('bar', SolidHandle('foo', None)))
-            ancestor = SolidHandle('quux' None)
-            assert handle.with_ancestor(ancestor) == SolidHandle(
-                'baz', SolidHandle('bar', SolidHandle('foo', SolidHandle('quux', None)))
+            handle = NodeHandle('baz', NodeHandle('bar', NodeHandle('foo', None)))
+            ancestor = NodeHandle('quux' None)
+            assert handle.with_ancestor(ancestor) == NodeHandle(
+                'baz', NodeHandle('bar', NodeHandle('foo', NodeHandle('quux', None)))
             )
         """
-        check.opt_inst_param(ancestor, "ancestor", SolidHandle)
+        check.opt_inst_param(ancestor, "ancestor", NodeHandle)
 
-        return SolidHandle.from_path((ancestor.path if ancestor else []) + self.path)
+        return NodeHandle.from_path((ancestor.path if ancestor else []) + self.path)
 
     @staticmethod
-    def from_path(path: List[str]) -> Optional["SolidHandle"]:
+    def from_path(path: List[str]) -> "NodeHandle":
         check.list_param(path, "path", of_type=str)
 
-        cur = None
+        cur: Optional["NodeHandle"] = None
         while len(path) > 0:
-            cur = SolidHandle(name=path.pop(0), parent=cur)
+            cur = NodeHandle(name=path.pop(0), parent=cur)
+
+        if cur is None:
+            check.failed(f"Invalid handle path {path}")
+
         return cur
 
     @staticmethod
-    def from_string(handle_str: str) -> Optional["SolidHandle"]:
+    def from_string(handle_str: str) -> "NodeHandle":
         check.str_param(handle_str, "handle_str")
 
         path = handle_str.split(".")
-        return SolidHandle.from_path(path)
+        return NodeHandle.from_path(path)
 
     @classmethod
-    def from_dict(cls, dict_repr: Dict[str, Any]) -> Optional["SolidHandle"]:
-        """This method makes it possible to load a potentially nested SolidHandle after a
-        roundtrip through json.loads(json.dumps(SolidHandle._asdict()))"""
+    def from_dict(cls, dict_repr: Dict[str, Any]) -> Optional["NodeHandle"]:
+        """This method makes it possible to load a potentially nested NodeHandle after a
+        roundtrip through json.loads(json.dumps(NodeHandle._asdict()))"""
 
         check.dict_param(dict_repr, "dict_repr", key_type=str)
         check.invariant(
-            "name" in dict_repr, "Dict representation of SolidHandle must have a 'name' key"
+            "name" in dict_repr, "Dict representation of NodeHandle must have a 'name' key"
         )
         check.invariant(
-            "parent" in dict_repr, "Dict representation of SolidHandle must have a 'parent' key"
+            "parent" in dict_repr, "Dict representation of NodeHandle must have a 'parent' key"
         )
 
         if isinstance(dict_repr["parent"], (list, tuple)):
-            dict_repr["parent"] = SolidHandle.from_dict(
+            dict_repr["parent"] = NodeHandle.from_dict(
                 {
                     "name": dict_repr["parent"][0],
                     "parent": dict_repr["parent"][1],
                 }
             )
 
-        return SolidHandle(**{k: dict_repr[k] for k in ["name", "parent"]})
+        return NodeHandle(**{k: dict_repr[k] for k in ["name", "parent"]})
 
 
-class SolidInputHandle(namedtuple("_SolidInputHandle", "solid input_def")):
-    def __new__(cls, solid: Solid, input_def: InputDefinition):
+# previous name for NodeHandle was SolidHandle
+register_serdes_tuple_fallbacks({"SolidHandle": NodeHandle})
+
+
+class SolidInputHandle(
+    NamedTuple("_SolidInputHandle", [("solid", Node), ("input_def", InputDefinition)])
+):
+    def __new__(cls, solid: Node, input_def: InputDefinition):
         return super(SolidInputHandle, cls).__new__(
             cls,
-            check.inst_param(solid, "solid", Solid),
+            check.inst_param(solid, "solid", Node),
             check.inst_param(input_def, "input_def", InputDefinition),
         )
 
@@ -395,11 +467,13 @@ class SolidInputHandle(namedtuple("_SolidInputHandle", "solid input_def")):
         return self.input_def.name
 
 
-class SolidOutputHandle(namedtuple("_SolidOutputHandle", "solid output_def")):
-    def __new__(cls, solid: Solid, output_def: OutputDefinition):
+class SolidOutputHandle(
+    NamedTuple("_SolidOutputHandle", [("solid", Node), ("output_def", OutputDefinition)])
+):
+    def __new__(cls, solid: Node, output_def: OutputDefinition):
         return super(SolidOutputHandle, cls).__new__(
             cls,
-            check.inst_param(solid, "solid", Solid),
+            check.inst_param(solid, "solid", Node),
             check.inst_param(output_def, "output_def", OutputDefinition),
         )
 
@@ -451,7 +525,10 @@ class IDependencyDefinition(ABC):  # pylint: disable=no-init
 
 
 class DependencyDefinition(
-    namedtuple("_DependencyDefinition", "solid output description"), IDependencyDefinition
+    NamedTuple(
+        "_DependencyDefinition", [("solid", str), ("output", str), ("description", Optional[str])]
+    ),
+    IDependencyDefinition,
 ):
     """Represents an edge in the DAG of solid instances forming a pipeline.
 
@@ -504,7 +581,11 @@ class DependencyDefinition(
 
 
 class MultiDependencyDefinition(
-    namedtuple("_MultiDependencyDefinition", "dependencies"), IDependencyDefinition
+    NamedTuple(
+        "_MultiDependencyDefinition",
+        [("dependencies", List[Union[DependencyDefinition, Type["MappedInputPlaceholder"]]])],
+    ),
+    IDependencyDefinition,
 ):
     """Represents a fan-in edge in the DAG of solid instances forming a pipeline.
 
@@ -602,12 +683,12 @@ InputToOutputHandleDict = Dict[SolidInputHandle, DepTypeAndOutputHandles]
 
 
 def _create_handle_dict(
-    solid_dict: Dict[str, Solid],
+    solid_dict: Dict[str, Node],
     dep_dict: Dict[str, Dict[str, IDependencyDefinition]],
 ) -> InputToOutputHandleDict:
     from .composition import MappedInputPlaceholder
 
-    check.dict_param(solid_dict, "solid_dict", key_type=str, value_type=Solid)
+    check.dict_param(solid_dict, "solid_dict", key_type=str, value_type=Node)
     check.two_dim_dict_param(dep_dict, "dep_dict", value_type=IDependencyDefinition)
 
     handle_dict: InputToOutputHandleDict = {}
@@ -650,7 +731,7 @@ def _create_handle_dict(
 
 class DependencyStructure:
     @staticmethod
-    def from_definitions(solids: Dict[str, Solid], dep_dict: Dict[str, Any]):
+    def from_definitions(solids: Dict[str, Node], dep_dict: Dict[str, Any]):
         return DependencyStructure(list(dep_dict.keys()), _create_handle_dict(solids, dep_dict))
 
     def __init__(self, solid_names: List[str], handle_dict: InputToOutputHandleDict):
@@ -667,7 +748,7 @@ class DependencyStructure:
         # solid_name => output_handle => list[input_handle]
         self._solid_output_index: dict = defaultdict(lambda: defaultdict(list))
 
-        # solid_name => dynamic output_handle that this will solid dupe for
+        # solid_name => dynamic output_handle that this solid will dupe for
         self._dynamic_fan_out_index: dict = {}
 
         # solid_name => set of dynamic output_handle this collects over
@@ -717,7 +798,9 @@ class DependencyStructure:
                         self._dynamic_fan_out_index[output_handle.solid_name],
                     )
                 else:
-                    check.failed("Unexpected dynamic fan in dep created")
+                    check.failed(
+                        f"Unexpected dynamic fan in dep created {output_handle} -> {input_handle}"
+                    )
 
                 output_handle_list = [output_handle]
             else:
@@ -766,7 +849,7 @@ class DependencyStructure:
         self,
         input_handle: SolidInputHandle,
         output_handle: SolidOutputHandle,
-    ):
+    ) -> None:
         if self._dynamic_fan_out_index.get(input_handle.solid_name):
             raise DagsterInvalidDefinitionError(
                 f'Solid "{input_handle.solid_name}" cannot both collect over dynamic output '
@@ -895,3 +978,10 @@ class DependencyStructure:
 
     def is_dynamic_mapped(self, solid_name: str) -> bool:
         return solid_name in self._dynamic_fan_out_index
+
+    def has_dynamic_downstreams(self, solid_name: str) -> bool:
+        for upstream_handle in self._dynamic_fan_out_index.values():
+            if upstream_handle.solid_name == solid_name:
+                return True
+
+        return False

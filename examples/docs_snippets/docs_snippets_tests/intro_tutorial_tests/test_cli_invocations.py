@@ -42,16 +42,6 @@ cli_args = [
         None,
     ),
     (
-        "basics/configuring_solids/",
-        "configurable_pipeline.py",
-        "configurable_pipeline",
-        "run_config.yaml",
-        None,
-        None,
-        0,
-        None,
-    ),
-    (
         "basics/connecting_solids/",
         "serial_pipeline.py",
         "serial_pipeline",
@@ -75,7 +65,7 @@ cli_args = [
         "basics/e04_quality/",
         "inputs_typed.py",
         "inputs_pipeline",
-        "inputs_env.yaml",
+        None,
         None,
         None,
         0,
@@ -85,7 +75,7 @@ cli_args = [
         "basics/e04_quality/",
         "custom_types.py",
         "custom_type_pipeline",
-        "inputs_env.yaml",
+        None,
         None,
         None,
         0,
@@ -95,40 +85,10 @@ cli_args = [
         "basics/e04_quality/",
         "custom_types_2.py",
         "custom_type_pipeline",
-        "custom_types_2.yaml",
+        None,
         None,
         None,
         1,
-        Exception,
-    ),
-    (
-        "basics/e04_quality/",
-        "custom_types_4.py",
-        "custom_type_pipeline",
-        "custom_type_input.yaml",
-        None,
-        None,
-        0,
-        None,
-    ),
-    (
-        "advanced/solids/",
-        "reusable_solids.py",
-        "reusable_solids_pipeline",
-        "reusable_solids.yaml",
-        None,
-        None,
-        0,
-        None,
-    ),
-    (
-        "advanced/solids/",
-        "composite_solids.py",
-        "composite_solids_pipeline",
-        "composite_solids.yaml",
-        None,
-        None,
-        0,
         None,
     ),
     (
@@ -166,17 +126,7 @@ cli_args = [
         "advanced/materializations/",
         "materializations.py",
         "materialization_pipeline",
-        "inputs_env.yaml",
         None,
-        None,
-        0,
-        None,
-    ),
-    (
-        "advanced/materializations/",
-        "output_materialization.py",
-        "output_materialization_pipeline",
-        "output_materialization.yaml",
         None,
         None,
         0,
@@ -202,7 +152,7 @@ def path_to_tutorial_file(path):
 def load_dagit_for_workspace_cli_args(n_pipelines=1, **kwargs):
     instance = DagsterInstance.ephemeral()
     with get_workspace_process_context_from_kwargs(
-        instance, version="", kwargs=kwargs
+        instance, version="", read_only=False, kwargs=kwargs
     ) as workspace_process_context:
         app = create_app_from_workspace_process_context(workspace_process_context)
 

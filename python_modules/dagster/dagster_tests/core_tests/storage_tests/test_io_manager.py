@@ -4,19 +4,24 @@ import tempfile
 import mock
 import pytest
 from dagster import (
+    AssetKey,
     AssetMaterialization,
     DagsterInstance,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     Field,
     IOManagerDefinition,
+    In,
     InputDefinition,
     ModeDefinition,
+    Out,
     OutputDefinition,
     build_input_context,
     build_output_context,
     composite_solid,
     execute_pipeline,
+    graph,
+    op,
     pipeline,
     reexecute_pipeline,
     resource,
@@ -296,7 +301,6 @@ def execute_pipeline_with_steps(
     plan = create_execution_plan(pipeline_def, step_keys_to_execute=step_keys_to_execute)
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline_def,
-        step_keys_to_execute=step_keys_to_execute,
         run_id=run_id,
         # the backfill flow can inject run group info
         parent_run_id=parent_run_id,
@@ -362,18 +366,18 @@ def test_multi_materialization():
             self.values = {}
 
         def handle_output(self, context, obj):
-            keys = tuple(context.get_run_scoped_output_identifier())
+            keys = tuple(context.get_output_identifier())
             self.values[keys] = obj
 
             yield AssetMaterialization(asset_key="yield_one")
             yield AssetMaterialization(asset_key="yield_two")
 
         def load_input(self, context):
-            keys = tuple(context.upstream_output.get_run_scoped_output_identifier())
+            keys = tuple(context.upstream_output.get_output_identifier())
             return self.values[keys]
 
         def has_asset(self, context):
-            keys = tuple(context.get_run_scoped_output_identifier())
+            keys = tuple(context.get_output_identifier())
             return keys in self.values
 
     @io_manager
@@ -684,6 +688,7 @@ def test_get_output_context_with_resources():
             log_manager=None,
             step_context=mock.MagicMock(),
             resources=mock.MagicMock(),
+            version=None,
         )
 
 
@@ -713,3 +718,45 @@ def test_error_boundary_with_gen():
         event for event in result.event_list if event.event_type_value == "STEP_FAILURE"
     ][0]
     assert step_failure.event_specific_data.error.cls_name == "DagsterExecutionHandleOutputError"
+
+
+def test_output_identifier_dynamic_memoization():
+    context = build_output_context(version="foo", mapping_key="bar", step_key="baz", name="buzz")
+
+    with pytest.raises(
+        CheckError,
+        match="Mapping key and version both provided for output 'buzz' of step 'baz'. Dynamic "
+        "mapping is not supported when using versioning.",
+    ):
+        context.get_output_identifier()
+
+
+def test_asset_key():
+    in_asset_key = AssetKey(["a", "b"])
+    out_asset_key = AssetKey(["c", "d"])
+
+    @op(out=Out(asset_key=out_asset_key))
+    def before():
+        pass
+
+    @op(ins={"a": In(asset_key=in_asset_key)}, out={})
+    def after(a):
+        assert a
+
+    class MyIOManager(IOManager):
+        def load_input(self, context):
+            assert context.asset_key == in_asset_key
+            assert context.upstream_output.asset_key == out_asset_key
+            return 1
+
+        def handle_output(self, context, obj):
+            assert context.asset_key == out_asset_key
+
+    @graph
+    def my_graph():
+        after(before())
+
+    result = my_graph.to_job(
+        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())}
+    ).execute_in_process()
+    assert result.success

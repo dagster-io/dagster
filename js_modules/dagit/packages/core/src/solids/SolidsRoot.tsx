@@ -6,6 +6,7 @@ import {useHistory, useLocation} from 'react-router-dom';
 import {AutoSizer, CellMeasurer, CellMeasurerCache, List} from 'react-virtualized';
 import styled from 'styled-components/macro';
 
+import {useFeatureFlags} from '../app/Flags';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {Loading} from '../ui/Loading';
 import {SplitPanelContainer} from '../ui/SplitPanelContainer';
@@ -40,14 +41,14 @@ function flatUniq(arrs: string[][]) {
 
 type Solid = SolidsRootQuery_repositoryOrError_Repository_usedSolids;
 
-function searchSuggestionsForSolids(solids: Solid[]): SuggestionProvider[] {
+function searchSuggestionsForSolids(solids: Solid[], crag: boolean): SuggestionProvider[] {
   return [
     {
       token: 'name',
       values: () => solids.map((s) => s.definition.name),
     },
     {
-      token: 'pipeline',
+      token: crag ? 'job' : 'pipeline',
       values: () => flatUniq(solids.map((s) => s.invocations.map((i) => i.pipeline.name))),
     },
     {
@@ -72,7 +73,10 @@ function filterSolidsWithSearch(solids: Solid[], search: TokenizingFieldValue[])
       ) {
         return false;
       }
-      if (item.token === 'pipeline' && !s.invocations.some((i) => i.pipeline.name === item.value)) {
+      if (
+        (item.token === 'pipeline' || item.token === 'job') &&
+        !s.invocations.some((i) => i.pipeline.name === item.value)
+      ) {
         return false;
       }
       if (
@@ -99,7 +103,9 @@ interface Props {
 
 export const SolidsRoot: React.FC<Props> = (props) => {
   const {name, repoAddress} = props;
-  useDocumentTitle('Solids');
+  const {flagPipelineModeTuples} = useFeatureFlags();
+
+  useDocumentTitle(flagPipelineModeTuples ? 'Ops' : 'Solids');
   const repositorySelector = repoAddressToSelector(repoAddress);
 
   const queryResult = useQuery<SolidsRootQuery>(SOLIDS_ROOT_QUERY, {
@@ -129,9 +135,10 @@ const SolidsRootWithData: React.FC<Props & {usedSolids: Solid[]}> = (props) => {
   const {name, repoAddress, usedSolids} = props;
   const history = useHistory();
   const location = useLocation();
+  const {flagPipelineModeTuples} = useFeatureFlags();
 
   const {q, typeExplorer} = querystring.parse(location.search);
-  const suggestions = searchSuggestionsForSolids(usedSolids);
+  const suggestions = searchSuggestionsForSolids(usedSolids, flagPipelineModeTuples);
   const search = tokenizedValuesFromString((q as string) || '', suggestions);
   const filtered = filterSolidsWithSearch(usedSolids, search);
 
@@ -176,7 +183,7 @@ const SolidsRootWithData: React.FC<Props & {usedSolids: Solid[]}> = (props) => {
   return (
     <div style={{height: '100%', display: 'flex'}}>
       <SplitPanelContainer
-        identifier={'solids'}
+        identifier={flagPipelineModeTuples ? 'ops' : 'solids'}
         firstInitialPercent={40}
         firstMinSize={420}
         first={
@@ -195,7 +202,7 @@ const SolidsRootWithData: React.FC<Props & {usedSolids: Solid[]}> = (props) => {
               />
             </div>
             <div style={{flex: 1}}>
-              <AutoSizer>
+              <AutoSizer nonce={window.__webpack_nonce__}>
                 {({height, width}) => (
                   <SolidList
                     height={height}
@@ -222,8 +229,12 @@ const SolidsRootWithData: React.FC<Props & {usedSolids: Solid[]}> = (props) => {
             </SolidDetailScrollContainer>
           ) : (
             <NonIdealState
-              title="No solid selected"
-              description="Select a solid to see its definition and invocations."
+              title={flagPipelineModeTuples ? 'No op selected' : 'No solid selected'}
+              description={
+                flagPipelineModeTuples
+                  ? 'Select an op to see its definition and invocations'
+                  : 'Select a solid to see its definition and invocations.'
+              }
             />
           )
         }
@@ -318,7 +329,7 @@ const SolidListItem = styled.div<{selected: boolean}>`
   & > code.bp3-code {
     color: ${({selected}) => (selected ? Colors.WHITE : Colors.DARK_GRAY3)};
     background: transparent;
-    fontfamily: ${FontFamily.monospace};
+    font-family: ${FontFamily.monospace};
     padding: 5px 0 0 0;
   }
 `;

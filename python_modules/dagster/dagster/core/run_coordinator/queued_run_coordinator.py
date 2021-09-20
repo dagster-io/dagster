@@ -2,15 +2,15 @@ import logging
 import time
 
 from dagster import DagsterEvent, DagsterEventType, IntSource, String, check
+from dagster.builtins import Bool
 from dagster.config import Field
-from dagster.config.config_type import Array, Noneable
+from dagster.config.config_type import Array, Noneable, ScalarUnion
 from dagster.config.field_utils import Shape
 from dagster.core.events.log import EventLogEntry
-from dagster.core.host_representation import ExternalPipeline
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 
-from .base import RunCoordinator
+from .base import RunCoordinator, SubmitRunContext
 
 
 class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
@@ -54,7 +54,13 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
                         Shape(
                             {
                                 "key": String,
-                                "value": Field(String, is_required=False),
+                                "value": Field(
+                                    ScalarUnion(
+                                        scalar_type=String,
+                                        non_scalar_schema=Shape({"applyLimitPerUniqueValue": Bool}),
+                                    ),
+                                    is_required=False,
+                                ),
                                 "limit": Field(int),
                             }
                         )
@@ -74,9 +80,8 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
             dequeue_interval_seconds=config_value.get("dequeue_interval_seconds"),
         )
 
-    def submit_run(self, pipeline_run, external_pipeline):
-        check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
-        check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
+    def submit_run(self, context: SubmitRunContext) -> PipelineRun:
+        pipeline_run = context.pipeline_run
         check.invariant(pipeline_run.status == PipelineRunStatus.NOT_STARTED)
 
         enqueued_event = DagsterEvent(
@@ -95,7 +100,10 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
         )
         self._instance.handle_new_event(event_record)
 
-        return self._instance.get_run_by_id(pipeline_run.run_id)
+        run = self._instance.get_run_by_id(pipeline_run.run_id)
+        if run is None:
+            check.failed(f"Failed to reload run {pipeline_run.run_id}")
+        return run
 
     def can_cancel_run(self, run_id):
         run = self._instance.get_run_by_id(run_id)

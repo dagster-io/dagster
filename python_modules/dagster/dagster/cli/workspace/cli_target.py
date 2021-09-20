@@ -8,11 +8,10 @@ from dagster import check
 from dagster.core.code_pointer import CodePointer
 from dagster.core.definitions.reconstructable import repository_def_from_target_def
 from dagster.core.host_representation.external import ExternalRepository
-from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
-from dagster.core.host_representation.origin import ExternalRepositoryOrigin
 from dagster.core.host_representation.repository_location import RepositoryLocation
 from dagster.core.instance import DagsterInstance
 from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
+from dagster.core.workspace.context import WorkspaceRequestContext
 from dagster.core.workspace.load_target import (
     EmptyWorkspaceTarget,
     GrpcServerTarget,
@@ -163,10 +162,22 @@ def created_workspace_load_target(kwargs):
         _cli_load_invariant(False)
 
 
-def get_workspace_process_context_from_kwargs(instance: DagsterInstance, version: str, kwargs):
+def get_workspace_process_context_from_kwargs(
+    instance: DagsterInstance, version: str, read_only: bool, kwargs
+):
     from dagster.core.workspace import WorkspaceProcessContext
 
-    return WorkspaceProcessContext(instance, created_workspace_load_target(kwargs), version=version)
+    return WorkspaceProcessContext(
+        instance, created_workspace_load_target(kwargs), version=version, read_only=read_only
+    )
+
+
+@contextmanager
+def get_workspace_from_kwargs(instance: DagsterInstance, version: str, kwargs):
+    with get_workspace_process_context_from_kwargs(
+        instance, version, read_only=False, kwargs=kwargs
+    ) as workspace_process_context:
+        yield workspace_process_context.create_request_context()
 
 
 def python_target_click_options():
@@ -362,17 +373,6 @@ def pipeline_target_argument(f):
     return apply_click_params(repository_target_argument(f), pipeline_option())
 
 
-def get_repository_origin_from_kwargs(kwargs):
-    provided_repo_name = kwargs.get("repository")
-
-    if not provided_repo_name:
-        raise click.UsageError("Must provide --repository to load a repository")
-
-    repository_location_origin = get_repository_location_origin_from_kwargs(kwargs)
-
-    return ExternalRepositoryOrigin(repository_location_origin, provided_repo_name)
-
-
 def get_pipeline_python_origin_from_kwargs(kwargs):
     repository_origin = get_repository_python_origin_from_kwargs(kwargs)
     provided_pipeline_name = kwargs.get("pipeline")
@@ -514,47 +514,49 @@ def get_repository_python_origin_from_kwargs(kwargs):
 
 
 @contextmanager
-def get_repository_location_from_kwargs(kwargs):
-    origin = get_repository_location_origin_from_kwargs(kwargs)
-    with ProcessGrpcServerRegistry(reload_interval=0, heartbeat_ttl=30) as grpc_server_registry:
-        from dagster.core.workspace.dynamic_workspace import DynamicWorkspace
-
-        with DynamicWorkspace(grpc_server_registry) as workspace:
-            with workspace.get_location(origin) as location:
-                yield location
+def get_repository_location_from_kwargs(instance, version, kwargs):
+    # Instance isn't strictly required to load a repository location, but is included
+    # to satisfy the WorkspaceProcessContext / WorkspaceRequestContext requirements
+    with get_workspace_from_kwargs(instance, version, kwargs) as workspace:
+        yield get_repository_location_from_workspace(workspace, kwargs.get("location"))
 
 
-def get_repository_location_origin_from_kwargs(kwargs):
-    all_origins = created_workspace_load_target(kwargs).create_origins()
+def get_repository_location_from_workspace(
+    workspace: WorkspaceRequestContext, provided_location_name
+):
+    if provided_location_name is None:
+        if len(workspace.repository_location_names) == 1:
+            provided_location_name = workspace.repository_location_names[0]
+        elif len(workspace.repository_location_names) == 0:
+            raise click.UsageError("No locations found in workspace")
+        elif provided_location_name is None:
+            raise click.UsageError(
+                (
+                    "Must provide --location as there are multiple locations "
+                    "available. Options are: {}"
+                ).format(_sorted_quoted(workspace.repository_location_names))
+            )
 
-    origins_by_name = {origin.location_name: origin for origin in all_origins}
-
-    provided_location_name = kwargs.get("location")
-
-    if provided_location_name is None and len(origins_by_name) == 1:
-        return next(iter(origins_by_name.values()))
-
-    elif provided_location_name is None:
-        raise click.UsageError(
-            (
-                "Must provide --location as there are more than one locations "
-                "available. Options are: {}"
-            ).format(_sorted_quoted(origins_by_name.keys()))
-        )
-
-    elif not origins_by_name.get(provided_location_name):
+    if provided_location_name not in workspace.repository_location_names:
         raise click.UsageError(
             (
                 'Location "{provided_location_name}" not found in workspace. '
                 "Found {found_names} instead."
             ).format(
                 provided_location_name=provided_location_name,
-                found_names=_sorted_quoted(origins_by_name.keys()),
+                found_names=_sorted_quoted(workspace.repository_location_names),
             )
         )
 
-    else:
-        return origins_by_name.get(provided_location_name)
+    if workspace.has_repository_location_error(provided_location_name):
+        raise click.UsageError(
+            'Error loading location "{provided_location_name}": {error_str}'.format(
+                provided_location_name=provided_location_name,
+                error_str=str(workspace.get_repository_location_error(provided_location_name)),
+            )
+        )
+
+    return workspace.get_repository_location(provided_location_name)
 
 
 def get_external_repository_from_repo_location(repo_location, provided_repo_name):
@@ -592,8 +594,10 @@ def get_external_repository_from_repo_location(repo_location, provided_repo_name
 
 
 @contextmanager
-def get_external_repository_from_kwargs(kwargs):
-    with get_repository_location_from_kwargs(kwargs) as repo_location:
+def get_external_repository_from_kwargs(instance, version, kwargs):
+    # Instance isn't strictly required to load an ExternalRepository, but is included
+    # to satisfy the WorkspaceProcessContext / WorkspaceRequestContext requirements
+    with get_repository_location_from_kwargs(instance, version, kwargs) as repo_location:
         provided_repo_name = kwargs.get("repository")
         yield get_external_repository_from_repo_location(repo_location, provided_repo_name)
 
@@ -635,8 +639,10 @@ def get_external_pipeline_from_external_repo(external_repo, provided_pipeline_na
 
 
 @contextmanager
-def get_external_pipeline_from_kwargs(kwargs):
-    with get_external_repository_from_kwargs(kwargs) as external_repo:
+def get_external_pipeline_from_kwargs(instance, version, kwargs):
+    # Instance isn't strictly required to load an ExternalPipeline, but is included
+    # to satisfy the WorkspaceProcessContext / WorkspaceRequestContext requirements
+    with get_external_repository_from_kwargs(instance, version, kwargs) as external_repo:
         provided_pipeline_name = kwargs.get("pipeline")
         yield get_external_pipeline_from_external_repo(external_repo, provided_pipeline_name)
 

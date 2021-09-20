@@ -4,7 +4,7 @@ import React from 'react';
 import {Link, useRouteMatch} from 'react-router-dom';
 
 import {useFeatureFlags} from '../app/Flags';
-import {DISABLED_MESSAGE, PermissionSet, usePermissions} from '../app/Permissions';
+import {DISABLED_MESSAGE, PermissionsMap, usePermissions} from '../app/Permissions';
 import {
   explorerPathFromString,
   explorerPathToString,
@@ -18,23 +18,23 @@ import {useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
+import {JobMetadata} from './JobMetadata';
 import {RepositoryLink} from './RepositoryLink';
 
 interface TabConfig {
   title: string;
   pathComponent: string;
   icon: IconName;
-  isAvailable?: (permissions: PermissionSet) => boolean;
+  isAvailable?: (permissions: PermissionsMap) => boolean;
 }
 
 const pipelineTabs: {[key: string]: TabConfig} = {
-  overview: {title: 'Overview', pathComponent: 'overview', icon: 'dashboard'},
-  definition: {title: 'Definition', pathComponent: '', icon: 'diagram-tree'},
+  overview: {title: 'Overview', pathComponent: '', icon: 'dashboard'},
   playground: {
     title: 'Playground',
     pathComponent: 'playground',
     icon: 'manually-entered-data',
-    isAvailable: (permissions: PermissionSet) => permissions.canLaunchPipelineExecution,
+    isAvailable: (permissions: PermissionsMap) => permissions.canLaunchPipelineExecution,
   },
   runs: {
     title: 'Runs',
@@ -48,7 +48,7 @@ const pipelineTabs: {[key: string]: TabConfig} = {
   },
 };
 
-const currentOrder = ['overview', 'definition', 'playground', 'runs', 'partitions'];
+const currentOrder = ['overview', 'playground', 'runs', 'partitions'];
 
 export function tabForPipelinePathComponent(component?: string): TabConfig {
   const tabList = Object.keys(pipelineTabs);
@@ -95,27 +95,29 @@ export const PipelineNav: React.FC<Props> = (props) => {
 
   const active = tabForPipelinePathComponent(match!.params.tab);
   const explorerPath = explorerPathFromString(match!.params.selector);
+  const {pipelineName, pipelineMode, snapshotId} = explorerPath;
+  const partitionSets = repo?.repository.partitionSets || [];
 
-  const hasPartitionSet = repo?.repository.partitionSets
-    .map((x) => x.pipelineName)
-    .includes(explorerPath.pipelineName);
+  // If using pipeline:mode tuple (crag flag), check for partition sets that are for this specific
+  // pipeline:mode tuple. Otherwise, just check for a pipeline name match.
+  const hasPartitionSet = partitionSets.some(
+    (partitionSet) =>
+      partitionSet.pipelineName === pipelineName &&
+      (!flagPipelineModeTuples || partitionSet.mode === pipelineMode),
+  );
 
-  let tabs = currentOrder
+  const tabs = currentOrder
     .filter((key) => hasPartitionSet || key !== 'partitions')
     .map(tabForKey(repoAddress, explorerPath));
-
-  if (flagPipelineModeTuples) {
-    tabs = tabs.filter((t) => t.text !== 'Definition');
-  }
 
   return (
     <Group direction="column" spacing={12} padding={{top: 20, horizontal: 20}}>
       <PageHeader
         title={
           <Heading>
-            {explorerPath.pipelineName}
-            {flagPipelineModeTuples && explorerPath.pipelineMode !== 'default' ? (
-              <span style={{opacity: 0.5}}> : {explorerPath.pipelineMode}</span>
+            {pipelineName}
+            {flagPipelineModeTuples && pipelineMode !== 'default' ? (
+              <span style={{opacity: 0.5}}> : {pipelineMode}</span>
             ) : null}
           </Heading>
         }
@@ -132,6 +134,15 @@ export const PipelineNav: React.FC<Props> = (props) => {
             </Link>{' '}
             in <RepositoryLink repoAddress={repoAddress} />
           </>
+        }
+        metadata={
+          snapshotId ? null : (
+            <JobMetadata
+              pipelineName={pipelineName}
+              pipelineMode={pipelineMode}
+              repoAddress={repoAddress}
+            />
+          )
         }
       />
       <Box border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}>

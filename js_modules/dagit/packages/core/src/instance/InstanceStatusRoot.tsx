@@ -15,7 +15,7 @@ import {InstanceSensors} from './InstanceSensors';
 export const InstanceStatusRoot = () => {
   return (
     <Page>
-      <Group direction="column" spacing={24}>
+      <Group direction="column" spacing={12}>
         <PageHeader title={<Heading>Instance status</Heading>} />
         <Switch>
           <Route path="/instance/health" render={() => <InstanceHealthPage />} />

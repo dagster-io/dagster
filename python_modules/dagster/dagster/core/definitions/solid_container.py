@@ -1,4 +1,3 @@
-from abc import ABC, abstractmethod, abstractproperty
 from collections import defaultdict
 from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple, Union
 
@@ -6,36 +5,15 @@ from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import DagsterTypeKind
 
-from .dependency import DependencyStructure, IDependencyDefinition, Solid, SolidInvocation
+from .dependency import DependencyStructure, IDependencyDefinition, Node, SolidInvocation
 
 if TYPE_CHECKING:
     from .solid import NodeDefinition
     from .graph import GraphDefinition
 
 
-class IContainSolids(ABC):  # pylint: disable=no-init
-    @abstractproperty
-    def solids(self):
-        """List[Solid]: Top-level solids in the container."""
-
-    @abstractproperty
-    def dependency_structure(self):
-        """DependencyStructure: The dependencies between top-level solids in the container."""
-
-    @abstractmethod
-    def solid_named(self, name):
-        """Return the (top-level) solid with a given name.
-
-        Args:
-            name (str): The name of the top level solid.
-
-        Returns:
-            Solid: The solid with the given name
-        """
-
-
 def validate_dependency_dict(
-    dependencies: Optional[Dict[Union[str, SolidInvocation], Dict[str, IDependencyDefinition]]]
+    dependencies: Optional[Dict[Union[str, SolidInvocation], Dict[str, IDependencyDefinition]]],
 ) -> Dict[Union[str, SolidInvocation], Dict[str, IDependencyDefinition]]:
     prelude = (
         'The expected type for "dependencies" is Dict[Union[str, SolidInvocation], Dict[str, '
@@ -78,8 +56,8 @@ def validate_dependency_dict(
         for input_key, dep in dep_dict.items():
             if not isinstance(input_key, str):
                 raise DagsterInvalidDefinitionError(
-                    prelude
-                    + "Received non-sting key in the inner dict for key {key}.".format(key=key)
+                    prelude + f"Received non-string key in the inner dict for key {key}. "
+                    f"Unexpected inner dict key type: {type(input_key)}"
                 )
             if not isinstance(dep, IDependencyDefinition):
                 raise DagsterInvalidDefinitionError(
@@ -97,7 +75,7 @@ def create_execution_structure(
     solid_defs: List["NodeDefinition"],
     dependencies_dict: Dict[Union[str, SolidInvocation], Dict[str, IDependencyDefinition]],
     graph_definition: "GraphDefinition",
-) -> Tuple[DependencyStructure, Dict[str, Solid]]:
+) -> Tuple[DependencyStructure, Dict[str, Node]]:
     """This builder takes the dependencies dictionary specified during creation of the
     PipelineDefinition object and builds (1) the execution structure and (2) a solid dependency
     dictionary.
@@ -191,7 +169,7 @@ def _build_pipeline_solid_dict(
     name_to_aliases: Dict[str, Set[str]],
     alias_to_solid_instance: Dict[str, SolidInvocation],
     graph_definition,
-) -> Dict[str, Solid]:
+) -> Dict[str, Node]:
     pipeline_solids = []
     for solid_def in solid_defs:
         uses_of_solid = name_to_aliases.get(solid_def.name, {solid_def.name})
@@ -203,7 +181,7 @@ def _build_pipeline_solid_dict(
             hook_defs = solid_instance.hook_defs if solid_instance else frozenset()
             retry_policy = solid_instance.retry_policy if solid_instance else None
             pipeline_solids.append(
-                Solid(
+                Node(
                     name=alias,
                     definition=solid_def,
                     graph_definition=graph_definition,

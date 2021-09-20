@@ -4,6 +4,7 @@ from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.core.host_representation.external_data import ExternalSensorExecutionErrorData
 from dagster.core.host_representation.handle import RepositoryHandle
 from dagster.grpc.types import SensorExecutionArgs
+from dagster.serdes import deserialize_json_to_dagster_namedtuple
 
 
 def sync_get_external_sensor_execution_data_ephemeral_grpc(
@@ -37,15 +38,17 @@ def sync_get_external_sensor_execution_data_grpc(
     origin = repository_handle.get_external_origin()
 
     result = check.inst(
-        api_client.external_sensor_execution(
-            sensor_execution_args=SensorExecutionArgs(
-                repository_origin=origin,
-                instance_ref=instance.get_ref(),
-                sensor_name=sensor_name,
-                last_completion_time=last_completion_time,
-                last_run_key=last_run_key,
-                cursor=cursor,
-            )
+        deserialize_json_to_dagster_namedtuple(
+            api_client.external_sensor_execution(
+                sensor_execution_args=SensorExecutionArgs(
+                    repository_origin=origin,
+                    instance_ref=instance.get_ref(),
+                    sensor_name=sensor_name,
+                    last_completion_time=last_completion_time,
+                    last_run_key=last_run_key,
+                    cursor=cursor,
+                )
+            ),
         ),
         (SensorExecutionData, ExternalSensorExecutionErrorData),
     )

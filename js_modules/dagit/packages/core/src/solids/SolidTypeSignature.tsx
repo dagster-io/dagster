@@ -58,7 +58,7 @@ const TypeSignature = styled(Code)`
   && {
     background: ${Colors.LIGHT_GRAY5};
     font-family: ${FontFamily.monospace};
-    font-size: 12px;
+    font-size: 14px;
     padding: 4px 10px;
     box-shadow: none;
     color: black;

@@ -1,12 +1,20 @@
+import logging
 import sys
 import textwrap
 
+import pytest
 from dagster import DagsterEvent
-from dagster.core.definitions.dependency import SolidHandle
+from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.errors import DagsterUserCodeExecutionError, user_code_error_boundary
 from dagster.core.execution.plan.objects import ErrorSource, StepFailureData
 from dagster.core.execution.plan.outputs import StepOutputData, StepOutputHandle
-from dagster.core.log_manager import construct_log_string
+from dagster.core.log_manager import (
+    DagsterLogHandler,
+    DagsterLogManager,
+    DagsterLoggingMetadata,
+    DagsterMessageProps,
+    construct_log_string,
+)
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 
@@ -15,34 +23,35 @@ def test_construct_log_string_for_event():
         event_type_value="STEP_OUTPUT",
         pipeline_name="my_pipeline",
         step_key="solid2",
-        solid_handle=SolidHandle("solid2", None),
+        solid_handle=NodeHandle("solid2", None),
         step_kind_value="COMPUTE",
         logging_tags={},
         event_specific_data=StepOutputData(step_output_handle=StepOutputHandle("solid2", "result")),
         message='Yielded output "result" of type "Any" for step "solid2". (Type check passed).',
         pid=54348,
     )
-    message_props = {"dagster_event": step_output_event, "pipeline_name": "my_pipeline"}
 
-    synth_props = {
-        "orig_message": step_output_event.message,
-        "run_id": "f79a8a93-27f1-41b5-b465-b35d0809b26d",
-    }
+    logging_metadata = DagsterLoggingMetadata(
+        run_id="f79a8a93-27f1-41b5-b465-b35d0809b26d", pipeline_name="my_pipeline"
+    )
+    dagster_message_props = DagsterMessageProps(
+        orig_message=step_output_event.message,
+        dagster_event=step_output_event,
+    )
+
     assert (
-        construct_log_string(message_props=message_props, logging_tags={}, synth_props=synth_props)
+        construct_log_string(logging_metadata=logging_metadata, message_props=dagster_message_props)
         == 'my_pipeline - f79a8a93-27f1-41b5-b465-b35d0809b26d - 54348 - STEP_OUTPUT - Yielded output "result" of type "Any" for step "solid2". (Type check passed).'
     )
 
 
 def test_construct_log_string_for_log():
-    message_props = {"pipeline_name": "my_pipeline"}
-
-    synth_props = {
-        "orig_message": "hear my tale",
-        "run_id": "f79a8a93-27f1-41b5-b465-b35d0809b26d",
-    }
+    logging_metadata = DagsterLoggingMetadata(
+        run_id="f79a8a93-27f1-41b5-b465-b35d0809b26d", pipeline_name="my_pipeline"
+    )
+    dagster_message_props = DagsterMessageProps(orig_message="hear my tale")
     assert (
-        construct_log_string(message_props=message_props, logging_tags={}, synth_props=synth_props)
+        construct_log_string(logging_metadata, dagster_message_props)
         == "my_pipeline - f79a8a93-27f1-41b5-b465-b35d0809b26d - hear my tale"
     )
 
@@ -52,7 +61,7 @@ def make_log_string(error, error_source=None):
         event_type_value="STEP_FAILURE",
         pipeline_name="my_pipeline",
         step_key="solid2",
-        solid_handle=SolidHandle("solid2", None),
+        solid_handle=NodeHandle("solid2", None),
         step_kind_value="COMPUTE",
         logging_tags={},
         event_specific_data=StepFailureData(
@@ -62,15 +71,14 @@ def make_log_string(error, error_source=None):
         pid=54348,
     )
 
-    message_props = {"dagster_event": step_failure_event, "pipeline_name": "my_pipeline"}
-
-    synth_props = {
-        "orig_message": step_failure_event.message,
-        "run_id": "f79a8a93-27f1-41b5-b465-b35d0809b26d",
-    }
-    return construct_log_string(
-        message_props=message_props, logging_tags={}, synth_props=synth_props
+    logging_metadata = DagsterLoggingMetadata(
+        run_id="f79a8a93-27f1-41b5-b465-b35d0809b26d", pipeline_name="my_pipeline"
     )
+    dagster_message_props = DagsterMessageProps(
+        orig_message=step_failure_event.message,
+        dagster_event=step_failure_event,
+    )
+    return construct_log_string(logging_metadata, dagster_message_props)
 
 
 def test_construct_log_string_with_error():
@@ -153,3 +161,51 @@ def test_construct_log_string_with_error_raise_from():
     ).strip()
 
     assert expected_substr in log_string
+
+
+@pytest.mark.parametrize("use_handler", [True, False])
+def test_user_code_error_boundary_python_capture(use_handler):
+    class TestHandler(logging.Handler):
+        def __init__(self):
+            self.captured = []
+            super().__init__()
+
+        def emit(self, record):
+            self.captured.append(record)
+
+    capture_handler = TestHandler()
+    user_logger = logging.getLogger("user_logger")
+    user_logger.addHandler(capture_handler)
+
+    test_extra = {"foo": 1, "bar": {2: 3, "baz": 4}}
+
+    with user_code_error_boundary(
+        DagsterUserCodeExecutionError,
+        lambda: "Some Error Message",
+        log_manager=DagsterLogManager(
+            dagster_handler=DagsterLogHandler(
+                logging_metadata=DagsterLoggingMetadata(
+                    run_id="123456", pipeline_name="pipeline", step_key="some_step"
+                ),
+                loggers=[user_logger] if not use_handler else [],
+                handlers=[capture_handler] if use_handler else [],
+            ),
+            managed_loggers=[logging.getLogger("python_log")],
+        ),
+    ):
+        python_log = logging.getLogger("python_log")
+        python_log.setLevel(logging.INFO)
+
+        python_log.debug("debug")
+        python_log.critical("critical msg", extra=test_extra)
+
+    assert len(capture_handler.captured) == 1
+    captured_record = capture_handler.captured[0]
+
+    assert captured_record.name == "python_log" if use_handler else "user_logger"
+    assert captured_record.msg == "pipeline - 123456 - some_step - critical msg"
+    assert captured_record.levelno == logging.CRITICAL
+    assert captured_record.dagster_meta["orig_message"] == "critical msg"
+
+    for k, v in test_extra.items():
+        assert getattr(captured_record, k) == v

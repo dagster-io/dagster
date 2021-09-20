@@ -1,6 +1,8 @@
 from typing import Dict, Type
 
 from dagster import ResourceDefinition, check, resource
+from dagster.core.decorator_utils import get_function_params
+from dagster.core.definitions.resource import is_context_provided
 
 from .storage import AssetStorage
 
@@ -51,6 +53,8 @@ def multi_type_asset_storage(
     def result(init_context):
         type_storages = {
             type_: storage_def.resource_fn(init_context)
+            if is_context_provided(get_function_params(storage_def.resource_fn))
+            else storage_def.resource_fn()
             for type_, storage_def in type_storage_defs.items()
         }
         for storage in type_storages.values():

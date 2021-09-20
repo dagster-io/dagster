@@ -42,22 +42,18 @@ def check_for_release():
     return False
 
 
-def is_phab_and_dagit_only():
+def is_pr_and_dagit_only():
     branch_name = os.getenv("BUILDKITE_BRANCH")
-    if branch_name is None:
-        branch_name = (
-            subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"])
-            .decode("utf-8")
-            .strip()
-        )
-    if not branch_name.startswith("phabricator"):
+    base_branch = os.getenv("BUILDKITE_PULL_REQUEST_BASE_BRANCH")
+
+    if branch_name is None or branch_name == "master" or branch_name.startswith("release"):
         return False
 
     try:
-        base_branch = branch_name.replace("/diff/", "/base/")
-        subprocess.check_call(["git", "fetch", "--tags"])
+        pr_commit = os.getenv("BUILDKITE_COMMIT")
+        origin_base = "origin/" + base_branch
         diff_files = (
-            subprocess.check_output(["git", "diff", base_branch, branch_name, "--name-only"])
+            subprocess.check_output(["git", "diff", origin_base, pr_commit, "--name-only"])
             .decode("utf-8")
             .strip()
             .split("\n")

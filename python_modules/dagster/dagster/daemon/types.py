@@ -2,7 +2,7 @@ from collections import namedtuple
 from enum import Enum
 
 from dagster import check
-from dagster.serdes import DefaultNamedTupleSerializer, unpack_value, whitelist_for_serdes
+from dagster.serdes import DefaultNamedTupleSerializer, unpack_inner_value, whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
 
 
@@ -16,19 +16,37 @@ class DaemonType(Enum):
 
 class DaemonBackcompat(DefaultNamedTupleSerializer):
     @classmethod
-    def value_from_storage_dict(cls, storage_dict, klass):
+    def value_from_storage_dict(
+        cls,
+        storage_dict,
+        klass,
+        args_for_class,
+        whitelist_map,
+        descent_path,
+    ):
         # Handle case where daemon_type used to be an enum (e.g. DaemonType.SCHEDULER)
+        daemon_type = unpack_inner_value(
+            storage_dict.get("daemon_type"),
+            whitelist_map,
+            descent_path=f"{descent_path}.daemon_type",
+        )
         return DaemonHeartbeat(
             timestamp=storage_dict.get("timestamp"),
-            daemon_type=(
-                storage_dict.get("daemon_type").value
-                if isinstance(storage_dict.get("daemon_type"), DaemonType)
-                else storage_dict.get("daemon_type")
-            ),
+            daemon_type=(daemon_type.value if isinstance(daemon_type, DaemonType) else daemon_type),
             daemon_id=storage_dict.get("daemon_id"),
-            errors=[unpack_value(storage_dict.get("error"))]  # error was replaced with errors
+            errors=[
+                unpack_inner_value(
+                    storage_dict.get("error"),
+                    whitelist_map,
+                    descent_path=f"{descent_path}.error",
+                )
+            ]  # error was replaced with errors
             if storage_dict.get("error")
-            else unpack_value(storage_dict.get("errors")),
+            else unpack_inner_value(
+                storage_dict.get("errors"),
+                whitelist_map,
+                descent_path=f"{descent_path}.errors",
+            ),
         )
 
 

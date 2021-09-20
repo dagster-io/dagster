@@ -41,6 +41,7 @@ module.exports = {
         'newlines-between': 'always',
       },
     ],
+    'no-alert': 'error',
     'no-restricted-imports': [
       'error',
       {
@@ -50,6 +51,11 @@ module.exports = {
             name: '@blueprintjs/core',
             importNames: ['Alert', 'Callout', 'Spinner'],
             message: 'Please use components in src/ui instead.',
+          },
+          {
+            name: '@blueprintjs/core',
+            importNames: ['Tooltip'],
+            message: 'Please use `Tooltip2` in `@blueprintjs/popover2` instead.',
           },
           {
             name: 'csstype',

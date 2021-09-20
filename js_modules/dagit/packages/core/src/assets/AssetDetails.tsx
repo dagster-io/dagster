@@ -13,8 +13,7 @@ import {Box} from '../ui/Box';
 import {Group} from '../ui/Group';
 import {MetadataTable} from '../ui/MetadataTable';
 import {Spinner} from '../ui/Spinner';
-import {Subheading} from '../ui/Text';
-import {FontFamily} from '../ui/styles';
+import {Mono, Subheading} from '../ui/Text';
 
 import {AssetLineageElements} from './AssetLineageElements';
 import {ASSET_QUERY} from './queries';
@@ -24,9 +23,10 @@ import {AssetQuery, AssetQueryVariables} from './types/AssetQuery';
 interface Props {
   assetKey: AssetKey;
   asOf: string | null;
+  asSidebarSection?: boolean;
 }
 
-export const AssetDetails: React.FC<Props> = ({assetKey, asOf}) => {
+export const AssetDetails: React.FC<Props> = ({assetKey, asOf, asSidebarSection}) => {
   const before = React.useMemo(() => (asOf ? `${Number(asOf) + 1}` : ''), [asOf]);
   const {data, loading} = useQuery<AssetQuery, AssetQueryVariables>(ASSET_QUERY, {
     variables: {
@@ -97,16 +97,14 @@ export const AssetDetails: React.FC<Props> = ({assetKey, asOf}) => {
       <MetadataTable
         rows={[
           {
-            key: 'Latest materialization from',
+            key: 'Run',
             value: latestRun ? (
               <div>
                 <div>
-                  {'Run '}
                   <Link
-                    style={{fontFamily: FontFamily.monospace}}
                     to={`/instance/runs/${latestEvent.runId}?timestamp=${latestEvent.timestamp}`}
                   >
-                    {titleForRun({runId: latestEvent.runId})}
+                    <Mono>{titleForRun({runId: latestEvent.runId})}</Mono>
                   </Link>
                 </div>
                 <div style={{paddingLeft: 10, paddingTop: 4}}>
@@ -146,7 +144,7 @@ export const AssetDetails: React.FC<Props> = ({assetKey, asOf}) => {
               }
             : undefined,
           {
-            key: 'Latest timestamp',
+            key: 'Timestamp',
             value: latestEvent ? (
               <Timestamp timestamp={{ms: Number(latestEvent.timestamp)}} />
             ) : (
@@ -155,7 +153,7 @@ export const AssetDetails: React.FC<Props> = ({assetKey, asOf}) => {
           },
           latestAssetLineage?.length
             ? {
-                key: 'Latest parent assets',
+                key: 'Parent assets',
                 value: (
                   <AssetLineageElements
                     elements={latestAssetLineage}
@@ -200,7 +198,11 @@ export const AssetDetails: React.FC<Props> = ({assetKey, asOf}) => {
           }
         />
       ) : null}
-      <Subheading>{isPartitioned ? 'Latest Materialized Partition' : 'Details'}</Subheading>
+      {!asSidebarSection && (
+        <Subheading>
+          {isPartitioned ? 'Latest Materialized Partition' : 'Latest Materialization'}
+        </Subheading>
+      )}
       {content()}
     </Group>
   );

@@ -1,6 +1,8 @@
 from .config import ConfigMapping
 from .decorators import (
+    asset_sensor,
     composite_solid,
+    config_mapping,
     daily_schedule,
     failure_hook,
     graph,
@@ -20,8 +22,8 @@ from .decorators import (
 from .dependency import (
     DependencyDefinition,
     MultiDependencyDefinition,
-    Solid,
-    SolidHandle,
+    Node,
+    NodeHandle,
     SolidInputHandle,
     SolidInvocation,
     SolidOutputHandle,
@@ -63,23 +65,47 @@ from .graph import GraphDefinition
 from .hook import HookDefinition
 from .input import In, InputDefinition, InputMapping
 from .intermediate_storage import IntermediateStorageDefinition, intermediate_storage
+from .job import JobDefinition
 from .logger import LoggerDefinition, build_init_logger_context, logger
 from .mode import ModeDefinition
-from .output import MultiOut, Out, OutputDefinition, OutputMapping
+from .op import OpDefinition
+from .output import DynamicOut, DynamicOutputDefinition, Out, OutputDefinition, OutputMapping
 from .partition import Partition, PartitionScheduleDefinition, PartitionSetDefinition
+from .partitioned_schedule import schedule_from_partitions
 from .pipeline import PipelineDefinition
 from .pipeline_base import IPipeline
+from .pipeline_sensor import (
+    PipelineFailureSensorContext,
+    RunFailureSensorContext,
+    RunStatusSensorContext,
+    RunStatusSensorDefinition,
+    pipeline_failure_sensor,
+    run_failure_sensor,
+    run_status_sensor,
+)
 from .preset import PresetDefinition
 from .reconstructable import (
     ReconstructablePipeline,
     build_reconstructable_pipeline,
     reconstructable,
 )
-from .repository import RepositoryDefinition
+from .repository import RepositoryData, RepositoryDefinition
 from .resource import ResourceDefinition, make_values_resource, resource
 from .run_config_schema import RunConfigSchema, create_run_config_schema
 from .run_request import JobType, RunRequest, SkipReason
 from .schedule import ScheduleDefinition, ScheduleEvaluationContext, ScheduleExecutionContext
-from .sensor import SensorDefinition, SensorEvaluationContext, SensorExecutionContext
+from .sensor import (
+    AssetSensorDefinition,
+    SensorDefinition,
+    SensorEvaluationContext,
+    SensorExecutionContext,
+)
 from .solid import CompositeSolidDefinition, NodeDefinition, SolidDefinition
 from .solid_container import create_execution_structure
+from .time_window_partitions import (
+    PartitionedConfig,
+    daily_partitioned_config,
+    hourly_partitioned_config,
+    monthly_partitioned_config,
+    weekly_partitioned_config,
+)

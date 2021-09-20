@@ -47,10 +47,11 @@ def stamp_alembic_rev(alembic_config, conn, rev="head", quiet=True):
 
 
 def check_alembic_revision(alembic_config, conn):
-    migration_context = MigrationContext.configure(conn)
-    db_revision = migration_context.get_current_revision()
-    script = ScriptDirectory.from_config(alembic_config)
-    head_revision = script.as_revision_number("head")
+    with _alembic_lock:
+        migration_context = MigrationContext.configure(conn)
+        db_revision = migration_context.get_current_revision()
+        script = ScriptDirectory.from_config(alembic_config)
+        head_revision = script.as_revision_number("head")
 
     return (db_revision, head_revision)
 

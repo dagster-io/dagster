@@ -1,4 +1,5 @@
 import datetime
+from typing import Callable, Union
 
 import pendulum
 from dagster import check
@@ -132,7 +133,9 @@ def identity_partition_selector(context, partition_set_def):
     return create_offset_partition_selector(lambda d: d)(context, partition_set_def)
 
 
-def create_offset_partition_selector(execution_time_to_partition_fn):
+def create_offset_partition_selector(
+    execution_time_to_partition_fn,
+) -> Callable[[ScheduleEvaluationContext, PartitionSetDefinition], Union[Partition, SkipReason]]:
     """Utility function for supplying a partition selector when creating a schedule from a
     partition set made of ``datetime`` objects that assumes a fixed time offset between the
     partition time and the time at which the schedule executes.
@@ -170,10 +173,9 @@ def create_offset_partition_selector(execution_time_to_partition_fn):
 
     check.callable_param(execution_time_to_partition_fn, "execution_time_to_partition_fn")
 
-    def offset_partition_selector(context, partition_set_def):
-        check.inst_param(context, "context", ScheduleEvaluationContext)
-        check.inst_param(partition_set_def, "partition_set_def", PartitionSetDefinition)
-
+    def offset_partition_selector(
+        context: ScheduleEvaluationContext, partition_set_def: PartitionSetDefinition
+    ) -> Union[Partition, SkipReason]:
         no_partitions_skip_reason = SkipReason(
             "Partition selector did not return a partition. Make sure that the timezone "
             "on your partition set matches your execution timezone."

@@ -54,13 +54,32 @@ def test_error_repo_in_registry():
         ),
     )
     with ProcessGrpcServerRegistry(reload_interval=5, heartbeat_ttl=10) as registry:
-        # Repository with a loading error raises an exception with the reason why
-        with pytest.raises(DagsterUserCodeProcessError, match="object is not callable"):
-            registry.get_grpc_endpoint(error_origin)
+        # Repository with a loading error does not raise an exception
+        endpoint = registry.get_grpc_endpoint(error_origin)
 
-        # the exception is idempotent
+        # But using that endpoint to load a location results in an error
         with pytest.raises(DagsterUserCodeProcessError, match="object is not callable"):
-            registry.get_grpc_endpoint(error_origin)
+            with GrpcServerRepositoryLocation(
+                origin=error_origin,
+                server_id=endpoint.server_id,
+                port=endpoint.port,
+                socket=endpoint.socket,
+                host=endpoint.host,
+                watch_server=False,
+            ):
+                pass
+
+        # that error is idempotent
+        with pytest.raises(DagsterUserCodeProcessError, match="object is not callable"):
+            with GrpcServerRepositoryLocation(
+                origin=error_origin,
+                server_id=endpoint.server_id,
+                port=endpoint.port,
+                socket=endpoint.socket,
+                host=endpoint.host,
+                watch_server=False,
+            ):
+                pass
 
 
 def test_process_server_registry():

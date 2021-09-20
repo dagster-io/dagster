@@ -44,10 +44,20 @@ PICKLED_CONFIG_FILE_NAME = "config.pkl"
         "storage": define_databricks_storage_config(),
         "local_pipeline_package_path": Field(
             StringSource,
-            is_required=True,
+            is_required=False,
             description="Absolute path to the package that contains the pipeline definition(s) "
             "whose steps will execute remotely on Databricks. This is a path on the local "
             "fileystem of the process executing the pipeline. Before every step run, the "
+            "launcher will zip up the code in this path, upload it to DBFS, and unzip it "
+            "into the Python path of the remote Spark process. This gives the remote process "
+            "access to up-to-date user code.",
+        ),
+        "local_dagster_job_package_path": Field(
+            StringSource,
+            is_required=False,
+            description="Absolute path to the package that contains the dagster job definition(s) "
+            "whose steps will execute remotely on Databricks. This is a path on the local "
+            "fileystem of the process executing the dagster job. Before every step run, the "
             "launcher will zip up the code in this path, upload it to DBFS, and unzip it "
             "into the Python path of the remote Spark process. This gives the remote process "
             "access to up-to-date user code.",
@@ -77,10 +87,10 @@ PICKLED_CONFIG_FILE_NAME = "config.pkl"
     }
 )
 def databricks_pyspark_step_launcher(context):
-    """Resource for running solids as a Databricks Job.
+    """Resource for running ops as a Databricks Job.
 
-    When this resource is used, the solid will be executed in Databricks using the 'Run Submit'
-    API. Pipeline code will be zipped up and copied to a directory in DBFS along with the solid's
+    When this resource is used, the op will be executed in Databricks using the 'Run Submit'
+    API. Pipeline code will be zipped up and copied to a directory in DBFS along with the op's
     execution context.
 
     Use the 'run_config' configuration to specify the details of the Databricks cluster used, and
@@ -101,18 +111,28 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         databricks_token,
         secrets_to_env_variables,
         storage,
-        local_pipeline_package_path,
         staging_prefix,
         wait_for_logs,
         max_completion_wait_time_seconds,
+        local_pipeline_package_path=None,
+        local_dagster_job_package_path=None,
     ):
         self.run_config = check.dict_param(run_config, "run_config")
         self.databricks_host = check.str_param(databricks_host, "databricks_host")
         self.databricks_token = check.str_param(databricks_token, "databricks_token")
         self.secrets = check.list_param(secrets_to_env_variables, "secrets_to_env_variables", dict)
         self.storage = check.dict_param(storage, "storage")
-        self.local_pipeline_package_path = check.str_param(
-            local_pipeline_package_path, "local_pipeline_package_path"
+        check.invariant(
+            local_dagster_job_package_path is not None or local_pipeline_package_path is not None,
+            "Missing config: need to provide either 'local_dagster_job_package_path' or 'local_pipeline_package_path' config entry",
+        )
+        check.invariant(
+            local_dagster_job_package_path is None or local_pipeline_package_path,
+            "Error in config: Provided both 'local_dagster_job_package_path' and 'local_pipeline_package_path' entries. Need to specify one or the other.",
+        )
+        self.local_dagster_job_package_path = check.str_param(
+            local_pipeline_package_path or local_dagster_job_package_path,
+            "local_dagster_job_package_path",
         )
         self.staging_prefix = check.str_param(staging_prefix, "staging_prefix")
         check.invariant(staging_prefix.startswith("/"), "staging_prefix must be an absolute path")
@@ -126,7 +146,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
 
     def launch_step(self, step_context, prior_attempts_count):
         step_run_ref = step_context_to_step_run_ref(
-            step_context, prior_attempts_count, self.local_pipeline_package_path
+            step_context, prior_attempts_count, self.local_dagster_job_package_path
         )
         run_id = step_context.pipeline_run.run_id
         log = step_context.log
@@ -182,11 +202,11 @@ class DatabricksPySparkStepLauncher(StepLauncher):
                 infile, self._dbfs_path(run_id, step_key, self._main_file_name())
             )
 
-        log.info("Uploading pipeline to DBFS")
+        log.info("Uploading dagster job to DBFS")
         with tempfile.TemporaryDirectory() as temp_dir:
-            # Zip and upload package containing pipeline
+            # Zip and upload package containing dagster job
             zip_local_path = os.path.join(temp_dir, CODE_ZIP_NAME)
-            build_pyspark_zip(zip_local_path, self.local_pipeline_package_path)
+            build_pyspark_zip(zip_local_path, self.local_dagster_job_package_path)
             with open(zip_local_path, "rb") as infile:
                 self.databricks_runner.client.put_file(
                     infile, self._dbfs_path(run_id, step_key, CODE_ZIP_NAME)
@@ -251,7 +271,7 @@ class DatabricksConfig:
     by the step launcher, then deserialized as part of the 'main' script when the job is running
     in Databricks.
 
-    The `setup` method handles the actual setup prior to solid execution on the Databricks side.
+    The `setup` method handles the actual setup prior to op execution on the Databricks side.
 
     This config is separated out from the regular Dagster run config system because the setup
     is done by the 'main' script before entering a Dagster context (i.e. using `run_step_from_ref`).

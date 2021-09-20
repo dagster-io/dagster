@@ -2,9 +2,11 @@ import os
 import pickle
 from abc import abstractmethod
 
-from dagster import IOManager, check, io_manager
+from dagster import check
 from dagster.config import Field
 from dagster.config.source import StringSource
+from dagster.core.execution.context.output import OutputContext
+from dagster.core.storage.io_manager import IOManager, io_manager
 from dagster.utils import PICKLE_PROTOCOL, mkdir_p
 from dagster.utils.backcompat import experimental
 
@@ -17,7 +19,7 @@ class MemoizableIOManager(IOManager):
     """
 
     @abstractmethod
-    def has_output(self, context):
+    def has_output(self, context: OutputContext) -> bool:
         """The user-defined method that returns whether data exists given the metadata.
 
         Args:
@@ -79,7 +81,7 @@ class VersionedPickledObjectFilesystemIOManager(MemoizableIOManager):
         return os.path.exists(filepath) and not os.path.isdir(filepath)
 
 
-@io_manager(config_schema={"base_dir": Field(StringSource, is_required=True)})
+@io_manager(config_schema={"base_dir": Field(StringSource, is_required=False)})
 @experimental
 def versioned_filesystem_io_manager(init_context):
     """Filesystem IO manager that utilizes versioning of stored objects.
@@ -90,5 +92,7 @@ def versioned_filesystem_io_manager(init_context):
     output.
     """
     return VersionedPickledObjectFilesystemIOManager(
-        base_dir=init_context.resource_config.get("base_dir")
+        base_dir=init_context.resource_config.get(
+            "base_dir", os.path.join(init_context.instance.storage_directory(), "versioned_outputs")
+        )
     )

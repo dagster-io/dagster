@@ -2,7 +2,7 @@
 from time import sleep
 from typing import Iterator, List
 
-from dagster import ConfigMapping, Output, OutputDefinition, solid
+from dagster import Field, Output, OutputDefinition, solid
 from dagster.core.definitions.decorators.graph import graph
 
 
@@ -39,7 +39,7 @@ def giver(context) -> Iterator[Output]:
 
 
 @solid(
-    config_schema={"fail": bool},
+    config_schema={"fail": Field(bool, is_required=False, default_value=False)},
     output_defs=[OutputDefinition(int, is_required=False)],
 )
 def total(context, in_1, in_2, in_3, in_4):
@@ -76,8 +76,6 @@ def sleepy():
 
 def _config(cfg):
     return {
-        "intermediate_storage": {"filesystem": {}},
-        "execution": {"multiprocess": {}},
         "solids": {
             "giver": {"config": cfg["sleeps"]},
             "total": {"config": {"fail": cfg["fail"]}},
@@ -86,12 +84,7 @@ def _config(cfg):
 
 
 sleepy_pipeline = sleepy.to_job(
-    config_mapping=ConfigMapping(
-        config_schema={
-            "sleeps": [int],
-            "fail": bool,
-        },
-        config_fn=_config,
-    ),
-    default_config={"sleeps": [1, 1, 1, 1], "fail": False},
+    config={
+        "solids": {"giver": {"config": [2, 2, 2, 2]}},
+    },
 )

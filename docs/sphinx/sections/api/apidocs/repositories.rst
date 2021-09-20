@@ -8,3 +8,5 @@ Repositories
 
 .. autoclass:: RepositoryDefinition
     :members:
+
+.. autoclass:: RepositoryData

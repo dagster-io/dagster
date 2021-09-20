@@ -2,7 +2,6 @@ import {MockList} from '@graphql-tools/mock';
 import {render, screen, waitFor} from '@testing-library/react';
 import * as React from 'react';
 
-import {PERMISSIONS_ALLOW_ALL} from '../app/Permissions';
 import {TestProvider} from '../testing/TestProvider';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
@@ -26,6 +25,12 @@ describe('PipelineRoot', () => {
       id: () => PIPELINE_NAME,
       modes: () => new MockList(1),
     }),
+    PipelineSnapshot: () => ({
+      runs: () => new MockList(0),
+      schedules: () => new MockList(0),
+      sensors: () => new MockList(0),
+      solidHandle: null,
+    }),
     RepositoryLocation: () => ({
       id: REPO_LOCATION,
       name: REPO_LOCATION,
@@ -44,10 +49,11 @@ describe('PipelineRoot', () => {
   const pipelineName = 'pipez';
   const path = `/workspace/${repoAddressAsString(repoAddress)}/pipelines/${pipelineName}:default`;
 
-  it('renders definition by default', async () => {
+  it('renders overview by default', async () => {
     const routerProps = {
       initialEntries: [path],
     };
+
     render(
       <TestProvider apolloProps={apolloProps} routerProps={routerProps}>
         <PipelineRoot repoAddress={repoAddress} />
@@ -56,7 +62,7 @@ describe('PipelineRoot', () => {
 
     await waitFor(() => {
       const selected = screen.getByRole('tab', {selected: true});
-      expect(selected.textContent).toMatch(/definition/i);
+      expect(selected.textContent).toMatch(/overview/i);
     });
   });
 
@@ -65,6 +71,7 @@ describe('PipelineRoot', () => {
       const routerProps = {
         initialEntries: [`${path}/playground`],
       };
+
       render(
         <TestProvider apolloProps={apolloProps} routerProps={routerProps}>
           <PipelineRoot repoAddress={repoAddress} />
@@ -84,11 +91,10 @@ describe('PipelineRoot', () => {
       const routerProps = {
         initialEntries: [`${path}/playground`],
       };
-      const permissions = {...PERMISSIONS_ALLOW_ALL, launch_pipeline_execution: false};
 
       render(
         <TestProvider
-          appContextProps={{permissions}}
+          permissionOverrides={{launch_pipeline_execution: false}}
           apolloProps={apolloProps}
           routerProps={routerProps}
         >
@@ -100,7 +106,7 @@ describe('PipelineRoot', () => {
         const selected = screen.getByRole('tab', {selected: true});
 
         // Redirect to Definition, which has been highlighted in the tabs.
-        expect(selected.textContent).toMatch(/definition/i);
+        expect(selected.textContent).toMatch(/overview/i);
 
         // Render a disabled "Playground" tab.
         expect(screen.queryByRole('tab', {name: /playground/i})).toHaveAttribute(

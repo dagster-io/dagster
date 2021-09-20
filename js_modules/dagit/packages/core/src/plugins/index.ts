@@ -2,6 +2,7 @@ import {SidebarSolidDefinitionFragment} from '../pipelines/types/SidebarSolidDef
 import * as generic from '../plugins/generic';
 import * as ipynb from '../plugins/ipynb';
 import * as sql from '../plugins/sql';
+import {RepoAddress} from '../workspace/types';
 
 const plugins = {
   sql: sql,
@@ -12,6 +13,7 @@ const plugins = {
 export interface IPluginSidebarProps {
   definition: SidebarSolidDefinitionFragment;
   rootServerURI: string;
+  repoAddress?: RepoAddress;
 }
 
 interface IPluginInterface {

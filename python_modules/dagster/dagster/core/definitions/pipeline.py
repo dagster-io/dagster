@@ -15,8 +15,11 @@ from dagster.core.storage.root_input_manager import (
     IInputManagerDefinition,
     RootInputManagerDefinition,
 )
+from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 from dagster.core.types.dagster_type import DagsterType, DagsterTypeKind
 from dagster.core.utils import str_format_set
+from dagster.utils import frozentags, merge_dicts
+from dagster.utils.backcompat import experimental_class_warning
 
 from .dependency import (
     DependencyDefinition,
@@ -24,22 +27,27 @@ from .dependency import (
     DynamicCollectDependencyDefinition,
     IDependencyDefinition,
     MultiDependencyDefinition,
-    Solid,
-    SolidHandle,
+    Node,
+    NodeHandle,
     SolidInputHandle,
     SolidInvocation,
 )
 from .graph import GraphDefinition
 from .hook import HookDefinition
 from .mode import ModeDefinition
+from .op import OpDefinition
 from .preset import PresetDefinition
 from .solid import NodeDefinition
 from .utils import validate_tags
+from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
     from .run_config_schema import RunConfigSchema
     from dagster.core.snap import PipelineSnapshot, ConfigSchemaSnapshot
     from dagster.core.host_representation import PipelineIndex
+    from dagster.core.instance import DagsterInstance
+    from dagster.core.definitions.partition import PartitionSetDefinition
+    from dagster.core.execution.execution_results import InProcessGraphResult
 
 
 class PipelineDefinition:
@@ -147,6 +155,7 @@ class PipelineDefinition:
         solid_retry_policy: Optional[RetryPolicy] = None,
         graph_def=None,
         _parent_pipeline_def=None,  # https://github.com/dagster-io/dagster/issues/2115
+        version_strategy: Optional[VersionStrategy] = None,
     ):
         # If a graph is specificed directly use it
         if check.opt_inst_param(graph_def, "graph_def", GraphDefinition):
@@ -171,6 +180,8 @@ class PipelineDefinition:
                 config_mapping=None,
                 description=None,
             )
+
+        self._is_using_graph_job_op_apis = _is_using_graph_job_op_apis(self._graph_def.solids)
 
         # tags and description can exist on graph as well, but since
         # same graph may be in multiple pipelines/jobs, keep separate layer
@@ -226,7 +237,7 @@ class PipelineDefinition:
                 mode_def,
                 self._current_level_node_defs,
                 self._graph_def._dagster_type_dict,
-                self._graph_def._solid_dict,
+                self._graph_def._node_dict,
                 self._hook_defs,
                 self._graph_def._dependency_structure,
             )
@@ -241,14 +252,23 @@ class PipelineDefinition:
         self._cached_run_config_schemas: Dict[str, "RunConfigSchema"] = {}
         self._cached_external_pipeline = None
 
+        self.version_strategy = check.opt_inst_param(
+            version_strategy, "version_strategy", VersionStrategy
+        )
+
+        if self.version_strategy is not None:
+            experimental_class_warning("VersionStrategy")
+
     @property
     def name(self):
         return self._name
 
+    def describe_target(self):
+        return f"pipeline '{self.name}'"
+
     @property
     def tags(self):
-        # could merge with graph level tags here
-        return self._tags
+        return frozentags(**merge_dicts(self._graph_def.tags, self._tags))
 
     @property
     def description(self):
@@ -308,6 +328,16 @@ class PipelineDefinition:
     def is_multi_mode(self) -> bool:
         return len(self._mode_definitions) > 1
 
+    def is_using_memoization(self, run_tags: Dict[str, str]) -> bool:
+        tags = merge_dicts(self.tags, run_tags)
+        # If someone provides a false value for memoized run tag, then they are intentionally
+        # switching off memoization.
+        if tags.get(MEMOIZED_RUN_TAG) == "false":
+            return False
+        return (
+            MEMOIZED_RUN_TAG in tags and tags.get(MEMOIZED_RUN_TAG) == "true"
+        ) or self.version_strategy is not None
+
     def has_mode_definition(self, mode: str) -> bool:
         check.str_param(mode, "mode")
         return bool(self._get_mode_definition(mode))
@@ -342,7 +372,7 @@ class PipelineDefinition:
         }
 
     @property
-    def all_solid_defs(self) -> List[NodeDefinition]:
+    def all_node_defs(self) -> List[NodeDefinition]:
         return list(self._all_node_defs.values())
 
     @property
@@ -446,7 +476,7 @@ class PipelineDefinition:
     def hook_defs(self) -> AbstractSet[HookDefinition]:
         return self._hook_defs
 
-    def get_all_hooks_for_handle(self, handle: SolidHandle) -> FrozenSet[HookDefinition]:
+    def get_all_hooks_for_handle(self, handle: NodeHandle) -> FrozenSet[HookDefinition]:
         """Gather all the hooks for the given solid from all places possibly attached with a hook.
 
         A hook can be attached to any of the following objects
@@ -454,12 +484,12 @@ class PipelineDefinition:
         * PipelineDefinition
 
         Args:
-            handle (SolidHandle): The solid's handle
+            handle (NodeHandle): The solid's handle
 
         Returns:
             FrozenSet[HookDefinition]
         """
-        check.inst_param(handle, "handle", SolidHandle)
+        check.inst_param(handle, "handle", NodeHandle)
         hook_defs: AbstractSet[HookDefinition] = set()
 
         current = handle
@@ -484,7 +514,7 @@ class PipelineDefinition:
 
         return frozenset(hook_defs)
 
-    def get_retry_policy_for_handle(self, handle: SolidHandle) -> Optional[RetryPolicy]:
+    def get_retry_policy_for_handle(self, handle: NodeHandle) -> Optional[RetryPolicy]:
         solid = self.get_solid(handle)
 
         if solid.retry_policy:
@@ -502,11 +532,14 @@ class PipelineDefinition:
         hook_defs = check.set_param(hook_defs, "hook_defs", of_type=HookDefinition)
 
         pipeline_def = PipelineDefinition(
+            name=self.name,
             graph_def=self._graph_def,
             mode_defs=self.mode_definitions,
             preset_defs=self.preset_defs,
             tags=self.tags,
             hook_defs=hook_defs | self.hook_defs,
+            description=self._description,
+            solid_retry_policy=self._solid_retry_policy,
             _parent_pipeline_def=self._parent_pipeline_def,
         )
 
@@ -551,7 +584,7 @@ class PipelineSubsetDefinition(PipelineDefinition):
         raise DagsterInvariantViolationError("Pipeline subsets may not be subset again.")
 
 
-def _dep_key_of(solid: Solid) -> SolidInvocation:
+def _dep_key_of(solid: Node) -> SolidInvocation:
     return SolidInvocation(
         name=solid.definition.name,
         alias=solid.name,
@@ -562,7 +595,8 @@ def _dep_key_of(solid: Solid) -> SolidInvocation:
 
 
 def _get_pipeline_subset_def(
-    pipeline_def, solids_to_execute: AbstractSet[str]
+    pipeline_def: PipelineDefinition,
+    solids_to_execute: AbstractSet[str],
 ) -> "PipelineSubsetDefinition":
     """
     Build a pipeline which is a subset of another pipeline.
@@ -580,7 +614,11 @@ def _get_pipeline_subset_def(
                 ),
             )
 
-    solids = list(map(graph.solid_named, solids_to_execute))
+    # go in topo order to ensure deps dict is ordered
+    solids = list(
+        filter(lambda solid: solid.name in solids_to_execute, graph.solids_in_topological_order)
+    )
+
     deps: Dict[
         Union[str, SolidInvocation],
         Dict[str, IDependencyDefinition],
@@ -594,7 +632,7 @@ def _get_pipeline_subset_def(
                     deps[_dep_key_of(solid)][input_handle.input_def.name] = DependencyDefinition(
                         solid=output_handle.solid.name, output=output_handle.output_def.name
                     )
-            if graph.dependency_structure.has_dynamic_fan_in_dep(input_handle):
+            elif graph.dependency_structure.has_dynamic_fan_in_dep(input_handle):
                 output_handle = graph.dependency_structure.get_dynamic_fan_in_dep(input_handle)
                 if output_handle.solid.name in solids_to_execute:
                     deps[_dep_key_of(solid)][
@@ -614,6 +652,7 @@ def _get_pipeline_subset_def(
                         if output_handle.solid.name in solids_to_execute
                     ]
                 )
+            # else input is unconnected
 
     try:
         sub_pipeline_def = PipelineSubsetDefinition(
@@ -641,7 +680,7 @@ def _checked_resource_reqs_for_mode(
     mode_def: ModeDefinition,
     node_defs: List[NodeDefinition],
     dagster_type_dict: Dict[str, DagsterType],
-    solid_dict: Dict[str, Solid],
+    solid_dict: Dict[str, Node],
     pipeline_hook_defs: AbstractSet[HookDefinition],
     dependency_structure: DependencyStructure,
 ) -> Set[str]:
@@ -826,10 +865,10 @@ def _checked_type_resource_reqs_for_mode(
 
 def _checked_input_resource_reqs_for_mode(
     dependency_structure: DependencyStructure,
-    solid_dict: Dict[str, Solid],
+    node_dict: Dict[str, Node],
     mode_def: ModeDefinition,
     outer_dependency_structure: Optional[DependencyStructure] = None,
-    outer_solid: Optional[Solid] = None,
+    outer_solid: Optional[Node] = None,
 ) -> Set[str]:
     resource_reqs = set()
     mode_root_input_managers = set(
@@ -838,19 +877,20 @@ def _checked_input_resource_reqs_for_mode(
         if isinstance(resource_def, RootInputManagerDefinition)
     )
 
-    for solid in solid_dict.values():
-        if solid.is_composite:
+    for node in node_dict.values():
+        if node.is_graph:
+            graph_def = node.definition.ensure_graph_def()
             # check inner solids
             resource_reqs.update(
                 _checked_input_resource_reqs_for_mode(
-                    dependency_structure=solid.definition.dependency_structure,
-                    solid_dict=solid.definition.solid_dict,
+                    dependency_structure=graph_def.dependency_structure,
+                    node_dict=graph_def.node_dict,
                     mode_def=mode_def,
                     outer_dependency_structure=dependency_structure,
-                    outer_solid=solid,
+                    outer_solid=node,
                 )
             )
-        for handle in solid.input_handles():
+        for handle in node.input_handles():
             source_output_handles = None
             if dependency_structure.has_deps(handle):
                 # input is connected to outputs from the same dependency structure
@@ -858,13 +898,13 @@ def _checked_input_resource_reqs_for_mode(
             elif (
                 outer_solid
                 and outer_dependency_structure
-                and solid.container_maps_input(handle.input_name)
+                and node.container_maps_input(handle.input_name)
             ):
                 # input is connected to outputs from outer dependency structure, e.g. first solids
                 # in a composite
                 outer_handle = SolidInputHandle(
                     solid=outer_solid,
-                    input_def=solid.container_mapped_input(handle.input_name).definition,
+                    input_def=node.container_mapped_input(handle.input_name).definition,
                 )
                 if outer_dependency_structure.has_deps(outer_handle):
                     source_output_handles = outer_dependency_structure.get_deps_list(outer_handle)
@@ -876,7 +916,7 @@ def _checked_input_resource_reqs_for_mode(
                     output_manager_def = mode_def.resource_defs[output_manager_key]
                     if not isinstance(output_manager_def, IInputManagerDefinition):
                         raise DagsterInvalidDefinitionError(
-                            f'Input "{handle.input_def.name}" of solid "{solid.name}" is '
+                            f'Input "{handle.input_def.name}" of solid "{node.name}" is '
                             f'connected to output "{source_output_handle.output_def.name}" '
                             f'of solid "{source_output_handle.solid.name}". In mode '
                             f'"{mode_def.name}", that output does not have an output '
@@ -899,7 +939,7 @@ def _checked_input_resource_reqs_for_mode(
                         "Possible solutions are:\n"
                         '  * add a dagster_type_loader for the type "{dagster_type}"\n'
                         '  * connect "{input_name}" to the output of another solid\n'.format(
-                            solid_name=solid.name,
+                            solid_name=node.name,
                             input_name=input_def.name,
                             dagster_type=input_def.dagster_type.display_name,
                         )
@@ -913,7 +953,7 @@ def _checked_input_resource_reqs_for_mode(
                     if input_def.root_manager_key not in mode_def.resource_defs:
                         raise DagsterInvalidDefinitionError(
                             f'Root input manager key "{input_def.root_manager_key}" is required by '
-                            f'unsatisfied input "{input_def.name}" of solid def {solid.name}, but is not '
+                            f'unsatisfied input "{input_def.name}" of solid {node.name}, but is not '
                             f'provided by mode "{mode_def.name}". '
                             f'In mode "{mode_def.name}", provide a root input manager for key "{input_def.root_manager_key}", '
                             f'or change "{input_def.root_manager_key}" to one of the provided root input managers keys: {sorted(mode_root_input_managers)}.'
@@ -975,6 +1015,7 @@ def _create_run_config_schema(
             logger_defs=mode_definition.loggers,
             ignored_solids=ignored_solids,
             required_resources=required_resources,
+            is_using_graph_job_op_apis=pipeline_def._is_using_graph_job_op_apis,  # pylint: disable=protected-access
         )
     )
 
@@ -987,7 +1028,7 @@ def _create_run_config_schema(
         check.failed("Unexpected outer_config_type value of None")
 
     config_type_dict_by_name, config_type_dict_by_key = construct_config_type_dictionary(
-        pipeline_def.all_solid_defs,
+        pipeline_def.all_node_defs,
         outer_config_type,
     )
 
@@ -997,3 +1038,14 @@ def _create_run_config_schema(
         config_type_dict_by_key=config_type_dict_by_key,
         config_mapping=mode_definition.config_mapping,
     )
+
+
+def _is_using_graph_job_op_apis(node_list: List[Node]):
+    """Recursively determine if any node definitions were constructed using the `op` decorator."""
+    for node in node_list:
+        if isinstance(node.definition, OpDefinition):
+            return True
+        elif isinstance(node.definition, GraphDefinition):
+            if _is_using_graph_job_op_apis(node.definition.solids):
+                return True
+    return False

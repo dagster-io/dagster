@@ -30,6 +30,12 @@ export interface NavQuery_workspaceOrError_Workspace_locationEntries_locationOrL
   scheduleState: NavQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_schedules_scheduleState;
 }
 
+export interface NavQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_sensors_targets {
+  __typename: "Target";
+  mode: string;
+  pipelineName: string;
+}
+
 export interface NavQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_sensors_sensorState {
   __typename: "InstigationState";
   id: string;
@@ -39,8 +45,8 @@ export interface NavQuery_workspaceOrError_Workspace_locationEntries_locationOrL
 export interface NavQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_sensors {
   __typename: "Sensor";
   id: string;
-  mode: string | null;
   name: string;
+  targets: NavQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_sensors_targets[] | null;
   sensorState: NavQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_sensors_sensorState;
 }
 

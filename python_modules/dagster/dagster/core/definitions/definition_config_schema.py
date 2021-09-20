@@ -105,7 +105,7 @@ class ConfiguredDefinitionConfigSchema(IDefinitionConfigSchema):
     def as_field(self) -> Field:
         return self._current_field
 
-    def _invoke_user_config_fn(self, processed_config):
+    def _invoke_user_config_fn(self, processed_config: Dict[str, Any]) -> Dict[str, Any]:
         with user_code_error_boundary(
             DagsterConfigMappingFunctionError,
             _get_user_code_error_str_lambda(self.parent_def),

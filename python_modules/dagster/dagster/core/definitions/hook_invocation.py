@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, List, NamedTuple, Optional, cast
 
 from ..errors import DagsterInvariantViolationError
-from ..execution.context.hook import BoundHookContext, HookContext, UnboundHookContext
+from ..execution.context.hook import BoundHookContext, UnboundHookContext
 
 if TYPE_CHECKING:
     from .hook import HookDefinition
@@ -10,11 +10,11 @@ if TYPE_CHECKING:
 
 def hook_invocation_result(
     hook_def: "HookDefinition",
-    hook_context: Optional[HookContext],
+    hook_context: Optional[UnboundHookContext],
     event_list: Optional[List["DagsterEvent"]] = None,
 ):
     if not hook_context:
-        hook_context = UnboundHookContext(resources={}, mode_def=None)
+        hook_context = UnboundHookContext(resources={}, mode_def=None, solid=None)
 
     # Validate that all required resources are provided in the context
     for key in hook_def.required_resource_keys:
@@ -30,6 +30,7 @@ def hook_invocation_result(
         resources=hook_context.resources,
         mode_def=hook_context.mode_def,
         log_manager=hook_context.log,
+        solid=hook_context._solid,  # pylint: disable=protected-access
     )
 
     return (

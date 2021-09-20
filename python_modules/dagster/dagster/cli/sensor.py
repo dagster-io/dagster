@@ -3,7 +3,9 @@ import sys
 
 import click
 import yaml
-from dagster import DagsterInvariantViolationError, check
+from dagster import DagsterInvariantViolationError
+from dagster import __version__ as dagster_version
+from dagster import check
 from dagster.cli.workspace.cli_target import (
     get_external_repository_from_kwargs,
     get_external_repository_from_repo_location,
@@ -125,7 +127,9 @@ def sensor_list_command(running, stopped, name, **kwargs):
 
 def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, print_fn):
     with DagsterInstance.get() as instance:
-        with get_external_repository_from_kwargs(cli_args) as external_repo:
+        with get_external_repository_from_kwargs(
+            instance, version=dagster_version, kwargs=cli_args
+        ) as external_repo:
             check_repo_and_scheduler(external_repo, instance)
             repository_name = external_repo.name
 
@@ -134,47 +138,39 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
                 print_fn(title)
                 print_fn("*" * len(title))
 
-            stored_sensors_by_id = {}
-            for job_state in instance.all_stored_job_state(
-                external_repo.get_external_origin_id(), JobType.SENSOR
-            ):
-                stored_sensors_by_id[job_state.job_origin_id] = job_state
-
-            all_state = [
-                stored_sensors_by_id.get(
-                    external_sensor.get_external_origin_id(),
-                    external_sensor.get_default_job_state(instance),
+            repo_sensors = external_repo.get_external_sensors()
+            stored_sensors_by_origin_id = {
+                stored_sensor_state.job_origin_id: stored_sensor_state
+                for stored_sensor_state in instance.all_stored_job_state(
+                    external_repo.get_external_origin_id(), job_type=JobType.SENSOR
                 )
-                for external_sensor in external_repo.get_external_sensors()
-            ]
-
-            if running_filter:
-                jobs = [
-                    job_state for job_state in all_state if job_state.status == JobStatus.RUNNING
-                ]
-            elif stopped_filter:
-                jobs = [
-                    job_state for job_state in all_state if job_state.status == JobStatus.STOPPED
-                ]
-            else:
-                jobs = all_state
+            }
 
             first = True
 
-            for job_state in jobs:
-                # If --name filter is present, only print the job name
-                if name_filter:
-                    print_fn(job_state.job_name)
+            for external_sensor in repo_sensors:
+                stored_sensor_state = stored_sensors_by_origin_id.get(
+                    external_sensor.get_external_origin_id()
+                )
+                if running_filter and (
+                    not stored_sensor_state or stored_sensor_state.status == JobStatus.STOPPED
+                ):
+                    continue
+                if stopped_filter and stored_sensor_state and JobStatus.RUNNING:
                     continue
 
-                flag = "[{status}]".format(status=job_state.status.value) if job_state else ""
-                job_title = "Sensor: {name} {flag}".format(name=job_state.job_name, flag=flag)
+                if name_filter:
+                    print_fn(external_sensor.name)
+                    continue
 
+                status = stored_sensor_state.status if stored_sensor_state else JobStatus.STOPPED
+                sensor_title = f"Sensor: {external_sensor.name} [{status.value}]"
                 if not first:
-                    print_fn("*" * len(job_title))
+                    print_fn("*" * len(sensor_title))
+
                 first = False
 
-                print_fn(job_title)
+                print_fn(sensor_title)
 
 
 @sensor_cli.command(name="start", help="Start an existing sensor.")
@@ -189,7 +185,9 @@ def sensor_start_command(sensor_name, start_all, **kwargs):
 
 def execute_start_command(sensor_name, all_flag, cli_args, print_fn):
     with DagsterInstance.get() as instance:
-        with get_external_repository_from_kwargs(cli_args) as external_repo:
+        with get_external_repository_from_kwargs(
+            instance, version=dagster_version, kwargs=cli_args
+        ) as external_repo:
             check_repo_and_scheduler(external_repo, instance)
             repository_name = external_repo.name
 
@@ -222,9 +220,11 @@ def sensor_stop_command(sensor_name, **kwargs):
     return execute_stop_command(sensor_name, kwargs, click.echo)
 
 
-def execute_stop_command(sensor_name, cli_args, print_fn, instance=None):
+def execute_stop_command(sensor_name, cli_args, print_fn):
     with DagsterInstance.get() as instance:
-        with get_external_repository_from_kwargs(cli_args) as external_repo:
+        with get_external_repository_from_kwargs(
+            instance, version=dagster_version, kwargs=cli_args
+        ) as external_repo:
             check_repo_and_scheduler(external_repo, instance)
             try:
                 external_sensor = external_repo.get_external_sensor(sensor_name)
@@ -264,7 +264,11 @@ def execute_preview_command(
     sensor_name, since, last_run_key, cursor, cli_args, print_fn, instance=None
 ):
     with DagsterInstance.get() as instance:
-        with get_repository_location_from_kwargs(cli_args) as repo_location:
+        with get_repository_location_from_kwargs(
+            instance,
+            version=dagster_version,
+            kwargs=cli_args,
+        ) as repo_location:
             try:
                 external_repo = get_external_repository_from_repo_location(
                     repo_location, cli_args.get("repository")
@@ -337,7 +341,9 @@ def sensor_cursor_command(sensor_name, **kwargs):
 
 def execute_cursor_command(sensor_name, cli_args, print_fn):
     with DagsterInstance.get() as instance:
-        with get_repository_location_from_kwargs(cli_args) as repo_location:
+        with get_repository_location_from_kwargs(
+            instance, version=dagster_version, kwargs=cli_args
+        ) as repo_location:
             if bool(cli_args.get("delete")) == bool(cli_args.get("set")):
                 # must use one of delete/set
                 raise click.UsageError("Must set cursor using `--set <value>` or use `--delete`")

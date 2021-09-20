@@ -1,9 +1,8 @@
 from dagster import check
-from dagster.core.host_representation import ExternalPipeline
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 
-from .base import RunCoordinator
+from .base import RunCoordinator, SubmitRunContext
 
 
 class DefaultRunCoordinator(RunCoordinator, ConfigurableClass):
@@ -26,12 +25,15 @@ class DefaultRunCoordinator(RunCoordinator, ConfigurableClass):
     def from_config_value(cls, inst_data, config_value):
         return cls(inst_data=inst_data, **config_value)
 
-    def submit_run(self, pipeline_run, external_pipeline):
-        check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
-        check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
+    def submit_run(self, context: SubmitRunContext) -> PipelineRun:
+        pipeline_run = context.pipeline_run
         check.invariant(pipeline_run.status == PipelineRunStatus.NOT_STARTED)
 
-        return self._instance.launch_run(pipeline_run.run_id, external_pipeline)
+        self._instance.launch_run(pipeline_run.run_id, context.workspace)
+        run = self._instance.get_run_by_id(pipeline_run.run_id)
+        if run is None:
+            check.failed(f"Failed to reload run {pipeline_run.run_id}")
+        return run
 
     def can_cancel_run(self, run_id):
         return self._instance.run_launcher.can_terminate(run_id)

@@ -2,7 +2,6 @@ from typing import AbstractSet, Any, Optional
 
 from dagster import (
     InputDefinition,
-    Nothing,
     ResourceDefinition,
     SolidDefinition,
     repository,
@@ -17,14 +16,15 @@ def make_solid(
     name: str,
     required_resource_keys: Optional[AbstractSet[str]] = None,
     config_schema: Optional[Any] = None,
+    num_inputs: int = 0,
 ) -> SolidDefinition:
     @solid(
         name=name,
-        input_defs=[InputDefinition("the_input", dagster_type=Nothing)],
+        input_defs=[InputDefinition(f"input{i}") for i in range(num_inputs)],
         required_resource_keys=required_resource_keys,
         config_schema=config_schema,
     )
-    def _solid(_):
+    def _solid(_, **_kwargs):
         return None
 
     return _solid
@@ -34,7 +34,7 @@ def make_solid(
 def event_tables():
     """A graph with no resources"""
     make_raw_events = make_solid("make_raw_events")
-    clean_events = make_solid("clean_events")
+    clean_events = make_solid("clean_events", num_inputs=1)
 
     raw_events = make_raw_events()
     clean_events(raw_events)
@@ -97,10 +97,10 @@ def content_recommender_training():
     """A graph with a production job, but no schedule"""
     build_user_features = make_solid("build_user_features")
     build_item_features = make_solid("build_item_features")
-    train_model = make_solid("train_model", required_resource_keys={"mlflow"})
-    evaluate_model = make_solid("evaluate_model")
+    train_model = make_solid("train_model", required_resource_keys={"mlflow"}, num_inputs=2)
+    evaluate_model = make_solid("evaluate_model", num_inputs=1)
 
-    evaluate_model(train_model([build_user_features(), build_item_features()]))
+    evaluate_model(train_model(input0=build_user_features(), input1=build_item_features()))
 
 
 content_recommender_training_dev = content_recommender_training.to_job(
@@ -121,7 +121,7 @@ def process_customer_data_dump():
 
 
 process_customer_data_dump_dev = process_customer_data_dump.to_job(
-    default_config={"solids": {"process_customer": {"config": {"customer_id": "test_customer"}}}}
+    config={"solids": {"process_customer": {"config": {"customer_id": "test_customer"}}}}
 )
 
 

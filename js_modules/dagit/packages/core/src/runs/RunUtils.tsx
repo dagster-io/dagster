@@ -7,14 +7,12 @@ import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {Timestamp} from '../app/time/Timestamp';
 import {ExecutionParams, PipelineRunStatus} from '../types/globalTypes';
-import {REPOSITORY_ORIGIN_FRAGMENT} from '../workspace/RepositoryInformation';
 
 import {DagsterTag} from './RunTag';
 import {StepSelection} from './StepSelection';
 import {TimeElapsed} from './TimeElapsed';
 import {LaunchPipelineExecution} from './types/LaunchPipelineExecution';
 import {LaunchPipelineReexecution} from './types/LaunchPipelineReexecution';
-import {RunActionMenuFragment} from './types/RunActionMenuFragment';
 import {RunFragment} from './types/RunFragment';
 import {RunTableRunFragment} from './types/RunTableRunFragment';
 import {RunTimeFragment} from './types/RunTimeFragment';
@@ -31,6 +29,7 @@ export function handleLaunchResult(
   basePath: string,
   pipelineName: string,
   result: void | {data?: LaunchPipelineExecution | LaunchPipelineReexecution | null},
+  openInTab?: boolean,
 ) {
   const obj =
     result && result.data && 'launchPipelineExecution' in result.data
@@ -45,7 +44,12 @@ export function handleLaunchResult(
   }
 
   if (obj.__typename === 'LaunchPipelineRunSuccess') {
-    window.location.href = `${basePath}/instance/runs/${obj.run.runId}`;
+    const url = `${basePath}/instance/runs/${obj.run.runId}`;
+    if (openInTab) {
+      window.open(url, '_blank');
+    } else {
+      window.location.href = url;
+    }
   } else if (obj.__typename === 'PythonError') {
     showCustomAlert({
       title: 'Error',
@@ -64,7 +68,7 @@ export function handleLaunchResult(
   }
 }
 
-function getBaseExecutionMetadata(run: RunFragment | RunTableRunFragment | RunActionMenuFragment) {
+function getBaseExecutionMetadata(run: RunFragment | RunTableRunFragment) {
   const hiddenTagKeys: string[] = [DagsterTag.IsResumeRetry, DagsterTag.StepSelection];
 
   return {
@@ -99,7 +103,7 @@ export type ReExecutionStyle =
   | {type: 'selection'; selection: StepSelection};
 
 export function getReexecutionVariables(input: {
-  run: (RunFragment | RunTableRunFragment | RunActionMenuFragment) & {runConfigYaml: string};
+  run: (RunFragment | RunTableRunFragment) & {runConfigYaml: string};
   style: ReExecutionStyle;
   repositoryLocationName: string;
   repositoryName: string;
@@ -173,7 +177,7 @@ export const DELETE_MUTATION = gql`
       ... on PythonError {
         message
       }
-      ... on ReadOnlyError {
+      ... on UnauthorizedError {
         message
       }
       ... on PipelineRunNotFoundError {
@@ -200,7 +204,7 @@ export const TERMINATE_MUTATION = gql`
           canTerminate
         }
       }
-      ... on ReadOnlyError {
+      ... on UnauthorizedError {
         message
       }
       ... on PythonError {
@@ -242,7 +246,8 @@ export const LAUNCH_PIPELINE_REEXECUTION_MUTATION = gql`
 interface RunTimeProps {
   run: RunTimeFragment;
 }
-export const RunTime: React.FunctionComponent<RunTimeProps> = ({run}) => {
+
+export const RunTime: React.FC<RunTimeProps> = React.memo(({run}) => {
   const {stats, status} = run;
 
   if (stats.__typename !== 'PipelineRunStatsSnapshot') {
@@ -279,9 +284,9 @@ export const RunTime: React.FunctionComponent<RunTimeProps> = ({run}) => {
   };
 
   return <div>{content()}</div>;
-};
+});
 
-export const RunElapsed: React.FC<RunTimeProps> = ({run}) => {
+export const RunElapsed: React.FC<RunTimeProps> = React.memo(({run}) => {
   if (run.stats.__typename !== 'PipelineRunStatsSnapshot') {
     return (
       <Popover content={<PythonErrorInfo error={run.stats} />}>
@@ -293,7 +298,7 @@ export const RunElapsed: React.FC<RunTimeProps> = ({run}) => {
   }
 
   return <TimeElapsed startUnix={run.stats.startTime} endUnix={run.stats.endTime} />;
-};
+});
 
 export const RUN_TIME_FRAGMENT = gql`
   fragment RunTimeFragment on PipelineRun {
@@ -313,27 +318,4 @@ export const RUN_TIME_FRAGMENT = gql`
     }
   }
   ${PYTHON_ERROR_FRAGMENT}
-`;
-
-export const RUN_ACTION_MENU_FRAGMENT = gql`
-  fragment RunActionMenuFragment on PipelineRun {
-    id
-    runId
-    rootRunId
-    pipelineName
-    solidSelection
-    pipelineSnapshotId
-    mode
-    canTerminate
-    tags {
-      key
-      value
-    }
-    status
-    repositoryOrigin {
-      id
-      ...RepositoryOriginFragment
-    }
-  }
-  ${REPOSITORY_ORIGIN_FRAGMENT}
 `;

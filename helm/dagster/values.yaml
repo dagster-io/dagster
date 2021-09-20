@@ -51,6 +51,9 @@ dagit:
   # Deploy a separate instance of Dagit in --read-only mode (can't launch runs, disable schedules, etc.)
   enableReadOnly: false
 
+  # The timeout in milliseconds to set on database statements sent to the Dagster instance.
+  dbStatementTimeout: ~
+
   # Additional environment variables to set.
   # A Kubernetes ConfigMap will be created with these environment variables. See:
   # https://kubernetes.io/docs/concepts/configuration/configmap/
@@ -131,13 +134,14 @@ dagit:
 ####################################################################################################
 computeLogManager:
   # Type can be one of [
-  #   LocalComputeLogManager,
+  #   NoOpComputeLogManager,
+  #   LocalComputeLogManager (deprecated - if set, NoOpComputeLogManager will be used instead),
   #   AzureBlobComputeLogManager,
   #   GCSComputeLogManager,
   #   S3ComputeLogManager,
   #   CustomComputeLogManager,
   # ]
-  type: LocalComputeLogManager
+  type: NoOpComputeLogManager
   config: {}
   ##  Uncomment this configuration if the AzureBlobComputeLogManager is selected
   #   azureBlobComputeLogManager:
@@ -210,7 +214,7 @@ dagster-user-deployments:
       #   - "-a"
       #   - "define_demo_execution_repo"
       dagsterApiGrpcArgs:
-        - "-f"
+        - "--python-file"
         - "/example_project/example_repo/repo.py"
       port: 3030
 
@@ -320,13 +324,13 @@ scheduler:
   type: DagsterDaemonScheduler
 
   config: {}
-    ## Uncomment this configuration will only be used if the CustomScheduler is selected.
-    ## Using this setting requires a custom Dagit image that defines the user specified
-    ## scheduler in an installed python module.
-    # customScheduler:
-    #   module: ~
-    #   class: ~
-    #   config: {}
+  ## Uncomment this configuration will only be used if the CustomScheduler is selected.
+  ## Using this setting requires a custom Dagit image that defines the user specified
+  ## scheduler in an installed python module.
+  #   customScheduler:
+  #     module: ~
+  #     class: ~
+  #     config: {}
 
 ####################################################################################################
 # Run Launcher: Configuration for run launcher
@@ -338,9 +342,14 @@ runLauncher:
   config:
     # This configuration will only be used if the K8sRunLauncher is selected
     k8sRunLauncher:
+
+      # Change with caution! If you're using a fixed tag for pipeline run images, changing the
+      # image pull policy to anything other than "Always" will use a cached/stale image, which is
+      # almost certainly not what you want.
+      imagePullPolicy: "Always"
+
       ## The image to use for the launched Job's Dagster container.
-      ## This image should only be specified when user code deployments are disabled. Otherwise,
-      ## it will be ignored.
+      ## The `pullPolicy` field is ignored. Use`imagePullPolicy` instead.
       # image:
       #   repository: ""
       #   tag: ""
@@ -373,6 +382,14 @@ runLauncher:
       # envSecrets:
       #   - name: secret
       envSecrets: []
+
+      # Additional variables from the existing environment can be passed into the Job.
+      #
+      # Example:
+      #
+      # envVars:
+      #   - "ENV_VAR"
+      envVars: []
 
     # This configuration will only be used if the CeleryK8sRunLauncher is selected
     celeryK8sRunLauncher:
@@ -650,6 +667,10 @@ ingress:
     # See: https://github.com/dagster-io/dagster/issues/2073
     host: ""
 
+    tls:
+      enabled: false
+      secretName: ""
+
     # Different http paths to add to the ingress before the default dagit path
     # Example:
     #
@@ -678,6 +699,10 @@ ingress:
     # See: https://github.com/dagster-io/dagster/issues/2073
     host: ""
 
+    tls:
+      enabled: false
+      secretName: ""
+
     # Different http paths to add to the ingress before the default dagit path
     # Example:
     #
@@ -702,6 +727,10 @@ ingress:
     # if path is '/flower', Flower will be accessible at 'mycompany.com/flower'
     # NOTE: do NOT keep trailing slash. For root configuration, set as empty string
     path: ""
+
+    tls:
+      enabled: false
+      secretName: ""
 
     # Different http paths to add to the ingress before the default flower path
     # Example:
@@ -732,8 +761,8 @@ ingress:
 # Setting `heartbeatTolerance` lets you configure how long each thread can run without sending
 # a heartbeat before the daemon determines that one must be hanging and restarts the process.
 #
-# Setting `enabled` in `queuedRunCoordinator` allows you to set limits on the total number of runs
-# that can execute at once.
+# Setting `config.queuedRunCoordinator.maxConcurrentRuns` in `runCoordinator` allows you to set
+# limits on the total number of runs that can execute at once.
 ####################################################################################################
 dagsterDaemon:
   enabled: true
@@ -747,11 +776,27 @@ dagsterDaemon:
 
   heartbeatTolerance: 300
 
-  queuedRunCoordinator:
+  runCoordinator:
     enabled: false
-    module: dagster.core.run_coordinator
-    class: QueuedRunCoordinator
-    config: {}
+
+    # Type can be one of [
+    #   QueuedRunCoordinator,
+    #   CustomRunCoordinator,
+    #  ]
+    type: QueuedRunCoordinator
+    config:
+      queuedRunCoordinator:
+        maxConcurrentRuns: ~
+        tagConcurrencyLimits: []
+        dequeueIntervalSeconds: ~
+
+    ##  Uncomment this configuration if the CustomRunCoordinator is selected.
+    ##  Using this setting requires a custom Daemon image that defines the user specified
+    ##  run coordinator in an installed python module.
+    #   customRunCoordinator:
+    #     module: ~
+    #     class: ~
+    #     config: {}
 
   # Additional environment variables to set.
   # A Kubernetes ConfigMap will be created with these environment variables. See:

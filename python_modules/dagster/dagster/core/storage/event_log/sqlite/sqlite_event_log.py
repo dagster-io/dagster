@@ -89,7 +89,8 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             conn_string = self.conn_string_for_shard(INDEX_SHARD_NAME)
             engine = create_engine(conn_string, poolclass=NullPool)
             self._initdb(engine)
-            self.reindex()
+            self.reindex_events()
+            self.reindex_assets()
 
         super().__init__()
 
@@ -240,7 +241,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         self,
         event_records_filter: Optional[EventRecordsFilter] = None,
         limit: Optional[int] = None,
-        ascending: Optional[bool] = False,
+        ascending: bool = False,
     ) -> Iterable[EventLogRecord]:
         """Overridden method to enable cross-run event queries in sqlite.
 
@@ -413,7 +414,11 @@ class SqliteEventLogStorageWatchdog(PatternMatchingEventHandler):
         events = self._event_log_storage.get_logs_for_run(self._run_id, self._cursor)
         self._cursor += len(events)
         for event in events:
-            status = self._cb(event)
+            status = None
+            try:
+                status = self._cb(event)
+            except Exception:  # pylint: disable=broad-except
+                logging.exception("Exception in callback for event watch on run %s.", self._run_id)
 
             if (
                 status == PipelineRunStatus.SUCCESS

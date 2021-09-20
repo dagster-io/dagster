@@ -256,7 +256,7 @@ export interface RunLogsQuery_pipelineRunOrError_PipelineRun_events_ExecutionSte
   level: LogLevel;
   stepKey: string | null;
   eventType: DagsterEventType | null;
-  error: RunLogsQuery_pipelineRunOrError_PipelineRun_events_ExecutionStepFailureEvent_error;
+  error: RunLogsQuery_pipelineRunOrError_PipelineRun_events_ExecutionStepFailureEvent_error | null;
   errorSource: ErrorSource | null;
   failureMetadata: RunLogsQuery_pipelineRunOrError_PipelineRun_events_ExecutionStepFailureEvent_failureMetadata | null;
 }
@@ -966,7 +966,7 @@ export interface RunLogsQuery_pipelineRunOrError_PipelineRun_events_HookErroredE
   level: LogLevel;
   stepKey: string | null;
   eventType: DagsterEventType | null;
-  error: RunLogsQuery_pipelineRunOrError_PipelineRun_events_HookErroredEvent_error;
+  error: RunLogsQuery_pipelineRunOrError_PipelineRun_events_HookErroredEvent_error | null;
 }
 
 export interface RunLogsQuery_pipelineRunOrError_PipelineRun_events_LogsCapturedEvent {

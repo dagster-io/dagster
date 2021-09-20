@@ -1,9 +1,9 @@
 import * as React from 'react';
 
-import {AppContext} from './AppContext';
+import {WebSocketContext} from './WebSocketProvider';
 
 export const useWebsocketAvailability = () => {
-  const {websocketURI} = React.useContext(AppContext);
+  const {websocketURI} = React.useContext(WebSocketContext);
   const [status, setStatus] = React.useState<'attempting-to-connect' | 'error' | 'success'>(
     'attempting-to-connect',
   );

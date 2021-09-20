@@ -1,7 +1,6 @@
 from dagster import check
 from dagster.core.execution.api import execute_run
-from dagster.core.host_representation import ExternalPipeline
-from dagster.core.launcher import RunLauncher
+from dagster.core.launcher import LaunchRunContext, RunLauncher
 from dagster.serdes import ConfigurableClass
 from dagster.utils.hosted_user_process import recon_pipeline_from_origin
 
@@ -31,11 +30,9 @@ class SyncInMemoryRunLauncher(RunLauncher, ConfigurableClass):
     def from_config_value(inst_data, config_value):
         return SyncInMemoryRunLauncher(inst_data=inst_data)
 
-    def launch_run(self, run, external_pipeline):
-        check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
-        recon_pipeline = recon_pipeline_from_origin(external_pipeline.get_python_origin())
-        execute_run(recon_pipeline, run, self._instance)
-        return run
+    def launch_run(self, context: LaunchRunContext) -> None:
+        recon_pipeline = recon_pipeline_from_origin(context.pipeline_code_origin)
+        execute_run(recon_pipeline, context.pipeline_run, self._instance)
 
     def can_terminate(self, run_id):
         return False

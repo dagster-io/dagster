@@ -636,20 +636,21 @@ def all_unique_validator(column, ignore_missing_vals=False):
     Example:
         .. code-block:: python
             aggregate_validator = MultiAggregateConstraintWithMetadata(
-            "confirms all values are unique",
-            {'bar': [all_unique_validator]},
-            ConstraintWithMetadataException,
-            raise_or_typecheck=False,
+                "confirms all values are unique",
+                {'bar': [all_unique_validator]},
+                ConstraintWithMetadataException,
+                raise_or_typecheck=False,
             )
             ntype = create_structured_dataframe_type(
-            "NumericType",
-            columns_aggregate_validator=aggregate_validator
+                "NumericType",
+                columns_aggregate_validator=aggregate_validator
             )
-            @solid(output_defs=[OutputDefinition(name='basic_dataframe', dagster_type=ntype)])
+            @op(out={'basic_dataframe': Out(dagster_type=ntype)})
             def create_dataframe(_):
                 yield Output(
-                DataFrame({'foo': [1, 2, 3], 'bar': [9, 10, 10]}), output_name='basic_dataframe',
-            )
+                    DataFrame({'foo': [1, 2, 3], 'bar': [9, 10, 10]}),
+                    output_name='basic_dataframe',
+                )
             #will fail with
             metadata['offending'] == {'bar': {'all_unique_validator': 'a violation'}}
             metadata['actual'] == {'bar': {'all_unique_validator': [10.0]}}
@@ -701,20 +702,21 @@ def column_range_validation_factory(minim=None, maxim=None, ignore_missing_vals=
         .. code-block:: python
             in_range_validator = column_range_validation_factory(1, 3, ignore_missing_vals=True)
             column_validator = MultiColumnConstraintWithMetadata(
-                            "confirms values are numbers in a range",
-                            {'foo': [in_range_validator]},
-                            ColumnWithMetadataException,
-                            raise_or_typecheck=False,
-                        )
-            ntype = create_structured_dataframe_type(
-            "NumericType",
-            columns_validator=column_validator
+                "confirms values are numbers in a range",
+                {'foo': [in_range_validator]},
+                ColumnWithMetadataException,
+                raise_or_typecheck=False,
             )
-            @solid(output_defs=[OutputDefinition(name='basic_dataframe', dagster_type=ntype)])
+            ntype = create_structured_dataframe_type(
+                "NumericType",
+                columns_validator=column_validator
+            )
+            @op(out={'basic_dataframe': Out(dagster_type=ntype)})
             def create_dataframe(_):
                 yield Output(
-                DataFrame({'foo': [1, 2, 7], 'bar': [9, 10, 10]}), output_name='basic_dataframe',
-            )
+                    DataFrame({'foo': [1, 2, 7], 'bar': [9, 10, 10]}),
+                    output_name='basic_dataframe',
+                )
             #will fail with
             metadata['offending'] == {'foo': {'in_range_validation_fn': ['row 2']}}
             metadata['actual'] == {'foo': {'in_range_validation_fn': [7]}}
@@ -763,20 +765,21 @@ def categorical_column_validator_factory(categories, ignore_missing_vals=False):
         .. code-block:: python
             categorical_validation_fn = categorical_column_validator_factory([1, 2])
             column_validator = MultiColumnConstraintWithMetadata(
-                            "confirms values are numbers in a range",
-                            {'foo': [categorical_validation_fn]},
-                            ColumnWithMetadataException,
-                            raise_or_typecheck=False,
-                        )
-            ntype = create_structured_dataframe_type(
-            "NumericType",
-            columns_validator=column_validator
+                "confirms values are numbers in a range",
+                {'foo': [categorical_validation_fn]},
+                ColumnWithMetadataException,
+                raise_or_typecheck=False,
             )
-            @solid(output_defs=[OutputDefinition(name='basic_dataframe', dagster_type=ntype)])
+            ntype = create_structured_dataframe_type(
+                "NumericType",
+                columns_validator=column_validator
+            )
+            @op(out={'basic_dataframe': Out(dagster_type=ntype)})
             def create_dataframe(_):
                 yield Output(
-                DataFrame({'foo': [1, 2, 7], 'bar': [9, 10, 10]}), output_name='basic_dataframe',
-            )
+                    DataFrame({'foo': [1, 2, 7], 'bar': [9, 10, 10]}),
+                    output_name='basic_dataframe',
+                )
             #will fail with
             metadata['offending'] == {'foo': {'categorical_validation_fn': ['row 2']}}
             metadata['actual'] == {'foo': {'categorical_validation_fn': [7]}}
@@ -817,20 +820,21 @@ def dtype_in_set_validation_factory(datatypes, ignore_missing_vals=False):
         .. code-block:: python
             dtype_is_num_validator = dtype_in_set_validation_factory((int, float, int64, float64))
             column_validator = MultiColumnConstraintWithMetadata(
-            "confirms values are numbers in a range",
-            {'foo': [dtype_is_num_validator]},
-            ColumnWithMetadataException,
-            raise_or_typecheck=False,
+                "confirms values are numbers in a range",
+                {'foo': [dtype_is_num_validator]},
+                ColumnWithMetadataException,
+                raise_or_typecheck=False,
             )
             ntype = create_structured_dataframe_type(
-            "NumericType",
-            columns_validator=column_validator
+                "NumericType",
+                columns_validator=column_validator
             )
-            @solid(output_defs=[OutputDefinition(name='basic_dataframe', dagster_type=ntype)])
+            @op(out={'basic_dataframe': Out(dagster_type=ntype)})
             def create_dataframe(_):
                 yield Output(
-                DataFrame({'foo': [1, 'a', 7], 'bar': [9, 10, 10]}), output_name='basic_dataframe',
-            )
+                    DataFrame({'foo': [1, 'a', 7], 'bar': [9, 10, 10]}),
+                    output_name='basic_dataframe',
+                )
             #will fail with
             metadata['offending'] == {'foo': {'categorical_validation_fn': ['row 1']}}
             metadata['actual'] == {'foo': {'categorical_validation_fn': ['a']}}

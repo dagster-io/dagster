@@ -66,8 +66,8 @@ const ErrorContext: React.FC<{errorSource: ErrorSource}> = ({errorSource}) => {
   }
 };
 
-export const READ_ONLY_ERROR_FRAGMENT = gql`
-  fragment ReadOnlyErrorFragment on ReadOnlyError {
+export const UNAUTHORIZED_ERROR_FRAGMENT = gql`
+  fragment UnauthorizedErrorFragment on UnauthorizedError {
     message
   }
 `;
@@ -103,7 +103,7 @@ const ErrorHeader = styled.h3`
 const Trace = styled.div`
   color: rgb(41, 50, 56);
   font-family: ${FontFamily.monospace};
-  font-size: 0.85em;
+  font-size: 1em;
   white-space: pre;
   padding-bottom: 1em;
 `;

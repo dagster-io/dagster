@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from typing import Callable, Dict, Generic, List, Optional, Type, TypeVar, Union, cast
 
 from dagster import check
@@ -5,6 +6,7 @@ from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantV
 from dagster.utils import merge_dicts
 
 from .graph import GraphDefinition
+from .job import JobDefinition
 from .partition import PartitionScheduleDefinition, PartitionSetDefinition
 from .pipeline import PipelineDefinition
 from .schedule import ScheduleDefinition
@@ -16,10 +18,15 @@ VALID_REPOSITORY_DATA_DICT_KEYS = {
     "partition_sets",
     "schedules",
     "sensors",
+    "jobs",
 }
 
 RepositoryLevelDefinition = TypeVar(
-    "RepositoryLevelDefinition", PipelineDefinition, PartitionSetDefinition, ScheduleDefinition
+    "RepositoryLevelDefinition",
+    PipelineDefinition,
+    PartitionSetDefinition,
+    ScheduleDefinition,
+    SensorDefinition,
 )
 
 
@@ -88,9 +95,18 @@ class _CacheingDefinitionIndex(Generic[RepositoryLevelDefinition]):
         if self._definition_names:
             return self._definition_names
 
-        self._definition_names = list(self._definitions.keys()) + [
-            definition.name for definition in self._get_lazy_definitions()
-        ]
+        lazy_names = []
+        for definition in self._get_lazy_definitions():
+            strict_definition = self._definitions.get(definition.name)
+            if strict_definition:
+                check.invariant(
+                    strict_definition == definition,
+                    f"Duplicate definition found for {definition.name}",
+                )
+            else:
+                lazy_names.append(definition.name)
+
+        self._definition_names = list(self._definitions.keys()) + lazy_names
         return self._definition_names
 
     def has_definition(self, definition_name: str) -> bool:
@@ -167,17 +183,168 @@ class _CacheingDefinitionIndex(Generic[RepositoryLevelDefinition]):
         self._definition_cache[definition_dict_key] = self._validation_fn(definition)
 
 
-class RepositoryData:
-    """Contains definitions belonging to a repository.
-
+class RepositoryData(ABC):
+    """
     Users should usually rely on the :py:func:`@repository <repository>` decorator to create new
     repositories, which will in turn call the static constructors on this class. However, users may
-    subclass RepositoryData for fine-grained control over access to and lazy creation
+    subclass :py:class:`RepositoryData` for fine-grained control over access to and lazy creation
     of repository members.
     """
 
+    @abstractmethod
+    def get_all_pipelines(self):
+        """Return all pipelines in the repository as a list.
+
+        Returns:
+            List[PipelineDefinition]: All pipelines in the repository.
+        """
+
+    def get_pipeline_names(self):
+        """Get the names of all pipelines in the repository.
+
+        Returns:
+            List[str]
+        """
+        return [pipeline_def.name for pipeline_def in self.get_all_pipelines()]
+
+    def has_pipeline(self, pipeline_name):
+        """Check if a pipeline with a given name is present in the repository.
+
+        Args:
+            pipeline_name (str): The name of the pipeline.
+
+        Returns:
+            bool
+        """
+        return pipeline_name in self.get_pipeline_names()
+
+    def get_pipeline(self, pipeline_name):
+        """Get a pipeline by name.
+
+        Args:
+            pipeline_name (str): Name of the pipeline to retrieve.
+
+        Returns:
+            PipelineDefinition: The pipeline definition corresponding to the given name.
+        """
+        pipelines_with_name = [
+            pipeline for pipeline in self.get_all_pipelines() if pipeline.name == pipeline_name
+        ]
+        if not pipelines_with_name:
+            raise DagsterInvariantViolationError(
+                f"Could not find pipeline {pipeline_name} in repository"
+            )
+        return pipelines_with_name[0]
+
+    def get_partition_set_names(self):
+        """Get the names of all partition sets in the repository.
+
+        Returns:
+            List[str]
+        """
+        return [partition_set.name for partition_set in self.get_all_partition_sets()]
+
+    def has_partition_set(self, partition_set_name):
+        """Check if a partition set with a given name is present in the repository.
+
+        Args:
+            partition_set_name (str): The name of the partition set.
+
+        Returns:
+            bool
+        """
+        return partition_set_name in self.get_partition_set_names()
+
+    def get_all_partition_sets(self):
+        """Return all partition sets in the repository as a list.
+
+        Returns:
+            List[PartitionSetDefinition]: All partition sets in the repository.
+        """
+        return []
+
+    def get_partition_set(self, partition_set_name):
+        """Get a partition set by name.
+
+        Args:
+            partition_set_name (str): Name of the partition set to retrieve.
+
+        Returns:
+            PartitionSetDefinition: The partition set definition corresponding to the given name.
+        """
+        partition_sets_with_name = [
+            partition_set
+            for partition_set in self.get_all_partition_sets()
+            if partition_set.name == partition_set_name
+        ]
+        if not partition_sets_with_name:
+            raise DagsterInvariantViolationError(
+                f"Could not find partition set {partition_set_name} in repository"
+            )
+        return partition_sets_with_name[0]
+
+    def get_schedule_names(self):
+        """Get the names of all schedules in the repository.
+
+        Returns:
+            List[str]
+        """
+        return [schedule.name for schedule in self.get_all_schedules()]
+
+    def get_all_schedules(self):
+        """Return all schedules in the repository as a list.
+
+        Returns:
+            List[ScheduleDefinition]: All pipelines in the repository.
+        """
+        return []
+
+    def get_schedule(self, schedule_name):
+        """Get a schedule by name.
+
+        args:
+            schedule_name (str): name of the schedule to retrieve.
+
+        Returns:
+            ScheduleDefinition: The schedule definition corresponding to the given name.
+        """
+        schedules_with_name = [
+            schedule for schedule in self.get_all_schedules() if schedule.name == schedule_name
+        ]
+        if not schedules_with_name:
+            raise DagsterInvariantViolationError(
+                f"Could not find schedule {schedule_name} in repository"
+            )
+        return schedules_with_name[0]
+
+    def has_schedule(self, schedule_name):
+        return schedule_name in self.get_schedule_names()
+
+    def get_all_sensors(self):
+        return []
+
+    def get_sensor_names(self):
+        return [sensor.name for sensor in self.get_all_sensors()]
+
+    def get_sensor(self, sensor_name):
+        sensors_with_name = [
+            sensor for sensor in self.get_all_sensors() if sensor.name == sensor_name
+        ]
+        if not sensors_with_name:
+            raise DagsterInvariantViolationError(
+                f"Could not find sensor {sensor_name} in repository"
+            )
+        return sensors_with_name[0]
+
+    def has_sensor(self, sensor_name):
+        return sensor_name in self.get_sensor_names()
+
+
+class CachingRepositoryData(RepositoryData):
+    """Default implementation of RepositoryData used by the :py:func:`@repository <repository>` decorator."""
+
     def __init__(self, pipelines, partition_sets, schedules, sensors):
-        """Constructs a new RepositoryData object.
+        """Constructs a new CachingRepositoryData object.
 
         You may pass pipeline, partition_set, and schedule definitions directly, or you may pass
         callables with no arguments that will be invoked to lazily construct definitions when
@@ -205,7 +372,11 @@ class RepositoryData:
         check.dict_param(sensors, "sensors", key_type=str)
 
         self._pipelines = _CacheingDefinitionIndex(
-            PipelineDefinition, "PipelineDefinition", "pipeline", pipelines, self._validate_pipeline
+            PipelineDefinition,
+            "PipelineDefinition",
+            "pipeline",
+            pipelines,
+            self._validate_pipeline,
         )
 
         self._schedules = _CacheingDefinitionIndex(
@@ -222,14 +393,17 @@ class RepositoryData:
         ]
 
         def load_partition_sets_from_pipelines():
-            mode_partition_sets = []
+            job_partition_sets = []
             for pipeline in self.get_all_pipelines():
-                for mode_def in pipeline.mode_definitions:
-                    partition_set_def = mode_def.get_partition_set_def(pipeline.name)
-                    if partition_set_def:
-                        mode_partition_sets.append(partition_set_def)
+                if isinstance(pipeline, JobDefinition):
+                    job_partition_set = pipeline.get_partition_set_def()
 
-            return mode_partition_sets
+                    if job_partition_set:
+                        # should only return a partition set if this was constructed using the job
+                        # API, with a partitioned config
+                        job_partition_sets.append(job_partition_set)
+
+            return job_partition_sets
 
         self._partition_sets = _CacheingDefinitionIndex(
             PartitionSetDefinition,
@@ -253,8 +427,6 @@ class RepositoryData:
         self._sensors.get_all_definitions()
 
         self._all_pipelines = None
-        self._solids = None
-        self._all_solids = None
 
     @staticmethod
     def from_dict(repository_definitions):
@@ -294,15 +466,29 @@ class RepositoryData:
             if key not in repository_definitions:
                 repository_definitions[key] = {}
 
-        duplicate_keys = set(repository_definitions.get("schedules", {}).keys()).intersection(
-            set(repository_definitions.get("sensors", {}).keys())
+        duplicate_keys = set(repository_definitions["schedules"].keys()).intersection(
+            set(repository_definitions["sensors"].keys())
         )
         if duplicate_keys:
             raise DagsterInvalidDefinitionError(
-                f"Duplicate definitions found for keys: {duplicate_keys.join(', ')}"
+                f"Duplicate definitions between schedules and sensors found for keys: {duplicate_keys.join(', ')}"
             )
 
-        return RepositoryData(**repository_definitions)
+        # merge jobs in to pipelines while they are just implemented as pipelines
+        for key, job in repository_definitions["jobs"].items():
+            if key in repository_definitions["pipelines"]:
+                raise DagsterInvalidDefinitionError(
+                    f'Conflicting entries for name {key} in "jobs" and "pipelines".'
+                )
+
+            if isinstance(job, GraphDefinition):
+                repository_definitions["pipelines"][key] = job.coerce_to_job()
+            else:
+                repository_definitions["pipelines"][key] = job
+
+        del repository_definitions["jobs"]
+
+        return CachingRepositoryData(**repository_definitions)
 
     @classmethod
     def from_list(cls, repository_definitions):
@@ -341,9 +527,10 @@ class RepositoryData:
                     )
                 jobs[definition.name] = definition
                 sensors[definition.name] = definition
-                if definition.has_loadable_target():
-                    target = definition.load_target()
-                    pipelines[target.name] = target
+                if definition.has_loadable_targets():
+                    targets = definition.load_targets()
+                    for target in targets:
+                        pipelines[target.name] = target
             elif isinstance(definition, ScheduleDefinition):
                 if definition.name in jobs:
                     raise DagsterInvalidDefinitionError(
@@ -367,13 +554,12 @@ class RepositoryData:
                         )
                     partition_sets[partition_set_def.name] = partition_set_def
             elif isinstance(definition, GraphDefinition):
-                # error experience when this fails can be improved
-                coerced = definition.to_job(resource_defs={})
+                coerced = definition.coerce_to_job()
                 pipelines[coerced.name] = coerced
             else:
                 check.failed(f"Unexpected repository entry {definition}")
 
-        return RepositoryData(
+        return CachingRepositoryData(
             pipelines=pipelines,
             partition_sets=partition_sets,
             schedules=schedules,
@@ -412,7 +598,7 @@ class RepositoryData:
             return self._all_pipelines
 
         self._all_pipelines = self._pipelines.get_all_definitions()
-        self.get_all_solid_defs()
+        self._check_solid_defs()
         return self._all_pipelines
 
     def get_pipeline(self, pipeline_name):
@@ -522,34 +708,20 @@ class RepositoryData:
     def get_all_sensors(self):
         return self._sensors.get_all_definitions()
 
-    def get_sensor(self, name):
-        return self._sensors.get_definition(name)
+    def get_sensor_names(self):
+        return self._sensors.get_definition_names()
 
-    def has_sensor(self, name):
-        return self._sensors.has_definition(name)
+    def get_sensor(self, sensor_name):
+        return self._sensors.get_definition(sensor_name)
 
-    def get_all_solid_defs(self):
-        if self._all_solids is not None:
-            return self._all_solids
+    def has_sensor(self, sensor_name):
+        return self._sensors.has_definition(sensor_name)
 
-        self._all_solids = self._construct_solid_defs()
-        return list(self._all_solids.values())
-
-    def has_solid(self, solid_name):
-        if self._all_solids is not None:
-            return solid_name in self._all_solids
-
-        self._all_solids = self._construct_solid_defs()
-        return solid_name in self._all_solids
-
-    def _construct_solid_defs(self):
+    def _check_solid_defs(self):
         solid_defs = {}
         solid_to_pipeline = {}
-        # This looks like it should infinitely loop but the
-        # memoization of _all_pipelines and _all_solids short
-        # circuits that
-        for pipeline in self.get_all_pipelines():
-            for solid_def in pipeline.all_solid_defs:
+        for pipeline in self._all_pipelines:
+            for solid_def in pipeline.all_node_defs + [pipeline.graph]:
                 if solid_def.name not in solid_defs:
                     solid_defs[solid_def.name] = solid_def
                     solid_to_pipeline[solid_def.name] = pipeline.name
@@ -560,34 +732,12 @@ class RepositoryData:
                     )
                     raise DagsterInvalidDefinitionError(
                         (
-                            "Duplicate solids found in repository with name '{solid_def_name}'. "
-                            "Solid definition names must be unique within a repository. Solid is "
-                            "defined in pipeline '{first_pipeline_name}' and in pipeline "
-                            "'{second_pipeline_name}'."
-                        ).format(
-                            solid_def_name=solid_def.name,
-                            first_pipeline_name=first_name,
-                            second_pipeline_name=second_name,
+                            f"Conflicting definitions found in repository with name '{solid_def.name}'. "
+                            "Solid & Graph/CompositeSolid definition names must be unique within a "
+                            f"repository. {solid_def.__class__.__name__} is defined in pipeline "
+                            f"'{first_name}' and in pipeline '{second_name}'."
                         )
                     )
-
-        return solid_defs
-
-    def solid_def_named(self, name):
-        """Get the solid with the given name in the repository.
-
-        Args:
-            name (str): The name of the solid for which to retrieve the solid definition.
-
-        Returns:
-            SolidDefinition: The solid with the given name.
-        """
-        check.str_param(name, "name")
-
-        if not self.has_solid(name):
-            check.failed("could not find solid_def for solid {name}".format(name=name))
-
-        return self._all_solids[name]
 
     def _validate_pipeline(self, pipeline):
         return pipeline
@@ -605,15 +755,16 @@ class RepositoryData:
 
     def _validate_sensor(self, sensor):
         pipelines = self.get_pipeline_names()
-        if sensor.pipeline_name is None:
+        if len(sensor.targets) == 0:
             # skip validation when the sensor does not target a pipeline
             return sensor
 
-        if sensor.pipeline_name not in pipelines:
-            raise DagsterInvalidDefinitionError(
-                f'SensorDefinition "{sensor.name}" targets pipeline "{sensor.pipeline_name}" '
-                "which was not found in this repository."
-            )
+        for target in sensor.targets:
+            if target.pipeline_name not in pipelines:
+                raise DagsterInvalidDefinitionError(
+                    f'SensorDefinition "{sensor.name}" targets pipeline "{target.pipeline_name}" '
+                    "which was not found in this repository."
+                )
 
         return sensor
 
@@ -692,26 +843,6 @@ class RepositoryDefinition:
             List[PipelineDefinition]: All pipelines in the repository.
         """
         return self._repository_data.get_all_pipelines()
-
-    def get_all_solid_defs(self):
-        """Get all the solid definitions in a repository.
-
-        Returns:
-            List[SolidDefinition]: All solid definitions in the repository.
-        """
-        return self._repository_data.get_all_solid_defs()
-
-    def solid_def_named(self, name):
-        """Get the solid with the given name in the repository.
-
-        Args:
-            name (str): The name of the solid for which to retrieve the solid definition.
-
-        Returns:
-            SolidDefinition: The solid with the given name.
-        """
-        check.str_param(name, "name")
-        return self._repository_data.solid_def_named(name)
 
     @property
     def partition_set_defs(self):

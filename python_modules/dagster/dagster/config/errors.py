@@ -1,5 +1,6 @@
 from collections import namedtuple
 from enum import Enum
+from typing import NamedTuple
 
 from dagster import check
 from dagster.utils.error import SerializableErrorInfo
@@ -19,6 +20,7 @@ class DagsterEvaluationErrorReason(Enum):
     FIELDS_NOT_DEFINED = "FIELDS_NOT_DEFINED"
     SELECTOR_FIELD_ERROR = "SELECTOR_FIELD_ERROR"
     FAILED_POST_PROCESSING = "FAILED_POST_PROCESSING"
+    FIELD_ALIAS_COLLISION = "FIELD_ALIAS_COLLISION"
 
 
 class FieldsNotDefinedErrorData(namedtuple("_FieldsNotDefinedErrorData", "field_names")):
@@ -26,6 +28,11 @@ class FieldsNotDefinedErrorData(namedtuple("_FieldsNotDefinedErrorData", "field_
         return super(FieldsNotDefinedErrorData, cls).__new__(
             cls, check.list_param(field_names, "field_names", of_type=str)
         )
+
+
+class FieldAliasCollisionErrorData(NamedTuple):
+    field_name: str
+    aliased_field_name: str
 
 
 class FieldNotDefinedErrorData(namedtuple("_FieldNotDefinedErrorData", "field_name")):
@@ -86,6 +93,7 @@ ERROR_DATA_TYPES = (
     RuntimeMismatchErrorData,
     SelectorTypeErrorData,
     SerializableErrorInfo,
+    FieldAliasCollisionErrorData,
 )
 
 
@@ -124,6 +132,17 @@ def create_dict_type_mismatch_error(context, config_value):
         error_data=RuntimeMismatchErrorData(
             config_type_snap=context.config_type_snap, value_rep=repr(config_value)
         ),
+    )
+
+
+def create_field_substitution_collision_error(context, name, aliased_name):
+    check.inst_param(context, "context", ContextData)
+    check_config_type_in_context_has_fields(context, "context")
+    return EvaluationError(
+        stack=context.stack,
+        reason=DagsterEvaluationErrorReason.FIELD_ALIAS_COLLISION,
+        message=f"Received both field '{name}' and field '{aliased_name}' in config. Please use one or the other.",
+        error_data=FieldAliasCollisionErrorData(field_name=name, aliased_field_name=aliased_name),
     )
 
 

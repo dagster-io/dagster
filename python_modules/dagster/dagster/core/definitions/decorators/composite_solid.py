@@ -57,7 +57,7 @@ class _CompositeSolid:
             output_mappings=output_mappings,
             dependencies=dependencies,
             solid_defs=solid_defs,
-            description=self.description,
+            description=self.description or fn.__doc__,
             config_mapping=config_mapping,
             positional_inputs=positional_inputs,
         )

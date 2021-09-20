@@ -119,6 +119,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         run_id: str,
         cursor: Optional[int] = -1,
         of_type: Optional[DagsterEventType] = None,
+        limit: Optional[int] = None,
     ) -> Iterable[EventLogEntry]:
         """Get all of the logs corresponding to a run.
 
@@ -164,8 +165,12 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         """
 
     @abstractmethod
-    def reindex(self, print_fn: Callable = lambda _: None, force: bool = False):
-        """Call this method to run any data migrations, reindexing to build summary tables."""
+    def reindex_events(self, print_fn: Callable = lambda _: None, force: bool = False):
+        """Call this method to run any data migrations across the event_log tables."""
+
+    @abstractmethod
+    def reindex_assets(self, print_fn: Callable = lambda _: None, force: bool = False):
+        """Call this method to run any data migrations across the asset tables."""
 
     @abstractmethod
     def wipe(self):
@@ -194,7 +199,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         self,
         event_records_filter: Optional[EventRecordsFilter] = None,
         limit: Optional[int] = None,
-        ascending: Optional[bool] = False,
+        ascending: bool = False,
     ) -> Iterable[EventLogRecord]:
         pass
 

@@ -121,6 +121,7 @@ class KubernetesWaitingReasons:
     ImagePullBackOff = "ImagePullBackOff"
     CrashLoopBackOff = "CrashLoopBackOff"
     RunContainerError = "RunContainerError"
+    CreateContainerConfigError = "CreateContainerConfigError"
 
 
 class DagsterKubernetesClient:
@@ -341,6 +342,23 @@ class DagsterKubernetesClient:
 
     ### Pod operations ###
 
+    def get_pods_in_job(self, job_name, namespace):
+        """Get the pods launched by the job ``job_name``.
+
+        Args:
+            job_name (str): Name of the job to inspect.
+            namespace (str): Namespace in which the job is located.
+
+        Returns:
+            List[V1Pod]: List of all pod objects that have been launched by the job ``job_name``.
+        """
+        check.str_param(job_name, "job_name")
+        check.str_param(namespace, "namespace")
+
+        return self.core_api.list_namespaced_pod(
+            namespace=namespace, label_selector="job-name={}".format(job_name)
+        ).items
+
     def get_pod_names_in_job(self, job_name, namespace):
         """Get the names of pods launched by the job ``job_name``.
 
@@ -354,9 +372,7 @@ class DagsterKubernetesClient:
         check.str_param(job_name, "job_name")
         check.str_param(namespace, "namespace")
 
-        pods = self.core_api.list_namespaced_pod(
-            namespace=namespace, label_selector="job-name={}".format(job_name)
-        ).items
+        pods = self.get_pods_in_job(job_name, namespace)
         return [p.metadata.name for p in pods]
 
     def wait_for_pod(
@@ -443,6 +459,13 @@ class DagsterKubernetesClient:
                 # https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#containerstatewaiting-v1-core
                 if state.waiting.reason == KubernetesWaitingReasons.PodInitializing:
                     self.logger('Waiting for pod "%s" to initialize...' % pod_name)
+                    self.sleeper(wait_time_between_attempts)
+                    continue
+                if state.waiting.reason == KubernetesWaitingReasons.CreateContainerConfigError:
+                    self.logger(
+                        'Pod "%s" is waiting due to a CreateContainerConfigError with message "%s" - trying again to see if it recovers'
+                        % (pod_name, state.waiting.message)
+                    )
                     self.sleeper(wait_time_between_attempts)
                     continue
                 elif state.waiting.reason == KubernetesWaitingReasons.ContainerCreating:

@@ -27,6 +27,7 @@ type Query {
   assetOrError(assetKey: AssetKeyInput!): AssetOrError!
   partitionBackfillOrError(backfillId: String!): PartitionBackfillOrError!
   partitionBackfillsOrError(cursor: String, limit: Int): PartitionBackfillsOrError!
+  permissions: [GraphenePermission!]!
 }
 
 union RepositoriesOrError = RepositoryConnection | PythonError
@@ -46,6 +47,7 @@ type Repository {
   partitionSets: [PartitionSet!]!
   schedules: [Schedule!]!
   sensors: [Sensor!]!
+  assetNodes: [AssetNode!]!
   displayMetadata: [RepositoryMetadata!]!
 }
 
@@ -74,6 +76,7 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   schedules: [Schedule!]!
   sensors: [Sensor!]!
   parentSnapshotId: String
+  graphName: String!
   presets: [PipelinePreset!]!
 }
 
@@ -524,7 +527,7 @@ type ExecutionStepFailureEvent implements MessageEvent & StepEvent {
   stepKey: String
   solidHandleID: String
   eventType: DagsterEventType
-  error: PythonError!
+  error: PythonError
   errorSource: ErrorSource
   failureMetadata: FailureMetadata
 }
@@ -614,7 +617,7 @@ type ExecutionStepUpForRetryEvent implements MessageEvent & StepEvent {
   stepKey: String
   solidHandleID: String
   eventType: DagsterEventType
-  error: PythonError!
+  error: PythonError
   secondsToWait: Int
 }
 
@@ -853,7 +856,7 @@ type HookErroredEvent implements MessageEvent & StepEvent {
   stepKey: String
   solidHandleID: String
   eventType: DagsterEventType
-  error: PythonError!
+  error: PythonError
 }
 
 type AlertStartEvent implements MessageEvent & PipelineEvent {
@@ -1014,6 +1017,7 @@ input PipelineRunsFilter {
   statuses: [PipelineRunStatus!]
   snapshotId: String
   updatedAfter: String
+  mode: String
 }
 
 input ExecutionTag {
@@ -1042,13 +1046,17 @@ type Sensor {
   id: ID!
   jobOriginId: String!
   name: String!
-  pipelineName: String
-  solidSelection: [String]
-  mode: String
+  targets: [Target!]
   sensorState: InstigationState!
   minIntervalSeconds: Int!
   description: String
   nextTick: FutureInstigationTick
+}
+
+type Target {
+  pipelineName: String!
+  mode: String!
+  solidSelection: [String!]
 }
 
 type PipelinePreset {
@@ -1067,6 +1075,21 @@ type UsedSolid {
 type SolidInvocationSite {
   pipeline: Pipeline!
   solidHandle: SolidHandle!
+}
+
+type AssetNode {
+  id: ID!
+  assetKey: AssetKey!
+  description: String
+  opName: String
+  jobName: String
+  dependencies: [AssetDependency!]!
+  assetMaterializations(partitions: [String], beforeTimestampMillis: String, limit: Int): [AssetMaterialization!]!
+}
+
+type AssetDependency {
+  inputName: String!
+  upstreamAsset: AssetNode!
 }
 
 union RepositoryOrError = PythonError | Repository | RepositoryNotFoundError
@@ -1137,6 +1160,7 @@ type PipelineSnapshot implements IPipelineSnapshot & PipelineReference {
   schedules: [Schedule!]!
   sensors: [Sensor!]!
   parentSnapshotId: String
+  graphName: String!
 }
 
 type PipelineSnapshotNotFoundError implements Error {
@@ -1173,14 +1197,14 @@ type Schedules {
   results: [Schedule!]!
 }
 
-union SensorOrError = Sensor | SensorNotFoundError | ReadOnlyError | PythonError
+union SensorOrError = Sensor | SensorNotFoundError | UnauthorizedError | PythonError
 
 type SensorNotFoundError implements Error {
   message: String!
   sensorName: String!
 }
 
-type ReadOnlyError implements Error {
+type UnauthorizedError implements Error {
   message: String!
 }
 
@@ -1385,6 +1409,11 @@ type PartitionBackfills {
   results: [PartitionBackfill!]!
 }
 
+type GraphenePermission {
+  permission: String!
+  value: Boolean!
+}
+
 type Mutation {
   launchPipelineExecution(executionParams: ExecutionParams!): LaunchPipelineExecutionResult!
   launchPipelineReexecution(executionParams: ExecutionParams!): LaunchPipelineReexecutionResult!
@@ -1404,7 +1433,7 @@ type Mutation {
   cancelPartitionBackfill(backfillId: String!): CancelBackfillResult!
 }
 
-union LaunchPipelineExecutionResult = LaunchPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | ReadOnlyError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
+union LaunchPipelineExecutionResult = LaunchPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | UnauthorizedError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
 
 type LaunchPipelineRunSuccess {
   run: PipelineRun!
@@ -1448,9 +1477,9 @@ input ExecutionMetadata {
   parentRunId: String
 }
 
-union LaunchPipelineReexecutionResult = LaunchPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | ReadOnlyError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
+union LaunchPipelineReexecutionResult = LaunchPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | UnauthorizedError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
 
-union ReconcileSchedulerStateMutationResult = ReadOnlyError | PythonError | ReconcileSchedulerStateSuccess
+union ReconcileSchedulerStateMutationResult = UnauthorizedError | PythonError | ReconcileSchedulerStateSuccess
 
 type ReconcileSchedulerStateSuccess {
   message: String!
@@ -1462,13 +1491,13 @@ type ScheduleStateResult {
   scheduleState: InstigationState!
 }
 
-union StopSensorMutationResultOrError = StopSensorMutationResult | ReadOnlyError | PythonError
+union StopSensorMutationResultOrError = StopSensorMutationResult | UnauthorizedError | PythonError
 
 type StopSensorMutationResult {
   instigationState: InstigationState
 }
 
-union TerminatePipelineExecutionResult = TerminatePipelineExecutionSuccess | TerminatePipelineExecutionFailure | PipelineRunNotFoundError | ReadOnlyError | PythonError
+union TerminatePipelineExecutionResult = TerminatePipelineExecutionSuccess | TerminatePipelineExecutionFailure | PipelineRunNotFoundError | UnauthorizedError | PythonError
 
 type TerminatePipelineExecutionSuccess {
   run: PipelineRun!
@@ -1484,13 +1513,13 @@ enum TerminatePipelinePolicy {
   MARK_AS_CANCELED_IMMEDIATELY
 }
 
-union DeletePipelineRunResult = DeletePipelineRunSuccess | ReadOnlyError | PythonError | PipelineRunNotFoundError
+union DeletePipelineRunResult = DeletePipelineRunSuccess | UnauthorizedError | PythonError | PipelineRunNotFoundError
 
 type DeletePipelineRunSuccess {
   runId: String!
 }
 
-union ReloadRepositoryLocationMutationResult = WorkspaceLocationEntry | ReloadNotSupported | RepositoryLocationNotFound | ReadOnlyError | PythonError
+union ReloadRepositoryLocationMutationResult = WorkspaceLocationEntry | ReloadNotSupported | RepositoryLocationNotFound | UnauthorizedError | PythonError
 
 type ReloadNotSupported implements Error {
   message: String!
@@ -1500,21 +1529,21 @@ type RepositoryLocationNotFound implements Error {
   message: String!
 }
 
-union ReloadWorkspaceMutationResult = Workspace | ReadOnlyError | PythonError
+union ReloadWorkspaceMutationResult = Workspace | UnauthorizedError | PythonError
 
-union ShutdownRepositoryLocationMutationResult = ShutdownRepositoryLocationSuccess | RepositoryLocationNotFound | ReadOnlyError | PythonError
+union ShutdownRepositoryLocationMutationResult = ShutdownRepositoryLocationSuccess | RepositoryLocationNotFound | UnauthorizedError | PythonError
 
 type ShutdownRepositoryLocationSuccess {
   repositoryLocationName: String!
 }
 
-union AssetWipeMutationResult = AssetNotFoundError | ReadOnlyError | PythonError | AssetWipeSuccess
+union AssetWipeMutationResult = AssetNotFoundError | UnauthorizedError | PythonError | AssetWipeSuccess
 
 type AssetWipeSuccess {
   assetKeys: [AssetKey!]!
 }
 
-union LaunchBackfillResult = LaunchBackfillSuccess | PartitionSetNotFoundError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | ReadOnlyError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
+union LaunchBackfillResult = LaunchBackfillSuccess | PartitionSetNotFoundError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | UnauthorizedError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
 
 type LaunchBackfillSuccess {
   backfillId: String!
@@ -1535,13 +1564,13 @@ input PartitionSetSelector {
   repositorySelector: RepositorySelector!
 }
 
-union ResumeBackfillResult = ResumeBackfillSuccess | ReadOnlyError | PythonError
+union ResumeBackfillResult = ResumeBackfillSuccess | UnauthorizedError | PythonError
 
 type ResumeBackfillSuccess {
   backfillId: String!
 }
 
-union CancelBackfillResult = CancelBackfillSuccess | ReadOnlyError | PythonError
+union CancelBackfillResult = CancelBackfillSuccess | UnauthorizedError | PythonError
 
 type CancelBackfillSuccess {
   backfillId: String!
@@ -1558,6 +1587,7 @@ union PipelineRunLogsSubscriptionPayload = PipelineRunLogsSubscriptionSuccess | 
 type PipelineRunLogsSubscriptionSuccess {
   run: PipelineRun!
   messages: [PipelineRunEvent!]!
+  hasMorePastEvents: Boolean!
 }
 
 type PipelineRunLogsSubscriptionFailure {

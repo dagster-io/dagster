@@ -2,10 +2,9 @@ from abc import ABC, abstractmethod, abstractproperty
 from typing import Any, Optional
 
 from dagster import check
-from dagster.core.definitions.dependency import Solid, SolidHandle
+from dagster.core.definitions.dependency import Node, NodeHandle
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.pipeline import PipelineDefinition
-from dagster.core.definitions.resource import Resources
 from dagster.core.definitions.solid import SolidDefinition
 from dagster.core.definitions.step_launcher import StepLauncher
 from dagster.core.errors import DagsterInvalidPropertyError
@@ -25,7 +24,7 @@ class AbstractComputeExecutionContext(ABC):  # pylint: disable=no-init
         """Implement this method to check if a logging tag is set."""
 
     @abstractmethod
-    def get_tag(self, key: str) -> str:
+    def get_tag(self, key: str) -> Optional[str]:
         """Implement this method to get a logging tag."""
 
     @abstractproperty
@@ -37,7 +36,7 @@ class AbstractComputeExecutionContext(ABC):  # pylint: disable=no-init
         """The solid definition corresponding to the execution step being executed."""
 
     @abstractproperty
-    def solid(self) -> Solid:
+    def solid(self) -> Node:
         """The solid corresponding to the execution step being executed."""
 
     @abstractproperty
@@ -139,7 +138,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         )
 
     @property
-    def resources(self) -> Resources:
+    def resources(self) -> Any:
         """Resources: The currently available resources."""
         return self._step_execution_context.resources
 
@@ -179,15 +178,15 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         return self._step_execution_context.log
 
     @property
-    def solid_handle(self) -> SolidHandle:
-        """SolidHandle: The current solid's handle.
+    def solid_handle(self) -> NodeHandle:
+        """NodeHandle: The current solid's handle.
 
         :meta private:
         """
         return self._step_execution_context.solid_handle
 
     @property
-    def solid(self) -> Solid:
+    def solid(self) -> Node:
         """Solid: The current solid object.
 
         :meta private:
@@ -211,14 +210,14 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         """
         return self._step_execution_context.has_tag(key)
 
-    def get_tag(self, key: str) -> str:
+    def get_tag(self, key: str) -> Optional[str]:
         """Get a logging tag.
 
         Args:
             key (tag): The tag to get.
 
         Returns:
-            str: The value of the tag.
+            Optional[str]: The value of the tag, if present.
         """
         return self._step_execution_context.get_tag(key)
 
@@ -240,3 +239,12 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         """
 
         return self._step_execution_context.previous_attempt_count
+
+    def describe_op(self):
+        return self._step_execution_context.describe_op()
+
+    def get_mapping_key(self) -> Optional[str]:
+        """
+        Which mapping_key this execution is for if downstream of a DynamicOutput, otherwise None.
+        """
+        return self._step_execution_context.step.get_mapping_key()

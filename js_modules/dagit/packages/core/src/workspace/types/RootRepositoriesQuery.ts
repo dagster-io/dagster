@@ -26,6 +26,7 @@ export interface RootRepositoriesQuery_workspaceOrError_Workspace_locationEntrie
   __typename: "Pipeline";
   id: string;
   name: string;
+  graphName: string;
   pipelineSnapshotId: string;
   modes: RootRepositoriesQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_modes[];
 }
@@ -33,6 +34,7 @@ export interface RootRepositoriesQuery_workspaceOrError_Workspace_locationEntrie
 export interface RootRepositoriesQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_partitionSets {
   __typename: "PartitionSet";
   id: string;
+  mode: string;
   pipelineName: string;
 }
 

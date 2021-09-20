@@ -1,20 +1,17 @@
 import time
 
 import pendulum
+from dagster.core.test_utils import instance_for_test
 from dagster.daemon.controller import (
     DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
     DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
     all_daemons_healthy,
 )
-from utils import setup_instance, start_daemon
+from utils import start_daemon
 
 
-def test_heartbeat(
-    tmpdir,
-):
-
-    dagster_home_path = tmpdir.strpath
-    with setup_instance(dagster_home_path, "") as instance:
+def test_heartbeat():
+    with instance_for_test() as instance:
 
         assert all_daemons_healthy(instance) is False
 

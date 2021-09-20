@@ -21,10 +21,6 @@ from .client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from .schema import create_schema
 from .version import __version__
 
-from future.standard_library import install_aliases  # isort:skip
-
-install_aliases()  # isort:skip
-
 
 def create_dagster_graphql_cli():
     return ui
@@ -203,7 +199,7 @@ def ui(text, file, predefined, variables, remote, output, ephemeral_instance, **
     else:
         instance = DagsterInstance.ephemeral() if ephemeral_instance else DagsterInstance.get()
         with get_workspace_process_context_from_kwargs(
-            instance, version=__version__, kwargs=kwargs
+            instance, version=__version__, read_only=False, kwargs=kwargs
         ) as workspace_process_context:
             execute_query_from_cli(
                 workspace_process_context,

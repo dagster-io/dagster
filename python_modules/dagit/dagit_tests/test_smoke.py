@@ -34,6 +34,7 @@ def test_smoke_app(gen_instance):
         with get_workspace_process_context_from_kwargs(
             instance,
             version="",
+            read_only=False,
             kwargs=dict(module_name="dagit_tests.toy.bar_repo", definition="bar"),
         ) as workspace_process_context:
 
@@ -58,7 +59,7 @@ def test_smoke_app(gen_instance):
             assert len(data["errors"]) == 1
             assert data["errors"][0]["message"] == "Must provide query string."
 
-            result = client.get("/dagit/notebook?path=foo.bar")
+            result = client.get("/dagit/notebook?path=foo.bar&repoLocName=foo_repo")
             assert result.status_code == 400
             assert result.data.decode("utf-8") == "Invalid Path"
 

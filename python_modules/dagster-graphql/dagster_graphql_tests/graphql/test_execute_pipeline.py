@@ -652,4 +652,4 @@ class TestExecutePipelineReadonlyFailure(ReadonlyGraphQLContextTestMatrix):
         assert not result.errors
         assert result.data
 
-        assert result.data["launchPipelineExecution"]["__typename"] == "ReadOnlyError"
+        assert result.data["launchPipelineExecution"]["__typename"] == "UnauthorizedError"

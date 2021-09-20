@@ -7,7 +7,6 @@ import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {
   IStorageData,
   applyChangesToSession,
-  applyCreateSession,
   applyRemoveSession,
   applySelectSession,
 } from '../app/LocalStorage';
@@ -63,7 +62,7 @@ const ExecutionTab = (props: ExecutationTabProps) => {
         <input
           ref={input}
           type="text"
-          onKeyDown={(e) => e.keyCode === 13 && e.currentTarget.blur()}
+          onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
           onChange={handleChange}
           onBlur={handleBlur}
           value={value}
@@ -82,11 +81,12 @@ const ExecutionTab = (props: ExecutationTabProps) => {
 
 interface ExecutionTabsProps {
   data: IStorageData;
+  onCreate: () => void;
   onSave: (data: IStorageData) => void;
 }
 
 export const ExecutionTabs = (props: ExecutionTabsProps) => {
-  const {data, onSave} = props;
+  const {data, onCreate, onSave} = props;
   const {sessions} = data;
   const sessionKeys = Object.keys(sessions);
   const sessionCount = sessionKeys.length;
@@ -122,7 +122,7 @@ export const ExecutionTabs = (props: ExecutionTabsProps) => {
           onRemove={() => onRemove(key)}
         />
       ))}
-      <ExecutionTab title="Add..." onClick={() => onApply(applyCreateSession)} />
+      <ExecutionTab title="Add..." onClick={onCreate} />
     </ExecutionTabsContainer>
   );
 };

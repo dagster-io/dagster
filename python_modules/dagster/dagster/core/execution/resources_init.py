@@ -3,8 +3,13 @@ from collections import deque
 from typing import AbstractSet, Any, Callable, Deque, Dict, Optional, cast
 
 from dagster import check
+from dagster.core.decorator_utils import get_function_params
 from dagster.core.definitions.pipeline import PipelineDefinition
-from dagster.core.definitions.resource import ResourceDefinition, ScopedResourcesBuilder
+from dagster.core.definitions.resource import (
+    ResourceDefinition,
+    ScopedResourcesBuilder,
+    is_context_provided,
+)
 from dagster.core.errors import (
     DagsterInvariantViolationError,
     DagsterResourceFunctionError,
@@ -56,7 +61,7 @@ def resource_initialization_manager(
     return EventGenerationManager(generator, ScopedResourcesBuilder)
 
 
-def _resolve_resource_dependencies(resource_defs):
+def resolve_resource_dependencies(resource_defs):
     """Generates a dictionary that maps resource key to resource keys it requires for initialization"""
     resource_dependencies = {
         key: resource_def.required_resource_keys for key, resource_def in resource_defs.items()
@@ -64,7 +69,7 @@ def _resolve_resource_dependencies(resource_defs):
     return resource_dependencies
 
 
-def _get_dependencies(resource_name, resource_deps):
+def get_dependencies(resource_name, resource_deps):
     """Get all resources that must be initialized before resource_name can be initialized.
 
     Uses dfs to get all required dependencies from a particular resource. If dependencies are
@@ -124,7 +129,7 @@ def _core_resource_initialization_event_generator(
                 resource_keys_to_init,
             )
 
-        resource_dependencies = _resolve_resource_dependencies(resource_defs)
+        resource_dependencies = resolve_resource_dependencies(resource_defs)
 
         for level in toposort(resource_dependencies):
             for resource_name in level:
@@ -277,10 +282,16 @@ def single_resource_event_generator(context, resource_name, resource_def):
         msg_fn = lambda: "Error executing resource_fn on ResourceDefinition {name}".format(
             name=resource_name
         )
-        with user_code_error_boundary(DagsterResourceFunctionError, msg_fn):
+        with user_code_error_boundary(
+            DagsterResourceFunctionError, msg_fn, log_manager=context.log
+        ):
             try:
                 with time_execution_scope() as timer_result:
-                    resource_or_gen = resource_def.resource_fn(context)
+                    resource_or_gen = (
+                        resource_def.resource_fn(context)
+                        if is_context_provided(get_function_params(resource_def.resource_fn))
+                        else resource_def.resource_fn()
+                    )
                     # Flag for whether resource is generator. This is used to ensure that teardown
                     # occurs when resources are initialized out of execution.
                     is_gen = inspect.isgenerator(resource_or_gen)
@@ -299,7 +310,7 @@ def single_resource_event_generator(context, resource_name, resource_def):
     except DagsterUserCodeExecutionError as dagster_user_error:
         raise dagster_user_error
 
-    with user_code_error_boundary(DagsterResourceFunctionError, msg_fn):
+    with user_code_error_boundary(DagsterResourceFunctionError, msg_fn, log_manager=context.log):
         try:
             next(gen)
         except StopIteration:
@@ -328,21 +339,32 @@ def get_required_resource_keys_to_init(
 
         resource_keys = resource_keys.union(
             get_required_resource_keys_for_step(
-                pipeline_def, step, execution_plan, resolved_run_config, intermediate_storage_def
+                pipeline_def, step, execution_plan, intermediate_storage_def
             )
         )
 
-    return frozenset(resource_keys)
+    resource_defs = pipeline_def.get_mode_definition(resolved_run_config.mode).resource_defs
+    return frozenset(get_transitive_required_resource_keys(resource_keys, resource_defs))
+
+
+def get_transitive_required_resource_keys(required_resource_keys, resource_defs):
+
+    resource_dependencies = resolve_resource_dependencies(resource_defs)
+
+    transitive_required_resource_keys = set()
+
+    for resource_key in required_resource_keys:
+        transitive_required_resource_keys = transitive_required_resource_keys.union(
+            set(get_dependencies(resource_key, resource_dependencies))
+        )
+
+    return transitive_required_resource_keys
 
 
 def get_required_resource_keys_for_step(
-    pipeline_def, execution_step, execution_plan, resolved_run_config, intermediate_storage_def
+    pipeline_def, execution_step, execution_plan, intermediate_storage_def
 ):
     resource_keys = set()
-
-    mode_definition = pipeline_def.get_mode_definition(resolved_run_config.mode)
-
-    resource_dependencies = _resolve_resource_dependencies(mode_definition.resource_defs)
 
     # add all the intermediate storage resource keys
     if intermediate_storage_def is not None:
@@ -395,8 +417,4 @@ def get_required_resource_keys_for_step(
                 if auto_plugin.compatible_with_storage_def(intermediate_storage_def):
                     resource_keys = resource_keys.union(auto_plugin.required_resource_keys())
 
-    for resource_name in resource_keys:
-        resource_keys = resource_keys.union(
-            set(_get_dependencies(resource_name, resource_dependencies))
-        )
     return frozenset(resource_keys)

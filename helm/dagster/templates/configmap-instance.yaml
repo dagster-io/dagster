@@ -68,18 +68,21 @@ data:
           port: {{ .Values.postgresql.service.port }}
           params: {{ .Values.postgresql.postgresqlParams | toYaml | nindent 12 }}
 
-    {{- if and (.Values.dagsterDaemon.enabled) (.Values.dagsterDaemon.queuedRunCoordinator.enabled) }}
+    {{- if and (.Values.dagsterDaemon.enabled) (.Values.dagsterDaemon.runCoordinator.enabled) }}
+    {{- $runCoordinatorType := .Values.dagsterDaemon.runCoordinator.type }}
     run_coordinator:
-      module: {{ .Values.dagsterDaemon.queuedRunCoordinator.module }}
-      class: {{ .Values.dagsterDaemon.queuedRunCoordinator.class }}
-      config:
-      {{- toYaml .Values.dagsterDaemon.queuedRunCoordinator.config | nindent 8 }}
+      {{- if eq $runCoordinatorType "QueuedRunCoordinator" }}
+        {{- include "dagsterYaml.runCoordinator.queued" . | indent 6 -}}
+      {{- else if eq $runCoordinatorType "CustomRunCoordinator" }}
+        {{- include "dagsterYaml.runCoordinator.custom" . | indent 6 -}}
+      {{- end }}
     {{- end }}
 
     {{- $computeLogManagerType := .Values.computeLogManager.type }}
-    {{- if not (eq $computeLogManagerType "LocalComputeLogManager") }}
     compute_logs:
-      {{- if eq $computeLogManagerType "AzureBlobComputeLogManager" }}
+      {{- if has $computeLogManagerType (list "NoOpComputeLogManager" "LocalComputeLogManager") -}}
+        {{- include "dagsterYaml.computeLogManager.noop" . | indent 6 -}}
+      {{- else if eq $computeLogManagerType "AzureBlobComputeLogManager" }}
         {{- include "dagsterYaml.computeLogManager.azure" . | indent 6 -}}
       {{- else if eq $computeLogManagerType "GCSComputeLogManager" }}
         {{- include "dagsterYaml.computeLogManager.gcs" . | indent 6 -}}
@@ -88,4 +91,3 @@ data:
       {{- else if eq $computeLogManagerType "CustomComputeLogManager" }}
         {{- include "dagsterYaml.computeLogManager.custom" . | indent 6 -}}
       {{- end }}
-    {{- end }}

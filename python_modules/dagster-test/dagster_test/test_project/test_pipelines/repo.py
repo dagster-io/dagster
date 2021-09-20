@@ -290,7 +290,7 @@ def define_schedules():
             if key in os.environ
         },
     )
-    def frequent_large_grpc_pipe(_):
+    def frequent_large_grpc_pipe():
         from dagster_celery_k8s.config import get_celery_engine_grpc_config
 
         cfg = get_celery_engine_grpc_config()
@@ -319,7 +319,7 @@ def define_schedules():
             if key in os.environ
         },
     )
-    def frequent_large_pipe(_):
+    def frequent_large_pipe():
         from dagster_celery_k8s.config import get_celery_engine_config
 
         cfg = get_celery_engine_config()
@@ -330,7 +330,7 @@ def define_schedules():
         pipeline_name="demo_pipeline_celery",
         cron_schedule="* * * * *",
     )
-    def frequent_celery(_):
+    def frequent_celery():
         from dagster_celery_k8s.config import get_celery_engine_config
 
         additional_env_config_maps = ["test-aws-env-configmap"] if not IS_BUILDKITE else []

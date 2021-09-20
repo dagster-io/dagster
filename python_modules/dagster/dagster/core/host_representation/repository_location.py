@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
 from dagster import check
 from dagster.api.get_server_id import sync_get_server_id
 from dagster.api.list_repositories import sync_list_repositories_grpc
+from dagster.api.notebook_data import sync_get_streaming_external_notebook_data_grpc
 from dagster.api.snapshot_execution_plan import sync_get_external_execution_plan_grpc
 from dagster.api.snapshot_partition import (
     sync_get_external_partition_config_grpc,
@@ -46,11 +47,14 @@ from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_pl
 from dagster.grpc.impl import (
     get_external_schedule_execution,
     get_external_sensor_execution,
+    get_notebook_data,
     get_partition_config,
     get_partition_names,
     get_partition_set_execution_param_data,
     get_partition_tags,
 )
+from dagster.grpc.types import GetCurrentImageResult
+from dagster.serdes import deserialize_as
 from dagster.seven.compat.pendulum import PendulumDateTime
 from dagster.utils import merge_dicts
 from dagster.utils.hosted_user_process import external_repo_from_def
@@ -178,6 +182,10 @@ class RepositoryLocation(AbstractContextManager):
     ) -> Union["SensorExecutionData", "ExternalSensorExecutionErrorData"]:
         pass
 
+    @abstractmethod
+    def get_external_notebook_data(self, notebook_path: str) -> bytes:
+        pass
+
     @abstractproperty
     def is_reload_supported(self) -> bool:
         pass
@@ -216,7 +224,7 @@ class RepositoryLocation(AbstractContextManager):
     def get_repository_python_origin(self, repository_name: str) -> "RepositoryPythonOrigin":
         if repository_name not in self.repository_code_pointer_dict:
             raise DagsterInvariantViolationError(
-                "Unable to find repository name {} on GRPC server.".format(repository_name)
+                "Unable to find repository {}.".format(repository_name)
             )
 
         code_pointer = self.repository_code_pointer_dict[repository_name]
@@ -309,7 +317,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
         check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
         check.dict_param(run_config, "run_config")
         check.str_param(mode, "mode")
-        check.opt_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
+        check.opt_nullable_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
         check.opt_inst_param(known_state, "known_state", KnownExecutionState)
 
         return ExternalExecutionPlan(
@@ -419,6 +427,10 @@ class InProcessRepositoryLocation(RepositoryLocation):
             partition_set_name=partition_set_name,
             partition_names=partition_names,
         )
+
+    def get_external_notebook_data(self, notebook_path: str) -> bytes:
+        check.str_param(notebook_path, "notebook_path")
+        return get_notebook_data(notebook_path)
 
 
 class GrpcServerRepositoryLocation(RepositoryLocation):
@@ -555,7 +567,10 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         return self._use_ssl
 
     def _reload_current_image(self) -> str:
-        return self.client.get_current_image().current_image
+        return deserialize_as(
+            self.client.get_current_image(),
+            GetCurrentImageResult,
+        ).current_image
 
     def cleanup(self) -> None:
         if self._heartbeat_shutdown_event:
@@ -599,7 +614,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
         check.dict_param(run_config, "run_config")
         check.str_param(mode, "mode")
-        check.opt_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
+        check.opt_nullable_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
         check.opt_inst_param(known_state, "known_state", KnownExecutionState)
 
         execution_plan_snapshot_or_error = sync_get_external_execution_plan_grpc(
@@ -719,3 +734,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         return sync_get_external_partition_set_execution_param_data_grpc(
             self.client, repository_handle, partition_set_name, partition_names
         )
+
+    def get_external_notebook_data(self, notebook_path: str) -> bytes:
+        check.str_param(notebook_path, "notebook_path")
+        return sync_get_streaming_external_notebook_data_grpc(self.client, notebook_path)

@@ -10,12 +10,13 @@ snapshots['test_create_execution_plan_with_dep 1'] = '''{
   "__class__": "ExecutionPlanSnapshot",
   "artifacts_persisted": true,
   "initial_known_state": null,
-  "pipeline_snapshot_id": "2649d19803561838375ad1798847e397578c8bdf",
+  "pipeline_snapshot_id": "1d7f214f0584150df209c62a02074780527c95bb",
   "snapshot_version": 1,
   "step_keys_to_execute": [
     "solid_one",
     "solid_two"
   ],
+  "step_output_versions": [],
   "steps": [
     {
       "__class__": "ExecutionStepSnap",
@@ -130,11 +131,12 @@ snapshots['test_create_noop_execution_plan 1'] = '''{
   "__class__": "ExecutionPlanSnapshot",
   "artifacts_persisted": true,
   "initial_known_state": null,
-  "pipeline_snapshot_id": "966a50e2092e6915a4434006c6edf4aafd2aea0a",
+  "pipeline_snapshot_id": "0965b76124e758660317760c7e9bbc66282f33b0",
   "snapshot_version": 1,
   "step_keys_to_execute": [
     "noop_solid"
   ],
+  "step_output_versions": [],
   "steps": [
     {
       "__class__": "ExecutionStepSnap",
@@ -181,11 +183,12 @@ snapshots['test_create_noop_execution_plan_with_tags 1'] = '''{
   "__class__": "ExecutionPlanSnapshot",
   "artifacts_persisted": true,
   "initial_known_state": null,
-  "pipeline_snapshot_id": "04810c5a068c9015c41e1bbd84be03a3fa885b83",
+  "pipeline_snapshot_id": "3248f027c9045c80d4d5124967cad459be986f0c",
   "snapshot_version": 1,
   "step_keys_to_execute": [
     "noop_solid"
   ],
+  "step_output_versions": [],
   "steps": [
     {
       "__class__": "ExecutionStepSnap",
@@ -246,7 +249,7 @@ snapshots['test_create_with_composite 1'] = '''{
   "__class__": "ExecutionPlanSnapshot",
   "artifacts_persisted": true,
   "initial_known_state": null,
-  "pipeline_snapshot_id": "6c7258b985583457031d0cf6d7738ce2ab2ae0ef",
+  "pipeline_snapshot_id": "574214af42cfa7ee95c5720ce8cc862e2b440a04",
   "snapshot_version": 1,
   "step_keys_to_execute": [
     "comp_1.return_one",
@@ -255,6 +258,7 @@ snapshots['test_create_with_composite 1'] = '''{
     "comp_2.add_one",
     "add"
   ],
+  "step_output_versions": [],
   "steps": [
     {
       "__class__": "ExecutionStepSnap",

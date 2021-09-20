@@ -8,15 +8,17 @@ import {LoadingSpinner} from '../ui/Loading';
 import {Page} from '../ui/Page';
 import {PageHeader} from '../ui/PageHeader';
 import {Table} from '../ui/Table';
-import {Heading} from '../ui/Text';
+import {Heading, Subheading} from '../ui/Text';
 
+import {ReloadAllButton} from './ReloadAllButton';
+import {RepositoryLocationsList} from './RepositoryLocationsList';
 import {useRepositoryOptions} from './WorkspaceContext';
 import {buildRepoPath} from './buildRepoAddress';
 import {workspacePath} from './workspacePath';
 
 export const WorkspaceOverviewRoot = () => {
   const {loading, error, options} = useRepositoryOptions();
-  const {flagPipelineModeTuples} = useFeatureFlags();
+  const {flagPipelineModeTuples, flagAssetGraph} = useFeatureFlags();
 
   const content = () => {
     if (loading) {
@@ -56,7 +58,8 @@ export const WorkspaceOverviewRoot = () => {
             ) : (
               <th>Pipelines</th>
             )}
-            <th>Solids</th>
+            <th>{flagPipelineModeTuples ? 'Ops' : 'Solids'}</th>
+            {flagAssetGraph ? <th>Assets</th> : null}
             <th>Schedules</th>
             <th>Sensors</th>
           </tr>
@@ -86,8 +89,17 @@ export const WorkspaceOverviewRoot = () => {
                   </td>
                 )}
                 <td>
-                  <Link to={workspacePath(name, location, '/solids')}>Solids</Link>
+                  <Link
+                    to={workspacePath(name, location, flagPipelineModeTuples ? '/ops' : '/solids')}
+                  >
+                    {flagPipelineModeTuples ? 'Ops' : 'Solids'}
+                  </Link>
                 </td>
+                {flagAssetGraph ? (
+                  <td>
+                    <Link to={workspacePath(name, location, '/assets')}>Assets</Link>
+                  </td>
+                ) : null}
                 <td>
                   <Link to={workspacePath(name, location, '/schedules')}>Schedules</Link>
                 </td>
@@ -106,6 +118,14 @@ export const WorkspaceOverviewRoot = () => {
     <Page>
       <Group direction="column" spacing={16}>
         <PageHeader title={<Heading>Workspace</Heading>} />
+        <Group direction="column" spacing={16}>
+          <Group direction="row" spacing={12} alignItems="center">
+            <Subheading id="repository-locations">Locations</Subheading>
+            <ReloadAllButton />
+          </Group>
+          <RepositoryLocationsList />
+        </Group>
+        <Subheading id="repository-locations">Repositories</Subheading>
         {content()}
       </Group>
     </Page>

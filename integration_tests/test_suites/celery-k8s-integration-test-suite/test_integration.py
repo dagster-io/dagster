@@ -19,7 +19,7 @@ from dagster_k8s_test_infra.integration_utils import image_pull_policy
 from dagster_test.test_project import (
     ReOriginatedExternalPipelineForTest,
     get_test_project_environments_path,
-    get_test_project_external_pipeline,
+    get_test_project_workspace_and_external_pipeline,
 )
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
@@ -65,18 +65,22 @@ def test_execute_on_celery_k8s_default(  # pylint: disable=redefined-outer-name
     )
 
     pipeline_name = "demo_pipeline_celery"
-    run = create_run_for_test(
-        dagster_instance,
-        pipeline_name=pipeline_name,
-        run_config=run_config,
-        mode="default",
-    )
+    with get_test_project_workspace_and_external_pipeline(dagster_instance, pipeline_name) as (
+        workspace,
+        external_pipeline,
+    ):
+        reoriginated_pipeline = ReOriginatedExternalPipelineForTest(external_pipeline)
 
-    with get_test_project_external_pipeline(pipeline_name) as external_pipeline:
-        dagster_instance.launch_run(
-            run.run_id,
-            ReOriginatedExternalPipelineForTest(external_pipeline),
+        run = create_run_for_test(
+            dagster_instance,
+            pipeline_name=pipeline_name,
+            run_config=run_config,
+            mode="default",
+            external_pipeline_origin=reoriginated_pipeline.get_external_origin(),
+            pipeline_code_origin=reoriginated_pipeline.get_python_origin(),
         )
+
+        dagster_instance.launch_run(run.run_id, workspace)
 
         result = wait_for_job_and_get_raw_logs(
             job_name="dagster-run-%s" % run.run_id, namespace=helm_namespace
@@ -104,22 +108,23 @@ def test_execute_on_celery_k8s_image_from_origin(  # pylint: disable=redefined-o
     )
 
     pipeline_name = "demo_pipeline_celery"
-    run = create_run_for_test(
-        dagster_instance,
-        pipeline_name=pipeline_name,
-        run_config=run_config,
-        mode="default",
-    )
-
-    with get_test_project_external_pipeline(
-        pipeline_name, container_image=dagster_docker_image
-    ) as external_pipeline:
-        dagster_instance.launch_run(
-            run.run_id,
-            ReOriginatedExternalPipelineForTest(
-                external_pipeline, container_image=dagster_docker_image
-            ),
+    with get_test_project_workspace_and_external_pipeline(
+        dagster_instance, pipeline_name, container_image=dagster_docker_image
+    ) as (workspace, external_pipeline):
+        reoriginated_pipeline = ReOriginatedExternalPipelineForTest(
+            external_pipeline, container_image=dagster_docker_image
         )
+
+        run = create_run_for_test(
+            dagster_instance,
+            pipeline_name=pipeline_name,
+            run_config=run_config,
+            mode="default",
+            external_pipeline_origin=reoriginated_pipeline.get_external_origin(),
+            pipeline_code_origin=reoriginated_pipeline.get_python_origin(),
+        )
+
+        dagster_instance.launch_run(run.run_id, workspace)
 
         result = wait_for_job_and_get_raw_logs(
             job_name="dagster-run-%s" % run.run_id, namespace=helm_namespace
@@ -147,20 +152,23 @@ def test_execute_subset_on_celery_k8s(  # pylint: disable=redefined-outer-name
     )
 
     pipeline_name = "demo_pipeline_celery"
-    run = create_run_for_test(
-        dagster_instance,
-        pipeline_name=pipeline_name,
-        run_config=run_config,
-        mode="default",
-        solids_to_execute={"count_letters"},
-    )
+    with get_test_project_workspace_and_external_pipeline(dagster_instance, pipeline_name) as (
+        workspace,
+        external_pipeline,
+    ):
+        reoriginated_pipeline = ReOriginatedExternalPipelineForTest(external_pipeline)
 
-    with get_test_project_external_pipeline(pipeline_name) as external_pipeline:
-
-        dagster_instance.launch_run(
-            run.run_id,
-            ReOriginatedExternalPipelineForTest(external_pipeline),
+        run = create_run_for_test(
+            dagster_instance,
+            pipeline_name=pipeline_name,
+            run_config=run_config,
+            mode="default",
+            solids_to_execute={"count_letters"},
+            external_pipeline_origin=reoriginated_pipeline.get_external_origin(),
+            pipeline_code_origin=reoriginated_pipeline.get_python_origin(),
         )
+
+        dagster_instance.launch_run(run.run_id, workspace)
 
         result = wait_for_job_and_get_raw_logs(
             job_name="dagster-run-%s" % run.run_id, namespace=helm_namespace
@@ -180,18 +188,22 @@ def test_execute_on_celery_k8s_retry_pipeline(  # pylint: disable=redefined-oute
     )
 
     pipeline_name = "retry_pipeline"
-    run = create_run_for_test(
-        dagster_instance,
-        pipeline_name=pipeline_name,
-        run_config=run_config,
-        mode="default",
-    )
+    with get_test_project_workspace_and_external_pipeline(dagster_instance, pipeline_name) as (
+        workspace,
+        external_pipeline,
+    ):
+        reoriginated_pipeline = ReOriginatedExternalPipelineForTest(external_pipeline)
 
-    with get_test_project_external_pipeline(pipeline_name) as external_pipeline:
-        dagster_instance.launch_run(
-            run.run_id,
-            ReOriginatedExternalPipelineForTest(external_pipeline),
+        run = create_run_for_test(
+            dagster_instance,
+            pipeline_name=pipeline_name,
+            run_config=run_config,
+            mode="default",
+            external_pipeline_origin=reoriginated_pipeline.get_external_origin(),
+            pipeline_code_origin=reoriginated_pipeline.get_python_origin(),
         )
+
+        dagster_instance.launch_run(run.run_id, workspace)
 
         result = wait_for_job_and_get_raw_logs(
             job_name="dagster-run-%s" % run.run_id, namespace=helm_namespace
@@ -242,19 +254,21 @@ def test_execute_on_celery_k8s_with_resource_requirements(  # pylint: disable=re
     )
 
     pipeline_name = "resources_limit_pipeline"
-    run = create_run_for_test(
-        dagster_instance,
-        pipeline_name=pipeline_name,
-        run_config=run_config,
-        mode="default",
-    )
-
-    with get_test_project_external_pipeline(pipeline_name) as external_pipeline:
-
-        dagster_instance.launch_run(
-            run.run_id,
-            ReOriginatedExternalPipelineForTest(external_pipeline),
+    with get_test_project_workspace_and_external_pipeline(dagster_instance, pipeline_name) as (
+        workspace,
+        external_pipeline,
+    ):
+        reoriginated_pipeline = ReOriginatedExternalPipelineForTest(external_pipeline)
+        run = create_run_for_test(
+            dagster_instance,
+            pipeline_name=pipeline_name,
+            run_config=run_config,
+            mode="default",
+            external_pipeline_origin=reoriginated_pipeline.get_external_origin(),
+            pipeline_code_origin=reoriginated_pipeline.get_python_origin(),
         )
+
+        dagster_instance.launch_run(run.run_id, workspace)
 
         result = wait_for_job_and_get_raw_logs(
             job_name="dagster-run-%s" % run.run_id, namespace=helm_namespace
@@ -265,19 +279,21 @@ def test_execute_on_celery_k8s_with_resource_requirements(  # pylint: disable=re
 
 def _test_termination(dagster_instance, run_config):
     pipeline_name = "resource_pipeline"
-    run = create_run_for_test(
-        dagster_instance,
-        pipeline_name=pipeline_name,
-        run_config=run_config,
-        mode="default",
-    )
-
-    with get_test_project_external_pipeline(pipeline_name) as external_pipeline:
-
-        dagster_instance.launch_run(
-            run.run_id,
-            ReOriginatedExternalPipelineForTest(external_pipeline),
+    with get_test_project_workspace_and_external_pipeline(dagster_instance, pipeline_name) as (
+        workspace,
+        external_pipeline,
+    ):
+        reoriginated_pipeline = ReOriginatedExternalPipelineForTest(external_pipeline)
+        run = create_run_for_test(
+            dagster_instance,
+            pipeline_name=pipeline_name,
+            run_config=run_config,
+            mode="default",
+            external_pipeline_origin=reoriginated_pipeline.get_external_origin(),
+            pipeline_code_origin=reoriginated_pipeline.get_python_origin(),
         )
+
+        dagster_instance.launch_run(run.run_id, workspace)
         assert isinstance(dagster_instance.run_launcher, CeleryK8sRunLauncher)
 
         # Wait for pipeline run to start
@@ -441,18 +457,21 @@ def test_execute_on_celery_k8s_with_hard_failure(  # pylint: disable=redefined-o
     )
 
     pipeline_name = "hard_failer"
-    run = create_run_for_test(
-        dagster_instance,
-        pipeline_name=pipeline_name,
-        run_config=run_config,
-        mode="default",
-    )
-
-    with get_test_project_external_pipeline(pipeline_name) as external_pipeline:
-        dagster_instance.launch_run(
-            run.run_id,
-            ReOriginatedExternalPipelineForTest(external_pipeline),
+    with get_test_project_workspace_and_external_pipeline(dagster_instance, pipeline_name) as (
+        workspace,
+        external_pipeline,
+    ):
+        reoriginated_pipeline = ReOriginatedExternalPipelineForTest(external_pipeline)
+        run = create_run_for_test(
+            dagster_instance,
+            pipeline_name=pipeline_name,
+            run_config=run_config,
+            mode="default",
+            external_pipeline_origin=reoriginated_pipeline.get_external_origin(),
+            pipeline_code_origin=reoriginated_pipeline.get_python_origin(),
         )
+
+        dagster_instance.launch_run(run.run_id, workspace)
         assert isinstance(dagster_instance.run_launcher, CeleryK8sRunLauncher)
 
         # Check that pipeline run is marked as failed

@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import {DEFAULT_RESULT_NAME, titleOfIO} from '../app/Util';
+import {DEFAULT_RESULT_NAME, titleOfIO} from '../app/titleOfIO';
 
 import {PipelineColorScale} from './PipelineColorScale';
 import {SVGEllipseInRect, SVGFlowLayoutRect, SVGMonospaceText} from './SVGComponents';

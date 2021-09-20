@@ -230,6 +230,22 @@ def in_process_executor(init_context):
     )
 
 
+@executor(name="execute_in_process_executor")
+def execute_in_process_executor(_):
+    """Executor used by execute_in_process.
+
+    Use of this executor triggers special behavior in the config system that ignores all incoming
+    executor config. This is because someone might set executor config on a job, and when we foist
+    this executor onto the job for `execute_in_process`, that config becomes nonsensical.
+    """
+    from dagster.core.executor.in_process import InProcessExecutor
+
+    return InProcessExecutor(
+        retries=RetryMode.ENABLED,
+        marker_to_close=None,
+    )
+
+
 @executor(
     name="multiprocess",
     config_schema={
@@ -287,14 +303,17 @@ def check_cross_process_constraints(init_context):
 
 
 def _check_intra_process_pipeline(pipeline):
+    from dagster.core.definitions import JobDefinition
+
     if not isinstance(pipeline, ReconstructablePipeline):
+        target = "job" if isinstance(pipeline.get_definition(), JobDefinition) else "pipeline"
         raise DagsterUnmetExecutorRequirementsError(
-            'You have attempted to use an executor that uses multiple processes with the pipeline "{name}" '
-            "that is not reconstructable. Pipelines must be loaded in a way that allows dagster to reconstruct "
+            'You have attempted to use an executor that uses multiple processes with the {target} "{name}" '
+            "that is not reconstructable. {target_cap} must be loaded in a way that allows dagster to reconstruct "
             "them in a new process. This means: \n"
             "  * using the file, module, or repository.yaml arguments of dagit/dagster-graphql/dagster\n"
-            "  * loading the pipeline through the reconstructable() function\n".format(
-                name=pipeline.get_definition().name
+            "  * loading the {target} through the reconstructable() function\n".format(
+                target=target, name=pipeline.get_definition().name, target_cap=target.capitalize()
             )
         )
 

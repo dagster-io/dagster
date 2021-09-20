@@ -29,7 +29,9 @@ def test_sensors_list(gen_sensor_args):
             result = runner.invoke(sensor_list_command, cli_args)
 
             assert result.exit_code == 0
-            assert result.output == "Repository bar\n**************\nSensor: foo_sensor [STOPPED]\n"
+            assert result.output == (
+                "Repository bar\n" "**************\n" "Sensor: foo_sensor [STOPPED]\n"
+            )
 
 
 @pytest.mark.parametrize("gen_sensor_args", sensor_command_contexts())

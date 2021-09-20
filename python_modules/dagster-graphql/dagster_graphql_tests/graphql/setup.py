@@ -7,6 +7,7 @@ import time
 from collections import OrderedDict
 from contextlib import contextmanager
 from copy import deepcopy
+from typing import List
 
 from dagster import (
     Any,
@@ -14,6 +15,8 @@ from dagster import (
     AssetMaterialization,
     Bool,
     DagsterInstance,
+    DynamicOutput,
+    DynamicOutputDefinition,
     Enum,
     EnumValue,
     EventMetadataEntry,
@@ -33,12 +36,14 @@ from dagster import (
     PythonObjectDagsterType,
     ScheduleDefinition,
     ScheduleEvaluationContext,
+    SolidExecutionContext,
     String,
     check,
     composite_solid,
     dagster_type_loader,
     dagster_type_materializer,
     daily_schedule,
+    graph,
     hourly_schedule,
     lambda_solid,
     logger,
@@ -54,11 +59,12 @@ from dagster.core.definitions.decorators.sensor import sensor
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.definitions.sensor import RunRequest, SkipReason
 from dagster.core.log_manager import coerce_valid_log_level
+from dagster.core.storage.fs_io_manager import fs_io_manager
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.core.test_utils import today_at_midnight
-from dagster.core.workspace.load import location_origin_from_python_file
-from dagster.experimental import DynamicOutput, DynamicOutputDefinition
+from dagster.core.workspace.context import WorkspaceProcessContext
+from dagster.core.workspace.load_target import PythonFileTarget
 from dagster.seven import get_system_temp_directory
 from dagster.utils import file_relative_path, segfault
 from dagster_graphql.test.utils import (
@@ -68,7 +74,7 @@ from dagster_graphql.test.utils import (
     main_repo_name,
 )
 
-LONG_INT = 29119888133298982934829348
+LONG_INT = 2875972244  # 32b unsigned, > 32b signed
 
 
 @dagster_type_loader(String)
@@ -107,13 +113,23 @@ def create_main_recon_repo():
 
 
 @contextmanager
-def get_main_external_repo():
-    with location_origin_from_python_file(
-        python_file=file_relative_path(__file__, "setup.py"),
-        attribute=main_repo_name(),
-        working_directory=None,
-        location_name=main_repo_location_name(),
-    ).create_test_location() as location:
+def get_main_workspace(instance):
+    with WorkspaceProcessContext(
+        instance,
+        PythonFileTarget(
+            python_file=file_relative_path(__file__, "setup.py"),
+            attribute=main_repo_name(),
+            working_directory=None,
+            location_name=main_repo_location_name(),
+        ),
+    ) as workspace_process_context:
+        yield workspace_process_context.create_request_context()
+
+
+@contextmanager
+def get_main_external_repo(instance):
+    with get_main_workspace(instance) as workspace:
+        location = workspace.get_repository_location(main_repo_location_name())
         yield location.get_repository(main_repo_name())
 
 
@@ -659,7 +675,6 @@ def spew_pipeline():
 def retry_config(count):
     return {
         "resources": {"retry_count": {"config": {"count": count}}},
-        "intermediate_storage": {"filesystem": {}},
     }
 
 
@@ -668,28 +683,42 @@ def retry_config_resource(context):
     return context.resource_config["count"]
 
 
-@pipeline(mode_defs=[ModeDefinition(resource_defs={"retry_count": retry_config_resource})])
+@pipeline(
+    mode_defs=[
+        ModeDefinition(
+            resource_defs={"io_manager": fs_io_manager, "retry_count": retry_config_resource}
+        )
+    ]
+)
 def eventually_successful():
-    @solid(output_defs=[OutputDefinition(Int)])
-    def spawn(_):
+    @solid
+    def spawn() -> int:
         return 0
 
     @solid(
-        input_defs=[InputDefinition("depth", Int)],
-        output_defs=[OutputDefinition(Int)],
         required_resource_keys={"retry_count"},
     )
-    def fail(context, depth):
+    def fail(context: SolidExecutionContext, depth: int) -> int:
         if context.resources.retry_count <= depth:
             raise Exception("fail")
 
         return depth + 1
 
     @solid
-    def reset(_, depth):
+    def reset(depth: int) -> int:
         return depth
 
-    reset(fail(fail(fail(spawn()))))
+    @solid
+    def collect(fan_in: List[int]):
+        if fan_in != [1, 2, 3]:
+            raise Exception(f"Fan in failed, expected [1, 2, 3] got {fan_in}")
+
+    s = spawn()
+    f1 = fail(s)
+    f2 = fail(f1)
+    f3 = fail(f2)
+    reset(f3)
+    collect([f1, f2, f3])
 
 
 @pipeline
@@ -884,7 +913,7 @@ def get_retry_multi_execution_params(graphql_context, should_fail, retry_id=None
         "executionMetadata": {
             "rootRunId": retry_id,
             "parentRunId": retry_id,
-            "tags": [{"key": RESUME_RETRY_TAG, "value": "true"}],
+            "tags": ([{"key": RESUME_RETRY_TAG, "value": "true"}] if retry_id else []),
         },
     }
 
@@ -1209,6 +1238,16 @@ def backcompat_materialization_pipeline():
     backcompat_materialize()
 
 
+@graph
+def simple_graph():
+    noop_solid()
+
+
+@graph
+def composed_graph():
+    simple_graph()
+
+
 @repository
 def empty_repo():
     return []
@@ -1254,6 +1293,9 @@ def define_pipelines():
         asset_lineage_pipeline,
         partitioned_asset_lineage_pipeline,
         backcompat_materialization_pipeline,
+        simple_graph.to_job("simple_job_a"),
+        simple_graph.to_job("simple_job_b"),
+        composed_graph.to_job(),
     ]
 
 

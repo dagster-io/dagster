@@ -9,6 +9,7 @@ from dagster.core.host_representation.external_data import (
 )
 from dagster.core.host_representation.handle import RepositoryHandle
 from dagster.grpc.types import PartitionArgs, PartitionNamesArgs, PartitionSetExecutionParamArgs
+from dagster.serdes import deserialize_json_to_dagster_namedtuple
 
 
 def sync_get_external_partition_names_grpc(api_client, repository_handle, partition_set_name):
@@ -19,11 +20,13 @@ def sync_get_external_partition_names_grpc(api_client, repository_handle, partit
     check.str_param(partition_set_name, "partition_set_name")
     repository_origin = repository_handle.get_external_origin()
     result = check.inst(
-        api_client.external_partition_names(
-            partition_names_args=PartitionNamesArgs(
-                repository_origin=repository_origin,
-                partition_set_name=partition_set_name,
-            ),
+        deserialize_json_to_dagster_namedtuple(
+            api_client.external_partition_names(
+                partition_names_args=PartitionNamesArgs(
+                    repository_origin=repository_origin,
+                    partition_set_name=partition_set_name,
+                ),
+            )
         ),
         (ExternalPartitionNamesData, ExternalPartitionExecutionErrorData),
     )
@@ -44,11 +47,13 @@ def sync_get_external_partition_config_grpc(
     check.str_param(partition_name, "partition_name")
     repository_origin = repository_handle.get_external_origin()
     result = check.inst(
-        api_client.external_partition_config(
-            partition_args=PartitionArgs(
-                repository_origin=repository_origin,
-                partition_set_name=partition_set_name,
-                partition_name=partition_name,
+        deserialize_json_to_dagster_namedtuple(
+            api_client.external_partition_config(
+                partition_args=PartitionArgs(
+                    repository_origin=repository_origin,
+                    partition_set_name=partition_set_name,
+                    partition_name=partition_name,
+                ),
             ),
         ),
         (ExternalPartitionConfigData, ExternalPartitionExecutionErrorData),
@@ -71,11 +76,13 @@ def sync_get_external_partition_tags_grpc(
 
     repository_origin = repository_handle.get_external_origin()
     result = check.inst(
-        api_client.external_partition_tags(
-            partition_args=PartitionArgs(
-                repository_origin=repository_origin,
-                partition_set_name=partition_set_name,
-                partition_name=partition_name,
+        deserialize_json_to_dagster_namedtuple(
+            api_client.external_partition_tags(
+                partition_args=PartitionArgs(
+                    repository_origin=repository_origin,
+                    partition_set_name=partition_set_name,
+                    partition_name=partition_name,
+                ),
             ),
         ),
         (ExternalPartitionTagsData, ExternalPartitionExecutionErrorData),
@@ -99,11 +106,13 @@ def sync_get_external_partition_set_execution_param_data_grpc(
     repository_origin = repository_handle.get_external_origin()
 
     result = check.inst(
-        api_client.external_partition_set_execution_params(
-            partition_set_execution_param_args=PartitionSetExecutionParamArgs(
-                repository_origin=repository_origin,
-                partition_set_name=partition_set_name,
-                partition_names=partition_names,
+        deserialize_json_to_dagster_namedtuple(
+            api_client.external_partition_set_execution_params(
+                partition_set_execution_param_args=PartitionSetExecutionParamArgs(
+                    repository_origin=repository_origin,
+                    partition_set_name=partition_set_name,
+                    partition_names=partition_names,
+                ),
             ),
         ),
         (ExternalPartitionSetExecutionParamData, ExternalPartitionExecutionErrorData),

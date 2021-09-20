@@ -119,11 +119,11 @@ class ActiveExecution:
             )
             if self._interrupted:
                 raise DagsterExecutionInterruptedError(
-                    f"Execution of pipeline was interrupted before completing the execution plan. {state_str}"
+                    f"Execution was interrupted before completing the execution plan. {state_str}"
                 )
             else:
                 raise DagsterInvariantViolationError(
-                    f"Execution of pipeline finished without completing the execution plan. {state_str}"
+                    f"Execution finished without completing the execution plan. {state_str}"
                 )
 
         # See verify_complete - steps for which we did not observe a failure/success event are in an unknown
@@ -131,12 +131,12 @@ class ActiveExecution:
         if len(self._unknown_state) > 0:
             if self._interrupted:
                 raise DagsterExecutionInterruptedError(
-                    "Execution of pipeline exited with steps {step_list} in an unknown state after "
+                    "Execution exited with steps {step_list} in an unknown state after "
                     "being interrupted.".format(step_list=self._unknown_state)
                 )
             else:
                 raise DagsterUnknownStepStateError(
-                    "Execution of pipeline exited with steps {step_list} in an unknown state to this process.\n"
+                    "Execution exited with steps {step_list} in an unknown state to this process.\n"
                     "This was likely caused by losing communication with the process performing step execution.".format(
                         step_list=self._unknown_state
                     )
@@ -269,9 +269,11 @@ class ActiveExecution:
         steps = []
         steps_to_skip = list(self._pending_skip)
         for key in steps_to_skip:
-            steps.append(self.get_step_by_key(key))
+            step = self.get_step_by_key(key)
+            steps.append(step)
             self._in_flight.add(key)
             self._pending_skip.remove(key)
+            self._prep_for_dynamic_outputs(step)
 
         return sorted(steps, key=self._sort_key_fn)
 
@@ -343,13 +345,12 @@ class ActiveExecution:
     def mark_success(self, step_key: str) -> None:
         self._success.add(step_key)
         self._mark_complete(step_key)
-        if step_key in self._gathering_dynamic_outputs:
-            self._successful_dynamic_outputs[step_key] = self._gathering_dynamic_outputs[step_key]
-            self._new_dynamic_mappings = True
+        self._resolve_any_dynamic_outputs(step_key)
 
     def mark_skipped(self, step_key: str) -> None:
         self._skipped.add(step_key)
         self._mark_complete(step_key)
+        self._resolve_any_dynamic_outputs(step_key)
 
     def mark_abandoned(self, step_key: str) -> None:
         self._abandoned.add(step_key)
@@ -465,3 +466,8 @@ class ActiveExecution:
 
         if dyn_outputs:
             self._gathering_dynamic_outputs[step.key] = {out.name: [] for out in dyn_outputs}
+
+    def _resolve_any_dynamic_outputs(self, step_key: str):
+        if step_key in self._gathering_dynamic_outputs:
+            self._successful_dynamic_outputs[step_key] = self._gathering_dynamic_outputs[step_key]
+            self._new_dynamic_mappings = True

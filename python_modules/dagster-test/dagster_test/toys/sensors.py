@@ -1,11 +1,12 @@
 import os
 
 from dagster import AssetKey, RunRequest, SkipReason, check, sensor
+from dagster.core.definitions.decorators.sensor import asset_sensor
 from dagster.core.definitions.pipeline_sensor import (
     PipelineFailureSensorContext,
     pipeline_failure_sensor,
 )
-from slack import WebClient
+from slack_sdk import WebClient
 
 
 def get_directory_files(directory_name, since=None):
@@ -61,31 +62,6 @@ def get_toys_sensors():
                 },
             )
 
-    @sensor(pipeline_name="log_asset_pipeline")
-    def toy_asset_sensor(context):
-        event_records = context.instance.events_records_for_asset_key(
-            AssetKey(["model"]), after_cursor=context.cursor, ascending=False, limit=1
-        )
-
-        if not event_records:
-            return
-
-        event_record = event_records[0]
-        from_pipeline = event_record.event_log_entry.pipeline_name
-
-        yield RunRequest(
-            run_key=str(event_record.storage_id),
-            run_config={
-                "solids": {
-                    "read_materialization": {
-                        "config": {"asset_key": ["model"], "pipeline": from_pipeline}
-                    }
-                }
-            },
-        )
-
-        context.update_cursor(str(event_record.storage_id))
-
     bucket = os.environ.get("DAGSTER_TOY_SENSOR_S3_BUCKET")
 
     from dagster_aws.s3.sensor import get_s3_keys
@@ -110,7 +86,7 @@ def get_toys_sensors():
                 },
             )
 
-    @pipeline_failure_sensor
+    @pipeline_failure_sensor(pipeline_selection=["error_monster"])
     def custom_slack_on_pipeline_failure(context: PipelineFailureSensorContext):
 
         base_url = "http://localhost:3000"
@@ -132,6 +108,19 @@ def get_toys_sensors():
         slack_client.chat_postMessage(
             channel=channel,
             blocks=[{"type": "section", "text": {"type": "mrkdwn", "text": message}}],
+        )
+
+    @asset_sensor(asset_key=AssetKey("model"), pipeline_name="log_asset_pipeline")
+    def toy_asset_sensor(context, asset_event):
+        yield RunRequest(
+            run_key=context.cursor,
+            run_config={
+                "solids": {
+                    "read_materialization": {
+                        "config": {"asset_key": ["model"], "pipeline": asset_event.pipeline_name}
+                    }
+                }
+            },
         )
 
     return [

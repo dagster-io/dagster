@@ -39,6 +39,7 @@ def create_creation_data(pipeline_def):
         logger_defs=default_loggers(),
         ignored_solids=[],
         required_resources=set(),
+        is_using_graph_job_op_apis=pipeline_def._is_using_graph_job_op_apis,  # pylint: disable=protected-access
     )
 
 
@@ -284,6 +285,7 @@ def test_solid_config_error():
         dependency_structure=pipeline_def.dependency_structure,
         parent_handle=None,
         resource_defs={},
+        is_using_graph_job_op_apis=False,
     )
 
     int_solid_config_type = solid_dict_type.fields["int_config_solid"].config_type

@@ -6,6 +6,7 @@ from dagster import check
 from dagster.core.errors import DagsterInvalidConfigError, DagsterInvalidInvocationError
 
 from ...config import Shape
+from ..decorator_utils import get_function_params
 
 if TYPE_CHECKING:
     from dagster.core.definitions.resource import ResourceDefinition
@@ -15,11 +16,17 @@ if TYPE_CHECKING:
 def resource_invocation_result(
     resource_def: "ResourceDefinition", init_context: Optional["InitResourceContext"]
 ) -> Any:
+    from .resource import is_context_provided
+
     if not resource_def.resource_fn:
         return None
     init_context = _check_invocation_requirements(resource_def, init_context)
 
-    val_or_gen = resource_def.resource_fn(init_context)
+    val_or_gen = (
+        resource_def.resource_fn(init_context)
+        if is_context_provided(get_function_params(resource_def.resource_fn))
+        else resource_def.resource_fn()
+    )
     if inspect.isgenerator(val_or_gen):
 
         @contextmanager

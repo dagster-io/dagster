@@ -16,14 +16,16 @@ def no_print(_):
 
 @pytest.mark.parametrize("gen_pipeline_args", launch_command_contexts())
 def test_print_command_verbose(gen_pipeline_args):
-    with gen_pipeline_args as (cli_args, _instance):
-        execute_print_command(verbose=True, cli_args=cli_args, print_fn=no_print)
+    with gen_pipeline_args as (cli_args, instance):
+        execute_print_command(instance=instance, verbose=True, cli_args=cli_args, print_fn=no_print)
 
 
 @pytest.mark.parametrize("gen_pipeline_args", launch_command_contexts())
 def test_print_command(gen_pipeline_args):
-    with gen_pipeline_args as (cli_args, _instance):
-        execute_print_command(verbose=False, cli_args=cli_args, print_fn=no_print)
+    with gen_pipeline_args as (cli_args, instance):
+        execute_print_command(
+            instance=instance, verbose=False, cli_args=cli_args, print_fn=no_print
+        )
 
 
 @pytest.mark.parametrize("pipeline_cli_args", valid_external_pipeline_target_cli_args_no_preset())

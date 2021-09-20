@@ -4,11 +4,14 @@ import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
 import {AppContext} from '../app/AppContext';
+import {useFeatureFlags} from '../app/Flags';
 import {breakOnUnderscores} from '../app/Util';
 import {pluginForMetadata} from '../plugins';
 import {SolidTypeSignature, SOLID_TYPE_SIGNATURE_FRAGMENT} from '../solids/SolidTypeSignature';
 import {ConfigTypeSchema, CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
 import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from '../typeexplorer/TypeWithTooltip';
+import {Box} from '../ui/Box';
+import {RepoAddress} from '../workspace/types';
 
 import {Description} from './Description';
 import {
@@ -35,12 +38,14 @@ interface SidebarSolidDefinitionProps {
   getInvocations?: (definitionName: string) => {handleID: string}[];
   showingSubsolids: boolean;
   onClickInvocation: (arg: SidebarSolidInvocationInfo) => void;
+  repoAddress?: RepoAddress;
 }
 
 const DEFAULT_INVOCATIONS_SHOWN = 20;
 
 export const SidebarSolidDefinition: React.FC<SidebarSolidDefinitionProps> = (props) => {
-  const {definition, getInvocations, showingSubsolids, onClickInvocation} = props;
+  const {definition, getInvocations, showingSubsolids, onClickInvocation, repoAddress} = props;
+  const {flagPipelineModeTuples} = useFeatureFlags();
   const Plugin = pluginForMetadata(definition.metadata);
   const isComposite = definition.__typename === 'CompositeSolidDefinition';
   const configField = definition.__typename === 'SolidDefinition' ? definition.configField : null;
@@ -72,74 +77,101 @@ export const SidebarSolidDefinition: React.FC<SidebarSolidDefinitionProps> = (pr
     requiredResources = definition.requiredResources;
   }
 
+  const subheadString = React.useMemo(() => {
+    if (flagPipelineModeTuples) {
+      return isComposite ? 'Graph' : 'Op';
+    }
+    return isComposite ? 'Composite solid' : 'Solid';
+  }, [flagPipelineModeTuples, isComposite]);
+
   return (
     <div>
       <SidebarSection title={'Definition'}>
-        <SidebarSubhead>{isComposite ? 'Composite Solid' : 'Solid'}</SidebarSubhead>
-        <SidebarTitle>{breakOnUnderscores(definition.name)}</SidebarTitle>
-        <SolidTypeSignature definition={definition} />
+        <Box padding={12}>
+          <SidebarSubhead>{subheadString}</SidebarSubhead>
+          <SidebarTitle>{breakOnUnderscores(definition.name)}</SidebarTitle>
+          <SolidTypeSignature definition={definition} />
+        </Box>
       </SidebarSection>
       {definition.description && (
         <SidebarSection title={'Description'}>
-          <Description description={definition.description} />
+          <Box padding={12}>
+            <Description description={definition.description} />
+          </Box>
         </SidebarSection>
       )}
       {definition.metadata && Plugin && Plugin.SidebarComponent && (
         <SidebarSection title={'Metadata'}>
-          <Plugin.SidebarComponent definition={definition} rootServerURI={rootServerURI} />
+          <Box padding={12}>
+            <Plugin.SidebarComponent
+              definition={definition}
+              rootServerURI={rootServerURI}
+              repoAddress={repoAddress}
+            />
+          </Box>
         </SidebarSection>
       )}
       {configField && (
         <SidebarSection title={'Config'}>
-          <ConfigTypeSchema
-            type={configField.configType}
-            typesInScope={configField.configType.recursiveConfigTypes}
-          />
+          <Box padding={12}>
+            <ConfigTypeSchema
+              type={configField.configType}
+              typesInScope={configField.configType.recursiveConfigTypes}
+            />
+          </Box>
         </SidebarSection>
       )}
       {requiredResources && (
         <SidebarSection title={'Required Resources'}>
-          {[...requiredResources].sort().map((requirement) => (
-            <ResourceContainer key={requirement.resourceKey}>
-              <Icon iconSize={14} icon={IconNames.LAYERS} color={Colors.DARK_GRAY2} />
-              <ResourceHeader>{requirement.resourceKey}</ResourceHeader>
-            </ResourceContainer>
-          ))}
+          <Box padding={12}>
+            {[...requiredResources].sort().map((requirement) => (
+              <ResourceContainer key={requirement.resourceKey}>
+                <Icon iconSize={14} icon={IconNames.LAYERS} color={Colors.DARK_GRAY2} />
+                <ResourceHeader>{requirement.resourceKey}</ResourceHeader>
+              </ResourceContainer>
+            ))}
+          </Box>
         </SidebarSection>
       )}
       <SidebarSection title={'Inputs'}>
-        {definition.inputDefinitions.map((inputDef, idx) => (
-          <SectionItemContainer key={idx}>
-            <SectionSmallHeader>{breakOnUnderscores(inputDef.name)}</SectionSmallHeader>
-            <TypeWrapper>
-              <TypeWithTooltip type={inputDef.type} />
-            </TypeWrapper>
-            <Description description={inputDef.description} />
-            <SolidLinks title="Mapped to:" items={inputMappings[inputDef.name]} />
-          </SectionItemContainer>
-        ))}
+        <Box padding={12}>
+          {definition.inputDefinitions.map((inputDef, idx) => (
+            <SectionItemContainer key={idx}>
+              <SectionSmallHeader>{breakOnUnderscores(inputDef.name)}</SectionSmallHeader>
+              <TypeWrapper>
+                <TypeWithTooltip type={inputDef.type} />
+              </TypeWrapper>
+              <Description description={inputDef.description} />
+              <SolidLinks title="Mapped to:" items={inputMappings[inputDef.name]} />
+            </SectionItemContainer>
+          ))}
+        </Box>
       </SidebarSection>
       <SidebarSection title={'Outputs'}>
-        {definition.outputDefinitions.map((outputDef, idx) => (
-          <SectionItemContainer key={idx}>
-            <SectionSmallHeader>
-              {breakOnUnderscores(outputDef.name)}
-              {outputDef.isDynamic && <span title="DynamicOutput">[*]</span>}
-            </SectionSmallHeader>
-            <TypeWrapper>
-              <TypeWithTooltip type={outputDef.type} />
-            </TypeWrapper>
-            <SolidLinks title="Mapped from:" items={outputMappings[outputDef.name]} />
-            <Description description={outputDef.description} />
-          </SectionItemContainer>
-        ))}
+        <Box padding={12}>
+          {definition.outputDefinitions.map((outputDef, idx) => (
+            <SectionItemContainer key={idx}>
+              <SectionSmallHeader>
+                {breakOnUnderscores(outputDef.name)}
+                {outputDef.isDynamic && <span title="DynamicOutput">[*]</span>}
+              </SectionSmallHeader>
+              <TypeWrapper>
+                <TypeWithTooltip type={outputDef.type} />
+              </TypeWrapper>
+              <SolidLinks title="Mapped from:" items={outputMappings[outputDef.name]} />
+              <Description description={outputDef.description} />
+            </SectionItemContainer>
+          ))}
+        </Box>
       </SidebarSection>
       {getInvocations && (
         <SidebarSection title={'All Invocations'}>
-          <InvocationList
-            invocations={getInvocations(definition.name)}
-            onClickInvocation={onClickInvocation}
-          />
+          <Box padding={12}>
+            <InvocationList
+              invocations={getInvocations(definition.name)}
+              onClickInvocation={onClickInvocation}
+            />
+          </Box>
         </SidebarSection>
       )}
     </div>

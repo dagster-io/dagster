@@ -25,7 +25,7 @@ from .base import (
     RunShardedEventsCursor,
     extract_asset_events_cursor,
 )
-from .migration import REINDEX_DATA_MIGRATIONS
+from .migration import ASSET_DATA_MIGRATIONS, ASSET_KEY_INDEX_COLS, EVENT_LOG_DATA_MIGRATIONS
 from .schema import AssetKeyTable, SecondaryIndexMigrationTable, SqlEventLogStorageTable
 
 
@@ -100,6 +100,7 @@ class SqlEventLogStorage(EventLogStorage):
         if not event.is_dagster_event or not event.dagster_event.asset_key:
             return
 
+        materialization = event.dagster_event.step_materialization_data.materialization
         # We switched to storing the entire event record of the last materialization instead of just
         # the AssetMaterialization object, so that we have access to metadata like timestamp,
         # pipeline, run_id, etc.
@@ -111,25 +112,52 @@ class SqlEventLogStorage(EventLogStorage):
         # to `last_materialization_event`, for clarity.  For now, we should do some back-compat.
         #
         # https://github.com/dagster-io/dagster/issues/3945
+        if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
+            insert_statement = (
+                AssetKeyTable.insert().values(  # pylint: disable=no-value-for-parameter
+                    asset_key=event.dagster_event.asset_key.to_string(),
+                    last_materialization=serialize_dagster_namedtuple(event),
+                    last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
+                    last_run_id=event.run_id,
+                    tags=seven.json.dumps(materialization.tags) if materialization.tags else None,
+                )
+            )
+            update_statement = (
+                AssetKeyTable.update()
+                .values(  # pylint: disable=no-value-for-parameter
+                    last_materialization=serialize_dagster_namedtuple(event),
+                    last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
+                    last_run_id=event.run_id,
+                    tags=seven.json.dumps(materialization.tags) if materialization.tags else None,
+                )
+                .where(
+                    AssetKeyTable.c.asset_key == event.dagster_event.asset_key.to_string(),
+                )
+            )
+        else:
+            insert_statement = (
+                AssetKeyTable.insert().values(  # pylint: disable=no-value-for-parameter
+                    asset_key=event.dagster_event.asset_key.to_string(),
+                    last_materialization=serialize_dagster_namedtuple(event),
+                    last_run_id=event.run_id,
+                )
+            )
+            update_statement = (
+                AssetKeyTable.update()
+                .values(  # pylint: disable=no-value-for-parameter
+                    last_materialization=serialize_dagster_namedtuple(event),
+                    last_run_id=event.run_id,
+                )
+                .where(
+                    AssetKeyTable.c.asset_key == event.dagster_event.asset_key.to_string(),
+                )
+            )
 
         with self.index_connection() as conn:
             try:
-                conn.execute(
-                    AssetKeyTable.insert().values(  # pylint: disable=no-value-for-parameter
-                        asset_key=event.dagster_event.asset_key.to_string(),
-                        last_materialization=serialize_dagster_namedtuple(event),
-                    )
-                )
+                conn.execute(insert_statement)
             except db.exc.IntegrityError:
-                conn.execute(
-                    AssetKeyTable.update()  # pylint: disable=no-value-for-parameter
-                    .values(
-                        last_materialization=serialize_dagster_namedtuple(event),
-                    )
-                    .where(
-                        AssetKeyTable.c.asset_key == event.dagster_event.asset_key.to_string(),
-                    )
-                )
+                conn.execute(update_statement)
 
     def store_event(self, event):
         """Store an event corresponding to a pipeline run.
@@ -147,7 +175,13 @@ class SqlEventLogStorage(EventLogStorage):
         if event.is_dagster_event and event.dagster_event.asset_key:
             self.store_asset(event)
 
-    def get_logs_for_run_by_log_id(self, run_id, cursor=-1, dagster_event_type=None):
+    def get_logs_for_run_by_log_id(
+        self,
+        run_id,
+        cursor=-1,
+        dagster_event_type=None,
+        limit=None,
+    ):
         check.str_param(run_id, "run_id")
         check.int_param(cursor, "cursor")
         check.invariant(
@@ -169,6 +203,9 @@ class SqlEventLogStorage(EventLogStorage):
         # adjust 0 based index cursor to SQL offset
         query = query.offset(cursor + 1)
 
+        if limit:
+            query = query.limit(limit)
+
         with self.run_connection(run_id) as conn:
             results = conn.execute(query).fetchall()
 
@@ -186,7 +223,13 @@ class SqlEventLogStorage(EventLogStorage):
 
         return events
 
-    def get_logs_for_run(self, run_id, cursor=-1, of_type=None):
+    def get_logs_for_run(
+        self,
+        run_id,
+        cursor=-1,
+        of_type=None,
+        limit=None,
+    ):
         """Get all of the logs corresponding to a run.
 
         Args:
@@ -194,6 +237,7 @@ class SqlEventLogStorage(EventLogStorage):
             cursor (Optional[int]): Zero-indexed logs will be returned starting from cursor + 1,
                 i.e., if cursor is -1, all logs will be returned. (default: -1)
             of_type (Optional[DagsterEventType]): the dagster event type to filter the logs.
+            limit (Optional[int]): the maximum number of events to fetch
         """
         check.str_param(run_id, "run_id")
         check.int_param(cursor, "cursor")
@@ -203,7 +247,7 @@ class SqlEventLogStorage(EventLogStorage):
         )
         check.opt_inst_param(of_type, "of_type", DagsterEventType)
 
-        events_by_id = self.get_logs_for_run_by_log_id(run_id, cursor, of_type)
+        events_by_id = self.get_logs_for_run_by_log_id(run_id, cursor, of_type, limit)
         return [event for id, event in sorted(events_by_id.items(), key=lambda x: x[0])]
 
     def get_stats_for_run(self, run_id):
@@ -382,22 +426,28 @@ class SqlEventLogStorage(EventLogStorage):
             for step_key, value in by_step_key.items()
         ]
 
-    def reindex(self, print_fn=None, force=False):
-        """Call this method to run any data migrations, reindexing to build summary tables."""
-        # Should be overridden by SqliteEventLogStorage and other storages that shard based on
-        # run_id
-        for migration_name, migration_fn in REINDEX_DATA_MIGRATIONS.items():
-            if self.has_secondary_index(migration_name):
-                if not force:
-                    if print_fn:
-                        print_fn("Skipping already reindexed summary: {}".format(migration_name))
-                    continue
-            if print_fn:
-                print_fn("Starting reindex: {}".format(migration_name))
-            migration_fn()(self, print_fn)
-            self.enable_secondary_index(migration_name)
-            if print_fn:
-                print_fn("Finished reindexing: {}".format(migration_name))
+    def _apply_migration(self, migration_name, migration_fn, print_fn, force):
+        if self.has_secondary_index(migration_name):
+            if not force:
+                if print_fn:
+                    print_fn("Skipping already reindexed summary: {}".format(migration_name))
+                return
+        if print_fn:
+            print_fn("Starting reindex: {}".format(migration_name))
+        migration_fn()(self, print_fn)
+        self.enable_secondary_index(migration_name)
+        if print_fn:
+            print_fn("Finished reindexing: {}".format(migration_name))
+
+    def reindex_events(self, print_fn=None, force=False):
+        """Call this method to run any data migrations across the event_log table"""
+        for migration_name, migration_fn in EVENT_LOG_DATA_MIGRATIONS.items():
+            self._apply_migration(migration_name, migration_fn, print_fn, force)
+
+    def reindex_assets(self, print_fn=None, force=False):
+        """Call this method to run any data migrations across the asset_keys table"""
+        for migration_name, migration_fn in ASSET_DATA_MIGRATIONS.items():
+            self._apply_migration(migration_name, migration_fn, print_fn, force)
 
     def wipe(self):
         """Clears the event log storage."""
@@ -465,7 +515,7 @@ class SqlEventLogStorage(EventLogStorage):
         return True
 
     def update_event_log_record(self, record_id, event):
-        """ Utility method for migration scripts to update SQL representation of event records. """
+        """Utility method for migration scripts to update SQL representation of event records."""
         check.int_param(record_id, "record_id")
         check.inst_param(event, "event", EventLogEntry)
         dagster_event_type = None
@@ -595,10 +645,7 @@ class SqlEventLogStorage(EventLogStorage):
                     if isinstance(event_records_filter.after_cursor, RunShardedEventsCursor)
                     else event_records_filter.after_cursor
                 )
-                after_query = db.select([SqlEventLogStorageTable.c.id]).where(
-                    SqlEventLogStorageTable.c.id == after_cursor_id
-                )
-                query = query.where(SqlEventLogStorageTable.c.id > after_query)
+                query = query.where(SqlEventLogStorageTable.c.id > after_cursor_id)
 
         if event_records_filter.before_timestamp:
             query = query.where(
@@ -618,7 +665,7 @@ class SqlEventLogStorage(EventLogStorage):
         self,
         event_records_filter: Optional[EventRecordsFilter] = None,
         limit: Optional[int] = None,
-        ascending: Optional[bool] = False,
+        ascending: bool = False,
     ) -> Iterable[EventLogRecord]:
         """Returns a list of (record_id, record)."""
         check.opt_inst_param(event_records_filter, "event_records_filter", EventRecordsFilter)
@@ -640,9 +687,13 @@ class SqlEventLogStorage(EventLogStorage):
             query = query.limit(limit)
 
         if ascending:
-            query = query.order_by(SqlEventLogStorageTable.c.timestamp.asc())
+            query = query.order_by(
+                SqlEventLogStorageTable.c.timestamp.asc(), SqlEventLogStorageTable.c.id.asc()
+            )
         else:
-            query = query.order_by(SqlEventLogStorageTable.c.timestamp.desc())
+            query = query.order_by(
+                SqlEventLogStorageTable.c.timestamp.desc(), SqlEventLogStorageTable.c.id.desc()
+            )
 
         with self.index_connection() as conn:
             results = conn.execute(query).fetchall()
@@ -669,6 +720,29 @@ class SqlEventLogStorage(EventLogStorage):
 
     def has_asset_key(self, asset_key: AssetKey) -> bool:
         check.inst_param(asset_key, "asset_key", AssetKey)
+        if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
+            query = (
+                db.select([AssetKeyTable.c.asset_key])
+                .where(
+                    db.or_(
+                        AssetKeyTable.c.asset_key == asset_key.to_string(),
+                        AssetKeyTable.c.asset_key == asset_key.to_string(legacy=True),
+                    )
+                )
+                .where(
+                    db.or_(
+                        AssetKeyTable.c.wipe_timestamp == None,
+                        AssetKeyTable.c.last_materialization_timestamp
+                        > AssetKeyTable.c.wipe_timestamp,
+                    )
+                )
+                .limit(1)
+            )
+            with self.index_connection() as conn:
+                row = conn.execute(query).fetchone()
+                return bool(row)
+
+        # has not migrated, need to pull asset_details to get wipe status
         query = (
             db.select([AssetKeyTable.c.asset_key, AssetKeyTable.c.asset_details])
             .where(
@@ -708,6 +782,20 @@ class SqlEventLogStorage(EventLogStorage):
             )
 
     def all_asset_keys(self):
+        if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
+            with self.index_connection() as conn:
+                results = conn.execute(
+                    db.select([AssetKeyTable.c.asset_key]).where(
+                        db.or_(
+                            AssetKeyTable.c.wipe_timestamp == None,
+                            AssetKeyTable.c.last_materialization_timestamp
+                            > AssetKeyTable.c.wipe_timestamp,
+                        )
+                    )
+                ).fetchall()
+                return list(set([AssetKey.from_db_string(result[0]) for result in results]))
+
+        # has not migrated, need to fetch the wipe_timestamp from asset_details
         with self.index_connection() as conn:
             results = conn.execute(
                 db.select([AssetKeyTable.c.asset_key, AssetKeyTable.c.asset_details])
@@ -874,49 +962,113 @@ class SqlEventLogStorage(EventLogStorage):
         return event_or_materialization.dagster_event.step_materialization_data.materialization
 
     def all_asset_tags(self):
-        query = db.select([AssetKeyTable.c.asset_key, AssetKeyTable.c.last_materialization])
         tags_by_asset_key = defaultdict(dict)
-        with self.index_connection() as conn:
-            rows = conn.execute(query).fetchall()
-            for asset_key, json_str in rows:
-                materialization = self._asset_materialization_from_json_column(json_str)
-                if materialization and materialization.tags:
-                    tags_by_asset_key[AssetKey.from_db_string(asset_key)] = {
-                        k: v for k, v in materialization.tags.items()
-                    }
+        if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
+            query = (
+                db.select([AssetKeyTable.c.asset_key, AssetKeyTable.c.tags])
+                .where(AssetKeyTable.c.tags != None)
+                .where(
+                    db.or_(
+                        AssetKeyTable.c.wipe_timestamp == None,
+                        AssetKeyTable.c.last_materialization_timestamp
+                        > AssetKeyTable.c.wipe_timestamp,
+                    )
+                )
+            )
+            with self.index_connection() as conn:
+                rows = conn.execute(query).fetchall()
+                for asset_key, tags_json in rows:
+                    tags = seven.json.loads(tags_json)
+                    if tags:
+                        tags_by_asset_key[AssetKey.from_db_string(asset_key)] = tags
+
+        else:
+            query = db.select([AssetKeyTable.c.asset_key, AssetKeyTable.c.last_materialization])
+            with self.index_connection() as conn:
+                rows = conn.execute(query).fetchall()
+                for asset_key, json_str in rows:
+                    materialization = self._asset_materialization_from_json_column(json_str)
+                    if materialization and materialization.tags:
+                        tags_by_asset_key[AssetKey.from_db_string(asset_key)] = {
+                            k: v for k, v in materialization.tags.items()
+                        }
 
         return tags_by_asset_key
 
     def get_asset_tags(self, asset_key):
         check.inst_param(asset_key, "asset_key", AssetKey)
-        query = db.select([AssetKeyTable.c.last_materialization]).where(
-            AssetKeyTable.c.asset_key == asset_key.to_string()
-        )
-        with self.index_connection() as conn:
-            rows = conn.execute(query).fetchall()
-            if not rows or not rows[0] or not rows[0][0]:
-                return {}
+        if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
+            query = (
+                db.select([AssetKeyTable.c.tags])
+                .where(AssetKeyTable.c.asset_key == asset_key.to_string())
+                .where(
+                    db.or_(
+                        AssetKeyTable.c.wipe_timestamp == None,
+                        AssetKeyTable.c.last_materialization_timestamp
+                        > AssetKeyTable.c.wipe_timestamp,
+                    )
+                )
+            )
+            with self.index_connection() as conn:
+                rows = conn.execute(query).fetchall()
+                if not rows or not rows[0] or not rows[0][0]:
+                    return {}
 
-            materialization = self._asset_materialization_from_json_column(rows[0][0])
-            return materialization.tags if materialization and materialization.tags else {}
+                return seven.json.loads(rows[0][0])
+        else:
+            query = db.select([AssetKeyTable.c.last_materialization]).where(
+                AssetKeyTable.c.asset_key == asset_key.to_string()
+            )
+            with self.index_connection() as conn:
+                rows = conn.execute(query).fetchall()
+                if not rows or not rows[0] or not rows[0][0]:
+                    return {}
+
+                materialization = self._asset_materialization_from_json_column(rows[0][0])
+                return materialization.tags if materialization and materialization.tags else {}
 
     def wipe_asset(self, asset_key):
         check.inst_param(asset_key, "asset_key", AssetKey)
 
-        with self.index_connection() as conn:
-            conn.execute(
-                AssetKeyTable.update()  # pylint: disable=no-value-for-parameter
-                .where(
-                    db.or_(
-                        AssetKeyTable.c.asset_key == asset_key.to_string(),
-                        AssetKeyTable.c.asset_key == asset_key.to_string(legacy=True),
+        wipe_timestamp = pendulum.now("UTC").timestamp()
+
+        if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
+            with self.index_connection() as conn:
+                conn.execute(
+                    AssetKeyTable.update()  # pylint: disable=no-value-for-parameter
+                    .where(
+                        db.or_(
+                            AssetKeyTable.c.asset_key == asset_key.to_string(),
+                            AssetKeyTable.c.asset_key == asset_key.to_string(legacy=True),
+                        )
+                    )
+                    .values(
+                        last_materialization=None,
+                        last_run_id=None,
+                        last_materialization_timestamp=None,
+                        tags=None,
+                        asset_details=serialize_dagster_namedtuple(
+                            AssetDetails(last_wipe_timestamp=wipe_timestamp)
+                        ),
+                        wipe_timestamp=utc_datetime_from_timestamp(wipe_timestamp),
                     )
                 )
-                .values(
-                    last_materialization=None,
-                    last_run_id=None,
-                    asset_details=serialize_dagster_namedtuple(
-                        AssetDetails(last_wipe_timestamp=pendulum.now("UTC").timestamp())
-                    ),
+
+        else:
+            with self.index_connection() as conn:
+                conn.execute(
+                    AssetKeyTable.update()  # pylint: disable=no-value-for-parameter
+                    .where(
+                        db.or_(
+                            AssetKeyTable.c.asset_key == asset_key.to_string(),
+                            AssetKeyTable.c.asset_key == asset_key.to_string(legacy=True),
+                        )
+                    )
+                    .values(
+                        last_materialization=None,
+                        last_run_id=None,
+                        asset_details=serialize_dagster_namedtuple(
+                            AssetDetails(last_wipe_timestamp=wipe_timestamp)
+                        ),
+                    )
                 )
-            )

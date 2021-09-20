@@ -89,6 +89,7 @@ def launch_scheduled_runs(
                 instance,
                 logger,
                 schedule_state,
+                workspace,
                 repo_location,
                 end_datetime_utc,
                 max_catchup_runs,
@@ -106,6 +107,7 @@ def launch_scheduled_runs_for_schedule(
     instance,
     logger,
     schedule_state,
+    workspace,
     repo_location,
     end_datetime_utc,
     max_catchup_runs,
@@ -204,6 +206,7 @@ def launch_scheduled_runs_for_schedule(
             yield from _schedule_runs_at_time(
                 instance,
                 logger,
+                workspace,
                 repo_location,
                 external_repo,
                 external_schedule,
@@ -229,6 +232,7 @@ def _check_for_debug_crash(debug_crash_flags, key):
 def _schedule_runs_at_time(
     instance,
     logger,
+    workspace,
     repo_location,
     external_repo,
     external_schedule,
@@ -301,7 +305,7 @@ def _schedule_runs_at_time(
 
         if run.status != PipelineRunStatus.FAILURE:
             try:
-                instance.submit_run(run.run_id, external_pipeline)
+                instance.submit_run(run.run_id, workspace)
                 logger.info(f"Completed scheduled launch of run {run.run_id} for {schedule_name}")
             except Exception:  # pylint: disable=broad-except
                 error_info = serializable_error_info_from_exc_info(sys.exc_info())
@@ -392,6 +396,7 @@ def _create_scheduler_run(
         execution_plan_snapshot=execution_plan_snapshot,
         parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
         external_pipeline_origin=external_pipeline.get_external_origin(),
+        pipeline_code_origin=external_pipeline.get_python_origin(),
     )
 
     if len(execution_plan_errors) > 0:

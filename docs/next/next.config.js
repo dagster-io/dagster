@@ -19,4 +19,13 @@ module.exports = {
   images: {
     domains: ["dagster-docs-versioned-content.s3.us-west-1.amazonaws.com"],
   },
+  webpack: (config, { webpack }) => {
+    config.plugins.push(
+      new webpack.DefinePlugin({
+        __VERSIONING_DISABLED__: process.env.VERSIONING_DISABLED === "true",
+        __IS_CRAG__: process.env.IS_CRAG === "true",
+      })
+    );
+    return config;
+  },
 };

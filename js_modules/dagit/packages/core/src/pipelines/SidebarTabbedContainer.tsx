@@ -9,14 +9,24 @@ import {TypeExplorerContainer} from '../typeexplorer/TypeExplorerContainer';
 import {TypeListContainer} from '../typeexplorer/TypeListContainer';
 import {RepoAddress} from '../workspace/types';
 
+import {PipelineExplorerJobContext} from './PipelineExplorerJobContext';
 import {PipelineExplorerPath} from './PipelinePathUtils';
 import {SidebarPipelineInfo, SIDEBAR_PIPELINE_INFO_FRAGMENT} from './SidebarPipelineInfo';
 import {SidebarSolidContainer} from './SidebarSolidContainer';
 import {SidebarTabbedContainerPipelineFragment} from './types/SidebarTabbedContainerPipelineFragment';
 
+type TabKey = 'types' | 'info';
+
+interface TabDefinition {
+  name: string;
+  icon: IconName;
+  key: TabKey;
+  content: () => React.ReactNode;
+}
+
 interface ISidebarTabbedContainerProps {
-  types?: string;
-  typeExplorer?: string;
+  tab?: TabKey;
+  typeName?: string;
   pipeline: SidebarTabbedContainerPipelineFragment;
   explorerPath: PipelineExplorerPath;
   solidHandleID?: string;
@@ -27,32 +37,10 @@ interface ISidebarTabbedContainerProps {
   repoAddress?: RepoAddress;
 }
 
-interface ITabInfo {
-  name: string;
-  icon: IconName;
-  key: string;
-  link: string;
-}
-
-const TabInfo: Array<ITabInfo> = [
-  {
-    name: 'Info',
-    icon: 'data-lineage',
-    key: 'info',
-    link: '?',
-  },
-  {
-    name: 'Types',
-    icon: 'manual',
-    key: 'types',
-    link: '?types=true',
-  },
-];
-
 export const SidebarTabbedContainer: React.FC<ISidebarTabbedContainerProps> = (props) => {
   const {
-    typeExplorer,
-    types,
+    tab,
+    typeName,
     pipeline,
     explorerPath,
     solidHandleID,
@@ -63,70 +51,74 @@ export const SidebarTabbedContainer: React.FC<ISidebarTabbedContainerProps> = (p
     repoAddress,
   } = props;
 
-  let content = <div />;
-  let activeTab = 'info';
+  const jobContext = React.useContext(PipelineExplorerJobContext);
 
-  if (typeExplorer) {
-    activeTab = 'types';
-    content = (
-      <TypeExplorerContainer
-        explorerPath={explorerPath}
-        repoAddress={repoAddress}
-        typeName={typeExplorer}
-      />
-    );
-  } else if (types) {
-    activeTab = 'types';
-    content = <TypeListContainer repoAddress={repoAddress} explorerPath={explorerPath} />;
-  } else if (solidHandleID) {
-    content = (
-      <SidebarSolidContainer
-        key={solidHandleID}
-        explorerPath={explorerPath}
-        handleID={solidHandleID}
-        showingSubsolids={false}
-        getInvocations={getInvocations}
-        onEnterCompositeSolid={onEnterCompositeSolid}
-        onClickSolid={onClickSolid}
-        repoAddress={repoAddress}
-      />
-    );
-  } else if (parentSolidHandleID) {
-    content = (
-      <SidebarSolidContainer
-        key={parentSolidHandleID}
-        explorerPath={explorerPath}
-        handleID={parentSolidHandleID}
-        showingSubsolids={true}
-        getInvocations={getInvocations}
-        onEnterCompositeSolid={onEnterCompositeSolid}
-        onClickSolid={onClickSolid}
-        repoAddress={repoAddress}
-      />
-    );
-  } else {
-    content = (
-      <SidebarPipelineInfo
-        pipeline={pipeline}
-        mode={explorerPath.pipelineMode}
-        key={pipeline.name}
-      />
-    );
-  }
+  const activeTab = tab || 'info';
+
+  const TabDefinitions: Array<TabDefinition> = [
+    {
+      name: 'Info',
+      icon: 'data-lineage',
+      key: 'info',
+      content: () =>
+        solidHandleID ? (
+          <SidebarSolidContainer
+            key={solidHandleID}
+            explorerPath={explorerPath}
+            handleID={solidHandleID}
+            showingSubsolids={false}
+            getInvocations={getInvocations}
+            onEnterCompositeSolid={onEnterCompositeSolid}
+            onClickSolid={onClickSolid}
+            repoAddress={repoAddress}
+          />
+        ) : parentSolidHandleID ? (
+          <SidebarSolidContainer
+            key={parentSolidHandleID}
+            explorerPath={explorerPath}
+            handleID={parentSolidHandleID}
+            showingSubsolids={true}
+            getInvocations={getInvocations}
+            onEnterCompositeSolid={onEnterCompositeSolid}
+            onClickSolid={onClickSolid}
+            repoAddress={repoAddress}
+          />
+        ) : jobContext ? (
+          jobContext.sidebarTab
+        ) : (
+          <SidebarPipelineInfo pipeline={pipeline} key={pipeline.name} />
+        ),
+    },
+    {
+      name: 'Types',
+      icon: 'manual',
+      key: 'types',
+      content: () =>
+        typeName ? (
+          <TypeExplorerContainer
+            explorerPath={explorerPath}
+            repoAddress={repoAddress}
+            typeName={typeName}
+          />
+        ) : (
+          <TypeListContainer repoAddress={repoAddress} explorerPath={explorerPath} />
+        ),
+    },
+  ];
 
   return (
     <>
-      <Tabs>
-        {TabInfo.map(({name, icon, key, link}) => (
-          <Link to={link} key={key}>
+      <TabContainer>
+        {TabDefinitions.map(({name, icon, key}) => (
+          <Link to={{search: `?tab=${key}`}} key={key}>
             <Tab key={key} active={key === activeTab}>
               <Icon icon={icon} style={{marginRight: 8}} />
               {name}
             </Tab>
           </Link>
         ))}
-      </Tabs>
-      {content}
+      </TabContainer>
+      {TabDefinitions.find((t) => t.key === activeTab)?.content()}
     </>
   );
 };
@@ -140,7 +132,7 @@ export const SIDEBAR_TABBED_CONTAINER_PIPELINE_FRAGMENT = gql`
   ${SIDEBAR_PIPELINE_INFO_FRAGMENT}
 `;
 
-const Tabs = styled.div`
+const TabContainer = styled.div`
   width: 100%;
   display: flex;
   margin-top: 10px;

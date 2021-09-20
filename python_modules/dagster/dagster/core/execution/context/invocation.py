@@ -4,9 +4,10 @@ from typing import AbstractSet, Any, Dict, NamedTuple, Optional, Union, cast
 from dagster import check
 from dagster.config import Shape
 from dagster.core.definitions.composition import PendingNodeInvocation
-from dagster.core.definitions.dependency import Solid, SolidHandle
+from dagster.core.definitions.dependency import Node, NodeHandle
 from dagster.core.definitions.hook import HookDefinition
 from dagster.core.definitions.mode import ModeDefinition
+from dagster.core.definitions.op import OpDefinition
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.definitions.resource import IContainsGenerator, Resources, ScopedResourcesBuilder
 from dagster.core.definitions.solid import SolidDefinition
@@ -23,7 +24,6 @@ from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.types.dagster_type import DagsterType
 from dagster.utils import merge_dicts
-from dagster.utils.backcompat import experimental_fn_warning
 from dagster.utils.forked_pdb import ForkedPdb
 
 from .compute import SolidExecutionContext
@@ -62,6 +62,7 @@ class UnboundSolidExecutionContext(SolidExecutionContext):
         self._instance = self._instance_cm.__enter__()  # pylint: disable=no-member
 
         # Open resource context manager
+        self._resources_contain_cm = False
         self._resources_cm = build_resources(
             check.opt_dict_param(resources_dict, "resources_dict", key_type=str), instance
         )
@@ -158,11 +159,11 @@ class UnboundSolidExecutionContext(SolidExecutionContext):
         return self._log
 
     @property
-    def solid_handle(self) -> SolidHandle:
+    def solid_handle(self) -> NodeHandle:
         raise DagsterInvalidPropertyError(_property_msg("solid_handle", "property"))
 
     @property
-    def solid(self) -> Solid:
+    def solid(self) -> Node:
         raise DagsterInvalidPropertyError(_property_msg("solid", "property"))
 
     @property
@@ -185,7 +186,7 @@ class UnboundSolidExecutionContext(SolidExecutionContext):
         solid_def = (
             solid_def_or_invocation
             if isinstance(solid_def_or_invocation, SolidDefinition)
-            else solid_def_or_invocation.node_def
+            else solid_def_or_invocation.node_def.ensure_solid_def()
         )
 
         _validate_resource_requirements(self.resources, solid_def)
@@ -345,11 +346,11 @@ class BoundSolidExecutionContext(SolidExecutionContext):
         return self._log
 
     @property
-    def solid_handle(self) -> SolidHandle:
+    def solid_handle(self) -> NodeHandle:
         raise DagsterInvalidPropertyError(_property_msg("solid_handle", "property"))
 
     @property
-    def solid(self) -> Solid:
+    def solid(self) -> Node:
         raise DagsterInvalidPropertyError(_property_msg("solid", "property"))
 
     @property
@@ -374,6 +375,15 @@ class BoundSolidExecutionContext(SolidExecutionContext):
         return TypeCheckContext(
             self.run_id, self.log, ScopedResourcesBuilder(resources._asdict()), dagster_type
         )
+
+    def get_mapping_key(self) -> Optional[str]:
+        return None
+
+    def describe_op(self):
+        if isinstance(self.solid_def, OpDefinition):
+            return f'op "{self.solid_def.name}"'
+
+        return f'solid "{self.solid_def.name}"'
 
 
 def build_op_context(
@@ -437,8 +447,6 @@ def build_solid_context(
             with build_solid_context(resources={"foo": context_manager_resource}) as context:
                 solid_to_invoke(context)
     """
-
-    experimental_fn_warning("build_solid_context")
 
     return UnboundSolidExecutionContext(
         resources_dict=check.opt_dict_param(resources, "resources", key_type=str),

@@ -13,5 +13,5 @@ Eg in dagster_examples
 Running dev ui:
 
 .. code-block:: sh
-  REACT_APP_GRAPHQL_URI="ws://localhost:3333/graphql" yarn start
+  REACT_APP_BACKEND_ORIGIN="http://localhost:3333" yarn start
 

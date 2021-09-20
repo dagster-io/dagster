@@ -2,18 +2,35 @@
 import os
 import re
 import sqlite3
+from collections import namedtuple
 from gzip import GzipFile
 
 import pytest
-from dagster import AssetKey, check, execute_pipeline, file_relative_path, pipeline, solid
+from dagster import (
+    AssetKey,
+    AssetMaterialization,
+    Output,
+    check,
+    execute_pipeline,
+    file_relative_path,
+    pipeline,
+    solid,
+)
 from dagster.cli.debug import DebugRunPayload
+from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.errors import DagsterInstanceMigrationRequired
 from dagster.core.events import DagsterEvent
 from dagster.core.events.log import EventLogEntry
 from dagster.core.instance import DagsterInstance, InstanceRef
 from dagster.core.storage.event_log.migration import migrate_event_log_data
 from dagster.core.storage.event_log.sql_event_log import SqlEventLogStorage
-from dagster.serdes import deserialize_json_to_dagster_namedtuple
+from dagster.serdes.serdes import (
+    WhitelistMap,
+    _deserialize_json,
+    _whitelist_for_serdes,
+    deserialize_json_to_dagster_namedtuple,
+    serialize_dagster_namedtuple,
+)
 from dagster.utils.test import copy_directory
 
 
@@ -268,6 +285,37 @@ def test_event_log_asset_partition_migration():
         assert "partition" in set(get_sqlite3_columns(db_path, "event_logs"))
 
 
+def test_mode_column_migration():
+    src_dir = file_relative_path(__file__, "snapshot_0_11_16_pre_add_mode_column/sqlite")
+    with copy_directory(src_dir) as test_dir:
+
+        @pipeline
+        def _test():
+            pass
+
+        db_path = os.path.join(test_dir, "history", "runs.db")
+        assert get_current_alembic_version(db_path) == "72686963a802"
+        assert "mode" not in set(get_sqlite3_columns(db_path, "runs"))
+
+        # this migration was optional, so make sure things work before migrating
+        instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
+        assert "mode" not in set(get_sqlite3_columns(db_path, "runs"))
+        assert instance.get_run_records()
+        assert instance.create_run_for_pipeline(_test)
+
+        instance.upgrade()
+
+        # Make sure the schema is migrated
+        assert "mode" in set(get_sqlite3_columns(db_path, "runs"))
+        assert instance.get_run_records()
+        assert instance.create_run_for_pipeline(_test)
+
+        instance._run_storage._alembic_downgrade(rev="72686963a802")
+
+        assert get_current_alembic_version(db_path) == "72686963a802"
+        assert "mode" not in set(get_sqlite3_columns(db_path, "runs"))
+
+
 def test_run_partition_migration():
     src_dir = file_relative_path(__file__, "snapshot_0_9_22_pre_run_partition/sqlite")
     with copy_directory(src_dir) as test_dir:
@@ -345,10 +393,6 @@ def test_0_10_0_schedule_wipe():
         assert "jobs" not in get_sqlite3_tables(db_path)
         assert "job_ticks" not in get_sqlite3_tables(db_path)
 
-        with pytest.raises(DagsterInstanceMigrationRequired):
-            with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
-                instance.optimize_for_dagit(statement_timeout=500)
-
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
             instance.upgrade()
 
@@ -396,3 +440,90 @@ def test_rename_event_log_entry():
     dagster_event = event_log_entry.dagster_event
     assert isinstance(dagster_event, DagsterEvent)
     assert dagster_event.event_type_value == "PIPELINE_SUCCESS"
+
+
+def test_0_12_0_extract_asset_index_cols():
+    src_dir = file_relative_path(__file__, "snapshot_0_12_0_pre_asset_index_cols/sqlite")
+
+    @solid
+    def asset_solid(_):
+        yield AssetMaterialization(
+            asset_key=AssetKey(["a"]), partition="partition_1", tags={"foo": "FOO"}
+        )
+        yield AssetMaterialization(asset_key=AssetKey(["b"]), tags={"bar": "BAR"})
+        yield Output(1)
+
+    @pipeline
+    def asset_pipeline():
+        asset_solid()
+
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "history", "runs", "index.db")
+        assert get_current_alembic_version(db_path) == "3b529ad30626"
+        assert "last_materialization_timestamp" not in set(
+            get_sqlite3_columns(db_path, "asset_keys")
+        )
+        assert "wipe_timestamp" not in set(get_sqlite3_columns(db_path, "asset_keys"))
+        assert "tags" not in set(get_sqlite3_columns(db_path, "asset_keys"))
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            storage = instance._event_storage
+
+            # make sure that executing the pipeline works
+            execute_pipeline(asset_pipeline, instance=instance)
+            assert storage.has_asset_key(AssetKey(["a"]))
+            assert storage.has_asset_key(AssetKey(["b"]))
+
+            # make sure that wiping works
+            storage.wipe_asset(AssetKey(["a"]))
+            assert not storage.has_asset_key(AssetKey(["a"]))
+            assert storage.has_asset_key(AssetKey(["b"]))
+
+            execute_pipeline(asset_pipeline, instance=instance)
+            assert storage.has_asset_key(AssetKey(["a"]))
+            old_tags = storage.get_asset_tags(AssetKey(["a"]))
+
+            # wipe and leave asset wiped
+            storage.wipe_asset(AssetKey(["b"]))
+            assert not storage.has_asset_key(AssetKey(["b"]))
+
+            old_keys = storage.all_asset_keys()
+
+            instance.upgrade()
+
+            assert "last_materialization_timestamp" in set(
+                get_sqlite3_columns(db_path, "asset_keys")
+            )
+            assert "wipe_timestamp" in set(get_sqlite3_columns(db_path, "asset_keys"))
+            assert "tags" in set(get_sqlite3_columns(db_path, "asset_keys"))
+
+            assert storage.has_asset_key(AssetKey(["a"]))
+            assert not storage.has_asset_key(AssetKey(["b"]))
+
+            new_tags = storage.get_asset_tags(AssetKey(["a"]))
+            new_keys = storage.all_asset_keys()
+            assert set(old_tags) == set(new_tags)
+            assert set(old_keys) == set(new_keys)
+
+            # make sure that storing assets still works
+            execute_pipeline(asset_pipeline, instance=instance)
+
+            # make sure that wiping still works
+            storage.wipe_asset(AssetKey(["a"]))
+            assert not storage.has_asset_key(AssetKey(["a"]))
+
+
+def test_solid_handle_node_handle():
+    # serialize in current code
+    test_handle = NodeHandle("test", None)
+    test_str = serialize_dagster_namedtuple(test_handle)
+
+    # deserialize in "legacy" code
+    legacy_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(legacy_env)
+    class SolidHandle(namedtuple("_SolidHandle", "name parent")):
+        pass
+
+    result = _deserialize_json(test_str, legacy_env)
+    assert isinstance(result, SolidHandle)
+    assert result.name == test_handle.name

@@ -1,4 +1,9 @@
 ---
+global:
+  postgresqlSecretName: ""
+  dagsterHome: ""
+  serviceAccountName: ""
+
 dagsterHome: "/opt/dagster/dagster_home"
 postgresqlSecretName: "dagster-postgresql-secret"
 
@@ -74,6 +79,7 @@ deployments:
     securityContext: {}
     resources: {}
     replicaCount: 1
+    labels: {}
     # Liveness Probe and Startup Probe are optional. For more configuration docs, see:
     # https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes
     # Note that Startup Probe is only available as a kubernetes v1.16+ feature.
@@ -111,6 +117,11 @@ imagePullSecrets: []
 
 serviceAccount:
   create: true
+
+  # Specifies the name for the service account to reference in the chart. Note that setting
+  # the global service account name will override this field.
+  name: ""
+
   annotations: {}
 
 ####################################################################################################

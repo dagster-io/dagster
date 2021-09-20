@@ -5,6 +5,14 @@ from dagster import Field, Noneable, Selector, build_init_resource_context, reso
 from dagster.core.errors import DagsterInvalidConfigError, DagsterInvalidInvocationError
 
 
+def test_resource_invocation_no_arg():
+    @resource
+    def basic_resource():
+        return 5
+
+    assert basic_resource() == 5
+
+
 def test_resource_invocation_none_arg():
     @resource
     def basic_resource(_):

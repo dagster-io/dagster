@@ -1,26 +1,40 @@
 from abc import ABC, abstractmethod
+from typing import NamedTuple, Optional
 
 from dagster.core.instance import MayHaveInstanceWeakref
+from dagster.core.origin import PipelinePythonOrigin
+from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.workspace.workspace import IWorkspace
+
+
+class LaunchRunContext(NamedTuple):
+    """
+    Context available within a run launcher's launch_run call.
+    """
+
+    pipeline_run: PipelineRun
+    workspace: Optional[IWorkspace]
+
+    @property
+    def pipeline_code_origin(self) -> Optional[PipelinePythonOrigin]:
+        return self.pipeline_run.pipeline_code_origin
 
 
 class RunLauncher(ABC, MayHaveInstanceWeakref):
     @abstractmethod
-    def launch_run(self, run, external_pipeline):
+    def launch_run(self, context: LaunchRunContext) -> None:
         """Launch a run.
 
         This method should begin the execution of the specified run, and may emit engine events.
         Runs should be created in the instance (e.g., by calling
         ``DagsterInstance.create_run()``) *before* this method is called, and
-        should be in the ``PipelineRunStatus.NOT_STARTED`` state. Typically, this method will
+        should be in the ``PipelineRunStatus.STARTING`` state. Typically, this method will
         not be invoked directly, but should be invoked through ``DagsterInstance.launch_run()``.
 
         Args:
-            run (PipelineRun): The PipelineRun to launch.
-            external_pipeline (ExternalPipeline): The pipeline that is being launched (currently
-             optional during migration)
-
-        Returns:
-            PipelineRun: The launched run.
+            context (LaunchRunContext): information about the launch - every run launcher
+            will need the PipelineRun, and some run launchers may need information from the
+            IWorkspace from which the run was launched.
         """
 
     @abstractmethod

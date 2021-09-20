@@ -248,7 +248,7 @@ export interface RunPipelineRunEventFragment_ExecutionStepFailureEvent {
   level: LogLevel;
   stepKey: string | null;
   eventType: DagsterEventType | null;
-  error: RunPipelineRunEventFragment_ExecutionStepFailureEvent_error;
+  error: RunPipelineRunEventFragment_ExecutionStepFailureEvent_error | null;
   errorSource: ErrorSource | null;
   failureMetadata: RunPipelineRunEventFragment_ExecutionStepFailureEvent_failureMetadata | null;
 }
@@ -950,7 +950,7 @@ export interface RunPipelineRunEventFragment_HookErroredEvent {
   level: LogLevel;
   stepKey: string | null;
   eventType: DagsterEventType | null;
-  error: RunPipelineRunEventFragment_HookErroredEvent_error;
+  error: RunPipelineRunEventFragment_HookErroredEvent_error | null;
 }
 
 export interface RunPipelineRunEventFragment_LogsCapturedEvent {

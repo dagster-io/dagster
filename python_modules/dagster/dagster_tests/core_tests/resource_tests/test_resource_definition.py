@@ -27,14 +27,26 @@ from dagster.core.errors import DagsterConfigMappingFunctionError, DagsterInvali
 from dagster.core.events.log import EventLogEntry, construct_event_logger
 from dagster.core.execution.api import create_execution_plan, execute_plan, execute_run
 from dagster.core.instance import DagsterInstance
-from dagster.core.log_manager import coerce_valid_log_level
 from dagster.core.test_utils import instance_for_test
+from dagster.core.utils import coerce_valid_log_level
 
 
 def define_string_resource():
     return ResourceDefinition(
         config_schema=String, resource_fn=lambda init_context: init_context.resource_config
     )
+
+
+def test_resource_decorator_no_context():
+    @resource
+    def _basic():
+        pass
+
+    # Document that it is possible to provide required resource keys and
+    # config schema, and still not provide a context.
+    @resource(required_resource_keys={"foo", "bar"}, config_schema={"foo": str})
+    def _reqs_resources():
+        pass
 
 
 def assert_pipeline_runs_with_resource(resource_def, resource_config, expected_resource):
@@ -624,11 +636,9 @@ def test_incorrect_resource_init_error():
     def _correct_resource(_):
         pass
 
-    with pytest.raises(DagsterInvalidDefinitionError, match="expects a single positional argument"):
-
-        @resource
-        def _incorrect_resource():
-            pass
+    @resource
+    def _correct_resource_no_context():
+        pass
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
@@ -812,7 +822,7 @@ def test_solid_failure_resource_teardown():
 
 
 def test_solid_failure_resource_teardown_raise():
-    """ test that teardown is invoked in resources for tests that raise_on_error """
+    """test that teardown is invoked in resources for tests that raise_on_error"""
     called = []
     cleaned = []
 
@@ -990,7 +1000,7 @@ def test_single_step_resource_event_logs():
         pipeline_run = instance.create_run_for_pipeline(
             the_pipeline,
             run_config={"loggers": {"callback": {}}},
-            step_keys_to_execute=["resource_solid"],
+            solids_to_execute={"resource_solid"},
         )
 
         result = execute_run(InMemoryPipeline(the_pipeline), pipeline_run, instance)

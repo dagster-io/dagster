@@ -58,7 +58,7 @@ def solid_requires_resources(context):
     context.resources.database.execute_query(CREATE_TABLE_1_QUERY)
 ```
 
-## (Experimental) Testing Resource Initialization
+## Testing Resource Initialization
 
 You can test the initialization of a resource by invoking the resource definition. This will run the underlying decorated function.
 
@@ -154,9 +154,9 @@ height={2414}
 
 ### Dagster CLI
 
-When launching a pipeline via the CLI, you can use the `-d` option to specify the mode.
+When launching a pipeline via the CLI, you can use the `--mode` option to specify the mode.
 
-    $ dagster pipeline execute -d prod_mode my_pipeline
+    $ dagster pipeline execute --mode prod_mode my_pipeline
 
 ## Examples
 

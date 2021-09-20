@@ -2,12 +2,12 @@ from collections import defaultdict, namedtuple
 
 from dagster import check
 from dagster.core.definitions import GraphDefinition
-from dagster.core.definitions.dependency import DependencyType, Solid, SolidInputHandle
+from dagster.core.definitions.dependency import DependencyType, Node, SolidInputHandle
 from dagster.serdes import whitelist_for_serdes
 
 
 def build_solid_invocation_snap(icontains_solids, solid):
-    check.inst_param(solid, "solid", Solid)
+    check.inst_param(solid, "solid", Node)
     check.inst_param(icontains_solids, "icontains_solids", GraphDefinition)
     dep_structure = icontains_solids.dependency_structure
 

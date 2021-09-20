@@ -31,7 +31,7 @@ from .utils import log_rpc, raise_for_rpc_error
 
 def _poll_rpc(
     context: SolidExecutionContext, request_token: str, should_yield_materializations: bool = True
-) -> DbtRpcOutput:
+):
     """Polls the dbt RPC server for the status of a request until the state is ``success``."""
     from ..utils import generate_materializations
 
@@ -44,27 +44,24 @@ def _poll_rpc(
     while True:
         # Poll for the dbt RPC request.
         context.log.debug(f"RequestToken: {request_token}")
-        resp = context.resources.dbt_rpc.poll(
+        out = context.resources.dbt_rpc.poll(
             request_token=request_token, logs=context.solid_config["logs"], logs_start=logs_start
         )
-        raise_for_rpc_error(context, resp)
-
-        resp_json = resp.json()
-        resp_result = resp_json.get("result", {})
+        raise_for_rpc_error(context, out.response)
 
         # Pass dbt RPC logs into the Dagster/Dagit logger.
         if context.solid_config["logs"]:
-            logs = resp_result.get("logs", [])
+            logs = out.result.get("logs", [])
             if len(logs) > 0:
                 log_rpc(context, logs)
             logs_start += len(logs)
 
-        current_state = resp_result.get("state")
+        current_state = out.result.get("state")
         # Stop polling if request's state is no longer "running".
         if current_state != "running":
             break
 
-        elapsed_time = resp_result.get("elapsed", 0)
+        elapsed_time = out.result.get("elapsed", 0)
         # Sleep for the configured time interval before polling again.
         context.log.debug(
             f"Request {request_token} currently in state '{current_state}' (elapsed time "
@@ -83,15 +80,13 @@ def _poll_rpc(
     context.log.info(
         f"Request {request_token} finished with state '{current_state}' in {elapsed_time} seconds"
     )
-    context.log.debug(json.dumps(resp_result, indent=2))
-
-    polled_run_results = DbtRpcOutput.from_dict(resp_result)
+    context.log.debug(json.dumps(out.result, indent=2))
 
     if should_yield_materializations:
-        for materialization in generate_materializations(polled_run_results):
+        for materialization in generate_materializations(out):
             yield materialization
 
-    yield Output(polled_run_results)
+    yield Output(out)
 
 
 def unwrap_result(poll_rpc_generator) -> DbtRpcOutput:
@@ -154,12 +149,12 @@ def dbt_rpc_run(context: SolidExecutionContext) -> String:
     This dbt RPC solid is asynchronous. The request token can be used in subsequent RPC requests to
     poll the progress of the running dbt process.
     """
-    resp = context.resources.dbt_rpc.run(
+    out = context.resources.dbt_rpc.run(
         models=context.solid_config["models"], exclude=context.solid_config["exclude"]
     )
-    context.log.debug(resp.text)
-    raise_for_rpc_error(context, resp)
-    return resp.json().get("result").get("request_token")
+    context.log.debug(out.response.text)
+    raise_for_rpc_error(context, out.response)
+    return out.result.get("request_token")
 
 
 @solid(
@@ -266,10 +261,12 @@ def dbt_rpc_run_and_wait(context: SolidExecutionContext) -> DbtRpcOutput:
         command += " --fail-fast"
 
     context.log.debug(f"Running dbt command: dbt {command}")
-    resp = context.resources.dbt_rpc.cli(cli=command, **context.solid_config["task_tags"])
-    context.log.debug(resp.text)
-    raise_for_rpc_error(context, resp)
-    request_token = resp.json().get("result").get("request_token")
+    out = context.resources.dbt_rpc.cli(
+        command=command, task_tags=context.solid_config["task_tags"]
+    )
+    context.log.debug(out.response.text)
+    raise_for_rpc_error(context, out.response)
+    request_token = out.result.get("request_token")
     return _poll_rpc(
         context,
         request_token,
@@ -322,15 +319,15 @@ def dbt_rpc_test(context: SolidExecutionContext) -> String:
     This dbt RPC solid is asynchronous. The request token can be used in subsequent RPC requests to
     poll the progress of the running dbt process.
     """
-    resp = context.resources.dbt_rpc.test(
+    out = context.resources.dbt_rpc.test(
         models=context.solid_config["models"],
         exclude=context.solid_config["exclude"],
         data=context.solid_config["data"],
         schema=context.solid_config["schema"],
     )
-    context.log.debug(resp.text)
-    raise_for_rpc_error(context, resp)
-    return resp.json().get("result").get("request_token")
+    context.log.debug(out.response.text)
+    raise_for_rpc_error(context, out.response)
+    return out.result.get("request_token")
 
 
 @solid(
@@ -397,15 +394,15 @@ def dbt_rpc_test_and_wait(context: SolidExecutionContext) -> DbtRpcOutput:
     This dbt RPC solid is synchronous, and will periodically poll the dbt RPC server until the dbt
     process is completed.
     """
-    resp = context.resources.dbt_rpc.test(
+    out = context.resources.dbt_rpc.test(
         models=context.solid_config["models"],
         exclude=context.solid_config["exclude"],
         data=context.solid_config["data"],
         schema=context.solid_config["schema"],
     )
-    context.log.debug(resp.text)
-    raise_for_rpc_error(context, resp)
-    request_token = resp.json().get("result").get("request_token")
+    context.log.debug(out.response.text)
+    raise_for_rpc_error(context, out.response)
+    request_token = out.result.get("request_token")
     return _poll_rpc(
         context,
         request_token,
@@ -446,12 +443,12 @@ def dbt_rpc_run_operation(context: SolidExecutionContext) -> String:
     This dbt RPC solid is asynchronous. The request token can be used in subsequent RPC requests to
     poll the progress of the running dbt process.
     """
-    resp = context.resources.dbt_rpc.run_operation(
+    out = context.resources.dbt_rpc.run_operation(
         macro=context.solid_config["macro"], args=context.solid_config["args"]
     )
-    context.log.debug(resp.text)
-    raise_for_rpc_error(context, resp)
-    return resp.json().get("result").get("request_token")
+    context.log.debug(out.response.text)
+    raise_for_rpc_error(context, out.response)
+    return out.result.get("request_token")
 
 
 @solid(
@@ -505,12 +502,12 @@ def dbt_rpc_run_operation_and_wait(context: SolidExecutionContext) -> DbtRpcOutp
     This dbt RPC solid is synchronous, and will periodically poll the dbt RPC server until the dbt
     process is completed.
     """
-    resp = context.resources.dbt_rpc.run_operation(
+    out = context.resources.dbt_rpc.run_operation(
         macro=context.solid_config["macro"], args=context.solid_config["args"]
     )
-    context.log.debug(resp.text)
-    raise_for_rpc_error(context, resp)
-    request_token = resp.json().get("result").get("request_token")
+    context.log.debug(out.response.text)
+    raise_for_rpc_error(context, out.response)
+    request_token = out.result.get("request_token")
     return _poll_rpc(
         context,
         request_token,
@@ -552,12 +549,12 @@ def dbt_rpc_snapshot(context: SolidExecutionContext) -> String:
     This dbt RPC solid is asynchronous. The request token can be used in subsequent RPC requests to
     poll the progress of the running dbt process.
     """
-    resp = context.resources.dbt_rpc.snapshot(
+    out = context.resources.dbt_rpc.snapshot(
         select=context.solid_config["select"], exclude=context.solid_config["exclude"]
     )
-    context.log.debug(resp.text)
-    raise_for_rpc_error(context, resp)
-    return resp.json().get("result").get("request_token")
+    context.log.debug(out.response.text)
+    raise_for_rpc_error(context, out.response)
+    return out.result.get("request_token")
 
 
 @solid(
@@ -627,12 +624,12 @@ def dbt_rpc_snapshot_and_wait(context: SolidExecutionContext) -> DbtRpcOutput:
                     seconds_to_wait=context.solid_config["retry_interval"],
                 )
 
-    resp = context.resources.dbt_rpc.snapshot(
+    out = context.resources.dbt_rpc.snapshot(
         select=context.solid_config["select"], exclude=context.solid_config["exclude"]
     )
-    context.log.debug(resp.text)
-    raise_for_rpc_error(context, resp)
-    request_token = resp.json().get("result").get("request_token")
+    context.log.debug(out.response.text)
+    raise_for_rpc_error(context, out.response)
+    request_token = out.result.get("request_token")
     return _poll_rpc(
         context,
         request_token,
@@ -686,10 +683,10 @@ def dbt_rpc_snapshot_freshness(context: SolidExecutionContext) -> String:
         command += f" --select {select}"
 
     context.log.debug(f"Running dbt command: dbt {command}")
-    resp = context.resources.dbt_rpc.cli(cli=command)
-    context.log.debug(resp.text)
-    raise_for_rpc_error(context, resp)
-    return resp.json().get("result").get("request_token")
+    out = context.resources.dbt_rpc.cli(command=command)
+    context.log.debug(out.response.text)
+    raise_for_rpc_error(context, out.response)
+    return out.result.get("request_token")
 
 
 @solid(
@@ -756,10 +753,10 @@ def dbt_rpc_snapshot_freshness_and_wait(context: SolidExecutionContext) -> DbtRp
         command += f" --select {select}"
 
     context.log.debug(f"Running dbt command: dbt {command}")
-    resp = context.resources.dbt_rpc.cli(cli=command)
-    context.log.debug(resp.text)
-    raise_for_rpc_error(context, resp)
-    request_token = resp.json().get("result").get("request_token")
+    out = context.resources.dbt_rpc.cli(command=command)
+    context.log.debug(out.response.text)
+    raise_for_rpc_error(context, out.response)
+    request_token = out.result.get("request_token")
     return _poll_rpc(
         context,
         request_token,
@@ -805,25 +802,24 @@ def dbt_rpc_snapshot_freshness_and_wait(context: SolidExecutionContext) -> DbtRp
     required_resource_keys={"dbt_rpc"},
     tags={"kind": "dbt"},
 )
-def dbt_rpc_compile_sql(context: SolidExecutionContext, sql: String) -> String:
+def dbt_rpc_compile_sql(context: SolidExecutionContext, sql: String) -> DbtRpcOutput:
     """This solid sends the ``dbt compile`` command to a dbt RPC server and returns the request
     token.
 
     This dbt RPC solid is asynchronous. The request token can be used in subsequent RPC requests to
     poll the progress of the running dbt process.
     """
-    resp = context.resources.dbt_rpc.compile_sql(sql=sql, name=context.solid_config["name"])
-    context.log.debug(resp.text)
-    raise_for_rpc_error(context, resp)
-    request_token = resp.json().get("result").get("request_token")
-    result = unwrap_result(
+    out = context.resources.dbt_rpc.compile_sql(sql=sql, name=context.solid_config["name"])
+    context.log.debug(out.response.text)
+    raise_for_rpc_error(context, out.response)
+    request_token = out.result.get("request_token")
+    return unwrap_result(
         _poll_rpc(
             context,
             request_token,
             should_yield_materializations=context.solid_config["yield_materializations"],
         )
     )
-    return result.results[0].node["compiled_sql"]
 
 
 def create_dbt_rpc_run_sql_solid(
@@ -911,18 +907,18 @@ def create_dbt_rpc_run_sql_solid(
         **kwargs,
     )
     def _dbt_rpc_run_sql(context: SolidExecutionContext, sql: String) -> DataFrame:
-        resp = context.resources.dbt_rpc.run_sql(sql=sql, name=context.solid_config["name"])
-        context.log.debug(resp.text)
-        raise_for_rpc_error(context, resp)
-        request_token = resp.json().get("result").get("request_token")
-        result = unwrap_result(
+        out = context.resources.dbt_rpc.run_sql(sql=sql, name=context.solid_config["name"])
+        context.log.debug(out.response.text)
+        raise_for_rpc_error(context, out.response)
+        request_token = out.result.get("request_token")
+        out = unwrap_result(
             _poll_rpc(
                 context,
                 request_token,
                 should_yield_materializations=context.solid_config["yield_materializations"],
             )
         )
-        table = result.results[0].table
+        table = out.result["results"][0]["table"]
         return pd.DataFrame.from_records(data=table["rows"], columns=table["column_names"])
 
     return _dbt_rpc_run_sql
@@ -957,13 +953,13 @@ def dbt_rpc_seed(context: SolidExecutionContext) -> String:
     This dbt RPC solid is asynchronous. The request token can be used in subsequent RPC requests to
     poll the progress of the running dbt process.
     """
-    resp = context.resources.dbt_rpc.seed(
+    out = context.resources.dbt_rpc.seed(
         show=context.solid_config["show"],
         **context.solid_config["task_tags"],
     )
-    context.log.debug(resp.text)
-    raise_for_rpc_error(context, resp)
-    return resp.json().get("result").get("request_token")
+    context.log.debug(out.response.text)
+    raise_for_rpc_error(context, out.response)
+    return out.result.get("request_token")
 
 
 @solid(
@@ -1013,13 +1009,13 @@ def dbt_rpc_seed_and_wait(context: SolidExecutionContext) -> DbtRpcOutput:
     This dbt RPC solid is synchronous, and will periodically poll the dbt RPC server until the dbt
     process is completed.
     """
-    resp = context.resources.dbt_rpc.seed(
+    out = context.resources.dbt_rpc.seed(
         show=context.solid_config["show"],
-        **context.solid_config["task_tags"],
+        task_tags=context.solid_config["task_tags"],
     )
-    context.log.debug(resp.text)
-    raise_for_rpc_error(context, resp)
-    request_token = resp.json().get("result").get("request_token")
+    context.log.debug(out.response.text)
+    raise_for_rpc_error(context, out.response)
+    request_token = out.result.get("request_token")
     return _poll_rpc(
         context,
         request_token,
@@ -1068,15 +1064,15 @@ def dbt_rpc_docs_generate(context: SolidExecutionContext) -> String:
     This dbt RPC solid is asynchronous. The request token can be used in subsequent RPC requests to
     poll the progress of the running dbt process.
     """
-    resp = context.resources.dbt_rpc.run(
+    out = context.resources.dbt_rpc.run(
         models=context.solid_config["models"],
         exclude=context.solid_config["exclude"],
         compile=context.solid_config["compile"],
         **context.solid_config["task_tags"],
     )
-    context.log.debug(resp.text)
-    raise_for_rpc_error(context, resp)
-    return resp.json().get("result").get("request_token")
+    context.log.debug(out.response.text)
+    raise_for_rpc_error(context, out.response)
+    return out.result.get("request_token")
 
 
 @solid(
@@ -1135,15 +1131,15 @@ def dbt_rpc_docs_generate_and_wait(context: SolidExecutionContext) -> DbtRpcOutp
     This dbt RPC solid is synchronous, and will periodically poll the dbt RPC server until the dbt
     process is completed.
     """
-    resp = context.resources.dbt_rpc.run(
+    out = context.resources.dbt_rpc.run(
         models=context.solid_config["models"],
         exclude=context.solid_config["exclude"],
         compile=context.solid_config["compile"],
-        **context.solid_config["task_tags"],
+        task_tags=context.solid_config["task_tags"],
     )
-    context.log.debug(resp.text)
-    raise_for_rpc_error(context, resp)
-    request_token = resp.json().get("result").get("request_token")
+    context.log.debug(out.response.text)
+    raise_for_rpc_error(context, out.response)
+    request_token = out.result.get("request_token")
     return _poll_rpc(
         context,
         request_token,

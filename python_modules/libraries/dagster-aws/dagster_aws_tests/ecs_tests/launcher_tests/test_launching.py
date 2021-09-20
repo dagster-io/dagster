@@ -1,18 +1,26 @@
 # pylint: disable=protected-access
+import dagster_aws
 import pytest
 from dagster.check import CheckError
+from dagster_aws.ecs import EcsEventualConsistencyTimeout
 
 
 def test_default_launcher(
-    ecs, instance, pipeline, external_pipeline, subnet, network_interface, image, environment
+    ecs,
+    instance,
+    workspace,
+    run,
+    subnet,
+    network_interface,
+    image,
+    environment,
 ):
-    run = instance.create_run_for_pipeline(pipeline)
     assert not run.tags
 
     initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
     initial_tasks = ecs.list_tasks()["taskArns"]
 
-    instance.launch_run(run.run_id, external_pipeline)
+    instance.launch_run(run.run_id, workspace)
 
     # A new task definition is created
     task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
@@ -27,6 +35,7 @@ def test_default_launcher(
     container_definition = task_definition["containerDefinitions"][0]
     assert container_definition["name"] == "run"
     assert container_definition["image"] == image
+    assert not container_definition.get("entryPoint")
     # But other stuff is inhereted from the parent task definition
     assert container_definition["environment"] == environment
 
@@ -56,7 +65,9 @@ def test_default_launcher(
     assert run.run_id in str(override["command"])
 
 
-def test_launching_custom_task_definition(ecs, instance_cm, pipeline, external_pipeline):
+def test_launching_custom_task_definition(
+    ecs, instance_cm, run, workspace, pipeline, external_pipeline
+):
     container_name = "override_container"
 
     task_definition = ecs.register_task_definition(
@@ -85,12 +96,17 @@ def test_launching_custom_task_definition(ecs, instance_cm, pipeline, external_p
     with instance_cm(
         {"task_definition": task_definition_arn, "container_name": container_name}
     ) as instance:
-        run = instance.create_run_for_pipeline(pipeline)
+
+        run = instance.create_run_for_pipeline(
+            pipeline,
+            external_pipeline_origin=external_pipeline.get_external_origin(),
+            pipeline_code_origin=external_pipeline.get_python_origin(),
+        )
 
         initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
         initial_tasks = ecs.list_tasks()["taskArns"]
 
-        instance.launch_run(run.run_id, external_pipeline)
+        instance.launch_run(run.run_id, workspace)
 
         # A new task definition is not created
         assert ecs.list_task_definitions()["taskDefinitionArns"] == initial_task_definitions
@@ -109,3 +125,42 @@ def test_launching_custom_task_definition(ecs, instance_cm, pipeline, external_p
         assert override["name"] == container_name
         assert "execute_run" in override["command"]
         assert run.run_id in str(override["command"])
+
+
+def test_eventual_consistency(ecs, instance, workspace, run, monkeypatch):
+    initial_tasks = ecs.list_tasks()["taskArns"]
+
+    retries = 0
+    original_describe_tasks = instance.run_launcher.ecs.describe_tasks
+    original_backoff_retries = dagster_aws.ecs.launcher.BACKOFF_RETRIES
+
+    def describe_tasks(*_args, **_kwargs):
+        nonlocal retries
+        nonlocal original_describe_tasks
+
+        if retries > 1:
+            return original_describe_tasks(*_args, **_kwargs)
+        retries += 1
+        return {"tasks": []}
+
+    with pytest.raises(EcsEventualConsistencyTimeout):
+        monkeypatch.setattr(instance.run_launcher.ecs, "describe_tasks", describe_tasks)
+        monkeypatch.setattr(dagster_aws.ecs.launcher, "BACKOFF_RETRIES", 0)
+        instance.launch_run(run.run_id, workspace)
+
+    # Reset the mock
+    retries = 0
+    monkeypatch.setattr(dagster_aws.ecs.launcher, "BACKOFF_RETRIES", original_backoff_retries)
+    instance.launch_run(run.run_id, workspace)
+
+    tasks = ecs.list_tasks()["taskArns"]
+    assert len(tasks) == len(initial_tasks) + 1
+
+    # backoff fails for reasons unrelated to eventual consistency
+
+    def exploding_describe_tasks(*_args, **_kwargs):
+        raise Exception("boom")
+
+    with pytest.raises(Exception, match="boom"):
+        monkeypatch.setattr(instance.run_launcher.ecs, "describe_tasks", exploding_describe_tasks)
+        instance.launch_run(run.run_id, workspace)

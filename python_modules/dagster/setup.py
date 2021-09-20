@@ -56,7 +56,6 @@ if __name__ == "__main__":
         },
         include_package_data=True,
         install_requires=[
-            "future",
             # cli
             "click>=5.0,<8.0",
             "coloredlogs>=6.1, <=14.0",
@@ -65,7 +64,8 @@ if __name__ == "__main__":
             "PyYAML>=5.1",
             # core (not explicitly expressed atm)
             # alembic 1.6.3 broke our migrations: https://github.com/sqlalchemy/alembic/issues/848
-            "alembic>=1.2.1,!=1.6.3",
+            # alembic 1.7.0 is a breaking change
+            "alembic>=1.2.1,!=1.6.3,<1.7.0",
             "croniter>=0.3.34",
             "grpcio>=1.32.0",  # ensure version we require is >= that with which we generated the grpc code (set in dev-requirements)
             "grpcio-health-checking>=1.32.0",
@@ -83,7 +83,7 @@ if __name__ == "__main__":
             'psutil >= 1.0; platform_system=="Windows"',
             # https://github.com/mhammond/pywin32/issues/1439
             'pywin32 != 226; platform_system=="Windows"',
-            "docstring-parser==0.7.1",
+            "docstring-parser",
         ],
         extras_require={
             "docker": ["docker"],

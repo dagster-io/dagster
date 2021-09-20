@@ -538,6 +538,7 @@ TEMPLATE = """<!DOCTYPE html>
         subscriptionEndpoint: 'ws://' + document.location.host + document.location.pathname,
         settings: {
           'schema.polling.enable': false,
+          'request.credentials': 'same-origin',
         }
       })
     })

@@ -6,6 +6,7 @@ import * as React from 'react';
 import {RouteComponentProps, Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {useFeatureFlags} from '../app/Flags';
 import {QueryCountdown} from '../app/QueryCountdown';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {PipelineRunStatus} from '../types/globalTypes';
@@ -24,7 +25,12 @@ import {AllScheduledTicks} from './AllScheduledTicks';
 import {doneStatuses, inProgressStatuses, queuedStatuses} from './RunStatuses';
 import {RunTable, RUN_TABLE_RUN_FRAGMENT} from './RunTable';
 import {RunsQueryRefetchContext} from './RunUtils';
-import {RunsFilter, runsFilterForSearchTokens, useQueryPersistedRunFilters} from './RunsFilter';
+import {
+  RunFilterTokenType,
+  RunsFilter,
+  runsFilterForSearchTokens,
+  useQueryPersistedRunFilters,
+} from './RunsFilter';
 import {CountFragment} from './types/CountFragment';
 import {QueueDaemonStatusQuery} from './types/QueueDaemonStatusQuery';
 import {RunsRootQuery, RunsRootQueryVariables} from './types/RunsRootQuery';
@@ -53,6 +59,7 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters();
   const filter = runsFilterForSearchTokens(filterTokens);
   const [showScheduled, setShowScheduled] = React.useState(false);
+  const {flagPipelineModeTuples} = useFeatureFlags();
 
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
     RunsRootQuery,
@@ -89,6 +96,9 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
   const selectedTab = showScheduled ? 'scheduled' : selectedTabId(filterTokens);
   const tabColor = (match: string) =>
     selectedTab === match ? Colors.BLUE1 : {link: Colors.GRAY2, hover: Colors.BLUE1};
+  const enabledFilters: RunFilterTokenType[] = flagPipelineModeTuples
+    ? ['status', 'tag', 'snapshotId', 'id', 'job']
+    : ['status', 'tag', 'snapshotId', 'id', 'pipeline'];
 
   return (
     <Page style={{height: '100%'}}>
@@ -192,6 +202,7 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
             tokens={filterTokens}
             onChange={setFilterTokens}
             loading={queryResult.loading}
+            enabledFilters={enabledFilters}
           />
         )}
         {selectedTab === 'queued' ? (

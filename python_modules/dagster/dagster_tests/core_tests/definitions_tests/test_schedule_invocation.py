@@ -20,7 +20,7 @@ def test_schedule_context_backcompat():
     assert isinstance(ScheduleEvaluationContext(None, None), ScheduleExecutionContext)
 
 
-def cron_test_schedule_factory():
+def cron_test_schedule_factory_context():
     @schedule(cron_schedule="* * * * *", pipeline_name="no_pipeline")
     def basic_schedule(_):
         return {}
@@ -28,17 +28,29 @@ def cron_test_schedule_factory():
     return basic_schedule
 
 
-def test_cron_schedule_invocation_all_args():
-    basic_schedule = cron_test_schedule_factory()
+def cron_test_schedule_factory_no_context():
+    @schedule(cron_schedule="* * * * *", pipeline_name="no_pipeline")
+    def basic_schedule():
+        return {}
 
-    assert basic_schedule(None) == {}
-    assert basic_schedule(build_schedule_context()) == {}
-    assert basic_schedule(_=None) == {}
-    assert basic_schedule(_=build_schedule_context()) == {}
+    return basic_schedule
+
+
+def test_cron_schedule_invocation_all_args():
+    basic_schedule_context = cron_test_schedule_factory_context()
+
+    assert basic_schedule_context(None) == {}
+    assert basic_schedule_context(build_schedule_context()) == {}
+    assert basic_schedule_context(_=None) == {}
+    assert basic_schedule_context(_=build_schedule_context()) == {}
+
+    basic_schedule_no_context = cron_test_schedule_factory_no_context()
+
+    assert basic_schedule_no_context() == {}
 
 
 def test_incorrect_cron_schedule_invocation():
-    basic_schedule = cron_test_schedule_factory()
+    basic_schedule = cron_test_schedule_factory_context()
 
     with pytest.raises(
         DagsterInvalidInvocationError,

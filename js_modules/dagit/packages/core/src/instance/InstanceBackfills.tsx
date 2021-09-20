@@ -38,8 +38,8 @@ import {CursorPaginationControls} from '../ui/CursorControls';
 import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
 import {Table} from '../ui/Table';
+import {Mono} from '../ui/Text';
 import {stringFromValue} from '../ui/TokenizingField';
-import {FontFamily} from '../ui/styles';
 import {workspacePipelinePath} from '../workspace/workspacePath';
 
 import {BackfillTerminationDialog} from './BackfillTerminationDialog';
@@ -174,7 +174,7 @@ const BackfillTable = ({backfills, refetch}: {backfills: Backfill[]; refetch: ()
     const {data} = await resumeBackfill({variables: {backfillId: backfill.backfillId}});
     if (data && data.resumePartitionBackfill.__typename === 'ResumeBackfillSuccess') {
       refetch();
-    } else if (data && data.resumePartitionBackfill.__typename === 'ReadOnlyError') {
+    } else if (data && data.resumePartitionBackfill.__typename === 'UnauthorizedError') {
       SharedToaster.show({
         message: (
           <Group direction="column" spacing={4}>
@@ -291,12 +291,14 @@ const BackfillRow = ({
 
   return (
     <tr>
-      <td style={{width: '120px', fontFamily: FontFamily.monospace}}>
-        {partitionSetBackfillUrl ? (
-          <Link to={partitionSetBackfillUrl}>{backfill.backfillId}</Link>
-        ) : (
-          backfill.backfillId
-        )}
+      <td style={{width: '120px'}}>
+        <Mono>
+          {partitionSetBackfillUrl ? (
+            <Link to={partitionSetBackfillUrl}>{backfill.backfillId}</Link>
+          ) : (
+            backfill.backfillId
+          )}
+        </Mono>
       </td>
       <td>
         {backfill.partitionSet ? (
@@ -554,7 +556,7 @@ const BACKFILLS_QUERY = gql`
           status
           numRequested
           numTotal
-          runs(limit: $limit) {
+          runs {
             id
             canTerminate
             status
@@ -595,7 +597,7 @@ const RESUME_BACKFILL_MUTATION = gql`
       ... on ResumeBackfillSuccess {
         backfillId
       }
-      ... on ReadOnlyError {
+      ... on UnauthorizedError {
         message
       }
       ... on PythonError {

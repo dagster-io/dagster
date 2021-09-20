@@ -10,8 +10,8 @@ import { InstigationStatus } from "./../../types/globalTypes";
 // GraphQL mutation operation: StopSensor
 // ====================================================
 
-export interface StopSensor_stopSensor_ReadOnlyError {
-  __typename: "ReadOnlyError";
+export interface StopSensor_stopSensor_UnauthorizedError {
+  __typename: "UnauthorizedError";
 }
 
 export interface StopSensor_stopSensor_StopSensorMutationResult_instigationState {
@@ -31,7 +31,7 @@ export interface StopSensor_stopSensor_PythonError {
   stack: string[];
 }
 
-export type StopSensor_stopSensor = StopSensor_stopSensor_ReadOnlyError | StopSensor_stopSensor_StopSensorMutationResult | StopSensor_stopSensor_PythonError;
+export type StopSensor_stopSensor = StopSensor_stopSensor_UnauthorizedError | StopSensor_stopSensor_StopSensorMutationResult | StopSensor_stopSensor_PythonError;
 
 export interface StopSensor {
   stopSensor: StopSensor_stopSensor;

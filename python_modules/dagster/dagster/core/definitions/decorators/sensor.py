@@ -1,24 +1,20 @@
 import inspect
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Callable, List, Optional, Union
+from typing import TYPE_CHECKING, Callable, Generator, List, Optional, Sequence, Union
 
 from dagster import check
 from dagster.core.definitions.sensor import RunRequest, SensorDefinition, SkipReason
 from dagster.core.errors import DagsterInvariantViolationError
 
-from ....seven import funcsigs
-from ...decorator_utils import get_function_params
 from ...errors import DagsterInvariantViolationError
+from ..events import AssetKey
 from ..graph import GraphDefinition
-from ..pipeline import PipelineDefinition
-from ..sensor import RunRequest, SensorDefinition, SkipReason
+from ..job import JobDefinition
+from ..sensor import AssetSensorDefinition, RunRequest, SensorDefinition, SkipReason
 
 if TYPE_CHECKING:
     from ..sensor import SensorEvaluationContext
-
-
-def is_context_provided(params: List[funcsigs.Parameter]) -> bool:
-    return len(params) == 1
+    from ...events.log import EventLogEntry
 
 
 def sensor(
@@ -28,9 +24,16 @@ def sensor(
     mode: Optional[str] = None,
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
-    job: Optional[Union[PipelineDefinition, GraphDefinition]] = None,
+    job: Optional[Union[GraphDefinition, JobDefinition]] = None,
+    jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
 ) -> Callable[
-    [Callable[["SensorEvaluationContext"], Union[SkipReason, RunRequest]]], SensorDefinition
+    [
+        Callable[
+            ["SensorEvaluationContext"],
+            Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
+        ]
+    ],
+    SensorDefinition,
 ]:
     """
     Creates a sensor where the decorated function is used as the sensor's evaluation function.  The
@@ -56,23 +59,109 @@ def sensor(
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
-        job (Optional[PipelineDefinition]): Experimental
+        job (Optional[Union[GraphDefinition, JobDefinition]]): Experimental
+        jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): Experimental
     """
     check.opt_str_param(name, "name")
 
     def inner(
-        fn: Callable[["SensorEvaluationContext"], Union[SkipReason, RunRequest]]
+        fn: Callable[
+            ["SensorEvaluationContext"],
+            Union[Generator[Union[SkipReason, RunRequest], None, None], SkipReason, RunRequest],
+        ]
     ) -> SensorDefinition:
         check.callable_param(fn, "fn")
         sensor_name = name or fn.__name__
 
-        def _wrapped_fn(context):
-            result = fn(context) if is_context_provided(get_function_params(fn)) else fn()
+        sensor_def = SensorDefinition(
+            name=sensor_name,
+            pipeline_name=pipeline_name,
+            evaluation_fn=fn,
+            solid_selection=solid_selection,
+            mode=mode,
+            minimum_interval_seconds=minimum_interval_seconds,
+            description=description,
+            job=job,
+            jobs=jobs,
+        )
+
+        update_wrapper(sensor_def, wrapped=fn)
+
+        return sensor_def
+
+    return inner
+
+
+def asset_sensor(
+    asset_key: AssetKey,
+    pipeline_name: Optional[str] = None,
+    name: Optional[str] = None,
+    solid_selection: Optional[List[str]] = None,
+    mode: Optional[str] = None,
+    minimum_interval_seconds: Optional[int] = None,
+    description: Optional[str] = None,
+    job: Optional[Union[GraphDefinition, JobDefinition]] = None,
+) -> Callable[
+    [
+        Callable[
+            [
+                "SensorEvaluationContext",
+                "EventLogEntry",
+            ],
+            Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
+        ]
+    ],
+    AssetSensorDefinition,
+]:
+    """
+    Creates an asset sensor where the decorated function is used as the asset sensor's evaluation
+    function.  The decorated function may:
+
+    1. Return a `RunRequest` object.
+    2. Yield multiple of `RunRequest` objects.
+    3. Return or yield a `SkipReason` object, providing a descriptive message of why no runs were
+       requested.
+    4. Return or yield nothing (skipping without providing a reason)
+
+    Takes a :py:class:`~dagster.SensorEvaluationContext` and an EventLogEntry corresponding to an
+    AssetMaterialization event.
+
+    Args:
+        asset_key (AssetKey): The asset_key this sensor monitors.
+        pipeline_name (Optional[str]): Name of the target pipeline
+        name (Optional[str]): The name of the sensor. Defaults to the name of the decorated
+            function.
+        solid_selection (Optional[List[str]]): A list of solid subselection (including single
+            solid names) to execute for runs for this sensor e.g.
+            ``['*some_solid+', 'other_solid']``
+        mode (Optional[str]): The mode to apply when executing runs for this sensor.
+            (default: 'default')
+        minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
+            between sensor evaluations.
+        description (Optional[str]): A human-readable description of the sensor.
+    """
+
+    check.opt_str_param(name, "name")
+
+    def inner(
+        fn: Callable[
+            [
+                "SensorEvaluationContext",
+                "EventLogEntry",
+            ],
+            Union[Generator[Union[SkipReason, RunRequest], None, None], SkipReason, RunRequest],
+        ]
+    ) -> AssetSensorDefinition:
+        check.callable_param(fn, "fn")
+        sensor_name = name or fn.__name__
+
+        def _wrapped_fn(context, event):
+            result = fn(context, event)
 
             if inspect.isgenerator(result):
                 for item in result:
                     yield item
-            elif isinstance(result, (SkipReason, RunRequest)):
+            elif isinstance(result, (RunRequest, SkipReason)):
                 yield result
 
             elif result is not None:
@@ -84,20 +173,16 @@ def sensor(
                     ).format(sensor_name=sensor_name, result=result, type_=type(result))
                 )
 
-        sensor_def = SensorDefinition(
+        return AssetSensorDefinition(
             name=sensor_name,
+            asset_key=asset_key,
             pipeline_name=pipeline_name,
-            evaluation_fn=_wrapped_fn,
+            asset_materialization_fn=_wrapped_fn,
             solid_selection=solid_selection,
             mode=mode,
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
             job=job,
-            decorated_fn=fn,
         )
-
-        update_wrapper(sensor_def, wrapped=fn)
-
-        return sensor_def
 
     return inner

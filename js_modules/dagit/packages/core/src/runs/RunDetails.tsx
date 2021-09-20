@@ -1,7 +1,9 @@
 import {gql} from '@apollo/client';
-import {Button, Classes, Colors, Dialog} from '@blueprintjs/core';
+import {AnchorButton, Button, Classes, Colors, Dialog} from '@blueprintjs/core';
+import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 
+import {AppContext} from '../app/AppContext';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {PipelineRunStatus} from '../types/globalTypes';
 import {Group} from '../ui/Group';
@@ -13,7 +15,7 @@ import {TimeElapsed} from './TimeElapsed';
 import {RunDetailsFragment} from './types/RunDetailsFragment';
 import {RunFragment} from './types/RunFragment';
 
-const timingStringForStatus = (status?: PipelineRunStatus) => {
+export const timingStringForStatus = (status?: PipelineRunStatus) => {
   switch (status) {
     case PipelineRunStatus.QUEUED:
       return 'Queued';
@@ -110,9 +112,20 @@ export const RunDetails: React.FC<{
 
 export const RunConfigDialog: React.FC<{run: RunFragment}> = ({run}) => {
   const [showDialog, setShowDialog] = React.useState(false);
+  const {rootServerURI} = React.useContext(AppContext);
   return (
     <div>
-      <Button onClick={() => setShowDialog(true)}>View tags and configuration</Button>
+      <Group direction="row" spacing={8}>
+        <Button text="View tags and config" icon="tag" onClick={() => setShowDialog(true)} />
+        <Tooltip content="Loadable in dagit-debug" position="bottom-right">
+          <AnchorButton
+            text="Debug file"
+            icon="download"
+            href={`${rootServerURI}/download_debug/${run.runId}`}
+          />
+        </Tooltip>
+      </Group>
+
       <Dialog
         isOpen={showDialog}
         onClose={() => setShowDialog(false)}

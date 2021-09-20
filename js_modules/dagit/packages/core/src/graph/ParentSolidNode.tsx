@@ -2,7 +2,7 @@ import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {titleOfIO} from '../app/Util';
+import {titleOfIO} from '../app/titleOfIO';
 import {SolidNameOrPath} from '../solids/SolidNameOrPath';
 
 import {ExternalConnectionNode} from './ExternalConnectionNode';

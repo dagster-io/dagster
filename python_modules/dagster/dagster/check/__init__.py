@@ -11,11 +11,14 @@ from typing import (
     Optional,
     Set,
     Tuple,
+    TypeVar,
     Union,
+    overload,
 )
 
 Type = Union[type, Tuple[type, ...]]
 Numeric = Union[int, float]
+T = TypeVar("T")
 
 
 class CheckError(Exception):
@@ -123,13 +126,13 @@ def not_implemented(desc: str):
     raise NotImplementedCheckError(f"Not implemented: {desc}")
 
 
-def inst(obj: Any, ttype: Type, desc: str = None) -> Any:
+def inst(obj: T, ttype: Type, desc: str = None) -> T:
     if not isinstance(obj, ttype):
         raise _type_mismatch_error(obj, ttype, desc)
     return obj
 
 
-def opt_inst(obj: Any, ttype: Type, desc: str = None, default: Any = None) -> Any:
+def opt_inst(obj: T, ttype: Type, desc: str = None, default: Any = None) -> T:
     if obj is not None and not isinstance(obj, ttype):
         raise _type_mismatch_error(obj, ttype, desc)
     return default if obj is None else obj
@@ -176,12 +179,27 @@ def param_invariant(condition: Any, param_name: str, desc: str = None):
         raise _param_invariant_exception(param_name, desc)
 
 
-def inst_param(obj: Any, param_name: str, ttype: Type, additional_message: str = None) -> Any:
+# mypy note: Attempting to use the passed type (Type[T] -> T) to infer the output type has
+# issues with abstract classes, so here we count on the incoming object to be typed before
+# this runtime validation check.
+
+
+def inst_param(obj: T, param_name: str, ttype: Type, additional_message: str = None) -> T:
     if not isinstance(obj, ttype):
         raise _param_type_mismatch_exception(
             obj, ttype, param_name, additional_message=additional_message
         )
     return obj
+
+
+@overload
+def opt_inst_param(obj: Optional[T], param_name: str, ttype: Type, default: T) -> T:
+    ...
+
+
+@overload
+def opt_inst_param(obj: T, param_name: str, ttype: Type) -> T:
+    ...
 
 
 def opt_inst_param(obj: Any, param_name: str, ttype: Type, default: Any = None) -> Any:
@@ -275,6 +293,18 @@ def opt_bool_param(obj: Any, param_name: str, default: bool = None) -> Optional[
     if obj is not None and not isinstance(obj, bool):
         raise _param_type_mismatch_exception(obj, bool, param_name)
     return default if obj is None else obj
+
+
+def is_dict(obj: Any, key_type: Type = None, value_type: Type = None, desc: str = None) -> Dict:
+    from dagster.utils import frozendict
+
+    if not isinstance(obj, (frozendict, dict)):
+        raise _type_mismatch_error(obj, (frozendict, dict), desc)
+
+    if not (key_type or value_type):
+        return obj
+
+    return _check_key_value_types(obj, key_type, value_type)
 
 
 def is_list(obj_list: Any, of_type: Type = None, desc: str = None) -> List:

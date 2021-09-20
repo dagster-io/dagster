@@ -1,5 +1,6 @@
 import {gql, useLazyQuery, useMutation} from '@apollo/client';
-import {Button, Menu, MenuDivider, MenuItem, Popover, Position, Tooltip} from '@blueprintjs/core';
+import {Button, Menu, MenuDivider, MenuItem, Popover, Position} from '@blueprintjs/core';
+import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as qs from 'query-string';
 import * as React from 'react';
 
@@ -22,11 +23,10 @@ import {
 import {TerminationDialog} from './TerminationDialog';
 import {LaunchPipelineReexecution} from './types/LaunchPipelineReexecution';
 import {PipelineEnvironmentYamlQuery} from './types/PipelineEnvironmentYamlQuery';
-import {RunActionMenuFragment} from './types/RunActionMenuFragment';
 import {RunTableRunFragment} from './types/RunTableRunFragment';
 
 export const RunActionsMenu: React.FC<{
-  run: RunTableRunFragment | RunActionMenuFragment;
+  run: RunTableRunFragment;
 }> = React.memo(({run}) => {
   const {refetch} = React.useContext(RunsQueryRefetchContext);
   const [visibleDialog, setVisibleDialog] = React.useState<'none' | 'terminate' | 'delete'>('none');
@@ -83,7 +83,6 @@ export const RunActionsMenu: React.FC<{
                 content={OPEN_PLAYGROUND_UNKNOWN}
                 position={Position.BOTTOM}
                 disabled={infoReady}
-                wrapperTagName="div"
                 targetTagName="div"
               >
                 <MenuItem
@@ -107,7 +106,6 @@ export const RunActionsMenu: React.FC<{
                 }
                 position={Position.BOTTOM}
                 disabled={infoReady && !!repoMatch}
-                wrapperTagName="div"
                 targetTagName="div"
               >
                 <MenuItem

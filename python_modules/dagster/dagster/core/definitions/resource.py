@@ -1,6 +1,17 @@
 from collections import namedtuple
 from functools import update_wrapper
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Dict, Optional, Union, cast, overload
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Union,
+    cast,
+    overload,
+)
 
 from dagster import check
 from dagster.core.definitions.config import is_callable_valid_config_arg
@@ -10,6 +21,7 @@ from dagster.core.errors import (
     DagsterInvalidInvocationError,
     DagsterUnknownResourceError,
 )
+from dagster.seven import funcsigs
 from dagster.utils.backcompat import experimental_arg_warning
 
 from ..decorator_utils import (
@@ -26,6 +38,10 @@ from .resource_invocation import resource_invocation_result
 
 if TYPE_CHECKING:
     from dagster.core.execution.resources_init import InitResourceContext
+
+
+def is_context_provided(params: List[funcsigs.Parameter]) -> bool:
+    return len(params) >= 1
 
 
 class ResourceDefinition(AnonymousConfigurableDefinition):
@@ -77,7 +93,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition):
             experimental_arg_warning("version", "ResourceDefinition.__init__")
 
     @property
-    def resource_fn(self) -> Callable[["InitResourceContext"], Any]:
+    def resource_fn(self) -> Callable[..., Any]:
         return self._resource_fn
 
     @property
@@ -134,8 +150,8 @@ class ResourceDefinition(AnonymousConfigurableDefinition):
         """
         from unittest import mock
 
-        return ResourceDefinition.hardcoded_resource(
-            value=mock.MagicMock(), description=description
+        return ResourceDefinition(
+            resource_fn=lambda _init_context: mock.MagicMock(), description=description
         )
 
     @staticmethod
@@ -160,32 +176,37 @@ class ResourceDefinition(AnonymousConfigurableDefinition):
     def __call__(self, *args, **kwargs):
         from dagster.core.execution.resources_init import InitResourceContext
 
-        if len(args) == 0 and len(kwargs) == 0:
-            raise DagsterInvalidInvocationError(
-                "Resource initialization function has context argument, but no context was provided "
-                "when invoking."
-            )
-        if len(args) + len(kwargs) > 1:
-            raise DagsterInvalidInvocationError(
-                "Initialization of resource received multiple arguments. Only a first "
-                "positional context parameter should be provided when invoking."
-            )
+        context_provided = is_context_provided(get_function_params(self.resource_fn))
 
-        context_param_name = get_function_params(self.resource_fn)[0].name
-
-        if args:
-            check.opt_inst_param(args[0], context_param_name, InitResourceContext)
-            return resource_invocation_result(self, args[0])
-        else:
-            if context_param_name not in kwargs:
+        if context_provided:
+            if len(args) + len(kwargs) == 0:
                 raise DagsterInvalidInvocationError(
-                    f"Resource initialization expected argument '{context_param_name}'."
+                    "Resource initialization function has context argument, but no context was provided "
+                    "when invoking."
                 )
-            check.opt_inst_param(
-                kwargs[context_param_name], context_param_name, InitResourceContext
-            )
+            if len(args) + len(kwargs) > 1:
+                raise DagsterInvalidInvocationError(
+                    "Initialization of resource received multiple arguments. Only a first "
+                    "positional context parameter should be provided when invoking."
+                )
 
-            return resource_invocation_result(self, kwargs[context_param_name])
+            context_param_name = get_function_params(self.resource_fn)[0].name
+
+            if args:
+                check.opt_inst_param(args[0], context_param_name, InitResourceContext)
+                return resource_invocation_result(self, args[0])
+            else:
+                if context_param_name not in kwargs:
+                    raise DagsterInvalidInvocationError(
+                        f"Resource initialization expected argument '{context_param_name}'."
+                    )
+                check.opt_inst_param(
+                    kwargs[context_param_name], context_param_name, InitResourceContext
+                )
+
+                return resource_invocation_result(self, kwargs[context_param_name])
+        else:
+            return resource_invocation_result(self, None)
 
 
 class _ResourceDecoratorCallable:
@@ -206,7 +227,7 @@ class _ResourceDecoratorCallable:
     def __call__(self, resource_fn: Callable[["InitResourceContext"], Any]):
         check.callable_param(resource_fn, "resource_fn")
 
-        any_name = ["*"]
+        any_name = ["*"] if is_context_provided(get_function_params(resource_fn)) else []
 
         params = get_function_params(resource_fn)
 

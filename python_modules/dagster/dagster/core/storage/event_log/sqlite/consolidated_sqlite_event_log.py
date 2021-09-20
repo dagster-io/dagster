@@ -1,3 +1,4 @@
+import logging
 import os
 from collections import defaultdict
 from contextlib import contextmanager
@@ -52,10 +53,8 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         self._conn_string = create_db_conn_string(base_dir, SQLITE_EVENT_LOG_FILENAME)
         self._secondary_index_cache = {}
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
-        self._watchdog = None
         self._watchers = defaultdict(dict)
-        self._obs = Observer()
-        self._obs.start()
+        self._obs = None
 
         if not os.path.exists(self.get_db_path()):
             self._init_db()
@@ -90,7 +89,8 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         if should_mark_indexes:
             # mark all secondary indexes
-            self.reindex()
+            self.reindex_events()
+            self.reindex_assets()
 
     @contextmanager
     def _connect(self):
@@ -133,12 +133,15 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             del self._secondary_index_cache[name]
 
     def watch(self, run_id, start_cursor, callback):
-        if not self._watchdog:
-            self._watchdog = ConsolidatedSqliteEventLogStorageWatchdog(self)
+        if not self._obs:
+            self._obs = Observer()
+            self._obs.start()
+            self._obs.schedule(
+                ConsolidatedSqliteEventLogStorageWatchdog(self), self._base_dir, True
+            )
 
-        watch = self._obs.schedule(self._watchdog, self._base_dir, True)
         cursor = start_cursor if start_cursor is not None else -1
-        self._watchers[run_id][callback] = (cursor, watch)
+        self._watchers[run_id][callback] = cursor
 
     def on_modified(self):
         keys = [
@@ -147,16 +150,21 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             for callback, _ in callback_dict.items()
         ]
         for run_id, callback in keys:
-            cursor, watch = self._watchers[run_id][callback]
+            cursor = self._watchers[run_id][callback]
 
             # fetch events
             events = self.get_logs_for_run(run_id, cursor)
 
             # update cursor
-            self._watchers[run_id][callback] = (cursor + len(events), watch)
+            self._watchers[run_id][callback] = cursor + len(events)
 
             for event in events:
-                status = callback(event)
+                status = None
+                try:
+                    status = callback(event)
+                except Exception:  # pylint: disable=broad-except
+                    logging.exception("Exception in callback for event watch on run %s.", run_id)
+
                 if (
                     status == PipelineRunStatus.SUCCESS
                     or status == PipelineRunStatus.FAILURE
@@ -165,10 +173,13 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                     self.end_watch(run_id, callback)
 
     def end_watch(self, run_id, handler):
-        if run_id in self._watchers:
-            _cursor, watch = self._watchers[run_id][handler]
-            self._obs.remove_handler_for_watch(self._watchdog, watch)
+        if run_id in self._watchers and handler in self._watchers[run_id]:
             del self._watchers[run_id][handler]
+
+    def dispose(self):
+        if self._obs:
+            self._obs.stop()
+            self._obs.join(timeout=15)
 
 
 class ConsolidatedSqliteEventLogStorageWatchdog(PatternMatchingEventHandler):

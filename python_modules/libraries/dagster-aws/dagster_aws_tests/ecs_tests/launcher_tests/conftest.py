@@ -6,8 +6,7 @@ import boto3
 import pytest
 from dagster import ExperimentalWarning
 from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.core.host_representation.origin import InProcessRepositoryLocationOrigin
-from dagster.core.test_utils import instance_for_test
+from dagster.core.test_utils import in_process_test_workspace, instance_for_test
 
 from . import repo
 
@@ -34,11 +33,7 @@ def task_definition(ecs, image, environment):
     return ecs.register_task_definition(
         family="dagster",
         containerDefinitions=[
-            {
-                "name": "dagster",
-                "image": image,
-                "environment": environment,
-            }
+            {"name": "dagster", "image": image, "environment": environment, "entryPoint": ["ls"]}
         ],
         networkMode="awsvpc",
     )["taskDefinition"]
@@ -114,12 +109,28 @@ def pipeline():
 
 
 @pytest.fixture
-def external_pipeline(image):
-    with InProcessRepositoryLocationOrigin(
+def external_pipeline(workspace):
+    location = workspace.get_repository_location(workspace.repository_location_names[0])
+    return location.get_repository(repo.repository.__name__).get_full_external_pipeline(
+        repo.pipeline.__name__
+    )
+
+
+@pytest.fixture
+def workspace(instance, image):
+    with in_process_test_workspace(
+        instance,
         ReconstructableRepository.for_file(
             repo.__file__, repo.repository.__name__, container_image=image
         ),
-    ).create_location() as location:
-        yield location.get_repository(repo.repository.__name__).get_full_external_pipeline(
-            repo.pipeline.__name__
-        )
+    ) as workspace:
+        yield workspace
+
+
+@pytest.fixture
+def run(instance, pipeline, external_pipeline):
+    return instance.create_run_for_pipeline(
+        pipeline,
+        external_pipeline_origin=external_pipeline.get_external_origin(),
+        pipeline_code_origin=external_pipeline.get_python_origin(),
+    )

@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { InstigationSelector, InstigationType, InstigationTickStatus } from "../../types/globalTypes";
+import { InstigationSelector, InstigationType, InstigationTickStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: TickHistoryQuery

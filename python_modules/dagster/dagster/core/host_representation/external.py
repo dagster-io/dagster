@@ -1,9 +1,12 @@
 import warnings
 from collections import OrderedDict
+from typing import Optional, Sequence
 
 from dagster import check
+from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.run_request import JobType
 from dagster.core.definitions.sensor import DEFAULT_SENSOR_DAEMON_INTERVAL
+from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.snap import ExecutionPlanSnapshot
@@ -11,6 +14,7 @@ from dagster.core.utils import toposort
 from dagster.utils.schedules import schedule_execution_time_iterator
 
 from .external_data import (
+    ExternalAssetNode,
     ExternalPartitionSetData,
     ExternalPipelineData,
     ExternalRepositoryData,
@@ -133,9 +137,7 @@ class ExternalRepository:
         return self.handle.get_external_origin()
 
     def get_python_origin(self):
-        return self.handle.repository_location.get_repository_python_origin(
-            self.name,
-        )
+        return self.handle.get_python_origin()
 
     def get_external_origin_id(self):
         """
@@ -144,8 +146,19 @@ class ExternalRepository:
         """
         return self.get_external_origin().get_id()
 
+    def get_external_asset_nodes(self) -> Sequence[ExternalAssetNode]:
+        return self.external_repository_data.external_asset_graph_data
+
+    def get_external_asset_node(self, asset_key: AssetKey) -> ExternalAssetNode:
+        matching = [
+            asset_node
+            for asset_node in self.external_repository_data.external_asset_graph_data
+            if asset_node.asset_key == asset_key
+        ]
+        return matching[0] if matching else None
+
     def get_display_metadata(self):
-        return self.handle.repository_location.get_display_metadata()
+        return self.handle.display_metadata
 
 
 class ExternalPipeline(RepresentedPipeline):
@@ -272,11 +285,7 @@ class ExternalPipeline(RepresentedPipeline):
         return self.get_python_origin()
 
     def get_python_origin(self):
-        repository_python_origin = (
-            self.repository_handle.repository_location.get_repository_python_origin(
-                self.repository_handle.repository_name,
-            )
-        )
+        repository_python_origin = self.repository_handle.get_python_origin()
         return PipelinePythonOrigin(self.name, repository_python_origin)
 
     def get_external_origin(self):
@@ -306,10 +315,14 @@ class ExternalExecutionPlan:
 
         self._step_index = {step.key: step for step in self.execution_plan_snapshot.steps}
 
-        check.invariant(
+        if (
             execution_plan_snapshot.pipeline_snapshot_id
-            == represented_pipeline.identifying_pipeline_snapshot_id
-        )
+            != represented_pipeline.identifying_pipeline_snapshot_id
+        ):
+            raise DagsterInvariantViolationError(
+                "The pipeline snapshot ID from the execution plan snapshot does not match the "
+                "passed in pipeline snapshot. "
+            )
 
         self._step_keys_in_plan = (
             set(execution_plan_snapshot.step_keys_to_execute)
@@ -475,15 +488,33 @@ class ExternalSensor:
 
     @property
     def pipeline_name(self):
-        return self._external_sensor_data.pipeline_name
-
-    @property
-    def solid_selection(self):
-        return self._external_sensor_data.solid_selection
+        target = self._get_single_target()
+        return target.pipeline_name if target else None
 
     @property
     def mode(self):
-        return self._external_sensor_data.mode
+        target = self._get_single_target()
+        return target.mode if target else None
+
+    @property
+    def solid_selection(self):
+        target = self._get_single_target()
+        return target.solid_selection if target else None
+
+    def _get_single_target(self):
+        if self._external_sensor_data.target_dict:
+            return list(self._external_sensor_data.target_dict.values())[0]
+        else:
+            return None
+
+    def get_target_data(self, pipeline_name: Optional[str] = None):
+        if pipeline_name:
+            return self._external_sensor_data.target_dict[pipeline_name]
+        else:
+            return self._get_single_target()
+
+    def get_external_targets(self):
+        return self._external_sensor_data.target_dict.values()
 
     @property
     def description(self):

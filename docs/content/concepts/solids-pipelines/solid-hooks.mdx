@@ -84,7 +84,7 @@ def selective_notif():
 
 In this case, solid "b" won't trigger any hooks, while when solid "a" fails or succeeds it will send a slack message.
 
-## (Experimental) Testing Hooks
+## Testing Hooks
 
 You can test the functionality of a hook by invoking the hook definition. This will run the underlying decorated function. You can construct a context to provide to the invocation using the <PyObject object="build_hook_context" /> function.
 
@@ -172,10 +172,8 @@ if __name__ == "__main__":
 
 ### <Cross/> Pipeline-level hooks
 
-Dagster currently does not have pipeline-scoped hooks. When you add a hook decorator to a pipeline, the hook is attached to every solid in the pipeline individually. The hook does not track pipeline-scoped events and only tracks solid-level success or failure events.
+When you add a hook decorator to a pipeline, the hook will be added to every solid in the pipeline individually. The hook does not track pipeline-scoped events and only tracks solid-level success or failure events.
 
-You may find the need for something like pipeline-level hooks. For example, you may want to run some code for every pipeline success or failure.
+You may find the need to set up pipeline-level policies. For example, you may want to run some code for every pipeline failure.
 
-Even though Dagster does not have first-class pipeline-level hooks, you can use <PyObject object="sensor" decorator/> to achieve the same functionality. The sensor can monitor pipeline events at the instance level and perform an arbitrary action (such as send an alert or even instigate a new pipeline run).
-
-You can find an example of the sensor at [Pipeline failure sensor](/concepts/partitions-schedules-sensors/sensors#pipeline-failure-sensor) on the [Sensors](/concepts/partitions-schedules-sensors/sensors) page.
+Dagster provides a way to create a sensor that reacts to pipeline failure events. You can find details at [Pipeline failure sensor](/concepts/partitions-schedules-sensors/sensors#pipeline-failure-sensor) on the [Sensors](/concepts/partitions-schedules-sensors/sensors) page.

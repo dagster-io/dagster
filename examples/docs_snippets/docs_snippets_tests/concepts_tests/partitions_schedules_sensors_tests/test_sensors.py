@@ -1,11 +1,10 @@
-from contextlib import suppress
-
-from dagster import build_sensor_context, execute_pipeline, pipeline, reconstructable, solid
+from dagster import execute_pipeline, pipeline, repository, solid
 from dagster.core.definitions.run_request import RunRequest
-from dagster.core.test_utils import instance_for_test
 from docs_snippets.concepts.partitions_schedules_sensors.sensors.sensor_alert import (
-    failure_alert_pipeline,
-    pipeline_failure_sensor,
+    email_on_pipeline_failure,
+    my_slack_on_pipeline_failure,
+    my_slack_on_pipeline_success,
+    slack_on_pipeline_failure,
 )
 from docs_snippets.concepts.partitions_schedules_sensors.sensors.sensors import (
     isolated_run_request,
@@ -27,11 +26,6 @@ def foo(context):
 @pipeline
 def your_pipeline_name():
     return foo()
-
-
-def test_failure_alert_pipeline():
-    result = execute_pipeline(failure_alert_pipeline, mode="test")
-    assert result.success
 
 
 def test_log_file_pipeline():
@@ -58,31 +52,20 @@ def test_interval_sensors():
     assert sensor_B
 
 
-def test_pipeline_failure_sensor_has_request():
-    with instance_for_test() as instance:
-        with suppress(Exception):
-            execute_pipeline(
-                reconstructable(your_pipeline_name),
-                run_config={"solids": {"foo": {"config": {"fail": True}}}},
-                instance=instance,
-            )
+def test_pipeline_failure_sensor_def():
+    @repository
+    def my_repo():
+        return [
+            my_slack_on_pipeline_failure,
+            slack_on_pipeline_failure,
+            email_on_pipeline_failure,
+            my_slack_on_pipeline_success,
+        ]
 
-        context = build_sensor_context(instance)
-        requests = list(pipeline_failure_sensor(context))
-        assert len(requests) == 1
-
-
-def test_pipeline_failure_sensor_has_no_request():
-    with instance_for_test() as instance:
-        execute_pipeline(
-            reconstructable(your_pipeline_name),
-            run_config={"solids": {"foo": {"config": {"fail": False}}}},
-            instance=instance,
-        )
-
-        context = build_sensor_context(instance)
-        requests = list(pipeline_failure_sensor(context))
-        assert len(requests) == 0
+    assert my_repo.has_sensor_def("my_slack_on_pipeline_failure")
+    assert my_repo.has_sensor_def("slack_on_pipeline_failure")
+    assert my_repo.has_sensor_def("email_on_pipeline_failure")
+    assert my_repo.has_sensor_def("my_slack_on_pipeline_success")
 
 
 def test_sensor_testing_example():

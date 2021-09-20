@@ -230,6 +230,7 @@ def execute_sensor_iteration(
                 yield from _evaluate_sensor(
                     tick_context,
                     instance,
+                    workspace,
                     repo_location,
                     external_repo,
                     external_sensor,
@@ -250,6 +251,7 @@ def execute_sensor_iteration(
 def _evaluate_sensor(
     context,
     instance,
+    workspace,
     repo_location,
     external_repo,
     external_sensor,
@@ -316,22 +318,32 @@ def _evaluate_sensor(
         yield
         return
 
-    pipeline_selector = PipelineSelector(
-        location_name=repo_location.name,
-        repository_name=external_repo.name,
-        pipeline_name=external_sensor.pipeline_name,
-        solid_selection=external_sensor.solid_selection,
-    )
-    subset_pipeline_result = repo_location.get_subset_external_pipeline_result(pipeline_selector)
-    external_pipeline = ExternalPipeline(
-        subset_pipeline_result.external_pipeline_data,
-        external_repo.handle,
-    )
-
     skipped_runs = []
     for run_request in sensor_runtime_data.run_requests:
+
+        target_data = external_sensor.get_target_data(run_request.job_name)
+
+        pipeline_selector = PipelineSelector(
+            location_name=repo_location.name,
+            repository_name=external_repo.name,
+            pipeline_name=target_data.pipeline_name,
+            solid_selection=target_data.solid_selection,
+        )
+        subset_pipeline_result = repo_location.get_subset_external_pipeline_result(
+            pipeline_selector
+        )
+        external_pipeline = ExternalPipeline(
+            subset_pipeline_result.external_pipeline_data,
+            external_repo.handle,
+        )
         run = _get_or_create_sensor_run(
-            context, instance, repo_location, external_sensor, external_pipeline, run_request
+            context,
+            instance,
+            repo_location,
+            external_sensor,
+            external_pipeline,
+            run_request,
+            target_data,
         )
 
         if isinstance(run, SkippedSensorRun):
@@ -347,7 +359,7 @@ def _evaluate_sensor(
             context.logger.info(
                 "Launching run for {sensor_name}".format(sensor_name=external_sensor.name)
             )
-            instance.submit_run(run.run_id, external_pipeline)
+            instance.submit_run(run.run_id, workspace)
             context.logger.info(
                 "Completed launch of run {run_id} for {sensor_name}".format(
                     run_id=run.run_id, sensor_name=external_sensor.name
@@ -396,12 +408,12 @@ def _is_under_min_interval(job_state, now):
 
 
 def _get_or_create_sensor_run(
-    context, instance, repo_location, external_sensor, external_pipeline, run_request
+    context, instance, repo_location, external_sensor, external_pipeline, run_request, target_data
 ):
 
     if not run_request.run_key:
         return _create_sensor_run(
-            instance, repo_location, external_sensor, external_pipeline, run_request
+            instance, repo_location, external_sensor, external_pipeline, run_request, target_data
         )
 
     existing_runs = instance.get_runs(
@@ -431,15 +443,17 @@ def _get_or_create_sensor_run(
     context.logger.info(f"Creating new run for {external_sensor.name}")
 
     return _create_sensor_run(
-        instance, repo_location, external_sensor, external_pipeline, run_request
+        instance, repo_location, external_sensor, external_pipeline, run_request, target_data
     )
 
 
-def _create_sensor_run(instance, repo_location, external_sensor, external_pipeline, run_request):
+def _create_sensor_run(
+    instance, repo_location, external_sensor, external_pipeline, run_request, target_data
+):
     external_execution_plan = repo_location.get_external_execution_plan(
         external_pipeline,
         run_request.run_config,
-        external_sensor.mode,
+        target_data.mode,
         step_keys_to_execute=None,
         known_state=None,
     )
@@ -455,14 +469,14 @@ def _create_sensor_run(instance, repo_location, external_sensor, external_pipeli
         tags[RUN_KEY_TAG] = run_request.run_key
 
     return instance.create_run(
-        pipeline_name=external_sensor.pipeline_name,
+        pipeline_name=target_data.pipeline_name,
         run_id=None,
         run_config=run_request.run_config,
-        mode=external_sensor.mode,
+        mode=target_data.mode,
         solids_to_execute=external_pipeline.solids_to_execute,
         step_keys_to_execute=None,
         status=PipelineRunStatus.NOT_STARTED,
-        solid_selection=external_sensor.solid_selection,
+        solid_selection=target_data.solid_selection,
         root_run_id=None,
         parent_run_id=None,
         tags=tags,
@@ -470,4 +484,5 @@ def _create_sensor_run(instance, repo_location, external_sensor, external_pipeli
         execution_plan_snapshot=execution_plan_snapshot,
         parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
         external_pipeline_origin=external_pipeline.get_external_origin(),
+        pipeline_code_origin=external_pipeline.get_python_origin(),
     )

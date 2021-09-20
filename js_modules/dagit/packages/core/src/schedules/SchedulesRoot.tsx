@@ -61,14 +61,14 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
             schedulesSection = (
               <NonIdealState
                 icon={IconNames.TIME}
-                title="No Schedules Found"
+                title="No schedules found"
                 description={
                   <p>
                     This repository does not have any schedules defined. Visit the{' '}
                     <a href="https://docs.dagster.io/overview/schedules-sensors/schedules">
                       scheduler documentation
                     </a>{' '}
-                    for more information about scheduling pipeline runs in Dagster.
+                    for more information about scheduling runs in Dagster.
                   </p>
                 }
               />

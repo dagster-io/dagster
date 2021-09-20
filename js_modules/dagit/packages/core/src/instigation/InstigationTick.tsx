@@ -1,16 +1,7 @@
 import {gql, useQuery} from '@apollo/client';
-import {
-  Tag,
-  Tooltip,
-  Dialog,
-  Button,
-  Intent,
-  NonIdealState,
-  Classes,
-  Colors,
-  Icon,
-} from '@blueprintjs/core';
+import {Tag, Dialog, Button, Intent, NonIdealState, Classes, Colors, Icon} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
+import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -83,12 +74,7 @@ export const TickTag: React.FunctionComponent<{
         );
       }
       return (
-        <Tooltip
-          position={'right'}
-          content={tick.skipReason}
-          wrapperTagName="div"
-          targetTagName="div"
-        >
+        <Tooltip position={'right'} content={tick.skipReason} targetTagName="div">
           <Tag minimal={true} intent={Intent.WARNING}>
             Skipped
           </Tag>

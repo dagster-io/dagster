@@ -1,0 +1,2 @@
+def calculate():
+    return "yes"

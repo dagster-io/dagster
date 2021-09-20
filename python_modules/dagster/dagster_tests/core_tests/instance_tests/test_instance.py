@@ -1,6 +1,7 @@
 import re
 
 import pytest
+import yaml
 from dagster import PipelineDefinition, check, execute_pipeline, pipeline, solid
 from dagster.config import Field
 from dagster.core.errors import (
@@ -9,14 +10,18 @@ from dagster.core.errors import (
     DagsterInvariantViolationError,
 )
 from dagster.core.execution.api import create_execution_plan
-from dagster.core.instance import DagsterInstance
+from dagster.core.instance import DagsterInstance, InstanceRef
+from dagster.core.launcher import LaunchRunContext, RunLauncher
+from dagster.core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
 from dagster.core.snap import (
     create_execution_plan_snapshot_id,
     create_pipeline_snapshot_id,
     snapshot_from_execution_plan,
 )
 from dagster.core.test_utils import create_run_for_test, environ, instance_for_test
-from dagster_tests.api_tests.utils import get_foo_pipeline_handle
+from dagster.serdes import ConfigurableClass
+from dagster.serdes.config_class import ConfigurableClassData
+from dagster_tests.api_tests.utils import get_bar_workspace
 
 
 def test_get_run_by_id():
@@ -107,16 +112,22 @@ def test_submit_run():
             }
         }
     ) as instance:
-        with get_foo_pipeline_handle() as pipeline_handle:
+        with get_bar_workspace(instance) as workspace:
+            external_pipeline = (
+                workspace.get_repository_location("bar_repo_location")
+                .get_repository("bar_repo")
+                .get_full_external_pipeline("foo")
+            )
 
             run = create_run_for_test(
                 instance=instance,
-                pipeline_name=pipeline_handle.pipeline_name,
+                pipeline_name=external_pipeline.name,
                 run_id="foo-bar",
-                external_pipeline_origin=pipeline_handle.get_external_origin(),
+                external_pipeline_origin=external_pipeline.get_external_origin(),
+                pipeline_code_origin=external_pipeline.get_python_origin(),
             )
 
-            instance.submit_run(run.run_id, None)
+            instance.submit_run(run.run_id, workspace)
 
             assert len(instance.run_coordinator.queue()) == 1
             assert instance.run_coordinator.queue()[0].run_id == "foo-bar"
@@ -199,11 +210,21 @@ class TestInstanceSubclass(DagsterInstance):
     def config_schema(cls):
         return {"foo": Field(str, is_required=True), "baz": Field(str, is_required=False)}
 
+    @staticmethod
+    def config_defaults(base_dir):
+        defaults = InstanceRef.config_defaults(base_dir)
+        defaults["run_coordinator"] = ConfigurableClassData(
+            "dagster.core.run_coordinator.queued_run_coordinator",
+            "QueuedRunCoordinator",
+            yaml.dump({}),
+        )
+        return defaults
+
 
 def test_instance_subclass():
     with instance_for_test(
         overrides={
-            "custom_instance_class": {
+            "instance_class": {
                 "module": "dagster_tests.core_tests.instance_tests.test_instance",
                 "class": "TestInstanceSubclass",
             },
@@ -219,9 +240,11 @@ def test_instance_subclass():
         assert subclass_instance.foo() == "bar"
         assert subclass_instance.baz is None
 
+        assert isinstance(subclass_instance.run_coordinator, QueuedRunCoordinator)
+
     with instance_for_test(
         overrides={
-            "custom_instance_class": {
+            "instance_class": {
                 "module": "dagster_tests.core_tests.instance_tests.test_instance",
                 "class": "TestInstanceSubclass",
             },
@@ -240,11 +263,39 @@ def test_instance_subclass():
     with pytest.raises(DagsterInvalidConfigError):
         with instance_for_test(
             overrides={
-                "custom_instance_class": {
+                "instance_class": {
                     "module": "dagster_tests.core_tests.instance_tests.test_instance",
                     "class": "TestInstanceSubclass",
                 },
                 "baz": "quux",
             }
         ) as subclass_instance:
+            pass
+
+
+# class that doesn't implement needed methods on ConfigurableClass
+class InvalidRunLauncher(RunLauncher, ConfigurableClass):
+    def can_terminate(self, run_id):
+        return False
+
+    def launch_run(self, context: LaunchRunContext) -> None:
+        pass
+
+    def terminate(self, run_id):
+        pass
+
+
+def test_configurable_class_missing_methods():
+    with pytest.raises(
+        NotImplementedError,
+        match="InvalidRunLauncher must implement the config_type classmethod",
+    ):
+        with instance_for_test(
+            overrides={
+                "run_launcher": {
+                    "module": "dagster_tests.core_tests.instance_tests.test_instance",
+                    "class": "InvalidRunLauncher",
+                }
+            }
+        ):
             pass

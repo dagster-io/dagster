@@ -1,12 +1,9 @@
 import gzip
 import io
-import json
 import os
 import uuid
 
 import nbformat
-import werkzeug
-from dagit.permissions import get_user_permissions
 from dagster import __version__ as dagster_version
 from dagster import check
 from dagster.core.debug import DebugRunPayload
@@ -72,22 +69,26 @@ def info_view():
     )
 
 
-def notebook_view(request_args):
+def notebook_view(context, request_args):
+    context = check.inst_param(context, "context", IWorkspaceProcessContext)
+    repo_location_name = request_args["repoLocName"]
     check.dict_param(request_args, "request_args")
 
-    # This currently provides open access to your file system - the very least we can
-    # do is limit it to notebook files until we create a more permanent solution.
     path = request_args["path"]
     if not path.endswith(".ipynb"):
         return "Invalid Path", 400
 
-    with open(os.path.abspath(path)) as f:
-        read_data = f.read()
-        notebook = nbformat.reads(read_data, as_version=4)
-        html_exporter = HTMLExporter()
-        html_exporter.template_file = "basic"
-        (body, resources) = html_exporter.from_notebook_node(notebook)
-        return "<style>" + resources["inlining"]["css"][0] + "</style>" + body, 200
+    # get ipynb content from grpc call
+    request_context = context.create_request_context()
+    notebook_content = request_context.get_external_notebook_data(repo_location_name, path)
+    check.inst_param(notebook_content, "notebook_content", bytes)
+
+    # parse content to HTML
+    notebook = nbformat.reads(notebook_content, as_version=4)
+    html_exporter = HTMLExporter()
+    html_exporter.template_file = "basic"
+    (body, resources) = html_exporter.from_notebook_node(notebook)
+    return "<style>" + resources["inlining"]["css"][0] + "</style>" + body, 200
 
 
 def download_log_view(context):
@@ -139,48 +140,13 @@ def download_dump_view(context):
     return view
 
 
-def register_permissions(app, context: IWorkspaceProcessContext):
-    # TODO: This is a nasty hack because we aren't currently using Jinja templating to render the
-    # static views; we should instead be injecting values into the Jinja environment and using Jinja
-    # to template them in rather than using string replace
-    def make_wrapper(view_fn):
-        def _wrapper(*args, **kwargs):
-            res = view_fn(*args, **kwargs)
-            if not isinstance(res, str):
-                return res
-
-            templated_res = res.replace(
-                '"[permissions_here]"',
-                json.dumps(
-                    get_user_permissions(context),
-                ),
-            )
-            return templated_res
-
-        return _wrapper
-
-    for view_function_key in app.view_functions:
-        if view_function_key != "routes.graphql":
-            app.view_functions[view_function_key] = make_wrapper(
-                app.view_functions[view_function_key]
-            )
-    # TODO: This is a brutal hack which is following on a brutal hack (treating
-    # all paths other than / as 404s and falling through to an error handler) -- we should instead
-    # have a catch-all handler for "/<path:path>"
-    error_handler = app.error_handler_spec[None][404][werkzeug.exceptions.NotFound]
-    app.register_error_handler(404, make_wrapper(error_handler))
-
-    return app
-
-
 def instantiate_app_with_views(
     context: IWorkspaceProcessContext,
     schema,
     app_path_prefix,
     target_dir=os.path.dirname(__file__),
-    # If you are injecting middleware that registers permissions on its own, set register_permissions_middleware to False
-    register_permissions_middleware=True,
     graphql_middleware=None,
+    include_notebook_route=False,
 ):
     app = Flask(
         "dagster-ui",
@@ -229,7 +195,8 @@ def instantiate_app_with_views(
     # these routes are specifically for the Dagit UI and are not part of the graphql
     # API that we want other people to consume, so they're separate for now.
     # Also grabbing the magic global request args dict so that notebook_view is testable
-    bp.add_url_rule("/dagit/notebook", "notebook", lambda: notebook_view(request.args))
+    if include_notebook_route:
+        bp.add_url_rule("/dagit/notebook", "notebook", lambda: notebook_view(context, request.args))
     bp.add_url_rule("/dagit_info", "sanity_view", info_view)
 
     index_path = os.path.join(target_dir, "./webapp/build/index.html")
@@ -242,6 +209,7 @@ def instantiate_app_with_views(
                     rendered_template.replace('href="/', f'href="{app_path_prefix}/')
                     .replace('src="/', f'src="{app_path_prefix}/')
                     .replace("__PATH_PREFIX__", app_path_prefix)
+                    .replace("NONCE-PLACEHOLDER", uuid.uuid4().hex)
                 )
         except FileNotFoundError:
             raise Exception(
@@ -262,9 +230,6 @@ def instantiate_app_with_views(
     app.register_blueprint(bp)
     app.register_error_handler(404, index_view)
 
-    if register_permissions_middleware:
-        app = register_permissions(app, context)
-
     CORS(app)
 
     return app
@@ -273,13 +238,11 @@ def instantiate_app_with_views(
 def create_app_from_workspace_process_context(
     workspace_process_context: WorkspaceProcessContext,
     path_prefix: str = "",
-    read_only: bool = False,
 ):
     check.inst_param(
         workspace_process_context, "workspace_process_context", WorkspaceProcessContext
     )
     check.str_param(path_prefix, "path_prefix")
-    check.bool_param(read_only, "read_only")
 
     instance = workspace_process_context.instance
 
@@ -297,4 +260,6 @@ def create_app_from_workspace_process_context(
 
     schema = create_schema()
 
-    return instantiate_app_with_views(workspace_process_context, schema, path_prefix)
+    return instantiate_app_with_views(
+        workspace_process_context, schema, path_prefix, include_notebook_route=True
+    )

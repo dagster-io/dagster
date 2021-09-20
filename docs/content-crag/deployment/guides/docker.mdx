@@ -1,0 +1,214 @@
+---
+title: Deploying Dagster to Docker | Dagster
+description: A guide to deploying Dagster to Docker.
+---
+
+# Deploying Dagster to Docker
+
+If you are running on AWS ECS or another container-based orchestration system, you'll likely want to package Dagit using a Docker image.
+
+A minimal skeleton `Dockerfile` that will run Dagit is shown below:
+
+```dockerfile file=/deploying/docker/Dockerfile
+FROM python:3.7-slim
+
+RUN mkdir -p /opt/dagster/dagster_home /opt/dagster/app
+
+RUN pip install dagit dagster-postgres
+
+# Copy your pipeline code and workspace to /opt/dagster/app
+COPY pipelines.py workspace.yaml /opt/dagster/app/
+
+ENV DAGSTER_HOME=/opt/dagster/dagster_home/
+
+# Copy dagster instance YAML to $DAGSTER_HOME
+COPY dagster.yaml /opt/dagster/dagster_home/
+
+WORKDIR /opt/dagster/app
+
+EXPOSE 3000
+
+ENTRYPOINT ["dagit", "-h", "0.0.0.0", "-p", "3000"]
+```
+
+You'll also need to include a `workspace.yaml` file in the same directory as the Dockerfile to configure your [workspace](/concepts/repositories-workspaces/workspaces):
+
+```yaml file=/deploying/docker/workspace.yaml
+load_from:
+  # References the file copied into your Dockerfile
+  - python_file: pipelines.py
+```
+
+as well as a `dagster.yaml` file to configure your [Dagster instance](/deployment/dagster-instance):
+
+```yaml file=/deploying/docker/dagster.yaml
+run_storage:
+  module: dagster_postgres.run_storage
+  class: PostgresRunStorage
+  config:
+    postgres_db:
+      username:
+        env: DAGSTER_PG_USERNAME
+      password:
+        env: DAGSTER_PG_PASSWORD
+      hostname:
+        env: DAGSTER_PG_HOST
+      db_name:
+        env: DAGSTER_PG_DB
+      port: 5432
+
+event_log_storage:
+  module: dagster_postgres.event_log
+  class: PostgresEventLogStorage
+  config:
+    postgres_db:
+      username:
+        env: DAGSTER_PG_USERNAME
+      password:
+        env: DAGSTER_PG_PASSWORD
+      hostname:
+        env: DAGSTER_PG_HOST
+      db_name:
+        env: DAGSTER_PG_DB
+      port: 5432
+
+schedule_storage:
+  module: dagster_postgres.schedule_storage
+  class: PostgresScheduleStorage
+  config:
+    postgres_db:
+      username:
+        env: DAGSTER_PG_USERNAME
+      password:
+        env: DAGSTER_PG_PASSWORD
+      hostname:
+        env: DAGSTER_PG_HOST
+      db_name:
+        env: DAGSTER_PG_DB
+      port: 5432
+
+compute_logs:
+  module: dagster_aws.s3.compute_log_manager
+  class: S3ComputeLogManager
+  config:
+    bucket: "mycorp-dagster-compute-logs"
+    prefix: "dagster-test-"
+
+local_artifact_storage:
+  module: dagster.core.storage.root
+  class: LocalArtifactStorage
+  config:
+    base_dir: "/opt/dagster/local/"
+```
+
+In cases where you're using environment variables to configure the instance, you should ensure these environment variables are exposed in the running Dagit container.
+
+Dagit servers expose a health check endpoint at `/dagit_info`, which returns a JSON response like:
+
+```JSON
+{
+  "dagit_version": "0.12.0",
+  "dagster_graphql_version": "0.12.0",
+  "dagster_version": "0.12.0"
+}
+```
+
+## Multi-container Docker deployment
+
+More advanced dagster deployments will require deploying more than one container. For example, if you are using [dagster-daemon](/deployment/dagster-daemon) to run schedules and sensors or manage a queue of runs, you'll likely want a separate container running the `dagster-daemon` service. You can also configure your [workspace](/concepts/repositories-workspaces/workspaces) so that your pipeline code can be updated and deployed separately in its own container running a gRPC server, without needing to redeploy the other dagster services. To enable this setup, include a container exposing a gRPC server at a port, and add that port in your `workspace.yaml` file.
+
+For example, your pipeline container might have the following Dockerfile:
+
+```dockerfile file=/deploying/docker/Dockerfile_pipelines
+FROM python:3.7-slim
+
+# Checkout and install dagster libraries needed to run the gRPC server
+# exposing your repository to dagit and dagster-daemon, and to load the DagsterInstance
+
+RUN pip install \
+    dagster \
+    dagster-postgres \
+    dagster-docker
+
+# Set $DAGSTER_HOME and copy dagster instance there
+
+ENV DAGSTER_HOME=/opt/dagster/dagster_home
+
+RUN mkdir -p $DAGSTER_HOME
+
+COPY dagster.yaml $DAGSTER_HOME
+
+# Add repository code
+
+WORKDIR /opt/dagster/app
+
+COPY repo.py /opt/dagster/app
+
+# Run dagster gRPC server on port 4000
+
+EXPOSE 4000
+
+# Using CMD rather than ENTRYPOINT allows the command to be overridden in run launchers or
+# executors to run other commands using this image
+CMD ["dagster", "api", "grpc", "-h", "0.0.0.0", "-p", "4000", "-f", "repo.py"]
+```
+
+and your workspace might look like:
+
+```yaml file=/deploying/docker/workspace_grpc.yaml
+load_from:
+  # Each entry here corresponds to a container that exposes a gRPC server.
+  - grpc_server:
+      host: docker_example_pipelines
+      port: 4000
+      location_name: "example_pipelines"
+```
+
+When you update your pipeline code, you can rebuild and restart your pipeline container without needing to redeploy other parts of the system. Dagit will automatically notice that a new server has been redeployed and prompt you to refresh your workspace.
+
+## Launching runs in containers
+
+To launch each run its own container, you can add the <PyObject module="dagster_docker" object="DockerRunLauncher" /> to your `dagster.yaml` file:
+
+```yaml file=/deploying/docker/run_launcher.yaml
+run_launcher:
+  module: dagster_docker
+  class: DockerRunLauncher
+  config:
+    env_vars:
+      - DAGSTER_POSTGRES_USER
+      - DAGSTER_POSTGRES_PASSWORD
+      - DAGSTER_POSTGRES_DB
+```
+
+This launcher will start each run in a new container, using whatever image that you set in the `DAGSTER_CURRENT_IMAGE` environment variable in your pipeline container (which will usually be the same image as the pipeline container itself)
+
+Any container that launches runs (usually the `dagster-daemon` container if you are maintaining a [run queue](/deployment/run-coordinator#queuedruncoordinator) or launching runs from schedules or sensors) must have permissions to create Docker containers in order to use this run launcher (mounting `/var/run/docker.sock` as a volume is one way to give it these permissions).
+
+## Mounting volumes
+
+You can mount your pipeline code in your pipeline container so that you don't have to rebuild your container whenever your code changes. Even if you're using volume mounts, you still need to restart the container whenever your code changes.
+
+If you are mounting your pipeline code as a volume in your pipeline container and using `DockerRunLauncher` to launch each run in a new container, you must specify your volume mounts in the `DockerRunLauncher` config as well. For example:
+
+```yaml file=/deploying/docker/run_launcher_volumes.yaml
+run_launcher:
+  module: dagster_docker
+  class: DockerRunLauncher
+  config:
+    env_vars:
+      - DAGSTER_POSTGRES_USER
+      - DAGSTER_POSTGRES_PASSWORD
+      - DAGSTER_POSTGRES_DB
+  container_kwargs:
+    volumes:
+        - repo.py:/opt/dagster/app/
+```
+
+## Example
+
+<CodeReferenceLink filePath="examples/deploy_docker" />
+
+This example demonstrates a Dagster deployment using `docker-compose` that includes a Dagit container for loading and launching pipelines, a `dagster-daemon` container for managing a run queue and submitting runs from schedules and sensors, a Postgres container for persistent storage, and a container with user pipeline code. The Dagster instance uses <PyObject module="dagster_docker" object="DockerRunLauncher" /> to launch each run in its own container.
+
+To start the deployment, run `docker-compose up`.

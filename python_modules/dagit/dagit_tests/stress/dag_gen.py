@@ -3,6 +3,7 @@ from collections import defaultdict
 
 from dagster import (
     DependencyDefinition,
+    Field,
     InputDefinition,
     Output,
     OutputDefinition,
@@ -12,16 +13,24 @@ from dagster import (
 )
 
 
-def generate_solid(solid_id, num_inputs, num_outputs):
+def generate_solid(solid_id, num_inputs, num_outputs, num_cfg):
     def compute_fn(_context, **_kwargs):
         for i in range(num_outputs):
             yield Output(i, "out_{}".format(i))
 
+    config = {}
+    for i in range(num_cfg):
+        config[f"field_{i}"] = Field(str, is_required=False)
+
     return SolidDefinition(
         name=solid_id,
-        input_defs=[InputDefinition(name="in_{}".format(i)) for i in range(num_inputs)],
+        input_defs=[
+            InputDefinition(name="in_{}".format(i), default_value="default")
+            for i in range(num_inputs)
+        ],
         output_defs=[OutputDefinition(name="out_{}".format(i)) for i in range(num_outputs)],
         compute_fn=compute_fn,
+        config_schema=config,
     )
 
 
@@ -37,9 +46,13 @@ def generate_pipeline(name, size, connect_factor=1.0):
     for i in range(size):
         num_inputs = random.randint(1, 3)
         num_outputs = random.randint(1, 3)
+        num_cfg = random.randint(0, 5)
         solid_id = "{}_solid_{}".format(name, i)
         solids[solid_id] = generate_solid(
-            solid_id=solid_id, num_inputs=num_inputs, num_outputs=num_outputs
+            solid_id=solid_id,
+            num_inputs=num_inputs,
+            num_outputs=num_outputs,
+            num_cfg=num_cfg,
         )
 
     solid_ids = list(solids.keys())

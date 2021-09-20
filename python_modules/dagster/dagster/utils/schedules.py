@@ -1,4 +1,5 @@
 import datetime
+from typing import Iterator, Optional
 
 import pendulum
 from croniter import croniter
@@ -6,10 +7,9 @@ from dagster import check
 from dagster.seven.compat.pendulum import to_timezone
 
 
-def schedule_execution_time_iterator(start_timestamp, cron_schedule, execution_timezone):
-    check.float_param(start_timestamp, "start_timestamp")
-    check.str_param(cron_schedule, "cron_schedule")
-    check.opt_str_param(execution_timezone, "execution_timezone")
+def schedule_execution_time_iterator(
+    start_timestamp: float, cron_schedule: str, execution_timezone: Optional[str]
+) -> Iterator[datetime.datetime]:
     timezone_str = execution_timezone if execution_timezone else "UTC"
 
     start_datetime = pendulum.from_timestamp(start_timestamp, tz=timezone_str)

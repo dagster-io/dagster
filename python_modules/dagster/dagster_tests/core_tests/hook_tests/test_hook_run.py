@@ -2,6 +2,8 @@ from collections import defaultdict
 
 import pytest
 from dagster import (
+    DynamicOutput,
+    DynamicOutputDefinition,
     Int,
     ModeDefinition,
     Output,
@@ -16,7 +18,6 @@ from dagster.core.definitions import failure_hook, success_hook
 from dagster.core.definitions.decorators.hook import event_list_hook
 from dagster.core.definitions.events import Failure, HookExecutionResult
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.experimental import DynamicOutput, DynamicOutputDefinition
 
 
 class SomeUserException(Exception):
@@ -427,7 +428,7 @@ def test_hook_on_pipeline_def_with_composite_solids():
     hooked_pipeline = a_pipeline.with_hooks({hook_a_generic})
     # hooked_pipeline should be a copy of the original pipeline
     assert hooked_pipeline.top_level_solid_defs == a_pipeline.top_level_solid_defs
-    assert hooked_pipeline.all_solid_defs == a_pipeline.all_solid_defs
+    assert hooked_pipeline.all_node_defs == a_pipeline.all_node_defs
 
     result = execute_pipeline(hooked_pipeline)
     assert result.success

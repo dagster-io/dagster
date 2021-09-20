@@ -3,7 +3,6 @@
 
 import json
 import os
-import shutil
 
 import click
 from dagster import file_relative_path
@@ -29,8 +28,6 @@ def write_json(filename, data):
 @click.option("--version", required=True, help="Version to remove")
 def main(version):
     # This is primarily use for removing rc versions created by the pre-release process
-    curr_content_directory = os.path.join(VERSIONED_CONTENT_DIR, version)
-    curr_image_directory = os.path.join(VERSIONED_IMAGE_DIR, version)
     master_navigation_path = os.path.join(VERSIONED_CONTENT_DIR, "_versioned_navigation.json")
 
     # Remove the navigation entry of the given version in the master navigation file

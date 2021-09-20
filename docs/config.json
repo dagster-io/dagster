@@ -8,7 +8,11 @@
     "https://docs.dagster.io/"
   ],
   "sitemap_urls": ["https://docs.dagster.io/sitemap.xml"],
-  "stop_urls": ["_modules"],
+  "stop_urls": [
+    "https://docs.dagster.io/_modules/",
+    "https://docs.dagster.io/master/",
+    "https://docs.dagster.io/\\d+\\.\\d+.\\d+/"
+  ],
   "strip_chars": " .,;:#¶",
   "selectors": {
     "default": {
@@ -46,5 +50,6 @@
     }
   },
   "js_render": true,
+  "js_wait": 3,
   "nb_hits": 9458
 }

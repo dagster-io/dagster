@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterable, NamedTuple, Optional, Set
 from dagster import check
 from dagster.core.definitions.hook import HookDefinition
 from dagster.core.definitions.mode import ModeDefinition
+from dagster.core.definitions.op import OpDefinition
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.definitions.pipeline_base import IPipeline
 from dagster.core.definitions.policy import RetryPolicy
@@ -33,7 +34,7 @@ from .output import OutputContext, get_output_context
 
 if TYPE_CHECKING:
     from dagster.core.definitions.intermediate_storage import IntermediateStorageDefinition
-    from dagster.core.definitions.dependency import Solid, SolidHandle
+    from dagster.core.definitions.dependency import Node, NodeHandle
     from dagster.core.storage.intermediate_storage import IntermediateStorage
     from dagster.core.instance import DagsterInstance
     from dagster.core.execution.plan.plan import ExecutionPlan
@@ -97,15 +98,15 @@ class IPlanContext(ABC):
 
     @property
     def logging_tags(self) -> Dict[str, str]:
-        return self.log.logging_tags
+        return self.log.logging_metadata.to_tags()
 
     def has_tag(self, key: str) -> bool:
         check.str_param(key, "key")
-        return key in self.logging_tags
+        return key in self.log.logging_metadata.pipeline_tags
 
     def get_tag(self, key: str) -> Optional[str]:
         check.str_param(key, "key")
-        return self.logging_tags.get(key)
+        return self.log.logging_metadata.pipeline_tags.get(key)
 
 
 class PlanData(NamedTuple):
@@ -146,7 +147,7 @@ class IStepContext(IPlanContext):
         raise NotImplementedError()
 
     @abstractproperty
-    def solid_handle(self) -> "SolidHandle":
+    def solid_handle(self) -> "NodeHandle":
         raise NotImplementedError()
 
 
@@ -220,7 +221,7 @@ class StepOrchestrationContext(PlanOrchestrationContext, IStepContext):
         return self._step
 
     @property
-    def solid_handle(self) -> "SolidHandle":
+    def solid_handle(self) -> "NodeHandle":
         return self.step.solid_handle
 
 
@@ -321,7 +322,6 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             plan_data.pipeline.get_definition(),
             step,
             plan_data.execution_plan,
-            execution_data.resolved_run_config,
             execution_data.intermediate_storage_def,
         )
         self._resources = execution_data.scoped_resources_builder.build(
@@ -346,7 +346,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         elif len(step_launcher_resources) == 1:
             self._step_launcher = step_launcher_resources[0]
 
-        self._step_exception = None
+        self._step_exception: Optional[BaseException] = None
         self._step_output_capture: Dict[StepOutputHandle, Any] = {}
 
     @property
@@ -354,7 +354,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return self._step
 
     @property
-    def solid_handle(self) -> "SolidHandle":
+    def solid_handle(self) -> "NodeHandle":
         return self.step.solid_handle
 
     @property
@@ -371,7 +371,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     @property
     def solid_def(self) -> SolidDefinition:
-        return self.solid.definition
+        return self.solid.definition.ensure_solid_def()
 
     @property
     def pipeline_def(self) -> PipelineDefinition:
@@ -382,12 +382,18 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return self._execution_data.mode_def
 
     @property
-    def solid(self) -> "Solid":
+    def solid(self) -> "Node":
         return self.pipeline_def.get_solid(self._step.solid_handle)
 
     @property
     def solid_retry_policy(self) -> Optional[RetryPolicy]:
         return self.pipeline_def.get_retry_policy_for_handle(self.solid_handle)
+
+    def describe_op(self):
+        if isinstance(self.solid_def, OpDefinition):
+            return f'op "{str(self.solid_handle)}"'
+
+        return f'solid "{str(self.solid_handle)}"'
 
     def get_io_manager(self, step_output_handle) -> IOManager:
         step_output = self.execution_plan.get_step_output(step_output_handle)
@@ -426,6 +432,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             log_manager=self.log,
             step_context=self,
             resources=None,
+            version=self.execution_plan.get_version_for_step_output_handle(step_output_handle),
         )
 
     def for_input_manager(
@@ -457,11 +464,33 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         return HookContext(self, hook_def)
 
+    def can_load(self, step_output_handle: StepOutputHandle) -> bool:
+        # Whether IO Manager can load the source
+        # FIXME https://github.com/dagster-io/dagster/issues/3511
+        # This is a stopgap which asks the instance to check the event logs to find out step skipping
+
+        from dagster.core.events import DagsterEventType
+
+        # can load from upstream in the same run
+        for record in self.instance.all_logs(self.run_id, of_type=DagsterEventType.STEP_OUTPUT):
+            if step_output_handle == record.dagster_event.event_specific_data.step_output_handle:
+                return True
+
+        # can load from a previous run
+        if self._get_source_run_id_from_logs(step_output_handle):
+            return True
+
+        return False
+
     def _get_source_run_id_from_logs(self, step_output_handle: StepOutputHandle) -> Optional[str]:
         from dagster.core.events import DagsterEventType
 
         # walk through event logs to find the right run_id based on the run lineage
-        _, runs = self.instance.get_run_group(self.run_id)
+        run_group = self.instance.get_run_group(self.run_id)
+        if run_group is None:
+            check.failed(f"Failed to load run group {self.run_id}")
+
+        _, runs = run_group
         run_id_to_parent_run_id = {run.run_id: run.parent_run_id for run in runs}
         source_run_id = self.pipeline_run.parent_run_id
         while source_run_id:

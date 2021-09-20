@@ -16,8 +16,7 @@ import {Group} from '../ui/Group';
 import {MetadataTable} from '../ui/MetadataTable';
 import {PageHeader} from '../ui/PageHeader';
 import {RefreshableCountdown} from '../ui/RefreshableCountdown';
-import {Code, Heading} from '../ui/Text';
-import {FontFamily} from '../ui/styles';
+import {Code, Heading, Mono} from '../ui/Text';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -112,7 +111,7 @@ export const ScheduleDetails: React.FC<{
               />
               <Tooltip content={copyText}>
                 <ButtonLink color={{link: Colors.GRAY3, hover: Colors.GRAY1}} onClick={copyId}>
-                  <span style={{fontFamily: FontFamily.monospace}}>{`id: ${id.slice(0, 8)}`}</span>
+                  <Mono>{`id: ${id.slice(0, 8)}`}</Mono>
                 </ButtonLink>
               </Tooltip>
             </Group>

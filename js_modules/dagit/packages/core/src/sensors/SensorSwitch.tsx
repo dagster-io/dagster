@@ -1,4 +1,4 @@
-import {useMutation} from '@apollo/client';
+import {gql, useMutation} from '@apollo/client';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 
@@ -13,17 +13,18 @@ import {
   START_SENSOR_MUTATION,
   STOP_SENSOR_MUTATION,
 } from './SensorMutations';
-import {SensorFragment} from './types/SensorFragment';
+import {SensorSwitchFragment} from './types/SensorSwitchFragment';
 import {StartSensor} from './types/StartSensor';
 import {StopSensor} from './types/StopSensor';
 
 interface Props {
+  large?: boolean;
   repoAddress: RepoAddress;
-  sensor: SensorFragment;
+  sensor: SensorSwitchFragment;
 }
 
 export const SensorSwitch: React.FC<Props> = (props) => {
-  const {repoAddress, sensor} = props;
+  const {large = true, repoAddress, sensor} = props;
   const {canStartSensor, canStopSensor} = usePermissions();
 
   const {jobOriginId, name, sensorState} = sensor;
@@ -55,7 +56,7 @@ export const SensorSwitch: React.FC<Props> = (props) => {
     return (
       <SwitchWithoutLabel
         disabled={toggleOnInFlight || toggleOffInFlight}
-        large
+        large={large}
         innerLabelChecked="on"
         innerLabel="off"
         checked={running || toggleOnInFlight}
@@ -71,7 +72,7 @@ export const SensorSwitch: React.FC<Props> = (props) => {
     <Tooltip content={lacksPermission ? DISABLED_MESSAGE : undefined}>
       <SwitchWithoutLabel
         disabled={disabled}
-        large
+        large={large}
         innerLabelChecked="on"
         innerLabel="off"
         checked={running || toggleOnInFlight}
@@ -80,3 +81,15 @@ export const SensorSwitch: React.FC<Props> = (props) => {
     </Tooltip>
   );
 };
+
+export const SENSOR_SWITCH_FRAGMENT = gql`
+  fragment SensorSwitchFragment on Sensor {
+    id
+    jobOriginId
+    name
+    sensorState {
+      id
+      status
+    }
+  }
+`;

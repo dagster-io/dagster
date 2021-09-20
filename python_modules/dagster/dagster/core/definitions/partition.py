@@ -158,6 +158,8 @@ class ScheduleTimeBasedPartitionsDefinition(
         ],
     ),
 ):
+    """Computes the partitions backwards from the scheduled execution times"""
+
     def __new__(
         cls,
         schedule_type: ScheduleType,
@@ -227,20 +229,7 @@ class ScheduleTimeBasedPartitionsDefinition(
         )
 
     def get_cron_schedule(self) -> str:
-        minute = self.execution_time.minute
-        hour = self.execution_time.hour
-        day = self.execution_day
-
-        if self.schedule_type is ScheduleType.HOURLY:
-            return f"{minute} * * * *"
-        elif self.schedule_type is ScheduleType.DAILY:
-            return f"{minute} {hour} * * *"
-        elif self.schedule_type is ScheduleType.WEEKLY:
-            return f"{minute} {hour} * * {day}"
-        elif self.schedule_type is ScheduleType.MONTHLY:
-            return f"{minute} {hour} {day} * *"
-        else:
-            check.assert_never(self.schedule_type)
+        return get_cron_schedule(self.schedule_type, self.execution_time, self.execution_day)
 
     def get_execution_time_to_partition_fn(self) -> Callable[[datetime], datetime]:
         if self.schedule_type is ScheduleType.HOURLY:
@@ -369,14 +358,13 @@ class PartitionSetDefinition(Generic[T]):
         self._user_defined_tags_fn_for_partition = check.callable_param(
             tags_fn_for_partition, "tags_fn_for_partition"
         )
-        self._partitions_def = check.opt_inst_param(
-            partitions_def,
-            "partitions_def",
-            PartitionsDefinition,
-            default=DynamicPartitionsDefinition(partition_fn=_wrap_partition_fn)
-            if partition_fn is not None
-            else None,
-        )
+        check.opt_inst_param(partitions_def, "partitions_def", PartitionsDefinition)
+        if partitions_def is not None:
+            self._partitions_def = partitions_def
+        else:
+            if partition_fn is None:
+                check.failed("One of `partition_fn` or `partitions_def` must be supplied.")
+            self._partitions_def = DynamicPartitionsDefinition(partition_fn=_wrap_partition_fn)
 
     @property
     def name(self):
@@ -627,3 +615,47 @@ class PartitionScheduleDefinition(ScheduleDefinition):
 
     def get_partition_set(self):
         return self._partition_set
+
+
+class PartitionedConfig(Generic[T]):
+    """Defines a way of configuring a job where the job can be run on one of a discrete set of
+    partitions, and each partition corresponds to run configuration for the job."""
+
+    def __init__(
+        self,
+        partitions_def: PartitionsDefinition[T],  # pylint: disable=unsubscriptable-object
+        run_config_for_partition_fn: Callable[[Partition[T]], Dict[str, Any]],
+    ):
+        self._partitions = check.inst_param(partitions_def, "partitions_def", PartitionsDefinition)
+        self._run_config_for_partition_fn = check.callable_param(
+            run_config_for_partition_fn, "run_config_for_partition_fn"
+        )
+
+    @property
+    def partitions_def(self) -> PartitionsDefinition[T]:  # pylint: disable=unsubscriptable-object
+        return self._partitions
+
+    @property
+    def run_config_for_partition_fn(self) -> Callable[[Partition[T]], Dict[str, Any]]:
+        return self._run_config_for_partition_fn
+
+
+def get_cron_schedule(
+    schedule_type: ScheduleType,
+    time_of_day: time = time(0, 0),
+    day_of_week: Optional[int] = 0,
+) -> str:
+    minute = time_of_day.minute
+    hour = time_of_day.hour
+    day = day_of_week
+
+    if schedule_type is ScheduleType.HOURLY:
+        return f"{minute} * * * *"
+    elif schedule_type is ScheduleType.DAILY:
+        return f"{minute} {hour} * * *"
+    elif schedule_type is ScheduleType.WEEKLY:
+        return f"{minute} {hour} * * {day}"
+    elif schedule_type is ScheduleType.MONTHLY:
+        return f"{minute} {hour} {day} * *"
+    else:
+        check.assert_never(schedule_type)

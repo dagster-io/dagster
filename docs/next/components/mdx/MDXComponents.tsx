@@ -163,7 +163,7 @@ const LinkGridItem = ({ title, href, children, tags = [] }) => {
   return (
     <div className="rounded-tl-lg rounded-tr-lg sm:rounded-tr-none relative group bg-white dark:bg-gray-800 p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-indigo-500 hover:bg-gray-50 transition-colors">
       <div className="mt-8">
-        <h3 className="text-lg font-medium">
+        <div className="text-lg font-medium">
           <Link href={href}>
             <a className="focus:outline-none">
               {/* Extend touch target to entire panel */}
@@ -171,7 +171,7 @@ const LinkGridItem = ({ title, href, children, tags = [] }) => {
               {title}
             </a>
           </Link>
-        </h3>
+        </div>
         <p className="mt-2 text-sm text-gray-500">{children}</p>
       </div>
       <span

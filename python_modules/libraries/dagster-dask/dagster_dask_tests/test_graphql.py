@@ -13,6 +13,7 @@ def test_execute_hammer_through_dagit():
         with get_workspace_process_context_from_kwargs(
             instance,
             version="",
+            read_only=False,
             kwargs={
                 "python_file": file_relative_path(
                     __file__, "../../../dagster-test/dagster_test/toys/hammer.py"

@@ -1,0 +1,1133 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 13.3
+-- Dumped by pg_dump version 13.3
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- Name: alembic_version; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.alembic_version (
+    version_num character varying(32) NOT NULL
+);
+
+
+ALTER TABLE public.alembic_version OWNER TO test;
+
+--
+-- Name: asset_keys; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.asset_keys (
+    id integer NOT NULL,
+    asset_key character varying(512),
+    last_materialization text,
+    last_run_id character varying(255),
+    asset_details text,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.asset_keys OWNER TO test;
+
+--
+-- Name: asset_keys_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.asset_keys_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.asset_keys_id_seq OWNER TO test;
+
+--
+-- Name: asset_keys_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.asset_keys_id_seq OWNED BY public.asset_keys.id;
+
+
+--
+-- Name: backfills; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.backfills (
+    id integer NOT NULL,
+    backfill_id character varying(32) NOT NULL,
+    partition_set_origin_id character varying(255) NOT NULL,
+    status character varying(255) NOT NULL,
+    "timestamp" timestamp without time zone NOT NULL,
+    body text
+);
+
+
+ALTER TABLE public.backfills OWNER TO test;
+
+--
+-- Name: backfills_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.backfills_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.backfills_id_seq OWNER TO test;
+
+--
+-- Name: backfills_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.backfills_id_seq OWNED BY public.backfills.id;
+
+
+--
+-- Name: bulk_actions; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.bulk_actions (
+    id integer NOT NULL,
+    key character varying(32) NOT NULL,
+    status character varying(255) NOT NULL,
+    "timestamp" timestamp without time zone NOT NULL,
+    body text
+);
+
+
+ALTER TABLE public.bulk_actions OWNER TO test;
+
+--
+-- Name: bulk_actions_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.bulk_actions_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.bulk_actions_id_seq OWNER TO test;
+
+--
+-- Name: bulk_actions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.bulk_actions_id_seq OWNED BY public.bulk_actions.id;
+
+
+--
+-- Name: daemon_heartbeats; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.daemon_heartbeats (
+    daemon_type character varying(255) NOT NULL,
+    daemon_id character varying(255),
+    "timestamp" timestamp without time zone NOT NULL,
+    body text
+);
+
+
+ALTER TABLE public.daemon_heartbeats OWNER TO test;
+
+--
+-- Name: event_logs; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.event_logs (
+    id integer NOT NULL,
+    run_id character varying(255),
+    event text NOT NULL,
+    dagster_event_type text,
+    "timestamp" timestamp without time zone,
+    step_key text,
+    asset_key text,
+    partition text
+);
+
+
+ALTER TABLE public.event_logs OWNER TO test;
+
+--
+-- Name: event_logs_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.event_logs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.event_logs_id_seq OWNER TO test;
+
+--
+-- Name: event_logs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.event_logs_id_seq OWNED BY public.event_logs.id;
+
+
+--
+-- Name: job_ticks; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.job_ticks (
+    id integer NOT NULL,
+    job_origin_id character varying(255),
+    status character varying(63),
+    type character varying(63),
+    "timestamp" timestamp without time zone,
+    tick_body text,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    update_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.job_ticks OWNER TO test;
+
+--
+-- Name: job_ticks_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.job_ticks_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.job_ticks_id_seq OWNER TO test;
+
+--
+-- Name: job_ticks_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.job_ticks_id_seq OWNED BY public.job_ticks.id;
+
+
+--
+-- Name: jobs; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.jobs (
+    id integer NOT NULL,
+    job_origin_id character varying(255),
+    repository_origin_id character varying(255),
+    status character varying(63),
+    job_type character varying(63),
+    job_body text,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    update_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.jobs OWNER TO test;
+
+--
+-- Name: jobs_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.jobs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.jobs_id_seq OWNER TO test;
+
+--
+-- Name: jobs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.jobs_id_seq OWNED BY public.jobs.id;
+
+
+--
+-- Name: normalized_cereals; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.normalized_cereals (
+    id integer NOT NULL,
+    name character varying,
+    mfr character varying,
+    type character varying,
+    calories double precision,
+    protein double precision,
+    fat double precision,
+    sodium double precision,
+    fiber double precision,
+    carbo double precision,
+    sugars double precision,
+    potass double precision,
+    vitamins double precision,
+    shelf double precision,
+    weight double precision,
+    cups double precision,
+    rating double precision
+);
+
+
+ALTER TABLE public.normalized_cereals OWNER TO test;
+
+--
+-- Name: normalized_cereals_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.normalized_cereals_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.normalized_cereals_id_seq OWNER TO test;
+
+--
+-- Name: normalized_cereals_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.normalized_cereals_id_seq OWNED BY public.normalized_cereals.id;
+
+
+--
+-- Name: run_tags; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.run_tags (
+    id integer NOT NULL,
+    run_id character varying(255),
+    key text,
+    value text
+);
+
+
+ALTER TABLE public.run_tags OWNER TO test;
+
+--
+-- Name: run_tags_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.run_tags_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.run_tags_id_seq OWNER TO test;
+
+--
+-- Name: run_tags_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.run_tags_id_seq OWNED BY public.run_tags.id;
+
+
+--
+-- Name: runs; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.runs (
+    id integer NOT NULL,
+    run_id character varying(255),
+    snapshot_id character varying(255),
+    pipeline_name text,
+    status character varying(63),
+    run_body text,
+    partition text,
+    partition_set text,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    update_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    mode character varying
+);
+
+
+ALTER TABLE public.runs OWNER TO test;
+
+--
+-- Name: runs_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.runs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.runs_id_seq OWNER TO test;
+
+--
+-- Name: runs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.runs_id_seq OWNED BY public.runs.id;
+
+
+--
+-- Name: secondary_indexes; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.secondary_indexes (
+    id integer NOT NULL,
+    name character varying(512),
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    migration_completed timestamp without time zone
+);
+
+
+ALTER TABLE public.secondary_indexes OWNER TO test;
+
+--
+-- Name: secondary_indexes_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.secondary_indexes_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.secondary_indexes_id_seq OWNER TO test;
+
+--
+-- Name: secondary_indexes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.secondary_indexes_id_seq OWNED BY public.secondary_indexes.id;
+
+
+--
+-- Name: snapshots; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.snapshots (
+    id integer NOT NULL,
+    snapshot_id character varying(255) NOT NULL,
+    snapshot_body bytea NOT NULL,
+    snapshot_type character varying(63) NOT NULL
+);
+
+
+ALTER TABLE public.snapshots OWNER TO test;
+
+--
+-- Name: snapshots_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.snapshots_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.snapshots_id_seq OWNER TO test;
+
+--
+-- Name: snapshots_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.snapshots_id_seq OWNED BY public.snapshots.id;
+
+
+--
+-- Name: asset_keys id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.asset_keys ALTER COLUMN id SET DEFAULT nextval('public.asset_keys_id_seq'::regclass);
+
+
+--
+-- Name: backfills id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.backfills ALTER COLUMN id SET DEFAULT nextval('public.backfills_id_seq'::regclass);
+
+
+--
+-- Name: bulk_actions id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.bulk_actions ALTER COLUMN id SET DEFAULT nextval('public.bulk_actions_id_seq'::regclass);
+
+
+--
+-- Name: event_logs id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.event_logs ALTER COLUMN id SET DEFAULT nextval('public.event_logs_id_seq'::regclass);
+
+
+--
+-- Name: job_ticks id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.job_ticks ALTER COLUMN id SET DEFAULT nextval('public.job_ticks_id_seq'::regclass);
+
+
+--
+-- Name: jobs id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.jobs ALTER COLUMN id SET DEFAULT nextval('public.jobs_id_seq'::regclass);
+
+
+--
+-- Name: normalized_cereals id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.normalized_cereals ALTER COLUMN id SET DEFAULT nextval('public.normalized_cereals_id_seq'::regclass);
+
+
+--
+-- Name: run_tags id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.run_tags ALTER COLUMN id SET DEFAULT nextval('public.run_tags_id_seq'::regclass);
+
+
+--
+-- Name: runs id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs ALTER COLUMN id SET DEFAULT nextval('public.runs_id_seq'::regclass);
+
+
+--
+-- Name: secondary_indexes id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.secondary_indexes ALTER COLUMN id SET DEFAULT nextval('public.secondary_indexes_id_seq'::regclass);
+
+
+--
+-- Name: snapshots id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.snapshots ALTER COLUMN id SET DEFAULT nextval('public.snapshots_id_seq'::regclass);
+
+
+--
+-- Data for Name: alembic_version; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.alembic_version (version_num) FROM stdin;
+ddcc6d7244c6
+\.
+
+
+--
+-- Data for Name: asset_keys; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.asset_keys (id, asset_key, last_materialization, last_run_id, asset_details, create_timestamp) FROM stdin;
+27	["model"]	{"__class__": "AssetMaterialization", "asset_key": {"__class__": "AssetKey", "path": ["model"]}, "description": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "FloatMetadataEntryData", "value": 1625760608.337679}, "label": "timestamp"}], "partition": null, "tags": {}}	1399fa66-f129-46ad-9cf9-2d528d0f87fa	\N	2021-07-08 16:10:08.348777
+\.
+
+
+--
+-- Data for Name: backfills; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.backfills (id, backfill_id, partition_set_origin_id, status, "timestamp", body) FROM stdin;
+\.
+
+
+--
+-- Data for Name: bulk_actions; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.bulk_actions (id, key, status, "timestamp", body) FROM stdin;
+\.
+
+
+--
+-- Data for Name: daemon_heartbeats; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.daemon_heartbeats (daemon_type, daemon_id, "timestamp", body) FROM stdin;
+\.
+
+
+--
+-- Data for Name: event_logs; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.event_logs (id, run_id, event, dagster_event_type, "timestamp", step_key, asset_key, partition) FROM stdin;
+144	1399fa66-f129-46ad-9cf9-2d528d0f87fa	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "PIPELINE_STARTING", "logging_tags": {}, "message": null, "pid": null, "pipeline_name": "model_pipeline", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 20, "message": "", "pipeline_name": "model_pipeline", "run_id": "1399fa66-f129-46ad-9cf9-2d528d0f87fa", "step_key": null, "timestamp": 1625760604.543912, "user_message": ""}	PIPELINE_STARTING	2021-07-08 16:10:04.543912	\N	\N	\N
+145	1399fa66-f129-46ad-9cf9-2d528d0f87fa	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": "cli_api_subprocess_init", "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "1295"}, "label": "pid"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Started process for pipeline (pid: 1295).", "pid": null, "pipeline_name": "model_pipeline", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 20, "message": "Started process for pipeline (pid: 1295).", "pipeline_name": "model_pipeline", "run_id": "1399fa66-f129-46ad-9cf9-2d528d0f87fa", "step_key": null, "timestamp": 1625760606.400359, "user_message": "Started process for pipeline (pid: 1295)."}	ENGINE_EVENT	2021-07-08 16:10:06.400359	\N	\N	\N
+146	1399fa66-f129-46ad-9cf9-2d528d0f87fa	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "PIPELINE_START", "logging_tags": {}, "message": "Started execution of pipeline \\"model_pipeline\\".", "pid": 1295, "pipeline_name": "model_pipeline", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "model_pipeline - 1399fa66-f129-46ad-9cf9-2d528d0f87fa - 1295 - PIPELINE_START - Started execution of pipeline \\"model_pipeline\\".", "pipeline_name": "model_pipeline", "run_id": "1399fa66-f129-46ad-9cf9-2d528d0f87fa", "step_key": null, "timestamp": 1625760608.24893, "user_message": "Started execution of pipeline \\"model_pipeline\\"."}	PIPELINE_START	2021-07-08 16:10:08.24893	\N	\N	\N
+147	1399fa66-f129-46ad-9cf9-2d528d0f87fa	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "1295"}, "label": "pid"}, {"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "['materialization_solid']"}, "label": "step_keys"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Executing steps in process (pid: 1295)", "pid": 1295, "pipeline_name": "model_pipeline", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "model_pipeline - 1399fa66-f129-46ad-9cf9-2d528d0f87fa - 1295 - ENGINE_EVENT - Executing steps in process (pid: 1295)", "pipeline_name": "model_pipeline", "run_id": "1399fa66-f129-46ad-9cf9-2d528d0f87fa", "step_key": null, "timestamp": 1625760608.275929, "user_message": "Executing steps in process (pid: 1295)"}	ENGINE_EVENT	2021-07-08 16:10:08.275929	\N	\N	\N
+148	1399fa66-f129-46ad-9cf9-2d528d0f87fa	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": "resources", "metadata_entries": []}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Starting initialization of resources [io_manager].", "pid": 1295, "pipeline_name": "model_pipeline", "solid_handle": null, "step_handle": {"__class__": "StepHandle", "solid_handle": {"__class__": "SolidHandle", "name": "materialization_solid", "parent": null}}, "step_key": "materialization_solid", "step_kind_value": null}, "error_info": null, "level": 10, "message": "model_pipeline - 1399fa66-f129-46ad-9cf9-2d528d0f87fa - 1295 - materialization_solid - ENGINE_EVENT - Starting initialization of resources [io_manager].", "pipeline_name": "model_pipeline", "run_id": "1399fa66-f129-46ad-9cf9-2d528d0f87fa", "step_key": "materialization_solid", "timestamp": 1625760608.289093, "user_message": "Starting initialization of resources [io_manager]."}	ENGINE_EVENT	2021-07-08 16:10:08.289093	materialization_solid	\N	\N
+149	1399fa66-f129-46ad-9cf9-2d528d0f87fa	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": "resources", "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": "Initialized in 0.01ms", "entry_data": {"__class__": "PythonArtifactMetadataEntryData", "module": "dagster.core.storage.mem_io_manager", "name": "InMemoryIOManager"}, "label": "io_manager"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Finished initialization of resources [io_manager].", "pid": 1295, "pipeline_name": "model_pipeline", "solid_handle": null, "step_handle": {"__class__": "StepHandle", "solid_handle": {"__class__": "SolidHandle", "name": "materialization_solid", "parent": null}}, "step_key": "materialization_solid", "step_kind_value": null}, "error_info": null, "level": 10, "message": "model_pipeline - 1399fa66-f129-46ad-9cf9-2d528d0f87fa - 1295 - materialization_solid - ENGINE_EVENT - Finished initialization of resources [io_manager].", "pipeline_name": "model_pipeline", "run_id": "1399fa66-f129-46ad-9cf9-2d528d0f87fa", "step_key": "materialization_solid", "timestamp": 1625760608.296083, "user_message": "Finished initialization of resources [io_manager]."}	ENGINE_EVENT	2021-07-08 16:10:08.296083	materialization_solid	\N	\N
+150	1399fa66-f129-46ad-9cf9-2d528d0f87fa	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ComputeLogsCaptureData", "log_key": "materialization_solid", "step_keys": ["materialization_solid"]}, "event_type_value": "LOGS_CAPTURED", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmpuf74gv30\\"}", "dagster/solid_selection": "*", "pipeline": "model_pipeline", "solid": "materialization_solid", "step_key": "materialization_solid"}, "message": "Started capturing logs for solid: materialization_solid.", "pid": 1295, "pipeline_name": "model_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "materialization_solid", "parent": null}, "step_handle": {"__class__": "StepHandle", "solid_handle": {"__class__": "SolidHandle", "name": "materialization_solid", "parent": null}}, "step_key": "materialization_solid", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "model_pipeline - 1399fa66-f129-46ad-9cf9-2d528d0f87fa - 1295 - materialization_solid - LOGS_CAPTURED - Started capturing logs for solid: materialization_solid.", "pipeline_name": "model_pipeline", "run_id": "1399fa66-f129-46ad-9cf9-2d528d0f87fa", "step_key": "materialization_solid", "timestamp": 1625760608.323808, "user_message": "Started capturing logs for solid: materialization_solid."}	LOGS_CAPTURED	2021-07-08 16:10:08.323808	materialization_solid	\N	\N
+151	1399fa66-f129-46ad-9cf9-2d528d0f87fa	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmpuf74gv30\\"}", "dagster/solid_selection": "*", "pipeline": "model_pipeline", "solid": "materialization_solid", "step_key": "materialization_solid"}, "message": "Started execution of step \\"materialization_solid\\".", "pid": 1295, "pipeline_name": "model_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "materialization_solid", "parent": null}, "step_handle": {"__class__": "StepHandle", "solid_handle": {"__class__": "SolidHandle", "name": "materialization_solid", "parent": null}}, "step_key": "materialization_solid", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "model_pipeline - 1399fa66-f129-46ad-9cf9-2d528d0f87fa - 1295 - materialization_solid - STEP_START - Started execution of step \\"materialization_solid\\".", "pipeline_name": "model_pipeline", "run_id": "1399fa66-f129-46ad-9cf9-2d528d0f87fa", "step_key": "materialization_solid", "timestamp": 1625760608.331208, "user_message": "Started execution of step \\"materialization_solid\\"."}	STEP_START	2021-07-08 16:10:08.331208	materialization_solid	\N	\N
+152	1399fa66-f129-46ad-9cf9-2d528d0f87fa	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepMaterializationData", "asset_lineage": [], "materialization": {"__class__": "AssetMaterialization", "asset_key": {"__class__": "AssetKey", "path": ["model"]}, "description": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "FloatMetadataEntryData", "value": 1625760608.337679}, "label": "timestamp"}], "partition": null, "tags": {}}}, "event_type_value": "ASSET_MATERIALIZATION", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmpuf74gv30\\"}", "dagster/solid_selection": "*", "pipeline": "model_pipeline", "solid": "materialization_solid", "step_key": "materialization_solid"}, "message": "Materialized value model.", "pid": 1295, "pipeline_name": "model_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "materialization_solid", "parent": null}, "step_handle": {"__class__": "StepHandle", "solid_handle": {"__class__": "SolidHandle", "name": "materialization_solid", "parent": null}}, "step_key": "materialization_solid", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "model_pipeline - 1399fa66-f129-46ad-9cf9-2d528d0f87fa - 1295 - materialization_solid - ASSET_MATERIALIZATION - Materialized value model.", "pipeline_name": "model_pipeline", "run_id": "1399fa66-f129-46ad-9cf9-2d528d0f87fa", "step_key": "materialization_solid", "timestamp": 1625760608.338121, "user_message": "Materialized value model."}	ASSET_MATERIALIZATION	2021-07-08 16:10:08.338121	materialization_solid	["model"]	\N
+153	1399fa66-f129-46ad-9cf9-2d528d0f87fa	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "metadata_entries": [], "step_output_handle": {"__class__": "StepOutputHandle", "mapping_key": null, "output_name": "result", "step_key": "materialization_solid"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [], "success": true}, "version": null}, "event_type_value": "STEP_OUTPUT", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmpuf74gv30\\"}", "dagster/solid_selection": "*", "pipeline": "model_pipeline", "solid": "materialization_solid", "step_key": "materialization_solid"}, "message": "Yielded output \\"result\\" of type \\"Any\\". (Type check passed).", "pid": 1295, "pipeline_name": "model_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "materialization_solid", "parent": null}, "step_handle": {"__class__": "StepHandle", "solid_handle": {"__class__": "SolidHandle", "name": "materialization_solid", "parent": null}}, "step_key": "materialization_solid", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "model_pipeline - 1399fa66-f129-46ad-9cf9-2d528d0f87fa - 1295 - materialization_solid - STEP_OUTPUT - Yielded output \\"result\\" of type \\"Any\\". (Type check passed).", "pipeline_name": "model_pipeline", "run_id": "1399fa66-f129-46ad-9cf9-2d528d0f87fa", "step_key": "materialization_solid", "timestamp": 1625760608.3524868, "user_message": "Yielded output \\"result\\" of type \\"Any\\". (Type check passed)."}	STEP_OUTPUT	2021-07-08 16:10:08.352487	materialization_solid	\N	\N
+154	1399fa66-f129-46ad-9cf9-2d528d0f87fa	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "HandledOutputData", "manager_key": "io_manager", "metadata_entries": [], "output_name": "result"}, "event_type_value": "HANDLED_OUTPUT", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmpuf74gv30\\"}", "dagster/solid_selection": "*", "pipeline": "model_pipeline", "solid": "materialization_solid", "step_key": "materialization_solid"}, "message": "Handled output \\"result\\" using IO manager \\"io_manager\\"", "pid": 1295, "pipeline_name": "model_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "materialization_solid", "parent": null}, "step_handle": {"__class__": "StepHandle", "solid_handle": {"__class__": "SolidHandle", "name": "materialization_solid", "parent": null}}, "step_key": "materialization_solid", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "model_pipeline - 1399fa66-f129-46ad-9cf9-2d528d0f87fa - 1295 - materialization_solid - HANDLED_OUTPUT - Handled output \\"result\\" using IO manager \\"io_manager\\"", "pipeline_name": "model_pipeline", "run_id": "1399fa66-f129-46ad-9cf9-2d528d0f87fa", "step_key": "materialization_solid", "timestamp": 1625760608.358509, "user_message": "Handled output \\"result\\" using IO manager \\"io_manager\\""}	HANDLED_OUTPUT	2021-07-08 16:10:08.358509	materialization_solid	\N	\N
+155	1399fa66-f129-46ad-9cf9-2d528d0f87fa	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 26.379903996712528}, "event_type_value": "STEP_SUCCESS", "logging_tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmpuf74gv30\\"}", "dagster/solid_selection": "*", "pipeline": "model_pipeline", "solid": "materialization_solid", "step_key": "materialization_solid"}, "message": "Finished execution of step \\"materialization_solid\\" in 26ms.", "pid": 1295, "pipeline_name": "model_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "materialization_solid", "parent": null}, "step_handle": {"__class__": "StepHandle", "solid_handle": {"__class__": "SolidHandle", "name": "materialization_solid", "parent": null}}, "step_key": "materialization_solid", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "model_pipeline - 1399fa66-f129-46ad-9cf9-2d528d0f87fa - 1295 - materialization_solid - STEP_SUCCESS - Finished execution of step \\"materialization_solid\\" in 26ms.", "pipeline_name": "model_pipeline", "run_id": "1399fa66-f129-46ad-9cf9-2d528d0f87fa", "step_key": "materialization_solid", "timestamp": 1625760608.364062, "user_message": "Finished execution of step \\"materialization_solid\\" in 26ms."}	STEP_SUCCESS	2021-07-08 16:10:08.364062	materialization_solid	\N	\N
+156	1399fa66-f129-46ad-9cf9-2d528d0f87fa	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "1295"}, "label": "pid"}, {"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "['materialization_solid']"}, "label": "step_keys"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Finished steps in process (pid: 1295) in 90ms", "pid": 1295, "pipeline_name": "model_pipeline", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "model_pipeline - 1399fa66-f129-46ad-9cf9-2d528d0f87fa - 1295 - ENGINE_EVENT - Finished steps in process (pid: 1295) in 90ms", "pipeline_name": "model_pipeline", "run_id": "1399fa66-f129-46ad-9cf9-2d528d0f87fa", "step_key": null, "timestamp": 1625760608.375371, "user_message": "Finished steps in process (pid: 1295) in 90ms"}	ENGINE_EVENT	2021-07-08 16:10:08.375371	\N	\N	\N
+157	1399fa66-f129-46ad-9cf9-2d528d0f87fa	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "PIPELINE_SUCCESS", "logging_tags": {}, "message": "Finished execution of pipeline \\"model_pipeline\\".", "pid": 1295, "pipeline_name": "model_pipeline", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "model_pipeline - 1399fa66-f129-46ad-9cf9-2d528d0f87fa - 1295 - PIPELINE_SUCCESS - Finished execution of pipeline \\"model_pipeline\\".", "pipeline_name": "model_pipeline", "run_id": "1399fa66-f129-46ad-9cf9-2d528d0f87fa", "step_key": null, "timestamp": 1625760608.3808289, "user_message": "Finished execution of pipeline \\"model_pipeline\\"."}	PIPELINE_SUCCESS	2021-07-08 16:10:08.380829	\N	\N	\N
+158	1399fa66-f129-46ad-9cf9-2d528d0f87fa	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": null, "metadata_entries": []}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Process for pipeline exited (pid: 1295).", "pid": null, "pipeline_name": "model_pipeline", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 20, "message": "Process for pipeline exited (pid: 1295).", "pipeline_name": "model_pipeline", "run_id": "1399fa66-f129-46ad-9cf9-2d528d0f87fa", "step_key": null, "timestamp": 1625760608.397452, "user_message": "Process for pipeline exited (pid: 1295)."}	ENGINE_EVENT	2021-07-08 16:10:08.397452	\N	\N	\N
+159	4a832042-13f5-4b77-ab3f-24b88827402e	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "PIPELINE_START", "logging_tags": {}, "message": "Started execution of pipeline \\"asset_pipeline\\".", "pid": 3447, "pipeline_name": "asset_pipeline", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "asset_pipeline - 4a832042-13f5-4b77-ab3f-24b88827402e - 3447 - PIPELINE_START - Started execution of pipeline \\"asset_pipeline\\".", "pipeline_name": "asset_pipeline", "run_id": "4a832042-13f5-4b77-ab3f-24b88827402e", "step_key": null, "timestamp": 1625761044.385639, "user_message": "Started execution of pipeline \\"asset_pipeline\\"."}	PIPELINE_START	2021-07-08 16:17:24.385639	\N	\N	\N
+160	4a832042-13f5-4b77-ab3f-24b88827402e	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "3447"}, "label": "pid"}, {"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "['asset_solid']"}, "label": "step_keys"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Executing steps in process (pid: 3447)", "pid": 3447, "pipeline_name": "asset_pipeline", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "asset_pipeline - 4a832042-13f5-4b77-ab3f-24b88827402e - 3447 - ENGINE_EVENT - Executing steps in process (pid: 3447)", "pipeline_name": "asset_pipeline", "run_id": "4a832042-13f5-4b77-ab3f-24b88827402e", "step_key": null, "timestamp": 1625761044.4044852, "user_message": "Executing steps in process (pid: 3447)"}	ENGINE_EVENT	2021-07-08 16:17:24.404485	\N	\N	\N
+161	4a832042-13f5-4b77-ab3f-24b88827402e	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": "resources", "metadata_entries": []}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Starting initialization of resources [io_manager].", "pid": 3447, "pipeline_name": "asset_pipeline", "solid_handle": null, "step_handle": {"__class__": "StepHandle", "solid_handle": {"__class__": "SolidHandle", "name": "asset_solid", "parent": null}}, "step_key": "asset_solid", "step_kind_value": null}, "error_info": null, "level": 10, "message": "asset_pipeline - 4a832042-13f5-4b77-ab3f-24b88827402e - 3447 - asset_solid - ENGINE_EVENT - Starting initialization of resources [io_manager].", "pipeline_name": "asset_pipeline", "run_id": "4a832042-13f5-4b77-ab3f-24b88827402e", "step_key": "asset_solid", "timestamp": 1625761044.413043, "user_message": "Starting initialization of resources [io_manager]."}	ENGINE_EVENT	2021-07-08 16:17:24.413043	asset_solid	\N	\N
+162	4a832042-13f5-4b77-ab3f-24b88827402e	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": "resources", "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": "Initialized in 0.02ms", "entry_data": {"__class__": "PythonArtifactMetadataEntryData", "module": "dagster.core.storage.mem_io_manager", "name": "InMemoryIOManager"}, "label": "io_manager"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Finished initialization of resources [io_manager].", "pid": 3447, "pipeline_name": "asset_pipeline", "solid_handle": null, "step_handle": {"__class__": "StepHandle", "solid_handle": {"__class__": "SolidHandle", "name": "asset_solid", "parent": null}}, "step_key": "asset_solid", "step_kind_value": null}, "error_info": null, "level": 10, "message": "asset_pipeline - 4a832042-13f5-4b77-ab3f-24b88827402e - 3447 - asset_solid - ENGINE_EVENT - Finished initialization of resources [io_manager].", "pipeline_name": "asset_pipeline", "run_id": "4a832042-13f5-4b77-ab3f-24b88827402e", "step_key": "asset_solid", "timestamp": 1625761044.420377, "user_message": "Finished initialization of resources [io_manager]."}	ENGINE_EVENT	2021-07-08 16:17:24.420377	asset_solid	\N	\N
+163	4a832042-13f5-4b77-ab3f-24b88827402e	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ComputeLogsCaptureData", "log_key": "asset_solid", "step_keys": ["asset_solid"]}, "event_type_value": "LOGS_CAPTURED", "logging_tags": {"pipeline": "asset_pipeline", "solid": "asset_solid", "step_key": "asset_solid"}, "message": "Started capturing logs for solid: asset_solid.", "pid": 3447, "pipeline_name": "asset_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "asset_solid", "parent": null}, "step_handle": {"__class__": "StepHandle", "solid_handle": {"__class__": "SolidHandle", "name": "asset_solid", "parent": null}}, "step_key": "asset_solid", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "asset_pipeline - 4a832042-13f5-4b77-ab3f-24b88827402e - 3447 - asset_solid - LOGS_CAPTURED - Started capturing logs for solid: asset_solid.", "pipeline_name": "asset_pipeline", "run_id": "4a832042-13f5-4b77-ab3f-24b88827402e", "step_key": "asset_solid", "timestamp": 1625761044.465475, "user_message": "Started capturing logs for solid: asset_solid."}	LOGS_CAPTURED	2021-07-08 16:17:24.465475	asset_solid	\N	\N
+164	4a832042-13f5-4b77-ab3f-24b88827402e	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {"pipeline": "asset_pipeline", "solid": "asset_solid", "step_key": "asset_solid"}, "message": "Started execution of step \\"asset_solid\\".", "pid": 3447, "pipeline_name": "asset_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "asset_solid", "parent": null}, "step_handle": {"__class__": "StepHandle", "solid_handle": {"__class__": "SolidHandle", "name": "asset_solid", "parent": null}}, "step_key": "asset_solid", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "asset_pipeline - 4a832042-13f5-4b77-ab3f-24b88827402e - 3447 - asset_solid - STEP_START - Started execution of step \\"asset_solid\\".", "pipeline_name": "asset_pipeline", "run_id": "4a832042-13f5-4b77-ab3f-24b88827402e", "step_key": "asset_solid", "timestamp": 1625761044.504541, "user_message": "Started execution of step \\"asset_solid\\"."}	STEP_START	2021-07-08 16:17:24.504541	asset_solid	\N	\N
+165	4a832042-13f5-4b77-ab3f-24b88827402e	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepMaterializationData", "asset_lineage": [], "materialization": {"__class__": "AssetMaterialization", "asset_key": {"__class__": "AssetKey", "path": ["a"]}, "description": null, "metadata_entries": [], "partition": "partition_1", "tags": {"foo": "FOO"}}}, "event_type_value": "ASSET_MATERIALIZATION", "logging_tags": {"pipeline": "asset_pipeline", "solid": "asset_solid", "step_key": "asset_solid"}, "message": "Materialized value a.", "pid": 3447, "pipeline_name": "asset_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "asset_solid", "parent": null}, "step_handle": {"__class__": "StepHandle", "solid_handle": {"__class__": "SolidHandle", "name": "asset_solid", "parent": null}}, "step_key": "asset_solid", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "asset_pipeline - 4a832042-13f5-4b77-ab3f-24b88827402e - 3447 - asset_solid - ASSET_MATERIALIZATION - Materialized value a.", "pipeline_name": "asset_pipeline", "run_id": "4a832042-13f5-4b77-ab3f-24b88827402e", "step_key": "asset_solid", "timestamp": 1625761044.5114958, "user_message": "Materialized value a."}	ASSET_MATERIALIZATION	2021-07-08 16:17:24.511496	asset_solid	["a"]	partition_1
+166	4a832042-13f5-4b77-ab3f-24b88827402e	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepFailureData", "error": {"__class__": "SerializableErrorInfo", "cause": null, "cls_name": "DagsterInstanceMigrationRequired", "message": "dagster.core.errors.DagsterInstanceMigrationRequired: Instance is out of date and must be migrated (Postgres event log storage requires migration). Database is at revision ddcc6d7244c6, head is 7b8304b4429d. Please run `dagster instance migrate`.\\n\\nOriginal exception:\\n\\nTraceback (most recent call last):\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1771, in _execute_context\\n    cursor, statement, parameters, context\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/default.py\\", line 717, in do_execute\\n    cursor.execute(statement, parameters)\\npsycopg2.errors.UndefinedColumn: column \\"last_materialization_timestamp\\" of relation \\"asset_keys\\" does not exist\\nLINE 1: ...ys (asset_key, last_materialization, last_run_id, last_mater...\\n                                                             ^\\n\\n\\nThe above exception was the direct cause of the following exception:\\n\\nTraceback (most recent call last):\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/storage/sql.py\\", line 61, in handle_schema_errors\\n    yield\\n  File \\"/Users/prha/code/dagster/python_modules/libraries/dagster-postgres/dagster_postgres/utils.py\\", line 166, in create_pg_connection\\n    yield conn\\n  File \\"/Users/prha/code/dagster/python_modules/libraries/dagster-postgres/dagster_postgres/event_log/event_log.py\\", line 187, in store_asset\\n    else None,\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1262, in execute\\n    return meth(self, multiparams, params, _EMPTY_EXECUTION_OPTS)\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/sql/elements.py\\", line 324, in _execute_on_connection\\n    self, multiparams, params, execution_options\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1461, in _execute_clauseelement\\n    cache_hit=cache_hit,\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1814, in _execute_context\\n    e, statement, parameters, cursor, context\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1995, in _handle_dbapi_exception\\n    sqlalchemy_exception, with_traceback=exc_info[2], from_=e\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/util/compat.py\\", line 207, in raise_\\n    raise exception\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1771, in _execute_context\\n    cursor, statement, parameters, context\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/default.py\\", line 717, in do_execute\\n    cursor.execute(statement, parameters)\\nsqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedColumn) column \\"last_materialization_timestamp\\" of relation \\"asset_keys\\" does not exist\\nLINE 1: ...ys (asset_key, last_materialization, last_run_id, last_mater...\\n                                                             ^\\n\\n[SQL: INSERT INTO asset_keys (asset_key, last_materialization, last_run_id, last_materialization_timestamp, tags) VALUES (%(asset_key)s, %(last_materialization)s, %(last_run_id)s, %(last_materialization_timestamp)s, %(tags)s) ON CONFLICT (asset_key) DO UPDATE SET last_materialization = %(param_1)s, last_run_id = %(param_2)s, last_materialization_timestamp = %(param_3)s, tags = %(param_4)s RETURNING asset_keys.id]\\n[parameters: {'asset_key': '[\\"a\\"]', 'last_materialization': '{\\"__class__\\": \\"AssetMaterialization\\", \\"asset_key\\": {\\"__class__\\": \\"AssetKey\\", \\"path\\": [\\"a\\"]}, \\"description\\": null, \\"metadata_entries\\": [], \\"partition\\": \\"partition_1\\", \\"tags\\": {\\"foo\\": \\"FOO\\"}}', 'last_run_id': '4a832042-13f5-4b77-ab3f-24b88827402e', 'last_materialization_timestamp': datetime.datetime(2021, 7, 8, 16, 17, 24, 511496, tzinfo=datetime.timezone.utc), 'tags': '{\\"foo\\": \\"FOO\\"}', 'param_1': '{\\"__class__\\": \\"AssetMaterialization\\", \\"asset_key\\": {\\"__class__\\": \\"AssetKey\\", \\"path\\": [\\"a\\"]}, \\"description\\": null, \\"metadata_entries\\": [], \\"partition\\": \\"partition_1\\", \\"tags\\": {\\"foo\\": \\"FOO\\"}}', 'param_2': '4a832042-13f5-4b77-ab3f-24b88827402e', 'param_3': datetime.datetime(2021, 7, 8, 16, 17, 24, 511496, tzinfo=datetime.timezone.utc), 'param_4': '{\\"foo\\": \\"FOO\\"}'}]\\n(Background on this error at: http://sqlalche.me/e/14/f405)\\n\\n", "stack": ["  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/execution/plan/execute_plan.py\\", line 193, in _dagster_event_sequence_for_step\\n    for step_event in check.generator(step_events):\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/execution/plan/execute_step.py\\", line 331, in core_dagster_event_sequence_for_step\\n    yield DagsterEvent.asset_materialization(step_context, user_event, input_lineage)\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/events/__init__.py\\", line 701, in asset_materialization\\n    else \\"\\"\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/events/__init__.py\\", line 288, in from_step\\n    log_step_event(step_context, event)\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/events/__init__.py\\", line 200, in log_step_event\\n    pipeline_name=step_context.pipeline_name,\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/log_manager.py\\", line 234, in debug\\n    return self._log(logging.DEBUG, msg, kwargs)\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/log_manager.py\\", line 204, in _log\\n    logger_.log(level, message, extra=extra)\\n", "  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/logging/__init__.py\\", line 1374, in log\\n    self._log(level, msg, args, **kwargs)\\n", "  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/logging/__init__.py\\", line 1444, in _log\\n    self.handle(record)\\n", "  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/logging/__init__.py\\", line 1454, in handle\\n    self.callHandlers(record)\\n", "  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/logging/__init__.py\\", line 1516, in callHandlers\\n    hdlr.handle(record)\\n", "  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/logging/__init__.py\\", line 865, in handle\\n    self.emit(record)\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/instance/__init__.py\\", line 116, in emit\\n    self._instance.handle_new_event(event)\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/instance/__init__.py\\", line 1143, in handle_new_event\\n    self._event_storage.store_event(event)\\n", "  File \\"/Users/prha/code/dagster/python_modules/libraries/dagster-postgres/dagster_postgres/event_log/event_log.py\\", line 156, in store_event\\n    self.store_asset(event)\\n", "  File \\"/Users/prha/code/dagster/python_modules/libraries/dagster-postgres/dagster_postgres/event_log/event_log.py\\", line 187, in store_asset\\n    else None,\\n", "  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/contextlib.py\\", line 99, in __exit__\\n    self.gen.throw(type, value, traceback)\\n", "  File \\"/Users/prha/code/dagster/python_modules/libraries/dagster-postgres/dagster_postgres/utils.py\\", line 166, in create_pg_connection\\n    yield conn\\n", "  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/contextlib.py\\", line 99, in __exit__\\n    self.gen.throw(type, value, traceback)\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/storage/sql.py\\", line 82, in handle_schema_errors\\n    ) from None\\n"]}, "error_source": {"__enum__": "ErrorSource.FRAMEWORK_ERROR"}, "user_failure_data": null}, "event_type_value": "STEP_FAILURE", "logging_tags": {"pipeline": "asset_pipeline", "solid": "asset_solid", "step_key": "asset_solid"}, "message": "Execution of step \\"asset_solid\\" failed.", "pid": 3447, "pipeline_name": "asset_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "asset_solid", "parent": null}, "step_handle": {"__class__": "StepHandle", "solid_handle": {"__class__": "SolidHandle", "name": "asset_solid", "parent": null}}, "step_key": "asset_solid", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 40, "message": "asset_pipeline - 4a832042-13f5-4b77-ab3f-24b88827402e - 3447 - asset_solid - STEP_FAILURE - Execution of step \\"asset_solid\\" failed.\\n\\ndagster.core.errors.DagsterInstanceMigrationRequired: Instance is out of date and must be migrated (Postgres event log storage requires migration). Database is at revision ddcc6d7244c6, head is 7b8304b4429d. Please run `dagster instance migrate`.\\n\\nOriginal exception:\\n\\nTraceback (most recent call last):\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1771, in _execute_context\\n    cursor, statement, parameters, context\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/default.py\\", line 717, in do_execute\\n    cursor.execute(statement, parameters)\\npsycopg2.errors.UndefinedColumn: column \\"last_materialization_timestamp\\" of relation \\"asset_keys\\" does not exist\\nLINE 1: ...ys (asset_key, last_materialization, last_run_id, last_mater...\\n                                                             ^\\n\\n\\nThe above exception was the direct cause of the following exception:\\n\\nTraceback (most recent call last):\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/storage/sql.py\\", line 61, in handle_schema_errors\\n    yield\\n  File \\"/Users/prha/code/dagster/python_modules/libraries/dagster-postgres/dagster_postgres/utils.py\\", line 166, in create_pg_connection\\n    yield conn\\n  File \\"/Users/prha/code/dagster/python_modules/libraries/dagster-postgres/dagster_postgres/event_log/event_log.py\\", line 187, in store_asset\\n    else None,\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1262, in execute\\n    return meth(self, multiparams, params, _EMPTY_EXECUTION_OPTS)\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/sql/elements.py\\", line 324, in _execute_on_connection\\n    self, multiparams, params, execution_options\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1461, in _execute_clauseelement\\n    cache_hit=cache_hit,\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1814, in _execute_context\\n    e, statement, parameters, cursor, context\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1995, in _handle_dbapi_exception\\n    sqlalchemy_exception, with_traceback=exc_info[2], from_=e\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/util/compat.py\\", line 207, in raise_\\n    raise exception\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1771, in _execute_context\\n    cursor, statement, parameters, context\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/default.py\\", line 717, in do_execute\\n    cursor.execute(statement, parameters)\\nsqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedColumn) column \\"last_materialization_timestamp\\" of relation \\"asset_keys\\" does not exist\\nLINE 1: ...ys (asset_key, last_materialization, last_run_id, last_mater...\\n                                                             ^\\n\\n[SQL: INSERT INTO asset_keys (asset_key, last_materialization, last_run_id, last_materialization_timestamp, tags) VALUES (%(asset_key)s, %(last_materialization)s, %(last_run_id)s, %(last_materialization_timestamp)s, %(tags)s) ON CONFLICT (asset_key) DO UPDATE SET last_materialization = %(param_1)s, last_run_id = %(param_2)s, last_materialization_timestamp = %(param_3)s, tags = %(param_4)s RETURNING asset_keys.id]\\n[parameters: {'asset_key': '[\\"a\\"]', 'last_materialization': '{\\"__class__\\": \\"AssetMaterialization\\", \\"asset_key\\": {\\"__class__\\": \\"AssetKey\\", \\"path\\": [\\"a\\"]}, \\"description\\": null, \\"metadata_entries\\": [], \\"partition\\": \\"partition_1\\", \\"tags\\": {\\"foo\\": \\"FOO\\"}}', 'last_run_id': '4a832042-13f5-4b77-ab3f-24b88827402e', 'last_materialization_timestamp': datetime.datetime(2021, 7, 8, 16, 17, 24, 511496, tzinfo=datetime.timezone.utc), 'tags': '{\\"foo\\": \\"FOO\\"}', 'param_1': '{\\"__class__\\": \\"AssetMaterialization\\", \\"asset_key\\": {\\"__class__\\": \\"AssetKey\\", \\"path\\": [\\"a\\"]}, \\"description\\": null, \\"metadata_entries\\": [], \\"partition\\": \\"partition_1\\", \\"tags\\": {\\"foo\\": \\"FOO\\"}}', 'param_2': '4a832042-13f5-4b77-ab3f-24b88827402e', 'param_3': datetime.datetime(2021, 7, 8, 16, 17, 24, 511496, tzinfo=datetime.timezone.utc), 'param_4': '{\\"foo\\": \\"FOO\\"}'}]\\n(Background on this error at: http://sqlalche.me/e/14/f405)\\n\\n\\nStack Trace:\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/execution/plan/execute_plan.py\\", line 193, in _dagster_event_sequence_for_step\\n    for step_event in check.generator(step_events):\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/execution/plan/execute_step.py\\", line 331, in core_dagster_event_sequence_for_step\\n    yield DagsterEvent.asset_materialization(step_context, user_event, input_lineage)\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/events/__init__.py\\", line 701, in asset_materialization\\n    else \\"\\"\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/events/__init__.py\\", line 288, in from_step\\n    log_step_event(step_context, event)\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/events/__init__.py\\", line 200, in log_step_event\\n    pipeline_name=step_context.pipeline_name,\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/log_manager.py\\", line 234, in debug\\n    return self._log(logging.DEBUG, msg, kwargs)\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/log_manager.py\\", line 204, in _log\\n    logger_.log(level, message, extra=extra)\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/logging/__init__.py\\", line 1374, in log\\n    self._log(level, msg, args, **kwargs)\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/logging/__init__.py\\", line 1444, in _log\\n    self.handle(record)\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/logging/__init__.py\\", line 1454, in handle\\n    self.callHandlers(record)\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/logging/__init__.py\\", line 1516, in callHandlers\\n    hdlr.handle(record)\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/logging/__init__.py\\", line 865, in handle\\n    self.emit(record)\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/instance/__init__.py\\", line 116, in emit\\n    self._instance.handle_new_event(event)\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/instance/__init__.py\\", line 1143, in handle_new_event\\n    self._event_storage.store_event(event)\\n  File \\"/Users/prha/code/dagster/python_modules/libraries/dagster-postgres/dagster_postgres/event_log/event_log.py\\", line 156, in store_event\\n    self.store_asset(event)\\n  File \\"/Users/prha/code/dagster/python_modules/libraries/dagster-postgres/dagster_postgres/event_log/event_log.py\\", line 187, in store_asset\\n    else None,\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/contextlib.py\\", line 99, in __exit__\\n    self.gen.throw(type, value, traceback)\\n  File \\"/Users/prha/code/dagster/python_modules/libraries/dagster-postgres/dagster_postgres/utils.py\\", line 166, in create_pg_connection\\n    yield conn\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/contextlib.py\\", line 99, in __exit__\\n    self.gen.throw(type, value, traceback)\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/storage/sql.py\\", line 82, in handle_schema_errors\\n    ) from None\\n", "pipeline_name": "asset_pipeline", "run_id": "4a832042-13f5-4b77-ab3f-24b88827402e", "step_key": "asset_solid", "timestamp": 1625761044.581718, "user_message": "Execution of step \\"asset_solid\\" failed."}	STEP_FAILURE	2021-07-08 16:17:24.581718	asset_solid	\N	\N
+167	4a832042-13f5-4b77-ab3f-24b88827402e	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "PipelineFailureData", "error": {"__class__": "SerializableErrorInfo", "cause": null, "cls_name": "DagsterInstanceMigrationRequired", "message": "dagster.core.errors.DagsterInstanceMigrationRequired: Instance is out of date and must be migrated (Postgres event log storage requires migration). Database is at revision ddcc6d7244c6, head is 7b8304b4429d. Please run `dagster instance migrate`.\\n\\nOriginal exception:\\n\\nTraceback (most recent call last):\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1771, in _execute_context\\n    cursor, statement, parameters, context\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/default.py\\", line 717, in do_execute\\n    cursor.execute(statement, parameters)\\npsycopg2.errors.UndefinedColumn: column \\"last_materialization_timestamp\\" of relation \\"asset_keys\\" does not exist\\nLINE 1: ...ys (asset_key, last_materialization, last_run_id, last_mater...\\n                                                             ^\\n\\n\\nThe above exception was the direct cause of the following exception:\\n\\nTraceback (most recent call last):\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/storage/sql.py\\", line 61, in handle_schema_errors\\n    yield\\n  File \\"/Users/prha/code/dagster/python_modules/libraries/dagster-postgres/dagster_postgres/utils.py\\", line 166, in create_pg_connection\\n    yield conn\\n  File \\"/Users/prha/code/dagster/python_modules/libraries/dagster-postgres/dagster_postgres/event_log/event_log.py\\", line 187, in store_asset\\n    else None,\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1262, in execute\\n    return meth(self, multiparams, params, _EMPTY_EXECUTION_OPTS)\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/sql/elements.py\\", line 324, in _execute_on_connection\\n    self, multiparams, params, execution_options\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1461, in _execute_clauseelement\\n    cache_hit=cache_hit,\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1814, in _execute_context\\n    e, statement, parameters, cursor, context\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1995, in _handle_dbapi_exception\\n    sqlalchemy_exception, with_traceback=exc_info[2], from_=e\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/util/compat.py\\", line 207, in raise_\\n    raise exception\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1771, in _execute_context\\n    cursor, statement, parameters, context\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/default.py\\", line 717, in do_execute\\n    cursor.execute(statement, parameters)\\nsqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedColumn) column \\"last_materialization_timestamp\\" of relation \\"asset_keys\\" does not exist\\nLINE 1: ...ys (asset_key, last_materialization, last_run_id, last_mater...\\n                                                             ^\\n\\n[SQL: INSERT INTO asset_keys (asset_key, last_materialization, last_run_id, last_materialization_timestamp, tags) VALUES (%(asset_key)s, %(last_materialization)s, %(last_run_id)s, %(last_materialization_timestamp)s, %(tags)s) ON CONFLICT (asset_key) DO UPDATE SET last_materialization = %(param_1)s, last_run_id = %(param_2)s, last_materialization_timestamp = %(param_3)s, tags = %(param_4)s RETURNING asset_keys.id]\\n[parameters: {'asset_key': '[\\"a\\"]', 'last_materialization': '{\\"__class__\\": \\"AssetMaterialization\\", \\"asset_key\\": {\\"__class__\\": \\"AssetKey\\", \\"path\\": [\\"a\\"]}, \\"description\\": null, \\"metadata_entries\\": [], \\"partition\\": \\"partition_1\\", \\"tags\\": {\\"foo\\": \\"FOO\\"}}', 'last_run_id': '4a832042-13f5-4b77-ab3f-24b88827402e', 'last_materialization_timestamp': datetime.datetime(2021, 7, 8, 16, 17, 24, 511496, tzinfo=datetime.timezone.utc), 'tags': '{\\"foo\\": \\"FOO\\"}', 'param_1': '{\\"__class__\\": \\"AssetMaterialization\\", \\"asset_key\\": {\\"__class__\\": \\"AssetKey\\", \\"path\\": [\\"a\\"]}, \\"description\\": null, \\"metadata_entries\\": [], \\"partition\\": \\"partition_1\\", \\"tags\\": {\\"foo\\": \\"FOO\\"}}', 'param_2': '4a832042-13f5-4b77-ab3f-24b88827402e', 'param_3': datetime.datetime(2021, 7, 8, 16, 17, 24, 511496, tzinfo=datetime.timezone.utc), 'param_4': '{\\"foo\\": \\"FOO\\"}'}]\\n(Background on this error at: http://sqlalche.me/e/14/f405)\\n\\n", "stack": ["  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/execution/api.py\\", line 756, in pipeline_execution_iterator\\n    for event in pipeline_context.executor.execute(pipeline_context, execution_plan):\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/executor/in_process.py\\", line 50, in execute\\n    output_capture=pipeline_context.output_capture,\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/execution/api.py\\", line 837, in __iter__\\n    pipeline_context=self.pipeline_context,\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/execution/plan/execute_plan.py\\", line 69, in inner_plan_execution_iterator\\n    for step_event in check.generator(_dagster_event_sequence_for_step(step_context)):\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/execution/plan/execute_plan.py\\", line 282, in _dagster_event_sequence_for_step\\n    raise dagster_error\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/execution/plan/execute_plan.py\\", line 193, in _dagster_event_sequence_for_step\\n    for step_event in check.generator(step_events):\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/execution/plan/execute_step.py\\", line 331, in core_dagster_event_sequence_for_step\\n    yield DagsterEvent.asset_materialization(step_context, user_event, input_lineage)\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/events/__init__.py\\", line 701, in asset_materialization\\n    else \\"\\"\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/events/__init__.py\\", line 288, in from_step\\n    log_step_event(step_context, event)\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/events/__init__.py\\", line 200, in log_step_event\\n    pipeline_name=step_context.pipeline_name,\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/log_manager.py\\", line 234, in debug\\n    return self._log(logging.DEBUG, msg, kwargs)\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/log_manager.py\\", line 204, in _log\\n    logger_.log(level, message, extra=extra)\\n", "  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/logging/__init__.py\\", line 1374, in log\\n    self._log(level, msg, args, **kwargs)\\n", "  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/logging/__init__.py\\", line 1444, in _log\\n    self.handle(record)\\n", "  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/logging/__init__.py\\", line 1454, in handle\\n    self.callHandlers(record)\\n", "  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/logging/__init__.py\\", line 1516, in callHandlers\\n    hdlr.handle(record)\\n", "  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/logging/__init__.py\\", line 865, in handle\\n    self.emit(record)\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/instance/__init__.py\\", line 116, in emit\\n    self._instance.handle_new_event(event)\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/instance/__init__.py\\", line 1143, in handle_new_event\\n    self._event_storage.store_event(event)\\n", "  File \\"/Users/prha/code/dagster/python_modules/libraries/dagster-postgres/dagster_postgres/event_log/event_log.py\\", line 156, in store_event\\n    self.store_asset(event)\\n", "  File \\"/Users/prha/code/dagster/python_modules/libraries/dagster-postgres/dagster_postgres/event_log/event_log.py\\", line 187, in store_asset\\n    else None,\\n", "  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/contextlib.py\\", line 99, in __exit__\\n    self.gen.throw(type, value, traceback)\\n", "  File \\"/Users/prha/code/dagster/python_modules/libraries/dagster-postgres/dagster_postgres/utils.py\\", line 166, in create_pg_connection\\n    yield conn\\n", "  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/contextlib.py\\", line 99, in __exit__\\n    self.gen.throw(type, value, traceback)\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/storage/sql.py\\", line 82, in handle_schema_errors\\n    ) from None\\n"]}}, "event_type_value": "PIPELINE_FAILURE", "logging_tags": {}, "message": "Execution of pipeline \\"asset_pipeline\\" failed. An exception was thrown during execution.", "pid": 3447, "pipeline_name": "asset_pipeline", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 40, "message": "asset_pipeline - 4a832042-13f5-4b77-ab3f-24b88827402e - 3447 - PIPELINE_FAILURE - Execution of pipeline \\"asset_pipeline\\" failed. An exception was thrown during execution.\\n\\ndagster.core.errors.DagsterInstanceMigrationRequired: Instance is out of date and must be migrated (Postgres event log storage requires migration). Database is at revision ddcc6d7244c6, head is 7b8304b4429d. Please run `dagster instance migrate`.\\n\\nOriginal exception:\\n\\nTraceback (most recent call last):\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1771, in _execute_context\\n    cursor, statement, parameters, context\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/default.py\\", line 717, in do_execute\\n    cursor.execute(statement, parameters)\\npsycopg2.errors.UndefinedColumn: column \\"last_materialization_timestamp\\" of relation \\"asset_keys\\" does not exist\\nLINE 1: ...ys (asset_key, last_materialization, last_run_id, last_mater...\\n                                                             ^\\n\\n\\nThe above exception was the direct cause of the following exception:\\n\\nTraceback (most recent call last):\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/storage/sql.py\\", line 61, in handle_schema_errors\\n    yield\\n  File \\"/Users/prha/code/dagster/python_modules/libraries/dagster-postgres/dagster_postgres/utils.py\\", line 166, in create_pg_connection\\n    yield conn\\n  File \\"/Users/prha/code/dagster/python_modules/libraries/dagster-postgres/dagster_postgres/event_log/event_log.py\\", line 187, in store_asset\\n    else None,\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1262, in execute\\n    return meth(self, multiparams, params, _EMPTY_EXECUTION_OPTS)\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/sql/elements.py\\", line 324, in _execute_on_connection\\n    self, multiparams, params, execution_options\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1461, in _execute_clauseelement\\n    cache_hit=cache_hit,\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1814, in _execute_context\\n    e, statement, parameters, cursor, context\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1995, in _handle_dbapi_exception\\n    sqlalchemy_exception, with_traceback=exc_info[2], from_=e\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/util/compat.py\\", line 207, in raise_\\n    raise exception\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1771, in _execute_context\\n    cursor, statement, parameters, context\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/default.py\\", line 717, in do_execute\\n    cursor.execute(statement, parameters)\\nsqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedColumn) column \\"last_materialization_timestamp\\" of relation \\"asset_keys\\" does not exist\\nLINE 1: ...ys (asset_key, last_materialization, last_run_id, last_mater...\\n                                                             ^\\n\\n[SQL: INSERT INTO asset_keys (asset_key, last_materialization, last_run_id, last_materialization_timestamp, tags) VALUES (%(asset_key)s, %(last_materialization)s, %(last_run_id)s, %(last_materialization_timestamp)s, %(tags)s) ON CONFLICT (asset_key) DO UPDATE SET last_materialization = %(param_1)s, last_run_id = %(param_2)s, last_materialization_timestamp = %(param_3)s, tags = %(param_4)s RETURNING asset_keys.id]\\n[parameters: {'asset_key': '[\\"a\\"]', 'last_materialization': '{\\"__class__\\": \\"AssetMaterialization\\", \\"asset_key\\": {\\"__class__\\": \\"AssetKey\\", \\"path\\": [\\"a\\"]}, \\"description\\": null, \\"metadata_entries\\": [], \\"partition\\": \\"partition_1\\", \\"tags\\": {\\"foo\\": \\"FOO\\"}}', 'last_run_id': '4a832042-13f5-4b77-ab3f-24b88827402e', 'last_materialization_timestamp': datetime.datetime(2021, 7, 8, 16, 17, 24, 511496, tzinfo=datetime.timezone.utc), 'tags': '{\\"foo\\": \\"FOO\\"}', 'param_1': '{\\"__class__\\": \\"AssetMaterialization\\", \\"asset_key\\": {\\"__class__\\": \\"AssetKey\\", \\"path\\": [\\"a\\"]}, \\"description\\": null, \\"metadata_entries\\": [], \\"partition\\": \\"partition_1\\", \\"tags\\": {\\"foo\\": \\"FOO\\"}}', 'param_2': '4a832042-13f5-4b77-ab3f-24b88827402e', 'param_3': datetime.datetime(2021, 7, 8, 16, 17, 24, 511496, tzinfo=datetime.timezone.utc), 'param_4': '{\\"foo\\": \\"FOO\\"}'}]\\n(Background on this error at: http://sqlalche.me/e/14/f405)\\n\\n\\nStack Trace:\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/execution/api.py\\", line 756, in pipeline_execution_iterator\\n    for event in pipeline_context.executor.execute(pipeline_context, execution_plan):\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/executor/in_process.py\\", line 50, in execute\\n    output_capture=pipeline_context.output_capture,\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/execution/api.py\\", line 837, in __iter__\\n    pipeline_context=self.pipeline_context,\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/execution/plan/execute_plan.py\\", line 69, in inner_plan_execution_iterator\\n    for step_event in check.generator(_dagster_event_sequence_for_step(step_context)):\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/execution/plan/execute_plan.py\\", line 282, in _dagster_event_sequence_for_step\\n    raise dagster_error\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/execution/plan/execute_plan.py\\", line 193, in _dagster_event_sequence_for_step\\n    for step_event in check.generator(step_events):\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/execution/plan/execute_step.py\\", line 331, in core_dagster_event_sequence_for_step\\n    yield DagsterEvent.asset_materialization(step_context, user_event, input_lineage)\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/events/__init__.py\\", line 701, in asset_materialization\\n    else \\"\\"\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/events/__init__.py\\", line 288, in from_step\\n    log_step_event(step_context, event)\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/events/__init__.py\\", line 200, in log_step_event\\n    pipeline_name=step_context.pipeline_name,\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/log_manager.py\\", line 234, in debug\\n    return self._log(logging.DEBUG, msg, kwargs)\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/log_manager.py\\", line 204, in _log\\n    logger_.log(level, message, extra=extra)\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/logging/__init__.py\\", line 1374, in log\\n    self._log(level, msg, args, **kwargs)\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/logging/__init__.py\\", line 1444, in _log\\n    self.handle(record)\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/logging/__init__.py\\", line 1454, in handle\\n    self.callHandlers(record)\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/logging/__init__.py\\", line 1516, in callHandlers\\n    hdlr.handle(record)\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/logging/__init__.py\\", line 865, in handle\\n    self.emit(record)\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/instance/__init__.py\\", line 116, in emit\\n    self._instance.handle_new_event(event)\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/instance/__init__.py\\", line 1143, in handle_new_event\\n    self._event_storage.store_event(event)\\n  File \\"/Users/prha/code/dagster/python_modules/libraries/dagster-postgres/dagster_postgres/event_log/event_log.py\\", line 156, in store_event\\n    self.store_asset(event)\\n  File \\"/Users/prha/code/dagster/python_modules/libraries/dagster-postgres/dagster_postgres/event_log/event_log.py\\", line 187, in store_asset\\n    else None,\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/contextlib.py\\", line 99, in __exit__\\n    self.gen.throw(type, value, traceback)\\n  File \\"/Users/prha/code/dagster/python_modules/libraries/dagster-postgres/dagster_postgres/utils.py\\", line 166, in create_pg_connection\\n    yield conn\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/contextlib.py\\", line 99, in __exit__\\n    self.gen.throw(type, value, traceback)\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/storage/sql.py\\", line 82, in handle_schema_errors\\n    ) from None\\n", "pipeline_name": "asset_pipeline", "run_id": "4a832042-13f5-4b77-ab3f-24b88827402e", "step_key": null, "timestamp": 1625761044.598689, "user_message": "Execution of pipeline \\"asset_pipeline\\" failed. An exception was thrown during execution."}	PIPELINE_FAILURE	2021-07-08 16:17:24.598689	\N	\N	\N
+168	383f9411-4010-454a-9d31-d5a72ab57221	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "PIPELINE_START", "logging_tags": {}, "message": "Started execution of pipeline \\"asset_pipeline\\".", "pid": 5200, "pipeline_name": "asset_pipeline", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "asset_pipeline - 383f9411-4010-454a-9d31-d5a72ab57221 - 5200 - PIPELINE_START - Started execution of pipeline \\"asset_pipeline\\".", "pipeline_name": "asset_pipeline", "run_id": "383f9411-4010-454a-9d31-d5a72ab57221", "step_key": null, "timestamp": 1625762114.5281448, "user_message": "Started execution of pipeline \\"asset_pipeline\\"."}	PIPELINE_START	2021-07-08 16:35:14.528145	\N	\N	\N
+169	383f9411-4010-454a-9d31-d5a72ab57221	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "5200"}, "label": "pid"}, {"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "['asset_solid']"}, "label": "step_keys"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Executing steps in process (pid: 5200)", "pid": 5200, "pipeline_name": "asset_pipeline", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "asset_pipeline - 383f9411-4010-454a-9d31-d5a72ab57221 - 5200 - ENGINE_EVENT - Executing steps in process (pid: 5200)", "pipeline_name": "asset_pipeline", "run_id": "383f9411-4010-454a-9d31-d5a72ab57221", "step_key": null, "timestamp": 1625762114.549501, "user_message": "Executing steps in process (pid: 5200)"}	ENGINE_EVENT	2021-07-08 16:35:14.549501	\N	\N	\N
+170	383f9411-4010-454a-9d31-d5a72ab57221	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": "resources", "metadata_entries": []}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Starting initialization of resources [io_manager].", "pid": 5200, "pipeline_name": "asset_pipeline", "solid_handle": null, "step_handle": {"__class__": "StepHandle", "solid_handle": {"__class__": "SolidHandle", "name": "asset_solid", "parent": null}}, "step_key": "asset_solid", "step_kind_value": null}, "error_info": null, "level": 10, "message": "asset_pipeline - 383f9411-4010-454a-9d31-d5a72ab57221 - 5200 - asset_solid - ENGINE_EVENT - Starting initialization of resources [io_manager].", "pipeline_name": "asset_pipeline", "run_id": "383f9411-4010-454a-9d31-d5a72ab57221", "step_key": "asset_solid", "timestamp": 1625762114.5577269, "user_message": "Starting initialization of resources [io_manager]."}	ENGINE_EVENT	2021-07-08 16:35:14.557727	asset_solid	\N	\N
+171	383f9411-4010-454a-9d31-d5a72ab57221	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": "resources", "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": "Initialized in 0.01ms", "entry_data": {"__class__": "PythonArtifactMetadataEntryData", "module": "dagster.core.storage.mem_io_manager", "name": "InMemoryIOManager"}, "label": "io_manager"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Finished initialization of resources [io_manager].", "pid": 5200, "pipeline_name": "asset_pipeline", "solid_handle": null, "step_handle": {"__class__": "StepHandle", "solid_handle": {"__class__": "SolidHandle", "name": "asset_solid", "parent": null}}, "step_key": "asset_solid", "step_kind_value": null}, "error_info": null, "level": 10, "message": "asset_pipeline - 383f9411-4010-454a-9d31-d5a72ab57221 - 5200 - asset_solid - ENGINE_EVENT - Finished initialization of resources [io_manager].", "pipeline_name": "asset_pipeline", "run_id": "383f9411-4010-454a-9d31-d5a72ab57221", "step_key": "asset_solid", "timestamp": 1625762114.564759, "user_message": "Finished initialization of resources [io_manager]."}	ENGINE_EVENT	2021-07-08 16:35:14.564759	asset_solid	\N	\N
+172	383f9411-4010-454a-9d31-d5a72ab57221	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ComputeLogsCaptureData", "log_key": "asset_solid", "step_keys": ["asset_solid"]}, "event_type_value": "LOGS_CAPTURED", "logging_tags": {"pipeline": "asset_pipeline", "solid": "asset_solid", "step_key": "asset_solid"}, "message": "Started capturing logs for solid: asset_solid.", "pid": 5200, "pipeline_name": "asset_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "asset_solid", "parent": null}, "step_handle": {"__class__": "StepHandle", "solid_handle": {"__class__": "SolidHandle", "name": "asset_solid", "parent": null}}, "step_key": "asset_solid", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "asset_pipeline - 383f9411-4010-454a-9d31-d5a72ab57221 - 5200 - asset_solid - LOGS_CAPTURED - Started capturing logs for solid: asset_solid.", "pipeline_name": "asset_pipeline", "run_id": "383f9411-4010-454a-9d31-d5a72ab57221", "step_key": "asset_solid", "timestamp": 1625762114.5895731, "user_message": "Started capturing logs for solid: asset_solid."}	LOGS_CAPTURED	2021-07-08 16:35:14.589573	asset_solid	\N	\N
+173	383f9411-4010-454a-9d31-d5a72ab57221	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {"pipeline": "asset_pipeline", "solid": "asset_solid", "step_key": "asset_solid"}, "message": "Started execution of step \\"asset_solid\\".", "pid": 5200, "pipeline_name": "asset_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "asset_solid", "parent": null}, "step_handle": {"__class__": "StepHandle", "solid_handle": {"__class__": "SolidHandle", "name": "asset_solid", "parent": null}}, "step_key": "asset_solid", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "asset_pipeline - 383f9411-4010-454a-9d31-d5a72ab57221 - 5200 - asset_solid - STEP_START - Started execution of step \\"asset_solid\\".", "pipeline_name": "asset_pipeline", "run_id": "383f9411-4010-454a-9d31-d5a72ab57221", "step_key": "asset_solid", "timestamp": 1625762114.600072, "user_message": "Started execution of step \\"asset_solid\\"."}	STEP_START	2021-07-08 16:35:14.600072	asset_solid	\N	\N
+174	383f9411-4010-454a-9d31-d5a72ab57221	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepMaterializationData", "asset_lineage": [], "materialization": {"__class__": "AssetMaterialization", "asset_key": {"__class__": "AssetKey", "path": ["a"]}, "description": null, "metadata_entries": [], "partition": "partition_1", "tags": {"foo": "FOO"}}}, "event_type_value": "ASSET_MATERIALIZATION", "logging_tags": {"pipeline": "asset_pipeline", "solid": "asset_solid", "step_key": "asset_solid"}, "message": "Materialized value a.", "pid": 5200, "pipeline_name": "asset_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "asset_solid", "parent": null}, "step_handle": {"__class__": "StepHandle", "solid_handle": {"__class__": "SolidHandle", "name": "asset_solid", "parent": null}}, "step_key": "asset_solid", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "asset_pipeline - 383f9411-4010-454a-9d31-d5a72ab57221 - 5200 - asset_solid - ASSET_MATERIALIZATION - Materialized value a.", "pipeline_name": "asset_pipeline", "run_id": "383f9411-4010-454a-9d31-d5a72ab57221", "step_key": "asset_solid", "timestamp": 1625762114.606975, "user_message": "Materialized value a."}	ASSET_MATERIALIZATION	2021-07-08 16:35:14.606975	asset_solid	["a"]	partition_1
+175	383f9411-4010-454a-9d31-d5a72ab57221	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepFailureData", "error": {"__class__": "SerializableErrorInfo", "cause": null, "cls_name": "DagsterInstanceMigrationRequired", "message": "dagster.core.errors.DagsterInstanceMigrationRequired: Instance is out of date and must be migrated (Postgres event log storage requires migration). Database is at revision ddcc6d7244c6, head is 7b8304b4429d. Please run `dagster instance migrate`.\\n\\nOriginal exception:\\n\\nTraceback (most recent call last):\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1771, in _execute_context\\n    cursor, statement, parameters, context\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/default.py\\", line 717, in do_execute\\n    cursor.execute(statement, parameters)\\npsycopg2.errors.UndefinedColumn: column \\"last_materialization_timestamp\\" of relation \\"asset_keys\\" does not exist\\nLINE 1: ...ys (asset_key, last_materialization, last_run_id, last_mater...\\n                                                             ^\\n\\n\\nThe above exception was the direct cause of the following exception:\\n\\nTraceback (most recent call last):\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/storage/sql.py\\", line 61, in handle_schema_errors\\n    yield\\n  File \\"/Users/prha/code/dagster/python_modules/libraries/dagster-postgres/dagster_postgres/utils.py\\", line 166, in create_pg_connection\\n    yield conn\\n  File \\"/Users/prha/code/dagster/python_modules/libraries/dagster-postgres/dagster_postgres/event_log/event_log.py\\", line 188, in store_asset\\n    else None,\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1262, in execute\\n    return meth(self, multiparams, params, _EMPTY_EXECUTION_OPTS)\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/sql/elements.py\\", line 324, in _execute_on_connection\\n    self, multiparams, params, execution_options\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1461, in _execute_clauseelement\\n    cache_hit=cache_hit,\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1814, in _execute_context\\n    e, statement, parameters, cursor, context\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1995, in _handle_dbapi_exception\\n    sqlalchemy_exception, with_traceback=exc_info[2], from_=e\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/util/compat.py\\", line 207, in raise_\\n    raise exception\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1771, in _execute_context\\n    cursor, statement, parameters, context\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/default.py\\", line 717, in do_execute\\n    cursor.execute(statement, parameters)\\nsqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedColumn) column \\"last_materialization_timestamp\\" of relation \\"asset_keys\\" does not exist\\nLINE 1: ...ys (asset_key, last_materialization, last_run_id, last_mater...\\n                                                             ^\\n\\n[SQL: INSERT INTO asset_keys (asset_key, last_materialization, last_run_id, last_materialization_timestamp, tags) VALUES (%(asset_key)s, %(last_materialization)s, %(last_run_id)s, %(last_materialization_timestamp)s, %(tags)s) ON CONFLICT (asset_key) DO UPDATE SET last_materialization = %(param_1)s, last_run_id = %(param_2)s, last_materialization_timestamp = %(param_3)s, tags = %(param_4)s RETURNING asset_keys.id]\\n[parameters: {'asset_key': '[\\"a\\"]', 'last_materialization': '{\\"__class__\\": \\"AssetMaterialization\\", \\"asset_key\\": {\\"__class__\\": \\"AssetKey\\", \\"path\\": [\\"a\\"]}, \\"description\\": null, \\"metadata_entries\\": [], \\"partition\\": \\"partition_1\\", \\"tags\\": {\\"foo\\": \\"FOO\\"}}', 'last_run_id': '383f9411-4010-454a-9d31-d5a72ab57221', 'last_materialization_timestamp': datetime.datetime(2021, 7, 8, 16, 35, 14, 606975, tzinfo=datetime.timezone.utc), 'tags': '{\\"foo\\": \\"FOO\\"}', 'param_1': '{\\"__class__\\": \\"AssetMaterialization\\", \\"asset_key\\": {\\"__class__\\": \\"AssetKey\\", \\"path\\": [\\"a\\"]}, \\"description\\": null, \\"metadata_entries\\": [], \\"partition\\": \\"partition_1\\", \\"tags\\": {\\"foo\\": \\"FOO\\"}}', 'param_2': '383f9411-4010-454a-9d31-d5a72ab57221', 'param_3': datetime.datetime(2021, 7, 8, 16, 35, 14, 606975, tzinfo=datetime.timezone.utc), 'param_4': '{\\"foo\\": \\"FOO\\"}'}]\\n(Background on this error at: http://sqlalche.me/e/14/f405)\\n\\n", "stack": ["  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/execution/plan/execute_plan.py\\", line 193, in _dagster_event_sequence_for_step\\n    for step_event in check.generator(step_events):\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/execution/plan/execute_step.py\\", line 331, in core_dagster_event_sequence_for_step\\n    yield DagsterEvent.asset_materialization(step_context, user_event, input_lineage)\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/events/__init__.py\\", line 701, in asset_materialization\\n    else \\"\\"\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/events/__init__.py\\", line 288, in from_step\\n    log_step_event(step_context, event)\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/events/__init__.py\\", line 200, in log_step_event\\n    pipeline_name=step_context.pipeline_name,\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/log_manager.py\\", line 234, in debug\\n    return self._log(logging.DEBUG, msg, kwargs)\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/log_manager.py\\", line 204, in _log\\n    logger_.log(level, message, extra=extra)\\n", "  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/logging/__init__.py\\", line 1374, in log\\n    self._log(level, msg, args, **kwargs)\\n", "  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/logging/__init__.py\\", line 1444, in _log\\n    self.handle(record)\\n", "  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/logging/__init__.py\\", line 1454, in handle\\n    self.callHandlers(record)\\n", "  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/logging/__init__.py\\", line 1516, in callHandlers\\n    hdlr.handle(record)\\n", "  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/logging/__init__.py\\", line 865, in handle\\n    self.emit(record)\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/instance/__init__.py\\", line 116, in emit\\n    self._instance.handle_new_event(event)\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/instance/__init__.py\\", line 1143, in handle_new_event\\n    self._event_storage.store_event(event)\\n", "  File \\"/Users/prha/code/dagster/python_modules/libraries/dagster-postgres/dagster_postgres/event_log/event_log.py\\", line 156, in store_event\\n    self.store_asset(event)\\n", "  File \\"/Users/prha/code/dagster/python_modules/libraries/dagster-postgres/dagster_postgres/event_log/event_log.py\\", line 188, in store_asset\\n    else None,\\n", "  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/contextlib.py\\", line 99, in __exit__\\n    self.gen.throw(type, value, traceback)\\n", "  File \\"/Users/prha/code/dagster/python_modules/libraries/dagster-postgres/dagster_postgres/utils.py\\", line 166, in create_pg_connection\\n    yield conn\\n", "  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/contextlib.py\\", line 99, in __exit__\\n    self.gen.throw(type, value, traceback)\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/storage/sql.py\\", line 82, in handle_schema_errors\\n    ) from None\\n"]}, "error_source": {"__enum__": "ErrorSource.FRAMEWORK_ERROR"}, "user_failure_data": null}, "event_type_value": "STEP_FAILURE", "logging_tags": {"pipeline": "asset_pipeline", "solid": "asset_solid", "step_key": "asset_solid"}, "message": "Execution of step \\"asset_solid\\" failed.", "pid": 5200, "pipeline_name": "asset_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "asset_solid", "parent": null}, "step_handle": {"__class__": "StepHandle", "solid_handle": {"__class__": "SolidHandle", "name": "asset_solid", "parent": null}}, "step_key": "asset_solid", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 40, "message": "asset_pipeline - 383f9411-4010-454a-9d31-d5a72ab57221 - 5200 - asset_solid - STEP_FAILURE - Execution of step \\"asset_solid\\" failed.\\n\\ndagster.core.errors.DagsterInstanceMigrationRequired: Instance is out of date and must be migrated (Postgres event log storage requires migration). Database is at revision ddcc6d7244c6, head is 7b8304b4429d. Please run `dagster instance migrate`.\\n\\nOriginal exception:\\n\\nTraceback (most recent call last):\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1771, in _execute_context\\n    cursor, statement, parameters, context\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/default.py\\", line 717, in do_execute\\n    cursor.execute(statement, parameters)\\npsycopg2.errors.UndefinedColumn: column \\"last_materialization_timestamp\\" of relation \\"asset_keys\\" does not exist\\nLINE 1: ...ys (asset_key, last_materialization, last_run_id, last_mater...\\n                                                             ^\\n\\n\\nThe above exception was the direct cause of the following exception:\\n\\nTraceback (most recent call last):\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/storage/sql.py\\", line 61, in handle_schema_errors\\n    yield\\n  File \\"/Users/prha/code/dagster/python_modules/libraries/dagster-postgres/dagster_postgres/utils.py\\", line 166, in create_pg_connection\\n    yield conn\\n  File \\"/Users/prha/code/dagster/python_modules/libraries/dagster-postgres/dagster_postgres/event_log/event_log.py\\", line 188, in store_asset\\n    else None,\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1262, in execute\\n    return meth(self, multiparams, params, _EMPTY_EXECUTION_OPTS)\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/sql/elements.py\\", line 324, in _execute_on_connection\\n    self, multiparams, params, execution_options\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1461, in _execute_clauseelement\\n    cache_hit=cache_hit,\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1814, in _execute_context\\n    e, statement, parameters, cursor, context\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1995, in _handle_dbapi_exception\\n    sqlalchemy_exception, with_traceback=exc_info[2], from_=e\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/util/compat.py\\", line 207, in raise_\\n    raise exception\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1771, in _execute_context\\n    cursor, statement, parameters, context\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/default.py\\", line 717, in do_execute\\n    cursor.execute(statement, parameters)\\nsqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedColumn) column \\"last_materialization_timestamp\\" of relation \\"asset_keys\\" does not exist\\nLINE 1: ...ys (asset_key, last_materialization, last_run_id, last_mater...\\n                                                             ^\\n\\n[SQL: INSERT INTO asset_keys (asset_key, last_materialization, last_run_id, last_materialization_timestamp, tags) VALUES (%(asset_key)s, %(last_materialization)s, %(last_run_id)s, %(last_materialization_timestamp)s, %(tags)s) ON CONFLICT (asset_key) DO UPDATE SET last_materialization = %(param_1)s, last_run_id = %(param_2)s, last_materialization_timestamp = %(param_3)s, tags = %(param_4)s RETURNING asset_keys.id]\\n[parameters: {'asset_key': '[\\"a\\"]', 'last_materialization': '{\\"__class__\\": \\"AssetMaterialization\\", \\"asset_key\\": {\\"__class__\\": \\"AssetKey\\", \\"path\\": [\\"a\\"]}, \\"description\\": null, \\"metadata_entries\\": [], \\"partition\\": \\"partition_1\\", \\"tags\\": {\\"foo\\": \\"FOO\\"}}', 'last_run_id': '383f9411-4010-454a-9d31-d5a72ab57221', 'last_materialization_timestamp': datetime.datetime(2021, 7, 8, 16, 35, 14, 606975, tzinfo=datetime.timezone.utc), 'tags': '{\\"foo\\": \\"FOO\\"}', 'param_1': '{\\"__class__\\": \\"AssetMaterialization\\", \\"asset_key\\": {\\"__class__\\": \\"AssetKey\\", \\"path\\": [\\"a\\"]}, \\"description\\": null, \\"metadata_entries\\": [], \\"partition\\": \\"partition_1\\", \\"tags\\": {\\"foo\\": \\"FOO\\"}}', 'param_2': '383f9411-4010-454a-9d31-d5a72ab57221', 'param_3': datetime.datetime(2021, 7, 8, 16, 35, 14, 606975, tzinfo=datetime.timezone.utc), 'param_4': '{\\"foo\\": \\"FOO\\"}'}]\\n(Background on this error at: http://sqlalche.me/e/14/f405)\\n\\n\\nStack Trace:\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/execution/plan/execute_plan.py\\", line 193, in _dagster_event_sequence_for_step\\n    for step_event in check.generator(step_events):\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/execution/plan/execute_step.py\\", line 331, in core_dagster_event_sequence_for_step\\n    yield DagsterEvent.asset_materialization(step_context, user_event, input_lineage)\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/events/__init__.py\\", line 701, in asset_materialization\\n    else \\"\\"\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/events/__init__.py\\", line 288, in from_step\\n    log_step_event(step_context, event)\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/events/__init__.py\\", line 200, in log_step_event\\n    pipeline_name=step_context.pipeline_name,\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/log_manager.py\\", line 234, in debug\\n    return self._log(logging.DEBUG, msg, kwargs)\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/log_manager.py\\", line 204, in _log\\n    logger_.log(level, message, extra=extra)\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/logging/__init__.py\\", line 1374, in log\\n    self._log(level, msg, args, **kwargs)\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/logging/__init__.py\\", line 1444, in _log\\n    self.handle(record)\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/logging/__init__.py\\", line 1454, in handle\\n    self.callHandlers(record)\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/logging/__init__.py\\", line 1516, in callHandlers\\n    hdlr.handle(record)\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/logging/__init__.py\\", line 865, in handle\\n    self.emit(record)\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/instance/__init__.py\\", line 116, in emit\\n    self._instance.handle_new_event(event)\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/instance/__init__.py\\", line 1143, in handle_new_event\\n    self._event_storage.store_event(event)\\n  File \\"/Users/prha/code/dagster/python_modules/libraries/dagster-postgres/dagster_postgres/event_log/event_log.py\\", line 156, in store_event\\n    self.store_asset(event)\\n  File \\"/Users/prha/code/dagster/python_modules/libraries/dagster-postgres/dagster_postgres/event_log/event_log.py\\", line 188, in store_asset\\n    else None,\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/contextlib.py\\", line 99, in __exit__\\n    self.gen.throw(type, value, traceback)\\n  File \\"/Users/prha/code/dagster/python_modules/libraries/dagster-postgres/dagster_postgres/utils.py\\", line 166, in create_pg_connection\\n    yield conn\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/contextlib.py\\", line 99, in __exit__\\n    self.gen.throw(type, value, traceback)\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/storage/sql.py\\", line 82, in handle_schema_errors\\n    ) from None\\n", "pipeline_name": "asset_pipeline", "run_id": "383f9411-4010-454a-9d31-d5a72ab57221", "step_key": "asset_solid", "timestamp": 1625762114.681291, "user_message": "Execution of step \\"asset_solid\\" failed."}	STEP_FAILURE	2021-07-08 16:35:14.681291	asset_solid	\N	\N
+176	383f9411-4010-454a-9d31-d5a72ab57221	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "PipelineFailureData", "error": {"__class__": "SerializableErrorInfo", "cause": null, "cls_name": "DagsterInstanceMigrationRequired", "message": "dagster.core.errors.DagsterInstanceMigrationRequired: Instance is out of date and must be migrated (Postgres event log storage requires migration). Database is at revision ddcc6d7244c6, head is 7b8304b4429d. Please run `dagster instance migrate`.\\n\\nOriginal exception:\\n\\nTraceback (most recent call last):\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1771, in _execute_context\\n    cursor, statement, parameters, context\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/default.py\\", line 717, in do_execute\\n    cursor.execute(statement, parameters)\\npsycopg2.errors.UndefinedColumn: column \\"last_materialization_timestamp\\" of relation \\"asset_keys\\" does not exist\\nLINE 1: ...ys (asset_key, last_materialization, last_run_id, last_mater...\\n                                                             ^\\n\\n\\nThe above exception was the direct cause of the following exception:\\n\\nTraceback (most recent call last):\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/storage/sql.py\\", line 61, in handle_schema_errors\\n    yield\\n  File \\"/Users/prha/code/dagster/python_modules/libraries/dagster-postgres/dagster_postgres/utils.py\\", line 166, in create_pg_connection\\n    yield conn\\n  File \\"/Users/prha/code/dagster/python_modules/libraries/dagster-postgres/dagster_postgres/event_log/event_log.py\\", line 188, in store_asset\\n    else None,\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1262, in execute\\n    return meth(self, multiparams, params, _EMPTY_EXECUTION_OPTS)\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/sql/elements.py\\", line 324, in _execute_on_connection\\n    self, multiparams, params, execution_options\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1461, in _execute_clauseelement\\n    cache_hit=cache_hit,\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1814, in _execute_context\\n    e, statement, parameters, cursor, context\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1995, in _handle_dbapi_exception\\n    sqlalchemy_exception, with_traceback=exc_info[2], from_=e\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/util/compat.py\\", line 207, in raise_\\n    raise exception\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1771, in _execute_context\\n    cursor, statement, parameters, context\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/default.py\\", line 717, in do_execute\\n    cursor.execute(statement, parameters)\\nsqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedColumn) column \\"last_materialization_timestamp\\" of relation \\"asset_keys\\" does not exist\\nLINE 1: ...ys (asset_key, last_materialization, last_run_id, last_mater...\\n                                                             ^\\n\\n[SQL: INSERT INTO asset_keys (asset_key, last_materialization, last_run_id, last_materialization_timestamp, tags) VALUES (%(asset_key)s, %(last_materialization)s, %(last_run_id)s, %(last_materialization_timestamp)s, %(tags)s) ON CONFLICT (asset_key) DO UPDATE SET last_materialization = %(param_1)s, last_run_id = %(param_2)s, last_materialization_timestamp = %(param_3)s, tags = %(param_4)s RETURNING asset_keys.id]\\n[parameters: {'asset_key': '[\\"a\\"]', 'last_materialization': '{\\"__class__\\": \\"AssetMaterialization\\", \\"asset_key\\": {\\"__class__\\": \\"AssetKey\\", \\"path\\": [\\"a\\"]}, \\"description\\": null, \\"metadata_entries\\": [], \\"partition\\": \\"partition_1\\", \\"tags\\": {\\"foo\\": \\"FOO\\"}}', 'last_run_id': '383f9411-4010-454a-9d31-d5a72ab57221', 'last_materialization_timestamp': datetime.datetime(2021, 7, 8, 16, 35, 14, 606975, tzinfo=datetime.timezone.utc), 'tags': '{\\"foo\\": \\"FOO\\"}', 'param_1': '{\\"__class__\\": \\"AssetMaterialization\\", \\"asset_key\\": {\\"__class__\\": \\"AssetKey\\", \\"path\\": [\\"a\\"]}, \\"description\\": null, \\"metadata_entries\\": [], \\"partition\\": \\"partition_1\\", \\"tags\\": {\\"foo\\": \\"FOO\\"}}', 'param_2': '383f9411-4010-454a-9d31-d5a72ab57221', 'param_3': datetime.datetime(2021, 7, 8, 16, 35, 14, 606975, tzinfo=datetime.timezone.utc), 'param_4': '{\\"foo\\": \\"FOO\\"}'}]\\n(Background on this error at: http://sqlalche.me/e/14/f405)\\n\\n", "stack": ["  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/execution/api.py\\", line 756, in pipeline_execution_iterator\\n    for event in pipeline_context.executor.execute(pipeline_context, execution_plan):\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/executor/in_process.py\\", line 50, in execute\\n    output_capture=pipeline_context.output_capture,\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/execution/api.py\\", line 837, in __iter__\\n    pipeline_context=self.pipeline_context,\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/execution/plan/execute_plan.py\\", line 69, in inner_plan_execution_iterator\\n    for step_event in check.generator(_dagster_event_sequence_for_step(step_context)):\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/execution/plan/execute_plan.py\\", line 282, in _dagster_event_sequence_for_step\\n    raise dagster_error\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/execution/plan/execute_plan.py\\", line 193, in _dagster_event_sequence_for_step\\n    for step_event in check.generator(step_events):\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/execution/plan/execute_step.py\\", line 331, in core_dagster_event_sequence_for_step\\n    yield DagsterEvent.asset_materialization(step_context, user_event, input_lineage)\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/events/__init__.py\\", line 701, in asset_materialization\\n    else \\"\\"\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/events/__init__.py\\", line 288, in from_step\\n    log_step_event(step_context, event)\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/events/__init__.py\\", line 200, in log_step_event\\n    pipeline_name=step_context.pipeline_name,\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/log_manager.py\\", line 234, in debug\\n    return self._log(logging.DEBUG, msg, kwargs)\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/log_manager.py\\", line 204, in _log\\n    logger_.log(level, message, extra=extra)\\n", "  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/logging/__init__.py\\", line 1374, in log\\n    self._log(level, msg, args, **kwargs)\\n", "  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/logging/__init__.py\\", line 1444, in _log\\n    self.handle(record)\\n", "  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/logging/__init__.py\\", line 1454, in handle\\n    self.callHandlers(record)\\n", "  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/logging/__init__.py\\", line 1516, in callHandlers\\n    hdlr.handle(record)\\n", "  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/logging/__init__.py\\", line 865, in handle\\n    self.emit(record)\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/instance/__init__.py\\", line 116, in emit\\n    self._instance.handle_new_event(event)\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/instance/__init__.py\\", line 1143, in handle_new_event\\n    self._event_storage.store_event(event)\\n", "  File \\"/Users/prha/code/dagster/python_modules/libraries/dagster-postgres/dagster_postgres/event_log/event_log.py\\", line 156, in store_event\\n    self.store_asset(event)\\n", "  File \\"/Users/prha/code/dagster/python_modules/libraries/dagster-postgres/dagster_postgres/event_log/event_log.py\\", line 188, in store_asset\\n    else None,\\n", "  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/contextlib.py\\", line 99, in __exit__\\n    self.gen.throw(type, value, traceback)\\n", "  File \\"/Users/prha/code/dagster/python_modules/libraries/dagster-postgres/dagster_postgres/utils.py\\", line 166, in create_pg_connection\\n    yield conn\\n", "  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/contextlib.py\\", line 99, in __exit__\\n    self.gen.throw(type, value, traceback)\\n", "  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/storage/sql.py\\", line 82, in handle_schema_errors\\n    ) from None\\n"]}}, "event_type_value": "PIPELINE_FAILURE", "logging_tags": {}, "message": "Execution of pipeline \\"asset_pipeline\\" failed. An exception was thrown during execution.", "pid": 5200, "pipeline_name": "asset_pipeline", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 40, "message": "asset_pipeline - 383f9411-4010-454a-9d31-d5a72ab57221 - 5200 - PIPELINE_FAILURE - Execution of pipeline \\"asset_pipeline\\" failed. An exception was thrown during execution.\\n\\ndagster.core.errors.DagsterInstanceMigrationRequired: Instance is out of date and must be migrated (Postgres event log storage requires migration). Database is at revision ddcc6d7244c6, head is 7b8304b4429d. Please run `dagster instance migrate`.\\n\\nOriginal exception:\\n\\nTraceback (most recent call last):\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1771, in _execute_context\\n    cursor, statement, parameters, context\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/default.py\\", line 717, in do_execute\\n    cursor.execute(statement, parameters)\\npsycopg2.errors.UndefinedColumn: column \\"last_materialization_timestamp\\" of relation \\"asset_keys\\" does not exist\\nLINE 1: ...ys (asset_key, last_materialization, last_run_id, last_mater...\\n                                                             ^\\n\\n\\nThe above exception was the direct cause of the following exception:\\n\\nTraceback (most recent call last):\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/storage/sql.py\\", line 61, in handle_schema_errors\\n    yield\\n  File \\"/Users/prha/code/dagster/python_modules/libraries/dagster-postgres/dagster_postgres/utils.py\\", line 166, in create_pg_connection\\n    yield conn\\n  File \\"/Users/prha/code/dagster/python_modules/libraries/dagster-postgres/dagster_postgres/event_log/event_log.py\\", line 188, in store_asset\\n    else None,\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1262, in execute\\n    return meth(self, multiparams, params, _EMPTY_EXECUTION_OPTS)\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/sql/elements.py\\", line 324, in _execute_on_connection\\n    self, multiparams, params, execution_options\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1461, in _execute_clauseelement\\n    cache_hit=cache_hit,\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1814, in _execute_context\\n    e, statement, parameters, cursor, context\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1995, in _handle_dbapi_exception\\n    sqlalchemy_exception, with_traceback=exc_info[2], from_=e\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/util/compat.py\\", line 207, in raise_\\n    raise exception\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/base.py\\", line 1771, in _execute_context\\n    cursor, statement, parameters, context\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/lib/python3.6/site-packages/sqlalchemy/engine/default.py\\", line 717, in do_execute\\n    cursor.execute(statement, parameters)\\nsqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedColumn) column \\"last_materialization_timestamp\\" of relation \\"asset_keys\\" does not exist\\nLINE 1: ...ys (asset_key, last_materialization, last_run_id, last_mater...\\n                                                             ^\\n\\n[SQL: INSERT INTO asset_keys (asset_key, last_materialization, last_run_id, last_materialization_timestamp, tags) VALUES (%(asset_key)s, %(last_materialization)s, %(last_run_id)s, %(last_materialization_timestamp)s, %(tags)s) ON CONFLICT (asset_key) DO UPDATE SET last_materialization = %(param_1)s, last_run_id = %(param_2)s, last_materialization_timestamp = %(param_3)s, tags = %(param_4)s RETURNING asset_keys.id]\\n[parameters: {'asset_key': '[\\"a\\"]', 'last_materialization': '{\\"__class__\\": \\"AssetMaterialization\\", \\"asset_key\\": {\\"__class__\\": \\"AssetKey\\", \\"path\\": [\\"a\\"]}, \\"description\\": null, \\"metadata_entries\\": [], \\"partition\\": \\"partition_1\\", \\"tags\\": {\\"foo\\": \\"FOO\\"}}', 'last_run_id': '383f9411-4010-454a-9d31-d5a72ab57221', 'last_materialization_timestamp': datetime.datetime(2021, 7, 8, 16, 35, 14, 606975, tzinfo=datetime.timezone.utc), 'tags': '{\\"foo\\": \\"FOO\\"}', 'param_1': '{\\"__class__\\": \\"AssetMaterialization\\", \\"asset_key\\": {\\"__class__\\": \\"AssetKey\\", \\"path\\": [\\"a\\"]}, \\"description\\": null, \\"metadata_entries\\": [], \\"partition\\": \\"partition_1\\", \\"tags\\": {\\"foo\\": \\"FOO\\"}}', 'param_2': '383f9411-4010-454a-9d31-d5a72ab57221', 'param_3': datetime.datetime(2021, 7, 8, 16, 35, 14, 606975, tzinfo=datetime.timezone.utc), 'param_4': '{\\"foo\\": \\"FOO\\"}'}]\\n(Background on this error at: http://sqlalche.me/e/14/f405)\\n\\n\\nStack Trace:\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/execution/api.py\\", line 756, in pipeline_execution_iterator\\n    for event in pipeline_context.executor.execute(pipeline_context, execution_plan):\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/executor/in_process.py\\", line 50, in execute\\n    output_capture=pipeline_context.output_capture,\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/execution/api.py\\", line 837, in __iter__\\n    pipeline_context=self.pipeline_context,\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/execution/plan/execute_plan.py\\", line 69, in inner_plan_execution_iterator\\n    for step_event in check.generator(_dagster_event_sequence_for_step(step_context)):\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/execution/plan/execute_plan.py\\", line 282, in _dagster_event_sequence_for_step\\n    raise dagster_error\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/execution/plan/execute_plan.py\\", line 193, in _dagster_event_sequence_for_step\\n    for step_event in check.generator(step_events):\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/execution/plan/execute_step.py\\", line 331, in core_dagster_event_sequence_for_step\\n    yield DagsterEvent.asset_materialization(step_context, user_event, input_lineage)\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/events/__init__.py\\", line 701, in asset_materialization\\n    else \\"\\"\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/events/__init__.py\\", line 288, in from_step\\n    log_step_event(step_context, event)\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/events/__init__.py\\", line 200, in log_step_event\\n    pipeline_name=step_context.pipeline_name,\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/log_manager.py\\", line 234, in debug\\n    return self._log(logging.DEBUG, msg, kwargs)\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/log_manager.py\\", line 204, in _log\\n    logger_.log(level, message, extra=extra)\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/logging/__init__.py\\", line 1374, in log\\n    self._log(level, msg, args, **kwargs)\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/logging/__init__.py\\", line 1444, in _log\\n    self.handle(record)\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/logging/__init__.py\\", line 1454, in handle\\n    self.callHandlers(record)\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/logging/__init__.py\\", line 1516, in callHandlers\\n    hdlr.handle(record)\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/logging/__init__.py\\", line 865, in handle\\n    self.emit(record)\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/instance/__init__.py\\", line 116, in emit\\n    self._instance.handle_new_event(event)\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/instance/__init__.py\\", line 1143, in handle_new_event\\n    self._event_storage.store_event(event)\\n  File \\"/Users/prha/code/dagster/python_modules/libraries/dagster-postgres/dagster_postgres/event_log/event_log.py\\", line 156, in store_event\\n    self.store_asset(event)\\n  File \\"/Users/prha/code/dagster/python_modules/libraries/dagster-postgres/dagster_postgres/event_log/event_log.py\\", line 188, in store_asset\\n    else None,\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/contextlib.py\\", line 99, in __exit__\\n    self.gen.throw(type, value, traceback)\\n  File \\"/Users/prha/code/dagster/python_modules/libraries/dagster-postgres/dagster_postgres/utils.py\\", line 166, in create_pg_connection\\n    yield conn\\n  File \\"/Users/prha/.pyenv/versions/3.6.8/lib/python3.6/contextlib.py\\", line 99, in __exit__\\n    self.gen.throw(type, value, traceback)\\n  File \\"/Users/prha/code/dagster/python_modules/dagster/dagster/core/storage/sql.py\\", line 82, in handle_schema_errors\\n    ) from None\\n", "pipeline_name": "asset_pipeline", "run_id": "383f9411-4010-454a-9d31-d5a72ab57221", "step_key": null, "timestamp": 1625762114.694818, "user_message": "Execution of pipeline \\"asset_pipeline\\" failed. An exception was thrown during execution."}	PIPELINE_FAILURE	2021-07-08 16:35:14.694818	\N	\N	\N
+\.
+
+
+--
+-- Data for Name: job_ticks; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.job_ticks (id, job_origin_id, status, type, "timestamp", tick_body, create_timestamp, update_timestamp) FROM stdin;
+\.
+
+
+--
+-- Data for Name: jobs; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.jobs (id, job_origin_id, repository_origin_id, status, job_type, job_body, create_timestamp, update_timestamp) FROM stdin;
+\.
+
+
+--
+-- Data for Name: normalized_cereals; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.normalized_cereals (id, name, mfr, type, calories, protein, fat, sodium, fiber, carbo, sugars, potass, vitamins, shelf, weight, cups, rating) FROM stdin;
+1	100% Bran	N	C	212.12121212121212	12.121212121212121	3.0303030303030303	393.93939393939394	30.303030303030305	15.151515151515152	18.18181818181818	848.4848484848485	75.75757575757575	3	3.0303030303030303	0.33	68.402973
+2	100% Natural Bran	Q	C	120	3	5	15	2	8	8	135	0	3	1	1	33.983679
+3	All-Bran	K	C	212.12121212121212	12.121212121212121	3.0303030303030303	787.8787878787879	27.272727272727273	21.21212121212121	15.151515151515152	969.6969696969697	75.75757575757575	3	3.0303030303030303	0.33	59.425505
+4	All-Bran with Extra Fiber	K	C	100	8	0	280	28	16	0	660	50	3	2	0.5	93.704912
+5	Almond Delight	R	C	146.66666666666666	2.6666666666666665	2.6666666666666665	266.66666666666663	1.3333333333333333	18.666666666666664	10.666666666666666	-1.3333333333333333	33.33333333333333	3	1.3333333333333333	0.75	34.384843
+6	Apple Cinnamon Cheerios	G	C	146.66666666666666	2.6666666666666665	2.6666666666666665	240	2	14	13.333333333333332	93.33333333333333	33.33333333333333	1	1.3333333333333333	0.75	29.509541
+7	Apple Jacks	K	C	110	2	0	125	1	11	14	30	25	2	1	1	33.174094
+8	Basic 4	G	C	173.33333333333331	4	2.6666666666666665	280	2.6666666666666665	24	10.666666666666666	133.33333333333331	33.33333333333333	3	1.7733333333333334	0.75	37.038562
+9	Bran Chex	R	C	134.32835820895522	2.9850746268656714	1.4925373134328357	298.5074626865671	5.970149253731343	22.388059701492537	8.955223880597014	186.56716417910445	37.31343283582089	1	1.4925373134328357	0.67	49.120253
+10	Bran Flakes	P	C	134.32835820895522	4.477611940298507	0	313.4328358208955	7.462686567164178	19.402985074626862	7.462686567164178	283.58208955223876	37.31343283582089	3	1.4925373134328357	0.67	53.313813
+11	Cap'n'Crunch	Q	C	160	1.3333333333333333	2.6666666666666665	293.3333333333333	0	16	16	46.666666666666664	33.33333333333333	2	1.3333333333333333	0.75	18.042851
+12	Cheerios	G	C	88	4.800000000000001	1.6	232	1.6	13.600000000000001	0.8	84	20	1	0.8	1.25	50.764999
+13	Cinnamon Toast Crunch	G	C	160	1.3333333333333333	4	280	0	17.333333333333332	12	60	33.33333333333333	2	1.3333333333333333	0.75	19.823573
+14	Clusters	G	C	220	6	4	280	4	26	14	210	50	3	2	0.5	40.400208
+15	Cocoa Puffs	G	C	110	1	1	180	0	12	13	55	25	2	1	1	22.736446
+16	Corn Chex	R	C	110	2	0	280	0	22	3	25	25	1	1	1	41.445019
+17	Corn Flakes	K	C	100	2	0	290	1	21	2	35	25	1	1	1	45.863324
+18	Corn Pops	K	C	110	1	0	90	1	13	12	20	25	2	1	1	35.782791
+19	Count Chocula	G	C	110	1	1	180	0	12	13	65	25	2	1	1	22.396513
+20	Cracklin' Oat Bran	K	C	220	6	6	280	8	20	14	320	50	3	2	0.5	40.448772
+21	Cream of Wheat (Quick)	N	H	100	3	0	80	1	21	0	-1	0	2	1	1	64.533816
+22	Crispix	K	C	110	2	0	220	1	21	3	30	25	3	1	1	46.895644
+23	Crispy Wheat & Raisins	G	C	133.33333333333331	2.6666666666666665	1.3333333333333333	186.66666666666666	2.6666666666666665	14.666666666666666	13.333333333333332	160	33.33333333333333	3	1.3333333333333333	0.75	36.176196
+24	Double Chex	R	C	133.33333333333331	2.6666666666666665	0	253.33333333333331	1.3333333333333333	24	6.666666666666666	106.66666666666666	33.33333333333333	3	1.3333333333333333	0.75	44.330856
+25	Froot Loops	K	C	110	2	1	125	1	11	13	30	25	2	1	1	32.207582
+26	Frosted Flakes	K	C	146.66666666666666	1.3333333333333333	0	266.66666666666663	1.3333333333333333	18.666666666666664	14.666666666666666	33.33333333333333	33.33333333333333	1	1.3333333333333333	0.75	31.435973
+27	Frosted Mini-Wheats	K	C	125	3.75	0	0	3.75	17.5	8.75	125	31.25	2	1.25	0.8	58.345141
+28	Fruit & Fibre Dates; Walnuts; and Oats	P	C	179.1044776119403	4.477611940298507	2.9850746268656714	238.8059701492537	7.462686567164178	17.91044776119403	14.925373134328357	298.5074626865671	37.31343283582089	3	1.8656716417910446	0.67	40.917047
+29	Fruitful Bran	K	C	179.1044776119403	4.477611940298507	0	358.2089552238806	7.462686567164178	20.8955223880597	17.91044776119403	283.58208955223876	37.31343283582089	3	1.9850746268656716	0.67	41.015492
+30	Fruity Pebbles	P	C	146.66666666666666	1.3333333333333333	1.3333333333333333	180	0	17.333333333333332	16	33.33333333333333	33.33333333333333	2	1.3333333333333333	0.75	28.025765
+31	Golden Crisp	P	C	113.63636363636364	2.272727272727273	0	51.13636363636364	0	12.500000000000002	17.045454545454547	45.45454545454546	28.40909090909091	1	1.1363636363636365	0.88	35.252444
+32	Golden Grahams	G	C	146.66666666666666	1.3333333333333333	1.3333333333333333	373.3333333333333	0	20	12	60	33.33333333333333	2	1.3333333333333333	0.75	23.804043
+33	Grape Nuts Flakes	P	C	113.63636363636364	3.409090909090909	1.1363636363636365	159.0909090909091	3.409090909090909	17.045454545454547	5.6818181818181825	96.5909090909091	28.40909090909091	3	1.1363636363636365	0.88	52.076897
+34	Grape-Nuts	P	C	440	12	0	680	12	68	12	360	100	3	4	0.25	53.371007
+35	Great Grains Pecan	P	C	363.6363636363636	9.09090909090909	9.09090909090909	227.27272727272728	9.09090909090909	39.39393939393939	12.121212121212121	303.030303030303	75.75757575757575	3	3.0303030303030303	0.33	45.811716
+36	Honey Graham Ohs	Q	C	120	1	2	220	1	12	11	45	25	2	1	1	21.871292
+37	Honey Nut Cheerios	G	C	146.66666666666666	4	1.3333333333333333	333.3333333333333	2	15.333333333333332	13.333333333333332	120	33.33333333333333	1	1.3333333333333333	0.75	31.072217
+38	Honey-comb	P	C	82.70676691729322	0.7518796992481203	0	135.33834586466165	0	10.526315789473683	8.270676691729323	26.31578947368421	18.796992481203006	1	0.7518796992481203	1.33	28.742414
+39	Just Right Crunchy  Nuggets	K	C	110	2	1	170	1	17	6	60	100	3	1	1	36.523683
+40	Just Right Fruit & Nut	K	C	186.66666666666666	4	1.3333333333333333	226.66666666666666	2.6666666666666665	26.666666666666664	12	126.66666666666666	133.33333333333331	3	1.7333333333333334	0.75	36.471512
+41	Kix	G	C	73.33333333333333	1.3333333333333333	0.6666666666666666	173.33333333333331	0	14	2	26.666666666666664	16.666666666666664	2	0.6666666666666666	1.5	39.241114
+42	Life	Q	C	149.25373134328356	5.970149253731343	2.9850746268656714	223.88059701492534	2.9850746268656714	17.91044776119403	8.955223880597014	141.79104477611938	37.31343283582089	2	1.4925373134328357	0.67	45.328074
+43	Lucky Charms	G	C	110	2	1	180	0	12	12	55	25	2	1	1	26.734515
+44	Maypo	A	H	100	4	1	0	0	16	3	95	25	2	1	1	54.850917
+45	Muesli Raisins; Dates; & Almonds	R	C	150	4	3	95	3	16	11	170	25	3	1	1	37.136863
+46	Muesli Raisins; Peaches; & Pecans	R	C	150	4	3	150	3	16	11	170	25	3	1	1	34.139765
+47	Mueslix Crispy Blend	K	C	238.8059701492537	4.477611940298507	2.9850746268656714	223.88059701492534	4.477611940298507	25.373134328358205	19.402985074626862	238.8059701492537	37.31343283582089	3	2.2388059701492535	0.67	30.313351
+48	Multi-Grain Cheerios	G	C	100	2	1	220	2	15	6	90	25	1	1	1	40.105965
+49	Nut&Honey Crunch	K	C	179.1044776119403	2.9850746268656714	1.4925373134328357	283.58208955223876	0	22.388059701492537	13.432835820895521	59.70149253731343	37.31343283582089	2	1.4925373134328357	0.67	29.924285
+50	Nutri-Grain Almond-Raisin	K	C	208.955223880597	4.477611940298507	2.9850746268656714	328.35820895522386	4.477611940298507	31.343283582089548	10.44776119402985	194.02985074626864	37.31343283582089	3	1.9850746268656716	0.67	40.69232
+51	Nutri-grain Wheat	K	C	90	3	0	170	3	18	2	90	25	3	1	1	59.642837
+52	Oatmeal Raisin Crisp	G	C	260	6	4	340	3	27	20	240	50	3	2.5	0.5	30.450843
+53	Post Nat. Raisin Bran	P	C	179.1044776119403	4.477611940298507	1.4925373134328357	298.5074626865671	8.955223880597014	16.417910447761194	20.8955223880597	388.0597014925373	37.31343283582089	3	1.9850746268656716	0.67	37.840594
+54	Product 19	K	C	100	3	0	320	1	20	3	45	100	3	1	1	41.50354
+55	Puffed Rice	Q	C	50	1	0	0	0	13	0	15	0	3	0.5	1	60.756112
+56	Puffed Wheat	Q	C	50	2	0	0	1	10	0	50	0	3	0.5	1	63.005645
+57	Quaker Oat Squares	Q	C	200	8	2	270	4	28	12	220	50	3	2	0.5	49.511874
+58	Quaker Oatmeal	Q	H	149.25373134328356	7.462686567164178	2.9850746268656714	0	4.029850746268656	-1.4925373134328357	-1.4925373134328357	164.17910447761193	0	1	1.4925373134328357	0.67	50.828392
+59	Raisin Bran	K	C	160	4	1.3333333333333333	280	6.666666666666666	18.666666666666664	16	320	33.33333333333333	2	1.7733333333333334	0.75	39.259197
+60	Raisin Nut Bran	G	C	200	6	4	280	5	21	16	280	50	3	2	0.5	39.7034
+61	Raisin Squares	K	C	180	4	0	0	4	30	12	220	50	3	2	0.5	55.333142
+62	Rice Chex	R	C	97.34513274336284	0.8849557522123894	0	212.38938053097345	0	20.353982300884958	1.7699115044247788	26.548672566371682	22.123893805309734	1	0.8849557522123894	1.13	41.998933
+63	Rice Krispies	K	C	110	2	0	290	0	22	3	35	25	1	1	1	40.560159
+64	Shredded Wheat	N	C	80	2	0	0	3	16	0	95	0	1	0.83	1	68.235885
+65	Shredded Wheat 'n'Bran	N	C	134.32835820895522	4.477611940298507	0	0	5.970149253731343	28.35820895522388	0	208.955223880597	0	1	1.4925373134328357	0.67	74.472949
+66	Shredded Wheat spoon size	N	C	134.32835820895522	4.477611940298507	0	0	4.477611940298507	29.850746268656714	0	179.1044776119403	0	1	1.4925373134328357	0.67	72.801787
+67	Smacks	K	C	146.66666666666666	2.6666666666666665	1.3333333333333333	93.33333333333333	1.3333333333333333	12	20	53.33333333333333	33.33333333333333	2	1.3333333333333333	0.75	31.230054
+68	Special K	K	C	110	6	0	230	1	16	3	55	25	1	1	1	53.131324
+69	Strawberry Fruit Wheats	N	C	90	2	0	15	3	15	5	90	25	2	1	1	59.363993
+70	Total Corn Flakes	G	C	110	2	1	200	0	21	3	35	100	3	1	1	38.839746
+71	Total Raisin Bran	G	C	140	3	1	190	4	15	14	230	100	3	1.5	1	28.592785
+72	Total Whole Grain	G	C	100	3	1	200	3	16	3	110	100	3	1	1	46.658844
+73	Triples	G	C	146.66666666666666	2.6666666666666665	1.3333333333333333	333.3333333333333	0	28	4	80	33.33333333333333	3	1.3333333333333333	0.75	39.106174
+74	Trix	G	C	110	1	1	140	0	13	12	25	25	2	1	1	27.753301
+75	Wheat Chex	R	C	149.25373134328356	4.477611940298507	1.4925373134328357	343.2835820895522	4.477611940298507	25.373134328358205	4.477611940298507	171.6417910447761	37.31343283582089	1	1.4925373134328357	0.67	49.787445
+76	Wheaties	G	C	100	3	1	200	3	17	3	110	25	1	1	1	51.592193
+77	Wheaties Honey Gold	G	C	146.66666666666666	2.6666666666666665	1.3333333333333333	266.66666666666663	1.3333333333333333	21.333333333333332	10.666666666666666	80	33.33333333333333	1	1.3333333333333333	0.75	36.187559
+\.
+
+
+--
+-- Data for Name: run_tags; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.run_tags (id, run_id, key, value) FROM stdin;
+6	1399fa66-f129-46ad-9cf9-2d528d0f87fa	dagster/solid_selection	*
+7	1399fa66-f129-46ad-9cf9-2d528d0f87fa	.dagster/grpc_info	{"host": "localhost", "socket": "/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmpuf74gv30"}
+\.
+
+
+--
+-- Data for Name: runs; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.runs (id, run_id, snapshot_id, pipeline_name, status, run_body, partition, partition_set, create_timestamp, update_timestamp, mode) FROM stdin;
+4	1399fa66-f129-46ad-9cf9-2d528d0f87fa	acb9cdc108355c862c469e72fe24307b1eda6b41	model_pipeline	SUCCESS	{"__class__": "PipelineRun", "execution_plan_snapshot_id": "0c5e14d1ef58258500aab0cd3593f8a29ea0e55c", "external_pipeline_origin": {"__class__": "ExternalPipelineOrigin", "external_repository_origin": {"__class__": "ExternalRepositoryOrigin", "repository_location_origin": {"__class__": "ManagedGrpcPythonEnvRepositoryLocationOrigin", "loadable_target_origin": {"__class__": "LoadableTargetOrigin", "attribute": null, "executable_path": "/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/bin/python3.6", "module_name": "dagster_test.toys.repo", "package_name": null, "python_file": null, "working_directory": null}, "location_name": "dagster_test.toys.repo"}, "repository_name": "toys_repository"}, "pipeline_name": "model_pipeline"}, "mode": "default", "parent_run_id": null, "pipeline_code_origin": {"__class__": "PipelinePythonOrigin", "pipeline_name": "model_pipeline", "repository_origin": {"__class__": "RepositoryPythonOrigin", "code_pointer": {"__class__": "ModuleCodePointer", "fn_name": "toys_repository", "module": "dagster_test.toys.repo"}, "container_image": null, "executable_path": "/Users/prha/.pyenv/versions/3.6.8/envs/dagster-3.6.8/bin/python3.6"}}, "pipeline_name": "model_pipeline", "pipeline_snapshot_id": "acb9cdc108355c862c469e72fe24307b1eda6b41", "root_run_id": null, "run_config": {}, "run_id": "1399fa66-f129-46ad-9cf9-2d528d0f87fa", "solid_selection": null, "solids_to_execute": null, "status": {"__enum__": "PipelineRunStatus.SUCCESS"}, "step_keys_to_execute": null, "tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmpuf74gv30\\"}", "dagster/solid_selection": "*"}}	\N	\N	2021-07-08 16:10:04.537024	2021-07-08 16:10:56.331095	default
+5	4a832042-13f5-4b77-ab3f-24b88827402e	ab8bb23574e380cee398089291d713a2c07dd694	asset_pipeline	FAILURE	{"__class__": "PipelineRun", "execution_plan_snapshot_id": "06f6cfdbae309e1cde1076f66b70e2bfa2d8e410", "external_pipeline_origin": null, "mode": "default", "parent_run_id": null, "pipeline_code_origin": null, "pipeline_name": "asset_pipeline", "pipeline_snapshot_id": "ab8bb23574e380cee398089291d713a2c07dd694", "root_run_id": null, "run_config": {}, "run_id": "4a832042-13f5-4b77-ab3f-24b88827402e", "solid_selection": null, "solids_to_execute": null, "status": {"__enum__": "PipelineRunStatus.FAILURE"}, "step_keys_to_execute": null, "tags": {}}	\N	\N	2021-07-08 16:17:24.371699	2021-07-08 16:17:24.612054	default
+6	383f9411-4010-454a-9d31-d5a72ab57221	ab8bb23574e380cee398089291d713a2c07dd694	asset_pipeline	FAILURE	{"__class__": "PipelineRun", "execution_plan_snapshot_id": "06f6cfdbae309e1cde1076f66b70e2bfa2d8e410", "external_pipeline_origin": null, "mode": "default", "parent_run_id": null, "pipeline_code_origin": null, "pipeline_name": "asset_pipeline", "pipeline_snapshot_id": "ab8bb23574e380cee398089291d713a2c07dd694", "root_run_id": null, "run_config": {}, "run_id": "383f9411-4010-454a-9d31-d5a72ab57221", "solid_selection": null, "solids_to_execute": null, "status": {"__enum__": "PipelineRunStatus.FAILURE"}, "step_keys_to_execute": null, "tags": {}}	\N	\N	2021-07-08 16:35:14.514784	2021-07-08 16:35:14.709377	default
+\.
+
+
+--
+-- Data for Name: secondary_indexes; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.secondary_indexes (id, name, create_timestamp, migration_completed) FROM stdin;
+1	asset_key_table	2021-07-07 05:43:47.528264	2021-07-06 22:43:47.524712
+3	run_partitions	2021-07-08 16:10:56.313889	2021-07-08 09:10:56.309887
+4	add_mode_column	2021-07-08 16:10:56.338122	2021-07-08 09:10:56.334199
+\.
+
+
+--
+-- Data for Name: snapshots; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.snapshots (id, snapshot_id, snapshot_body, snapshot_type) FROM stdin;
+7	acb9cdc108355c862c469e72fe24307b1eda6b41	\\x789ced5d5b6fdb3816fe2b819f67038917519cb74c2f3bc16693419379583485c0cb61a2ad2c7925bb984cd1ffbe942cf9164ba115cb71db1428124914c9f39def1c9e4352ccd75114a9441445148d7e3d19fd114f208953b84ec5a4b8cfa6a35f4e462a4b4d7c1715ea1ec6222a9a27bf9e7c5d7ff74d55eeba2ab6fabe4892a8a9a3bc1dc987e8333c54159ca50f6d15dd3c4caa6e94556828541e4fa67196da02e92c49ec4d4867e3e88b4866502c6f9a1812bd727d177f81344ac518ca9acbe6eccd79eb8bab38d57527aa2a37faf02ffbf8f4ecf23fa36fb66ca14422f2a87ea56e636a4b4513918b712957d37859fc2ccfc5c3e9f5bd98c029f135788034938c5244a8eff9946a4f6a214386b00a0c28d058ee8ec7e8222ea6279939e9d55c2f24eb7b0d903ddb7542fec387b39db0ff38dab1239fcaca7fcbb2a407f2fdd09bb7b6c46f71e980c7f59bb38bb30f5b00d9f6d67555a27aefb7abab8beaad76b6be4f32d16ad7fb0761dedc1285e5f58030bcbfb83abb790287f3f48028948d2d3168ae0644e0fcf229f9e785ff4cad60a72535ff710d09a869969f4aa09afaa1c41cc24010aca841004a188a43e59b4031e6fb92f203faf4754fb487aeef047ff4e7e5f9d5e56eeea9b1f6ddbbf669533b95c92c65d49e2730031c7a4c63a6b809b85201e29c2922a821c2670150858f423d7dfb3eb87e167e68f7be3d5290b5e7a5888233ce2567bef69150c03c8174187a5885a1fd1f60e233ed31448f423dfd7a3eb8726a07b97bcf1ea9e67a9ac7e9dd5246f048191670cd79a96b21918fbc80602a1142842963cd3444c171f8b6de9d1f5c41f39eade9c8b973731d35aff9d2483f600204f758e80911304eb9fdcd53cc973a5401051bcfa18114f2716ba5efcbc7cb5a8d9825d36892675f620d2532d37c062b4faada235144ff2db2342aa67959d3d76fad5d8a8b2887ffcde2bcaacc88a4286b6b62051d174226f651837dc38c2ae0d502738101280492484f6344a93460380d3c3fe49e30da3a308f97fa3c3ed920dd8b689f9eb0a19dc9e56a30ef2edebdb9b9da168f3d99252e3a457480b5a058104f4a820c0f84d08869444185820734d0c4e36ca8016240c6dfd6b308b765d76f4739582f01457d55abbebafa66fff564509c96dd525014db49a404e55ea0b9f03063c8c65b0480694e3ca129e594092318d6be1cd63e3690188bbfcac91135cb7348a7e54def979381001adb5ec59d101963b030ca588f1d306b5f82d8a1d5c8d030c47d5f80f4203440c0ddce9c297d483b138886a10884324248e01a080bedd8c4a9a2a1f40216069203821e5331476567bd8962e2048a87620ae3ed3409432e1926d6e5fa9270e6795a5ad0b4903c94d2133e359a3250fa38471aeb27c630cef287edc231822d1fb81d57285512116a43156d598c01f94c1a652516d61698bb0d38d3eda036f0b2c9483f1b6854d9458cba250762d42c6b7851d6b19d1244526c09af0d260887bef6b467756770e087582bce95e481cd00516fbe0f2ad724569f13f81125ab2adb14accc10dd4d73df89ed3e4cf38567d95e4df3d5348731cd6ae6d3d936f73e63bb0fdb7ce129d657db7cb5cd616c733eebed6c9c7b9faedf8771bef014eeab71be1ae730c6594faa3b5be7de9703f6629d14198145d936f635a7c85e42d92f8385cd8a110919a38c1cd77cfeab75be98753a93dd95578724bb4106026db40a3ce173c244684260ca8e954c783e92847901958abc92fd95ecc72ad9d6a1a8dc34e96c9ace567008d3ac3452ae42704a3ce3332fd4cae692e59a1f579c321fa4e09c530f817f5c21e2b0d3e1593416a9b8837ce8f9f0dd14e04a899b0fe76f6ea2ebdfcffe78d79f167ee85182b4a434a4364ce21ec1214618dbfbcc0e2ba125aa94d8989f87166331853c1649fcb7285f8b8a2c895b56e705930a0b166a69434e60482014108e55288c174a2214d14233e4ca10675d1c942188f85690901b63d35be65b6103428814c042c28d0c03112020c4ffee18723b3abf7c7f753beac99324bb8b12f802495bce32e012e0ed488bbbc2f2b477efab9f3d93addd687150b2622984f4033f0864b9ea68acc9d0d0f7c17a6e4c03df4746338cd577b9c0bd205cb9c6dd90b7dc33516a697e6fc18abece6fbe88bedddb396bdc8d40ceaa3a2c8134453250dab789950fc4043664454adae19f2b86431bb571acb90cbe47022df7093d6f9704fc056a56bdb0c9939d37bf1c47f8ff78a38435a231e8d88602b6b22cb74162abacce9b1c8e724f88752a36006ed9150512ac5d52ea29e4794696c1ab8d500d36c8f73d0de56e41e253a686de38b68cd49f47dc1c8a6c965b03d82eae73843eb0b85b23d0e7495e55d122b673d8799cc6ba3ffb741bb65c0788830e5bc37d63f9ddccba6d31765b692b2d9c274fdd68b1efaf3ff7440bd769b81f97169b9396627affacbcc719d2832ada79aeeac755b45b2ae3348bbb1ba40755b4f30ee46352f4a0116c57ca0a28004f519b76208d94cd34a9b00e9e28a3add5620d360d21806db56e947006ffa094e08c4bac5139c01083417204bc0cd4954dca890a2918e020a83a2a4a0c6bfb63917f863c9a66b66359d13ad1356c18bffef14aef94a5fa1ea6358c71fe9ccb8de1ce5c3a28c3056181e1a161ca5a2b229ac820a0c23084b46f90d2cc702e3d745c7b0f5d58e2f55ea358fd786aeb46f0576e6f72db994587e5b6eb1ad23171fbc522b7a39c81c866d3c96cfa88c7bd0e0772a4b22b690e4a65e7ef4c8f89ca8e0eaff3bbd4012257e781d88d30ceaa3928619cbf6e1f88304ed03977f2a0d0396736c7646bc3ba61290a8874fc7837cf2ed33bceb81e56dbae0b313f8fb6adf32cb2b6ed87ce6bcb8ea47085ffa0a4703eb3e09848e1bc04b6fbe910038cc2ce29831b8f9c3576281ecd3de3c18efc5b1e91b4ee9a5dc5ed79f05f09d3e53fbbcefefb563eab37cf445599b2cbc54428e838f7f5edfc85b27f974df1cdf35fd72a753b0576a5da4ef3d4713149c4c3e619af96ed721627d3385d9a9bc3b9af2badae1dfc9a6442dbfed787e03e679ff37259bbbdbe5d3e69d890fbb16a3f761c70da17e4e60cc30e943b0f35dd847985d3db91decbb98e4341df88da867dcbc1aa7dc15f1c50d8817ef761aacf81ff19e7360e85ff42d836056c3dd1b52ffcf511841de0779de2fa1ce87b9fc93814f0e76927ec97d9f47eebc8da17faa6c26ef8574a39a9e0f2eae6f76664dca683ba33ed20d605b6f4b20d99b690a32f30cb08a2039727c28ce730f339e7510e45cea5b85bb5300f76605286db33359de59d310e4c20d590aa87eba6f46a8853ed2b8be2f44ba6eabd6ae5c32dd9c17559f07c51aed1719c4e66d3a8ea4cf3e2a7b92ef583152756d1584c266b71fbbc499b4044cbd590962f36e6459ffeb0c3ea7f9e437cfad6c6bbbb5c4ceed75bcd3424d1a4febb01653de54f71b786666341b66cf5721b3cffb605de82e9a4fe7cab666735175591958ae6c94d5485e5d55b6dc1fe4fb747fd715273730f27b57c272a4b32dbfa493dcb7032c7fe74f4cbe309882af55b1c543a7fbf2cd76c36ed54d887bad0102a7bc1459aed156ef9f0ae022fcfb269f38732faedb55cd3c163c35cb88c388dcb2e151d0eaf72546f9745d7ff20c878921571b9297ce184d6fcd696db2dd5fff8da6e5cfb06444f7ae3f96a5a2788575591557fb99a65af27bb6dc2d6e3cb8aac9dfb06ebdda473bed6a5a285892f06d7c7a3c9f2f2ff92285949	PIPELINE
+8	0c5e14d1ef58258500aab0cd3593f8a29ea0e55c	\\x789cb5525d4b03410cfc2bb2cf22b6b6f5e34d4410445a509f4442ba97eae2dedeba9b55abf4bf9b5cafb68af5cdd7cc643293e4c300588f390398931d73fe46b6b06bc2c463b80e18f363c36677c760623743cb1922a5ec3253257c4e850474c1b1430f4fa1790d901999040cc57b01a38be45d20c89d1c386d3568a7c7b6b2bdfda383e1d01e8dfa76303aa6c3fe8cfa8383fdc3698f2a1c4d073d9dfed5faa2c39b20fd3d2d334578a279066e805aeb3af8ced4e2208923f78e1a0672e365e87dd79295f3b125f8b51034b86973c5c22d5b5b6590327fd756dc050da6c2144abdd455b94b01f6cec65793db9b73b310664d8c15328263aabff49bc2ab717f991bb7b495c50a1f2452029e4782cee169982b14b0d66d9844b9f8f6883135723d76943b9f1b33d6d293354b77904138c4c299a1cfb42c55735177f67b31d1737169f331e466c557b05e19ad3a740dede6e01143e5e917438a5e2cc18d345bd71f3151e0eeef168bfb1f03baafdbdadefed2562f02aeadfcab6fa9b0dc547525c4e21317493e1e	EXECUTION_PLAN
+9	ab8bb23574e380cee398089291d713a2c07dd694	\\x789ced5d5b6fdb3816fe2b819fbb054991a2386f995e7682ed268326f3b0680a8197c3445b59f24a763199a2ff7d29d9f22d964a2b96eb7652a04864538787dff90e790e6ff9328a639dcab28ce3d12f67a3df9309a44906d7999c94f7f974f4e26ca4f3cc267771a9ef612ce3b2f9e697b32f9befbeaacb5dd7c5d6df97691a3732aa8f63f5107f82875ac079f6d026e8e66152ab51893050ea22994c933c7305b2599aba0f219b8de3cf329d41b9fad026909ab5e7bbe433647126c75049aeaa731fce6b5f3e25995928518bdcd2e15feeeb97e797ff197d75654b2d5359c48b5716754c5da978220b39aedad5545e153f2f0af9f0f2fa5e4ee025c5061010c315678c50861166cc2065a48a38097468418309d4fe788cde25e5f42cb767bdaaeb85e4e2b306c89ef57a21fffefdf95ed87f18eda9c8c74af8af799ef640be1f7af3da56f82d1f3df0b87e75feeefcfd0e4076bd755d97a8dffbf5eaea5dfd563b5bdfa6b96cf5ebc38330af6e85c2ea794018debebb3abff9060e17d91151a82a5b61d03c0d88c0c5e5b7da3f2ffc47e61af6b2a2e63fae21053dcd8b970a986138528180289434d0cc12002d2d0b228d6da839c7583171c43e7db3273a80ea7bc11fff71797175b95ff7d478fbfeaa7ddcb64eed32ab361a8464c02188103701d7c28642eb9008c13595cc528979084c0727619ebeba0f6e9f653fb4bf6e8f0ce4fc79d54429b8104a706c30911a3892c444110a7414b9ff6140313788137612e6e9a7f9e0c6597490fb6bf6c834d7d322c9ee566d0444abb04018212a5b4b453041210d98228450aead73d38884a7d1b7f5567e7003cd35dbb091b772731b35af6165150eb90429108f909421174cb8df90e6589948870c5c3c470632c8879d42df565fafa45a394ba7f1a4c83f27062a64a6c50cd6bea9a5c7b28cff5be6595c4e8b4ad297afad2a25655cc0ff6649510bb3322d2b694dac609252aad47dd560df30a30e788d0c840c0018848a2a6402c298b260050b118e0492d6b80e0c89ca9ea7d736c80ed2b48fdff0a1bdc9e5eb306fdebd797573b52b1efb6696b8548a9a303092059222a528b12294d2106e08031d4911b2d05024f85003c4808cbf5dcc22dc56aadf8e0a70bd04948ba785e9eba7afee5f4f062559a59686b2dc4d222d9940a11112059c13176f51006e0445d23026189756f2c06035ac7f6c2131967f5693237a5614904dab0fd18bb381001a3bad924e88acb581b4daba1e3be4cebf247543ab5591e544602c4121882c50f0f7336f4a1fd3cf2461512443a9ad940a8401ca23373609a659a450c8a3500920d0632ae6a4fcac37516c9242f9504e61bc9b265124140fa8eb72b1a28223649403cd482522a590c4cc1ac6419bd31c695c3f3186715e3cec6e1ca781e38370e30a635a11ca5ca8621c8b0320982bab5d8ba5f305eeef03de743baa0f7cdf64a49f0f34a6ec22c6a2260f622c58d6f0a292b19b1254b1c011ded8809220c20619e46c6783104781d142682542970192de7c1fb45d93447f4ae1676c592d6cbb615586e8ef9a874e6c0fe19adf7996edd9359f5d7318d7ac673ebd7df3e033b687f0cdef3cc5faec9bcfbe398c6fce67bdbd9df3e0d3f58770ceef3c85fbec9ccfce398c732e26d5bdbdf3e0cb0107f14e46ac0c645577808d60c43d42a5970da4cb8a098d38679c9ed67cfeb3777e37eff426bb2faf8e49764b2c84c61a1d228905e532b21170edc64a2e11268a721432a5e933d99fc97eaa2ddb3914559b26bd5dd3db0b8ee19ab545aa5508c128b298a3c868974b566b7e420bc6312829846088003ead1071d8e9f03c1ecb4cde4131f47cf87e06f0a5c4cdfb8b5737f1f56fe7bfbfe94f0b42b1d43412d6bae485e3c8a89052aa24f0880aaba250860428c53f1c2d6e4717976faf6e473dc991e677710a9f216d8b48075ce0b91d1979574ea1e8ad7dfdb36728bd1f2d8e4ad64049a97088c350556b4ad6f5a22cc2189c5f062cc49858c38340ff90cb974bc2552b980d79ab15f1ca4af3cf96ace8dbe3cd974877f776de16f72390b7a98e4aa0e18e22fc30c1e936270a289dd0479cd83bc7f0a3c5a10f491c8816bed1eacf4b8bedd85e4eef9f348078437a54437b87743fafa1fdc604af64673f488f6a68ef8d3aa764e841b39daeb11f48084833c25ccf4cb41bb299741d3cd5d638af0d8ccb642985c089f5a38437f847a584e042058654030cb501284140204b40bbe886ea8881050192e993a2c4b0be3f96c52728e269ee14cbcbd68c61d85da19b7b3c7bb27bb16db4358cf1def5ecc7706f2e1d95e192f2d08ac872edbc955043551832693921065ba20db74228444e6b89de8725a8efbedf8d3dc63bf74b3d737b9bdbde2c3a2eb7b9d28174a3880ab4004e24212115818ea44591a22e7535d270f21cb9d591db494caa6feb9bcfa693d9f4118f7b9da1f7a4b22f698e4a65efe318a74465cf0eaff3f8c60091abf740ec47186fd31c95300671a923b02e99460453a5b08488721b426889a1daf5f53c0a31fc7884e94b09a70b4ce3324f93967373de9eefc70b6f0b1c9717be870307e2851f74be4a1e153aef8cf7945c6ad8e159c91262933c5e0cdd67dacf1bd7e35a5b81b49431a4094256558bb004b00d2cc11819a862648a19ff3ba5fe6e5075dd67cbee0defc51b4f52f8c27f545258d7c8ea581a971109aa650d84711010e4fa781c08ab150bddd081e44991c2330c5b9d087e5aea097f829ed52fb4259fdec75c4f332749b229146330899c82139617f2eeb14fec7d9cf1244f7fa6f9dd1d142de79fbd5d74e00993d59e9ca7ce9994f9acd03b664df6db8b337073d7e2d8a7b5b716d1d258efe0f5345df4705ee93558790f0bc71dac7cef27f80107ab3e37410c3095e03defe9c9235f8b1d8b47f330fe68d7fbadae43dacc237c9bdbf392bf0aa6cb7f76ddf3f7b5fa6eb1952aaecb542a9713a9a1e38ed7d7f3172afd2e9be2db77bd6e08f5bbf1754d6ca77b9aa49ca4f261fb3e57c776354bd26992addccde38ed7b55a372e794d73699cfe8b0b6f9fb2a779ece2a9229169f257bbbc7d8e2f6cb5fbb1693f745c66da17e4e6bec20e943b2f30dd86798dd3bb913ec81d8e4341df34b50dfb964b54fb82bfbc8cb003fdee8b539f02ff13ee681c0aff6563db0cb0f3f6d6bef02fae1bec00bfebc6d6a740dffbfec5a180bfc83a61bfcca7f73b47d6bed03702bbe15f2be56582cbab9bdf9a9171970d16cab483b828b043cb3664da428ebec0ac22880e5cbe11663c85994fb97b722872ae9abbd30af360072655b83dd3d359d119e3c0043203997eb86e4aaf8738758e1927d9e75ccbca5073493bb283ebaae0c5b25c63e3249bcca671ad4cf3e2c7b92dcd836b4ea25dea3f996cc4edf32a5d0211b7acfccc0bb42d0b395bcff3858f5fdb387657c8c9fd8e1a268bbf0750c9a97eba0c741db9c65b7203f5cb6d50fcdb15780db693e6f389994e31efea226b82e6894c5c87e0f55b6d81fddfee74c2e304e6e61ece16ed3bd3799abbdacf16d3df6773ec5f8e5e3c9e19afd3bce505a4f3f7ab72cdd452a7c1de2f0a0d61b2efb8ab64b7c01d07ea6af08a3c9f367f00a3df1ccb860d1e3be6b27b48b2a452a9ece8dcea4ee9f5aae8e61ffa184ff232a9a680971dce461fb5e3e316f13fbfb59b6e7c0ba2963e78bee9a713baabbac87a2fb99e476fa6b36d4d5c8c206b2dec3cdeb038f43267e9a254bc74ece5f0f9780c593dfe1fc7264cc9	PIPELINE
+10	06f6cfdbae309e1cde1076f66b70e2bfa2d8e410	\\x789cb552cb4e63310cfd1594f508f501b49d1d1a218d84109580d50859ee8d1922727343e20005f5dfc74e6f1f2060375b1ffb3c6cbf1980c663ce00e6e781397ba1a6b0ebc2dc63b80a18f37dc7e6c781c1c4ee0e1bce1029659799acf4732a24a00b8e1d7a7808dd7380ccc8246028de0b185d24ef0241eee9c0e9a8c1c574b1188d8f2747349e0e1aa2f16c3a98ce46b3a19d0cc7386a06136b4f6647aabe1d7d52f12ec8fc50cb4c111e6899813ba06a5d85ff18c9430cb9f32275db376645debe887b250d1ad7d434b170edd651a1af6ef718b5ea8286503a0aa55db329c9b90087bf2e2fe637d76766259d2d315a6404c7d46e59bbc21b91ef2c5dd6b68d318b7f2548025e4682ded769582a14b0d5e426512ebe1e2ca64e2ec58e72ef734f63473ddf7569f20c35a7f4dca1cfb42ed9a5b0bbe67d31d1637169ff09e43ec55b68e5f8499ec1bdd26642d7503707f718aca74f0c29fa7b0deea5f9b0f4888902f79fb55add7ea0ddfcd5fba1fa235fea0ab893fd0f1ea5c272356513c3ab7f604028bb	EXECUTION_PLAN
+\.
+
+
+--
+-- Name: asset_keys_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.asset_keys_id_seq', 27, true);
+
+
+--
+-- Name: backfills_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.backfills_id_seq', 1, false);
+
+
+--
+-- Name: bulk_actions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.bulk_actions_id_seq', 1, false);
+
+
+--
+-- Name: event_logs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.event_logs_id_seq', 176, true);
+
+
+--
+-- Name: job_ticks_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.job_ticks_id_seq', 1, false);
+
+
+--
+-- Name: jobs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.jobs_id_seq', 1, false);
+
+
+--
+-- Name: normalized_cereals_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.normalized_cereals_id_seq', 77, true);
+
+
+--
+-- Name: run_tags_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.run_tags_id_seq', 7, true);
+
+
+--
+-- Name: runs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.runs_id_seq', 6, true);
+
+
+--
+-- Name: secondary_indexes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.secondary_indexes_id_seq', 4, true);
+
+
+--
+-- Name: snapshots_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.snapshots_id_seq', 10, true);
+
+
+--
+-- Name: alembic_version alembic_version_pkc; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.alembic_version
+    ADD CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num);
+
+
+--
+-- Name: asset_keys asset_keys_asset_key_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.asset_keys
+    ADD CONSTRAINT asset_keys_asset_key_key UNIQUE (asset_key);
+
+
+--
+-- Name: asset_keys asset_keys_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.asset_keys
+    ADD CONSTRAINT asset_keys_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: backfills backfills_backfill_id_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.backfills
+    ADD CONSTRAINT backfills_backfill_id_key UNIQUE (backfill_id);
+
+
+--
+-- Name: backfills backfills_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.backfills
+    ADD CONSTRAINT backfills_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: bulk_actions bulk_actions_key_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.bulk_actions
+    ADD CONSTRAINT bulk_actions_key_key UNIQUE (key);
+
+
+--
+-- Name: bulk_actions bulk_actions_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.bulk_actions
+    ADD CONSTRAINT bulk_actions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: daemon_heartbeats daemon_heartbeats_daemon_type_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.daemon_heartbeats
+    ADD CONSTRAINT daemon_heartbeats_daemon_type_key UNIQUE (daemon_type);
+
+
+--
+-- Name: event_logs event_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.event_logs
+    ADD CONSTRAINT event_logs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: job_ticks job_ticks_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.job_ticks
+    ADD CONSTRAINT job_ticks_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: jobs jobs_job_origin_id_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.jobs
+    ADD CONSTRAINT jobs_job_origin_id_key UNIQUE (job_origin_id);
+
+
+--
+-- Name: jobs jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.jobs
+    ADD CONSTRAINT jobs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: normalized_cereals normalized_cereals_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.normalized_cereals
+    ADD CONSTRAINT normalized_cereals_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: run_tags run_tags_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.run_tags
+    ADD CONSTRAINT run_tags_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: runs runs_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs
+    ADD CONSTRAINT runs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: runs runs_run_id_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs
+    ADD CONSTRAINT runs_run_id_key UNIQUE (run_id);
+
+
+--
+-- Name: secondary_indexes secondary_indexes_name_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.secondary_indexes
+    ADD CONSTRAINT secondary_indexes_name_key UNIQUE (name);
+
+
+--
+-- Name: secondary_indexes secondary_indexes_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.secondary_indexes
+    ADD CONSTRAINT secondary_indexes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: snapshots snapshots_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.snapshots
+    ADD CONSTRAINT snapshots_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: snapshots snapshots_snapshot_id_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.snapshots
+    ADD CONSTRAINT snapshots_snapshot_id_key UNIQUE (snapshot_id);
+
+
+--
+-- Name: idx_asset_key; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_asset_key ON public.event_logs USING btree (asset_key);
+
+
+--
+-- Name: idx_asset_partition; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_asset_partition ON public.event_logs USING btree (asset_key, partition);
+
+
+--
+-- Name: idx_bulk_actions; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_bulk_actions ON public.bulk_actions USING btree (key);
+
+
+--
+-- Name: idx_bulk_actions_status; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_bulk_actions_status ON public.bulk_actions USING btree (status);
+
+
+--
+-- Name: idx_job_tick_status; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_job_tick_status ON public.job_ticks USING btree (job_origin_id, status);
+
+
+--
+-- Name: idx_job_tick_timestamp; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_job_tick_timestamp ON public.job_ticks USING btree (job_origin_id, "timestamp");
+
+
+--
+-- Name: idx_run_id; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_run_id ON public.event_logs USING btree (run_id);
+
+
+--
+-- Name: idx_run_partitions; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_run_partitions ON public.runs USING btree (partition_set, partition);
+
+
+--
+-- Name: idx_run_status; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_run_status ON public.runs USING btree (status);
+
+
+--
+-- Name: idx_run_tags; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_run_tags ON public.run_tags USING btree (key, value);
+
+
+--
+-- Name: idx_step_key; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_step_key ON public.event_logs USING btree (step_key);
+
+
+--
+-- Name: ix_job_ticks_job_origin_id; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX ix_job_ticks_job_origin_id ON public.job_ticks USING btree (job_origin_id);
+
+
+--
+-- Name: ix_jobs_job_type; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX ix_jobs_job_type ON public.jobs USING btree (job_type);
+
+
+--
+-- Name: runs fk_runs_snapshot_id_snapshots_snapshot_id; Type: FK CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs
+    ADD CONSTRAINT fk_runs_snapshot_id_snapshots_snapshot_id FOREIGN KEY (snapshot_id) REFERENCES public.snapshots(snapshot_id);
+
+
+--
+-- Name: run_tags run_tags_run_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.run_tags
+    ADD CONSTRAINT run_tags_run_id_fkey FOREIGN KEY (run_id) REFERENCES public.runs(run_id) ON DELETE CASCADE;
+
+
+--
+-- PostgreSQL database dump complete
+--
+

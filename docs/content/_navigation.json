@@ -207,6 +207,10 @@
           {
             "title": "Loggers",
             "path": "/concepts/logging/loggers"
+          },
+          {
+            "title": "Python Logging",
+            "path": "/concepts/logging/python-logging"
           }
         ]
       },
@@ -323,10 +327,6 @@
           {
             "title": "Executing on Dask",
             "path": "/deployment/guides/dask"
-          },
-          {
-            "title": "Executing on Airflow",
-            "path": "/deployment/guides/airflow"
           }
         ]
       }
@@ -353,8 +353,8 @@
             "path": "/integrations/great-expectations"
           },
           {
-            "title": "Dagster with PySpark",
-            "path": "/integrations/pyspark"
+            "title": "Dagster with Spark",
+            "path": "/integrations/spark"
           },
           {
             "title": "Dagster with Pandas",
@@ -393,8 +393,16 @@
             "path": "/guides/dagster/run-attribution"
           },
           {
+            "title": "Migrating to Graphs, Jobs, and Ops (Experimental)",
+            "path": "/guides/dagster/graph_job_op"
+          },
+          {
             "title": "Re-execution",
             "path": "/guides/dagster/re-execution"
+          },
+          {
+            "title": "Fully-Featured Example Project",
+            "path": "/guides/dagster/example_project"
           }
         ]
       }
@@ -473,6 +481,14 @@
             "path": "/_apidocs/dynamic"
           },
           {
+            "title": "Experimental Core APIs",
+            "path": "/_apidocs/experimental"
+          },
+          {
+            "title": "Versioning & Memoization",
+            "path": "/_apidocs/memoization"
+          },
+          {
             "title": "Utilities",
             "path": "/_apidocs/utilities"
           },
@@ -512,10 +528,6 @@
           {
             "title": "Celery + Kubernetes (dagster-celery-k8s)",
             "path": "/_apidocs/libraries/dagster-celery-k8s"
-          },
-          {
-            "title": "Cron (dagster-cron)",
-            "path": "/_apidocs/libraries/dagster-cron"
           },
           {
             "title": "Dask (dagster-dask)",

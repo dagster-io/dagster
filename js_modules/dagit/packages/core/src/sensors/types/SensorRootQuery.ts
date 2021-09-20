@@ -11,7 +11,7 @@ import { SensorSelector, InstigationType, InstigationStatus, PipelineRunStatus, 
 // ====================================================
 
 export interface SensorRootQuery_sensorOrError_SensorNotFoundError {
-  __typename: "SensorNotFoundError" | "ReadOnlyError" | "PythonError";
+  __typename: "SensorNotFoundError" | "UnauthorizedError" | "PythonError";
 }
 
 export interface SensorRootQuery_sensorOrError_Sensor_nextTick {
@@ -88,18 +88,23 @@ export interface SensorRootQuery_sensorOrError_Sensor_sensorState {
   runningCount: number;
 }
 
+export interface SensorRootQuery_sensorOrError_Sensor_targets {
+  __typename: "Target";
+  pipelineName: string;
+  solidSelection: string[] | null;
+  mode: string;
+}
+
 export interface SensorRootQuery_sensorOrError_Sensor {
   __typename: "Sensor";
   id: string;
   jobOriginId: string;
   name: string;
-  pipelineName: string | null;
-  solidSelection: (string | null)[] | null;
-  mode: string | null;
   description: string | null;
   minIntervalSeconds: number;
   nextTick: SensorRootQuery_sensorOrError_Sensor_nextTick | null;
   sensorState: SensorRootQuery_sensorOrError_Sensor_sensorState;
+  targets: SensorRootQuery_sensorOrError_Sensor_targets[] | null;
 }
 
 export type SensorRootQuery_sensorOrError = SensorRootQuery_sensorOrError_SensorNotFoundError | SensorRootQuery_sensorOrError_Sensor;

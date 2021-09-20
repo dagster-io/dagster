@@ -5,7 +5,7 @@ import * as React from 'react';
 import {TerminatePipelinePolicy} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {Group} from '../ui/Group';
-import {FontFamily} from '../ui/styles';
+import {Mono} from '../ui/Text';
 
 import {NavigationBlock} from './NavitationBlock';
 import {TERMINATE_MUTATION} from './RunUtils';
@@ -13,7 +13,7 @@ import {
   Terminate,
   Terminate_terminatePipelineExecution_PipelineRunNotFoundError,
   Terminate_terminatePipelineExecution_PythonError,
-  Terminate_terminatePipelineExecution_ReadOnlyError,
+  Terminate_terminatePipelineExecution_UnauthorizedError,
   Terminate_terminatePipelineExecution_TerminatePipelineExecutionFailure,
 } from './types/Terminate';
 
@@ -28,7 +28,7 @@ export interface Props {
 type Error =
   | Terminate_terminatePipelineExecution_TerminatePipelineExecutionFailure
   | Terminate_terminatePipelineExecution_PipelineRunNotFoundError
-  | Terminate_terminatePipelineExecution_ReadOnlyError
+  | Terminate_terminatePipelineExecution_UnauthorizedError
   | Terminate_terminatePipelineExecution_PythonError
   | undefined;
 
@@ -314,7 +314,7 @@ export const TerminationDialog = (props: Props) => {
               {Object.keys(errors).map((runId) => (
                 <li key={runId}>
                   <Group direction="row" spacing={8}>
-                    <span style={{fontFamily: FontFamily.monospace}}>{runId.slice(0, 8)}</span>
+                    <Mono>{runId.slice(0, 8)}</Mono>
                     {errors[runId] ? <div>{errors[runId]?.message}</div> : null}
                   </Group>
                 </li>

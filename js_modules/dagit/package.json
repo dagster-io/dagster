@@ -18,6 +18,6 @@
     "concurrently": "^6.0.0",
     "eslint": "^7.17.0",
     "prettier": "2.2.1",
-    "typescript": "4.3.2"
+    "typescript": "4.3.5"
   }
 }

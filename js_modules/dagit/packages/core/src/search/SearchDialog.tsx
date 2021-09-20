@@ -4,6 +4,7 @@ import * as React from 'react';
 import {useHistory, useLocation} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {useFeatureFlags} from '../app/Flags';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {Box} from '../ui/Box';
 import {Group} from '../ui/Group';
@@ -63,6 +64,7 @@ export const SearchDialog: React.FC<{theme: 'dark' | 'light'; searchPlaceholder:
   const location = useLocation();
   const history = useHistory();
   const {loading, performSearch} = useRepoSearch();
+  const {flagPipelineModeTuples} = useFeatureFlags();
 
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const {shown, queryString, results, highlight, loaded} = state;
@@ -161,7 +163,11 @@ export const SearchDialog: React.FC<{theme: 'dark' | 'light'; searchPlaceholder:
               spellCheck={false}
               onChange={onChange}
               onKeyDown={onKeyDown}
-              placeholder="Search pipelines, schedules, sensors…"
+              placeholder={
+                flagPipelineModeTuples
+                  ? 'Search jobs, schedules, sensors…'
+                  : 'Search pipelines, schedules, sensors…'
+              }
               type="text"
               value={queryString}
             />
@@ -247,7 +253,7 @@ const SlashShortcut = styled.div<{$theme: 'light' | 'dark'}>`
   background-color: ${({$theme}) => ($theme === 'light' ? Colors.LIGHT_GRAY4 : Colors.DARK_GRAY3)};
   border-radius: 3px;
   color: ${({$theme}) => ($theme === 'light' ? Colors.DARK_GRAY1 : Colors.LIGHT_GRAY4)};
-  font-size: 10px;
+  font-size: 14px;
   font-family: ${FontFamily.monospace};
   padding: 2px 6px;
 `;

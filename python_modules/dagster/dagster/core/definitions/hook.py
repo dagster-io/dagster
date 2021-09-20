@@ -62,7 +62,6 @@ class HookDefinition(
                     foo(bar())
 
         """
-
         from .pipeline import PipelineDefinition
         from ..execution.context.hook import HookContext
         from .hook_invocation import hook_invocation_result

@@ -3,19 +3,20 @@ from dagster import check
 from dagster.core.host_representation import ExternalSchedule, ScheduleSelector
 from dagster.core.host_representation.selector import RepositorySelector
 from dagster.core.scheduler.job import JobTickStatsSnapshot
+from dagster.core.workspace.permissions import Permissions
 
 from ...implementation.fetch_schedules import (
     reconcile_scheduler_state,
     start_schedule,
     stop_schedule,
 )
-from ...implementation.utils import capture_error, check_read_only
+from ...implementation.utils import capture_error, check_permission
 from ..errors import (
     GraphenePythonError,
-    GrapheneReadOnlyError,
     GrapheneRepositoryNotFoundError,
     GrapheneScheduleNotFoundError,
     GrapheneSchedulerNotDefinedError,
+    GrapheneUnauthorizedError,
 )
 from ..inputs import GrapheneRepositorySelector, GrapheneScheduleSelector
 from ..instigation import GrapheneInstigationState
@@ -78,7 +79,11 @@ class GrapheneReconcileSchedulerStateSuccess(graphene.ObjectType):
 
 class GrapheneReconcileSchedulerStateMutationResult(graphene.Union):
     class Meta:
-        types = (GrapheneReadOnlyError, GraphenePythonError, GrapheneReconcileSchedulerStateSuccess)
+        types = (
+            GrapheneUnauthorizedError,
+            GraphenePythonError,
+            GrapheneReconcileSchedulerStateSuccess,
+        )
         name = "ReconcileSchedulerStateMutationResult"
 
 
@@ -92,7 +97,7 @@ class GrapheneReconcileSchedulerStateMutation(graphene.Mutation):
         name = "ReconcileSchedulerStateMutation"
 
     @capture_error
-    @check_read_only
+    @check_permission(Permissions.START_SCHEDULE)
     def mutate(self, graphene_info, repository_selector):
         return reconcile_scheduler_state(
             graphene_info, RepositorySelector.from_graphql_input(repository_selector)

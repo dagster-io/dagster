@@ -1,3 +1,5 @@
+import sys
+
 import pytest
 from dagster import check
 from dagster.core.code_pointer import ModuleCodePointer
@@ -7,6 +9,7 @@ from dagster.core.host_representation.origin import (
     ExternalRepositoryOrigin,
     InProcessRepositoryLocationOrigin,
 )
+from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
 from dagster.core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
     NON_IN_PROGRESS_RUN_STATUSES,
@@ -16,17 +19,29 @@ from dagster.core.storage.pipeline_run import (
 
 
 def test_queued_pipeline_origin_check():
+
+    code_pointer = ModuleCodePointer("fake", "fake")
     fake_pipeline_origin = ExternalPipelineOrigin(
         ExternalRepositoryOrigin(
-            InProcessRepositoryLocationOrigin(
-                ReconstructableRepository(ModuleCodePointer("fake", "fake"))
-            ),
+            InProcessRepositoryLocationOrigin(ReconstructableRepository(code_pointer)),
             "foo_repo",
         ),
         "foo",
     )
 
-    PipelineRun(status=PipelineRunStatus.QUEUED, external_pipeline_origin=fake_pipeline_origin)
+    fake_code_origin = PipelinePythonOrigin(
+        pipeline_name="foo",
+        repository_origin=RepositoryPythonOrigin(
+            sys.executable,
+            code_pointer,
+        ),
+    )
+
+    PipelineRun(
+        status=PipelineRunStatus.QUEUED,
+        external_pipeline_origin=fake_pipeline_origin,
+        pipeline_code_origin=fake_code_origin,
+    )
 
     with pytest.raises(check.CheckError):
         PipelineRun(status=PipelineRunStatus.QUEUED)

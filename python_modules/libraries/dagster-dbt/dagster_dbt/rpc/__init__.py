@@ -1,4 +1,10 @@
-from .resources import DbtRpcClient, dbt_rpc_resource, local_dbt_rpc_resource
+from .resources import (
+    DbtRpcClient,
+    DbtRpcSyncClient,
+    dbt_rpc_resource,
+    dbt_rpc_sync_resource,
+    local_dbt_rpc_resource,
+)
 from .solids import (
     create_dbt_rpc_run_sql_solid,
     dbt_rpc_compile_sql,

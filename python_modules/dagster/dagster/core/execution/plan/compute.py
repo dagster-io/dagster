@@ -8,9 +8,9 @@ from dagster.core.definitions import (
     DynamicOutput,
     ExpectationResult,
     Materialization,
+    Node,
+    NodeHandle,
     Output,
-    Solid,
-    SolidHandle,
 )
 from dagster.core.errors import DagsterExecutionStepExecutionError, DagsterInvariantViolationError
 from dagster.core.execution.context.compute import SolidExecutionContext
@@ -27,10 +27,10 @@ SolidOutputUnion = Union[
 
 
 def create_step_outputs(
-    solid: Solid, handle: SolidHandle, resolved_run_config: ResolvedRunConfig
+    solid: Node, handle: NodeHandle, resolved_run_config: ResolvedRunConfig
 ) -> List[StepOutput]:
-    check.inst_param(solid, "solid", Solid)
-    check.inst_param(handle, "handle", SolidHandle)
+    check.inst_param(solid, "solid", Node)
+    check.inst_param(handle, "handle", NodeHandle)
 
     # the run config has the solid output name configured
     config_output_names: Set[str] = set()
@@ -56,7 +56,7 @@ def create_step_outputs(
     ]
 
 
-def _validate_event(event: Any, solid_handle: SolidHandle) -> SolidOutputUnion:
+def _validate_event(event: Any, solid_handle: NodeHandle) -> SolidOutputUnion:
     if not isinstance(
         event,
         (DynamicOutput, Output, AssetMaterialization, Materialization, ExpectationResult),
@@ -108,10 +108,12 @@ def _yield_compute_results(
     if inspect.isasyncgen(user_event_generator):
         user_event_generator = gen_from_async_gen(user_event_generator)
 
+    op_label = step_context.describe_op()
+
     for event in iterate_with_context(
         lambda: solid_execution_error_boundary(
             DagsterExecutionStepExecutionError,
-            msg_fn=lambda: f'Error occurred while executing solid "{step_context.solid.name}":',
+            msg_fn=lambda: f"Error occurred while executing {op_label}:",
             step_context=step_context,
             step_key=step_context.step.key,
             solid_def_name=step_context.solid_def.name,

@@ -11,7 +11,7 @@ import { SensorSelector, InstigationStatus } from "./../../types/globalTypes";
 // ====================================================
 
 export interface StartSensor_startSensor_SensorNotFoundError {
-  __typename: "SensorNotFoundError" | "ReadOnlyError";
+  __typename: "SensorNotFoundError" | "UnauthorizedError";
 }
 
 export interface StartSensor_startSensor_Sensor_sensorState {

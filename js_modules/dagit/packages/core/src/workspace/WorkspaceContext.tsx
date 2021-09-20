@@ -2,6 +2,7 @@ import {ApolloQueryResult, gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PipelineSelector} from '../types/globalTypes';
 
 import {REPOSITORY_INFO_FRAGMENT} from './RepositoryInformation';
 import {buildRepoAddress} from './buildRepoAddress';
@@ -64,6 +65,7 @@ const ROOT_REPOSITORIES_QUERY = gql`
                 pipelines {
                   id
                   name
+                  graphName
                   pipelineSnapshotId
                   modes {
                     id
@@ -72,6 +74,7 @@ const ROOT_REPOSITORIES_QUERY = gql`
                 }
                 partitionSets {
                   id
+                  mode
                   pipelineName
                 }
                 ...RepositoryInfoFragment
@@ -219,7 +222,7 @@ export const usePipelineSelector = (
     ...repositorySelector,
     pipelineName,
     solidSelection,
-  };
+  } as PipelineSelector;
 };
 
 export const optionToRepoAddress = (option: DagsterRepoOption) =>

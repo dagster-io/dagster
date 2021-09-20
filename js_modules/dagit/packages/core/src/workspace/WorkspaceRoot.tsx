@@ -8,6 +8,7 @@ import {ScheduleRoot} from '../schedules/ScheduleRoot';
 import {SensorRoot} from '../sensors/SensorRoot';
 import {MainContent} from '../ui/MainContent';
 
+import {AssetGraphRoot} from './AssetGraphRoot';
 import {GraphRoot} from './GraphRoot';
 import {WorkspaceContext} from './WorkspaceContext';
 import {WorkspaceOverviewRoot} from './WorkspaceOverviewRoot';
@@ -19,7 +20,7 @@ const RepoRouteContainer: React.FC<{repoPath: string}> = (props) => {
   const {repoPath} = props;
   const workspaceState = React.useContext(WorkspaceContext);
   const addressForPath = repoAddressFromPath(repoPath);
-  const {flagPipelineModeTuples} = useFeatureFlags();
+  const {flagPipelineModeTuples, flagAssetGraph} = useFeatureFlags();
 
   // A RepoAddress could not be created for this path, which means it's invalid.
   if (!addressForPath) {
@@ -105,6 +106,24 @@ const RepoRouteContainer: React.FC<{repoPath: string}> = (props) => {
           <SensorRoot sensorName={props.match.params.sensorName} repoAddress={addressForPath} />
         )}
       />
+      {flagAssetGraph ? (
+        <Route
+          path="/workspace/:repoPath/assets/(.+)"
+          render={(props) => {
+            return (
+              <AssetGraphRoot
+                {...props}
+                repoAddress={addressForPath}
+                selected={
+                  props.match.params[0]
+                    ? JSON.stringify(props.match.params[0].split('/').map(decodeURIComponent))
+                    : undefined
+                }
+              />
+            );
+          }}
+        />
+      ) : null}
       <Route
         path="/workspace/:repoPath/:tab?"
         render={(props: RouteComponentProps<{tab?: string}>) => (
@@ -115,25 +134,37 @@ const RepoRouteContainer: React.FC<{repoPath: string}> = (props) => {
   );
 };
 
-export const WorkspaceRoot = () => (
-  <MainContent>
-    <Switch>
-      <Route path="/workspace" exact component={WorkspaceOverviewRoot} />
-      <Route
-        path={['/workspace/pipelines/:pipelinePath', '/workspace/jobs/:pipelinePath']}
-        render={(props: RouteComponentProps<{pipelinePath: string}>) => (
-          <WorkspacePipelineRoot pipelinePath={props.match.params.pipelinePath} />
-        )}
-      />
-      <Route
-        path="/workspace/:repoPath"
-        render={(props: RouteComponentProps<{repoPath: string}>) => (
-          <RepoRouteContainer repoPath={props.match.params.repoPath} />
-        )}
-      />
-    </Switch>
-  </MainContent>
-);
+export const WorkspaceRoot = () => {
+  const {flagPipelineModeTuples} = useFeatureFlags();
+  return (
+    <MainContent>
+      <Switch>
+        <Route path="/workspace" exact component={WorkspaceOverviewRoot} />
+        <Route
+          path="/workspace/jobs/:pipelinePath"
+          render={(props: RouteComponentProps<{pipelinePath: string}>) => (
+            <WorkspacePipelineRoot pipelinePath={props.match.params.pipelinePath} />
+          )}
+        />
+        <Route
+          path="/workspace/pipelines/:pipelinePath"
+          render={(props: RouteComponentProps<{pipelinePath: string}>) => {
+            if (flagPipelineModeTuples) {
+              return <Redirect to={props.match.url.replace('/pipelines/', '/jobs/')} />;
+            }
+            return <WorkspacePipelineRoot pipelinePath={props.match.params.pipelinePath} />;
+          }}
+        />
+        <Route
+          path="/workspace/:repoPath"
+          render={(props: RouteComponentProps<{repoPath: string}>) => (
+            <RepoRouteContainer repoPath={props.match.params.repoPath} />
+          )}
+        />
+      </Switch>
+    </MainContent>
+  );
+};
 
 // Imported via React.lazy, which requires a default export.
 // eslint-disable-next-line import/no-default-export

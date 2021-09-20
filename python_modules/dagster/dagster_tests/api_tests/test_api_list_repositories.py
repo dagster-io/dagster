@@ -9,6 +9,7 @@ from dagster.api.list_repositories import (
 from dagster.core.code_pointer import FileCodePointer, ModuleCodePointer, PackageCodePointer
 from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.grpc.types import LoadableRepositorySymbol
+from dagster.serdes import deserialize_json_to_dagster_namedtuple
 from dagster.utils import file_relative_path
 from dagster_test.dagster_core_docker_buildkite import get_test_project_docker_image
 
@@ -227,7 +228,10 @@ def test_sync_list_container_grpc(docker_grpc_client):
 
     loadable_repo_symbols = response.repository_symbols
 
-    assert docker_grpc_client.get_current_image().current_image == get_test_project_docker_image()
+    assert (
+        deserialize_json_to_dagster_namedtuple(docker_grpc_client.get_current_image()).current_image
+        == get_test_project_docker_image()
+    )
 
     assert isinstance(loadable_repo_symbols, list)
     assert len(loadable_repo_symbols) == 1

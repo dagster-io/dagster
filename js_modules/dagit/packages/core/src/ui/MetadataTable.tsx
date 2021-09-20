@@ -44,7 +44,7 @@ MetadataTable.defaultProps = {
   spacing: 4,
 };
 
-const StyledTable = styled.table`
+export const StyledTable = styled.table`
   border-spacing: 0;
   td {
     vertical-align: top;

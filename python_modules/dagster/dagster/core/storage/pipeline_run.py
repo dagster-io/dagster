@@ -5,9 +5,10 @@ from enum import Enum
 from typing import NamedTuple
 
 from dagster import check
+from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster.core.utils import make_new_run_id
-from dagster.serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
+from dagster.serdes import DefaultNamedTupleSerializer, unpack_inner_value, whitelist_for_serdes
 
 from .tags import (
     BACKFILL_ID_TAG,
@@ -91,9 +92,21 @@ class PipelineRunStatsSnapshot(
 
 class PipelineRunSerializer(DefaultNamedTupleSerializer):
     @classmethod
-    def value_from_storage_dict(cls, storage_dict, _klass):
+    def value_from_storage_dict(
+        cls,
+        storage_dict,
+        klass,
+        args_for_class,
+        whitelist_map,
+        descent_path,
+    ):
+        # unpack all stored fields
+        unpacked_dict = {
+            key: unpack_inner_value(value, whitelist_map, f"{descent_path}.{key}")
+            for key, value in storage_dict.items()
+        }
         # called by the serdes layer, delegates to helper method with expanded kwargs
-        return pipeline_run_from_storage(**storage_dict)
+        return pipeline_run_from_storage(**unpacked_dict)
 
 
 def pipeline_run_from_storage(
@@ -117,6 +130,7 @@ def pipeline_run_from_storage(
     solid_subset=None,
     reexecution_config=None,  # pylint: disable=unused-argument
     external_pipeline_origin=None,
+    pipeline_code_origin=None,
     **kwargs,
 ):
 
@@ -197,6 +211,7 @@ def pipeline_run_from_storage(
         pipeline_snapshot_id=pipeline_snapshot_id,
         execution_plan_snapshot_id=execution_plan_snapshot_id,
         external_pipeline_origin=external_pipeline_origin,
+        pipeline_code_origin=pipeline_code_origin,
     )
 
 
@@ -207,7 +222,8 @@ class PipelineRun(
         (
             "pipeline_name run_id run_config mode solid_selection solids_to_execute "
             "step_keys_to_execute status tags root_run_id parent_run_id "
-            "pipeline_snapshot_id execution_plan_snapshot_id external_pipeline_origin"
+            "pipeline_snapshot_id execution_plan_snapshot_id external_pipeline_origin "
+            "pipeline_code_origin"
         ),
     )
 ):
@@ -230,7 +246,12 @@ class PipelineRun(
         parent_run_id=None,
         pipeline_snapshot_id=None,
         execution_plan_snapshot_id=None,
+        # An ExternalPipelineOrigin that can be used to recreate the RepositoryLocation and
+        # ExternalPipeline that was used to submit this run
         external_pipeline_origin=None,
+        # A PipelinePythonOrigin with information about where to find the pipeline definition in
+        # code. Most run launchers will pass this origin as an argument to the run worker process.
+        pipeline_code_origin=None,
     ):
         check.invariant(
             (root_run_id is not None and parent_run_id is not None)
@@ -245,7 +266,7 @@ class PipelineRun(
         # a list of solid queries provided by the user
         # possible to be None when only solids_to_execute is set by the user directly
         check.opt_list_param(solid_selection, "solid_selection", of_type=str)
-        check.opt_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
+        check.opt_nullable_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
 
         # Placing this with the other imports causes a cyclic import
         # https://github.com/dagster-io/dagster/issues/3181
@@ -280,6 +301,9 @@ class PipelineRun(
             ),
             external_pipeline_origin=check.opt_inst_param(
                 external_pipeline_origin, "external_pipeline_origin", ExternalPipelineOrigin
+            ),
+            pipeline_code_origin=check.opt_inst_param(
+                pipeline_code_origin, "pipeline_code_origin", PipelinePythonOrigin
             ),
         )
 
@@ -354,7 +378,7 @@ class PipelineRun(
 @whitelist_for_serdes
 class PipelineRunsFilter(
     namedtuple(
-        "_PipelineRunsFilter", "run_ids pipeline_name statuses tags snapshot_id updated_after"
+        "_PipelineRunsFilter", "run_ids pipeline_name statuses tags snapshot_id updated_after mode"
     )
 ):
     def __new__(
@@ -365,6 +389,7 @@ class PipelineRunsFilter(
         tags=None,
         snapshot_id=None,
         updated_after=None,
+        mode=None,
     ):
         return super(PipelineRunsFilter, cls).__new__(
             cls,
@@ -374,6 +399,7 @@ class PipelineRunsFilter(
             tags=check.opt_dict_param(tags, "tags", key_type=str, value_type=str),
             snapshot_id=check.opt_str_param(snapshot_id, "snapshot_id"),
             updated_after=check.opt_inst_param(updated_after, "updated_after", datetime),
+            mode=check.opt_str_param(mode, "mode"),
         )
 
     @staticmethod

@@ -55,6 +55,10 @@ module.exports = {
             "code::after": {
               content: '""',
             },
+            'pre a': {
+              backgroundColor: theme("colors.yellow.100"),
+              marginRight: 8,
+            },
           },
         },
         dark: {

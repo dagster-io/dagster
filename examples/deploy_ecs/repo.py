@@ -1,8 +1,11 @@
+import time
+
 import dagster
 
 
 @dagster.solid
 def solid():
+    time.sleep(30)
     return True
 
 

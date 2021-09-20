@@ -26,3 +26,5 @@ declare module 'worker-loader!*' {
   // eslint-disable-next-line import/no-default-export
   export default WebpackWorker;
 }
+
+declare module 'chartjs-adapter-date-fns';

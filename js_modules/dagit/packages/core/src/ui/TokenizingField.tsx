@@ -64,8 +64,15 @@ export function tokenizedValueFromString(
   providers: SuggestionProvider[],
 ): TokenizingFieldValue {
   const parts = str.split(':');
-  if (parts.length === 2 && findProviderByToken(parts[0], providers)) {
-    return {token: parts[0], value: parts[1]};
+  const token = parts[0];
+  if (findProviderByToken(token, providers)) {
+    if (parts.length === 2) {
+      return {token, value: parts[1]};
+    }
+    // Jobs can be `pipeline:mode` tuples, so join the "value" tokens back together.
+    if (token === 'job') {
+      return {token, value: parts.slice(1).join(':')};
+    }
   }
   return {value: str};
 }

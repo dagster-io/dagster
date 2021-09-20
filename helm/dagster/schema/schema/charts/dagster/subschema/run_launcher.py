@@ -46,11 +46,13 @@ class CeleryK8sRunLauncherConfig(BaseModel):
 
 class K8sRunLauncherConfig(BaseModel):
     image: Optional[kubernetes.Image]
+    imagePullPolicy: kubernetes.PullPolicy
     jobNamespace: Optional[str]
     loadInclusterConfig: bool
     kubeconfigFile: Optional[str]
     envConfigMaps: List[kubernetes.ConfigMapEnvSource]
     envSecrets: List[kubernetes.SecretEnvSource]
+    envVars: List[str]
 
     class Config:
         extra = Extra.forbid

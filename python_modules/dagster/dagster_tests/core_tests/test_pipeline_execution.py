@@ -25,7 +25,7 @@ from dagster import (
     reexecute_pipeline,
     solid,
 )
-from dagster.core.definitions import Solid
+from dagster.core.definitions import Node
 from dagster.core.definitions.dependency import DependencyStructure
 from dagster.core.definitions.graph import _create_adjacency_lists
 from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
@@ -76,8 +76,7 @@ def make_compute_fn():
 def _do_construct(solids, dependencies):
     pipeline_def = PipelineDefinition(name="test", solid_defs=solids, dependencies=dependencies)
     solids = {
-        s.name: Solid(name=s.name, definition=s, graph_definition=pipeline_def.graph)
-        for s in solids
+        s.name: Node(name=s.name, definition=s, graph_definition=pipeline_def.graph) for s in solids
     }
     dependency_structure = DependencyStructure.from_definitions(solids, dependencies)
     return _create_adjacency_lists(list(solids.values()), dependency_structure)
