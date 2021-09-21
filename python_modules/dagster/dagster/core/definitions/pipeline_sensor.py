@@ -1,5 +1,4 @@
 from typing import Any, Callable, List, NamedTuple, Optional, Union, cast
-from dagster.utils import utc_datetime_from_timestamp
 
 import pendulum
 from dagster import check
@@ -22,6 +21,7 @@ from dagster.serdes import (
 from dagster.serdes.errors import DeserializationError
 from dagster.serdes.serdes import register_serdes_tuple_fallbacks
 from dagster.seven import JSONDecodeError
+from dagster.utils import utc_datetime_from_timestamp
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 

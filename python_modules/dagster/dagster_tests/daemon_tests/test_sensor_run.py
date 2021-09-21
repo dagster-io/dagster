@@ -6,9 +6,6 @@ import tempfile
 import threading
 import time
 from contextlib import contextmanager
-from dagster.core.events import DagsterEvent, DagsterEventType
-from dagster.core.events.log import EventLogEntry
-from dagster.core.storage.event_log.base import EventRecordsFilter
 
 import pendulum
 import pytest
@@ -30,6 +27,8 @@ from dagster.core.definitions.pipeline_sensor import run_status_sensor
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.definitions.run_request import JobType
 from dagster.core.definitions.sensor import DEFAULT_SENSOR_DAEMON_INTERVAL, RunRequest, SkipReason
+from dagster.core.events import DagsterEvent, DagsterEventType
+from dagster.core.events.log import EventLogEntry
 from dagster.core.execution.api import execute_pipeline
 from dagster.core.host_representation import (
     ExternalJobOrigin,
@@ -40,6 +39,7 @@ from dagster.core.host_representation import (
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import JobState, JobStatus, JobTickStatus
+from dagster.core.storage.event_log.base import EventRecordsFilter
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import instance_for_test
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
