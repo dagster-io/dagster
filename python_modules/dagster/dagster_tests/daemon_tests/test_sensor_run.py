@@ -6,6 +6,9 @@ import tempfile
 import threading
 import time
 from contextlib import contextmanager
+from dagster.core.events import DagsterEvent, DagsterEventType
+from dagster.core.events.log import EventLogEntry
+from dagster.core.storage.event_log.base import EventRecordsFilter
 
 import pendulum
 import pytest
@@ -1441,6 +1444,16 @@ def default_storage_config_fn(_):
     return {}
 
 
+def sql_event_log_storage_config_fn(temp_dir):
+    return {
+        "event_log_storage": {
+            "module": "dagster.core.storage.event_log",
+            "class": "ConsolidatedSqliteEventLogStorage",
+            "config": {"base_dir": temp_dir},
+        },
+    }
+
+
 @pytest.mark.parametrize("external_repo_context", repos())
 @pytest.mark.parametrize(
     "storage_config_fn",
@@ -1541,6 +1554,76 @@ def test_run_status_sensor_interleave(external_repo_context, storage_config_fn):
                 )
                 assert len(ticks[0].origin_run_ids) == 1
                 assert ticks[0].origin_run_ids[0] == run1.run_id
+
+
+@pytest.mark.parametrize("external_repo_context", repos())
+@pytest.mark.parametrize("storage_config_fn", [sql_event_log_storage_config_fn])
+def test_pipeline_failure_sensor_empty_run_records(external_repo_context, storage_config_fn):
+    freeze_datetime = pendulum.now()
+    with tempfile.TemporaryDirectory() as temp_dir:
+
+        with instance_with_sensors(
+            external_repo_context, overrides=storage_config_fn(temp_dir)
+        ) as (
+            instance,
+            workspace,
+            external_repo,
+        ):
+
+            with pendulum.test(freeze_datetime):
+                failure_sensor = external_repo.get_external_sensor("my_pipeline_failure_sensor")
+                instance.start_sensor(failure_sensor)
+
+                evaluate_sensors(instance, workspace)
+
+                ticks = instance.get_job_ticks(failure_sensor.get_external_origin_id())
+                assert len(ticks) == 1
+                validate_tick(
+                    ticks[0],
+                    failure_sensor,
+                    freeze_datetime,
+                    JobTickStatus.SKIPPED,
+                )
+
+                freeze_datetime = freeze_datetime.add(seconds=60)
+                time.sleep(1)
+
+            with pendulum.test(freeze_datetime):
+                # create a mismatch between event storage and run storage
+                instance.event_log_storage.store_event(
+                    EventLogEntry(
+                        None,
+                        "fake failure event",
+                        "debug",
+                        "",
+                        "fake_run_id",
+                        time.time(),
+                        dagster_event=DagsterEvent(
+                            DagsterEventType.PIPELINE_FAILURE.value,
+                            "foo",
+                        ),
+                    )
+                )
+                runs = instance.get_runs()
+                assert len(runs) == 0
+                failure_events = instance.get_event_records(
+                    EventRecordsFilter(event_type=DagsterEventType.PIPELINE_FAILURE)
+                )
+                assert len(failure_events) == 1
+                freeze_datetime = freeze_datetime.add(seconds=60)
+
+            with pendulum.test(freeze_datetime):
+                # shouldn't fire the failure sensor due to the mismatch
+                evaluate_sensors(instance, workspace)
+
+                ticks = instance.get_job_ticks(failure_sensor.get_external_origin_id())
+                assert len(ticks) == 2
+                validate_tick(
+                    ticks[0],
+                    failure_sensor,
+                    freeze_datetime,
+                    JobTickStatus.SKIPPED,
+                )
 
 
 @pytest.mark.parametrize("external_repo_context", repos())
