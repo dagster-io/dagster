@@ -19,6 +19,7 @@ import * as React from 'react';
 import {BrowserRouter} from 'react-router-dom';
 import {createGlobalStyle} from 'styled-components/macro';
 
+import {GlobalTooltipStyle} from '../ui/Tooltip';
 import {FontFamily} from '../ui/styles';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
 
@@ -131,6 +132,7 @@ export const AppProvider: React.FC<Props> = (props) => {
     <AppContext.Provider value={appContextValue}>
       <WebSocketProvider websocketURI={websocketURI} connectionParams={headerObject}>
         <GlobalStyle />
+        <GlobalTooltipStyle />
         <ApolloProvider client={apolloClient}>
           <PermissionsProvider>
             <BrowserRouter basename={basePath || ''}>
