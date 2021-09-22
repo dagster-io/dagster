@@ -1,5 +1,6 @@
 import inspect
 from collections import deque
+from contextlib import ContextDecorator
 from typing import AbstractSet, Any, Callable, Deque, Dict, Optional, cast
 
 from dagster import check
@@ -294,7 +295,9 @@ def single_resource_event_generator(context, resource_name, resource_def):
                     )
                     # Flag for whether resource is generator. This is used to ensure that teardown
                     # occurs when resources are initialized out of execution.
-                    is_gen = inspect.isgenerator(resource_or_gen)
+                    is_gen = inspect.isgenerator(resource_or_gen) or isinstance(
+                        resource_or_gen, ContextDecorator
+                    )
                     gen = ensure_gen(resource_or_gen)
                     resource = next(gen)
                 resource = InitializedResource(

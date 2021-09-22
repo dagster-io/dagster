@@ -306,6 +306,17 @@ def safe_tempfile_path() -> Iterator[str]:
 
 
 def ensure_gen(thing_or_gen):
+
+    # Context managers created using contextlib.contextdecorator are not usable as iterators.
+    # This special casing makes them usable as iterators.
+    if isinstance(thing_or_gen, contextlib.ContextDecorator):
+
+        def _gen_thing():
+            with thing_or_gen as thing:
+                yield thing
+
+        return _gen_thing()
+
     if not inspect.isgenerator(thing_or_gen):
 
         def _gen_thing():

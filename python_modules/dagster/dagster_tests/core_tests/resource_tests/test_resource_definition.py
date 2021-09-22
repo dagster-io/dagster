@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 from unittest import mock
 
 import pytest
@@ -13,10 +14,13 @@ from dagster import (
     PipelineDefinition,
     ResourceDefinition,
     String,
+    build_op_context,
     configured,
     execute_pipeline,
     execute_pipeline_iterator,
     fs_io_manager,
+    graph,
+    op,
     reconstructable,
     resource,
     solid,
@@ -1189,3 +1193,30 @@ def test_configured_resource_unused():
     execute_pipeline(basic_pipeline)
 
     assert not entered
+
+
+def test_context_manager_resource():
+    @resource
+    @contextmanager
+    def cm_resource():
+        yield "foo"
+
+    @op(required_resource_keys={"cm"})
+    def basic(context):
+        assert context.resources.cm == "foo"
+
+    with build_op_context(resources={"cm": cm_resource}) as context:
+        basic(context)
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="At least one provided resource is a generator, but attempting to access resources "
+        "outside of context manager scope.",
+    ):
+        basic(build_op_context(resources={"cm": cm_resource}))
+
+    @graph
+    def call_basic():
+        basic()
+
+    assert call_basic.execute_in_process(resources={"cm": cm_resource}).success
