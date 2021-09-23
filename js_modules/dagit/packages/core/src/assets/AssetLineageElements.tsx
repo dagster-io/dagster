@@ -43,8 +43,17 @@ const AssetLineageInfoElement: React.FC<{
         <Link to={to}>
           <Box flex={{display: 'inline-flex', alignItems: 'center'}}>
             {lineage_info.assetKey.path
-              .map<React.ReactNode>((p, i) => <span key={i}>{p}</span>)
-              .reduce((prev, curr) => [prev, <>&nbsp;{'>'}&nbsp;</>, curr])}
+              .map((p, i) => <span key={i}>{p}</span>)
+              .reduce(
+                (accum, curr, ii) => [
+                  ...accum,
+                  ii > 0 ? (
+                    <React.Fragment key={`${ii}-space`}>{`&nbsp;>&nbsp;`}</React.Fragment>
+                  ) : null,
+                  curr,
+                ],
+                [] as React.ReactNode[],
+              )}
           </Box>
         </Link>
       </Tooltip>

@@ -521,8 +521,17 @@ const AssetEntryRow: React.FC<{
           <Link to={linkUrl}>
             <Box flex={{alignItems: 'center'}}>
               {path
-                .map<React.ReactNode>((p, i) => <span key={i}>{p}</span>)
-                .reduce((prev, curr) => [prev, <>&nbsp;{'>'}&nbsp;</>, curr])}
+                .map((p, i) => <span key={i}>{p}</span>)
+                .reduce(
+                  (accum, curr, ii) => [
+                    ...accum,
+                    ii > 0 ? (
+                      <React.Fragment key={`${ii}-space`}>&nbsp;{`>`}&nbsp;</React.Fragment>
+                    ) : null,
+                    curr,
+                  ],
+                  [] as React.ReactNode[],
+                )}
               {isAssetEntry || isFlattened ? null : '/'}
             </Box>
           </Link>
