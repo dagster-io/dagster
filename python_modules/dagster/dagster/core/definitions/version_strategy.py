@@ -1,18 +1,20 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Optional
 from collections import namedtuple
+from typing import TYPE_CHECKING, Optional
+
 from dagster import check
 
 if TYPE_CHECKING:
     from .solid import SolidDefinition
     from .resource import ResourceDefinition
 
+
 class SolidVersionContext(
     namedtuple(
         "SolidVersionContext",
         "solid_def solid_config",
     )
-    ):
+):
     """Version-specific solid context.
     Attributes:
         solid_def (SolidDefinition): The definition of the versioned solid
@@ -20,24 +22,25 @@ class SolidVersionContext(
     """
 
     def __new__(
-            cls,
-            solid_def,
-            solid_config,
+        cls,
+        solid_def,
+        solid_config,
     ):
         if TYPE_CHECKING:
-            solid_def = check.inst_param(solid_def, "solid_def", SolidDefinition)
+            solid_def = check.inst_param(
+                solid_def, "solid_def", SolidDefinition  # pylint: disable=E0601
+            )
         return super(SolidVersionContext, cls).__new__(
-            cls,
-            solid_def=solid_def,
-            solid_config=solid_config
+            cls, solid_def=solid_def, solid_config=solid_config
         )
+
 
 class ResourceVersionContext(
     namedtuple(
         "SolidVersionContext",
         "solid_def solid_config",
     )
-    ):
+):
     """Version-specific solid context.
     Attributes:
         resource_def (ResourceDefinition): The definition of the versioned resource
@@ -45,17 +48,18 @@ class ResourceVersionContext(
     """
 
     def __new__(
-            cls,
-            resource_def,
-            resource_config,
+        cls,
+        resource_def,
+        resource_config,
     ):
         if TYPE_CHECKING:
-            resource_def = check.inst_param(resource_def, "resource_def", ResourceDefinition)
+            resource_def = check.inst_param(
+                resource_def, "resource_def", ResourceDefinition  # pylint: disable=E0601
+            )
         return super(ResourceVersionContext, cls).__new__(
-            cls,
-            solid_def=resource_def,
-            solid_config=resource_config
+            cls, solid_def=resource_def, solid_config=resource_config
         )
+
 
 class VersionStrategy(ABC):
     """Abstract class for defining a strategy to version solids and resources.
@@ -75,6 +79,6 @@ class VersionStrategy(ABC):
         pass
 
     def get_resource_version(
-        self, context: ResourceVersionContext # pylint: disable=unused-argument
+        self, context: ResourceVersionContext  # pylint: disable=unused-argument
     ) -> Optional[str]:
         return None

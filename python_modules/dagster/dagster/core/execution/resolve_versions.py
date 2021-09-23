@@ -1,10 +1,10 @@
 import re
 
 from dagster import check
+from dagster.core.definitions.version_strategy import ResourceVersionContext, SolidVersionContext
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.step import is_executable_step
-from dagster.core.definitions.version_strategy import SolidVersionContext, ResourceVersionContext
 
 from .plan.inputs import join_and_hash
 
@@ -129,8 +129,12 @@ def resolve_step_versions(pipeline_def, execution_plan, resolved_run_config):
                 if resource_def.version is not None:
                     resource_def_version = resource_def.version
                 else:
-                    version_context = ResourceVersionContext(resource_def=resource_def, resource_config=resource_config)
-                    resource_def_version = pipeline_def.version_strategy.get_resource_version(version_context)
+                    version_context = ResourceVersionContext(
+                        resource_def=resource_def, resource_config=resource_config
+                    )
+                    resource_def_version = pipeline_def.version_strategy.get_resource_version(
+                        version_context
+                    )
 
                 if resource_def_version is not None:
 
