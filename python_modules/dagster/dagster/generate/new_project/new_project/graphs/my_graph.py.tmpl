@@ -1,0 +1,13 @@
+from dagster import graph
+
+from {{ repo_name }}.ops.hello import hello
+
+@graph
+def my_graph():
+    """
+    A graph definition. This example graph has a single op.
+
+    For more hints on writing Dagster graphs, see our documentation overview on Graphs:
+    https://docs.dagster.io/overview/<TODO: INSERT GRAPH URL>
+    """
+    hello()
