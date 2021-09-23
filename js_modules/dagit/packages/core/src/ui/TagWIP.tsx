@@ -3,6 +3,7 @@ import * as React from 'react';
 
 import {BaseTag} from './BaseTag';
 import {ColorsWIP} from './Colors';
+import {IconName, IconWIP} from './Icon';
 
 const intentToFillColor = (intent: React.ComponentProps<typeof BlueprintTag>['intent']) => {
   switch (intent) {
@@ -52,19 +53,28 @@ const intentToIconColor = (intent: React.ComponentProps<typeof BlueprintTag>['in
   }
 };
 
-export const TagWIP = (props: React.ComponentProps<typeof BlueprintTag>) => {
-  const {children, intent, ...rest} = props;
+interface Props extends Omit<React.ComponentProps<typeof BlueprintTag>, 'icon' | 'rightIcon'> {
+  icon?: IconName;
+  rightIcon?: IconName;
+}
+
+export const TagWIP: React.FC<Props> = (props) => {
+  const {children, icon, rightIcon, intent, ...rest} = props;
 
   const fillColor = intentToFillColor(intent);
   const textColor = intentToTextColor(intent);
   const iconColor = intentToIconColor(intent);
+
+  const iconWithColor = icon ? <IconWIP name={icon} color={iconColor} /> : null;
+  const rightIconWithColor = rightIcon ? <IconWIP name={rightIcon} color={iconColor} /> : null;
 
   return (
     <BaseTag
       {...rest}
       fillColor={fillColor}
       textColor={textColor}
-      iconColor={iconColor}
+      icon={iconWithColor}
+      rightIcon={rightIconWithColor}
       label={children}
     />
   );

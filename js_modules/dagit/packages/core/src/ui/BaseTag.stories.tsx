@@ -29,29 +29,21 @@ export const Basic = () => {
           <BaseTag
             fillColor={fillColor}
             textColor={textColor}
-            iconColor={iconColor}
-            icon={<IconWIP name="info" />}
+            icon={<IconWIP name="info" color={iconColor} />}
           />
           <BaseTag
             fillColor={fillColor}
             textColor={textColor}
-            iconColor={iconColor}
-            icon={<IconWIP name="alternate_email" />}
+            icon={<IconWIP name="alternate_email" color={iconColor} />}
             label="Lorem"
           />
           <BaseTag
             fillColor={fillColor}
             textColor={textColor}
-            iconColor={iconColor}
-            rightIcon={<IconWIP name="toggle_off" />}
+            rightIcon={<IconWIP name="toggle_off" color={iconColor} />}
             label="Lorem"
           />
-          <BaseTag
-            fillColor={fillColor}
-            textColor={textColor}
-            iconColor={iconColor}
-            label="Lorem"
-          />
+          <BaseTag fillColor={fillColor} textColor={textColor} label="Lorem" />
         </Group>
       ))}
     </Group>

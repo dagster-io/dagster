@@ -6,7 +6,6 @@ import {IconWrapper} from './Icon';
 
 interface Props {
   fillColor?: string;
-  iconColor?: string;
   textColor?: string;
   icon?: React.ReactNode;
   rightIcon?: React.ReactNode;
@@ -16,14 +15,13 @@ interface Props {
 export const BaseTag = (props: Props) => {
   const {
     fillColor = ColorsWIP.Gray10,
-    iconColor = ColorsWIP.Gray900,
     textColor = ColorsWIP.Gray900,
     icon,
     rightIcon,
     label,
   } = props;
   return (
-    <StyledTag $fillColor={fillColor} $textColor={textColor} $iconColor={iconColor}>
+    <StyledTag $fillColor={fillColor} $textColor={textColor}>
       {icon || null}
       {label ? <span>{label}</span> : null}
       {rightIcon || null}
@@ -34,7 +32,6 @@ export const BaseTag = (props: Props) => {
 interface StyledTagProps {
   $fillColor: string;
   $textColor: string;
-  $iconColor: string;
 }
 
 const StyledTag = styled.div<StyledTagProps>`
@@ -63,52 +60,4 @@ const StyledTag = styled.div<StyledTagProps>`
   > ${IconWrapper}:first-child:last-child {
     margin: 0 -4px;
   }
-
-  > ${IconWrapper} {
-    color: ${({$iconColor}) => $iconColor};
-  }
 `;
-
-// export const PrettyTag = styled(Tag)`
-//   &.bp3-tag {
-//     background-color: #f5f4f2;
-//     border-radius: 8px;
-//     color: #524e48;
-//     font-size: 12px;
-//     padding: 4px 8px;
-//     user-select: none;
-//   }
-
-//   &.bp3-tag.bp3-large {
-//     border-radius: 16px;
-//     padding: 8px 16px;
-//   }
-
-//   &.bp3-tag.bp3-intent-primary {
-//     background-color: #edecfc;
-//     color: #0e0ca7;
-//   }
-
-//   &.bp3-tag.bp3-intent-success {
-//     background-color: #edf9f3;
-//     color: #12754b;
-//   }
-
-//   &.bp3-tag.bp3-intent-danger {
-//     background-color: #fceeed;
-//     color: #a50906;
-//   }
-
-//   &.bp3-tag.bp3-intent-warning {
-//     background-color: #fff6e6;
-//     color: #a55802;
-//   }
-
-//   & .MuiSvgIcon-root {
-//     font-size: 0.9rem;
-//   }
-
-//   &.bp3-tag > *:not(:last-child) {
-//     margin-right: 6px;
-//   }
-// `;
