@@ -21,6 +21,7 @@ const flexPropertiesToCSS = (flex: FlexProperties) => {
     ${flex.justifyContent ? `justify-content: ${flex.justifyContent};` : null}
     ${flex.grow ? `flex-grow: ${flex.grow};` : null}
     ${flex.wrap ? `flex-wrap: ${flex.wrap};` : null}
+    ${flex.gap ? `gap: ${flex.gap}px;` : null}
     ${flex.shrink !== null && flex.shrink !== undefined ? `flex-shrink: ${flex.shrink};` : null}
   `;
 };
