@@ -1,5 +1,4 @@
-import {Button, Classes, Dialog, Icon} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
+import {Button, Classes, Dialog} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -9,7 +8,9 @@ import {ShortcutHandler} from '../app/ShortcutHandler';
 import {RunTag} from '../runs/RunTag';
 import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
+import {IconWIP} from '../ui/Icon';
 
 interface ITagEditorProps {
   tagsFromDefinition?: PipelineRunTag[];
@@ -142,7 +143,9 @@ export const TagEditor: React.FC<ITagEditorProps> = ({
                       value={value}
                       onChange={(e) => onTagEdit(key, e.target.value, idx)}
                     />
-                    <Remove onClick={() => onRemove(idx)} />
+                    <RemoveButton onClick={() => onRemove(idx)}>
+                      <IconWIP name="close" />
+                    </RemoveButton>
                   </div>
                 );
               })}
@@ -195,9 +198,9 @@ export const TagContainer = ({tags, onRequestEdit}: ITagContainerProps) => {
         ))}
       </TagList>
       <TagEditorLink onRequestOpen={onRequestEdit}>
-        <div style={{whiteSpace: 'nowrap'}}>
-          <Icon icon={IconNames.EDIT} iconSize={12} style={{marginBottom: 2}} /> Edit Tags
-        </div>
+        <Group direction="row" spacing={4} alignItems="center">
+          <IconWIP name="edit" color={ColorsWIP.Gray500} /> Edit Tags
+        </Group>
       </TagEditorLink>
     </Container>
   );
@@ -218,16 +221,15 @@ const TagEditorLink = ({onRequestOpen, children}: ITagEditorLinkProps) => (
   </ShortcutHandler>
 );
 
-const Remove = styled(Icon).attrs({icon: IconNames.CROSS})`
-  align-self: center;
-  color: #aaaaaa;
+const RemoveButton = styled.button`
+  background: none;
+  border: none;
+  border-radius: 4px;
   cursor: pointer;
-  border: 1px solid transparent;
-  padding: 3px;
-  &:hover {
-    color: #999999;
-    border: 1px solid #cccccc;
-    border-radius: 1px;
+  padding: 0 3px;
+
+  :hover {
+    background-color: ${ColorsWIP.Gray200};
   }
 `;
 

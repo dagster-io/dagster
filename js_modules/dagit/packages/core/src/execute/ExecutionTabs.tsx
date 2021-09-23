@@ -1,5 +1,4 @@
-import {Colors, Icon} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
+import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -10,6 +9,7 @@ import {
   applyRemoveSession,
   applySelectSession,
 } from '../app/LocalStorage';
+import {IconWIP} from '../ui/Icon';
 
 interface ExecutationTabProps {
   canRemove?: boolean;
@@ -72,7 +72,7 @@ const ExecutionTab = (props: ExecutationTabProps) => {
       )}
       {canRemove && !editing && onRemove ? (
         <RemoveButton onClick={onClickRemove}>
-          <Icon icon={IconNames.CROSS} />
+          <IconWIP name="close" />
         </RemoveButton>
       ) : null}
     </TabContainer>
@@ -138,13 +138,13 @@ const ExecutionTabsContainer = styled.div`
 
 const TabContainer = styled.div<{active: boolean}>`
   position: relative;
-  padding: 0 9px 2px 9px;
-  display: inline-block;
+  padding: 6px 8px;
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
   background: ${({active}) => (active ? Colors.WHITE : Colors.LIGHT_GRAY3)};
   color: ${({active}) => (active ? Colors.BLACK : Colors.DARK_GRAY3)};
   user-select: none;
-  line-height: 28px;
-  height: 30px;
   top: 1px;
 
   border: 1px solid ${Colors.GRAY5};
@@ -167,7 +167,8 @@ const TabContainer = styled.div<{active: boolean}>`
 
 const RemoveButton = styled.button`
   border: 0;
-  margin-left: 8px;
+  cursor: pointer;
+  margin-left: 4px;
   opacity: 0.2;
   padding: 0;
   &:hover {

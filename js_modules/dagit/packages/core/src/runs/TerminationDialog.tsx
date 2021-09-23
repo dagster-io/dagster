@@ -1,10 +1,12 @@
 import {useMutation} from '@apollo/client';
-import {Checkbox, Button, Classes, Colors, Dialog, Icon, ProgressBar} from '@blueprintjs/core';
+import {Checkbox, Button, Classes, Dialog, ProgressBar} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {TerminatePipelinePolicy} from '../types/globalTypes';
 import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
+import {IconWIP} from '../ui/Icon';
 import {Mono} from '../ui/Text';
 
 import {NavigationBlock} from './NavitationBlock';
@@ -181,14 +183,9 @@ export const TerminationDialog = (props: Props) => {
                 <Checkbox
                   checked={state.mustForce}
                   labelElement={
-                    <Box
-                      flex={{display: 'inline-flex'}}
-                      style={{position: 'relative', top: '-2px'}}
-                    >
+                    <Box flex={{display: 'inline-flex'}}>
                       <Group direction="row" spacing={8}>
-                        <div style={{position: 'relative', top: '-1px'}}>
-                          <Icon icon="warning-sign" iconSize={13} color={Colors.GOLD3} />
-                        </div>
+                        <IconWIP name="warning" color={ColorsWIP.Yellow500} />
                         <div>
                           Force termination immediately. <strong>Warning:</strong> computational
                           resources created by runs may not be cleaned up.
@@ -200,9 +197,7 @@ export const TerminationDialog = (props: Props) => {
                 />
               ) : (
                 <Group direction="row" spacing={8}>
-                  <div style={{position: 'relative', top: '-1px'}}>
-                    <Icon icon="warning-sign" iconSize={13} color={Colors.GOLD3} />
-                  </div>
+                  <IconWIP name="warning" color={ColorsWIP.Yellow500} />
                   <div>
                     <strong>Warning:</strong> computational resources created by runs may not be
                     cleaned up.
@@ -286,7 +281,7 @@ export const TerminationDialog = (props: Props) => {
       <Group direction="column" spacing={8}>
         {successCount ? (
           <Group direction="row" spacing={8} alignItems="flex-start">
-            <Icon icon="tick-circle" iconSize={16} color={Colors.GREEN3} />
+            <IconWIP name="check_circle" color={ColorsWIP.Green500} />
             <div>
               {state.mustForce
                 ? `Successfully forced termination for ${successCount}
@@ -299,7 +294,7 @@ export const TerminationDialog = (props: Props) => {
         {errorCount ? (
           <Group direction="column" spacing={8}>
             <Group direction="row" spacing={8} alignItems="flex-start">
-              <Icon icon="warning-sign" iconSize={16} color={Colors.GOLD3} />
+              <IconWIP name="warning" color={ColorsWIP.Yellow500} />
               <div>
                 {state.mustForce
                   ? `Could not force termination for ${errorCount} ${

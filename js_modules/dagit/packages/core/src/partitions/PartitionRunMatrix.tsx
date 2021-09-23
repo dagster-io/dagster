@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors, Dialog, Button, Classes, MenuItem, Menu, Popover, Icon} from '@blueprintjs/core';
+import {Colors, Dialog, Button, Classes, MenuItem, Menu, Popover} from '@blueprintjs/core';
 import {Popover2} from '@blueprintjs/popover2';
 import qs from 'query-string';
 import * as React from 'react';
@@ -10,8 +10,10 @@ import {useViewport} from '../gantt/useViewport';
 import {QueryPersistedStateConfig, useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {PIPELINE_EXPLORER_SOLID_HANDLE_FRAGMENT} from '../pipelines/PipelineExplorer';
 import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Group} from '../ui/Group';
+import {IconWIP} from '../ui/Icon';
 import {TokenizingFieldValue} from '../ui/TokenizingField';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -231,9 +233,9 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
               <MenuItem
                 text="Show previous status"
                 icon={
-                  <Icon
-                    icon="tick"
-                    color={options.showPrevious ? Colors.GRAY1 : Colors.LIGHT_GRAY3}
+                  <IconWIP
+                    name="done"
+                    color={options.showPrevious ? ColorsWIP.Gray700 : ColorsWIP.Gray200}
                   />
                 }
                 onClick={() => setOptions({...options, showPrevious: !options.showPrevious})}
@@ -242,9 +244,9 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
               <MenuItem
                 text="Only show failures and gaps"
                 icon={
-                  <Icon
-                    icon="tick"
-                    color={options.showFailuresAndGapsOnly ? Colors.GRAY1 : Colors.LIGHT_GRAY3}
+                  <IconWIP
+                    name="done"
+                    color={options.showFailuresAndGapsOnly ? ColorsWIP.Gray700 : ColorsWIP.Gray200}
                   />
                 }
                 onClick={() =>
@@ -272,9 +274,9 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
                   </Group>
                 }
                 icon={
-                  <Icon
-                    icon="tick"
-                    color={options.colorizeByAge ? Colors.GRAY1 : Colors.LIGHT_GRAY3}
+                  <IconWIP
+                    name="done"
+                    color={options.colorizeByAge ? ColorsWIP.Gray700 : ColorsWIP.Gray200}
                   />
                 }
                 onClick={() => setOptions({...options, colorizeByAge: !options.colorizeByAge})}

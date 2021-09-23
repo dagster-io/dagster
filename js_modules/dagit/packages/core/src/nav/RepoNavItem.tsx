@@ -1,4 +1,4 @@
-import {Button, Colors, Icon} from '@blueprintjs/core';
+import {Button, Colors} from '@blueprintjs/core';
 import {Popover2 as Popover, Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -8,7 +8,9 @@ import {usePermissions} from '../app/Permissions';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
+import {IconWIP, IconWrapper} from '../ui/Icon';
 import {Spinner} from '../ui/Spinner';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
@@ -129,12 +131,12 @@ const SingleRepoSummary: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) 
                 }
               >
                 {reloading ? (
-                  <span style={{position: 'relative', top: '1px'}}>
+                  <Box padding={2}>
                     <Spinner purpose="body-text" />
-                  </span>
+                  </Box>
                 ) : (
                   <StyledButton onClick={tryReload}>
-                    <Icon icon="refresh" iconSize={11} color={Colors.GRAY4} />
+                    <IconWIP name="refresh" color={ColorsWIP.Gray200} />
                   </StyledButton>
                 )}
               </Tooltip>
@@ -173,22 +175,18 @@ const StyledButton = styled.button`
   padding: 0;
   margin: 0;
   position: relative;
-  top: 1px;
+  top: 2px;
 
   :focus:not(:focus-visible) {
     outline: none;
   }
 
-  .bp3-icon {
-    display: block;
+  & ${IconWrapper} {
+    transition: color 0.1s ease-in-out;
   }
 
-  .bp3-icon svg {
-    transition: fill 0.1s ease-in-out;
-  }
-
-  :hover .bp3-icon svg {
-    fill: ${Colors.BLUE5};
+  :hover ${IconWrapper} {
+    color: ${ColorsWIP.Blue200};
   }
 `;
 

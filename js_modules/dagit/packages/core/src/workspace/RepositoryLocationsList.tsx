@@ -1,4 +1,4 @@
-import {Button, Colors, Icon, NonIdealState, Tag} from '@blueprintjs/core';
+import {Button, Colors, NonIdealState, Tag} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import React from 'react';
 
@@ -8,6 +8,7 @@ import {ReloadRepositoryLocationButton} from '../nav/ReloadRepositoryLocationBut
 import {useRepositoryLocationReload} from '../nav/useRepositoryLocationReload';
 import {ButtonLink} from '../ui/ButtonLink';
 import {Group} from '../ui/Group';
+import {IconWIP} from '../ui/Icon';
 import {Table} from '../ui/Table';
 import {Caption} from '../ui/Text';
 
@@ -88,7 +89,7 @@ const ReloadButton: React.FC<{
         <Button
           onClick={() => tryReload()}
           loading={reloading}
-          icon={<Icon icon="refresh" iconSize={11} />}
+          icon={<IconWIP name="refresh" />}
           text="Reload"
           small
           minimal
