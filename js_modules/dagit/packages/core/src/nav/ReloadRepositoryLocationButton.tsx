@@ -1,5 +1,6 @@
 import * as React from 'react';
 
+import {AppContext} from '../app/AppContext';
 import {RepositoryLocationErrorDialog} from '../workspace/RepositoryLocationErrorDialog';
 
 import {useRepositoryLocationReload} from './useRepositoryLocationReload';
@@ -17,6 +18,8 @@ interface Props {
 export const ReloadRepositoryLocationButton: React.FC<Props> = (props) => {
   const {children, location} = props;
   const [shown, setShown] = React.useState(false);
+
+  const {basePath} = React.useContext(AppContext);
 
   const {reloading, error, tryReload} = useRepositoryLocationReload(location);
 
@@ -36,7 +39,7 @@ export const ReloadRepositoryLocationButton: React.FC<Props> = (props) => {
           // is presented to the user, and so that if the user was previously viewing
           // an object in a failed repo location, they aren't staring at a blank page.
           setShown(false);
-          window.location.href = '/workspace';
+          window.location.href = `${basePath}/workspace`;
         }}
       />
     </>
