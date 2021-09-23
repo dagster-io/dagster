@@ -32,6 +32,7 @@ export function handleLaunchResult(
   basePath: string,
   pipelineName: string,
   result: void | {data?: LaunchPipelineExecution | LaunchPipelineReexecution | null},
+  openInTab?: boolean,
 ) {
   const obj =
     result && result.data && 'launchPipelineExecution' in result.data
@@ -46,7 +47,12 @@ export function handleLaunchResult(
   }
 
   if (obj.__typename === 'LaunchPipelineRunSuccess') {
-    window.location.href = `${basePath}/instance/runs/${obj.run.runId}`;
+    const url = `${basePath}/instance/runs/${obj.run.runId}`;
+    if (openInTab) {
+      window.open(url, '_blank');
+    } else {
+      window.location.href = url;
+    }
   } else if (obj.__typename === 'PythonError') {
     showCustomAlert({
       title: 'Error',
