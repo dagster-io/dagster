@@ -34,6 +34,7 @@ export const ColorsWIP = {
   Olive50: 'rgba(72, 82, 69, 0.1)',
   ForestGreen: 'rgba(33, 70, 61, 1)',
   HighlightGreen: 'rgba(81, 233, 124, 1)',
+  HighlightRed: 'rgba(255, 128, 100, 1)',
   NeonGreen: 'rgba(167, 255, 191, 1)',
   LightPurple: 'rgba(222, 221, 255, 1)',
   Link: 'rgba(9, 8, 110, 1)',
