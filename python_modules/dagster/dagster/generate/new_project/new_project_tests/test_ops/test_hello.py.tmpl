@@ -1,14 +1,4 @@
-from dagster import graph
 from {{ repo_name }}.ops.hello import hello
-
-
-def _execute_op_in_graph(an_op):
-    @graph
-    def my_graph():
-        an_op()
-
-    result = my_graph.execute_in_process()
-    return result
 
 
 def test_hello():
@@ -16,10 +6,7 @@ def test_hello():
     This is an example test for a Dagster op.
 
     For hints on how to test your Dagster ops, see our documentation tutorial on Testing:
-    https://docs.dagster.io/tutorial/testable
+    https://docs.dagster.io/concepts/testing
     """
-    result = _execute_op_in_graph(hello)
 
-    assert result.success
-    # TODO how to test an op?
-    # assert result.output_values == {"result": "Hello, Dagster!"}
+    assert hello() == "Hello, Dagster!"
