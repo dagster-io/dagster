@@ -646,7 +646,7 @@ def test_hook_ops():
 
     result = a_graph.execute_in_process()
     assert result.success
-    assert called_hook_to_ops["a_hook"] == {"a_op", "op_with_hook"}
+    assert called_hook_to_ops["my_hook"] == {"a_op", "op_with_hook"}
 
 
 def test_hook_graph():

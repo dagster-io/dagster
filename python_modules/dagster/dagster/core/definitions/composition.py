@@ -9,6 +9,7 @@ from typing import (
     List,
     NamedTuple,
     Optional,
+    Set,
     Tuple,
     Type,
     Union,
@@ -551,6 +552,9 @@ class PendingNodeInvocation:
 
         tags = check.opt_dict_param(tags, "tags", key_type=str)
         hooks = check.opt_set_param(hooks, "hooks", HookDefinition)
+        job_hooks: Set[HookDefinition] = set()
+        job_hooks.update(check.opt_set_param(hooks, "hooks", HookDefinition))
+        job_hooks.update(self.hook_defs)
         return self.node_def.to_job(
             name=name or self.given_alias,
             description=description,
@@ -559,7 +563,7 @@ class PendingNodeInvocation:
             tags=tags if not self.tags else self.tags.updated_with(tags),
             logger_defs=logger_defs,
             executor_def=executor_def,
-            hooks=hooks.union(self.hook_defs),
+            hooks=job_hooks,
             version_strategy=version_strategy,
         )
 
