@@ -75,11 +75,15 @@ const StyledMenuItem = styled(MenuItem)<StyledMenuItemProps>`
   border-radius: 4px;
   color: ${({$textColor}) => $textColor};
   line-height: 20px;
-  padding: 6px 8px;
+  padding: 6px 8px 6px 12px;
   transition: background-color 50ms, box-shadow 150ms;
 
-  & ${IconWrapper} {
+  ${IconWrapper} {
     padding-top: 2px;
+  }
+
+  ${IconWrapper}:first-child {
+    margin-left: -4px;
   }
 
   &:hover {
