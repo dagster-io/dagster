@@ -1,0 +1,15 @@
+---
+version: "3.9"
+services:
+  server1:
+    image: python:3
+    ports:
+      - 8000:8000
+    command: python -m http.server
+    container_name: server1
+  server2:
+    image: python:3
+    ports:
+      - 8001:8001
+    command: python -m http.server 8001
+    container_name: server2
