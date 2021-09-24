@@ -75,7 +75,7 @@ const StyledMenuItem = styled(MenuItem)<StyledMenuItemProps>`
   border-radius: 4px;
   color: ${({$textColor}) => $textColor};
   line-height: 20px;
-  padding: 6px 8px 6px 12px;
+  padding: 6px 8px;
   transition: background-color 50ms, box-shadow 150ms;
 
   & ${IconWrapper} {
