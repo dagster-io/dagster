@@ -1,8 +1,8 @@
-import {Colors, Intent} from '@blueprintjs/core';
+import {Intent} from '@blueprintjs/core';
 import {Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
-import {ColorsWIP} from './Colors';
 
+import {ColorsWIP} from './Colors';
 import {Group} from './Group';
 import {Slider, MultiSlider} from './Slider';
 
