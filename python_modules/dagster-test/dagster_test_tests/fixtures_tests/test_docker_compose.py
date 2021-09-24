@@ -50,3 +50,14 @@ def test_docker_compose_cm_with_network(request, docker_compose_cm, retrying_req
     ) as docker_compose:
         assert "network" in subprocess.check_output(["docker", "network", "ls"]).decode()
         assert retrying_requests.get(f"http://{docker_compose['server']}:8000").ok
+
+
+def test_docker_compose_cm_single_service(request, docker_compose_cm, retrying_requests):
+    with docker_compose_cm(
+        docker_compose_yml=os.path.join(
+            os.path.dirname(request.fspath), "multi-service-docker-compose.yml"
+        ),
+        service="server2",
+    ) as docker_compose:
+        assert not docker_compose.get("server1")
+        assert retrying_requests.get(f"http://{docker_compose['server2']}:8001").ok
