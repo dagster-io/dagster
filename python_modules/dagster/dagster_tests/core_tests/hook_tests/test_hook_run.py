@@ -10,6 +10,8 @@ from dagster import (
     OutputDefinition,
     composite_solid,
     execute_pipeline,
+    graph,
+    op,
     pipeline,
     resource,
     solid,
@@ -622,3 +624,71 @@ def test_hook_subpipeline():
     result = execute_pipeline(a_pipeline, solid_selection=["solid_a"])
     assert result.success
     assert called_hook_to_solids["hook_a_generic"] == {"solid_a"}
+
+
+def test_hook_ops():
+    called_hook_to_ops = defaultdict(set)
+
+    @success_hook
+    def my_hook(context):
+        called_hook_to_ops[context.hook_def.name].add(context.solid.name)
+        return HookExecutionResult("my_hook")
+
+    @op
+    def a_op(_):
+        pass
+
+    @graph
+    def a_graph():
+        a_op.with_hooks(hook_defs={my_hook})()
+        a_op.alias("op_with_hook").with_hooks(hook_defs={my_hook})()
+        a_op.alias("op_without_hook")()
+
+    result = a_graph.execute_in_process()
+    assert result.success
+    assert called_hook_to_ops["a_hook"] == {"a_op", "op_with_hook"}
+
+
+def test_hook_graph():
+    called_hook_to_ops = defaultdict(set)
+
+    @success_hook
+    def a_hook(context):
+        called_hook_to_ops[context.hook_def.name].add(context.solid.name)
+        return HookExecutionResult("a_hook")
+
+    @success_hook
+    def b_hook(context):
+        called_hook_to_ops[context.hook_def.name].add(context.solid.name)
+        return HookExecutionResult("a_hook")
+
+    @op
+    def a_op(_):
+        pass
+
+    @op
+    def b_op(_):
+        pass
+
+    @a_hook
+    @graph
+    def sub_graph():
+        a_op()
+
+    @b_hook
+    @graph
+    def super_graph():
+        sub_graph()
+        b_op()
+
+    result = super_graph.execute_in_process()
+    assert result.success
+    assert called_hook_to_ops["a_hook"] == {"a_op"}
+    assert called_hook_to_ops["b_hook"] == {"a_op", "b_op"}
+
+    # test to_job
+    called_hook_to_ops = defaultdict(set)
+    result = super_graph.to_job().execute_in_process()
+    assert result.success
+    assert called_hook_to_ops["a_hook"] == {"a_op"}
+    assert called_hook_to_ops["b_hook"] == {"a_op", "b_op"}

@@ -5,12 +5,14 @@ from dagster.core.definitions import (
     GraphDefinition,
     NodeDefinition,
     PipelineDefinition,
+    ResourceDefinition,
     SolidDefinition,
 )
 from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.instance import DagsterInstance
+from dagster.core.storage.io_manager import IOManager, IOManagerDefinition
 
 from .api import (
     ExecuteRunWithPlanIterable,
@@ -85,3 +87,21 @@ def core_execute_in_process(
             return InProcessGraphResult(node, handle, event_list_for_top_lvl_node, recorder)
 
     check.failed(f"Unexpected node type {node}")
+
+
+def wrap_resources_for_execution(
+    resources: Optional[Dict[str, Any]] = None
+) -> Dict[str, ResourceDefinition]:
+    resources = check.opt_dict_param(resources, "resources", key_type=str)
+    resource_defs = {}
+    # Wrap instantiated resource values in a resource definition.
+    # If an instantiated IO manager is provided, wrap it in an IO manager definition.
+    for resource_key, resource in resources.items():
+        if isinstance(resource, ResourceDefinition):
+            resource_defs[resource_key] = resource
+        elif isinstance(resource, IOManager):
+            resource_defs[resource_key] = IOManagerDefinition.hardcoded_io_manager(resource)
+        else:
+            resource_defs[resource_key] = ResourceDefinition.hardcoded_resource(resource)
+
+    return resource_defs
