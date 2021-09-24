@@ -1,6 +1,18 @@
 import warnings
 from collections import namedtuple
-from typing import AbstractSet, Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Callable,
+    Dict,
+    List,
+    NamedTuple,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 
 from dagster import check
 from dagster.core.definitions.graph import GraphDefinition
@@ -12,8 +24,8 @@ from dagster.core.errors import (
     DagsterInvariantViolationError,
 )
 from dagster.utils import frozentags
-
 from dagster.utils.backcompat import experimental
+
 from .config import ConfigMapping
 from .decorators.solid import (
     DecoratedSolidFunction,
@@ -29,12 +41,18 @@ from .dependency import (
 )
 from .hook import HookDefinition
 from .inference import infer_output_props
+from .logger import LoggerDefinition
 from .output import OutputDefinition, OutputMapping
+from .resource import ResourceDefinition
 from .solid import NodeDefinition, SolidDefinition
 from .utils import check_valid_name, validate_tags
-from .resource import ResourceDefinition
-from .logger import LoggerDefinition
 from .version_strategy import VersionStrategy
+
+if TYPE_CHECKING:
+    from dagster.core.instance import DagsterInstance
+    from .partition import PartitionedConfig
+    from .executor import ExecutorDefinition
+    from .job import JobDefinition
 
 
 _composition_stack: List["InProgressCompositionContext"] = []
