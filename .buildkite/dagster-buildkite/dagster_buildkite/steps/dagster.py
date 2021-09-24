@@ -313,6 +313,13 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         supported_pythons=ExamplePythons,
     ),
     ModuleBuildSpec(
+        "examples/hacker_news_assets",
+        env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_USER", "SNOWFLAKE_PASSWORD"],
+        buildkite_label="hacker_news_assets",
+        upload_coverage=False,
+        supported_pythons=ExamplePythons,
+    ),
+    ModuleBuildSpec(
         "examples/hacker_news",
         env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_USER", "SNOWFLAKE_PASSWORD"],
         buildkite_label="hacker_news_example",
@@ -481,6 +488,7 @@ def examples_tests():
         "dbt_example",
         "deploy_docker",
         "hacker_news",
+        "hacker_news_assets",
     ]
 
     examples_root = os.path.join(GIT_REPO_ROOT, "examples")
