@@ -3,12 +3,17 @@ import debounce from 'lodash/debounce';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
-type WebSocketContextType = {
+
+type Availability = 'attempting-to-connect' | 'unavailable' | 'available';
+
+export type WebSocketContextType = {
+  availability: Availability;
   status: number;
   websocketClient?: SubscriptionClient;
 };
 
 export const WebSocketContext = React.createContext<WebSocketContextType>({
+  availability: 'attempting-to-connect',
   status: WebSocket.CONNECTING,
 });
 
@@ -31,26 +36,45 @@ interface Props {
 export const WebSocketProvider: React.FC<Props> = (props) => {
   const {children, websocketClient} = props;
   const [status, setStatus] = React.useState(WebSocket.CONNECTING);
+  const [availability, setAvailability] = React.useState<Availability>('attempting-to-connect');
 
   const value = React.useMemo(
     () => ({
+      availability,
       status,
       websocketClient,
     }),
-    [status, websocketClient],
+    [availability, status, websocketClient],
   );
 
   const debouncedSetter = React.useMemo(() => debounce(setStatus, DEBOUNCE_TIME), []);
 
   React.useEffect(() => {
-    const unlisteners = WS_EVENTS.map((eventName) =>
+    const availabilityListeners = [
+      websocketClient.onConnected(() => setAndUnlisten('available')),
+      websocketClient.onError(() => setAndUnlisten('unavailable')),
+    ];
+
+    const unlisten = () => availabilityListeners.forEach((u) => u());
+    const setAndUnlisten = (value: Availability) => {
+      unlisten();
+      setAvailability(value);
+    };
+
+    return () => {
+      unlisten();
+    };
+  }, [websocketClient]);
+
+  React.useEffect(() => {
+    const statusListeners = WS_EVENTS.map((eventName) =>
       websocketClient.on(eventName, () => {
         debouncedSetter(websocketClient.status);
       }),
     );
 
     return () => {
-      unlisteners.forEach((u) => u());
+      statusListeners.forEach((u) => u());
     };
   }, [debouncedSetter, websocketClient]);
 

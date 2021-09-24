@@ -4,7 +4,7 @@ import {MemoryRouter, MemoryRouterProps} from 'react-router-dom';
 
 import {AppContext, AppContextValue} from '../app/AppContext';
 import {PermissionsContext, PermissionsFromJSON} from '../app/Permissions';
-import {WebSocketContext} from '../app/WebSocketProvider';
+import {WebSocketContext, WebSocketContextType} from '../app/WebSocketProvider';
 import {PermissionFragment} from '../app/types/PermissionFragment';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
 
@@ -34,8 +34,8 @@ const testValue = {
   rootServerURI: '',
 };
 
-const websocketValue = {
-  websocketURI: 'ws://foo',
+const websocketValue: WebSocketContextType = {
+  availability: 'available',
   status: WebSocket.OPEN,
 };
 

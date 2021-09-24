@@ -2,7 +2,7 @@ import {gql, useApolloClient, useQuery, useSubscription} from '@apollo/client';
 import throttle from 'lodash/throttle';
 import * as React from 'react';
 
-import {useWebsocketAvailability} from '../app/useWebsocketAvailability';
+import {WebSocketContext} from '../app/WebSocketProvider';
 import {PipelineRunStatus} from '../types/globalTypes';
 import {TokenizingFieldValue} from '../ui/TokenizingField';
 
@@ -243,13 +243,13 @@ const LogsProviderWithQuery = (props: LogsProviderWithQueryProps) => {
 
 export const LogsProvider: React.FC<LogsProviderProps> = (props) => {
   const {children, runId} = props;
-  const websocketAvailability = useWebsocketAvailability();
+  const {availability} = React.useContext(WebSocketContext);
 
-  if (websocketAvailability === 'attempting-to-connect') {
+  if (availability === 'attempting-to-connect') {
     return <>{children({allNodes: [], loading: true})}</>;
   }
 
-  if (websocketAvailability === 'error') {
+  if (availability === 'unavailable') {
     return <LogsProviderWithQuery runId={runId}>{children}</LogsProviderWithQuery>;
   }
 
