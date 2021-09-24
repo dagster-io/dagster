@@ -19,8 +19,8 @@ import * as React from 'react';
 import {BrowserRouter} from 'react-router-dom';
 import {createGlobalStyle} from 'styled-components/macro';
 
-import {GlobalTooltipStyle} from '../ui/Tooltip';
 import {ColorsWIP} from '../ui/Colors';
+import {GlobalTooltipStyle} from '../ui/Tooltip';
 import {FontFamily} from '../ui/styles';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
 
