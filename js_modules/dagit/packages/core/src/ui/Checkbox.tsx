@@ -7,12 +7,16 @@ import {ColorsWIP} from './Colors';
 
 const DISABLED_COLOR = ColorsWIP.Gray300;
 
-interface Props {
+type Props = React.DetailedHTMLProps<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  HTMLInputElement
+> & {
   checked: boolean;
+  label: string;
   indeterminate?: boolean;
   format?: 'check' | 'star' | 'switch';
   fillColor?: string;
-}
+};
 
 interface IconProps {
   checked: boolean;
@@ -21,7 +25,7 @@ interface IconProps {
   fillColor: string;
 }
 
-const StarIcon: React.FC<IconProps> = ({checked, fillColor}) => (
+const StarIcon: React.FC<IconProps> = ({checked, indeterminate, fillColor}) => (
   <svg width="24px" height="24px" viewBox="-3 -3 24 24">
     <path
       className="interaction-focus-outline"
@@ -33,13 +37,20 @@ const StarIcon: React.FC<IconProps> = ({checked, fillColor}) => (
       className="interaction-darken"
       fill={ColorsWIP.Gray300}
     />
+    {indeterminate && (
+      <path
+        d="M11.6490126,5.26286597 L11.8098,5.64001 L16.6398,6.05001 C17.5198,6.12001 17.8798,7.22001 17.2098,7.80001 L17.2098,7.80001 L13.5398,10.98 L14.6398,15.7 C14.8398,16.56 13.9098,17.24 13.1498,16.78 L13.1498,16.78 L8.99983,14.27 L4.84983,16.77 C4.49121528,16.9870563 4.09474951,16.9502879 3.79701262,16.7605538 L11.6490126,5.26286597 Z"
+        className="interaction-darken"
+        fill={fillColor}
+      />
+    )}
     <path
       d="M8.99983 14.27L13.1498 16.78C13.9098 17.24 14.8398 16.56 14.6398 15.7L13.5398 10.98L17.2098 7.80001C17.8798 7.22001 17.5198 6.12001 16.6398 6.05001L11.8098 5.64001L9.91983 1.18001C9.57983 0.37001 8.41983 0.37001 8.07983 1.18001L6.18983 5.63001L1.35983 6.04001C0.479829 6.11001 0.119828 7.21001 0.789828 7.79001L4.45983 10.97L3.35983 15.69C3.15983 16.55 4.08983 17.23 4.84983 16.77L8.99983 14.27Z"
       className="interaction-darken"
       fill={fillColor}
       style={{
         transformOrigin: '9px 9px',
-        transform: checked ? 'scale(1,1)' : 'scale(0,0)',
+        transform: !indeterminate && checked ? 'scale(1,1)' : 'scale(0,0)',
         transition: 'transform 80ms linear',
       }}
     />
@@ -63,7 +74,8 @@ const SwitchIcon: React.FC<IconProps> = ({checked, indeterminate, disabled, fill
       width="36"
       height="22"
       rx="11"
-      fill={fillColor}
+      fill={disabled || (checked && !indeterminate) ? fillColor : ColorsWIP.Gray500}
+      style={{transition: 'fill 100ms linear'}}
       className="interaction-darken interaction-focus-outline"
     />
     {!disabled && <rect x="0" y="0" width="36" height="22" rx="11" fill="url(#innerShadow)" />}
@@ -136,45 +148,44 @@ const CheckIcon: React.FC<IconProps> = ({checked, indeterminate, fillColor}) => 
   </svg>
 );
 
-export const Checkbox = styled(
-  ({
-    id,
-    checked,
-    label,
-    className,
-    format = 'check',
-    disabled = false,
-    indeterminate = false,
-    fillColor = ColorsWIP.Gray800,
-    ...rest
-  }) => {
-    const uid = useRef(id || uniqueId('checkbox-'));
-    const Component: React.FC<IconProps> = {star: StarIcon, check: CheckIcon, switch: SwitchIcon}[
-      format
-    ];
+const Base: React.FC<Props> = ({
+  id,
+  checked,
+  label,
+  className,
+  format = 'check',
+  disabled = false,
+  indeterminate = false,
+  fillColor = ColorsWIP.Gray800,
+  ...rest
+}) => {
+  const uid = useRef(id || uniqueId('checkbox-'));
+  const Component: React.FC<IconProps> = {star: StarIcon, check: CheckIcon, switch: SwitchIcon}[
+    format
+  ];
 
-    return (
-      <label htmlFor={uid.current} className={className}>
-        <input
-          type="checkbox"
-          id={uid.current}
-          tabIndex={0}
-          checked={checked}
-          disabled={disabled}
-          indeterminate={indeterminate}
-          {...rest}
-        />
-        <Component
-          disabled={disabled}
-          checked={checked}
-          indeterminate={indeterminate}
-          fillColor={disabled ? DISABLED_COLOR : fillColor}
-        />
-        {label}
-      </label>
-    );
-  },
-)<Props>`
+  return (
+    <label htmlFor={uid.current} className={className}>
+      <input
+        type="checkbox"
+        id={uid.current}
+        tabIndex={0}
+        checked={checked}
+        disabled={disabled}
+        {...rest}
+      />
+      <Component
+        disabled={disabled}
+        checked={checked}
+        indeterminate={indeterminate}
+        fillColor={disabled ? DISABLED_COLOR : fillColor}
+      />
+      {label}
+    </label>
+  );
+};
+
+export const Checkbox = styled(Base)`
   display: inline-flex;
   position: relative;
   user-select: none;
