@@ -1,6 +1,27 @@
 # Changelog
+
+# 0.12.12
+
+### Community Contributions
+
+- [dagster-msteams] Introduced a new integration with Microsoft Teams, which includes a connection resource and support for sending messages to Microsoft Teams. See details in the [API Docs](https://docs.dagster.io/_apidocs/libraries/dagster-msteams) (thanks [@iswariyam](https://github.com/iswariyam)!).
+- Fixed a mistake in the sensors docs (thanks [@vitorbaptista](https://github.com/vitorbaptista))!
+
+### Bugfixes
+
+- Fixed a bug that caused run status sensors to sometimes repeatedly fire alerts.
+- Fixed a bug that caused the `emr_pyspark_step_launcher` to fail when stderr included non-Log4J-formatted lines.
+- Fixed a bug that caused `applyPerUniqueValue` config on the `QueuedRunCoordinator` to fail Helm schema validation.
+- [dagster-shell] Fixed an issue where a failure while executing a shell command sometimes didn’t raise a clear explanation for the failure.
+
+### Experimental
+
+- Added experimental `@asset` decorator and `build_assets_job` APIs to construct asset-based jobs, along with Dagit support.
+- Added `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest`, which enable constructing asset-based jobs from DBT models.
+
 # 0.12.11
-## Community Contributions
+
+### Community Contributions
 
 - [helm] The ingress now supports TLS (thanks @cpmoser!)
 - [helm] Fixed an issue where dagit could not be configured with an empty workspace (thanks @yamrzou!)
@@ -8,10 +29,10 @@
 ### New
 
 - [dagstermill] You can now have more precise IO control over the output notebooks by specifying `output_notebook_name` in `define_dagstermill_solid` and providing your own IO manager via "output_notebook_io_manager" resource key.
-  - We've deprecated `output_notebook` argument in `define_dagstermill_solid` in favor of `output_notebook_name`.
-  - Previously, the output notebook functionality requires “file_manager“ resource and result in a FileHandle output. Now, when specifying output_notebook_name, it requires "output_notebook_io_manager" resource and results in a bytes output.
-  - You can now customize your own "output_notebook_io_manager" by extending OutputNotebookIOManager. A built-in `local_output_notebook_io_manager` is provided for handling local output notebook materialization.
-  - See detailed migration guide in https://github.com/dagster-io/dagster/pull/4490.
+- We've deprecated `output_notebook` argument in `define_dagstermill_solid` in favor of `output_notebook_name`.
+- Previously, the output notebook functionality requires “file_manager“ resource and result in a FileHandle output. Now, when specifying output_notebook_name, it requires "output_notebook_io_manager" resource and results in a bytes output.
+- You can now customize your own "output_notebook_io_manager" by extending OutputNotebookIOManager. A built-in `local_output_notebook_io_manager` is provided for handling local output notebook materialization.
+- See detailed migration guide in https://github.com/dagster-io/dagster/pull/4490.
 
 - Dagit fonts have been updated.
 
