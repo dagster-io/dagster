@@ -1,4 +1,5 @@
-from dagster.core.asset_defs import AssetIn, Column, table
+from dagster.core.asset_defs import AssetIn
+from hacker_news_assets.utils.table import Column, table
 from pandas import DataFrame, Series
 
 

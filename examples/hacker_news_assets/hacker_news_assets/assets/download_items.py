@@ -1,7 +1,8 @@
 from typing import Tuple
 
 from dagster import Output
-from dagster.core.asset_defs import Column, asset, table
+from dagster.core.asset_defs import asset
+from hacker_news_assets.utils.table import Column, table
 from pandas import DataFrame
 from pyspark.sql import DataFrame as SparkDF
 from pyspark.sql.types import (

@@ -2,8 +2,9 @@
 import random
 
 from dagster import EventMetadata, Output
-from dagster.core.asset_defs import AssetIn, Column, asset, table
+from dagster.core.asset_defs import AssetIn, asset
 from hacker_news_assets.assets.user_story_matrix import IndexedCooMatrix
+from hacker_news_assets.utils.table import Column, table
 from pandas import DataFrame, Series
 from sklearn.decomposition import TruncatedSVD
 

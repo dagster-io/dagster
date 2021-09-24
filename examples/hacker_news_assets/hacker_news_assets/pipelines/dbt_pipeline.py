@@ -4,11 +4,11 @@ from dagster.core.asset_defs import build_assets_job
 # from dagster.seven.temp_dir import get_system_temp_directory
 from dagster.utils import file_relative_path
 from dagster_dbt import dbt_cli_resource
-from dagster_dbt.assets import load_assets
+from dagster_dbt.asset_defs import load_assets_from_dbt_project
 from dagster_pyspark import pyspark_resource
 from hacker_news_assets.assets.activity_forecast import activity_forecast
 from hacker_news_assets.pipelines.download_pipeline import S3_SPARK_CONF
-# from hacker_news_assets.resources.parquet_io_manager import parquet_io_manager
+# from hacker_news_assets.resources.parquet_io_manager import parquet_.io_manager
 from hacker_news_assets.resources.snowflake_io_manager import (
     SHARED_SNOWFLAKE_CONF,
     connect_snowflake,
@@ -54,7 +54,7 @@ def asset_metadata(_context, model_info):
 
 # this list has one element per dbt model
 assets = (
-    load_assets(
+    load_assets_from_dbt_project(
         DBT_PROJECT_DIR,
         DBT_PROFILES_DIR,
         runtime_metadata_fn=asset_metadata,
