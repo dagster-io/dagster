@@ -57,6 +57,23 @@ export const Disabled = () => {
       <Button icon={<Icon name="cached" />} disabled intent="primary">
         Disabled
       </Button>
+      <Button icon={<Icon name="cached" />} loading intent="primary">
+        Loading
+      </Button>
+      <Button loading intent="primary">
+        Loading with no icon
+      </Button>
+      <Button rightIcon={<Icon name="cached" />} loading intent="primary">
+        Loading right
+      </Button>
+      <Button
+        icon={<Icon name="cached" />}
+        rightIcon={<Icon name="folder" />}
+        loading
+        intent="primary"
+      >
+        Loading with two icons
+      </Button>
     </Group>
   );
 };

@@ -20,7 +20,7 @@ export const RepositoryLink: React.FC<{repoAddress: RepoAddress}> = ({repoAddres
   const {canReloadRepositoryLocation} = usePermissions();
 
   return (
-    <Box flex={{display: 'inline-flex', direction: 'row', alignItems: 'baseline'}}>
+    <Box flex={{display: 'inline-flex', direction: 'row', alignItems: 'center'}}>
       <RepositoryName
         to={workspacePathFromAddress(repoAddress)}
         title={repoAddressAsString(repoAddress)}
@@ -46,13 +46,15 @@ export const RepositoryLink: React.FC<{repoAddress: RepoAddress}> = ({repoAddres
                   )
                 }
               >
-                {reloading ? (
-                  <Spinner purpose="body-text" />
-                ) : (
-                  <StyledButton onClick={tryReload}>
-                    <IconWIP name="refresh" color={ColorsWIP.Gray400} />
-                  </StyledButton>
-                )}
+                <SpinnerOrButton>
+                  {reloading ? (
+                    <Spinner purpose="body-text" />
+                  ) : (
+                    <StyledButton onClick={tryReload}>
+                      <IconWIP name="refresh" color={ColorsWIP.Gray400} />
+                    </StyledButton>
+                  )}
+                </SpinnerOrButton>
               </ReloadTooltip>
             </ShortcutHandler>
           )}
@@ -71,10 +73,13 @@ const RepositoryName = styled(Link)`
 const ReloadTooltip = styled(Tooltip)`
   margin-left: 4px;
 
-  button {
-    position: relative;
-    top: 3px;
+  && {
+    display: block;
   }
+`;
+
+const SpinnerOrButton = styled.div`
+  display: flex;
 `;
 
 const StyledButton = styled.button`

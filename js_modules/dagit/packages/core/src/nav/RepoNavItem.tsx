@@ -101,7 +101,7 @@ export const RepoNavItem: React.FC<Props> = (props) => {
 const SingleRepoSummary: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) => {
   const {canReloadRepositoryLocation} = usePermissions();
   return (
-    <Group direction="row" spacing={8} alignItems="center">
+    <Group direction="row" spacing={4} alignItems="center">
       <SingleRepoNameLink
         to={workspacePathFromAddress(repoAddress)}
         title={repoAddressAsString(repoAddress)}
@@ -116,7 +116,7 @@ const SingleRepoSummary: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) 
               shortcutLabel={`⌥R`}
               shortcutFilter={(e) => e.code === 'KeyR' && e.altKey}
             >
-              <Tooltip
+              <ReloadTooltip
                 inheritDarkTheme={false}
                 content={
                   <Reloading>
@@ -130,16 +130,16 @@ const SingleRepoSummary: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) 
                   </Reloading>
                 }
               >
-                {reloading ? (
-                  <Box padding={2}>
+                <SpinnerOrButton>
+                  {reloading ? (
                     <Spinner purpose="body-text" />
-                  </Box>
-                ) : (
-                  <StyledButton onClick={tryReload}>
-                    <IconWIP name="refresh" color={ColorsWIP.Gray200} />
-                  </StyledButton>
-                )}
-              </Tooltip>
+                  ) : (
+                    <StyledButton onClick={tryReload}>
+                      <IconWIP name="refresh" color={ColorsWIP.Gray200} />
+                    </StyledButton>
+                  )}
+                </SpinnerOrButton>
+              </ReloadTooltip>
             </ShortcutHandler>
           )}
         </ReloadRepositoryLocationButton>
@@ -168,14 +168,22 @@ const SingleRepoNameLink = styled(Link)`
   }
 `;
 
+const ReloadTooltip = styled(Tooltip)`
+  && {
+    display: block;
+  }
+`;
+
+const SpinnerOrButton = styled.div`
+  display: flex;
+`;
+
 const StyledButton = styled.button`
   background-color: transparent;
   border: 0;
   cursor: pointer;
   padding: 0;
   margin: 0;
-  position: relative;
-  top: 2px;
 
   :focus:not(:focus-visible) {
     outline: none;
