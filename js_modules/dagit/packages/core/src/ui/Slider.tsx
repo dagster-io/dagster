@@ -45,11 +45,11 @@ const StylesShared = css<{$fillColor: string}>`
     width: 18px;
     height: 18px;
     border-radius: 50%;
-    border: 2px solid ${ColorsWIP.Gray100};
+    border: 2px solid ${ColorsWIP.Gray300};
     background: ${ColorsWIP.White};
     box-shadow: none;
     &:hover {
-      border: 2px solid ${ColorsWIP.Gray200};
+      border: 2px solid ${ColorsWIP.Gray400};
       box-shadow: rgba(0, 0, 0, 0.12) 0px 2px 12px 0px;
     }
 
