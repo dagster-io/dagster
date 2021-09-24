@@ -76,18 +76,26 @@ const StyledButton = styled.button<StyledButtonProps>`
   font-size: 14px;
   line-height: 20px;
   padding: 6px 12px;
-  transition: background 100ms, box-shadow 150ms;
+  transition: background 100ms, box-shadow 150ms, filter 100ms;
   user-select: none;
 
   ${({$stroke}) => ($stroke ? DEFAULT_STROKE : NO_STROKE)}
 
   :hover {
-    ${({$stroke}) => ($stroke ? DEFAULT_STROKE_PLUS_HOVER : NO_STROKE_PLUS_HOVER)};
+    ${({$stroke}) => ($stroke ? DEFAULT_STROKE_PLUS_HOVER : NO_STROKE_PLUS_HOVER)}
   }
 
   :focus {
     box-shadow: rgba(58, 151, 212, 0.6) 0 0 0 3px;
     outline: none;
+  }
+
+  :focus:not(:focus-visible) {
+    ${({$stroke}) => ($stroke ? DEFAULT_STROKE_PLUS_HOVER : NO_STROKE_PLUS_HOVER)}
+  }
+
+  :active {
+    filter: brightness(0.95);
   }
 
   :disabled {
