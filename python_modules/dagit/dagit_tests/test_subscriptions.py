@@ -3,6 +3,7 @@ from contextlib import contextmanager
 from unittest import mock
 
 import objgraph
+import pytest
 from dagit.subscription_server import DagsterSubscriptionServer
 from dagster import execute_pipeline, pipeline, solid
 from dagster.core.test_utils import environ, instance_for_test
@@ -112,6 +113,9 @@ def test_event_log_subscription():
             assert len(objgraph.by_type("PipelineRunObservableSubscribe")) == 0
 
 
+@pytest.mark.skip(
+    "PipelineRunObservableSubscribe GC check is flaky - see https://github.com/dagster-io/dagster/issues/4917"
+)
 def test_event_log_subscription_chunked():
     schema = create_schema()
     server = DagsterSubscriptionServer(schema=schema)
