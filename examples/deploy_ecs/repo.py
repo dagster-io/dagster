@@ -12,6 +12,7 @@ def solid():
 @dagster.pipeline
 def pipeline():
     solid()
+    solid()
 
 
 @dagster.repository
