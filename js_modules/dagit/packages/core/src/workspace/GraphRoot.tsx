@@ -34,7 +34,7 @@ export const GraphRoot: React.FC<Props> = (props) => {
               <RepositoryLink repoAddress={repoAddress} />
             </>
           }
-          icon="diagram-tree"
+          icon="schema"
         />
       </div>
       <div style={{position: 'relative', minHeight: 0, flex: 1, display: 'flex'}}>

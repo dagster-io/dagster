@@ -1712,6 +1712,9 @@
                     "title": "Value",
                     "anyOf": [
                         {
+                            "type": "object"
+                        },
+                        {
                             "type": "string"
                         },
                         {

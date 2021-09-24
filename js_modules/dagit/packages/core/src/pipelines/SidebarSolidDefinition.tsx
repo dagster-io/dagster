@@ -1,6 +1,4 @@
 import {gql} from '@apollo/client';
-import {Colors, Icon} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
 import {AppContext} from '../app/AppContext';
@@ -11,6 +9,8 @@ import {SolidTypeSignature, SOLID_TYPE_SIGNATURE_FRAGMENT} from '../solids/Solid
 import {ConfigTypeSchema, CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
 import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from '../typeexplorer/TypeWithTooltip';
 import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
+import {IconWIP} from '../ui/Icon';
 import {RepoAddress} from '../workspace/types';
 
 import {Description} from './Description';
@@ -126,7 +126,7 @@ export const SidebarSolidDefinition: React.FC<SidebarSolidDefinitionProps> = (pr
           <Box padding={12}>
             {[...requiredResources].sort().map((requirement) => (
               <ResourceContainer key={requirement.resourceKey}>
-                <Icon iconSize={14} icon={IconNames.LAYERS} color={Colors.DARK_GRAY2} />
+                <IconWIP name="layers" color={ColorsWIP.Gray700} />
                 <ResourceHeader>{requirement.resourceKey}</ResourceHeader>
               </ResourceContainer>
             ))}

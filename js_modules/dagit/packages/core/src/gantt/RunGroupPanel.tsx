@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors, Icon} from '@blueprintjs/core';
+import {Colors} from '@blueprintjs/core';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -11,7 +11,9 @@ import {DagsterTag} from '../runs/RunTag';
 import {RunElapsed, RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
+import {IconWIP} from '../ui/Icon';
 
 import {RunGroupPanelQuery} from './types/RunGroupPanelQuery';
 
@@ -35,12 +37,7 @@ export const RunGroupPanel: React.FC<{runId: string}> = ({runId}) => {
   if (group.__typename === 'PythonError') {
     return (
       <Group direction="row" spacing={8} padding={8}>
-        <Icon
-          icon="warning-sign"
-          color={Colors.GOLD3}
-          iconSize={13}
-          style={{position: 'relative', top: '-1px'}}
-        />
+        <IconWIP name="warning" color={ColorsWIP.Yellow500} />
         <div style={{fontSize: '13px'}}>
           The run group for this run could not be loaded.{' '}
           <ButtonLink
@@ -59,6 +56,7 @@ export const RunGroupPanel: React.FC<{runId: string}> = ({runId}) => {
       </Group>
     );
   }
+
   if (group.runs?.length === 1) {
     return <div />;
   }

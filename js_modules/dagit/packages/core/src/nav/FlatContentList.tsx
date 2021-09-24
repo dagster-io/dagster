@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors, Icon} from '@blueprintjs/core';
+import {Colors} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -7,6 +7,8 @@ import styled from 'styled-components/macro';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {InstigationStatus} from '../types/globalTypes';
 import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
+import {IconWIP} from '../ui/Icon';
 import {DagsterRepoOption} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
@@ -142,7 +144,7 @@ const JobItem: React.FC<JobItemProps> = (props) => {
       return null;
     }
 
-    const whichIcon = schedule ? 'time' : 'automatic-updates';
+    const whichIcon = schedule ? 'schedule' : 'sensors';
     const status = schedule ? schedule?.scheduleState.status : sensor?.sensorState.status;
     const tooltipContent = schedule ? (
       <>
@@ -156,11 +158,9 @@ const JobItem: React.FC<JobItemProps> = (props) => {
 
     return (
       <IconWithTooltip content={tooltipContent} inheritDarkTheme={false}>
-        <Icon
-          icon={whichIcon}
-          iconSize={12}
-          color={status === InstigationStatus.RUNNING ? Colors.GREEN5 : Colors.DARK_GRAY5}
-          style={{display: 'block'}}
+        <IconWIP
+          name={whichIcon}
+          color={status === InstigationStatus.RUNNING ? ColorsWIP.Green500 : ColorsWIP.Gray600}
         />
       </IconWithTooltip>
     );

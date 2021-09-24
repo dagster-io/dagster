@@ -98,7 +98,7 @@ export const SnapshotNav = (props: SnapshotNavProps) => {
             {tag()}
           </Group>
         }
-        icon="diagram-tree"
+        icon="schema"
         description={
           <span>
             Snapshot of{' '}

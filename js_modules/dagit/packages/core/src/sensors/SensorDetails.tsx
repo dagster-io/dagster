@@ -85,7 +85,7 @@ export const SensorDetails: React.FC<{
             ) : null}
           </Group>
         }
-        icon="automatic-updates"
+        icon="sensors"
         description={
           <>
             <Link to={workspacePathFromAddress(repoAddress, '/sensors')}>Sensor</Link> in{' '}

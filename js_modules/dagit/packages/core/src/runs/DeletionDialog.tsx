@@ -1,8 +1,10 @@
 import {useMutation} from '@apollo/client';
-import {Button, Classes, Colors, Dialog, Icon, ProgressBar} from '@blueprintjs/core';
+import {Button, Classes, Dialog, ProgressBar} from '@blueprintjs/core';
 import * as React from 'react';
 
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
+import {IconWIP} from '../ui/Icon';
 import {Mono} from '../ui/Text';
 
 import {NavigationBlock} from './NavitationBlock';
@@ -233,8 +235,8 @@ export const DeletionDialog = (props: Props) => {
     return (
       <Group direction="column" spacing={8}>
         {successCount ? (
-          <Group direction="row" spacing={8} alignItems="flex-start">
-            <Icon icon="tick-circle" iconSize={16} color={Colors.GREEN3} />
+          <Group direction="row" spacing={8} alignItems="center">
+            <IconWIP name="check_circle" color={ColorsWIP.Green500} />
             <div>{`Successfully deleted ${successCount} ${
               successCount === 1 ? 'run' : 'runs'
             }.`}</div>
@@ -242,8 +244,8 @@ export const DeletionDialog = (props: Props) => {
         ) : null}
         {errorCount ? (
           <Group direction="column" spacing={8}>
-            <Group direction="row" spacing={8} alignItems="flex-start">
-              <Icon icon="warning-sign" iconSize={16} color={Colors.GOLD3} />
+            <Group direction="row" spacing={8} alignItems="center">
+              <IconWIP name="warning" color={ColorsWIP.Yellow500} />
               <div>{`Could not delete ${errorCount} ${errorCount === 1 ? 'run' : 'runs'}.`}</div>
             </Group>
             <ul>

@@ -1,4 +1,4 @@
-import {Colors, Icon} from '@blueprintjs/core';
+import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import {useHistory, Link, useRouteMatch} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -6,6 +6,8 @@ import styled from 'styled-components/macro';
 import {LayoutContext} from '../app/LayoutProvider';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
+import {IconWIP} from '../ui/Icon';
 
 import {InstanceWarningIcon} from './InstanceWarningIcon';
 import {LeftNavRepositorySection} from './LeftNavRepositorySection';
@@ -46,7 +48,7 @@ export const LeftNav = () => {
           shortcutFilter={(e) => e.code === 'Digit1' && e.altKey}
         >
           <Tab to="/instance/runs" className={!!runsMatch ? 'selected' : ''}>
-            <Icon icon="history" iconSize={16} />
+            <IconWIP name="settings_backup_restore" color={ColorsWIP.White} />
             <TabLabel>Runs</TabLabel>
           </Tab>
         </ShortcutHandler>
@@ -56,7 +58,7 @@ export const LeftNav = () => {
           shortcutFilter={(e) => e.code === 'Digit2' && e.altKey}
         >
           <Tab to="/instance/assets" className={!!assetsMatch ? 'selected' : ''}>
-            <Icon icon="panel-table" iconSize={16} />
+            <IconWIP name="table_view" color={ColorsWIP.White} />
             <TabLabel>Assets</TabLabel>
           </Tab>
         </ShortcutHandler>
@@ -66,7 +68,7 @@ export const LeftNav = () => {
           shortcutFilter={(e) => e.code === 'Digit3' && e.altKey}
         >
           <Tab to="/instance" className={!!statusMatch ? 'selected' : ''}>
-            <Icon icon="dashboard" iconSize={16} />
+            <IconWIP name="speed" color={ColorsWIP.White} />
             <TabLabel>Status</TabLabel>
             <InstanceWarningIcon />
           </Tab>
@@ -77,7 +79,7 @@ export const LeftNav = () => {
           shortcutFilter={(e) => e.code === 'Digit4' && e.altKey}
         >
           <Tab to="/workspace" className={!!workspaceMatch ? 'selected' : ''}>
-            <Icon icon="cube" iconSize={16} />
+            <IconWIP name="source" color={ColorsWIP.White} />
             <TabLabel>Workspace</TabLabel>
             <WorkspaceWarningIcon />
           </Tab>

@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Button, Classes, Colors, Dialog, Icon} from '@blueprintjs/core';
+import {Button, Classes, Colors, Dialog} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -14,7 +14,9 @@ import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {SensorSwitch, SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
+import {IconWIP} from '../ui/Icon';
 import {MetadataTable, StyledTable} from '../ui/MetadataTable';
 import {Mono} from '../ui/Text';
 import {RepoAddress} from '../workspace/types';
@@ -198,13 +200,8 @@ const MatchingSchedule: React.FC<{schedule: Schedule; repoAddress: RepoAddress}>
   schedule,
   repoAddress,
 }) => (
-  <Group direction="row" spacing={8}>
-    <Icon
-      icon="time"
-      color={Colors.GRAY3}
-      iconSize={13}
-      style={{position: 'relative', top: '-2px'}}
-    />
+  <Group direction="row" spacing={8} alignItems="center">
+    <IconWIP name="schedule" color={ColorsWIP.Gray700} />
     <Link to={workspacePathFromAddress(repoAddress, `/schedules/${schedule.name}`)}>
       {schedule.name}
     </Link>
@@ -216,13 +213,8 @@ const MatchingSensor: React.FC<{sensor: Sensor; repoAddress: RepoAddress}> = ({
   sensor,
   repoAddress,
 }) => (
-  <Group direction="row" spacing={8}>
-    <Icon
-      icon="automatic-updates"
-      color={Colors.GRAY3}
-      iconSize={13}
-      style={{position: 'relative', top: '-2px'}}
-    />
+  <Group direction="row" spacing={8} alignItems="center">
+    <IconWIP name="sensors" color={ColorsWIP.Gray700} />
     <Link to={workspacePathFromAddress(repoAddress, `/sensors/${sensor.name}`)}>{sensor.name}</Link>
     <SensorSwitch large={false} repoAddress={repoAddress} sensor={sensor} />
   </Group>

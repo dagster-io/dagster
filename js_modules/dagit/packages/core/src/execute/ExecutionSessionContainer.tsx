@@ -1,5 +1,5 @@
 import {gql, useApolloClient, useQuery} from '@apollo/client';
-import {Button, Colors, Icon} from '@blueprintjs/core';
+import {Button, Colors} from '@blueprintjs/core';
 import merge from 'deepmerge';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -29,7 +29,9 @@ import {DagsterTag} from '../runs/RunTag';
 import {RepositorySelector} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
+import {IconWIP} from '../ui/Icon';
 import {SecondPanelToggle, SplitPanelContainer} from '../ui/SplitPanelContainer';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -623,7 +625,7 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
                 border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY1}}
               >
                 <Group direction="row" spacing={8} alignItems="center">
-                  <Icon icon="warning-sign" color={Colors.GOLD3} />
+                  <IconWIP name="warning" color={ColorsWIP.Yellow500} />
                   <div>
                     Your repository has been manually refreshed, and this configuration may now be
                     out of date.

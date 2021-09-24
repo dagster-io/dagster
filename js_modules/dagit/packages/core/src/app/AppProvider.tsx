@@ -20,6 +20,7 @@ import {BrowserRouter} from 'react-router-dom';
 import {createGlobalStyle} from 'styled-components/macro';
 
 import {GlobalTooltipStyle} from '../ui/Tooltip';
+import {ColorsWIP} from '../ui/Colors';
 import {FontFamily} from '../ui/styles';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
 
@@ -72,6 +73,21 @@ const GlobalStyle = createGlobalStyle`
   code, pre {
     font-family: ${FontFamily.monospace};
     font-size: 16px;
+  }
+
+  .material-icons {
+    display: block;
+  }
+
+  /* todo dish: Remove these when we have buttons updated. */
+
+  .bp3-button .material-icons {
+    position: relative;
+    top: 1px;
+  }
+
+  .bp3-button:disabled .material-icons {
+    color: ${ColorsWIP.Gray300}
   }
 `;
 

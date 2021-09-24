@@ -83,8 +83,12 @@ describe('LeftNav', () => {
     it('does not show warning icon when no errors', async () => {
       render(<Test mocks={defaultMocks} />);
       await waitFor(() => {
-        expect(screen.getByRole('link', {name: /status/i})).toBeVisible();
-        expect(screen.queryByRole('link', {name: /status warnings found/i})).toBeNull();
+        expect(screen.getByRole('link', {name: /source workspace/i})).toBeVisible();
+        expect(
+          screen.queryByRole('link', {
+            name: /source workspace warning/i,
+          }),
+        ).toBeNull();
       });
     });
 
@@ -98,7 +102,11 @@ describe('LeftNav', () => {
 
       render(<Test mocks={[defaultMocks, mocks]} />);
       await waitFor(() => {
-        expect(screen.getByRole('link', {name: /workspace warnings found/i})).toBeVisible();
+        expect(
+          screen.getByRole('link', {
+            name: /source workspace warning/i,
+          }),
+        ).toBeVisible();
       });
     });
   });

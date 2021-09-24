@@ -11,6 +11,7 @@ import {Group} from '../ui/Group';
 import {PageHeader} from '../ui/PageHeader';
 import {Heading} from '../ui/Text';
 
+import {RepositoryAssetsList} from './RepositoryAssetsList';
 import {RepositoryGraphsList} from './RepositoryGraphsList';
 import {RepositoryPipelinesList} from './RepositoryPipelinesList';
 import {repoAddressAsString} from './repoAddressAsString';
@@ -25,7 +26,7 @@ interface Props {
 export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
   const {repoAddress, tab} = props;
   const path = repoAddressAsString(repoAddress);
-  const {flagPipelineModeTuples} = useFeatureFlags();
+  const {flagPipelineModeTuples, flagAssetGraph} = useFeatureFlags();
 
   const tabs = [
     {text: 'Pipelines', href: workspacePathFromAddress(repoAddress, '/pipelines')},
@@ -40,6 +41,13 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
   if (flagPipelineModeTuples) {
     tabs.splice(0, 1, {text: 'Jobs', href: workspacePathFromAddress(repoAddress, '/jobs')});
     tabs.splice(1, 0, {text: 'Graphs', href: workspacePathFromAddress(repoAddress, '/graphs')});
+  }
+
+  if (flagAssetGraph) {
+    tabs.push({
+      text: 'Assets',
+      href: workspacePathFromAddress(repoAddress, '/assets'),
+    });
   }
 
   const activeTab = () => {
@@ -58,6 +66,8 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
         return 'Jobs';
       case 'pipelines':
         return 'Pipelines';
+      case 'assets':
+        return 'Assets';
       default:
         return flagPipelineModeTuples ? 'Pipelines' : 'Jobs';
     }
@@ -68,7 +78,7 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
       <Group direction="column" spacing={16} padding={{top: 20, horizontal: 20}}>
         <PageHeader
           title={<Heading>{path}</Heading>}
-          icon="cube"
+          icon="source"
           description={<Link to="/workspace">Repository</Link>}
         />
         <Box border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}>
@@ -89,6 +99,10 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
           <Route
             path="/workspace/:repoPath/sensors"
             render={() => <SensorsRoot repoAddress={repoAddress} />}
+          />
+          <Route
+            path="/workspace/:repoPath/assets(/?.*)"
+            render={() => <RepositoryAssetsList repoAddress={repoAddress} />}
           />
           <Route
             path="/workspace/:repoPath/ops/:name?"
