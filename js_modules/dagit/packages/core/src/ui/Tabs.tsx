@@ -107,7 +107,7 @@ export const Tab = styled(({title, count, icon, selected, disabled, ...rest}) =>
   }
 `;
 
-export const Count = styled.div`
+const Count = styled.div`
   display: inline;
   font-family: ${FontFamily.monospace};
   font-size: 14px;

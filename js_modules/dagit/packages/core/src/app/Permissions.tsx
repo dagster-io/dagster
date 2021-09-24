@@ -21,7 +21,7 @@ export type PermissionsFromJSON = {
   cancel_partition_backfill?: boolean;
 };
 
-export const extractPermissions = (permissions: PermissionFragment[]) => {
+const extractPermissions = (permissions: PermissionFragment[]) => {
   const permsMap: PermissionsFromJSON = {};
   for (const item of permissions) {
     permsMap[item.permission] = item.value;
