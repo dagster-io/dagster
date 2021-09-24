@@ -13,9 +13,16 @@ class RunCoordinatorType(str, Enum):
     CUSTOM = "CustomRunCoordinator"
 
 
+class TagConcurrencyLimitConfig(BaseModel):
+    applyLimitPerUniqueValue: bool
+
+    class Config:
+        extra = Extra.forbid
+
+
 class TagConcurrencyLimit(BaseModel):
     key: str
-    value: Optional[Union[Dict, str]]
+    value: Optional[Union[str, TagConcurrencyLimitConfig]]
     limit: int
 
     class Config:

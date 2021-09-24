@@ -1700,6 +1700,20 @@
             ],
             "type": "string"
         },
+        "TagConcurrencyLimitConfig": {
+            "title": "TagConcurrencyLimitConfig",
+            "type": "object",
+            "properties": {
+                "applyLimitPerUniqueValue": {
+                    "title": "Applylimitperuniquevalue",
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "applyLimitPerUniqueValue"
+            ],
+            "additionalProperties": false
+        },
         "TagConcurrencyLimit": {
             "title": "TagConcurrencyLimit",
             "type": "object",
@@ -1712,10 +1726,10 @@
                     "title": "Value",
                     "anyOf": [
                         {
-                            "type": "object"
+                            "type": "string"
                         },
                         {
-                            "type": "string"
+                            "$ref": "#/definitions/TagConcurrencyLimitConfig"
                         },
                         {
                             "type": "null"
