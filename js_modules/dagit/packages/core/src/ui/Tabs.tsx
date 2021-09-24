@@ -9,21 +9,21 @@ interface TabsProps {
   children: Array<React.ReactElement<TabProps>>;
   selectedTabId?: string;
   onChange?: (selectedTabId: string) => void;
-  small?: boolean;
+  size?: 'small' | 'large';
 }
 
-export const Tabs = styled(({selectedTabId, children, small, onChange, ...rest}) => {
+export const Tabs = styled(({selectedTabId, children, onChange, size = 'large', ...rest}) => {
   if (!(children instanceof Array) || children.some((c) => c.type !== Tab)) {
     throw new Error('Tabs must render Tab instances');
   }
 
   return (
     <div {...rest} role="tablist">
-      {children.map((child) =>
+      {React.Children.map(children, (child) =>
         React.cloneElement(child, {
           key: child.props.key || child.props.id,
           selected: child.props.selected || child.props.id === selectedTabId,
-          $small: small,
+          $size: size,
           ...(onChange && !child.props.disabled
             ? {
                 onClick: () => onChange(child.props.id),
@@ -51,7 +51,7 @@ interface TabProps {
   selected?: boolean;
   count?: number;
   icon: React.ReactNode;
-  $small?: boolean;
+  $size?: 'small' | 'large';
 }
 
 export const Tab = styled(({title, count, icon, selected, disabled, ...rest}) => (
@@ -68,7 +68,7 @@ export const Tab = styled(({title, count, icon, selected, disabled, ...rest}) =>
     {count && <Count>{count}</Count>}
   </div>
 ))<TabProps>`
-  padding: ${({$small}) => ($small ? '12px 0 10px' : '18px 0 16px')};
+  padding: ${({$size}) => ($size === 'small' ? '12px 0 10px' : '18px 0 16px')};
   border-bottom: ${({selected}) => (selected ? ColorsWIP.Blue500 : 'transparent')} solid 2px;
   display: flex;
   align-items: center;
