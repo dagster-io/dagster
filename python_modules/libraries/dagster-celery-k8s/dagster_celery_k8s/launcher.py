@@ -212,12 +212,10 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         from dagster.cli.api import ExecuteRunArgs
 
         input_json = serialize_dagster_namedtuple(
-            # depends on DagsterInstance.get() returning the same instance
-            # https://github.com/dagster-io/dagster/issues/2757
             ExecuteRunArgs(
                 pipeline_origin=pipeline_origin,
                 pipeline_run_id=run.run_id,
-                instance_ref=None,
+                instance_ref=self._instance.get_ref(),
             )
         )
 

@@ -269,7 +269,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             ExecuteRunArgs(
                 pipeline_origin=pipeline_origin,
                 pipeline_run_id=run.run_id,
-                instance_ref=None,
+                instance_ref=self._instance.get_ref(),
             )
         )
 
