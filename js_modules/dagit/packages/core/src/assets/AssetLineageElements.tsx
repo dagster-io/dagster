@@ -48,7 +48,7 @@ const AssetLineageInfoElement: React.FC<{
                 (accum, curr, ii) => [
                   ...accum,
                   ii > 0 ? (
-                    <React.Fragment key={`${ii}-space`}>{`&nbsp;>&nbsp;`}</React.Fragment>
+                    <React.Fragment key={`${ii}-space`}>&nbsp;{'>'}&nbsp;</React.Fragment>
                   ) : null,
                   curr,
                 ],
