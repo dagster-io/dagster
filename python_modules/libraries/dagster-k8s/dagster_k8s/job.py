@@ -8,6 +8,10 @@ from typing import List
 
 import kubernetes
 from dagster import Array, BoolSource, Field, Noneable, StringSource
+from kubernetes.client.api_client import ApiClient as K8sApiClient
+import kubernetes.client.models as k8s_models
+import copy
+
 from dagster import __version__ as dagster_version
 from dagster import check
 from dagster.config.field_utils import Permissive, Shape
@@ -52,7 +56,7 @@ USER_DEFINED_K8S_CONFIG_SCHEMA = Shape(
         "pod_spec_config": Permissive(),
         "job_config": Permissive(),
         "job_metadata": Permissive(),
-        "job_spec_config": Permissive(),
+        "k8s_job_object_config": Permissive(),
     }
 )
 
@@ -65,7 +69,7 @@ DEFAULT_JOB_SPEC_CONFIG = {
 class UserDefinedDagsterK8sConfig(
     namedtuple(
         "_UserDefinedDagsterK8sConfig",
-        "container_config pod_template_spec_metadata pod_spec_config job_config job_metadata job_spec_config",
+        "container_config pod_template_spec_metadata pod_spec_config job_config job_metadata k8s_job_object_config",
     )
 ):
     def __new__(
@@ -75,7 +79,7 @@ class UserDefinedDagsterK8sConfig(
         pod_spec_config=None,
         job_config=None,
         job_metadata=None,
-        job_spec_config=None,
+        k8s_job_object_config=None,
     ):
 
         container_config = check.opt_dict_param(container_config, "container_config", key_type=str)
@@ -85,7 +89,9 @@ class UserDefinedDagsterK8sConfig(
         pod_spec_config = check.opt_dict_param(pod_spec_config, "pod_spec_config", key_type=str)
         job_config = check.opt_dict_param(job_config, "job_config", key_type=str)
         job_metadata = check.opt_dict_param(job_metadata, "job_metadata", key_type=str)
-        job_spec_config = check.opt_dict_param(job_spec_config, "job_spec_config", key_type=str)
+        k8s_job_object_config = check.opt_dict_param(
+            k8s_job_object_config, "k8s_job_object_config", key_type=str
+        )
 
         return super(UserDefinedDagsterK8sConfig, cls).__new__(
             cls,
@@ -94,7 +100,7 @@ class UserDefinedDagsterK8sConfig(
             pod_spec_config=pod_spec_config,
             job_config=job_config,
             job_metadata=job_metadata,
-            job_spec_config=job_spec_config,
+            k8s_job_object_config=k8s_job_object_config,
         )
 
     def to_dict(self):
@@ -104,7 +110,7 @@ class UserDefinedDagsterK8sConfig(
             "pod_spec_config": self.pod_spec_config,
             "job_config": self.job_config,
             "job_metadata": self.job_metadata,
-            "job_spec_config": self.job_spec_config,
+            "k8s_job_object_config": self.k8s_job_object_config,
         }
 
     @classmethod
@@ -115,7 +121,7 @@ class UserDefinedDagsterK8sConfig(
             pod_spec_config=config_dict.get("pod_spec_config"),
             job_config=config_dict.get("job_config"),
             job_metadata=config_dict.get("job_metadata"),
-            job_spec_config=config_dict.get("job_spec_config"),
+            k8s_job_object_config=config_dict.get("k8s_job_object_config"),
         )
 
 
@@ -172,7 +178,7 @@ def get_user_defined_k8s_config(tags):
         pod_spec_config=user_defined_k8s_config.get("pod_spec_config"),
         job_config=user_defined_k8s_config.get("job_config"),
         job_metadata=user_defined_k8s_config.get("job_metadata"),
-        job_spec_config=user_defined_k8s_config.get("job_spec_config"),
+        k8s_job_object_config=user_defined_k8s_config.get("k8s_job_object_config"),
     )
 
 
@@ -188,7 +194,7 @@ class DagsterK8sJobConfig(
         "_K8sJobTaskConfig",
         "job_image dagster_home image_pull_policy image_pull_secrets service_account_name "
         "instance_config_map postgres_password_secret env_config_maps env_secrets env_vars "
-        "volume_mounts volumes",
+        "volume_mounts volumes k8s_job_object",
     )
 ):
     """Configuration parameters for launching Dagster Jobs on Kubernetes.
@@ -246,6 +252,7 @@ class DagsterK8sJobConfig(
         env_vars=None,
         volume_mounts=None,
         volumes=None,
+        k8s_job_object=None,
     ):
         return super(DagsterK8sJobConfig, cls).__new__(
             cls,
@@ -267,6 +274,7 @@ class DagsterK8sJobConfig(
             env_vars=check.opt_list_param(env_vars, "env_secrets", of_type=str),
             volume_mounts=check.opt_list_param(volume_mounts, "volume_mounts"),
             volumes=check.opt_list_param(volumes, "volumes"),
+            k8s_job_object=check.opt_dict_param(k8s_job_object, "k8s_job_object", key_type=str),
         )
 
     @classmethod
@@ -435,6 +443,11 @@ class DagsterK8sJobConfig(
                 "possible volume source types that can be included, see: "
                 "https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core",
             ),
+            "k8s_job_object": Field(
+                Noneable(Permissive()),
+                is_required=False,
+                description="A Kubernetes Job spec to use instead of the default. This is currently mutually exclusive with all other config, except job_image",
+            ),
         }
 
     @property
@@ -553,6 +566,13 @@ def construct_dagster_k8s_job(
     }
     dagster_labels = merge_dicts(k8s_common_labels, additional_labels)
 
+    job_image = user_defined_k8s_config.container_config.pop("image", job_config.job_image)
+
+    if job_config.k8s_job_object:
+        return _construct_dagster_k8s_job_from_spec(
+            job_config.k8s_job_object, job_image, args, job_name
+        )
+
     env = [kubernetes.client.V1EnvVar(name="DAGSTER_HOME", value=job_config.dagster_home)]
     if job_config.postgres_password_secret:
         env.append(
@@ -607,8 +627,6 @@ def construct_dagster_k8s_job(
         k8s_model_from_dict(kubernetes.client.models.V1VolumeMount, mount)
         for mount in job_config.volume_mounts
     ]
-
-    job_image = user_defined_k8s_config.container_config.pop("image", job_config.job_image)
 
     user_defined_k8s_volume_mounts = user_defined_k8s_config.container_config.pop(
         "volume_mounts", []
@@ -676,9 +694,9 @@ def construct_dagster_k8s_job(
         ),
     )
 
-    job_spec_config = merge_dicts(
+    k8s_job_object_config = merge_dicts(
         DEFAULT_JOB_SPEC_CONFIG,
-        user_defined_k8s_config.job_spec_config,
+        user_defined_k8s_config.k8s_job_object_config,
     )
 
     job = kubernetes.client.V1Job(
@@ -689,7 +707,7 @@ def construct_dagster_k8s_job(
         ),
         spec=kubernetes.client.V1JobSpec(
             template=template,
-            **job_spec_config,
+            **k8s_job_object_config,
         ),
         **user_defined_k8s_config.job_config,
     )
@@ -713,3 +731,25 @@ def get_k8s_job_name(input_1, input_2=None):
     name_hash = hashlib.md5((input_1 + input_2).encode("utf-8"))
 
     return name_hash.hexdigest()
+
+
+def _construct_dagster_k8s_job_from_spec(k8s_job_object, job_image, args, job_name):
+    k8s_job_object = copy.deepcopy(k8s_job_object)
+
+    containers = (
+        k8s_job_object.get("spec", {}).get("template", {}).get("spec", {}).get("containers", [])
+    )
+    check.invariant(len(containers) >= 1, "Expected at least one container in k8s_job_object")
+
+    dagster_container = containers[0]
+
+    if not dagster_container.get("image"):
+        dagster_container["image"] = job_image
+
+    dagster_container["args"] = args
+    k8s_job_object["metadata"]["name"] = job_name
+
+    # forced to use private method https://github.com/kubernetes-client/python/issues/977
+    return K8sApiClient()._ApiClient__deserialize_model(  # pylint: disable=protected-access
+        k8s_job_object, k8s_models.V1Job
+    )
