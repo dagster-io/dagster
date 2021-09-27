@@ -116,6 +116,98 @@ class DagsterGraphQLClient:
         else:
             raise DagsterGraphQLClientError(repo_connection_status, query_res["message"])
 
+    def _submit_pipeline_execution(
+        self,
+        pipeline_name: str,
+        repository_location_name: Optional[str] = None,
+        repository_name: Optional[str] = None,
+        run_config: Optional[Any] = None,
+        mode: Optional[str] = None,
+        preset: Optional[str] = None,
+        tags: Optional[Dict[str, Any]] = None,
+        is_using_job_op_graph_apis: Optional[bool] = False,
+    ):
+        check.opt_str_param(repository_location_name, "repository_location_name")
+        check.opt_str_param(repository_name, "repository_name")
+        check.str_param(pipeline_name, "pipeline_name")
+        check.opt_str_param(mode, "mode")
+        check.opt_str_param(preset, "preset")
+        # The following invariant will never fail when a job is executed
+        check.invariant(
+            (mode is not None and run_config is not None) or preset is not None,
+            "Either a mode and run_config or a preset must be specified in order to "
+            f"submit the pipeline {pipeline_name} for execution",
+        )
+        tags = validate_tags(tags)
+
+        pipeline_or_job = "Job" if is_using_job_op_graph_apis else "Pipeline"
+
+        if not repository_location_name or not repository_name:
+            pipeline_info_lst = self._get_repo_locations_and_names_with_pipeline(pipeline_name)
+            if len(pipeline_info_lst) == 0:
+                raise DagsterGraphQLClientError(
+                    f"{pipeline_or_job}NotFoundError",
+                    f"No jobs/pipelines with the name `{pipeline_name}` exist",
+                )
+            elif len(pipeline_info_lst) == 1:
+                pipeline_info = pipeline_info_lst[0]
+                repository_location_name = pipeline_info.repository_location_name
+                repository_name = pipeline_info.repository_name
+            else:
+                raise DagsterGraphQLClientError(
+                    "Must specify repository_location_name and repository_name"
+                    f" since there are multiple jobs/pipelines with the name {pipeline_name}."
+                    f"\n\tchoose one of: {pipeline_info_lst}"
+                )
+
+        variables = {
+            "executionParams": {
+                "selector": {
+                    "repositoryLocationName": repository_location_name,
+                    "repositoryName": repository_name,
+                    "pipelineName": pipeline_name,
+                }
+            }
+        }
+        if preset is not None:
+            variables["executionParams"]["preset"] = preset
+        if mode is not None and run_config is not None:
+            variables["executionParams"] = {
+                **variables["executionParams"],
+                "runConfigData": run_config,
+                "mode": mode,
+                "executionMetadata": {"tags": [{"key": k, "value": v} for k, v in tags.items()]}
+                if tags
+                else {},
+            }
+
+        res_data: Dict[str, Any] = self._execute(CLIENT_SUBMIT_PIPELINE_RUN_MUTATION, variables)
+        query_result = res_data["launchPipelineExecution"]
+        query_result_type = query_result["__typename"]
+
+        formatted_query_result_type = query_result_type
+        if "Pipeline" in formatted_query_result_type:
+            formatted_query_result_type = formatted_query_result_type.replace(
+                "Pipeline", pipeline_or_job
+            )
+
+        if query_result_type == "LaunchPipelineRunSuccess":
+            return query_result["run"]["runId"]
+        elif query_result_type == "InvalidStepError":
+            raise DagsterGraphQLClientError(query_result_type, query_result["invalidStepKey"])
+        elif query_result_type == "InvalidOutputError":
+            error_info = InvalidOutputErrorInfo(
+                step_key=query_result["stepKey"],
+                invalid_output_name=query_result["invalidOutputName"],
+            )
+            raise DagsterGraphQLClientError(query_result_type, body=error_info)
+        elif query_result_type == "PipelineConfigValidationInvalid":
+            raise DagsterGraphQLClientError(formatted_query_result_type, query_result["errors"])
+        else:
+            # query_result_type is a ConflictingExecutionParamsError, a PresetNotFoundError
+            # a PipelineNotFoundError, a PipelineRunConflict, or a PythonError
+            raise DagsterGraphQLClientError(formatted_query_result_type, query_result["message"])
+
     def submit_pipeline_execution(
         self,
         pipeline_name: str,
@@ -164,75 +256,16 @@ class DagsterGraphQLClient:
         Returns:
             str: run id of the submitted pipeline run
         """
-        check.opt_str_param(repository_location_name, "repository_location_name")
-        check.opt_str_param(repository_name, "repository_name")
-        check.str_param(pipeline_name, "pipeline_name")
-        check.opt_str_param(mode, "mode")
-        check.opt_str_param(preset, "preset")
-        check.invariant(
-            (mode is not None and run_config is not None) or preset is not None,
-            "Either a mode and run_config or a preset must be specified in order to "
-            f"submit the pipeline {pipeline_name} for execution",
+        return self._submit_pipeline_execution(
+            pipeline_name,
+            repository_location_name,
+            repository_name,
+            run_config,
+            mode,
+            preset,
+            tags,
+            is_using_job_op_graph_apis=False,
         )
-        tags = validate_tags(tags)
-
-        if not repository_location_name or not repository_name:
-            pipeline_info_lst = self._get_repo_locations_and_names_with_pipeline(pipeline_name)
-            if len(pipeline_info_lst) == 0:
-                raise DagsterGraphQLClientError(
-                    "PipelineNotFoundError", f"No pipelines with the name `{pipeline_name}` exist"
-                )
-            elif len(pipeline_info_lst) == 1:
-                pipeline_info = pipeline_info_lst[0]
-                repository_location_name = pipeline_info.repository_location_name
-                repository_name = pipeline_info.repository_name
-            else:
-                raise DagsterGraphQLClientError(
-                    "Must specify repository_location_name and repository_name"
-                    f" since there are multiple pipelines with the name {pipeline_name}."
-                    f"\n\tchoose one of: {pipeline_info_lst}"
-                )
-
-        variables = {
-            "executionParams": {
-                "selector": {
-                    "repositoryLocationName": repository_location_name,
-                    "repositoryName": repository_name,
-                    "pipelineName": pipeline_name,
-                }
-            }
-        }
-        if preset is not None:
-            variables["executionParams"]["preset"] = preset
-        if mode is not None and run_config is not None:
-            variables["executionParams"] = {
-                **variables["executionParams"],
-                "runConfigData": run_config,
-                "mode": mode,
-                "executionMetadata": {"tags": [{"key": k, "value": v} for k, v in tags.items()]}
-                if tags
-                else {},
-            }
-
-        res_data: Dict[str, Any] = self._execute(CLIENT_SUBMIT_PIPELINE_RUN_MUTATION, variables)
-        query_result = res_data["launchPipelineExecution"]
-        query_result_type = query_result["__typename"]
-        if query_result_type == "LaunchPipelineRunSuccess":
-            return query_result["run"]["runId"]
-        elif query_result_type == "InvalidStepError":
-            raise DagsterGraphQLClientError(query_result_type, query_result["invalidStepKey"])
-        elif query_result_type == "InvalidOutputError":
-            error_info = InvalidOutputErrorInfo(
-                step_key=query_result["stepKey"],
-                invalid_output_name=query_result["invalidOutputName"],
-            )
-            raise DagsterGraphQLClientError(query_result_type, body=error_info)
-        elif query_result_type == "PipelineConfigValidationInvalid":
-            raise DagsterGraphQLClientError(query_result_type, query_result["errors"])
-        else:
-            # query_result_type is a ConflictingExecutionParamsError, a PresetNotFoundError
-            # a PipelineNotFoundError, a PipelineRunConflict, or a PythonError
-            raise DagsterGraphQLClientError(query_result_type, query_result["message"])
 
     def submit_job_execution(
         self,
@@ -242,8 +275,46 @@ class DagsterGraphQLClient:
         run_config: Optional[Any] = {},
         tags: Optional[Dict[str, Any]] = None,
     ) -> str:
-        return self.submit_pipeline_execution(
-            job_name, repository_location_name, repository_name, run_config, "default", None, tags
+        """Submits a job with attached configuration for execution.
+
+        Args:
+            job_name (str): The job's name
+            repository_location_name (Optional[str], optional): The name of the repository location where
+                the job is located. If omitted, the client will try to infer the repository location
+                from the available options on the Dagster deployment. Defaults to None.
+            repository_name (Optional[str], optional): The name of the repository where the job is located.
+                If omitted, the client will try to infer the repository from the available options
+                on the Dagster deployment. Defaults to None.
+            run_config (Optional[Any], optional): This is the run config to execute the job with.
+                Note that runConfigData is any-typed in the GraphQL type system. This type is used when passing in
+                an arbitrary object for run config. However, it must conform to the constraints of the config
+                schema for this job. If it does not, the client will throw a DagsterGraphQLClientError with a message of
+                JobConfigValidationInvalid. Defaults to None.
+            tags (Optional[Dict[str, Any]], optional): A set of tags to add to the job execution.
+
+        Raises:
+            DagsterGraphQLClientError("InvalidStepError", invalid_step_key): the job has an invalid step
+            DagsterGraphQLClientError("InvalidOutputError", body=error_object): some solid has an invalid output within the job.
+                The error_object is of type dagster_graphql.InvalidOutputErrorInfo.
+            DagsterGraphQLClientError("JobRunConflict", message): a `DagsterRunConflict` occured during execution.
+                This indicates that a conflicting job run already exists in run storage.
+            DagsterGraphQLClientError("JobConfigurationInvalid", invalid_step_key): the run_config is not in the expected format
+                for the job
+            DagsterGraphQLClientError("JobNotFoundError", message): the requested job does not exist
+            DagsterGraphQLClientError("PythonError", message): an internal framework error occurred
+
+        Returns:
+            str: run id of the submitted pipeline run
+        """
+        return self._submit_pipeline_execution(
+            pipeline_name=job_name,
+            repository_location_name=repository_location_name,
+            repository_name=repository_name,
+            run_config=run_config,
+            mode="default",
+            preset=None,
+            tags=tags,
+            is_using_job_op_graph_apis=True,
         )
 
     def get_run_status(self, run_id: str) -> PipelineRunStatus:
