@@ -930,6 +930,14 @@ def wait_for_grpc_server(server_process, client, subprocess_args, timeout=60):
             client.ping("")
             return
         except grpc._channel._InactiveRpcError:  # pylint: disable=protected-access
+            import sys
+
+            print(
+                "Connection failure after "
+                + str(time.time() - start_time)
+                + " seconds: "
+                + str(sys.exc_info())
+            )
             pass
 
         if time.time() - start_time > timeout:
@@ -942,7 +950,7 @@ def wait_for_grpc_server(server_process, client, subprocess_args, timeout=60):
                 f"gRPC server exited with return code {server_process.returncode} while starting up with the command: \"{' '.join(subprocess_args)}\""
             )
 
-        sleep(0.1)
+        sleep(1)
 
 
 def open_server_process(
