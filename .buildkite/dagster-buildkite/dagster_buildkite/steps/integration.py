@@ -42,7 +42,7 @@ def backcompat_suite_extra_cmds_fn(release_mapping):
 
     def _extra_cmds_fn(_):
         return [
-            f"export EARLIEST_TESTED_RELEASE={EARLIEST_TESTED_RELEASE}"
+            f"export EARLIEST_TESTED_RELEASE={EARLIEST_TESTED_RELEASE}",
             "pushd integration_tests/test_suites/backcompat-test-suite/dagit_service",
             f"./build.sh {dagit_version} {user_code_version}",
             "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
