@@ -11,6 +11,7 @@ export const ColorsWIP = {
   Gray100: 'rgba(245, 244, 242, 1)',
   Gray50: 'rgba(250, 249, 247, 1)',
   Gray10: 'rgba(35, 31, 27, 0.03)',
+  KeylineGray: 'rgba(35, 31, 27, 0.1)',
   White: 'rgba(255, 255, 255, 1)',
   LightPurple: 'rgba(222, 221, 255, 1)',
   Link: 'rgba(9, 8, 110, 1)',

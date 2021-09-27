@@ -4,8 +4,8 @@ import * as React from 'react';
 import {POLL_INTERVAL} from '../runs/useCursorPaginatedQuery';
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
-import {Group} from '../ui/Group';
-import {Subheading} from '../ui/Text';
+import {PageHeader} from '../ui/PageHeader';
+import {Heading, Subheading} from '../ui/Text';
 import {REPOSITORY_LOCATIONS_FRAGMENT} from '../workspace/WorkspaceContext';
 
 import {DaemonList} from './DaemonList';
@@ -30,15 +30,16 @@ export const InstanceHealthPage = () => {
   };
 
   return (
-    <Group direction="column" spacing={20}>
-      <InstanceTabs tab="health" queryData={queryData} />
-      <Group direction="column" spacing={16}>
-        <Box padding={{horizontal: 24}}>
-          <Subheading>Daemon statuses</Subheading>
-        </Box>
-        {daemonContent()}
-      </Group>
-    </Group>
+    <>
+      <PageHeader
+        title={<Heading>Instance status</Heading>}
+        tabs={<InstanceTabs tab="health" queryData={queryData} />}
+      />
+      <Box padding={{vertical: 16, horizontal: 24}}>
+        <Subheading>Daemon statuses</Subheading>
+      </Box>
+      {daemonContent()}
+    </>
   );
 };
 

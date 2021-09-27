@@ -8,6 +8,7 @@ import {LoadingSpinner} from '../ui/Loading';
 import {NonIdealState} from '../ui/NonIdealState';
 import {Page} from '../ui/Page';
 import {PageHeader} from '../ui/PageHeader';
+import {PageSection} from '../ui/PageSection';
 import {Table} from '../ui/Table';
 import {Heading, Subheading} from '../ui/Text';
 
@@ -117,19 +118,21 @@ export const WorkspaceOverviewRoot = () => {
 
   return (
     <Page>
-      <Box padding={{horizontal: 24}}>
-        <PageHeader title={<Heading>Workspace</Heading>} />
-      </Box>
-      <Box padding={{horizontal: 24, top: 24, bottom: 16}}>
+      <PageHeader title={<Heading>Workspace</Heading>} />
+      <Box padding={{vertical: 16, horizontal: 24}}>
         <Group direction="row" spacing={12} alignItems="center">
           <Subheading id="repository-locations">Locations</Subheading>
           <ReloadAllButton />
         </Group>
       </Box>
-      <RepositoryLocationsList />
-      <Box padding={{horizontal: 24, top: 32, bottom: 16}}>
-        <Subheading id="repository-locations">Repositories</Subheading>
+      <Box padding={{bottom: 24}}>
+        <RepositoryLocationsList />
       </Box>
+      <PageSection>
+        <Box padding={{vertical: 16, horizontal: 24}}>
+          <Subheading id="repository-locations">Repositories</Subheading>
+        </Box>
+      </PageSection>
       {content()}
     </Page>
   );

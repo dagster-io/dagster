@@ -3,7 +3,6 @@ import * as React from 'react';
 
 import {PipelineTable, PIPELINE_TABLE_FRAGMENT} from '../pipelines/PipelineTable';
 import {NonIdealState} from '../ui/NonIdealState';
-import {Page} from '../ui/Page';
 
 import {repoAddressAsString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
@@ -70,9 +69,5 @@ export const RepositoryPipelinesList: React.FC<Props> = (props) => {
     );
   }
 
-  return (
-    <Page>
-      <PipelineTable pipelines={pipelinesForTable} showRepo={false} />
-    </Page>
-  );
+  return <PipelineTable pipelines={pipelinesForTable} showRepo={false} />;
 };

@@ -5,9 +5,10 @@ import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {TickHistory} from '../instigation/TickHistory';
 import {DagsterTag} from '../runs/RunTag';
-import {Group} from '../ui/Group';
+import {Box} from '../ui/Box';
 import {Loading} from '../ui/Loading';
 import {Page} from '../ui/Page';
+import {PageSection} from '../ui/PageSection';
 import {PreviousRunsSection, PREVIOUS_RUNS_FRAGMENT} from '../workspace/PreviousRunsSection';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -68,29 +69,29 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
 
         return (
           <Page>
-            <Group direction="column" spacing={20}>
-              <Group direction="column" spacing={20} padding={{horizontal: 24}}>
+            <ScheduleDetails
+              repoAddress={repoAddress}
+              schedule={scheduleOrError}
+              countdownDuration={INTERVAL}
+              countdownStatus={countdownStatus}
+              onRefresh={() => onRefresh()}
+            />
+            <PageSection>
+              <Box padding={{vertical: 16, horizontal: 24}}>
                 <SchedulerInfo daemonHealth={instance.daemonHealth} />
-                <ScheduleDetails
-                  repoAddress={repoAddress}
-                  schedule={scheduleOrError}
-                  countdownDuration={INTERVAL}
-                  countdownStatus={countdownStatus}
-                  onRefresh={() => onRefresh()}
-                />
-                <TickHistory
-                  repoAddress={repoAddress}
-                  name={scheduleOrError.name}
-                  onHighlightRunIds={(runIds: string[]) => setSelectedRunIds(runIds)}
-                />
-              </Group>
-              <SchedulePreviousRuns
-                repoAddress={repoAddress}
-                schedule={scheduleOrError}
-                highlightedIds={selectedRunIds}
-                runTab={runTab}
-              />
-            </Group>
+              </Box>
+            </PageSection>
+            <TickHistory
+              repoAddress={repoAddress}
+              name={scheduleOrError.name}
+              onHighlightRunIds={(runIds: string[]) => setSelectedRunIds(runIds)}
+            />
+            <SchedulePreviousRuns
+              repoAddress={repoAddress}
+              schedule={scheduleOrError}
+              highlightedIds={selectedRunIds}
+              runTab={runTab}
+            />
           </Page>
         );
       }}

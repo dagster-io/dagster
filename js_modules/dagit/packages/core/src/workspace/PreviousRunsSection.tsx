@@ -4,7 +4,7 @@ import * as React from 'react';
 import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
-import {Group} from '../ui/Group';
+import {PageSection} from '../ui/PageSection';
 import {Subheading} from '../ui/Text';
 
 import {PreviousRunsFragment} from './types/PreviousRunsFragment';
@@ -26,12 +26,12 @@ export const PreviousRunsSection: React.FC<{
   };
 
   return (
-    <Group direction="column" spacing={4}>
+    <PageSection>
       <Box padding={{vertical: 16, horizontal: 24}} flex={{direction: 'row'}}>
         <Subheading>Latest runs</Subheading>
       </Box>
       <div style={{color: ColorsWIP.Gray400}}>{content()}</div>
-    </Group>
+    </PageSection>
   );
 };
 

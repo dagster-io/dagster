@@ -37,7 +37,6 @@ export const Tabs = styled(({selectedTabId, children, onChange, size = 'large', 
 })<TabsProps>`
   display: flex;
   gap: 16px;
-  border-bottom: 1px solid ${ColorsWIP.Gray100};
   font-size: ${({size}) => (size === 'small' ? '12px' : '14px')};
   line-height: ${({size}) => (size === 'small' ? '16px' : '20px')};
   font-weight: 600;
@@ -67,8 +66,8 @@ export const Tab = styled(({title, count, icon, selected, disabled, ...rest}) =>
     {count !== undefined ? <Count>{count === 'indeterminate' ? '–' : count}</Count> : null}
   </div>
 ))<TabProps>`
-  padding: ${({$size}) => ($size === 'small' ? '12px 0 10px' : '18px 0 16px')};
-  border-bottom: ${({selected}) => (selected ? ColorsWIP.Blue500 : 'transparent')} solid 2px;
+  padding: ${({$size}) => ($size === 'small' ? '10px 0' : '16px 0')};
+  box-shadow: ${({selected}) => (selected ? ColorsWIP.Blue500 : 'transparent')} 0 -2px 0 inset;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -89,7 +88,7 @@ export const Tab = styled(({title, count, icon, selected, disabled, ...rest}) =>
   /* Focus outline only when using keyboard, not when focusing via mouse. */
   &:focus {
     outline: none !important;
-    border-bottom: ${({selected}) => (selected ? ColorsWIP.Blue500 : ColorsWIP.Blue200)} solid 2px;
+    box-shadow: ${({selected}) => (selected ? ColorsWIP.Blue500 : ColorsWIP.Blue200)} 0 -2px 0 inset;
   }
 
   &:hover {

@@ -18,6 +18,7 @@ import {ColorsWIP} from '../ui/Colors';
 import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
 import {NonIdealState} from '../ui/NonIdealState';
+import {PageSection} from '../ui/PageSection';
 import {Spinner} from '../ui/Spinner';
 import {Tab, Tabs} from '../ui/Tabs';
 import {Subheading} from '../ui/Text';
@@ -145,11 +146,13 @@ export const TickHistory = ({
 
   if (!data) {
     return (
-      <Group direction="column" spacing={12}>
-        <Subheading>Tick History</Subheading>
-        {tabs}
+      <PageSection>
+        <Box padding={{vertical: 16, horizontal: 24}}>
+          <Subheading>Tick History</Subheading>
+          {tabs}
+        </Box>
         <Spinner purpose="section" />
-      </Group>
+      </PageSection>
     );
   }
 
@@ -197,84 +200,96 @@ export const TickHistory = ({
 
   const now = Date.now();
   return (
-    <Group direction="column" spacing={12}>
-      <Subheading>Tick History</Subheading>
-      {tabs}
-      {showRecent && selectedTab === 'recent' ? (
-        <LiveTickTimeline
-          ticks={ticks}
-          nextTick={nextTick}
-          onHoverTick={onTickHover}
-          onSelectTick={onTickClick}
-        />
-      ) : ticks.length ? (
-        <>
-          <Box flex={{justifyContent: 'flex-end'}}>
-            <Group direction="row" spacing={16}>
-              <StatusFilter status={InstigationTickStatus.SUCCESS} />
-              <StatusFilter status={InstigationTickStatus.FAILURE} />
-              {instigationType === InstigationType.SCHEDULE ? (
-                <StatusFilter status={InstigationTickStatus.SKIPPED} />
-              ) : null}
-            </Group>
-          </Box>
-          <TickHistoryGraph
-            ticks={displayedTicks}
-            selectedTick={selectedTick}
-            onSelectTick={onTickClick}
-            onHoverTick={onTickHover}
-            selectedTab={selectedTab}
-            maxBounds={
-              selectedTab === 'all'
-                ? undefined
-                : {min: now - (selectedRange || 0) * MILLIS_PER_DAY, max: Date.now()}
-            }
-          />
-        </>
-      ) : (
-        <Box margin={{top: 16, bottom: 32}} flex={{justifyContent: 'center'}}>
-          <NonIdealState icon="no-results" description="No ticks to display" />
+    <>
+      <PageSection>
+        <Box padding={{top: 16, horizontal: 24}}>
+          <Subheading>Tick History</Subheading>
+          {tabs}
         </Box>
-      )}
-      <DialogWIP
-        isOpen={
-          !!(
-            selectedTick &&
-            (selectedTick.status === InstigationTickStatus.SUCCESS ||
-              selectedTick.status === InstigationTickStatus.SKIPPED)
-          )
-        }
-        onClose={() => setSelectedTick(undefined)}
-        style={{
-          width:
-            selectedTick && selectedTick.status === InstigationTickStatus.SUCCESS ? '90vw' : '50vw',
-        }}
-        title={selectedTick ? <TimestampDisplay timestamp={selectedTick.timestamp} /> : null}
-      >
-        {selectedTick ? (
-          <DialogBody>
-            {selectedTick.status === InstigationTickStatus.SUCCESS ? (
-              selectedTick.runIds.length ? (
-                <RunList runIds={selectedTick.runIds} />
-              ) : (
-                <FailedRunList originRunIds={selectedTick.originRunIds} />
-              )
-            ) : null}
-            {selectedTick.status === InstigationTickStatus.SKIPPED ? (
+      </PageSection>
+      <PageSection style={{paddingBottom: '16px'}}>
+        {showRecent && selectedTab === 'recent' ? (
+          <LiveTickTimeline
+            ticks={ticks}
+            nextTick={nextTick}
+            onHoverTick={onTickHover}
+            onSelectTick={onTickClick}
+          />
+        ) : ticks.length ? (
+          <>
+            <Box flex={{justifyContent: 'flex-end'}}>
               <Group direction="row" spacing={16}>
-                <TickTag tick={selectedTick} />
-                <span>{selectedTick.skipReason || 'No skip reason provided'}</span>
+                <StatusFilter status={InstigationTickStatus.SUCCESS} />
+                <StatusFilter status={InstigationTickStatus.FAILURE} />
+                {instigationType === InstigationType.SCHEDULE ? (
+                  <StatusFilter status={InstigationTickStatus.SKIPPED} />
+                ) : null}
               </Group>
-            ) : null}
-          </DialogBody>
-        ) : null}
-        <DialogFooter>
-          <ButtonWIP intent="primary" onClick={() => setSelectedTick(undefined)}>
-            OK
-          </ButtonWIP>
-        </DialogFooter>
-      </DialogWIP>
-    </Group>
+            </Box>
+            <TickHistoryGraph
+              ticks={displayedTicks}
+              selectedTick={selectedTick}
+              onSelectTick={onTickClick}
+              onHoverTick={onTickHover}
+              selectedTab={selectedTab}
+              maxBounds={
+                selectedTab === 'all'
+                  ? undefined
+                  : {min: now - (selectedRange || 0) * MILLIS_PER_DAY, max: Date.now()}
+              }
+            />
+          </>
+        ) : (
+          <Box padding={{vertical: 32}} flex={{justifyContent: 'center'}}>
+            <NonIdealState
+              icon="no-results"
+              title="No ticks to display"
+              description="There are no ticks within this timeframe."
+            />
+          </Box>
+        )}
+        <DialogWIP
+          isOpen={
+            !!(
+              selectedTick &&
+              (selectedTick.status === InstigationTickStatus.SUCCESS ||
+                selectedTick.status === InstigationTickStatus.SKIPPED)
+            )
+          }
+          onClose={() => setSelectedTick(undefined)}
+          style={{
+            width:
+              selectedTick && selectedTick.status === InstigationTickStatus.SUCCESS
+                ? '90vw'
+                : '50vw',
+          }}
+          title={selectedTick ? <TimestampDisplay timestamp={selectedTick.timestamp} /> : null}
+        >
+          {selectedTick ? (
+            <DialogBody>
+              {selectedTick.status === InstigationTickStatus.SUCCESS ? (
+                selectedTick.runIds.length ? (
+                  <RunList runIds={selectedTick.runIds} />
+                ) : (
+                  <FailedRunList originRunIds={selectedTick.originRunIds} />
+                )
+              ) : null}
+              {selectedTick.status === InstigationTickStatus.SKIPPED ? (
+                <Group direction="row" spacing={16}>
+                  <TickTag tick={selectedTick} />
+                  <span>{selectedTick.skipReason || 'No skip reason provided'}</span>
+                </Group>
+              ) : null}
+            </DialogBody>
+          ) : null}
+          <DialogFooter>
+            <ButtonWIP intent="primary" onClick={() => setSelectedTick(undefined)}>
+              OK
+            </ButtonWIP>
+          </DialogFooter>
+        </DialogWIP>
+      </PageSection>
+    </>
   );
 };
 

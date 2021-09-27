@@ -12,7 +12,9 @@ import {Box} from '../ui/Box';
 import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
 import {NonIdealState} from '../ui/NonIdealState';
-import {Subheading} from '../ui/Text';
+import {PageHeader} from '../ui/PageHeader';
+import {PageSection} from '../ui/PageSection';
+import {Heading, Subheading} from '../ui/Text';
 import {REPOSITORY_INFO_FRAGMENT} from '../workspace/RepositoryInformation';
 import {buildRepoPath, buildRepoAddress} from '../workspace/buildRepoAddress';
 
@@ -30,12 +32,15 @@ export const InstanceSchedules = React.memo(() => {
   });
 
   return (
-    <Group direction="column" spacing={20}>
-      <InstanceTabs tab="schedules" queryData={queryData} />
+    <>
+      <PageHeader
+        title={<Heading>Instance status</Heading>}
+        tabs={<InstanceTabs tab="schedules" queryData={queryData} />}
+      />
       <Loading queryResult={queryData} allowStaleData={true}>
         {(data) => <AllSchedules data={data} />}
       </Loading>
-    </Group>
+    </>
   );
 });
 
@@ -55,22 +60,29 @@ const AllSchedules: React.FC<{data: InstanceSchedulesQuery}> = ({data}) => {
   );
 
   const loadedSchedulesSection = withSchedules.length ? (
-    <Group direction="column" spacing={32}>
-      <Group direction="column" spacing={12} padding={{horizontal: 24}}>
+    <>
+      <Box padding={{vertical: 16, horizontal: 24}}>
         <SchedulerInfo daemonHealth={instance.daemonHealth} />
-      </Group>
+      </Box>
       {withSchedules.map((repository) => (
-        <Group direction="column" spacing={8} key={repository.name}>
-          <Box padding={{horizontal: 24}}>
-            <Subheading>{`${buildRepoPath(repository.name, repository.location.name)}`}</Subheading>
+        <React.Fragment key={repository.name}>
+          <PageSection>
+            <Box padding={{vertical: 16, horizontal: 24}}>
+              <Subheading>{`${buildRepoPath(
+                repository.name,
+                repository.location.name,
+              )}`}</Subheading>
+            </Box>
+          </PageSection>
+          <Box padding={{bottom: 16}}>
+            <SchedulesTable
+              repoAddress={buildRepoAddress(repository.name, repository.location.name)}
+              schedules={repository.schedules}
+            />
           </Box>
-          <SchedulesTable
-            repoAddress={buildRepoAddress(repository.name, repository.location.name)}
-            schedules={repository.schedules}
-          />
-        </Group>
+        </React.Fragment>
       ))}
-    </Group>
+    </>
   ) : null;
 
   const unloadableSchedules = unloadable.filter(

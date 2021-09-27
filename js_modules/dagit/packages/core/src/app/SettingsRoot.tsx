@@ -2,11 +2,11 @@ import {Switch} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
-import {Group} from '../ui/Group';
 import {MetadataTable} from '../ui/MetadataTable';
-import {Page} from '../ui/Page';
 import {PageHeader} from '../ui/PageHeader';
+import {PageSection} from '../ui/PageSection';
 import {Heading, Subheading} from '../ui/Text';
 
 import {FeatureFlag, getFeatureFlags, setFeatureFlags} from './Flags';
@@ -35,22 +35,26 @@ const SettingsRoot = () => {
   );
 
   return (
-    <Page style={{height: '100vh', overflowY: 'auto'}}>
-      <Group direction="column" spacing={24} padding={{horizontal: 24}}>
-        <PageHeader title={<Heading>User settings</Heading>} />
-        <Group direction="column" spacing={16}>
+    <div style={{height: '100vh', overflowY: 'auto'}}>
+      <PageHeader title={<Heading>User settings</Heading>} />
+      <Box padding={{vertical: 16, horizontal: 24}}>
+        <Box padding={{bottom: 8}}>
           <Subheading>Preferences</Subheading>
-          <MetadataTable
-            rows={[
-              {
-                key: 'Timezone',
-                value: <TimezoneSelect trigger={trigger} />,
-              },
-            ]}
-          />
-        </Group>
-        <Group direction="column" spacing={16}>
-          <Subheading>Experimental features</Subheading>
+        </Box>
+        <MetadataTable
+          rows={[
+            {
+              key: 'Timezone',
+              value: <TimezoneSelect trigger={trigger} />,
+            },
+          ]}
+        />
+      </Box>
+      <PageSection>
+        <Box padding={{vertical: 16, horizontal: 24}}>
+          <Box padding={{bottom: 8}}>
+            <Subheading>Experimental features</Subheading>
+          </Box>
           <MetadataTable
             rows={[
               {
@@ -82,9 +86,9 @@ const SettingsRoot = () => {
               },
             ]}
           />
-        </Group>
-      </Group>
-    </Page>
+        </Box>
+      </PageSection>
+    </div>
   );
 };
 

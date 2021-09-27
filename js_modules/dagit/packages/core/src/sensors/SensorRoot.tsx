@@ -4,9 +4,10 @@ import * as React from 'react';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {TickHistory} from '../instigation/TickHistory';
-import {Group} from '../ui/Group';
+import {Box} from '../ui/Box';
 import {Loading} from '../ui/Loading';
 import {Page} from '../ui/Page';
+import {PageSection} from '../ui/PageSection';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -59,24 +60,26 @@ export const SensorRoot: React.FC<{
 
         return (
           <Page>
-            <Group direction="column" spacing={24}>
-              <Group direction="column" spacing={20} padding={{horizontal: 24}}>
+            <SensorDetails
+              repoAddress={repoAddress}
+              sensor={sensorOrError}
+              daemonHealth={instance.daemonHealth.daemonStatus.healthy}
+              countdownDuration={INTERVAL}
+              countdownStatus={countdownStatus}
+              onRefresh={() => onRefresh()}
+            />
+            <PageSection>
+              <Box padding={{vertical: 16, horizontal: 24}}>
                 <SensorInfo daemonHealth={instance.daemonHealth} />
-                <SensorDetails
-                  repoAddress={repoAddress}
-                  sensor={sensorOrError}
-                  daemonHealth={instance.daemonHealth.daemonStatus.healthy}
-                  countdownDuration={INTERVAL}
-                  countdownStatus={countdownStatus}
-                  onRefresh={() => onRefresh()}
-                />
-                <TickHistory
-                  repoAddress={repoAddress}
-                  name={sensorOrError.name}
-                  showRecent={true}
-                  onHighlightRunIds={(runIds: string[]) => setSelectedRunIds(runIds)}
-                />
-              </Group>
+              </Box>
+            </PageSection>
+            <TickHistory
+              repoAddress={repoAddress}
+              name={sensorOrError.name}
+              showRecent={true}
+              onHighlightRunIds={(runIds: string[]) => setSelectedRunIds(runIds)}
+            />
+            <PageSection>
               {sensorOrError.targets && sensorOrError.targets.length ? (
                 <SensorPreviousRuns
                   repoAddress={repoAddress}
@@ -90,7 +93,7 @@ export const SensorRoot: React.FC<{
                   highlightedIds={selectedRunIds}
                 />
               )}
-            </Group>
+            </PageSection>
           </Page>
         );
       }}

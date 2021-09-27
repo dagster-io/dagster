@@ -4,7 +4,6 @@ import {Link} from 'react-router-dom';
 
 import {QueryCountdown} from '../app/QueryCountdown';
 import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
 import {Tab, Tabs} from '../ui/Tabs';
 
 const POLL_INTERVAL = 15000;
@@ -17,11 +16,7 @@ interface Props {
 export const InstanceTabs: React.FC<Props> = (props) => {
   const {queryData, tab} = props;
   return (
-    <Box
-      flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}
-      border={{side: 'bottom', width: 1, color: ColorsWIP.Gray100}}
-      margin={{horizontal: 24}}
-    >
+    <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
       <Tabs selectedTabId={tab}>
         <Tab id="health" title={<Link to="/instance/health">Health</Link>} />
         <Tab id="schedules" title={<Link to="/instance/schedules">Schedules</Link>} />

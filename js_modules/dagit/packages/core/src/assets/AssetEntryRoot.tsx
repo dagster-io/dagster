@@ -1,16 +1,14 @@
 import {gql, useQuery} from '@apollo/client';
-import {BreadcrumbProps, Breadcrumbs} from '@blueprintjs/core';
 import * as React from 'react';
-import {Link, Redirect, RouteComponentProps} from 'react-router-dom';
+import {Redirect, RouteComponentProps} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
-import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
 import {Loading} from '../ui/Loading';
 import {Page} from '../ui/Page';
 import {PageHeader} from '../ui/PageHeader';
+import {TagWIP} from '../ui/TagWIP';
 import {Heading} from '../ui/Text';
 
 import {AssetView} from './AssetView';
@@ -50,59 +48,27 @@ export const AssetEntryRoot: React.FC<RouteComponentProps> = ({location, match})
     return <Redirect to={pathname} />;
   }
 
-  const pathDetails = () => {
-    if (currentPath.length === 1 || view !== 'directory') {
-      return <Link to="/instance/assets">Assets</Link>;
-    }
-
-    const breadcrumbs: BreadcrumbProps[] = [];
-    currentPath.slice(0, currentPath.length - 1).reduce((accum: string, elem: string) => {
-      const href = `${accum}/${encodeURIComponent(elem)}`;
-      breadcrumbs.push({text: elem, href});
-      return href;
-    }, '/instance/assets');
-
-    return (
-      <Box flex={{direction: 'row', alignItems: 'center'}} style={{maxWidth: 500}}>
-        <Box margin={{right: 4}}>
-          <Link to="/instance/assets">Assets</Link>:
-        </Box>
-        <Breadcrumbs
-          breadcrumbRenderer={({text, href}) => (
-            <Link to={href || '#'}>
-              <span style={{fontSize: '14px'}}>{text}</span>
-            </Link>
-          )}
-          items={breadcrumbs}
-        />
-      </Box>
-    );
-  };
-
   return (
     <Page>
-      <Group direction="column" spacing={20} padding={{horizontal: 24}}>
-        <PageHeader
-          title={
-            view !== 'directory' ? (
-              <Heading>{currentPath[currentPath.length - 1]}</Heading>
-            ) : (
-              <Box flex={{alignItems: 'center'}}>
-                {currentPath
-                  .map<React.ReactNode>((p, i) => <Heading key={i}>{p}</Heading>)
-                  .reduce((prev, curr, i) => [
-                    prev,
-                    <Box key={`separator_${i}`} padding={4}>
-                      <IconWIP name="chevron_right" size={24} />
-                    </Box>,
-                    curr,
-                  ])}
-              </Box>
-            )
-          }
-          icon="asset"
-          description={<PathDetails>{pathDetails()}</PathDetails>}
-        />
+      <PageHeader
+        title={
+          view !== 'directory' ? (
+            <Heading>{currentPath[currentPath.length - 1]}</Heading>
+          ) : (
+            <Box flex={{alignItems: 'center', gap: 4}}>
+              {currentPath
+                .map<React.ReactNode>((p, i) => <Heading key={i}>{p}</Heading>)
+                .reduce((prev, curr, i) => [
+                  prev,
+                  <IconWIP key={`separator_${i}`} name="chevron_right" size={16} />,
+                  curr,
+                ])}
+            </Box>
+          )
+        }
+        tags={<TagWIP icon="asset">Asset</TagWIP>}
+      />
+      <Box padding={{vertical: 16, horizontal: 24}}>
         <Loading queryResult={queryResult}>
           {({assetOrError, assetNodeOrError}) => {
             if (
@@ -119,7 +85,7 @@ export const AssetEntryRoot: React.FC<RouteComponentProps> = ({location, match})
             );
           }}
         </Loading>
-      </Group>
+      </Box>
     </Page>
   );
 };
@@ -132,20 +98,6 @@ const Wrapper = styled.div`
   height: 100%;
   min-width: 0;
   overflow: auto;
-`;
-
-const PathDetails = styled.div`
-  color: ${ColorsWIP.Gray500};
-
-  .bp3-breadcrumbs {
-    height: auto;
-  }
-
-  .bp3-breadcrumbs-collapsed {
-    position: relative;
-    top: 2px;
-    margin-left: 2px;
-  }
 `;
 
 const ASSET_ENTRY_ROOT_QUERY = gql`

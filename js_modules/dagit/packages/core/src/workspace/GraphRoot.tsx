@@ -1,14 +1,15 @@
 import React from 'react';
-import {Link, RouteComponentProps} from 'react-router-dom';
+import {RouteComponentProps} from 'react-router-dom';
 
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {PipelineExplorerRegexRoot} from '../pipelines/PipelineExplorerRoot';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {PageHeader} from '../ui/PageHeader';
+import {PageSection} from '../ui/PageSection';
+import {TagWIP} from '../ui/TagWIP';
 import {Heading} from '../ui/Text';
 
 import {RepoAddress} from './types';
-import {workspacePathFromAddress} from './workspacePath';
 
 interface Props extends RouteComponentProps {
   repoAddress: RepoAddress;
@@ -25,21 +26,19 @@ export const GraphRoot: React.FC<Props> = (props) => {
 
   return (
     <div style={{height: '100%', display: 'flex', flexDirection: 'column'}}>
-      <div style={{padding: 20, borderBottom: '1px solid #ccc'}}>
-        <PageHeader
-          title={<Heading>{title}</Heading>}
-          description={
-            <>
-              <Link to={workspacePathFromAddress(repoAddress, '/graphs')}>Graph</Link> in{' '}
-              <RepositoryLink repoAddress={repoAddress} />
-            </>
-          }
-          icon="schema"
-        />
-      </div>
-      <div style={{position: 'relative', minHeight: 0, flex: 1, display: 'flex'}}>
-        <PipelineExplorerRegexRoot {...props} repoAddress={repoAddress} />
-      </div>
+      <PageHeader
+        title={<Heading>{title}</Heading>}
+        tags={
+          <TagWIP icon="schema">
+            Graph in <RepositoryLink repoAddress={repoAddress} />
+          </TagWIP>
+        }
+      />
+      <PageSection>
+        <div style={{position: 'relative', minHeight: 0, flex: 1, display: 'flex', top: '1px'}}>
+          <PipelineExplorerRegexRoot {...props} repoAddress={repoAddress} />
+        </div>
+      </PageSection>
     </div>
   );
 };

@@ -1,15 +1,15 @@
 import * as React from 'react';
 import {Link, Redirect, Route, Switch} from 'react-router-dom';
+import styled from 'styled-components/macro';
 
 import {useFeatureFlags} from '../app/Flags';
 import {SchedulesRoot} from '../schedules/SchedulesRoot';
 import {SensorsRoot} from '../sensors/SensorsRoot';
 import {SolidsRoot} from '../solids/SolidsRoot';
 import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
-import {Group} from '../ui/Group';
 import {PageHeader} from '../ui/PageHeader';
 import {Tab, Tabs} from '../ui/Tabs';
+import {TagWIP} from '../ui/TagWIP';
 import {Heading} from '../ui/Text';
 
 import {RepositoryAssetsList} from './RepositoryAssetsList';
@@ -76,22 +76,19 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%'}}>
-      <Group direction="column" spacing={16} padding={{top: 16, horizontal: 24}}>
-        <PageHeader
-          title={<Heading>{path}</Heading>}
-          icon="repo"
-          description={<Link to="/workspace">Repository</Link>}
-        />
-        <Box border={{side: 'bottom', width: 1, color: ColorsWIP.Gray100}}>
+      <PageHeader
+        title={<Heading>{path}</Heading>}
+        tags={<TagWIP icon="folder">Repository</TagWIP>}
+        tabs={
           <Tabs large={false} selectedTabId={activeTab()}>
             {tabs.map((tab) => {
               const {href, text} = tab;
               return <Tab key={text} id={text} title={<Link to={href}>{text}</Link>} />;
             })}
           </Tabs>
-        </Box>
-      </Group>
-      <div style={{flex: 1, flexGrow: 1}}>
+        }
+      />
+      <Container>
         <Switch>
           <Route
             path="/workspace/:repoPath/schedules"
@@ -137,7 +134,12 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
             render={() => <Redirect to={workspacePathFromAddress(repoAddress, `/pipelines`)} />}
           />
         </Switch>
-      </div>
+      </Container>
     </Box>
   );
 };
+
+const Container = styled.div`
+  flex: 1;
+  flex-grow: 1;
+`;

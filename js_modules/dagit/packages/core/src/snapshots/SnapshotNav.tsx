@@ -3,9 +3,6 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {explorerPathToString, PipelineExplorerPath} from '../pipelines/PipelinePathUtils';
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
-import {Group} from '../ui/Group';
 import {PageHeader} from '../ui/PageHeader';
 import {Tab, Tabs} from '../ui/Tabs';
 import {TagWIP} from '../ui/TagWIP';
@@ -90,39 +87,38 @@ export const SnapshotNav = (props: SnapshotNavProps) => {
   ];
 
   return (
-    <Group direction="column" spacing={12} padding={{top: 20, horizontal: 20}}>
+    <>
       <PageHeader
         title={
-          <Group direction="row" spacing={12} alignItems="flex-end">
-            <Heading style={{fontFamily: FontFamily.monospace}}>
-              {explorerPath.snapshotId?.slice(0, 8)}
-            </Heading>
-            {tag()}
-          </Group>
+          <Heading style={{fontFamily: FontFamily.monospace, fontSize: '20px'}}>
+            {explorerPath.snapshotId?.slice(0, 8)}
+          </Heading>
         }
-        icon="schema"
-        description={
-          <span>
-            Snapshot of{' '}
-            <Link
-              to={workspacePipelinePathGuessRepo(
-                explorerPath.pipelineName,
-                explorerPath.pipelineMode,
-              )}
-            >
-              {explorerPath.pipelineName}
-            </Link>
-          </span>
+        tags={
+          <>
+            <TagWIP icon="schema">
+              Snapshot of{' '}
+              <Link
+                to={workspacePipelinePathGuessRepo(
+                  explorerPath.pipelineName,
+                  explorerPath.pipelineMode,
+                )}
+              >
+                {explorerPath.pipelineName}
+              </Link>
+            </TagWIP>
+            {tag()}
+          </>
+        }
+        tabs={
+          <Tabs large={false} selectedTabId={activeTab}>
+            {tabs.map((tab) => {
+              const {href, text, pathComponent} = tab;
+              return <Tab key={text} id={pathComponent} title={<Link to={href}>{text}</Link>} />;
+            })}
+          </Tabs>
         }
       />
-      <Box border={{side: 'bottom', width: 1, color: ColorsWIP.Gray100}}>
-        <Tabs large={false} selectedTabId={activeTab}>
-          {tabs.map((tab) => {
-            const {href, text, pathComponent} = tab;
-            return <Tab key={text} id={pathComponent} title={<Link to={href}>{text}</Link>} />;
-          })}
-        </Tabs>
-      </Box>
-    </Group>
+    </>
   );
 };
