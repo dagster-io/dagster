@@ -90,3 +90,7 @@ def connect_sibling_docker_container(network_name, container_name, env_variable)
             )
         )
     ]
+
+
+def is_release_branch(branch_name: str):
+    return branch_name.startswith("release-")
