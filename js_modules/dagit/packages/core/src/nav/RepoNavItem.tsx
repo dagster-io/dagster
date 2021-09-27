@@ -130,15 +130,13 @@ const SingleRepoSummary: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) 
                   </Reloading>
                 }
               >
-                <SpinnerOrButton>
-                  {reloading ? (
-                    <Spinner purpose="body-text" />
-                  ) : (
-                    <StyledButton onClick={tryReload}>
-                      <IconWIP name="refresh" color={ColorsWIP.Gray200} />
-                    </StyledButton>
-                  )}
-                </SpinnerOrButton>
+                {reloading ? (
+                  <Spinner purpose="body-text" />
+                ) : (
+                  <StyledButton onClick={tryReload}>
+                    <IconWIP name="refresh" color={ColorsWIP.Gray200} />
+                  </StyledButton>
+                )}
               </ReloadTooltip>
             </ShortcutHandler>
           )}
@@ -174,14 +172,11 @@ const ReloadTooltip = styled(Tooltip)`
   }
 `;
 
-const SpinnerOrButton = styled.div`
-  display: flex;
-`;
-
 const StyledButton = styled.button`
   background-color: transparent;
   border: 0;
   cursor: pointer;
+  display: block;
   padding: 0;
   margin: 0;
 
