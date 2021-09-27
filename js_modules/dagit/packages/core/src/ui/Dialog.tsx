@@ -44,8 +44,8 @@ export const DialogBody: React.FC = (props) => {
 };
 
 interface DialogFooterProps {
-  right?: React.ReactNode;
-  left?: React.ReactNode;
+  buttons?: React.ReactNode[];
+  left?: React.ReactFragment;
 }
 
 export const DialogFooter: React.FC<DialogFooterProps> = (props) => {
@@ -56,16 +56,10 @@ export const DialogFooter: React.FC<DialogFooterProps> = (props) => {
       flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
     >
       <div>{props.left}</div>
-      <div>{props.right}</div>
+      <Group direction="row" spacing={12} alignItems="center">
+        {props.buttons}
+      </Group>
     </Box>
-  );
-};
-
-export const DialogButtons: React.FC = (props) => {
-  return (
-    <Group direction="row" spacing={12} alignItems="center">
-      {props.children}
-    </Group>
   );
 };
 

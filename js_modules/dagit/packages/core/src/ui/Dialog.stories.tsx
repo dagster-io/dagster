@@ -4,7 +4,6 @@ import * as React from 'react';
 import {ButtonWIP} from './Button';
 import {
   DialogBody,
-  DialogButtons,
   DialogFooter,
   DialogHeader,
   DialogWIP as Dialog,
@@ -47,16 +46,14 @@ export const Simple = () => {
           </Group>
         </DialogBody>
         <DialogFooter
-          right={
-            <DialogButtons>
-              <ButtonWIP intent="none" onClick={() => setOpen(false)}>
-                Cancel
-              </ButtonWIP>
-              <ButtonWIP intent="primary" onClick={() => setOpen(false)}>
-                Perform action
-              </ButtonWIP>
-            </DialogButtons>
-          }
+          buttons={[
+            <ButtonWIP key="cancel" intent="none" onClick={() => setOpen(false)}>
+              Cancel
+            </ButtonWIP>,
+            <ButtonWIP key="action" intent="primary" onClick={() => setOpen(false)}>
+              Perform action
+            </ButtonWIP>,
+          ]}
         />
       </DialogWIP>
     </>
