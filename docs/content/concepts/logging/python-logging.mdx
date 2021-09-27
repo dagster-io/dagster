@@ -5,11 +5,35 @@ description: Dagster is compatible and configurable with Python's logging module
 
 # Python Logging
 
-Dagster is compatible and configurable with [Python's logging module](https://docs.python.org/3/library/logging.html). You can specify and configure handlers and formatters to create custom log messages.
+Dagster is compatible and configurable with [Python's logging module](https://docs.python.org/3/library/logging.html). At the moment, you can access the configuration options through your `dagster.yaml` file, which will apply the contained settings to any run launched from your instance.
+You can specify and configure handlers and formatters to create custom log messages.
 
-## Configuring Python Logging <Experimental />
+## Capturing Python Logs <Experimental />
 
-In your config YAML, you can configure handlers and formatters that will apply to the Dagster instance, so all pipeline runs will share the same logging configuration.
+By default, logs generated using the python logging module are not captured into the Dagster ecosystem. This means that they are not stored in the [TODO] Dagster Event Log,
+and will not be associated with any Dagster metadata (such as step key, run id, etc.).
+
+If a `python_log_level` is set (see: Configuring A Python Log Level), then these loggers will be set to
+that level before a run is launched.
+
+## Configuring A Python Log Level <Experimental />
+
+If you want to set a global log level for your Dagster instance, you can do this by setting the
+`python_log_level` in your dagster.yaml file. This will set the log level of all loggers managed by Dagster. By default,
+this will just be the `context.log` logger. If there are custom python loggers that you wish to capture, see
+[TODO] Capturing Python Logs.
+
+This allows you to filter out logs below a given level. For example, setting a log level of `INFO` will filter out all `DEBUG` level logs.
+
+```
+
+```
+
+setting the `python_log_level` to `INFO` will
+
+## Configuring Python Log Handlers <Experimental />
+
+In your dagster.yaml file, you can configure handlers and formatters that will apply to the Dagster instance, so all pipeline runs will share the same logging configuration.
 
 ```yaml file=/concepts/logging/python_logging_config.yaml
 python_logs:
@@ -66,8 +90,8 @@ def file_log_pipeline():
 After execution, we can read the output log file `my_dagster_logs.log`. As expected, the log file contains the formatted log!
 
 <Image
-alt="log-file-output"
-src="/images/concepts/logging/log-file-output.png"
-width={4032}
-height={945}
+  alt="log-file-output"
+  src="/images/concepts/logging/log-file-output.png"
+  width={4032}
+  height={945}
 />

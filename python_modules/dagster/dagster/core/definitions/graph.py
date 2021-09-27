@@ -467,6 +467,8 @@ class GraphDefinition(NodeDefinition):
                 f"is an object of type {type(config)}"
             )
 
+        print("z" * 300)
+        print(logger_defs)
         return JobDefinition(
             name=job_name,
             description=description,
