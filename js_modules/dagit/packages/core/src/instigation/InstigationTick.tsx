@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Tag, Dialog, Button, Intent, NonIdealState, Classes, Colors} from '@blueprintjs/core';
+import {Dialog, Button, NonIdealState, Classes, Colors} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -15,6 +15,7 @@ import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
 import {Spinner} from '../ui/Spinner';
+import {TagWIP} from '../ui/TagWIP';
 import {Body} from '../ui/Text';
 
 import {LaunchedRunListQuery, LaunchedRunListQueryVariables} from './types/LaunchedRunListQuery';
@@ -27,26 +28,18 @@ export const TickTag: React.FunctionComponent<{
   const [open, setOpen] = React.useState<boolean>(false);
   switch (tick.status) {
     case InstigationTickStatus.STARTED:
-      return (
-        <Tag minimal={true} intent={Intent.NONE}>
-          Started
-        </Tag>
-      );
+      return <TagWIP>Started</TagWIP>;
     case InstigationTickStatus.SUCCESS:
       if (!tick.runIds.length) {
-        return (
-          <Tag minimal={true} intent={Intent.PRIMARY}>
-            Requested
-          </Tag>
-        );
+        return <TagWIP intent="primary">Requested</TagWIP>;
       }
       return (
         <>
-          <Tag minimal={true} intent={Intent.PRIMARY} interactive={true}>
+          <TagWIP intent="primary" interactive>
             <ButtonLink underline="never" onClick={() => setOpen(true)}>
               {tick.runIds.length} Requested
             </ButtonLink>
-          </Tag>
+          </TagWIP>
           <Dialog
             isOpen={open}
             onClose={() => setOpen(false)}
@@ -68,26 +61,16 @@ export const TickTag: React.FunctionComponent<{
       );
     case InstigationTickStatus.SKIPPED:
       if (!tick.skipReason) {
-        return (
-          <Tag minimal={true} intent={Intent.WARNING}>
-            Skipped
-          </Tag>
-        );
+        return <TagWIP intent="warning">Skipped</TagWIP>;
       }
       return (
-        <Tooltip position={'right'} content={tick.skipReason} targetTagName="div">
-          <Tag minimal={true} intent={Intent.WARNING}>
-            Skipped
-          </Tag>
+        <Tooltip position="right" content={tick.skipReason} targetTagName="div">
+          <TagWIP intent="warning">Skipped</TagWIP>
         </Tooltip>
       );
     case InstigationTickStatus.FAILURE:
       if (!tick.error) {
-        return (
-          <Tag minimal={true} intent={Intent.DANGER}>
-            Failure
-          </Tag>
-        );
+        return <TagWIP intent="danger">Failure</TagWIP>;
       } else {
         const error = tick.error;
         return (
@@ -103,9 +86,9 @@ export const TickTag: React.FunctionComponent<{
               })
             }
           >
-            <Tag minimal={true} intent={Intent.DANGER} interactive={true}>
+            <TagWIP minimal={true} intent="danger">
               Failure
-            </Tag>
+            </TagWIP>
           </LinkButton>
         );
       }

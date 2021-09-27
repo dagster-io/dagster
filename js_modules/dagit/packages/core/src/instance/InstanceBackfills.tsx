@@ -1,17 +1,9 @@
 import {gql, useQuery, useMutation} from '@apollo/client';
-import {
-  Colors,
-  NonIdealState,
-  Popover,
-  Button,
-  Menu,
-  MenuItem,
-  Tag,
-  Intent,
-} from '@blueprintjs/core';
+import {Colors, NonIdealState, Popover, Button, Menu, MenuItem, Intent} from '@blueprintjs/core';
 import qs from 'qs';
 import * as React from 'react';
 import {useHistory, Link} from 'react-router-dom';
+import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {SharedToaster} from '../app/DomUtils';
@@ -38,6 +30,7 @@ import {CursorPaginationControls} from '../ui/CursorControls';
 import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
 import {Table} from '../ui/Table';
+import {TagWIP} from '../ui/TagWIP';
 import {Mono} from '../ui/Text';
 import {stringFromValue} from '../ui/TokenizingField';
 import {workspacePipelinePath} from '../workspace/workspacePath';
@@ -313,17 +306,16 @@ const BackfillRow = ({
       <td>
         {[BulkActionStatus.CANCELED, BulkActionStatus.FAILED].includes(backfill.status) ? (
           <Box margin={{bottom: 12}}>
-            <Tag
-              minimal
-              intent="danger"
+            <TagButton
               onClick={() =>
                 backfill.error &&
                 showCustomAlert({title: 'Error', body: <PythonErrorInfo error={backfill.error} />})
               }
-              style={{cursor: backfill.error ? 'pointer' : 'default'}}
             >
-              {backfill.status}
-            </Tag>
+              <TagWIP intent="danger" interactive>
+                {backfill.status}
+              </TagWIP>
+            </TagButton>
           </Box>
         ) : null}
         <BackfillStatusTable backfill={backfill} />
@@ -385,6 +377,18 @@ const BackfillRow = ({
     </tr>
   );
 };
+
+const TagButton = styled.button`
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+
+  :focus {
+    outline: none;
+  }
+`;
 
 const getProgressCounts = (backfill: Backfill) => {
   const byPartitionRuns: {[key: string]: BackfillRun} = {};

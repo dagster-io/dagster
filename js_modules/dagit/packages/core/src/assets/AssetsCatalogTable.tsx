@@ -539,7 +539,7 @@ const AssetEntryRow: React.FC<{
         {shouldShowTags ? (
           <td>
             {isAssetEntry && assets[0].tags.length ? (
-              <Box flex={{direction: 'row', wrap: 'wrap'}}>
+              <Box flex={{direction: 'row', wrap: 'wrap', gap: 8}}>
                 {assets[0].tags.map((tag, idx) => (
                   <Tag tag={tag} key={idx} onClick={() => onTagClick(tag)} />
                 ))}

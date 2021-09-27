@@ -6,6 +6,7 @@ import styled from 'styled-components/macro';
 
 import {TimezoneContext} from '../app/time/TimezoneContext';
 import {browserTimezone} from '../app/time/browserTimezone';
+import {ColorsWIP} from '../ui/Colors';
 import {FontFamily} from '../ui/styles';
 
 import {LogLevel} from './LogLevel';
@@ -13,12 +14,12 @@ import {ColumnWidthsContext} from './LogsScrollingTableHeader';
 
 const bgcolorForLevel = (level: LogLevel) =>
   ({
-    [LogLevel.DEBUG]: `transparent`,
-    [LogLevel.INFO]: `transparent`,
-    [LogLevel.EVENT]: `transparent`,
-    [LogLevel.WARNING]: `rgba(166, 121, 8, 0.05)`,
-    [LogLevel.ERROR]: `rgba(206, 17, 38, 0.05)`,
-    [LogLevel.CRITICAL]: `rgba(206, 17, 38, 0.05)`,
+    [LogLevel.DEBUG]: ColorsWIP.White,
+    [LogLevel.INFO]: ColorsWIP.White,
+    [LogLevel.EVENT]: ColorsWIP.White,
+    [LogLevel.WARNING]: ColorsWIP.Yellow50,
+    [LogLevel.ERROR]: ColorsWIP.Red50,
+    [LogLevel.CRITICAL]: ColorsWIP.Red50,
   }[level]);
 
 export const Row = styled.div<{level: LogLevel; highlighted: boolean}>`

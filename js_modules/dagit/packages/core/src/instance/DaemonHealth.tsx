@@ -1,10 +1,10 @@
-import {Button, Classes, Colors, Dialog, Tag} from '@blueprintjs/core';
+import {Button, Classes, Colors, Dialog} from '@blueprintjs/core';
 import * as React from 'react';
-import styled from 'styled-components/macro';
 
 import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
 import {Group} from '../ui/Group';
+import {TagWIP} from '../ui/TagWIP';
 import {Trace} from '../ui/Trace';
 
 import {DaemonHealthFragment_allDaemonStatuses as DaemonStatus} from './types/DaemonHealthFragment';
@@ -17,26 +17,14 @@ const DaemonHealthTag = (props: Props) => {
   const {daemon} = props;
 
   if (daemon.healthy) {
-    return (
-      <HoverTag minimal intent="success">
-        Running
-      </HoverTag>
-    );
+    return <TagWIP intent="success">Running</TagWIP>;
   }
 
   if (daemon.required) {
-    return (
-      <HoverTag minimal intent="danger">
-        Not running
-      </HoverTag>
-    );
+    return <TagWIP intent="danger">Not running</TagWIP>;
   }
 
-  return (
-    <HoverTag minimal intent="none">
-      Not enabled
-    </HoverTag>
-  );
+  return <TagWIP intent="none">Not enabled</TagWIP>;
 };
 
 type State = {
@@ -139,8 +127,3 @@ export const DaemonHealth = (props: Props) => {
     </Group>
   );
 };
-
-const HoverTag = styled(Tag)`
-  cursor: default;
-  user-select: none;
-`;

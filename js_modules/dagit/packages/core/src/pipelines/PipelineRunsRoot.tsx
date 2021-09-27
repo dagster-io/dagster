@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {NonIdealState, Tag} from '@blueprintjs/core';
+import {NonIdealState} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
@@ -19,6 +19,7 @@ import {CursorPaginationControls} from '../ui/CursorControls';
 import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
 import {Page} from '../ui/Page';
+import {TagWIP} from '../ui/TagWIP';
 import {TokenizingFieldValue} from '../ui/TokenizingField';
 
 import {explorerPathFromString} from './PipelinePathUtils';
@@ -87,7 +88,7 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
           <Group direction="column" spacing={8}>
             <Group direction="row" spacing={8}>
               {permanentTokens.map(({token, value}) => (
-                <Tag minimal key={token}>{`${token}:${value}`}</Tag>
+                <TagWIP key={token}>{`${token}:${value}`}</TagWIP>
               ))}
             </Group>
             <RunsFilter
