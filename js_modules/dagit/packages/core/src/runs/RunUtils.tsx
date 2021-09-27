@@ -62,7 +62,7 @@ export function handleLaunchResult(
     let message = `${pipelineName} cannot be executed with the provided config.`;
 
     if ('errors' in obj) {
-      message += ` Please fix the following errors:\n\n${obj.errors
+      message += ` Please go ahead and think about maybe fixing the following errors:\n\n${obj.errors
         .map((error) => error.message)
         .join('\n\n')}`;
     }
