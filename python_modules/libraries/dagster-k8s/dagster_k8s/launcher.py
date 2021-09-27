@@ -47,6 +47,11 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     under the ``config`` key of this YAML block will be passed to the constructor. The full list
     of acceptable values is given below by the constructor args.
 
+    When used in conjunction with k8s executor, the ``job_image`` from the executor configuration
+    will override the one from this RunLuancher. Also, environement vaiables from the executor
+    configuration defined via ``env_config_maps``, ``env_secrets`` or ``env_vars`` will be appended
+    to the ones defined in this RunLauncher.
+
     Args:
         service_account_name (str): The name of the Kubernetes service account under which to run
             the Job.
