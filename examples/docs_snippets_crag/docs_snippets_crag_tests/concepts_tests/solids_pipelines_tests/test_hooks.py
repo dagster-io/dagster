@@ -2,7 +2,7 @@ from unittest import mock
 
 from dagster import DagsterEventType, ModeDefinition, ResourceDefinition, execute_pipeline, pipeline
 from dagster.core.definitions import solid
-from docs_snippets_crag.concepts.solids_pipelines.solid_hooks import (
+from docs_snippets_crag.concepts.solids_pipelines.op_hooks import (
     a,
     notif_all,
     selective_notif,
@@ -10,7 +10,7 @@ from docs_snippets_crag.concepts.solids_pipelines.solid_hooks import (
     slack_message_on_success,
     test_my_success_hook,
 )
-from docs_snippets_crag.concepts.solids_pipelines.solid_hooks_context import my_failure_hook
+from docs_snippets_crag.concepts.solids_pipelines.op_hooks_context import my_failure_hook
 
 
 def test_notif_all_pipeline():
