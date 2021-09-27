@@ -3,7 +3,7 @@ import sys
 import tempfile
 from unittest import mock
 
-from dagster import DagsterEventType, execute_pipeline, pipeline, solid
+from dagster import DagsterEventType, graph, op
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster.core.run_coordinator import DefaultRunCoordinator
@@ -31,9 +31,9 @@ def test_compute_log_manager(
     fake_client = FakeBlobServiceClient(storage_account)
     mock_create_blob_client.return_value = fake_client
 
-    @pipeline
+    @graph
     def simple():
-        @solid
+        @op
         def easy(context):
             context.log.info("easy")
             print(HELLO_WORLD)  # pylint: disable=print-call
@@ -60,7 +60,7 @@ def test_compute_log_manager(
             run_coordinator=DefaultRunCoordinator(),
             run_launcher=SyncInMemoryRunLauncher(),
         )
-        result = execute_pipeline(simple, instance=instance)
+        result = simple.execute_in_process(instance=instance)
         compute_steps = [
             event.step_key
             for event in result.step_event_list
