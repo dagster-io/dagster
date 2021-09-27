@@ -20,7 +20,7 @@ export const RepositoryLink: React.FC<{repoAddress: RepoAddress}> = ({repoAddres
   const {canReloadRepositoryLocation} = usePermissions();
 
   return (
-    <Box flex={{display: 'inline-flex', direction: 'row', alignItems: 'baseline'}}>
+    <Box flex={{display: 'inline-flex', direction: 'row', alignItems: 'center'}}>
       <RepositoryName
         to={workspacePathFromAddress(repoAddress)}
         title={repoAddressAsString(repoAddress)}
@@ -71,9 +71,8 @@ const RepositoryName = styled(Link)`
 const ReloadTooltip = styled(Tooltip)`
   margin-left: 4px;
 
-  button {
-    position: relative;
-    top: 3px;
+  && {
+    display: block;
   }
 `;
 
@@ -81,6 +80,7 @@ const StyledButton = styled.button`
   background-color: transparent;
   border: 0;
   cursor: pointer;
+  display: block;
   padding: 0;
   margin: 0;
 

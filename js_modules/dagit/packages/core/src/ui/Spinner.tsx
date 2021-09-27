@@ -26,8 +26,27 @@ export const Spinner: React.FC<{
     }
   };
 
-  return <SlowSpinner size={size()} value={value} $fillColor={fillColor} />;
+  const padding = () => {
+    switch (purpose) {
+      case 'caption-text':
+        return 1;
+      case 'body-text':
+        return 2;
+      default:
+        return 0;
+    }
+  };
+
+  return (
+    <SpinnerWrapper $padding={padding()}>
+      <SlowSpinner size={size()} value={value} $fillColor={fillColor} />
+    </SpinnerWrapper>
+  );
 };
+
+export const SpinnerWrapper = styled.div<{$padding: number}>`
+  padding: ${({$padding}) => $padding}px;
+`;
 
 const SlowSpinner = styled(BlueprintSpinner)<{$fillColor: string}>`
   .bp3-spinner-animation {

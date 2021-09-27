@@ -3,6 +3,7 @@ import styled, {css} from 'styled-components/macro';
 
 import {ColorsWIP} from './Colors';
 import {IconWrapper} from './Icon';
+import {SpinnerWrapper} from './Spinner';
 
 interface Props extends React.ComponentPropsWithRef<'button'> {
   icon?: React.ReactNode;
@@ -107,22 +108,26 @@ const StyledButton = styled.button<StyledButtonProps>`
     ${({$stroke}) => ($stroke ? DEFAULT_STROKE : null)};
   }
 
+  ${SpinnerWrapper},
   ${IconWrapper} {
     color: ${({$textColor}) => $textColor};
     align-self: center;
     display: block;
   }
 
+  ${SpinnerWrapper}:first-child,
   ${IconWrapper}:first-child {
     margin-left: -4px;
     margin-right: 4px;
   }
 
+  ${SpinnerWrapper}:last-child,
   ${IconWrapper}:last-child {
     margin-right: -4px;
     margin-left: 4px;
   }
 
+  ${SpinnerWrapper}:first-child:last-child,
   ${IconWrapper}:first-child:last-child {
     margin: 2px -4px;
   }
