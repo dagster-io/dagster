@@ -63,33 +63,35 @@ export const WorkspacePipelineRoot: React.FC<Props> = (props) => {
 
   return (
     <Page>
-      <PageHeader
-        title={<Heading>{pipelineName}</Heading>}
-        icon={flagPipelineModeTuples ? 'workspaces' : 'schema'}
-        description={
-          flagPipelineModeTuples
-            ? 'Job in multiple repositories'
-            : 'Pipeline in multiple repositories'
-        }
-      />
-      <Box margin={{vertical: 20}}>
-        <Alert
-          intent="info"
-          title={
-            <div>
-              {flagPipelineModeTuples ? (
-                <>
-                  Jobs named <strong>{pipelineName}</strong> were found in multiple repositories.
-                </>
-              ) : (
-                <>
-                  Pipelines named <strong>{pipelineName}</strong> were found in multiple
-                  repositories.
-                </>
-              )}
-            </div>
+      <Box padding={{horizontal: 24}}>
+        <PageHeader
+          title={<Heading>{pipelineName}</Heading>}
+          icon={flagPipelineModeTuples ? 'workspaces' : 'schema'}
+          description={
+            flagPipelineModeTuples
+              ? 'Job in multiple repositories'
+              : 'Pipeline in multiple repositories'
           }
         />
+        <Box margin={{vertical: 16}}>
+          <Alert
+            intent="info"
+            title={
+              <div>
+                {flagPipelineModeTuples ? (
+                  <>
+                    Jobs named <strong>{pipelineName}</strong> were found in multiple repositories.
+                  </>
+                ) : (
+                  <>
+                    Pipelines named <strong>{pipelineName}</strong> were found in multiple
+                    repositories.
+                  </>
+                )}
+              </div>
+            }
+          />
+        </Box>
       </Box>
       <Table>
         <thead>

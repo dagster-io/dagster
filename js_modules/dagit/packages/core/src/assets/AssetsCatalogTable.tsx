@@ -130,7 +130,7 @@ export const AssetsCatalogTable: React.FC<{prefixPath?: string[]}> = ({prefixPat
           const showSwitcher = prefixPath || assets.some((asset) => asset.key.path.length > 1);
           return (
             <Wrapper>
-              <Box flex={{justifyContent: 'space-between'}}>
+              <Box flex={{justifyContent: 'space-between'}} padding={{horizontal: 24}}>
                 <div>
                   {showSwitcher ? (
                     <Group spacing={8} direction="row">

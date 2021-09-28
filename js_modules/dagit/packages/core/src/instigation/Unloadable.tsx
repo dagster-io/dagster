@@ -33,9 +33,10 @@ export const UnloadableSensors: React.FunctionComponent<{
   }
   return (
     <>
-      <Subheading>Unloadable sensors</Subheading>
-      <UnloadableSensorInfo />
-
+      <Box padding={{top: 16, horizontal: 24}}>
+        <Subheading>Unloadable sensors</Subheading>
+        <UnloadableSensorInfo />
+      </Box>
       <Table>
         <thead>
           <tr>

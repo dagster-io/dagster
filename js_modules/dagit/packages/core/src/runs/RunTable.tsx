@@ -159,8 +159,8 @@ export const RunTable = (props: RunTableProps) => {
           </th>
           <th>Run ID</th>
           <th>{flagPipelineModeTuples ? 'Job' : 'Pipeline'}</th>
-          <th style={{width: 110, minWidth: 110}}>Snapshot ID</th>
-          <th style={{width: 160}}>Timing</th>
+          <th style={{width: 120, minWidth: 120}}>Snapshot ID</th>
+          <th style={{width: 180}}>Timing</th>
           {props.additionalColumnHeaders}
           <th style={{width: 52}} />
         </tr>

@@ -108,7 +108,7 @@ export const InstanceBackfills = () => {
           return (
             <>
               {isBackfillHealthy ? null : (
-                <Box margin={{bottom: 8}}>
+                <Box margin={{bottom: 24}} padding={{horizontal: 24}}>
                   <Alert
                     intent="warning"
                     title="The backfill daemon is not running."

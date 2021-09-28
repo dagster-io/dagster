@@ -3,6 +3,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {useFeatureFlags} from '../app/Flags';
+import {Box} from '../ui/Box';
 import {Group} from '../ui/Group';
 import {LoadingSpinner} from '../ui/Loading';
 import {Page} from '../ui/Page';
@@ -116,18 +117,20 @@ export const WorkspaceOverviewRoot = () => {
 
   return (
     <Page>
-      <Group direction="column" spacing={16}>
+      <Box padding={{horizontal: 24}}>
         <PageHeader title={<Heading>Workspace</Heading>} />
-        <Group direction="column" spacing={16}>
-          <Group direction="row" spacing={12} alignItems="center">
-            <Subheading id="repository-locations">Locations</Subheading>
-            <ReloadAllButton />
-          </Group>
-          <RepositoryLocationsList />
+      </Box>
+      <Box padding={{horizontal: 24, top: 24, bottom: 16}}>
+        <Group direction="row" spacing={8} alignItems="center">
+          <Subheading id="repository-locations">Locations</Subheading>
+          <ReloadAllButton />
         </Group>
+      </Box>
+      <RepositoryLocationsList />
+      <Box padding={{horizontal: 24, top: 32, bottom: 16}}>
         <Subheading id="repository-locations">Repositories</Subheading>
-        {content()}
-      </Group>
+      </Box>
+      {content()}
     </Page>
   );
 };
