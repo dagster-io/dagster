@@ -96,8 +96,6 @@ class ModeDefinition(
         if _partitioned_config:
             experimental_arg_warning("_partitioned_config", "ModeDefinition.__new__")
 
-        print("y" * 300)
-        print(logger_defs)
         return super(ModeDefinition, cls).__new__(
             cls,
             name=check_valid_name(name) if name else DEFAULT_MODE_NAME,
