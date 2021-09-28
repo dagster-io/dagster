@@ -1,4 +1,4 @@
-solids:
-  add_x_multiply_by_x:
+ops:
+  to_fahrenheit:
     config:
-      x: 1
+      from_unit: celsius
