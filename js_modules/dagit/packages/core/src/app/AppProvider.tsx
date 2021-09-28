@@ -21,6 +21,7 @@ import {createGlobalStyle} from 'styled-components/macro';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
 
 import {ColorsWIP} from '../ui/Colors';
+import {GlobalDialogStyle} from '../ui/Dialog';
 import {GlobalPopoverStyle} from '../ui/Popover';
 import {GlobalTooltipStyle} from '../ui/Tooltip';
 import {FontFamily} from '../ui/styles';
@@ -155,6 +156,7 @@ export const AppProvider: React.FC<Props> = (props) => {
         <GlobalStyle />
         <GlobalTooltipStyle />
         <GlobalPopoverStyle />
+        <GlobalDialogStyle />
         <ApolloProvider client={apolloClient}>
           <PermissionsProvider>
             <BrowserRouter basename={basePath || ''}>

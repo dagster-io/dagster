@@ -1,10 +1,12 @@
 import {useMutation} from '@apollo/client';
-import {Checkbox, Button, Classes, Dialog, ProgressBar} from '@blueprintjs/core';
+import {Checkbox, ProgressBar} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {TerminatePipelinePolicy} from '../types/globalTypes';
 import {Box} from '../ui/Box';
+import {ButtonWIP} from '../ui/Button';
 import {ColorsWIP} from '../ui/Colors';
+import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
 import {Mono} from '../ui/Text';
@@ -229,37 +231,37 @@ export const TerminationDialog = (props: Props) => {
       case 'initial':
         if (!count) {
           return (
-            <Button intent="none" onClick={onClose}>
+            <ButtonWIP intent="none" onClick={onClose}>
               OK
-            </Button>
+            </ButtonWIP>
           );
         }
 
         return (
           <>
-            <Button intent="none" onClick={onClose}>
+            <ButtonWIP intent="none" onClick={onClose}>
               Cancel
-            </Button>
-            <Button intent="danger" onClick={mutate}>
+            </ButtonWIP>
+            <ButtonWIP intent="danger" onClick={mutate}>
               {`${state.mustForce ? 'Force termination for' : 'Terminate'} ${`${count} ${
                 count === 1 ? 'run' : 'runs'
               }`}`}
-            </Button>
+            </ButtonWIP>
           </>
         );
       case 'terminating':
         return (
-          <Button intent="danger" disabled>
+          <ButtonWIP intent="danger" disabled>
             {state.mustForce
               ? `Forcing termination for ${`${count} ${count === 1 ? 'run' : 'runs'}...`}`
               : `Terminating ${`${count} ${count === 1 ? 'run' : 'runs'}...`}`}
-          </Button>
+          </ButtonWIP>
         );
       case 'completed':
         return (
-          <Button intent="primary" onClick={onClose}>
+          <ButtonWIP intent="primary" onClick={onClose}>
             Done
-          </Button>
+          </ButtonWIP>
         );
     }
   };
@@ -324,7 +326,7 @@ export const TerminationDialog = (props: Props) => {
   const canQuicklyClose = state.step !== 'terminating';
 
   return (
-    <Dialog
+    <DialogWIP
       isOpen={isOpen}
       title="Terminate runs"
       canEscapeKeyClose={canQuicklyClose}
@@ -332,15 +334,13 @@ export const TerminationDialog = (props: Props) => {
       isCloseButtonShown={canQuicklyClose}
       onClose={onClose}
     >
-      <div className={Classes.DIALOG_BODY}>
+      <DialogBody>
         <Group direction="column" spacing={24}>
           {progressContent()}
           {completionContent()}
         </Group>
-      </div>
-      <div className={Classes.DIALOG_FOOTER}>
-        <div className={Classes.DIALOG_FOOTER_ACTIONS}>{buttons()}</div>
-      </div>
-    </Dialog>
+      </DialogBody>
+      <DialogFooter>{buttons()}</DialogFooter>
+    </DialogWIP>
   );
 };

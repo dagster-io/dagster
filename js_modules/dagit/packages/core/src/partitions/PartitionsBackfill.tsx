@@ -1,5 +1,5 @@
 import {gql, useLazyQuery, useMutation, useQuery} from '@apollo/client';
-import {Checkbox, Intent, NonIdealState, Classes, Colors, InputGroup} from '@blueprintjs/core';
+import {Checkbox, Intent, NonIdealState, Colors, InputGroup} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -20,6 +20,7 @@ import {Alert} from '../ui/Alert';
 import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
 import {ColorsWIP} from '../ui/Colors';
+import {DialogBody, DialogFooter} from '../ui/Dialog';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
@@ -397,8 +398,8 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
   const selectedString = partitionsToText(selected, partitionNames);
 
   return (
-    <div>
-      <div className={Classes.DIALOG_BODY}>
+    <>
+      <DialogBody>
         <div style={{display: 'flex', alignItems: 'center', marginBottom: 4}}>
           <strong style={{display: 'block'}}>Partitions</strong>
           <Checkbox
@@ -590,49 +591,44 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
             />
           </div>
         ) : null}
-      </div>
-      <div className={Classes.DIALOG_FOOTER}>
-        <div style={{display: 'flex', alignItems: 'center', justifyContent: 'flex-end'}}>
-          <TagEditor
-            tagsFromSession={tags}
-            onChange={setTags}
-            open={tagEditorOpen}
-            onRequestClose={() => setTagEditorOpen(false)}
-          />
-          {tags.length ? (
-            <div style={{border: '1px solid #ececec', borderBottom: 'none'}}>
-              <TagContainer
-                tags={{fromSession: tags}}
-                onRequestEdit={() => setTagEditorOpen(true)}
-              />
-            </div>
-          ) : (
-            <ButtonLink
-              color="#106ba3"
-              onClick={() => setTagEditorOpen(true)}
-              style={{margin: '9px  9px 0 9px'}}
-            >
-              + Add tags to backfill runs
-            </ButtonLink>
-          )}
-          <LaunchBackfillButton
-            partitionNames={selected}
-            partitionSetName={partitionSet.name}
-            reexecutionSteps={
-              !options.fromFailure && solidsFiltered.all.length < solids.length
-                ? stepRows.map((step) => step.name)
-                : undefined
-            }
-            fromFailure={options.fromFailure}
-            tags={tags}
-            onSubmit={onSubmit}
-            onSuccess={onSuccess}
-            onError={onError}
-            repoAddress={repoAddress}
-          />
-        </div>
-      </div>
-    </div>
+      </DialogBody>
+      <DialogFooter>
+        <TagEditor
+          tagsFromSession={tags}
+          onChange={setTags}
+          open={tagEditorOpen}
+          onRequestClose={() => setTagEditorOpen(false)}
+        />
+        {tags.length ? (
+          <div style={{border: '1px solid #ececec', borderBottom: 'none'}}>
+            <TagContainer tags={{fromSession: tags}} onRequestEdit={() => setTagEditorOpen(true)} />
+          </div>
+        ) : (
+          <ButtonLink
+            color="#106ba3"
+            onClick={() => setTagEditorOpen(true)}
+            style={{margin: '9px  9px 0 9px'}}
+          >
+            + Add tags to backfill runs
+          </ButtonLink>
+        )}
+        <LaunchBackfillButton
+          partitionNames={selected}
+          partitionSetName={partitionSet.name}
+          reexecutionSteps={
+            !options.fromFailure && solidsFiltered.all.length < solids.length
+              ? stepRows.map((step) => step.name)
+              : undefined
+          }
+          fromFailure={options.fromFailure}
+          tags={tags}
+          onSubmit={onSubmit}
+          onSuccess={onSuccess}
+          onError={onError}
+          repoAddress={repoAddress}
+        />
+      </DialogFooter>
+    </>
   );
 };
 

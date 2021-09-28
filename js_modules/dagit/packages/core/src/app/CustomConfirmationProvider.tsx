@@ -1,5 +1,7 @@
-import {Button, Classes, Dialog, Intent} from '@blueprintjs/core';
 import * as React from 'react';
+
+import {ButtonWIP} from '../ui/Button';
+import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 
 interface ConfirmationOptions {
   catchOnCancel?: boolean;
@@ -21,19 +23,15 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
   onClose,
 }) => {
   return (
-    <Dialog icon={title ? 'info-sign' : undefined} onClose={onClose} title={title} isOpen={open}>
-      <div className={Classes.DIALOG_BODY}>
-        <p>{description}</p>
-      </div>
-      <div className={Classes.DIALOG_FOOTER}>
-        <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-          <Button onClick={onClose}>Cancel</Button>
-          <Button onClick={onSubmit} intent={Intent.WARNING}>
-            Confirm
-          </Button>
-        </div>
-      </div>
-    </Dialog>
+    <DialogWIP icon={title ? 'info' : undefined} onClose={onClose} title={title} isOpen={open}>
+      <DialogBody>{description}</DialogBody>
+      <DialogFooter>
+        <ButtonWIP onClick={onClose}>Cancel</ButtonWIP>
+        <ButtonWIP onClick={onSubmit} intent="warning">
+          Confirm
+        </ButtonWIP>
+      </DialogFooter>
+    </DialogWIP>
   );
 };
 
