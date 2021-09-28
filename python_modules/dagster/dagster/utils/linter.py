@@ -113,6 +113,8 @@ def register_solid_transform():
             in node.decoratornames()
             or "dagster.core.definitions.decorators.op.op" in node.decoratornames()
             or "dagster.core.definitions.decorators.op._Op" in node.decoratornames()
+            or "dagster.core.definitions.decorators.graph.graph" in node.decoratornames()
+            or "dagster.core.definitions.decorators.graph._Graph" in node.decoratornames()
         )
 
     @astroid.inference_tip
