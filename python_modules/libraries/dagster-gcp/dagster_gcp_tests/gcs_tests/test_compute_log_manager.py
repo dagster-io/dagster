@@ -2,7 +2,7 @@ import os
 import sys
 import tempfile
 
-from dagster import DagsterEventType, execute_pipeline, pipeline, solid
+from dagster import DagsterEventType, job, op
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher import DefaultRunLauncher
 from dagster.core.run_coordinator import DefaultRunCoordinator
@@ -23,9 +23,9 @@ EXPECTED_LOGS = [
 
 
 def test_compute_log_manager(gcs_bucket):
-    @pipeline
+    @job
     def simple():
-        @solid
+        @op
         def easy(context):
             context.log.info("easy")
             print(HELLO_WORLD)  # pylint: disable=print-call
@@ -46,10 +46,10 @@ def test_compute_log_manager(gcs_bucket):
             run_coordinator=DefaultRunCoordinator(),
             run_launcher=DefaultRunLauncher(),
         )
-        result = execute_pipeline(simple, instance=instance)
+        result = simple.execute_in_process(instance=instance)
         compute_steps = [
             event.step_key
-            for event in result.step_event_list
+            for event in result.all_node_events
             if event.event_type == DagsterEventType.STEP_START
         ]
         assert len(compute_steps) == 1
@@ -66,11 +66,7 @@ def test_compute_log_manager(gcs_bucket):
         stderr_gcs = (
             storage.Client()
             .get_bucket(gcs_bucket)
-            .blob(
-                "{prefix}/storage/{run_id}/compute_logs/easy.err".format(
-                    prefix="my_prefix", run_id=result.run_id
-                )
-            )
+            .blob(f"my_prefix/storage/{result.run_id}/compute_logs/easy.err")
             .download_as_bytes()
             .decode("utf-8")
         )

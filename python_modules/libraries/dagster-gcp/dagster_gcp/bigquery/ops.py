@@ -1,6 +1,6 @@
 import hashlib
 
-from dagster import InputDefinition, List, Nothing, OutputDefinition, check, solid
+from dagster import InputDefinition, List, Nothing, OutputDefinition, check, op, solid
 from dagster_pandas import DataFrame
 from google.cloud.bigquery.job import LoadJobConfig, QueryJobConfig
 from google.cloud.bigquery.table import EncryptionConfiguration, TimePartitioning
@@ -31,21 +31,15 @@ def _preprocess_config(cfg):
     return cfg
 
 
-def bq_solid_for_queries(sql_queries):
-    """
-    Executes BigQuery SQL queries.
-
-    Expects a BQ client to be provisioned in resources as context.resources.bigquery.
-    """
-
+def _bq_core_command(dagster_decorator, decorator_name, sql_queries):
     sql_queries = check.list_param(sql_queries, "sql queries", of_type=str)
-
     m = hashlib.sha1()
     for query in sql_queries:
         m.update(query.encode("utf-8"))
-    name = "bq_solid_{hash}".format(hash=m.hexdigest()[:10])
+    hash_str = m.hexdigest()[:10]
+    name = f"bq_{decorator_name}_{hash_str}"
 
-    @solid(
+    @dagster_decorator(
         name=name,
         input_defs=[InputDefinition(_START, Nothing)],
         output_defs=[OutputDefinition(List[DataFrame])],
@@ -53,8 +47,8 @@ def bq_solid_for_queries(sql_queries):
         required_resource_keys={"bigquery"},
         tags={"kind": "sql", "sql": "\n".join(sql_queries)},
     )
-    def _solid(context):  # pylint: disable=unused-argument
-        query_job_config = _preprocess_config(context.solid_config.get("query_job_config", {}))
+    def _bq_fn(context):  # pylint: disable=unused-argument
+        query_job_config = _preprocess_config(context.op_config.get("query_job_config", {}))
 
         # Retrieve results as pandas DataFrames
         results = []
@@ -72,13 +66,33 @@ def bq_solid_for_queries(sql_queries):
 
         return results
 
-    return _solid
+    return _bq_fn
+
+
+def bq_solid_for_queries(sql_queries):
+    """
+    Executes BigQuery SQL queries.
+
+    Expects a BQ client to be provisioned in resources as context.resources.bigquery.
+    """
+
+    return _bq_core_command(solid, "solid", sql_queries)
+
+
+def bq_op_for_queries(sql_queries):
+    """
+    Executes BigQuery SQL queries.
+
+    Expects a BQ client to be provisioned in resources as context.resources.bigquery.
+    """
+
+    return _bq_core_command(op, "op", sql_queries)
 
 
 BIGQUERY_LOAD_CONFIG = define_bigquery_load_config()
 
 
-@solid(
+@op(
     input_defs=[InputDefinition("paths", List[str])],
     output_defs=[OutputDefinition(Nothing)],
     config_schema=BIGQUERY_LOAD_CONFIG,
@@ -88,7 +102,7 @@ def import_gcs_paths_to_bq(context, paths):
     return _execute_load_in_source(context, paths, BigQueryLoadSource.GCS)
 
 
-@solid(
+@op(
     input_defs=[InputDefinition("df", DataFrame)],
     output_defs=[OutputDefinition(Nothing)],
     config_schema=BIGQUERY_LOAD_CONFIG,
@@ -98,7 +112,7 @@ def import_df_to_bq(context, df):
     return _execute_load_in_source(context, df, BigQueryLoadSource.DataFrame)
 
 
-@solid(
+@op(
     input_defs=[InputDefinition("path", str)],
     output_defs=[OutputDefinition(Nothing)],
     config_schema=BIGQUERY_LOAD_CONFIG,
@@ -109,8 +123,8 @@ def import_file_to_bq(context, path):
 
 
 def _execute_load_in_source(context, source, source_name):
-    destination = context.solid_config.get("destination")
-    load_job_config = _preprocess_config(context.solid_config.get("load_job_config", {}))
+    destination = context.op_config.get("destination")
+    load_job_config = _preprocess_config(context.op_config.get("load_job_config", {}))
     cfg = LoadJobConfig(**load_job_config) if load_job_config else None
 
     context.log.info(
@@ -135,7 +149,7 @@ def _execute_load_in_source(context, source, source_name):
         context.resources.bigquery.load_table_from_uri(source, destination, job_config=cfg).result()
 
 
-@solid(
+@op(
     input_defs=[InputDefinition(_START, Nothing)],
     config_schema=define_bigquery_create_dataset_config(),
     required_resource_keys={"bigquery"},
@@ -143,16 +157,16 @@ def _execute_load_in_source(context, source, source_name):
 def bq_create_dataset(context):
     """BigQuery Create Dataset.
 
-    This solid encapsulates creating a BigQuery dataset.
+    This op encapsulates creating a BigQuery dataset.
 
     Expects a BQ client to be provisioned in resources as context.resources.bigquery.
     """
-    (dataset, exists_ok) = [context.solid_config.get(k) for k in ("dataset", "exists_ok")]
+    (dataset, exists_ok) = [context.op_config.get(k) for k in ("dataset", "exists_ok")]
     context.log.info("executing BQ create_dataset for dataset %s" % (dataset))
     context.resources.bigquery.create_dataset(dataset, exists_ok)
 
 
-@solid(
+@op(
     input_defs=[InputDefinition(_START, Nothing)],
     config_schema=define_bigquery_delete_dataset_config(),
     required_resource_keys={"bigquery"},
@@ -160,13 +174,13 @@ def bq_create_dataset(context):
 def bq_delete_dataset(context):
     """BigQuery Delete Dataset.
 
-    This solid encapsulates deleting a BigQuery dataset.
+    This op encapsulates deleting a BigQuery dataset.
 
     Expects a BQ client to be provisioned in resources as context.resources.bigquery.
     """
 
     (dataset, delete_contents, not_found_ok) = [
-        context.solid_config.get(k) for k in ("dataset", "delete_contents", "not_found_ok")
+        context.op_config.get(k) for k in ("dataset", "delete_contents", "not_found_ok")
     ]
 
     context.log.info("executing BQ delete_dataset for dataset %s" % dataset)

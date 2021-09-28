@@ -1,6 +1,6 @@
 from unittest import mock
 
-from dagster import ModeDefinition, configured, execute_pipeline, pipeline, solid
+from dagster import configured, job, op
 from dagster_gcp.gcs.file_manager import GCSFileHandle, GCSFileManager
 from dagster_gcp.gcs.resources import gcs_file_manager
 from google.cloud import storage
@@ -44,8 +44,8 @@ def test_gcs_file_manger_resource(MockGCSFileManager, mock_storage_client_Client
         "gcs_prefix": "some-prefix",
     }
 
-    @solid(required_resource_keys={"file_manager"})
-    def test_solid(context):
+    @op(required_resource_keys={"file_manager"})
+    def test_op(context):
         # test that we got back a GCSFileManager
         assert context.resources.file_manager == MockGCSFileManager.return_value
 
@@ -59,15 +59,9 @@ def test_gcs_file_manger_resource(MockGCSFileManager, mock_storage_client_Client
 
         did_it_run["it_ran"] = True
 
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={"file_manager": configured(gcs_file_manager)(resource_config)},
-            )
-        ]
-    )
-    def test_pipeline():
-        test_solid()
+    @job(resource_defs={"file_manager": configured(gcs_file_manager)(resource_config)})
+    def test_job():
+        test_op()
 
-    execute_pipeline(test_pipeline)
+    test_job.execute_in_process()
     assert did_it_run["it_ran"]
