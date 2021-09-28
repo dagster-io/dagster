@@ -162,3 +162,7 @@ def test_ops():
             raise Exception(
                 f"Error while executing op or solid '{op_or_solid.name}' from module '{module.__name__}'"
             ) from ex
+
+
+def test_execute_nested_graph():
+    assert nested_graphs.nested_output == 5

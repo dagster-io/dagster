@@ -21,6 +21,9 @@ do_it_all_job = do_it_all.to_job(resource_defs={"external_service": external_ser
 # end_graph_with_resources
 
 # start_execute_graph
-result = do_it_all_job.execute_in_process()
-assert result.output_for_node("do_something")
+def execute_graph_in_process():
+    result = do_it_all_job.execute_in_process()
+    assert result.output_for_node("do_something")
+
+
 # end_execute_graph
