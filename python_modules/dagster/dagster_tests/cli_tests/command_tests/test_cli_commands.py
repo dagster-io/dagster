@@ -19,6 +19,7 @@ from dagster import (
     pipeline,
     repository,
     solid,
+    graph,
 )
 from dagster.cli import ENV_PREFIX, cli
 from dagster.cli.pipeline import pipeline_execute_command
@@ -32,10 +33,6 @@ from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.server import GrpcServerProcess
 from dagster.utils import file_relative_path, merge_dicts
 from dagster.version import __version__
-
-
-def no_print(_):
-    return None
 
 
 @lambda_solid
@@ -60,6 +57,18 @@ def foo_pipeline():
 
 def define_foo_pipeline():
     return foo_pipeline
+
+
+@graph
+def qux():
+    do_input(do_something())
+
+
+qux_job = qux.to_job(tags={"foo": "bar"})
+
+
+def define_qux_job():
+    return qux_job
 
 
 @pipeline(name="baz", description="Not much tbh")
@@ -160,6 +169,7 @@ def bar():
         "pipelines": {
             "foo": foo_pipeline,
             "baz": baz_pipeline,
+            "qux": qux_job,
             "partitioned_scheduled_pipeline": partitioned_scheduled_pipeline,
             "memoizable": memoizable_pipeline,
         },
@@ -510,6 +520,45 @@ def valid_pipeline_python_origin_target_cli_args():
     ]
 
 
+def valid_job_python_origin_target_cli_args():
+    return [
+        ["-f", file_relative_path(__file__, "test_cli_commands.py"), "-a", "bar", "-j", "qux"],
+        [
+            "-f",
+            file_relative_path(__file__, "test_cli_commands.py"),
+            "-d",
+            os.path.dirname(__file__),
+            "-a",
+            "bar",
+            "-j",
+            "qux",
+        ],
+        [
+            "-m",
+            "dagster_tests.cli_tests.command_tests.test_cli_commands",
+            "-a",
+            "bar",
+            "-j",
+            "qux",
+        ],
+        ["-m", "dagster_tests.cli_tests.command_tests.test_cli_commands", "-j", "qux"],
+        [
+            "-f",
+            file_relative_path(__file__, "test_cli_commands.py"),
+            "-a",
+            "define_qux_job",
+        ],
+        [
+            "-f",
+            file_relative_path(__file__, "test_cli_commands.py"),
+            "-d",
+            os.path.dirname(__file__),
+            "-a",
+            "define_qux_job",
+        ],
+    ]
+
+
 def valid_external_pipeline_target_cli_args_no_preset():
     return [
         ["-w", file_relative_path(__file__, "repository_file.yaml"), "-p", "foo"],
@@ -524,6 +573,22 @@ def valid_external_pipeline_target_cli_args_no_preset():
             "foo",
         ],
     ] + [args for args in valid_pipeline_python_origin_target_cli_args()]
+
+
+def valid_external_job_target_cli_args():
+    return [
+        ["-w", file_relative_path(__file__, "repository_file.yaml"), "-j", "qux"],
+        ["-w", file_relative_path(__file__, "repository_module.yaml"), "-j", "qux"],
+        ["-w", file_relative_path(__file__, "workspace.yaml"), "-j", "qux"],
+        [
+            "-w",
+            file_relative_path(__file__, "override.yaml"),
+            "-w",
+            file_relative_path(__file__, "workspace.yaml"),
+            "-j",
+            "qux",
+        ],
+    ] + [args for args in valid_job_python_origin_target_cli_args()]
 
 
 def valid_external_pipeline_target_cli_args_with_preset():
