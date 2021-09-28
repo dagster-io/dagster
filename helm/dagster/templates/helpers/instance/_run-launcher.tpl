@@ -17,6 +17,41 @@ config:
   {{- end }}
 {{- end }}
 
+{{- define "snakeCaseDictRecursive" }}
+  {{- if kindIs "map" . }}
+    {{- $myDict := dict }}
+    {{- range $k, $v := . }}
+    {{- $snakeKey := snakecase $k }}
+    {{- $val := include "snakeCaseDictRecursive" $v }}
+    {{- $val := $val | fromYaml }}
+    {{- $_ := set $myDict $snakeKey $val }}
+    {{- if kindIs "map" $val }}
+      {{- if hasKey $val "ROOT_VALUE" }}
+        {{- $val := get $val "ROOT_VALUE" }}
+        {{- $_ := set $myDict $snakeKey $val }}
+      {{- end }}
+    {{- end }}
+    {{- end }}
+    {{- $myDict | toYaml }}
+  {{- else if kindIs "slice" . }}
+    {{- $myDict := dict }}
+    {{- range $index, $item := . }}
+      {{- $strKey := toString $index }}
+      {{- $val := include "snakeCaseDictRecursive" $item }}
+      {{- $val := $val | fromYaml }}
+      {{- $_ := set $myDict $strKey $val }}
+      {{- if kindIs "map" $val }}
+        {{- if hasKey $val "ROOT_VALUE" }}
+          {{- $val := get $val "ROOT_VALUE" }}
+          {{- $_ := set $myDict $strKey $val }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+  {{- values $myDict | toYaml }}
+  {{- else }}ROOT_VALUE: {{ . }}
+  {{- end }}
+{{- end }}
+
 {{- define "dagsterYaml.runLauncher.k8s" }}
 {{- $k8sRunLauncherConfig := .Values.runLauncher.config.k8sRunLauncher }}
 module: dagster_k8s
@@ -66,11 +101,11 @@ config:
   {{- end }}
 
   {{- if $k8sRunLauncherConfig.volumeMounts }}
-  volume_mounts: {{- $k8sRunLauncherConfig.volumeMounts | toYaml | nindent 4 }}
+  volume_mounts: {{- include "snakeCaseDictRecursive" $k8sRunLauncherConfig.volumeMounts | nindent 4 }}
   {{- end }}
 
   {{- if $k8sRunLauncherConfig.volumes }}
-  volumes: {{- $k8sRunLauncherConfig.volumes | toYaml | nindent 4 }}
+  volumes: {{- include "snakeCaseDictRecursive" $k8sRunLauncherConfig.volumes | nindent 4 }}
   {{- end }}
 
 {{- end }}
