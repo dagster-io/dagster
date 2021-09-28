@@ -24,6 +24,14 @@ def test_asset_with_inputs():
     assert my_asset.input_defs[0].get_asset_key(None) == AssetKey("arg1")
 
 
+def test_asset_with_compute_kind():
+    @asset(compute_kind="sql")
+    def my_asset(arg1):
+        return arg1
+
+    assert my_asset.tags == {"kind": "sql"}
+
+
 def test_asset_with_inputs_and_namespace():
     @asset(namespace="my_namespace")
     def my_asset(arg1):
