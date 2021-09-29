@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 from dagster import DagsterEvent, check
 from dagster.core.definitions import NodeDefinition, NodeHandle
@@ -7,7 +7,7 @@ from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.outputs import StepOutputHandle
 
 
-class InProcessResult:
+class ExecuteInProcessResult:
     def __init__(
         self,
         node_def: NodeDefinition,
@@ -22,15 +22,15 @@ class InProcessResult:
         self._event_list = all_events
         self._run_id = run_id
 
-        self._output_capture = output_capture
+        self._output_capture = check.opt_dict_param(output_capture, "output_capture", key_type=str)
 
     @property
-    def success(self):
+    def success(self) -> bool:
         """bool: Whether execution was successful."""
-        return all([not step_event.is_step_failure for step_event in self.all_node_events])
+        return all([not event.is_failure for event in self._event_list])
 
     @property
-    def all_node_events(self):
+    def all_node_events(self) -> List[DagsterEvent]:
         step_events = []
 
         for node_name in self._node_def.ensure_graph_def().node_dict.keys():
@@ -39,12 +39,14 @@ class InProcessResult:
 
         return step_events
 
-    def events_for_node(self, node_name):
+    def events_for_node(self, node_name: str) -> List[DagsterEvent]:
         check.str_param(node_name, "node_name")
 
         return _filter_events_by_handle(self._event_list, NodeHandle.from_string(node_name))
 
-    def output_value(self, output_name=DEFAULT_OUTPUT):
+    def output_value(self, output_name: str = DEFAULT_OUTPUT) -> Any:
+
+        check.str_param(output_name, "output_name")
 
         # Resolve the first layer of mapping
         graph_def = self._node_def.ensure_graph_def()
@@ -60,7 +62,7 @@ class InProcessResult:
             self._output_capture, origin_handle, origin_output_def.name
         )
 
-    def output_for_node(self, node_str, output_name=DEFAULT_OUTPUT):
+    def output_for_node(self, node_str: str, output_name: Optional[str] = DEFAULT_OUTPUT):
 
         # resolve handle of node that node_str is referring to
         target_handle = NodeHandle.from_string(node_str)
@@ -75,11 +77,17 @@ class InProcessResult:
         )
 
 
-def _filter_events_by_handle(event_list, handle):
+def _filter_events_by_handle(
+    event_list: List[DagsterEvent], handle: NodeHandle
+) -> List[DagsterEvent]:
     step_events = []
     for event in event_list:
-        if event.is_step_event and event.solid_handle.is_or_descends_from(handle):
-            step_events.append(event)
+        if event.is_step_event:
+            handle = cast(
+                NodeHandle, event.solid_handle
+            )  # step events are guaranteed to have a node handle.
+            if handle.is_or_descends_from(handle):
+                step_events.append(event)
 
     return step_events
 
@@ -88,7 +96,7 @@ def _filter_outputs_by_handle(
     output_dict: Dict[StepOutputHandle, Any],
     node_handle: NodeHandle,
     output_name: str,
-):
+) -> Any:
     mapped_outputs = {}
     step_key = str(node_handle)
     output_found = False

@@ -15,7 +15,7 @@ from .context_creation_pipeline import (
     PlanOrchestrationContextManager,
     orchestration_context_event_generator,
 )
-from .execute_in_process_result import InProcessResult
+from .execute_in_process_result import ExecuteInProcessResult
 
 
 def core_execute_in_process(
@@ -59,4 +59,4 @@ def core_execute_in_process(
         )
         event_list = list(_execute_run_iterable)
 
-    return InProcessResult(node, event_list, pipeline_run.run_id, output_capture)
+    return ExecuteInProcessResult(node, event_list, pipeline_run.run_id, output_capture)
