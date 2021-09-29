@@ -1,5 +1,4 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors} from '@blueprintjs/core';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -41,7 +40,7 @@ export const RunGroupPanel: React.FC<{runId: string}> = ({runId}) => {
         <div style={{fontSize: '13px'}}>
           The run group for this run could not be loaded.{' '}
           <ButtonLink
-            color={Colors.BLUE3}
+            color={ColorsWIP.Blue500}
             underline="always"
             onClick={() => {
               showCustomAlert({
@@ -83,7 +82,7 @@ export const RunGroupPanel: React.FC<{runId: string}> = ({runId}) => {
                   flex: 1,
                   marginLeft: 5,
                   minWidth: 0,
-                  color: Colors.DARK_GRAY5,
+                  color: ColorsWIP.Gray700,
                 }}
               >
                 <div style={{display: 'flex', justifyContent: 'space-between'}}>
@@ -97,7 +96,7 @@ export const RunGroupPanel: React.FC<{runId: string}> = ({runId}) => {
                 <div
                   style={{
                     display: 'flex',
-                    color: Colors.DARK_GRAY5,
+                    color: ColorsWIP.Gray700,
                     justifyContent: 'space-between',
                   }}
                 >
@@ -143,7 +142,7 @@ const RUN_GROUP_PANEL_QUERY = gql`
 
 const RunGroupRun = styled(Link)<{selected: boolean}>`
   align-items: flex-start;
-  background: ${({selected}) => (selected ? Colors.LIGHT_GRAY2 : Colors.WHITE)};
+  background: ${({selected}) => (selected ? ColorsWIP.Gray100 : ColorsWIP.White)};
   padding: 3px 6px;
   font-size: 13px;
   line-height: 20px;
@@ -152,7 +151,7 @@ const RunGroupRun = styled(Link)<{selected: boolean}>`
   padding-left: 6px;
   &:hover {
     text-decoration: none;
-    background: ${({selected}) => (selected ? Colors.LIGHT_GRAY2 : Colors.LIGHT_GRAY5)};
+    background: ${({selected}) => (selected ? ColorsWIP.Gray100 : ColorsWIP.Gray50)};
   }
 `;
 
@@ -166,7 +165,7 @@ const ThinLine = styled.div`
 `;
 
 const RunTitle = styled.span`
-  color: ${Colors.BLACK};
+  color: ${ColorsWIP.Dark};
   font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;

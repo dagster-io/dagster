@@ -1,5 +1,5 @@
 import {gql, useLazyQuery, useMutation, useQuery} from '@apollo/client';
-import {Checkbox, Intent, NonIdealState, Colors, InputGroup} from '@blueprintjs/core';
+import {Checkbox, Intent, NonIdealState, InputGroup} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -279,7 +279,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
         <div>An unexpected error occurred. This backfill was not launched.</div>
         {errors ? (
           <ButtonLink
-            color={Colors.WHITE}
+            color={ColorsWIP.White}
             underline="always"
             onClick={() => {
               showCustomAlert({
@@ -480,14 +480,14 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
             display: 'flex',
             marginTop: 20,
             paddingTop: 20,
-            borderTop: `1px solid ${Colors.LIGHT_GRAY3}`,
+            borderTop: `1px solid ${ColorsWIP.Gray100}`,
             justifyContent: 'space-between',
           }}
         >
           <strong style={{display: 'block', marginBottom: 4}}>Preview</strong>
-          <div style={{color: Colors.GRAY3}}>Click or drag to edit selected partitions</div>
+          <div style={{color: ColorsWIP.Gray400}}>Click or drag to edit selected partitions</div>
         </div>
-        <div style={{display: 'flex', border: `1px solid ${Colors.LIGHT_GRAY1}`}}>
+        <div style={{display: 'flex', border: `1px solid ${ColorsWIP.Gray200}`}}>
           {query && (
             <GridFloatingContainer floating={true}>
               <GridColumn disabled>

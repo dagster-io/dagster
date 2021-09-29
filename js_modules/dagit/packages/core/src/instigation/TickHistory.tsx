@@ -1,6 +1,7 @@
 import {gql, useQuery} from '@apollo/client';
-import {Checkbox, Colors, NonIdealState, Tabs, Tab} from '@blueprintjs/core';
+import {Checkbox, NonIdealState, Tabs, Tab} from '@blueprintjs/core';
 import {ActiveElement, Chart, TimeUnit} from 'chart.js';
+import 'chartjs-adapter-date-fns';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import moment from 'moment-timezone';
 import * as React from 'react';
@@ -13,6 +14,7 @@ import {InstigationTickStatus, InstigationType} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {ButtonWIP} from '../ui/Button';
 import {ButtonLink} from '../ui/ButtonLink';
+import {ColorsWIP} from '../ui/Colors';
 import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
 import {Spinner} from '../ui/Spinner';
@@ -20,24 +22,22 @@ import {Subheading} from '../ui/Text';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
-import {TICK_TAG_FRAGMENT, RunList, TickTag, FailedRunList} from './InstigationTick';
+import {FailedRunList, RunList, TickTag, TICK_TAG_FRAGMENT} from './InstigationTick';
 import {LiveTickTimeline} from './LiveTickTimeline';
 import {
   TickHistoryQuery,
   TickHistoryQuery_instigationStateOrError_InstigationState_ticks,
 } from './types/TickHistoryQuery';
 
-import 'chartjs-adapter-date-fns';
-
 Chart.register(zoomPlugin);
 
 const MIN_ZOOM_RANGE = 30 * 60 * 1000; // 30 minutes
 
 const COLOR_MAP = {
-  [InstigationTickStatus.SUCCESS]: Colors.BLUE3,
-  [InstigationTickStatus.FAILURE]: Colors.RED3,
-  [InstigationTickStatus.STARTED]: Colors.GRAY3,
-  [InstigationTickStatus.SKIPPED]: Colors.GOLD3,
+  [InstigationTickStatus.SUCCESS]: ColorsWIP.Blue500,
+  [InstigationTickStatus.FAILURE]: ColorsWIP.Red500,
+  [InstigationTickStatus.STARTED]: ColorsWIP.Gray400,
+  [InstigationTickStatus.SKIPPED]: ColorsWIP.Yellow500,
 };
 
 interface ShownStatusState {
@@ -310,13 +310,13 @@ const TickHistoryGraph: React.FC<{
       {
         label: 'ticks',
         data: tickData,
-        borderColor: Colors.LIGHT_GRAY4,
+        borderColor: ColorsWIP.Gray100,
         borderWidth: 0,
         backgroundColor: 'rgba(0,0,0,0)',
         pointBackgroundColor: ticks.map((tick) => COLOR_MAP[tick.status]),
         pointBorderWidth: 1,
         pointBorderColor: ticks.map((tick) =>
-          selectedTick && selectedTick.id === tick.id ? Colors.DARK_GRAY5 : COLOR_MAP[tick.status],
+          selectedTick && selectedTick.id === tick.id ? ColorsWIP.Gray700 : COLOR_MAP[tick.status],
         ),
         pointRadius: ticks.map((tick) => (selectedTick && selectedTick.id === tick.id ? 5 : 3)),
         pointHoverBorderWidth: 1,

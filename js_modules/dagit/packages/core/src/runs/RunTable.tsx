@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Checkbox, Colors, NonIdealState} from '@blueprintjs/core';
+import {Checkbox, NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -10,6 +10,7 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {PipelineSnapshotLink} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
 import {Table} from '../ui/Table';
@@ -258,7 +259,7 @@ const RunRow: React.FC<{
               pipelineHrefContext="no-link"
             />
             <Link to={workspacePipelinePathGuessRepo(run.pipelineName, run.mode)}>
-              <IconWIP name="open_in_new" color={Colors.BLUE3} />
+              <IconWIP name="open_in_new" color={ColorsWIP.Blue500} />
             </Link>
           </Group>
           <RunTags tags={run.tags} onSetFilter={onSetFilter} />

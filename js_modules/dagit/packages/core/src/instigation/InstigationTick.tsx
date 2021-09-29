@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {NonIdealState, Colors} from '@blueprintjs/core';
+import {NonIdealState} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -137,7 +137,7 @@ export const FailedRunList: React.FunctionComponent<{
   }
   return (
     <Group direction="column" spacing={16}>
-      <Box padding={12} border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY1}}>
+      <Box padding={12} border={{side: 'bottom', width: 1, color: ColorsWIP.Gray200}}>
         <Body>
           Failed Runs
           <Tooltip content="Failed runs this tick reacted on and reported back to.">

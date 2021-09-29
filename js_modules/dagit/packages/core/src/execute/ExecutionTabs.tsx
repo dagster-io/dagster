@@ -1,14 +1,14 @@
-import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {
-  IStorageData,
   applyChangesToSession,
   applyRemoveSession,
   applySelectSession,
+  IStorageData,
 } from '../app/LocalStorage';
+import {ColorsWIP} from '../ui/Colors';
 import {IconWIP} from '../ui/Icon';
 
 interface ExecutationTabProps {
@@ -133,7 +133,7 @@ const ExecutionTabsContainer = styled.div`
   display; flex;
   z-index: 1;
   flex-direction: row;
-  border-bottom: 1px solid ${Colors.GRAY5};
+  border-bottom: 1px solid ${ColorsWIP.Gray200};
 `;
 
 const TabContainer = styled.div<{active: boolean}>`
@@ -142,19 +142,19 @@ const TabContainer = styled.div<{active: boolean}>`
   display: inline-flex;
   flex-direction: row;
   align-items: center;
-  background: ${({active}) => (active ? Colors.WHITE : Colors.LIGHT_GRAY3)};
-  color: ${({active}) => (active ? Colors.BLACK : Colors.DARK_GRAY3)};
+  background: ${({active}) => (active ? ColorsWIP.White : ColorsWIP.Gray100)};
+  color: ${({active}) => (active ? ColorsWIP.Dark : ColorsWIP.Gray800)};
   user-select: none;
   top: 1px;
 
-  border: 1px solid ${Colors.GRAY5};
-  border-bottom: 1px solid ${({active}) => (active ? 'transparent' : Colors.GRAY5)};
+  border: 1px solid ${ColorsWIP.Gray200};
+  border-bottom: 1px solid ${({active}) => (active ? 'transparent' : ColorsWIP.Gray200)};
   border-right: 0;
   &:last-child {
-    border-right: 1px solid ${Colors.GRAY5};
+    border-right: 1px solid ${ColorsWIP.Gray200};
   }
   &:hover {
-    background: ${({active}) => (active ? Colors.WHITE : Colors.LIGHT_GRAY5)};
+    background: ${({active}) => (active ? ColorsWIP.White : ColorsWIP.Gray50)};
   }
   input {
     line-height: 1.28581;

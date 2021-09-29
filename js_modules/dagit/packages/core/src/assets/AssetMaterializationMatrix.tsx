@@ -1,4 +1,4 @@
-import {Colors, Button} from '@blueprintjs/core';
+import {Button} from '@blueprintjs/core';
 import flatMap from 'lodash/flatMap';
 import uniq from 'lodash/uniq';
 import * as React from 'react';
@@ -10,12 +10,13 @@ import {Timestamp} from '../app/time/Timestamp';
 import {useViewport} from '../gantt/useViewport';
 import {
   GridColumn,
-  GridScrollContainer,
   GridFloatingContainer,
+  GridScrollContainer,
   LeftLabel,
 } from '../partitions/RunMatrixUtils';
 import {MetadataEntry} from '../runs/MetadataEntry';
 import {titleForRun} from '../runs/RunUtils';
+import {ColorsWIP} from '../ui/Colors';
 import {FontFamily} from '../ui/styles';
 
 import {AssetPredecessorLink} from './AssetMaterializationTable';
@@ -98,7 +99,9 @@ export const AssetMaterializationMatrix: React.FC<AssetMaterializationMatrixProp
 
   return (
     <PartitionRunMatrixContainer>
-      <div style={{position: 'relative', display: 'flex', border: `1px solid ${Colors.GRAY5}`}}>
+      <div
+        style={{position: 'relative', display: 'flex', border: `1px solid ${ColorsWIP.Gray200}`}}
+      >
         <GridFloatingContainer floating={true} style={{width: 300}}>
           <GridColumn disabled style={{width: 300, overflow: 'hidden'}}>
             {isPartitioned && <HeaderRowLabel>Partition</HeaderRowLabel>}
@@ -166,12 +169,12 @@ export const AssetMaterializationMatrix: React.FC<AssetMaterializationMatrixProp
                   </div>
                   <div
                     className="cell"
-                    style={anyPredecessors ? {} : {borderBottom: `1px solid ${Colors.LIGHT_GRAY1}`}}
+                    style={anyPredecessors ? {} : {borderBottom: `1px solid ${ColorsWIP.Gray200}`}}
                   >
                     <Timestamp timestamp={{ms: Number(materializationEvent.timestamp)}} />
                   </div>
                   {anyPredecessors ? (
-                    <div className="cell" style={{borderBottom: `1px solid ${Colors.LIGHT_GRAY1}`}}>
+                    <div className="cell" style={{borderBottom: `1px solid ${ColorsWIP.Gray200}`}}>
                       {predecessors?.length ? (
                         <AssetPredecessorLink
                           isPartitioned={isPartitioned}
@@ -200,7 +203,7 @@ export const AssetMaterializationMatrix: React.FC<AssetMaterializationMatrixProp
                   })}
                   <div
                     className="cell"
-                    style={{borderTop: `1px solid ${Colors.LIGHT_GRAY1}`}}
+                    style={{borderTop: `1px solid ${ColorsWIP.Gray200}`}}
                     onMouseEnter={() => setHoveredLabel(LABEL_STEP_EXECUTION_TIME)}
                     onMouseLeave={() => setHoveredLabel('')}
                   >
@@ -221,7 +224,7 @@ export const AssetMaterializationMatrix: React.FC<AssetMaterializationMatrixProp
 
 const HeaderRowLabel = styled(LeftLabel)`
   padding-left: 6px;
-  color: ${Colors.GRAY2};
+  color: ${ColorsWIP.Gray500};
 `;
 
 const MetadataRowLabel: React.FunctionComponent<{
@@ -236,7 +239,7 @@ const MetadataRowLabel: React.FunctionComponent<{
     key={label}
     hovered={hovered}
     data-tooltip={label}
-    style={{display: 'flex', borderTop: bordered ? `1px solid ${Colors.LIGHT_GRAY1}` : ''}}
+    style={{display: 'flex', borderTop: bordered ? `1px solid ${ColorsWIP.Gray200}` : ''}}
   >
     <div style={{width: 149, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>
       <Button

@@ -18,7 +18,7 @@ export const Table = styled(HTMLTable)<TableProps>`
   }
 
   & tr th {
-    color: ${ColorsWIP.Gray800};
+    color: ${ColorsWIP.Gray500};
     font-family: ${FontFamily.default};
     font-size: 12px;
     font-weight: 400;

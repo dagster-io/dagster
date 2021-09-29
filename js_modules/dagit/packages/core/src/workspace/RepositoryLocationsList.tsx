@@ -1,4 +1,4 @@
-import {Button, Colors, NonIdealState} from '@blueprintjs/core';
+import {Button, NonIdealState} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import React from 'react';
 
@@ -7,6 +7,7 @@ import {Timestamp} from '../app/time/Timestamp';
 import {ReloadRepositoryLocationButton} from '../nav/ReloadRepositoryLocationButton';
 import {useRepositoryLocationReload} from '../nav/useRepositoryLocationReload';
 import {ButtonLink} from '../ui/ButtonLink';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
 import {Table} from '../ui/Table';
@@ -79,7 +80,7 @@ const ReloadButton: React.FC<{
   if (!canReloadRepositoryLocation) {
     return (
       <Tooltip content={DISABLED_MESSAGE}>
-        <ButtonLink color={Colors.GRAY3}>Reload</ButtonLink>
+        <ButtonLink color={ColorsWIP.Gray400}>Reload</ButtonLink>
       </Tooltip>
     );
   }
@@ -105,7 +106,7 @@ export const RepositoryLocationsList = () => {
   const {locationEntries, loading} = React.useContext(WorkspaceContext);
 
   if (loading && !locationEntries.length) {
-    return <div style={{color: Colors.GRAY3}}>Loading…</div>;
+    return <div style={{color: ColorsWIP.Gray400}}>Loading…</div>;
   }
 
   if (!locationEntries.length) {
@@ -132,7 +133,7 @@ export const RepositoryLocationsList = () => {
                     <div key={idx}>
                       <Caption style={{wordBreak: 'break-word'}}>
                         {`${metadata.key}: `}
-                        <span style={{color: Colors.GRAY3}}>{metadata.value}</span>
+                        <span style={{color: ColorsWIP.Gray400}}>{metadata.value}</span>
                       </Caption>
                     </div>
                   ))}

@@ -1,8 +1,8 @@
-import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {ButtonWIP} from '../ui/Button';
 import {ButtonLink} from '../ui/ButtonLink';
+import {ColorsWIP} from '../ui/Colors';
 import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
 import {TagWIP} from '../ui/TagWIP';
@@ -67,7 +67,7 @@ export const DaemonHealth = (props: Props) => {
     if (errorCount > 0) {
       return (
         <>
-          <ButtonLink color={Colors.BLUE2} underline="hover" onClick={show}>
+          <ButtonLink color={ColorsWIP.Link} underline="hover" onClick={show}>
             {errorCount > 1 ? `View errors (${errorCount})` : 'View error'}
           </ButtonLink>
           <DialogWIP
@@ -118,7 +118,7 @@ export const DaemonHealth = (props: Props) => {
     }
 
     if (!daemon.healthy) {
-      return <div style={{color: Colors.GRAY2}}>No recent heartbeat</div>;
+      return <div style={{color: ColorsWIP.Gray500}}>No recent heartbeat</div>;
     }
 
     return null;

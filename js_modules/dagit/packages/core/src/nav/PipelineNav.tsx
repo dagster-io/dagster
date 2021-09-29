@@ -1,4 +1,4 @@
-import {IconName, Tab, Tabs, Colors} from '@blueprintjs/core';
+import {IconName, Tab, Tabs} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import React from 'react';
 import {Link, useRouteMatch} from 'react-router-dom';
@@ -11,6 +11,7 @@ import {
   PipelineExplorerPath,
 } from '../pipelines/PipelinePathUtils';
 import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {PageHeader} from '../ui/PageHeader';
 import {Heading} from '../ui/Text';
@@ -145,7 +146,7 @@ export const PipelineNav: React.FC<Props> = (props) => {
           )
         }
       />
-      <Box border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}>
+      <Box border={{side: 'bottom', width: 1, color: ColorsWIP.Gray100}}>
         <Tabs large={false} selectedTabId={active.title}>
           {tabs.map((tab) => {
             const {href, text, isAvailable} = tab;

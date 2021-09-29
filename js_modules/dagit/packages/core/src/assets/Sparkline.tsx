@@ -1,5 +1,6 @@
-import {Colors} from '@blueprintjs/core';
 import React from 'react';
+
+import {ColorsWIP} from '../ui/Colors';
 
 import {AssetNumericHistoricalData} from './types';
 
@@ -28,7 +29,7 @@ export const Sparkline: React.FunctionComponent<{
     ctx.translate(0, -height);
 
     ctx.beginPath();
-    ctx.strokeStyle = Colors.BLUE3;
+    ctx.strokeStyle = ColorsWIP.Blue500;
     ctx.lineWidth = 3;
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';

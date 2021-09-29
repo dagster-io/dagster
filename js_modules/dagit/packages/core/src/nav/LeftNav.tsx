@@ -1,6 +1,5 @@
-import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
-import {useHistory, Link, useRouteMatch} from 'react-router-dom';
+import {Link, useHistory, useRouteMatch} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {LayoutContext} from '../app/LayoutProvider';
@@ -34,7 +33,7 @@ export const LeftNav = () => {
           <div
             style={{
               fontSize: 10.5,
-              color: Colors.GRAY1,
+              color: ColorsWIP.Gray600,
               userSelect: 'none',
               textTransform: 'uppercase',
             }}
@@ -101,18 +100,18 @@ const LeftNavContainer = styled.div<{$open: boolean}>`
   flex-shrink: 0;
   flex-direction: column;
   justify-content: start;
-  background: ${Colors.DARK_GRAY2};
-  border-right: 1px solid ${Colors.DARK_GRAY5};
+  background: ${ColorsWIP.Gray900};
+  border-right: 1px solid ${ColorsWIP.Gray700};
 
   @media (max-width: 1440px) {
-    box-shadow: 2px 0px 0px ${Colors.LIGHT_GRAY1};
+    box-shadow: 2px 0px 0px ${ColorsWIP.Gray200};
     transform: translateX(${({$open}) => ($open ? '0' : '-280px')});
     transition: transform 150ms ease-in-out;
   }
 `;
 
 const Tab = styled(Link)`
-  color: ${Colors.LIGHT_GRAY1} !important;
+  color: ${ColorsWIP.Gray200} !important;
   border-left: 4px solid transparent;
   border-right: 4px solid transparent;
   display: flex;
@@ -120,15 +119,15 @@ const Tab = styled(Link)`
   align-items: center;
   outline: 0;
   &:hover {
-    color: ${Colors.WHITE} !important;
+    color: ${ColorsWIP.White} !important;
     text-decoration: none;
   }
   &:focus {
     outline: 0;
   }
   &.selected {
-    color: ${Colors.WHITE} !important;
-    border-left: 4px solid ${Colors.COBALT3};
+    color: ${ColorsWIP.White} !important;
+    border-left: 4px solid ${ColorsWIP.Blue500};
     font-weight: 600;
   }
 `;

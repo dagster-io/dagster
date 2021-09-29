@@ -4,6 +4,8 @@ import deepmerge from 'deepmerge';
 import * as React from 'react';
 import {createGlobalStyle} from 'styled-components/macro';
 
+import {ColorsWIP} from './Colors';
+
 export const GlobalPopoverStyle = createGlobalStyle`
   .dagit-popover.bp3-popover2,
   .dagit-popover.bp3-popover {
@@ -23,6 +25,11 @@ export const GlobalPopoverStyle = createGlobalStyle`
   .dagit-popover .bp3-popover2-content > :last-child {
     border-bottom-left-radius: 4px;
     border-bottom-right-radius: 4px;
+  }
+
+  .dagit-popover .bp3-popover2.bp3-dark .bp3-popover2-content,
+  .bp3-dark .dagit-popover .bp3-popover2 .bp3-popover2-content {
+    background-color: ${ColorsWIP.Gray900};
   }
 `;
 

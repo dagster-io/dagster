@@ -1,5 +1,4 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
@@ -10,6 +9,7 @@ import {SchedulerInfo, SCHEDULER_FRAGMENT} from '../schedules/SchedulerInfo';
 import {SchedulesNextTicks} from '../schedules/SchedulesNextTicks';
 import {Alert} from '../ui/Alert';
 import {ButtonLink} from '../ui/ButtonLink';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
 
@@ -36,7 +36,7 @@ export const AllScheduledTicks = () => {
                 <Group direction="row" spacing={4}>
                   <div>Could not load scheduled ticks.</div>
                   <ButtonLink
-                    color={Colors.BLUE3}
+                    color={ColorsWIP.Link}
                     underline="always"
                     onClick={() => {
                       showCustomAlert({

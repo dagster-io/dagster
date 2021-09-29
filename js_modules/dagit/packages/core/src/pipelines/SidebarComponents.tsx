@@ -1,7 +1,8 @@
-import {Collapse, Colors} from '@blueprintjs/core';
+import {Collapse} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {ColorsWIP} from '../ui/Colors';
 import {IconWIP} from '../ui/Icon';
 import {FontFamily} from '../ui/styles';
 
@@ -69,12 +70,12 @@ export const SectionSmallHeader = styled.h4`
 `;
 
 export const SidebarSubhead = styled.div`
-  color: ${Colors.GRAY3};
+  color: ${ColorsWIP.Gray400};
   font-size: 0.7rem;
 `;
 
 export const SectionItemContainer = styled.div`
-  border-bottom: 1px solid ${Colors.LIGHT_GRAY2};
+  border-bottom: 1px solid ${ColorsWIP.Gray100};
   margin-bottom: 20px;
   padding-bottom: 20px;
   font-size: 0.8rem;
@@ -90,10 +91,10 @@ export const SectionItemContainer = styled.div`
 const CollapsingHeaderBar = styled.div`
   padding: 6px;
   padding-left: 12px;
-  background: linear-gradient(to bottom, ${Colors.LIGHT_GRAY5}, ${Colors.LIGHT_GRAY4});
-  border-top: 1px solid ${Colors.LIGHT_GRAY4};
-  border-bottom: 1px solid ${Colors.LIGHT_GRAY3};
-  color: ${Colors.GRAY1};
+  background: linear-gradient(to bottom, ${ColorsWIP.Gray50}, ${ColorsWIP.Gray100});
+  border-top: 1px solid ${ColorsWIP.Gray100};
+  border-bottom: 1px solid ${ColorsWIP.Gray100};
+  color: ${ColorsWIP.Gray600};
   cursor: pointer;
   display: flex;
   justify-content: space-between;

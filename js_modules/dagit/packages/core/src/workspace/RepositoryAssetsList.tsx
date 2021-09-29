@@ -1,9 +1,10 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors, NonIdealState} from '@blueprintjs/core';
+import {NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {Page} from '../ui/Page';
 import {Table} from '../ui/Table';
@@ -110,6 +111,6 @@ export const RepositoryAssetsList: React.FC<Props> = (props) => {
 };
 
 const Description = styled.div`
-  color: ${Colors.GRAY3};
+  color: ${ColorsWIP.Gray400};
   font-size: 12px;
 `;

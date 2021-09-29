@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors, Intent} from '@blueprintjs/core';
+import {Intent} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -9,6 +9,7 @@ import {ShortcutHandler} from '../app/ShortcutHandler';
 import {PipelineGraph, PIPELINE_GRAPH_SOLID_FRAGMENT} from '../graph/PipelineGraph';
 import {SVGViewport} from '../graph/SVGViewport';
 import {getDagrePipelineLayout} from '../graph/getFullSolidLayout';
+import {ColorsWIP} from '../ui/Colors';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Popover} from '../ui/Popover';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -55,7 +56,7 @@ class SolidSelectorModal extends React.PureComponent<SolidSelectorModalProps> {
         {errorMessage && <ModalErrorOverlay>{errorMessage}</ModalErrorOverlay>}
         <PipelineGraph
           ref={this.graphRef}
-          backgroundColor={Colors.WHITE}
+          backgroundColor={ColorsWIP.White}
           pipelineName={pipelineOrError.name}
           solids={queryResultSolids}
           layout={getDagrePipelineLayout(queryResultSolids)}
@@ -211,7 +212,7 @@ const SolidSelectorModalContainer = styled.div`
   border-radius: 4px;
   width: 60vw;
   height: 60vh;
-  background: ${Colors.WHITE};
+  background: ${ColorsWIP.White};
   & > div {
     border-radius: 4px;
   }
@@ -223,7 +224,7 @@ const ModalErrorOverlay = styled.div`
   padding: 4px 8px;
   z-index: 2;
   border-radius: 2px;
-  border: 1px solid ${Colors.RED3};
-  background: ${Colors.RED5};
+  border: 1px solid ${ColorsWIP.Red500};
+  background: ${ColorsWIP.Red200};
   color: white;
 `;

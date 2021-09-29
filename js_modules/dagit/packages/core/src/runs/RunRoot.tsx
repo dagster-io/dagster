@@ -1,12 +1,13 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors, NonIdealState} from '@blueprintjs/core';
+import {NonIdealState} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
-import {RouteComponentProps, Link} from 'react-router-dom';
+import {Link, RouteComponentProps} from 'react-router-dom';
 
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {PageHeader} from '../ui/PageHeader';
 import {Heading} from '../ui/Text';
@@ -52,9 +53,9 @@ export const RunRoot = (props: RouteComponentProps<{runId: string}>) => {
       }}
     >
       <Box
-        background={Colors.WHITE}
+        background={ColorsWIP.White}
         padding={{top: 16, bottom: 12, horizontal: 20}}
-        border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}
+        border={{side: 'bottom', width: 1, color: ColorsWIP.Gray100}}
         flex={{direction: 'row', alignItems: 'flex-start'}}
         style={{position: 'relative', zIndex: 1}}
       >

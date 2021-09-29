@@ -1,5 +1,4 @@
 import {gql, useApolloClient, useSubscription} from '@apollo/client';
-import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {LocationStateChangeEventType} from '../types/globalTypes';
@@ -65,20 +64,20 @@ export const RepositoryLocationStateObserver = () => {
   }
 
   return (
-    <Group background={Colors.GRAY5} direction="column" spacing={0}>
+    <Group background={ColorsWIP.Gray200} direction="column" spacing={0}>
       {updatedLocations.length > 0 ? (
         <Group padding={{vertical: 8, horizontal: 12}} direction="row" spacing={8}>
           <IconWIP name="warning" color={ColorsWIP.Gray700} />
-          <Caption color={Colors.DARK_GRAY3}>
+          <Caption color={ColorsWIP.Gray800}>
             {updatedLocations.length === 1
               ? `Repository location ${updatedLocations[0]} has been updated,` // Be specific when there's only one repository location updated
               : 'One or more repository locations have been updated,'}{' '}
             and new data is available.{' '}
             <ButtonLink
               color={{
-                link: Colors.DARK_GRAY3,
-                hover: Colors.DARK_GRAY1,
-                active: Colors.DARK_GRAY1,
+                link: ColorsWIP.Gray800,
+                hover: ColorsWIP.Gray900,
+                active: ColorsWIP.Gray900,
               }}
               underline="always"
               onClick={() => {

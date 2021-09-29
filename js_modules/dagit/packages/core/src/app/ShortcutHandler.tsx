@@ -1,7 +1,8 @@
-import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components/macro';
+
+import {ColorsWIP} from '../ui/Colors';
 
 const MODIFIER_KEYCODES = [17, 18, 91, 224];
 const SHORTCUT_VISIBILITY_EVENT_TYPE = 'shortcut-visibility';
@@ -179,9 +180,9 @@ const ShortcutAnnotation = styled.div`
   padding: 2px;
   z-index: 20;
   transform: translate(-90%, -10px);
-  color: ${Colors.LIGHT_GRAY3};
-  background: ${Colors.DARK_GRAY4};
-  border: 1px solid ${Colors.GRAY4};
+  color: ${ColorsWIP.Gray100};
+  background: ${ColorsWIP.Gray800};
+  border: 1px solid ${ColorsWIP.Gray300};
   border-radius: 3px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 `;

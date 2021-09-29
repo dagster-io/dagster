@@ -1,6 +1,6 @@
-import {Colors} from '@blueprintjs/core';
 import styled from 'styled-components/macro';
 
+import {ColorsWIP} from './Colors';
 import {FontFamily} from './styles';
 
 interface TextProps {
@@ -34,7 +34,7 @@ export const Caption = styled.span<TextProps>`
 `;
 
 export const Code = styled.span`
-  background-color: ${Colors.LIGHT_GRAY4};
+  background-color: ${ColorsWIP.Gray100};
   border-radius: 3px;
   font-family: ${FontFamily.monospace};
   font-size: 14px;

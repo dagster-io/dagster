@@ -1,5 +1,5 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import {NonIdealState, Colors, Button, Menu, MenuItem} from '@blueprintjs/core';
+import {NonIdealState, Button, Menu, MenuItem} from '@blueprintjs/core';
 import * as qs from 'query-string';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -450,7 +450,7 @@ const ConfigBody = styled.div`
   font-family: ${FontFamily.monospace};
   font-size: 14px;
   overflow: scroll;
-  background: ${Colors.WHITE};
+  background: ${ColorsWIP.White};
 `;
 
 const RunRequestBody = styled.div`
@@ -459,6 +459,6 @@ const RunRequestBody = styled.div`
 
 const SkipWrapper = styled.div`
   background-color: #fdfcf2;
-  border: 1px solid ${Colors.GOLD5};
+  border: 1px solid ${ColorsWIP.Yellow500};
   border-radius: 3px;
 `;

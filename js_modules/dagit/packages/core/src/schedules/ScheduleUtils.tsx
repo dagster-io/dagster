@@ -1,10 +1,10 @@
 import {gql} from '@apollo/client';
-import {Colors} from '@blueprintjs/core';
 import React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
+import {ColorsWIP} from '../ui/Colors';
 import {REPOSITORY_INFO_FRAGMENT} from '../workspace/RepositoryInformation';
 
 import {SCHEDULER_FRAGMENT} from './SchedulerInfo';
@@ -105,7 +105,7 @@ export const SchedulerTimezoneNote: React.FC<{
   return (
     <div
       style={{
-        color: Colors.GRAY3,
+        color: ColorsWIP.Gray400,
         fontSize: 12.5,
       }}
     >

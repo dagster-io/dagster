@@ -1,10 +1,10 @@
-import {Colors} from '@blueprintjs/core';
 import {Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {Box} from './Box';
 import {ButtonLink} from './ButtonLink';
+import {ColorsWIP} from './Colors';
 import {Group} from './Group';
 import {Body, Code, Heading, Subheading} from './Text';
 import {AlignItems, FlexWrap, Spacing} from './types';
@@ -20,7 +20,7 @@ export const Row = () => {
   return (
     <Group spacing={12} direction="column">
       {spacings.map((spacing) => (
-        <Box background={Colors.LIGHT_GRAY4} padding={8} key={`${spacing}`}>
+        <Box background={ColorsWIP.Gray100} padding={8} key={`${spacing}`}>
           <Group direction="row" spacing={spacing}>
             <ExampleText>
               <strong>{spacing}</strong>
@@ -42,7 +42,7 @@ export const Column = () => {
   return (
     <Group spacing={12} direction="column">
       {spacings.map((spacing) => (
-        <Box background={Colors.LIGHT_GRAY4} padding={12} key={`${spacing}`}>
+        <Box background={ColorsWIP.Gray100} padding={12} key={`${spacing}`}>
           <Group direction="column" spacing={spacing}>
             <ExampleText>
               <strong>{spacing}</strong>
@@ -64,7 +64,7 @@ export const AlignItemsColumn = () => {
   return (
     <Group spacing={12} direction="column">
       {alignments.map((alignment) => (
-        <Box background={Colors.LIGHT_GRAY4} padding={12} key={alignment}>
+        <Box background={ColorsWIP.Gray100} padding={12} key={alignment}>
           <Group direction="column" alignItems={alignment} spacing={8}>
             <ExampleText>
               <strong>{alignment}</strong>
@@ -92,7 +92,7 @@ export const EmptyChildren = () => {
         that renders to <Code>null</Code>. Upon inspection of the DOM, note that both are given{' '}
         <Code>display: none</Code>.
       </Body>
-      <Group background={Colors.LIGHT_GRAY5} padding={12} direction="column" spacing={8}>
+      <Group background={ColorsWIP.Gray50} padding={12} direction="column" spacing={8}>
         <ExampleText>China</ExampleText>
         <ExampleText>France</ExampleText>
         {null}
@@ -109,7 +109,7 @@ export const PointerEventsTest = () => {
   return (
     <div>
       <ButtonLink
-        color={{link: Colors.BLUE3, hover: Colors.ORANGE3}}
+        color={{link: ColorsWIP.Blue500, hover: ColorsWIP.Yellow500}}
         onClick={() => console.log('Clicked!')}
       >
         <strong>Try to click me!</strong>
@@ -134,7 +134,7 @@ export const Wrap = () => {
   return (
     <Group spacing={12} direction="column">
       {wraps.map((wrap) => (
-        <Box background={Colors.LIGHT_GRAY4} padding={12} key={wrap} style={{width: '400px'}}>
+        <Box background={ColorsWIP.Gray100} padding={12} key={wrap} style={{width: '400px'}}>
           <Group direction="row" spacing={8} wrap={wrap}>
             <ExampleText>
               <strong>{wrap}</strong>

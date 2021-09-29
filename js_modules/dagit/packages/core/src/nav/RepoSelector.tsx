@@ -1,4 +1,4 @@
-import {Checkbox, Colors} from '@blueprintjs/core';
+import {Checkbox} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -59,7 +59,10 @@ export const RepoSelector: React.FC<Props> = (props) => {
                 </Box>
                 <Group direction="column" spacing={2}>
                   {metadata.map(({key, value}) => (
-                    <Caption style={{color: Colors.GRAY3}} key={key}>{`${key}: ${value}`}</Caption>
+                    <Caption
+                      style={{color: ColorsWIP.Gray400}}
+                      key={key}
+                    >{`${key}: ${value}`}</Caption>
                   ))}
                 </Group>
               </Group>
@@ -100,23 +103,23 @@ const RepoLabel = styled.label`
 `;
 
 const RepoName = styled.div`
-  color: ${Colors.LIGHT_GRAY5};
+  color: ${ColorsWIP.Gray50};
 `;
 
 const RepoLocation = styled.div`
-  color: ${Colors.GRAY3};
+  color: ${ColorsWIP.Gray400};
 `;
 
 const BrowseLink = styled(Link)`
   line-height: 1;
 
   && {
-    color: ${Colors.GRAY5};
+    color: ${ColorsWIP.Gray200};
   }
 
   &&:hover,
   &&:active {
-    color: ${Colors.GRAY3};
+    color: ${ColorsWIP.Gray400};
   }
 `;
 

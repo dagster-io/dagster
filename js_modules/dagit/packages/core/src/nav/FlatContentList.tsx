@@ -1,5 +1,4 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -90,7 +89,7 @@ export const FlatContentList: React.FC<Props> = (props) => {
                 <Label $hasIcon={!!(schedule || sensor)}>
                   {name}
                   {modeName !== 'default' ? (
-                    <span style={{color: Colors.GRAY3}}>{` : ${modeName}`}</span>
+                    <span style={{color: ColorsWIP.Gray400}}>{` : ${modeName}`}</span>
                   ) : null}
                 </Label>
               ),

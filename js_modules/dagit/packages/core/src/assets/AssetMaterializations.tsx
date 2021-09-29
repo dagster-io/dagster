@@ -1,11 +1,12 @@
 import {useQuery} from '@apollo/client';
-import {Button, ButtonGroup, Colors, Tab, Tabs} from '@blueprintjs/core';
+import {Button, ButtonGroup, Tab, Tabs} from '@blueprintjs/core';
 import flatMap from 'lodash/flatMap';
 import uniq from 'lodash/uniq';
 import * as React from 'react';
 
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
 import {Spinner} from '../ui/Spinner';
 import {Subheading} from '../ui/Text';
 
@@ -176,7 +177,7 @@ const AssetMaterializationMatrixAndGraph: React.FC<{
         ))}
       </div>
       {xAxis === 'partition' && (
-        <div style={{color: Colors.GRAY3, fontSize: '0.85rem'}}>
+        <div style={{color: ColorsWIP.Gray400, fontSize: '0.85rem'}}>
           When graphing values by partition, the highest data point for each materialized event
           label is displayed.
         </div>

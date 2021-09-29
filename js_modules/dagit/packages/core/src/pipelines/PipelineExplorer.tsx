@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Breadcrumbs, Checkbox, Colors, InputGroup, NonIdealState} from '@blueprintjs/core';
+import {Breadcrumbs, Checkbox, InputGroup, NonIdealState} from '@blueprintjs/core';
 import Color from 'color';
 import * as querystring from 'query-string';
 import * as React from 'react';
@@ -11,6 +11,7 @@ import {filterByQuery} from '../app/GraphQueryImpl';
 import {PIPELINE_GRAPH_SOLID_FRAGMENT} from '../graph/PipelineGraph';
 import {PipelineGraphContainer} from '../graph/PipelineGraphContainer';
 import {SolidNameOrPath} from '../solids/SolidNameOrPath';
+import {ColorsWIP} from '../ui/Colors';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {IconWIP} from '../ui/Icon';
 import {SplitPanelContainer} from '../ui/SplitPanelContainer';
@@ -139,7 +140,7 @@ export const PipelineExplorer: React.FC<PipelineExplorerProps> = (props) => {
     all,
   ]);
 
-  const backgroundColor = parentHandle ? Colors.WHITE : Colors.WHITE;
+  const backgroundColor = parentHandle ? ColorsWIP.White : ColorsWIP.White;
   const backgroundTranslucent = Color(backgroundColor).fade(0.6).toString();
 
   return (
@@ -276,7 +277,7 @@ const RightInfoPanel = styled.div`
 
   height: 100%;
   overflow-y: scroll;
-  background: ${Colors.WHITE};
+  background: ${ColorsWIP.White};
 `;
 
 const OptionsOverlay = styled.div`
@@ -364,7 +365,7 @@ const LargeDAGContainer = styled.div`
   max-width: 600px;
   text-align: center;
   .bp3-icon {
-    color: ${Colors.LIGHT_GRAY1};
+    color: ${ColorsWIP.Gray200};
   }
 `;
 
@@ -372,7 +373,7 @@ const LargeDAGInstructionBox = styled.div`
   padding: 15px 20px;
   border: 1px solid #fff5c3;
   margin-bottom: 20px;
-  color: ${Colors.DARK_GRAY3};
+  color: ${ColorsWIP.Gray800};
   background: #fffbe5;
   text-align: left;
   line-height: 1.4rem;

@@ -1,5 +1,4 @@
-import {Colors} from '@blueprintjs/core';
-import React from 'react';
+import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {useFeatureFlags} from '../app/Flags';
@@ -10,6 +9,7 @@ import {RunStatusTagWithStats} from '../runs/RunStatusTag';
 import {titleForRun} from '../runs/RunUtils';
 import {ButtonWIP} from '../ui/Button';
 import {ButtonLink} from '../ui/ButtonLink';
+import {ColorsWIP} from '../ui/Colors';
 import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
 import {Table} from '../ui/Table';
@@ -75,7 +75,7 @@ const AssetMaterializationRow: React.FC<{
   return (
     <tr>
       {isPartitioned && (
-        <td>{latest.partition || <span style={{color: Colors.GRAY3}}>None</span>}</td>
+        <td>{latest.partition || <span style={{color: ColorsWIP.Gray400}}>None</span>}</td>
       )}
       <td style={{fontSize: 12, padding: '4px 12px 0 0'}}>
         {materialization.description ? (

@@ -1,5 +1,5 @@
 import {gql, useApolloClient, useQuery} from '@apollo/client';
-import {Button, Colors} from '@blueprintjs/core';
+import {Button} from '@blueprintjs/core';
 import merge from 'deepmerge';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -8,12 +8,12 @@ import * as yaml from 'yaml';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useFeatureFlags} from '../app/Flags';
 import {
-  PipelineRunTag,
-  SessionBase,
-  useStorage,
   applyChangesToSession,
   applyCreateSession,
   IExecutionSessionChanges,
+  PipelineRunTag,
+  SessionBase,
+  useStorage,
 } from '../app/LocalStorage';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {ShortcutHandler} from '../app/ShortcutHandler';
@@ -589,7 +589,7 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
                     onShortcut={openTagEditor}
                   >
                     <ButtonLink
-                      color={{link: Colors.GRAY3, hover: Colors.DARK_GRAY3}}
+                      color={{link: ColorsWIP.Gray400, hover: ColorsWIP.Gray800}}
                       onClick={openTagEditor}
                       underline="always"
                     >
@@ -622,7 +622,7 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
             {refreshableSessionBase ? (
               <Box
                 padding={{vertical: 8, horizontal: 12}}
-                border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY1}}
+                border={{side: 'bottom', width: 1, color: ColorsWIP.Gray200}}
               >
                 <Group direction="row" spacing={8} alignItems="center">
                   <IconWIP name="warning" color={ColorsWIP.Yellow500} />
