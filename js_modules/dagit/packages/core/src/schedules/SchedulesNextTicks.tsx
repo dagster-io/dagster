@@ -8,9 +8,7 @@ import {
   MenuItem,
   Popover,
   Dialog,
-  Icon,
 } from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
 import * as qs from 'query-string';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -24,8 +22,10 @@ import {RunTags} from '../runs/RunTags';
 import {InstigationStatus} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {HighlightedCodeBlock} from '../ui/HighlightedCodeBlock';
+import {IconWIP} from '../ui/Icon';
 import {Spinner} from '../ui/Spinner';
 import {Table} from '../ui/Table';
 import {FontFamily} from '../ui/styles';
@@ -348,7 +348,7 @@ const NextTickDialog: React.FC<{
                   <td>
                     <ButtonLink onClick={() => setSelectedRunRequest(runRequest)} underline={false}>
                       <Group direction="row" spacing={8} alignItems="center">
-                        <Icon icon={IconNames.SHARE} iconSize={12} />
+                        <IconWIP name="open_in_new" color={ColorsWIP.Gray400} />
                         <span>View config</span>
                       </Group>
                     </ButtonLink>

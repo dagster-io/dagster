@@ -1,0 +1,21 @@
+name: some_example
+description: blah blah blah
+ops:
+  - def: add_one
+    alias: A
+  - def: add_one
+    alias: B
+    deps:
+      num:
+        op: A
+  - def: add_two
+    alias: C
+    deps:
+      num:
+        op: A
+  - def: subtract
+    deps:
+      left:
+        op: B
+      right:
+        op: C

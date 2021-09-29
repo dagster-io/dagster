@@ -4,10 +4,10 @@ from dagster import (
     EventMetadata,
     ExpectationResult,
     Failure,
+    Out,
     Output,
-    OutputDefinition,
     RetryRequested,
-    solid,
+    op,
 )
 
 
@@ -39,44 +39,40 @@ def flaky_operation():
     return 0
 
 
-# start_solid_output_0
+# start_op_output_0
 
 
-@solid
-def my_simple_yield_solid(context):
+@op
+def my_simple_yield_op(context):
     yield Output(1)
 
 
-# end_solid_output_0
+# end_op_output_0
 
-# start_solid_output_1
+# start_op_output_1
 
 
-@solid
-def my_simple_return_solid(context):
+@op
+def my_simple_return_op(context):
     return 1
 
 
-# end_solid_output_1
+# end_op_output_1
 
-# start_solid_output_2
+# start_op_output_2
 
 
-@solid(
-    output_defs=[
-        OutputDefinition(name="my_output"),
-    ]
-)
-def my_named_yield_solid(context):
+@op(out={"my_output": Out(int)})
+def my_named_yield_op(context):
     yield Output(1, output_name="my_output")
 
 
-# end_solid_output_2
+# end_op_output_2
 
-# start_solid_output_3
+# start_op_output_3
 
 
-@solid
+@op
 def my_metadata_output(context):
     df = get_some_data()
     yield Output(
@@ -90,13 +86,13 @@ def my_metadata_output(context):
     )
 
 
-# end_solid_output_3
+# end_op_output_3
 
-# start_metadata_expectation_solid
+# start_metadata_expectation_op
 
 
-@solid
-def my_metadata_expectation_solid(context, df):
+@op
+def my_metadata_expectation_op(context, df):
     df = do_some_transform(df)
     yield ExpectationResult(
         success=len(df) > 0,
@@ -111,13 +107,13 @@ def my_metadata_expectation_solid(context, df):
     yield Output(df)
 
 
-# end_metadata_expectation_solid
+# end_metadata_expectation_op
 
-# start_failure_solid
+# start_failure_op
 
 
-@solid
-def my_failure_solid():
+@op
+def my_failure_op():
     path = "/path/to/files"
     my_files = get_files(path)
     if len(my_files) == 0:
@@ -131,13 +127,13 @@ def my_failure_solid():
     return some_calculation(my_files)
 
 
-# end_failure_solid
+# end_failure_op
 
-# start_failure_metadata_solid
+# start_failure_metadata_op
 
 
-@solid
-def my_failure_metadata_solid():
+@op
+def my_failure_metadata_op():
     path = "/path/to/files"
     my_files = get_files(path)
     if len(my_files) == 0:
@@ -151,13 +147,13 @@ def my_failure_metadata_solid():
     return some_calculation(my_files)
 
 
-# end_failure_metadata_solid
+# end_failure_metadata_op
 
-# start_retry_solid
+# start_retry_op
 
 
-@solid
-def my_retry_solid():
+@op
+def my_retry_op():
     try:
         result = flaky_operation()
     except:
@@ -165,13 +161,13 @@ def my_retry_solid():
     return result
 
 
-# end_retry_solid
+# end_retry_op
 
-# start_asset_solid
+# start_asset_op
 
 
-@solid
-def my_asset_solid(context):
+@op
+def my_asset_op(context):
     df = get_some_data()
     store_to_s3(df)
     yield AssetMaterialization(
@@ -183,4 +179,4 @@ def my_asset_solid(context):
     yield Output(result)
 
 
-# end_asset_solid
+# end_asset_op

@@ -1,8 +1,11 @@
-import {Colors, Icon} from '@blueprintjs/core';
+import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {useFeatureFlags} from '../app/Flags';
+import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
+import {IconWIP} from '../ui/Icon';
 import {RepoAddress} from '../workspace/types';
 import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
@@ -23,7 +26,6 @@ export const PipelineReference: React.FC<Props> = ({
   mode,
   snapshotId,
   showIcon,
-  fontSize,
 }) => {
   const {flagPipelineModeTuples} = useFeatureFlags();
 
@@ -56,24 +58,26 @@ export const PipelineReference: React.FC<Props> = ({
     );
 
   return (
-    <span style={{fontSize: fontSize}}>
+    <Box flex={{direction: 'row', alignItems: 'center'}}>
       {showIcon && (
-        <Icon
-          color={Colors.GRAY2}
-          icon={flagPipelineModeTuples ? 'send-to-graph' : 'diagram-tree'}
-          iconSize={Math.floor((fontSize || 16) * 0.8)}
-          style={{position: 'relative', top: -2, paddingRight: 5}}
-        />
+        <Box margin={{right: 8}}>
+          <IconWIP
+            color={ColorsWIP.Gray300}
+            name={flagPipelineModeTuples ? 'workspaces' : 'schema'}
+          />
+        </Box>
       )}
-      {pipeline}
-      {snapshotId && ' @ '}
-      {snapshotId && (
-        <PipelineSnapshotLink
-          snapshotId={snapshotId}
-          pipelineName={pipelineName}
-          pipelineMode={mode}
-        />
-      )}
-    </span>
+      <span>
+        {pipeline}
+        {snapshotId && ' @ '}
+        {snapshotId && (
+          <PipelineSnapshotLink
+            snapshotId={snapshotId}
+            pipelineName={pipelineName}
+            pipelineMode={mode}
+          />
+        )}
+      </span>
+    </Box>
   );
 };

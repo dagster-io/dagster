@@ -1,5 +1,4 @@
 import {useQuery} from '@apollo/client';
-import {Colors, Icon} from '@blueprintjs/core';
 import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -10,7 +9,9 @@ import {MetadataEntry} from '../runs/MetadataEntry';
 import {titleForRun} from '../runs/RunUtils';
 import {Alert} from '../ui/Alert';
 import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
+import {IconWIP} from '../ui/Icon';
 import {MetadataTable} from '../ui/MetadataTable';
 import {Spinner} from '../ui/Spinner';
 import {Mono, Subheading} from '../ui/Text';
@@ -100,14 +101,15 @@ export const AssetDetails: React.FC<Props> = ({assetKey, asOf, asSidebarSection}
             key: 'Run',
             value: latestRun ? (
               <div>
-                <div>
+                <Box margin={{bottom: 4}}>
+                  {'Run '}
                   <Link
                     to={`/instance/runs/${latestEvent.runId}?timestamp=${latestEvent.timestamp}`}
                   >
                     <Mono>{titleForRun({runId: latestEvent.runId})}</Mono>
                   </Link>
-                </div>
-                <div style={{paddingLeft: 10, paddingTop: 4}}>
+                </Box>
+                <Box padding={{left: 8}}>
                   <PipelineReference
                     showIcon
                     pipelineName={latestRun.pipelineName}
@@ -115,14 +117,9 @@ export const AssetDetails: React.FC<Props> = ({assetKey, asOf, asSidebarSection}
                     snapshotId={latestRun.pipelineSnapshotId}
                     mode={latestRun.mode}
                   />
-                </div>
-                <div style={{paddingLeft: 10, paddingTop: 4}}>
-                  <Icon
-                    icon="git-commit"
-                    color={Colors.GRAY2}
-                    iconSize={12}
-                    style={{position: 'relative', top: -2, paddingRight: 5}}
-                  />
+                </Box>
+                <Group direction="row" padding={{left: 8}} spacing={8} alignItems="center">
+                  <IconWIP name="linear_scale" color={ColorsWIP.Gray500} />
                   <Link
                     to={`/instance/runs/${latestRun.runId}?${qs.stringify({
                       selection: latest.materializationEvent.stepKey,
@@ -131,7 +128,7 @@ export const AssetDetails: React.FC<Props> = ({assetKey, asOf, asSidebarSection}
                   >
                     {latest.materializationEvent.stepKey}
                   </Link>
-                </div>
+                </Group>
               </div>
             ) : (
               'No materialization events'

@@ -1,6 +1,7 @@
 import re
 
 from dagster import check
+from dagster.core.definitions.version_strategy import ResourceVersionContext, SolidVersionContext
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.step import is_executable_step
@@ -96,11 +97,14 @@ def resolve_step_versions(pipeline_def, execution_plan, resolved_run_config):
 
         solid_name = str(step.solid_handle)
 
+        solid_config = resolved_run_config.solids[solid_name].config
+
         solid_def_version = None
         if solid_def.version is not None:
             solid_def_version = solid_def.version
         elif pipeline_def.version_strategy is not None:
-            solid_def_version = pipeline_def.version_strategy.get_solid_version(solid_def)
+            version_context = SolidVersionContext(solid_def=solid_def, solid_config=solid_config)
+            solid_def_version = pipeline_def.version_strategy.get_solid_version(version_context)
 
         if solid_def_version is None:
             raise DagsterInvariantViolationError(
@@ -111,7 +115,7 @@ def resolve_step_versions(pipeline_def, execution_plan, resolved_run_config):
 
         check_valid_version(solid_def_version)
 
-        solid_config_version = resolve_config_version(resolved_run_config.solids[solid_name].config)
+        solid_config_version = resolve_config_version(solid_config)
 
         resource_versions_for_solid = []
         for resource_key in solid_def.required_resource_keys:
@@ -125,8 +129,11 @@ def resolve_step_versions(pipeline_def, execution_plan, resolved_run_config):
                 if resource_def.version is not None:
                     resource_def_version = resource_def.version
                 else:
+                    version_context = ResourceVersionContext(
+                        resource_def=resource_def, resource_config=resource_config
+                    )
                     resource_def_version = pipeline_def.version_strategy.get_resource_version(
-                        resource_def
+                        version_context
                     )
 
                 if resource_def_version is not None:

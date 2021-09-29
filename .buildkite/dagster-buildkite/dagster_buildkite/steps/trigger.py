@@ -4,6 +4,7 @@ from typing import Dict, List, Optional
 
 def trigger_step(
     pipeline: str,
+    trigger_branch: str,
     branches: Optional[List[str]] = None,
     async_step: bool = False,
     if_condition: str = None,
@@ -29,6 +30,7 @@ def trigger_step(
         "async": async_step,
         "build": {
             "env": env or {},
+            "branch": trigger_branch,
         },
     }
 

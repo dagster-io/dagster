@@ -1,7 +1,6 @@
 import {
   Button,
   Colors,
-  Icon,
   Intent,
   Menu,
   MenuItem,
@@ -10,7 +9,6 @@ import {
   Position,
   Tag,
 } from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -19,7 +17,9 @@ import {TickTag} from '../instigation/InstigationTick';
 import {InstigatedRunStatus} from '../instigation/InstigationUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {InstigationStatus, InstigationType} from '../types/globalTypes';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
+import {IconWIP} from '../ui/Icon';
 import {Table} from '../ui/Table';
 import {Code} from '../ui/Text';
 import {RepoAddress} from '../workspace/types';
@@ -61,11 +61,7 @@ export const SchedulesTable: React.FC<{
             <Group direction="row" spacing={8} alignItems="center">
               Last Tick
               <Tooltip position="top" content={lastTick}>
-                <Icon
-                  icon={IconNames.INFO_SIGN}
-                  iconSize={12}
-                  style={{position: 'relative', top: '-2px'}}
-                />
+                <IconWIP name="info" color={ColorsWIP.Gray400} />
               </Tooltip>
             </Group>
           </th>
@@ -73,11 +69,7 @@ export const SchedulesTable: React.FC<{
             <Group direction="row" spacing={8} alignItems="center">
               Last Run
               <Tooltip position="top" content={lastRun}>
-                <Icon
-                  icon={IconNames.INFO_SIGN}
-                  iconSize={12}
-                  style={{position: 'relative', top: '-2px'}}
-                />
+                <IconWIP name="info" color={ColorsWIP.Gray400} />
               </Tooltip>
             </Group>
           </th>
@@ -85,11 +77,7 @@ export const SchedulesTable: React.FC<{
             <Group direction="row" spacing={8} alignItems="center">
               Partition
               <Tooltip position="top" content={partitionStatus}>
-                <Icon
-                  icon={IconNames.INFO_SIGN}
-                  iconSize={12}
-                  style={{position: 'relative', top: '-2px'}}
-                />
+                <IconWIP name="info" color={ColorsWIP.Gray400} />
               </Tooltip>
             </Group>
           </th>

@@ -1,5 +1,4 @@
-import {Checkbox, Colors, Icon, NonIdealState} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
+import {Checkbox, Colors, NonIdealState} from '@blueprintjs/core';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -8,12 +7,13 @@ import styled from 'styled-components/macro';
 import {AppContext} from '../app/AppContext';
 import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
 import {WebSocketContext} from '../app/WebSocketProvider';
-import {useWebsocketAvailability} from '../app/useWebsocketAvailability';
 import {EMPTY_RUN_METADATA, IRunMetadataDict, IStepMetadata} from '../runs/RunMetadataProvider';
 import {StepSelection} from '../runs/StepSelection';
 import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Group} from '../ui/Group';
+import {IconWIP} from '../ui/Icon';
 import {Spinner} from '../ui/Spinner';
 import {SplitPanelContainer} from '../ui/SplitPanelContainer';
 
@@ -217,9 +217,8 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
 
   const {rootServerURI} = React.useContext(AppContext);
 
-  const websocketAvailability = useWebsocketAvailability();
-  const {status} = React.useContext(WebSocketContext);
-  const lostWebsocket = websocketAvailability === 'success' && status === WebSocket.CLOSED;
+  const {availability, status} = React.useContext(WebSocketContext);
+  const lostWebsocket = availability === 'available' && status === WebSocket.CLOSED;
 
   // The slider in the UI updates `options.zoom` from 1-100. We convert that value
   // into a px-per-ms "scale", where the minimum is the value required to zoom-to-fit.
@@ -363,12 +362,7 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
                 padding={{vertical: 8, horizontal: 12}}
                 alignItems="flex-start"
               >
-                <Icon
-                  icon="warning-sign"
-                  color={Colors.ORANGE2}
-                  iconSize={14}
-                  style={{display: 'block', position: 'relative', top: '2px'}}
-                />
+                <IconWIP name="warning" color={ColorsWIP.Yellow700} />
                 <div style={{maxWidth: '400px', whiteSpace: 'normal', overflow: 'hidden'}}>
                   <strong>Lost connection to Dagit server.</strong>
                   <span>
@@ -789,7 +783,7 @@ export const QueuedState = ({runId}: {runId: string}) => (
       axis="horizontal"
       first={
         <NonIdealState
-          icon={IconNames.TIME}
+          icon="time"
           description="This run is currently queued."
           action={<Link to={`/instance/runs?q=status%3AQUEUED`}>View queued runs</Link>}
         />

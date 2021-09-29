@@ -21,6 +21,7 @@ from dagster.serdes import (
 from dagster.serdes.errors import DeserializationError
 from dagster.serdes.serdes import register_serdes_tuple_fallbacks
 from dagster.seven import JSONDecodeError
+from dagster.utils import utc_datetime_from_timestamp
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 
@@ -335,7 +336,22 @@ class RunStatusSensorDefinition(SensorDefinition):
                 run_records = context.instance.get_run_records(
                     filters=PipelineRunsFilter(run_ids=[event_log_entry.run_id])
                 )
-                check.invariant(len(run_records) == 1)
+
+                # skip if we couldn't find the right run
+                if len(run_records) != 1:
+                    # bc we couldn't find the run, we use the event timestamp as the approximate
+                    # run update timestamp
+                    approximate_update_timestamp = utc_datetime_from_timestamp(
+                        event_log_entry.timestamp
+                    )
+                    context.update_cursor(
+                        RunStatusSensorCursor(
+                            record_id=storage_id,
+                            update_timestamp=approximate_update_timestamp.isoformat(),
+                        ).to_json()
+                    )
+                    continue
+
                 pipeline_run = run_records[0].pipeline_run
                 update_timestamp = run_records[0].update_timestamp
 

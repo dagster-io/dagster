@@ -1,6 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Tag, Dialog, Button, Intent, NonIdealState, Classes, Colors, Icon} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
+import {Tag, Dialog, Button, Intent, NonIdealState, Classes, Colors} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -12,7 +11,9 @@ import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
 import {InstigationTickStatus, InstigationType} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
+import {IconWIP} from '../ui/Icon';
 import {Spinner} from '../ui/Spinner';
 import {Body} from '../ui/Text';
 
@@ -134,7 +135,7 @@ export const RunList: React.FunctionComponent<{
   if (data.pipelineRunsOrError.__typename !== 'PipelineRuns') {
     return (
       <NonIdealState
-        icon={IconNames.ERROR}
+        icon="error"
         title="Query Error"
         description={data.pipelineRunsOrError.message}
       />
@@ -159,12 +160,7 @@ export const FailedRunList: React.FunctionComponent<{
         <Body>
           Failed Runs
           <Tooltip content="Failed runs this tick reacted on and reported back to.">
-            <Icon
-              icon="info-sign"
-              iconSize={12}
-              color={Colors.GRAY3}
-              style={{position: 'relative', top: '-2px', marginLeft: '6px'}}
-            />
+            <IconWIP name="info" color={ColorsWIP.Gray500} />
           </Tooltip>
         </Body>
 
@@ -174,12 +170,7 @@ export const FailedRunList: React.FunctionComponent<{
         <Body>
           Requested Runs
           <Tooltip content="Runs launched by the run requests in this tick.">
-            <Icon
-              icon="info-sign"
-              iconSize={12}
-              color={Colors.GRAY3}
-              style={{position: 'relative', top: '-2px', marginLeft: '6px'}}
-            />
+            <IconWIP name="info" color={ColorsWIP.Gray500} />
           </Tooltip>
         </Body>
         <NonIdealState description="Sensor does not target a pipeline." />

@@ -1,8 +1,8 @@
-import {Collapse, Colors, Icon} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
+import {Collapse, Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {IconWIP} from '../ui/Icon';
 import {FontFamily} from '../ui/styles';
 
 interface ISidebarSectionProps {
@@ -33,7 +33,7 @@ export const SidebarSection: React.FC<ISidebarSectionProps> = (props) => {
     <div>
       <CollapsingHeaderBar onClick={onToggle}>
         {title}
-        <DisclosureIcon icon={open ? IconNames.CHEVRON_DOWN : IconNames.CHEVRON_UP} />
+        <DisclosureIcon name={open ? 'expand_more' : 'chevron_left'} />
       </CollapsingHeaderBar>
       <Collapse isOpen={open}>
         <div>{children}</div>
@@ -42,8 +42,7 @@ export const SidebarSection: React.FC<ISidebarSectionProps> = (props) => {
   );
 };
 
-const DisclosureIcon = styled(Icon)`
-  float: right;
+const DisclosureIcon = styled(IconWIP)`
   opacity: 0.5;
 `;
 
@@ -95,6 +94,10 @@ const CollapsingHeaderBar = styled.div`
   border-top: 1px solid ${Colors.LIGHT_GRAY4};
   border-bottom: 1px solid ${Colors.LIGHT_GRAY3};
   color: ${Colors.GRAY1};
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   text-transform: uppercase;
   font-size: 0.75rem;
 `;

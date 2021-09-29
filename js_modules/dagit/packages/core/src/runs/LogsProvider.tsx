@@ -2,7 +2,7 @@ import {gql, useApolloClient, useQuery, useSubscription} from '@apollo/client';
 import throttle from 'lodash/throttle';
 import * as React from 'react';
 
-import {useWebsocketAvailability} from '../app/useWebsocketAvailability';
+import {WebSocketContext} from '../app/WebSocketProvider';
 import {PipelineRunStatus} from '../types/globalTypes';
 import {TokenizingFieldValue} from '../ui/TokenizingField';
 
@@ -60,11 +60,13 @@ const BATCH_INTERVAL = 100;
 
 type State = {
   nodes: Nodes;
+  cursor: number;
   loading: boolean;
 };
 
 type Action =
   | {type: 'append'; queued: RunPipelineRunEventFragment[]; hasMore: boolean}
+  | {type: 'set-cursor'}
   | {type: 'reset'};
 
 const reducer = (state: State, action: Action) => {
@@ -75,8 +77,10 @@ const reducer = (state: State, action: Action) => {
         clientsideKey: `csk${idx}`,
       }));
       return {...state, nodes, loading: action.hasMore};
+    case 'set-cursor':
+      return {...state, cursor: state.nodes.length - 1};
     case 'reset':
-      return {nodes: [], loading: true};
+      return {nodes: [], cursor: -1, loading: true};
     default:
       return state;
   }
@@ -84,11 +88,13 @@ const reducer = (state: State, action: Action) => {
 
 const initialState = {
   nodes: [],
+  cursor: -1,
   loading: true,
 };
 
 const useLogsProviderWithSubscription = (runId: string) => {
   const client = useApolloClient();
+  const {websocketClient} = React.useContext(WebSocketContext);
   const queue = React.useRef<RunPipelineRunEventFragment[]>([]);
   const [state, dispatch] = React.useReducer(reducer, initialState);
 
@@ -122,6 +128,13 @@ const useLogsProviderWithSubscription = (runId: string) => {
     [client, runId],
   );
 
+  // If the WebSocket disconnects, move the cursor to the end to ensure that we don't
+  // incorrectly refetch logs that we already have.
+  React.useEffect(() => {
+    const unlisten = websocketClient?.onDisconnected(() => dispatch({type: 'set-cursor'}));
+    return () => unlisten && unlisten();
+  }, [websocketClient]);
+
   React.useEffect(() => {
     queue.current = [];
     dispatch({type: 'reset'});
@@ -137,9 +150,11 @@ const useLogsProviderWithSubscription = (runId: string) => {
     }, BATCH_INTERVAL);
   }, []);
 
+  const {nodes, cursor, loading} = state;
+
   useSubscription<PipelineRunLogsSubscription>(PIPELINE_RUN_LOGS_SUBSCRIPTION, {
     fetchPolicy: 'no-cache',
-    variables: {runId: runId, after: null},
+    variables: {runId, after: cursor},
     onSubscriptionData: ({subscriptionData}) => {
       const logs = subscriptionData.data?.pipelineRunLogs;
       if (!logs || logs.__typename === 'PipelineRunLogsSubscriptionFailure') {
@@ -160,8 +175,6 @@ const useLogsProviderWithSubscription = (runId: string) => {
       throttledSetNodes(hasMorePastEvents);
     },
   });
-
-  const {nodes, loading} = state;
 
   return React.useMemo(
     () => (nodes !== null ? {allNodes: nodes, loading} : {allNodes: [], loading}),
@@ -243,13 +256,13 @@ const LogsProviderWithQuery = (props: LogsProviderWithQueryProps) => {
 
 export const LogsProvider: React.FC<LogsProviderProps> = (props) => {
   const {children, runId} = props;
-  const websocketAvailability = useWebsocketAvailability();
+  const {availability} = React.useContext(WebSocketContext);
 
-  if (websocketAvailability === 'attempting-to-connect') {
+  if (availability === 'attempting-to-connect') {
     return <>{children({allNodes: [], loading: true})}</>;
   }
 
-  if (websocketAvailability === 'error') {
+  if (availability === 'unavailable') {
     return <LogsProviderWithQuery runId={runId}>{children}</LogsProviderWithQuery>;
   }
 

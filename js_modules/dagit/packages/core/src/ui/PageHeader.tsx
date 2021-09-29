@@ -1,9 +1,11 @@
-import {Colors, Icon, IconName} from '@blueprintjs/core';
+import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {Box} from './Box';
+import {ColorsWIP} from './Colors';
 import {Group} from './Group';
+import {IconName, IconWIP} from './Icon';
 
 interface Props {
   title: React.ReactNode;
@@ -21,12 +23,7 @@ export const PageHeader = (props: Props) => {
         <Group direction="column" spacing={8}>
           {title}
           <Group direction="row" spacing={4} alignItems="center">
-            <Icon
-              color={Colors.GRAY1}
-              icon={icon}
-              iconSize={12}
-              style={{position: 'relative', top: -2}}
-            />
+            {icon ? <IconWIP color={ColorsWIP.Gray400} name={icon} /> : null}
             <Description>{description}</Description>
           </Group>
         </Group>

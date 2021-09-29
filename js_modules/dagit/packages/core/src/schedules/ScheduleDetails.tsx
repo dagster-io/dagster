@@ -94,7 +94,7 @@ export const ScheduleDetails: React.FC<{
             ) : null}
           </Group>
         }
-        icon="time"
+        icon="schedule"
         description={
           <>
             <Link to={workspacePathFromAddress(repoAddress, '/schedules')}>Schedule</Link> in{' '}

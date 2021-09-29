@@ -3,6 +3,7 @@ import styled, {css} from 'styled-components/macro';
 
 import {ColorsWIP} from './Colors';
 import {IconWrapper} from './Icon';
+import {SpinnerWrapper} from './Spinner';
 
 interface Props extends React.ComponentPropsWithRef<'button'> {
   icon?: React.ReactNode;
@@ -76,18 +77,26 @@ const StyledButton = styled.button<StyledButtonProps>`
   font-size: 14px;
   line-height: 20px;
   padding: 6px 12px;
-  transition: background 100ms, box-shadow 150ms;
+  transition: background 100ms, box-shadow 150ms, filter 100ms;
   user-select: none;
 
   ${({$stroke}) => ($stroke ? DEFAULT_STROKE : NO_STROKE)}
 
   :hover {
-    ${({$stroke}) => ($stroke ? DEFAULT_STROKE_PLUS_HOVER : NO_STROKE_PLUS_HOVER)};
+    ${({$stroke}) => ($stroke ? DEFAULT_STROKE_PLUS_HOVER : NO_STROKE_PLUS_HOVER)}
   }
 
   :focus {
     box-shadow: rgba(58, 151, 212, 0.6) 0 0 0 3px;
     outline: none;
+  }
+
+  :focus:not(:focus-visible) {
+    ${({$stroke}) => ($stroke ? DEFAULT_STROKE_PLUS_HOVER : NO_STROKE_PLUS_HOVER)}
+  }
+
+  :active {
+    filter: brightness(0.95);
   }
 
   :disabled {
@@ -99,22 +108,26 @@ const StyledButton = styled.button<StyledButtonProps>`
     ${({$stroke}) => ($stroke ? DEFAULT_STROKE : null)};
   }
 
+  ${SpinnerWrapper},
   ${IconWrapper} {
     color: ${({$textColor}) => $textColor};
     align-self: center;
     display: block;
   }
 
+  ${SpinnerWrapper}:first-child,
   ${IconWrapper}:first-child {
     margin-left: -4px;
     margin-right: 4px;
   }
 
+  ${SpinnerWrapper}:last-child,
   ${IconWrapper}:last-child {
     margin-right: -4px;
     margin-left: 4px;
   }
 
+  ${SpinnerWrapper}:first-child:last-child,
   ${IconWrapper}:first-child:last-child {
     margin: 2px -4px;
   }

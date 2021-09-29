@@ -49,13 +49,8 @@ module.exports = {
         paths: [
           {
             name: '@blueprintjs/core',
-            importNames: ['Alert', 'Callout', 'Spinner'],
+            importNames: ['Alert', 'Callout', 'Icon', 'Spinner', 'Tooltip'],
             message: 'Please use components in src/ui instead.',
-          },
-          {
-            name: '@blueprintjs/core',
-            importNames: ['Tooltip'],
-            message: 'Please use `Tooltip2` in `@blueprintjs/popover2` instead.',
           },
           {
             name: 'csstype',

@@ -101,10 +101,10 @@ def test_memoization_with_default_strategy():
         my_op()
 
     class MyVersionStrategy(VersionStrategy):
-        def get_solid_version(self, solid_def):
+        def get_solid_version(self, _):
             return "foo"
 
-        def get_resource_version(self, resource_def):
+        def get_resource_version(self, _):
             return "foo"
 
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -137,7 +137,7 @@ def test_memoization_with_default_strategy_overriden():
     version = ["foo"]
 
     class MyVersionStrategy(VersionStrategy):
-        def get_solid_version(self, solid_def):
+        def get_solid_version(self, _):
             return version[0]
 
     recorder = []
@@ -179,6 +179,79 @@ def test_memoization_with_default_strategy_overriden():
             assert result.success
 
             assert len(recorder) == 1
+
+            # Ensure that after switching memoization tag off, that the plan recognizes every step
+            # should be run.
+            unmemoized_plan = create_execution_plan(
+                my_job, instance=instance, tags={MEMOIZED_RUN_TAG: "false"}
+            )
+            assert len(unmemoized_plan.step_keys_to_execute) == 1
+
+
+def test_version_strategy_depends_from_context():
+    # this dict is to emulate execution which depends on some argument in context
+    version = {"foo": "bar"}
+    version_strategy_called = []
+    graph_executed = []
+
+    class ContextDependantVersionStrategy(VersionStrategy):
+        def get_solid_version(self, context):
+            version_strategy_called.append("versioned")
+            solid_arg = context.solid_config["arg"]
+            return version[solid_arg]
+
+        def get_resource_version(self, context):
+            resource_arg = context.resource_config["arg"]
+            return version[resource_arg]
+
+    run_config = {"solids": {"my_op": {"config": {"arg": "foo"}}}}
+
+    @op
+    def my_op(context):
+        graph_executed.append("executed")
+
+    @graph
+    def my_graph():
+        my_op()
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with instance_for_test(temp_dir=temp_dir) as instance:
+            my_job = my_graph.to_job(
+                version_strategy=ContextDependantVersionStrategy(),
+                resource_defs={
+                    "io_manager": versioned_filesystem_io_manager.configured(
+                        {"base_dir": temp_dir}
+                    ),
+                },
+            )
+
+            result = my_job.execute_in_process(run_config=run_config, instance=instance)
+            assert result.success
+
+            assert len(graph_executed) > 0
+            assert len(version_strategy_called) > 0
+
+            # check that memoization works
+            graph_executed = []
+            version_strategy_called = []
+
+            result = my_job.execute_in_process(run_config=run_config, instance=instance)
+            assert result.success
+
+            assert len(graph_executed) == 0
+            assert len(version_strategy_called) > 0
+
+            # check that changing the version leads to reexecution
+            graph_executed = []
+            version_strategy_called = []
+
+            version["foo"] = "not_bar"
+
+            result = my_job.execute_in_process(run_config=run_config, instance=instance)
+            assert result.success
+
+            assert len(graph_executed) > 0
+            assert len(version_strategy_called) > 0
 
             # Ensure that after switching memoization tag off, that the plan recognizes every step
             # should be run.
