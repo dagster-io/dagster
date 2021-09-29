@@ -14,9 +14,13 @@ def test_hello_world():
         hello_world_op()
 
     result = hello_world.execute_in_process(
-        config={
-            "hello_world_op": {
-                "inputs": {"num_csv": {"csv": {"path": file_relative_path(__file__, "num.csv")}}}
+        run_config={
+            "ops": {
+                "hello_world_op": {
+                    "inputs": {
+                        "num_csv": {"csv": {"path": file_relative_path(__file__, "num.csv")}}
+                    }
+                }
             }
         }
     )
