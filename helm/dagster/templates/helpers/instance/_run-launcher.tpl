@@ -64,6 +64,15 @@ config:
   {{- if $k8sRunLauncherConfig.envVars }}
   env_vars: {{- $k8sRunLauncherConfig.envVars | toYaml | nindent 4 }}
   {{- end }}
+
+  {{- if $k8sRunLauncherConfig.volumeMounts }}
+  volume_mounts: {{- $k8sRunLauncherConfig.volumeMounts | toYaml | nindent 4 }}
+  {{- end }}
+
+  {{- if $k8sRunLauncherConfig.volumes }}
+  volumes: {{- $k8sRunLauncherConfig.volumes | toYaml | nindent 4 }}
+  {{- end }}
+
 {{- end }}
 
 {{- define "dagsterYaml.runLauncher.custom" }}

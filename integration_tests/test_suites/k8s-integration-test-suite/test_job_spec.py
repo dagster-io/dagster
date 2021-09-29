@@ -88,6 +88,9 @@ spec:
         - mount_path: /opt/dagster/dagster_home/dagster.yaml
           name: dagster-instance
           sub_path: dagster.yaml
+        - mount_path: /opt/dagster/test_mount_path/volume_mounted_file.yaml
+          name: test-volume
+          sub_path: volume_mounted_file.yaml
       image_pull_secrets:
       - name: test-image-pull-secret
       restart_policy: Never
@@ -96,6 +99,9 @@ spec:
       - config_map:
           name: dagster-instance
         name: dagster-instance
+      - config_map:
+          name: test-volume-configmap
+        name: test-volume
   ttl_seconds_after_finished: 86400
 """
 
@@ -146,6 +152,9 @@ spec:
         - mount_path: /opt/dagster/dagster_home/dagster.yaml
           name: dagster-instance
           sub_path: dagster.yaml
+        - mount_path: /opt/dagster/test_mount_path/volume_mounted_file.yaml
+          name: test-volume
+          sub_path: volume_mounted_file.yaml
       image_pull_secrets:
       - name: test-image-pull-secret
       restart_policy: Never
@@ -154,6 +163,9 @@ spec:
       - config_map:
           name: dagster-instance
         name: dagster-instance
+      - config_map:
+          name: test-volume-configmap
+        name: test-volume
   ttl_seconds_after_finished: {ttl_seconds_after_finished}
 """
 

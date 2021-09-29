@@ -74,6 +74,35 @@ def test_k8s_run_launcher_default(
 
 
 @pytest.mark.integration
+def test_k8s_run_launcher_volume_mounts(
+    dagster_instance_for_k8s_run_launcher, helm_namespace_for_k8s_run_launcher, dagster_docker_image
+):
+    run_config = merge_dicts(
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
+        {
+            "execution": {
+                "k8s": {
+                    "config": {
+                        "job_namespace": helm_namespace_for_k8s_run_launcher,
+                        "job_image": dagster_docker_image,
+                        "image_pull_policy": image_pull_policy(),
+                        "env_config_maps": ["dagster-pipeline-env"]
+                        + ([TEST_AWS_CONFIGMAP_NAME] if not IS_BUILDKITE else []),
+                    }
+                }
+            },
+        },
+    )
+    _launch_executor_run(
+        run_config,
+        dagster_instance_for_k8s_run_launcher,
+        helm_namespace_for_k8s_run_launcher,
+        pipeline_name="volume_mount_pipeline",
+        num_steps=1,
+    )
+
+
+@pytest.mark.integration
 def test_k8s_executor_get_config_from_run_launcher(
     dagster_instance_for_k8s_run_launcher, helm_namespace_for_k8s_run_launcher, dagster_docker_image
 ):
@@ -160,8 +189,9 @@ def _launch_executor_run(
     run_config,
     dagster_instance_for_k8s_run_launcher,
     helm_namespace_for_k8s_run_launcher,
+    pipeline_name="demo_k8s_executor_pipeline",
+    num_steps=2,
 ):
-    pipeline_name = "demo_k8s_executor_pipeline"
     tags = {"key": "value"}
 
     with get_test_project_external_pipeline_hierarchy(
@@ -206,7 +236,7 @@ def _launch_executor_run(
                     if ("Executing step" in event.message and "in Kubernetes job" in event.message)
                 ]
             )
-            == 2
+            == num_steps
         )
 
         return run.run_id
