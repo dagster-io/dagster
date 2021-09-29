@@ -22,7 +22,9 @@ class ExecuteInProcessResult:
         self._event_list = all_events
         self._run_id = run_id
 
-        self._output_capture = check.opt_dict_param(output_capture, "output_capture", key_type=str)
+        self._output_capture = check.opt_dict_param(
+            output_capture, "output_capture", key_type=StepOutputHandle
+        )
 
     @property
     def success(self) -> bool:
