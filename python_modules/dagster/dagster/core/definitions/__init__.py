@@ -63,7 +63,7 @@ from .executor import (
 )
 from .graph import GraphDefinition
 from .hook import HookDefinition
-from .input import In, InputDefinition, InputMapping, GraphIn
+from .input import GraphIn, In, InputDefinition, InputMapping
 from .intermediate_storage import IntermediateStorageDefinition, intermediate_storage
 from .job import JobDefinition
 from .logger import LoggerDefinition, build_init_logger_context, logger
@@ -72,10 +72,10 @@ from .op import OpDefinition
 from .output import (
     DynamicOut,
     DynamicOutputDefinition,
+    GraphOut,
     Out,
     OutputDefinition,
     OutputMapping,
-    GraphOut,
 )
 from .partition import Partition, PartitionScheduleDefinition, PartitionSetDefinition
 from .partitioned_schedule import schedule_from_partitions
