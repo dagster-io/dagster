@@ -1,13 +1,9 @@
-from dagster import daily_partitioned_config, schedule_from_partitions
+from dagster import schedule
 
-from {{ repo_name }}.graphs.my_graph import my_graph
+from {{ repo_name }}.graphs.say_hello import say_hello_job
 
 
-@daily_partitioned_config(start_date="2021-01-01", timezone="US/Central")
-def my_daily_config(_start, _end):
+@schedule(cron_schedule="0 * * * *", job=say_hello_job, execution_timezone="US/Central")
+def my_hourly_schedule(_context):
     run_config = {}
     return run_config
-
-
-my_hourly_job = my_graph.to_job(config=my_daily_config)
-my_hourly_schedule = schedule_from_partitions(my_hourly_job)
