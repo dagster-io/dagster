@@ -74,11 +74,7 @@ def docker_compose_down(docker_compose_yml, context, service):
     compose_command += [
         "--file",
         str(docker_compose_yml),
-        "down",
-    ]
-
-    if service:
-        compose_command.append(service)
+    ] + (["rm", "-s", service] if service else ["down"])
 
     subprocess.check_call(compose_command)
 
