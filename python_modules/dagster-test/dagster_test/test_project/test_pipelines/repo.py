@@ -35,6 +35,7 @@ from dagster.utils.yaml_utils import merge_yamls
 from dagster_aws.s3 import s3_plus_default_intermediate_storage_defs, s3_resource
 from dagster_gcp.gcs.resources import gcs_resource
 from dagster_gcp.gcs.system_storage import gcs_plus_default_intermediate_storage_defs
+from dagster_docker import docker_executor
 
 IS_BUILDKITE = bool(os.getenv("BUILDKITE"))
 
@@ -111,6 +112,22 @@ def hanging_pipeline():
 )
 def demo_pipeline():
     count_letters(multiply_the_word())
+
+
+def define_demo_pipeline_docker():
+    @pipeline(
+        mode_defs=[
+            ModeDefinition(
+                intermediate_storage_defs=s3_plus_default_intermediate_storage_defs,
+                resource_defs={"s3": s3_resource},
+                executor_defs=[docker_executor],
+            )
+        ]
+    )
+    def demo_pipeline_docker():
+        count_letters(multiply_the_word())
+
+    return demo_pipeline_docker
 
 
 def define_demo_pipeline_celery():
@@ -511,6 +528,7 @@ def define_demo_execution_repo():
         return {
             "pipelines": {
                 "demo_pipeline_celery": define_demo_pipeline_celery,
+                "demo_pipeline_docker": define_demo_pipeline_docker,
                 "large_pipeline_celery": define_large_pipeline_celery,
                 "long_running_pipeline_celery": define_long_running_pipeline_celery,
                 "optional_outputs": optional_outputs,

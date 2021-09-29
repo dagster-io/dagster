@@ -185,6 +185,7 @@ class ActiveExecution:
                         if len(missing_source_handles) == len(
                             step_input.get_step_output_handle_dependencies()
                         ):
+
                             should_skip = True
                             break
 
@@ -471,3 +472,20 @@ class ActiveExecution:
         if step_key in self._gathering_dynamic_outputs:
             self._successful_dynamic_outputs[step_key] = self._gathering_dynamic_outputs[step_key]
             self._new_dynamic_mappings = True
+
+    def rebuild_from_events(self, dagster_events: List[DagsterEvent]) -> None:
+        """
+        Replay events to rebuild the execution state and continue after a failure.
+        """
+        possibly_in_flight = set()
+
+        def collect_possibly_launched_steps():
+            steps = self.get_steps_to_execute()
+            for step in steps:
+                possibly_in_flight.add(step.step_key)
+
+        for event in dagster_events:
+            collect_possibly_launched_steps()
+            self.handle_event(event)
+
+        collect_possibly_launched_steps()
