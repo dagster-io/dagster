@@ -19,17 +19,17 @@ from docs_snippets_crag.concepts.solids_pipelines.pipelines import (
 
 def test_one_plus_one():
     result = one_plus_one.execute_in_process()
-    assert result.result_for_node("add_one").output_value() == 2
+    assert result.output_for_node("add_one") == 2
 
 
 def test_one_plus_one_graph_def():
     result = one_plus_one_graph_def.execute_in_process()
-    assert result.result_for_node("add_one").output_value() == 2
+    assert result.output_for_node("add_one") == 2
 
 
 def test_linear():
     result = linear.execute_in_process()
-    assert result.result_for_node("add_one_3").output_value() == 4
+    assert result.output_for_node("add_one_3") == 4
 
 
 def test_other_graphs():
@@ -48,7 +48,7 @@ def test_other_graphs():
 def test_fan_in():
     result = fan_in.execute_in_process()
     assert result.success
-    assert result.result_for_node("sum_fan_in").output_value() == 10
+    assert result.output_for_node("sum_fan_in") == 10
 
 
 def test_dynamic():
@@ -57,5 +57,5 @@ def test_dynamic():
 
 
 def test_dep_dsl():
-    result = define_dep_dsl_graph().execute_in_process(config={"A": {"inputs": {"num": 0}}})
+    result = define_dep_dsl_graph().execute_in_process(run_config={"A": {"inputs": {"num": 0}}})
     assert result.success

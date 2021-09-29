@@ -259,7 +259,7 @@ def test_custom_dagster_dataframe_parametrizable_input():
         }
     )
     assert result.success
-    output_df = result.result_for_node("did_i_win").output_value()
+    output_df = result.output_for_node("did_i_win")
     assert isinstance(output_df, DataFrame)
     assert output_df["foo"].tolist() == ["goat"]
     materialization_events = [event for event in result.event_list if event.is_step_materialization]
