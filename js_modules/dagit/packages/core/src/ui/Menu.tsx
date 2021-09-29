@@ -44,7 +44,7 @@ const intentToIconColor = (intent: React.ComponentProps<typeof MenuItem>['intent
 };
 
 interface ItemProps extends Omit<React.ComponentProps<typeof MenuItem>, 'icon'> {
-  icon?: IconName;
+  icon?: IconName | JSX.Element;
 }
 
 export const MenuItemWIP: React.FC<ItemProps> = (props) => {
@@ -52,9 +52,17 @@ export const MenuItemWIP: React.FC<ItemProps> = (props) => {
 
   const textColor = intentToTextColor(intent);
   const iconColor = intentToIconColor(intent);
-  const iconWithColor = icon ? <IconWIP name={icon} color={iconColor} /> : null;
+  const iconWithColor = () => {
+    if (icon) {
+      if (typeof icon === 'string') {
+        return <IconWIP name={icon} color={iconColor} />;
+      }
+      return icon;
+    }
+    return null;
+  };
 
-  return <StyledMenuItem {...rest} $textColor={textColor} icon={iconWithColor} />;
+  return <StyledMenuItem {...rest} $textColor={textColor} icon={iconWithColor()} />;
 };
 
 export const MenuDividerWIP = styled(MenuDivider)`
@@ -80,6 +88,14 @@ const StyledMenuItem = styled(MenuItem)<StyledMenuItemProps>`
 
   ${IconWrapper} {
     padding-top: 2px;
+  }
+
+  &.bp3-disabled ${IconWrapper} {
+    opacity: 0.5;
+  }
+
+  &.bp3-active ${IconWrapper} {
+    color: ${ColorsWIP.White};
   }
 
   ${IconWrapper}:first-child {

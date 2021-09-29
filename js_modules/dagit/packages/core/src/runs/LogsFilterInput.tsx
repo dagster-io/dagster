@@ -1,8 +1,9 @@
-import {Colors, Popover} from '@blueprintjs/core';
+import {Colors} from '@blueprintjs/core';
 import Fuse from 'fuse.js';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {Popover} from '../ui/Popover';
 import {SuggestionProvider} from '../ui/TokenizingField';
 import {useSuggestionsForString} from '../ui/useSuggestionsForString';
 
@@ -143,8 +144,6 @@ export const LogsFilterInput: React.FC<Props> = (props) => {
 
   return (
     <Popover
-      minimal
-      usePortal
       isOpen={shown && suggestions.length > 0}
       position="bottom-left"
       content={
@@ -219,7 +218,7 @@ const Results = styled.ul`
   max-width: 800px;
   min-width: 300px;
   overflow-y: auto;
-  padding: 0;
+  padding: 4px 0;
 `;
 
 interface HighlightableTextProps {

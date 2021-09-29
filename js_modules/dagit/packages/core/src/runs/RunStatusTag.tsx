@@ -1,10 +1,11 @@
-import {Popover, Tag} from '@blueprintjs/core';
+import {Tag} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {assertUnreachable} from '../app/Util';
 import {PipelineRunStatus} from '../types/globalTypes';
 import {Group} from '../ui/Group';
+import {Popover} from '../ui/Popover';
 import {Spinner} from '../ui/Spinner';
 
 import {RunStats} from './RunStats';
@@ -83,8 +84,8 @@ export const RunStatusTagWithStats = (props: Props) => {
   const {runId, status} = props;
   return (
     <Popover
-      position={'bottom'}
-      interactionKind={'hover'}
+      position="bottom-left"
+      interactionKind="hover"
       content={<RunStats runId={runId} />}
       hoverOpenDelay={100}
       usePortal

@@ -1,14 +1,5 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import {
-  Classes,
-  NonIdealState,
-  Colors,
-  Button,
-  Menu,
-  MenuItem,
-  Popover,
-  Dialog,
-} from '@blueprintjs/core';
+import {Classes, NonIdealState, Colors, Button, Menu, MenuItem, Dialog} from '@blueprintjs/core';
 import * as qs from 'query-string';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -26,6 +17,8 @@ import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {HighlightedCodeBlock} from '../ui/HighlightedCodeBlock';
 import {IconWIP} from '../ui/Icon';
+import {MenuItemWIP, MenuWIP} from '../ui/Menu';
+import {Popover} from '../ui/Popover';
 import {Spinner} from '../ui/Spinner';
 import {Table} from '../ui/Table';
 import {FontFamily} from '../ui/styles';
@@ -182,7 +175,7 @@ const NextTickMenu: React.FC<{
   return (
     <>
       <Popover
-        content={<Menu>{menuItems}</Menu>}
+        content={<MenuWIP>{menuItems}</MenuWIP>}
         position="bottom-right"
         onOpening={() => {
           if (!called) {
@@ -212,19 +205,19 @@ const NextTickMenuItems: React.FC<{
   onItemOpen: (value: boolean) => void;
 }> = ({repoAddress, schedule, evaluationResult, loading, onItemOpen}) => {
   if (!evaluationResult) {
-    return <MenuItem text="Could not preview tick for this schedule" />;
+    return <MenuItemWIP text="Could not preview tick for this schedule" />;
   }
 
   if (evaluationResult.skipReason) {
-    return <MenuItem text={`View skip reason...`} onClick={() => onItemOpen(true)} />;
+    return <MenuItemWIP text={`View skip reason...`} onClick={() => onItemOpen(true)} />;
   }
 
   if (evaluationResult.error) {
-    return <MenuItem text="View error..." onClick={() => onItemOpen(true)} />;
+    return <MenuItemWIP text="View error..." onClick={() => onItemOpen(true)} />;
   }
 
   if (!evaluationResult.runRequests || !evaluationResult.runRequests.length) {
-    return <MenuItem text="No runs requested for this projected schedule tick" />;
+    return <MenuItemWIP text="No runs requested for this projected schedule tick" />;
   }
 
   if (evaluationResult.runRequests.length === 1) {
@@ -232,12 +225,12 @@ const NextTickMenuItems: React.FC<{
     const runConfigYaml = runRequest ? runRequest.runConfigYaml : '';
     return (
       <>
-        <MenuItem
+        <MenuItemWIP
           text={loading ? 'Loading Configuration...' : 'View Configuration...'}
-          icon="share"
+          icon="open_in_new"
           onClick={() => onItemOpen(true)}
         />
-        <MenuItem
+        <MenuItemWIP
           text="Open in Playground..."
           icon="edit"
           target="_blank"
@@ -255,7 +248,7 @@ const NextTickMenuItems: React.FC<{
   }
 
   return (
-    <MenuItem
+    <MenuItemWIP
       text={`View ${evaluationResult.runRequests.length} run requests...`}
       icon="edit"
       target="_blank"

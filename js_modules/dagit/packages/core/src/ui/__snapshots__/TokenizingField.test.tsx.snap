@@ -2,135 +2,127 @@
 
 exports[`renders empty [snapshot] 1`] = `
 <span
-  className="bp3-popover-wrapper"
+  className="bp3-popover2-target"
+  onClick={[Function]}
 >
-  <span
-    className="bp3-popover-target"
+  <div
+    className="bp3-input bp3-tag-input TokenizingField__StyledTagInput-hbbfxn-0 cSUccq"
+    onBlur={[Function]}
     onClick={[Function]}
   >
     <div
-      className="bp3-input bp3-tag-input TokenizingField__StyledTagInput-hbbfxn-0 cSUccq"
-      onBlur={[Function]}
-      onClick={[Function]}
+      className="bp3-tag-input-values"
     >
-      <div
-        className="bp3-tag-input-values"
-      >
-        <input
-          className="bp3-input-ghost"
-          onBlur={[Function]}
-          onChange={[Function]}
-          onFocus={[Function]}
-          onKeyDown={[Function]}
-          onKeyUp={[Function]}
-          onPaste={[Function]}
-          placeholder="Filter…"
-          value=""
-        />
-      </div>
+      <input
+        className="bp3-input-ghost"
+        onBlur={[Function]}
+        onChange={[Function]}
+        onFocus={[Function]}
+        onKeyDown={[Function]}
+        onKeyUp={[Function]}
+        onPaste={[Function]}
+        placeholder="Filter…"
+        value=""
+      />
     </div>
-  </span>
+  </div>
 </span>
 `;
 
 exports[`renders with tokens [snapshot] 1`] = `
 <span
-  className="bp3-popover-wrapper"
+  className="bp3-popover2-target"
+  onClick={[Function]}
 >
-  <span
-    className="bp3-popover-target"
+  <div
+    className="bp3-input bp3-tag-input TokenizingField__StyledTagInput-hbbfxn-0 cSUccq"
+    onBlur={[Function]}
     onClick={[Function]}
   >
     <div
-      className="bp3-input bp3-tag-input TokenizingField__StyledTagInput-hbbfxn-0 cSUccq"
-      onBlur={[Function]}
-      onClick={[Function]}
+      className="bp3-tag-input-values"
     >
-      <div
-        className="bp3-tag-input-values"
+      <span
+        className="bp3-tag bp3-minimal"
+        data-tag-index={0}
       >
         <span
-          className="bp3-tag bp3-minimal"
-          data-tag-index={0}
+          className="bp3-text-overflow-ellipsis bp3-fill"
+        >
+          pipeline:composition
+        </span>
+        <button
+          className="bp3-tag-remove"
+          onClick={[Function]}
+          type="button"
         >
           <span
-            className="bp3-text-overflow-ellipsis bp3-fill"
+            className="bp3-icon bp3-icon-small-cross"
+            icon="small-cross"
           >
-            pipeline:composition
-          </span>
-          <button
-            className="bp3-tag-remove"
-            onClick={[Function]}
-            type="button"
-          >
-            <span
-              className="bp3-icon bp3-icon-small-cross"
-              icon="small-cross"
+            <svg
+              data-icon="small-cross"
+              height={16}
+              viewBox="0 0 16 16"
+              width={16}
             >
-              <svg
-                data-icon="small-cross"
-                height={16}
-                viewBox="0 0 16 16"
-                width={16}
-              >
-                <desc>
-                  small-cross
-                </desc>
-                <path
-                  d="M9.41 8l2.29-2.29c.19-.18.3-.43.3-.71a1.003 1.003 0 00-1.71-.71L8 6.59l-2.29-2.3a1.003 1.003 0 00-1.42 1.42L6.59 8 4.3 10.29c-.19.18-.3.43-.3.71a1.003 1.003 0 001.71.71L8 9.41l2.29 2.29c.18.19.43.3.71.3a1.003 1.003 0 00.71-1.71L9.41 8z"
-                  fillRule="evenodd"
-                />
-              </svg>
-            </span>
-          </button>
-        </span>
+              <desc>
+                small-cross
+              </desc>
+              <path
+                d="M9.41 8l2.29-2.29c.19-.18.3-.43.3-.71a1.003 1.003 0 00-1.71-.71L8 6.59l-2.29-2.3a1.003 1.003 0 00-1.42 1.42L6.59 8 4.3 10.29c-.19.18-.3.43-.3.71a1.003 1.003 0 001.71.71L8 9.41l2.29 2.29c.18.19.43.3.71.3a1.003 1.003 0 00.71-1.71L9.41 8z"
+                fillRule="evenodd"
+              />
+            </svg>
+          </span>
+        </button>
+      </span>
+      <span
+        className="bp3-tag bp3-minimal"
+        data-tag-index={1}
+      >
         <span
-          className="bp3-tag bp3-minimal"
-          data-tag-index={1}
+          className="bp3-text-overflow-ellipsis bp3-fill"
+        >
+          freeform
+        </span>
+        <button
+          className="bp3-tag-remove"
+          onClick={[Function]}
+          type="button"
         >
           <span
-            className="bp3-text-overflow-ellipsis bp3-fill"
+            className="bp3-icon bp3-icon-small-cross"
+            icon="small-cross"
           >
-            freeform
-          </span>
-          <button
-            className="bp3-tag-remove"
-            onClick={[Function]}
-            type="button"
-          >
-            <span
-              className="bp3-icon bp3-icon-small-cross"
-              icon="small-cross"
+            <svg
+              data-icon="small-cross"
+              height={16}
+              viewBox="0 0 16 16"
+              width={16}
             >
-              <svg
-                data-icon="small-cross"
-                height={16}
-                viewBox="0 0 16 16"
-                width={16}
-              >
-                <desc>
-                  small-cross
-                </desc>
-                <path
-                  d="M9.41 8l2.29-2.29c.19-.18.3-.43.3-.71a1.003 1.003 0 00-1.71-.71L8 6.59l-2.29-2.3a1.003 1.003 0 00-1.42 1.42L6.59 8 4.3 10.29c-.19.18-.3.43-.3.71a1.003 1.003 0 001.71.71L8 9.41l2.29 2.29c.18.19.43.3.71.3a1.003 1.003 0 00.71-1.71L9.41 8z"
-                  fillRule="evenodd"
-                />
-              </svg>
-            </span>
-          </button>
-        </span>
-        <input
-          className="bp3-input-ghost"
-          onBlur={[Function]}
-          onChange={[Function]}
-          onFocus={[Function]}
-          onKeyDown={[Function]}
-          onKeyUp={[Function]}
-          onPaste={[Function]}
-          value=""
-        />
-      </div>
+              <desc>
+                small-cross
+              </desc>
+              <path
+                d="M9.41 8l2.29-2.29c.19-.18.3-.43.3-.71a1.003 1.003 0 00-1.71-.71L8 6.59l-2.29-2.3a1.003 1.003 0 00-1.42 1.42L6.59 8 4.3 10.29c-.19.18-.3.43-.3.71a1.003 1.003 0 001.71.71L8 9.41l2.29 2.29c.18.19.43.3.71.3a1.003 1.003 0 00.71-1.71L9.41 8z"
+                fillRule="evenodd"
+              />
+            </svg>
+          </span>
+        </button>
+      </span>
+      <input
+        className="bp3-input-ghost"
+        onBlur={[Function]}
+        onChange={[Function]}
+        onFocus={[Function]}
+        onKeyDown={[Function]}
+        onKeyUp={[Function]}
+        onPaste={[Function]}
+        value=""
+      />
     </div>
-  </span>
+  </div>
 </span>
 `;
