@@ -5,14 +5,12 @@ from dagster.core.definitions import (
     GraphDefinition,
     NodeDefinition,
     PipelineDefinition,
-    ResourceDefinition,
     SolidDefinition,
 )
 from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.io_manager import IOManager, IOManagerDefinition
 
 from .api import (
     ExecuteRunWithPlanIterable,
