@@ -580,10 +580,8 @@ class PendingNodeInvocation:
                 "constructed using the `@graph` decorator support this method."
             )
 
-        from dagster.core.execution.execute_in_process import (
-            core_execute_in_process,
-            wrap_resources_for_execution,
-        )
+        from dagster.core.execution.build_resources import wrap_resources_for_execution
+        from dagster.core.execution.execute_in_process import core_execute_in_process
         from .mode import ModeDefinition
         from .job import JobDefinition
         from .executor import execute_in_process_executor
