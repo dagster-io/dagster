@@ -17,6 +17,10 @@ The replacement for :py:class:`composite_solid` / :py:class:`CompositeSolidDefin
 .. autoclass:: GraphDefinition
     :members:
 
+.. autoclass:: GraphIn
+
+.. autoclass:: GraphOut
+
 Job
 ---
 

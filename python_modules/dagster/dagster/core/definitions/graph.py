@@ -684,7 +684,7 @@ def _validate_in_mappings(
             target_type = target_input.dagster_type
             fan_in_msg = ""
 
-        if target_type != mapping.definition.dagster_type:
+        if target_type != mapping.definition.dagster_type and class_name != "GraphDefinition":
             raise DagsterInvalidDefinitionError(
                 "In {class_name} '{name}' input "
                 "'{mapping.definition.name}' of type {mapping.definition.dagster_type.display_name} maps to "
@@ -747,8 +747,10 @@ def _validate_out_mappings(
 
             target_output = target_solid.output_def_named(mapping.maps_from.output_name)
 
-            if mapping.definition.dagster_type.kind != DagsterTypeKind.ANY and (
-                target_output.dagster_type != mapping.definition.dagster_type
+            if (
+                mapping.definition.dagster_type.kind != DagsterTypeKind.ANY
+                and (target_output.dagster_type != mapping.definition.dagster_type)
+                and class_name != "GraphDefinition"
             ):
                 raise DagsterInvalidDefinitionError(
                     "In {class_name} '{name}' output "
