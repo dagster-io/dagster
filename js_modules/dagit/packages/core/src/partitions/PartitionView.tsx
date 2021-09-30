@@ -1,4 +1,4 @@
-import {Button, Dialog, Colors} from '@blueprintjs/core';
+import {Button} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
@@ -12,6 +12,7 @@ import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useQueryPersistedRunFilters} from '../runs/RunsFilter';
 import {Box} from '../ui/Box';
 import {CursorHistoryControls} from '../ui/CursorControls';
+import {DialogWIP} from '../ui/Dialog';
 import {Spinner} from '../ui/Spinner';
 import {RepoAddress} from '../workspace/types';
 
@@ -103,11 +104,11 @@ export const PartitionView: React.FC<PartitionViewProps> = ({
 
   return (
     <div>
-      <Dialog
+      <DialogWIP
         canEscapeKeyClose={!blockDialog}
         canOutsideClickClose={!blockDialog}
         onClose={() => setShowBackfillSetup(false)}
-        style={{width: 800, background: Colors.WHITE}}
+        style={{width: 800}}
         title={`Launch ${partitionSet.name} backfill`}
         isOpen={showBackfillSetup}
       >
@@ -124,7 +125,7 @@ export const PartitionView: React.FC<PartitionViewProps> = ({
             repoAddress={repoAddress}
           />
         )}
-      </Dialog>
+      </DialogWIP>
       <PartitionPagerContainer>
         {flagPipelineModeTuples && partitionSetsForMode.length <= 1 ? null : (
           <>

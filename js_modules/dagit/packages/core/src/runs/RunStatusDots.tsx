@@ -1,8 +1,9 @@
-import {Popover, Colors} from '@blueprintjs/core';
+import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled, {css, keyframes} from 'styled-components/macro';
 
 import {PipelineRunStatus} from '../types/globalTypes';
+import {Popover} from '../ui/Popover';
 import {Spinner} from '../ui/Spinner';
 
 import {RunStats} from './RunStats';
@@ -23,8 +24,8 @@ const RUN_STATUS_COLORS = {
 export const RunStatusWithStats: React.FC<RunStatusProps & {runId: string}> = React.memo(
   ({runId, ...rest}) => (
     <Popover
-      position={'bottom'}
-      interactionKind={'hover'}
+      position="bottom"
+      interactionKind="hover"
       content={<RunStats runId={runId} />}
       hoverOpenDelay={100}
     >

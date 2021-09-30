@@ -86,8 +86,9 @@ const RUN_STATS_QUERY = gql`
 
 const RunStatsDetailsContainer = styled.div`
   min-width: 200px;
-  padding: 20px;
+  padding: 12px;
   color: white;
+  font-size: 12px;
   & > a {
     display: block;
   }

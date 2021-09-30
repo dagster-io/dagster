@@ -200,6 +200,8 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             service_account_name=exc_config.get("service_account_name"),
             env_config_maps=exc_config.get("env_config_maps"),
             env_secrets=exc_config.get("env_secrets"),
+            volume_mounts=exc_config.get("volume_mounts"),
+            volumes=exc_config.get("volumes"),
         )
 
         self._instance.add_run_tags(

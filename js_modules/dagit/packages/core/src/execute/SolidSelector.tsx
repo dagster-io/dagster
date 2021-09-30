@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors, Intent, Popover} from '@blueprintjs/core';
+import {Colors, Intent} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -10,6 +10,7 @@ import {PipelineGraph, PIPELINE_GRAPH_SOLID_FRAGMENT} from '../graph/PipelineGra
 import {SVGViewport} from '../graph/SVGViewport';
 import {getDagrePipelineLayout} from '../graph/getFullSolidLayout';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
+import {Popover} from '../ui/Popover';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -159,16 +160,24 @@ export const SolidSelector = (props: ISolidSelectorProps) => {
     }
   };
 
+  if (!data?.pipelineOrError) {
+    return null;
+  }
+
   return (
-    <div style={{position: 'relative'}}>
+    <div>
       <Popover
-        autoFocus={false}
         isOpen={focused}
-        minimal
-        modifiers={{arrow: {enabled: false}, offset: {enabled: true, offset: '0, 8px'}}}
         position="bottom-left"
+        content={
+          <SolidSelectorModal
+            pipelineOrError={data.pipelineOrError}
+            errorMessage={errorMessage}
+            queryResultSolids={queryResultSolids}
+          />
+        }
       >
-        <ShortcutHandler shortcutLabel={'⌥S'} shortcutFilter={(e) => e.keyCode === 83 && e.altKey}>
+        <ShortcutHandler shortcutLabel="⌥S" shortcutFilter={(e) => e.keyCode === 83 && e.altKey}>
           <GraphQueryInput
             width={(pending !== '*' && pending !== '') || focused ? 350 : 90}
             intent={errorMessage ? Intent.DANGER : Intent.NONE}
@@ -193,13 +202,6 @@ export const SolidSelector = (props: ISolidSelectorProps) => {
             }}
           />
         </ShortcutHandler>
-        {data?.pipelineOrError && (
-          <SolidSelectorModal
-            pipelineOrError={data?.pipelineOrError}
-            errorMessage={errorMessage}
-            queryResultSolids={queryResultSolids}
-          />
-        )}
       </Popover>
     </div>
   );

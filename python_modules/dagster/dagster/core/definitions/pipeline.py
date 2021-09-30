@@ -867,9 +867,14 @@ def _checked_input_resource_reqs_for_mode(
     dependency_structure: DependencyStructure,
     node_dict: Dict[str, Node],
     mode_def: ModeDefinition,
-    outer_dependency_structure: Optional[DependencyStructure] = None,
-    outer_solid: Optional[Node] = None,
+    outer_dependency_structures: Optional[List[DependencyStructure]] = None,
+    outer_solids: Optional[List[Node]] = None,
 ) -> Set[str]:
+    outer_dependency_structures = check.opt_list_param(
+        outer_dependency_structures, "outer_dependency_structures", DependencyStructure
+    )
+    outer_solids = check.opt_list_param(outer_solids, "outer_solids", Node)
+
     resource_reqs = set()
     mode_root_input_managers = set(
         key
@@ -886,8 +891,9 @@ def _checked_input_resource_reqs_for_mode(
                     dependency_structure=graph_def.dependency_structure,
                     node_dict=graph_def.node_dict,
                     mode_def=mode_def,
-                    outer_dependency_structure=dependency_structure,
-                    outer_solid=node,
+                    outer_dependency_structures=outer_dependency_structures
+                    + [dependency_structure],
+                    outer_solids=outer_solids + [node],
                 )
             )
         for handle in node.input_handles():
@@ -895,19 +901,30 @@ def _checked_input_resource_reqs_for_mode(
             if dependency_structure.has_deps(handle):
                 # input is connected to outputs from the same dependency structure
                 source_output_handles = dependency_structure.get_deps_list(handle)
-            elif (
-                outer_solid
-                and outer_dependency_structure
-                and node.container_maps_input(handle.input_name)
-            ):
+            else:
                 # input is connected to outputs from outer dependency structure, e.g. first solids
                 # in a composite
-                outer_handle = SolidInputHandle(
-                    solid=outer_solid,
-                    input_def=node.container_mapped_input(handle.input_name).definition,
-                )
-                if outer_dependency_structure.has_deps(outer_handle):
-                    source_output_handles = outer_dependency_structure.get_deps_list(outer_handle)
+                curr_node = node
+                curr_handle = handle
+                curr_index = len(outer_solids) - 1
+
+                # Checks to see if input is mapped to an outer dependency structure
+                while curr_index >= 0 and curr_node.container_maps_input(curr_handle.input_name):
+                    curr_handle = SolidInputHandle(
+                        solid=outer_solids[curr_index],
+                        input_def=curr_node.container_mapped_input(
+                            curr_handle.input_name
+                        ).definition,
+                    )
+
+                    if outer_dependency_structures[curr_index].has_deps(curr_handle):
+                        source_output_handles = outer_dependency_structures[
+                            curr_index
+                        ].get_deps_list(curr_handle)
+                        break
+
+                    curr_node = outer_solids[curr_index]
+                    curr_index -= 1
 
             if source_output_handles:
                 # input is connected to source output handles within the graph

@@ -537,9 +537,9 @@ class GraphDefinition(NodeDefinition):
         Returns:
             InProcessGraphResult
         """
+        from dagster.core.execution.build_resources import wrap_resources_for_execution
         from dagster.core.execution.execute_in_process import core_execute_in_process
         from dagster.core.instance import DagsterInstance
-        from dagster.core.storage.io_manager import IOManagerDefinition, IOManager
         from .job import JobDefinition
         from .executor import execute_in_process_executor
 
@@ -551,21 +551,10 @@ class GraphDefinition(NodeDefinition):
         instance = check.opt_inst_param(instance, "instance", DagsterInstance)
         resources = check.opt_dict_param(resources, "resources", key_type=str)
 
-        resource_defs = {}
-        # Wrap instantiated resource values in a resource definition.
-        # If an instantiated IO manager is provided, wrap it in an IO manager definition.
-        for resource_key, resource in resources.items():
-            if isinstance(resource, ResourceDefinition):
-                resource_defs[resource_key] = resource
-            elif isinstance(resource, IOManager):
-                resource_defs[resource_key] = IOManagerDefinition.hardcoded_io_manager(resource)
-            else:
-                resource_defs[resource_key] = ResourceDefinition.hardcoded_resource(resource)
-
+        resource_defs = wrap_resources_for_execution(resources)
         in_proc_mode = ModeDefinition(
             executor_defs=[execute_in_process_executor], resource_defs=resource_defs
         )
-
         ephemeral_job = JobDefinition(name=self._name, graph_def=self, mode_def=in_proc_mode)
 
         run_config = {"ops": config if config is not None else {}}
@@ -684,7 +673,7 @@ def _validate_in_mappings(
             target_type = target_input.dagster_type
             fan_in_msg = ""
 
-        if target_type != mapping.definition.dagster_type:
+        if target_type != mapping.definition.dagster_type and class_name != "GraphDefinition":
             raise DagsterInvalidDefinitionError(
                 "In {class_name} '{name}' input "
                 "'{mapping.definition.name}' of type {mapping.definition.dagster_type.display_name} maps to "
@@ -747,8 +736,10 @@ def _validate_out_mappings(
 
             target_output = target_solid.output_def_named(mapping.maps_from.output_name)
 
-            if mapping.definition.dagster_type.kind != DagsterTypeKind.ANY and (
-                target_output.dagster_type != mapping.definition.dagster_type
+            if (
+                mapping.definition.dagster_type.kind != DagsterTypeKind.ANY
+                and (target_output.dagster_type != mapping.definition.dagster_type)
+                and class_name != "GraphDefinition"
             ):
                 raise DagsterInvalidDefinitionError(
                     "In {class_name} '{name}' output "

@@ -1,8 +1,10 @@
 import {useMutation} from '@apollo/client';
-import {Button, Classes, Dialog, ProgressBar} from '@blueprintjs/core';
+import {ProgressBar} from '@blueprintjs/core';
 import * as React from 'react';
 
+import {ButtonWIP} from '../ui/Button';
 import {ColorsWIP} from '../ui/Colors';
+import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
 import {Mono} from '../ui/Text';
@@ -189,32 +191,32 @@ export const DeletionDialog = (props: Props) => {
       case 'initial':
         return (
           <>
-            <Button intent="none" onClick={onClose}>
+            <ButtonWIP intent="none" onClick={onClose}>
               Cancel
-            </Button>
-            <Button intent="danger" onClick={mutate}>
+            </ButtonWIP>
+            <ButtonWIP intent="danger" onClick={mutate}>
               {`Yes, delete ${`${count} ${count === 1 ? 'run' : 'runs'}`}`}
-            </Button>
+            </ButtonWIP>
             {terminatableCount ? (
-              <Button intent="primary" onClick={onTerminateInstead}>
+              <ButtonWIP intent="primary" onClick={onTerminateInstead}>
                 {`Terminate ${`${terminatableCount} ${
                   terminatableCount === 1 ? 'run' : 'runs'
                 }`} instead`}
-              </Button>
+              </ButtonWIP>
             ) : null}
           </>
         );
       case 'deleting':
         return (
-          <Button intent="danger" disabled>
+          <ButtonWIP intent="danger" disabled>
             Deleting…
-          </Button>
+          </ButtonWIP>
         );
       case 'completed':
         return (
-          <Button intent="primary" onClick={onClose}>
+          <ButtonWIP intent="primary" onClick={onClose}>
             Done
-          </Button>
+          </ButtonWIP>
         );
     }
   };
@@ -267,7 +269,7 @@ export const DeletionDialog = (props: Props) => {
   const canQuicklyClose = state.step !== 'deleting';
 
   return (
-    <Dialog
+    <DialogWIP
       isOpen={isOpen}
       title="Delete runs"
       canEscapeKeyClose={canQuicklyClose}
@@ -275,15 +277,13 @@ export const DeletionDialog = (props: Props) => {
       isCloseButtonShown={canQuicklyClose}
       onClose={onClose}
     >
-      <div className={Classes.DIALOG_BODY}>
+      <DialogBody>
         <Group direction="column" spacing={24}>
           {progressContent()}
           {completionContent()}
         </Group>
-      </div>
-      <div className={Classes.DIALOG_FOOTER}>
-        <div className={Classes.DIALOG_FOOTER_ACTIONS}>{buttons()}</div>
-      </div>
-    </Dialog>
+      </DialogBody>
+      <DialogFooter>{buttons()}</DialogFooter>
+    </DialogWIP>
   );
 };

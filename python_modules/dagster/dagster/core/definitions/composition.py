@@ -1,8 +1,22 @@
 import warnings
 from collections import namedtuple
-from typing import AbstractSet, Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Callable,
+    Dict,
+    List,
+    NamedTuple,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+    Union,
+)
 
 from dagster import check
+from dagster.core.definitions.graph import GraphDefinition
 from dagster.core.definitions.input import InputDefinition, InputMapping
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.errors import (
@@ -11,6 +25,7 @@ from dagster.core.errors import (
     DagsterInvariantViolationError,
 )
 from dagster.utils import frozentags
+from dagster.utils.backcompat import experimental
 
 from .config import ConfigMapping
 from .decorators.solid import (
@@ -27,9 +42,19 @@ from .dependency import (
 )
 from .hook import HookDefinition
 from .inference import infer_output_props
+from .logger import LoggerDefinition
 from .output import OutputDefinition, OutputMapping
+from .resource import ResourceDefinition
 from .solid import NodeDefinition, SolidDefinition
 from .utils import check_valid_name, validate_tags
+from .version_strategy import VersionStrategy
+
+if TYPE_CHECKING:
+    from dagster.core.instance import DagsterInstance
+    from .partition import PartitionedConfig
+    from .executor import ExecutorDefinition
+    from .job import JobDefinition
+
 
 _composition_stack: List["InProgressCompositionContext"] = []
 
@@ -504,6 +529,89 @@ class PendingNodeInvocation:
             tags=self.tags,
             hook_defs=self.hook_defs,
             retry_policy=retry_policy,
+        )
+
+    @experimental
+    def to_job(
+        self,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
+        config: Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"] = None,
+        tags: Optional[Dict[str, Any]] = None,
+        logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
+        executor_def: Optional["ExecutorDefinition"] = None,
+        hooks: Optional[AbstractSet[HookDefinition]] = None,
+        version_strategy: Optional[VersionStrategy] = None,
+    ) -> "JobDefinition":
+        if not isinstance(self.node_def, GraphDefinition):
+            raise DagsterInvalidInvocationError(
+                "Attemped to call `execute_in_process` on a composite solid.  Only graphs "
+                "constructed using the `@graph` decorator support this method."
+            )
+
+        tags = check.opt_dict_param(tags, "tags", key_type=str)
+        hooks = check.opt_set_param(hooks, "hooks", HookDefinition)
+        job_hooks: Set[HookDefinition] = set()
+        job_hooks.update(check.opt_set_param(hooks, "hooks", HookDefinition))
+        job_hooks.update(self.hook_defs)
+        return self.node_def.to_job(
+            name=name or self.given_alias,
+            description=description,
+            resource_defs=resource_defs,
+            config=config,
+            tags=tags if not self.tags else self.tags.updated_with(tags),
+            logger_defs=logger_defs,
+            executor_def=executor_def,
+            hooks=job_hooks,
+            version_strategy=version_strategy,
+        )
+
+    def execute_in_process(
+        self,
+        config: Any = None,
+        instance: Optional["DagsterInstance"] = None,
+        resources: Optional[Dict[str, Any]] = None,
+        raise_on_error: bool = True,
+    ):
+        if not isinstance(self.node_def, GraphDefinition):
+            raise DagsterInvalidInvocationError(
+                "Attemped to call `execute_in_process` on a composite solid.  Only graphs "
+                "constructed using the `@graph` decorator support this method."
+            )
+
+        from dagster.core.execution.build_resources import wrap_resources_for_execution
+        from dagster.core.execution.execute_in_process import core_execute_in_process
+        from .mode import ModeDefinition
+        from .job import JobDefinition
+        from .executor import execute_in_process_executor
+
+        if len(self.node_def.input_defs) > 0:
+            raise DagsterInvariantViolationError(
+                "Graphs with inputs cannot be used with execute_in_process at this time."
+            )
+
+        ephemeral_job = JobDefinition(
+            name=self.given_alias,
+            graph_def=self.node_def,
+            mode_def=ModeDefinition(
+                executor_defs=[execute_in_process_executor],
+                resource_defs=wrap_resources_for_execution(resources),
+            ),
+            tags=self.tags,
+            hook_defs=self.hook_defs,
+            solid_retry_policy=self.retry_policy,
+        )
+
+        run_config = {"ops": config if config is not None else {}}
+
+        return core_execute_in_process(
+            node=self.node_def,
+            ephemeral_pipeline=ephemeral_job,
+            run_config=run_config,
+            instance=instance,
+            output_capturing_enabled=True,
+            raise_on_error=raise_on_error,
         )
 
 

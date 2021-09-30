@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports
 import {Dialog as BlueprintDialog} from '@blueprintjs/core';
 import * as React from 'react';
 import styled, {createGlobalStyle} from 'styled-components/macro';
@@ -7,11 +8,28 @@ import {ColorsWIP} from './Colors';
 import {Group} from './Group';
 import {IconName, IconWIP} from './Icon';
 
-interface Props extends Omit<React.ComponentProps<typeof BlueprintDialog>, 'backdropClassName'> {}
+interface Props
+  extends Omit<
+    React.ComponentProps<typeof BlueprintDialog>,
+    'title' | 'icon' | 'backdropClassName'
+  > {
+  title?: React.ReactNode;
+  icon?: IconName;
+}
 
 export const DialogWIP: React.FC<Props> = (props) => {
-  const {...rest} = props;
-  return <BlueprintDialog {...rest} backdropClassName="dagit-backdrop" className="dagit-dialog" />;
+  const {icon, title, children, ...rest} = props;
+  return (
+    <BlueprintDialog
+      {...rest}
+      portalClassName="dagit-portal"
+      backdropClassName="dagit-backdrop"
+      className="dagit-dialog"
+    >
+      {title ? <DialogHeader icon={icon} label={title} /> : null}
+      {children}
+    </BlueprintDialog>
+  );
 };
 
 interface HeaderProps {
@@ -44,7 +62,6 @@ export const DialogBody: React.FC = (props) => {
 };
 
 interface DialogFooterProps {
-  buttons?: React.ReactNode[];
   left?: React.ReactFragment;
 }
 
@@ -56,9 +73,7 @@ export const DialogFooter: React.FC<DialogFooterProps> = (props) => {
       flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
     >
       <div>{props.left}</div>
-      <Group direction="row" spacing={12} alignItems="center">
-        {props.buttons}
-      </Group>
+      <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>{props.children}</Box>
     </Box>
   );
 };
@@ -66,47 +81,52 @@ export const DialogFooter: React.FC<DialogFooterProps> = (props) => {
 const DialogHeaderText = styled.div`
   font-size: 16px;
   font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
 `;
 
 export const GlobalDialogStyle = createGlobalStyle`
-  .bp3-overlay-backdrop {
+  .dagit-portal .bp3-overlay-backdrop {
     background-color: rgba(189, 186, 183, 0.7);
   }
 
-  .bp3-dialog-container {
+  .dagit-portal .bp3-dialog-container {
     display: grid;
     grid-template-rows: minmax(40px, 1fr) auto minmax(40px, 2fr);
     grid-template-columns: 40px 8fr 40px;
   }
 
-  .bp3-dialog {
+  .dagit-portal .bp3-dialog {
     background-color: ${ColorsWIP.White};
     border-radius: 4px;
     box-shadow: rgba(0, 0, 0, 0.12) 0px 2px 12px;
     grid-row: 2;
     grid-column: 2;
     margin: 0 auto;
+    overflow: hidden;
     padding: 0;
   }
 
-  .bp3-dialog > :first-child {
+  .dagit-portal .bp3-dialog > :first-child {
     border-top-left-radius: 4px;
     border-top-right-radius: 4px;
   }
 
-  .bp3-dialog > :last-child {
+  .dagit-portal .bp3-dialog > :last-child {
     border-bottom-right-radius: 4px;
     border-bottom-left-radius: 4px;
   }
 
-  .bp3-dialog-container.bp3-overlay-enter > .bp3-dialog,
-  .bp3-dialog-container.bp3-overlay-appear > .bp3-dialog {
+  .dagit-portal .bp3-dialog-container.bp3-overlay-enter > .bp3-dialog,
+  .dagit-portal .bp3-dialog-container.bp3-overlay-appear > .bp3-dialog {
     opacity: 0;
     transform:scale(0.95);
   }
 
-  .bp3-dialog-container.bp3-overlay-enter-active > .bp3-dialog,
-  .bp3-dialog-container.bp3-overlay-appear-active > .bp3-dialog {
+  .dagit-portal .bp3-dialog-container.bp3-overlay-enter-active > .bp3-dialog,
+  .dagit-portal .bp3-dialog-container.bp3-overlay-appear-active > .bp3-dialog {
     opacity: 1;
     transform: scale(1);
     transition-delay: 0;
@@ -115,12 +135,12 @@ export const GlobalDialogStyle = createGlobalStyle`
     transition-timing-function: ease-in-out;
   }
 
-  .bp3-dialog-container.bp3-overlay-exit > .bp3-dialog {
+  .dagit-portal .bp3-dialog-container.bp3-overlay-exit > .bp3-dialog {
     opacity: 1;
     transform: scale(1);
   }
 
-  .bp3-dialog-container.bp3-overlay-exit-active > .bp3-dialog{
+  .dagit-portal .bp3-dialog-container.bp3-overlay-exit-active > .bp3-dialog {
     opacity: 0;
     transform: scale(0.95);
     transition-delay:0;

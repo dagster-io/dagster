@@ -1,9 +1,10 @@
-import {Menu, MenuItem, Popover, TagInput} from '@blueprintjs/core';
+import {Menu, MenuItem, TagInput} from '@blueprintjs/core';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
 import styled from 'styled-components/macro';
 
 import {Box} from './Box';
+import {Popover} from './Popover';
 import {Spinner} from './Spinner';
 
 const MAX_SUGGESTIONS = 100;
@@ -310,9 +311,8 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
 
   return (
     <Popover
-      minimal={true}
       isOpen={open && suggestions.length > 0 && !atMaxValues}
-      position={'bottom-left'}
+      position="bottom-left"
       content={
         suggestions.length > 0 ? (
           <div style={{maxHeight: 235, overflowY: 'scroll'}} ref={menuRef}>

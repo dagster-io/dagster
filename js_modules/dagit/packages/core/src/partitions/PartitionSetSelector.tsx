@@ -1,5 +1,8 @@
-import {Button, Menu, MenuItem, Popover} from '@blueprintjs/core';
+import {Button} from '@blueprintjs/core';
 import * as React from 'react';
+
+import {MenuItemWIP, MenuWIP} from '../ui/Menu';
+import {Popover} from '../ui/Popover';
 
 import {PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSets_results} from './types/PipelinePartitionsRootQuery';
 
@@ -15,21 +18,19 @@ export const PartitionSetSelector: React.FunctionComponent<{
     <Popover
       isOpen={open}
       onInteraction={setOpen}
-      minimal
-      wrapperTagName="span"
-      position={'bottom-left'}
+      position="bottom-left"
       content={
-        <Menu style={{minWidth: 280}}>
+        <MenuWIP style={{minWidth: 280}}>
           {partitionSets.map((partitionSet, idx) => (
-            <MenuItem
+            <MenuItemWIP
               key={idx}
               onClick={() => onSelect(partitionSet)}
               active={selected.name === partitionSet.name}
-              icon={'git-repo'}
+              icon="view_list"
               text={<div>{partitionSet.name}</div>}
             />
           ))}
-        </Menu>
+        </MenuWIP>
       }
     >
       <Button text={`Partition Set: ${selected.name}`} rightIcon="caret-down" />

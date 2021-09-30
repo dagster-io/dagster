@@ -1,14 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {
-  Button,
-  Checkbox,
-  Classes,
-  Colors,
-  Dialog,
-  NonIdealState,
-  Tabs,
-  Tab,
-} from '@blueprintjs/core';
+import {Checkbox, Colors, NonIdealState, Tabs, Tab} from '@blueprintjs/core';
 import {ActiveElement, Chart, TimeUnit} from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import moment from 'moment-timezone';
@@ -20,7 +11,9 @@ import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {InstigationTickStatus, InstigationType} from '../types/globalTypes';
 import {Box} from '../ui/Box';
+import {ButtonWIP} from '../ui/Button';
 import {ButtonLink} from '../ui/ButtonLink';
+import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
 import {Spinner} from '../ui/Spinner';
 import {Subheading} from '../ui/Text';
@@ -247,11 +240,13 @@ export const TickHistory = ({
           <NonIdealState description="No ticks to display" />
         </Box>
       )}
-      <Dialog
+      <DialogWIP
         isOpen={
-          selectedTick &&
-          (selectedTick.status === InstigationTickStatus.SUCCESS ||
-            selectedTick.status === InstigationTickStatus.SKIPPED)
+          !!(
+            selectedTick &&
+            (selectedTick.status === InstigationTickStatus.SUCCESS ||
+              selectedTick.status === InstigationTickStatus.SKIPPED)
+          )
         }
         onClose={() => setSelectedTick(undefined)}
         style={{
@@ -261,7 +256,7 @@ export const TickHistory = ({
         title={selectedTick ? <TimestampDisplay timestamp={selectedTick.timestamp} /> : null}
       >
         {selectedTick ? (
-          <Box background={Colors.WHITE} padding={16} margin={{bottom: 16}}>
+          <DialogBody>
             {selectedTick.status === InstigationTickStatus.SUCCESS ? (
               selectedTick.runIds.length ? (
                 <RunList runIds={selectedTick.runIds} />
@@ -275,16 +270,14 @@ export const TickHistory = ({
                 <span>{selectedTick.skipReason || 'No skip reason provided'}</span>
               </Group>
             ) : null}
-          </Box>
+          </DialogBody>
         ) : null}
-        <div className={Classes.DIALOG_FOOTER}>
-          <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-            <Button intent="primary" onClick={() => setSelectedTick(undefined)}>
-              OK
-            </Button>
-          </div>
-        </div>
-      </Dialog>
+        <DialogFooter>
+          <ButtonWIP intent="primary" onClick={() => setSelectedTick(undefined)}>
+            OK
+          </ButtonWIP>
+        </DialogFooter>
+      </DialogWIP>
     </Group>
   );
 };

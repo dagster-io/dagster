@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Dialog, Button, NonIdealState, Classes, Colors} from '@blueprintjs/core';
+import {NonIdealState, Colors} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -10,8 +10,10 @@ import {assertUnreachable} from '../app/Util';
 import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
 import {InstigationTickStatus, InstigationType} from '../types/globalTypes';
 import {Box} from '../ui/Box';
+import {ButtonWIP} from '../ui/Button';
 import {ButtonLink} from '../ui/ButtonLink';
 import {ColorsWIP} from '../ui/Colors';
+import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
 import {Spinner} from '../ui/Spinner';
@@ -40,23 +42,19 @@ export const TickTag: React.FunctionComponent<{
               {tick.runIds.length} Requested
             </ButtonLink>
           </TagWIP>
-          <Dialog
+          <DialogWIP
             isOpen={open}
             onClose={() => setOpen(false)}
             style={{width: '90vw'}}
-            title={`Launched runs`}
+            title="Launched runs"
           >
-            <Box background={Colors.WHITE} padding={16} margin={{bottom: 16}}>
-              {open && <RunList runIds={tick.runIds} />}
-            </Box>
-            <div className={Classes.DIALOG_FOOTER}>
-              <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-                <Button intent="primary" onClick={() => setOpen(false)}>
-                  OK
-                </Button>
-              </div>
-            </div>
-          </Dialog>
+            <DialogBody>{open && <RunList runIds={tick.runIds} />}</DialogBody>
+            <DialogFooter>
+              <ButtonWIP intent="primary" onClick={() => setOpen(false)}>
+                OK
+              </ButtonWIP>
+            </DialogFooter>
+          </DialogWIP>
         </>
       );
     case InstigationTickStatus.SKIPPED:

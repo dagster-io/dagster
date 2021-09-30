@@ -505,6 +505,24 @@ def define_demo_k8s_executor_pipeline():
     return demo_k8s_executor_pipeline
 
 
+@solid
+def check_volume_mount(context):
+    with open("/opt/dagster/test_mount_path/volume_mounted_file.yaml", "r") as mounted_file:
+        contents = mounted_file.read()
+        context.log.info(f"Contents of mounted file: {contents}")
+        assert contents == "BAR_CONTENTS"
+
+
+def define_volume_mount_pipeline():
+    @pipeline(
+        mode_defs=k8s_mode_defs(),
+    )
+    def volume_mount_pipeline():
+        check_volume_mount()
+
+    return volume_mount_pipeline
+
+
 def define_demo_execution_repo():
     @repository
     def demo_execution_repo():
@@ -527,6 +545,7 @@ def define_demo_execution_repo():
                 "hanging_pipeline": hanging_pipeline,
                 "hard_failer": define_hard_failer,
                 "demo_k8s_executor_pipeline": define_demo_k8s_executor_pipeline,
+                "volume_mount_pipeline": define_volume_mount_pipeline,
             },
             "schedules": define_schedules(),
         }

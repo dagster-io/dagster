@@ -1,5 +1,5 @@
 import {Button, Colors, Menu, MenuItem} from '@blueprintjs/core';
-import {Tooltip2 as Tooltip, Popover2 as Popover} from '@blueprintjs/popover2';
+import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -10,6 +10,7 @@ import {InstigationStatus, InstigationType} from '../types/globalTypes';
 import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
+import {Popover} from '../ui/Popover';
 import {Table} from '../ui/Table';
 import {TagWIP} from '../ui/TagWIP';
 import {Code} from '../ui/Text';

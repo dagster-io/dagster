@@ -1,10 +1,11 @@
 import {gql, useMutation} from '@apollo/client';
-import {Button, Classes, Dialog} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {doneStatuses} from '../runs/RunStatuses';
 import {TerminationDialog} from '../runs/TerminationDialog';
 import {BulkActionStatus} from '../types/globalTypes';
+import {ButtonWIP} from '../ui/Button';
+import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 
 import {InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results} from './types/InstanceBackfillsQuery';
 
@@ -39,34 +40,30 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
 
   return (
     <>
-      <Dialog
+      <DialogWIP
         isOpen={!!backfill && backfill.status !== BulkActionStatus.CANCELED && !!numUnscheduled}
         title="Cancel backfill"
         onClose={onClose}
       >
-        <div className={Classes.DIALOG_BODY}>
-          <div>
-            There {numUnscheduled === 1 ? 'is 1 partition ' : `are ${numUnscheduled} partitions `}
-            yet to be queued or launched.
-          </div>
-        </div>
-        <div className={Classes.DIALOG_FOOTER}>
-          <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-            <Button intent="none" onClick={onClose}>
-              Close
-            </Button>
-            {isSubmitting ? (
-              <Button intent="danger" disabled>
-                Canceling...
-              </Button>
-            ) : (
-              <Button intent="danger" onClick={cancel}>
-                Cancel backfill
-              </Button>
-            )}
-          </div>
-        </div>
-      </Dialog>
+        <DialogBody>
+          There {numUnscheduled === 1 ? 'is 1 partition ' : `are ${numUnscheduled} partitions `}
+          yet to be queued or launched.
+        </DialogBody>
+        <DialogFooter>
+          <ButtonWIP intent="none" onClick={onClose}>
+            Close
+          </ButtonWIP>
+          {isSubmitting ? (
+            <ButtonWIP intent="danger" disabled>
+              Canceling...
+            </ButtonWIP>
+          ) : (
+            <ButtonWIP intent="danger" onClick={cancel}>
+              Cancel backfill
+            </ButtonWIP>
+          )}
+        </DialogFooter>
+      </DialogWIP>
       <TerminationDialog
         isOpen={
           !!backfill &&
