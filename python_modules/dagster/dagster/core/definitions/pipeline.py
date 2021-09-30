@@ -870,17 +870,17 @@ def _checked_input_resource_reqs_for_mode(
     outer_dependency_structures: Optional[List[DependencyStructure]] = None,
     outer_solids: Optional[List[Node]] = None,
 ) -> Set[str]:
+    outer_dependency_structures = check.opt_list_param(
+        outer_dependency_structures, "outer_dependency_structures", DependencyStructure
+    )
+    outer_solids = check.opt_list_param(outer_solids, "outer_solids", Node)
+
     resource_reqs = set()
     mode_root_input_managers = set(
         key
         for key, resource_def in mode_def.resource_defs.items()
         if isinstance(resource_def, RootInputManagerDefinition)
     )
-
-    outer_dependency_structures = check.opt_list_param(
-        outer_dependency_structures, "outer_dependency_structures", DependencyStructure
-    )
-    outer_solids = check.opt_list_param(outer_solids, "outer_solids", Node)
 
     for node in node_dict.values():
         if node.is_graph:
@@ -921,6 +921,7 @@ def _checked_input_resource_reqs_for_mode(
                         source_output_handles = outer_dependency_structures[
                             curr_index
                         ].get_deps_list(curr_handle)
+                        break
 
                     curr_node = outer_solids[curr_index]
                     curr_index -= 1
