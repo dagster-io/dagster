@@ -1,5 +1,6 @@
 import {Button, MenuItem} from '@blueprintjs/core';
 import * as React from 'react';
+import styled from 'styled-components/macro';
 
 import {useFeatureFlags} from '../app/Flags';
 import {ShortcutHandler} from '../app/ShortcutHandler';
@@ -31,7 +32,7 @@ export const SolidJumpBar: React.FC<SolidJumpBarProps> = (props) => {
         noResults={<MenuItem disabled={true} text="No results." />}
         onItemSelect={(name) => onChange(solids.find((s) => s.name === name)!)}
       >
-        <Button
+        <SelectButton
           ref={button}
           text={
             selectedSolid
@@ -52,23 +53,20 @@ export const SolidJumpBar: React.FC<SolidJumpBarProps> = (props) => {
 // of 0px and adding "width" rules to all nested <divs> that are a function of the parent (eg: 100%)
 // tells the layout engine that this can be assigned a width by it's container. This allows
 // us to make the Select "as wide as the layout allows" and have it truncate first.
-//
-// const StringSelectNoIntrinsicWidth = styled(Select.ofType<string>())`
-//   min-width: 0;
+const SelectButton = styled(Button)`
+  min-width: 0;
 
-//   & .bp3-popover-target {
-//     width: 100%;
-//   }
-//   & .bp3-button {
-//     max-width: 100%;
-//     white-space: nowrap;
-//   }
-//   & .bp3-button-text {
-//     min-width: 0;
-//     overflow: hidden;
-//     text-overflow: ellipsis;
-//   }
-// `;
+  && {
+    max-width: 100%;
+    white-space: nowrap;
+  }
+
+  & .bp3-button-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+`;
 
 const BasicStringPredicate = (text: string, items: string[]) =>
   items.filter((i) => i.toLowerCase().includes(text.toLowerCase())).slice(0, 20);
