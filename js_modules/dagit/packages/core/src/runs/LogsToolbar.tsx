@@ -1,10 +1,11 @@
-import {Button, ButtonGroup, Checkbox, IconName} from '@blueprintjs/core';
+import {Button, ButtonGroup, IconName} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {useCopyToClipboard} from '../app/browser';
 import {Box} from '../ui/Box';
+import {Checkbox} from '../ui/Checkbox';
 import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {MenuItemWIP} from '../ui/Menu';
@@ -276,7 +277,6 @@ const StructuredLogToolbar = ({
       />
       {filterText ? (
         <NonMatchCheckbox
-          inline
           checked={filter.hideNonMatches}
           onChange={(event) =>
             onSetFilter({...filter, hideNonMatches: event.currentTarget.checked})

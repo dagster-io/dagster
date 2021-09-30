@@ -1,5 +1,5 @@
 import {gql, useLazyQuery, useMutation, useQuery} from '@apollo/client';
-import {Checkbox, Intent, NonIdealState, InputGroup} from '@blueprintjs/core';
+import {Intent, NonIdealState, InputGroup} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -19,6 +19,7 @@ import {PipelineRunStatus} from '../types/globalTypes';
 import {Alert} from '../ui/Alert';
 import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
+import {Checkbox} from '../ui/Checkbox';
 import {ColorsWIP} from '../ui/Colors';
 import {DialogBody, DialogFooter} from '../ui/Dialog';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
@@ -400,20 +401,24 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
   return (
     <>
       <DialogBody>
-        <div style={{display: 'flex', alignItems: 'center', marginBottom: 4}}>
+        <Box flex={{direction: 'row', alignItems: 'center', gap: 12}} margin={{bottom: 4}}>
           <strong style={{display: 'block'}}>Partitions</strong>
           <Checkbox
             label="Select all"
             disabled={!selectablePartitions.length}
             style={{marginBottom: 0, marginLeft: 10}}
             checked={selected.length === selectablePartitions.length}
-            onClick={() =>
-              setSelected(
-                selected.length === selectablePartitions.length ? [] : selectablePartitions,
-              )
-            }
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              if (!e.target.checked) {
+                setSelected([]);
+              } else {
+                setSelected(
+                  selected.length === selectablePartitions.length ? [] : selectablePartitions,
+                );
+              }
+            }}
           />
-        </div>
+        </Box>
         <InputGroup
           small
           fill
@@ -459,14 +464,15 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
                     fromFailure: !options.fromFailure,
                   });
                 }}
-              >
-                <Box flex={{display: 'inline-flex', alignItems: 'center'}}>
-                  <Box margin={{right: 4}}>Re-execute from failures</Box>
-                  <Tooltip content="For each partition, if the most recent run failed, launch a re-execution starting from the steps that failed.">
-                    <IconWIP name="info" color={ColorsWIP.Gray500} />
-                  </Tooltip>
-                </Box>
-              </Checkbox>
+                label={
+                  <Box flex={{display: 'inline-flex', alignItems: 'center'}}>
+                    <Box margin={{right: 4}}>Re-execute from failures</Box>
+                    <Tooltip content="For each partition, if the most recent run failed, launch a re-execution starting from the steps that failed.">
+                      <IconWIP name="info" color={ColorsWIP.Gray500} />
+                    </Tooltip>
+                  </Box>
+                }
+              />
               {statusesLoading ? (
                 <div style={{marginLeft: '8px', marginTop: '3px'}}>
                   <Spinner purpose="body-text" />

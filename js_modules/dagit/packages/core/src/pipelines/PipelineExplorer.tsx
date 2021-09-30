@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Breadcrumbs, Checkbox, InputGroup, NonIdealState} from '@blueprintjs/core';
+import {Breadcrumbs, InputGroup, NonIdealState} from '@blueprintjs/core';
 import Color from 'color';
 import * as querystring from 'query-string';
 import * as React from 'react';
@@ -11,6 +11,7 @@ import {filterByQuery} from '../app/GraphQueryImpl';
 import {PIPELINE_GRAPH_SOLID_FRAGMENT} from '../graph/PipelineGraph';
 import {PipelineGraphContainer} from '../graph/PipelineGraphContainer';
 import {SolidNameOrPath} from '../solids/SolidNameOrPath';
+import {Checkbox} from '../ui/Checkbox';
 import {ColorsWIP} from '../ui/Colors';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {IconWIP} from '../ui/Icon';

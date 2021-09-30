@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Button, Checkbox, Code, Intent, Position} from '@blueprintjs/core';
+import {Button, Code, Intent, Position} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -14,6 +14,7 @@ import {
   ConfigEditorRunConfigSchemaFragment_allConfigTypes_CompositeConfigType,
 } from '../configeditor/types/ConfigEditorRunConfigSchemaFragment';
 import {ButtonLink} from '../ui/ButtonLink';
+import {Checkbox} from '../ui/Checkbox';
 import {ColorsWIP} from '../ui/Colors';
 import {IconWIP} from '../ui/Icon';
 import {SplitPanelContainer} from '../ui/SplitPanelContainer';

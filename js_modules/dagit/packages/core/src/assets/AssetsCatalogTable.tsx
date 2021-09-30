@@ -2,7 +2,6 @@ import {gql, useQuery} from '@apollo/client';
 import {
   Button,
   ButtonGroup,
-  Checkbox,
   InputGroup as BlueprintInputGroup,
   Menu,
   MenuItem,
@@ -18,6 +17,7 @@ import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {QueryCountdown} from '../app/QueryCountdown';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {Box} from '../ui/Box';
+import {Checkbox} from '../ui/Checkbox';
 import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
