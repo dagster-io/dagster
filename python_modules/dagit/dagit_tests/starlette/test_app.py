@@ -3,7 +3,10 @@ import gc
 import objgraph
 from dagit.graphql import GraphQLWS
 from dagit.starlette import ROOT_ADDRESS_STATIC_RESOURCES
+from dagit.version import __version__ as dagit_version
+from dagster import __version__ as dagster_version
 from dagster import execute_pipeline, graph, op, pipeline, reconstructable
+from dagster_graphql.version import __version__ as dagster_graphql_version
 from starlette.testclient import TestClient
 
 EVENT_LOG_SUBSCRIPTION = """
@@ -20,9 +23,9 @@ def test_dagit_info(empty_app):
     response = client.get("/dagit_info")
     assert response.status_code == 200
     assert response.json() == {
-        "dagit_version": "dev",
-        "dagster_version": "dev",
-        "dagster_graphql_version": "dev",
+        "dagit_version": dagit_version,
+        "dagster_version": dagster_version,
+        "dagster_graphql_version": dagster_graphql_version,
     }
 
 
