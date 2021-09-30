@@ -1,5 +1,5 @@
 import responses
-from dagster import ModeDefinition, execute_pipeline, pipeline, solid
+from dagster import graph, op
 from dagster_pagerduty import pagerduty_resource
 from dagster_pagerduty.hooks import pagerduty_on_failure
 
@@ -9,24 +9,24 @@ class SomeUserException(Exception):
 
 
 @responses.activate
-def test_failure_hook_on_solid_instance():
+def test_failure_hook_on_op_instance():
     def my_summary_fn(_):
         return "A custom summary"
 
-    @solid
-    def pass_solid(_):
+    @op
+    def pass_op(_):
         pass
 
-    @solid
-    def fail_solid(_):
+    @op
+    def fail_op(_):
         raise SomeUserException()
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"pagerduty": pagerduty_resource})])
-    def a_pipeline():
-        pass_solid.with_hooks(hook_defs={pagerduty_on_failure("info")})()
-        pass_solid.alias("solid_with_hook").with_hooks(hook_defs={pagerduty_on_failure("info")})()
-        fail_solid.alias("fail_solid_without_hook")()
-        fail_solid.with_hooks(
+    @graph
+    def a_graph():
+        pass_op.with_hooks(hook_defs={pagerduty_on_failure("info")})()
+        pass_op.alias("op_with_hook").with_hooks(hook_defs={pagerduty_on_failure("info")})()
+        fail_op.alias("fail_op_without_hook")()
+        fail_op.with_hooks(
             hook_defs={pagerduty_on_failure(severity="info", summary_fn=my_summary_fn)}
         )()
 
@@ -37,8 +37,7 @@ def test_failure_hook_on_solid_instance():
             status=202,
             json={"status": "success", "message": "Event processed"},
         )
-        result = execute_pipeline(
-            a_pipeline,
+        result = a_graph.to_job(resource_defs={"pagerduty": pagerduty_resource}).execute_in_process(
             run_config={
                 "resources": {
                     "pagerduty": {"config": {"routing_key": "0123456789abcdef0123456789abcdef"}}
@@ -52,20 +51,19 @@ def test_failure_hook_on_solid_instance():
 
 @responses.activate
 def test_failure_hook_decorator():
-    @solid
-    def pass_solid(_):
+    @op
+    def pass_op(_):
         pass
 
-    @solid
-    def fail_solid(_):
+    @op
+    def fail_op(_):
         raise SomeUserException()
 
-    @pagerduty_on_failure(severity="info", dagit_base_url="localhost:3000")
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"pagerduty": pagerduty_resource})])
-    def a_pipeline():
-        pass_solid()
-        fail_solid()
-        fail_solid.alias("another_fail_solid")()
+    @graph
+    def a_graph():
+        pass_op()
+        fail_op()
+        fail_op.alias("another_fail_op")()
 
     with responses.RequestsMock() as rsps:
         rsps.add(
@@ -74,8 +72,10 @@ def test_failure_hook_decorator():
             status=202,
             json={"status": "success", "message": "Event processed"},
         )
-        result = execute_pipeline(
-            a_pipeline,
+        result = a_graph.to_job(
+            hooks={pagerduty_on_failure(severity="info", dagit_base_url="localhost:3000")},
+            resource_defs={"pagerduty": pagerduty_resource},
+        ).execute_in_process(
             run_config={
                 "resources": {
                     "pagerduty": {"config": {"routing_key": "0123456789abcdef0123456789abcdef"}}

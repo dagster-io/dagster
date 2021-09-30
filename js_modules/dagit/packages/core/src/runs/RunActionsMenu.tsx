@@ -1,5 +1,5 @@
 import {gql, useLazyQuery, useMutation} from '@apollo/client';
-import {Button, Menu, MenuDivider, MenuItem, Popover, Position} from '@blueprintjs/core';
+import {Button, Position} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as qs from 'query-string';
 import * as React from 'react';
@@ -8,6 +8,8 @@ import {AppContext} from '../app/AppContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {usePermissions} from '../app/Permissions';
 import {HighlightedCodeBlock} from '../ui/HighlightedCodeBlock';
+import {MenuDividerWIP, MenuItemWIP, MenuWIP} from '../ui/Menu';
+import {Popover} from '../ui/Popover';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 import {workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
@@ -65,11 +67,11 @@ export const RunActionsMenu: React.FC<{
     <>
       <Popover
         content={
-          <Menu>
-            <MenuItem
+          <MenuWIP>
+            <MenuItemWIP
               text={loading ? 'Loading Configuration...' : 'View Configuration...'}
               disabled={!runConfigYaml}
-              icon="share"
+              icon="open_in_new"
               onClick={() =>
                 showCustomAlert({
                   title: 'Config',
@@ -77,7 +79,7 @@ export const RunActionsMenu: React.FC<{
                 })
               }
             />
-            <MenuDivider />
+            <MenuDividerWIP />
             <>
               <Tooltip
                 content={OPEN_PLAYGROUND_UNKNOWN}
@@ -85,7 +87,7 @@ export const RunActionsMenu: React.FC<{
                 disabled={infoReady}
                 targetTagName="div"
               >
-                <MenuItem
+                <MenuItemWIP
                   text="Open in Playground..."
                   disabled={!infoReady}
                   icon="edit"
@@ -108,10 +110,10 @@ export const RunActionsMenu: React.FC<{
                 disabled={infoReady && !!repoMatch}
                 targetTagName="div"
               >
-                <MenuItem
+                <MenuItemWIP
                   text="Re-execute"
                   disabled={!infoReady || !repoMatch}
-                  icon="repeat"
+                  icon="refresh"
                   onClick={async () => {
                     if (repoMatch && runConfigYaml) {
                       const result = await reexecute({
@@ -128,26 +130,31 @@ export const RunActionsMenu: React.FC<{
                 />
               </Tooltip>
               {isFinished || !canTerminatePipelineExecution ? null : (
-                <MenuItem
-                  icon="stop"
+                <MenuItemWIP
+                  icon="cancel"
                   text="Terminate"
                   onClick={() => setVisibleDialog('terminate')}
                 />
               )}
-              <MenuDivider />
+              <MenuDividerWIP />
             </>
-            <MenuItem
+            <MenuItemWIP
               text="Download Debug File"
-              icon="download"
+              icon="download_for_offline"
               download
               href={`${rootServerURI}/download_debug/${run.runId}`}
             />
             {canDeletePipelineRun ? (
-              <MenuItem icon="trash" text="Delete" onClick={() => setVisibleDialog('delete')} />
+              <MenuItemWIP
+                icon="delete"
+                text="Delete"
+                intent="danger"
+                onClick={() => setVisibleDialog('delete')}
+              />
             ) : null}
-          </Menu>
+          </MenuWIP>
         }
-        position={'bottom'}
+        position="bottom-right"
         onOpening={() => {
           if (!called) {
             loadEnv();
@@ -212,10 +219,10 @@ export const RunBulkActionsMenu: React.FC<{
     <>
       <Popover
         content={
-          <Menu>
+          <MenuWIP>
             {canTerminatePipelineExecution ? (
-              <MenuItem
-                icon="stop"
+              <MenuItemWIP
+                icon="cancel"
                 text={`Terminate ${unfinishedIDs.length} ${
                   unfinishedIDs.length === 1 ? 'run' : 'runs'
                 }`}
@@ -226,8 +233,9 @@ export const RunBulkActionsMenu: React.FC<{
               />
             ) : null}
             {canDeletePipelineRun ? (
-              <MenuItem
-                icon="trash"
+              <MenuItemWIP
+                icon="delete"
+                intent="danger"
                 text={`Delete ${selectedIDs.length} ${selectedIDs.length === 1 ? 'run' : 'runs'}`}
                 disabled={selectedIDs.length === 0}
                 onClick={() => {
@@ -235,9 +243,9 @@ export const RunBulkActionsMenu: React.FC<{
                 }}
               />
             ) : null}
-          </Menu>
+          </MenuWIP>
         }
-        position={'bottom'}
+        position="bottom-right"
       >
         <Button disabled={selected.length === 0} text="Actions" rightIcon="caret-down" small />
       </Popover>

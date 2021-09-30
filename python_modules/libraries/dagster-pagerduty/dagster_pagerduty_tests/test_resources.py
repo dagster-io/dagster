@@ -1,12 +1,12 @@
 import responses
-from dagster import ModeDefinition, execute_solid, solid
+from dagster import build_op_context, op
 from dagster_pagerduty import pagerduty_resource
 
 
 @responses.activate
 def test_pagerduty_resource():
-    @solid(required_resource_keys={"pagerduty"})
-    def pagerduty_solid(context):
+    @op(required_resource_keys={"pagerduty"})
+    def pagerduty_op(context):
         assert context.resources.pagerduty
         with responses.RequestsMock() as rsps:
             rsps.add(
@@ -28,14 +28,13 @@ def test_pagerduty_resource():
                 event_class="High CPU",
                 custom_details={"ping time": "1500ms", "load avg": 0.75},
             )
+            return True
 
-    result = execute_solid(
-        pagerduty_solid,
-        run_config={
-            "resources": {
-                "pagerduty": {"config": {"routing_key": "0123456789abcdef0123456789abcdef"}}
-            }
-        },
-        mode_def=ModeDefinition(resource_defs={"pagerduty": pagerduty_resource}),
-    )
-    assert result.success
+    with build_op_context(
+        resources={
+            "pagerduty": pagerduty_resource.configured(
+                {"routing_key": "0123456789abcdef0123456789abcdef"}
+            )
+        }
+    ) as context:
+        assert pagerduty_op(context)

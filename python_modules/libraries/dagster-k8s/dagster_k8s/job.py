@@ -513,7 +513,7 @@ def construct_dagster_k8s_job(
     user_defined_k8s_env_vars = user_defined_k8s_config.container_config.pop("env", [])
     for env_var in user_defined_k8s_env_vars:
         additional_k8s_env_vars.append(
-            kubernetes.client.V1EnvVar(name=env_var["name"], value=env_var["value"])
+            k8s_model_from_dict(kubernetes.client.models.V1EnvVar, env_var)
         )
 
     user_defined_k8s_env_from = user_defined_k8s_config.container_config.pop("env_from", [])

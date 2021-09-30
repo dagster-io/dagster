@@ -77,7 +77,7 @@ const StyledButton = styled.button<StyledButtonProps>`
   font-size: 14px;
   line-height: 20px;
   padding: 6px 12px;
-  transition: background 100ms, box-shadow 150ms, filter 100ms;
+  transition: background 100ms, box-shadow 150ms, filter 100ms, opacity 150ms;
   user-select: none;
 
   ${({$stroke}) => ($stroke ? DEFAULT_STROKE : NO_STROKE)}

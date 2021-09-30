@@ -79,8 +79,7 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
                 <SchedulerTimezoneNote schedulerOrError={scheduler} />
                 <SchedulesTable schedules={repositoryOrError.schedules} repoAddress={repoAddress} />
                 <Box
-                  margin={{vertical: 16}}
-                  padding={{bottom: 8}}
+                  padding={{vertical: 16, horizontal: 24}}
                   border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}
                 >
                   <Subheading>Scheduled ticks</Subheading>
@@ -92,7 +91,9 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
 
           return (
             <Group direction="column" spacing={20}>
-              <SchedulerInfo schedulerOrError={scheduler} daemonHealth={instance.daemonHealth} />
+              <Box padding={{horizontal: 24}}>
+                <SchedulerInfo schedulerOrError={scheduler} daemonHealth={instance.daemonHealth} />
+              </Box>
               {schedulesSection}
               {unloadableInstigationStatesOrError.__typename === 'PythonError' ? (
                 <PythonErrorInfo error={unloadableInstigationStatesOrError} />

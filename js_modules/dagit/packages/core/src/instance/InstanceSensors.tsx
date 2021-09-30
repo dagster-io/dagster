@@ -55,11 +55,18 @@ const AllSensors: React.FC<{data: InstanceSensorsQuery}> = ({data}) => {
 
   const sensorDefinitionsSection = withSensors.length ? (
     <Group direction="column" spacing={32}>
-      <SensorInfo daemonHealth={instance.daemonHealth} />
+      <Box padding={{horizontal: 24}}>
+        <SensorInfo daemonHealth={instance.daemonHealth} />
+      </Box>
       {withSensors.map((repository) =>
         repository.sensors.length ? (
           <Group direction="column" spacing={12} key={repository.name}>
-            <Subheading>{`${buildRepoPath(repository.name, repository.location.name)}`}</Subheading>
+            <Box padding={{horizontal: 24}}>
+              <Subheading>{`${buildRepoPath(
+                repository.name,
+                repository.location.name,
+              )}`}</Subheading>
+            </Box>
             <SensorsTable
               repoAddress={buildRepoAddress(repository.name, repository.location.name)}
               sensors={repository.sensors}

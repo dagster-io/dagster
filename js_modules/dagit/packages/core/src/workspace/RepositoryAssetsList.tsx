@@ -51,7 +51,6 @@ export const RepositoryAssetsList: React.FC<Props> = (props) => {
   });
 
   const repo = data?.repositoryOrError;
-  console.log(repo);
   const assetsForTable = React.useMemo(() => {
     if (!repo || repo.__typename !== 'Repository') {
       return null;

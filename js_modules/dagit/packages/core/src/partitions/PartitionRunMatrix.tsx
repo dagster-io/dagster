@@ -1,6 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors, Dialog, Button, Classes, MenuItem, Menu, Popover} from '@blueprintjs/core';
-import {Popover2} from '@blueprintjs/popover2';
+import {Colors, Button} from '@blueprintjs/core';
 import qs from 'query-string';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -10,10 +9,14 @@ import {useViewport} from '../gantt/useViewport';
 import {QueryPersistedStateConfig, useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {PIPELINE_EXPLORER_SOLID_HANDLE_FRAGMENT} from '../pipelines/PipelineExplorer';
 import {Box} from '../ui/Box';
+import {ButtonWIP} from '../ui/Button';
 import {ColorsWIP} from '../ui/Colors';
+import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
+import {MenuItemWIP, MenuWIP} from '../ui/Menu';
+import {Popover} from '../ui/Popover';
 import {TokenizingFieldValue} from '../ui/TokenizingField';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -169,13 +172,13 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
 
   return (
     <PartitionRunMatrixContainer>
-      <Dialog
+      <DialogWIP
         isOpen={!!focused}
         onClose={() => setFocused(null)}
         style={{width: '90vw'}}
         title={focused ? `${focused.partitionName} runs (${focused.stepName})` : ''}
       >
-        <div style={{background: Colors.WHITE, padding: 15, marginBottom: 15}}>
+        <DialogBody>
           {focused && (
             <PartitionRunListForStep
               pipelineName={props.pipelineName}
@@ -193,15 +196,13 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
               )}
             />
           )}
-        </div>
-        <div className={Classes.DIALOG_FOOTER}>
-          <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-            <Button intent="primary" autoFocus={true} onClick={() => setFocused(null)}>
-              OK
-            </Button>
-          </div>
-        </div>
-      </Dialog>
+        </DialogBody>
+        <DialogFooter>
+          <ButtonWIP intent="primary" autoFocus={true} onClick={() => setFocused(null)}>
+            OK
+          </ButtonWIP>
+        </DialogFooter>
+      </DialogWIP>
       <Box
         flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
         padding={{vertical: 4}}
@@ -229,8 +230,8 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
         <Popover
           position="bottom-left"
           content={
-            <Menu>
-              <MenuItem
+            <MenuWIP>
+              <MenuItemWIP
                 text="Show previous status"
                 icon={
                   <IconWIP
@@ -241,7 +242,7 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
                 onClick={() => setOptions({...options, showPrevious: !options.showPrevious})}
                 shouldDismissPopover={false}
               />
-              <MenuItem
+              <MenuItemWIP
                 text="Only show failures and gaps"
                 icon={
                   <IconWIP
@@ -257,7 +258,7 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
                 }
                 shouldDismissPopover={false}
               />
-              <MenuItem
+              <MenuItemWIP
                 tagName="div"
                 text={
                   <Group direction="column" spacing={8}>
@@ -282,7 +283,7 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
                 onClick={() => setOptions({...options, colorizeByAge: !options.colorizeByAge})}
                 shouldDismissPopover={false}
               />
-            </Menu>
+            </MenuWIP>
           }
         >
           <Button icon="settings" minimal text="Settings" />
@@ -391,17 +392,16 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
               >
                 <TopLabelTilted label={p.name} />
                 {sortPartitionSteps(p.steps).map(({name, color, unix}) => (
-                  <Popover2
+                  <Popover
                     key={name}
-                    minimal
                     disabled={p.runs.length === 0}
                     interactionKind="click"
                     placement="bottom-start"
                     content={
                       p.runs.length ? (
-                        <Menu>
-                          <MenuItem
-                            icon="share"
+                        <MenuWIP>
+                          <MenuItemWIP
+                            icon="open_in_new"
                             text="Show Logs From Last Run"
                             href={`${basePath}/instance/runs/${
                               p.runs[p.runs.length - 1].runId
@@ -410,15 +410,15 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
                               logs: `step:${name}`,
                             })}`}
                           />
-                          <MenuItem
-                            icon="list"
+                          <MenuItemWIP
+                            icon="settings_backup_restore"
                             text={`View Runs (${p.runs.length})`}
                             onClick={() =>
                               p.runs.length > 0 &&
                               setFocused({stepName: name, partitionName: p.name})
                             }
                           />
-                        </Menu>
+                        </MenuWIP>
                       ) : (
                         <span />
                       )
@@ -446,7 +446,7 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
                           : {}
                       }
                     />
-                  </Popover2>
+                  </Popover>
                 ))}
                 <Divider />
                 <LeftLabel style={{textAlign: 'center'}}>{p.runs.length}</LeftLabel>

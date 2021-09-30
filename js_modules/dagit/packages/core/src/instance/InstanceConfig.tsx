@@ -65,7 +65,7 @@ export const InstanceConfig = React.memo(() => {
   return (
     <Group direction="column" spacing={20}>
       <InstanceTabs tab="config" />
-      <Group direction="column" spacing={16}>
+      <Group direction="column" spacing={16} padding={{horizontal: 24}}>
         <Subheading>{`Dagster ${data.version}`}</Subheading>
         <YamlShimStyle />
         {sections.map((section) => {

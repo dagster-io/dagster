@@ -4,7 +4,6 @@ import {
   Checkbox,
   Menu,
   MenuItem,
-  Popover,
   InputGroup as BlueprintInputGroup,
   NonIdealState,
   Colors,
@@ -23,6 +22,8 @@ import {Box} from '../ui/Box';
 import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
 import {Loading} from '../ui/Loading';
+import {MenuItemWIP, MenuWIP} from '../ui/Menu';
+import {Popover} from '../ui/Popover';
 import {Table} from '../ui/Table';
 import {Tag} from '../ui/Tag';
 
@@ -130,7 +131,7 @@ export const AssetsCatalogTable: React.FC<{prefixPath?: string[]}> = ({prefixPat
           const showSwitcher = prefixPath || assets.some((asset) => asset.key.path.length > 1);
           return (
             <Wrapper>
-              <Box flex={{justifyContent: 'space-between'}}>
+              <Box flex={{justifyContent: 'space-between'}} padding={{horizontal: 24}}>
                 <div>
                   {showSwitcher ? (
                     <Group spacing={8} direction="row">
@@ -200,7 +201,9 @@ const AssetSearch = ({assets}: {assets: Asset[]}) => {
     history.push(`/instance/assets/${asset.key.path.join('/')}`);
   };
 
-  const matching = assets.filter((asset) => !q || matches(asset.key.path.join('/'), q));
+  const matching = assets
+    .filter((asset) => !q || matches(asset.key.path.join('/'), q))
+    .slice(0, 10);
 
   const onKeyDown = (e: React.KeyboardEvent<any>) => {
     // Enter and Return confirm the currently selected suggestion or
@@ -238,14 +241,13 @@ const AssetSearch = ({assets}: {assets: Asset[]}) => {
   return (
     <div style={{width: 600}}>
       <Popover
-        minimal
-        fill={true}
         isOpen={open && matching.length > 0}
-        position={'bottom-left'}
+        position="bottom-left"
+        fill
         content={
-          <Menu style={{maxWidth: 600, minWidth: 600}}>
-            {matching.slice(0, 10).map((asset, idx) => (
-              <MenuItem
+          <MenuWIP style={{maxWidth: 600, minWidth: 600}}>
+            {matching.map((asset, idx) => (
+              <MenuItemWIP
                 key={idx}
                 onMouseDown={(e: React.MouseEvent<any>) => {
                   e.preventDefault();
@@ -253,7 +255,7 @@ const AssetSearch = ({assets}: {assets: Asset[]}) => {
                   selectOption(asset);
                 }}
                 active={highlight === idx}
-                icon="panel-table"
+                icon="table_view"
                 text={
                   <div>
                     <div>{asset.key.path.join('/')}</div>
@@ -261,7 +263,7 @@ const AssetSearch = ({assets}: {assets: Asset[]}) => {
                 }
               />
             ))}
-          </Menu>
+          </MenuWIP>
         }
       >
         <InputGroup
@@ -539,7 +541,7 @@ const AssetEntryRow: React.FC<{
         {shouldShowTags ? (
           <td>
             {isAssetEntry && assets[0].tags.length ? (
-              <Box flex={{direction: 'row', wrap: 'wrap'}}>
+              <Box flex={{direction: 'row', wrap: 'wrap', gap: 8}}>
                 {assets[0].tags.map((tag, idx) => (
                   <Tag tag={tag} key={idx} onClick={() => onTagClick(tag)} />
                 ))}
@@ -561,7 +563,7 @@ const AssetEntryRow: React.FC<{
                     />
                   </Menu>
                 }
-                position="bottom"
+                position="bottom-right"
               >
                 <Button small minimal icon="chevron-down" style={{marginLeft: '4px'}} />
               </Popover>

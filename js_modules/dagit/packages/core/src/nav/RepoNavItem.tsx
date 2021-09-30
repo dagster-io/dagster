@@ -1,5 +1,5 @@
 import {Button, Colors} from '@blueprintjs/core';
-import {Popover2 as Popover, Tooltip2 as Tooltip} from '@blueprintjs/popover2';
+import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -11,6 +11,7 @@ import {ButtonLink} from '../ui/ButtonLink';
 import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {IconWIP, IconWrapper} from '../ui/Icon';
+import {Popover} from '../ui/Popover';
 import {Spinner} from '../ui/Spinner';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
@@ -66,7 +67,7 @@ export const RepoNavItem: React.FC<Props> = (props) => {
             canEscapeKeyClose
             isOpen={open}
             onInteraction={onInteraction}
-            modifiers={{offset: {enabled: true, options: {offset: [0, 24]}}}}
+            modifiers={{offset: {enabled: true, options: {offset: [0, 16]}}}}
             placement="right"
             popoverClassName="bp3-dark"
             content={

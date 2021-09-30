@@ -80,7 +80,7 @@ export const AssetEntryRoot: React.FC<RouteComponentProps> = ({location, match})
 
   return (
     <Page>
-      <Group direction="column" spacing={20}>
+      <Group direction="column" spacing={20} padding={{horizontal: 24}}>
         <PageHeader
           title={
             view !== 'directory' ? (

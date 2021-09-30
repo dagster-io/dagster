@@ -56,13 +56,15 @@ const AllSchedules: React.FC<{data: InstanceSchedulesQuery}> = ({data}) => {
 
   const loadedSchedulesSection = withSchedules.length ? (
     <Group direction="column" spacing={32}>
-      <Group direction="column" spacing={12}>
+      <Group direction="column" spacing={12} padding={{horizontal: 24}}>
         <SchedulerTimezoneNote schedulerOrError={scheduler} />
         <SchedulerInfo schedulerOrError={scheduler} daemonHealth={instance.daemonHealth} />
       </Group>
       {withSchedules.map((repository) => (
         <Group direction="column" spacing={8} key={repository.name}>
-          <Subheading>{`${buildRepoPath(repository.name, repository.location.name)}`}</Subheading>
+          <Box padding={{horizontal: 24}}>
+            <Subheading>{`${buildRepoPath(repository.name, repository.location.name)}`}</Subheading>
+          </Box>
           <SchedulesTable
             repoAddress={buildRepoAddress(repository.name, repository.location.name)}
             schedules={repository.schedules}

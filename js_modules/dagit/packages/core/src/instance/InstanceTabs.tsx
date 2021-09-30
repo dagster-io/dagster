@@ -19,6 +19,7 @@ export const InstanceTabs: React.FC<Props> = (props) => {
     <Box
       flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}
       border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}
+      margin={{horizontal: 24}}
     >
       <Tabs selectedTabId={tab}>
         <Tab id="health" title={<Link to="/instance/health">Health</Link>} />
