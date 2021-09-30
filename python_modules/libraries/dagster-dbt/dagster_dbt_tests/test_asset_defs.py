@@ -28,6 +28,7 @@ def assert_assets_match_project(assets):
         assert name == asset.name
         assert len(asset.output_defs) == 1
         assert f'["{name}"]' == asset.output_defs[0].hardcoded_asset_key.to_string()
+        assert asset.tags == {"kind": "dbt"}
 
     job = build_assets_job(
         "jarb", assets, resource_defs={"dbt": ResourceDefinition.none_resource()}
