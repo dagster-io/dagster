@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Button, Classes, Colors, Dialog} from '@blueprintjs/core';
+import {Colors} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -13,8 +13,10 @@ import {ScheduleSwitch, SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwi
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {SensorSwitch, SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {Box} from '../ui/Box';
+import {ButtonWIP} from '../ui/Button';
 import {ButtonLink} from '../ui/ButtonLink';
 import {ColorsWIP} from '../ui/Colors';
+import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
 import {MetadataTable, StyledTable} from '../ui/MetadataTable';
@@ -154,14 +156,14 @@ const ScheduleOrSensor: React.FC<{job: Job; mode: string; repoAddress: RepoAddre
     return (
       <>
         <ButtonLink onClick={() => setOpen(true)}>{buttonText}</ButtonLink>
-        <Dialog
+        <DialogWIP
           title={dialogTitle}
           canOutsideClickClose
           canEscapeKeyClose
           isOpen={open}
           onClose={() => setOpen(false)}
         >
-          <div className={Classes.DIALOG_BODY}>
+          <DialogBody>
             <Group direction="column" spacing={16}>
               {matchingSchedules.map((schedule) => (
                 <MatchingSchedule
@@ -174,13 +176,13 @@ const ScheduleOrSensor: React.FC<{job: Job; mode: string; repoAddress: RepoAddre
                 <MatchingSensor key={sensor.name} sensor={sensor} repoAddress={repoAddress} />
               ))}
             </Group>
-          </div>
-          <div className={Classes.DIALOG_FOOTER}>
-            <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-              <Button text="OK" onClick={() => setOpen(false)} />
-            </div>
-          </div>
-        </Dialog>
+          </DialogBody>
+          <DialogFooter>
+            <ButtonWIP intent="primary" onClick={() => setOpen(false)}>
+              OK
+            </ButtonWIP>
+          </DialogFooter>
+        </DialogWIP>
       </>
     );
   }
@@ -299,7 +301,7 @@ const RelatedAssets: React.FC<{runs: RunMetadataFragment[]}> = ({runs}) => {
   return (
     <>
       <ButtonLink onClick={() => setOpen(true)}>{`View ${keys.length} assets`}</ButtonLink>
-      <Dialog
+      <DialogWIP
         title="Related assets"
         canOutsideClickClose
         canEscapeKeyClose
@@ -307,7 +309,7 @@ const RelatedAssets: React.FC<{runs: RunMetadataFragment[]}> = ({runs}) => {
         onClose={() => setOpen(false)}
         style={{maxWidth: '80%', minWidth: '500px', width: 'auto'}}
       >
-        <div className={Classes.DIALOG_BODY}>
+        <DialogBody>
           <Group direction="column" spacing={16}>
             {keys.map((key) => (
               <Link key={key} to={`/instance/assets/${key}`} style={{wordBreak: 'break-word'}}>
@@ -315,13 +317,13 @@ const RelatedAssets: React.FC<{runs: RunMetadataFragment[]}> = ({runs}) => {
               </Link>
             ))}
           </Group>
-        </div>
-        <div className={Classes.DIALOG_FOOTER}>
-          <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-            <Button text="OK" onClick={() => setOpen(false)} />
-          </div>
-        </div>
-      </Dialog>
+        </DialogBody>
+        <DialogFooter>
+          <ButtonWIP intent="primary" onClick={() => setOpen(false)}>
+            OK
+          </ButtonWIP>
+        </DialogFooter>
+      </DialogWIP>
     </>
   );
 };

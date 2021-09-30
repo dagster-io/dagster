@@ -1,4 +1,3 @@
-import {Button, Classes, Dialog} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -7,8 +6,10 @@ import {PipelineRunTag} from '../app/LocalStorage';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {RunTag} from '../runs/RunTag';
 import {Box} from '../ui/Box';
+import {ButtonWIP} from '../ui/Button';
 import {ButtonLink} from '../ui/ButtonLink';
 import {ColorsWIP} from '../ui/Colors';
+import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
 
@@ -74,24 +75,15 @@ export const TagEditor: React.FC<ITagEditorProps> = ({
   };
 
   return (
-    <Dialog
-      icon="info-sign"
+    <DialogWIP
+      icon="info"
       onClose={onRequestClose}
       style={{minWidth: 500}}
       title="Add tags to run"
-      usePortal={true}
       isOpen={open}
     >
-      <div
-        className={Classes.DIALOG_BODY}
-        style={{
-          margin: 0,
-          marginBottom: 17,
-          height: `calc(100% - 85px)`,
-          position: 'relative',
-        }}
-      >
-        <Group padding={16} spacing={16} direction="column">
+      <DialogBody>
+        <Group spacing={16} direction="column">
           {tagsFromDefinition.length ? (
             <Group direction="column" spacing={8}>
               <Box margin={{left: 2}} style={{fontSize: '13px', fontWeight: 500}}>
@@ -155,22 +147,20 @@ export const TagEditor: React.FC<ITagEditorProps> = ({
             </div>
           </Group>
         </Group>
-      </div>
-      <div className={Classes.DIALOG_FOOTER}>
-        <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-          <Button onClick={onRequestClose}>Cancel</Button>
-          <ShortcutHandler
-            shortcutLabel="⌥Enter"
-            shortcutFilter={(e) => e.keyCode === 13 && e.altKey}
-            onShortcut={onSave}
-          >
-            <Button intent="primary" onClick={onSave} disabled={disabled}>
-              Apply
-            </Button>
-          </ShortcutHandler>
-        </div>
-      </div>
-    </Dialog>
+      </DialogBody>
+      <DialogFooter>
+        <ButtonWIP onClick={onRequestClose}>Cancel</ButtonWIP>
+        <ShortcutHandler
+          shortcutLabel="⌥Enter"
+          shortcutFilter={(e) => e.keyCode === 13 && e.altKey}
+          onShortcut={onSave}
+        >
+          <ButtonWIP intent="primary" onClick={onSave} disabled={disabled}>
+            Apply
+          </ButtonWIP>
+        </ShortcutHandler>
+      </DialogFooter>
+    </DialogWIP>
   );
 };
 

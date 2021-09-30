@@ -1,14 +1,5 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import {
-  Classes,
-  NonIdealState,
-  Colors,
-  Button,
-  Menu,
-  MenuItem,
-  Popover,
-  Dialog,
-} from '@blueprintjs/core';
+import {NonIdealState, Colors, Button, Menu, MenuItem, Popover} from '@blueprintjs/core';
 import * as qs from 'query-string';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -21,8 +12,10 @@ import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunTags} from '../runs/RunTags';
 import {InstigationStatus} from '../types/globalTypes';
 import {Box} from '../ui/Box';
+import {ButtonWIP} from '../ui/Button';
 import {ButtonLink} from '../ui/ButtonLink';
 import {ColorsWIP} from '../ui/Colors';
+import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
 import {HighlightedCodeBlock} from '../ui/HighlightedCodeBlock';
 import {IconWIP} from '../ui/Icon';
@@ -301,98 +294,102 @@ const NextTickDialog: React.FC<{
     body = null;
   } else if (selectedRunRequest) {
     body = (
-      <>
-        {selectedRunRequest.tags.length ? (
-          <Box padding={12}>
-            <RunTags tags={selectedRunRequest.tags} />
-          </Box>
-        ) : null}
-        <ConfigBody>
-          <div ref={configRef}>
-            <HighlightedCodeBlock value={selectedRunRequest.runConfigYaml} language="yaml" />
-          </div>
-        </ConfigBody>
-      </>
+      <DialogBody>
+        <Group direction="column" spacing={12}>
+          {selectedRunRequest.tags.length ? <RunTags tags={selectedRunRequest.tags} /> : null}
+          <ConfigBody>
+            <div ref={configRef}>
+              <HighlightedCodeBlock value={selectedRunRequest.runConfigYaml} language="yaml" />
+            </div>
+          </ConfigBody>
+        </Group>
+      </DialogBody>
     );
   } else if (evaluationResult.error) {
     body = (
-      <Box margin={24}>
+      <DialogBody>
         <PythonErrorInfo error={evaluationResult.error} />
-      </Box>
+      </DialogBody>
     );
   } else if (evaluationResult.skipReason) {
     body = (
-      <Box margin={24}>
+      <DialogBody>
         <SkipWrapper>{evaluationResult.skipReason}</SkipWrapper>
-      </Box>
+      </DialogBody>
     );
   } else if (evaluationResult.runRequests) {
     body = (
-      <RunRequestBody>
-        <Table>
-          <thead>
-            <tr>
-              <th>Run key</th>
-              <th>Config</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {evaluationResult.runRequests.map((runRequest, idx) => {
-              if (!runRequest) {
-                return null;
-              }
-              return (
-                <tr key={idx}>
-                  <td>{runRequest.runKey || <span>&mdash;</span>}</td>
-                  <td>
-                    <ButtonLink onClick={() => setSelectedRunRequest(runRequest)} underline={false}>
-                      <Group direction="row" spacing={8} alignItems="center">
-                        <IconWIP name="open_in_new" color={ColorsWIP.Gray400} />
-                        <span>View config</span>
-                      </Group>
-                    </ButtonLink>
-                  </td>
-                  <td>
-                    <Popover
-                      content={
-                        <Menu>
-                          <MenuItem
-                            text="Open in Playground..."
-                            icon="edit"
-                            target="_blank"
-                            href={workspacePathFromAddress(
-                              repoAddress,
-                              `/pipelines/${schedule.pipelineName}/playground/setup?${qs.stringify({
-                                mode: schedule.mode,
-                                config: runRequest.runConfigYaml,
-                                solidSelection: schedule.solidSelection,
-                              })}`,
-                            )}
-                          />
-                        </Menu>
-                      }
-                      position="bottom"
-                    >
-                      <Button small minimal icon="chevron-down" />
-                    </Popover>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </Table>
-      </RunRequestBody>
+      <DialogBody>
+        <RunRequestBody>
+          <Table>
+            <thead>
+              <tr>
+                <th>Run key</th>
+                <th>Config</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {evaluationResult.runRequests.map((runRequest, idx) => {
+                if (!runRequest) {
+                  return null;
+                }
+                return (
+                  <tr key={idx}>
+                    <td>{runRequest.runKey || <span>&mdash;</span>}</td>
+                    <td>
+                      <ButtonLink
+                        onClick={() => setSelectedRunRequest(runRequest)}
+                        underline={false}
+                      >
+                        <Group direction="row" spacing={8} alignItems="center">
+                          <IconWIP name="open_in_new" color={ColorsWIP.Gray400} />
+                          <span>View config</span>
+                        </Group>
+                      </ButtonLink>
+                    </td>
+                    <td>
+                      <Popover
+                        content={
+                          <Menu>
+                            <MenuItem
+                              text="Open in Playground..."
+                              icon="edit"
+                              target="_blank"
+                              href={workspacePathFromAddress(
+                                repoAddress,
+                                `/pipelines/${
+                                  schedule.pipelineName
+                                }/playground/setup?${qs.stringify({
+                                  mode: schedule.mode,
+                                  config: runRequest.runConfigYaml,
+                                  solidSelection: schedule.solidSelection,
+                                })}`,
+                              )}
+                            />
+                          </Menu>
+                        }
+                        position="bottom"
+                      >
+                        <Button small minimal icon="chevron-down" />
+                      </Popover>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </Table>
+        </RunRequestBody>
+      </DialogBody>
     );
   }
 
   return (
-    <Dialog
-      usePortal={true}
+    <DialogWIP
       onClose={() => close()}
       style={{width: '50vw'}}
       title={
-        <Box flex={{direction: 'row'}}>
+        <Box flex={{direction: 'row', gap: 4}}>
           <TimestampDisplay timestamp={tickTimestamp} timezone={schedule.executionTimezone} />
           {selectedRunRequest?.runKey ? <div>: {selectedRunRequest?.runKey}</div> : null}
         </Box>
@@ -400,27 +397,22 @@ const NextTickDialog: React.FC<{
       isOpen={isOpen}
     >
       {body}
-      <div className={Classes.DIALOG_FOOTER}>
-        <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-          {selectedRunRequest ? (
-            <Button
-              autoFocus={false}
-              onClick={(e: React.MouseEvent<any, MouseEvent>) => {
-                copyValue(
-                  e,
-                  configRef && configRef.current ? configRef.current.innerText : '' || '',
-                );
-              }}
-            >
-              Copy
-            </Button>
-          ) : null}
-          <Button intent="primary" autoFocus={true} onClick={() => close()}>
-            OK
-          </Button>
-        </div>
-      </div>
-    </Dialog>
+      <DialogFooter>
+        {selectedRunRequest ? (
+          <ButtonWIP
+            autoFocus={false}
+            onClick={(e: React.MouseEvent<any, MouseEvent>) => {
+              copyValue(e, configRef && configRef.current ? configRef.current.innerText : '' || '');
+            }}
+          >
+            Copy
+          </ButtonWIP>
+        ) : null}
+        <ButtonWIP intent="primary" autoFocus={true} onClick={() => close()}>
+          OK
+        </ButtonWIP>
+      </DialogFooter>
+    </DialogWIP>
   );
 };
 
@@ -457,24 +449,14 @@ const ConfigBody = styled.div`
   font-size: 14px;
   overflow: scroll;
   background: ${Colors.WHITE};
-  border-top: 1px solid ${Colors.LIGHT_GRAY3};
-  padding: 20px;
-  margin: 0;
-  margin-bottom: 20px;
 `;
 
 const RunRequestBody = styled.div`
   font-size: 13px;
-  background: ${Colors.WHITE};
-  border-top: 1px solid ${Colors.LIGHT_GRAY3};
-  padding: 20px;
-  margin: 0;
-  margin-bottom: 20px;
 `;
 
 const SkipWrapper = styled.div`
   background-color: #fdfcf2;
-  padding: 1em 2em;
   border: 1px solid ${Colors.GOLD5};
   border-radius: 3px;
 `;

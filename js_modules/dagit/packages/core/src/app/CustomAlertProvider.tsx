@@ -1,7 +1,8 @@
-import {Button, Classes, Colors, Dialog} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {ButtonWIP} from '../ui/Button';
+import {DialogWIP, DialogBody, DialogFooter} from '../ui/Dialog';
 import {FontFamily} from '../ui/styles';
 
 import {copyValue} from './DomUtils';
@@ -25,63 +26,56 @@ export const showCustomAlert = (opts: Partial<ICustomAlert>) => {
   setCustomAlert(Object.assign({body: '', title: 'Error'}, opts));
 };
 
-export class CustomAlertProvider extends React.Component {
-  state = {alert: CurrentAlert};
+export const CustomAlertProvider = () => {
+  const [alert, setAlert] = React.useState(() => CurrentAlert);
+  const body = React.useRef<HTMLDivElement>(null);
 
-  bodyRef = React.createRef<HTMLDivElement>();
+  const copySelector = alert?.copySelector;
 
-  componentDidMount() {
-    document.addEventListener(CURRENT_ALERT_CHANGED, () => this.setState({alert: CurrentAlert}));
-  }
+  React.useEffect(() => {
+    const setter = () => setAlert(CurrentAlert);
+    document.addEventListener(CURRENT_ALERT_CHANGED, setter);
+    return () => document.removeEventListener(CURRENT_ALERT_CHANGED, setter);
+  }, []);
 
-  render() {
-    const alert = this.state.alert;
+  const onCopy = React.useCallback(
+    (e: React.MouseEvent) => {
+      const copyElement = copySelector ? body.current!.querySelector(copySelector) : body.current;
+      const copyText =
+        copyElement instanceof HTMLElement ? copyElement.innerText : copyElement?.textContent;
+      copyValue(e, copyText || '');
+    },
+    [copySelector],
+  );
 
-    return (
-      <Dialog
-        icon={alert ? 'info-sign' : undefined}
-        usePortal={true}
-        onClose={() => setCustomAlert(null)}
-        style={{width: 'auto', maxWidth: '80vw'}}
-        title={alert ? alert.title : ''}
-        isOpen={!!alert}
-      >
-        <Body ref={this.bodyRef}>{alert ? alert.body : undefined}</Body>
-        <div className={Classes.DIALOG_FOOTER}>
-          <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-            <Button
-              autoFocus={false}
-              onClick={(e: React.MouseEvent<any, MouseEvent>) => {
-                const copyElement = alert?.copySelector
-                  ? this.bodyRef.current!.querySelector(alert.copySelector)
-                  : this.bodyRef.current;
-                const copyText =
-                  copyElement instanceof HTMLElement
-                    ? copyElement.innerText
-                    : copyElement?.textContent;
-                copyValue(e, copyText || '');
-              }}
-            >
-              Copy
-            </Button>
-            <Button intent="primary" autoFocus={true} onClick={() => setCustomAlert(null)}>
-              OK
-            </Button>
-          </div>
-        </div>
-      </Dialog>
-    );
-  }
-}
+  return (
+    <DialogWIP
+      title={alert?.title}
+      icon={alert ? 'info' : undefined}
+      onClose={() => setCustomAlert(null)}
+      style={{width: 'auto', maxWidth: '80vw'}}
+      isOpen={!!alert}
+    >
+      {alert ? (
+        <DialogBody>
+          <Body ref={body}>{alert.body}</Body>
+        </DialogBody>
+      ) : null}
+      <DialogFooter>
+        <ButtonWIP autoFocus={false} onClick={onCopy}>
+          Copy
+        </ButtonWIP>
+        <ButtonWIP intent="primary" autoFocus={true} onClick={() => setCustomAlert(null)}>
+          OK
+        </ButtonWIP>
+      </DialogFooter>
+    </DialogWIP>
+  );
+};
 
 const Body = styled.div`
   white-space: pre-line;
   font-family: ${FontFamily.monospace};
   font-size: 16px;
   overflow: scroll;
-  background: ${Colors.WHITE};
-  border-top: 1px solid ${Colors.LIGHT_GRAY3};
-  padding: 20px;
-  margin: 0;
-  margin-bottom: 20px;
 `;
