@@ -1,16 +1,5 @@
-import {
-  Button,
-  ButtonGroup,
-  Checkbox,
-  Colors,
-  IconName,
-  MenuItem,
-  Tab,
-  Tabs,
-  Tag,
-} from '@blueprintjs/core';
+import {Button, ButtonGroup, Checkbox, Colors, IconName, Tab, Tabs, Tag} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
-import {Select} from '@blueprintjs/select';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -18,6 +7,8 @@ import {useCopyToClipboard} from '../app/browser';
 import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
 import {Group} from '../ui/Group';
+import {MenuItemWIP} from '../ui/Menu';
+import {SelectWIP} from '../ui/Select';
 import {Spinner} from '../ui/Spinner';
 
 import {ExecutionStateDot} from './ExecutionStateDot';
@@ -158,11 +149,11 @@ const ComputeLogToolbar = ({
       style={{flex: 1}}
     >
       <Group direction="row" spacing={24} alignItems="center">
-        <Select
+        <SelectWIP
           disabled={!steps.length}
           items={Object.keys(logCaptureSteps)}
           itemRenderer={(item: string, options: {handleClick: any; modifiers: any}) => (
-            <MenuItem
+            <MenuItemWIP
               key={item}
               onClick={options.handleClick}
               text={logKeyText(item)}
@@ -181,7 +172,7 @@ const ComputeLogToolbar = ({
             rightIcon="caret-down"
             style={{minHeight: 25}}
           />
-        </Select>
+        </SelectWIP>
         {isValidStepSelection ? (
           <Tabs selectedTabId={LogType[logType]}>
             <Tab

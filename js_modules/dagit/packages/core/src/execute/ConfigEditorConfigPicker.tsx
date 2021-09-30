@@ -1,8 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import {Button, HTMLInputProps, IInputGroupProps, Intent, Menu, MenuItem} from '@blueprintjs/core';
-import {Select, Suggest} from '@blueprintjs/select';
 import * as React from 'react';
-import * as ReactDOM from 'react-dom';
 import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
@@ -14,7 +12,10 @@ import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
 import {RepositorySelector} from '../types/globalTypes';
 import {ColorsWIP} from '../ui/Colors';
 import {IconWIP} from '../ui/Icon';
+import {MenuDividerWIP, MenuItemWIP, MenuWIP} from '../ui/Menu';
+import {SelectWIP} from '../ui/Select';
 import {Spinner} from '../ui/Spinner';
+import {SuggestWIP} from '../ui/Suggest';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -104,7 +105,7 @@ export const ConfigEditorConfigPicker: React.FC<ConfigEditorConfigPickerProps> =
 
   return (
     <PickerContainer>
-      {pipelineMode && configGenerators.length <= 1 ? null : (
+      {(pipelineMode && configGenerators.length === 1) || configGenerators.length < 1 ? null : (
         <ConfigEditorConfigGeneratorPicker
           label={label()}
           configGenerators={configGenerators}
@@ -189,7 +190,7 @@ const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = 
     // current partition's name so it doesn't flicker (if one is set already.)
     if (loading && partitions.length === 0) {
       return (
-        <Suggest<string>
+        <SuggestWIP<string>
           key="loading"
           inputProps={{
             ...inputProps,
@@ -200,6 +201,7 @@ const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = 
           noResults={<Menu.Item disabled={true} text="Loading..." />}
           inputValueRenderer={(str) => str}
           selectedItem={value}
+          onItemSelect={() => {}}
         />
       );
     }
@@ -215,7 +217,7 @@ const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = 
     // selection change. However, we need to set an initial value (defaultSelectedItem)
     // and ensure it is re-applied to the internal state when it changes (via `key` below).
     return (
-      <Suggest<Partition>
+      <SuggestWIP<Partition>
         key={selected ? selected.name : 'none'}
         defaultSelectedItem={selected}
         items={partitions}
@@ -249,7 +251,7 @@ const ConfigEditorConfigGeneratorPicker: React.FC<ConfigEditorConfigGeneratorPic
   (props) => {
     const {configGenerators, label, onSelect} = props;
     const {flagPipelineModeTuples} = useFeatureFlags();
-    const select = React.useRef<Select<ConfigGenerator>>(null);
+    const button = React.useRef<Button | null>(null);
     const itemLabel = flagPipelineModeTuples ? 'Ops' : 'Solids';
 
     return (
@@ -257,10 +259,9 @@ const ConfigEditorConfigGeneratorPicker: React.FC<ConfigEditorConfigGeneratorPic
         <ShortcutHandler
           shortcutLabel={'⌥E'}
           shortcutFilter={(e) => e.keyCode === 69 && e.altKey}
-          onShortcut={() => activateSelect(select.current)}
+          onShortcut={() => button.current?.buttonRef?.click()}
         >
-          <Select<ConfigGenerator>
-            ref={select}
+          <SelectWIP<ConfigGenerator>
             items={configGenerators}
             itemPredicate={(query, configGenerator) =>
               query.length === 0 || configGenerator.name.includes(query)
@@ -280,17 +281,17 @@ const ConfigEditorConfigGeneratorPicker: React.FC<ConfigEditorConfigGeneratorPic
                 renderedPresetItems.length > 0 && renderedPartitionSetItems.length > 0;
 
               return (
-                <Menu ulRef={itemsParentRef}>
+                <MenuWIP ulRef={itemsParentRef}>
                   {bothTypesPresent && <MenuItem disabled={true} text={`Presets`} />}
                   {renderedPresetItems}
-                  {bothTypesPresent && <Menu.Divider />}
+                  {bothTypesPresent && <MenuDividerWIP />}
                   {bothTypesPresent && <MenuItem disabled={true} text={`Partition Sets`} />}
                   {renderedPartitionSetItems}
-                </Menu>
+                </MenuWIP>
               );
             }}
             itemRenderer={(item, props) => (
-              <Menu.Item
+              <MenuItemWIP
                 active={props.modifiers.active}
                 onClick={props.handleClick}
                 key={item.name}
@@ -311,33 +312,27 @@ const ConfigEditorConfigGeneratorPicker: React.FC<ConfigEditorConfigGeneratorPic
                 }
               />
             )}
-            noResults={<Menu.Item disabled={true} text="No presets." />}
+            noResults={<MenuItemWIP disabled={true} text="No presets." />}
             onItemSelect={onSelect}
           >
-            <Button text={label} data-test-id="preset-selector-button" rightIcon="caret-down" />
-          </Select>
+            <Button
+              ref={button}
+              text={label}
+              data-test-id="preset-selector-button"
+              rightIcon="caret-down"
+            />
+          </SelectWIP>
         </ShortcutHandler>
       </div>
     );
   },
 );
 
-function activateSelect(select: Select<any> | null) {
-  if (!select) {
-    return;
-  }
-  // eslint-disable-next-line react/no-find-dom-node
-  const selectEl = ReactDOM.findDOMNode(select) as HTMLElement;
-  const btnEl = selectEl.querySelector('button');
-  if (btnEl) {
-    btnEl.click();
-  }
-}
-
 const PickerContainer = styled.div`
   display: flex;
   justify: space-between;
   align-items: center;
+  gap: 6px;
 `;
 
 export const CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT = gql`

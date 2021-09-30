@@ -1,7 +1,9 @@
-import {Button, Intent, Menu} from '@blueprintjs/core';
+import {Button, Intent} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
-import {Select} from '@blueprintjs/select';
 import * as React from 'react';
+
+import {MenuItemWIP} from '../ui/Menu';
+import {SelectWIP} from '../ui/Select';
 
 import {ModeNotFoundError} from './ModeNotFoundError';
 
@@ -18,11 +20,7 @@ interface ConfigEditorModePickerProps {
 
 const MODE_PICKER_HINT_TEXT = `To add a mode, add a ModeDefinition to the pipeline.`;
 
-const ModeSelect = Select.ofType<Mode>();
-
-export const ConfigEditorModePicker: React.FunctionComponent<ConfigEditorModePickerProps> = (
-  props,
-) => {
+export const ConfigEditorModePicker: React.FC<ConfigEditorModePickerProps> = (props) => {
   const resolvedMode = props.modeName
     ? props.modes.find((m) => m.name === props.modeName)
     : props.modes[0];
@@ -43,14 +41,14 @@ export const ConfigEditorModePicker: React.FunctionComponent<ConfigEditorModePic
   };
 
   return (
-    <ModeSelect
+    <SelectWIP
       activeItem={resolvedMode}
       filterable={true}
-      disabled={singleMode && valid}
+      disabled={disabled}
       items={props.modes}
       itemPredicate={(query, mode) => query.length === 0 || mode.name.includes(query)}
       itemRenderer={(mode, props) => (
-        <Menu.Item
+        <MenuItemWIP
           active={props.modifiers.active}
           key={mode.name}
           text={mode.name}
@@ -74,6 +72,6 @@ export const ConfigEditorModePicker: React.FunctionComponent<ConfigEditorModePic
         rightIcon="caret-down"
         data-test-id="mode-picker-button"
       />
-    </ModeSelect>
+    </SelectWIP>
   );
 };

@@ -1,7 +1,8 @@
-import {Menu} from '@blueprintjs/core';
-import {Select} from '@blueprintjs/select';
 import moment from 'moment-timezone';
 import * as React from 'react';
+
+import {MenuDividerWIP, MenuItemWIP, MenuWIP} from '../../ui/Menu';
+import {SelectWIP} from '../../ui/Select';
 
 import {TimezoneContext} from './TimezoneContext';
 import {browserTimezone, browserTimezoneAbbreviation} from './browserTimezone';
@@ -56,17 +57,17 @@ export const TimezoneSelect: React.FC<Props> = ({trigger}) => {
   const [timezone, setTimezone] = React.useContext(TimezoneContext);
 
   return (
-    <Select<typeof SortedTimezoneItems[0]>
-      popoverProps={{position: 'bottom-right'}}
+    <SelectWIP<typeof SortedTimezoneItems[0]>
+      popoverProps={{position: 'bottom-left'}}
       activeItem={SortedTimezoneItems.find((tz) => tz.key === timezone)}
       inputProps={{style: {width: '300px'}}}
       items={SortedTimezoneItems}
       itemPredicate={(query, tz) => tz.key.toLowerCase().includes(query.toLowerCase())}
       itemRenderer={(tz, props) =>
         tz.key.startsWith('divider') ? (
-          <Menu.Divider key={tz.key} />
+          <MenuDividerWIP key={tz.key} />
         ) : (
-          <Menu.Item
+          <MenuItemWIP
             active={props.modifiers.active}
             onClick={props.handleClick}
             label={tz.offsetLabel}
@@ -75,10 +76,14 @@ export const TimezoneSelect: React.FC<Props> = ({trigger}) => {
           />
         )
       }
-      noResults={<Menu.Item disabled text="No results." />}
+      itemListRenderer={({renderItem, filteredItems}) => {
+        const renderedItems = filteredItems.map(renderItem).filter(Boolean);
+        return <MenuWIP>{renderedItems}</MenuWIP>;
+      }}
+      noResults={<MenuItemWIP disabled text="No results." />}
       onItemSelect={(tz) => setTimezone(tz.key)}
     >
       {trigger(timezone)}
-    </Select>
+    </SelectWIP>
   );
 };

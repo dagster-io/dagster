@@ -11,6 +11,8 @@ import {MemoryRouter} from 'react-router-dom';
 
 import {createGlobalStyle} from 'styled-components/macro';
 
+import {GlobalPopoverStyle} from '../src/ui/Popover';
+
 const GlobalStyle = createGlobalStyle`
   * {
     box-sizing: border-box;
@@ -35,6 +37,7 @@ export const decorators = [
   (Story) => (
     <MemoryRouter>
       <GlobalStyle />
+      <GlobalPopoverStyle />
       <Story />
     </MemoryRouter>
   ),
