@@ -33,7 +33,14 @@ def ambitious_solid():
 
 With the default behavior, because this code uses a custom python logger (instead of `context.log`), this log statement will not be added as an event in the Dagster event log, and therefore won't show up in Dagit. However, sometimes it is desirable to change this default behavior, and treat these sorts of log statements identically to how Dagster treats `context.log` calls.
 
-This can be accomplished by setting the `managed_python_loggers` key in your dagster.yaml file to a list of python logger names that you would like to capture.
+This can be accomplished by setting the `managed_python_loggers` key in your dagster.yaml file to a list of python logger names that you would like to capture:
+
+```yaml file=/concepts/logging/python_logging_managed_loggers_config2.yaml
+python_logs:
+  managed_python_loggers:
+    - my_logger
+    - my_other_logger
+```
 
 If you would like to capture logs from ALL python loggers, you can simply include `root` in your list, as python loggers are arranged in a hierarchy, with `root` as the parent of all other loggers:
 
@@ -43,7 +50,7 @@ python_logs:
     - root
 ```
 
-Once this key is set, Dagster will treat any normal python log call from one of the listed logger in the exact same way as a `context.log` call, which means you should be able to see this log statement in Dagit:
+Once this key is set, Dagster will treat any normal python log call from one of the listed loggers in the exact same way as a `context.log` call, which means you should be able to see this log statement in Dagit:
 
 <Image
 alt="log-python-error"
