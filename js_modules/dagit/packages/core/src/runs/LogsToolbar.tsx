@@ -1,16 +1,16 @@
-import {Button, ButtonGroup, Checkbox, IconName, Tab, Tabs} from '@blueprintjs/core';
+import {Button, ButtonGroup, Checkbox, IconName} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {useCopyToClipboard} from '../app/browser';
 import {Box} from '../ui/Box';
-import {ButtonLink} from '../ui/ButtonLink';
 import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {MenuItemWIP} from '../ui/Menu';
 import {SelectWIP} from '../ui/Select';
 import {Spinner} from '../ui/Spinner';
+import {Tab, Tabs} from '../ui/Tabs';
 import {TagWIP} from '../ui/TagWIP';
 
 import {ExecutionStateDot} from './ExecutionStateDot';
@@ -176,38 +176,16 @@ const ComputeLogToolbar = ({
           />
         </SelectWIP>
         {isValidStepSelection ? (
-          <Tabs selectedTabId={LogType[logType]}>
+          <Tabs selectedTabId={LogType[logType]} size="small">
             <Tab
               id={LogType[LogType.stdout]}
-              title={
-                <ButtonLink
-                  color={
-                    logType === LogType.stdout
-                      ? ColorsWIP.Link
-                      : {link: ColorsWIP.Gray500, hover: ColorsWIP.Link}
-                  }
-                  underline="never"
-                  onClick={() => onSetLogType(LogType.stdout)}
-                >
-                  stdout
-                </ButtonLink>
-              }
+              title="stdout"
+              onClick={() => onSetLogType(LogType.stdout)}
             />
             <Tab
               id={LogType[LogType.stderr]}
-              title={
-                <ButtonLink
-                  color={
-                    logType === LogType.stderr
-                      ? ColorsWIP.Link
-                      : {link: ColorsWIP.Gray500, hover: ColorsWIP.Link}
-                  }
-                  underline="never"
-                  onClick={() => onSetLogType(LogType.stderr)}
-                >
-                  stderr
-                </ButtonLink>
-              }
+              title="stderr"
+              onClick={() => onSetLogType(LogType.stderr)}
             />
           </Tabs>
         ) : null}

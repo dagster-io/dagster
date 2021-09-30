@@ -59,6 +59,8 @@ module.exports = {
               'Select',
               'Suggest',
               'Spinner',
+              'Tab',
+              'Tabs',
               'Tag',
               'Tooltip',
             ],

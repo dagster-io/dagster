@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Checkbox, NonIdealState, Tabs, Tab} from '@blueprintjs/core';
+import {Checkbox, NonIdealState} from '@blueprintjs/core';
 import {ActiveElement, Chart, TimeUnit} from 'chart.js';
 import 'chartjs-adapter-date-fns';
 import zoomPlugin from 'chartjs-plugin-zoom';
@@ -18,6 +18,7 @@ import {ColorsWIP} from '../ui/Colors';
 import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
 import {Spinner} from '../ui/Spinner';
+import {Tab, Tabs} from '../ui/Tabs';
 import {Subheading} from '../ui/Text';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -135,17 +136,9 @@ export const TickHistory = ({
     <Tabs selectedTabId={selectedTab}>
       {TABS.map((tab) =>
         tab.id === 'recent' && !showRecent ? null : (
-          <Tab
-            id={tab.id}
-            key={tab.id}
-            title={
-              <ButtonLink underline={false} onClick={() => setSelectedTab(tab.id)}>
-                {tab.label}
-              </ButtonLink>
-            }
-          />
+          <Tab id={tab.id} key={tab.id} title={tab.label} onClick={() => setSelectedTab(tab.id)} />
         ),
-      )}
+      ).filter(Boolean)}
     </Tabs>
   );
 

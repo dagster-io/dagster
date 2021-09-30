@@ -1,10 +1,9 @@
 import {gql, useQuery} from '@apollo/client';
-import {Divider, NonIdealState, Tab, Tabs} from '@blueprintjs/core';
+import {NonIdealState} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link, RouteComponentProps} from 'react-router-dom';
-import styled from 'styled-components/macro';
 
 import {useFeatureFlags} from '../app/Flags';
 import {QueryCountdown} from '../app/QueryCountdown';
@@ -12,14 +11,13 @@ import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {PipelineRunStatus} from '../types/globalTypes';
 import {Alert} from '../ui/Alert';
 import {Box} from '../ui/Box';
-import {ButtonLink} from '../ui/ButtonLink';
 import {ColorsWIP} from '../ui/Colors';
 import {CursorPaginationControls} from '../ui/CursorControls';
 import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
 import {Page} from '../ui/Page';
 import {PageHeader} from '../ui/PageHeader';
-import {TagWIP} from '../ui/TagWIP';
+import {Tab, Tabs} from '../ui/Tabs';
 import {Heading} from '../ui/Text';
 import {TokenizingFieldValue} from '../ui/TokenizingField';
 
@@ -33,7 +31,6 @@ import {
   runsFilterForSearchTokens,
   useQueryPersistedRunFilters,
 } from './RunsFilter';
-import {CountFragment} from './types/CountFragment';
 import {QueueDaemonStatusQuery} from './types/QueueDaemonStatusQuery';
 import {RunsRootQuery, RunsRootQueryVariables} from './types/RunsRootQuery';
 import {POLL_INTERVAL, useCursorPaginatedQuery} from './useCursorPaginatedQuery';
@@ -96,8 +93,8 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
   };
 
   const selectedTab = showScheduled ? 'scheduled' : selectedTabId(filterTokens);
-  const tabColor = (match: string) =>
-    selectedTab === match ? ColorsWIP.Link : {link: ColorsWIP.Gray500, hover: ColorsWIP.Link};
+  // const tabColor = (match: string) =>
+  //   selectedTab === match ? ColorsWIP.Link : {link: ColorsWIP.Gray500, hover: ColorsWIP.Link};
   const enabledFilters: RunFilterTokenType[] = flagPipelineModeTuples
     ? ['status', 'tag', 'snapshotId', 'id', 'job']
     : ['status', 'tag', 'snapshotId', 'id', 'pipeline'];
@@ -112,89 +109,33 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
             flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}
           >
             <Tabs selectedTabId={selectedTab} id="run-tabs">
+              <Tab title="All runs" onClick={() => setStatusFilter([])} id="all" />
               <Tab
-                title={
-                  <TabButton
-                    color={tabColor('all')}
-                    underline="never"
-                    onClick={() => setStatusFilter([])}
-                  >
-                    All runs
-                  </TabButton>
+                title="Queued"
+                count={
+                  queryResult.data?.queuedCount?.__typename === 'PipelineRuns'
+                    ? queryResult.data?.queuedCount.count
+                    : 'indeterminate'
                 }
-                id="all"
-              />
-              <Tab
-                title={
-                  <TabButton
-                    color={tabColor('queued')}
-                    underline="never"
-                    onClick={() => setStatusFilter(Array.from(queuedStatuses))}
-                  >
-                    <Group direction="row" spacing={4} alignItems="center">
-                      <div>Queued</div>
-                      <CountTag
-                        loading={queryResult.loading && !queryResult.data}
-                        fragment={
-                          queryResult.data?.queuedCount?.__typename === 'PipelineRuns'
-                            ? queryResult.data?.queuedCount
-                            : undefined
-                        }
-                      />
-                    </Group>
-                  </TabButton>
-                }
+                onClick={() => setStatusFilter(Array.from(queuedStatuses))}
                 id="queued"
               />
               <Tab
-                title={
-                  <TabButton
-                    color={tabColor('in-progress')}
-                    underline="never"
-                    onClick={() => setStatusFilter(Array.from(inProgressStatuses))}
-                  >
-                    <Group direction="row" spacing={4} alignItems="center">
-                      <div>In progress</div>
-                      <CountTag
-                        loading={queryResult.loading && !queryResult.data}
-                        fragment={
-                          queryResult.data?.inProgressCount?.__typename === 'PipelineRuns'
-                            ? queryResult.data?.inProgressCount
-                            : undefined
-                        }
-                      />
-                    </Group>
-                  </TabButton>
+                title="In progress"
+                count={
+                  queryResult.data?.inProgressCount?.__typename === 'PipelineRuns'
+                    ? queryResult.data?.inProgressCount.count
+                    : 'indeterminate'
                 }
+                onClick={() => setStatusFilter(Array.from(inProgressStatuses))}
                 id="in-progress"
               />
               <Tab
-                title={
-                  <TabButton
-                    color={tabColor('done')}
-                    underline="never"
-                    onClick={() => setStatusFilter(Array.from(doneStatuses))}
-                  >
-                    Done
-                  </TabButton>
-                }
+                title="Done"
+                onClick={() => setStatusFilter(Array.from(doneStatuses))}
                 id="done"
               />
-              <div style={{display: 'flex', alignSelf: 'stretch'}}>
-                <Divider style={{margin: '6px 0px'}} />
-              </div>
-              <Tab
-                title={
-                  <TabButton
-                    color={tabColor('scheduled')}
-                    underline="never"
-                    onClick={() => setShowScheduled(true)}
-                  >
-                    Scheduled
-                  </TabButton>
-                }
-                id="scheduled"
-              />
+              <Tab title="Scheduled" onClick={() => setShowScheduled(true)} id="scheduled" />
             </Tabs>
             <Box padding={{bottom: 8}}>
               <QueryCountdown pollInterval={POLL_INTERVAL} queryResult={queryResult} />
@@ -334,23 +275,3 @@ const QUEUE_DAEMON_STATUS_QUERY = gql`
     }
   }
 `;
-
-const TabButton = styled(ButtonLink)`
-  line-height: 34px;
-`;
-
-interface CountTagProps {
-  loading: boolean;
-  fragment: CountFragment | undefined;
-}
-
-const CountTag = (props: CountTagProps) => {
-  const {loading, fragment} = props;
-  if (loading) {
-    return <TagWIP intent="none">–</TagWIP>;
-  }
-  if (typeof fragment?.count === 'number') {
-    return <TagWIP intent="none">{fragment.count}</TagWIP>;
-  }
-  return null;
-};

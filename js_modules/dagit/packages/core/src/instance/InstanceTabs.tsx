@@ -1,11 +1,11 @@
 import {QueryResult} from '@apollo/client';
-import {Tab, Tabs} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {QueryCountdown} from '../app/QueryCountdown';
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
+import {Tab, Tabs} from '../ui/Tabs';
 
 const POLL_INTERVAL = 15000;
 
