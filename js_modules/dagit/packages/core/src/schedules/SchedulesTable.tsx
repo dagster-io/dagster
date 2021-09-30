@@ -1,4 +1,4 @@
-import {Button, Colors, Intent, Menu, MenuItem, Tag} from '@blueprintjs/core';
+import {Button, Colors, Menu, MenuItem} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -12,6 +12,7 @@ import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
 import {Popover} from '../ui/Popover';
 import {Table} from '../ui/Table';
+import {TagWIP} from '../ui/TagWIP';
 import {Code} from '../ui/Text';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -110,7 +111,7 @@ const errorDisplay = (
 
   return (
     <Popover
-      interactionKind="click"
+      interactionKind="hover"
       popoverClassName="bp3-popover-content-sizing"
       position="right"
       content={
@@ -129,9 +130,9 @@ const errorDisplay = (
         </Group>
       }
     >
-      <Tag fill={true} interactive={true} intent={Intent.DANGER}>
+      <TagWIP fill interactive intent="danger">
         Error
-      </Tag>
+      </TagWIP>
     </Popover>
   );
 };
@@ -158,8 +159,10 @@ const ScheduleRow: React.FC<{
   return (
     <tr key={name}>
       <td>
-        <ScheduleSwitch repoAddress={repoAddress} schedule={schedule} />
-        {errorDisplay(status, runningScheduleCount, repoAddress)}
+        <Group direction="column" spacing={4}>
+          <ScheduleSwitch repoAddress={repoAddress} schedule={schedule} />
+          {errorDisplay(status, runningScheduleCount, repoAddress)}
+        </Group>
       </td>
       <td>
         <Group direction="column" spacing={4}>

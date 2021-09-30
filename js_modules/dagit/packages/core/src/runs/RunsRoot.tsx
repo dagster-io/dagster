@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors, Divider, NonIdealState, Tab, Tabs, Tag} from '@blueprintjs/core';
+import {Colors, Divider, NonIdealState, Tab, Tabs} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
@@ -18,6 +18,7 @@ import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
 import {Page} from '../ui/Page';
 import {PageHeader} from '../ui/PageHeader';
+import {TagWIP} from '../ui/TagWIP';
 import {Heading} from '../ui/Text';
 import {TokenizingFieldValue} from '../ui/TokenizingField';
 
@@ -343,22 +344,10 @@ interface CountTagProps {
 const CountTag = (props: CountTagProps) => {
   const {loading, fragment} = props;
   if (loading) {
-    return (
-      <CountTagStyled minimal intent="none">
-        –
-      </CountTagStyled>
-    );
+    return <TagWIP intent="none">–</TagWIP>;
   }
   if (typeof fragment?.count === 'number') {
-    return (
-      <CountTagStyled minimal intent="none">
-        {fragment.count}
-      </CountTagStyled>
-    );
+    return <TagWIP intent="none">{fragment.count}</TagWIP>;
   }
   return null;
 };
-
-const CountTagStyled = styled(Tag)`
-  min-width: 24px;
-`;

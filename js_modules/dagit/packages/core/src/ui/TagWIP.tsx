@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports
 import {Tag as BlueprintTag} from '@blueprintjs/core';
 import * as React from 'react';
 
@@ -17,7 +18,7 @@ const intentToFillColor = (intent: React.ComponentProps<typeof BlueprintTag>['in
       return ColorsWIP.Yellow50;
     case 'none':
     default:
-      return ColorsWIP.Gray50;
+      return ColorsWIP.Gray100;
   }
 };
 

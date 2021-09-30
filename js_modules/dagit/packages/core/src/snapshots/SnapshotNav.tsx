@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Tag, Colors, Tab, Tabs} from '@blueprintjs/core';
+import {Colors, Tab, Tabs} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -7,6 +7,7 @@ import {explorerPathToString, PipelineExplorerPath} from '../pipelines/PipelineP
 import {Box} from '../ui/Box';
 import {Group} from '../ui/Group';
 import {PageHeader} from '../ui/PageHeader';
+import {TagWIP} from '../ui/TagWIP';
 import {Heading} from '../ui/Text';
 import {FontFamily} from '../ui/styles';
 import {useActivePipelineForName} from '../workspace/WorkspaceContext';
@@ -48,9 +49,9 @@ export const SnapshotNav = (props: SnapshotNavProps) => {
   const tag = () => {
     if (loading) {
       return (
-        <Tag intent="none" minimal>
+        <TagWIP intent="none" minimal>
           ...
-        </Tag>
+        </TagWIP>
       );
     }
 
@@ -61,16 +62,16 @@ export const SnapshotNav = (props: SnapshotNavProps) => {
         data?.pipelineSnapshotOrError?.parentSnapshotId !== currentSnapshotID)
     ) {
       return (
-        <Tag intent="warning" minimal>
+        <TagWIP intent="warning" minimal>
           Snapshot
-        </Tag>
+        </TagWIP>
       );
     }
 
     return (
-      <Tag intent="success" minimal>
+      <TagWIP intent="success" minimal>
         Current
-      </Tag>
+      </TagWIP>
     );
   };
 
