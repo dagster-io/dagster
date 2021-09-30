@@ -1,14 +1,5 @@
 import {gql, useQuery, useMutation} from '@apollo/client';
-import {
-  Colors,
-  NonIdealState,
-  Popover,
-  Button,
-  Menu,
-  MenuItem,
-  Tag,
-  Intent,
-} from '@blueprintjs/core';
+import {Colors, NonIdealState, Button, Tag, Intent} from '@blueprintjs/core';
 import qs from 'qs';
 import * as React from 'react';
 import {useHistory, Link} from 'react-router-dom';
@@ -37,6 +28,8 @@ import {ButtonLink} from '../ui/ButtonLink';
 import {CursorPaginationControls} from '../ui/CursorControls';
 import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
+import {MenuItemWIP, MenuWIP} from '../ui/Menu';
+import {Popover} from '../ui/Popover';
 import {Table} from '../ui/Table';
 import {Mono} from '../ui/Text';
 import {stringFromValue} from '../ui/TokenizingField';
@@ -332,21 +325,21 @@ const BackfillRow = ({
       <td style={{width: '100px'}}>
         <Popover
           content={
-            <Menu>
+            <MenuWIP>
               {canCancelPartitionBackfill ? (
                 <>
                   {counts.numUnscheduled && backfill.status === BulkActionStatus.REQUESTED ? (
-                    <MenuItem
+                    <MenuItemWIP
                       text="Cancel backfill submission"
-                      icon="stop"
+                      icon="cancel"
                       intent="danger"
                       onClick={() => onTerminateBackfill(backfill)}
                     />
                   ) : null}
                   {canCancel ? (
-                    <MenuItem
+                    <MenuItemWIP
                       text="Terminate unfinished runs"
-                      icon="stop"
+                      icon="cancel"
                       intent="danger"
                       onClick={() => onTerminateBackfill(backfill)}
                     />
@@ -356,28 +349,28 @@ const BackfillRow = ({
               {canLaunchPartitionBackfill &&
               backfill.status === BulkActionStatus.FAILED &&
               backfill.partitionSet ? (
-                <MenuItem
+                <MenuItemWIP
                   text="Resume failed backfill"
                   title="Submits runs for all partitions in the backfill that do not have a corresponding run. Does not retry failed runs."
-                  icon="repeat"
+                  icon="refresh"
                   onClick={() => onResumeBackfill(backfill)}
                 />
               ) : null}
               {partitionSetBackfillUrl ? (
-                <MenuItem
+                <MenuItemWIP
                   text="View Partition Matrix"
-                  icon="multi-select"
+                  icon="view_list"
                   onClick={() => history.push(partitionSetBackfillUrl)}
                 />
               ) : null}
-              <MenuItem
+              <MenuItemWIP
                 text="View Backfill Runs"
-                icon="history"
+                icon="settings_backup_restore"
                 onClick={() => history.push(runsUrl)}
               />
-            </Menu>
+            </MenuWIP>
           }
-          position="bottom"
+          position="bottom-right"
         >
           <Button small minimal icon="chevron-down" style={{marginLeft: '4px'}} />
         </Popover>
