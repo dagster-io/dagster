@@ -55,6 +55,8 @@ module.exports = {
               'Dialog',
               'Icon',
               'Popover',
+              'Select',
+              'Suggest',
               'Spinner',
               'Tag',
               'Tooltip',
@@ -64,6 +66,10 @@ module.exports = {
           {
             name: '@blueprintjs/popover2',
             importNames: ['Popover2'],
+            message: 'Please use components in src/ui instead.',
+          },
+          {
+            name: '@blueprintjs/select',
             message: 'Please use components in src/ui instead.',
           },
           {
