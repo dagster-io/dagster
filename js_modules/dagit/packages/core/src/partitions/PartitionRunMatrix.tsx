@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors, Dialog, Button, Classes} from '@blueprintjs/core';
+import {Colors, Button} from '@blueprintjs/core';
 import qs from 'query-string';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -9,7 +9,9 @@ import {useViewport} from '../gantt/useViewport';
 import {QueryPersistedStateConfig, useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {PIPELINE_EXPLORER_SOLID_HANDLE_FRAGMENT} from '../pipelines/PipelineExplorer';
 import {Box} from '../ui/Box';
+import {ButtonWIP} from '../ui/Button';
 import {ColorsWIP} from '../ui/Colors';
+import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
@@ -170,13 +172,13 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
 
   return (
     <PartitionRunMatrixContainer>
-      <Dialog
+      <DialogWIP
         isOpen={!!focused}
         onClose={() => setFocused(null)}
         style={{width: '90vw'}}
         title={focused ? `${focused.partitionName} runs (${focused.stepName})` : ''}
       >
-        <div style={{background: Colors.WHITE, padding: 15, marginBottom: 15}}>
+        <DialogBody>
           {focused && (
             <PartitionRunListForStep
               pipelineName={props.pipelineName}
@@ -194,15 +196,13 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
               )}
             />
           )}
-        </div>
-        <div className={Classes.DIALOG_FOOTER}>
-          <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-            <Button intent="primary" autoFocus={true} onClick={() => setFocused(null)}>
-              OK
-            </Button>
-          </div>
-        </div>
-      </Dialog>
+        </DialogBody>
+        <DialogFooter>
+          <ButtonWIP intent="primary" autoFocus={true} onClick={() => setFocused(null)}>
+            OK
+          </ButtonWIP>
+        </DialogFooter>
+      </DialogWIP>
       <Box
         flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
         padding={{vertical: 4}}

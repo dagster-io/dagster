@@ -45,16 +45,14 @@ export const Simple = () => {
             </div>
           </Group>
         </DialogBody>
-        <DialogFooter
-          buttons={[
-            <ButtonWIP key="cancel" intent="none" onClick={() => setOpen(false)}>
-              Cancel
-            </ButtonWIP>,
-            <ButtonWIP key="action" intent="primary" onClick={() => setOpen(false)}>
-              Perform action
-            </ButtonWIP>,
-          ]}
-        />
+        <DialogFooter>
+          <ButtonWIP intent="none" onClick={() => setOpen(false)}>
+            Cancel
+          </ButtonWIP>
+          <ButtonWIP intent="primary" onClick={() => setOpen(false)}>
+            Perform action
+          </ButtonWIP>
+        </DialogFooter>
       </DialogWIP>
     </>
   );

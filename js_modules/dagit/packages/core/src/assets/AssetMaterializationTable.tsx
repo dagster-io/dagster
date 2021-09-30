@@ -1,4 +1,4 @@
-import {Button, Classes, Colors, Dialog} from '@blueprintjs/core';
+import {Colors} from '@blueprintjs/core';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -8,7 +8,9 @@ import {PipelineReference} from '../pipelines/PipelineReference';
 import {MetadataEntries} from '../runs/MetadataEntry';
 import {RunStatusTagWithStats} from '../runs/RunStatusTag';
 import {titleForRun} from '../runs/RunUtils';
+import {ButtonWIP} from '../ui/Button';
 import {ButtonLink} from '../ui/ButtonLink';
+import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
 import {Table} from '../ui/Table';
 import {Mono} from '../ui/Text';
@@ -144,7 +146,7 @@ export const AssetPredecessorLink: React.FC<PredecessorDialogProps> = ({
   return (
     <>
       <ButtonLink onClick={() => setOpen(true)}>{`View ${count} previous`}</ButtonLink>
-      <Dialog
+      <DialogWIP
         isOpen={open}
         canEscapeKeyClose
         canOutsideClickClose
@@ -152,22 +154,20 @@ export const AssetPredecessorLink: React.FC<PredecessorDialogProps> = ({
         style={{width: '80%', minWidth: '800px'}}
         title={title()}
       >
-        <div className={Classes.DIALOG_BODY}>
+        <DialogBody>
           <AssetMaterializationTable
             hasLineage={hasLineage}
             isPartitioned={isPartitioned}
             materializations={predecessors.map((p) => ({latest: p}))}
             shouldBucketPartitions={false}
           />
-        </div>
-        <div className={Classes.DIALOG_FOOTER}>
-          <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-            <Button intent="primary" onClick={() => setOpen(false)}>
-              OK
-            </Button>
-          </div>
-        </div>
-      </Dialog>
+        </DialogBody>
+        <DialogFooter>
+          <ButtonWIP intent="primary" onClick={() => setOpen(false)}>
+            OK
+          </ButtonWIP>
+        </DialogFooter>
+      </DialogWIP>
     </>
   );
 };

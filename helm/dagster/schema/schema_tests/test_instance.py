@@ -100,6 +100,24 @@ def test_k8s_run_launcher_config(template: HelmTemplate):
     env_config_maps = [{"name": "env_config_map"}]
     env_secrets = [{"name": "secret"}]
     env_vars = ["ENV_VAR"]
+    volume_mounts = [
+        {
+            "mountPath": "/opt/dagster/dagster_home/dagster.yaml",
+            "name": "dagster-instance",
+            "subPath": "dagster.yaml",
+        },
+        {
+            "name": "test-volume",
+            "mountPath": "/opt/dagster/test_mount_path/volume_mounted_file.yaml",
+            "subPath": "volume_mounted_file.yaml",
+        },
+    ]
+
+    volumes = [
+        {"name": "test-volume", "configMap": {"name": "test-volume-configmap"}},
+        {"name": "test-pvc", "persistentVolumeClaim": {"claimName": "my_claim", "readOnly": False}},
+    ]
+
     helm_values = DagsterHelmValues.construct(
         runLauncher=RunLauncher.construct(
             type=RunLauncherType.K8S,
@@ -111,6 +129,8 @@ def test_k8s_run_launcher_config(template: HelmTemplate):
                     envConfigMaps=env_config_maps,
                     envSecrets=env_secrets,
                     envVars=env_vars,
+                    volumeMounts=volume_mounts,
+                    volumes=volumes,
                 )
             ),
         )
@@ -132,6 +152,8 @@ def test_k8s_run_launcher_config(template: HelmTemplate):
         secret["name"] for secret in env_secrets
     ]
     assert run_launcher_config["config"]["env_vars"] == env_vars
+    assert run_launcher_config["config"]["volume_mounts"] == volume_mounts
+    assert run_launcher_config["config"]["volumes"] == volumes
 
 
 @pytest.mark.parametrize("enabled", [True, False])

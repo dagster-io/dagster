@@ -8,4 +8,4 @@ python_logs:
         formatter: myFormatter
     formatters:
       myFormatter:
-        format: 'My formatted message: %(message)s'
+        format: "My formatted message: %(message)s"

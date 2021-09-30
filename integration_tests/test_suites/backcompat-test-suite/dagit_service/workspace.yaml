@@ -1,0 +1,5 @@
+load_from:
+  - grpc_server:
+      host: dagster_grpc_server
+      port: 8090
+      location_name: test_repo

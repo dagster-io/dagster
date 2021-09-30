@@ -71,7 +71,7 @@ interface IPoint {
   x: number;
   y: number;
 }
-export type IEdge = {
+type IEdge = {
   from: IPoint;
   to: IPoint;
   dashed: boolean;

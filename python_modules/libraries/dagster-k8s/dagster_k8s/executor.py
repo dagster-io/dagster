@@ -91,6 +91,8 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
         ),
         env_config_maps=run_launcher.env_config_maps + (exc_cfg.get("env_config_maps") or []),
         env_secrets=run_launcher.env_secrets + (exc_cfg.get("env_secrets") or []),
+        volume_mounts=run_launcher.volume_mounts + (exc_cfg.get("volume_mounts") or []),
+        volumes=run_launcher.volumes + (exc_cfg.get("volumes") or []),
     )
 
     return StepDelegatingExecutor(
