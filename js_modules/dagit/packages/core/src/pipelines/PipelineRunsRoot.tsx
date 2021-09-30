@@ -83,7 +83,7 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
       <Page>
         <Box
           flex={{alignItems: 'flex-start', justifyContent: 'space-between'}}
-          margin={{bottom: 8}}
+          padding={{bottom: 16, horizontal: 24}}
         >
           <Group direction="column" spacing={8}>
             <Group direction="row" spacing={8}>
@@ -100,7 +100,6 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
           </Group>
           <QueryCountdown pollInterval={POLL_INTERVAL} queryResult={queryResult} />
         </Box>
-
         <Loading queryResult={queryResult} allowStaleData={true}>
           {({pipelineRunsOrError}) => {
             if (pipelineRunsOrError.__typename !== 'PipelineRuns') {

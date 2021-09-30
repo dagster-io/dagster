@@ -102,119 +102,121 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
     : ['status', 'tag', 'snapshotId', 'id', 'pipeline'];
 
   return (
-    <Page style={{height: '100%'}}>
+    <Page>
       <Group direction="column" spacing={8}>
-        <PageHeader title={<Heading>Runs</Heading>} />
-        <Box
-          border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}
-          flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}
-        >
-          <Tabs selectedTabId={selectedTab} id="run-tabs">
-            <Tab
-              title={
-                <TabButton
-                  color={tabColor('all')}
-                  underline="never"
-                  onClick={() => setStatusFilter([])}
-                >
-                  All runs
-                </TabButton>
-              }
-              id="all"
-            />
-            <Tab
-              title={
-                <TabButton
-                  color={tabColor('queued')}
-                  underline="never"
-                  onClick={() => setStatusFilter(Array.from(queuedStatuses))}
-                >
-                  <Group direction="row" spacing={4} alignItems="center">
-                    <div>Queued</div>
-                    <CountTag
-                      loading={queryResult.loading && !queryResult.data}
-                      fragment={
-                        queryResult.data?.queuedCount?.__typename === 'PipelineRuns'
-                          ? queryResult.data?.queuedCount
-                          : undefined
-                      }
-                    />
-                  </Group>
-                </TabButton>
-              }
-              id="queued"
-            />
-            <Tab
-              title={
-                <TabButton
-                  color={tabColor('in-progress')}
-                  underline="never"
-                  onClick={() => setStatusFilter(Array.from(inProgressStatuses))}
-                >
-                  <Group direction="row" spacing={4} alignItems="center">
-                    <div>In progress</div>
-                    <CountTag
-                      loading={queryResult.loading && !queryResult.data}
-                      fragment={
-                        queryResult.data?.inProgressCount?.__typename === 'PipelineRuns'
-                          ? queryResult.data?.inProgressCount
-                          : undefined
-                      }
-                    />
-                  </Group>
-                </TabButton>
-              }
-              id="in-progress"
-            />
-            <Tab
-              title={
-                <TabButton
-                  color={tabColor('done')}
-                  underline="never"
-                  onClick={() => setStatusFilter(Array.from(doneStatuses))}
-                >
-                  Done
-                </TabButton>
-              }
-              id="done"
-            />
-            <div style={{display: 'flex', alignSelf: 'stretch'}}>
-              <Divider style={{margin: '6px 0px'}} />
-            </div>
-            <Tab
-              title={
-                <TabButton
-                  color={tabColor('scheduled')}
-                  underline="never"
-                  onClick={() => setShowScheduled(true)}
-                >
-                  Scheduled
-                </TabButton>
-              }
-              id="scheduled"
-            />
-          </Tabs>
-          <Box padding={{bottom: 8}}>
-            <QueryCountdown pollInterval={POLL_INTERVAL} queryResult={queryResult} />
+        <Group direction="column" spacing={8} padding={{horizontal: 24}}>
+          <PageHeader title={<Heading>Runs</Heading>} />
+          <Box
+            border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}
+            flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}
+          >
+            <Tabs selectedTabId={selectedTab} id="run-tabs">
+              <Tab
+                title={
+                  <TabButton
+                    color={tabColor('all')}
+                    underline="never"
+                    onClick={() => setStatusFilter([])}
+                  >
+                    All runs
+                  </TabButton>
+                }
+                id="all"
+              />
+              <Tab
+                title={
+                  <TabButton
+                    color={tabColor('queued')}
+                    underline="never"
+                    onClick={() => setStatusFilter(Array.from(queuedStatuses))}
+                  >
+                    <Group direction="row" spacing={4} alignItems="center">
+                      <div>Queued</div>
+                      <CountTag
+                        loading={queryResult.loading && !queryResult.data}
+                        fragment={
+                          queryResult.data?.queuedCount?.__typename === 'PipelineRuns'
+                            ? queryResult.data?.queuedCount
+                            : undefined
+                        }
+                      />
+                    </Group>
+                  </TabButton>
+                }
+                id="queued"
+              />
+              <Tab
+                title={
+                  <TabButton
+                    color={tabColor('in-progress')}
+                    underline="never"
+                    onClick={() => setStatusFilter(Array.from(inProgressStatuses))}
+                  >
+                    <Group direction="row" spacing={4} alignItems="center">
+                      <div>In progress</div>
+                      <CountTag
+                        loading={queryResult.loading && !queryResult.data}
+                        fragment={
+                          queryResult.data?.inProgressCount?.__typename === 'PipelineRuns'
+                            ? queryResult.data?.inProgressCount
+                            : undefined
+                        }
+                      />
+                    </Group>
+                  </TabButton>
+                }
+                id="in-progress"
+              />
+              <Tab
+                title={
+                  <TabButton
+                    color={tabColor('done')}
+                    underline="never"
+                    onClick={() => setStatusFilter(Array.from(doneStatuses))}
+                  >
+                    Done
+                  </TabButton>
+                }
+                id="done"
+              />
+              <div style={{display: 'flex', alignSelf: 'stretch'}}>
+                <Divider style={{margin: '6px 0px'}} />
+              </div>
+              <Tab
+                title={
+                  <TabButton
+                    color={tabColor('scheduled')}
+                    underline="never"
+                    onClick={() => setShowScheduled(true)}
+                  >
+                    Scheduled
+                  </TabButton>
+                }
+                id="scheduled"
+              />
+            </Tabs>
+            <Box padding={{bottom: 8}}>
+              <QueryCountdown pollInterval={POLL_INTERVAL} queryResult={queryResult} />
+            </Box>
           </Box>
-        </Box>
-        {showScheduled ? null : (
-          <RunsFilter
-            tokens={filterTokens}
-            onChange={setFilterTokens}
-            loading={queryResult.loading}
-            enabledFilters={enabledFilters}
-          />
-        )}
-        {selectedTab === 'queued' ? (
-          <Group direction="column" spacing={8}>
-            <Alert
-              intent="info"
-              title={<Link to="/instance/config#run_coordinator">View queue configuration</Link>}
+          {showScheduled ? null : (
+            <RunsFilter
+              tokens={filterTokens}
+              onChange={setFilterTokens}
+              loading={queryResult.loading}
+              enabledFilters={enabledFilters}
             />
-            <QueueDaemonAlert />
-          </Group>
-        ) : null}
+          )}
+          {selectedTab === 'queued' ? (
+            <Group direction="column" spacing={8}>
+              <Alert
+                intent="info"
+                title={<Link to="/instance/config#run_coordinator">View queue configuration</Link>}
+              />
+              <QueueDaemonAlert />
+            </Group>
+          ) : null}
+        </Group>
         <RunsQueryRefetchContext.Provider value={{refetch: queryResult.refetch}}>
           <Loading queryResult={queryResult} allowStaleData={true}>
             {({pipelineRunsOrError}) => {

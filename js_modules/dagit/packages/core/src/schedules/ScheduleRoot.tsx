@@ -6,7 +6,6 @@ import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {TickHistory} from '../instigation/TickHistory';
 import {DagsterTag} from '../runs/RunTag';
 import {Group} from '../ui/Group';
-import {ScrollContainer} from '../ui/ListComponents';
 import {Loading} from '../ui/Loading';
 import {Page} from '../ui/Page';
 import {PreviousRunsSection, PREVIOUS_RUNS_FRAGMENT} from '../workspace/PreviousRunsSection';
@@ -68,9 +67,9 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
         }
 
         return (
-          <ScrollContainer>
-            <Page>
-              <Group direction="column" spacing={20}>
+          <Page>
+            <Group direction="column" spacing={20}>
+              <Group direction="column" spacing={20} padding={{horizontal: 24}}>
                 <SchedulerInfo
                   schedulerOrError={scheduler}
                   daemonHealth={instance.daemonHealth}
@@ -88,15 +87,15 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
                   name={scheduleOrError.name}
                   onHighlightRunIds={(runIds: string[]) => setSelectedRunIds(runIds)}
                 />
-                <SchedulePreviousRuns
-                  repoAddress={repoAddress}
-                  schedule={scheduleOrError}
-                  highlightedIds={selectedRunIds}
-                  runTab={runTab}
-                />
               </Group>
-            </Page>
-          </ScrollContainer>
+              <SchedulePreviousRuns
+                repoAddress={repoAddress}
+                schedule={scheduleOrError}
+                highlightedIds={selectedRunIds}
+                runTab={runTab}
+              />
+            </Group>
+          </Page>
         );
       }}
     </Loading>

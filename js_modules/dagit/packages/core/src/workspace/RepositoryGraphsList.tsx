@@ -4,8 +4,8 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {Box} from '../ui/Box';
 import {Group} from '../ui/Group';
-import {Page} from '../ui/Page';
 import {Table} from '../ui/Table';
 
 import {repoAddressAsString} from './repoAddressAsString';
@@ -104,7 +104,7 @@ export const RepositoryGraphsList: React.FC<Props> = (props) => {
   }
 
   return (
-    <Page>
+    <Box margin={{top: 16}}>
       <Table>
         <thead>
           <tr>
@@ -126,7 +126,7 @@ export const RepositoryGraphsList: React.FC<Props> = (props) => {
           ))}
         </tbody>
       </Table>
-    </Page>
+    </Box>
   );
 };
 

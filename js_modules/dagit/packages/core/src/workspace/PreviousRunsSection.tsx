@@ -27,11 +27,7 @@ export const PreviousRunsSection: React.FC<{
 
   return (
     <Group direction="column" spacing={4}>
-      <Box
-        padding={{bottom: 12}}
-        border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}
-        flex={{direction: 'row'}}
-      >
+      <Box padding={{vertical: 16, horizontal: 24}} flex={{direction: 'row'}}>
         <Subheading>Latest runs</Subheading>
       </Box>
       <div style={{color: Colors.GRAY3}}>{content()}</div>

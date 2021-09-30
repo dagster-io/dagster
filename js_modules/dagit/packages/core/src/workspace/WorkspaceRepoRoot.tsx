@@ -75,7 +75,7 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%'}}>
-      <Group direction="column" spacing={16} padding={{top: 20, horizontal: 20}}>
+      <Group direction="column" spacing={16} padding={{top: 16, horizontal: 24}}>
         <PageHeader
           title={<Heading>{path}</Heading>}
           icon="source"

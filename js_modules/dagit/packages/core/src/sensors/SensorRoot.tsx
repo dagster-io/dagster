@@ -60,21 +60,23 @@ export const SensorRoot: React.FC<{
         return (
           <Page>
             <Group direction="column" spacing={24}>
-              <SensorInfo daemonHealth={instance.daemonHealth} />
-              <SensorDetails
-                repoAddress={repoAddress}
-                sensor={sensorOrError}
-                daemonHealth={instance.daemonHealth.daemonStatus.healthy}
-                countdownDuration={INTERVAL}
-                countdownStatus={countdownStatus}
-                onRefresh={() => onRefresh()}
-              />
-              <TickHistory
-                repoAddress={repoAddress}
-                name={sensorOrError.name}
-                showRecent={true}
-                onHighlightRunIds={(runIds: string[]) => setSelectedRunIds(runIds)}
-              />
+              <Group direction="column" spacing={20} padding={{horizontal: 24}}>
+                <SensorInfo daemonHealth={instance.daemonHealth} />
+                <SensorDetails
+                  repoAddress={repoAddress}
+                  sensor={sensorOrError}
+                  daemonHealth={instance.daemonHealth.daemonStatus.healthy}
+                  countdownDuration={INTERVAL}
+                  countdownStatus={countdownStatus}
+                  onRefresh={() => onRefresh()}
+                />
+                <TickHistory
+                  repoAddress={repoAddress}
+                  name={sensorOrError.name}
+                  showRecent={true}
+                  onHighlightRunIds={(runIds: string[]) => setSelectedRunIds(runIds)}
+                />
+              </Group>
               {sensorOrError.targets && sensorOrError.targets.length ? (
                 <SensorPreviousRuns
                   repoAddress={repoAddress}
