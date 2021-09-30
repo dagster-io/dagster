@@ -233,3 +233,40 @@ def test_inner_inputs_connected_to_outer_dependency_with_root_input_manager():
     assert result.success
     assert result.output_for_solid("my_composite.inner_solid") == "from top_level_solid"
     assert "my_root" not in called
+
+
+def test_inner_inputs_connected_to_nested_outer_dependency():
+    my_dagster_type = DagsterType(name="foo", type_check_fn=lambda _, _a: True)
+
+    @solid(input_defs=[InputDefinition("data", my_dagster_type)])
+    def inner_solid(data):
+        return data
+
+    @composite_solid(input_defs=[InputDefinition("data_1", my_dagster_type)])
+    def inner_composite(data_1):
+        # source output handle should be top_level solid
+        return inner_solid(data_1)
+
+    @composite_solid(input_defs=[InputDefinition("data_2", my_dagster_type)])
+    def middle_composite(data_2):
+        return inner_composite(data_2)
+
+    @composite_solid(input_defs=[InputDefinition("data_3", my_dagster_type)])
+    def outer_composite(data_3):
+        return middle_composite(data_3)
+
+    @solid
+    def top_level_solid():
+        return "from top_level_solid"
+
+    @pipeline
+    def my_pipeline():
+        # inner_solid should be connected to top_level_solid
+        outer_composite(top_level_solid())
+
+    result = execute_pipeline(my_pipeline)
+    assert result.success
+    assert (
+        result.output_for_solid("outer_composite.middle_composite.inner_composite.inner_solid")
+        == "from top_level_solid"
+    )
