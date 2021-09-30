@@ -914,8 +914,7 @@ def do_composition(
     fn: Callable,
     provided_input_defs: List[InputDefinition],
     provided_output_defs: Optional[List[OutputDefinition]],
-    config_schema: Any,
-    config_fn: Optional[Callable[[Any], Any]],
+    config_mapping: Optional[ConfigMapping],
     ignore_output_from_composition_fn: bool,
 ) -> Tuple[
     List[InputMapping],
@@ -938,8 +937,9 @@ def do_composition(
             explicitly provided to the decorator by the user.
         provided_output_defs(List[OutputDefinition]): List of output definitions
             explicitly provided to the decorator by the user.
-        config_schema(Any): Config schema provided to decorator by user.
-        config_fn(Callable): Config fn provided to decorator by user.
+        config_mapping (Any): Config mapping provided to decorator by user. In
+            pipeline/composite_solid case, this would have been constructed from a user-provided
+            config_schema and config_fn.
         ignore_output_from_composite_fn(Bool): Because of backwards compatibility
             issues, pipelines ignore the return value out of the mapping if
             the user has not explicitly provided the output definitions.
@@ -1036,10 +1036,6 @@ def do_composition(
             )
         output_mappings.append(mapping)
 
-    config_mapping = _get_validated_config_mapping(
-        graph_name, config_schema, config_fn, decorator_name
-    )
-
     return (
         input_mappings,
         output_mappings,
@@ -1050,8 +1046,11 @@ def do_composition(
     )
 
 
-def _get_validated_config_mapping(
-    name: str, config_schema: Any, config_fn: Optional[Callable[[Any], Any]], decorator_name: str
+def get_validated_config_mapping(
+    name: str,
+    config_schema: Any,
+    config_fn: Optional[Callable[[Any], Any]],
+    decorator_name: str,
 ) -> Optional[ConfigMapping]:
     if config_fn is None and config_schema is None:
         return None

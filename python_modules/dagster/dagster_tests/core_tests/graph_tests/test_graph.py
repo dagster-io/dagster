@@ -660,3 +660,107 @@ def test_output_for_node_non_standard_name():
     result = basic.execute_in_process()
 
     assert result.output_for_node("my_op", "foo") == 5
+
+
+def test_top_level_config_mapping_graph():
+    @op(config_schema=str)
+    def my_op(context):
+        return context.op_config
+
+    def _config_fn(_):
+        return {"my_op": {"config": "foo"}}
+
+    @graph(config_mapping=ConfigMapping(config_fn=_config_fn))
+    def my_graph():
+        my_op()
+
+    result = my_graph.execute_in_process()
+
+    assert result.success
+    assert result.output_for_node("my_op") == "foo"
+
+
+def test_top_level_config_mapping_config_schema():
+    @op(config_schema=str)
+    def my_op(context):
+        return context.op_config
+
+    def _config_fn(outer):
+        return {"my_op": {"config": outer}}
+
+    @graph(config_mapping=ConfigMapping(config_fn=_config_fn, config_schema=str))
+    def my_graph():
+        my_op()
+
+    result = my_graph.to_job().execute_in_process(run_config={"ops": {"config": "foo"}})
+
+    assert result.success
+    assert result.output_for_node("my_op") == "foo"
+
+    my_job = my_graph.to_job(config={"ops": {"config": "foo"}})
+    result = my_job.execute_in_process()
+    assert result.success
+    assert result.output_for_node("my_op") == "foo"
+
+
+def test_nested_graph_config_mapping():
+    @op(config_schema=str)
+    def my_op(context):
+        return context.op_config
+
+    def _nested_config_fn(outer):
+        return {"my_op": {"config": outer}}
+
+    @graph(config_mapping=ConfigMapping(config_fn=_nested_config_fn, config_schema=str))
+    def my_nested_graph():
+        my_op()
+
+    def _config_fn(outer):
+        return {"my_nested_graph": {"config": outer}}
+
+    @graph(config_mapping=ConfigMapping(config_fn=_config_fn, config_schema=str))
+    def my_graph():
+        my_nested_graph()
+
+    result = my_graph.to_job().execute_in_process(run_config={"ops": {"config": "foo"}})
+
+    assert result.success
+    assert result.output_for_node("my_nested_graph.my_op") == "foo"
+
+
+def test_top_level_graph_config_mapping_failure():
+    @op(config_schema=str)
+    def my_op(context):
+        return context.op_config
+
+    def _nested_config_fn(_):
+        return "foo"
+
+    @graph(config_mapping=ConfigMapping(config_fn=_nested_config_fn))
+    def my_nested_graph():
+        my_op()
+
+    with pytest.raises(
+        DagsterInvalidConfigError,
+        match="In pipeline 'my_nested_graph', top level graph 'my_nested_graph' has a configuration error.",
+    ):
+        my_nested_graph.execute_in_process()
+
+
+def test_top_level_graph_outer_config_failure():
+    @op(config_schema=str)
+    def my_op(context):
+        return context.op_config
+
+    def _config_fn(outer):
+        return {"my_op": {"config": outer}}
+
+    @graph(config_mapping=ConfigMapping(config_fn=_config_fn, config_schema=str))
+    def my_graph():
+        my_op()
+
+    with pytest.raises(DagsterInvalidConfigError, match="Invalid scalar at path root:ops:config"):
+        my_graph.to_job().execute_in_process(run_config={"ops": {"config": {"bad_type": "foo"}}})
+
+    with pytest.raises(DagsterInvalidConfigError, match="Invalid scalar at path root:config"):
+        my_graph.to_job(config={"ops": {"config": {"bad_type": "foo"}}})
