@@ -1,6 +1,6 @@
 import pytest
 from dagster import graph
-from dagster.core.test_utils import environ
+from dagster.core.test_utils import environ, remove_none_recursively
 from dagster_k8s import DagsterK8sJobConfig, construct_dagster_k8s_job
 from dagster_k8s.job import (
     DAGSTER_PG_PASSWORD_ENV_VAR,
@@ -195,6 +195,10 @@ def test_construct_dagster_k8s_job_with_user_defined_env():
                         "env": [
                             {"name": "ENV_VAR_1", "value": "one"},
                             {"name": "ENV_VAR_2", "value": "two"},
+                            {
+                                "name": "DD_AGENT_HOST",
+                                "valueFrom": {"fieldRef": {"fieldPath": "status.hostIP"}},
+                            },
                         ]
                     }
                 }
@@ -213,12 +217,15 @@ def test_construct_dagster_k8s_job_with_user_defined_env():
     ).to_dict()
 
     env = job["spec"]["template"]["spec"]["containers"][0]["env"]
-    env_mapping = {env_var["name"]: env_var for env_var in env}
+    env_mapping = remove_none_recursively({env_var["name"]: env_var for env_var in env})
 
-    # Has DAGSTER_HOME and two additional env vars
-    assert len(env_mapping) == 3
+    # Has DAGSTER_HOME and three additional env vars
+    assert len(env_mapping) == 4
     assert env_mapping["ENV_VAR_1"]["value"] == "one"
     assert env_mapping["ENV_VAR_2"]["value"] == "two"
+    assert env_mapping["DD_AGENT_HOST"]["value_from"] == {
+        "field_ref": {"field_path": "status.hostIP"}
+    }
 
 
 def test_construct_dagster_k8s_job_with_user_defined_env_from():

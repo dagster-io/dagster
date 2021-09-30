@@ -430,3 +430,20 @@ def in_process_test_workspace(instance, recon_repo):
         instance, TestInProcessWorkspaceLoadTarget(InProcessRepositoryLocationOrigin(recon_repo))
     ) as workspace_process_context:
         yield workspace_process_context.create_request_context()
+
+
+def remove_none_recursively(obj):
+    """Remove none values from a dict. This can be used to support comparing provided config vs.
+    config we retrive from kubernetes, which returns all fields, even those which have no value
+    configured.
+    """
+    if isinstance(obj, (list, tuple, set)):
+        return type(obj)(remove_none_recursively(x) for x in obj if x is not None)
+    elif isinstance(obj, dict):
+        return type(obj)(
+            (remove_none_recursively(k), remove_none_recursively(v))
+            for k, v in obj.items()
+            if k is not None and v is not None
+        )
+    else:
+        return obj

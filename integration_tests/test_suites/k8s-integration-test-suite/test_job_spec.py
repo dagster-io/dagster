@@ -4,7 +4,7 @@ import yaml
 from dagster import __version__ as dagster_version
 from dagster.core.definitions.utils import validate_tags
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.core.test_utils import create_run_for_test
+from dagster.core.test_utils import create_run_for_test, remove_none_recursively
 from dagster.utils import load_yaml_from_path
 from dagster_k8s import construct_dagster_k8s_job
 from dagster_k8s.job import (
@@ -13,7 +13,7 @@ from dagster_k8s.job import (
     get_user_defined_k8s_config,
 )
 from dagster_k8s.test import wait_for_job_and_get_raw_logs
-from dagster_k8s_test_infra.integration_utils import image_pull_policy, remove_none_recursively
+from dagster_k8s_test_infra.integration_utils import image_pull_policy
 from dagster_test.test_project import (
     ReOriginatedExternalPipelineForTest,
     get_test_project_docker_image,
