@@ -1,5 +1,6 @@
 from typing import Any, Callable, Dict, Mapping, Optional, Set
 
+from dagster import check
 from dagster.builtins import Nothing
 from dagster.core.decorator_utils import get_function_params, get_valid_name_permutations
 from dagster.core.definitions.decorators.op import _Op
@@ -22,6 +23,7 @@ def asset(
     description: Optional[str] = None,
     required_resource_keys: Optional[Set[str]] = None,
     io_manager_key: Optional[str] = None,
+    compute_kind: Optional[str] = None,
 ) -> Callable[[Callable[..., Any]], OpDefinition]:
     """Create an op that computes an asset.
 
@@ -40,6 +42,8 @@ def asset(
         io_manager_key (Optional[str]): The resource key of the IOManager used for storing the
             output of the op as an asset, and for loading it in downstream ops
             (default: "io_manager").
+        compute_kind (Optional[str]): A string to represent the kind of computation that produces
+            the asset, e.g. "dbt" or "spark". It will be displayed in Dagit as a badge on the asset.
     """
     if callable(name):
         return _Asset()(name)
@@ -53,6 +57,7 @@ def asset(
             description=description,
             required_resource_keys=required_resource_keys,
             io_manager_key=io_manager_key,
+            compute_kind=check.opt_str_param(compute_kind, "compute_kind"),
         )(fn)
 
     return inner
@@ -68,6 +73,7 @@ class _Asset:
         description: Optional[str] = None,
         required_resource_keys: Optional[Set[str]] = None,
         io_manager_key: Optional[str] = None,
+        compute_kind: Optional[str] = None,
     ):
         self.name = name
         self.namespace = namespace
@@ -76,6 +82,7 @@ class _Asset:
         self.description = description
         self.required_resource_keys = required_resource_keys
         self.io_manager_key = io_manager_key
+        self.compute_kind = compute_kind
 
     def __call__(self, fn: Callable):
         asset_name = self.name or fn.__name__
@@ -91,6 +98,7 @@ class _Asset:
             ins=build_asset_ins(fn, self.namespace, self.ins),
             out=out,
             required_resource_keys=self.required_resource_keys,
+            tags={"kind": self.compute_kind} if self.compute_kind else None,
         )(fn)
 
 
