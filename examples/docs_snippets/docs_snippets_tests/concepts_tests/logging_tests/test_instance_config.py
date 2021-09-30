@@ -5,9 +5,7 @@ from dagster.utils import file_relative_path
 
 def test_valid_managed_loggers_instance_yaml():
     ref = InstanceRef.from_dir(
-        base_dir=file_relative_path(
-            __file__, "../../../docs_snippets/concepts/logging"
-        ),
+        base_dir=file_relative_path(__file__, "../../../docs_snippets/concepts/logging"),
         config_filename="python_logging_managed_loggers_config.yaml",
     )
     instance = DagsterInstance.from_ref(ref)
@@ -16,9 +14,7 @@ def test_valid_managed_loggers_instance_yaml():
 
 def test_valid_managed_loggers_instance_yaml_2():
     ref = InstanceRef.from_dir(
-        base_dir=file_relative_path(
-            __file__, "../../../docs_snippets/concepts/logging"
-        ),
+        base_dir=file_relative_path(__file__, "../../../docs_snippets/concepts/logging"),
         config_filename="python_logging_managed_loggers_config2.yaml",
     )
     instance = DagsterInstance.from_ref(ref)
@@ -27,9 +23,7 @@ def test_valid_managed_loggers_instance_yaml_2():
 
 def test_valid_log_level_instance_yaml():
     ref = InstanceRef.from_dir(
-        base_dir=file_relative_path(
-            __file__, "../../../docs_snippets/concepts/logging"
-        ),
+        base_dir=file_relative_path(__file__, "../../../docs_snippets/concepts/logging"),
         config_filename="python_logging_python_log_level_config.yaml",
     )
     instance = DagsterInstance.from_ref(ref)
@@ -38,9 +32,7 @@ def test_valid_log_level_instance_yaml():
 
 def test_valid_handler_instance_yaml():
     ref = InstanceRef.from_dir(
-        base_dir=file_relative_path(
-            __file__, "../../../docs_snippets/concepts/logging"
-        ),
+        base_dir=file_relative_path(__file__, "../../../docs_snippets/concepts/logging"),
         config_filename="python_logging_handler_config.yaml",
     )
     instance = DagsterInstance.from_ref(ref)
