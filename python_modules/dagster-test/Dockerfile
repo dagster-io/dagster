@@ -29,6 +29,8 @@ RUN pip install \
     -e modules/dagstermill \
     -e .
 
+RUN ! (pip list --exclude-editable | grep -e dagster -e dagit)
+
 WORKDIR /dagster_test/test_project/
 
 EXPOSE 80
