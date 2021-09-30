@@ -156,19 +156,18 @@ def snowflake_resource(context):
         from dagster import execute_pipeline, pipeline, DependencyDefinition, ModeDefinition
         from dagster_snowflake import snowflake_resource
 
-        @solid(required_resource_keys={'snowflake'})
+        @op(required_resource_keys={'snowflake'})
         def get_one(context):
             context.resources.snowflake.execute_query('SELECT 1')
 
-        @pipeline(
-            mode_defs=[ModeDefinition(resource_defs={'snowflake': snowflake_resource})],
-        )
-        def snowflake_pipeline():
+        @graph
+        def my_snowflake_graph():
             get_one()
 
-        result = execute_pipeline(
-            snowflake_pipeline,
-            {
+        my_snowflake_graph.to_job(
+            resources={'snowflake': snowflake_resource}
+        ).execute_in_process(
+            run_config={
                 'resources': {
                     'snowflake': {
                         'config': {
@@ -181,7 +180,7 @@ def snowflake_resource(context):
                         }
                     }
                 }
-            },
+            }
         )
 
     """
