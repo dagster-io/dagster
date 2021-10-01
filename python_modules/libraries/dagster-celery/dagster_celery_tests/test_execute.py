@@ -118,7 +118,7 @@ def test_terminate_pipeline_on_celery(rabbitmq):
 
             with instance_for_test(temp_dir=tempdir) as instance:
                 run_config = {
-                    "intermediate_storage": {"filesystem": {"config": {"base_dir": tempdir}}},
+                    "resources": {"io_manager": {"config": {"base_dir": tempdir}}},
                     "execution": {"celery": {}},
                 }
 
@@ -298,9 +298,7 @@ def test_engine_error():
                     execute_pipeline(
                         ReconstructablePipeline.for_file(REPO_FILE, "engine_error"),
                         run_config={
-                            "intermediate_storage": {
-                                "filesystem": {"config": {"base_dir": storage}}
-                            },
+                            "resources": {"io_manager": {"config": {"base_dir": storage}}},
                             "execution": {
                                 "celery": {"config": {"config_source": {"task_always_eager": True}}}
                             },

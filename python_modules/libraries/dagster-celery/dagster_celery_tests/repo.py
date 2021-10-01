@@ -11,11 +11,17 @@ from dagster import (
     lambda_solid,
     pipeline,
     solid,
+    fs_io_manager,
 )
 from dagster.core.test_utils import nesting_composite_pipeline
 from dagster_celery import celery_executor
 
-celery_mode_defs = [ModeDefinition(executor_defs=default_executors + [celery_executor])]
+celery_mode_defs = [
+    ModeDefinition(
+        executor_defs=default_executors + [celery_executor],
+        resource_defs={"io_manager": fs_io_manager},
+    )
+]
 
 
 # test_execute pipelines
