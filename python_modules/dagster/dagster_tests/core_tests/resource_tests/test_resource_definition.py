@@ -16,10 +16,10 @@ from dagster import (
     configured,
     execute_pipeline,
     execute_pipeline_iterator,
+    fs_io_manager,
     reconstructable,
     resource,
     solid,
-    fs_io_manager,
 )
 from dagster.core.definitions import pipeline
 from dagster.core.definitions.pipeline_base import InMemoryPipeline

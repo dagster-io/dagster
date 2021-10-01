@@ -1,17 +1,18 @@
 import os
 import pickle
+
 import pytest
 from dagster import (
     DependencyDefinition,
     InputDefinition,
     Int,
+    ModeDefinition,
     OutputDefinition,
     PipelineDefinition,
     execute_pipeline,
+    fs_io_manager,
     lambda_solid,
     reexecute_pipeline,
-    ModeDefinition,
-    fs_io_manager,
 )
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.errors import (

@@ -3,11 +3,11 @@ import os
 from dagster import (
     ModeDefinition,
     executor,
+    fs_io_manager,
     pipeline,
     reconstructable,
     resource,
     solid,
-    fs_io_manager,
 )
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.execution.api import create_execution_plan

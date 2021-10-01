@@ -11,13 +11,13 @@ import pytest
 from dagster import (
     Any,
     Field,
+    ModeDefinition,
     daily_partitioned_config,
+    fs_io_manager,
     graph,
     pipeline,
     repository,
     solid,
-    ModeDefinition,
-    fs_io_manager,
 )
 from dagster.core.definitions import Partition, PartitionSetDefinition
 from dagster.core.definitions.reconstructable import ReconstructableRepository

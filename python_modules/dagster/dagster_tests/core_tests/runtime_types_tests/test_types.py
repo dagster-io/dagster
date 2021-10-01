@@ -18,12 +18,12 @@ from dagster import (
     TypeCheck,
     check_dagster_type,
     execute_pipeline,
+    fs_io_manager,
     lambda_solid,
     make_python_type_usable_as_dagster_type,
     pipeline,
     resource,
     solid,
-    fs_io_manager,
 )
 from dagster.core.types.dagster_type import (
     DagsterType,

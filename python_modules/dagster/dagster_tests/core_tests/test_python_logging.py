@@ -4,11 +4,11 @@ import pytest
 from dagster import (
     ModeDefinition,
     execute_pipeline,
+    fs_io_manager,
     pipeline,
     reconstructable,
     resource,
     solid,
-    fs_io_manager,
 )
 from dagster.core.test_utils import instance_for_test
 

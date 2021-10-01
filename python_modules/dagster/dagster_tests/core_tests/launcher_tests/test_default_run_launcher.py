@@ -8,13 +8,13 @@ from contextlib import contextmanager
 import pytest
 from dagster import (
     DefaultRunLauncher,
+    ModeDefinition,
     file_relative_path,
+    fs_io_manager,
     pipeline,
     repository,
     seven,
     solid,
-    ModeDefinition,
-    fs_io_manager,
 )
 from dagster.core.errors import DagsterLaunchFailedError
 from dagster.core.storage.pipeline_run import PipelineRunStatus

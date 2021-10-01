@@ -12,11 +12,11 @@ from dagster import (
     String,
     execute_pipeline,
     execute_pipeline_iterator,
+    fs_io_manager,
     pipeline,
     reconstructable,
     resource,
     solid,
-    fs_io_manager,
 )
 from dagster.core.definitions.no_step_launcher import no_step_launcher
 from dagster.core.events import DagsterEventType

@@ -1,6 +1,6 @@
 import os
 import pickle
-from dagster.core.definitions.mode import ModeDefinition
+
 import pytest
 from dagster import (
     DagsterEventType,
@@ -10,10 +10,11 @@ from dagster import (
     Int,
     OutputDefinition,
     PipelineDefinition,
+    fs_io_manager,
     lambda_solid,
     reconstructable,
-    fs_io_manager,
 )
+from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.plan.outputs import StepOutputHandle

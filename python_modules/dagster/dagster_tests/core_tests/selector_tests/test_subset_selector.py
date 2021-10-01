@@ -1,6 +1,6 @@
-from dagster.core.definitions.resource import resource
 import pytest
-from dagster import InputDefinition, lambda_solid, pipeline, ModeDefinition, fs_io_manager
+from dagster import InputDefinition, ModeDefinition, fs_io_manager, lambda_solid, pipeline
+from dagster.core.definitions.resource import resource
 from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
 from dagster.core.selector.subset_selector import (
     MAX_NUM,
