@@ -3,7 +3,6 @@ import {gql} from '@apollo/client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
-import {ColorsWIP} from '../ui/Colors';
 import {REPOSITORY_INFO_FRAGMENT} from '../workspace/RepositoryInformation';
 
 export const SCHEDULE_FRAGMENT = gql`
