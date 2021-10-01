@@ -1,14 +1,15 @@
-import {Colors, Icon} from '@blueprintjs/core';
 import React from 'react';
 import {Link} from 'react-router-dom';
+import styled from 'styled-components/macro';
 
-import {AssetDetails} from '../../assets/AssetDetails';
 import {AssetMaterializations} from '../../assets/AssetMaterializations';
+import {LatestMaterializationMetadata} from '../../assets/LastMaterializationMetadata';
 import {Description} from '../../pipelines/Description';
 import {SidebarSection, SidebarTitle} from '../../pipelines/SidebarComponents';
 import {PipelineExplorerSolidHandleFragment} from '../../pipelines/types/PipelineExplorerSolidHandleFragment';
 import {pluginForMetadata} from '../../plugins';
 import {Box} from '../../ui/Box';
+import {ColorsWIP} from '../../ui/Colors';
 import {IconWIP} from '../../ui/Icon';
 import {RepoAddress} from '../types';
 
@@ -25,7 +26,7 @@ export const SidebarAssetInfo: React.FC<{
 
   return (
     <div style={{overflowY: 'auto'}}>
-      <SidebarSection title="Static Definition">
+      <SidebarSection title="Definition">
         <Box margin={12}>
           <SidebarTitle>{assetKeyToString(node.assetKey)}</SidebarTitle>
           <Description description={node.description || null} />
@@ -35,25 +36,15 @@ export const SidebarAssetInfo: React.FC<{
         )}
       </SidebarSection>
 
-      <div style={{borderBottom: `2px solid ${Colors.GRAY5}`}} />
+      <div style={{borderBottom: `2px solid ${ColorsWIP.Gray300}`}} />
       <SidebarSection title={'Materialization in Last Run'}>
         {node.assetMaterializations.length ? (
           <Box margin={12}>
-            <Link
-              to={`/instance/assets/${node.assetKey.path.join('/')}`}
-              style={{
-                position: 'absolute',
-                top: 20,
-                right: 10,
-                display: 'flex',
-                gap: 5,
-                alignItems: 'center',
-              }}
-            >
+            <AssetCatalogLink to={`/instance/assets/${node.assetKey.path.join('/')}`}>
               {'View All in Asset Catalog '}
-              <IconWIP name="open_in_new" size={16} color={Colors.BLUE3} />
-            </Link>
-            <AssetDetails assetKey={node.assetKey} asOf={null} asSidebarSection />
+              <IconWIP name="open_in_new" size={16} color={ColorsWIP.Blue500} />
+            </AssetCatalogLink>
+            <LatestMaterializationMetadata latest={node.assetMaterializations[0]} asOf={null} />
           </Box>
         ) : (
           <Box margin={12}>&mdash;</Box>
@@ -70,3 +61,12 @@ export const SidebarAssetInfo: React.FC<{
     </div>
   );
 };
+
+const AssetCatalogLink = styled(Link)`
+  position: absolute;
+  top: 5px;
+  right: 10px;
+  display: flex;
+  gap: 5px;
+  align-items: center;
+`;

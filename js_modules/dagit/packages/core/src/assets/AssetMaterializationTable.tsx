@@ -16,7 +16,7 @@ import {Table} from '../ui/Table';
 import {Mono} from '../ui/Text';
 
 import {AssetLineageElements} from './AssetLineageElements';
-import {AssetQuery_assetOrError_Asset_assetMaterializations as Materialization} from './types/AssetQuery';
+import {AssetMaterializationsQuery_assetOrError_Asset_assetMaterializations as Materialization} from './types/AssetMaterializationsQuery';
 import {HistoricalMaterialization} from './useMaterializationBuckets';
 
 export const AssetMaterializationTable: React.FC<{

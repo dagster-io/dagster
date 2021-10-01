@@ -4,6 +4,7 @@ import {IconNames} from '@blueprintjs/icons';
 import React from 'react';
 import styled from 'styled-components/macro';
 
+import {LATEST_MATERIALIZATION_METADATA_FRAGMENT} from '../../assets/LastMaterializationMetadata';
 import {SVGViewport} from '../../graph/SVGViewport';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
 import {PipelineExplorerPath} from '../../pipelines/PipelinePathUtils';
@@ -11,6 +12,7 @@ import {SidebarPipelineOrJobOverview} from '../../pipelines/SidebarPipelineOrJob
 import {PipelineExplorerSolidHandleFragment} from '../../pipelines/types/PipelineExplorerSolidHandleFragment';
 import {METADATA_ENTRY_FRAGMENT} from '../../runs/MetadataEntry';
 import {POLL_INTERVAL} from '../../runs/useCursorPaginatedQuery';
+import {ColorsWIP} from '../../ui/Colors';
 import {Loading} from '../../ui/Loading';
 import {SplitPanelContainer} from '../../ui/SplitPanelContainer';
 import {repoAddressToSelector} from '../repoAddressToSelector';
@@ -32,7 +34,6 @@ import {
   AssetGraphQueryVariables,
   AssetGraphQuery_repositoryOrError_Repository_assetNodes,
 } from './types/AssetGraphQuery';
-import {ColorsWIP} from '../../ui/Colors';
 
 type AssetNode = AssetGraphQuery_repositoryOrError_Repository_assetNodes;
 
@@ -225,6 +226,8 @@ const ASSETS_GRAPH_QUERY = gql`
             }
           }
           assetMaterializations(limit: 1) {
+            ...LatestMaterializationMetadataFragment
+
             materializationEvent {
               materialization {
                 metadataEntries {
@@ -260,6 +263,7 @@ const ASSETS_GRAPH_QUERY = gql`
     }
   }
   ${METADATA_ENTRY_FRAGMENT}
+  ${LATEST_MATERIALIZATION_METADATA_FRAGMENT}
 `;
 
 const SVGContainer = styled.svg`

@@ -36,6 +36,7 @@ import {AssetsFilter, filterAssets} from './AssetsFilter';
 import {AssetsTableMaterializationsQuery} from './types/AssetsTableMaterializationsQuery';
 import {AssetsTableNodesQuery} from './types/AssetsTableNodesQuery';
 import {useAssetView} from './useAssetView';
+import {useFeatureFlags} from '../app/Flags';
 
 type AssetKey = {path: string[]};
 type AssetTag = {key: string; value: string};
@@ -388,6 +389,7 @@ const AssetsTable = ({
   useDocumentTitle(currentPath.length ? `Assets: ${currentPath.join(' \u203A ')}` : 'Assets');
   const [toWipe, setToWipe] = React.useState<AssetKey[] | undefined>();
   const {canWipeAssets} = usePermissions();
+  const {flagAssetGraph} = useFeatureFlags();
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const {checkedPaths} = state;
 
@@ -479,8 +481,8 @@ const AssetsTable = ({
                 </Group>
               </th>
             ) : null}
-            <th>Description</th>
-            <th style={{maxWidth: 250}}>Defined In</th>
+            {flagAssetGraph ? <th>Description</th> : null}
+            {flagAssetGraph ? <th style={{maxWidth: 250}}>Defined In</th> : null}
             {canWipeAssets ? <th>Actions</th> : null}
           </tr>
         </thead>
@@ -494,6 +496,7 @@ const AssetsTable = ({
                 path={path}
                 assets={pathMap[JSON.stringify(path)] || []}
                 shouldShowTags={hasTags}
+                shouldShowAssetGraphColumns={flagAssetGraph}
                 isFlattened={isFlattened}
                 isSelected={isSelected}
                 onSelectToggle={onToggle}
@@ -526,6 +529,7 @@ const AssetEntryRow: React.FC<{
   isFlattened: boolean;
   onSelectToggle: (e: React.FormEvent<HTMLInputElement>, path: string[]) => void;
   shouldShowTags: boolean;
+  shouldShowAssetGraphColumns: boolean;
   assets: Asset[];
   onTagClick: (tag: AssetTag) => void;
   onWipe: (assets: Asset[]) => void;
@@ -535,6 +539,7 @@ const AssetEntryRow: React.FC<{
     currentPath,
     path,
     shouldShowTags,
+    shouldShowAssetGraphColumns,
     assets,
     onTagClick,
     isSelected,
@@ -585,17 +590,21 @@ const AssetEntryRow: React.FC<{
             ) : null}
           </td>
         ) : null}
-        <td>{first.description && markdownToPlaintext(first.description).split('\n')[0]}</td>
-        <td>
-          {first.jobName && (
-            <PipelineReference
-              showIcon
-              pipelineName={first.jobName}
-              pipelineHrefContext="repo-unknown"
-              mode={'default'}
-            />
-          )}
-        </td>
+        {shouldShowAssetGraphColumns ? (
+          <td>{first.description && markdownToPlaintext(first.description).split('\n')[0]}</td>
+        ) : null}
+        {shouldShowAssetGraphColumns ? (
+          <td>
+            {first.jobName && (
+              <PipelineReference
+                showIcon
+                pipelineName={first.jobName}
+                pipelineHrefContext="repo-unknown"
+                mode={'default'}
+              />
+            )}
+          </td>
+        ) : null}
         {canWipe ? (
           <td>
             {isAssetEntry ? (

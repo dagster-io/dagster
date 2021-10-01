@@ -1,26 +1,27 @@
-import {useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {Button, ButtonGroup} from '@blueprintjs/core';
 import flatMap from 'lodash/flatMap';
 import uniq from 'lodash/uniq';
 import * as React from 'react';
 
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {METADATA_ENTRY_FRAGMENT} from '../runs/MetadataEntry';
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
 import {Spinner} from '../ui/Spinner';
 import {Tab, Tabs} from '../ui/Tabs';
 import {Subheading} from '../ui/Text';
+import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
 
 import {AssetMaterializationMatrix, LABEL_STEP_EXECUTION_TIME} from './AssetMaterializationMatrix';
 import {AssetMaterializationTable} from './AssetMaterializationTable';
 import {AssetValueGraph} from './AssetValueGraph';
-import {ASSET_QUERY} from './queries';
 import {AssetKey, AssetNumericHistoricalData} from './types';
 import {
-  AssetQuery,
-  AssetQueryVariables,
-  AssetQuery_assetOrError_Asset_assetMaterializations,
-} from './types/AssetQuery';
+  AssetMaterializationsQuery,
+  AssetMaterializationsQueryVariables,
+  AssetMaterializationsQuery_assetOrError_Asset_assetMaterializations,
+} from './types/AssetMaterializationsQuery';
 import {HistoricalMaterialization, useMaterializationBuckets} from './useMaterializationBuckets';
 
 interface Props {
@@ -31,13 +32,16 @@ interface Props {
 
 export const AssetMaterializations: React.FC<Props> = ({assetKey, asOf, asSidebarSection}) => {
   const before = React.useMemo(() => (asOf ? `${Number(asOf) + 1}` : ''), [asOf]);
-  const {data, loading} = useQuery<AssetQuery, AssetQueryVariables>(ASSET_QUERY, {
-    variables: {
-      assetKey: {path: assetKey.path},
-      limit: 200,
-      before,
+  const {data, loading} = useQuery<AssetMaterializationsQuery, AssetMaterializationsQueryVariables>(
+    ASSET_MATERIALIZATIONS_QUERY,
+    {
+      variables: {
+        assetKey: {path: assetKey.path},
+        limit: 200,
+        before,
+      },
     },
-  });
+  );
 
   const asset = data?.assetOrError.__typename === 'Asset' ? data?.assetOrError : null;
   const assetMaterializations = asset?.assetMaterializations || [];
@@ -195,7 +199,7 @@ const AssetMaterializationMatrixAndGraph: React.FC<{
  * Assumes that the data is pre-sorted in ascending partition order if using xAxis = partition.
  */
 const extractNumericData = (
-  assetMaterializations: AssetQuery_assetOrError_Asset_assetMaterializations[],
+  assetMaterializations: AssetMaterializationsQuery_assetOrError_Asset_assetMaterializations[],
   xAxis: 'time' | 'partition',
 ) => {
   const series: AssetNumericHistoricalData = {};
@@ -282,3 +286,50 @@ const extractNumericData = (
   }
   return series;
 };
+
+export const ASSET_MATERIALIZATIONS_QUERY = gql`
+  query AssetMaterializationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $before: String) {
+    assetOrError(assetKey: $assetKey) {
+      ... on Asset {
+        id
+        key {
+          path
+        }
+        assetMaterializations(limit: $limit, beforeTimestampMillis: $before) {
+          partition
+          runOrError {
+            ... on PipelineRun {
+              id
+              runId
+              mode
+              status
+              pipelineName
+              pipelineSnapshotId
+            }
+          }
+          materializationEvent {
+            runId
+            timestamp
+            stepKey
+            stepStats {
+              endTime
+              startTime
+            }
+            materialization {
+              label
+              description
+              metadataEntries {
+                ...MetadataEntryFragment
+              }
+            }
+            assetLineage {
+              ...AssetLineageFragment
+            }
+          }
+        }
+      }
+    }
+  }
+  ${METADATA_ENTRY_FRAGMENT}
+  ${ASSET_LINEAGE_FRAGMENT}
+`;

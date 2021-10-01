@@ -1,3 +1,4 @@
+import {gql} from '@apollo/client';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import qs from 'qs';
 import React from 'react';
@@ -8,10 +9,10 @@ import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
 import {Group} from '../ui/Group';
 
-import {AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent_assetLineage} from './types/AssetQuery';
+import {AssetLineageFragment} from './types/AssetLineageFragment';
 
 const AssetLineageInfoElement: React.FC<{
-  lineage_info: AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent_assetLineage;
+  lineage_info: AssetLineageFragment;
   timestamp: string;
 }> = ({lineage_info, timestamp}) => {
   const partition_list_label = lineage_info.partitions.length === 1 ? 'Partition' : 'Partitions';
@@ -64,7 +65,7 @@ const AssetLineageInfoElement: React.FC<{
 const MAX_COLLAPSED = 5;
 
 export const AssetLineageElements: React.FunctionComponent<{
-  elements: AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent_assetLineage[];
+  elements: AssetLineageFragment[];
   timestamp: string;
 }> = ({elements, timestamp}) => {
   const [collapsed, setCollapsed] = React.useState(true);
@@ -82,3 +83,12 @@ export const AssetLineageElements: React.FunctionComponent<{
     </Group>
   );
 };
+
+export const ASSET_LINEAGE_FRAGMENT = gql`
+  fragment AssetLineageFragment on AssetLineageInfo {
+    assetKey {
+      path
+    }
+    partitions
+  }
+`;

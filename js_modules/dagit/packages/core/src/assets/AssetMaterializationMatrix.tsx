@@ -23,9 +23,9 @@ import {AssetPredecessorLink} from './AssetMaterializationTable';
 import {Sparkline} from './Sparkline';
 import {AssetNumericHistoricalData} from './types';
 import {
-  AssetQuery_assetOrError_Asset_assetMaterializations,
-  AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent_materialization_metadataEntries,
-} from './types/AssetQuery';
+  AssetMaterializationsQuery_assetOrError_Asset_assetMaterializations,
+  AssetMaterializationsQuery_assetOrError_Asset_assetMaterializations_materializationEvent_materialization_metadataEntries,
+} from './types/AssetMaterializationsQuery';
 import {HistoricalMaterialization} from './useMaterializationBuckets';
 
 const COL_WIDTH = 120;
@@ -46,7 +46,7 @@ interface AssetMaterializationMatrixProps {
 }
 
 function xForAssetMaterialization(
-  am: AssetQuery_assetOrError_Asset_assetMaterializations,
+  am: AssetMaterializationsQuery_assetOrError_Asset_assetMaterializations,
   xAxis: 'time' | 'partition',
 ) {
   return xAxis === 'time' ? Number(am.materializationEvent.timestamp) : am.partition;
@@ -257,7 +257,7 @@ const MetadataRowLabel: React.FunctionComponent<{
 
 const plaintextFor = (
   entry:
-    | AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent_materialization_metadataEntries
+    | AssetMaterializationsQuery_assetOrError_Asset_assetMaterializations_materializationEvent_materialization_metadataEntries
     | undefined,
 ) => {
   if (!entry) {
