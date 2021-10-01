@@ -24,7 +24,11 @@ from dagster.core.definitions.partition import (
     StaticPartitionsDefinition,
 )
 from dagster.core.definitions.pipeline import PipelineSubsetDefinition
-from dagster.core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
+from dagster.core.errors import (
+    DagsterConfigMappingFunctionError,
+    DagsterInvalidConfigError,
+    DagsterInvalidDefinitionError,
+)
 
 
 def get_ops():
@@ -764,3 +768,80 @@ def test_top_level_graph_outer_config_failure():
 
     with pytest.raises(DagsterInvalidConfigError, match="Invalid scalar at path root:config"):
         my_graph.to_job(config={"ops": {"config": {"bad_type": "foo"}}})
+
+
+def test_graph_with_configured():
+    @op(config_schema=str)
+    def my_op(context):
+        return context.op_config
+
+    def _config_fn(outer):
+        return {"my_op": {"config": outer}}
+
+    @graph(config_mapping=ConfigMapping(config_fn=_config_fn, config_schema=str))
+    def my_graph():
+        my_op()
+
+    result = my_graph.configured(name="my_graph", config_or_config_fn="foo").execute_in_process()
+    assert result.success
+    assert result.output_for_node("my_op") == "foo"
+
+    def _configured_use_fn(outer):
+        return outer
+
+    result = (
+        my_graph.configured(
+            name="my_graph", config_or_config_fn=_configured_use_fn, config_schema=str
+        )
+        .to_job()
+        .execute_in_process(run_config={"ops": {"config": "foo"}})
+    )
+
+    assert result.success
+    assert result.output_for_node("my_op") == "foo"
+
+
+def test_graph_configured_error_in_config():
+    @op(config_schema=str)
+    def my_op(context):
+        return context.op_config
+
+    def _config_fn(outer):
+        return {"my_op": {"config": outer}}
+
+    @graph(config_mapping=ConfigMapping(config_fn=_config_fn, config_schema=str))
+    def my_graph():
+        my_op()
+
+    def _bad_config_fn(_):
+        return 2
+
+    configured_graph = my_graph.configured(name="blah", config_or_config_fn=_bad_config_fn)
+
+    with pytest.raises(DagsterInvalidConfigError, match="Error in config for graph blah"):
+        configured_graph.execute_in_process()
+
+
+def test_graph_configured_error_in_fn():
+    @op(config_schema=str)
+    def my_op(context):
+        return context.op_config
+
+    def _config_fn(outer):
+        return {"my_op": {"config": outer}}
+
+    @graph(config_mapping=ConfigMapping(config_fn=_config_fn, config_schema=str))
+    def my_graph():
+        my_op()
+
+    def _bad_config_fn(_):
+        raise Exception("Uh oh")
+
+    configured_graph = my_graph.configured(name="blah", config_or_config_fn=_bad_config_fn)
+
+    with pytest.raises(
+        DagsterConfigMappingFunctionError,
+        match="The config mapping function on a `configured` GraphDefinition has thrown an "
+        "unexpected error during its execution.",
+    ):
+        configured_graph.execute_in_process()
