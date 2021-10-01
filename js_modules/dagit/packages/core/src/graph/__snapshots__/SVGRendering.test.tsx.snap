@@ -3,36 +3,36 @@
 exports[`airline_demo_ingest_pipeline: renders the expected SVG 1`] = `
 "<svg version=\\"1.1\\" xmlns=\\"http://www.w3.org/2000/svg\\" viewbox=\\"0 0 3595 1155.5\\" width=\\"3595\\" height=\\"1155.5\\">
   <style data-styled=\\"active\\" data-styled-version=\\"5.2.3\\">
-    .DGqbf {
+    .bmBNbG {
       stroke-width: 6;
-      stroke: #10161A;
+      stroke: rgba(23, 22, 21, 1);
       fill: none;
     }
   </style>
   <g opacity=\\"0.2\\">
     <g>
-      <path d=\\"M1795,247C1795,326,1795,326,1795,405\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 DGqbf\\"></path>
+      <path d=\\"M1795,247C1795,326,1795,326,1795,405\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 bmBNbG\\"></path>
     </g>
     <g>
-      <path d=\\"M115,265C115,308,745,308,745,351\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 DGqbf\\"></path>
+      <path d=\\"M115,265C115,308,745,308,745,351\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 bmBNbG\\"></path>
     </g>
     <g>
-      <path d=\\"M535,265C535,326,745,326,745,387\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 DGqbf\\"></path>
+      <path d=\\"M535,265C535,326,745,326,745,387\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 bmBNbG\\"></path>
     </g>
     <g>
-      <path d=\\"M955,265C955,344,745,344,745,423\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 DGqbf\\"></path>
+      <path d=\\"M955,265C955,344,745,344,745,423\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 bmBNbG\\"></path>
     </g>
     <g>
-      <path d=\\"M1375,265C1375,362,745,362,745,459\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 DGqbf\\"></path>
+      <path d=\\"M1375,265C1375,362,745,362,745,459\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 bmBNbG\\"></path>
     </g>
     <g>
-      <path d=\\"M745,570C745,613,745,613,745,656\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 DGqbf\\"></path>
+      <path d=\\"M745,570C745,613,745,613,745,656\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 bmBNbG\\"></path>
     </g>
     <g>
-      <path d=\\"M1795,767C1795,810,1795,810,1795,853\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 DGqbf\\"></path>
+      <path d=\\"M1795,767C1795,810,1795,810,1795,853\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 bmBNbG\\"></path>
     </g>
     <g>
-      <path d=\\"M1795,516C1795,586,1795,586,1795,656\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 DGqbf\\"></path>
+      <path d=\\"M1795,516C1795,586,1795,586,1795,656\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 bmBNbG\\"></path>
     </g>
   </g>
   <g opacity=\\"0.55\\"></g>
@@ -82,8 +82,8 @@ exports[`airline_demo_ingest_pipeline: renders the expected SVG 1`] = `
       <ellipse cx=\\"1795\\" cy=\\"247\\" rx=\\"7\\" ry=\\"7\\" fill=\\"rgba(0, 0, 0, 0.3)\\" stroke=\\"white\\" stroke-width=\\"1.5\\"></ellipse>
       <rect rx=\\"4\\" ry=\\"4\\" fill=\\"#d6ecff\\" stroke=\\"#2491eb\\" stroke-width=\\"1\\" height=\\"27\\" width=\\"94.8\\" x=\\"1809\\" y=\\"233.5\\"></rect><text fill=\\"#222\\" x=\\"1813\\" y=\\"240\\" style=\\"font-family:Inconsolata,SF Mono,SFMono-Regular,ui-monospace,Source Code Pro,Menlo,Monaco,Cascadia Mono,Segoe UI Mono,Roboto Mono,Oxygen Mono,Ubuntu Monospace,Fira Mono,Droid Sans Mono,Courier New,monospace;font-size:14px;pointer-events:none\\" width=\\"86.8\\" height=\\"14\\" dominant-baseline=\\"hanging\\">FileHandle</text>
     </g>
-    <ellipse cx=\\"2130\\" cy=\\"148\\" rx=\\"13\\" ry=\\"13\\" stroke=\\"#8A9BA8\\" fill=\\"#DBE6EE\\" pathLength=\\"100\\" stroke-width=\\"1\\" stroke-dasharray=\\"0 50 0\\"></ellipse>
-    <ellipse cx=\\"2130\\" cy=\\"148\\" rx=\\"10\\" ry=\\"10\\" stroke=\\"#FFFFFF\\" fill=\\"#7D8C97\\" pathLength=\\"100\\" stroke-width=\\"2\\"></ellipse><text x=\\"2125\\" y=\\"142.5\\" style=\\"font:14px &quot;Arial&quot;, san-serif\\" fill=\\"#FFFFFF\\" dominant-baseline=\\"hanging\\">C</text>
+    <ellipse cx=\\"2130\\" cy=\\"148\\" rx=\\"13\\" ry=\\"13\\" stroke=\\"rgba(161, 157, 153, 1)\\" fill=\\"#DBE6EE\\" pathLength=\\"100\\" stroke-width=\\"1\\" stroke-dasharray=\\"0 50 0\\"></ellipse>
+    <ellipse cx=\\"2130\\" cy=\\"148\\" rx=\\"10\\" ry=\\"10\\" stroke=\\"rgba(255, 255, 255, 1)\\" fill=\\"#7D8C97\\" pathLength=\\"100\\" stroke-width=\\"2\\"></ellipse><text x=\\"2125\\" y=\\"142.5\\" style=\\"font:14px &quot;Arial&quot;, san-serif\\" fill=\\"rgba(255, 255, 255, 1)\\" dominant-baseline=\\"hanging\\">C</text>
   </g>
   <g data-tooltip=\\"ingest_q2_sfo_weather\\" data-tooltip-style=\\"{&quot;top&quot;:-20,&quot;left&quot;:5}\\">
     <rect width=\\"370\\" height=\\"87\\" fill=\\"#DBE6EE\\" stroke=\\"#979797\\" stroke-width=\\"1\\" x=\\"1780\\" y=\\"417\\"></rect><text fill=\\"#222\\" x=\\"1792\\" y=\\"452.5\\" style=\\"font-family:Inconsolata,SF Mono,SFMono-Regular,ui-monospace,Source Code Pro,Menlo,Monaco,Cascadia Mono,Segoe UI Mono,Roboto Mono,Oxygen Mono,Ubuntu Monospace,Fira Mono,Droid Sans Mono,Courier New,monospace;font-size:16px;pointer-events:none\\" width=\\"208.32\\" height=\\"16\\" dominant-baseline=\\"hanging\\">ingest_q2_sfo_weather</text>
@@ -153,8 +153,8 @@ exports[`airline_demo_ingest_pipeline: renders the expected SVG 1`] = `
       <ellipse cx=\\"745\\" cy=\\"570\\" rx=\\"7\\" ry=\\"7\\" fill=\\"rgba(0, 0, 0, 0.3)\\" stroke=\\"white\\" stroke-width=\\"1.5\\"></ellipse>
       <rect rx=\\"4\\" ry=\\"4\\" fill=\\"#d6ecff\\" stroke=\\"#2491eb\\" stroke-width=\\"1\\" height=\\"27\\" width=\\"146.88\\" x=\\"759\\" y=\\"556.5\\"></rect><text fill=\\"#222\\" x=\\"763\\" y=\\"563\\" style=\\"font-family:Inconsolata,SF Mono,SFMono-Regular,ui-monospace,Source Code Pro,Menlo,Monaco,Cascadia Mono,Segoe UI Mono,Roboto Mono,Oxygen Mono,Ubuntu Monospace,Fira Mono,Droid Sans Mono,Courier New,monospace;font-size:14px;pointer-events:none\\" width=\\"138.88\\" height=\\"14\\" dominant-baseline=\\"hanging\\">PySparkDataFrame</text>
     </g>
-    <ellipse cx=\\"1080\\" cy=\\"471\\" rx=\\"13\\" ry=\\"13\\" stroke=\\"#8A9BA8\\" fill=\\"#DBE6EE\\" pathLength=\\"100\\" stroke-width=\\"1\\" stroke-dasharray=\\"0 50 0\\"></ellipse>
-    <ellipse cx=\\"1080\\" cy=\\"471\\" rx=\\"10\\" ry=\\"10\\" stroke=\\"#FFFFFF\\" fill=\\"#7D8C97\\" pathLength=\\"100\\" stroke-width=\\"2\\"></ellipse><text x=\\"1075\\" y=\\"465.5\\" style=\\"font:14px &quot;Arial&quot;, san-serif\\" fill=\\"#FFFFFF\\" dominant-baseline=\\"hanging\\">C</text>
+    <ellipse cx=\\"1080\\" cy=\\"471\\" rx=\\"13\\" ry=\\"13\\" stroke=\\"rgba(161, 157, 153, 1)\\" fill=\\"#DBE6EE\\" pathLength=\\"100\\" stroke-width=\\"1\\" stroke-dasharray=\\"0 50 0\\"></ellipse>
+    <ellipse cx=\\"1080\\" cy=\\"471\\" rx=\\"10\\" ry=\\"10\\" stroke=\\"rgba(255, 255, 255, 1)\\" fill=\\"#7D8C97\\" pathLength=\\"100\\" stroke-width=\\"2\\"></ellipse><text x=\\"1075\\" y=\\"465.5\\" style=\\"font:14px &quot;Arial&quot;, san-serif\\" fill=\\"rgba(255, 255, 255, 1)\\" dominant-baseline=\\"hanging\\">C</text>
   </g>
   <g data-tooltip=\\"june_on_time_s3_to_df\\" data-tooltip-style=\\"{&quot;top&quot;:-20,&quot;left&quot;:5}\\">
     <rect x=\\"934\\" y=\\"160\\" width=\\"382\\" height=\\"99\\" fill=\\"#E6DBEE\\" stroke=\\"#979797\\" stroke-width=\\"1\\"></rect>
@@ -202,8 +202,8 @@ exports[`airline_demo_ingest_pipeline: renders the expected SVG 1`] = `
       <ellipse cx=\\"745\\" cy=\\"767\\" rx=\\"7\\" ry=\\"7\\" fill=\\"rgba(0, 0, 0, 0.3)\\" stroke=\\"white\\" stroke-width=\\"1.5\\"></ellipse><text fill=\\"#FFF\\" x=\\"759\\" y=\\"760\\" style=\\"font-family:Inconsolata,SF Mono,SFMono-Regular,ui-monospace,Source Code Pro,Menlo,Monaco,Cascadia Mono,Segoe UI Mono,Roboto Mono,Oxygen Mono,Ubuntu Monospace,Fira Mono,Droid Sans Mono,Courier New,monospace;font-size:14px;pointer-events:none\\" width=\\"95.48\\" height=\\"14\\" dominant-baseline=\\"hanging\\">table_name:</text>
       <rect rx=\\"4\\" ry=\\"4\\" fill=\\"#d6ecff\\" stroke=\\"#2491eb\\" stroke-width=\\"1\\" height=\\"27\\" width=\\"60.08\\" x=\\"861.48\\" y=\\"753.5\\"></rect><text fill=\\"#222\\" x=\\"865.48\\" y=\\"760\\" style=\\"font-family:Inconsolata,SF Mono,SFMono-Regular,ui-monospace,Source Code Pro,Menlo,Monaco,Cascadia Mono,Segoe UI Mono,Roboto Mono,Oxygen Mono,Ubuntu Monospace,Fira Mono,Droid Sans Mono,Courier New,monospace;font-size:14px;pointer-events:none\\" width=\\"52.08\\" height=\\"14\\" dominant-baseline=\\"hanging\\">String</text>
     </g>
-    <ellipse cx=\\"1080\\" cy=\\"668\\" rx=\\"13\\" ry=\\"13\\" stroke=\\"#8A9BA8\\" fill=\\"#DBE6EE\\" pathLength=\\"100\\" stroke-width=\\"1\\" stroke-dasharray=\\"0 50 0\\"></ellipse>
-    <ellipse cx=\\"1080\\" cy=\\"668\\" rx=\\"10\\" ry=\\"10\\" stroke=\\"#FFFFFF\\" fill=\\"#7D8C97\\" pathLength=\\"100\\" stroke-width=\\"2\\"></ellipse><text x=\\"1075\\" y=\\"662.5\\" style=\\"font:14px &quot;Arial&quot;, san-serif\\" fill=\\"#FFFFFF\\" dominant-baseline=\\"hanging\\">C</text>
+    <ellipse cx=\\"1080\\" cy=\\"668\\" rx=\\"13\\" ry=\\"13\\" stroke=\\"rgba(161, 157, 153, 1)\\" fill=\\"#DBE6EE\\" pathLength=\\"100\\" stroke-width=\\"1\\" stroke-dasharray=\\"0 50 0\\"></ellipse>
+    <ellipse cx=\\"1080\\" cy=\\"668\\" rx=\\"10\\" ry=\\"10\\" stroke=\\"rgba(255, 255, 255, 1)\\" fill=\\"#7D8C97\\" pathLength=\\"100\\" stroke-width=\\"2\\"></ellipse><text x=\\"1075\\" y=\\"662.5\\" style=\\"font:14px &quot;Arial&quot;, san-serif\\" fill=\\"rgba(255, 255, 255, 1)\\" dominant-baseline=\\"hanging\\">C</text>
   </g>
   <g data-tooltip=\\"load_q2_sfo_weather\\" data-tooltip-style=\\"{&quot;top&quot;:-20,&quot;left&quot;:5}\\">
     <rect width=\\"370\\" height=\\"87\\" fill=\\"#DBE6EE\\" stroke=\\"#979797\\" stroke-width=\\"1\\" x=\\"1780\\" y=\\"865\\"></rect><text fill=\\"#222\\" x=\\"1792\\" y=\\"900.5\\" style=\\"font-family:Inconsolata,SF Mono,SFMono-Regular,ui-monospace,Source Code Pro,Menlo,Monaco,Cascadia Mono,Segoe UI Mono,Roboto Mono,Oxygen Mono,Ubuntu Monospace,Fira Mono,Droid Sans Mono,Courier New,monospace;font-size:16px;pointer-events:none\\" width=\\"188.48\\" height=\\"16\\" dominant-baseline=\\"hanging\\">load_q2_sfo_weather</text>
@@ -222,8 +222,8 @@ exports[`airline_demo_ingest_pipeline: renders the expected SVG 1`] = `
       <ellipse cx=\\"1795\\" cy=\\"964\\" rx=\\"7\\" ry=\\"7\\" fill=\\"rgba(0, 0, 0, 0.3)\\" stroke=\\"white\\" stroke-width=\\"1.5\\"></ellipse><text fill=\\"#FFF\\" x=\\"1809\\" y=\\"957\\" style=\\"font-family:Inconsolata,SF Mono,SFMono-Regular,ui-monospace,Source Code Pro,Menlo,Monaco,Cascadia Mono,Segoe UI Mono,Roboto Mono,Oxygen Mono,Ubuntu Monospace,Fira Mono,Droid Sans Mono,Courier New,monospace;font-size:14px;pointer-events:none\\" width=\\"95.48\\" height=\\"14\\" dominant-baseline=\\"hanging\\">table_name:</text>
       <rect rx=\\"4\\" ry=\\"4\\" fill=\\"#d6ecff\\" stroke=\\"#2491eb\\" stroke-width=\\"1\\" height=\\"27\\" width=\\"60.08\\" x=\\"1911.48\\" y=\\"950.5\\"></rect><text fill=\\"#222\\" x=\\"1915.48\\" y=\\"957\\" style=\\"font-family:Inconsolata,SF Mono,SFMono-Regular,ui-monospace,Source Code Pro,Menlo,Monaco,Cascadia Mono,Segoe UI Mono,Roboto Mono,Oxygen Mono,Ubuntu Monospace,Fira Mono,Droid Sans Mono,Courier New,monospace;font-size:14px;pointer-events:none\\" width=\\"52.08\\" height=\\"14\\" dominant-baseline=\\"hanging\\">String</text>
     </g>
-    <ellipse cx=\\"2130\\" cy=\\"865\\" rx=\\"13\\" ry=\\"13\\" stroke=\\"#8A9BA8\\" fill=\\"#DBE6EE\\" pathLength=\\"100\\" stroke-width=\\"1\\" stroke-dasharray=\\"0 50 0\\"></ellipse>
-    <ellipse cx=\\"2130\\" cy=\\"865\\" rx=\\"10\\" ry=\\"10\\" stroke=\\"#FFFFFF\\" fill=\\"#7D8C97\\" pathLength=\\"100\\" stroke-width=\\"2\\"></ellipse><text x=\\"2125\\" y=\\"859.5\\" style=\\"font:14px &quot;Arial&quot;, san-serif\\" fill=\\"#FFFFFF\\" dominant-baseline=\\"hanging\\">C</text>
+    <ellipse cx=\\"2130\\" cy=\\"865\\" rx=\\"13\\" ry=\\"13\\" stroke=\\"rgba(161, 157, 153, 1)\\" fill=\\"#DBE6EE\\" pathLength=\\"100\\" stroke-width=\\"1\\" stroke-dasharray=\\"0 50 0\\"></ellipse>
+    <ellipse cx=\\"2130\\" cy=\\"865\\" rx=\\"10\\" ry=\\"10\\" stroke=\\"rgba(255, 255, 255, 1)\\" fill=\\"#7D8C97\\" pathLength=\\"100\\" stroke-width=\\"2\\"></ellipse><text x=\\"2125\\" y=\\"859.5\\" style=\\"font:14px &quot;Arial&quot;, san-serif\\" fill=\\"rgba(255, 255, 255, 1)\\" dominant-baseline=\\"hanging\\">C</text>
   </g>
   <g data-tooltip=\\"master_cord_s3_to_df\\" data-tooltip-style=\\"{&quot;top&quot;:-20,&quot;left&quot;:5}\\">
     <rect x=\\"1354\\" y=\\"160\\" width=\\"382\\" height=\\"99\\" fill=\\"#E6DBEE\\" stroke=\\"#979797\\" stroke-width=\\"1\\"></rect>
@@ -388,18 +388,18 @@ exports[`airline_demo_ingest_pipeline: renders the expected SVG 1`] = `
 exports[`airline_demo_ingest_pipeline_composite: renders the expected SVG 1`] = `
 "<svg version=\\"1.1\\" xmlns=\\"http://www.w3.org/2000/svg\\" viewbox=\\"0 0 655 850.5\\" width=\\"655\\" height=\\"850.5\\">
   <style data-styled=\\"active\\" data-styled-version=\\"5.2.3\\">
-    .DGqbf {
+    .bmBNbG {
       stroke-width: 6;
-      stroke: #10161A;
+      stroke: rgba(23, 22, 21, 1);
       fill: none;
     }
   </style>
   <g opacity=\\"0.2\\">
     <g>
-      <path d=\\"M115,462C115,505,115,505,115,548\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 DGqbf\\"></path>
+      <path d=\\"M115,462C115,505,115,505,115,548\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 bmBNbG\\"></path>
     </g>
     <g>
-      <path d=\\"M115,229C115,272,115,272,115,315\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 DGqbf\\"></path>
+      <path d=\\"M115,229C115,272,115,272,115,315\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 bmBNbG\\"></path>
     </g>
   </g>
   <g opacity=\\"0.55\\"></g>
@@ -420,8 +420,8 @@ exports[`airline_demo_ingest_pipeline_composite: renders the expected SVG 1`] = 
       <ellipse cx=\\"115\\" cy=\\"229\\" rx=\\"7\\" ry=\\"7\\" fill=\\"rgba(0, 0, 0, 0.3)\\" stroke=\\"white\\" stroke-width=\\"1.5\\"></ellipse>
       <rect rx=\\"4\\" ry=\\"4\\" fill=\\"#d6ecff\\" stroke=\\"#2491eb\\" stroke-width=\\"1\\" height=\\"27\\" width=\\"94.8\\" x=\\"129\\" y=\\"215.5\\"></rect><text fill=\\"#222\\" x=\\"133\\" y=\\"222\\" style=\\"font-family:Inconsolata,SF Mono,SFMono-Regular,ui-monospace,Source Code Pro,Menlo,Monaco,Cascadia Mono,Segoe UI Mono,Roboto Mono,Oxygen Mono,Ubuntu Monospace,Fira Mono,Droid Sans Mono,Courier New,monospace;font-size:14px;pointer-events:none\\" width=\\"86.8\\" height=\\"14\\" dominant-baseline=\\"hanging\\">FileHandle</text>
     </g>
-    <ellipse cx=\\"450\\" cy=\\"130\\" rx=\\"13\\" ry=\\"13\\" stroke=\\"#8A9BA8\\" fill=\\"#DBE6EE\\" pathLength=\\"100\\" stroke-width=\\"1\\" stroke-dasharray=\\"0 50 0\\"></ellipse>
-    <ellipse cx=\\"450\\" cy=\\"130\\" rx=\\"10\\" ry=\\"10\\" stroke=\\"#FFFFFF\\" fill=\\"#7D8C97\\" pathLength=\\"100\\" stroke-width=\\"2\\"></ellipse><text x=\\"445\\" y=\\"124.5\\" style=\\"font:14px &quot;Arial&quot;, san-serif\\" fill=\\"#FFFFFF\\" dominant-baseline=\\"hanging\\">C</text>
+    <ellipse cx=\\"450\\" cy=\\"130\\" rx=\\"13\\" ry=\\"13\\" stroke=\\"rgba(161, 157, 153, 1)\\" fill=\\"#DBE6EE\\" pathLength=\\"100\\" stroke-width=\\"1\\" stroke-dasharray=\\"0 50 0\\"></ellipse>
+    <ellipse cx=\\"450\\" cy=\\"130\\" rx=\\"10\\" ry=\\"10\\" stroke=\\"rgba(255, 255, 255, 1)\\" fill=\\"#7D8C97\\" pathLength=\\"100\\" stroke-width=\\"2\\"></ellipse><text x=\\"445\\" y=\\"124.5\\" style=\\"font:14px &quot;Arial&quot;, san-serif\\" fill=\\"rgba(255, 255, 255, 1)\\" dominant-baseline=\\"hanging\\">C</text>
   </g>
   <g data-tooltip=\\"ingest_csv_file_handle_to_spark\\" data-tooltip-style=\\"{&quot;top&quot;:-20,&quot;left&quot;:5}\\">
     <rect width=\\"370\\" height=\\"87\\" fill=\\"#DBE6EE\\" stroke=\\"#979797\\" stroke-width=\\"1\\" x=\\"100\\" y=\\"560\\"></rect><text fill=\\"#222\\" x=\\"112\\" y=\\"595.5\\" style=\\"font-family:Inconsolata,SF Mono,SFMono-Regular,ui-monospace,Source Code Pro,Menlo,Monaco,Cascadia Mono,Segoe UI Mono,Roboto Mono,Oxygen Mono,Ubuntu Monospace,Fira Mono,Droid Sans Mono,Courier New,monospace;font-size:16px;pointer-events:none\\" width=\\"307.52\\" height=\\"16\\" dominant-baseline=\\"hanging\\">ingest_csv_file_handle_to_spark</text>
@@ -474,33 +474,33 @@ exports[`airline_demo_ingest_pipeline_composite: renders the expected SVG 1`] = 
 exports[`airline_demo_warehouse_pipeline: renders the expected SVG 1`] = `
 "<svg version=\\"1.1\\" xmlns=\\"http://www.w3.org/2000/svg\\" viewbox=\\"0 0 1505 1208.5\\" width=\\"1505\\" height=\\"1208.5\\">
   <style data-styled=\\"active\\" data-styled-version=\\"5.2.3\\">
-    .DGqbf {
+    .bmBNbG {
       stroke-width: 6;
-      stroke: #10161A;
+      stroke: rgba(23, 22, 21, 1);
       fill: none;
     }
   </style>
   <g opacity=\\"0.2\\">
     <g>
-      <path d=\\"M545,193C545,236,545,236,545,279\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 DGqbf\\"></path>
+      <path d=\\"M545,193C545,236,545,236,545,279\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 bmBNbG\\"></path>
     </g>
     <g>
-      <path d=\\"M115,372C115,424,125,424,125,476\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 DGqbf\\"></path>
+      <path d=\\"M115,372C115,424,125,424,125,476\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 bmBNbG\\"></path>
     </g>
     <g>
-      <path d=\\"M545,390C545,451,125,451,125,512\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 DGqbf\\"></path>
+      <path d=\\"M545,390C545,451,125,451,125,512\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 bmBNbG\\"></path>
     </g>
     <g>
-      <path d=\\"M125,623C125,666,125,666,125,709\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 DGqbf\\"></path>
+      <path d=\\"M125,623C125,666,125,666,125,709\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 bmBNbG\\"></path>
     </g>
     <g>
-      <path d=\\"M545,390C545,442,555,442,555,494\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 DGqbf\\"></path>
+      <path d=\\"M545,390C545,442,555,442,555,494\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 bmBNbG\\"></path>
     </g>
     <g>
-      <path d=\\"M125,820C125,863,125,863,125,906\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 DGqbf\\"></path>
+      <path d=\\"M125,820C125,863,125,863,125,906\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 bmBNbG\\"></path>
     </g>
     <g>
-      <path d=\\"M555,605C555,657,555,657,555,709\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 DGqbf\\"></path>
+      <path d=\\"M555,605C555,657,555,657,555,709\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 bmBNbG\\"></path>
     </g>
   </g>
   <g opacity=\\"0.55\\"></g>
@@ -671,8 +671,8 @@ exports[`airline_demo_warehouse_pipeline: renders the expected SVG 1`] = `
       <ellipse cx=\\"125\\" cy=\\"1017\\" rx=\\"7\\" ry=\\"7\\" fill=\\"rgba(0, 0, 0, 0.3)\\" stroke=\\"white\\" stroke-width=\\"1.5\\"></ellipse><text fill=\\"#FFF\\" x=\\"139\\" y=\\"1010\\" style=\\"font-family:Inconsolata,SF Mono,SFMono-Regular,ui-monospace,Source Code Pro,Menlo,Monaco,Cascadia Mono,Segoe UI Mono,Roboto Mono,Oxygen Mono,Ubuntu Monospace,Fira Mono,Droid Sans Mono,Courier New,monospace;font-size:14px;pointer-events:none\\" width=\\"130.2\\" height=\\"14\\" dominant-baseline=\\"hanging\\">s3_file_handle:</text>
       <rect rx=\\"4\\" ry=\\"4\\" fill=\\"#d6ecff\\" stroke=\\"#2491eb\\" stroke-width=\\"1\\" height=\\"27\\" width=\\"112.16\\" x=\\"276.2\\" y=\\"1003.5\\"></rect><text fill=\\"#222\\" x=\\"280.2\\" y=\\"1010\\" style=\\"font-family:Inconsolata,SF Mono,SFMono-Regular,ui-monospace,Source Code Pro,Menlo,Monaco,Cascadia Mono,Segoe UI Mono,Roboto Mono,Oxygen Mono,Ubuntu Monospace,Fira Mono,Droid Sans Mono,Courier New,monospace;font-size:14px;pointer-events:none\\" width=\\"104.16\\" height=\\"14\\" dominant-baseline=\\"hanging\\">S3FileHandle</text>
     </g>
-    <ellipse cx=\\"460\\" cy=\\"918\\" rx=\\"13\\" ry=\\"13\\" stroke=\\"#8A9BA8\\" fill=\\"#DBE6EE\\" pathLength=\\"100\\" stroke-width=\\"1\\" stroke-dasharray=\\"0 50 0\\"></ellipse>
-    <ellipse cx=\\"460\\" cy=\\"918\\" rx=\\"10\\" ry=\\"10\\" stroke=\\"#FFFFFF\\" fill=\\"#7D8C97\\" pathLength=\\"100\\" stroke-width=\\"2\\"></ellipse><text x=\\"455\\" y=\\"912.5\\" style=\\"font:14px &quot;Arial&quot;, san-serif\\" fill=\\"#FFFFFF\\" dominant-baseline=\\"hanging\\">C</text>
+    <ellipse cx=\\"460\\" cy=\\"918\\" rx=\\"13\\" ry=\\"13\\" stroke=\\"rgba(161, 157, 153, 1)\\" fill=\\"#DBE6EE\\" pathLength=\\"100\\" stroke-width=\\"1\\" stroke-dasharray=\\"0 50 0\\"></ellipse>
+    <ellipse cx=\\"460\\" cy=\\"918\\" rx=\\"10\\" ry=\\"10\\" stroke=\\"rgba(255, 255, 255, 1)\\" fill=\\"#7D8C97\\" pathLength=\\"100\\" stroke-width=\\"2\\"></ellipse><text x=\\"455\\" y=\\"912.5\\" style=\\"font:14px &quot;Arial&quot;, san-serif\\" fill=\\"rgba(255, 255, 255, 1)\\" dominant-baseline=\\"hanging\\">C</text>
   </g>
   <g data-tooltip=\\"upload_outbound_avg_delay_pdf_plots\\" data-tooltip-style=\\"{&quot;top&quot;:-20,&quot;left&quot;:5}\\">
     <rect width=\\"370\\" height=\\"87\\" fill=\\"#DBE6EE\\" stroke=\\"#979797\\" stroke-width=\\"1\\" x=\\"540\\" y=\\"721\\"></rect><text fill=\\"#222\\" x=\\"552\\" y=\\"756.5\\" style=\\"font-family:Inconsolata,SF Mono,SFMono-Regular,ui-monospace,Source Code Pro,Menlo,Monaco,Cascadia Mono,Segoe UI Mono,Roboto Mono,Oxygen Mono,Ubuntu Monospace,Fira Mono,Droid Sans Mono,Courier New,monospace;font-size:16px;pointer-events:none\\" width=\\"347.2\\" height=\\"16\\" dominant-baseline=\\"hanging\\">upload_outbound_avg_delay_pdf_plots</text>
@@ -691,8 +691,8 @@ exports[`airline_demo_warehouse_pipeline: renders the expected SVG 1`] = `
       <ellipse cx=\\"555\\" cy=\\"820\\" rx=\\"7\\" ry=\\"7\\" fill=\\"rgba(0, 0, 0, 0.3)\\" stroke=\\"white\\" stroke-width=\\"1.5\\"></ellipse><text fill=\\"#FFF\\" x=\\"569\\" y=\\"813\\" style=\\"font-family:Inconsolata,SF Mono,SFMono-Regular,ui-monospace,Source Code Pro,Menlo,Monaco,Cascadia Mono,Segoe UI Mono,Roboto Mono,Oxygen Mono,Ubuntu Monospace,Fira Mono,Droid Sans Mono,Courier New,monospace;font-size:14px;pointer-events:none\\" width=\\"130.2\\" height=\\"14\\" dominant-baseline=\\"hanging\\">s3_file_handle:</text>
       <rect rx=\\"4\\" ry=\\"4\\" fill=\\"#d6ecff\\" stroke=\\"#2491eb\\" stroke-width=\\"1\\" height=\\"27\\" width=\\"112.16\\" x=\\"706.2\\" y=\\"806.5\\"></rect><text fill=\\"#222\\" x=\\"710.2\\" y=\\"813\\" style=\\"font-family:Inconsolata,SF Mono,SFMono-Regular,ui-monospace,Source Code Pro,Menlo,Monaco,Cascadia Mono,Segoe UI Mono,Roboto Mono,Oxygen Mono,Ubuntu Monospace,Fira Mono,Droid Sans Mono,Courier New,monospace;font-size:14px;pointer-events:none\\" width=\\"104.16\\" height=\\"14\\" dominant-baseline=\\"hanging\\">S3FileHandle</text>
     </g>
-    <ellipse cx=\\"890\\" cy=\\"721\\" rx=\\"13\\" ry=\\"13\\" stroke=\\"#8A9BA8\\" fill=\\"#DBE6EE\\" pathLength=\\"100\\" stroke-width=\\"1\\" stroke-dasharray=\\"0 50 0\\"></ellipse>
-    <ellipse cx=\\"890\\" cy=\\"721\\" rx=\\"10\\" ry=\\"10\\" stroke=\\"#FFFFFF\\" fill=\\"#7D8C97\\" pathLength=\\"100\\" stroke-width=\\"2\\"></ellipse><text x=\\"885\\" y=\\"715.5\\" style=\\"font:14px &quot;Arial&quot;, san-serif\\" fill=\\"#FFFFFF\\" dominant-baseline=\\"hanging\\">C</text>
+    <ellipse cx=\\"890\\" cy=\\"721\\" rx=\\"13\\" ry=\\"13\\" stroke=\\"rgba(161, 157, 153, 1)\\" fill=\\"#DBE6EE\\" pathLength=\\"100\\" stroke-width=\\"1\\" stroke-dasharray=\\"0 50 0\\"></ellipse>
+    <ellipse cx=\\"890\\" cy=\\"721\\" rx=\\"10\\" ry=\\"10\\" stroke=\\"rgba(255, 255, 255, 1)\\" fill=\\"#7D8C97\\" pathLength=\\"100\\" stroke-width=\\"2\\"></ellipse><text x=\\"885\\" y=\\"715.5\\" style=\\"font:14px &quot;Arial&quot;, san-serif\\" fill=\\"rgba(255, 255, 255, 1)\\" dominant-baseline=\\"hanging\\">C</text>
   </g>
 </svg>"
 `;
@@ -700,18 +700,18 @@ exports[`airline_demo_warehouse_pipeline: renders the expected SVG 1`] = `
 exports[`composition: renders the expected SVG 1`] = `
 "<svg version=\\"1.1\\" xmlns=\\"http://www.w3.org/2000/svg\\" viewbox=\\"0 0 655 814.5\\" width=\\"655\\" height=\\"814.5\\">
   <style data-styled=\\"active\\" data-styled-version=\\"5.2.3\\">
-    .DGqbf {
+    .bmBNbG {
       stroke-width: 6;
-      stroke: #10161A;
+      stroke: rgba(23, 22, 21, 1);
       fill: none;
     }
   </style>
   <g opacity=\\"0.2\\">
     <g>
-      <path d=\\"M115,426C115,469,115,469,115,512\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 DGqbf\\"></path>
+      <path d=\\"M115,426C115,469,115,469,115,512\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 bmBNbG\\"></path>
     </g>
     <g>
-      <path d=\\"M115,229C115,272,115,272,115,315\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 DGqbf\\"></path>
+      <path d=\\"M115,229C115,272,115,272,115,315\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 bmBNbG\\"></path>
     </g>
   </g>
   <g opacity=\\"0.55\\"></g>
@@ -788,36 +788,36 @@ exports[`composition: renders the expected SVG 1`] = `
 exports[`log_spew: renders the expected SVG 1`] = `
 "<svg version=\\"1.1\\" xmlns=\\"http://www.w3.org/2000/svg\\" viewbox=\\"0 0 1095 1262.5\\" width=\\"1095\\" height=\\"1262.5\\">
   <style data-styled=\\"active\\" data-styled-version=\\"5.2.3\\">
-    .DGqbf {
+    .bmBNbG {
       stroke-width: 6;
-      stroke: #10161A;
+      stroke: rgba(23, 22, 21, 1);
       fill: none;
     }
   </style>
   <g opacity=\\"0.2\\">
     <g>
-      <path d=\\"M125,695C125,738,335,738,335,781\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 DGqbf\\"></path>
+      <path d=\\"M125,695C125,738,335,738,335,781\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 bmBNbG\\"></path>
     </g>
     <g>
-      <path d=\\"M555,677C555,747,335,747,335,817\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 DGqbf\\"></path>
+      <path d=\\"M555,677C555,747,335,747,335,817\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 bmBNbG\\"></path>
     </g>
     <g>
-      <path d=\\"M335,193C335,263,115,263,115,333\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 DGqbf\\"></path>
+      <path d=\\"M335,193C335,263,115,263,115,333\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 bmBNbG\\"></path>
     </g>
     <g>
-      <path d=\\"M335,229C335,272,545,272,545,315\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 DGqbf\\"></path>
+      <path d=\\"M335,229C335,272,545,272,545,315\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 bmBNbG\\"></path>
     </g>
     <g>
-      <path d=\\"M115,444C115,496,125,496,125,548\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 DGqbf\\"></path>
+      <path d=\\"M115,444C115,496,125,496,125,548\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 bmBNbG\\"></path>
     </g>
     <g>
-      <path d=\\"M545,426C545,505,125,505,125,584\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 DGqbf\\"></path>
+      <path d=\\"M545,426C545,505,125,505,125,584\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 bmBNbG\\"></path>
     </g>
     <g>
-      <path d=\\"M545,426C545,496,555,496,555,566\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 DGqbf\\"></path>
+      <path d=\\"M545,426C545,496,555,496,555,566\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 bmBNbG\\"></path>
     </g>
     <g>
-      <path d=\\"M335,928C335,971,335,971,335,1014\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 DGqbf\\"></path>
+      <path d=\\"M335,928C335,971,335,971,335,1014\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 bmBNbG\\"></path>
     </g>
   </g>
   <g opacity=\\"0.55\\"></g>
@@ -990,45 +990,45 @@ exports[`log_spew: renders the expected SVG 1`] = `
 exports[`many_events: renders the expected SVG 1`] = `
 "<svg version=\\"1.1\\" xmlns=\\"http://www.w3.org/2000/svg\\" viewbox=\\"0 0 3595 921.5\\" width=\\"3595\\" height=\\"921.5\\">
   <style data-styled=\\"active\\" data-styled-version=\\"5.2.3\\">
-    .DGqbf {
+    .bmBNbG {
       stroke-width: 6;
-      stroke: #10161A;
+      stroke: rgba(23, 22, 21, 1);
       fill: none;
     }
   </style>
   <g opacity=\\"0.2\\">
     <g>
-      <path d=\\"M1585,587C1585,630,1375,630,1375,673\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 DGqbf\\"></path>
+      <path d=\\"M1585,587C1585,630,1375,630,1375,673\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 bmBNbG\\"></path>
     </g>
     <g>
-      <path d=\\"M1585,587C1585,630,1795,630,1795,673\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 DGqbf\\"></path>
+      <path d=\\"M1585,587C1585,630,1795,630,1795,673\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 bmBNbG\\"></path>
     </g>
     <g>
-      <path d=\\"M1585,390C1585,433,1585,433,1585,476\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 DGqbf\\"></path>
+      <path d=\\"M1585,390C1585,433,1585,433,1585,476\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 bmBNbG\\"></path>
     </g>
     <g>
-      <path d=\\"M115,193C115,236,1585,236,1585,279\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 DGqbf\\"></path>
+      <path d=\\"M115,193C115,236,1585,236,1585,279\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 bmBNbG\\"></path>
     </g>
     <g>
-      <path d=\\"M535,193C535,236,1585,236,1585,279\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 DGqbf\\"></path>
+      <path d=\\"M535,193C535,236,1585,236,1585,279\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 bmBNbG\\"></path>
     </g>
     <g>
-      <path d=\\"M955,193C955,236,1585,236,1585,279\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 DGqbf\\"></path>
+      <path d=\\"M955,193C955,236,1585,236,1585,279\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 bmBNbG\\"></path>
     </g>
     <g>
-      <path d=\\"M1375,193C1375,236,1585,236,1585,279\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 DGqbf\\"></path>
+      <path d=\\"M1375,193C1375,236,1585,236,1585,279\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 bmBNbG\\"></path>
     </g>
     <g>
-      <path d=\\"M1795,193C1795,236,1585,236,1585,279\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 DGqbf\\"></path>
+      <path d=\\"M1795,193C1795,236,1585,236,1585,279\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 bmBNbG\\"></path>
     </g>
     <g>
-      <path d=\\"M2215,193C2215,236,1585,236,1585,279\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 DGqbf\\"></path>
+      <path d=\\"M2215,193C2215,236,1585,236,1585,279\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 bmBNbG\\"></path>
     </g>
     <g>
-      <path d=\\"M2635,193C2635,236,1585,236,1585,279\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 DGqbf\\"></path>
+      <path d=\\"M2635,193C2635,236,1585,236,1585,279\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 bmBNbG\\"></path>
     </g>
     <g>
-      <path d=\\"M3055,193C3055,236,1585,236,1585,279\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 DGqbf\\"></path>
+      <path d=\\"M3055,193C3055,236,1585,236,1585,279\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 bmBNbG\\"></path>
     </g>
   </g>
   <g opacity=\\"0.55\\"></g>
@@ -1208,15 +1208,15 @@ exports[`many_events: renders the expected SVG 1`] = `
 exports[`renders the expected SVG when viewing a composite 1`] = `
 "<svg version=\\"1.1\\" xmlns=\\"http://www.w3.org/2000/svg\\" viewbox=\\"0 0 695 962.5\\" width=\\"695\\" height=\\"962.5\\">
   <style data-styled=\\"active\\" data-styled-version=\\"5.2.3\\">
-    .jXbrMi {
+    .dhmPMi {
       stroke-width: 10px;
-      fill: #E1E8ED;
-      stroke: #E1E8ED;
+      fill: rgba(245, 244, 242, 1);
+      stroke: rgba(245, 244, 242, 1);
     }
 
-    .jXbrMi:hover {
-      fill: #CED9E0;
-      stroke: #CED9E0;
+    .dhmPMi:hover {
+      fill: rgba(218, 216, 214, 1);
+      stroke: rgba(218, 216, 214, 1);
     }
 
     .bBOTnM {
@@ -1224,17 +1224,17 @@ exports[`renders the expected SVG when viewing a composite 1`] = `
       transition: x 250ms ease-out, y 250ms ease-out, width 250ms ease-out, height 250ms ease-out;
     }
 
-    .DGqbf {
+    .bmBNbG {
       stroke-width: 6;
-      stroke: #10161A;
+      stroke: rgba(23, 22, 21, 1);
       fill: none;
     }
   </style>
   <g>
-    <rect x=\\"1\\" y=\\"1\\" width=\\"694\\" height=\\"961.5\\" fill=\\"#F5F8FA\\" stroke=\\"#979797\\" stroke-width=\\"1\\" class=\\"ParentSolidNode__SVGLabeledParentRect-sc-3q33dr-0 bBOTnM\\"></rect><text x=\\"6\\" height=\\"16\\" fill=\\"#979797\\" y=\\"6\\" style=\\"font-family:Inconsolata,SF Mono,SFMono-Regular,ui-monospace,Source Code Pro,Menlo,Monaco,Cascadia Mono,Segoe UI Mono,Roboto Mono,Oxygen Mono,Ubuntu Monospace,Fira Mono,Droid Sans Mono,Courier New,monospace;font-size:16px;pointer-events:none\\" width=\\"198.4\\" dominant-baseline=\\"hanging\\">master_cord_s3_to_df</text>
+    <rect x=\\"1\\" y=\\"1\\" width=\\"694\\" height=\\"961.5\\" fill=\\"rgba(250, 249, 247, 1)\\" stroke=\\"#979797\\" stroke-width=\\"1\\" class=\\"ParentSolidNode__SVGLabeledParentRect-sc-3q33dr-0 bBOTnM\\"></rect><text x=\\"6\\" height=\\"16\\" fill=\\"#979797\\" y=\\"6\\" style=\\"font-family:Inconsolata,SF Mono,SFMono-Regular,ui-monospace,Source Code Pro,Menlo,Monaco,Cascadia Mono,Segoe UI Mono,Roboto Mono,Oxygen Mono,Ubuntu Monospace,Fira Mono,Droid Sans Mono,Courier New,monospace;font-size:16px;pointer-events:none\\" width=\\"198.4\\" dominant-baseline=\\"hanging\\">master_cord_s3_to_df</text>
   </g>
   <g>
-    <rect x=\\"70\\" y=\\"142\\" width=\\"555\\" height=\\"678.5\\" fill=\\"#F5F8FA\\" stroke=\\"#979797\\" stroke-width=\\"1\\" class=\\"ParentSolidNode__SVGLabeledParentRect-sc-3q33dr-0 bBOTnM\\"></rect><text x=\\"75\\" height=\\"16\\" fill=\\"#979797\\" y=\\"147\\" style=\\"font-family:Inconsolata,SF Mono,SFMono-Regular,ui-monospace,Source Code Pro,Menlo,Monaco,Cascadia Mono,Segoe UI Mono,Roboto Mono,Oxygen Mono,Ubuntu Monospace,Fira Mono,Droid Sans Mono,Courier New,monospace;font-size:16px;pointer-events:none\\" width=\\"79.36\\" dominant-baseline=\\"hanging\\">s3_to_df</text>
+    <rect x=\\"70\\" y=\\"142\\" width=\\"555\\" height=\\"678.5\\" fill=\\"rgba(250, 249, 247, 1)\\" stroke=\\"#979797\\" stroke-width=\\"1\\" class=\\"ParentSolidNode__SVGLabeledParentRect-sc-3q33dr-0 bBOTnM\\"></rect><text x=\\"75\\" height=\\"16\\" fill=\\"#979797\\" y=\\"147\\" style=\\"font-family:Inconsolata,SF Mono,SFMono-Regular,ui-monospace,Source Code Pro,Menlo,Monaco,Cascadia Mono,Segoe UI Mono,Roboto Mono,Oxygen Mono,Ubuntu Monospace,Fira Mono,Droid Sans Mono,Courier New,monospace;font-size:16px;pointer-events:none\\" width=\\"79.36\\" dominant-baseline=\\"hanging\\">s3_to_df</text>
   </g>
   <g>
     <path d=\\"M 85 124 H 50 V 230 H 155\\" fill=\\"none\\" stroke-width=\\"5\\" stroke-linecap=\\"round\\" stroke=\\"rgb(137, 206, 206)\\"></path>
@@ -1265,7 +1265,7 @@ exports[`renders the expected SVG when viewing a composite 1`] = `
     <rect rx=\\"4\\" ry=\\"4\\" fill=\\"#d6ecff\\" stroke=\\"#2491eb\\" stroke-width=\\"1\\" height=\\"27\\" width=\\"60.08\\" x=\\"236.2\\" y=\\"74.5\\"></rect><text fill=\\"#222\\" x=\\"240.2\\" y=\\"81\\" style=\\"font-family:Inconsolata,SF Mono,SFMono-Regular,ui-monospace,Source Code Pro,Menlo,Monaco,Cascadia Mono,Segoe UI Mono,Roboto Mono,Oxygen Mono,Ubuntu Monospace,Fira Mono,Droid Sans Mono,Courier New,monospace;font-size:14px;pointer-events:none\\" width=\\"52.08\\" height=\\"14\\" dominant-baseline=\\"hanging\\">String</text>
   </g>
   <g>
-    <rect width=\\"215.76\\" height=\\"12\\" x=\\"-22.879999999999995\\" y=\\"1022.5\\" class=\\"ExternalConnectionNode__BackingRect-byhvq6-0 jXbrMi\\"></rect>
+    <rect width=\\"215.76\\" height=\\"12\\" x=\\"-22.879999999999995\\" y=\\"1022.5\\" class=\\"ExternalConnectionNode__BackingRect-byhvq6-0 dhmPMi\\"></rect>
     <ellipse cx=\\"85\\" cy=\\"1012.5\\" rx=\\"7\\" ry=\\"7\\" fill=\\"#C7CBCD\\"></ellipse><text height=\\"12\\" x=\\"-22.879999999999995\\" y=\\"1022.5\\" style=\\"font-family:Inconsolata,SF Mono,SFMono-Regular,ui-monospace,Source Code Pro,Menlo,Monaco,Cascadia Mono,Segoe UI Mono,Roboto Mono,Oxygen Mono,Ubuntu Monospace,Fira Mono,Droid Sans Mono,Courier New,monospace;font-size:12px;pointer-events:none\\" width=\\"215.76\\" dominant-baseline=\\"hanging\\">join_q2_data:master_cord_data</text>
     <path class=\\"vx-link vx-link-vertical-diagonal\\" d=\\"M85,1012.5C85,925.5,85,925.5,85,838.5\\" style=\\"stroke:#C7CBCD;stroke-width:6;fill:none\\"></path>
   </g>
@@ -1279,10 +1279,10 @@ exports[`renders the expected SVG when viewing a composite 1`] = `
   </g>
   <g opacity=\\"0.2\\">
     <g>
-      <path d=\\"M155,574C155,617,155,617,155,660\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 DGqbf\\"></path>
+      <path d=\\"M155,574C155,617,155,617,155,660\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 bmBNbG\\"></path>
     </g>
     <g>
-      <path d=\\"M155,341C155,384,155,384,155,427\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 DGqbf\\"></path>
+      <path d=\\"M155,341C155,384,155,384,155,427\\" class=\\"SolidLinks__StyledPath-sc-17nn3yf-0 bmBNbG\\"></path>
     </g>
   </g>
   <g opacity=\\"0.55\\"></g>
@@ -1303,8 +1303,8 @@ exports[`renders the expected SVG when viewing a composite 1`] = `
       <ellipse cx=\\"155\\" cy=\\"341\\" rx=\\"7\\" ry=\\"7\\" fill=\\"rgba(0, 0, 0, 0.3)\\" stroke=\\"white\\" stroke-width=\\"1.5\\"></ellipse>
       <rect rx=\\"4\\" ry=\\"4\\" fill=\\"#d6ecff\\" stroke=\\"#2491eb\\" stroke-width=\\"1\\" height=\\"27\\" width=\\"94.8\\" x=\\"169\\" y=\\"327.5\\"></rect><text fill=\\"#222\\" x=\\"173\\" y=\\"334\\" style=\\"font-family:Inconsolata,SF Mono,SFMono-Regular,ui-monospace,Source Code Pro,Menlo,Monaco,Cascadia Mono,Segoe UI Mono,Roboto Mono,Oxygen Mono,Ubuntu Monospace,Fira Mono,Droid Sans Mono,Courier New,monospace;font-size:14px;pointer-events:none\\" width=\\"86.8\\" height=\\"14\\" dominant-baseline=\\"hanging\\">FileHandle</text>
     </g>
-    <ellipse cx=\\"490\\" cy=\\"242\\" rx=\\"13\\" ry=\\"13\\" stroke=\\"#8A9BA8\\" fill=\\"#DBE6EE\\" pathLength=\\"100\\" stroke-width=\\"1\\" stroke-dasharray=\\"0 50 0\\"></ellipse>
-    <ellipse cx=\\"490\\" cy=\\"242\\" rx=\\"10\\" ry=\\"10\\" stroke=\\"#FFFFFF\\" fill=\\"#7D8C97\\" pathLength=\\"100\\" stroke-width=\\"2\\"></ellipse><text x=\\"485\\" y=\\"236.5\\" style=\\"font:14px &quot;Arial&quot;, san-serif\\" fill=\\"#FFFFFF\\" dominant-baseline=\\"hanging\\">C</text>
+    <ellipse cx=\\"490\\" cy=\\"242\\" rx=\\"13\\" ry=\\"13\\" stroke=\\"rgba(161, 157, 153, 1)\\" fill=\\"#DBE6EE\\" pathLength=\\"100\\" stroke-width=\\"1\\" stroke-dasharray=\\"0 50 0\\"></ellipse>
+    <ellipse cx=\\"490\\" cy=\\"242\\" rx=\\"10\\" ry=\\"10\\" stroke=\\"rgba(255, 255, 255, 1)\\" fill=\\"#7D8C97\\" pathLength=\\"100\\" stroke-width=\\"2\\"></ellipse><text x=\\"485\\" y=\\"236.5\\" style=\\"font:14px &quot;Arial&quot;, san-serif\\" fill=\\"rgba(255, 255, 255, 1)\\" dominant-baseline=\\"hanging\\">C</text>
   </g>
   <g data-tooltip=\\"ingest_csv_file_handle_to_spark\\" data-tooltip-style=\\"{&quot;top&quot;:-20,&quot;left&quot;:5}\\">
     <rect width=\\"370\\" height=\\"87\\" fill=\\"#DBE6EE\\" stroke=\\"#979797\\" stroke-width=\\"1\\" x=\\"140\\" y=\\"672\\"></rect><text fill=\\"#222\\" x=\\"152\\" y=\\"707.5\\" style=\\"font-family:Inconsolata,SF Mono,SFMono-Regular,ui-monospace,Source Code Pro,Menlo,Monaco,Cascadia Mono,Segoe UI Mono,Roboto Mono,Oxygen Mono,Ubuntu Monospace,Fira Mono,Droid Sans Mono,Courier New,monospace;font-size:16px;pointer-events:none\\" width=\\"307.52\\" height=\\"16\\" dominant-baseline=\\"hanging\\">ingest_csv_file_handle_to_spark</text>
