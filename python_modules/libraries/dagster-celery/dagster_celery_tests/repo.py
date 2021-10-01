@@ -8,10 +8,10 @@ from dagster import (
     OutputDefinition,
     RetryRequested,
     default_executors,
+    fs_io_manager,
     lambda_solid,
     pipeline,
     solid,
-    fs_io_manager,
 )
 from dagster.core.test_utils import nesting_composite_pipeline
 from dagster_celery import celery_executor
