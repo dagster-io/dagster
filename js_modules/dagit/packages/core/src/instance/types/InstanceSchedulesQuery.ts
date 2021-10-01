@@ -185,31 +185,6 @@ export interface InstanceSchedulesQuery_repositoriesOrError_PythonError {
 
 export type InstanceSchedulesQuery_repositoriesOrError = InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection | InstanceSchedulesQuery_repositoriesOrError_PythonError;
 
-export interface InstanceSchedulesQuery_scheduler_SchedulerNotDefinedError {
-  __typename: "SchedulerNotDefinedError";
-  message: string;
-}
-
-export interface InstanceSchedulesQuery_scheduler_Scheduler {
-  __typename: "Scheduler";
-  schedulerClass: string | null;
-}
-
-export interface InstanceSchedulesQuery_scheduler_PythonError_cause {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-}
-
-export interface InstanceSchedulesQuery_scheduler_PythonError {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-  cause: InstanceSchedulesQuery_scheduler_PythonError_cause | null;
-}
-
-export type InstanceSchedulesQuery_scheduler = InstanceSchedulesQuery_scheduler_SchedulerNotDefinedError | InstanceSchedulesQuery_scheduler_Scheduler | InstanceSchedulesQuery_scheduler_PythonError;
-
 export interface InstanceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_repositoryOrigin_repositoryLocationMetadata {
   __typename: "RepositoryMetadata";
   key: string;
@@ -302,6 +277,5 @@ export type InstanceSchedulesQuery_unloadableInstigationStatesOrError = Instance
 export interface InstanceSchedulesQuery {
   instance: InstanceSchedulesQuery_instance;
   repositoriesOrError: InstanceSchedulesQuery_repositoriesOrError;
-  scheduler: InstanceSchedulesQuery_scheduler;
   unloadableInstigationStatesOrError: InstanceSchedulesQuery_unloadableInstigationStatesOrError;
 }

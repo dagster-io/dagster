@@ -16,7 +16,7 @@ import {Subheading} from '../ui/Text';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
-import {SchedulerTimezoneNote, SCHEDULES_ROOT_QUERY} from './ScheduleUtils';
+import {SCHEDULES_ROOT_QUERY} from './ScheduleUtils';
 import {SchedulerInfo} from './SchedulerInfo';
 import {SchedulesNextTicks} from './SchedulesNextTicks';
 import {SchedulesTable} from './SchedulesTable';
@@ -40,12 +40,7 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
     <Page>
       <Loading queryResult={queryResult} allowStaleData={true}>
         {(result) => {
-          const {
-            repositoryOrError,
-            scheduler,
-            unloadableInstigationStatesOrError,
-            instance,
-          } = result;
+          const {repositoryOrError, unloadableInstigationStatesOrError, instance} = result;
           let schedulesSection = null;
 
           if (repositoryOrError.__typename === 'PythonError') {
@@ -77,7 +72,6 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
           } else {
             schedulesSection = repositoryOrError.schedules.length > 0 && (
               <Group direction="column" spacing={16}>
-                <SchedulerTimezoneNote schedulerOrError={scheduler} />
                 <SchedulesTable schedules={repositoryOrError.schedules} repoAddress={repoAddress} />
                 <Box
                   padding={{vertical: 16, horizontal: 24}}
@@ -93,7 +87,7 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
           return (
             <Group direction="column" spacing={20}>
               <Box padding={{horizontal: 24}}>
-                <SchedulerInfo schedulerOrError={scheduler} daemonHealth={instance.daemonHealth} />
+                <SchedulerInfo daemonHealth={instance.daemonHealth} />
               </Box>
               {schedulesSection}
               {unloadableInstigationStatesOrError.__typename === 'PythonError' ? (
