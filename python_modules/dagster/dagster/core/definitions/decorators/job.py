@@ -1,16 +1,20 @@
 from functools import update_wrapper
-from typing import AbstractSet, Any, Callable, Dict, Optional, Union
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Dict, Optional, Union
 
 from dagster import check
 from dagster.utils.backcompat import experimental_decorator
 
 from ..config import ConfigMapping
-from ..logger import LoggerDefinition
 from ..graph import GraphDefinition
-from ..resource import ResourceDefinition
 from ..hook import HookDefinition
-from ..version_strategy import VersionStrategy
 from ..job import JobDefinition
+from ..logger import LoggerDefinition
+from ..resource import ResourceDefinition
+from ..version_strategy import VersionStrategy
+
+if TYPE_CHECKING:
+    from ..partition import PartitionedConfig
+    from ..executor import ExecutorDefinition
 
 
 class _Job:
