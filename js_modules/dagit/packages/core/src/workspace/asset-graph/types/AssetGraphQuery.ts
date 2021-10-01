@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { RepositorySelector, PipelineRunStatus } from "./../../types/globalTypes";
+import { RepositorySelector, PipelineRunStatus } from "./../../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: AssetGraphQuery

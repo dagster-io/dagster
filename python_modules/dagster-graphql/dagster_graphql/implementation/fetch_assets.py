@@ -14,6 +14,25 @@ def get_assets(graphene_info):
     return GrapheneAssetConnection(nodes=[GrapheneAsset(key=asset_key) for asset_key in asset_keys])
 
 
+def get_asset_nodes(graphene_info): 
+    from ..schema.asset_graph import GrapheneAssetNode
+    return [
+        GrapheneAssetNode(repository, external_asset_node)
+        for location in graphene_info.context.repository_locations
+        for repository in location.get_repositories().values()
+        for external_asset_node in repository.get_external_asset_nodes()
+    ]
+
+
+def get_asset_node(graphene_info, asset_key):
+    from ..schema.errors import GrapheneAssetNotFoundError
+    check.inst_param(asset_key, "asset_key", AssetKey)
+    node = next((n for n in get_asset_nodes(graphene_info) if n.assetKey == asset_key), None)
+    if not node:
+        return GrapheneAssetNotFoundError(asset_key=asset_key)
+    return node
+
+
 def get_asset(graphene_info, asset_key):
     from ..schema.errors import GrapheneAssetNotFoundError
     from ..schema.pipelines.pipeline import GrapheneAsset

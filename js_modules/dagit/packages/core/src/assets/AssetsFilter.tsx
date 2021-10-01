@@ -8,9 +8,7 @@ import {ColorsWIP} from '../ui/Colors';
 import {Popover} from '../ui/Popover';
 import {useSuggestionsForString} from '../ui/useSuggestionsForString';
 
-import {AssetsTableQuery_assetsOrError_AssetConnection_nodes} from './types/AssetsTableQuery';
-
-type Asset = AssetsTableQuery_assetsOrError_AssetConnection_nodes;
+import {Asset} from './AssetsCatalogTable';
 
 const getAssetFilterProviders = memoize((assets: Asset[] = []) => {
   const allTags = {};

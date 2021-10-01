@@ -10,6 +10,20 @@ import { AssetKeyInput, PipelineRunStatus } from "./../../types/globalTypes";
 // GraphQL query operation: AssetQuery
 // ====================================================
 
+export interface AssetQuery_assetNodeOrError_AssetNode {
+  __typename: "AssetNode";
+  description: string | null;
+  opName: string | null;
+  jobName: string | null;
+}
+
+export interface AssetQuery_assetNodeOrError_AssetNotFoundError {
+  __typename: "AssetNotFoundError";
+  message: string;
+}
+
+export type AssetQuery_assetNodeOrError = AssetQuery_assetNodeOrError_AssetNode | AssetQuery_assetNodeOrError_AssetNotFoundError;
+
 export interface AssetQuery_assetOrError_AssetNotFoundError {
   __typename: "AssetNotFoundError";
 }
@@ -176,6 +190,7 @@ export interface AssetQuery_assetOrError_Asset {
 export type AssetQuery_assetOrError = AssetQuery_assetOrError_AssetNotFoundError | AssetQuery_assetOrError_Asset;
 
 export interface AssetQuery {
+  assetNodeOrError: AssetQuery_assetNodeOrError;
   assetOrError: AssetQuery_assetOrError;
 }
 

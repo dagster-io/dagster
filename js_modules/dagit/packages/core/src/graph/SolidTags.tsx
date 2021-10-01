@@ -19,6 +19,9 @@ function hueForTag(text = '') {
   if (text === 'ipynb') {
     return 25;
   }
+  if (text === 'dbt') {
+    return 250;
+  }
   if (text === 'snowflake') {
     return 197;
   }
@@ -55,29 +58,32 @@ const SolidTagsInner: React.FunctionComponent<ISolidTagsProps> = ({
       padding={0}
     >
       <SVGFlowLayoutFiller />
-      {tags.map((tag) => {
-        const hue = hueForTag(tag.label);
-        return (
-          <SVGFlowLayoutRect
-            key={tag.label}
-            rx={0}
-            ry={0}
-            height={height}
-            padding={minified ? 8 : 4}
-            fill={`hsl(${hue}, 10%, 95%)`}
-            stroke={`hsl(${hue}, 75%, 50%)`}
-            onClick={tag.onClick}
-            strokeWidth={1}
-            spacing={0}
-          >
-            <SVGMonospaceText
-              text={tag.label}
-              fill={`hsl(${hue}, 75%, 50%)`}
-              size={minified ? 24 : 14}
-            />
-          </SVGFlowLayoutRect>
-        );
-      })}
+      {tags.map((tag) => (
+        <SVGNodeTag tag={tag} minified={minified} key={tag.label} height={height} />
+      ))}
+    </SVGFlowLayoutRect>
+  );
+};
+
+export const SVGNodeTag: React.FC<{tag: ISolidTag; minified: boolean; height: number}> = ({
+  tag,
+  minified,
+  height,
+}) => {
+  const hue = hueForTag(tag.label);
+  return (
+    <SVGFlowLayoutRect
+      rx={0}
+      ry={0}
+      height={height}
+      padding={minified ? 8 : 4}
+      fill={`hsl(${hue}, 10%, 95%)`}
+      stroke={`hsl(${hue}, 75%, 50%)`}
+      onClick={tag.onClick}
+      strokeWidth={1}
+      spacing={0}
+    >
+      <SVGMonospaceText text={tag.label} fill={`hsl(${hue}, 75%, 50%)`} size={minified ? 24 : 14} />
     </SVGFlowLayoutRect>
   );
 };

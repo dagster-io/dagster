@@ -2,7 +2,7 @@ import * as React from 'react';
 
 import {FontFamily} from '../ui/styles';
 
-const PX_TO_UNITS = 0.62;
+const PX_TO_UNITS = 0.53;
 
 interface ISize {
   width: number;

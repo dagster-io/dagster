@@ -4,6 +4,18 @@ import {METADATA_ENTRY_FRAGMENT} from '../runs/MetadataEntry';
 
 export const ASSET_QUERY = gql`
   query AssetQuery($assetKey: AssetKeyInput!, $limit: Int!, $before: String) {
+    assetNodeOrError(assetKey: $assetKey) {
+      ... on AssetNode {
+        description
+        opName
+        jobName
+      }
+
+      ... on AssetNotFoundError {
+        message
+      }
+    }
+
     assetOrError(assetKey: $assetKey) {
       ... on Asset {
         id

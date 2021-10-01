@@ -2,6 +2,7 @@ import graphene
 
 from ..errors import GrapheneAssetNotFoundError, GraphenePythonError
 from ..pipelines.pipeline import GrapheneAsset
+from ..asset_graph import GrapheneAssetNode
 from ..util import non_null_list
 
 

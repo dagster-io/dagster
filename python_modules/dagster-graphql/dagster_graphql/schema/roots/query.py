@@ -10,7 +10,7 @@ from dagster.core.host_representation import (
 from dagster.core.scheduler.job import JobType
 
 from ...implementation.external import fetch_repositories, fetch_repository, fetch_workspace
-from ...implementation.fetch_assets import get_asset, get_assets
+from ...implementation.fetch_assets import get_asset, get_assets, get_asset_nodes, get_asset_node
 from ...implementation.fetch_backfills import get_backfill, get_backfills
 from ...implementation.fetch_jobs import get_job_state_or_error, get_unloadable_job_states_or_error
 from ...implementation.fetch_partition_sets import get_partition_set, get_partition_sets_or_error
@@ -56,6 +56,7 @@ from ..instigation import (
     GrapheneInstigationStatesOrError,
     GrapheneInstigationType,
 )
+from ..asset_graph import GrapheneAssetNode, GrapheneAssetNodeOrError
 from ..partition_sets import GraphenePartitionSetOrError, GraphenePartitionSetsOrError
 from ..permissions import GraphenePermission
 from ..pipelines.config_result import GraphenePipelineConfigValidationResult
@@ -199,6 +200,13 @@ class GrapheneQuery(graphene.ObjectType):
 
     assetOrError = graphene.Field(
         graphene.NonNull(GrapheneAssetOrError),
+        assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
+    )
+
+    assetNodes = non_null_list(GrapheneAssetNode)
+
+    assetNodeOrError = graphene.Field(
+        graphene.NonNull(GrapheneAssetNodeOrError),
         assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
     )
 
@@ -361,6 +369,12 @@ class GrapheneQuery(graphene.ObjectType):
 
     def resolve_instance(self, graphene_info):
         return GrapheneInstance(graphene_info.context.instance)
+
+    def resolve_assetNodes(self, graphene_info):
+        return get_asset_nodes(graphene_info)
+    
+    def resolve_assetNodeOrError(self, graphene_info, **kwargs):
+        return get_asset_node(graphene_info, AssetKey.from_graphql_input(kwargs["assetKey"]))
 
     def resolve_assetsOrError(self, graphene_info):
         return get_assets(graphene_info)

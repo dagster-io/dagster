@@ -4,6 +4,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {Timestamp} from '../app/time/Timestamp';
+import {Description} from '../pipelines/Description';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {MetadataEntry} from '../runs/MetadataEntry';
 import {titleForRun} from '../runs/RunUtils';
@@ -60,15 +61,19 @@ export const AssetDetails: React.FC<Props> = ({assetKey, asOf, asSidebarSection}
     );
   }, [asOf, data?.assetOrError, loading]);
 
-  const content = () => {
-    if (loading) {
-      return (
-        <Box padding={{vertical: 20}}>
-          <Spinner purpose="section" />
-        </Box>
-      );
+  const staticContent = () => {
+    const assetNodeOrError = data?.assetNodeOrError;
+    if (!assetNodeOrError || assetNodeOrError.__typename !== 'AssetNode') {
+      return null;
     }
+    return (
+      <div>
+        <Description description={assetNodeOrError.description} />
+      </div>
+    );
+  };
 
+  const runtimeContent = () => {
     const assetOrError = data?.assetOrError;
 
     if (!assetOrError || assetOrError.__typename !== 'Asset') {
@@ -195,12 +200,18 @@ export const AssetDetails: React.FC<Props> = ({assetKey, asOf, asSidebarSection}
           }
         />
       ) : null}
+      {loading && (
+        <Box padding={{vertical: 20}}>
+          <Spinner purpose="section" />
+        </Box>
+      )}
+      {staticContent()}
       {!asSidebarSection && (
         <Subheading>
           {isPartitioned ? 'Latest Materialized Partition' : 'Latest Materialization'}
         </Subheading>
       )}
-      {content()}
+      {runtimeContent()}
     </Group>
   );
 };
