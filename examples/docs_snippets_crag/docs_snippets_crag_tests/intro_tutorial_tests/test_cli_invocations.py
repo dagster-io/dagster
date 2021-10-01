@@ -34,7 +34,7 @@ cli_args = [
     (
         "basics/single_solid_pipeline/",
         "hello_cereal.py",
-        "hello_cereal_graph",
+        "hello_cereal_job",
         None,
         None,
         None,

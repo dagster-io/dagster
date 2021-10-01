@@ -1,7 +1,7 @@
 import csv
 
 import requests
-from dagster import graph, op
+from dagster import job, op
 
 
 @op
@@ -33,7 +33,7 @@ def display_results(context, most_calories, most_protein):
     context.log.info(f"Most protein-rich cereal: {most_protein}")
 
 
-@graph
+@job
 def diamond():
     cereals = download_cereals()
     display_results(
