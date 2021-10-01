@@ -17,10 +17,10 @@ import {AssetMaterializationMatrix, LABEL_STEP_EXECUTION_TIME} from './AssetMate
 import {AssetMaterializationTable} from './AssetMaterializationTable';
 import {AssetValueGraph} from './AssetValueGraph';
 import {AssetKey, AssetNumericHistoricalData} from './types';
+import {AssetMaterializationFragment} from './types/AssetMaterializationFragment';
 import {
   AssetMaterializationsQuery,
   AssetMaterializationsQueryVariables,
-  AssetMaterializationsQuery_assetOrError_Asset_assetMaterializations,
 } from './types/AssetMaterializationsQuery';
 import {HistoricalMaterialization, useMaterializationBuckets} from './useMaterializationBuckets';
 
@@ -199,7 +199,7 @@ const AssetMaterializationMatrixAndGraph: React.FC<{
  * Assumes that the data is pre-sorted in ascending partition order if using xAxis = partition.
  */
 const extractNumericData = (
-  assetMaterializations: AssetMaterializationsQuery_assetOrError_Asset_assetMaterializations[],
+  assetMaterializations: AssetMaterializationFragment[],
   xAxis: 'time' | 'partition',
 ) => {
   const series: AssetNumericHistoricalData = {};
@@ -296,37 +296,40 @@ export const ASSET_MATERIALIZATIONS_QUERY = gql`
           path
         }
         assetMaterializations(limit: $limit, beforeTimestampMillis: $before) {
-          partition
-          runOrError {
-            ... on PipelineRun {
-              id
-              runId
-              mode
-              status
-              pipelineName
-              pipelineSnapshotId
-            }
-          }
-          materializationEvent {
-            runId
-            timestamp
-            stepKey
-            stepStats {
-              endTime
-              startTime
-            }
-            materialization {
-              label
-              description
-              metadataEntries {
-                ...MetadataEntryFragment
-              }
-            }
-            assetLineage {
-              ...AssetLineageFragment
-            }
-          }
+          ...AssetMaterializationFragment
         }
+      }
+    }
+  }
+  fragment AssetMaterializationFragment on AssetMaterialization {
+    partition
+    runOrError {
+      ... on PipelineRun {
+        id
+        runId
+        mode
+        status
+        pipelineName
+        pipelineSnapshotId
+      }
+    }
+    materializationEvent {
+      runId
+      timestamp
+      stepKey
+      stepStats {
+        endTime
+        startTime
+      }
+      materialization {
+        label
+        description
+        metadataEntries {
+          ...MetadataEntryFragment
+        }
+      }
+      assetLineage {
+        ...AssetLineageFragment
       }
     }
   }

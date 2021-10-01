@@ -23,7 +23,7 @@ import {FontFamily} from '../ui/styles';
 import {AssetPredecessorLink} from './AssetMaterializationTable';
 import {Sparkline} from './Sparkline';
 import {AssetNumericHistoricalData} from './types';
-import {AssetMaterializationsQuery_assetOrError_Asset_assetMaterializations} from './types/AssetMaterializationsQuery';
+import {AssetMaterializationFragment} from './types/AssetMaterializationFragment';
 import {HistoricalMaterialization} from './useMaterializationBuckets';
 
 const COL_WIDTH = 120;
@@ -43,10 +43,7 @@ interface AssetMaterializationMatrixProps {
   setGraphedLabels: (labels: string[]) => void;
 }
 
-function xForAssetMaterialization(
-  am: AssetMaterializationsQuery_assetOrError_Asset_assetMaterializations,
-  xAxis: 'time' | 'partition',
-) {
+function xForAssetMaterialization(am: AssetMaterializationFragment, xAxis: 'time' | 'partition') {
   return xAxis === 'time' ? Number(am.materializationEvent.timestamp) : am.partition;
 }
 
