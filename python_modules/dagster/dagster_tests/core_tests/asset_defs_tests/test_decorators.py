@@ -103,3 +103,11 @@ def test_all_fields():
     output_def = my_asset.output_defs[0]
     assert output_def.io_manager_key == "my_io_key"
     assert output_def.metadata["metakey"] == "metaval"
+
+
+def test_infer_input_dagster_type():
+    @asset
+    def my_asset(_input1: str):
+        pass
+
+    assert my_asset.input_defs[0].dagster_type.display_name == "String"
