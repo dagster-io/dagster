@@ -1,3 +1,5 @@
+import os
+import pickle
 import pytest
 from dagster import (
     DependencyDefinition,
@@ -8,6 +10,8 @@ from dagster import (
     execute_pipeline,
     lambda_solid,
     reexecute_pipeline,
+    ModeDefinition,
+    fs_io_manager,
 )
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.errors import (
@@ -22,14 +26,9 @@ from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.intermediate_storage import build_fs_intermediate_storage
 from dagster.core.system_config.objects import ResolvedRunConfig
-from dagster.utils import merge_dicts
 
 
-def env_with_fs(run_config):
-    return merge_dicts(run_config, {"intermediate_storage": {"filesystem": {}}})
-
-
-def define_addy_pipeline():
+def define_addy_pipeline(using_file_system=False):
     @lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))
     def add_one(num):
         return num + 1
@@ -49,14 +48,17 @@ def define_addy_pipeline():
             "add_two": {"num": DependencyDefinition("add_one")},
             "add_three": {"num": DependencyDefinition("add_two")},
         },
+        mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})]
+        if using_file_system
+        else None,
     )
     return pipeline_def
 
 
 def test_execution_plan_reexecution():
-    pipeline_def = define_addy_pipeline()
+    pipeline_def = define_addy_pipeline(using_file_system=True)
     instance = DagsterInstance.ephemeral()
-    run_config = env_with_fs({"solids": {"add_one": {"inputs": {"num": {"value": 3}}}}})
+    run_config = {"solids": {"add_one": {"inputs": {"num": {"value": 3}}}}}
     result = execute_pipeline(
         pipeline_def,
         run_config=run_config,
@@ -65,11 +67,17 @@ def test_execution_plan_reexecution():
 
     assert result.success
 
-    intermediate_storage = build_fs_intermediate_storage(
-        instance.intermediates_directory, result.run_id
-    )
-    assert intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_one")).obj == 4
-    assert intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_two")).obj == 6
+    with open(
+        os.path.join(instance.storage_directory(), result.run_id, "add_one", "result"),
+        "rb",
+    ) as read_obj:
+        assert pickle.load(read_obj) == 4
+
+    with open(
+        os.path.join(instance.storage_directory(), result.run_id, "add_two", "result"),
+        "rb",
+    ) as read_obj:
+        assert pickle.load(read_obj) == 6
 
     ## re-execute add_two
 
@@ -98,22 +106,24 @@ def test_execution_plan_reexecution():
         pipeline_run=pipeline_run,
         instance=instance,
     )
-
-    intermediate_storage = build_fs_intermediate_storage(
-        instance.intermediates_directory, result.run_id
+    assert not os.path.exists(
+        os.path.join(instance.storage_directory(), pipeline_run.run_id, "add_one", "result")
     )
-    assert intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_one")).obj == 4
-    assert intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_two")).obj == 6
+    with open(
+        os.path.join(instance.storage_directory(), pipeline_run.run_id, "add_two", "result"),
+        "rb",
+    ) as read_obj:
+        assert pickle.load(read_obj) == 6
 
     assert not get_step_output_event(step_events, "add_one")
     assert get_step_output_event(step_events, "add_two")
 
 
 def test_execution_plan_wrong_run_id():
-    pipeline_def = define_addy_pipeline()
+    pipeline_def = define_addy_pipeline(using_file_system=True)
 
     unrun_id = "not_a_run"
-    run_config = env_with_fs({"solids": {"add_one": {"inputs": {"num": {"value": 3}}}}})
+    run_config = {"solids": {"add_one": {"inputs": {"num": {"value": 3}}}}}
 
     instance = DagsterInstance.ephemeral()
 
@@ -175,18 +185,23 @@ def test_execution_plan_reexecution_with_in_memory():
 
 
 def test_pipeline_step_key_subset_execution():
-    pipeline_def = define_addy_pipeline()
+    pipeline_def = define_addy_pipeline(using_file_system=True)
     instance = DagsterInstance.ephemeral()
-    run_config = env_with_fs({"solids": {"add_one": {"inputs": {"num": {"value": 3}}}}})
+    run_config = {"solids": {"add_one": {"inputs": {"num": {"value": 3}}}}}
     result = execute_pipeline(pipeline_def, run_config=run_config, instance=instance)
 
     assert result.success
+    with open(
+        os.path.join(instance.storage_directory(), result.run_id, "add_one", "result"),
+        "rb",
+    ) as read_obj:
+        assert pickle.load(read_obj) == 4
 
-    intermediate_storage = build_fs_intermediate_storage(
-        instance.intermediates_directory, result.run_id
-    )
-    assert intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_one")).obj == 4
-    assert intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_two")).obj == 6
+    with open(
+        os.path.join(instance.storage_directory(), result.run_id, "add_two", "result"),
+        "rb",
+    ) as read_obj:
+        assert pickle.load(read_obj) == 6
 
     ## re-execute add_two
 
@@ -202,12 +217,18 @@ def test_pipeline_step_key_subset_execution():
 
     step_events = pipeline_reexecution_result.step_event_list
     assert step_events
-
-    intermediate_storage = build_fs_intermediate_storage(
-        instance.intermediates_directory, result.run_id
+    assert not os.path.exists(
+        os.path.join(
+            instance.storage_directory(), pipeline_reexecution_result.run_id, "add_one", "result"
+        )
     )
-    assert intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_one")).obj == 4
-    assert intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_two")).obj == 6
+    with open(
+        os.path.join(
+            instance.storage_directory(), pipeline_reexecution_result.run_id, "add_two", "result"
+        ),
+        "rb",
+    ) as read_obj:
+        assert pickle.load(read_obj) == 6
 
     assert not get_step_output_event(step_events, "add_one")
     assert get_step_output_event(step_events, "add_two")

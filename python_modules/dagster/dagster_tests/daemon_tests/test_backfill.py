@@ -8,7 +8,17 @@ from contextlib import contextmanager
 
 import pendulum
 import pytest
-from dagster import Any, Field, daily_partitioned_config, graph, pipeline, repository, solid
+from dagster import (
+    Any,
+    Field,
+    daily_partitioned_config,
+    graph,
+    pipeline,
+    repository,
+    solid,
+    ModeDefinition,
+    fs_io_manager,
+)
 from dagster.core.definitions import Partition, PartitionSetDefinition
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.execution.api import execute_pipeline
@@ -29,6 +39,8 @@ from dagster.daemon.backfill import execute_backfill_iteration
 from dagster.seven import IS_WINDOWS, get_system_temp_directory
 from dagster.utils import touch_file
 from dagster.utils.error import SerializableErrorInfo
+
+default_mode_def = ModeDefinition(resource_defs={"io_manager": fs_io_manager})
 
 
 def _failure_flag_file():
@@ -81,24 +93,24 @@ def after_failure(_, _input):
     return 1
 
 
-@pipeline
+@pipeline(mode_defs=[default_mode_def])
 def the_pipeline():
     always_succeed()
 
 
-@pipeline
+@pipeline(mode_defs=[default_mode_def])
 def conditional_failure_pipeline():
     after_failure(conditionally_fail(always_succeed()))
 
 
-@pipeline
+@pipeline(mode_defs=[default_mode_def])
 def partial_pipeline():
     always_succeed.alias("step_one")()
     always_succeed.alias("step_two")()
     always_succeed.alias("step_three")()
 
 
-@pipeline
+@pipeline(mode_defs=[default_mode_def])
 def parallel_failure_pipeline():
     fail_solid.alias("fail_one")()
     fail_solid.alias("fail_two")()
@@ -111,7 +123,7 @@ def config_solid(_):
     return 1
 
 
-@pipeline
+@pipeline(mode_defs=[default_mode_def])
 def config_pipeline():
     config_solid()
 
@@ -120,28 +132,24 @@ simple_partition_set = PartitionSetDefinition(
     name="simple_partition_set",
     pipeline_name="the_pipeline",
     partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],
-    run_config_fn_for_partition=lambda _partition: {"intermediate_storage": {"filesystem": {}}},
 )
 
 conditionally_fail_partition_set = PartitionSetDefinition(
     name="conditionally_fail_partition_set",
     pipeline_name="conditional_failure_pipeline",
     partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],
-    run_config_fn_for_partition=lambda _partition: {"intermediate_storage": {"filesystem": {}}},
 )
 
 partial_partition_set = PartitionSetDefinition(
     name="partial_partition_set",
     pipeline_name="partial_pipeline",
     partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],
-    run_config_fn_for_partition=lambda _partition: {"intermediate_storage": {"filesystem": {}}},
 )
 
 parallel_failure_partition_set = PartitionSetDefinition(
     name="parallel_failure_partition_set",
     pipeline_name="parallel_failure_pipeline",
     partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],
-    run_config_fn_for_partition=lambda _partition: {"intermediate_storage": {"filesystem": {}}},
 )
 
 

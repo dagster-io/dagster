@@ -6,7 +6,16 @@ import time
 from contextlib import contextmanager
 
 import pytest
-from dagster import DefaultRunLauncher, file_relative_path, pipeline, repository, seven, solid
+from dagster import (
+    DefaultRunLauncher,
+    file_relative_path,
+    pipeline,
+    repository,
+    seven,
+    solid,
+    ModeDefinition,
+    fs_io_manager,
+)
 from dagster.core.errors import DagsterLaunchFailedError
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import (
@@ -21,13 +30,15 @@ from dagster.core.workspace import WorkspaceProcessContext
 from dagster.core.workspace.load_target import GrpcServerTarget, PythonFileTarget
 from dagster.grpc.server import GrpcServerProcess
 
+default_mode_def = ModeDefinition(resource_defs={"io_manager": fs_io_manager})
+
 
 @solid
 def noop_solid(_):
     pass
 
 
-@pipeline
+@pipeline(mode_defs=[default_mode_def])
 def noop_pipeline():
     pass
 
@@ -37,7 +48,7 @@ def crashy_solid(_):
     os._exit(1)  # pylint: disable=W0212
 
 
-@pipeline
+@pipeline(mode_defs=[default_mode_def])
 def crashy_pipeline():
     crashy_solid()
 
@@ -48,7 +59,7 @@ def sleepy_solid(_):
         time.sleep(0.1)
 
 
-@pipeline
+@pipeline(mode_defs=[default_mode_def])
 def sleepy_pipeline():
     sleepy_solid()
 
@@ -58,7 +69,7 @@ def slow_solid(_):
     time.sleep(4)
 
 
-@pipeline
+@pipeline(mode_defs=[default_mode_def])
 def slow_pipeline():
     slow_solid()
 
@@ -83,7 +94,7 @@ def add(_, num1, num2):
     return num1 + num2
 
 
-@pipeline
+@pipeline(mode_defs=[default_mode_def])
 def math_diamond():
     one = return_one()
     add(multiply_by_2(one), multiply_by_3(one))
@@ -136,7 +147,7 @@ def get_managed_grpc_server_workspace(instance):
 def run_configs():
     return [
         None,
-        {"execution": {"multiprocess": {}}, "intermediate_storage": {"filesystem": {}}},
+        {"execution": {"multiprocess": {}}},
     ]
 
 
