@@ -93,8 +93,6 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
   };
 
   const selectedTab = showScheduled ? 'scheduled' : selectedTabId(filterTokens);
-  // const tabColor = (match: string) =>
-  //   selectedTab === match ? ColorsWIP.Link : {link: ColorsWIP.Gray500, hover: ColorsWIP.Link};
   const enabledFilters: RunFilterTokenType[] = flagPipelineModeTuples
     ? ['status', 'tag', 'snapshotId', 'id', 'job']
     : ['status', 'tag', 'snapshotId', 'id', 'pipeline'];
