@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors, Button} from '@blueprintjs/core';
+import {Button} from '@blueprintjs/core';
 import qs from 'query-string';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -39,11 +39,11 @@ import {
 } from './types/PartitionRunMatrixPipelineQuery';
 import {PartitionRunMatrixRunFragment} from './types/PartitionRunMatrixRunFragment';
 import {
-  useMatrixData,
-  MatrixStep,
   DisplayOptions,
-  StatusSquareFinalColor,
   isStepKeyForNode,
+  MatrixStep,
+  StatusSquareFinalColor,
+  useMatrixData,
 } from './useMatrixData';
 
 const TITLE_TOTAL_FAILURES = 'This step failed at least once for this percent of partitions.';
@@ -293,7 +293,7 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
         style={{
           position: 'relative',
           display: 'flex',
-          border: `1px solid ${Colors.GRAY5}`,
+          border: `1px solid ${ColorsWIP.Gray200}`,
           borderLeft: 0,
         }}
       >
@@ -467,7 +467,7 @@ const Divider = styled.div`
   height: 1px;
   width: 100%;
   margin-top: 5px;
-  border-top: 1px solid ${Colors.GRAY5};
+  border-top: 1px solid ${ColorsWIP.Gray200};
 `;
 
 export const PARTITION_RUN_MATRIX_RUN_FRAGMENT = gql`

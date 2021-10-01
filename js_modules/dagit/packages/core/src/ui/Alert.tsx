@@ -1,4 +1,3 @@
-import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -55,7 +54,7 @@ export const Alert: React.FC<Props> = (props) => {
       background={backgroundColor}
       padding={{horizontal: 16, vertical: 12}}
       style={{
-        boxShadow: `inset 4px 0 ${borderColor}, inset -1px 1px ${Colors.LIGHT_GRAY3}, inset 0 -1px ${Colors.LIGHT_GRAY3}`,
+        boxShadow: `inset 4px 0 ${borderColor}, inset -1px 1px ${ColorsWIP.Gray100}, inset 0 -1px ${ColorsWIP.Gray100}`,
       }}
     >
       <Group direction="row" spacing={12} alignItems="flex-start">
@@ -74,12 +73,12 @@ Alert.defaultProps = {
 };
 
 const AlertTitle = styled.div`
-  color: ${Colors.DARK_GRAY3};
+  color: ${ColorsWIP.Gray800};
   font-weight: 600;
   -webkit-font-smoothing: antialiased;
 `;
 
 const AlertDescription = styled.div`
-  color: ${Colors.DARK_GRAY3};
+  color: ${ColorsWIP.Gray800};
   font-weight: 400;
 `;

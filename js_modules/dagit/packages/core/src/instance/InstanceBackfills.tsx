@@ -1,5 +1,5 @@
 import {gql, useQuery, useMutation} from '@apollo/client';
-import {Colors, NonIdealState, Button, Intent} from '@blueprintjs/core';
+import {NonIdealState, Button, Intent} from '@blueprintjs/core';
 import qs from 'qs';
 import * as React from 'react';
 import {useHistory, Link} from 'react-router-dom';
@@ -26,6 +26,7 @@ import {BulkActionStatus, PipelineRunStatus} from '../types/globalTypes';
 import {Alert} from '../ui/Alert';
 import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
+import {ColorsWIP} from '../ui/Colors';
 import {CursorPaginationControls} from '../ui/CursorControls';
 import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
@@ -188,7 +189,7 @@ const BackfillTable = ({backfills, refetch}: {backfills: Backfill[]; refetch: ()
           <Group direction="column" spacing={4}>
             <div>An unexpected error occurred. This backfill was not retried.</div>
             <ButtonLink
-              color={Colors.WHITE}
+              color={ColorsWIP.White}
               underline="always"
               onClick={() => {
                 showCustomAlert({
@@ -440,7 +441,7 @@ const BackfillProgress = ({backfill}: {backfill: Backfill}) => {
       style={{
         fontSize: 36,
         fontWeight: 'bold',
-        color: Colors.GRAY1,
+        color: ColorsWIP.Gray600,
         fontVariantNumeric: 'tabular-nums',
       }}
     >
@@ -464,7 +465,7 @@ const PartitionSetReference: React.FunctionComponent<{
     >
       {partitionSet.name}
     </Link>
-    <span style={{color: Colors.DARK_GRAY3, fontSize: 12}}>
+    <span style={{color: ColorsWIP.Gray800, fontSize: 12}}>
       {partitionSet.repositoryOrigin.repositoryName}@
       {partitionSet.repositoryOrigin.repositoryLocationName}
     </span>
@@ -531,7 +532,7 @@ const BackfillStatusTableRow = ({
     >
       <td
         style={{
-          borderTop: isTotal ? `1px solid ${Colors.LIGHT_GRAY1}` : undefined,
+          borderTop: isTotal ? `1px solid ${ColorsWIP.Gray200}` : undefined,
           maxWidth: '100px',
           padding: '3px 5px',
         }}
@@ -542,7 +543,7 @@ const BackfillStatusTableRow = ({
       </td>
       <td
         style={{
-          borderTop: isTotal ? `1px solid ${Colors.LIGHT_GRAY1}` : undefined,
+          borderTop: isTotal ? `1px solid ${ColorsWIP.Gray200}` : undefined,
           maxWidth: '50px',
           padding: '3px 5px',
         }}

@@ -3156,6 +3156,7 @@ __metadata:
     lodash: ^4.17.15
     lru-cache: ^6.0.0
     moment-timezone: ^0.5.31
+    nearest-color: ^0.4.4
     prettier: 2.2.1
     pretty: ^2.0.0
     qs: ^6.10.1
@@ -3172,6 +3173,7 @@ __metadata:
     react-test-renderer: ^17.0.2
     react-virtualized: ^9.22.3
     remark-gfm: ^1.0.0
+    rgb-hex: ^4.0.0
     source-map-explorer: ^2.5.0
     styled-components: ^5.2.1
     subscriptions-transport-ws: ^0.9.15
@@ -18619,6 +18621,13 @@ fsevents@^1.2.7:
   languageName: node
   linkType: hard
 
+"nearest-color@npm:^0.4.4":
+  version: 0.4.4
+  resolution: "nearest-color@npm:0.4.4"
+  checksum: a2fd874f522acccac575d11e48fcfa45478ec141aba752f1d5ba56ced7fbaa72c0f314331b4310110d25d3722c05eccbce5eabce49981d4df51db54332ec8d0e
+  languageName: node
+  linkType: hard
+
 "negotiator@npm:0.6.2":
   version: 0.6.2
   resolution: "negotiator@npm:0.6.2"
@@ -22378,6 +22387,13 @@ resolve@^2.0.0-next.3:
     convert-source-map: ^0.3.3
     css: ^2.0.0
   checksum: 13e5054d81ac84eee488fd4bacd20d08f35683bd8e296b4358e7f0a41b2d30a959313b7794f388f336705ad18d36af6ee7080e1b6c1313ecf33bc51d1bd95971
+  languageName: node
+  linkType: hard
+
+"rgb-hex@npm:^4.0.0":
+  version: 4.0.0
+  resolution: "rgb-hex@npm:4.0.0"
+  checksum: 077426af207946ae34f7a3baceb304dcf45b2f128ff6be44be6f0f20239d7049da7334ec3e3e4b7338a29df78ed87fb6ce34bbcb65a4d6bdc502d9b38d467ee1
   languageName: node
   linkType: hard
 

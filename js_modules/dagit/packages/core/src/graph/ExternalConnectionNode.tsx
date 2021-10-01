@@ -1,7 +1,8 @@
-import {Colors} from '@blueprintjs/core';
 import {LinkVertical as Link} from '@vx/shape';
 import * as React from 'react';
 import styled from 'styled-components/macro';
+
+import {ColorsWIP} from '../ui/Colors';
 
 import {SVGMonospaceText} from './SVGComponents';
 import {Edge} from './SolidLinks';
@@ -68,10 +69,10 @@ export const ExternalConnectionNode: React.FunctionComponent<ExternalConnectionN
 
 const BackingRect = styled('rect')`
   stroke-width: 10px;
-  fill: ${Colors.LIGHT_GRAY3};
-  stroke: ${Colors.LIGHT_GRAY3};
+  fill: ${ColorsWIP.Gray100};
+  stroke: ${ColorsWIP.Gray100};
   &:hover {
-    fill: ${Colors.LIGHT_GRAY1};
-    stroke: ${Colors.LIGHT_GRAY1};
+    fill: ${ColorsWIP.Gray200};
+    stroke: ${ColorsWIP.Gray200};
   }
 `;

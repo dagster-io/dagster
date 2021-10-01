@@ -1,9 +1,9 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors, Divider, NonIdealState, Tab, Tabs} from '@blueprintjs/core';
+import {Divider, NonIdealState, Tab, Tabs} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
-import {RouteComponentProps, Link} from 'react-router-dom';
+import {Link, RouteComponentProps} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {useFeatureFlags} from '../app/Flags';
@@ -13,6 +13,7 @@ import {PipelineRunStatus} from '../types/globalTypes';
 import {Alert} from '../ui/Alert';
 import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
+import {ColorsWIP} from '../ui/Colors';
 import {CursorPaginationControls} from '../ui/CursorControls';
 import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
@@ -96,7 +97,7 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
 
   const selectedTab = showScheduled ? 'scheduled' : selectedTabId(filterTokens);
   const tabColor = (match: string) =>
-    selectedTab === match ? Colors.BLUE1 : {link: Colors.GRAY2, hover: Colors.BLUE1};
+    selectedTab === match ? ColorsWIP.Link : {link: ColorsWIP.Gray500, hover: ColorsWIP.Link};
   const enabledFilters: RunFilterTokenType[] = flagPipelineModeTuples
     ? ['status', 'tag', 'snapshotId', 'id', 'job']
     : ['status', 'tag', 'snapshotId', 'id', 'pipeline'];
@@ -107,7 +108,7 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
         <Group direction="column" spacing={8} padding={{horizontal: 24}}>
           <PageHeader title={<Heading>Runs</Heading>} />
           <Box
-            border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}
+            border={{side: 'bottom', width: 1, color: ColorsWIP.Gray100}}
             flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}
           >
             <Tabs selectedTabId={selectedTab} id="run-tabs">

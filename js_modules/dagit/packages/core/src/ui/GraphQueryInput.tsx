@@ -1,4 +1,4 @@
-import {Button, Colors, InputGroup, Intent} from '@blueprintjs/core';
+import {Button, InputGroup, Intent} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import isEqual from 'lodash/isEqual';
 import uniq from 'lodash/uniq';
@@ -8,6 +8,7 @@ import styled from 'styled-components/macro';
 import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {dynamicKeyWithoutIndex, isDynamicStep} from '../gantt/DynamicStepSupport';
 
+import {ColorsWIP} from './Colors';
 import {MenuItemWIP, MenuWIP} from './Menu';
 import {Popover} from './Popover';
 
@@ -269,7 +270,7 @@ const GraphQueryInputField = styled(InputGroup)`
   }
 
   &.has-step {
-    box-shadow: 0 0 0 2px ${Colors.GOLD3};
+    box-shadow: 0 0 0 2px ${ColorsWIP.Yellow500};
     border-radius: 3px;
   }
 `;

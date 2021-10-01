@@ -1,7 +1,8 @@
 import {gql} from '@apollo/client';
-import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
+
+import {ColorsWIP} from '../ui/Colors';
 
 type ConfigTypeSchemaTheme = 'dark' | 'light';
 
@@ -177,7 +178,7 @@ export const CONFIG_TYPE_SCHEMA_FRAGMENT = gql`
 `;
 
 const TypeSchemaContainer = styled.code`
-  color: ${Colors.GRAY3};
+  color: ${ColorsWIP.Gray400};
   display: block;
   white-space: pre-wrap;
   font-size: 14px;
@@ -187,7 +188,7 @@ const TypeSchemaContainer = styled.code`
 const DictEntry = styled.div``;
 
 const DictKey = styled.span<{theme: ConfigTypeSchemaTheme | undefined}>`
-  color: ${({theme}) => (theme === 'dark' ? Colors.WHITE : Colors.BLACK)};
+  color: ${({theme}) => (theme === 'dark' ? ColorsWIP.White : ColorsWIP.Dark)};
 `;
 
 const DictComment = styled.div`
@@ -203,4 +204,4 @@ const DictBlockComment = ({indent = '', content}: {indent: string; content: stri
     <DictComment>{`${indent.replace(/ /g, '\u00A0')}/* ${content} */`}</DictComment>
   ) : null;
 
-const Optional = <span style={{fontWeight: 500, color: Colors.ORANGE2}}>?</span>;
+const Optional = <span style={{fontWeight: 500, color: ColorsWIP.Yellow700}}>?</span>;

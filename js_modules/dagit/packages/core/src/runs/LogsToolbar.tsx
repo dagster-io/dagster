@@ -1,4 +1,4 @@
-import {Button, ButtonGroup, Checkbox, Colors, IconName, Tab, Tabs} from '@blueprintjs/core';
+import {Button, ButtonGroup, Checkbox, IconName, Tab, Tabs} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -6,6 +6,7 @@ import styled from 'styled-components/macro';
 import {useCopyToClipboard} from '../app/browser';
 import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {MenuItemWIP} from '../ui/Menu';
 import {SelectWIP} from '../ui/Select';
@@ -182,8 +183,8 @@ const ComputeLogToolbar = ({
                 <ButtonLink
                   color={
                     logType === LogType.stdout
-                      ? Colors.BLUE1
-                      : {link: Colors.GRAY2, hover: Colors.BLUE1}
+                      ? ColorsWIP.Link
+                      : {link: ColorsWIP.Gray500, hover: ColorsWIP.Link}
                   }
                   underline="never"
                   onClick={() => onSetLogType(LogType.stdout)}
@@ -198,8 +199,8 @@ const ComputeLogToolbar = ({
                 <ButtonLink
                   color={
                     logType === LogType.stderr
-                      ? Colors.BLUE1
-                      : {link: Colors.GRAY2, hover: Colors.BLUE1}
+                      ? ColorsWIP.Link
+                      : {link: ColorsWIP.Gray500, hover: ColorsWIP.Link}
                   }
                   underline="never"
                   onClick={() => onSetLogType(LogType.stderr)}
@@ -356,10 +357,10 @@ const StructuredLogToolbar = ({
 const LogsToolbarContainer = styled.div`
   display: flex;
   flex-direction: row;
-  background: ${Colors.WHITE};
+  background: ${ColorsWIP.White};
   align-items: center;
   padding: 4px 8px;
-  border-bottom: 1px solid ${Colors.GRAY4};
+  border-bottom: 1px solid ${ColorsWIP.Gray300};
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.07);
   z-index: 2;
 `;
@@ -377,7 +378,7 @@ const LogsToolbarDivider = styled.div`
   width: 1px;
   height: 30px;
   margin: 0 8px;
-  border-right: 1px solid ${Colors.LIGHT_GRAY3};
+  border-right: 1px solid ${ColorsWIP.Gray100};
 `;
 
 const FilterButton = styled.button`

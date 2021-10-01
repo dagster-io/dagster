@@ -1,4 +1,3 @@
-import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -29,7 +28,7 @@ export const PageHeader = (props: Props) => {
         </Group>
         {metadata ? (
           <Box
-            border={{side: 'left', width: 1, color: Colors.LIGHT_GRAY3}}
+            border={{side: 'left', width: 1, color: ColorsWIP.Gray100}}
             padding={{horizontal: 20}}
             margin={{left: 20}}
           >
@@ -43,7 +42,7 @@ export const PageHeader = (props: Props) => {
 };
 
 const Description = styled.div`
-  color: ${Colors.GRAY3};
+  color: ${ColorsWIP.Gray400};
   white-space: nowrap;
 
   a,
@@ -51,7 +50,7 @@ const Description = styled.div`
   a:visited,
   a:hover,
   a:active {
-    color: ${Colors.GRAY2};
+    color: ${ColorsWIP.Gray500};
     font-weight: 500;
   }
 

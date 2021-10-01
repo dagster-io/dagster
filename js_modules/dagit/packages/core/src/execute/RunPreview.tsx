@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Button, Checkbox, Code, Colors, Intent, Position} from '@blueprintjs/core';
+import {Button, Checkbox, Code, Intent, Position} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -471,7 +471,7 @@ export const RUN_PREVIEW_VALIDATION_FRAGMENT = gql`
 `;
 
 const SectionTitle = styled.div`
-  color: ${Colors.GRAY3};
+  color: ${ColorsWIP.Gray400};
   text-transform: uppercase;
   font-size: 12px;
 `;
@@ -497,28 +497,28 @@ const ItemBorder = {
   invalid: `1px solid #CE1126`,
   missing: `1px solid #CE1126`,
   present: `1px solid #AFCCE1`,
-  none: `1px solid ${Colors.LIGHT_GRAY2}`,
+  none: `1px solid ${ColorsWIP.Gray100}`,
 };
 
 const ItemBackground = {
-  invalid: Colors.RED5,
-  missing: Colors.RED5,
+  invalid: ColorsWIP.Red200,
+  missing: ColorsWIP.Red200,
   present: '#C8E1F4',
-  none: Colors.LIGHT_GRAY4,
+  none: ColorsWIP.Gray100,
 };
 
 const ItemBackgroundHover = {
   invalid: '#E15858',
   missing: '#E15858',
   present: '#AFCCE1',
-  none: Colors.LIGHT_GRAY4,
+  none: ColorsWIP.Gray100,
 };
 
 const ItemColor = {
-  invalid: Colors.WHITE,
-  missing: Colors.WHITE,
-  present: Colors.BLACK,
-  none: Colors.BLACK,
+  invalid: ColorsWIP.White,
+  missing: ColorsWIP.White,
+  present: ColorsWIP.Dark,
+  none: ColorsWIP.Dark,
 };
 
 const Item = styled.div<{
@@ -568,7 +568,7 @@ const ErrorRowContainer = styled.div<{hoverable: boolean}>`
   ${({hoverable}) =>
     hoverable &&
     `&:hover {
-      background: ${Colors.LIGHT_GRAY5};
+      background: ${ColorsWIP.Gray50};
     }
   `}
 `;

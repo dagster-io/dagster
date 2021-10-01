@@ -1,8 +1,9 @@
-import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import ReactMarkdown from 'react-markdown';
 import gfm from 'remark-gfm';
 import styled from 'styled-components/macro';
+
+import {ColorsWIP} from './Colors';
 
 interface Props {
   children: string;
@@ -18,7 +19,7 @@ export const Markdown: React.FC<Props> = (props) => {
 
 const Container = styled.div`
   table tr th {
-    color: ${Colors.GRAY3};
+    color: ${ColorsWIP.Gray400};
     font-weight: normal;
     padding: 4px 16px 4px 0;
     text-align: left;

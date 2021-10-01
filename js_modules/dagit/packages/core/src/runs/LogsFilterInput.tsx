@@ -1,8 +1,8 @@
-import {Colors} from '@blueprintjs/core';
 import Fuse from 'fuse.js';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {ColorsWIP} from '../ui/Colors';
 import {Popover} from '../ui/Popover';
 import {SuggestionProvider} from '../ui/TokenizingField';
 import {useSuggestionsForString} from '../ui/useSuggestionsForString';
@@ -204,7 +204,7 @@ const ResultItem: React.FC<{
 };
 
 const FilterInput = styled.input`
-  border: 1px solid ${Colors.GRAY5};
+  border: 1px solid ${ColorsWIP.Gray200};
   border-radius: 3px;
   padding: 4px 6px;
   font-size: 12px;
@@ -227,8 +227,8 @@ interface HighlightableTextProps {
 
 const Item = styled.li<HighlightableTextProps>`
   align-items: center;
-  background-color: ${({isHighlight}) => (isHighlight ? Colors.BLUE3 : Colors.WHITE)};
-  color: ${({isHighlight}) => (isHighlight ? Colors.WHITE : 'default')};
+  background-color: ${({isHighlight}) => (isHighlight ? ColorsWIP.Blue500 : ColorsWIP.White)};
+  color: ${({isHighlight}) => (isHighlight ? ColorsWIP.White : 'default')};
   cursor: pointer;
   display: flex;
   flex-direction: row;
@@ -240,6 +240,6 @@ const Item = styled.li<HighlightableTextProps>`
   text-overflow: ellipsis;
 
   &:hover {
-    background-color: ${({isHighlight}) => (isHighlight ? Colors.BLUE3 : Colors.LIGHT_GRAY3)};
+    background-color: ${({isHighlight}) => (isHighlight ? ColorsWIP.Blue500 : ColorsWIP.Gray100)};
   }
 `;

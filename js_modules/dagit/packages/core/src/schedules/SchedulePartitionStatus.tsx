@@ -1,5 +1,4 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import {Colors} from '@blueprintjs/core';
 import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -9,6 +8,7 @@ import {assertUnreachable} from '../app/Util';
 import {StatusTable} from '../instigation/InstigationUtils';
 import {PipelineRunStatus} from '../types/globalTypes';
 import {ButtonLink} from '../ui/ButtonLink';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {Caption} from '../ui/Text';
 import {RepoAddress} from '../workspace/types';
@@ -86,7 +86,7 @@ export const SchedulePartitionStatus: React.FC<{
 
   const loadable = () => {
     if (loading) {
-      return <Caption style={{color: Colors.GRAY3}}>Loading…</Caption>;
+      return <Caption style={{color: ColorsWIP.Gray400}}>Loading…</Caption>;
     }
 
     if (!data) {
@@ -107,7 +107,7 @@ export const SchedulePartitionStatus: React.FC<{
       );
     }
 
-    return <Caption style={{color: Colors.RED1}}>Partition set not found!</Caption>;
+    return <Caption style={{color: ColorsWIP.Red700}}>Partition set not found!</Caption>;
   };
 
   return (
@@ -125,7 +125,7 @@ const RetrievedSchedulePartitionStatus: React.FC<{
   const {partitionSet} = schedule;
 
   if (!partitionSet || partitionSet.partitionStatusesOrError.__typename !== 'PartitionStatuses') {
-    return <span style={{color: Colors.GRAY4}}>None</span>;
+    return <span style={{color: ColorsWIP.Gray300}}>None</span>;
   }
 
   const partitions = partitionSet.partitionStatusesOrError.results;
@@ -149,7 +149,7 @@ const RetrievedSchedulePartitionStatus: React.FC<{
                 {status === 'Failed' || status === 'Missing' ? (
                   <Link
                     to={`${partitionURL}?showFailuresAndGapsOnly=true`}
-                    style={{color: Colors.DARK_GRAY1}}
+                    style={{color: ColorsWIP.Gray900}}
                   >
                     {partitionsByType[status].length}
                   </Link>

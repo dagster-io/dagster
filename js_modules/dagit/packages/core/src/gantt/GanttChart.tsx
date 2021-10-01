@@ -1,11 +1,11 @@
-import {Checkbox, Colors, NonIdealState} from '@blueprintjs/core';
+import {Checkbox, NonIdealState} from '@blueprintjs/core';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {AppContext} from '../app/AppContext';
-import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
+import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
 import {WebSocketContext} from '../app/WebSocketProvider';
 import {EMPTY_RUN_METADATA, IRunMetadataDict, IStepMetadata} from '../runs/RunMetadataProvider';
 import {StepSelection} from '../runs/StepSelection';
@@ -39,10 +39,10 @@ import {
 } from './Constants';
 import {isDynamicStep} from './DynamicStepSupport';
 import {
-  BuildLayoutParams,
   adjustLayoutWithRunMetadata,
   boxStyleFor,
   buildLayout,
+  BuildLayoutParams,
   interestingQueriesFor,
 } from './GanttChartLayout';
 import {GanttChartModeControl} from './GanttChartModeControl';
@@ -358,7 +358,7 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
               <Group
                 direction="row"
                 spacing={8}
-                background={`${Colors.ORANGE3}26`}
+                background={`${ColorsWIP.Yellow500}26`}
                 padding={{vertical: 8, horizontal: 12}}
                 alignItems="flex-start"
               >
@@ -613,7 +613,7 @@ const GanttLine = React.memo(
     depNotDrawn: boolean;
   } & Bounds) => {
     const border = `${LINE_SIZE}px ${dotted ? 'dotted' : 'solid'} ${
-      darkened ? Colors.DARK_GRAY1 : Colors.LIGHT_GRAY3
+      darkened ? ColorsWIP.Gray900 : ColorsWIP.Gray100
     }`;
 
     const maxXAvoidingOverlap = maxX + (depIdx % 10) * LINE_SIZE;
@@ -660,7 +660,7 @@ const GanttChartContainer = styled.div`
   flex-direction: column;
   z-index: 2;
   user-select: none;
-  background: ${Colors.WHITE};
+  background: ${ColorsWIP.White};
 
   .line {
     position: absolute;
@@ -705,11 +705,11 @@ const GanttChartContainer = styled.div`
       width ${CSS_DURATION}ms linear, height ${CSS_DURATION}ms linear;
 
     &.focused {
-      border: 1px solid ${Colors.DARK_GRAY1};
-      box-shadow: 0 0 0 2px ${Colors.GOLD3};
+      border: 1px solid ${ColorsWIP.Gray900};
+      box-shadow: 0 0 0 2px ${ColorsWIP.Yellow500};
     }
     &.hovered {
-      border: 1px solid ${Colors.DARK_GRAY3};
+      border: 1px solid ${ColorsWIP.Gray800};
     }
     &.dynamic {
       filter: brightness(125%);
@@ -742,7 +742,7 @@ const GanttChartContainer = styled.div`
 const WebsocketWarning = styled.div`
   position: absolute;
   bottom: 100%;
-  color: ${Colors.ORANGE2};
+  color: ${ColorsWIP.Yellow700};
   width: 100%;
 `;
 

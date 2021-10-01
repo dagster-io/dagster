@@ -1,11 +1,12 @@
 import {gql} from '@apollo/client';
-import {Colors, NonIdealState} from '@blueprintjs/core';
+import {NonIdealState} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import {CellMeasurer, CellMeasurerCache, List, ListRowProps, ScrollParams} from 'react-virtualized';
 import styled from 'styled-components/macro';
 
+import {ColorsWIP} from '../ui/Colors';
 import {Spinner} from '../ui/Spinner';
 
 import {LogFilter, LogsProviderLogs} from './LogsProvider';
@@ -280,7 +281,7 @@ class LogsScrollingTableSized extends React.Component<ILogsScrollingTableSizedPr
     const isLastRow = index === this.props.filteredNodes.length - 1;
     const lastRowStyles = isLastRow
       ? {
-          borderBottom: `1px solid ${Colors.LIGHT_GRAY3}`,
+          borderBottom: `1px solid ${ColorsWIP.Gray100}`,
         }
       : {};
 

@@ -1,9 +1,9 @@
-import {Colors} from '@blueprintjs/core';
 import {pathVerticalDiagonal} from '@vx/shape';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {weakmapMemoize} from '../app/Util';
+import {ColorsWIP} from '../ui/Colors';
 
 import {IFullPipelineLayout, IFullSolidLayout, ILayoutConnection} from './getFullSolidLayout';
 import {PipelineGraphSolidFragment} from './types/PipelineGraphSolidFragment';
@@ -123,6 +123,6 @@ const DynamicMarker: React.FunctionComponent<{
 
 const StyledPath = styled('path')`
   stroke-width: 6;
-  stroke: ${Colors.BLACK};
+  stroke: ${ColorsWIP.Dark};
   fill: none;
 `;

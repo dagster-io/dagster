@@ -1,12 +1,12 @@
 import {gql} from '@apollo/client';
-import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {SolidNameOrPath} from '../solids/SolidNameOrPath';
+import {ColorsWIP} from '../ui/Colors';
 
 import {ParentSolidNode, SVGLabeledParentRect} from './ParentSolidNode';
-import {SVGViewport, DETAIL_ZOOM, SVGViewportInteractor} from './SVGViewport';
+import {DETAIL_ZOOM, SVGViewport, SVGViewportInteractor} from './SVGViewport';
 import {SolidLinks} from './SolidLinks';
 import {
   SolidNode,
@@ -123,7 +123,7 @@ export class PipelineGraphContents extends React.PureComponent<
             {...layout.parent.invocationBoundingBox}
             key={`composite-rect-${parentHandleID}`}
             label={parentSolid.name}
-            fill={Colors.LIGHT_GRAY5}
+            fill={ColorsWIP.Gray50}
             minified={minified}
           />
         )}
@@ -136,7 +136,7 @@ export class PipelineGraphContents extends React.PureComponent<
             {...layout.solids[selectedSolid.name].solid}
             key={`composite-rect-${selectedHandleID}`}
             label={''}
-            fill={Colors.LIGHT_GRAY5}
+            fill={ColorsWIP.Gray50}
             minified={true}
           />
         )}

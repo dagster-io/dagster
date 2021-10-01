@@ -1,4 +1,4 @@
-import {Colors, Text} from '@blueprintjs/core';
+import {Text} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -30,7 +30,7 @@ export type SolidMappingTable = {
 export const ShowAllButton = styled.button`
   background: transparent;
   border: none;
-  color: ${Colors.BLUE3};
+  color: ${ColorsWIP.Blue500};
   text-decoration: underline;
   padding-top: 10px;
   font-size: 0.9rem;
@@ -64,7 +64,7 @@ export const Invocation = (props: {
   const handlePath = handleID.split('.');
   return (
     <InvocationContainer onClick={props.onClick}>
-      {pipelineName && <div style={{color: Colors.BLUE1}}>{pipelineName}</div>}
+      {pipelineName && <div style={{color: ColorsWIP.Blue700}}>{pipelineName}</div>}
       <SolidColumn stepKey={handlePath.join('.')} />
     </InvocationContainer>
   );
@@ -136,19 +136,19 @@ export const DependencyTable = styled.table`
 
 const DependencyHeaderCell = styled.td`
   font-size: 0.7rem;
-  color: ${Colors.GRAY3};
+  color: ${ColorsWIP.Gray400};
 `;
 
 const InvocationContainer = styled.div`
   margin: 0 -10px;
   padding: 10px;
   pointer: default;
-  border-bottom: 1px solid ${Colors.LIGHT_GRAY2};
+  border-bottom: 1px solid ${ColorsWIP.Gray100};
   &:last-child {
     border-bottom: none;
   }
   &:hover {
-    background: ${Colors.LIGHT_GRAY5};
+    background: ${ColorsWIP.Gray50};
   }
   font-family: ${FontFamily.monospace};
 `;

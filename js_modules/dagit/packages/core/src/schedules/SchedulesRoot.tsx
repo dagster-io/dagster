@@ -1,5 +1,5 @@
 import {useQuery} from '@apollo/client';
-import {Colors, NonIdealState} from '@blueprintjs/core';
+import {NonIdealState} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
@@ -8,6 +8,7 @@ import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {UnloadableSchedules} from '../instigation/Unloadable';
 import {InstigationType} from '../types/globalTypes';
 import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
 import {Page} from '../ui/Page';
@@ -15,7 +16,7 @@ import {Subheading} from '../ui/Text';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
-import {SCHEDULES_ROOT_QUERY, SchedulerTimezoneNote} from './ScheduleUtils';
+import {SchedulerTimezoneNote, SCHEDULES_ROOT_QUERY} from './ScheduleUtils';
 import {SchedulerInfo} from './SchedulerInfo';
 import {SchedulesNextTicks} from './SchedulesNextTicks';
 import {SchedulesTable} from './SchedulesTable';
@@ -80,7 +81,7 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
                 <SchedulesTable schedules={repositoryOrError.schedules} repoAddress={repoAddress} />
                 <Box
                   padding={{vertical: 16, horizontal: 24}}
-                  border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}
+                  border={{side: 'bottom', width: 1, color: ColorsWIP.Gray100}}
                 >
                   <Subheading>Scheduled ticks</Subheading>
                 </Box>

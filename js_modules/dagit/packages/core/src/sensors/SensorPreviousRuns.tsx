@@ -1,9 +1,10 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors, NonIdealState} from '@blueprintjs/core';
+import {NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {DagsterTag} from '../runs/RunTag';
 import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {Subheading} from '../ui/Text';
 import {PreviousRunsSection, PREVIOUS_RUNS_FRAGMENT} from '../workspace/PreviousRunsSection';
@@ -48,12 +49,12 @@ export const NoTargetSensorPreviousRuns: React.FC<{
     <Group direction="column" spacing={4}>
       <Box
         padding={{bottom: 12}}
-        border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}
+        border={{side: 'bottom', width: 1, color: ColorsWIP.Gray100}}
         flex={{direction: 'row'}}
       >
         <Subheading>Latest runs</Subheading>
       </Box>
-      <div style={{color: Colors.GRAY3}}>
+      <div style={{color: ColorsWIP.Gray400}}>
         <Box margin={{vertical: 64}}>
           <NonIdealState description="Sensor does not target a pipeline." />
         </Box>

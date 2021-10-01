@@ -1,22 +1,23 @@
 import {gql} from '@apollo/client';
-import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {ColorsWIP} from '../ui/Colors';
+
 import {PartitionGraph} from './PartitionGraph';
 import {
-  PARTITION_GRAPH_FRAGMENT,
-  StepSelector,
   getPipelineDurationForRun,
-  getStepDurationsForRun,
   getPipelineExpectationFailureForRun,
-  getPipelineExpectationSuccessForRun,
   getPipelineExpectationRateForRun,
+  getPipelineExpectationSuccessForRun,
   getPipelineMaterializationCountForRun,
+  getStepDurationsForRun,
   getStepExpectationFailureForRun,
   getStepExpectationRateForRun,
   getStepExpectationSuccessForRun,
   getStepMaterializationCountForRun,
+  PARTITION_GRAPH_FRAGMENT,
+  StepSelector,
 } from './PartitionGraphUtils';
 import {PartitionGraphSetRunFragment} from './types/PartitionGraphSetRunFragment';
 
@@ -124,7 +125,7 @@ const NavContainer = styled.div`
   margin: 20px 0 0 10px;
   padding: 10px;
   background-color: #fff;
-  border: 1px solid ${Colors.GRAY5};
+  border: 1px solid ${ColorsWIP.Gray200};
   overflow: auto;
 `;
 

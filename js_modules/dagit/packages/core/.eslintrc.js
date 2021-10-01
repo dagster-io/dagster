@@ -52,6 +52,7 @@ module.exports = {
             importNames: [
               'Alert',
               'Callout',
+              'Colors',
               'Dialog',
               'Icon',
               'Popover',

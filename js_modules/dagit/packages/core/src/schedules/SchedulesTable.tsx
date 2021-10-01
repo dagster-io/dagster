@@ -1,4 +1,4 @@
-import {Button, Colors, Menu, MenuItem} from '@blueprintjs/core';
+import {Button, Menu, MenuItem} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -184,7 +184,7 @@ const ScheduleRow: React.FC<{
             {humanCronString(cronSchedule)}
           </Tooltip>
         ) : (
-          <span style={{color: Colors.GRAY4}}>None</span>
+          <span style={{color: ColorsWIP.Gray300}}>None</span>
         )}
       </td>
       <td>
@@ -194,14 +194,14 @@ const ScheduleRow: React.FC<{
             timezone={executionTimezone}
           />
         ) : (
-          <span style={{color: Colors.GRAY4}}>None</span>
+          <span style={{color: ColorsWIP.Gray300}}>None</span>
         )}
       </td>
       <td>
         {latestTick ? (
           <TickTag tick={latestTick} instigationType={InstigationType.SCHEDULE} />
         ) : (
-          <span style={{color: Colors.GRAY4}}>None</span>
+          <span style={{color: ColorsWIP.Gray300}}>None</span>
         )}
       </td>
       <td>
@@ -211,7 +211,7 @@ const ScheduleRow: React.FC<{
         {schedule.partitionSet ? (
           <SchedulePartitionStatus schedule={schedule} repoAddress={repoAddress} />
         ) : (
-          <div style={{color: Colors.GRAY4}}>None</div>
+          <div style={{color: ColorsWIP.Gray300}}>None</div>
         )}
       </td>
       <td>

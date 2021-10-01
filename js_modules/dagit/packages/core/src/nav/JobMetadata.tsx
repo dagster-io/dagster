@@ -1,5 +1,4 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -245,7 +244,7 @@ const LatestRun: React.FC<{run: RunMetadataFragment}> = ({run}) => {
             <StyledTable>
               <tbody>
                 <tr>
-                  <td style={{color: Colors.GRAY4}}>
+                  <td style={{color: ColorsWIP.Gray300}}>
                     <Box padding={{right: 16}}>Started</Box>
                   </td>
                   <td>
@@ -257,7 +256,7 @@ const LatestRun: React.FC<{run: RunMetadataFragment}> = ({run}) => {
                   </td>
                 </tr>
                 <tr>
-                  <td style={{color: Colors.GRAY4}}>Ended</td>
+                  <td style={{color: ColorsWIP.Gray300}}>Ended</td>
                   <td>
                     {stats.end ? (
                       <TimestampDisplay timestamp={stats.end} timeFormat={TIME_FORMAT} />
@@ -329,7 +328,7 @@ const RelatedAssets: React.FC<{runs: RunMetadataFragment[]}> = ({runs}) => {
 };
 
 const GrayText = styled.div`
-  color: ${Colors.GRAY3};
+  color: ${ColorsWIP.Gray400};
 `;
 
 const RUN_METADATA_FRAGMENT = gql`

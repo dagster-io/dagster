@@ -1,4 +1,3 @@
-import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -30,7 +29,7 @@ export const PipelineReference: React.FC<Props> = ({
   const {flagPipelineModeTuples} = useFeatureFlags();
 
   const modeLabel =
-    mode === 'default' ? null : <span style={{color: Colors.GRAY3}}>{`: ${mode}`}</span>;
+    mode === 'default' ? null : <span style={{color: ColorsWIP.Gray400}}>{`: ${mode}`}</span>;
 
   const pipeline =
     pipelineHrefContext === 'repo-unknown' ? (

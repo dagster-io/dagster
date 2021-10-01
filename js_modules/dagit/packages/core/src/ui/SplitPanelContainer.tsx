@@ -1,6 +1,8 @@
-import {Button, ButtonGroup, Colors} from '@blueprintjs/core';
+import {Button, ButtonGroup} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
+
+import {ColorsWIP} from './Colors';
 
 const DIVIDER_THICKNESS = 4;
 
@@ -193,18 +195,18 @@ const DividerWrapper = {
   horizontal: styled.div<{resizing: boolean}>`
     width: ${DIVIDER_THICKNESS}px;
     z-index: 1;
-    background: ${Colors.WHITE};
-    border-left: 1px solid ${(p) => (p.resizing ? Colors.GRAY5 : Colors.LIGHT_GRAY2)};
-    border-right: 1px solid ${(p) => (p.resizing ? Colors.GRAY3 : Colors.GRAY5)};
+    background: ${ColorsWIP.White};
+    border-left: 1px solid ${(p) => (p.resizing ? ColorsWIP.Gray200 : ColorsWIP.Gray100)};
+    border-right: 1px solid ${(p) => (p.resizing ? ColorsWIP.Gray400 : ColorsWIP.Gray200)};
     overflow: visible;
     position: relative;
   `,
   vertical: styled.div<{resizing: boolean}>`
     height: ${DIVIDER_THICKNESS}px;
     z-index: 1;
-    background: ${Colors.WHITE};
-    border-top: 1px solid ${(p) => (p.resizing ? Colors.GRAY5 : Colors.LIGHT_GRAY2)};
-    border-bottom: 1px solid ${(p) => (p.resizing ? Colors.GRAY3 : Colors.GRAY5)};
+    background: ${ColorsWIP.White};
+    border-top: 1px solid ${(p) => (p.resizing ? ColorsWIP.Gray200 : ColorsWIP.Gray100)};
+    border-bottom: 1px solid ${(p) => (p.resizing ? ColorsWIP.Gray400 : ColorsWIP.Gray200)};
     overflow: visible;
     position: relative;
   `,

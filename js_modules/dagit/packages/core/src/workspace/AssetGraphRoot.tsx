@@ -1,5 +1,5 @@
 import {gql, useQuery, useMutation} from '@apollo/client';
-import {Menu, MenuItem, Colors, NonIdealState} from '@blueprintjs/core';
+import {Menu, MenuItem, NonIdealState} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import {ContextMenu2 as ContextMenu} from '@blueprintjs/popover2';
 import {pathVerticalDiagonal} from '@vx/shape';
@@ -29,6 +29,7 @@ import {LaunchPipelineExecution} from '../runs/types/LaunchPipelineExecution';
 import {POLL_INTERVAL} from '../runs/useCursorPaginatedQuery';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
 import {Loading} from '../ui/Loading';
 import {SplitPanelContainer} from '../ui/SplitPanelContainer';
 import {FontFamily} from '../ui/styles';
@@ -343,7 +344,7 @@ export const AssetGraphRoot: React.FC<Props> = (props) => {
                         markerHeight="4"
                         orient="auto"
                       >
-                        <path d="M 0 0 L 10 5 L 0 10 z" fill={Colors.LIGHT_GRAY1} />
+                        <path d="M 0 0 L 10 5 L 0 10 z" fill={ColorsWIP.Gray200} />
                       </marker>
                     </defs>
                     <g opacity={0.8}>
@@ -535,7 +536,7 @@ const SVGContainer = styled.svg`
 `;
 const StyledPath = styled('path')<{dashed: boolean}>`
   stroke-width: 4;
-  stroke: ${Colors.LIGHT_GRAY1};
+  stroke: ${ColorsWIP.Gray200};
   ${({dashed}) => (dashed ? `stroke-dasharray: 8 2;` : '')}
   fill: none;
 `;
@@ -620,9 +621,9 @@ const AssetNode: React.FC<{
         style={{
           border: '1px solid #ececec',
           outline: selected
-            ? `2px solid ${Colors.BLUE4}`
+            ? `2px solid ${ColorsWIP.Blue500}`
             : secondaryHighlight
-            ? `2px solid ${Colors.BLUE4}55`
+            ? `2px solid ${ColorsWIP.Blue500}55`
             : 'none',
           marginTop: 10,
           marginRight: 4,
@@ -798,7 +799,7 @@ const RunLinkTooltipStyle = JSON.stringify({
   marginLeft: -10,
   marginTop: -8,
   fontSize: 13,
-  color: Colors.BLUE2,
+  color: ColorsWIP.Link,
   border: 0,
   borderRadius: 4,
 } as CSSProperties);

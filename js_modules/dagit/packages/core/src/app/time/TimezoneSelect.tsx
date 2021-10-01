@@ -58,7 +58,10 @@ export const TimezoneSelect: React.FC<Props> = ({trigger}) => {
 
   return (
     <SelectWIP<typeof SortedTimezoneItems[0]>
-      popoverProps={{position: 'bottom-left'}}
+      popoverProps={{
+        position: 'bottom-left',
+        modifiers: {offset: {enabled: true, offset: '-12px, 8px'}},
+      }}
       activeItem={SortedTimezoneItems.find((tz) => tz.key === timezone)}
       inputProps={{style: {width: '300px'}}}
       items={SortedTimezoneItems}

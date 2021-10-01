@@ -1,10 +1,11 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors, Tab, Tabs} from '@blueprintjs/core';
+import {Tab, Tabs} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {explorerPathToString, PipelineExplorerPath} from '../pipelines/PipelinePathUtils';
 import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {PageHeader} from '../ui/PageHeader';
 import {TagWIP} from '../ui/TagWIP';
@@ -114,7 +115,7 @@ export const SnapshotNav = (props: SnapshotNavProps) => {
           </span>
         }
       />
-      <Box border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}>
+      <Box border={{side: 'bottom', width: 1, color: ColorsWIP.Gray100}}>
         <Tabs large={false} selectedTabId={activeTab}>
           {tabs.map((tab) => {
             const {href, text, pathComponent} = tab;

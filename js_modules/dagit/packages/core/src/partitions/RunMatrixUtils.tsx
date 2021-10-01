@@ -1,12 +1,13 @@
-import {Colors} from '@blueprintjs/core';
 import {Tooltip2} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {ColorsWIP} from '../ui/Colors';
+
 export const STEP_STATUS_COLORS = {
   SUCCESS: '#009857',
-  FAILURE: Colors.RED3,
-  SKIPPED: Colors.GOLD3,
+  FAILURE: ColorsWIP.Red500,
+  SKIPPED: ColorsWIP.Yellow500,
 };
 
 // In CSS, you can layer multiple backgrounds on top of each other by comma-separating values in
@@ -35,12 +36,12 @@ export const GridColumn = styled.div<{
     !focused &&
     !multiselectFocused &&
     `&${hovered ? '' : ':hover'} {
-    background: ${Colors.LIGHT_GRAY3};
+    background: ${ColorsWIP.Gray100};
     cursor: default;
     ${TopLabelTiltedInner} {
-      background: ${Colors.LIGHT_GRAY5};
+      background: ${ColorsWIP.Gray50};
       .tilted {
-        background: ${Colors.LIGHT_GRAY3};
+        background: ${ColorsWIP.Gray100};
       }
     }
   }`}
@@ -49,36 +50,36 @@ export const GridColumn = styled.div<{
     disabled &&
     `
       ${TopLabelTiltedInner} {
-        color: ${Colors.GRAY3}
+        color: ${ColorsWIP.Gray400}
       }
     `}
 
   ${({focused}) =>
     focused &&
-    `background: ${Colors.BLUE4};
+    `background: ${ColorsWIP.Blue500};
     ${LeftLabel} {
       color: white;
     }
     ${TopLabelTiltedInner} {
-      background: ${Colors.LIGHT_GRAY5};
+      background: ${ColorsWIP.Gray50};
       color: white;
       .tilted {
-        background: ${Colors.BLUE4};
+        background: ${ColorsWIP.Blue500};
       }
     }
   }`}
 
   ${({multiselectFocused}) =>
     multiselectFocused &&
-    `background: ${Colors.BLUE5};
+    `background: ${ColorsWIP.Blue200};
     ${LeftLabel} {
       color: white;
     }
     ${TopLabelTiltedInner} {
-      background: ${Colors.LIGHT_GRAY5};
+      background: ${ColorsWIP.Gray50};
       color: white;
       .tilted {
-        background: ${Colors.BLUE5};
+        background: ${ColorsWIP.Blue200};
       }
     }
   }`}
@@ -101,7 +102,7 @@ export const GridColumn = styled.div<{
     display: inline-block;
 
     &:hover:not(.empty) {
-      background: ${Colors.BLUE5};
+      background: ${ColorsWIP.Blue200};
     }
     &:before {
       content: ' ';
@@ -190,7 +191,7 @@ export const GridColumn = styled.div<{
     }
     &.missing {
       &:before {
-        background: ${Colors.WHITE};
+        background: ${ColorsWIP.White};
       }
     }
   }
@@ -205,7 +206,7 @@ export const LeftLabel = styled.div<{hovered?: boolean; redness?: number}>`
   background: ${({redness, hovered}) =>
     flatGradientStack([
       redness ? `rgba(255, 0, 0, ${redness * 0.6})` : 'transparent',
-      hovered ? Colors.LIGHT_GRAY2 : 'transparent',
+      hovered ? ColorsWIP.Gray100 : 'transparent',
     ])};
 `;
 
@@ -282,7 +283,7 @@ const TopLabelTiltedInner = styled.div`
 
 export const GridFloatingContainer = styled.div<{floating: boolean}>`
   display: flex;
-  border-right: 1px solid ${Colors.GRAY5};
+  border-right: 1px solid ${ColorsWIP.Gray200};
   padding-bottom: 16px;
   width: 330px;
   z-index: 1;
@@ -295,9 +296,9 @@ export const GridScrollContainer = styled.div`
   overflow-x: scroll;
   overscroll-behavior-x: contain;
   z-index: 0;
-  background: ${Colors.LIGHT_GRAY5};
+  background: ${ColorsWIP.Gray50};
   flex: 1;
-  scrollbar-color: ${Colors.GRAY2} ${Colors.LIGHT_GRAY3};
+  scrollbar-color: ${ColorsWIP.Gray500} ${ColorsWIP.Gray100};
   scrollbar-width: thin;
 
   ::-webkit-scrollbar {
@@ -311,10 +312,10 @@ export const GridScrollContainer = styled.div`
   }
   &::-webkit-scrollbar-thumb {
     border-radius: 8px;
-    border: 2px solid ${Colors.LIGHT_GRAY3};
-    background-color: ${Colors.GRAY2};
+    border: 2px solid ${ColorsWIP.Gray100};
+    background-color: ${ColorsWIP.Gray500};
   }
   &::-webkit-scrollbar-track {
-    background-color: ${Colors.LIGHT_GRAY3};
+    background-color: ${ColorsWIP.Gray100};
   }
 `;

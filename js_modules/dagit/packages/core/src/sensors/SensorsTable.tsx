@@ -1,4 +1,3 @@
-import {Colors} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -98,7 +97,7 @@ const SensorRow: React.FC<{
         {latestTick ? (
           <TickTag tick={latestTick} instigationType={InstigationType.SENSOR} />
         ) : (
-          <span style={{color: Colors.GRAY4}}>None</span>
+          <span style={{color: ColorsWIP.Gray300}}>None</span>
         )}
       </td>
       <td>

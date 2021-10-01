@@ -1,9 +1,10 @@
-import {InputGroup as BlueprintInputGroup, Colors} from '@blueprintjs/core';
+import {InputGroup as BlueprintInputGroup} from '@blueprintjs/core';
 import Fuse from 'fuse.js';
 import memoize from 'lodash/memoize';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {ColorsWIP} from '../ui/Colors';
 import {Popover} from '../ui/Popover';
 import {useSuggestionsForString} from '../ui/useSuggestionsForString';
 
@@ -211,7 +212,7 @@ const InputGroup = styled(({hasSuggestions, ...props}) => <BlueprintInputGroup {
   input:focus {
     outline: none;
     box-shadow: none;
-    border: 1px solid ${Colors.LIGHT_GRAY1};
+    border: 1px solid ${ColorsWIP.Gray200};
     margin-left: 0px;
     min-width: 600px;
   }
@@ -235,8 +236,8 @@ const Item = styled.li<{
   readonly isHighlight: boolean;
 }>`
   align-items: center;
-  background-color: ${({isHighlight}) => (isHighlight ? Colors.BLUE3 : Colors.WHITE)};
-  color: ${({isHighlight}) => (isHighlight ? Colors.WHITE : 'default')};
+  background-color: ${({isHighlight}) => (isHighlight ? ColorsWIP.Blue500 : ColorsWIP.White)};
+  color: ${({isHighlight}) => (isHighlight ? ColorsWIP.White : 'default')};
   cursor: pointer;
   display: flex;
   flex-direction: row;
@@ -248,6 +249,6 @@ const Item = styled.li<{
   text-overflow: ellipsis;
 
   &:hover {
-    background-color: ${({isHighlight}) => (isHighlight ? Colors.BLUE3 : Colors.LIGHT_GRAY3)};
+    background-color: ${({isHighlight}) => (isHighlight ? ColorsWIP.Blue500 : ColorsWIP.Gray100)};
   }
 `;

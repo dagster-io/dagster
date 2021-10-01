@@ -1,17 +1,16 @@
 import {gql, useQuery} from '@apollo/client';
 import {
   Button,
+  ButtonGroup,
   Checkbox,
+  InputGroup as BlueprintInputGroup,
   Menu,
   MenuItem,
-  InputGroup as BlueprintInputGroup,
   NonIdealState,
-  Colors,
-  ButtonGroup,
 } from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
-import {useHistory, Link} from 'react-router-dom';
+import {Link, useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {usePermissions} from '../app/Permissions';
@@ -19,6 +18,7 @@ import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {QueryCountdown} from '../app/QueryCountdown';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
 import {Loading} from '../ui/Loading';
@@ -46,7 +46,7 @@ const EXPERIMENTAL_TAGS_WARNING = (
     Tags are an experimental feature of asset materializations. See the{' '}
     <a
       href="https://docs.dagster.io/_apidocs/solids#dagster.AssetMaterialization"
-      style={{color: Colors.WHITE}}
+      style={{color: ColorsWIP.White}}
     >
       AssetMaterialization documentation
     </a>{' '}

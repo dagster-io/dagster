@@ -1,5 +1,5 @@
 import {gql, useApolloClient} from '@apollo/client';
-import {Button, ButtonGroup, Colors} from '@blueprintjs/core';
+import {Button, ButtonGroup} from '@blueprintjs/core';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -129,7 +129,7 @@ export const RepositoryContentList: React.FC<RepositoryContentListProps> = ({
       <Box
         flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
         padding={{vertical: 8, horizontal: 12}}
-        border={{side: 'bottom', width: 1, color: Colors.DARK_GRAY3}}
+        border={{side: 'bottom', width: 1, color: ColorsWIP.Gray800}}
       >
         <ItemHeader>{'Pipelines & Solids'}</ItemHeader>
         <ButtonGroup>
@@ -173,7 +173,7 @@ const ItemHeader = styled.div`
   text-overflow: ellipsis;
   overflow: hidden;
   font-weight: bold;
-  color: ${Colors.LIGHT_GRAY3} !important;
+  color: ${ColorsWIP.Gray100} !important;
 `;
 
 export const Items = styled.div`
@@ -184,15 +184,15 @@ export const Items = styled.div`
   }
 
   scrollbar-width: thin;
-  scrollbar-color: ${Colors.GRAY1} ${Colors.DARK_GRAY1};
+  scrollbar-color: ${ColorsWIP.Gray600} ${ColorsWIP.Gray900};
 
   &::-webkit-scrollbar-track {
-    background: ${Colors.DARK_GRAY1};
+    background: ${ColorsWIP.Gray900};
   }
   &::-webkit-scrollbar-thumb {
-    background-color: ${Colors.GRAY1};
+    background-color: ${ColorsWIP.Gray600};
     border-radius: 6px;
-    border: 3px solid ${Colors.DARK_GRAY1};
+    border: 3px solid ${ColorsWIP.Gray900};
   }
 `;
 
@@ -205,25 +205,25 @@ export const Item = styled(Link)`
   border-left: 4px solid transparent;
   border-bottom: 1px solid transparent;
   display: block;
-  color: ${Colors.LIGHT_GRAY3} !important;
+  color: ${ColorsWIP.Gray100} !important;
   user-select: none;
 
   &:hover {
     text-decoration: none;
-    color: ${Colors.WHITE} !important;
+    color: ${ColorsWIP.White} !important;
   }
   &:focus {
     outline: 0;
   }
   &.focused {
-    border-left: 4px solid ${Colors.GRAY3};
+    border-left: 4px solid ${ColorsWIP.Gray400};
   }
   &.selected {
-    border-left: 4px solid ${Colors.COBALT3};
-    border-bottom: 1px solid ${Colors.DARK_GRAY2};
-    background: ${Colors.BLACK};
+    border-left: 4px solid ${ColorsWIP.Blue500};
+    border-bottom: 1px solid ${ColorsWIP.Gray900};
+    background: ${ColorsWIP.Dark};
     font-weight: 600;
-    color: ${Colors.WHITE} !important;
+    color: ${ColorsWIP.White} !important;
   }
 `;
 
@@ -233,8 +233,8 @@ const BaseTooltipStyle = {
   paddingRight: 7,
   left: 9,
   top: 5,
-  color: Colors.WHITE,
-  background: Colors.DARK_GRAY1,
+  color: ColorsWIP.White,
+  background: ColorsWIP.Gray900,
   transform: 'none',
   border: 0,
   borderRadius: 4,
@@ -242,14 +242,14 @@ const BaseTooltipStyle = {
 
 const ItemTooltipStyle = JSON.stringify({
   ...BaseTooltipStyle,
-  color: Colors.WHITE,
-  background: Colors.DARK_GRAY1,
+  color: ColorsWIP.White,
+  background: ColorsWIP.Gray900,
 });
 
 const SelectedItemTooltipStyle = JSON.stringify({
   ...BaseTooltipStyle,
-  color: Colors.WHITE,
-  background: Colors.BLACK,
+  color: ColorsWIP.White,
+  background: ColorsWIP.Dark,
   fontWeight: 600,
 });
 

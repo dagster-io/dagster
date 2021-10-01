@@ -1,4 +1,4 @@
-import {Colors, Position} from '@blueprintjs/core';
+import {Position} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -7,6 +7,7 @@ import {formatElapsedTime} from '../app/Util';
 import {SidebarSection} from '../pipelines/SidebarComponents';
 import {IRunMetadataDict, IStepState} from '../runs/RunMetadataProvider';
 import {StepSelection} from '../runs/StepSelection';
+import {ColorsWIP} from '../ui/Colors';
 import {Spinner} from '../ui/Spinner';
 
 import {GanttChartMode} from './Constants';
@@ -169,12 +170,12 @@ const StepItemContainer = styled.div<{selected: boolean}>`
   height: 28px;
   padding: 0 5px;
   align-items: center;
-  border-bottom: 1px solid ${Colors.LIGHT_GRAY1};
+  border-bottom: 1px solid ${ColorsWIP.Gray200};
   font-size: 13px;
-  ${({selected}) => selected && `background: ${Colors.LIGHT_GRAY4};`}
+  ${({selected}) => selected && `background: ${ColorsWIP.Gray100};`}
 
   &:hover {
-    background: ${Colors.LIGHT_GRAY3};
+    background: ${ColorsWIP.Gray100};
   }
 `;
 
@@ -186,7 +187,7 @@ const StepStatusDot = styled.div`
 `;
 
 const Elapsed = styled.div`
-  color: ${Colors.GRAY3};
+  color: ${ColorsWIP.Gray400};
   font-variant-numeric: tabular-nums;
 `;
 

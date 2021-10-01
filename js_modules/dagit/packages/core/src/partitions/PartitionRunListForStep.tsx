@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {NonIdealState, Button, Colors} from '@blueprintjs/core';
+import {Button, NonIdealState} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import qs from 'query-string';
@@ -11,6 +11,7 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
 import {DagsterTag} from '../runs/RunTag';
 import {StepEventStatus} from '../types/globalTypes';
+import {ColorsWIP} from '../ui/Colors';
 import {Spinner} from '../ui/Spinner';
 
 import {STEP_STATUS_COLORS} from './RunMatrixUtils';
@@ -133,7 +134,7 @@ const StatSummaryLine = styled.div`
 `;
 
 const StatBox = styled.div`
-  border: 1px solid ${Colors.LIGHT_GRAY2};
+  border: 1px solid ${ColorsWIP.Gray100};
   margin-left: 4px;
   padding: 1px 5px;
   font-size: 11px;

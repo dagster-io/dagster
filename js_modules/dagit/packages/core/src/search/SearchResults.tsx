@@ -1,4 +1,3 @@
-import {Colors} from '@blueprintjs/core';
 import Fuse from 'fuse.js';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -127,7 +126,7 @@ interface HighlightableTextProps {
 
 const Item = styled.li<HighlightableTextProps>`
   align-items: center;
-  background-color: ${({isHighlight}) => (isHighlight ? Colors.BLUE3 : ColorsWIP.White)};
+  background-color: ${({isHighlight}) => (isHighlight ? ColorsWIP.Blue500 : ColorsWIP.White)};
   color: ${({isHighlight}) => (isHighlight ? ColorsWIP.White : 'default')}
   display: flex;
   flex-direction: row;
@@ -136,7 +135,7 @@ const Item = styled.li<HighlightableTextProps>`
   user-select: none;
 
   &:hover {
-    background-color: ${({isHighlight}) => (isHighlight ? Colors.BLUE3 : ColorsWIP.Gray500)};
+    background-color: ${({isHighlight}) => (isHighlight ? ColorsWIP.Blue500 : ColorsWIP.Gray500)};
   }
 `;
 

@@ -1,9 +1,9 @@
-import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {useFeatureFlags} from '../app/Flags';
 import {getJSONForKey} from '../app/LocalStorage';
+import {ColorsWIP} from '../ui/Colors';
 
 const ColumnWidthsStorageKey = 'ColumnWidths';
 const ColumnWidths = Object.assign(
@@ -147,7 +147,7 @@ export const Headers = () => {
 
 const HeadersContainer = styled.div`
   display: flex;
-  color: ${Colors.GRAY3};
+  color: ${ColorsWIP.Gray400};
   text-transform: uppercase;
   font-size: 11px;
   border-bottom: 1px solid #cbd4da;
@@ -177,6 +177,6 @@ const HeaderDragHandle = styled.div<{
   & > div {
     width: 1px;
     height: 100%;
-    background: ${({isDragging}) => (isDragging ? Colors.GRAY1 : Colors.LIGHT_GRAY3)};
+    background: ${({isDragging}) => (isDragging ? ColorsWIP.Gray600 : ColorsWIP.Gray100)};
   }
 `;

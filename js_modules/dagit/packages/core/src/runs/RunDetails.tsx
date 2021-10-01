@@ -1,11 +1,12 @@
 import {gql} from '@apollo/client';
-import {AnchorButton, Button, Colors} from '@blueprintjs/core';
+import {AnchorButton, Button} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 
 import {AppContext} from '../app/AppContext';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {PipelineRunStatus} from '../types/globalTypes';
+import {ColorsWIP} from '../ui/Colors';
 import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
 import {HighlightedCodeBlock} from '../ui/HighlightedCodeBlock';
@@ -43,7 +44,7 @@ const LoadingOrValue: React.FC<{
   loading: boolean;
   children: () => React.ReactNode;
 }> = ({loading, children}) =>
-  loading ? <div style={{color: Colors.GRAY3}}>Loading…</div> : <div>{children()}</div>;
+  loading ? <div style={{color: ColorsWIP.Gray400}}>Loading…</div> : <div>{children()}</div>;
 
 const TIME_FORMAT = {showSeconds: true, showTimezone: false};
 
@@ -66,7 +67,7 @@ export const RunDetails: React.FC<{
                   );
                 }
                 return (
-                  <div style={{color: Colors.GRAY3}}>{timingStringForStatus(run?.status)}</div>
+                  <div style={{color: ColorsWIP.Gray400}}>{timingStringForStatus(run?.status)}</div>
                 );
               }}
             </LoadingOrValue>
@@ -83,7 +84,7 @@ export const RunDetails: React.FC<{
                   );
                 }
                 return (
-                  <div style={{color: Colors.GRAY3}}>{timingStringForStatus(run?.status)}</div>
+                  <div style={{color: ColorsWIP.Gray400}}>{timingStringForStatus(run?.status)}</div>
                 );
               }}
             </LoadingOrValue>
@@ -100,7 +101,7 @@ export const RunDetails: React.FC<{
                   );
                 }
                 return (
-                  <div style={{color: Colors.GRAY3}}>{timingStringForStatus(run?.status)}</div>
+                  <div style={{color: ColorsWIP.Gray400}}>{timingStringForStatus(run?.status)}</div>
                 );
               }}
             </LoadingOrValue>
