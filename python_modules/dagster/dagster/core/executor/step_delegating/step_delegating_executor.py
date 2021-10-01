@@ -1,19 +1,19 @@
 import time
 from typing import Dict, List, Optional, cast
 
+
 import pendulum
 from dagster import check
-from dagster.core.events import DagsterEvent, EngineEventData, log_step_event
+from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData, log_step_event
 from dagster.core.execution.context.system import PlanOrchestrationContext
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.plan.step import ExecutionStep
 from dagster.core.execution.retries import RetryMode
-from dagster.core.executor.step_delegating.step_handler.base import StepHandlerContext
+from dagster.core.executor.step_delegating.step_handler.base import StepHandlerContext, StepHandler
 from dagster.grpc.types import ExecuteStepArgs
 from dagster.utils.backcompat import experimental
 
 from ..base import Executor
-from .step_handler import StepHandler
 
 
 @experimental
@@ -86,6 +86,50 @@ class StepDelegatingExecutor(Executor):
         )
 
         with execution_plan.start(retry_mode=self.retries) as active_execution:
+
+            if pipeline_context.resume_from_failure:
+                yield DagsterEvent.engine_event(
+                    pipeline_context,
+                    "Resuming execution from failure",
+                    EngineEventData(),
+                )
+
+                events = self._pop_events(
+                    pipeline_context.plan_data.instance,
+                    pipeline_context.plan_data.pipeline_run.run_id,
+                )
+                for dagster_event in events:
+                    yield dagster_event
+
+                possibly_in_flight_steps = active_execution.rebuild_from_events(events)
+                for step in possibly_in_flight_steps:
+
+                    yield DagsterEvent.engine_event(
+                        pipeline_context,
+                        "Checking on status of possibly launched step",
+                        EngineEventData(),
+                        step.handle,
+                    )
+
+                    # TODO: check if failure event included. For now, hacky assumption that
+                    # we don't log anything on successful check
+                    if self._step_handler.check_step_health(
+                        self._get_step_handler_context(pipeline_context, [step], active_execution)
+                    ):
+                        # health check failed, launch the step
+                        launch_events = self._log_new_events(
+                            self._step_handler.launch_step(
+                                self._get_step_handler_context(
+                                    pipeline_context, [step], active_execution
+                                )
+                            ),
+                            pipeline_context,
+                            {step.key: step for step in possibly_in_flight_steps},
+                        )
+                        for dagster_event in launch_events:
+                            yield dagster_event
+                            active_execution.handle_event(dagster_event)
+
             stopping = False
             running_steps: Dict[str, ExecutionStep] = {}
 

@@ -60,14 +60,20 @@ def execute_run_command(input_json):
                 buffer.append(serialize_dagster_namedtuple(event))
 
             _execute_run_command_body(
-                recon_pipeline, args.pipeline_run_id, instance, send_to_buffer
+                recon_pipeline,
+                args.pipeline_run_id,
+                instance,
+                send_to_buffer,
+                args.resume_from_failure,
             )
 
             for line in buffer:
                 click.echo(line)
 
 
-def _execute_run_command_body(recon_pipeline, pipeline_run_id, instance, write_stream_fn):
+def _execute_run_command_body(
+    recon_pipeline, pipeline_run_id, instance, write_stream_fn, resume_from_failure
+):
 
     # we need to send but the fact that we have loaded the args so the calling
     # process knows it is safe to clean up the temp input file
@@ -83,7 +89,9 @@ def _execute_run_command_body(recon_pipeline, pipeline_run_id, instance, write_s
     )
 
     try:
-        for event in core_execute_run(recon_pipeline, pipeline_run, instance):
+        for event in core_execute_run(
+            recon_pipeline, pipeline_run, instance, resume_from_failure=resume_from_failure
+        ):
             write_stream_fn(event)
     finally:
         instance.report_engine_event(

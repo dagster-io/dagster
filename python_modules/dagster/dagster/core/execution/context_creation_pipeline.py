@@ -317,6 +317,7 @@ class PlanOrchestrationContextManager(ExecutionContextManager[PlanOrchestrationC
         raise_on_error: Optional[bool] = False,
         output_capture: Optional[Dict["StepOutputHandle", Any]] = None,
         executor_defs: Optional[List[ExecutorDefinition]] = None,
+        resume_from_failure=False,
     ):
         event_generator = context_event_generator(
             pipeline,
@@ -327,6 +328,7 @@ class PlanOrchestrationContextManager(ExecutionContextManager[PlanOrchestrationC
             raise_on_error,
             executor_defs,
             output_capture,
+            resume_from_failure=resume_from_failure,
         )
         super(PlanOrchestrationContextManager, self).__init__(event_generator)
 
@@ -344,6 +346,7 @@ def orchestration_context_event_generator(
     raise_on_error: bool,
     executor_defs: Optional[List[ExecutorDefinition]],
     output_capture: Optional[Dict["StepOutputHandle", Any]],
+    resume_from_failure: bool = False,
 ) -> Generator[Union[DagsterEvent, PlanOrchestrationContext], None, None]:
     check.invariant(executor_defs is None)
     context_creation_data = create_context_creation_data(
@@ -364,6 +367,7 @@ def orchestration_context_event_generator(
             log_manager=log_manager,
             executor=executor,
             output_capture=output_capture,
+            resume_from_failure=resume_from_failure,
         )
 
         _validate_plan_with_context(execution_context, execution_plan)

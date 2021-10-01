@@ -473,19 +473,19 @@ class ActiveExecution:
             self._successful_dynamic_outputs[step_key] = self._gathering_dynamic_outputs[step_key]
             self._new_dynamic_mappings = True
 
-    def rebuild_from_events(self, dagster_events: List[DagsterEvent]) -> None:
+    def rebuild_from_events(self, dagster_events: List[DagsterEvent]) -> List[ExecutionStep]:
         """
         Replay events to rebuild the execution state and continue after a failure.
-        """
-        possibly_in_flight = set()
 
-        def collect_possibly_launched_steps():
-            steps = self.get_steps_to_execute()
-            for step in steps:
-                possibly_in_flight.add(step.step_key)
+        Returns a list of steps that are possibly in flight. Current status of the event log implies
+        that the previous run worker might have crashed before launching these steps, or it may have
+        launched them but they have yet to report a STEP_START event.
+        """
+
+        self.get_steps_to_execute()
 
         for event in dagster_events:
-            collect_possibly_launched_steps()
             self.handle_event(event)
+            self.get_steps_to_execute()
 
-        collect_possibly_launched_steps()
+        return [self.get_step_by_key(step_key) for step_key in self._in_flight]

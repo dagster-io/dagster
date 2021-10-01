@@ -48,7 +48,9 @@ def docker_postgres_instance(overrides=None, conn_args=None):
 
 
 def test_docker_executor():
-
+    """
+    Note that this test relies on having AWS credentials in the environment.
+    """
     docker_image = get_test_project_docker_image()
     if IS_BUILDKITE:
         # TODO!
@@ -87,7 +89,7 @@ def test_docker_executor():
 
 
 def test_docker_executor_check_step_health():
-
+    # missing network causes step to fail
     docker_image = get_test_project_docker_image()
     if IS_BUILDKITE:
         # TODO!
