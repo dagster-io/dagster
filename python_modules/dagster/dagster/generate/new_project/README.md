@@ -9,8 +9,8 @@ Welcome to your new Dagster repository.
 | `README.md`              | A description and guide for this code repository                                  |
 | `setup.py`               | A build script with Python package dependencies for this code repository          |
 | `workspace.yaml`         | A file that specifies the location of the user code for Dagit and the Dagster CLI |
-| `{{ repo_name }}/`       | A Python module that contains code for your Dagster repository                    |
-| `{{ repo_name }}_tests/` | A Python module that contains tests for `{{ repo_name }}`                         |
+| `{{ repo_name }}/`       | A Python directory that contains code for your Dagster repository                 |
+| `{{ repo_name }}_tests/` | A Python directory that contains tests for `{{ repo_name }}`                      |
 
 ## Getting up and running
 
