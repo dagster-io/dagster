@@ -4,6 +4,7 @@ import json
 import pytest
 from dagster import (
     ConfigMapping,
+    DagsterInstance,
     Enum,
     Field,
     Permissive,
@@ -622,7 +623,13 @@ def test_tags():
     def mygraphic():
         pass
 
-    assert mygraphic.to_job().tags == {"a": "x"}
+    mygraphic_job = mygraphic.to_job()
+    assert mygraphic_job.tags == {"a": "x"}
+    with DagsterInstance.ephemeral() as instance:
+        result = mygraphic_job.execute_in_process(instance=instance)
+        assert result.success
+        run = instance.get_runs()[0]
+        assert run.tags.get("a") == "x"
 
 
 def test_job_and_graph_tags():
@@ -631,5 +638,10 @@ def test_job_and_graph_tags():
         pass
 
     job = mygraphic.to_job(tags={"a": "y", "b": "z"})
-
     assert job.tags == {"a": "y", "b": "z", "c": "q"}
+
+    with DagsterInstance.ephemeral() as instance:
+        result = job.execute_in_process(instance=instance)
+        assert result.success
+        run = instance.get_runs()[0]
+        assert run.tags == {"a": "y", "b": "z", "c": "q"}
