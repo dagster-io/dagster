@@ -320,7 +320,7 @@ def target_with_config_option(command_name, using_job_op_graph_apis):
     )
 
 
-def python_pipeline_or_job_config_argument(command_name, using_job_op_graph_apis):
+def python_pipeline_or_job_config_argument(command_name, using_job_op_graph_apis=False):
     def wrap(f):
         return target_with_config_option(command_name, using_job_op_graph_apis)(f)
 
@@ -385,6 +385,7 @@ def pipeline_option():
     return click.option(
         "--pipeline",
         "-p",
+        "pipeline_or_job",
         help=("Pipeline within the repository, necessary if more than one pipeline is present."),
     )
 
@@ -399,6 +400,7 @@ def job_option():
     return click.option(
         "--job",
         "-j",
+        "pipeline_or_job",
         help=("Job within the repository, necessary if more than one job is present."),
     )
 
@@ -409,9 +411,9 @@ def job_target_argument(f):
     return apply_click_params(repository_target_argument(f), job_option())
 
 
-def get_pipeline_python_origin_from_kwargs(using_job_graph_op_apis, kwargs):
+def get_pipeline_or_job_python_origin_from_kwargs(kwargs, using_job_op_graph_apis=False):
     repository_origin = get_repository_python_origin_from_kwargs(kwargs)
-    provided_pipeline_name = kwargs.get("job" if using_job_graph_op_apis else "pipeline")
+    provided_pipeline_name = kwargs.get("pipeline_or_job")
 
     recon_repo = recon_repository_from_origin(repository_origin)
     repo_definition = recon_repo.get_definition()
@@ -423,10 +425,10 @@ def get_pipeline_python_origin_from_kwargs(using_job_graph_op_apis, kwargs):
     elif provided_pipeline_name is None:
         raise click.UsageError(
             (
-                "Must provide {flag} as there is more than one pipeline "
+                "Must provide {flag} as there is more than one pipeline/job "
                 "in {repository}. Options are: {pipelines}."
             ).format(
-                flag="--job" if using_job_graph_op_apis else "--pipeline",
+                flag="--job" if using_job_op_graph_apis else "--pipeline",
                 repository=repo_definition.name,
                 pipelines=_sorted_quoted(pipeline_names),
             )
@@ -434,10 +436,10 @@ def get_pipeline_python_origin_from_kwargs(using_job_graph_op_apis, kwargs):
     elif not provided_pipeline_name in pipeline_names:
         raise click.UsageError(
             (
-                '{pipeline_or_job} "{provided_pipeline_name}" not found in repository "{repository_name}". '
+                'Pipeline/Job "{provided_pipeline_name}" not found in repository "{repository_name}". '
                 "Found {found_names} instead."
             ).format(
-                pipeline_or_job="Job" if using_job_graph_op_apis else "Pipeline",
+                pipeline_or_job="Job" if using_job_op_graph_apis else "Pipeline",
                 provided_pipeline_name=provided_pipeline_name,
                 repository_name=repo_definition.name,
                 found_names=_sorted_quoted(pipeline_names),
@@ -644,7 +646,7 @@ def get_external_repository_from_kwargs(instance, version, kwargs):
 
 
 def get_external_pipeline_or_job_from_external_repo(
-    external_repo, provided_pipeline_or_job_name, using_job_op_graph_apis
+    external_repo, provided_pipeline_or_job_name, using_job_op_graph_apis=False
 ):
     check.inst_param(external_repo, "external_repo", ExternalRepository)
     check.opt_str_param(provided_pipeline_or_job_name, "provided_pipeline_or_job_name")
@@ -685,11 +687,13 @@ def get_external_pipeline_or_job_from_external_repo(
 
 
 @contextmanager
-def get_external_pipeline_or_job_from_kwargs(instance, version, using_job_op_graph_apis, kwargs):
+def get_external_pipeline_or_job_from_kwargs(
+    instance, version, kwargs, using_job_op_graph_apis=False
+):
     # Instance isn't strictly required to load an ExternalPipeline, but is included
     # to satisfy the WorkspaceProcessContext / WorkspaceRequestContext requirements
     with get_external_repository_from_kwargs(instance, version, kwargs) as external_repo:
-        provided_pipeline_or_job_name = kwargs.get("job" if using_job_op_graph_apis else "pipeline")
+        provided_pipeline_or_job_name = kwargs.get("pipeline_or_job")
         yield get_external_pipeline_or_job_from_external_repo(
             external_repo, provided_pipeline_or_job_name, using_job_op_graph_apis
         )

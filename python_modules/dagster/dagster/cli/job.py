@@ -16,7 +16,7 @@ from dagster.cli.workspace.cli_target import (
     get_external_pipeline_or_job_from_kwargs,
     get_external_repository_from_kwargs,
     get_external_repository_from_repo_location,
-    get_pipeline_python_origin_from_kwargs,
+    get_pipeline_or_job_python_origin_from_kwargs,
     get_repository_location_from_workspace,
     get_workspace_from_kwargs,
     job_target_argument,
@@ -55,6 +55,7 @@ from dagster.cli.pipeline import (
     execute_print_command,
     get_run_config_from_file_list,
     add_step_to_table,
+    execute_execute_command,
 )
 
 from .config_scaffolder import scaffold_pipeline_config
@@ -73,7 +74,7 @@ def job_cli():
 )
 @repository_target_argument
 def job_list_command(**kwargs):
-    return execute_list_command(kwargs, click.echo)
+    return execute_list_command(kwargs, click.echo, True)
 
 
 def get_job_in_same_python_env_instructions(command_name):
@@ -98,17 +99,6 @@ def get_job_instructions(command_name):
     ).format(command_name=command_name, default_filename=DEFAULT_WORKSPACE_YAML_FILENAME)
 
 
-def get_partitioned_job_instructions(command_name):
-    return (
-        "This commands targets a partitioned job. The job and partition set must be "
-        "defined in a repository, which can be specified in a number of ways:"
-        "\n\n1. dagster job {command_name} -p <<job_name>> (works if .{default_filename} exists)"
-        "\n\n2. dagster job {command_name} -p <<job_name>> -w path/to/{default_filename}"
-        "\n\n3. dagster job {command_name} -f /path/to/file.py -a define_some_repo -p <<job_name>>"
-        "\n\n4. dagster job {command_name} -m a_module.submodule -a define_some_repo -p <<job_name>>"
-    ).format(command_name=command_name, default_filename=DEFAULT_WORKSPACE_YAML_FILENAME)
-
-
 @job_cli.command(
     name="print",
     help="Print a job.\n\n{instructions}".format(instructions=get_job_instructions("print")),
@@ -116,7 +106,6 @@ def get_partitioned_job_instructions(command_name):
 @click.option("--verbose", is_flag=True)
 @job_target_argument
 def job_print_command(verbose, **cli_args):
-
     with DagsterInstance.get() as instance:
         return execute_print_command(
             instance, verbose, cli_args, click.echo, using_job_op_graph_apis=True
@@ -130,7 +119,7 @@ def job_print_command(verbose, **cli_args):
     ),
 )
 @python_job_target_argument
-@python_pipeline_or_job_config_argument("list_versions", True)
+@python_pipeline_or_job_config_argument("list_versions", using_job_op_graph_apis=True)
 def job_list_versions_command(**kwargs):
     with DagsterInstance.get() as instance:
         execute_list_versions_command(instance, kwargs)
@@ -141,7 +130,7 @@ def execute_list_versions_command(instance, kwargs):
 
     config = list(check.opt_tuple_param(kwargs.get("config"), "config", default=(), of_type=str))
 
-    pipeline_origin = get_pipeline_python_origin_from_kwargs(True, kwargs)
+    pipeline_origin = get_pipeline_or_job_python_origin_from_kwargs(kwargs, True)
     pipeline = recon_pipeline_from_origin(pipeline_origin)
     run_config = get_run_config_from_file_list(config)
 
@@ -154,3 +143,24 @@ def execute_list_versions_command(instance, kwargs):
     )
 
     add_step_to_table(memoized_plan)
+
+
+@job_cli.command(
+    name="execute",
+    help="Execute a job.\n\n{instructions}".format(
+        instructions=get_job_in_same_python_env_instructions("execute")
+    ),
+)
+@python_job_target_argument
+@python_pipeline_or_job_config_argument("execute", using_job_op_graph_apis=True)
+@click.option("--tags", type=click.STRING, help="JSON string of tags to use for this job run")
+def job_execute_command(**kwargs):
+    with capture_interrupts():
+        if is_dagster_home_set():
+            with DagsterInstance.get() as instance:
+                execute_execute_command(instance, kwargs, True)
+        else:
+            warnings.warn(
+                "DAGSTER_HOME is not set, no metadata will be recorded for this execution.\n",
+            )
+            execute_execute_command(DagsterInstance.ephemeral(), kwargs, True)

@@ -24,7 +24,6 @@ def test_print_command_verbose(gen_pipeline_args):
             verbose=True,
             cli_args=cli_args,
             print_fn=no_print,
-            using_job_op_graph_apis=False,
         )
 
 
@@ -36,7 +35,6 @@ def test_print_command(gen_pipeline_args):
             verbose=False,
             cli_args=cli_args,
             print_fn=no_print,
-            using_job_op_graph_apis=False,
         )
 
 

@@ -18,7 +18,7 @@ def load_pipeline_via_cli_runner(cli_args):
     @pipeline_target_argument
     def command(**kwargs):
         with get_external_pipeline_or_job_from_kwargs(
-            DagsterInstance.get(), "", False, kwargs
+            DagsterInstance.get(), "", kwargs
         ) as external_pipeline:
             capture_result["external_pipeline"] = external_pipeline
 

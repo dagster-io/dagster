@@ -48,6 +48,37 @@ def assert_correct_bar_repository_output(result):
     )
 
 
+def assert_correct_job_list_bar_repository_output(result):
+    assert result.exit_code == 0
+    assert result.output == (
+        "Repository bar\n"
+        "**************\n"
+        "Job: baz\n"
+        "Description:\n"
+        "Not much tbh\n"
+        "Ops: (Execution Order)\n"
+        "    do_input\n"
+        "********\n"
+        "Job: foo\n"
+        "Ops: (Execution Order)\n"
+        "    do_something\n"
+        "    do_input\n"
+        "***************\n"
+        "Job: memoizable\n"
+        "Ops: (Execution Order)\n"
+        "    my_solid\n"
+        "***********************************\n"
+        "Job: partitioned_scheduled_pipeline\n"
+        "Ops: (Execution Order)\n"
+        "    do_something\n"
+        "********\n"
+        "Job: qux\n"
+        "Ops: (Execution Order)\n"
+        "    do_something\n"
+        "    do_input\n"
+    )
+
+
 def assert_correct_extra_repository_output(result):
     assert result.exit_code == 0
     assert result.output == (
@@ -55,6 +86,17 @@ def assert_correct_extra_repository_output(result):
         "****************\n"
         "Pipeline: extra\n"
         "Solids: (Execution Order)\n"
+        "    do_something\n"
+    )
+
+
+def assert_correct_job_list_extra_repository_output(result):
+    assert result.exit_code == 0
+    assert result.output == (
+        "Repository extra\n"
+        "****************\n"
+        "Job: extra\n"
+        "Ops: (Execution Order)\n"
         "    do_something\n"
     )
 
@@ -85,17 +127,8 @@ def test_list_command_grpc_socket():
             result = runner.invoke(pipeline_list_command, ["--grpc-socket", api_client.socket])
             assert_correct_bar_repository_output(result)
 
-            result = runner.invoke(job_list_command, ["--grpc-socket", api_client.socket])
-            assert_correct_bar_repository_output(result)
-
             result = runner.invoke(
                 pipeline_list_command,
-                ["--grpc-socket", api_client.socket, "--grpc-host", api_client.host],
-            )
-            assert_correct_bar_repository_output(result)
-
-            result = runner.invoke(
-                job_list_command,
                 ["--grpc-socket", api_client.socket, "--grpc-host", api_client.host],
             )
             assert_correct_bar_repository_output(result)
@@ -126,26 +159,11 @@ def test_list_command_deployed_grpc():
             )
             assert_correct_bar_repository_output(result)
 
-            result = runner.invoke(
-                job_list_command,
-                ["--grpc-port", api_client.port, "--grpc-host", api_client.host],
-            )
-            assert_correct_bar_repository_output(result)
-
             result = runner.invoke(pipeline_list_command, ["--grpc-port", api_client.port])
-            assert_correct_bar_repository_output(result)
-
-            result = runner.invoke(job_list_command, ["--grpc-port", api_client.port])
             assert_correct_bar_repository_output(result)
 
             result = runner.invoke(
                 pipeline_list_command,
-                ["--grpc-port", api_client.port, "--grpc-socket", "foonamedsocket"],
-            )
-            assert result.exit_code != 0
-
-            result = runner.invoke(
-                job_list_command,
                 ["--grpc-port", api_client.port, "--grpc-socket", "foonamedsocket"],
             )
             assert result.exit_code != 0
@@ -180,7 +198,7 @@ def test_list_command_cli():
             job_list_command,
             ["-f", file_relative_path(__file__, "test_cli_commands.py"), "-a", "bar"],
         )
-        assert_correct_bar_repository_output(result)
+        assert_correct_job_list_bar_repository_output(result)
 
         result = runner.invoke(
             pipeline_list_command,
@@ -206,7 +224,7 @@ def test_list_command_cli():
                 os.path.dirname(__file__),
             ],
         )
-        assert_correct_bar_repository_output(result)
+        assert_correct_job_list_bar_repository_output(result)
 
         result = runner.invoke(
             pipeline_list_command,
@@ -218,7 +236,7 @@ def test_list_command_cli():
             job_list_command,
             ["-m", "dagster_tests.cli_tests.command_tests.test_cli_commands", "-a", "bar"],
         )
-        assert_correct_bar_repository_output(result)
+        assert_correct_job_list_bar_repository_output(result)
 
         result = runner.invoke(
             pipeline_list_command, ["-w", file_relative_path(__file__, "workspace.yaml")]
@@ -228,7 +246,7 @@ def test_list_command_cli():
         result = runner.invoke(
             job_list_command, ["-w", file_relative_path(__file__, "workspace.yaml")]
         )
-        assert_correct_bar_repository_output(result)
+        assert_correct_job_list_bar_repository_output(result)
 
         result = runner.invoke(
             pipeline_list_command,
@@ -250,7 +268,7 @@ def test_list_command_cli():
                 file_relative_path(__file__, "override.yaml"),
             ],
         )
-        assert_correct_extra_repository_output(result)
+        assert_correct_job_list_extra_repository_output(result)
 
         result = runner.invoke(
             pipeline_list_command,
@@ -288,7 +306,7 @@ def test_list_command_cli():
             job_list_command,
             ["-m", "dagster_tests.cli_tests.command_tests.test_cli_commands"],
         )
-        assert_correct_bar_repository_output(result)
+        assert_correct_job_list_bar_repository_output(result)
 
         result = runner.invoke(
             pipeline_list_command, ["-f", file_relative_path(__file__, "test_cli_commands.py")]
@@ -298,7 +316,7 @@ def test_list_command_cli():
         result = runner.invoke(
             job_list_command, ["-f", file_relative_path(__file__, "test_cli_commands.py")]
         )
-        assert_correct_bar_repository_output(result)
+        assert_correct_job_list_bar_repository_output(result)
 
 
 def test_list_command():
