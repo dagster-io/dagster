@@ -14,7 +14,7 @@ import {RepoAddress} from '../workspace/types';
 
 import {ScheduleDetails} from './ScheduleDetails';
 import {SCHEDULE_FRAGMENT} from './ScheduleUtils';
-import {SCHEDULER_FRAGMENT, SchedulerInfo} from './SchedulerInfo';
+import {SchedulerInfo} from './SchedulerInfo';
 import {PreviousRunsForScheduleQuery} from './types/PreviousRunsForScheduleQuery';
 import {
   ScheduleRootQuery,
@@ -61,7 +61,7 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
 
   return (
     <Loading queryResult={queryResult} allowStaleData={true}>
-      {({scheduleOrError, scheduler, instance}) => {
+      {({scheduleOrError, instance}) => {
         if (scheduleOrError.__typename !== 'Schedule') {
           return null;
         }
@@ -70,11 +70,7 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
           <Page>
             <Group direction="column" spacing={20}>
               <Group direction="column" spacing={20} padding={{horizontal: 24}}>
-                <SchedulerInfo
-                  schedulerOrError={scheduler}
-                  daemonHealth={instance.daemonHealth}
-                  errorsOnly={true}
-                />
+                <SchedulerInfo daemonHealth={instance.daemonHealth} />
                 <ScheduleDetails
                   repoAddress={repoAddress}
                   schedule={scheduleOrError}
@@ -137,9 +133,6 @@ const SchedulePreviousRuns: React.FC<SchedulePreviousRunsProps> = (props) => {
 
 const SCHEDULE_ROOT_QUERY = gql`
   query ScheduleRootQuery($scheduleSelector: ScheduleSelector!) {
-    scheduler {
-      ...SchedulerFragment
-    }
     scheduleOrError(scheduleSelector: $scheduleSelector) {
       ... on Schedule {
         id
@@ -158,7 +151,6 @@ const SCHEDULE_ROOT_QUERY = gql`
     }
   }
 
-  ${SCHEDULER_FRAGMENT}
   ${SCHEDULE_FRAGMENT}
   ${INSTANCE_HEALTH_FRAGMENT}
 `;

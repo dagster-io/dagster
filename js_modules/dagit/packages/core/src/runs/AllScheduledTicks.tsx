@@ -5,7 +5,7 @@ import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {REPOSITORY_SCHEDULES_FRAGMENT} from '../schedules/ScheduleUtils';
-import {SchedulerInfo, SCHEDULER_FRAGMENT} from '../schedules/SchedulerInfo';
+import {SchedulerInfo} from '../schedules/SchedulerInfo';
 import {SchedulesNextTicks} from '../schedules/SchedulesNextTicks';
 import {Alert} from '../ui/Alert';
 import {Box} from '../ui/Box';
@@ -27,7 +27,7 @@ export const AllScheduledTicks = () => {
   return (
     <Loading queryResult={queryResult}>
       {(result) => {
-        const {repositoriesOrError, instance, scheduler} = result;
+        const {repositoriesOrError, instance} = result;
         if (repositoriesOrError.__typename === 'PythonError') {
           const message = repositoriesOrError.message;
           return (
@@ -56,7 +56,7 @@ export const AllScheduledTicks = () => {
         return (
           <Group direction="column" spacing={16}>
             <Box padding={{horizontal: 24}}>
-              <SchedulerInfo schedulerOrError={scheduler} daemonHealth={instance.daemonHealth} />
+              <SchedulerInfo daemonHealth={instance.daemonHealth} />
             </Box>
             <SchedulesNextTicks repos={repositoriesOrError.nodes} />
           </Group>
@@ -68,9 +68,6 @@ export const AllScheduledTicks = () => {
 
 const SCHEDULER_INFO_QUERY = gql`
   query SchedulerInfoQuery {
-    scheduler {
-      ...SchedulerFragment
-    }
     instance {
       ...InstanceHealthFragment
     }
@@ -87,7 +84,6 @@ const SCHEDULER_INFO_QUERY = gql`
       ...PythonErrorFragment
     }
   }
-  ${SCHEDULER_FRAGMENT}
   ${INSTANCE_HEALTH_FRAGMENT}
   ${REPOSITORY_SCHEDULES_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}

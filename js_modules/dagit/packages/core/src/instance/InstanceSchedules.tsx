@@ -5,8 +5,8 @@ import * as React from 'react';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
 import {UnloadableSchedules} from '../instigation/Unloadable';
-import {SchedulerTimezoneNote, SCHEDULE_FRAGMENT} from '../schedules/ScheduleUtils';
-import {SchedulerInfo, SCHEDULER_FRAGMENT} from '../schedules/SchedulerInfo';
+import {SCHEDULE_FRAGMENT} from '../schedules/ScheduleUtils';
+import {SchedulerInfo} from '../schedules/SchedulerInfo';
 import {SchedulesTable} from '../schedules/SchedulesTable';
 import {InstigationType} from '../types/globalTypes';
 import {Box} from '../ui/Box';
@@ -40,7 +40,7 @@ export const InstanceSchedules = React.memo(() => {
 });
 
 const AllSchedules: React.FC<{data: InstanceSchedulesQuery}> = ({data}) => {
-  const {instance, scheduler, repositoriesOrError, unloadableInstigationStatesOrError} = data;
+  const {instance, repositoriesOrError, unloadableInstigationStatesOrError} = data;
 
   if (repositoriesOrError.__typename === 'PythonError') {
     return <PythonErrorInfo error={repositoriesOrError} />;
@@ -57,8 +57,7 @@ const AllSchedules: React.FC<{data: InstanceSchedulesQuery}> = ({data}) => {
   const loadedSchedulesSection = withSchedules.length ? (
     <Group direction="column" spacing={32}>
       <Group direction="column" spacing={12} padding={{horizontal: 24}}>
-        <SchedulerTimezoneNote schedulerOrError={scheduler} />
-        <SchedulerInfo schedulerOrError={scheduler} daemonHealth={instance.daemonHealth} />
+        <SchedulerInfo daemonHealth={instance.daemonHealth} />
       </Group>
       {withSchedules.map((repository) => (
         <Group direction="column" spacing={8} key={repository.name}>
@@ -134,9 +133,6 @@ const INSTANCE_SCHEDULES_QUERY = gql`
       }
       ...PythonErrorFragment
     }
-    scheduler {
-      ...SchedulerFragment
-    }
     unloadableInstigationStatesOrError {
       ... on InstigationStates {
         results {
@@ -151,7 +147,6 @@ const INSTANCE_SCHEDULES_QUERY = gql`
   ${INSTANCE_HEALTH_FRAGMENT}
   ${REPOSITORY_INFO_FRAGMENT}
   ${SCHEDULE_FRAGMENT}
-  ${SCHEDULER_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
   ${INSTIGATION_STATE_FRAGMENT}
 `;
