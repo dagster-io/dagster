@@ -88,6 +88,7 @@ export const PipelineExplorerContainer: React.FC<{
   const selectedName = explorerPath.pathSolids[explorerPath.pathSolids.length - 1];
   const parentNames = explorerPath.pathSolids.slice(0, explorerPath.pathSolids.length - 1);
   const pipelineSelector = usePipelineSelector(repoAddress || null, explorerPath.pipelineName);
+  const {flagAssetGraph} = useFeatureFlags();
 
   const queryResult = useQuery<PipelineExplorerRootQuery, PipelineExplorerRootQueryVariables>(
     PIPELINE_EXPLORER_ROOT_QUERY,
@@ -149,7 +150,7 @@ export const PipelineExplorerContainer: React.FC<{
           ),
         );
 
-        if (isAssetGraph) {
+        if (flagAssetGraph && isAssetGraph) {
           return (
             <AssetGraphExplorer
               repoAddress={repoAddress!}
