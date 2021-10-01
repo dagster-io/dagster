@@ -11,8 +11,8 @@ import {ColorsWIP} from '../ui/Colors';
 import {Spinner} from '../ui/Spinner';
 import {Tab, Tabs} from '../ui/Tabs';
 import {Subheading} from '../ui/Text';
-import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
 
+import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
 import {AssetMaterializationMatrix, LABEL_STEP_EXECUTION_TIME} from './AssetMaterializationMatrix';
 import {AssetMaterializationTable} from './AssetMaterializationTable';
 import {AssetValueGraph} from './AssetValueGraph';
