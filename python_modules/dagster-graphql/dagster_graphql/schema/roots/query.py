@@ -372,7 +372,7 @@ class GrapheneQuery(graphene.ObjectType):
 
     def resolve_assetNodes(self, graphene_info):
         return get_asset_nodes(graphene_info)
-    
+
     def resolve_assetNodeOrError(self, graphene_info, **kwargs):
         return get_asset_node(graphene_info, AssetKey.from_graphql_input(kwargs["assetKey"]))
 
