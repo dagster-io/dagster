@@ -155,23 +155,40 @@ def error_monster():
     str_to_num.alias("end")(string=middle)
 
 
-config = {
-    "resources": {"errorable_resource": {"config": {"throw_on_resource_init": False}}},
-    "ops": {
-        "end": {"config": {"return_wrong_type": False, "throw_in_op": False}},
-        "middle": {"config": {"return_wrong_type": False, "throw_in_op": False}},
-        "start": {"config": {"return_wrong_type": False, "throw_in_op": False}},
-    },
-}
-
 error_monster_passing_job = error_monster.to_job(
     resource_defs={
         "errorable_resource": define_errorable_resource(),
         "io_manager": errorable_io_manager,
     },
-    config=config,
+    config={
+        "resources": {"errorable_resource": {"config": {"throw_on_resource_init": False}}},
+        "ops": {
+            "end": {"config": {"return_wrong_type": False, "throw_in_op": False}},
+            "middle": {"config": {"return_wrong_type": False, "throw_in_op": False}},
+            "start": {"config": {"return_wrong_type": False, "throw_in_op": False}},
+        },
+    },
     tags={"monster": "error"},
     executor_def=in_process_executor,
+    name="error_monster_passing_job",
+)
+
+error_monster_failing_job = error_monster.to_job(
+    resource_defs={
+        "errorable_resource": define_errorable_resource(),
+        "io_manager": errorable_io_manager,
+    },
+    config={
+        "resources": {"errorable_resource": {"config": {"throw_on_resource_init": False}}},
+        "ops": {
+            "end": {"config": {"return_wrong_type": False, "throw_in_op": False}},
+            "middle": {"config": {"return_wrong_type": False, "throw_in_op": True}},
+            "start": {"config": {"return_wrong_type": False, "throw_in_op": False}},
+        },
+    },
+    tags={"monster": "error"},
+    executor_def=in_process_executor,
+    name="error_monster_failing_job",
 )
 
 

@@ -3,6 +3,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {useFeatureFlags} from '../app/Flags';
+import {Box} from '../ui/Box';
 import {Group} from '../ui/Group';
 import {LoadingSpinner} from '../ui/Loading';
 import {Page} from '../ui/Page';
@@ -18,7 +19,7 @@ import {workspacePath} from './workspacePath';
 
 export const WorkspaceOverviewRoot = () => {
   const {loading, error, options} = useRepositoryOptions();
-  const {flagPipelineModeTuples} = useFeatureFlags();
+  const {flagPipelineModeTuples, flagAssetGraph} = useFeatureFlags();
 
   const content = () => {
     if (loading) {
@@ -59,6 +60,7 @@ export const WorkspaceOverviewRoot = () => {
               <th>Pipelines</th>
             )}
             <th>{flagPipelineModeTuples ? 'Ops' : 'Solids'}</th>
+            {flagAssetGraph ? <th>Assets</th> : null}
             <th>Schedules</th>
             <th>Sensors</th>
           </tr>
@@ -94,6 +96,11 @@ export const WorkspaceOverviewRoot = () => {
                     {flagPipelineModeTuples ? 'Ops' : 'Solids'}
                   </Link>
                 </td>
+                {flagAssetGraph ? (
+                  <td>
+                    <Link to={workspacePath(name, location, '/assets')}>Assets</Link>
+                  </td>
+                ) : null}
                 <td>
                   <Link to={workspacePath(name, location, '/schedules')}>Schedules</Link>
                 </td>
@@ -110,18 +117,20 @@ export const WorkspaceOverviewRoot = () => {
 
   return (
     <Page>
-      <Group direction="column" spacing={16}>
+      <Box padding={{horizontal: 24}}>
         <PageHeader title={<Heading>Workspace</Heading>} />
-        <Group direction="column" spacing={16}>
-          <Group direction="row" spacing={12} alignItems="center">
-            <Subheading id="repository-locations">Locations</Subheading>
-            <ReloadAllButton />
-          </Group>
-          <RepositoryLocationsList />
+      </Box>
+      <Box padding={{horizontal: 24, top: 24, bottom: 16}}>
+        <Group direction="row" spacing={8} alignItems="center">
+          <Subheading id="repository-locations">Locations</Subheading>
+          <ReloadAllButton />
         </Group>
+      </Box>
+      <RepositoryLocationsList />
+      <Box padding={{horizontal: 24, top: 32, bottom: 16}}>
         <Subheading id="repository-locations">Repositories</Subheading>
-        {content()}
-      </Group>
+      </Box>
+      {content()}
     </Page>
   );
 };

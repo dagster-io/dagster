@@ -43,7 +43,7 @@ def execute_script_file(shell_script_path, output_logging, log, cwd=None, env=No
             Unused by default.
 
     Raises:
-        Exception: When an invalid output_logging is selected. Unreachable from solid-based
+        Exception: When an invalid output_logging is selected. Unreachable from op-based
             invocation since the config system will check output_logging against the config
             enum.
 
@@ -68,6 +68,7 @@ def execute_script_file(shell_script_path, output_logging, log, cwd=None, env=No
     log.info(f"Running command:\n{shell_command}")
 
     # pylint: disable=subprocess-popen-preexec-fn
+    sub_process = None
     try:
         sub_process = Popen(
             ["bash", shell_script_path],

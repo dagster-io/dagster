@@ -1,10 +1,11 @@
-import {Button, Classes, Colors, Dialog, Tag} from '@blueprintjs/core';
+import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
-import styled from 'styled-components/macro';
 
-import {Box} from '../ui/Box';
+import {ButtonWIP} from '../ui/Button';
 import {ButtonLink} from '../ui/ButtonLink';
+import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
+import {TagWIP} from '../ui/TagWIP';
 import {Trace} from '../ui/Trace';
 
 import {DaemonHealthFragment_allDaemonStatuses as DaemonStatus} from './types/DaemonHealthFragment';
@@ -17,26 +18,14 @@ const DaemonHealthTag = (props: Props) => {
   const {daemon} = props;
 
   if (daemon.healthy) {
-    return (
-      <HoverTag minimal intent="success">
-        Running
-      </HoverTag>
-    );
+    return <TagWIP intent="success">Running</TagWIP>;
   }
 
   if (daemon.required) {
-    return (
-      <HoverTag minimal intent="danger">
-        Not running
-      </HoverTag>
-    );
+    return <TagWIP intent="danger">Not running</TagWIP>;
   }
 
-  return (
-    <HoverTag minimal intent="none">
-      Not enabled
-    </HoverTag>
-  );
+  return <TagWIP intent="none">Not enabled</TagWIP>;
 };
 
 type State = {
@@ -81,13 +70,13 @@ export const DaemonHealth = (props: Props) => {
           <ButtonLink color={Colors.BLUE2} underline="hover" onClick={show}>
             {errorCount > 1 ? `View errors (${errorCount})` : 'View error'}
           </ButtonLink>
-          <Dialog
+          <DialogWIP
             isOpen={shown}
             title="Daemon error"
             onClose={hide}
             style={{maxWidth: '80%', minWidth: '70%'}}
           >
-            <div className={Classes.DIALOG_BODY}>
+            <DialogBody>
               <Group direction="column" spacing={12}>
                 {errorCount === 1 ? (
                   <div>
@@ -105,10 +94,10 @@ export const DaemonHealth = (props: Props) => {
                   </Group>
                 </Trace>
               </Group>
-            </div>
-            <div className={Classes.DIALOG_FOOTER}>
-              <Box flex={{alignItems: 'center', justifyContent: 'space-between'}}>
-                {errorCount > 1 ? (
+            </DialogBody>
+            <DialogFooter
+              left={
+                errorCount > 1 ? (
                   <Group direction="row" spacing={12} alignItems="center">
                     <ButtonLink onClick={prev}>&larr; Previous</ButtonLink>
                     <span>{`${page + 1} of ${errorCount}`}</span>
@@ -116,11 +105,14 @@ export const DaemonHealth = (props: Props) => {
                   </Group>
                 ) : (
                   <div />
-                )}
-                <Button onClick={hide}>OK</Button>
-              </Box>
-            </div>
-          </Dialog>
+                )
+              }
+            >
+              <ButtonWIP intent="primary" onClick={hide}>
+                OK
+              </ButtonWIP>
+            </DialogFooter>
+          </DialogWIP>
         </>
       );
     }
@@ -139,8 +131,3 @@ export const DaemonHealth = (props: Props) => {
     </Group>
   );
 };
-
-const HoverTag = styled(Tag)`
-  cursor: default;
-  user-select: none;
-`;

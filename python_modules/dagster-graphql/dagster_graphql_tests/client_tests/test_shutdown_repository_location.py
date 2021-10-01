@@ -15,7 +15,7 @@ class TestShutdownRepositoryLocation(
     )
 ):
     def test_shutdown_repository_location(self, graphql_client, graphql_context):
-        origin = next(iter(graphql_context.workspace_snapshot.values())).origin
+        origin = next(iter(graphql_context.get_workspace_snapshot().values())).origin
         origin.create_client().heartbeat()
 
         result = graphql_client.shutdown_repository_location("test")

@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors, Icon} from '@blueprintjs/core';
+import {Colors} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -7,6 +7,8 @@ import styled from 'styled-components/macro';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {InstigationStatus} from '../types/globalTypes';
 import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
+import {IconWIP} from '../ui/Icon';
 import {DagsterRepoOption} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
@@ -76,7 +78,12 @@ export const FlatContentList: React.FC<Props> = (props) => {
             const modeName = mode.name;
             const tuple: [string, string] = [name, modeName];
             const schedule = schedules.find((schedule) => schedule.mode === modeName) || null;
-            const sensor = sensors.find((sensor) => sensor.mode === modeName) || null;
+            const sensor =
+              sensors.find((sensor) =>
+                sensor.targets?.some(
+                  (target) => target.mode === modeName && target.pipelineName === name,
+                ),
+              ) || null;
             items.push({
               job: tuple,
               label: (
@@ -137,7 +144,7 @@ const JobItem: React.FC<JobItemProps> = (props) => {
       return null;
     }
 
-    const whichIcon = schedule ? 'time' : 'automatic-updates';
+    const whichIcon = schedule ? 'schedule' : 'sensors';
     const status = schedule ? schedule?.scheduleState.status : sensor?.sensorState.status;
     const tooltipContent = schedule ? (
       <>
@@ -151,11 +158,9 @@ const JobItem: React.FC<JobItemProps> = (props) => {
 
     return (
       <IconWithTooltip content={tooltipContent} inheritDarkTheme={false}>
-        <Icon
-          icon={whichIcon}
-          iconSize={12}
-          color={status === InstigationStatus.RUNNING ? Colors.GREEN5 : Colors.DARK_GRAY5}
-          style={{display: 'block'}}
+        <IconWIP
+          name={whichIcon}
+          color={status === InstigationStatus.RUNNING ? ColorsWIP.Green500 : ColorsWIP.Gray600}
         />
       </IconWithTooltip>
     );
@@ -190,8 +195,11 @@ const NAV_SCHEDULE_FRAGMENT = gql`
 const NAV_SENSOR_FRAGMENT = gql`
   fragment NavSensorFragment on Sensor {
     id
-    mode
     name
+    targets {
+      mode
+      pipelineName
+    }
     sensorState {
       id
       status

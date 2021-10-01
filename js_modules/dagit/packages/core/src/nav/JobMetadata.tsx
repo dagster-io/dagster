@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Button, Classes, Colors, Dialog, Icon} from '@blueprintjs/core';
+import {Colors} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -13,10 +13,14 @@ import {ScheduleSwitch, SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwi
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {SensorSwitch, SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {Box} from '../ui/Box';
+import {ButtonWIP} from '../ui/Button';
 import {ButtonLink} from '../ui/ButtonLink';
+import {ColorsWIP} from '../ui/Colors';
+import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
+import {IconWIP} from '../ui/Icon';
 import {MetadataTable, StyledTable} from '../ui/MetadataTable';
-import {FontFamily} from '../ui/styles';
+import {Mono} from '../ui/Text';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -121,7 +125,11 @@ const ScheduleOrSensor: React.FC<{job: Job; mode: string; repoAddress: RepoAddre
   const matchingSensors = React.useMemo(() => {
     if (job?.__typename === 'Pipeline' && job.sensors.length) {
       return flagPipelineModeTuples
-        ? job.sensors.filter((sensor) => sensor.mode === mode)
+        ? job.sensors.filter((sensor) =>
+            sensor.targets?.some(
+              (target) => target.mode === mode && target.pipelineName === job.name,
+            ),
+          )
         : job.sensors;
     }
     return [];
@@ -148,14 +156,14 @@ const ScheduleOrSensor: React.FC<{job: Job; mode: string; repoAddress: RepoAddre
     return (
       <>
         <ButtonLink onClick={() => setOpen(true)}>{buttonText}</ButtonLink>
-        <Dialog
+        <DialogWIP
           title={dialogTitle}
           canOutsideClickClose
           canEscapeKeyClose
           isOpen={open}
           onClose={() => setOpen(false)}
         >
-          <div className={Classes.DIALOG_BODY}>
+          <DialogBody>
             <Group direction="column" spacing={16}>
               {matchingSchedules.map((schedule) => (
                 <MatchingSchedule
@@ -168,13 +176,13 @@ const ScheduleOrSensor: React.FC<{job: Job; mode: string; repoAddress: RepoAddre
                 <MatchingSensor key={sensor.name} sensor={sensor} repoAddress={repoAddress} />
               ))}
             </Group>
-          </div>
-          <div className={Classes.DIALOG_FOOTER}>
-            <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-              <Button text="OK" onClick={() => setOpen(false)} />
-            </div>
-          </div>
-        </Dialog>
+          </DialogBody>
+          <DialogFooter>
+            <ButtonWIP intent="primary" onClick={() => setOpen(false)}>
+              OK
+            </ButtonWIP>
+          </DialogFooter>
+        </DialogWIP>
       </>
     );
   }
@@ -194,13 +202,8 @@ const MatchingSchedule: React.FC<{schedule: Schedule; repoAddress: RepoAddress}>
   schedule,
   repoAddress,
 }) => (
-  <Group direction="row" spacing={8}>
-    <Icon
-      icon="time"
-      color={Colors.GRAY3}
-      iconSize={13}
-      style={{position: 'relative', top: '-2px'}}
-    />
+  <Group direction="row" spacing={8} alignItems="center">
+    <IconWIP name="schedule" color={ColorsWIP.Gray700} />
     <Link to={workspacePathFromAddress(repoAddress, `/schedules/${schedule.name}`)}>
       {schedule.name}
     </Link>
@@ -212,13 +215,8 @@ const MatchingSensor: React.FC<{sensor: Sensor; repoAddress: RepoAddress}> = ({
   sensor,
   repoAddress,
 }) => (
-  <Group direction="row" spacing={8}>
-    <Icon
-      icon="automatic-updates"
-      color={Colors.GRAY3}
-      iconSize={13}
-      style={{position: 'relative', top: '-2px'}}
-    />
+  <Group direction="row" spacing={8} alignItems="center">
+    <IconWIP name="sensors" color={ColorsWIP.Gray700} />
     <Link to={workspacePathFromAddress(repoAddress, `/sensors/${sensor.name}`)}>{sensor.name}</Link>
     <SensorSwitch large={false} repoAddress={repoAddress} sensor={sensor} />
   </Group>
@@ -235,11 +233,11 @@ const LatestRun: React.FC<{run: RunMetadataFragment}> = ({run}) => {
   }, [run]);
 
   return (
-    <Group direction="row" spacing={8} alignItems="center">
-      <RunStatus status={run.status} />
-      <div style={{fontFamily: FontFamily.monospace}}>
+    <Group direction="row" spacing={8} alignItems="baseline">
+      <RunStatus status={run.status} size={10} />
+      <Mono>
         <Link to={`/instance/runs/${run.id}`}>{run.id.slice(0, 8)}</Link>
-      </div>
+      </Mono>
       {stats ? (
         <Tooltip
           placement="bottom"
@@ -303,7 +301,7 @@ const RelatedAssets: React.FC<{runs: RunMetadataFragment[]}> = ({runs}) => {
   return (
     <>
       <ButtonLink onClick={() => setOpen(true)}>{`View ${keys.length} assets`}</ButtonLink>
-      <Dialog
+      <DialogWIP
         title="Related assets"
         canOutsideClickClose
         canEscapeKeyClose
@@ -311,7 +309,7 @@ const RelatedAssets: React.FC<{runs: RunMetadataFragment[]}> = ({runs}) => {
         onClose={() => setOpen(false)}
         style={{maxWidth: '80%', minWidth: '500px', width: 'auto'}}
       >
-        <div className={Classes.DIALOG_BODY}>
+        <DialogBody>
           <Group direction="column" spacing={16}>
             {keys.map((key) => (
               <Link key={key} to={`/instance/assets/${key}`} style={{wordBreak: 'break-word'}}>
@@ -319,13 +317,13 @@ const RelatedAssets: React.FC<{runs: RunMetadataFragment[]}> = ({runs}) => {
               </Link>
             ))}
           </Group>
-        </div>
-        <div className={Classes.DIALOG_FOOTER}>
-          <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-            <Button text="OK" onClick={() => setOpen(false)} />
-          </div>
-        </div>
-      </Dialog>
+        </DialogBody>
+        <DialogFooter>
+          <ButtonWIP intent="primary" onClick={() => setOpen(false)}>
+            OK
+          </ButtonWIP>
+        </DialogFooter>
+      </DialogWIP>
     </>
   );
 };
@@ -354,6 +352,7 @@ const JOB_METADATA_QUERY = gql`
     pipelineOrError(params: $params) {
       ... on Pipeline {
         id
+        name
         schedules {
           id
           mode
@@ -361,7 +360,10 @@ const JOB_METADATA_QUERY = gql`
         }
         sensors {
           id
-          mode
+          targets {
+            pipelineName
+            mode
+          }
           ...SensorSwitchFragment
         }
       }

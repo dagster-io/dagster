@@ -1,10 +1,12 @@
 import {gql} from '@apollo/client';
-import {Colors, Icon} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
+import {Colors} from '@blueprintjs/core';
 import Ansi from 'ansi-to-react';
 import * as React from 'react';
 import styled, {createGlobalStyle} from 'styled-components/macro';
 
+import {ColorsWIP} from '../ui/Colors';
+import {Group} from '../ui/Group';
+import {IconWIP} from '../ui/Icon';
 import {Spinner} from '../ui/Spinner';
 import {FontFamily} from '../ui/styles';
 
@@ -79,8 +81,10 @@ export class ComputeLogContent extends React.Component<{
           onMouseOver={this.cancelHideWarning}
           onMouseOut={this.scheduleHideWarning}
         >
-          <Icon icon={IconNames.ARROW_UP} style={{marginRight: 10}} />
-          Scroll to top
+          <Group direction="row" spacing={8} alignItems="center">
+            <IconWIP name="arrow_upward" color={ColorsWIP.White} />
+            Scroll to top
+          </Group>
         </ScrollToTop>
       </ScrollToast>
     );
@@ -98,14 +102,18 @@ export class ComputeLogContent extends React.Component<{
     }
     const warning = isTruncated ? (
       <FileWarning>
-        <Icon icon={IconNames.WARNING_SIGN} style={{marginRight: 10, color: Colors.ORANGE5}} />
-        This log has exceeded the 5MB limit.{' '}
-        {downloadUrl ? (
-          <a href={downloadUrl} download>
-            Download the full log file
-          </a>
-        ) : null}
-        .
+        <Group direction="row" spacing={8} alignItems="center">
+          <IconWIP name="warning" color={ColorsWIP.Yellow500} />
+          <div>
+            This log has exceeded the 5MB limit.{' '}
+            {downloadUrl ? (
+              <a href={downloadUrl} download>
+                Download the full log file
+              </a>
+            ) : null}
+            .
+          </div>
+        </Group>
       </FileWarning>
     ) : null;
 
@@ -355,6 +363,7 @@ const RelativeContainer = styled.div`
 const LogContent = styled(ScrollContainer)`
   color: #eeeeee;
   font-family: ${FontFamily.monospace};
+  font-size: 16px;
   white-space: pre;
   overflow: auto;
   position: absolute;
@@ -391,9 +400,6 @@ const ScrollToTop = styled.div`
   border-left: 0.5px solid #5c7080;
   border-right: 0.5px solid #5c7080;
   cursor: pointer;
-  &:hover {
-    text-decoration: underline;
-  }
 `;
 const LoadingContainer = styled.div`
   display: flex;

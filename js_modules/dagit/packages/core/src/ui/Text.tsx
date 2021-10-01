@@ -37,6 +37,11 @@ export const Code = styled.span`
   background-color: ${Colors.LIGHT_GRAY4};
   border-radius: 3px;
   font-family: ${FontFamily.monospace};
-  font-size: 12px;
+  font-size: 14px;
   padding: 2px 4px;
+`;
+
+export const Mono = styled.span`
+  font-family: ${FontFamily.monospace};
+  font-size: 16px;
 `;

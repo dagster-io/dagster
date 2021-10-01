@@ -35,11 +35,17 @@ export interface RepositoryPipelinesListQuery_repositoryOrError_Repository_pipel
   mode: string;
 }
 
+export interface RepositoryPipelinesListQuery_repositoryOrError_Repository_pipelines_sensors_targets {
+  __typename: "Target";
+  mode: string;
+  pipelineName: string;
+}
+
 export interface RepositoryPipelinesListQuery_repositoryOrError_Repository_pipelines_sensors {
   __typename: "Sensor";
   id: string;
   name: string;
-  mode: string | null;
+  targets: RepositoryPipelinesListQuery_repositoryOrError_Repository_pipelines_sensors_targets[] | null;
 }
 
 export interface RepositoryPipelinesListQuery_repositoryOrError_Repository_pipelines {

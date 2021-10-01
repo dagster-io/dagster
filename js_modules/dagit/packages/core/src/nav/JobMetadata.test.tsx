@@ -36,7 +36,11 @@ describe('JobMetadata', () => {
     }),
     Sensor: () => ({
       name: () => 'cool_sensor',
-      mode: () => 'my_mode',
+      targets: () => new MockList(1),
+    }),
+    Target: () => ({
+      pipelineName: () => PIPELINE_NAME,
+      mode: () => PIPELINE_MODE,
     }),
   };
 
@@ -76,6 +80,7 @@ describe('JobMetadata', () => {
       it('renders single schedule', async () => {
         const mocks = {
           Pipeline: () => ({
+            name: () => PIPELINE_NAME,
             schedules: () => new MockList(1),
             sensors: () => new MockList(0),
           }),
@@ -97,6 +102,7 @@ describe('JobMetadata', () => {
       it('renders multiple schedules', async () => {
         const mocks = {
           Pipeline: () => ({
+            name: () => PIPELINE_NAME,
             schedules: () => new MockList(2),
             sensors: () => new MockList(0),
           }),
@@ -114,6 +120,7 @@ describe('JobMetadata', () => {
       it('renders single sensor', async () => {
         const mocks = {
           Pipeline: () => ({
+            name: () => PIPELINE_NAME,
             schedules: () => new MockList(0),
             sensors: () => new MockList(1),
           }),
@@ -131,6 +138,7 @@ describe('JobMetadata', () => {
       it('renders multiple sensors', async () => {
         const mocks = {
           Pipeline: () => ({
+            name: () => PIPELINE_NAME,
             schedules: () => new MockList(0),
             sensors: () => new MockList(2),
           }),
@@ -148,6 +156,7 @@ describe('JobMetadata', () => {
       it('renders multiple of each', async () => {
         const mocks = {
           Pipeline: () => ({
+            name: () => PIPELINE_NAME,
             schedules: () => new MockList(2),
             sensors: () => new MockList(2),
           }),
@@ -186,6 +195,7 @@ describe('JobMetadata', () => {
       it('renders empty if no matching mode', async () => {
         const mocks = {
           Pipeline: () => ({
+            name: () => PIPELINE_NAME,
             schedules: () => new MockList(1),
             sensors: () => new MockList(1),
           }),
@@ -193,7 +203,12 @@ describe('JobMetadata', () => {
             mode: () => 'mismatching_mode',
           }),
           Sensor: () => ({
-            mode: () => 'mismatching_mode',
+            targets: () => [
+              {
+                pipelineName: PIPELINE_NAME,
+                mode: 'mistmatching_mode',
+              },
+            ],
           }),
         };
 
@@ -208,6 +223,7 @@ describe('JobMetadata', () => {
       it('renders single schedule with matching mode', async () => {
         const mocks = {
           Pipeline: () => ({
+            name: () => PIPELINE_NAME,
             schedules: () => new MockList(1),
             sensors: () => new MockList(0),
           }),
@@ -226,6 +242,7 @@ describe('JobMetadata', () => {
       it('renders multiple schedules if matching mode', async () => {
         const mocks = {
           Pipeline: () => ({
+            name: () => PIPELINE_NAME,
             schedules: () => new MockList(2),
             sensors: () => new MockList(0),
           }),
@@ -243,6 +260,7 @@ describe('JobMetadata', () => {
       it('renders single sensor if matching mode', async () => {
         const mocks = {
           Pipeline: () => ({
+            name: () => PIPELINE_NAME,
             schedules: () => new MockList(0),
             sensors: () => new MockList(1),
           }),
@@ -260,6 +278,7 @@ describe('JobMetadata', () => {
       it('renders multiple sensors if matching mode', async () => {
         const mocks = {
           Pipeline: () => ({
+            name: () => PIPELINE_NAME,
             schedules: () => new MockList(0),
             sensors: () => new MockList(2),
           }),
@@ -277,6 +296,7 @@ describe('JobMetadata', () => {
       it('renders multiple of each if matching mode', async () => {
         const mocks = {
           Pipeline: () => ({
+            name: () => PIPELINE_NAME,
             schedules: () => new MockList(2),
             sensors: () => new MockList(2),
           }),

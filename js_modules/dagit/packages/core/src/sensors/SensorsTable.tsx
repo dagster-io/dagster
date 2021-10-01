@@ -1,5 +1,4 @@
-import {Colors, Icon} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
+import {Colors} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -8,7 +7,9 @@ import {TickTag} from '../instigation/InstigationTick';
 import {InstigatedRunStatus} from '../instigation/InstigationUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {InstigationType} from '../types/globalTypes';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
+import {IconWIP} from '../ui/Icon';
 import {Table} from '../ui/Table';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -35,11 +36,7 @@ export const SensorsTable: React.FC<{
             <Group direction="row" spacing={8} alignItems="center">
               Last tick
               <Tooltip position="top" content={lastTick}>
-                <Icon
-                  icon={IconNames.INFO_SIGN}
-                  iconSize={12}
-                  style={{position: 'relative', top: '-2px'}}
-                />
+                <IconWIP name="info" color={ColorsWIP.Gray500} />
               </Tooltip>
             </Group>
           </th>
@@ -47,11 +44,7 @@ export const SensorsTable: React.FC<{
             <Group direction="row" spacing={8} alignItems="center">
               Last Run
               <Tooltip position="top" content={lastRun}>
-                <Icon
-                  icon={IconNames.INFO_SIGN}
-                  iconSize={12}
-                  style={{position: 'relative', top: '-2px'}}
-                />
+                <IconWIP name="info" color={ColorsWIP.Gray500} />
               </Tooltip>
             </Group>
           </th>
@@ -70,7 +63,7 @@ const SensorRow: React.FC<{
   repoAddress: RepoAddress;
   sensor: SensorFragment;
 }> = ({repoAddress, sensor}) => {
-  const {name, mode, pipelineName, sensorState} = sensor;
+  const {name, sensorState} = sensor;
   const {ticks} = sensorState;
   const latestTick = ticks.length ? ticks[0] : null;
 
@@ -84,15 +77,20 @@ const SensorRow: React.FC<{
           <span style={{fontWeight: 500}}>
             <Link to={workspacePathFromAddress(repoAddress, `/sensors/${name}`)}>{name}</Link>
           </span>
-          {pipelineName && mode !== null && (
-            <PipelineReference
-              showIcon
-              fontSize={13}
-              pipelineName={pipelineName}
-              pipelineHrefContext={repoAddress}
-              mode={mode}
-            />
-          )}
+          {sensor.targets && sensor.targets.length ? (
+            <Group direction="column" spacing={2}>
+              {sensor.targets.map((target) => (
+                <PipelineReference
+                  key={`${target.pipelineName}:${target.mode}`}
+                  showIcon
+                  fontSize={13}
+                  pipelineName={target.pipelineName}
+                  pipelineHrefContext={repoAddress}
+                  mode={target.mode}
+                />
+              ))}
+            </Group>
+          ) : null}
         </Group>
       </td>
       <td>{humanizeSensorInterval(sensor.minIntervalSeconds)}</td>

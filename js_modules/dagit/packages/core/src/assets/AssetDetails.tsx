@@ -1,5 +1,4 @@
 import {useQuery} from '@apollo/client';
-import {Colors, Icon} from '@blueprintjs/core';
 import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -10,11 +9,12 @@ import {MetadataEntry} from '../runs/MetadataEntry';
 import {titleForRun} from '../runs/RunUtils';
 import {Alert} from '../ui/Alert';
 import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
+import {IconWIP} from '../ui/Icon';
 import {MetadataTable} from '../ui/MetadataTable';
 import {Spinner} from '../ui/Spinner';
-import {Subheading} from '../ui/Text';
-import {FontFamily} from '../ui/styles';
+import {Mono, Subheading} from '../ui/Text';
 
 import {AssetLineageElements} from './AssetLineageElements';
 import {ASSET_QUERY} from './queries';
@@ -24,9 +24,10 @@ import {AssetQuery, AssetQueryVariables} from './types/AssetQuery';
 interface Props {
   assetKey: AssetKey;
   asOf: string | null;
+  asSidebarSection?: boolean;
 }
 
-export const AssetDetails: React.FC<Props> = ({assetKey, asOf}) => {
+export const AssetDetails: React.FC<Props> = ({assetKey, asOf, asSidebarSection}) => {
   const before = React.useMemo(() => (asOf ? `${Number(asOf) + 1}` : ''), [asOf]);
   const {data, loading} = useQuery<AssetQuery, AssetQueryVariables>(ASSET_QUERY, {
     variables: {
@@ -97,19 +98,18 @@ export const AssetDetails: React.FC<Props> = ({assetKey, asOf}) => {
       <MetadataTable
         rows={[
           {
-            key: 'Latest materialization from',
+            key: 'Run',
             value: latestRun ? (
               <div>
-                <div>
+                <Box margin={{bottom: 4}}>
                   {'Run '}
                   <Link
-                    style={{fontFamily: FontFamily.monospace}}
                     to={`/instance/runs/${latestEvent.runId}?timestamp=${latestEvent.timestamp}`}
                   >
-                    {titleForRun({runId: latestEvent.runId})}
+                    <Mono>{titleForRun({runId: latestEvent.runId})}</Mono>
                   </Link>
-                </div>
-                <div style={{paddingLeft: 10, paddingTop: 4}}>
+                </Box>
+                <Box padding={{left: 8}}>
                   <PipelineReference
                     showIcon
                     pipelineName={latestRun.pipelineName}
@@ -117,14 +117,9 @@ export const AssetDetails: React.FC<Props> = ({assetKey, asOf}) => {
                     snapshotId={latestRun.pipelineSnapshotId}
                     mode={latestRun.mode}
                   />
-                </div>
-                <div style={{paddingLeft: 10, paddingTop: 4}}>
-                  <Icon
-                    icon="git-commit"
-                    color={Colors.GRAY2}
-                    iconSize={12}
-                    style={{position: 'relative', top: -2, paddingRight: 5}}
-                  />
+                </Box>
+                <Group direction="row" padding={{left: 8}} spacing={8} alignItems="center">
+                  <IconWIP name="linear_scale" color={ColorsWIP.Gray500} />
                   <Link
                     to={`/instance/runs/${latestRun.runId}?${qs.stringify({
                       selection: latest.materializationEvent.stepKey,
@@ -133,7 +128,7 @@ export const AssetDetails: React.FC<Props> = ({assetKey, asOf}) => {
                   >
                     {latest.materializationEvent.stepKey}
                   </Link>
-                </div>
+                </Group>
               </div>
             ) : (
               'No materialization events'
@@ -146,7 +141,7 @@ export const AssetDetails: React.FC<Props> = ({assetKey, asOf}) => {
               }
             : undefined,
           {
-            key: 'Latest timestamp',
+            key: 'Timestamp',
             value: latestEvent ? (
               <Timestamp timestamp={{ms: Number(latestEvent.timestamp)}} />
             ) : (
@@ -155,7 +150,7 @@ export const AssetDetails: React.FC<Props> = ({assetKey, asOf}) => {
           },
           latestAssetLineage?.length
             ? {
-                key: 'Latest parent assets',
+                key: 'Parent assets',
                 value: (
                   <AssetLineageElements
                     elements={latestAssetLineage}
@@ -200,7 +195,11 @@ export const AssetDetails: React.FC<Props> = ({assetKey, asOf}) => {
           }
         />
       ) : null}
-      <Subheading>{isPartitioned ? 'Latest Materialized Partition' : 'Details'}</Subheading>
+      {!asSidebarSection && (
+        <Subheading>
+          {isPartitioned ? 'Latest Materialized Partition' : 'Latest Materialization'}
+        </Subheading>
+      )}
       {content()}
     </Group>
   );

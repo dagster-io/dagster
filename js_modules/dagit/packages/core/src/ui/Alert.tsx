@@ -1,9 +1,11 @@
-import {Colors, Icon, IconName} from '@blueprintjs/core';
+import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {Box} from './Box';
+import {ColorsWIP} from './Colors';
 import {Group} from './Group';
+import {IconName, IconWIP} from './Icon';
 
 export interface Props {
   intent: 'info' | 'warning' | 'error' | 'success';
@@ -18,32 +20,32 @@ export const Alert: React.FC<Props> = (props) => {
     switch (intent) {
       case 'warning':
         return {
-          backgroundColor: `${Colors.GOLD3}16`,
-          borderColor: Colors.GOLD3,
-          icon: 'warning-sign',
-          iconColor: Colors.GOLD3,
+          backgroundColor: ColorsWIP.Yellow50,
+          borderColor: ColorsWIP.Yellow500,
+          icon: 'warning',
+          iconColor: ColorsWIP.Yellow500,
         };
       case 'error':
         return {
-          backgroundColor: `${Colors.RED3}16`,
-          borderColor: Colors.RED3,
+          backgroundColor: ColorsWIP.Red50,
+          borderColor: ColorsWIP.Red500,
           icon: 'error',
-          iconColor: Colors.RED3,
+          iconColor: ColorsWIP.Red500,
         };
       case 'success':
         return {
-          backgroundColor: `${Colors.GREEN3}16`,
-          borderColor: Colors.GREEN3,
-          icon: 'tick-circle',
-          iconColor: Colors.GREEN3,
+          backgroundColor: ColorsWIP.Green50,
+          borderColor: ColorsWIP.Green500,
+          icon: 'done',
+          iconColor: ColorsWIP.Green500,
         };
       case 'info':
       default:
         return {
-          backgroundColor: Colors.LIGHT_GRAY5,
-          borderColor: Colors.BLUE3,
-          icon: 'info-sign',
-          iconColor: Colors.BLUE3,
+          backgroundColor: ColorsWIP.Gray50,
+          borderColor: ColorsWIP.Blue500,
+          icon: 'info',
+          iconColor: ColorsWIP.Blue500,
         };
     }
   }, [intent]);
@@ -57,12 +59,7 @@ export const Alert: React.FC<Props> = (props) => {
       }}
     >
       <Group direction="row" spacing={12} alignItems="flex-start">
-        <Icon
-          icon={icon as IconName}
-          iconSize={14}
-          color={iconColor}
-          style={{position: 'relative', top: '-1px'}}
-        />
+        <IconWIP name={icon as IconName} color={iconColor} />
         <Group direction="column" spacing={8}>
           <AlertTitle>{title}</AlertTitle>
           {description ? <AlertDescription>{description}</AlertDescription> : null}

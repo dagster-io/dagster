@@ -24,13 +24,13 @@ from .config import CELERY_K8S_CONFIG_KEY, celery_k8s_config
 
 
 class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
-    """In contrast to the :py:class:`K8sRunLauncher`, which launches pipeline runs as single K8s
+    """In contrast to the :py:class:`K8sRunLauncher`, which launches dagster runs as single K8s
     Jobs, this run launcher is intended for use in concert with
     :py:func:`dagster_celery_k8s.celery_k8s_job_executor`.
 
     With this run launcher, execution is delegated to:
 
-        1. A run worker Kubernetes Job, which traverses the pipeline run execution plan and
+        1. A run worker Kubernetes Job, which traverses the dagster run execution plan and
            submits steps to Celery queues for execution;
         2. The step executions which are submitted to Celery queues are picked up by Celery workers,
            and each step execution spawns a step execution Kubernetes Job. See the implementation
@@ -200,6 +200,8 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             service_account_name=exc_config.get("service_account_name"),
             env_config_maps=exc_config.get("env_config_maps"),
             env_secrets=exc_config.get("env_secrets"),
+            volume_mounts=exc_config.get("volume_mounts"),
+            volumes=exc_config.get("volumes"),
         )
 
         self._instance.add_run_tags(
@@ -283,7 +285,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         can_terminate = self.can_terminate(run_id)
         if not can_terminate:
             self._instance.report_engine_event(
-                message="Unable to terminate pipeline: can_terminate returned {}.".format(
+                message="Unable to terminate dagster job: can_terminate returned {}.".format(
                     can_terminate
                 ),
                 pipeline_run=run,
@@ -301,13 +303,13 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             termination_result = delete_job(job_name=job_name, namespace=job_namespace)
             if termination_result:
                 self._instance.report_engine_event(
-                    message="Pipeline was terminated successfully.",
+                    message="Dagster Job was terminated successfully.",
                     pipeline_run=run,
                     cls=self.__class__,
                 )
             else:
                 self._instance.report_engine_event(
-                    message="Pipeline was not terminated successfully; delete_job returned {}".format(
+                    message="Dagster Job was not terminated successfully; delete_job returned {}".format(
                         termination_result
                     ),
                     pipeline_run=run,
@@ -316,7 +318,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             return termination_result
         except Exception:  # pylint: disable=broad-except
             self._instance.report_engine_event(
-                message="Pipeline was not terminated successfully; encountered error in delete_job",
+                message="Dagster Job was not terminated successfully; encountered error in delete_job",
                 pipeline_run=run,
                 engine_event_data=EngineEventData.engine_error(
                     serializable_error_info_from_exc_info(sys.exc_info())

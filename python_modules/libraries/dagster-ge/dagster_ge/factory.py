@@ -14,9 +14,8 @@ from dagster import (
     solid,
 )
 from dagster_pandas import DataFrame
-from great_expectations.render.page_renderer_util import (
-    render_multiple_validation_result_pages_markdown,
-)
+from great_expectations.render.renderer import ValidationResultsPageRenderer
+from great_expectations.render.view import DefaultMarkdownPageView
 
 try:
     # ge < v0.13.0
@@ -34,6 +33,112 @@ def ge_data_context(context):
         yield ge.data_context.DataContext(context_root_dir=context.resource_config["ge_root_dir"])
 
 
+def ge_validation_solid_factory_v3(
+    name,
+    datasource_name,
+    data_connector_name,
+    data_asset_name,
+    suite_name,
+    batch_identifiers: dict,
+    input_dagster_type=DataFrame,
+    runtime_method_type="batch_data",
+    extra_kwargs=None,
+):
+    """
+        Generates solids for interacting with GE (v3 API)
+
+    Args:
+        name (str): the name of the solid
+        datasource_name (str): the name of your DataSource, see your great_expectations.yml
+        data_connector_name (str): the name of the data connector for this datasource. This should
+            point to a RuntimeDataConnector. For information on how to set this up, see:
+            https://docs.greatexpectations.io/docs/guides/connecting_to_your_data/how_to_create_a_batch_of_data_from_an_in_memory_spark_or_pandas_dataframe
+        data_asset_name (str): the name of the data asset that this solid will be validating.
+        suite_name (str): the name of your expectation suite, see your great_expectations.yml
+        batch_identifier_fn (dict): A dicitonary of batch identifiers to uniquely identify this
+            batch of data. To learn more about batch identifiers, see:
+            https://docs.greatexpectations.io/docs/reference/datasources#batches.
+        input_dagster_type (DagsterType): the Dagster type used to type check the input to the
+                    solid. Defaults to `dagster_pandas.DataFrame`.
+        runtime_method_type (str): how GE should interperet the solid input. One of ("batch_data",
+            "path", "query"). Defaults to "batch_data", which will interperet the input as an in-memory
+            object.
+        extra_kwargs (Optional[dict]): adds extra kwargs to the invocation of `ge_data_context`'s
+                    `get_validator` method. If not set, input will be:
+                        {
+                            "datasource_name": datasource_name,
+                            "data_connector_name": data_connector_name,
+                            "data_asset_name": data_asset_name,
+                            "runtime_parameters": {
+                               "<runtime_method_type>": <solid input>
+                            },
+                            "batch_identifiers": batch_identifiers,
+                            "expectation_suite_name": suite_name,
+                        }
+
+    Returns:
+        A solid that takes in a set of data and yields both an expectation with relevant metadata
+        and an output with all the metadata (for user processing)
+
+    """
+    check.str_param(datasource_name, "datasource_name")
+    check.str_param(data_connector_name, "data_connector_name")
+    check.str_param(suite_name, "suite_name")
+
+    extra_kwargs = check.opt_dict_param(extra_kwargs, "extra_kwargs")
+
+    @solid(
+        name=name,
+        input_defs=[InputDefinition("dataset", input_dagster_type)],
+        output_defs=[
+            OutputDefinition(
+                dagster_type=dict,
+                description="""
+        This solid yields an expectationResult with a structured dict of metadata from the GE suite,
+        as well as the full result in case a user wants to process it differently.
+        The structured dict contains both summary stats from the suite as well as expectation by expectation
+        results/details.
+        """,
+            )
+        ],
+        required_resource_keys={"ge_data_context"},
+        tags={"kind": "ge"},
+    )
+    def ge_validation_solid(context, dataset):
+        data_context = context.resources.ge_data_context
+        validator_kwargs = {
+            "datasource_name": datasource_name,
+            "data_connector_name": data_connector_name,
+            "data_asset_name": datasource_name or data_asset_name,
+            "runtime_parameters": {runtime_method_type: dataset},
+            "batch_identifiers": batch_identifiers,
+            "expectation_suite_name": suite_name,
+            **extra_kwargs,
+        }
+        validator = data_context.get_validator(**validator_kwargs)
+
+        run_id = {
+            "run_name": datasource_name + " run",
+            "run_time": datetime.datetime.utcnow(),
+        }
+        results = validator.validate(run_id=run_id)
+
+        validation_results_page_renderer = ValidationResultsPageRenderer(run_info_at_end=True)
+        rendered_document_content_list = validation_results_page_renderer.render(
+            validation_results=results
+        )
+        md_str = "".join(DefaultMarkdownPageView().render(rendered_document_content_list))
+
+        meta_stats = EventMetadataEntry.md(md_str=md_str, label="Expectation Results")
+        yield ExpectationResult(
+            success=bool(results["success"]),
+            metadata_entries=[meta_stats],
+        )
+        yield Output(results.to_json_dict())
+
+    return ge_validation_solid
+
+
 def ge_validation_solid_factory(
     name,
     datasource_name,
@@ -44,7 +149,6 @@ def ge_validation_solid_factory(
 ):
     """
         Generates solids for interacting with GE.
-
     Args:
         name (str): the name of the solid
         datasource_name (str): the name of your DataSource, see your great_expectations.yml
@@ -58,11 +162,9 @@ def ge_validation_solid_factory(
         batch_kwargs (Optional[dict]): overrides the `batch_kwargs` parameter when calling the
                     `ge_data_context`'s `get_batch` method. Defaults to `{"dataset": dataset}`,
                     where `dataset` is the input to the generated solid.
-
     Returns:
         A solid that takes in a set of data and yields both an expectation with relevant metadata
         and an output with all the metadata (for user processing)
-
     """
 
     check.str_param(datasource_name, "datasource_name")
@@ -115,10 +217,12 @@ def ge_validation_solid_factory(
             validation_operator, assets_to_validate=[batch], run_id=run_id
         )
         res = convert_to_json_serializable(results.list_validation_results())[0]
-        md_str = render_multiple_validation_result_pages_markdown(
-            validation_operator_result=results,
-            run_info_at_end=True,
+        validation_results_page_renderer = ValidationResultsPageRenderer(run_info_at_end=True)
+        rendered_document_content_list = (
+            validation_results_page_renderer.render_validation_operator_result(results)
         )
+        md_str = " ".join(DefaultMarkdownPageView().render(rendered_document_content_list))
+
         meta_stats = EventMetadataEntry.md(md_str=md_str, label="Expectation Results")
         yield ExpectationResult(
             success=res["success"],

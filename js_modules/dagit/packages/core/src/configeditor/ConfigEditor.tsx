@@ -61,6 +61,7 @@ const CodeMirrorShimStyle = createGlobalStyle`
     bottom: 0;
     height: initial;
     font-family: ${FontFamily.monospace};
+    font-size: 16px;
 
     /* Note: Theme overrides */
     &.cm-s-default .cm-comment {
@@ -74,6 +75,7 @@ const CodeMirrorShimStyle = createGlobalStyle`
   .CodeMirror-lint-message-error,
   .CodeMirror-lint-message-warning {
     font-family: ${FontFamily.monospace};
+    font-size: 16px;
   }
 `;
 const CodeMirrorWhitespaceStyle = createGlobalStyle`

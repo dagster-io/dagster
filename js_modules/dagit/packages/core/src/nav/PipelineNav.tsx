@@ -121,7 +121,7 @@ export const PipelineNav: React.FC<Props> = (props) => {
             ) : null}
           </Heading>
         }
-        icon={flagPipelineModeTuples ? 'send-to-graph' : 'diagram-tree'}
+        icon={flagPipelineModeTuples ? 'workspaces' : 'schema'}
         description={
           <>
             <Link

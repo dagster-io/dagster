@@ -7,7 +7,10 @@ from dagster_test.graph_job_op_toys.asset_lineage import (
 from dagster_test.graph_job_op_toys.branches import branch_failed_job, branch_job
 from dagster_test.graph_job_op_toys.composition import composition
 from dagster_test.graph_job_op_toys.dynamic import dynamic_job
-from dagster_test.graph_job_op_toys.error_monster import error_monster_passing_job
+from dagster_test.graph_job_op_toys.error_monster import (
+    error_monster_failing_job,
+    error_monster_passing_job,
+)
 from dagster_test.graph_job_op_toys.hammer import hammer_default_executor_job
 from dagster_test.graph_job_op_toys.log_asset import log_asset_job
 from dagster_test.graph_job_op_toys.log_file import log_file_job
@@ -19,6 +22,9 @@ from dagster_test.graph_job_op_toys.notebooks import hello_world_notebook_pipeli
 from dagster_test.graph_job_op_toys.retries import retry_job
 from dagster_test.graph_job_op_toys.sleepy import sleepy_job
 from dagster_test.graph_job_op_toys.unreliable import unreliable_job
+
+from .schedules import get_toys_schedules
+from .sensors import get_toys_sensors
 
 
 @op
@@ -41,6 +47,7 @@ def toys_repository():
     return (
         [
             composition,
+            error_monster_failing_job,
             error_monster_passing_job,
             hammer_default_executor_job,
             log_asset_job,
@@ -60,6 +67,6 @@ def toys_repository():
             model_job,
             hello_world_notebook_pipeline,
         ]
-        # + get_toys_schedules()
-        # + get_toys_sensors()
+        + get_toys_schedules()
+        + get_toys_sensors()
     )

@@ -17,12 +17,21 @@ The replacement for :py:class:`composite_solid` / :py:class:`CompositeSolidDefin
 .. autoclass:: GraphDefinition
     :members:
 
+.. autoclass:: GraphIn
+
+.. autoclass:: GraphOut
+
 Job
 ---
 
 The replacement for :py:class:`pipeline` / :py:class:`PipelineDefinition`, a ``Job`` binds a ``Graph`` and the resources it needs to be executable.
 
 Jobs are created by calling :py:meth:`GraphDefinition.to_job` on a graph instance.
+
+.. currentmodule:: dagster
+
+.. autoclass:: JobDefinition
+    :members:
 
 Op
 --
@@ -43,19 +52,20 @@ The replacement for :py:class:`solid`, has a more intuitive name and offers a mo
 Testing
 -------
 
+.. currentmodule:: dagster
+
+.. autofunction:: build_op_context
+
 Explicit in-process execution APIs have been added to better facilitate testing of Graphs and Jobs.
 
-Jobs can be tested with :py:meth:`PipelineDefinition.execute_in_process`, and Graphs with :py:meth:`GraphDefinition.execute_in_process`
-
-.. currentmodule:: dagster
-.. automethod:: PipelineDefinition.execute_in_process
+Jobs can be tested with :py:meth:`JobDefinition.execute_in_process`, and Graphs with :py:meth:`GraphDefinition.execute_in_process`
 
 .. currentmodule:: dagster.core.execution.execution_results
 
 .. autoclass:: InProcessGraphResult
     :members:
 
-.. autoclass:: InProcessSolidResult
+.. autoclass:: InProcessOpResult
     :members:
 
 .. autoclass:: NodeExecutionResult

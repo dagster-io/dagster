@@ -8,7 +8,7 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {RunStatus} from '../runs/RunStatusDots';
 import {titleForRun} from '../runs/RunUtils';
 import {Group} from '../ui/Group';
-import {FontFamily} from '../ui/styles';
+import {Mono} from '../ui/Text';
 import {REPOSITORY_ORIGIN_FRAGMENT} from '../workspace/RepositoryInformation';
 
 import {TICK_TAG_FRAGMENT} from './InstigationTick';
@@ -25,7 +25,7 @@ export const InstigatedRunStatus: React.FC<{
     <Group direction="row" spacing={4} alignItems="center">
       <RunStatus status={run.status} />
       <Link to={`/instance/runs/${run.runId}`} target="_blank" rel="noreferrer">
-        <span style={{fontFamily: FontFamily.monospace}}>{titleForRun({runId: run.runId})}</span>
+        <Mono>{titleForRun({runId: run.runId})}</Mono>
       </Link>
     </Group>
   );

@@ -342,9 +342,14 @@ runLauncher:
   config:
     # This configuration will only be used if the K8sRunLauncher is selected
     k8sRunLauncher:
+
+      # Change with caution! If you're using a fixed tag for pipeline run images, changing the
+      # image pull policy to anything other than "Always" will use a cached/stale image, which is
+      # almost certainly not what you want.
+      imagePullPolicy: "Always"
+
       ## The image to use for the launched Job's Dagster container.
-      ## This image should only be specified when user code deployments are disabled. Otherwise,
-      ## it will be ignored.
+      ## The `pullPolicy` field is ignored. Use`imagePullPolicy` instead.
       # image:
       #   repository: ""
       #   tag: ""
@@ -385,6 +390,28 @@ runLauncher:
       # envVars:
       #   - "ENV_VAR"
       envVars: []
+
+      # Additional volumes that should be included in the Job's Pod. See:
+      # https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core
+      #
+      # Example:
+      #
+      # volumes:
+      #   - name: my-volume
+      #     configMap: my-config-map
+      volumes: []
+
+      # Additional volume mounts that should be included in the container in the Job's Pod. See:
+      # See: https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core
+      #
+      # Example:
+      #
+      # volumeMounts:
+      #   - name: test-volume
+      #     mountPath: /opt/dagster/test_folder
+      #     subPath: test_file.yaml
+      volumeMounts: []
+
 
     # This configuration will only be used if the CeleryK8sRunLauncher is selected
     celeryK8sRunLauncher:
@@ -662,6 +689,10 @@ ingress:
     # See: https://github.com/dagster-io/dagster/issues/2073
     host: ""
 
+    tls:
+      enabled: false
+      secretName: ""
+
     # Different http paths to add to the ingress before the default dagit path
     # Example:
     #
@@ -690,6 +721,10 @@ ingress:
     # See: https://github.com/dagster-io/dagster/issues/2073
     host: ""
 
+    tls:
+      enabled: false
+      secretName: ""
+
     # Different http paths to add to the ingress before the default dagit path
     # Example:
     #
@@ -714,6 +749,10 @@ ingress:
     # if path is '/flower', Flower will be accessible at 'mycompany.com/flower'
     # NOTE: do NOT keep trailing slash. For root configuration, set as empty string
     path: ""
+
+    tls:
+      enabled: false
+      secretName: ""
 
     # Different http paths to add to the ingress before the default flower path
     # Example:

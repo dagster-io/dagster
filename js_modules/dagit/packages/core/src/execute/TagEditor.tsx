@@ -1,5 +1,3 @@
-import {Button, Classes, Dialog, Icon} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -8,8 +6,12 @@ import {PipelineRunTag} from '../app/LocalStorage';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {RunTag} from '../runs/RunTag';
 import {Box} from '../ui/Box';
+import {ButtonWIP} from '../ui/Button';
 import {ButtonLink} from '../ui/ButtonLink';
+import {ColorsWIP} from '../ui/Colors';
+import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
+import {IconWIP} from '../ui/Icon';
 
 interface ITagEditorProps {
   tagsFromDefinition?: PipelineRunTag[];
@@ -73,24 +75,15 @@ export const TagEditor: React.FC<ITagEditorProps> = ({
   };
 
   return (
-    <Dialog
-      icon="info-sign"
+    <DialogWIP
+      icon="info"
       onClose={onRequestClose}
       style={{minWidth: 500}}
       title="Add tags to run"
-      usePortal={true}
       isOpen={open}
     >
-      <div
-        className={Classes.DIALOG_BODY}
-        style={{
-          margin: 0,
-          marginBottom: 17,
-          height: `calc(100% - 85px)`,
-          position: 'relative',
-        }}
-      >
-        <Group padding={16} spacing={16} direction="column">
+      <DialogBody>
+        <Group spacing={16} direction="column">
           {tagsFromDefinition.length ? (
             <Group direction="column" spacing={8}>
               <Box margin={{left: 2}} style={{fontSize: '13px', fontWeight: 500}}>
@@ -142,7 +135,9 @@ export const TagEditor: React.FC<ITagEditorProps> = ({
                       value={value}
                       onChange={(e) => onTagEdit(key, e.target.value, idx)}
                     />
-                    <Remove onClick={() => onRemove(idx)} />
+                    <RemoveButton onClick={() => onRemove(idx)}>
+                      <IconWIP name="close" />
+                    </RemoveButton>
                   </div>
                 );
               })}
@@ -152,22 +147,20 @@ export const TagEditor: React.FC<ITagEditorProps> = ({
             </div>
           </Group>
         </Group>
-      </div>
-      <div className={Classes.DIALOG_FOOTER}>
-        <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-          <Button onClick={onRequestClose}>Cancel</Button>
-          <ShortcutHandler
-            shortcutLabel="⌥Enter"
-            shortcutFilter={(e) => e.keyCode === 13 && e.altKey}
-            onShortcut={onSave}
-          >
-            <Button intent="primary" onClick={onSave} disabled={disabled}>
-              Apply
-            </Button>
-          </ShortcutHandler>
-        </div>
-      </div>
-    </Dialog>
+      </DialogBody>
+      <DialogFooter>
+        <ButtonWIP onClick={onRequestClose}>Cancel</ButtonWIP>
+        <ShortcutHandler
+          shortcutLabel="⌥Enter"
+          shortcutFilter={(e) => e.keyCode === 13 && e.altKey}
+          onShortcut={onSave}
+        >
+          <ButtonWIP intent="primary" onClick={onSave} disabled={disabled}>
+            Apply
+          </ButtonWIP>
+        </ShortcutHandler>
+      </DialogFooter>
+    </DialogWIP>
   );
 };
 
@@ -195,9 +188,9 @@ export const TagContainer = ({tags, onRequestEdit}: ITagContainerProps) => {
         ))}
       </TagList>
       <TagEditorLink onRequestOpen={onRequestEdit}>
-        <div style={{whiteSpace: 'nowrap'}}>
-          <Icon icon={IconNames.EDIT} iconSize={12} style={{marginBottom: 2}} /> Edit Tags
-        </div>
+        <Group direction="row" spacing={4} alignItems="center">
+          <IconWIP name="edit" color={ColorsWIP.Gray500} /> Edit Tags
+        </Group>
       </TagEditorLink>
     </Container>
   );
@@ -218,16 +211,15 @@ const TagEditorLink = ({onRequestOpen, children}: ITagEditorLinkProps) => (
   </ShortcutHandler>
 );
 
-const Remove = styled(Icon).attrs({icon: IconNames.CROSS})`
-  align-self: center;
-  color: #aaaaaa;
+const RemoveButton = styled.button`
+  background: none;
+  border: none;
+  border-radius: 4px;
   cursor: pointer;
-  border: 1px solid transparent;
-  padding: 3px;
-  &:hover {
-    color: #999999;
-    border: 1px solid #cccccc;
-    border-radius: 1px;
+  padding: 0 3px;
+
+  :hover {
+    background-color: ${ColorsWIP.Gray200};
   }
 `;
 

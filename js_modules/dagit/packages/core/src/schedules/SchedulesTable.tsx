@@ -1,16 +1,4 @@
-import {
-  Button,
-  Colors,
-  Icon,
-  Intent,
-  Menu,
-  MenuItem,
-  Popover,
-  PopoverInteractionKind,
-  Position,
-  Tag,
-} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
+import {Button, Colors, Menu, MenuItem} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -19,8 +7,12 @@ import {TickTag} from '../instigation/InstigationTick';
 import {InstigatedRunStatus} from '../instigation/InstigationUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {InstigationStatus, InstigationType} from '../types/globalTypes';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
+import {IconWIP} from '../ui/Icon';
+import {Popover} from '../ui/Popover';
 import {Table} from '../ui/Table';
+import {TagWIP} from '../ui/TagWIP';
 import {Code} from '../ui/Text';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -61,11 +53,7 @@ export const SchedulesTable: React.FC<{
             <Group direction="row" spacing={8} alignItems="center">
               Last Tick
               <Tooltip position="top" content={lastTick}>
-                <Icon
-                  icon={IconNames.INFO_SIGN}
-                  iconSize={12}
-                  style={{position: 'relative', top: '-2px'}}
-                />
+                <IconWIP name="info" color={ColorsWIP.Gray400} />
               </Tooltip>
             </Group>
           </th>
@@ -73,11 +61,7 @@ export const SchedulesTable: React.FC<{
             <Group direction="row" spacing={8} alignItems="center">
               Last Run
               <Tooltip position="top" content={lastRun}>
-                <Icon
-                  icon={IconNames.INFO_SIGN}
-                  iconSize={12}
-                  style={{position: 'relative', top: '-2px'}}
-                />
+                <IconWIP name="info" color={ColorsWIP.Gray400} />
               </Tooltip>
             </Group>
           </th>
@@ -85,11 +69,7 @@ export const SchedulesTable: React.FC<{
             <Group direction="row" spacing={8} alignItems="center">
               Partition
               <Tooltip position="top" content={partitionStatus}>
-                <Icon
-                  icon={IconNames.INFO_SIGN}
-                  iconSize={12}
-                  style={{position: 'relative', top: '-2px'}}
-                />
+                <IconWIP name="info" color={ColorsWIP.Gray400} />
               </Tooltip>
             </Group>
           </th>
@@ -131,29 +111,28 @@ const errorDisplay = (
 
   return (
     <Popover
-      interactionKind={PopoverInteractionKind.CLICK}
+      interactionKind="hover"
       popoverClassName="bp3-popover-content-sizing"
-      position={Position.RIGHT}
-      fill={true}
+      position="right"
+      content={
+        <Group direction="column" spacing={8} padding={12}>
+          <strong>There are errors with this schedule.</strong>
+          <div>Errors:</div>
+          <ul>
+            {errors.map((error, index) => (
+              <li key={index}>{error}</li>
+            ))}
+          </ul>
+          <div>
+            To resolve, click <ReconcileButton repoAddress={repoAddress} /> or run{' '}
+            <Code>dagster schedule up</Code>
+          </div>
+        </Group>
+      }
     >
-      <Tag fill={true} interactive={true} intent={Intent.DANGER}>
+      <TagWIP fill interactive intent="danger">
         Error
-      </Tag>
-      <div>
-        <h3>There are errors with this schedule.</h3>
-
-        <p>Errors:</p>
-        <ul>
-          {errors.map((error, index) => (
-            <li key={index}>{error}</li>
-          ))}
-        </ul>
-
-        <p>
-          To resolve, click <ReconcileButton repoAddress={repoAddress} /> or run{' '}
-          <Code>dagster schedule up</Code>
-        </p>
-      </div>
+      </TagWIP>
     </Popover>
   );
 };
@@ -180,8 +159,10 @@ const ScheduleRow: React.FC<{
   return (
     <tr key={name}>
       <td>
-        <ScheduleSwitch repoAddress={repoAddress} schedule={schedule} />
-        {errorDisplay(status, runningScheduleCount, repoAddress)}
+        <Group direction="column" spacing={4}>
+          <ScheduleSwitch repoAddress={repoAddress} schedule={schedule} />
+          {errorDisplay(status, runningScheduleCount, repoAddress)}
+        </Group>
       </td>
       <td>
         <Group direction="column" spacing={4}>

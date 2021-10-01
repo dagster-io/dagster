@@ -108,10 +108,12 @@ def _yield_compute_results(
     if inspect.isasyncgen(user_event_generator):
         user_event_generator = gen_from_async_gen(user_event_generator)
 
+    op_label = step_context.describe_op()
+
     for event in iterate_with_context(
         lambda: solid_execution_error_boundary(
             DagsterExecutionStepExecutionError,
-            msg_fn=lambda: f'Error occurred while executing solid "{step_context.solid.name}":',
+            msg_fn=lambda: f"Error occurred while executing {op_label}:",
             step_context=step_context,
             step_key=step_context.step.key,
             solid_def_name=step_context.solid_def.name,

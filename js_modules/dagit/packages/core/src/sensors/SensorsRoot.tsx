@@ -9,6 +9,7 @@ import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
 import {UnloadableSensors} from '../instigation/Unloadable';
 import {InstigationType} from '../types/globalTypes';
+import {Box} from '../ui/Box';
 import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
 import {Page} from '../ui/Page';
@@ -81,7 +82,9 @@ export const SensorsRoot = (props: Props) => {
               return (
                 <Group direction="column" spacing={20}>
                   {sensorsOrError.results.length > 0 && (
-                    <SensorInfo daemonHealth={instance.daemonHealth} />
+                    <Box padding={{horizontal: 24}}>
+                      <SensorInfo daemonHealth={instance.daemonHealth} />
+                    </Box>
                   )}
                   <SensorsTable repoAddress={repoAddress} sensors={sensorsOrError.results} />
                   <UnloadableSensors sensorStates={unloadableInstigationStatesOrError.results} />

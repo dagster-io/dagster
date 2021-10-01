@@ -132,7 +132,7 @@ def test_eventual_consistency(ecs, instance, workspace, run, monkeypatch):
 
     retries = 0
     original_describe_tasks = instance.run_launcher.ecs.describe_tasks
-    original_backoff_retries = dagster_aws.ecs.launcher.BACKOFF_RETRIES
+    original_backoff_retries = dagster_aws.ecs.tasks.BACKOFF_RETRIES
 
     def describe_tasks(*_args, **_kwargs):
         nonlocal retries
@@ -145,12 +145,12 @@ def test_eventual_consistency(ecs, instance, workspace, run, monkeypatch):
 
     with pytest.raises(EcsEventualConsistencyTimeout):
         monkeypatch.setattr(instance.run_launcher.ecs, "describe_tasks", describe_tasks)
-        monkeypatch.setattr(dagster_aws.ecs.launcher, "BACKOFF_RETRIES", 0)
+        monkeypatch.setattr(dagster_aws.ecs.tasks, "BACKOFF_RETRIES", 0)
         instance.launch_run(run.run_id, workspace)
 
     # Reset the mock
     retries = 0
-    monkeypatch.setattr(dagster_aws.ecs.launcher, "BACKOFF_RETRIES", original_backoff_retries)
+    monkeypatch.setattr(dagster_aws.ecs.tasks, "BACKOFF_RETRIES", original_backoff_retries)
     instance.launch_run(run.run_id, workspace)
 
     tasks = ecs.list_tasks()["taskArns"]

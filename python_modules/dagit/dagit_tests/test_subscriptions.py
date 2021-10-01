@@ -3,9 +3,10 @@ from contextlib import contextmanager
 from unittest import mock
 
 import objgraph
+import pytest
 from dagit.subscription_server import DagsterSubscriptionServer
 from dagster import execute_pipeline, pipeline, solid
-from dagster.core.test_utils import instance_for_test
+from dagster.core.test_utils import environ, instance_for_test
 from dagster.core.workspace.context import WorkspaceProcessContext
 from dagster.core.workspace.load_target import WorkspaceFileTarget
 from dagster.utils import file_relative_path
@@ -108,6 +109,35 @@ def test_event_log_subscription():
             assert len(objgraph.by_type("PipelineRunObservableSubscribe")) == 1
             end_subscription(server, context)
             gc.collect()
+            assert len(objgraph.by_type("SubscriptionObserver")) == 0
+            assert len(objgraph.by_type("PipelineRunObservableSubscribe")) == 0
+
+
+@pytest.mark.skip(
+    "PipelineRunObservableSubscribe GC check is flaky - see https://github.com/dagster-io/dagster/issues/4917"
+)
+def test_event_log_subscription_chunked():
+    schema = create_schema()
+    server = DagsterSubscriptionServer(schema=schema)
+
+    with instance_for_test() as instance, environ({"DAGIT_EVENT_LOAD_CHUNK_SIZE": "2"}):
+        run = execute_pipeline(example_pipeline, instance=instance)
+        assert run.success
+        assert run.run_id
+
+        with create_subscription_context(instance) as context:
+            start_subscription(server, context, EVENT_LOG_SUBSCRIPTION, {"runId": run.run_id})
+            gc.collect()
+            assert len(objgraph.by_type("SubscriptionObserver")) == 1
+            subs = objgraph.by_type("PipelineRunObservableSubscribe")
+            assert len(subs) == 1
+            subscription_obj = subs[0]
+            end_subscription(server, context)
+            subscription_obj.stopped.wait(30)
+            subs = None
+            subscription_obj = None
+            gc.collect()
+
             assert len(objgraph.by_type("SubscriptionObserver")) == 0
             assert len(objgraph.by_type("PipelineRunObservableSubscribe")) == 0
 

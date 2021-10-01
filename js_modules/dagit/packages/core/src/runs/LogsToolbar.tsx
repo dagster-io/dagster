@@ -1,16 +1,5 @@
-import {
-  Button,
-  ButtonGroup,
-  Checkbox,
-  Colors,
-  IconName,
-  MenuItem,
-  Tab,
-  Tabs,
-  Tag,
-} from '@blueprintjs/core';
+import {Button, ButtonGroup, Checkbox, Colors, IconName, Tab, Tabs} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
-import {Select} from '@blueprintjs/select';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -18,7 +7,10 @@ import {useCopyToClipboard} from '../app/browser';
 import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
 import {Group} from '../ui/Group';
+import {MenuItemWIP} from '../ui/Menu';
+import {SelectWIP} from '../ui/Select';
 import {Spinner} from '../ui/Spinner';
+import {TagWIP} from '../ui/TagWIP';
 
 import {ExecutionStateDot} from './ExecutionStateDot';
 import {LogLevel} from './LogLevel';
@@ -158,11 +150,11 @@ const ComputeLogToolbar = ({
       style={{flex: 1}}
     >
       <Group direction="row" spacing={24} alignItems="center">
-        <Select
+        <SelectWIP
           disabled={!steps.length}
           items={Object.keys(logCaptureSteps)}
           itemRenderer={(item: string, options: {handleClick: any; modifiers: any}) => (
-            <MenuItem
+            <MenuItemWIP
               key={item}
               onClick={options.handleClick}
               text={logKeyText(item)}
@@ -181,7 +173,7 @@ const ComputeLogToolbar = ({
             rightIcon="caret-down"
             style={{minHeight: 25}}
           />
-        </Select>
+        </SelectWIP>
         {isValidStepSelection ? (
           <Tabs selectedTabId={LogType[logType]}>
             <Tab
@@ -315,15 +307,12 @@ const StructuredLogToolbar = ({
         </NonMatchCheckbox>
       ) : null}
       <LogsToolbarDivider />
-      <div style={{display: 'flex'}}>
+      <Group direction="row" spacing={4} alignItems="center">
         {Object.keys(LogLevel).map((level) => {
           const enabled = filter.levels[level];
           return (
-            <FilterTag
+            <FilterButton
               key={level}
-              intent={enabled ? 'primary' : 'none'}
-              interactive
-              minimal={!enabled}
               onClick={() =>
                 onSetFilter({
                   ...filter,
@@ -333,13 +322,20 @@ const StructuredLogToolbar = ({
                   },
                 })
               }
-              round
             >
-              {level.toLowerCase()}
-            </FilterTag>
+              <TagWIP
+                key={level}
+                intent={enabled ? 'primary' : 'none'}
+                interactive
+                minimal={!enabled}
+                round
+              >
+                {level.toLowerCase()}
+              </TagWIP>
+            </FilterButton>
           );
         })}
-      </div>
+      </Group>
       {selectedStep && <LogsToolbarDivider />}
       <div style={{minWidth: 15, flex: 1}} />
       <div style={{marginRight: '8px'}}>
@@ -384,8 +380,15 @@ const LogsToolbarDivider = styled.div`
   border-right: 1px solid ${Colors.LIGHT_GRAY3};
 `;
 
-const FilterTag = styled(Tag)`
-  margin-right: 8px;
-  text-transform: capitalize;
-  opacity: ${({minimal}) => (minimal ? '0.5' : '1')};
+const FilterButton = styled.button`
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  display: block;
+
+  :focus {
+    outline: none;
+  }
 `;

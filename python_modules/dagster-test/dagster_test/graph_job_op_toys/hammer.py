@@ -23,7 +23,7 @@ def hammer_op(context, chase_duration):
     data = list(range(0, ptr_length))
     random.shuffle(data)
 
-    curr = random.randint(0, ptr_length)
+    curr = random.randint(0, ptr_length - 1)
     # and away we go
     start_time = time.time()
     while (time.time() - start_time) < chase_duration:

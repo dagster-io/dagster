@@ -22,7 +22,7 @@ from .context_creation_pipeline import (
     PlanOrchestrationContextManager,
     orchestration_context_event_generator,
 )
-from .execution_results import InProcessGraphResult, InProcessSolidResult
+from .execution_results import InProcessGraphResult, InProcessOpResult
 
 
 def core_execute_in_process(
@@ -80,7 +80,7 @@ def core_execute_in_process(
         handle = NodeHandle(node.name, None)
 
         if isinstance(node, SolidDefinition):
-            return InProcessSolidResult(node, handle, event_list_for_top_lvl_node, recorder)
+            return InProcessOpResult(node, handle, event_list_for_top_lvl_node, recorder)
         elif isinstance(node, GraphDefinition):
             return InProcessGraphResult(node, handle, event_list_for_top_lvl_node, recorder)
 

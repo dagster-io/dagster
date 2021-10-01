@@ -1,10 +1,10 @@
 from dagster import execute_solid
-from docs_snippets_crag.concepts.assets.materialization_solids import (
+from docs_snippets_crag.concepts.assets.materialization_ops import (
     my_asset_key_materialization_solid,
     my_asset_solid,
     my_constant_asset_solid,
     my_materialization_solid,
-    my_metadata_materialization_solid,
+    my_metadata_materialization_op,
     my_partitioned_asset_solid,
     my_simple_solid,
     my_variable_asset_solid,
@@ -16,7 +16,7 @@ def test_solids_compile_and_execute():
         my_asset_key_materialization_solid,
         my_constant_asset_solid,
         my_materialization_solid,
-        my_metadata_materialization_solid,
+        my_metadata_materialization_op,
         my_simple_solid,
         my_variable_asset_solid,
         my_asset_solid,

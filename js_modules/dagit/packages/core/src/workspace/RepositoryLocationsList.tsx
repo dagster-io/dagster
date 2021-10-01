@@ -1,4 +1,4 @@
-import {Button, Colors, Icon, NonIdealState, Tag} from '@blueprintjs/core';
+import {Button, Colors, NonIdealState} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import React from 'react';
 
@@ -8,7 +8,9 @@ import {ReloadRepositoryLocationButton} from '../nav/ReloadRepositoryLocationBut
 import {useRepositoryLocationReload} from '../nav/useRepositoryLocationReload';
 import {ButtonLink} from '../ui/ButtonLink';
 import {Group} from '../ui/Group';
+import {IconWIP} from '../ui/Icon';
 import {Table} from '../ui/Table';
+import {TagWIP} from '../ui/TagWIP';
 import {Caption} from '../ui/Text';
 
 import {RepositoryLocationNonBlockingErrorDialog} from './RepositoryLocationErrorDialog';
@@ -25,15 +27,15 @@ const LocationStatus: React.FC<{location: string; locationOrError: LocationOrErr
   if (locationOrError.loadStatus === 'LOADING') {
     if (locationOrError.locationOrLoadError) {
       return (
-        <Tag minimal intent="primary">
+        <TagWIP minimal intent="primary">
           Updating...
-        </Tag>
+        </TagWIP>
       );
     } else {
       return (
-        <Tag minimal intent="primary">
+        <TagWIP minimal intent="primary">
           Loading...
-        </Tag>
+        </TagWIP>
       );
     }
   }
@@ -42,9 +44,9 @@ const LocationStatus: React.FC<{location: string; locationOrError: LocationOrErr
     return (
       <>
         <div style={{display: 'flex', alignItems: 'start'}}>
-          <Tag minimal intent="danger">
+          <TagWIP minimal intent="danger">
             Failed
-          </Tag>
+          </TagWIP>
           <div style={{fontSize: '14px', marginLeft: '8px'}}>
             <ButtonLink onClick={() => setShowDialog(true)}>View error</ButtonLink>
           </div>
@@ -62,9 +64,9 @@ const LocationStatus: React.FC<{location: string; locationOrError: LocationOrErr
   }
 
   return (
-    <Tag minimal intent="success">
+    <TagWIP minimal intent="success">
       Loaded
-    </Tag>
+    </TagWIP>
   );
 };
 
@@ -88,7 +90,7 @@ const ReloadButton: React.FC<{
         <Button
           onClick={() => tryReload()}
           loading={reloading}
-          icon={<Icon icon="refresh" iconSize={11} />}
+          icon={<IconWIP name="refresh" />}
           text="Reload"
           small
           minimal

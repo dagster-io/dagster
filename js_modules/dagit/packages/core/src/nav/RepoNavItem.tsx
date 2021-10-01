@@ -1,5 +1,5 @@
-import {Button, Colors, Icon} from '@blueprintjs/core';
-import {Popover2 as Popover, Tooltip2 as Tooltip} from '@blueprintjs/popover2';
+import {Button, Colors} from '@blueprintjs/core';
+import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -8,7 +8,10 @@ import {usePermissions} from '../app/Permissions';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
+import {IconWIP, IconWrapper} from '../ui/Icon';
+import {Popover} from '../ui/Popover';
 import {Spinner} from '../ui/Spinner';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
@@ -64,7 +67,7 @@ export const RepoNavItem: React.FC<Props> = (props) => {
             canEscapeKeyClose
             isOpen={open}
             onInteraction={onInteraction}
-            modifiers={{offset: {enabled: true, options: {offset: [0, 24]}}}}
+            modifiers={{offset: {enabled: true, options: {offset: [0, 16]}}}}
             placement="right"
             popoverClassName="bp3-dark"
             content={
@@ -99,7 +102,7 @@ export const RepoNavItem: React.FC<Props> = (props) => {
 const SingleRepoSummary: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) => {
   const {canReloadRepositoryLocation} = usePermissions();
   return (
-    <Group direction="row" spacing={8} alignItems="center">
+    <Group direction="row" spacing={4} alignItems="center">
       <SingleRepoNameLink
         to={workspacePathFromAddress(repoAddress)}
         title={repoAddressAsString(repoAddress)}
@@ -114,7 +117,7 @@ const SingleRepoSummary: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) 
               shortcutLabel={`⌥R`}
               shortcutFilter={(e) => e.code === 'KeyR' && e.altKey}
             >
-              <Tooltip
+              <ReloadTooltip
                 inheritDarkTheme={false}
                 content={
                   <Reloading>
@@ -129,15 +132,13 @@ const SingleRepoSummary: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) 
                 }
               >
                 {reloading ? (
-                  <span style={{position: 'relative', top: '1px'}}>
-                    <Spinner purpose="body-text" />
-                  </span>
+                  <Spinner purpose="body-text" />
                 ) : (
                   <StyledButton onClick={tryReload}>
-                    <Icon icon="refresh" iconSize={11} color={Colors.GRAY4} />
+                    <IconWIP name="refresh" color={ColorsWIP.Gray200} />
                   </StyledButton>
                 )}
-              </Tooltip>
+              </ReloadTooltip>
             </ShortcutHandler>
           )}
         </ReloadRepositoryLocationButton>
@@ -166,29 +167,30 @@ const SingleRepoNameLink = styled(Link)`
   }
 `;
 
+const ReloadTooltip = styled(Tooltip)`
+  && {
+    display: block;
+  }
+`;
+
 const StyledButton = styled.button`
   background-color: transparent;
   border: 0;
   cursor: pointer;
+  display: block;
   padding: 0;
   margin: 0;
-  position: relative;
-  top: 1px;
 
   :focus:not(:focus-visible) {
     outline: none;
   }
 
-  .bp3-icon {
-    display: block;
+  & ${IconWrapper} {
+    transition: color 0.1s ease-in-out;
   }
 
-  .bp3-icon svg {
-    transition: fill 0.1s ease-in-out;
-  }
-
-  :hover .bp3-icon svg {
-    fill: ${Colors.BLUE5};
+  :hover ${IconWrapper} {
+    color: ${ColorsWIP.Blue200};
   }
 `;
 

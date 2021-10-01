@@ -47,6 +47,7 @@ type Repository {
   partitionSets: [PartitionSet!]!
   schedules: [Schedule!]!
   sensors: [Sensor!]!
+  assetNodes: [AssetNode!]!
   displayMetadata: [RepositoryMetadata!]!
 }
 
@@ -1045,13 +1046,17 @@ type Sensor {
   id: ID!
   jobOriginId: String!
   name: String!
-  pipelineName: String
-  solidSelection: [String]
-  mode: String
+  targets: [Target!]
   sensorState: InstigationState!
   minIntervalSeconds: Int!
   description: String
   nextTick: FutureInstigationTick
+}
+
+type Target {
+  pipelineName: String!
+  mode: String!
+  solidSelection: [String!]
 }
 
 type PipelinePreset {
@@ -1070,6 +1075,21 @@ type UsedSolid {
 type SolidInvocationSite {
   pipeline: Pipeline!
   solidHandle: SolidHandle!
+}
+
+type AssetNode {
+  id: ID!
+  assetKey: AssetKey!
+  description: String
+  opName: String
+  jobName: String
+  dependencies: [AssetDependency!]!
+  assetMaterializations(partitions: [String], beforeTimestampMillis: String, limit: Int): [AssetMaterialization!]!
+}
+
+type AssetDependency {
+  inputName: String!
+  upstreamAsset: AssetNode!
 }
 
 union RepositoryOrError = PythonError | Repository | RepositoryNotFoundError
@@ -1567,6 +1587,7 @@ union PipelineRunLogsSubscriptionPayload = PipelineRunLogsSubscriptionSuccess | 
 type PipelineRunLogsSubscriptionSuccess {
   run: PipelineRun!
   messages: [PipelineRunEvent!]!
+  hasMorePastEvents: Boolean!
 }
 
 type PipelineRunLogsSubscriptionFailure {

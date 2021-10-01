@@ -1,10 +1,10 @@
-from dagster import execute_solid
-from hacker_news.pipelines.download_pipeline import MODE_TEST
-from hacker_news.solids.id_range_for_time import (
+from dagster import ResourceDefinition, build_op_context
+from hacker_news.ops.id_range_for_time import (
     binary_search_nearest_left,
     binary_search_nearest_right,
     id_range_for_time,
 )
+from hacker_news.resources.hn_resource import hn_snapshot_client
 
 
 def test_binary_search():
@@ -33,20 +33,16 @@ def test_binary_search():
 
 def test_hello():
     """
-    This is an example test for a Dagster solid.
+    This is an example test for a Dagster op.
 
-    For hints on how to test your Dagster solids, see our documentation tutorial on Testing:
+    For hints on how to test your Dagster ops, see our documentation tutorial on Testing:
     https://docs.dagster.io/tutorial/testable
     """
-    result = execute_solid(
-        id_range_for_time,
-        run_config={
-            "resources": {
-                "partition_start": {"config": "2020-12-30 00:00:00"},
-                "partition_end": {"config": "2020-12-30 01:00:00"},
-            },
-        },
-        mode_def=MODE_TEST,
-    )
-
-    assert result.success
+    with build_op_context(
+        resources={
+            "partition_start": ResourceDefinition.hardcoded_resource("2020-12-30 00:00:00"),
+            "partition_end": ResourceDefinition.hardcoded_resource("2020-12-30 01:00:00"),
+            "hn_client": hn_snapshot_client,
+        }
+    ) as context:
+        id_range_for_time(context)

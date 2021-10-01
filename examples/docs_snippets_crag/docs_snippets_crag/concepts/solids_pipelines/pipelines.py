@@ -1,50 +1,42 @@
 # pylint: disable=unused-argument
 
-from dagster import (
-    DependencyDefinition,
-    ModeDefinition,
-    PipelineDefinition,
-    PresetDefinition,
-    execute_pipeline,
-    pipeline,
-    solid,
-)
+from dagster import DependencyDefinition, GraphDefinition, graph, op
 
 
-@solid
-def my_solid():
+@op
+def my_op():
     pass
 
 
 # start_pipeline_example_marker
-@solid
+@op
 def return_one(context):
     return 1
 
 
-@solid
+@op
 def add_one(context, number: int):
     return number + 1
 
 
-@pipeline
-def one_plus_one_pipeline():
+@graph
+def one_plus_one():
     add_one(return_one())
 
 
 # end_pipeline_example_marker
 
 # start_multiple_usage_pipeline
-@pipeline
-def multiple_usage_pipeline():
+@graph
+def multiple_usage():
     add_one(add_one(return_one()))
 
 
 # end_multiple_usage_pipeline
 
 # start_alias_pipeline
-@pipeline
-def alias_pipeline():
+@graph
+def alias():
     add_one.alias("second_addition")(add_one(return_one()))
 
 
@@ -52,8 +44,8 @@ def alias_pipeline():
 
 
 # start_tag_pipeline
-@pipeline
-def tag_pipeline():
+@graph
+def tagged_add_one():
     add_one.tag({"my_tag": "my_value"})(add_one(return_one()))
 
 
@@ -61,60 +53,18 @@ def tag_pipeline():
 
 
 # start_pipeline_definition_marker
-one_plus_one_pipeline_def = PipelineDefinition(
-    name="one_plus_one_pipeline",
-    solid_defs=[return_one, add_one],
+one_plus_one_graph_def = GraphDefinition(
+    name="one_plus_one",
+    node_defs=[return_one, add_one],
     dependencies={"add_one": {"number": DependencyDefinition("return_one")}},
 )
 # end_pipeline_definition_marker
 
 
-# start_modes_pipeline
-dev_mode = ModeDefinition("dev")
-staging_mode = ModeDefinition("staging")
-prod_mode = ModeDefinition("prod")
-
-
-@pipeline(mode_defs=[dev_mode, staging_mode, prod_mode])
-def my_modes_pipeline():
-    my_solid()
-
-
-# end_modes_pipeline
-
-# start_preset_pipeline
-@pipeline(
-    preset_defs=[
-        PresetDefinition(
-            name="one",
-            run_config={"solids": {"add_one": {"inputs": {"number": 1}}}},
-        ),
-        PresetDefinition(
-            name="two",
-            run_config={"solids": {"add_one": {"inputs": {"number": 2}}}},
-        ),
-    ]
-)
-def my_presets_pipeline():
-    add_one()
-
-
-# end_preset_pipeline
-
-# start_run_preset
-
-
-def run_pipeline():
-    execute_pipeline(my_presets_pipeline, preset="one")
-
-
-# end_run_preset
-
-
 # start_tags_pipeline
-@pipeline(tags={"my_tag": "my_value"})
+@graph(tags={"my_tag": "my_value"})
 def my_tags_pipeline():
-    my_solid()
+    my_op()
 
 
 # end_tags_pipeline

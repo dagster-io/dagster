@@ -6,6 +6,7 @@ import styled from 'styled-components/macro';
 
 import {TimezoneContext} from '../app/time/TimezoneContext';
 import {browserTimezone} from '../app/time/browserTimezone';
+import {ColorsWIP} from '../ui/Colors';
 import {FontFamily} from '../ui/styles';
 
 import {LogLevel} from './LogLevel';
@@ -13,16 +14,16 @@ import {ColumnWidthsContext} from './LogsScrollingTableHeader';
 
 const bgcolorForLevel = (level: LogLevel) =>
   ({
-    [LogLevel.DEBUG]: `transparent`,
-    [LogLevel.INFO]: `transparent`,
-    [LogLevel.EVENT]: `transparent`,
-    [LogLevel.WARNING]: `rgba(166, 121, 8, 0.05)`,
-    [LogLevel.ERROR]: `rgba(206, 17, 38, 0.05)`,
-    [LogLevel.CRITICAL]: `rgba(206, 17, 38, 0.05)`,
+    [LogLevel.DEBUG]: ColorsWIP.White,
+    [LogLevel.INFO]: ColorsWIP.White,
+    [LogLevel.EVENT]: ColorsWIP.White,
+    [LogLevel.WARNING]: ColorsWIP.Yellow50,
+    [LogLevel.ERROR]: ColorsWIP.Red50,
+    [LogLevel.CRITICAL]: ColorsWIP.Red50,
   }[level]);
 
 export const Row = styled.div<{level: LogLevel; highlighted: boolean}>`
-  font-size: 0.75em;
+  font-size: 0.9em;
   width: 100%;
   height: 100%;
   max-height: 17em;
@@ -106,7 +107,7 @@ const SolidColumnContainer = styled.div`
 `;
 
 const SolidColumnTooltipStyle = JSON.stringify({
-  fontSize: '0.75em',
+  fontSize: '0.9em',
   fontFamily: FontFamily.monospace,
   color: Colors.BLACK,
   background: Colors.WHITE,

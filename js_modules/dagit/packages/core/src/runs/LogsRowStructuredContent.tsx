@@ -1,4 +1,4 @@
-import {Colors, Intent, Tag} from '@blueprintjs/core';
+import {Colors, Intent} from '@blueprintjs/core';
 import qs from 'qs';
 import querystring from 'query-string';
 import * as React from 'react';
@@ -8,6 +8,7 @@ import {assertUnreachable} from '../app/Util';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
 import {ErrorSource} from '../types/globalTypes';
 import {Box} from '../ui/Box';
+import {TagWIP} from '../ui/TagWIP';
 
 import {EventTypeColumn} from './LogsRowComponents';
 import {LogRowStructuredContentTable, MetadataEntries, MetadataEntryLink} from './MetadataEntry';
@@ -250,8 +251,7 @@ const DefaultContent: React.FunctionComponent<{
     <>
       <EventTypeColumn>
         {eventType && (
-          <Tag
-            minimal={true}
+          <TagWIP
             intent={eventIntent}
             style={
               eventColor
@@ -266,7 +266,7 @@ const DefaultContent: React.FunctionComponent<{
             }
           >
             {eventType}
-          </Tag>
+          </TagWIP>
         )}
       </EventTypeColumn>
       <Box padding={{left: 4}} style={{flex: 1}}>
@@ -321,9 +321,9 @@ const FailureContent: React.FunctionComponent<{
   return (
     <>
       <EventTypeColumn>
-        <Tag minimal={true} intent="danger" style={{fontSize: '0.9em'}}>
+        <TagWIP minimal intent="danger">
           {eventType}
-        </Tag>
+        </TagWIP>
       </EventTypeColumn>
       <Box padding={{left: 4}} style={{flex: 1}}>
         {contextMessage}

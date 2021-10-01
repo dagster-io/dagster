@@ -5,7 +5,7 @@ from unittest import mock
 from dagster import SensorEvaluationContext
 from dagster.core.instance.ref import InstanceRef
 from dagster.core.storage.event_log.base import EventLogRecord
-from hacker_news.sensors.hn_tables_updated_sensor import story_recommender_on_hn_table_update
+from hacker_news.sensors.hn_tables_updated_sensor import story_recommender_on_hn_table_update_prod
 
 
 def get_mock_event_records(asset_events: List[Tuple[str, int]]):
@@ -36,7 +36,7 @@ def test_first_events(mock_event_records):
             cursor=None,
             repository_name=None,
         )
-        requests = story_recommender_on_hn_table_update.evaluate_tick(context).run_requests
+        requests = story_recommender_on_hn_table_update_prod.evaluate_tick(context).run_requests
         assert len(requests) == 1
         assert requests[0].run_key == "1|2"
 
@@ -53,7 +53,7 @@ def test_nothing_new(mock_event_records):
             cursor=None,
             repository_name=None,
         )
-        requests = story_recommender_on_hn_table_update.evaluate_tick(context).run_requests
+        requests = story_recommender_on_hn_table_update_prod.evaluate_tick(context).run_requests
         assert len(requests) == 0
 
 
@@ -71,7 +71,7 @@ def test_new_comments_old_stories(mock_event_records):
             cursor=None,
             repository_name=None,
         )
-        requests = story_recommender_on_hn_table_update.evaluate_tick(context).run_requests
+        requests = story_recommender_on_hn_table_update_prod.evaluate_tick(context).run_requests
         assert len(requests) == 0
 
 
@@ -90,7 +90,7 @@ def test_old_comments_new_stories(mock_event_records):
             cursor=None,
             repository_name=None,
         )
-        requests = story_recommender_on_hn_table_update.evaluate_tick(context).run_requests
+        requests = story_recommender_on_hn_table_update_prod.evaluate_tick(context).run_requests
         assert len(requests) == 0
 
 
@@ -108,6 +108,6 @@ def test_both_new(mock_event_records):
             cursor=None,
             repository_name=None,
         )
-        requests = story_recommender_on_hn_table_update.evaluate_tick(context).run_requests
+        requests = story_recommender_on_hn_table_update_prod.evaluate_tick(context).run_requests
         assert len(requests) == 1
         assert requests[0].run_key == "2|3"

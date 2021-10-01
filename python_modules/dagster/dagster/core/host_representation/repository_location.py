@@ -224,7 +224,7 @@ class RepositoryLocation(AbstractContextManager):
     def get_repository_python_origin(self, repository_name: str) -> "RepositoryPythonOrigin":
         if repository_name not in self.repository_code_pointer_dict:
             raise DagsterInvariantViolationError(
-                "Unable to find repository name {} on GRPC server.".format(repository_name)
+                "Unable to find repository {}.".format(repository_name)
             )
 
         code_pointer = self.repository_code_pointer_dict[repository_name]

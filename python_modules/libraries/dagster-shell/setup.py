@@ -21,7 +21,7 @@ if __name__ == "__main__":
         author="Elementl",
         author_email="hello@elementl.com",
         license="Apache-2.0",
-        description="Package for Dagster shell solids.",
+        description="Package for Dagster shell ops.",
         url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-shell",
         classifiers=[
             "Programming Language :: Python :: 3.6",

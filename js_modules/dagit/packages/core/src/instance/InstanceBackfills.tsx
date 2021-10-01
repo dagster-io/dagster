@@ -1,17 +1,9 @@
 import {gql, useQuery, useMutation} from '@apollo/client';
-import {
-  Colors,
-  NonIdealState,
-  Popover,
-  Button,
-  Menu,
-  MenuItem,
-  Tag,
-  Intent,
-} from '@blueprintjs/core';
+import {Colors, NonIdealState, Button, Intent} from '@blueprintjs/core';
 import qs from 'qs';
 import * as React from 'react';
 import {useHistory, Link} from 'react-router-dom';
+import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {SharedToaster} from '../app/DomUtils';
@@ -37,9 +29,12 @@ import {ButtonLink} from '../ui/ButtonLink';
 import {CursorPaginationControls} from '../ui/CursorControls';
 import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
+import {MenuItemWIP, MenuWIP} from '../ui/Menu';
+import {Popover} from '../ui/Popover';
 import {Table} from '../ui/Table';
+import {TagWIP} from '../ui/TagWIP';
+import {Mono} from '../ui/Text';
 import {stringFromValue} from '../ui/TokenizingField';
-import {FontFamily} from '../ui/styles';
 import {workspacePipelinePath} from '../workspace/workspacePath';
 
 import {BackfillTerminationDialog} from './BackfillTerminationDialog';
@@ -108,7 +103,7 @@ export const InstanceBackfills = () => {
           return (
             <>
               {isBackfillHealthy ? null : (
-                <Box margin={{bottom: 8}}>
+                <Box margin={{bottom: 24}} padding={{horizontal: 24}}>
                   <Alert
                     intent="warning"
                     title="The backfill daemon is not running."
@@ -291,12 +286,14 @@ const BackfillRow = ({
 
   return (
     <tr>
-      <td style={{width: '120px', fontFamily: FontFamily.monospace}}>
-        {partitionSetBackfillUrl ? (
-          <Link to={partitionSetBackfillUrl}>{backfill.backfillId}</Link>
-        ) : (
-          backfill.backfillId
-        )}
+      <td style={{width: '120px'}}>
+        <Mono>
+          {partitionSetBackfillUrl ? (
+            <Link to={partitionSetBackfillUrl}>{backfill.backfillId}</Link>
+          ) : (
+            backfill.backfillId
+          )}
+        </Mono>
       </td>
       <td>
         {backfill.partitionSet ? (
@@ -311,17 +308,16 @@ const BackfillRow = ({
       <td>
         {[BulkActionStatus.CANCELED, BulkActionStatus.FAILED].includes(backfill.status) ? (
           <Box margin={{bottom: 12}}>
-            <Tag
-              minimal
-              intent="danger"
+            <TagButton
               onClick={() =>
                 backfill.error &&
                 showCustomAlert({title: 'Error', body: <PythonErrorInfo error={backfill.error} />})
               }
-              style={{cursor: backfill.error ? 'pointer' : 'default'}}
             >
-              {backfill.status}
-            </Tag>
+              <TagWIP intent="danger" interactive>
+                {backfill.status}
+              </TagWIP>
+            </TagButton>
           </Box>
         ) : null}
         <BackfillStatusTable backfill={backfill} />
@@ -330,21 +326,21 @@ const BackfillRow = ({
       <td style={{width: '100px'}}>
         <Popover
           content={
-            <Menu>
+            <MenuWIP>
               {canCancelPartitionBackfill ? (
                 <>
                   {counts.numUnscheduled && backfill.status === BulkActionStatus.REQUESTED ? (
-                    <MenuItem
+                    <MenuItemWIP
                       text="Cancel backfill submission"
-                      icon="stop"
+                      icon="cancel"
                       intent="danger"
                       onClick={() => onTerminateBackfill(backfill)}
                     />
                   ) : null}
                   {canCancel ? (
-                    <MenuItem
+                    <MenuItemWIP
                       text="Terminate unfinished runs"
-                      icon="stop"
+                      icon="cancel"
                       intent="danger"
                       onClick={() => onTerminateBackfill(backfill)}
                     />
@@ -354,28 +350,28 @@ const BackfillRow = ({
               {canLaunchPartitionBackfill &&
               backfill.status === BulkActionStatus.FAILED &&
               backfill.partitionSet ? (
-                <MenuItem
+                <MenuItemWIP
                   text="Resume failed backfill"
                   title="Submits runs for all partitions in the backfill that do not have a corresponding run. Does not retry failed runs."
-                  icon="repeat"
+                  icon="refresh"
                   onClick={() => onResumeBackfill(backfill)}
                 />
               ) : null}
               {partitionSetBackfillUrl ? (
-                <MenuItem
+                <MenuItemWIP
                   text="View Partition Matrix"
-                  icon="multi-select"
+                  icon="view_list"
                   onClick={() => history.push(partitionSetBackfillUrl)}
                 />
               ) : null}
-              <MenuItem
+              <MenuItemWIP
                 text="View Backfill Runs"
-                icon="history"
+                icon="settings_backup_restore"
                 onClick={() => history.push(runsUrl)}
               />
-            </Menu>
+            </MenuWIP>
           }
-          position="bottom"
+          position="bottom-right"
         >
           <Button small minimal icon="chevron-down" style={{marginLeft: '4px'}} />
         </Popover>
@@ -383,6 +379,18 @@ const BackfillRow = ({
     </tr>
   );
 };
+
+const TagButton = styled.button`
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+
+  :focus {
+    outline: none;
+  }
+`;
 
 const getProgressCounts = (backfill: Backfill) => {
   const byPartitionRuns: {[key: string]: BackfillRun} = {};

@@ -21,6 +21,7 @@ from dagster.core.definitions.partition import (
     PartitionedConfig,
     StaticPartitionsDefinition,
 )
+from dagster.core.definitions.pipeline import PipelineSubsetDefinition
 from dagster.core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
 
 
@@ -222,8 +223,7 @@ def test_partitions():
             ),
         ),
     )
-    mode = job.mode_definitions[0]
-    partition_set = mode.get_partition_set_def("my_graph")
+    partition_set = job.get_partition_set_def()
     partitions = partition_set.get_partitions()
     assert len(partitions) == 2
     assert partitions[0].value == "2020-02-25"
@@ -600,3 +600,36 @@ def test_raise_on_error_execute_in_process():
 
     result = error_job.execute_in_process(raise_on_error=False)
     assert not result.success
+
+
+def test_job_subset():
+    @op
+    def my_op():
+        pass
+
+    @graph
+    def basic():
+        my_op()
+        my_op()
+
+    the_job = basic.to_job()
+
+    assert isinstance(the_job.get_pipeline_subset_def({"my_op"}), PipelineSubsetDefinition)
+
+
+def test_tags():
+    @graph(tags={"a": "x"})
+    def mygraphic():
+        pass
+
+    assert mygraphic.to_job().tags == {"a": "x"}
+
+
+def test_job_and_graph_tags():
+    @graph(tags={"a": "x", "c": "q"})
+    def mygraphic():
+        pass
+
+    job = mygraphic.to_job(tags={"a": "y", "b": "z"})
+
+    assert job.tags == {"a": "y", "b": "z", "c": "q"}

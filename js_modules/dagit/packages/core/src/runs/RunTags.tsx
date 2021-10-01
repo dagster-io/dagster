@@ -22,7 +22,7 @@ export const RunTags: React.FC<{
   };
 
   return (
-    <Box flex={{direction: 'row', wrap: 'wrap'}}>
+    <Box flex={{direction: 'row', wrap: 'wrap', gap: 8}}>
       {tags.map((tag, idx) => (
         <RunTag tag={tag} key={idx} onClick={onClick} />
       ))}

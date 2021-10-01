@@ -14,11 +14,24 @@ Why not pickle?
   (in memory, not human readable, etc) just handle the json case effectively.
 """
 
-import inspect
+
 from abc import ABC, abstractmethod
 from enum import Enum
-from inspect import Parameter, signature
-from typing import Any, Dict, List, NamedTuple, Optional, Set, Tuple, Type, TypeVar, Union, cast
+from inspect import Parameter, isclass, signature
+from typing import (
+    Any,
+    Dict,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 
 from dagster import check, seven
 
@@ -28,7 +41,9 @@ from .errors import DeserializationError, SerdesUsageError, SerializationError
 # Whitelisting
 ###################################################################################################
 
-TupleEntry = Tuple[Optional[Type[NamedTuple]], Type["NamedTupleSerializer"]]
+TupleEntry = Tuple[
+    Optional[Type[NamedTuple]], Type["NamedTupleSerializer"], Mapping[str, Parameter]
+]
 EnumEntry = Tuple[Type[Enum], Type["EnumSerializer"]]
 
 
@@ -41,8 +56,17 @@ class WhitelistMap(NamedTuple):
         name: str,
         nt: Optional[Type[NamedTuple]],
         serializer: Optional[Type["NamedTupleSerializer"]],
+        args_for_class: Mapping[str, Parameter],
     ):
-        self.tuples[name] = (nt, serializer or DefaultNamedTupleSerializer)
+        """
+        Args:
+            name: The class name of the namedtuple to register
+            nt: The namedtuple class to register.
+                Can be None to gracefull load previously serialized objects as None.
+            serializer: The class to use when serializing and deserializing
+            args_for_class: the inspect.signature paramaters for __new__
+        """
+        self.tuples[name] = (nt, serializer or DefaultNamedTupleSerializer, args_for_class)
 
     def has_tuple_entry(self, name: str) -> bool:
         return name in self.tuples
@@ -50,7 +74,11 @@ class WhitelistMap(NamedTuple):
     def get_tuple_entry(self, name: str) -> TupleEntry:
         return self.tuples[name]
 
-    def register_enum(self, enum: Type[Enum], serializer: Optional[Type["EnumSerializer"]]):
+    def register_enum(
+        self,
+        enum: Type[Enum],
+        serializer: Optional[Type["EnumSerializer"]],
+    ):
         self.enums[enum.__name__] = (enum, serializer or DefaultEnumSerializer)
 
     def has_enum_entry(self, name: str) -> bool:
@@ -76,7 +104,7 @@ def whitelist_for_serdes(serializer: Union[Type, Type["Serializer"]]):
 
     """
 
-    if inspect.isclass(serializer) and not issubclass(serializer, Serializer):
+    if isclass(serializer) and not issubclass(serializer, Serializer):
         return _whitelist_for_serdes(whitelist_map=_WHITELIST_MAP, serializer=None)(serializer)
     else:
         check.subclass_param(serializer, "serializer", Serializer)
@@ -91,8 +119,9 @@ def _whitelist_for_serdes(
         if issubclass(klass, Enum):
             whitelist_map.register_enum(klass, serializer)
         elif issubclass(klass, tuple):
-            _check_serdes_tuple_class_invariants(klass)
-            whitelist_map.register_tuple(klass.__name__, klass, serializer)
+            sig_params = signature(klass.__new__).parameters
+            _check_serdes_tuple_class_invariants(klass, sig_params)
+            whitelist_map.register_tuple(klass.__name__, klass, serializer, sig_params)
         else:
             raise SerdesUsageError(f"Can not whitelist class {klass} for serializer {serializer}")
 
@@ -121,7 +150,24 @@ class DefaultEnumSerializer(EnumSerializer):
 class NamedTupleSerializer(Serializer):
     @classmethod
     @abstractmethod
-    def value_from_storage_dict(cls, storage_dict: Dict[str, Any], klass: Type) -> NamedTuple:
+    def value_from_storage_dict(
+        cls,
+        storage_dict: Dict[str, Any],
+        klass: Type,
+        args_for_class: Mapping[str, Parameter],
+        whitelist_map: WhitelistMap,
+        descent_path: str,
+    ) -> NamedTuple:
+        """
+        Load the target value from the object tree output of json parsing.
+
+        Args:
+            storage_dict: The parsed json object to hydrate
+            klass: The namedtuple class object
+            args_for_class: the inspect.signature paramaters for __new__
+            whitelist_map: current map of whitelisted serdes objects
+            descent_path: the path to the current node from the root
+        """
         raise NotImplementedError()
 
     @classmethod
@@ -132,6 +178,15 @@ class NamedTupleSerializer(Serializer):
         whitelist_map: WhitelistMap,
         descent_path: str,
     ) -> Dict[str, Any]:
+        """
+        Transform the object in to a form that can be json serialized.
+
+        Args:
+            value: the instance of the object
+            whitelist_map: current map of whitelisted serdes objects
+            descent_path: the path to the current node from the root
+        """
+
         raise NotImplementedError()
 
 
@@ -147,17 +202,31 @@ class DefaultNamedTupleSerializer(NamedTupleSerializer):
         return set()
 
     @classmethod
-    def value_from_storage_dict(cls, storage_dict: Dict[str, Any], klass: Type) -> NamedTuple:
-
+    def value_from_storage_dict(
+        cls,
+        storage_dict: Dict[str, Any],
+        klass: Type,
+        args_for_class: Mapping[str, Parameter],
+        whitelist_map: WhitelistMap,
+        descent_path: str,
+    ) -> NamedTuple:
         # Naively implements backwards compatibility by filtering arguments that aren't present in
         # the constructor. If a property is present in the serialized object, but doesn't exist in
         # the version of the class loaded into memory, that property will be completely ignored.
-        # The call to seven.get_args turns out to be pretty expensive -- we should probably turn
-        # to, e.g., manually managing the deprecated keys on the serdes constructor.
-        args_for_class = seven.get_args(klass)
+        unpacked_dict = {
+            key: unpack_inner_value(value, whitelist_map, f"{descent_path}.{key}")
+            for key, value in storage_dict.items()
+            if key in args_for_class
+        }
+        return cls.value_from_unpacked(unpacked_dict, klass)
 
-        filtered_val = {k: v for k, v in storage_dict.items() if k in args_for_class}
-        return klass(**filtered_val)
+    @classmethod
+    def value_from_unpacked(
+        cls,
+        unpacked_dict: Dict[str, Any],
+        klass: Type,
+    ):
+        return klass(**unpacked_dict)
 
     @classmethod
     def value_to_storage_dict(
@@ -172,7 +241,7 @@ class DefaultNamedTupleSerializer(NamedTupleSerializer):
         for key, inner_value in value._asdict().items():
             if key in skip_when_empty_fields and inner_value in EMPTY_VALUES_TO_SKIP:
                 continue
-            base_dict[key] = _pack_value(inner_value, whitelist_map, f"{descent_path}.{key}")
+            base_dict[key] = pack_inner_value(inner_value, whitelist_map, f"{descent_path}.{key}")
 
         base_dict["__class__"] = value.__class__.__name__
         return base_dict
@@ -190,12 +259,14 @@ def serialize_dagster_namedtuple(nt: tuple, **json_kwargs) -> str:
 
 
 def _serialize_dagster_namedtuple(nt: tuple, whitelist_map: WhitelistMap, **json_kwargs) -> str:
-    return seven.json.dumps(_pack_value(nt, whitelist_map, _root(nt)), **json_kwargs)
+    return seven.json.dumps(pack_inner_value(nt, whitelist_map, _root(nt)), **json_kwargs)
 
 
 def serialize_value(val: Any) -> str:
     """Serialize a value to a json encoded string."""
-    return seven.json.dumps(_pack_value(val, whitelist_map=_WHITELIST_MAP, descent_path=_root(val)))
+    return seven.json.dumps(
+        pack_inner_value(val, whitelist_map=_WHITELIST_MAP, descent_path=_root(val))
+    )
 
 
 def pack_value(val: Any) -> Any:
@@ -206,13 +277,13 @@ def pack_value(val: Any) -> Any:
         * set
         * frozenset
     """
-    return _pack_value(val, whitelist_map=_WHITELIST_MAP, descent_path=_root(val))
+    return pack_inner_value(val, whitelist_map=_WHITELIST_MAP, descent_path=_root(val))
 
 
-def _pack_value(val: Any, whitelist_map: WhitelistMap, descent_path: str) -> Any:
+def pack_inner_value(val: Any, whitelist_map: WhitelistMap, descent_path: str) -> Any:
     if isinstance(val, list):
         return [
-            _pack_value(item, whitelist_map, f"{descent_path}[{idx}]")
+            pack_inner_value(item, whitelist_map, f"{descent_path}[{idx}]")
             for idx, item in enumerate(val)
         ]
     if isinstance(val, tuple):
@@ -222,7 +293,7 @@ def _pack_value(val: Any, whitelist_map: WhitelistMap, descent_path: str) -> Any
                 f"Can only serialize whitelisted namedtuples, received {val}.{_path_msg(descent_path)}",
             )
         val = cast(NamedTuple, val)
-        _, serializer = whitelist_map.get_tuple_entry(klass_name)
+        _, serializer, _ = whitelist_map.get_tuple_entry(klass_name)
         return serializer.value_to_storage_dict(val, whitelist_map, descent_path)
     if isinstance(val, Enum):
         klass_name = val.__class__.__name__
@@ -235,20 +306,21 @@ def _pack_value(val: Any, whitelist_map: WhitelistMap, descent_path: str) -> Any
         set_path = descent_path + "{}"
         return {
             "__set__": [
-                _pack_value(item, whitelist_map, set_path) for item in sorted(list(val), key=str)
+                pack_inner_value(item, whitelist_map, set_path)
+                for item in sorted(list(val), key=str)
             ]
         }
     if isinstance(val, frozenset):
         frz_set_path = descent_path + "{}"
         return {
             "__frozenset__": [
-                _pack_value(item, whitelist_map, frz_set_path)
+                pack_inner_value(item, whitelist_map, frz_set_path)
                 for item in sorted(list(val), key=str)
             ]
         }
     if isinstance(val, dict):
         return {
-            key: _pack_value(value, whitelist_map, f"{descent_path}.{key}")
+            key: pack_inner_value(value, whitelist_map, f"{descent_path}.{key}")
             for key, value in val.items()
         }
 
@@ -288,12 +360,12 @@ def deserialize_as(json_str: str, cls: Type[T]) -> T:
 
 def _deserialize_json(json_str: str, whitelist_map: WhitelistMap):
     value = seven.json.loads(json_str)
-    return _unpack_value(value, whitelist_map=whitelist_map, descent_path=_root(value))
+    return unpack_inner_value(value, whitelist_map=whitelist_map, descent_path=_root(value))
 
 
 def deserialize_value(val: str) -> Any:
     """Deserialize a json encoded string in to its original value"""
-    return _unpack_value(
+    return unpack_inner_value(
         seven.json.loads(check.str_param(val, "val")),
         whitelist_map=_WHITELIST_MAP,
         descent_path="",
@@ -302,17 +374,17 @@ def deserialize_value(val: str) -> Any:
 
 def unpack_value(val: Any) -> Any:
     """Convert a packed value in to its original form"""
-    return _unpack_value(
+    return unpack_inner_value(
         val,
         whitelist_map=_WHITELIST_MAP,
         descent_path="",
     )
 
 
-def _unpack_value(val: Any, whitelist_map: WhitelistMap, descent_path: str) -> Any:
+def unpack_inner_value(val: Any, whitelist_map: WhitelistMap, descent_path: str) -> Any:
     if isinstance(val, list):
         return [
-            _unpack_value(item, whitelist_map, f"{descent_path}[{idx}]")
+            unpack_inner_value(item, whitelist_map, f"{descent_path}[{idx}]")
             for idx, item in enumerate(val)
         ]
     if isinstance(val, dict) and val.get("__class__"):
@@ -324,17 +396,15 @@ def _unpack_value(val: Any, whitelist_map: WhitelistMap, descent_path: str) -> A
                 f"expected versions.{_path_msg(descent_path)}"
             )
 
-        klass, serializer = whitelist_map.get_tuple_entry(klass_name)
+        klass, serializer, args_for_class = whitelist_map.get_tuple_entry(klass_name)
 
         # Target class being set to none, likely by
         if klass is None:
             return None
 
-        unpacked_val = {
-            key: _unpack_value(value, whitelist_map, f"{descent_path}.{key}")
-            for key, value in val.items()
-        }
-        return serializer.value_from_storage_dict(unpacked_val, klass)
+        return serializer.value_from_storage_dict(
+            val, klass, args_for_class, whitelist_map, descent_path
+        )
     if isinstance(val, dict) and val.get("__enum__"):
         name, member = val["__enum__"].split(".")
         if not whitelist_map.has_enum_entry(name):
@@ -347,15 +417,15 @@ def _unpack_value(val: Any, whitelist_map: WhitelistMap, descent_path: str) -> A
         return enum_serializer.value_from_storage_str(member, enum_class)
     if isinstance(val, dict) and val.get("__set__") is not None:
         set_path = descent_path + "{}"
-        return set([_unpack_value(item, whitelist_map, set_path) for item in val["__set__"]])
+        return set([unpack_inner_value(item, whitelist_map, set_path) for item in val["__set__"]])
     if isinstance(val, dict) and val.get("__frozenset__") is not None:
         frz_set_path = descent_path + "{}"
         return frozenset(
-            [_unpack_value(item, whitelist_map, frz_set_path) for item in val["__frozenset__"]]
+            [unpack_inner_value(item, whitelist_map, frz_set_path) for item in val["__frozenset__"]]
         )
     if isinstance(val, dict):
         return {
-            key: _unpack_value(value, whitelist_map, f"{descent_path}.{key}")
+            key: unpack_inner_value(value, whitelist_map, f"{descent_path}.{key}")
             for key, value in val.items()
         }
 
@@ -377,7 +447,12 @@ def register_serdes_tuple_fallbacks(
     """
 
     for class_name, klass in fallback_map.items():
-        whitelist_map.register_tuple(class_name, klass, DefaultNamedTupleSerializer)
+        whitelist_map.register_tuple(
+            class_name,
+            klass,
+            DefaultNamedTupleSerializer,
+            signature(klass.__new__).parameters,
+        )
 
 
 ###################################################################################################
@@ -385,16 +460,12 @@ def register_serdes_tuple_fallbacks(
 ###################################################################################################
 
 
-def _get_dunder_new_params_dict(klass):
-    return signature(klass.__new__).parameters
+def _get_dunder_new_params(sig_params):
+    return list(sig_params.values())
 
 
-def _get_dunder_new_params(klass):
-    return list(_get_dunder_new_params_dict(klass).values())
-
-
-def _check_serdes_tuple_class_invariants(klass):
-    dunder_new_params = _get_dunder_new_params(klass)
+def _check_serdes_tuple_class_invariants(klass, sig_params):
+    dunder_new_params = _get_dunder_new_params(sig_params)
 
     cls_param = dunder_new_params[0]
 

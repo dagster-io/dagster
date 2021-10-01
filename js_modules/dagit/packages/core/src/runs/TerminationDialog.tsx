@@ -1,11 +1,15 @@
 import {useMutation} from '@apollo/client';
-import {Checkbox, Button, Classes, Colors, Dialog, Icon, ProgressBar} from '@blueprintjs/core';
+import {Checkbox, ProgressBar} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {TerminatePipelinePolicy} from '../types/globalTypes';
 import {Box} from '../ui/Box';
+import {ButtonWIP} from '../ui/Button';
+import {ColorsWIP} from '../ui/Colors';
+import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
-import {FontFamily} from '../ui/styles';
+import {IconWIP} from '../ui/Icon';
+import {Mono} from '../ui/Text';
 
 import {NavigationBlock} from './NavitationBlock';
 import {TERMINATE_MUTATION} from './RunUtils';
@@ -181,14 +185,9 @@ export const TerminationDialog = (props: Props) => {
                 <Checkbox
                   checked={state.mustForce}
                   labelElement={
-                    <Box
-                      flex={{display: 'inline-flex'}}
-                      style={{position: 'relative', top: '-2px'}}
-                    >
+                    <Box flex={{display: 'inline-flex'}}>
                       <Group direction="row" spacing={8}>
-                        <div style={{position: 'relative', top: '-1px'}}>
-                          <Icon icon="warning-sign" iconSize={13} color={Colors.GOLD3} />
-                        </div>
+                        <IconWIP name="warning" color={ColorsWIP.Yellow500} />
                         <div>
                           Force termination immediately. <strong>Warning:</strong> computational
                           resources created by runs may not be cleaned up.
@@ -200,9 +199,7 @@ export const TerminationDialog = (props: Props) => {
                 />
               ) : (
                 <Group direction="row" spacing={8}>
-                  <div style={{position: 'relative', top: '-1px'}}>
-                    <Icon icon="warning-sign" iconSize={13} color={Colors.GOLD3} />
-                  </div>
+                  <IconWIP name="warning" color={ColorsWIP.Yellow500} />
                   <div>
                     <strong>Warning:</strong> computational resources created by runs may not be
                     cleaned up.
@@ -234,37 +231,37 @@ export const TerminationDialog = (props: Props) => {
       case 'initial':
         if (!count) {
           return (
-            <Button intent="none" onClick={onClose}>
+            <ButtonWIP intent="none" onClick={onClose}>
               OK
-            </Button>
+            </ButtonWIP>
           );
         }
 
         return (
           <>
-            <Button intent="none" onClick={onClose}>
+            <ButtonWIP intent="none" onClick={onClose}>
               Cancel
-            </Button>
-            <Button intent="danger" onClick={mutate}>
+            </ButtonWIP>
+            <ButtonWIP intent="danger" onClick={mutate}>
               {`${state.mustForce ? 'Force termination for' : 'Terminate'} ${`${count} ${
                 count === 1 ? 'run' : 'runs'
               }`}`}
-            </Button>
+            </ButtonWIP>
           </>
         );
       case 'terminating':
         return (
-          <Button intent="danger" disabled>
+          <ButtonWIP intent="danger" disabled>
             {state.mustForce
               ? `Forcing termination for ${`${count} ${count === 1 ? 'run' : 'runs'}...`}`
               : `Terminating ${`${count} ${count === 1 ? 'run' : 'runs'}...`}`}
-          </Button>
+          </ButtonWIP>
         );
       case 'completed':
         return (
-          <Button intent="primary" onClick={onClose}>
+          <ButtonWIP intent="primary" onClick={onClose}>
             Done
-          </Button>
+          </ButtonWIP>
         );
     }
   };
@@ -286,7 +283,7 @@ export const TerminationDialog = (props: Props) => {
       <Group direction="column" spacing={8}>
         {successCount ? (
           <Group direction="row" spacing={8} alignItems="flex-start">
-            <Icon icon="tick-circle" iconSize={16} color={Colors.GREEN3} />
+            <IconWIP name="check_circle" color={ColorsWIP.Green500} />
             <div>
               {state.mustForce
                 ? `Successfully forced termination for ${successCount}
@@ -299,7 +296,7 @@ export const TerminationDialog = (props: Props) => {
         {errorCount ? (
           <Group direction="column" spacing={8}>
             <Group direction="row" spacing={8} alignItems="flex-start">
-              <Icon icon="warning-sign" iconSize={16} color={Colors.GOLD3} />
+              <IconWIP name="warning" color={ColorsWIP.Yellow500} />
               <div>
                 {state.mustForce
                   ? `Could not force termination for ${errorCount} ${
@@ -314,7 +311,7 @@ export const TerminationDialog = (props: Props) => {
               {Object.keys(errors).map((runId) => (
                 <li key={runId}>
                   <Group direction="row" spacing={8}>
-                    <span style={{fontFamily: FontFamily.monospace}}>{runId.slice(0, 8)}</span>
+                    <Mono>{runId.slice(0, 8)}</Mono>
                     {errors[runId] ? <div>{errors[runId]?.message}</div> : null}
                   </Group>
                 </li>
@@ -329,7 +326,7 @@ export const TerminationDialog = (props: Props) => {
   const canQuicklyClose = state.step !== 'terminating';
 
   return (
-    <Dialog
+    <DialogWIP
       isOpen={isOpen}
       title="Terminate runs"
       canEscapeKeyClose={canQuicklyClose}
@@ -337,15 +334,13 @@ export const TerminationDialog = (props: Props) => {
       isCloseButtonShown={canQuicklyClose}
       onClose={onClose}
     >
-      <div className={Classes.DIALOG_BODY}>
+      <DialogBody>
         <Group direction="column" spacing={24}>
           {progressContent()}
           {completionContent()}
         </Group>
-      </div>
-      <div className={Classes.DIALOG_FOOTER}>
-        <div className={Classes.DIALOG_FOOTER_ACTIONS}>{buttons()}</div>
-      </div>
-    </Dialog>
+      </DialogBody>
+      <DialogFooter>{buttons()}</DialogFooter>
+    </DialogWIP>
   );
 };

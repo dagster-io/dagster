@@ -3,6 +3,7 @@ import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {POLL_INTERVAL} from '../runs/useCursorPaginatedQuery';
+import {Box} from '../ui/Box';
 import {Group} from '../ui/Group';
 import {Subheading} from '../ui/Text';
 import {REPOSITORY_LOCATIONS_FRAGMENT} from '../workspace/WorkspaceContext';
@@ -32,7 +33,9 @@ export const InstanceHealthPage = () => {
     <Group direction="column" spacing={20}>
       <InstanceTabs tab="health" queryData={queryData} />
       <Group direction="column" spacing={16}>
-        <Subheading>Daemon statuses</Subheading>
+        <Box padding={{horizontal: 24}}>
+          <Subheading>Daemon statuses</Subheading>
+        </Box>
         {daemonContent()}
       </Group>
     </Group>

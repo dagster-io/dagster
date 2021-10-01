@@ -19,6 +19,8 @@ import {ColumnWidthsProvider, Headers} from './LogsScrollingTableHeader';
 import {IRunMetadataDict} from './RunMetadataProvider';
 import {RunPipelineRunEventFragment} from './types/RunPipelineRunEventFragment';
 
+const LOGS_PADDING_BOTTOM = 50;
+
 interface ILogsScrollingTableProps {
   logs: LogsProviderLogs;
   filter: LogFilter;
@@ -221,7 +223,12 @@ class LogsScrollingTableSized extends React.Component<ILogsScrollingTableSizedPr
 
   onScroll = ({scrollTop, scrollHeight, clientHeight}: ScrollParams) => {
     const atTopAndStarting = scrollTop === 0 && scrollHeight <= clientHeight;
-    const atBottom = Math.abs(scrollTop - (scrollHeight - clientHeight)) < 5;
+
+    // Note: The distance to the bottom can go negative if you scroll into the padding at the bottom of the list.
+    // react-virtualized seems to be faking these numbers (they're different than what you get if you inspect the el)
+    const distanceToBottom = scrollHeight - clientHeight - scrollTop;
+    const atBottom = distanceToBottom < 5;
+
     this.isAtBottomOrZero = atTopAndStarting || atBottom;
   };
 
@@ -308,11 +315,11 @@ class LogsScrollingTableSized extends React.Component<ILogsScrollingTableSizedPr
     const {filteredNodes, height, loading, width} = this.props;
     return (
       <div>
-        {loading && (
+        {loading ? (
           <ListEmptyState>
             <NonIdealState icon={<Spinner purpose="section" />} title="Fetching logs..." />
           </ListEmptyState>
-        )}
+        ) : null}
         <List
           ref={this.list}
           deferredMeasurementCache={this.cache}
@@ -323,7 +330,7 @@ class LogsScrollingTableSized extends React.Component<ILogsScrollingTableSizedPr
           width={width}
           height={height}
           overscanRowCount={10}
-          style={{paddingBottom: 50}}
+          style={{paddingBottom: LOGS_PADDING_BOTTOM}}
           onScroll={this.onScroll}
         />
       </div>
@@ -385,6 +392,7 @@ class AutoSizer extends React.Component<{
 }
 
 const ListEmptyState = styled.div`
+  background-color: rgba(255, 255, 255, 0.7);
   z-index: 100;
   position: absolute;
   width: 100%;

@@ -1,11 +1,13 @@
 import {gql, useApolloClient} from '@apollo/client';
-import {Button, ButtonGroup, Colors, Icon} from '@blueprintjs/core';
+import {Button, ButtonGroup, Colors} from '@blueprintjs/core';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {useFeatureFlags} from '../app/Flags';
 import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
+import {IconWIP} from '../ui/Icon';
 import {DagsterRepoOption} from '../workspace/WorkspaceContext';
 import {buildRepoPath} from '../workspace/buildRepoAddress';
 import {workspacePath} from '../workspace/workspacePath';
@@ -135,14 +137,14 @@ export const RepositoryContentList: React.FC<RepositoryContentListProps> = ({
             small={true}
             active={type === 'pipelines'}
             intent={type === 'pipelines' ? 'primary' : 'none'}
-            icon={<Icon icon="diagram-tree" iconSize={13} />}
+            icon={<IconWIP name="schema" color={ColorsWIP.White} />}
             onClick={() => setType('pipelines')}
           />
           <Button
             small={true}
             active={type === 'solids'}
             intent={type === 'solids' ? 'primary' : 'none'}
-            icon={<Icon icon="git-commit" iconSize={13} />}
+            icon={<IconWIP name="linear_scale" color={ColorsWIP.White} />}
             onClick={() => setType('solids')}
           />
         </ButtonGroup>

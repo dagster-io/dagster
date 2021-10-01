@@ -95,20 +95,42 @@ def test_storage_postgres_db_config(template: HelmTemplate, storage: str):
 
 def test_k8s_run_launcher_config(template: HelmTemplate):
     job_namespace = "namespace"
+    image_pull_policy = "Always"
     load_incluster_config = True
     env_config_maps = [{"name": "env_config_map"}]
     env_secrets = [{"name": "secret"}]
     env_vars = ["ENV_VAR"]
+    volume_mounts = [
+        {
+            "mountPath": "/opt/dagster/dagster_home/dagster.yaml",
+            "name": "dagster-instance",
+            "subPath": "dagster.yaml",
+        },
+        {
+            "name": "test-volume",
+            "mountPath": "/opt/dagster/test_mount_path/volume_mounted_file.yaml",
+            "subPath": "volume_mounted_file.yaml",
+        },
+    ]
+
+    volumes = [
+        {"name": "test-volume", "configMap": {"name": "test-volume-configmap"}},
+        {"name": "test-pvc", "persistentVolumeClaim": {"claimName": "my_claim", "readOnly": False}},
+    ]
+
     helm_values = DagsterHelmValues.construct(
         runLauncher=RunLauncher.construct(
             type=RunLauncherType.K8S,
             config=RunLauncherConfig.construct(
                 k8sRunLauncher=K8sRunLauncherConfig.construct(
                     jobNamespace=job_namespace,
+                    imagePullPolicy=image_pull_policy,
                     loadInclusterConfig=load_incluster_config,
                     envConfigMaps=env_config_maps,
                     envSecrets=env_secrets,
                     envVars=env_vars,
+                    volumeMounts=volume_mounts,
+                    volumes=volumes,
                 )
             ),
         )
@@ -122,6 +144,7 @@ def test_k8s_run_launcher_config(template: HelmTemplate):
     assert run_launcher_config["class"] == "K8sRunLauncher"
     assert run_launcher_config["config"]["job_namespace"] == job_namespace
     assert run_launcher_config["config"]["load_incluster_config"] == load_incluster_config
+    assert run_launcher_config["config"]["image_pull_policy"] == image_pull_policy
     assert run_launcher_config["config"]["env_config_maps"][1:] == [
         configmap["name"] for configmap in env_config_maps
     ]
@@ -129,6 +152,8 @@ def test_k8s_run_launcher_config(template: HelmTemplate):
         secret["name"] for secret in env_secrets
     ]
     assert run_launcher_config["config"]["env_vars"] == env_vars
+    assert run_launcher_config["config"]["volume_mounts"] == volume_mounts
+    assert run_launcher_config["config"]["volumes"] == volumes
 
 
 @pytest.mark.parametrize("enabled", [True, False])

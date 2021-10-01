@@ -90,15 +90,19 @@
     "path": "/concepts",
     "children": [
       {
-        "title": "Ops & Graphs",
+        "title": "Ops, Graphs, and Jobs",
         "children": [
           {
             "title": "Solids",
             "path": "/concepts/solids-pipelines/solids"
           },
           {
-            "title": "Pipelines",
+            "title": "Graphs",
             "path": "/concepts/solids-pipelines/pipelines"
+          },
+          {
+            "title": "Jobs",
+            "path": "/concepts/solids-pipelines/jobs"
           },
           {
             "title": "Pipeline Execution",
@@ -109,8 +113,8 @@
             "path": "/concepts/solids-pipelines/composite-solids"
           },
           {
-            "title": "Solid Events",
-            "path": "/concepts/solids-pipelines/solid-events"
+            "title": "Op Events",
+            "path": "/concepts/solids-pipelines/op-events"
           },
           {
             "title": "Solid Hooks",
@@ -350,7 +354,7 @@
           },
           {
             "title": "Dagster with PySpark",
-            "path": "/integrations/pyspark"
+            "path": "/integrations/spark"
           },
           {
             "title": "Dagster with Pandas",

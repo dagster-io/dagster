@@ -425,10 +425,6 @@ class DagsterBackfillFailedError(DagsterError):
         super(DagsterBackfillFailedError, self).__init__(*args, **kwargs)
 
 
-class DagsterScheduleWipeRequired(DagsterError):
-    """Indicates that the user must wipe their stored schedule state."""
-
-
 class DagsterInstanceMigrationRequired(DagsterError):
     """Indicates that the dagster instance must be migrated."""
 

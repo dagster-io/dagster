@@ -1,4 +1,4 @@
-import {Colors, Icon, Overlay} from '@blueprintjs/core';
+import {Colors, Overlay} from '@blueprintjs/core';
 import Fuse from 'fuse.js';
 import * as React from 'react';
 import {useHistory, useLocation} from 'react-router-dom';
@@ -7,7 +7,9 @@ import styled from 'styled-components/macro';
 import {useFeatureFlags} from '../app/Flags';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
+import {IconWIP} from '../ui/Icon';
 import {Spinner} from '../ui/Spinner';
 import {FontFamily} from '../ui/styles';
 
@@ -142,7 +144,7 @@ export const SearchDialog: React.FC<{theme: 'dark' | 'light'; searchPlaceholder:
         <SearchTrigger onClick={openSearch} $theme={theme}>
           <Box flex={{justifyContent: 'space-between', alignItems: 'center'}}>
             <Group direction="row" alignItems="center" spacing={8}>
-              <Icon icon="search" iconSize={16} color={Colors.GRAY3} style={{display: 'block'}} />
+              <IconWIP name="search" color={ColorsWIP.Gray500} />
               <Placeholder>{searchPlaceholder}</Placeholder>
               <SlashShortcut $theme={theme}>{'/'}</SlashShortcut>
             </Group>
@@ -157,7 +159,7 @@ export const SearchDialog: React.FC<{theme: 'dark' | 'light'; searchPlaceholder:
       >
         <Container>
           <SearchBox hasQueryString={!!queryString.length}>
-            <Icon icon="search" iconSize={18} color={Colors.LIGHT_GRAY3} />
+            <IconWIP name="search" color={ColorsWIP.Gray200} size={20} />
             <SearchInput
               autoFocus
               spellCheck={false}
@@ -240,7 +242,7 @@ const SearchInput = styled.input`
   color: ${Colors.GRAY1};
   font-family: ${FontFamily.default};
   font-size: 18px;
-  margin-left: 8px;
+  margin-left: 4px;
   outline: none;
   width: 100%;
 
@@ -253,7 +255,7 @@ const SlashShortcut = styled.div<{$theme: 'light' | 'dark'}>`
   background-color: ${({$theme}) => ($theme === 'light' ? Colors.LIGHT_GRAY4 : Colors.DARK_GRAY3)};
   border-radius: 3px;
   color: ${({$theme}) => ($theme === 'light' ? Colors.DARK_GRAY1 : Colors.LIGHT_GRAY4)};
-  font-size: 10px;
+  font-size: 14px;
   font-family: ${FontFamily.monospace};
   padding: 2px 6px;
 `;

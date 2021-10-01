@@ -17,6 +17,7 @@ from dagster.core.definitions import (
     GraphDefinition,
     IPipeline,
     InputDefinition,
+    JobDefinition,
     Node,
     NodeHandle,
     SolidDefinition,
@@ -1067,11 +1068,21 @@ def _check_persistent_storage_requirement(
         can_isolate_steps(pipeline_def, mode_def)
         or (intermediate_storage_def and intermediate_storage_def.is_persistent)
     ):
+        if isinstance(pipeline_def, JobDefinition):
+            target = "job"
+            node = "op"
+            suggestion = 'the_graph.to_job(resource_defs={"io_manager": fs_io_manager})'
+        else:
+            target = "pipeline"
+            node = "solid"
+            suggestion = (
+                '@pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})])'
+            )
         raise DagsterUnmetExecutorRequirementsError(
-            "You have attempted to use an executor that uses multiple processes, but your pipeline "
-            "includes solid outputs that will not be stored somewhere where other processes can "
+            f"You have attempted to use an executor that uses multiple processes, but your {target} "
+            f"includes {node} outputs that will not be stored somewhere where other processes can "
             "retrieve them. Please use a persistent IO manager for these outputs. E.g. with\n"
-            '    @pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})])'
+            f"    {suggestion}"
         )
 
 

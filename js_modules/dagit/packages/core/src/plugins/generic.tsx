@@ -1,51 +1,38 @@
-import {Button, Classes, Dialog} from '@blueprintjs/core';
+import {Button} from '@blueprintjs/core';
 import startCase from 'lodash/startCase';
 import * as React from 'react';
 
 import {IPluginSidebarProps} from '../plugins';
+import {ButtonWIP} from '../ui/Button';
+import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 
-export class SidebarComponent extends React.Component<IPluginSidebarProps> {
-  state = {
-    open: false,
-  };
+export const SidebarComponent: React.FC<IPluginSidebarProps> = (props) => {
+  const [open, setOpen] = React.useState(false);
 
-  componentDidMount() {
-    document.addEventListener('show-kind-info', this.onClick);
+  React.useEffect(() => {
+    const onOpen = () => setOpen(true);
+    document.addEventListener('show-kind-info', onOpen);
+    return () => document.removeEventListener('show-kind-info', onOpen);
+  }, []);
+
+  const metadata = props.definition.metadata.sort((a, b) => a.key.localeCompare(b.key));
+
+  if (metadata.length === 0) {
+    return <span />;
   }
 
-  componentWillUnmount() {
-    document.removeEventListener('show-kind-info', this.onClick);
-  }
-
-  onClick = () => {
-    this.setState({
-      open: true,
-    });
-  };
-
-  render() {
-    const metadata = this.props.definition.metadata.sort((a, b) => a.key.localeCompare(b.key));
-
-    if (metadata.length === 0) {
-      return <span />;
-    }
-
-    return (
-      <div>
-        <Button icon="duplicate" onClick={this.onClick}>
-          View Metadata
-        </Button>
-        <Dialog
-          title={`Metadata: ${this.props.definition.name}`}
-          isOpen={this.state.open}
-          onClose={() =>
-            this.setState({
-              open: false,
-            })
-          }
-        >
+  return (
+    <div>
+      <Button icon="duplicate" onClick={() => setOpen(true)}>
+        View Metadata
+      </Button>
+      <DialogWIP
+        title={`Metadata: ${props.definition.name}`}
+        isOpen={open}
+        onClose={() => setOpen(false)}
+      >
+        <DialogBody>
           <div
-            className={Classes.DIALOG_BODY}
             style={{
               maxHeight: 400,
               overflow: 'scroll',
@@ -70,13 +57,11 @@ export class SidebarComponent extends React.Component<IPluginSidebarProps> {
               </tbody>
             </table>
           </div>
-          <div className={Classes.DIALOG_FOOTER}>
-            <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-              <Button onClick={() => this.setState({open: false})}>Close</Button>
-            </div>
-          </div>
-        </Dialog>
-      </div>
-    );
-  }
-}
+        </DialogBody>
+        <DialogFooter>
+          <ButtonWIP onClick={() => setOpen(false)}>Close</ButtonWIP>
+        </DialogFooter>
+      </DialogWIP>
+    </div>
+  );
+};

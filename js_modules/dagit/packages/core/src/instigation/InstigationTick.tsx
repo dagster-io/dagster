@@ -1,6 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Tag, Dialog, Button, Intent, NonIdealState, Classes, Colors, Icon} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
+import {NonIdealState, Colors} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -11,9 +10,14 @@ import {assertUnreachable} from '../app/Util';
 import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
 import {InstigationTickStatus, InstigationType} from '../types/globalTypes';
 import {Box} from '../ui/Box';
+import {ButtonWIP} from '../ui/Button';
 import {ButtonLink} from '../ui/ButtonLink';
+import {ColorsWIP} from '../ui/Colors';
+import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
+import {IconWIP} from '../ui/Icon';
 import {Spinner} from '../ui/Spinner';
+import {TagWIP} from '../ui/TagWIP';
 import {Body} from '../ui/Text';
 
 import {LaunchedRunListQuery, LaunchedRunListQueryVariables} from './types/LaunchedRunListQuery';
@@ -26,67 +30,45 @@ export const TickTag: React.FunctionComponent<{
   const [open, setOpen] = React.useState<boolean>(false);
   switch (tick.status) {
     case InstigationTickStatus.STARTED:
-      return (
-        <Tag minimal={true} intent={Intent.NONE}>
-          Started
-        </Tag>
-      );
+      return <TagWIP>Started</TagWIP>;
     case InstigationTickStatus.SUCCESS:
       if (!tick.runIds.length) {
-        return (
-          <Tag minimal={true} intent={Intent.PRIMARY}>
-            Requested
-          </Tag>
-        );
+        return <TagWIP intent="primary">Requested</TagWIP>;
       }
       return (
         <>
-          <Tag minimal={true} intent={Intent.PRIMARY} interactive={true}>
+          <TagWIP intent="primary" interactive>
             <ButtonLink underline="never" onClick={() => setOpen(true)}>
               {tick.runIds.length} Requested
             </ButtonLink>
-          </Tag>
-          <Dialog
+          </TagWIP>
+          <DialogWIP
             isOpen={open}
             onClose={() => setOpen(false)}
             style={{width: '90vw'}}
-            title={`Launched runs`}
+            title="Launched runs"
           >
-            <Box background={Colors.WHITE} padding={16} margin={{bottom: 16}}>
-              {open && <RunList runIds={tick.runIds} />}
-            </Box>
-            <div className={Classes.DIALOG_FOOTER}>
-              <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-                <Button intent="primary" onClick={() => setOpen(false)}>
-                  OK
-                </Button>
-              </div>
-            </div>
-          </Dialog>
+            <DialogBody>{open && <RunList runIds={tick.runIds} />}</DialogBody>
+            <DialogFooter>
+              <ButtonWIP intent="primary" onClick={() => setOpen(false)}>
+                OK
+              </ButtonWIP>
+            </DialogFooter>
+          </DialogWIP>
         </>
       );
     case InstigationTickStatus.SKIPPED:
       if (!tick.skipReason) {
-        return (
-          <Tag minimal={true} intent={Intent.WARNING}>
-            Skipped
-          </Tag>
-        );
+        return <TagWIP intent="warning">Skipped</TagWIP>;
       }
       return (
-        <Tooltip position={'right'} content={tick.skipReason} targetTagName="div">
-          <Tag minimal={true} intent={Intent.WARNING}>
-            Skipped
-          </Tag>
+        <Tooltip position="right" content={tick.skipReason} targetTagName="div">
+          <TagWIP intent="warning">Skipped</TagWIP>
         </Tooltip>
       );
     case InstigationTickStatus.FAILURE:
       if (!tick.error) {
-        return (
-          <Tag minimal={true} intent={Intent.DANGER}>
-            Failure
-          </Tag>
-        );
+        return <TagWIP intent="danger">Failure</TagWIP>;
       } else {
         const error = tick.error;
         return (
@@ -102,9 +84,9 @@ export const TickTag: React.FunctionComponent<{
               })
             }
           >
-            <Tag minimal={true} intent={Intent.DANGER} interactive={true}>
+            <TagWIP minimal={true} intent="danger">
               Failure
-            </Tag>
+            </TagWIP>
           </LinkButton>
         );
       }
@@ -134,7 +116,7 @@ export const RunList: React.FunctionComponent<{
   if (data.pipelineRunsOrError.__typename !== 'PipelineRuns') {
     return (
       <NonIdealState
-        icon={IconNames.ERROR}
+        icon="error"
         title="Query Error"
         description={data.pipelineRunsOrError.message}
       />
@@ -159,12 +141,7 @@ export const FailedRunList: React.FunctionComponent<{
         <Body>
           Failed Runs
           <Tooltip content="Failed runs this tick reacted on and reported back to.">
-            <Icon
-              icon="info-sign"
-              iconSize={12}
-              color={Colors.GRAY3}
-              style={{position: 'relative', top: '-2px', marginLeft: '6px'}}
-            />
+            <IconWIP name="info" color={ColorsWIP.Gray500} />
           </Tooltip>
         </Body>
 
@@ -174,12 +151,7 @@ export const FailedRunList: React.FunctionComponent<{
         <Body>
           Requested Runs
           <Tooltip content="Runs launched by the run requests in this tick.">
-            <Icon
-              icon="info-sign"
-              iconSize={12}
-              color={Colors.GRAY3}
-              style={{position: 'relative', top: '-2px', marginLeft: '6px'}}
-            />
+            <IconWIP name="info" color={ColorsWIP.Gray500} />
           </Tooltip>
         </Body>
         <NonIdealState description="Sensor does not target a pipeline." />

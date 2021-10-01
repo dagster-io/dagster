@@ -1,9 +1,10 @@
-import {InputGroup as BlueprintInputGroup, Colors, Popover} from '@blueprintjs/core';
+import {InputGroup as BlueprintInputGroup, Colors} from '@blueprintjs/core';
 import Fuse from 'fuse.js';
 import memoize from 'lodash/memoize';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {Popover} from '../ui/Popover';
 import {useSuggestionsForString} from '../ui/useSuggestionsForString';
 
 import {AssetsTableQuery_assetsOrError_AssetConnection_nodes} from './types/AssetsTableQuery';
@@ -168,7 +169,7 @@ export const AssetsFilter = ({
       minimal
       usePortal
       isOpen={isOpen}
-      position={'bottom-left'}
+      position="bottom-left"
       content={
         <Menu>
           {suggestions.map((suggestion, idx) => (

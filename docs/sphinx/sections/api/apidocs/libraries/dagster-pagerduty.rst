@@ -25,7 +25,7 @@ As noted in the PagerDuty documentation, you'll find an integration key (also re
 created from the PagerDuty events API.
 
 Once your service/integration is created, you can provision a PagerDuty resource and issue PagerDuty
-alerts from within your solids.
+alerts from within your ops.
 
 
 .. currentmodule:: dagster_pagerduty

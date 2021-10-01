@@ -1,11 +1,13 @@
-import {Checkbox, Colors, Icon} from '@blueprintjs/core';
+import {Checkbox, Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {usePermissions} from '../app/Permissions';
 import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
+import {IconWIP, IconWrapper} from '../ui/Icon';
 import {Spinner} from '../ui/Spinner';
 import {Caption} from '../ui/Text';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
@@ -126,12 +128,7 @@ const ReloadButton: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) => {
           {reloading ? (
             <Spinner purpose="body-text" />
           ) : (
-            <Icon
-              icon="refresh"
-              iconSize={11}
-              color={Colors.GRAY5}
-              style={{position: 'relative', top: '-4px'}}
-            />
+            <IconWIP name="refresh" color={ColorsWIP.Gray200} />
           )}
         </ReloadButtonInner>
       )}
@@ -143,15 +140,15 @@ const ReloadButtonInner = styled.button`
   background: transparent;
   border: 0;
   cursor: pointer;
-  padding: 4px;
+  padding: 2px;
   margin: -2px 0 0 8px;
   outline: none;
 
-  :hover .bp3-icon svg {
-    fill: ${Colors.GRAY3};
+  :hover ${IconWrapper} {
+    color: ${ColorsWIP.Gray500};
   }
 
-  :focus .bp3-icon svg {
-    fill: ${Colors.LIGHT_GRAY3};
+  :focus ${IconWrapper} {
+    color: ${ColorsWIP.Gray100};
   }
 `;

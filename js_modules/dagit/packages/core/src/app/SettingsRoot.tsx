@@ -35,8 +35,8 @@ const SettingsRoot = () => {
   );
 
   return (
-    <Page style={{height: '100vh', overflowY: 'auto'}}>
-      <Group direction="column" spacing={24}>
+    <Page>
+      <Group direction="column" spacing={24} padding={{horizontal: 24}}>
         <PageHeader title={<Heading>User settings</Heading>} />
         <Group direction="column" spacing={16}>
           <Subheading>Preferences</Subheading>
@@ -68,6 +68,15 @@ const SettingsRoot = () => {
                   <Switch
                     checked={flags.includes(FeatureFlag.flagPipelineModeTuples)}
                     onChange={() => toggleFlag(FeatureFlag.flagPipelineModeTuples)}
+                  />
+                ),
+              },
+              {
+                key: 'Experimental Asset APIs',
+                value: (
+                  <Switch
+                    checked={flags.includes(FeatureFlag.flagAssetGraph)}
+                    onChange={() => toggleFlag(FeatureFlag.flagAssetGraph)}
                   />
                 ),
               },

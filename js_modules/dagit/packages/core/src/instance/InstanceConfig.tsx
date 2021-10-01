@@ -1,12 +1,14 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors, Icon} from '@blueprintjs/core';
+import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link, useHistory} from 'react-router-dom';
 import styled, {createGlobalStyle, css} from 'styled-components/macro';
 
 import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {HighlightedCodeBlock} from '../ui/HighlightedCodeBlock';
+import {IconWIP} from '../ui/Icon';
 import {Spinner} from '../ui/Spinner';
 import {Subheading} from '../ui/Text';
 
@@ -63,7 +65,7 @@ export const InstanceConfig = React.memo(() => {
   return (
     <Group direction="column" spacing={20}>
       <InstanceTabs tab="config" />
-      <Group direction="column" spacing={16}>
+      <Group direction="column" spacing={16} padding={{horizontal: 24}}>
         <Subheading>{`Dagster ${data.version}`}</Subheading>
         <YamlShimStyle />
         {sections.map((section) => {
@@ -72,7 +74,7 @@ export const InstanceConfig = React.memo(() => {
           return (
             <Box flex={{direction: 'row', alignItems: 'flex-start'}} key={id} id={id}>
               <ConfigLink to={`/instance/config${hashForSection}`} key={id}>
-                <Icon icon="link" color={Colors.GRAY4} iconSize={11} />
+                <IconWIP name="link" color={ColorsWIP.Gray300} />
               </ConfigLink>
               <ConfigSection highlighted={hash === hashForSection}>
                 <HighlightedCodeBlock value={section} language="yaml" />

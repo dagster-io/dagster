@@ -1,12 +1,12 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors, Breadcrumbs, Icon, BreadcrumbProps} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
+import {Colors, Breadcrumbs, BreadcrumbProps} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link, Redirect, RouteComponentProps} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {Box} from '../ui/Box';
 import {Group} from '../ui/Group';
+import {IconWIP} from '../ui/Icon';
 import {Loading} from '../ui/Loading';
 import {Page} from '../ui/Page';
 import {PageHeader} from '../ui/PageHeader';
@@ -80,7 +80,7 @@ export const AssetEntryRoot: React.FC<RouteComponentProps> = ({location, match})
 
   return (
     <Page>
-      <Group direction="column" spacing={20}>
+      <Group direction="column" spacing={20} padding={{horizontal: 24}}>
         <PageHeader
           title={
             view !== 'directory' ? (
@@ -92,14 +92,14 @@ export const AssetEntryRoot: React.FC<RouteComponentProps> = ({location, match})
                   .reduce((prev, curr, i) => [
                     prev,
                     <Box key={`separator_${i}`} padding={4}>
-                      <Icon icon={IconNames.CHEVRON_RIGHT} iconSize={18} />
+                      <IconWIP name="chevron_right" size={24} />
                     </Box>,
                     curr,
                   ])}
               </Box>
             )
           }
-          icon="th"
+          icon="table_view"
           description={<PathDetails>{pathDetails()}</PathDetails>}
         />
         <Loading queryResult={queryResult}>

@@ -28,6 +28,7 @@ config:
   kubeconfig_file: {{ $k8sRunLauncherConfig.kubeconfigFile }}
   {{- end }}
   job_namespace: {{ $k8sRunLauncherConfig.jobNamespace | default .Release.Namespace }}
+  image_pull_policy: {{ $k8sRunLauncherConfig.imagePullPolicy }}
 
   {{- if .Values.imagePullSecrets }}
   image_pull_secrets: {{- .Values.imagePullSecrets | toYaml | nindent 10 }}
@@ -36,7 +37,6 @@ config:
 
   {{- if (hasKey $k8sRunLauncherConfig "image") }}
   job_image: {{ include "dagster.externalImage.name" (list $ $k8sRunLauncherConfig.image) | quote }}
-  image_pull_policy: {{ $k8sRunLauncherConfig.image.pullPolicy }}
   {{- end }}
   dagster_home:
     env: DAGSTER_HOME
@@ -64,6 +64,15 @@ config:
   {{- if $k8sRunLauncherConfig.envVars }}
   env_vars: {{- $k8sRunLauncherConfig.envVars | toYaml | nindent 4 }}
   {{- end }}
+
+  {{- if $k8sRunLauncherConfig.volumeMounts }}
+  volume_mounts: {{- $k8sRunLauncherConfig.volumeMounts | toYaml | nindent 4 }}
+  {{- end }}
+
+  {{- if $k8sRunLauncherConfig.volumes }}
+  volumes: {{- $k8sRunLauncherConfig.volumes | toYaml | nindent 4 }}
+  {{- end }}
+
 {{- end }}
 
 {{- define "dagsterYaml.runLauncher.custom" }}

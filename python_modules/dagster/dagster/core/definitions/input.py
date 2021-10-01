@@ -1,5 +1,5 @@
 from collections import namedtuple
-from typing import NamedTuple, Optional, Set, Type, Union
+from typing import NamedTuple, Optional, Set
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
@@ -385,37 +385,17 @@ class In(
         )
 
 
-class GraphIn(
-    NamedTuple(
-        "_GraphIn",
-        [
-            ("dagster_type", Union[DagsterType, Type[NoValueSentinel]]),
-            ("description", Optional[str]),
-        ],
-    )
-):
+class GraphIn(NamedTuple("_GraphIn", [("description", Optional[str])])):
     """
     Experimental replacement for :py:class:`InputDefinition` on graphs intended to decrease verbosity.
     It represents the information about the inputs that the graph maps.
 
     Args:
-        dagster_type (Optional[Union[Type, DagsterType]]]):
-            The type of this input. Should only be set if the correct type can not
-            be inferred directly from the type signature of the decorated function.
         description (Optional[str]): Human-readable description of the input.
     """
 
-    def __new__(cls, dagster_type=NoValueSentinel, description=None):
-        return super(GraphIn, cls).__new__(
-            cls,
-            dagster_type=dagster_type,
-            description=description,
-        )
+    def __new__(cls, description=None):
+        return super(GraphIn, cls).__new__(cls, description=description)
 
     def to_definition(self, name: str) -> InputDefinition:
-        dagster_type = self.dagster_type if self.dagster_type is not NoValueSentinel else None
-        return InputDefinition(
-            name=name,
-            dagster_type=dagster_type,
-            description=self.description,
-        )
+        return InputDefinition(name=name, description=self.description)

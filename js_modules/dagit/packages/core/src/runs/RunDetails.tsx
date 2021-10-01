@@ -1,11 +1,12 @@
 import {gql} from '@apollo/client';
-import {AnchorButton, Button, Classes, Colors, Dialog} from '@blueprintjs/core';
+import {AnchorButton, Button, Colors} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 
 import {AppContext} from '../app/AppContext';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {PipelineRunStatus} from '../types/globalTypes';
+import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
 import {HighlightedCodeBlock} from '../ui/HighlightedCodeBlock';
 import {MetadataTable} from '../ui/MetadataTable';
@@ -125,14 +126,13 @@ export const RunConfigDialog: React.FC<{run: RunFragment}> = ({run}) => {
           />
         </Tooltip>
       </Group>
-
-      <Dialog
+      <DialogWIP
         isOpen={showDialog}
         onClose={() => setShowDialog(false)}
         style={{width: '800px'}}
         title="Run configuration"
       >
-        <div className={Classes.DIALOG_BODY}>
+        <DialogBody>
           <Group direction="column" spacing={20}>
             <Group direction="column" spacing={12}>
               <div style={{fontSize: '16px', fontWeight: 600}}>Tags</div>
@@ -145,15 +145,13 @@ export const RunConfigDialog: React.FC<{run: RunFragment}> = ({run}) => {
               <HighlightedCodeBlock value={run?.runConfigYaml || ''} language="yaml" />
             </Group>
           </Group>
-        </div>
-        <div className={Classes.DIALOG_FOOTER}>
-          <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-            <Button onClick={() => setShowDialog(false)} intent="primary">
-              OK
-            </Button>
-          </div>
-        </div>
-      </Dialog>
+        </DialogBody>
+        <DialogFooter>
+          <Button onClick={() => setShowDialog(false)} intent="primary">
+            OK
+          </Button>
+        </DialogFooter>
+      </DialogWIP>
     </div>
   );
 };

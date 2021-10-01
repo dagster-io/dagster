@@ -1,50 +1,44 @@
 import pytest
-from dagster import DagsterTypeCheckDidNotPass, execute_solid
+from dagster import DagsterTypeCheckDidNotPass
 from docs_snippets_crag.concepts.types.types import test_dagster_type
 
 
 def test_basic_even_type():
     from docs_snippets_crag.concepts.types.types import double_even
 
-    assert execute_solid(double_even, input_values={"num": 2}).success
+    double_even(num=2)
 
     with pytest.raises(DagsterTypeCheckDidNotPass):
-        execute_solid(double_even, input_values={"num": 3})
-
-    assert not execute_solid(double_even, input_values={"num": 3}, raise_on_error=False).success
+        double_even(num=3)
 
 
 def test_basic_even_type_with_annotations():
     from docs_snippets_crag.concepts.types.types import double_even_with_annotations
 
-    assert execute_solid(double_even_with_annotations, input_values={"num": 2}).success
+    double_even_with_annotations(num=2)
 
     with pytest.raises(DagsterTypeCheckDidNotPass):
-        execute_solid(double_even_with_annotations, input_values={"num": 3})
-
-    assert not execute_solid(
-        double_even_with_annotations, input_values={"num": 3}, raise_on_error=False
-    ).success
+        double_even_with_annotations(num=3)
 
 
 def test_python_object_dagster_type():
     from docs_snippets_crag.concepts.types.object_type import EvenType, double_even
 
-    assert execute_solid(double_even, input_values={"even_num": EvenType(2)}).success
+    double_even(even_num=EvenType(2))
     with pytest.raises(AssertionError):
-        execute_solid(double_even, input_values={"even_num": EvenType(3)})
+        double_even(even_num=EvenType(3))
 
 
 def test_usable_as_dagster_type():
     from docs_snippets_crag.concepts.types.usable_as import EvenType, double_even
 
-    assert execute_solid(double_even, input_values={"even_num": EvenType(2)}).success
+    double_even(even_num=EvenType(2))
 
 
 def test_make_python_type_usable_as_dagster_type():
     from docs_snippets_crag.concepts.types.make_usable import EvenType, double_even
 
-    assert execute_solid(double_even, input_values={"even_num": EvenType(2)}).success
+    double_even(even_num=EvenType(2))
 
 
 def test_unit_test():

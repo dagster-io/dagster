@@ -1,14 +1,5 @@
 import {gql, useLazyQuery, useMutation, useQuery} from '@apollo/client';
-import {
-  Checkbox,
-  Intent,
-  NonIdealState,
-  Classes,
-  Colors,
-  InputGroup,
-  Icon,
-} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
+import {Checkbox, Intent, NonIdealState, Colors, InputGroup} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -28,8 +19,11 @@ import {PipelineRunStatus} from '../types/globalTypes';
 import {Alert} from '../ui/Alert';
 import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
+import {ColorsWIP} from '../ui/Colors';
+import {DialogBody, DialogFooter} from '../ui/Dialog';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Group} from '../ui/Group';
+import {IconWIP} from '../ui/Icon';
 import {Spinner} from '../ui/Spinner';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -196,7 +190,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
   if (data.partitionSetOrError.__typename === 'PartitionSetNotFoundError') {
     return (
       <NonIdealState
-        icon={IconNames.ERROR}
+        icon="error"
         title="Partition Set Not Found"
         description={data.partitionSetOrError.message}
       />
@@ -205,7 +199,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
   if (data.pipelineSnapshotOrError.__typename === 'PipelineNotFoundError') {
     return (
       <NonIdealState
-        icon={IconNames.ERROR}
+        icon="error"
         title={flagPipelineModeTuples ? 'Job not found' : 'Pipeline not found'}
         description={data.pipelineSnapshotOrError.message}
       />
@@ -214,7 +208,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
   if (data.pipelineSnapshotOrError.__typename === 'PipelineSnapshotNotFoundError') {
     return (
       <NonIdealState
-        icon={IconNames.ERROR}
+        icon="error"
         title={flagPipelineModeTuples ? 'Job not found' : 'Pipeline not found'}
         description={data.pipelineSnapshotOrError.message}
       />
@@ -404,8 +398,8 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
   const selectedString = partitionsToText(selected, partitionNames);
 
   return (
-    <div>
-      <div className={Classes.DIALOG_BODY}>
+    <>
+      <DialogBody>
         <div style={{display: 'flex', alignItems: 'center', marginBottom: 4}}>
           <strong style={{display: 'block'}}>Partitions</strong>
           <Checkbox
@@ -429,9 +423,9 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
           onBlur={(e) => {
             try {
               setSelected(textToPartitions(e.target.value, partitionNames));
-            } catch (err) {
+            } catch (err: any) {
               e.preventDefault();
-              alert(err.message);
+              showCustomAlert({body: err.message});
             }
           }}
         />
@@ -466,15 +460,12 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
                   });
                 }}
               >
-                Re-execute from failures
-                <Tooltip content="For each partition, if the most recent run failed, launch a re-execution starting from the steps that failed.">
-                  <Icon
-                    icon="info-sign"
-                    iconSize={12}
-                    color={Colors.GRAY3}
-                    style={{position: 'relative', top: '-2px', marginLeft: '6px'}}
-                  />
-                </Tooltip>
+                <Box flex={{display: 'inline-flex', alignItems: 'center'}}>
+                  <Box margin={{right: 4}}>Re-execute from failures</Box>
+                  <Tooltip content="For each partition, if the most recent run failed, launch a re-execution starting from the steps that failed.">
+                    <IconWIP name="info" color={ColorsWIP.Gray500} />
+                  </Tooltip>
+                </Box>
               </Checkbox>
               {statusesLoading ? (
                 <div style={{marginLeft: '8px', marginTop: '3px'}}>
@@ -600,49 +591,44 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
             />
           </div>
         ) : null}
-      </div>
-      <div className={Classes.DIALOG_FOOTER}>
-        <div style={{display: 'flex', alignItems: 'center', justifyContent: 'flex-end'}}>
-          <TagEditor
-            tagsFromSession={tags}
-            onChange={setTags}
-            open={tagEditorOpen}
-            onRequestClose={() => setTagEditorOpen(false)}
-          />
-          {tags.length ? (
-            <div style={{border: '1px solid #ececec', borderBottom: 'none'}}>
-              <TagContainer
-                tags={{fromSession: tags}}
-                onRequestEdit={() => setTagEditorOpen(true)}
-              />
-            </div>
-          ) : (
-            <ButtonLink
-              color="#106ba3"
-              onClick={() => setTagEditorOpen(true)}
-              style={{margin: '9px  9px 0 9px'}}
-            >
-              + Add tags to backfill runs
-            </ButtonLink>
-          )}
-          <LaunchBackfillButton
-            partitionNames={selected}
-            partitionSetName={partitionSet.name}
-            reexecutionSteps={
-              !options.fromFailure && solidsFiltered.all.length < solids.length
-                ? stepRows.map((step) => step.name)
-                : undefined
-            }
-            fromFailure={options.fromFailure}
-            tags={tags}
-            onSubmit={onSubmit}
-            onSuccess={onSuccess}
-            onError={onError}
-            repoAddress={repoAddress}
-          />
-        </div>
-      </div>
-    </div>
+      </DialogBody>
+      <DialogFooter>
+        <TagEditor
+          tagsFromSession={tags}
+          onChange={setTags}
+          open={tagEditorOpen}
+          onRequestClose={() => setTagEditorOpen(false)}
+        />
+        {tags.length ? (
+          <div style={{border: '1px solid #ececec', borderBottom: 'none'}}>
+            <TagContainer tags={{fromSession: tags}} onRequestEdit={() => setTagEditorOpen(true)} />
+          </div>
+        ) : (
+          <ButtonLink
+            color="#106ba3"
+            onClick={() => setTagEditorOpen(true)}
+            style={{margin: '9px  9px 0 9px'}}
+          >
+            + Add tags to backfill runs
+          </ButtonLink>
+        )}
+        <LaunchBackfillButton
+          partitionNames={selected}
+          partitionSetName={partitionSet.name}
+          reexecutionSteps={
+            !options.fromFailure && solidsFiltered.all.length < solids.length
+              ? stepRows.map((step) => step.name)
+              : undefined
+          }
+          fromFailure={options.fromFailure}
+          tags={tags}
+          onSubmit={onSubmit}
+          onSuccess={onSuccess}
+          onError={onError}
+          repoAddress={repoAddress}
+        />
+      </DialogFooter>
+    </>
   );
 };
 

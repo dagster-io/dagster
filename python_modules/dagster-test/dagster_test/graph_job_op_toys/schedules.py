@@ -1,54 +1,15 @@
 import datetime
-from collections import defaultdict
 
-from dagster import (
-    PartitionSetDefinition,
-    ScheduleEvaluationContext,
-    daily_schedule,
-    hourly_schedule,
-    monthly_schedule,
-    weekly_schedule,
+from dagster import schedule_from_partitions
+from dagster.core.definitions.time_window_partitions import (
+    daily_partitioned_config,
+    hourly_partitioned_config,
+    monthly_partitioned_config,
+    weekly_partitioned_config,
 )
-from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
-from dagster.utils.partitions import date_partition_range
-
-
-def _fetch_runs_by_partition(instance, partition_set_def, status_filters=None):
-    # query runs db for this partition set
-    filters = PipelineRunsFilter(tags={"dagster/partition_set": partition_set_def.name})
-    partition_set_runs = instance.get_runs(filters)
-
-    runs_by_partition = defaultdict(list)
-
-    for run in partition_set_runs:
-        if not status_filters or run.status in status_filters:
-            runs_by_partition[run.tags["dagster/partition"]].append(run)
-
-    return runs_by_partition
-
-
-def backfilling_partition_selector(
-    context: ScheduleEvaluationContext,
-    partition_set_def: PartitionSetDefinition,
-    retry_failed=False,
-):
-    status_filters = [PipelineRunStatus.SUCCESS] if retry_failed else None
-    runs_by_partition = _fetch_runs_by_partition(
-        context.instance, partition_set_def, status_filters
-    )
-
-    selected = None
-    for partition in partition_set_def.get_partitions():
-        runs = runs_by_partition[partition.name]
-
-        selected = partition
-
-        # break when we find the first empty partition
-        if len(runs) == 0:
-            break
-
-    # may return an already satisfied final partition - bank on should_execute to prevent firing in schedule
-    return selected
+from dagster_test.graph_job_op_toys.longitudinal import longitudinal
+from dagster_test.graph_job_op_toys.many_events import many_events
+from dagster_test.graph_job_op_toys.unreliable import unreliable
 
 
 def _toys_tz_info():
@@ -57,160 +18,79 @@ def _toys_tz_info():
     return "US/Pacific"
 
 
-def backfill_should_execute(context, partition_set_def, retry_failed=False):
-    status_filters = (
-        [PipelineRunStatus.STARTED, PipelineRunStatus.SUCCESS] if retry_failed else None
-    )
-    runs_by_partition = _fetch_runs_by_partition(
-        context.instance, partition_set_def, status_filters
-    )
-    for runs in runs_by_partition.values():
-        for run in runs:
-            # if any active runs - don't start a new one
-            if run.status == PipelineRunStatus.STARTED:
-                return False  # would be nice to return a reason here
+def unreliable_job_test_schedule():
+    @weekly_partitioned_config(start_date="2020-01-05", timezone=_toys_tz_info())
+    def unreliable_config(_start, _end):
+        return {}
 
-    available_partitions = set([partition.name for partition in partition_set_def.get_partitions()])
-    satisfied_partitions = set(runs_by_partition.keys())
-    is_remaining_partitions = bool(available_partitions.difference(satisfied_partitions))
-    return is_remaining_partitions
+    unreliable_weekly_job = unreliable.to_job(config=unreliable_config)
+    unreliable_weekly_schedule = schedule_from_partitions(unreliable_weekly_job)
+
+    return unreliable_weekly_schedule
 
 
-def backfill_test_schedule():
-    schedule_name = "backfill_unreliable_weekly"
-    # create weekly partition set
-    partition_set = PartitionSetDefinition(
-        name="unreliable_weekly",
-        pipeline_name="unreliable_pipeline",
-        partition_fn=date_partition_range(
-            # first sunday of the year
-            start=datetime.datetime(2020, 1, 5),
-            delta_range="weeks",
-        ),
-        run_config_fn_for_partition=lambda _: {"intermediate_storage": {"filesystem": {}}},
-    )
-
-    def _should_execute(context):
-        return backfill_should_execute(context, partition_set)
-
-    return partition_set.create_schedule_definition(
-        schedule_name=schedule_name,
-        cron_schedule="* * * * *",  # tick every minute
-        partition_selector=backfilling_partition_selector,
-        should_execute=_should_execute,
-        execution_timezone=_toys_tz_info(),
-    )
-
-
-def materialization_schedule():
-    # create weekly partition set
-    schedule_name = "many_events_partitioned"
-    partition_set = PartitionSetDefinition(
-        name="many_events_minutely",
-        pipeline_name="many_events",
-        partition_fn=date_partition_range(start=datetime.datetime(2020, 1, 1)),
-        run_config_fn_for_partition=lambda _: {"intermediate_storage": {"filesystem": {}}},
-    )
-
-    def _should_execute(context):
-        return backfill_should_execute(context, partition_set)
-
-    return partition_set.create_schedule_definition(
-        schedule_name=schedule_name,
-        cron_schedule="* * * * *",  # tick every minute
-        partition_selector=backfilling_partition_selector,
-        should_execute=_should_execute,
-        execution_timezone=_toys_tz_info(),
-    )
-
-
-@hourly_schedule(
-    pipeline_name="many_events",
-    start_date=datetime.datetime(2021, 1, 1),
-    execution_timezone=_toys_tz_info(),
-)
 def hourly_materialization_schedule():
-    return {}
+    @hourly_partitioned_config(start_date=datetime.datetime(2021, 1, 1), timezone=_toys_tz_info())
+    def hourly_materialization_config(_start, _end):
+        return {}
+
+    return schedule_from_partitions(
+        many_events.to_job("many_events_hourly", config=hourly_materialization_config),
+    )
 
 
-@daily_schedule(
-    pipeline_name="many_events",
-    start_date=datetime.datetime(2021, 1, 1),
-    execution_timezone=_toys_tz_info(),
-)
 def daily_materialization_schedule():
-    return {}
+    @daily_partitioned_config(start_date=datetime.datetime(2021, 1, 1), timezone=_toys_tz_info())
+    def daily_materialization_config(_start, _end):
+        return {}
+
+    return schedule_from_partitions(
+        many_events.to_job("many_events_daily", config=daily_materialization_config),
+    )
 
 
-@weekly_schedule(
-    pipeline_name="many_events",
-    start_date=datetime.datetime(2021, 1, 1),
-    execution_timezone=_toys_tz_info(),
-)
 def weekly_materialization_schedule():
-    return {}
+    @weekly_partitioned_config(start_date=datetime.datetime(2021, 1, 1), timezone=_toys_tz_info())
+    def weekly_materialization_config(_start, _end):
+        return {}
+
+    return schedule_from_partitions(
+        many_events.to_job("many_events_weekly", config=weekly_materialization_config),
+    )
 
 
-@monthly_schedule(
-    pipeline_name="many_events",
-    start_date=datetime.datetime(2021, 1, 1),
-    execution_timezone=_toys_tz_info(),
-)
 def monthly_materialization_schedule():
-    return {}
+    @monthly_partitioned_config(start_date=datetime.datetime(2021, 1, 1), timezone=_toys_tz_info())
+    def monthly_materialization_config(_start, _end):
+        return {}
+
+    return schedule_from_partitions(
+        many_events.to_job("many_events_monthly", config=monthly_materialization_config),
+    )
 
 
 def longitudinal_schedule():
     from .longitudinal import longitudinal_job
 
-    schedule_name = "longitudinal_demo"
-
-    def longitudinal_config(partition):
+    @daily_partitioned_config(start_date="2020-01-01", timezone=_toys_tz_info())
+    def longitudinal_config(start, _end):
         return {
-            "solids": {
-                solid.name: {"config": {"partition": partition.name}}
-                for solid in longitudinal_job.solids
+            "ops": {
+                op.name: {"config": {"partition": start.to_date_string()}}
+                for op in longitudinal_job.solids
             }
         }
 
-    partition_set = PartitionSetDefinition(
-        name="ingest_and_train",
-        pipeline_name="longitudinal_pipeline",
-        partition_fn=date_partition_range(start=datetime.datetime(2020, 1, 1)),
-        run_config_fn_for_partition=longitudinal_config,
-    )
-
-    def _should_execute(context):
-        return backfill_should_execute(context, partition_set, retry_failed=True)
-
-    def _partition_selector(context, partition_set):
-        return backfilling_partition_selector(context, partition_set, retry_failed=True)
-
-    return partition_set.create_schedule_definition(
-        schedule_name=schedule_name,
-        cron_schedule="*/5 * * * *",  # tick every 5 minutes
-        partition_selector=_partition_selector,
-        should_execute=_should_execute,
-        execution_timezone=_toys_tz_info(),
-    )
+    longitudinal_job = longitudinal.to_job(config=longitudinal_config)
+    return schedule_from_partitions(longitudinal_job)
 
 
 def get_toys_schedules():
-    from dagster import ScheduleDefinition
-
     return [
-        backfill_test_schedule(),
+        unreliable_job_test_schedule(),
+        hourly_materialization_schedule(),
+        daily_materialization_schedule(),
+        weekly_materialization_schedule(),
+        monthly_materialization_schedule(),
         longitudinal_schedule(),
-        materialization_schedule(),
-        hourly_materialization_schedule,
-        daily_materialization_schedule,
-        weekly_materialization_schedule,
-        monthly_materialization_schedule,
-        ScheduleDefinition(
-            name="many_events_every_min",
-            cron_schedule="* * * * *",
-            pipeline_name="many_events",
-            run_config_fn=lambda _: {"intermediate_storage": {"filesystem": {}}},
-            execution_timezone=_toys_tz_info(),
-        ),
     ]

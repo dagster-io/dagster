@@ -1,10 +1,10 @@
 import {gql} from '@apollo/client';
-import {Colors, Icon} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {ConfigTypeSchema, CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
+import {ColorsWIP} from '../ui/Colors';
+import {IconWIP, IconWrapper} from '../ui/Icon';
 
 import {Description} from './Description';
 import {SectionHeader, SectionItemContainer} from './SidebarComponents';
@@ -21,7 +21,7 @@ export const SidebarModeSection: React.FunctionComponent<{
       <Description description={mode.description || NO_DESCRIPTION} />
       {mode.resources.map((resource) => (
         <ContextResourceContainer key={resource.name}>
-          <Icon iconSize={14} icon={IconNames.LAYERS} color={Colors.DARK_GRAY2} />
+          <IconWIP name="layers" color={ColorsWIP.Gray700} />
           <div>
             <ContextResourceHeader>{resource.name}</ContextResourceHeader>
             <Description description={resource.description || NO_DESCRIPTION} />
@@ -36,7 +36,7 @@ export const SidebarModeSection: React.FunctionComponent<{
       ))}
       {mode.loggers.map((logger) => (
         <ContextLoggerContainer key={logger.name}>
-          <Icon iconSize={14} icon={IconNames.LAYERS} color={Colors.DARK_GRAY2} />
+          <IconWIP name="layers" color={ColorsWIP.Gray700} />
           <div>
             <ContextLoggerHeader>{logger.name}</ContextLoggerHeader>
             <Description description={logger.description || NO_DESCRIPTION} />
@@ -88,29 +88,35 @@ export const SIDEBAR_MODE_INFO_FRAGMENT = gql`
 `;
 
 const ContextResourceHeader = styled(SectionHeader)`
-  font-size: 13px;
+  font-size: 16px;
+  margin: 4px 0;
 `;
 
 const ContextResourceContainer = styled.div`
   display: flex;
   align-items: flex-start;
-  padding-top: 15px;
-  & .bp3-icon {
-    padding-top: 7px;
-    padding-right: 10px;
+  margin-top: 12px;
+  & h4 {
+    margin-top: -2px;
+  }
+  & ${IconWrapper} {
+    margin-right: 8px;
   }
 `;
 
 const ContextLoggerHeader = styled(SectionHeader)`
-  font-size: 13px;
+  font-size: 16px;
+  margin: 4px 0;
 `;
 
 const ContextLoggerContainer = styled.div`
   display: flex;
   align-items: flex-start;
-  padding-top: 15px;
-  & .bp3-icon {
-    padding-top: 7px;
-    padding-right: 10px;
+  margin-top: 12px;
+  & h4 {
+    margin-top: -2px;
+  }
+  & ${IconWrapper} {
+    margin-right: 8px;
   }
 `;
