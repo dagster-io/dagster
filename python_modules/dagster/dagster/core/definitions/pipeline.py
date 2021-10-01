@@ -1030,8 +1030,10 @@ def _create_run_config_schema(
     from .run_config import (
         RunConfigSchemaCreationData,
         construct_config_type_dictionary,
-        define_run_config_schema_type,
+        define_run_config_schema_type_for_pipeline,
+        define_run_config_schema_type_for_job,
     )
+    from .job import JobDefinition
     from .run_config_schema import RunConfigSchema
 
     # When executing with a subset pipeline, include the missing solids
@@ -1049,19 +1051,21 @@ def _create_run_config_schema(
     else:
         ignored_solids = []
 
-    run_config_schema_type = define_run_config_schema_type(
-        RunConfigSchemaCreationData(
-            pipeline_name=pipeline_def.name,
-            solids=pipeline_def.graph.solids,
-            graph_def=pipeline_def.graph,
-            dependency_structure=pipeline_def.graph.dependency_structure,
-            mode_definition=mode_definition,
-            logger_defs=mode_definition.loggers,
-            ignored_solids=ignored_solids,
-            required_resources=required_resources,
-            is_using_graph_job_op_apis=pipeline_def._is_using_graph_job_op_apis,  # pylint: disable=protected-access
-        )
+    creation_data = RunConfigSchemaCreationData(
+        pipeline_name=pipeline_def.name,
+        solids=pipeline_def.graph.solids,
+        graph_def=pipeline_def.graph,
+        dependency_structure=pipeline_def.graph.dependency_structure,
+        mode_definition=mode_definition,
+        logger_defs=mode_definition.loggers,
+        ignored_solids=ignored_solids,
+        required_resources=required_resources,
+        is_using_graph_job_op_apis=pipeline_def._is_using_graph_job_op_apis,  # pylint: disable=protected-access
     )
+    if isinstance(pipeline_def, JobDefinition):
+        run_config_schema_type = define_run_config_schema_type_for_job(creation_data)
+    else:
+        run_config_schema_type = define_run_config_schema_type_for_pipeline(creation_data)
 
     if mode_definition.config_mapping:
         outer_config_type = mode_definition.config_mapping.config_schema.config_type

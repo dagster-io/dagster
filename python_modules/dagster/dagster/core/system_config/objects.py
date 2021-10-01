@@ -213,7 +213,7 @@ class ResolvedRunConfig(
         config_mapped_logger_configs = config_map_loggers(pipeline_def, config_value, mode)
 
         node_key = (
-            "ops"
+            "graph"
             if pipeline_def._is_using_graph_job_op_apis  # pylint: disable=protected-access
             else "solids"
         )

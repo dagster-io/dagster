@@ -123,7 +123,38 @@ def define_storage_field(
         return Field(storage_selector, default_value=default_storage)
 
 
-def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) -> ConfigType:
+def define_run_config_schema_type_for_job(creation_data: RunConfigSchemaCreationData) -> ConfigType:
+    if creation_data.graph_def.has_config_mapping:
+        config_schema = cast(IDefinitionConfigSchema, creation_data.graph_def.config_schema)
+        nodes_field = Field({"config": config_schema.as_field()})
+    else:
+        nodes_field = Field(
+            define_solid_dictionary_cls(
+                solids=creation_data.solids,
+                ignored_solids=creation_data.ignored_solids,
+                dependency_structure=creation_data.dependency_structure,
+                resource_defs=creation_data.mode_definition.resource_defs,
+                is_using_graph_job_op_apis=creation_data.is_using_graph_job_op_apis,
+            )
+        )
+
+    fields = {
+        "execution": define_execution_field(creation_data.mode_definition.executor_defs),
+        "loggers": Field(define_logger_dictionary_cls(creation_data)),
+        "resources": Field(
+            define_resource_dictionary_cls(
+                creation_data.mode_definition.resource_defs,
+                creation_data.required_resources,
+            )
+        ),
+        "graph": nodes_field,
+    }
+    return Shape(fields=fields)
+
+
+def define_run_config_schema_type_for_pipeline(
+    creation_data: RunConfigSchemaCreationData,
+) -> ConfigType:
     intermediate_storage_field = define_storage_field(
         selector_for_named_defs(creation_data.mode_definition.intermediate_storage_defs),
         storage_names=[dfn.name for dfn in creation_data.mode_definition.intermediate_storage_defs],

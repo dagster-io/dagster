@@ -8,7 +8,6 @@ from dagster import (
     Enum,
     Field,
     Out,
-    Permissive,
     Shape,
     graph,
     logger,
@@ -148,7 +147,7 @@ def test_config_mapping_fn():
 
     def _mapped(val):
         return {
-            "ops": {"do_stuff": {"config": {"msg": "i am here"}}},
+            "graph": {"do_stuff": {"config": {"msg": "i am here"}}},
             "resources": {"date": {"config": val["date"]}},
         }
 
@@ -184,7 +183,7 @@ def test_default_config():
     job = needs_config.to_job(
         resource_defs={"date": date},
         config={
-            "ops": {"do_stuff": {"config": {"msg": "i am here"}}},
+            "graph": {"do_stuff": {"config": {"msg": "i am here"}}},
             "resources": {"date": {"config": "6/3"}},
         },
     )
@@ -217,7 +216,7 @@ def test_partitions():
         my_op()
 
     def config_fn(partition: Partition):
-        return {"ops": {"my_op": {"config": {"date": partition.value}}}}
+        return {"graph": {"my_op": {"config": {"date": partition.value}}}}
 
     job = my_graph.to_job(
         config=PartitionedConfig(
@@ -233,7 +232,7 @@ def test_partitions():
     assert partitions[0].value == "2020-02-25"
     assert partitions[0].name == "2020-02-25"
     assert partition_set.run_config_for_partition(partitions[0]) == {
-        "ops": {"my_op": {"config": {"date": "2020-02-25"}}}
+        "graph": {"my_op": {"config": {"date": "2020-02-25"}}}
     }
 
 
@@ -377,53 +376,6 @@ def test_desc():
     assert job.description == desc
 
 
-def test_config_naming_collisions():
-    @op(config_schema={"solids": Permissive(), "ops": Permissive()})
-    def my_op(context):
-        return context.op_config
-
-    @graph
-    def my_graph():
-        return my_op()
-
-    config = {
-        "solids": {"solids": {"foo": {"config": {"foobar": "bar"}}}},
-        "ops": {"solids": {"foo": {"config": {"foobar": "bar"}}}},
-    }
-    result = my_graph.execute_in_process(run_config={"ops": {"my_op": {"config": config}}})
-    assert result.success
-    assert result.output_value() == config
-
-    @graph
-    def ops():
-        return my_op()
-
-    result = ops.execute_in_process(run_config={"ops": {"my_op": {"config": config}}})
-    assert result.success
-    assert result.output_value() == config
-
-
-def test_to_job_default_config_field_aliasing():
-    @op
-    def add_one(x):
-        return x + 1
-
-    @graph
-    def my_graph():
-        return add_one()
-
-    my_job = my_graph.to_job(config={"ops": {"add_one": {"inputs": {"x": {"value": 1}}}}})
-
-    result = my_job.execute_in_process()
-    assert result.success
-
-    result = my_job.execute_in_process({"solids": {"add_one": {"inputs": {"x": {"value": 1}}}}})
-    assert result.success
-
-    result = my_job.execute_in_process({"ops": {"add_one": {"inputs": {"x": {"value": 1}}}}})
-    assert result.success
-
-
 def test_to_job_incomplete_default_config():
     @op(config_schema={"foo": str})
     def my_op(_):
@@ -441,12 +393,17 @@ def test_to_job_incomplete_default_config():
             default_config_error,
         ),  # Not providing required config nested into the op config schema.
         (
-            {"ops": {"my_op": {"config": {"foo": "bar"}}, "not_my_op": {"config": {"foo": "bar"}}}},
+            {
+                "graph": {
+                    "my_op": {"config": {"foo": "bar"}},
+                    "not_my_op": {"config": {"foo": "bar"}},
+                }
+            },
             invalid_default_error,
         ),  # Providing extraneous config for an op that doesn't exist.
         (
             {
-                "ops": {"my_op": {"config": {"foo": "bar"}}},
+                "graph": {"my_op": {"config": {"foo": "bar"}}},
                 "solids": {"my_op": {"config": {"foo": "bar"}}},
             },
             default_config_error,
@@ -490,7 +447,7 @@ def test_enum_config_mapping():
     assert result.output_for_node("my_op") == TestEnum.ONE
 
     def _override_defaults_mapping(_):
-        return {"ops": {"my_op": {"config": {"my_enum": "TWO"}}}}
+        return {"graph": {"my_op": {"config": {"my_enum": "TWO"}}}}
 
     override_defaults = my_graph.to_job(config=ConfigMapping(config_fn=_override_defaults_mapping))
     result = override_defaults.execute_in_process()
@@ -498,7 +455,7 @@ def test_enum_config_mapping():
     assert result.output_for_node("my_op") == TestEnum.TWO
 
     def _ingest_config_mapping(x):
-        return {"ops": {"my_op": {"config": {"my_enum": x["my_field"]}}}}
+        return {"graph": {"my_op": {"config": {"my_enum": x["my_field"]}}}}
 
     default_config_mapping = ConfigMapping(
         config_fn=_ingest_config_mapping,
@@ -528,7 +485,7 @@ def test_enum_config_mapping():
 
     def _ingest_post_processed_config(x):
         assert x["my_field"] == TestEnum.TWO
-        return {"ops": {"my_op": {"config": {"my_enum": "TWO"}}}}
+        return {"graph": {"my_op": {"config": {"my_enum": "TWO"}}}}
 
     config_mapping_with_preprocessing = ConfigMapping(
         config_fn=_ingest_post_processed_config,
@@ -555,7 +512,7 @@ def test_enum_default_config():
     def my_graph():
         my_op()
 
-    my_job = my_graph.to_job(config={"ops": {"my_op": {"config": {"my_enum": "TWO"}}}})
+    my_job = my_graph.to_job(config={"graph": {"my_op": {"config": {"my_enum": "TWO"}}}})
     result = my_job.execute_in_process()
     assert result.success
     assert result.output_for_node("my_op") == TestEnum.TWO
@@ -582,7 +539,7 @@ def test_enum_to_execution():
     assert result.output_for_node("my_op") == TestEnum.ONE
 
     result = my_graph.execute_in_process(
-        run_config={"ops": {"my_op": {"config": {"my_enum": "TWO"}}}}
+        run_config={"graph": {"my_op": {"config": {"my_enum": "TWO"}}}}
     )
     assert result.success
     assert result.output_for_node("my_op") == TestEnum.TWO
@@ -696,12 +653,12 @@ def test_top_level_config_mapping_config_schema():
     def my_graph():
         my_op()
 
-    result = my_graph.to_job().execute_in_process(run_config={"ops": {"config": "foo"}})
+    result = my_graph.to_job().execute_in_process(run_config={"graph": {"config": "foo"}})
 
     assert result.success
     assert result.output_for_node("my_op") == "foo"
 
-    my_job = my_graph.to_job(config={"ops": {"config": "foo"}})
+    my_job = my_graph.to_job(config={"graph": {"config": "foo"}})
     result = my_job.execute_in_process()
     assert result.success
     assert result.output_for_node("my_op") == "foo"
@@ -726,7 +683,7 @@ def test_nested_graph_config_mapping():
     def my_graph():
         my_nested_graph()
 
-    result = my_graph.to_job().execute_in_process(run_config={"ops": {"config": "foo"}})
+    result = my_graph.to_job().execute_in_process(run_config={"graph": {"config": "foo"}})
 
     assert result.success
     assert result.output_for_node("my_nested_graph.my_op") == "foo"
@@ -763,11 +720,11 @@ def test_top_level_graph_outer_config_failure():
     def my_graph():
         my_op()
 
-    with pytest.raises(DagsterInvalidConfigError, match="Invalid scalar at path root:ops:config"):
-        my_graph.to_job().execute_in_process(run_config={"ops": {"config": {"bad_type": "foo"}}})
+    with pytest.raises(DagsterInvalidConfigError, match="Invalid scalar at path root:graph:config"):
+        my_graph.to_job().execute_in_process(run_config={"graph": {"config": {"bad_type": "foo"}}})
 
     with pytest.raises(DagsterInvalidConfigError, match="Invalid scalar at path root:config"):
-        my_graph.to_job(config={"ops": {"config": {"bad_type": "foo"}}})
+        my_graph.to_job(config={"graph": {"config": {"bad_type": "foo"}}})
 
 
 def test_graph_with_configured():
@@ -794,7 +751,7 @@ def test_graph_with_configured():
             name="my_graph", config_or_config_fn=_configured_use_fn, config_schema=str
         )
         .to_job()
-        .execute_in_process(run_config={"ops": {"config": "foo"}})
+        .execute_in_process(run_config={"graph": {"config": "foo"}})
     )
 
     assert result.success

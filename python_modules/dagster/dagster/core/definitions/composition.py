@@ -617,7 +617,7 @@ class PendingNodeInvocation:
             solid_retry_policy=self.retry_policy,
         )
 
-        run_config = {"ops": config if config is not None else {}}
+        run_config = {"graph": config if config is not None else {}}
 
         return core_execute_in_process(
             node=self.node_def,

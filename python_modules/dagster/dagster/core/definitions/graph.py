@@ -523,15 +523,13 @@ class GraphDefinition(NodeDefinition):
         resource_defs: Optional[Dict[str, ResourceDefinition]],
         executor_def: "ExecutorDefinition",
     ) -> ConfigType:
-        from .pipeline import PipelineDefinition
+        from .job import JobDefinition
 
         return (
-            PipelineDefinition(
+            JobDefinition(
                 name=self.name,
                 graph_def=self,
-                mode_defs=[
-                    ModeDefinition(resource_defs=resource_defs, executor_defs=[executor_def])
-                ],
+                mode_def=ModeDefinition(resource_defs=resource_defs, executor_defs=[executor_def]),
             )
             .get_run_config_schema("default")
             .run_config_schema_type
