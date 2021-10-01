@@ -52,10 +52,6 @@ class GrpcServerRegistry(AbstractContextManager):
         pass
 
 
-DEFAULT_PROCESS_CLEANUP_INTERVAL = 60
-DEFAULT_PROCESS_HEARTBEAT_INTERVAL = 120
-
-
 class ProcessRegistryEntry(
     namedtuple(
         "_ProcessRegistryEntry",
@@ -82,13 +78,13 @@ class ProcessGrpcServerRegistry(GrpcServerRegistry):
     def __init__(
         self,
         # How often to reload created processes in a background thread
-        reload_interval=DEFAULT_PROCESS_CLEANUP_INTERVAL,
+        reload_interval,
         # How long the process can live without a heartbeat before it dies. You should ensure
         # that either heartbeat_ttl is greater than reload_interval (so that the process will reload
         # before it ends due to heartbeat failure), or if reload_interval is 0, that any processes
         # returned by this registry have at least one GrpcServerRepositoryLocation hitting the
         # server with a heartbeat while you want the process to stay running.
-        heartbeat_ttl=DEFAULT_PROCESS_HEARTBEAT_INTERVAL,
+        heartbeat_ttl,
     ):
         # ProcessRegistryEntry map of servers being currently returned, keyed by origin ID
         self._active_entries = {}

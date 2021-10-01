@@ -18,12 +18,10 @@ from dagster.core.host_representation import (
     InProcessRepositoryLocationOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )
-from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG, PARTITION_SET_TAG
-from dagster.core.test_utils import instance_for_test
+from dagster.core.test_utils import create_test_daemon_workspace, instance_for_test
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.core.workspace.dynamic_workspace import DynamicWorkspace
 from dagster.daemon import get_default_daemon_logger
 from dagster.daemon.backfill import execute_backfill_iteration
 from dagster.seven import IS_WINDOWS, get_system_temp_directory
@@ -219,10 +217,9 @@ def repos():
 @contextmanager
 def instance_for_context(external_repo_context, overrides=None):
     with instance_for_test(overrides) as instance:
-        with ProcessGrpcServerRegistry() as grpc_server_registry:
-            with DynamicWorkspace(grpc_server_registry) as workspace:
-                with external_repo_context() as external_repo:
-                    yield (instance, workspace, external_repo)
+        with create_test_daemon_workspace() as workspace:
+            with external_repo_context() as external_repo:
+                yield (instance, workspace, external_repo)
 
 
 def step_did_not_run(instance, run, step_name):
