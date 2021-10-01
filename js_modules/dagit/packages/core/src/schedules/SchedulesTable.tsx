@@ -1,4 +1,3 @@
-import {Button, Menu, MenuItem} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -7,9 +6,11 @@ import {TickTag} from '../instigation/InstigationTick';
 import {InstigatedRunStatus} from '../instigation/InstigationUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {InstigationStatus, InstigationType} from '../types/globalTypes';
+import {ButtonWIP} from '../ui/Button';
 import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
+import {MenuItemWIP, MenuWIP} from '../ui/Menu';
 import {Popover} from '../ui/Popover';
 import {Table} from '../ui/Table';
 import {TagWIP} from '../ui/TagWIP';
@@ -218,30 +219,30 @@ const ScheduleRow: React.FC<{
         {schedule.partitionSet ? (
           <Popover
             content={
-              <Menu>
-                <MenuItem
+              <MenuWIP>
+                <MenuItemWIP
                   text="View Partition History..."
-                  icon="multi-select"
+                  icon="dynamic_feed"
                   target="_blank"
                   href={workspacePathFromAddress(
                     repoAddress,
                     `/pipelines/${pipelineName}/partitions`,
                   )}
                 />
-                <MenuItem
+                <MenuItemWIP
                   text="Launch Partition Backfill..."
-                  icon="add"
+                  icon="add_circle"
                   target="_blank"
                   href={workspacePathFromAddress(
                     repoAddress,
                     `/pipelines/${pipelineName}/partitions`,
                   )}
                 />
-              </Menu>
+              </MenuWIP>
             }
-            position="bottom"
+            position="bottom-left"
           >
-            <Button small minimal icon="chevron-down" style={{marginLeft: '4px'}} />
+            <ButtonWIP icon={<IconWIP name="expand_more" />} />
           </Popover>
         ) : null}
       </td>

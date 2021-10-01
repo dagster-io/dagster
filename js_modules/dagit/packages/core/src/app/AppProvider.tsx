@@ -74,8 +74,12 @@ const GlobalStyle = createGlobalStyle`
     padding: 0;
   }
 
-  body, button, input, select, textarea {
+  body,input, select, textarea {
     font-family: ${FontFamily.default};
+  }
+
+  button {
+    font-family: inherit;
   }
 
   code, pre {

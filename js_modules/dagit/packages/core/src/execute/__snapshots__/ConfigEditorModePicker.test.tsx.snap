@@ -13,56 +13,22 @@ exports[`renders error mode 1`] = `
       onKeyDown={[Function]}
     >
       <button
-        className="bp3-button bp3-intent-danger"
+        className="BaseButton__StyledButton-sc-1bn4i2e-0 iUvkxa"
         data-test-id="mode-picker-button"
-        onBlur={[Function]}
-        onKeyDown={[Function]}
-        onKeyUp={[Function]}
         title="Current execution mode"
-        type="button"
       >
         <span
-          className="bp3-icon bp3-icon-error"
-          icon="error"
+          className="Icon__IconWrapper-ovocpb-0 bhLmqF material-icons"
         >
-          <svg
-            data-icon="error"
-            height={16}
-            viewBox="0 0 16 16"
-            width={16}
-          >
-            <desc>
-              error
-            </desc>
-            <path
-              d="M7.99-.01c-4.42 0-8 3.58-8 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm1 13h-2v-2h2v2zm0-3h-2v-7h2v7z"
-              fillRule="evenodd"
-            />
-          </svg>
+          error
         </span>
-        <span
-          className="bp3-button-text"
-        >
+        <span>
           Invalid Mode Selection
         </span>
         <span
-          className="bp3-icon bp3-icon-caret-down"
-          icon="caret-down"
+          className="Icon__IconWrapper-ovocpb-0 bhLmqF material-icons"
         >
-          <svg
-            data-icon="caret-down"
-            height={16}
-            viewBox="0 0 16 16"
-            width={16}
-          >
-            <desc>
-              caret-down
-            </desc>
-            <path
-              d="M12 6.5c0-.28-.22-.5-.5-.5h-7a.495.495 0 00-.37.83l3.5 4c.09.1.22.17.37.17s.28-.07.37-.17l3.5-4c.08-.09.13-.2.13-.33z"
-              fillRule="evenodd"
-            />
-          </svg>
+          expand_more
         </span>
       </button>
     </div>
@@ -83,37 +49,17 @@ exports[`renders multi mode pipelines 1`] = `
       onKeyDown={[Function]}
     >
       <button
-        className="bp3-button"
+        className="BaseButton__StyledButton-sc-1bn4i2e-0 bGSldS"
         data-test-id="mode-picker-button"
-        onBlur={[Function]}
-        onKeyDown={[Function]}
-        onKeyUp={[Function]}
         title="Current execution mode"
-        type="button"
       >
-        <span
-          className="bp3-button-text"
-        >
+        <span>
           Mode: mode_1
         </span>
         <span
-          className="bp3-icon bp3-icon-caret-down"
-          icon="caret-down"
+          className="Icon__IconWrapper-ovocpb-0 bhLmqF material-icons"
         >
-          <svg
-            data-icon="caret-down"
-            height={16}
-            viewBox="0 0 16 16"
-            width={16}
-          >
-            <desc>
-              caret-down
-            </desc>
-            <path
-              d="M12 6.5c0-.28-.22-.5-.5-.5h-7a.495.495 0 00-.37.83l3.5 4c.09.1.22.17.37.17s.28-.07.37-.17l3.5-4c.08-.09.13-.2.13-.33z"
-              fillRule="evenodd"
-            />
-          </svg>
+          expand_more
         </span>
       </button>
     </div>
@@ -134,37 +80,17 @@ exports[`renders multi mode pipelines 2`] = `
       onKeyDown={[Function]}
     >
       <button
-        className="bp3-button"
+        className="BaseButton__StyledButton-sc-1bn4i2e-0 bGSldS"
         data-test-id="mode-picker-button"
-        onBlur={[Function]}
-        onKeyDown={[Function]}
-        onKeyUp={[Function]}
         title="Current execution mode"
-        type="button"
       >
-        <span
-          className="bp3-button-text"
-        >
+        <span>
           Mode: mode_1
         </span>
         <span
-          className="bp3-icon bp3-icon-caret-down"
-          icon="caret-down"
+          className="Icon__IconWrapper-ovocpb-0 bhLmqF material-icons"
         >
-          <svg
-            data-icon="caret-down"
-            height={16}
-            viewBox="0 0 16 16"
-            width={16}
-          >
-            <desc>
-              caret-down
-            </desc>
-            <path
-              d="M12 6.5c0-.28-.22-.5-.5-.5h-7a.495.495 0 00-.37.83l3.5 4c.09.1.22.17.37.17s.28-.07.37-.17l3.5-4c.08-.09.13-.2.13-.33z"
-              fillRule="evenodd"
-            />
-          </svg>
+          expand_more
         </span>
       </button>
     </div>
@@ -185,39 +111,18 @@ exports[`renders single mode pipelines 1`] = `
       onKeyDown={[Function]}
     >
       <button
-        className="bp3-button bp3-disabled"
+        className="BaseButton__StyledButton-sc-1bn4i2e-0 bGSldS"
         data-test-id="mode-picker-button"
         disabled={true}
-        onBlur={[Function]}
-        onKeyDown={[Function]}
-        onKeyUp={[Function]}
-        tabIndex={-1}
         title="To add a mode, add a ModeDefinition to the pipeline."
-        type="button"
       >
-        <span
-          className="bp3-button-text"
-        >
+        <span>
           Mode: default
         </span>
         <span
-          className="bp3-icon bp3-icon-caret-down"
-          icon="caret-down"
+          className="Icon__IconWrapper-ovocpb-0 bhLmqF material-icons"
         >
-          <svg
-            data-icon="caret-down"
-            height={16}
-            viewBox="0 0 16 16"
-            width={16}
-          >
-            <desc>
-              caret-down
-            </desc>
-            <path
-              d="M12 6.5c0-.28-.22-.5-.5-.5h-7a.495.495 0 00-.37.83l3.5 4c.09.1.22.17.37.17s.28-.07.37-.17l3.5-4c.08-.09.13-.2.13-.33z"
-              fillRule="evenodd"
-            />
-          </svg>
+          expand_more
         </span>
       </button>
     </div>
@@ -238,39 +143,18 @@ exports[`renders single mode pipelines 2`] = `
       onKeyDown={[Function]}
     >
       <button
-        className="bp3-button bp3-disabled"
+        className="BaseButton__StyledButton-sc-1bn4i2e-0 bGSldS"
         data-test-id="mode-picker-button"
         disabled={true}
-        onBlur={[Function]}
-        onKeyDown={[Function]}
-        onKeyUp={[Function]}
-        tabIndex={-1}
         title="To add a mode, add a ModeDefinition to the pipeline."
-        type="button"
       >
-        <span
-          className="bp3-button-text"
-        >
+        <span>
           Mode: default
         </span>
         <span
-          className="bp3-icon bp3-icon-caret-down"
-          icon="caret-down"
+          className="Icon__IconWrapper-ovocpb-0 bhLmqF material-icons"
         >
-          <svg
-            data-icon="caret-down"
-            height={16}
-            viewBox="0 0 16 16"
-            width={16}
-          >
-            <desc>
-              caret-down
-            </desc>
-            <path
-              d="M12 6.5c0-.28-.22-.5-.5-.5h-7a.495.495 0 00-.37.83l3.5 4c.09.1.22.17.37.17s.28-.07.37-.17l3.5-4c.08-.09.13-.2.13-.33z"
-              fillRule="evenodd"
-            />
-          </svg>
+          expand_more
         </span>
       </button>
     </div>

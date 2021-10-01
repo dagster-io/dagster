@@ -1,4 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
+// eslint-disable-next-line no-restricted-imports
 import {Button, HTMLInputProps, IInputGroupProps, Intent, Menu, MenuItem} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -10,6 +11,7 @@ import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
 import {RepositorySelector} from '../types/globalTypes';
+import {ButtonWIP} from '../ui/Button';
 import {ColorsWIP} from '../ui/Colors';
 import {IconWIP} from '../ui/Icon';
 import {MenuDividerWIP, MenuItemWIP, MenuWIP} from '../ui/Menu';
@@ -251,7 +253,7 @@ const ConfigEditorConfigGeneratorPicker: React.FC<ConfigEditorConfigGeneratorPic
   (props) => {
     const {configGenerators, label, onSelect} = props;
     const {flagPipelineModeTuples} = useFeatureFlags();
-    const button = React.useRef<Button | null>(null);
+    const button = React.useRef<HTMLButtonElement>(null);
     const itemLabel = flagPipelineModeTuples ? 'Ops' : 'Solids';
 
     return (
@@ -259,7 +261,7 @@ const ConfigEditorConfigGeneratorPicker: React.FC<ConfigEditorConfigGeneratorPic
         <ShortcutHandler
           shortcutLabel={'⌥E'}
           shortcutFilter={(e) => e.keyCode === 69 && e.altKey}
-          onShortcut={() => button.current?.buttonRef?.click()}
+          onShortcut={() => button.current?.click()}
         >
           <SelectWIP<ConfigGenerator>
             items={configGenerators}
@@ -315,12 +317,13 @@ const ConfigEditorConfigGeneratorPicker: React.FC<ConfigEditorConfigGeneratorPic
             noResults={<MenuItemWIP disabled={true} text="No presets." />}
             onItemSelect={onSelect}
           >
-            <Button
+            <ButtonWIP
               ref={button}
-              text={label}
               data-test-id="preset-selector-button"
-              rightIcon="caret-down"
-            />
+              rightIcon={<IconWIP name="expand_more" />}
+            >
+              {label}
+            </ButtonWIP>
           </SelectWIP>
         </ShortcutHandler>
       </div>

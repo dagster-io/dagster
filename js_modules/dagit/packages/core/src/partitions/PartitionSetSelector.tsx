@@ -1,6 +1,7 @@
-import {Button} from '@blueprintjs/core';
 import * as React from 'react';
 
+import {ButtonWIP} from '../ui/Button';
+import {IconWIP} from '../ui/Icon';
 import {MenuItemWIP, MenuWIP} from '../ui/Menu';
 import {Popover} from '../ui/Popover';
 
@@ -33,7 +34,9 @@ export const PartitionSetSelector: React.FunctionComponent<{
         </MenuWIP>
       }
     >
-      <Button text={`Partition Set: ${selected.name}`} rightIcon="caret-down" />
+      <ButtonWIP
+        rightIcon={<IconWIP name="expand_more" />}
+      >{`Partition Set: ${selected.name}`}</ButtonWIP>
     </Popover>
   );
 };

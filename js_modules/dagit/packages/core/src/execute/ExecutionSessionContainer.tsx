@@ -1,5 +1,4 @@
 import {gql, useApolloClient, useQuery} from '@apollo/client';
-import {Button} from '@blueprintjs/core';
 import merge from 'deepmerge';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -28,6 +27,7 @@ import {isHelpContextEqual} from '../configeditor/isHelpContextEqual';
 import {DagsterTag} from '../runs/RunTag';
 import {RepositorySelector} from '../types/globalTypes';
 import {Box} from '../ui/Box';
+import {ButtonWIP} from '../ui/Button';
 import {ButtonLink} from '../ui/ButtonLink';
 import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
@@ -606,11 +606,10 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
                 onRequestClose={closeTagEditor}
               />
               <div style={{flex: 1}} />
-              <Button
-                icon="paragraph"
-                small={true}
+              <ButtonWIP
+                title="Toggle whitespace"
+                icon={<IconWIP name="line_style" />}
                 active={showWhitespace}
-                style={{marginLeft: 'auto'}}
                 onClick={() => dispatch({type: 'toggle-whitepsace', payload: !showWhitespace})}
               />
               <SessionSettingsSpacer />
@@ -630,17 +629,14 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
                     Your repository has been manually refreshed, and this configuration may now be
                     out of date.
                   </div>
-                  <Button
-                    small
+                  <ButtonWIP
                     intent="primary"
                     onClick={() => onRefreshConfig(refreshableSessionBase)}
                     disabled={state.configLoading}
                   >
                     Refresh config
-                  </Button>
-                  <Button small onClick={onDismissRefreshWarning}>
-                    Dismiss
-                  </Button>
+                  </ButtonWIP>
+                  <ButtonWIP onClick={onDismissRefreshWarning}>Dismiss</ButtonWIP>
                 </Group>
               </Box>
             ) : null}

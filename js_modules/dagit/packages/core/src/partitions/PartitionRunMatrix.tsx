@@ -1,5 +1,4 @@
 import {gql, useQuery} from '@apollo/client';
-import {Button} from '@blueprintjs/core';
 import qs from 'query-string';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -286,7 +285,7 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
             </MenuWIP>
           }
         >
-          <Button icon="settings" minimal text="Settings" />
+          <ButtonWIP icon={<IconWIP name="tune" />}>Settings</ButtonWIP>
         </Popover>
       </Box>
       <div

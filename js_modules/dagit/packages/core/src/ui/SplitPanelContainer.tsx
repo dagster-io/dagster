@@ -1,9 +1,10 @@
-import {Button} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {ButtonWIP} from './Button';
 import {ButtonGroup} from './ButtonGroup';
 import {ColorsWIP} from './Colors';
+import {IconWIP} from './Icon';
 
 const DIVIDER_THICKNESS = 4;
 
@@ -167,11 +168,10 @@ export const SecondPanelToggle = ({container, axis}: PanelToggleProps) => {
   React.useEffect(() => setOpen(initialIsOpen), [initialIsOpen]);
 
   return (
-    <Button
-      small={true}
+    <ButtonWIP
       active={open}
-      title={'Toggle Second Pane'}
-      icon={axis === 'vertical' ? 'add-row-bottom' : 'add-column-right'}
+      title="Toggle Second Pane"
+      icon={<IconWIP name={axis === 'vertical' ? 'vertical_align_top' : 'vertical_align_top'} />}
       onClick={() => {
         if (!container.current) {
           return;

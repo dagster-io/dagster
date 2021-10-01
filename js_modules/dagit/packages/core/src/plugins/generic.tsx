@@ -1,10 +1,10 @@
-import {Button} from '@blueprintjs/core';
 import startCase from 'lodash/startCase';
 import * as React from 'react';
 
 import {IPluginSidebarProps} from '../plugins';
 import {ButtonWIP} from '../ui/Button';
 import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
+import {IconWIP} from '../ui/Icon';
 
 export const SidebarComponent: React.FC<IPluginSidebarProps> = (props) => {
   const [open, setOpen] = React.useState(false);
@@ -25,9 +25,9 @@ export const SidebarComponent: React.FC<IPluginSidebarProps> = (props) => {
 
   return (
     <div>
-      <Button icon="duplicate" onClick={() => setOpen(true)}>
-        View Metadata
-      </Button>
+      <ButtonWIP icon={<IconWIP name="content_copy" />} onClick={() => setOpen(true)}>
+        View metadata
+      </ButtonWIP>
       <DialogWIP
         title={`Metadata: ${props.definition.name}`}
         isOpen={open}
