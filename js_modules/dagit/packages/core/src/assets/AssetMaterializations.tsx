@@ -1,11 +1,11 @@
 import {useQuery} from '@apollo/client';
-import {Button, ButtonGroup} from '@blueprintjs/core';
 import flatMap from 'lodash/flatMap';
 import uniq from 'lodash/uniq';
 import * as React from 'react';
 
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {Box} from '../ui/Box';
+import {ButtonGroup} from '../ui/ButtonGroup';
 import {ColorsWIP} from '../ui/Colors';
 import {Spinner} from '../ui/Spinner';
 import {Tab, Tabs} from '../ui/Tabs';
@@ -64,6 +64,7 @@ export const AssetMaterializations: React.FC<Props> = ({assetKey, asOf, asSideba
   });
 
   const reversed = React.useMemo(() => [...bucketed].reverse(), [bucketed]);
+  const activeItems = React.useMemo(() => new Set([xAxis]), [xAxis]);
 
   const content = () => {
     if (loading) {
@@ -100,17 +101,17 @@ export const AssetMaterializations: React.FC<Props> = ({assetKey, asOf, asSideba
 
   return (
     <div>
-      <Box flex={{justifyContent: 'space-between', alignItems: 'flex-end'}}>
+      <Box flex={{justifyContent: 'space-between', alignItems: 'flex-end'}} padding={{right: 4}}>
         <Subheading>Materializations over Time</Subheading>
         {isPartitioned ? (
-          <ButtonGroup>
-            <Button active={xAxis === 'partition'} onClick={() => setXAxis('partition')}>
-              By Partition
-            </Button>
-            <Button active={xAxis === 'time'} onClick={() => setXAxis('time')}>
-              By Timestamp
-            </Button>
-          </ButtonGroup>
+          <ButtonGroup
+            activeItems={activeItems}
+            buttons={[
+              {id: 'partition', label: 'By partition'},
+              {id: 'time', label: 'By timestamp'},
+            ]}
+            onClick={(id: string) => setXAxis(id as 'partition' | 'time')}
+          />
         ) : null}
       </Box>
       <Box margin={{vertical: 8}}>

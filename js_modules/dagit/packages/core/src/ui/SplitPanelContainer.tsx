@@ -1,7 +1,8 @@
-import {Button, ButtonGroup} from '@blueprintjs/core';
+import {Button} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {ButtonGroup} from './ButtonGroup';
 import {ColorsWIP} from './Colors';
 
 const DIVIDER_THICKNESS = 4;
@@ -135,21 +136,21 @@ interface PanelToggleProps {
 }
 
 export const FirstOrSecondPanelToggle = ({container, axis}: PanelToggleProps) => {
+  // todo dish/bengotow: Fix these icons.
   return (
-    <ButtonGroup style={{flexShrink: 0}}>
-      <Button
-        small={true}
-        title={'Focus First Pane'}
-        icon={axis === 'vertical' ? 'add-row-top' : 'add-column-left'}
-        onClick={() => container.current?.onChangeSize(100)}
-      />
-      <Button
-        small={true}
-        title={'Focus Second Pane'}
-        icon={axis === 'vertical' ? 'add-row-bottom' : 'add-column-right'}
-        onClick={() => container.current?.onChangeSize(0)}
-      />
-    </ButtonGroup>
+    <ButtonGroup
+      buttons={[
+        {
+          id: 'first-pane',
+          icon: axis === 'vertical' ? 'vertical_align_bottom' : 'vertical_align_bottom',
+        },
+        {
+          id: 'second-pane',
+          icon: axis === 'vertical' ? 'vertical_align_top' : 'vertical_align_top',
+        },
+      ]}
+      onClick={(id) => container.current?.onChangeSize(id === 'first-pane' ? 100 : 0)}
+    />
   );
 };
 

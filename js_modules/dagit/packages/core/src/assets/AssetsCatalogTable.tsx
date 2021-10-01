@@ -1,7 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import {
   Button,
-  ButtonGroup,
   Checkbox,
   InputGroup as BlueprintInputGroup,
   Menu,
@@ -18,6 +17,7 @@ import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {QueryCountdown} from '../app/QueryCountdown';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {Box} from '../ui/Box';
+import {ButtonGroup} from '../ui/ButtonGroup';
 import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
@@ -135,20 +135,14 @@ export const AssetsCatalogTable: React.FC<{prefixPath?: string[]}> = ({prefixPat
                 <div>
                   {showSwitcher ? (
                     <Group spacing={8} direction="row">
-                      <ButtonGroup>
-                        <Button
-                          icon="list"
-                          title="Flat"
-                          active={isFlattened}
-                          onClick={() => setIsFlattened(true)}
-                        />
-                        <Button
-                          icon="folder-close"
-                          title="Directory"
-                          active={!isFlattened}
-                          onClick={() => setIsFlattened(false)}
-                        />
-                      </ButtonGroup>
+                      <ButtonGroup
+                        activeItems={new Set([view])}
+                        buttons={[
+                          {id: 'flat', icon: 'view_list'},
+                          {id: 'directory', icon: 'folder_open'},
+                        ]}
+                        onClick={(id) => setIsFlattened(id === 'flat')}
+                      />
                       {isFlattened ? (
                         <AssetsFilter assets={assets} query={q} onSetQuery={setQ} />
                       ) : (
