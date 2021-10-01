@@ -12,6 +12,7 @@ import { AssetKeyInput } from "./../../types/globalTypes";
 
 export interface AssetQuery_assetNodeOrError_AssetNode {
   __typename: "AssetNode";
+  id: string;
   description: string | null;
   opName: string | null;
   jobName: string | null;

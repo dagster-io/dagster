@@ -18,7 +18,7 @@ import {AssetLineageElements} from './AssetLineageElements';
 import {LatestMaterializationMetadataFragment} from './types/LatestMaterializationMetadataFragment';
 
 export const LatestMaterializationMetadata: React.FC<{
-  latest: LatestMaterializationMetadatataFragment | undefined;
+  latest: LatestMaterializationMetadataFragment | undefined;
   asOf: string | null;
 }> = ({latest, asOf}) => {
   if (!latest) {
@@ -143,6 +143,5 @@ export const LATEST_MATERIALIZATION_METADATA_FRAGMENT = gql`
       }
     }
   }
-
   ${METADATA_ENTRY_FRAGMENT}
 `;

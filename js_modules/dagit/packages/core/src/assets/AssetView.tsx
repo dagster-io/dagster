@@ -2,6 +2,7 @@ import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {METADATA_ENTRY_FRAGMENT} from '../runs/MetadataEntry';
 import {Box} from '../ui/Box';
 import {Group} from '../ui/Group';
 import {Spinner} from '../ui/Spinner';
@@ -9,6 +10,7 @@ import {Subheading} from '../ui/Text';
 import {assetKeyToString} from '../workspace/asset-graph/Utils';
 
 import {AssetMaterializations} from './AssetMaterializations';
+import {AssetNodeDefinition, ASSET_NODE_DEFINITION_FRAGMENT} from './AssetNodeDefinition';
 import {
   LatestMaterializationMetadata,
   LATEST_MATERIALIZATION_METADATA_FRAGMENT,
@@ -32,17 +34,6 @@ export const AssetView: React.FC<Props> = ({assetKey, asOf}) => {
       before,
     },
   });
-  // const staticContent = () => {
-  //   const assetNodeOrError = data?.assetNodeOrError;
-  //   if (!assetNodeOrError || assetNodeOrError.__typename !== 'AssetNode') {
-  //     return null;
-  //   }
-  //   return (
-  //     <div>
-  //       <Description description={assetNodeOrError.description} />
-  //     </div>
-  //   );
-  // };
 
   const isPartitioned = !!(
     data?.assetOrError?.__typename === 'Asset' &&
@@ -61,12 +52,15 @@ export const AssetView: React.FC<Props> = ({assetKey, asOf}) => {
         {data?.assetOrError && data.assetOrError.__typename === 'Asset' && (
           <SnapshotWarning asset={data.assetOrError} asOf={asOf} />
         )}
+        {data?.assetNodeOrError && data.assetNodeOrError.__typename === 'AssetNode' && (
+          <AssetNodeDefinition assetNode={data.assetNodeOrError} />
+        )}
         <Subheading>
           {isPartitioned ? 'Latest Materialized Partition' : 'Latest Materialization'}
         </Subheading>
         {data?.assetOrError && data.assetOrError.__typename === 'Asset' && (
           <LatestMaterializationMetadata
-            asset={data.assetOrError.assetMaterializations[0]}
+            latest={data.assetOrError.assetMaterializations[0]}
             asOf={asOf}
           />
         )}
@@ -80,9 +74,12 @@ export const ASSET_QUERY = gql`
   query AssetQuery($assetKey: AssetKeyInput!, $limit: Int!, $before: String) {
     assetNodeOrError(assetKey: $assetKey) {
       ... on AssetNode {
+        id
         description
         opName
         jobName
+
+        ...AssetNodeDefinitionFragment
       }
 
       ... on AssetNotFoundError {
@@ -104,6 +101,8 @@ export const ASSET_QUERY = gql`
       }
     }
   }
+  ${METADATA_ENTRY_FRAGMENT}
+  ${ASSET_NODE_DEFINITION_FRAGMENT}
   ${LATEST_MATERIALIZATION_METADATA_FRAGMENT}
   ${SNAPSHOT_WARNING_ASSET_FRAGMENT}
 `;
