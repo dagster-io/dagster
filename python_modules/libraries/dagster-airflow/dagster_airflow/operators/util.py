@@ -67,6 +67,7 @@ def get_aws_environment():
 
 
 def check_storage_specified(pipeline_def, mode_def, run_config):
+    # TODO: check io manager
     if not can_isolate_steps(pipeline_def, mode_def) and "intermediate_storage" not in run_config:
         raise AirflowException(
             "DAGs created using dagster-airflow run each step in its own process, but your "

@@ -31,6 +31,7 @@ def construct_environment_yaml(preset_name, config, pipeline_name, module_name):
 
     if (
         not can_isolate_steps(pipeline_def, pipeline_def.get_default_mode())
+        # TODO: if io manager is not specified, inject dagster_tmp_path to be the fs_io_manager's base dir
         and "intermediate_storage" not in run_config
     ):
         system_tmp_path = seven.get_system_temp_directory()

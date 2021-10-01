@@ -43,6 +43,7 @@ class DagsterDockerOperator(DockerOperator):
         self.host_tmp_dir = host_tmp_dir
 
         run_config = dagster_operator_parameters.run_config
+        # TODO????????
         if "filesystem" in run_config["intermediate_storage"]:
             if (
                 "config" in (run_config["intermediate_storage"].get("filesystem", {}) or {})

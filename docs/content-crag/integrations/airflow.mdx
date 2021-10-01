@@ -7,7 +7,7 @@ description: The dagster-airflow package allows you to export Dagster pipelines 
 
 <CodeReferenceLink filePath="examples/airflow_ingest" />
 
-The [`dagster-airflow`](/\_apidocs/libraries/dagster_airflow) package allows you to export Dagster pipelines as Airflow DAGs, as well as to import Airflow DAGs into Dagster pipelines.
+The [`dagster-airflow`](/_apidocs/libraries/dagster_airflow) package allows you to export Dagster pipelines as Airflow DAGs, as well as to import Airflow DAGs into Dagster pipelines.
 
 Dagster is a fully-featured orchestrator and does not require a system like Airflow to deploy, execute, or schedule pipelines. The main scenarios for using Dagster with Airflow are:
 
@@ -85,10 +85,10 @@ Like other Airflow DAG definition files, this should go inside `$AIRLFLOW_HOME/d
 After this, the DAG should show up inside Airflow:
 
 <Image
-alt="intro_airflow_one.png"
-src="/images/deploying/intro_airflow_one.png"
-width={1272}
-height={868}
+  alt="intro_airflow_one.png"
+  src="/images/deploying/intro_airflow_one.png"
+  width={1272}
+  height={868}
 />
 
 ### Running Containerized
@@ -123,7 +123,7 @@ dag, steps = make_airflow_dag_containerized(
 )
 ```
 
-The `image` argument is the name of the Docker image. Running in a containerized context requires a persistent intermediate storage layer available to the Dagster containers, such as a network filesystem, S3, or GCS. You can pass `op_kwargs` through to the the **`DagsterDockerOperator`** to use custom TLS settings, the private registry of your choice, etc., just as you would configure the ordinary Airflow **`DockerOperator`**.
+The `image` argument is the name of the Docker image. Running in a containerized context requires the storage that your IO managers depend on to be available to the Dagster containers, such as a network filesystem, S3, or GCS. You can pass `op_kwargs` through to the the **`DagsterDockerOperator`** to use custom TLS settings, the private registry of your choice, etc., just as you would configure the ordinary Airflow **`DockerOperator`**.
 
 If you want your containerized pipeline to be available to Airflow operators running on other machines (for example, in environments where Airflow workers are running remotely) you'll need to push your Docker image to a Docker registry so that remote instances of Docker can pull the image by name, or otherwise ensure that the image is available on remote nodes.
 
