@@ -286,6 +286,7 @@ __all__ = [
     "executor",
     "graph",
     "intermediate_storage",
+    "job",
     "lambda_solid",
     "logger",
     "op",
