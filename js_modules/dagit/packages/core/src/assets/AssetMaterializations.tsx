@@ -69,6 +69,10 @@ export const AssetMaterializations: React.FC<Props> = ({assetKey, asOf, asSideba
 
   const reversed = React.useMemo(() => [...bucketed].reverse(), [bucketed]);
 
+  if (process.env.NODE_ENV === 'test') {
+    return <span />; // chartjs and our useViewport hook don't play nicely with jest
+  }
+
   const content = () => {
     if (loading) {
       return (

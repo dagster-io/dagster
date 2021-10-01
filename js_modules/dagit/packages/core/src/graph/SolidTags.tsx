@@ -58,9 +58,7 @@ const SolidTagsInner: React.FunctionComponent<ISolidTagsProps> = ({
       padding={0}
     >
       <SVGFlowLayoutFiller />
-      {tags.map((tag) => (
-        <SVGNodeTag tag={tag} minified={minified} key={tag.label} height={height} />
-      ))}
+      {tags.map((tag) => SVGNodeTag({tag, minified, height}))}
     </SVGFlowLayoutRect>
   );
 };
@@ -75,6 +73,7 @@ export const SVGNodeTag: React.FC<{tag: ISolidTag; minified: boolean; height: nu
     <SVGFlowLayoutRect
       rx={0}
       ry={0}
+      key={tag.label}
       height={height}
       padding={minified ? 8 : 4}
       fill={`hsl(${hue}, 10%, 95%)`}
