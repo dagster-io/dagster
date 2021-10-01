@@ -82,6 +82,7 @@ from dagster.core.definitions import (
     hourly_schedule,
     in_process_executor,
     intermediate_storage,
+    job,
     lambda_solid,
     logger,
     make_values_resource,

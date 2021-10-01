@@ -8,6 +8,7 @@ from .decorators import (
     graph,
     hook,
     hourly_schedule,
+    job,
     lambda_solid,
     monthly_schedule,
     op,
