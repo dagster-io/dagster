@@ -1,5 +1,5 @@
 import {useQuery} from '@apollo/client';
-import {Button, ButtonGroup, Tab, Tabs} from '@blueprintjs/core';
+import {Button, ButtonGroup} from '@blueprintjs/core';
 import flatMap from 'lodash/flatMap';
 import uniq from 'lodash/uniq';
 import * as React from 'react';
@@ -8,6 +8,7 @@ import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
 import {Spinner} from '../ui/Spinner';
+import {Tab, Tabs} from '../ui/Tabs';
 import {Subheading} from '../ui/Text';
 
 import {AssetMaterializationMatrix, LABEL_STEP_EXECUTION_TIME} from './AssetMaterializationMatrix';
@@ -113,13 +114,9 @@ export const AssetMaterializations: React.FC<Props> = ({assetKey, asOf, asSideba
         ) : null}
       </Box>
       <Box margin={{vertical: 8}}>
-        <Tabs
-          large={false}
-          selectedTabId={activeTab}
-          onChange={(t) => setActiveTab(t as 'graphs' | 'list')}
-        >
-          <Tab id="graphs" title="Graphs" />
-          <Tab id="list" title="List" />
+        <Tabs selectedTabId={activeTab}>
+          <Tab id="graphs" title="Graphs" onClick={() => setActiveTab('graphs')} />
+          <Tab id="list" title="List" onClick={() => setActiveTab('list')} />
         </Tabs>
       </Box>
       {content()}

@@ -1,4 +1,3 @@
-import {Tab, Tabs} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link, Redirect, Route, Switch} from 'react-router-dom';
 
@@ -10,6 +9,7 @@ import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {PageHeader} from '../ui/PageHeader';
+import {Tab, Tabs} from '../ui/Tabs';
 import {Heading} from '../ui/Text';
 
 import {RepositoryAssetsList} from './RepositoryAssetsList';

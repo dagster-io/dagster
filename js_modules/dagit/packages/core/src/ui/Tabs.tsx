@@ -21,7 +21,6 @@ export const Tabs = styled(({selectedTabId, children, onChange, size = 'large', 
     <div {...rest} role="tablist">
       {React.Children.map(children, (child) =>
         React.cloneElement(child, {
-          key: child.props.key || child.props.id,
           selected: child.props.selected || child.props.id === selectedTabId,
           $size: size,
           ...(onChange && !child.props.disabled
@@ -39,8 +38,8 @@ export const Tabs = styled(({selectedTabId, children, onChange, size = 'large', 
   display: flex;
   gap: 16px;
   border-bottom: 1px solid ${ColorsWIP.Gray100};
-  font-size: ${({small}) => (small ? '12px' : '14px')};
-  line-height: ${({small}) => (small ? '16px' : '20px')};
+  font-size: ${({size}) => (size === 'small' ? '12px' : '14px')};
+  line-height: ${({size}) => (size === 'small' ? '16px' : '20px')};
   font-weight: 600;
 `;
 
@@ -49,8 +48,8 @@ interface TabProps {
   title: React.ReactNode;
   disabled?: boolean;
   selected?: boolean;
-  count?: number;
-  icon: React.ReactNode;
+  count?: number | 'indeterminate';
+  icon?: React.ReactNode;
   $size?: 'small' | 'large';
 }
 
@@ -65,7 +64,7 @@ export const Tab = styled(({title, count, icon, selected, disabled, ...rest}) =>
   >
     {title}
     {icon}
-    {count && <Count>{count}</Count>}
+    {count !== undefined ? <Count>{count === 'indeterminate' ? '–' : count}</Count> : null}
   </div>
 ))<TabProps>`
   padding: ${({$size}) => ($size === 'small' ? '12px 0 10px' : '18px 0 16px')};
