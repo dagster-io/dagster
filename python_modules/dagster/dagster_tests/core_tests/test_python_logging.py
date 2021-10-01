@@ -1,16 +1,8 @@
 import logging
 
 import pytest
-from dagster import (
-    ModeDefinition,
-    execute_pipeline,
-    fs_io_manager,
-    pipeline,
-    reconstructable,
-    resource,
-    solid,
-)
-from dagster.core.test_utils import instance_for_test
+from dagster import ModeDefinition, execute_pipeline, pipeline, reconstructable, resource, solid
+from dagster.core.test_utils import default_mode_def_for_test, instance_for_test
 
 
 def get_log_records(pipe, managed_loggers=None, python_logging_level=None, run_config=None):
@@ -244,7 +236,7 @@ def define_logging_pipeline():
         loggerA.debug("loggerA")
         loggerA.info("loggerA")
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})])
+    @pipeline(mode_defs=[default_mode_def_for_test])
     def pipe():
         solidB(solidA())
 

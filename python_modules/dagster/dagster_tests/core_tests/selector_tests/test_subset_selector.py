@@ -1,6 +1,5 @@
 import pytest
-from dagster import InputDefinition, ModeDefinition, fs_io_manager, lambda_solid, pipeline
-from dagster.core.definitions.resource import resource
+from dagster import InputDefinition, lambda_solid, pipeline
 from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
 from dagster.core.selector.subset_selector import (
     MAX_NUM,
@@ -10,6 +9,7 @@ from dagster.core.selector.subset_selector import (
     parse_solid_selection,
     parse_step_selection,
 )
+from dagster.core.test_utils import default_mode_def_for_test
 
 
 @lambda_solid
@@ -37,7 +37,7 @@ def add_one(num):
     return num + 1
 
 
-@pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})])
+@pipeline(mode_defs=[default_mode_def_for_test])
 def foo_pipeline():
     """
     return_one ---> add_nums --> multiply_two --> add_one

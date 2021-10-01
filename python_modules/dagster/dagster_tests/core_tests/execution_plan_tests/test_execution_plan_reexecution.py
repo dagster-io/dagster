@@ -6,11 +6,9 @@ from dagster import (
     DependencyDefinition,
     InputDefinition,
     Int,
-    ModeDefinition,
     OutputDefinition,
     PipelineDefinition,
     execute_pipeline,
-    fs_io_manager,
     lambda_solid,
     reexecute_pipeline,
 )
@@ -22,11 +20,10 @@ from dagster.core.errors import (
 )
 from dagster.core.events import get_step_output_event
 from dagster.core.execution.api import create_execution_plan, execute_plan
-from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.intermediate_storage import build_fs_intermediate_storage
 from dagster.core.system_config.objects import ResolvedRunConfig
+from dagster.core.test_utils import default_mode_def_for_test
 
 
 def define_addy_pipeline(using_file_system=False):
@@ -49,9 +46,7 @@ def define_addy_pipeline(using_file_system=False):
             "add_two": {"num": DependencyDefinition("add_one")},
             "add_three": {"num": DependencyDefinition("add_two")},
         },
-        mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})]
-        if using_file_system
-        else None,
+        mode_defs=[default_mode_def_for_test] if using_file_system else None,
     )
     return pipeline_def
 

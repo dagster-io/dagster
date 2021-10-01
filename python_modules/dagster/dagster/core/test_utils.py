@@ -7,7 +7,7 @@ from contextlib import ExitStack, contextmanager
 
 import pendulum
 import yaml
-from dagster import Shape, check, composite_solid, pipeline, solid
+from dagster import ModeDefinition, Shape, check, composite_solid, fs_io_manager, pipeline, solid
 from dagster.config import Field
 from dagster.config.config_type import Array
 from dagster.core.host_representation.origin import (
@@ -447,3 +447,6 @@ def remove_none_recursively(obj):
         )
     else:
         return obj
+
+
+default_mode_def_for_test = ModeDefinition(resource_defs={"io_manager": fs_io_manager})

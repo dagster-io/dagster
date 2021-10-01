@@ -87,7 +87,6 @@ def backfill_test_schedule():
             start=datetime.datetime(2020, 1, 5),
             delta_range="weeks",
         ),
-        run_config_fn_for_partition=lambda _: {"intermediate_storage": {"filesystem": {}}},
     )
 
     def _should_execute(context):
@@ -109,7 +108,6 @@ def materialization_schedule():
         name="many_events_minutely",
         pipeline_name="many_events",
         partition_fn=date_partition_range(start=datetime.datetime(2020, 1, 1)),
-        run_config_fn_for_partition=lambda _: {"intermediate_storage": {"filesystem": {}}},
     )
 
     def _should_execute(context):
@@ -210,7 +208,6 @@ def get_toys_schedules():
             name="many_events_every_min",
             cron_schedule="* * * * *",
             pipeline_name="many_events",
-            run_config_fn=lambda _: {"intermediate_storage": {"filesystem": {}}},
             execution_timezone=_toys_tz_info(),
         ),
     ]

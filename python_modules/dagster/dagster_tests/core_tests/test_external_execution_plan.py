@@ -10,19 +10,15 @@ from dagster import (
     Int,
     OutputDefinition,
     PipelineDefinition,
-    fs_io_manager,
     lambda_solid,
     reconstructable,
 )
-from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.api import create_execution_plan, execute_plan
-from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.intermediate_storage import build_fs_intermediate_storage
 from dagster.core.system_config.objects import ResolvedRunConfig
-from dagster.core.test_utils import instance_for_test
+from dagster.core.test_utils import default_mode_def_for_test, instance_for_test
 
 
 def define_inty_pipeline(using_file_system=False):
@@ -42,9 +38,7 @@ def define_inty_pipeline(using_file_system=False):
         name="basic_external_plan_execution",
         solid_defs=[return_one, add_one, user_throw_exception],
         dependencies={"add_one": {"num": DependencyDefinition("return_one")}},
-        mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})]
-        if using_file_system
-        else None,
+        mode_defs=[default_mode_def_for_test] if using_file_system else None,
     )
     return pipeline
 
