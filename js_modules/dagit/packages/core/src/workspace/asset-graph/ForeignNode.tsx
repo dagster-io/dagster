@@ -10,7 +10,7 @@ import {assetKeyToString} from './Utils';
 export const ForeignNode: React.FC<{assetKey: {path: string[]}}> = ({assetKey}) => (
   <ForeignNodeLink>
     <span className="label">{assetKeyToString(assetKey)}</span>
-    <IconWIP name="open_in_new" color={ColorsWIP.Gray500} size={16} />
+    <IconWIP name="open_in_new" color={ColorsWIP.Gray500} />
   </ForeignNodeLink>
 );
 

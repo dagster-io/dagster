@@ -1,5 +1,4 @@
 import {useMutation} from '@apollo/client';
-import {Menu, MenuItem} from '@blueprintjs/core';
 import {ContextMenu2 as ContextMenu} from '@blueprintjs/popover2';
 import qs from 'query-string';
 import React, {CSSProperties} from 'react';
@@ -20,6 +19,7 @@ import {LaunchPipelineExecution} from '../../runs/types/LaunchPipelineExecution'
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {ColorsWIP} from '../../ui/Colors';
 import {markdownToPlaintext} from '../../ui/Markdown';
+import {MenuItemWIP, MenuWIP} from '../../ui/Menu';
 import {FontFamily} from '../../ui/styles';
 import {repoAddressToSelector} from '../repoAddressToSelector';
 import {RepoAddress} from '../types';
@@ -70,8 +70,8 @@ export const AssetNode: React.FC<{
   return (
     <ContextMenu
       content={
-        <Menu>
-          <MenuItem
+        <MenuWIP>
+          <MenuItemWIP
             text={
               <span>
                 Launch run to build{' '}
@@ -80,10 +80,10 @@ export const AssetNode: React.FC<{
                 </span>
               </span>
             }
-            icon="send-to"
+            icon="open_in_new"
             onClick={onLaunch}
           />
-        </Menu>
+        </MenuWIP>
       }
     >
       <div

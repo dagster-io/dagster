@@ -11,7 +11,6 @@ import {PipelineExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {SidebarPipelineOrJobOverview} from '../../pipelines/SidebarPipelineOrJobOverview';
 import {PipelineExplorerSolidHandleFragment} from '../../pipelines/types/PipelineExplorerSolidHandleFragment';
 import {METADATA_ENTRY_FRAGMENT} from '../../runs/MetadataEntry';
-import {POLL_INTERVAL} from '../../runs/useCursorPaginatedQuery';
 import {ColorsWIP} from '../../ui/Colors';
 import {Loading} from '../../ui/Loading';
 import {SplitPanelContainer} from '../../ui/SplitPanelContainer';
@@ -51,7 +50,6 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
   const queryResult = useQuery<AssetGraphQuery, AssetGraphQueryVariables>(ASSETS_GRAPH_QUERY, {
     variables: {repositorySelector},
     notifyOnNetworkStatusChange: true,
-    pollInterval: POLL_INTERVAL,
   });
 
   const selectNode = React.useCallback(

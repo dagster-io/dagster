@@ -42,7 +42,7 @@ export const SidebarAssetInfo: React.FC<{
           <Box margin={12}>
             <AssetCatalogLink to={`/instance/assets/${node.assetKey.path.join('/')}`}>
               {'View All in Asset Catalog '}
-              <IconWIP name="open_in_new" size={16} color={ColorsWIP.Blue500} />
+              <IconWIP name="open_in_new" color={ColorsWIP.Blue500} />
             </AssetCatalogLink>
             <LatestMaterializationMetadata latest={node.assetMaterializations[0]} asOf={null} />
           </Box>
