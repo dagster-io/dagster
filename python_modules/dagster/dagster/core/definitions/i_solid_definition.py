@@ -44,7 +44,7 @@ class NodeDefinition(NamedConfigurableDefinition):
         )
 
     @abstractproperty
-    def node_as_str(self):
+    def node_type_str(self):
         raise NotImplementedError()
 
     @property
@@ -52,7 +52,7 @@ class NodeDefinition(NamedConfigurableDefinition):
         return self._name
 
     def describe_node(self):
-        return f"{self.node_as_str} '{self.name}'"
+        return f"{self.node_type_str} '{self.name}'"
 
     @property
     def description(self):

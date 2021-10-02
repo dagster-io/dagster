@@ -187,7 +187,7 @@ class GraphDefinition(NodeDefinition):
         return [self.solid_named(solid_name) for solid_name in order]
 
     @property
-    def node_as_str(self) -> str:
+    def node_type_str(self) -> str:
         return "graph"
 
     @property

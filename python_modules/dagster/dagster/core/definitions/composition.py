@@ -395,11 +395,11 @@ class PendingNodeInvocation:
             output_name = output_def.name
             if output_def.is_dynamic:
                 return InvokedSolidDynamicOutputWrapper(
-                    resolved_node_name, output_name, self.node_def.node_as_str
+                    resolved_node_name, output_name, self.node_def.node_type_str
                 )
             else:
                 return InvokedSolidOutputHandle(
-                    resolved_node_name, output_name, self.node_def.node_as_str
+                    resolved_node_name, output_name, self.node_def.node_type_str
                 )
 
         outputs = [output_def for output_def in self.node_def.output_defs]
@@ -407,11 +407,11 @@ class PendingNodeInvocation:
         for output_def in outputs:
             if output_def.is_dynamic:
                 invoked_output_handles[output_def.name] = InvokedSolidDynamicOutputWrapper(
-                    resolved_node_name, output_def.name, self.node_def.node_as_str
+                    resolved_node_name, output_def.name, self.node_def.node_type_str
                 )
             else:
                 invoked_output_handles[output_def.name] = InvokedSolidOutputHandle(
-                    resolved_node_name, output_def.name, self.node_def.node_as_str
+                    resolved_node_name, output_def.name, self.node_def.node_type_str
                 )
 
         return namedtuple(
@@ -421,7 +421,7 @@ class PendingNodeInvocation:
 
     def describe_node(self):
         node_name = self.given_alias if self.given_alias else self.node_def.name
-        return f"{self.node_def.node_as_str} '{node_name}'"
+        return f"{self.node_def.node_type_str} '{node_name}'"
 
     def _process_argument_node(self, node_name, output_node, input_name, input_bindings, arg_desc):
 
@@ -444,7 +444,7 @@ class PendingNodeInvocation:
                             name=current_context().name,
                             arg_desc=arg_desc,
                             input_name=input_name,
-                            node_type=self.node_def.node_as_str,
+                            node_type=self.node_def.node_type_str,
                             node_name=node_name,
                             idx=idx,
                             type=type(output_node),
@@ -463,7 +463,7 @@ class PendingNodeInvocation:
                     arg_desc=arg_desc,
                     input_name=input_name,
                     node_name=node_name,
-                    node_type=self.node_def.node_as_str,
+                    node_type=self.node_def.node_type_str,
                     options=output_node._fields,
                 )
             )
@@ -503,7 +503,7 @@ class PendingNodeInvocation:
                     arg_desc=arg_desc,
                     input_name=input_name,
                     node_name=node_name,
-                    node_type=self.node_def.node_as_str,
+                    node_type=self.node_def.node_type_str,
                 )
             )
 

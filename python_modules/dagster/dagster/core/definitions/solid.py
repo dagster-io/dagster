@@ -171,7 +171,7 @@ class SolidDefinition(NodeDefinition):
                 return solid_invocation_result(self, None, *args, **kwargs)
 
     @property
-    def node_as_str(self) -> str:
+    def node_type_str(self) -> str:
         return "solid"
 
     @property
@@ -359,7 +359,7 @@ class CompositeSolidDefinition(GraphDefinition):
         )
 
     @property
-    def node_as_str(self):
+    def node_type_str(self):
         return "composite solid"
 
 
