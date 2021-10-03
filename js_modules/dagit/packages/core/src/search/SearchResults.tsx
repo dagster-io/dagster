@@ -3,21 +3,20 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {useFeatureFlags} from '../app/Flags';
 import {ColorsWIP} from '../ui/Colors';
 import {IconName, IconWIP} from '../ui/Icon';
 
 import {SearchResult, SearchResultType} from './types';
 
-const iconForType = (type: SearchResultType, flagPipelineModeTuples: boolean): IconName => {
+const iconForType = (type: SearchResultType): IconName => {
   switch (type) {
     case SearchResultType.Asset:
-      return 'table_view';
+      return 'asset';
     case SearchResultType.PartitionSet:
     case SearchResultType.Schedule:
       return 'schedule';
     case SearchResultType.Pipeline:
-      return flagPipelineModeTuples ? 'workspaces' : 'schema';
+      return 'job';
     case SearchResultType.Repository:
       return 'source';
     case SearchResultType.Run:
@@ -25,7 +24,7 @@ const iconForType = (type: SearchResultType, flagPipelineModeTuples: boolean): I
     case SearchResultType.Sensor:
       return 'sensors';
     case SearchResultType.Solid:
-      return 'linear_scale';
+      return 'op';
     default:
       return 'source';
   }
@@ -40,7 +39,6 @@ interface ItemProps {
 const SearchResultItem: React.FC<ItemProps> = React.memo(({isHighlight, onClickResult, result}) => {
   const {item} = result;
   const element = React.useRef<HTMLLIElement>(null);
-  const {flagPipelineModeTuples} = useFeatureFlags();
 
   React.useEffect(() => {
     if (element.current && isHighlight) {
@@ -62,7 +60,7 @@ const SearchResultItem: React.FC<ItemProps> = React.memo(({isHighlight, onClickR
     <Item isHighlight={isHighlight} ref={element}>
       <ResultLink to={item.href} onClick={onClick}>
         <IconWIP
-          name={iconForType(item.type, flagPipelineModeTuples)}
+          name={iconForType(item.type)}
           color={isHighlight ? ColorsWIP.White : ColorsWIP.Gray500}
         />
         <div style={{marginLeft: '12px'}}>

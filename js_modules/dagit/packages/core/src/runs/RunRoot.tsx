@@ -69,7 +69,7 @@ export const RunRoot = (props: RouteComponentProps<{runId: string}>) => {
               )}
             </Group>
           }
-          icon="history"
+          icon="run"
           description={
             <Group direction="row" spacing={4} alignItems="baseline">
               <Link to="/instance/runs">Run</Link>

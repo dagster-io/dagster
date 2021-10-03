@@ -100,7 +100,7 @@ export const AssetEntryRoot: React.FC<RouteComponentProps> = ({location, match})
               </Box>
             )
           }
-          icon="table_view"
+          icon="asset"
           description={<PathDetails>{pathDetails()}</PathDetails>}
         />
         <Loading queryResult={queryResult}>
