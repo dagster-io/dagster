@@ -14,6 +14,7 @@ import * as React from 'react';
 import {Link, useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {useFeatureFlags} from '../app/Flags';
 import {usePermissions} from '../app/Permissions';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {QueryCountdown} from '../app/QueryCountdown';
@@ -36,7 +37,6 @@ import {AssetsFilter, filterAssets} from './AssetsFilter';
 import {AssetsTableMaterializationsQuery} from './types/AssetsTableMaterializationsQuery';
 import {AssetsTableNodesQuery} from './types/AssetsTableNodesQuery';
 import {useAssetView} from './useAssetView';
-import {useFeatureFlags} from '../app/Flags';
 
 type AssetKey = {path: string[]};
 type AssetTag = {key: string; value: string};
