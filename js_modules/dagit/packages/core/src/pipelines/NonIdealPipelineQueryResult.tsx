@@ -15,6 +15,10 @@ export const NonIdealPipelineQueryResult: React.FC<{
         message: string;
       }
     | {
+        __typename: 'RepositoryNotFoundError';
+        message: string;
+      }
+    | {
         __typename: 'PythonError';
         message: string;
       };
@@ -34,6 +38,15 @@ export const NonIdealPipelineQueryResult: React.FC<{
       <NonIdealState
         icon={IconNames.FLOW_BRANCH}
         title={flagPipelineModeTuples ? 'Job not found' : 'Pipeline not found'}
+        description={result.message}
+      />
+    );
+  }
+  if (result.__typename === 'RepositoryNotFoundError') {
+    return (
+      <NonIdealState
+        icon={IconNames.FLOW_BRANCH}
+        title={'Repository not found'}
         description={result.message}
       />
     );

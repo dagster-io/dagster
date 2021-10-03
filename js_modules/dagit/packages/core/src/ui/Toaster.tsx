@@ -51,7 +51,7 @@ export const Toaster: {
       if (icon && typeof icon === 'string') {
         rest.message = (
           <>
-            <IconWIP name={icon} color={ColorsWIP.White} size={16} />
+            <IconWIP name={icon} color={ColorsWIP.White} />
             {rest.message}
           </>
         );

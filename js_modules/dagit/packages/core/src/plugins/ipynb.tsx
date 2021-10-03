@@ -1,11 +1,13 @@
 import {Button} from '@blueprintjs/core';
 import * as React from 'react';
 
+import {AppContext} from '../app/AppContext';
 import {IPluginSidebarProps} from '../plugins';
 import {ButtonWIP} from '../ui/Button';
 import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 
 export const SidebarComponent: React.FC<IPluginSidebarProps> = (props) => {
+  const {rootServerURI} = React.useContext(AppContext);
   const [open, setOpen] = React.useState(false);
 
   React.useEffect(() => {
@@ -38,7 +40,7 @@ export const SidebarComponent: React.FC<IPluginSidebarProps> = (props) => {
         <DialogBody>
           <iframe
             title={notebookPath.value}
-            src={`${props.rootServerURI}/dagit/notebook?path=${encodeURIComponent(
+            src={`${rootServerURI}/dagit/notebook?path=${encodeURIComponent(
               notebookPath.value,
             )}&repoLocName=${repoLocName}`}
             sandbox=""
