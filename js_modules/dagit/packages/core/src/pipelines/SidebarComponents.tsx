@@ -100,4 +100,5 @@ const CollapsingHeaderBar = styled.div`
   align-items: center;
   text-transform: uppercase;
   font-size: 0.75rem;
+  user-select: none;
 `;

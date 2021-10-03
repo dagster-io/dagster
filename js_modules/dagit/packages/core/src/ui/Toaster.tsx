@@ -1,10 +1,4 @@
-import {
-  Toaster as BlueprintToaster,
-  IToasterProps,
-  IToaster,
-  IToastProps,
-  Colors,
-} from '@blueprintjs/core';
+import {Toaster as BlueprintToaster, IToasterProps, IToaster, IToastProps} from '@blueprintjs/core';
 import React from 'react';
 import {createGlobalStyle} from 'styled-components/macro';
 
@@ -57,7 +51,7 @@ export const Toaster: {
       if (icon && typeof icon === 'string') {
         rest.message = (
           <>
-            <IconWIP name={icon} color={Colors.WHITE} size={16} />
+            <IconWIP name={icon} color={ColorsWIP.White} />
             {rest.message}
           </>
         );

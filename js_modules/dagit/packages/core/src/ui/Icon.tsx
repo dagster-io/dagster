@@ -86,4 +86,7 @@ createGlobalStyle`
     position: relative;
     top: 1px;
   }
+  a .material-icons {
+    text-decoration: none;
+  }
 `;

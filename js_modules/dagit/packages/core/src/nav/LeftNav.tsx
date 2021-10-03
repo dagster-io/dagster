@@ -34,7 +34,7 @@ export const LeftNav = () => {
           <div
             style={{
               fontSize: 10.5,
-              color: Colors.GRAY1,
+              color: ColorsWIP.Gray400,
               userSelect: 'none',
               textTransform: 'uppercase',
             }}

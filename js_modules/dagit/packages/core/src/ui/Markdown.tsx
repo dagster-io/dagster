@@ -1,7 +1,10 @@
 import {Colors} from '@blueprintjs/core';
+import LRUCache from 'lru-cache';
 import * as React from 'react';
 import ReactMarkdown from 'react-markdown';
+import remark from 'remark';
 import gfm from 'remark-gfm';
+import toPlainText from 'remark-plain-text';
 import styled from 'styled-components/macro';
 
 interface Props {
@@ -14,6 +17,21 @@ export const Markdown: React.FC<Props> = (props) => {
       <ReactMarkdown remarkPlugins={[gfm]} {...props} />
     </Container>
   );
+};
+
+const Remark = remark()
+  .use(gfm)
+  .use(toPlainText as any);
+const markdownCache = new LRUCache<string, string>({max: 500});
+export const markdownToPlaintext = (md: string) => {
+  // Compile the Markdown file to plain text:
+  const cached = markdownCache.get(md);
+  if (cached) {
+    return cached;
+  }
+  const str = Remark.processSync(md).toString();
+  markdownCache.set(md, str);
+  return str;
 };
 
 const Container = styled.div`

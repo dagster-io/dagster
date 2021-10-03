@@ -103,14 +103,17 @@ export const AssetEntryRoot: React.FC<RouteComponentProps> = ({location, match})
           description={<PathDetails>{pathDetails()}</PathDetails>}
         />
         <Loading queryResult={queryResult}>
-          {({assetOrError}) => {
-            if (assetOrError.__typename === 'AssetNotFoundError') {
+          {({assetOrError, assetNodeOrError}) => {
+            if (
+              assetOrError.__typename === 'AssetNotFoundError' &&
+              assetNodeOrError.__typename === 'AssetNotFoundError'
+            ) {
               return <AssetsCatalogTable prefixPath={currentPath} />;
             }
 
             return (
               <Wrapper>
-                <AssetView assetKey={assetOrError.key} asOf={asOf} />
+                <AssetView assetKey={{path: currentPath}} asOf={asOf} />
               </Wrapper>
             );
           }}
@@ -146,6 +149,12 @@ const PathDetails = styled.div`
 
 const ASSET_ENTRY_ROOT_QUERY = gql`
   query AssetEntryRootQuery($assetKey: AssetKeyInput!) {
+    assetNodeOrError(assetKey: $assetKey) {
+      __typename
+      ... on AssetNode {
+        id
+      }
+    }
     assetOrError(assetKey: $assetKey) {
       __typename
       ... on Asset {

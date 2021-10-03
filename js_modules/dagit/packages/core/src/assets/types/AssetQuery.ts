@@ -4,11 +4,26 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { AssetKeyInput, PipelineRunStatus } from "./../../types/globalTypes";
+import { AssetKeyInput } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: AssetQuery
 // ====================================================
+
+export interface AssetQuery_assetNodeOrError_AssetNode {
+  __typename: "AssetNode";
+  id: string;
+  description: string | null;
+  opName: string | null;
+  jobName: string | null;
+}
+
+export interface AssetQuery_assetNodeOrError_AssetNotFoundError {
+  __typename: "AssetNotFoundError";
+  message: string;
+}
+
+export type AssetQuery_assetNodeOrError = AssetQuery_assetNodeOrError_AssetNode | AssetQuery_assetNodeOrError_AssetNotFoundError;
 
 export interface AssetQuery_assetOrError_AssetNotFoundError {
   __typename: "AssetNotFoundError";
@@ -28,22 +43,6 @@ export interface AssetQuery_assetOrError_Asset_mostRecentMaterialization {
   __typename: "AssetMaterialization";
   materializationEvent: AssetQuery_assetOrError_Asset_mostRecentMaterialization_materializationEvent;
 }
-
-export interface AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_PipelineRunNotFoundError {
-  __typename: "PipelineRunNotFoundError" | "PythonError";
-}
-
-export interface AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_PipelineRun {
-  __typename: "PipelineRun";
-  id: string;
-  runId: string;
-  mode: string;
-  status: PipelineRunStatus;
-  pipelineName: string;
-  pipelineSnapshotId: string | null;
-}
-
-export type AssetQuery_assetOrError_Asset_assetMaterializations_runOrError = AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_PipelineRunNotFoundError | AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_PipelineRun;
 
 export interface AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent_stepStats {
   __typename: "PipelineRunStepStats";
@@ -132,8 +131,6 @@ export type AssetQuery_assetOrError_Asset_assetMaterializations_materializationE
 
 export interface AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent_materialization {
   __typename: "Materialization";
-  label: string;
-  description: string | null;
   metadataEntries: AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent_materialization_metadataEntries[];
 }
 
@@ -150,19 +147,34 @@ export interface AssetQuery_assetOrError_Asset_assetMaterializations_materializa
 
 export interface AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent {
   __typename: "StepMaterializationEvent";
-  runId: string;
   timestamp: string;
+  runId: string;
   stepKey: string | null;
   stepStats: AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent_stepStats;
   materialization: AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent_materialization;
   assetLineage: AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent_assetLineage[];
 }
 
+export interface AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_PipelineRunNotFoundError {
+  __typename: "PipelineRunNotFoundError" | "PythonError";
+}
+
+export interface AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_PipelineRun {
+  __typename: "PipelineRun";
+  id: string;
+  runId: string;
+  mode: string;
+  pipelineName: string;
+  pipelineSnapshotId: string | null;
+}
+
+export type AssetQuery_assetOrError_Asset_assetMaterializations_runOrError = AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_PipelineRunNotFoundError | AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_PipelineRun;
+
 export interface AssetQuery_assetOrError_Asset_assetMaterializations {
   __typename: "AssetMaterialization";
+  materializationEvent: AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent;
   partition: string | null;
   runOrError: AssetQuery_assetOrError_Asset_assetMaterializations_runOrError;
-  materializationEvent: AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent;
 }
 
 export interface AssetQuery_assetOrError_Asset {
@@ -176,6 +188,7 @@ export interface AssetQuery_assetOrError_Asset {
 export type AssetQuery_assetOrError = AssetQuery_assetOrError_AssetNotFoundError | AssetQuery_assetOrError_Asset;
 
 export interface AssetQuery {
+  assetNodeOrError: AssetQuery_assetNodeOrError;
   assetOrError: AssetQuery_assetOrError;
 }
 

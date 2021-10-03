@@ -6,9 +6,7 @@ import styled from 'styled-components/macro';
 
 import {useSuggestionsForString} from '../ui/useSuggestionsForString';
 
-import {AssetsTableQuery_assetsOrError_AssetConnection_nodes} from './types/AssetsTableQuery';
-
-type Asset = AssetsTableQuery_assetsOrError_AssetConnection_nodes;
+import {Asset} from './AssetsCatalogTable';
 
 const getAssetFilterProviders = memoize((assets: Asset[] = []) => {
   const allTags = {};
