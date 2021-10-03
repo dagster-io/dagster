@@ -65,7 +65,7 @@ export type IconName =
 interface Props {
   color?: string;
   name: IconName;
-  size?: 16 | 20 | 24;
+  size?: 16 | 20 | 24 | 48;
 }
 
 export const IconWIP = (props: Props) => {
