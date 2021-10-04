@@ -2,7 +2,7 @@ import logging
 
 import pytest
 from dagster import ModeDefinition, execute_pipeline, pipeline, reconstructable, resource, solid
-from dagster.core.test_utils import instance_for_test
+from dagster.core.test_utils import default_mode_def_for_test, instance_for_test
 
 
 def get_log_records(pipe, managed_loggers=None, python_logging_level=None, run_config=None):
@@ -236,7 +236,7 @@ def define_logging_pipeline():
         loggerA.debug("loggerA")
         loggerA.info("loggerA")
 
-    @pipeline
+    @pipeline(mode_defs=[default_mode_def_for_test])
     def pipe():
         solidB(solidA())
 
@@ -251,7 +251,6 @@ def test_multiprocess_logging(managed_loggers):
         managed_loggers=managed_loggers,
         python_logging_level="INFO",
         run_config={
-            "intermediate_storage": {"filesystem": {}},
             "execution": {"multiprocess": {}},
         },
     )

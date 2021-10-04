@@ -12,6 +12,7 @@ from dagster import (
     String,
     execute_pipeline,
     execute_pipeline_iterator,
+    fs_io_manager,
     pipeline,
     reconstructable,
     resource,
@@ -31,7 +32,7 @@ from dagster.core.execution.retries import RetryMode
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.utils import safe_tempfile_path, send_interrupt
-from dagster.utils.merger import deep_merge_dicts
+from dagster.utils.merger import deep_merge_dicts, merge_dicts
 
 RUN_CONFIG_BASE = {"solids": {"return_two": {"config": {"a": "b"}}}}
 
@@ -44,11 +45,13 @@ def make_run_config(scratch_dir, mode):
     return deep_merge_dicts(
         RUN_CONFIG_BASE,
         {
-            "resources": {
-                step_launcher_resource_key: {"config": {"scratch_dir": scratch_dir}}
-                for step_launcher_resource_key in step_launcher_resource_keys
-            },
-            "intermediate_storage": {"filesystem": {"config": {"base_dir": scratch_dir}}},
+            "resources": merge_dicts(
+                {"io_manager": {"config": {"base_dir": scratch_dir}}},
+                {
+                    step_launcher_resource_key: {"config": {"scratch_dir": scratch_dir}}
+                    for step_launcher_resource_key in step_launcher_resource_keys
+                },
+            ),
         },
     )
 
@@ -84,6 +87,7 @@ def define_basic_pipeline():
                 resource_defs={
                     "first_step_launcher": local_external_step_launcher,
                     "second_step_launcher": local_external_step_launcher,
+                    "io_manager": fs_io_manager,
                 },
             ),
             ModeDefinition(
@@ -91,6 +95,7 @@ def define_basic_pipeline():
                 resource_defs={
                     "first_step_launcher": no_step_launcher,
                     "second_step_launcher": local_external_step_launcher,
+                    "io_manager": fs_io_manager,
                 },
             ),
             ModeDefinition(
@@ -98,6 +103,7 @@ def define_basic_pipeline():
                 resource_defs={
                     "first_step_launcher": request_retry_local_external_step_launcher,
                     "second_step_launcher": request_retry_local_external_step_launcher,
+                    "io_manager": fs_io_manager,
                 },
             ),
         ]
@@ -128,6 +134,7 @@ def define_sleepy_pipeline():
                 "external",
                 resource_defs={
                     "first_step_launcher": local_external_step_launcher,
+                    "io_manager": fs_io_manager,
                 },
             ),
         ]
@@ -239,8 +246,12 @@ def test_interrupt_step_launcher(mode):
     with tempfile.TemporaryDirectory() as tmpdir:
         with safe_tempfile_path() as success_tempfile:
             sleepy_run_config = {
-                "resources": {"first_step_launcher": {"config": {"scratch_dir": tmpdir}}},
-                "intermediate_storage": {"filesystem": {"config": {"base_dir": tmpdir}}},
+                "resources": {
+                    "first_step_launcher": {
+                        "config": {"scratch_dir": tmpdir},
+                    },
+                    "io_manager": {"config": {"base_dir": tmpdir}},
+                },
                 "solids": {"sleepy_solid": {"config": {"tempfile": success_tempfile}}},
             }
 

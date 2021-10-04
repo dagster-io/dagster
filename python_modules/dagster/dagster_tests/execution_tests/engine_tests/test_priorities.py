@@ -1,5 +1,5 @@
 from dagster import execute_pipeline, pipeline, reconstructable, solid
-from dagster.core.test_utils import instance_for_test
+from dagster.core.test_utils import default_mode_def_for_test, instance_for_test
 
 
 @solid(tags={"dagster/priority": "-1"})
@@ -17,7 +17,7 @@ def high(_):
     pass
 
 
-@pipeline
+@pipeline(mode_defs=[default_mode_def_for_test])
 def priority_test():
     none()
     low()
@@ -45,7 +45,6 @@ def test_priorities_mp():
             pipe,
             {
                 "execution": {"multiprocess": {"config": {"max_concurrent": 1}}},
-                "intermediate_storage": {"filesystem": {}},
             },
             instance=instance,
         )

@@ -4,13 +4,13 @@ Welcome to your new Dagster repository.
 
 ### Contents
 
-| Name | Description |
-|-|-|
-| `{{ repo_name }}/` | A Python module that contains code for your Dagster repository |
-| `{{ repo_name }}_tests/` | A Python module that contains tests for `{{ repo_name }}` |
-| `workspace.yaml` | A file that specifies the location of the user code for Dagit and the Dagster CLI |
-| `README.md` | A description and guide for this code repository |
-| `setup.py` | A build script with Python package dependencies for this code repository |
+| Name                     | Description                                                                       |
+| ------------------------ | --------------------------------------------------------------------------------- |
+| `README.md`              | A description and guide for this code repository                                  |
+| `setup.py`               | A build script with Python package dependencies for this code repository          |
+| `workspace.yaml`         | A file that specifies the location of the user code for Dagit and the Dagster CLI |
+| `{{ repo_name }}/`       | A Python directory that contains code for your Dagster repository                 |
+| `{{ repo_name }}_tests/` | A Python directory that contains tests for `{{ repo_name }}`                      |
 
 ## Getting up and running
 
@@ -58,7 +58,7 @@ dagit
 
 3. (Optional) If you want to enable Dagster
 [Schedules](https://docs.dagster.io/overview/schedules-sensors/schedules) or
-[Sensors](https://docs.dagster.io/overview/schedules-sensors/sensors) for your pipelines, start the
+[Sensors](https://docs.dagster.io/overview/schedules-sensors/sensors) for your jobs, start the
 [Dagster Daemon process](https://docs.dagster.io/overview/daemon#main) **in a different shell or terminal**:
 
 ```bash
@@ -73,8 +73,8 @@ Tests can be found in `{{ repo_name }}_tests` and are run with the following com
 pytest {{ repo_name }}_tests
 ```
 
-As you create Dagster solids and pipelines, add tests in `{{ repo_name }}_tests/` to check that your
+As you create Dagster ops and graphs, add tests in `{{ repo_name }}_tests/` to check that your
 code behaves as desired and does not break over time.
 
-[For hints on how to write tests for solids and pipelines in Dagster,
+[For hints on how to write tests for ops and graphs in Dagster,
 [see our documentation tutorial on Testing](https://docs.dagster.io/tutorial/testable).

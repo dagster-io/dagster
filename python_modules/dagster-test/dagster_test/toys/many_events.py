@@ -3,10 +3,12 @@ from dagster import (
     EventMetadata,
     ExpectationResult,
     InputDefinition,
+    ModeDefinition,
     Nothing,
     Output,
     OutputDefinition,
     file_relative_path,
+    fs_io_manager,
     pipeline,
     solid,
 )
@@ -175,7 +177,8 @@ def check_admins_both_succeed(_context):
     description=(
         "Demo pipeline that yields AssetMaterializations and ExpectationResults, along with the "
         "various forms of metadata that can be attached to them."
-    )
+    ),
+    mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})],
 )
 def many_events():
     raw_files_solids = [raw_file_solid() for raw_file_solid in create_raw_file_solids()]
