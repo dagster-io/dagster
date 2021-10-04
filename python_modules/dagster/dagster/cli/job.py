@@ -130,12 +130,12 @@ def execute_list_versions_command(instance, kwargs):
 
     config = list(check.opt_tuple_param(kwargs.get("config"), "config", default=(), of_type=str))
 
-    pipeline_origin = get_pipeline_or_job_python_origin_from_kwargs(kwargs, True)
-    pipeline = recon_pipeline_from_origin(pipeline_origin)
+    job_origin = get_pipeline_or_job_python_origin_from_kwargs(kwargs, True)
+    job = recon_pipeline_from_origin(job_origin)
     run_config = get_run_config_from_file_list(config)
 
     memoized_plan = create_execution_plan(
-        pipeline,
+        job,
         run_config=run_config,
         mode="default",
         instance=instance,

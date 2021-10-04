@@ -626,8 +626,6 @@ def execute_launch_command(instance, kwargs):
         external_repo = get_external_repository_from_repo_location(
             repo_location, kwargs.get("repository")
         )
-        print("whyy")
-        print(kwargs)
         external_pipeline = get_external_pipeline_or_job_from_external_repo(
             external_repo, kwargs.get("pipeline_or_job")
         )

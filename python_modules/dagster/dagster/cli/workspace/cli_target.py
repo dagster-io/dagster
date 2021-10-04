@@ -308,14 +308,16 @@ def target_with_config_option(command_name, using_job_op_graph_apis):
             "files at the key-level granularity. If the file is a pattern then you must "
             "enclose it in double quotes"
             "\n\nExample: "
-            "dagster {pipeline_or_job} {name} -f hello_world.py -p pandas_hello_world "
+            "dagster {pipeline_or_job} {name} -f hello_world.py {pipeline_or_job_flag} pandas_hello_world "
             '-c "pandas_hello_world/*.yaml"'
             "\n\nYou can also specify multiple files:"
             "\n\nExample: "
-            "dagster {pipeline_or_job} {name} -f hello_world.py -p pandas_hello_world "
+            "dagster {pipeline_or_job} {name} -f hello_world.py {pipeline_or_job_flag} pandas_hello_world "
             "-c pandas_hello_world/solids.yaml -c pandas_hello_world/env.yaml"
         ).format(
-            name=command_name, pipeline_or_job="job" if using_job_op_graph_apis else "pipeline"
+            name=command_name,
+            pipeline_or_job="job" if using_job_op_graph_apis else "pipeline",
+            pipeline_or_job_flag="-j" if using_job_op_graph_apis else "-p",
         ),
     )
 
@@ -439,7 +441,6 @@ def get_pipeline_or_job_python_origin_from_kwargs(kwargs, using_job_op_graph_api
                 'Pipeline/Job "{provided_pipeline_name}" not found in repository "{repository_name}". '
                 "Found {found_names} instead."
             ).format(
-                pipeline_or_job="Job" if using_job_op_graph_apis else "Pipeline",
                 provided_pipeline_name=provided_pipeline_name,
                 repository_name=repo_definition.name,
                 found_names=_sorted_quoted(pipeline_names),
@@ -661,7 +662,7 @@ def get_external_pipeline_or_job_from_external_repo(
     if provided_pipeline_or_job_name is None:
         raise click.UsageError(
             (
-                "Must provide {flag} as there is more than one pipeline "
+                "Must provide {flag} as there is more than one pipeline/job "
                 "in {repository}. Options are: {pipelines}."
             ).format(
                 flag='--job' if using_job_op_graph_apis else '--pipeline',
