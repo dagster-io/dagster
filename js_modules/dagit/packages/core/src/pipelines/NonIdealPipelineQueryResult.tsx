@@ -43,11 +43,7 @@ export const NonIdealPipelineQueryResult: React.FC<{
   }
   if (result.__typename === 'RepositoryNotFoundError') {
     return (
-      <NonIdealState
-        icon={IconNames.FLOW_BRANCH}
-        title={'Repository not found'}
-        description={result.message}
-      />
+      <NonIdealState icon="error" title={'Repository not found'} description={result.message} />
     );
   }
   if (result.__typename === 'PythonError') {
