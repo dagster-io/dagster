@@ -1,11 +1,12 @@
 import {gql} from '@apollo/client';
-import {Button} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {MetadataEntries} from '../runs/MetadataEntry';
 import {MetadataEntryFragment} from '../runs/types/MetadataEntryFragment';
 import {ErrorSource} from '../types/globalTypes';
+import {ButtonWIP} from '../ui/Button';
+import {IconWIP} from '../ui/Icon';
 import {FontFamily} from '../ui/styles';
 
 import {PythonErrorFragment} from './types/PythonErrorFragment';
@@ -46,9 +47,9 @@ export const PythonErrorInfo: React.FC<IPythonErrorInfoProps> = (props) => {
           </>
         ) : null}
         {props.showReload && (
-          <Button icon="refresh" onClick={() => window.location.reload()}>
+          <ButtonWIP icon={<IconWIP name="refresh" />} onClick={() => window.location.reload()}>
             Reload
-          </Button>
+          </ButtonWIP>
         )}
       </Wrapper>
     </>

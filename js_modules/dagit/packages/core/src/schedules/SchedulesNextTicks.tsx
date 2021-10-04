@@ -1,5 +1,4 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import {Button, Menu, MenuItem} from '@blueprintjs/core';
 import * as qs from 'query-string';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -187,7 +186,7 @@ const NextTickMenu: React.FC<{
           }
         }}
       >
-        <Button small minimal icon="chevron-down" style={{position: 'relative', top: '-4px'}} />
+        <ButtonWIP icon={<IconWIP name="expand_more" />} />
       </Popover>
       <NextTickDialog
         repoAddress={repoAddress}
@@ -355,8 +354,8 @@ const NextTickDialog: React.FC<{
                     <td>
                       <Popover
                         content={
-                          <Menu>
-                            <MenuItem
+                          <MenuWIP>
+                            <MenuItemWIP
                               text="Open in Playground..."
                               icon="edit"
                               target="_blank"
@@ -371,11 +370,11 @@ const NextTickDialog: React.FC<{
                                 })}`,
                               )}
                             />
-                          </Menu>
+                          </MenuWIP>
                         }
                         position="bottom"
                       >
-                        <Button small minimal icon="chevron-down" />
+                        <ButtonWIP icon={<IconWIP name="expand_more" />} />
                       </Popover>
                     </td>
                   </tr>

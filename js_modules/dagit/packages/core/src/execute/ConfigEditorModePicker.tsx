@@ -1,7 +1,7 @@
-import {Button, Intent} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
+import {ButtonWIP} from '../ui/Button';
+import {IconWIP} from '../ui/Icon';
 import {MenuItemWIP} from '../ui/Menu';
 import {SelectWIP} from '../ui/Select';
 
@@ -57,21 +57,20 @@ export const ConfigEditorModePicker: React.FC<ConfigEditorModePickerProps> = (pr
       )}
       onItemSelect={onItemSelect}
     >
-      <Button
-        icon={valid ? undefined : IconNames.ERROR}
-        intent={valid ? Intent.NONE : Intent.DANGER}
+      <ButtonWIP
+        icon={valid ? undefined : <IconWIP name="error" />}
+        intent={valid ? 'none' : 'danger'}
         title={disabled ? MODE_PICKER_HINT_TEXT : 'Current execution mode'}
-        text={
-          valid
-            ? resolvedMode
-              ? `Mode: ${resolvedMode.name}`
-              : 'Select Mode'
-            : 'Invalid Mode Selection'
-        }
         disabled={disabled}
-        rightIcon="caret-down"
+        rightIcon={<IconWIP name="expand_more" />}
         data-test-id="mode-picker-button"
-      />
+      >
+        {valid
+          ? resolvedMode
+            ? `Mode: ${resolvedMode.name}`
+            : 'Select Mode'
+          : 'Invalid Mode Selection'}
+      </ButtonWIP>
     </SelectWIP>
   );
 };

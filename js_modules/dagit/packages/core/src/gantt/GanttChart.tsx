@@ -374,21 +374,22 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
             </Box>
           </WebsocketWarning>
         ) : null}
-        <GraphQueryInput
-          items={props.graph}
-          value={props.selection.query}
-          placeholder="Type a Step Subset"
-          onChange={props.onUpdateQuery}
-          presets={metadata ? interestingQueriesFor(metadata, layout) : undefined}
-          className={selection.keys.length > 0 ? 'has-step' : ''}
-        />
-        <Checkbox
-          checked={options.hideUnselectedSteps}
-          label="Hide unselected steps"
-          onChange={props.onChange}
-          inline={true}
-          style={{marginLeft: 5}}
-        />
+        <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
+          <GraphQueryInput
+            items={props.graph}
+            value={props.selection.query}
+            placeholder="Type a Step Subset"
+            onChange={props.onUpdateQuery}
+            presets={metadata ? interestingQueriesFor(metadata, layout) : undefined}
+            className={selection.keys.length > 0 ? 'has-step' : ''}
+          />
+          <Checkbox
+            checked={options.hideUnselectedSteps}
+            label="Hide unselected steps"
+            onChange={props.onChange}
+            inline={true}
+          />
+        </Box>
       </GraphQueryInputContainer>
     </>
   );

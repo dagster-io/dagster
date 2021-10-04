@@ -1,10 +1,10 @@
-import {Button} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {AppContext} from '../app/AppContext';
 import {IPluginSidebarProps} from '../plugins';
 import {ButtonWIP} from '../ui/Button';
 import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
+import {IconWIP} from '../ui/Icon';
 
 export const SidebarComponent: React.FC<IPluginSidebarProps> = (props) => {
   const {rootServerURI} = React.useContext(AppContext);
@@ -26,9 +26,9 @@ export const SidebarComponent: React.FC<IPluginSidebarProps> = (props) => {
 
   return (
     <div>
-      <Button icon="duplicate" onClick={() => setOpen(true)}>
+      <ButtonWIP icon={<IconWIP name="content_copy" />} onClick={() => setOpen(true)}>
         View Notebook
-      </Button>
+      </ButtonWIP>
       <DialogWIP
         icon="info"
         onClose={() => setOpen(false)}

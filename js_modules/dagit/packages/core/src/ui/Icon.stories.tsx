@@ -41,7 +41,11 @@ export const IconColors = () => {
     <Box flex={{gap: 6, wrap: 'wrap'}}>
       {IconNames.map((name, idx) => (
         <Tooltip content={name} key={name}>
-          <Icon name={name} color={ColorsWIP[idx % Object.keys(ColorsWIP).length]} size={24} />
+          <Icon
+            name={name}
+            color={ColorsWIP[Object.keys(ColorsWIP)[idx % Object.keys(ColorsWIP).length]]}
+            size={24}
+          />
         </Tooltip>
       ))}
     </Box>

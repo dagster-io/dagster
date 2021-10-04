@@ -1,4 +1,4 @@
-import {Button, IconName, Intent} from '@blueprintjs/core';
+import {IconName, Intent} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
@@ -8,7 +8,9 @@ import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
 import {LaunchButtonConfiguration, LaunchButtonDropdown} from '../execute/LaunchButton';
 import {PipelineRunStatus} from '../types/globalTypes';
 import {Box} from '../ui/Box';
+import {ButtonWIP} from '../ui/Button';
 import {Group} from '../ui/Group';
+import {IconWIP} from '../ui/Icon';
 import {buildRepoPath} from '../workspace/buildRepoAddress';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 
@@ -57,14 +59,14 @@ const CancelRunButton: React.FC<{run: RunFragment | undefined; isFinalStatus: bo
   return (
     <>
       {!isFinalStatus ? (
-        <Button
-          icon={IconNames.STOP}
-          small={true}
-          text="Terminate"
+        <ButtonWIP
+          icon={<IconWIP name="cancel" />}
           intent="warning"
           disabled={showDialog}
           onClick={() => setShowDialog(true)}
-        />
+        >
+          Terminate
+        </ButtonWIP>
       ) : null}
       <TerminationDialog
         isOpen={showDialog}

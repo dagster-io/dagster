@@ -27,6 +27,7 @@ export const Icons = {
   copy_to_clipboard_done: require('./icon-svgs/assignment_turned_in.svg'),
 
   // Material icons
+  add_circle: require('./icon-svgs/add_circle.svg'),
   account_tree: require('./icon-svgs/account_tree.svg'),
   alternate_email: require('./icon-svgs/alternate_email.svg'),
   arrow_back: require('./icon-svgs/arrow_back.svg'),
@@ -44,9 +45,12 @@ export const Icons = {
   chevron_right: require('./icon-svgs/chevron_right.svg'),
   chevron_left: require('./icon-svgs/chevron_left.svg'),
   close: require('./icon-svgs/close.svg'),
+  content_copy: require('./icon-svgs/content_copy.svg'),
   delete: require('./icon-svgs/delete.svg'),
   done: require('./icon-svgs/done.svg'),
   download_for_offline: require('./icon-svgs/download_for_offline.svg'),
+  dynamic_feed: require('./icon-svgs/dynamic_feed.svg'),
+  drag_handle: require('./icon-svgs/drag_handle.svg'),
   edit: require('./icon-svgs/edit.svg'),
   error: require('./icon-svgs/error.svg'),
   expand_less: require('./icon-svgs/expand_less.svg'),
@@ -57,11 +61,15 @@ export const Icons = {
   info: require('./icon-svgs/info.svg'),
   history: require('./icon-svgs/history.svg'),
   layers: require('./icon-svgs/layers.svg'),
+  line_style: require('./icon-svgs/line_style.svg'),
   linear_scale: require('./icon-svgs/linear_scale.svg'),
   link: require('./icon-svgs/link.svg'),
+  list: require('./icon-svgs/list.svg'),
+  local_offer: require('./icon-svgs/local_offer.svg'),
   location_on: require('./icon-svgs/location_on.svg'),
   menu: require('./icon-svgs/menu.svg'),
   menu_book: require('./icon-svgs/menu_book.svg'),
+  more_horiz: require('./icon-svgs/more_horiz.svg'),
   open_in_new: require('./icon-svgs/open_in_new.svg'),
   refresh: require('./icon-svgs/refresh.svg'),
   schema: require('./icon-svgs/schema.svg'),
@@ -73,12 +81,21 @@ export const Icons = {
   speed: require('./icon-svgs/speed.svg'),
   star: require('./icon-svgs/star.svg'),
   table_view: require('./icon-svgs/table_view.svg'),
+  timer: require('./icon-svgs/timer.svg'),
   toggle_off: require('./icon-svgs/toggle_off.svg'),
   toggle_on: require('./icon-svgs/toggle_on.svg'),
+  tune: require('./icon-svgs/tune.svg'),
+  unfold_more: require('./icon-svgs/unfold_more.svg'),
   view_list: require('./icon-svgs/view_list.svg'),
   visibility: require('./icon-svgs/visibility.svg'),
+  visibility_off: require('./icon-svgs/visibility_off.svg'),
   warning: require('./icon-svgs/warning.svg'),
   workspaces: require('./icon-svgs/workspaces.svg'),
+  waterfall_chart: require('./icon-svgs/waterfall_chart.svg'),
+  vertical_align_bottom: require('./icon-svgs/vertical_align_bottom.svg'),
+  vertical_align_center: require('./icon-svgs/vertical_align_center.svg'),
+  vertical_align_top: require('./icon-svgs/vertical_align_top.svg'),
+  wysiwyg: require('./icon-svgs/wysiwyg.svg'),
   zoom_in: require('./icon-svgs/zoom_in.svg'),
   zoom_out: require('./icon-svgs/zoom_out.svg'),
 } as const;
@@ -95,22 +112,26 @@ interface Props {
 
 export const IconWIP = (props: Props) => {
   const {color = ColorsWIP.Dark, name, size = 16} = props;
-  let img = Icons[name] || require('./icon-svgs/test.svg');
+  let img = Icons[name] || '';
   if (typeof img === 'object' && 'default' in img) {
     // in Dagit but not in Storybook due to webpack config differences
     img = img.default;
   }
-  return <IconWrapper $color={color} $size={size} $img={img} role="img" aria-label={name} />;
+  return (
+    <IconWrapper
+      role="img"
+      $size={size}
+      aria-label={name}
+      style={{background: color, maskImage: `url('${img}')`}}
+    />
+  );
 };
 
-export const IconWrapper = styled.div<{$color: string; $size: number; $img: string}>`
-  color: ${(p) => p.$color};
+export const IconWrapper = styled.div<{$size: number}>`
   width: ${(p) => p.$size}px;
   height: ${(p) => p.$size}px;
   flex-shrink: 0;
   flex-grow: 0;
-  background: ${(p) => p.$color};
-  mask-image: url('${(p) => p.$img}');
   mask-size: cover;
   object-fit: cover;
 `;

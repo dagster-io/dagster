@@ -1,5 +1,5 @@
 import * as React from 'react';
-import styled, {css} from 'styled-components/macro';
+import styled from 'styled-components/macro';
 
 import {ColorsWIP} from './Colors';
 import {IconWrapper} from './Icon';
@@ -11,7 +11,7 @@ interface Props extends React.ComponentPropsWithRef<'button'> {
   loading?: boolean;
   rightIcon?: React.ReactNode;
   fillColor?: string;
-  stroke?: boolean;
+  strokeColor?: string;
   textColor?: string;
 }
 
@@ -25,7 +25,7 @@ export const BaseButton = React.forwardRef(
       loading,
       rightIcon,
       textColor = ColorsWIP.Dark,
-      stroke = true,
+      strokeColor = ColorsWIP.Gray300,
       ...rest
     } = props;
 
@@ -34,7 +34,7 @@ export const BaseButton = React.forwardRef(
         {...rest}
         disabled={disabled || loading}
         $fillColor={fillColor}
-        $stroke={stroke}
+        $strokeColor={strokeColor}
         $textColor={textColor}
         ref={ref}
       >
@@ -48,22 +48,9 @@ export const BaseButton = React.forwardRef(
 
 interface StyledButtonProps {
   $fillColor: string;
-  $stroke: boolean;
+  $strokeColor: string;
   $textColor: string;
 }
-
-const DEFAULT_STROKE = css`
-  box-shadow: ${ColorsWIP.Gray300} 0px 0px 0px 1px;
-`;
-const NO_STROKE = css`
-  box-shadow: none;
-`;
-const DEFAULT_STROKE_PLUS_HOVER = css`
-  box-shadow: ${ColorsWIP.Gray400} 0px 0px 0px 1px, rgba(0, 0, 0, 0.12) 0px 2px 12px 0px;
-`;
-const NO_STROKE_PLUS_HOVER = css`
-  box-shadow: rgba(0, 0, 0, 0.12) 0px 2px 12px 0px;
-`;
 
 const StyledButton = styled.button<StyledButtonProps>`
   align-items: center;
@@ -79,11 +66,11 @@ const StyledButton = styled.button<StyledButtonProps>`
   padding: 6px 12px;
   transition: background 100ms, box-shadow 150ms, filter 100ms, opacity 150ms;
   user-select: none;
-
-  ${({$stroke}) => ($stroke ? DEFAULT_STROKE : NO_STROKE)}
+  box-shadow: ${({$strokeColor}) => `${$strokeColor} inset 0px 0px 0px 1px`};
 
   :hover {
-    ${({$stroke}) => ($stroke ? DEFAULT_STROKE_PLUS_HOVER : NO_STROKE_PLUS_HOVER)}
+    box-shadow: ${({$strokeColor}) =>
+      `${$strokeColor} inset 0px 0px 0px 1px, rgba(0, 0, 0, 0.12) 0px 2px 12px 0px;`};
   }
 
   :focus {
@@ -92,7 +79,8 @@ const StyledButton = styled.button<StyledButtonProps>`
   }
 
   :focus:not(:focus-visible) {
-    ${({$stroke}) => ($stroke ? DEFAULT_STROKE_PLUS_HOVER : NO_STROKE_PLUS_HOVER)}
+    box-shadow: ${({$strokeColor}) =>
+      `${$strokeColor} inset 0px 0px 0px 1px, rgba(0, 0, 0, 0.12) 0px 2px 12px 0px;`};
   }
 
   :active {
@@ -105,7 +93,7 @@ const StyledButton = styled.button<StyledButtonProps>`
   }
 
   :disabled:hover {
-    ${({$stroke}) => ($stroke ? DEFAULT_STROKE : null)};
+    box-shadow: ${({$strokeColor}) => `${$strokeColor} inset 0px 0px 0px 1px`};
   }
 
   ${SpinnerWrapper},
