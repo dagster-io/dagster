@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod, abstractproperty
-from typing import Any, Optional
+from typing import Any, Mapping, Optional
 
 from dagster import check
 from dagster.core.definitions.dependency import Node, NodeHandle
+from dagster.core.definitions.event_metadata import ParseableMetadataEntryData
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.definitions.solid import SolidDefinition
@@ -248,3 +249,21 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         Which mapping_key this execution is for if downstream of a DynamicOutput, otherwise None.
         """
         return self._step_execution_context.step.get_mapping_key()
+
+    def log_output_metadata(
+        self, metadata: Mapping[str, ParseableMetadataEntryData], output_name: Optional[str] = None
+    ) -> None:
+        """
+        Attaches a set of metadata entries to a given output.
+
+        These metadata entries will be included on any AssetMaterializations recorded for the
+        output.
+
+        Args:
+            metadata (Optional[Dict[str, Union[str, float, int, Dict, EventMetadata]]]):
+                Arbitrary metadata about the output.  Keys are displayed string labels, and values are
+                one of the following: string, float, int, JSON-serializable dict, JSON-serializable
+                list, and one of the data classes returned by a EventMetadata static method.
+            output_name (Optional[str]): The name of the output to attach metadata to. If no name
+                is provided, will use the first output.
+        """

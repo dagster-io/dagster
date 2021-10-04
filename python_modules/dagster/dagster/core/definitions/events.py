@@ -164,7 +164,7 @@ class Output(
         metadata_entries (Optional[Union[EventMetadataEntry, PartitionMetadataEntry]]):
             (Experimental) A set of metadata entries to attach to events related to this Output.
         metadata (Optional[Dict[str, Union[str, float, int, Dict, EventMetadata]]]):
-            Arbitrary metadata about the failure.  Keys are displayed string labels, and values are
+            Arbitrary metadata about the output.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
             list, and one of the data classes returned by a EventMetadata static method.
     """

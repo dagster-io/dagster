@@ -116,6 +116,7 @@ def _step_output_error_checked_user_event_sequence(
                 step_context.log.info(
                     f'Emitting implicit Nothing for output "{step_output_def.name}" on {op_label}'
                 )
+                # TODO: asset materializations
                 yield Output(output_name=step_output_def.name, value=None)
             elif not step_output_def.is_dynamic:
                 raise DagsterStepOutputNotFoundError(

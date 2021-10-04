@@ -5,9 +5,29 @@ so we have a different layer of objects that encode the explicit public API
 in the user_context module
 """
 from abc import ABC, abstractproperty
-from typing import TYPE_CHECKING, Any, Dict, Iterable, NamedTuple, Optional, Set, cast
+from collections import defaultdict
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Set,
+    Union,
+    cast,
+)
 
 from dagster import check
+from dagster.core.definitions.event_metadata import (
+    EventMetadataEntry,
+    ParseableMetadataEntryData,
+    PartitionMetadataEntry,
+    parse_metadata,
+)
 from dagster.core.definitions.hook import HookDefinition
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.op import OpDefinition
@@ -328,6 +348,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             self._required_resource_keys
         )
         self._previous_attempt_count = previous_attempt_count
+        self._mutable_state = StepMutableState()
 
         resources_iter = cast(Iterable, self._resources)
 
@@ -578,3 +599,29 @@ class TypeCheckContext:
     @property
     def log(self) -> DagsterLogManager:
         return self._log
+
+
+class StepMutableState:
+    """
+    Houses state that can be mutated over the course of a step.
+    """
+
+    def __init__(self):
+        self._seen_output_names: Set[str] = set()
+        self._output_metadata: Dict[
+            str, List[Union[EventMetadataEntry, PartitionMetadataEntry]]
+        ] = defaultdict(list)
+
+    def log_output_metadata(
+        self, metadata: Mapping[str, ParseableMetadataEntryData], output_name: str
+    ):
+        self._output_metadata[output_name].append(parse_metadata(metadata, []))
+
+    def output_metadata(
+        self, output_name: str
+    ) -> Sequence[Union[EventMetadataEntry, PartitionMetadataEntry]]:
+        return self._output_metadata(output_name)
+
+    @property
+    def seen_output_names(self):
+        return self._seen_output_names
