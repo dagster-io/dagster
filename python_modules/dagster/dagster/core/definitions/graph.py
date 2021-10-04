@@ -59,7 +59,7 @@ if TYPE_CHECKING:
     from .partition import PartitionedConfig
     from .executor import ExecutorDefinition
     from .job import JobDefinition
-    from dagster.core.execution.execute_in_process import InProcessGraphResult
+    from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
 
 
 def _check_node_defs_arg(graph_name: str, node_defs: Optional[List[NodeDefinition]]):
@@ -515,7 +515,7 @@ class GraphDefinition(NodeDefinition):
 
     def execute_in_process(
         self,
-        config: Any = None,
+        run_config: Any = None,
         instance: Optional["DagsterInstance"] = None,
         resources: Optional[Dict[str, Any]] = None,
         raise_on_error: bool = True,
@@ -524,8 +524,9 @@ class GraphDefinition(NodeDefinition):
         Execute this graph in-process, collecting results in-memory.
 
         Args:
-            config (Optional[Dict[str, Any]]):
-                Configuration for the graph.
+            run_config (Optional[Dict[str, Any]]):
+                Run config to provide to execution. The configuration for the underlying graph
+                should exist under the "ops" key.
             instance (Optional[DagsterInstance]):
                 The instance to execute against, an ephemeral one will be used if none provided.
             resources (Optional[Dict[str, Any]]):
@@ -535,7 +536,7 @@ class GraphDefinition(NodeDefinition):
                 Defaults to ``True``.
 
         Returns:
-            InProcessGraphResult
+            ExecuteInProcessResult
         """
         from dagster.core.execution.build_resources import wrap_resources_for_execution
         from dagster.core.execution.execute_in_process import core_execute_in_process
@@ -557,7 +558,7 @@ class GraphDefinition(NodeDefinition):
         )
         ephemeral_job = JobDefinition(name=self._name, graph_def=self, mode_def=in_proc_mode)
 
-        run_config = {"ops": config if config is not None else {}}
+        run_config = run_config if run_config is not None else {}
 
         return core_execute_in_process(
             node=self,

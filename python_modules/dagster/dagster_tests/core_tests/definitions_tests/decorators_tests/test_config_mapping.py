@@ -37,7 +37,7 @@ def test_bare_config_mapping():
 
     result = my_graph.to_job(config=my_config_mapping).execute_in_process(run_config={"foo": "bar"})
     assert result.success
-    assert result.result_for_node("my_op").output_values["result"] == "bar"
+    assert result.output_for_node("my_op") == "bar"
 
 
 def test_no_params_config_mapping():
@@ -47,7 +47,7 @@ def test_no_params_config_mapping():
 
     result = my_graph.to_job(config=my_config_mapping).execute_in_process(run_config={"foo": "bar"})
     assert result.success
-    assert result.result_for_node("my_op").output_values["result"] == "bar"
+    assert result.output_for_node("my_op") == "bar"
 
 
 def test_conf_schema_typing_config_mapping():
@@ -63,7 +63,7 @@ def test_conf_schema_typing_config_mapping():
 
     result = my_graph.to_job(config=my_config_mapping).execute_in_process(run_config={"foo": "bar"})
     assert result.success
-    assert result.result_for_node("my_op").output_values["result"] == "bar"
+    assert result.output_for_node("my_op") == "bar"
 
 
 def test_receive_processed_config_values():
@@ -81,7 +81,7 @@ def test_receive_processed_config_values():
 
     processed_result = my_graph.to_job(config=processed_config_mapping).execute_in_process()
     assert processed_result.success
-    assert processed_result.result_for_node("my_op").output_values["result"] == TestEnum.BAR
+    assert processed_result.output_for_node("my_op") == TestEnum.BAR
 
     @config_mapping(config_schema=enum_conf_schema, receive_processed_config_values=False)
     def unprocessed_config_mapping(outer_config):
@@ -89,4 +89,4 @@ def test_receive_processed_config_values():
 
     unprocessed_result = my_graph.to_job(config=unprocessed_config_mapping).execute_in_process()
     assert unprocessed_result.success
-    assert unprocessed_result.result_for_node("my_op").output_values["result"] == "BAR"
+    assert unprocessed_result.output_for_node("my_op") == "BAR"

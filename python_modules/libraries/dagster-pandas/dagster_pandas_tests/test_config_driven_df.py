@@ -37,9 +37,11 @@ def test_dataframe_csv_from_inputs():
         return df_as_config()
 
     result = test_graph.execute_in_process(
-        config={
-            "df_as_config": {
-                "inputs": {"df": {"csv": {"path": file_relative_path(__file__, "num.csv")}}}
+        run_config={
+            "ops": {
+                "df_as_config": {
+                    "inputs": {"df": {"csv": {"path": file_relative_path(__file__, "num.csv")}}}
+                }
             }
         },
     )
@@ -62,10 +64,12 @@ def test_dataframe_wrong_sep_from_inputs():
         return df_as_config()
 
     result = test_graph.execute_in_process(
-        config={
-            "df_as_config": {
-                "inputs": {
-                    "df": {"csv": {"path": file_relative_path(__file__, "num.csv"), "sep": "|"}}
+        run_config={
+            "ops": {
+                "df_as_config": {
+                    "inputs": {
+                        "df": {"csv": {"path": file_relative_path(__file__, "num.csv"), "sep": "|"}}
+                    }
                 }
             }
         },
@@ -88,13 +92,15 @@ def test_dataframe_pipe_sep_csv_from_inputs():
         return df_as_config()
 
     result = test_graph.execute_in_process(
-        config={
-            "df_as_config": {
-                "inputs": {
-                    "df": {
-                        "csv": {
-                            "path": file_relative_path(__file__, "num_pipes.csv"),
-                            "sep": "|",
+        run_config={
+            "ops": {
+                "df_as_config": {
+                    "inputs": {
+                        "df": {
+                            "csv": {
+                                "path": file_relative_path(__file__, "num_pipes.csv"),
+                                "sep": "|",
+                            }
                         }
                     }
                 }
@@ -124,7 +130,7 @@ def test_dataframe_csv_missing_inputs():
 
     expected_suggested_config = {"df_as_input": {"inputs": {"df": "<selector>"}}}
     assert exc_info.value.errors[0].message.startswith(
-        'Missing required config entry "df_as_input" at path root:ops.'
+        'Missing required config entry "ops" at the root.'
     )
     assert str(expected_suggested_config) in exc_info.value.errors[0].message
 
@@ -148,9 +154,11 @@ def test_dataframe_csv_missing_input_collision():
 
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
         overlapping.execute_in_process(
-            config={
-                "df_as_input": {
-                    "inputs": {"df": {"csv": {"path": file_relative_path(__file__, "num.csv")}}}
+            run_config={
+                "ops": {
+                    "df_as_input": {
+                        "inputs": {"df": {"csv": {"path": file_relative_path(__file__, "num.csv")}}}
+                    }
                 }
             },
         )
@@ -178,9 +186,13 @@ def test_dataframe_parquet_from_inputs():
         df_as_config()
 
     result = test_graph.execute_in_process(
-        config={
-            "df_as_config": {
-                "inputs": {"df": {"parquet": {"path": file_relative_path(__file__, "num.parquet")}}}
+        run_config={
+            "ops": {
+                "df_as_config": {
+                    "inputs": {
+                        "df": {"parquet": {"path": file_relative_path(__file__, "num.parquet")}}
+                    }
+                }
             }
         },
     )
@@ -202,9 +214,13 @@ def test_dataframe_table_from_inputs():
         df_as_config()
 
     result = test_graph.execute_in_process(
-        config={
-            "df_as_config": {
-                "inputs": {"df": {"table": {"path": file_relative_path(__file__, "num_table.txt")}}}
+        run_config={
+            "ops": {
+                "df_as_config": {
+                    "inputs": {
+                        "df": {"table": {"path": file_relative_path(__file__, "num_table.txt")}}
+                    }
+                }
             }
         },
     )
@@ -231,7 +247,7 @@ def test_dataframe_pickle_from_inputs():
         df_as_config()
 
     result = test_graph.execute_in_process(
-        config={"df_as_config": {"inputs": {"df": {"pickle": {"path": pickle_path}}}}}
+        run_config={"ops": {"df_as_config": {"inputs": {"df": {"pickle": {"path": pickle_path}}}}}}
     )
 
     assert result.success
@@ -251,7 +267,9 @@ def test_dataframe_csv_materialization():
 
     with get_temp_file_name() as filename:
         result = return_df_graph.execute_in_process(
-            config={"return_df": {"outputs": [{"result": {"csv": {"path": filename}}}]}},
+            run_config={
+                "ops": {"return_df": {"outputs": [{"result": {"csv": {"path": filename}}}]}}
+            },
         )
 
         assert result.success
@@ -273,7 +291,9 @@ def test_dataframe_parquet_materialization():
 
     with get_temp_file_name() as filename:
         result = return_df_graph.execute_in_process(
-            config={"return_df": {"outputs": [{"result": {"parquet": {"path": filename}}}]}},
+            run_config={
+                "ops": {"return_df": {"outputs": [{"result": {"parquet": {"path": filename}}}]}}
+            },
         )
 
         assert result.success
@@ -294,7 +314,9 @@ def test_dataframe_table_materialization():
     with get_temp_file_name() as filename:
         filename = "/tmp/table_test.txt"
         result = return_df_graph.execute_in_process(
-            config={"return_df": {"outputs": [{"result": {"table": {"path": filename}}}]}},
+            run_config={
+                "ops": {"return_df": {"outputs": [{"result": {"table": {"path": filename}}}]}}
+            },
         )
 
         assert result.success
@@ -315,7 +337,9 @@ def test_dataframe_pickle_materialization():
     with get_temp_file_name() as filename:
         filename = "/tmp/num.pickle"
         result = return_df_graph.execute_in_process(
-            config={"return_df": {"outputs": [{"result": {"pickle": {"path": filename}}}]}},
+            run_config={
+                "ops": {"return_df": {"outputs": [{"result": {"pickle": {"path": filename}}}]}}
+            },
         )
 
         assert result.success

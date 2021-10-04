@@ -39,7 +39,7 @@ from dagster import graph, op
 
 @op
 def do_something():
-    ...
+    return "foo"
 
 
 @graph
@@ -56,7 +56,15 @@ In both cases, you can load the pipeline / graph in Dagit with:
 If you want to execute the graph in process, instead of using <PyObject module="dagster" object="execute_pipeline" />, you can invoke its <PyObject module="dagster" object="GraphDefinition" method="execute_in_process" /> method.
 
 ```python file=/guides/dagster/graph_job_op/execute_simple_graph.py startafter=start_execute endbefore=end_execute
-do_it_all.execute_in_process()
+result = do_it_all.execute_in_process()
+```
+
+A call to <PyObject module="dagster" object="GraphDefinition" method="execute_in_process" /> creates an <PyObject module="dagster" object="InProcessResult" /> object. Outputs can be retrieved using the <PyObject module="dagster" object="InProcessResult" method="output_for_node" /> method, and events can be retrieved using the <PyObject module="dagster" object="InProcessResult" method="events_for_node" /> method.
+
+```python file=/guides/dagster/graph_job_op/execute_simple_graph.py startafter=start_retrieve_output endbefore=end_retrieve_output
+output = result.output_for_node("do_something")
+    assert output == "foo"
+    events = result.events_for_node("do_something")
 ```
 
 ## Resources
@@ -87,6 +95,7 @@ def do_it_all():
 With the new APIs, supplying resources to a graph involves building a job from it:
 
 ```python file=/guides/dagster/graph_job_op/graph_with_resources.py
+# start_graph_with_resources
 from dagster import graph, op, resource
 
 
@@ -106,6 +115,15 @@ def do_it_all():
 
 
 do_it_all_job = do_it_all.to_job(resource_defs={"external_service": external_service})
+# end_graph_with_resources
+
+# start_execute_graph
+def execute_graph_in_process():
+    result = do_it_all_job.execute_in_process()
+    assert result.output_for_node("do_something")
+
+
+# end_execute_graph
 ```
 
 ### A pipeline with a test mode
@@ -611,7 +629,7 @@ def do_it_all():
 
 With the graph APIs, you can just use graphs at both layers:
 
-```python file=/guides/dagster/graph_job_op/nested_graphs.py
+```python file=/guides/dagster/graph_job_op/nested_graphs.py startafter=start_nested_graph endbefore=end_nested_graph
 from dagster import graph, op
 
 
@@ -639,6 +657,13 @@ def do_yet_more(arg1):
 @graph
 def do_it_all():
     do_yet_more(do_two_things())
+```
+
+When using <PyObject module="dagster" object="GraphDefinition" method="execute_in_process" /> on a graph that has internal graphs, you can retrieve results by appending the graph name with a `.`:
+
+```python file=/guides/dagster/graph_job_op/nested_graphs.py startafter=start_execute_nested_graph endbefore=end_execute_nested_graph
+result = do_it_all.execute_in_process()
+nested_output = result.output_for_node("do_two_things.do_something_else")
 ```
 
 ### A composite solid with inputs and outputs

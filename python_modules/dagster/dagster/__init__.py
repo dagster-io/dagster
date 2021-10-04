@@ -150,6 +150,7 @@ from dagster.core.execution.context.invocation import build_op_context, build_so
 from dagster.core.execution.context.logger import InitLoggerContext
 from dagster.core.execution.context.output import OutputContext, build_output_context
 from dagster.core.execution.context.system import TypeCheckContext
+from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster.core.execution.results import (
     CompositeSolidExecutionResult,
     PipelineExecutionResult,
@@ -310,6 +311,7 @@ __all__ = [
     "InitExecutorContext",
     "InitLoggerContext",
     "InitResourceContext",
+    "ExecuteInProcessResult",
     "build_init_resource_context",
     "InitIntermediateStorageContext",
     "PipelineExecutionResult",

@@ -83,14 +83,14 @@ def test_hammer_job():
 
 def test_resource_job_no_config():
     result = resource_job.execute_in_process()
-    assert result.result_for_node("one").output_values["result"] == 2
+    assert result.output_for_node("one") == 2
 
 
 def test_resource_job_with_config():
     result = resource_ops.to_job(
         config={"resources": {"R1": {"config": 2}}}, resource_defs=lots_of_resources
     ).execute_in_process()
-    assert result.result_for_node("one").output_values["result"] == 3
+    assert result.output_for_node("one") == 3
 
 
 def test_pyspark_assets_job():
@@ -202,7 +202,7 @@ def test_composition_job():
     )
 
     assert result.success
-    assert result.result_for_node("div_four").output_values["result"] == 7.0 / 4.0
+    assert result.output_for_node("div_four") == 7.0 / 4.0
 
 
 def test_asset_lineage_job():

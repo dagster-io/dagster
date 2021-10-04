@@ -47,7 +47,7 @@ if TYPE_CHECKING:
     from dagster.core.host_representation import PipelineIndex
     from dagster.core.instance import DagsterInstance
     from dagster.core.definitions.partition import PartitionSetDefinition
-    from dagster.core.execution.execution_results import InProcessGraphResult
+    from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
 
 
 class PipelineDefinition:

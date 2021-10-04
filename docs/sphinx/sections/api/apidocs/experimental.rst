@@ -60,15 +60,9 @@ Explicit in-process execution APIs have been added to better facilitate testing 
 
 Jobs can be tested with :py:meth:`JobDefinition.execute_in_process`, and Graphs with :py:meth:`GraphDefinition.execute_in_process`
 
-.. currentmodule:: dagster.core.execution.execution_results
+.. currentmodule:: dagster
 
-.. autoclass:: InProcessGraphResult
-    :members:
-
-.. autoclass:: InProcessOpResult
-    :members:
-
-.. autoclass:: NodeExecutionResult
+.. autoclass:: InProcessResult
     :members:
 
 Partition-Based Schedules

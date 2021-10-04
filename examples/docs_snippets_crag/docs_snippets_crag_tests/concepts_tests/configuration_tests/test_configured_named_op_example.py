@@ -14,8 +14,8 @@ def test_job():
         }
     )
 
-    sample_dataset = result.result_for_node("sample_dataset").output_value()
-    full_dataset = result.result_for_node("full_dataset").output_value()
+    sample_dataset = result.output_for_node("sample_dataset")
+    full_dataset = result.output_for_node("full_dataset")
 
     assert len(sample_dataset) == 5
     assert len(full_dataset) == 12

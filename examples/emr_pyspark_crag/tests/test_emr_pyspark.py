@@ -14,4 +14,4 @@ def test_emr_pyspark_execution_plan():
 def test_emr_pyspark_local():
     res = count_people_over_50_local.execute_in_process()
     assert res.success
-    assert res.result_for_node("count_people").output_value() == 1
+    assert res.output_for_node("count_people") == 1
