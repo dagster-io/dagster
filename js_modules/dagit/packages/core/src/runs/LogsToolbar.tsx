@@ -65,8 +65,8 @@ export const LogsToolbar: React.FC<ILogsToolbarProps> = (props) => {
       <ButtonGroup
         activeItems={new Set([logType])}
         buttons={[
-          {id: LogType.structured, icon: 'list'},
-          {id: LogType.stdout, icon: 'wysiwyg'},
+          {id: LogType.structured, icon: 'list', tooltip: 'Structured event logs'},
+          {id: LogType.stdout, icon: 'wysiwyg', tooltip: 'Raw compute logs'},
         ]}
         onClick={(id) => onSetLogType(id)}
       />
