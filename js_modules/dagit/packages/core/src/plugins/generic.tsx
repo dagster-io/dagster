@@ -15,7 +15,9 @@ export const SidebarComponent: React.FC<IPluginSidebarProps> = (props) => {
     return () => document.removeEventListener('show-kind-info', onOpen);
   }, []);
 
-  const metadata = props.definition.metadata.sort((a, b) => a.key.localeCompare(b.key));
+  const metadata = props.definition.metadata
+    .filter((m) => m.key !== 'kind')
+    .sort((a, b) => a.key.localeCompare(b.key));
 
   if (metadata.length === 0) {
     return <span />;

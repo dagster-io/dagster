@@ -1,16 +1,16 @@
 import * as React from 'react';
 
-import {AssetQuery_assetOrError_Asset_assetMaterializations as Materialization} from './types/AssetQuery';
+import {AssetMaterializationFragment} from './types/AssetMaterializationFragment';
 
 const NO_PARTITION_KEY = '__NO_PARTITION__';
 
 export type HistoricalMaterialization = {
-  latest: Materialization;
-  predecessors?: Materialization[];
+  latest: AssetMaterializationFragment;
+  predecessors?: AssetMaterializationFragment[];
 };
 
 type Config = {
-  materializations: Materialization[];
+  materializations: AssetMaterializationFragment[];
   isPartitioned: boolean;
   shouldBucketPartitions: boolean;
 };
@@ -28,7 +28,7 @@ export const useMaterializationBuckets = (config: Config): HistoricalMaterializa
       }));
     }
 
-    const buckets: {[key: string]: Materialization[]} = materializations.reduce(
+    const buckets: {[key: string]: AssetMaterializationFragment[]} = materializations.reduce(
       (accum, materialization) => {
         const partition = materialization.partition;
         const key = partition || NO_PARTITION_KEY;
