@@ -118,6 +118,51 @@ def construct_single_handler_logger(name, level, handler):
     return single_handler_logger
 
 
+# Base python logger whose messages will be captured as structured Dagster log messages.
+BASE_DAGSTER_LOGGER = logging.getLogger(name="dagster")
+
+
+def get_dagster_logger(name: str = None) -> logging.Logger:
+    """
+    Creates a python logger whose output messages will be captured and converted into Dagster log
+    messages. This means they will have structured information such as the step_key, run_id, etc.
+    embedded into them, and will show up in the Dagster event log.
+
+    This can be used as a more convenient alternative to `context.log` in most cases. If log level
+    is not set explicitly, defaults to DEBUG.
+
+    Args:
+        name (Optional[str]): If supplied, will create a logger with the name "dagster.builtin.{name}",
+            with properties inherited from the base Dagster logger. If omitted, the returned logger
+            will be named "dagster.builtin".
+
+    Returns:
+        :class:`logging.Logger`: A logger whose output will be captured by Dagster.
+
+    Example:
+
+        .. code-block:: python
+
+            from dagster import op
+            from dagster.utils.log import get_dagster_logger
+
+            @op
+            def hello_op():
+                log = get_dagster_logger()
+                for i in range(5):
+                    # do something
+                    log.info(f"Did {i+1} things!")
+
+    """
+
+    # enforce that the parent logger will always have a DEBUG log level
+    BASE_DAGSTER_LOGGER.setLevel(logging.DEBUG)
+    base_builtin = BASE_DAGSTER_LOGGER.getChild("builtin")
+    if name:
+        return base_builtin.getChild(name)
+    return base_builtin
+
+
 def define_structured_logger(name, callback, level):
     check.str_param(name, "name")
     check.callable_param(callback, "callback")

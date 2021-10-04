@@ -436,7 +436,7 @@ def in_process_test_workspace(instance, recon_repo):
 
 @contextmanager
 def create_test_daemon_workspace():
-    """ Creates a DynamicWorkspace suitable for passing into a DagsterDaemon loop when running tests."""
+    """Creates a DynamicWorkspace suitable for passing into a DagsterDaemon loop when running tests."""
     with create_daemon_grpc_server_registry() as grpc_server_registry:
         with DynamicWorkspace(grpc_server_registry) as workspace:
             yield workspace
