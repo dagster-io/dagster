@@ -195,11 +195,11 @@ def build_asset_ins(
         if input_name in asset_ins:
             metadata = asset_ins[input_name].metadata or {}
             namespace = asset_ins[input_name].namespace
-            dagster_type = Any if asset_ins[input_name].managed else Nothing
+            dagster_type = None if asset_ins[input_name].managed else Nothing
         else:
             metadata = {}
             namespace = None
-            dagster_type = Any
+            dagster_type = None
 
         asset_key = AssetKey(list(filter(None, [namespace or asset_namespace, input_name])))
 
