@@ -10,5 +10,6 @@ def execute_simple_graph():
 
     # start_retrieve_output
     output = result.output_for_node("do_something")
+    assert output == "foo"
     events = result.events_for_node("do_something")
     # end_retrieve_output

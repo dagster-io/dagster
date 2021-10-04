@@ -7,6 +7,7 @@ from docs_snippets.guides.dagster.graph_job_op import (
     composite_solid_multi_out,
     graph_job_test,
     graph_with_config,
+    execute_simple_graph,
     graph_with_config_and_schedule,
     graph_with_config_mapping,
     graph_with_partition_schedule,
@@ -166,3 +167,7 @@ def test_ops():
 
 def test_execute_nested_graph():
     assert nested_graphs.nested_output == 5
+
+
+def test_execute_simple_graph():
+    execute_simple_graph.execute_simple_graph()
