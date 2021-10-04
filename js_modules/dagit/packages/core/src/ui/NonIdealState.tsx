@@ -3,19 +3,20 @@ import * as React from 'react';
 import {Box} from './Box';
 import {ColorsWIP} from './Colors';
 import {IconName, IconWIP} from './Icon';
+import {Spinner} from './Spinner';
 import {Subheading} from './Text';
 
-type Props = React.DetailedHTMLProps<
+export type NonIdealStateProps = React.DetailedHTMLProps<
   React.InputHTMLAttributes<HTMLInputElement>,
   HTMLInputElement
 > & {
-  icon: IconName;
+  icon: 'error' | 'no-results' | 'spinner' | IconName;
   title?: string;
-  description: React.ReactNode;
+  description?: React.ReactNode;
   action?: React.ReactNode;
 };
 
-export const NonIdealState: React.FC<Props> = ({title, description, icon, action}) => {
+export const NonIdealState: React.FC<NonIdealStateProps> = ({title, description, icon, action}) => {
   return (
     <Box
       flex={{gap: 20, alignItems: 'flex-start'}}
@@ -28,10 +29,16 @@ export const NonIdealState: React.FC<Props> = ({title, description, icon, action
         maxWidth: 500,
       }}
     >
-      <IconWIP name={icon} size={48} color={ColorsWIP.Gray400} />
+      {icon === 'spinner' ? (
+        <Spinner purpose="section" />
+      ) : icon === 'no-results' ? (
+        <IconWIP name="search" size={48} color={ColorsWIP.Gray400} />
+      ) : (
+        <IconWIP name={icon} size={48} color={ColorsWIP.Gray400} />
+      )}
       <Box flex={{gap: 8, direction: 'column'}}>
         {title && <Subheading style={{color: ColorsWIP.Gray900}}>{title}</Subheading>}
-        <div style={{color: ColorsWIP.Gray500}}>{description}</div>
+        {description && <div style={{color: ColorsWIP.Gray500}}>{description}</div>}
         {action}
       </Box>
     </Box>

@@ -1,6 +1,4 @@
 import {useQuery} from '@apollo/client';
-import {NonIdealState} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
@@ -11,6 +9,7 @@ import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
+import {NonIdealState} from '../ui/NonIdealState';
 import {Page} from '../ui/Page';
 import {Subheading} from '../ui/Text';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -48,7 +47,7 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
           } else if (repositoryOrError.__typename === 'RepositoryNotFoundError') {
             schedulesSection = (
               <NonIdealState
-                icon={IconNames.ERROR}
+                icon="error"
                 title="Repository not found"
                 description="Could not load this repository."
               />
@@ -56,7 +55,7 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
           } else if (!repositoryOrError.schedules.length) {
             schedulesSection = (
               <NonIdealState
-                icon={IconNames.TIME}
+                icon="schedule"
                 title="No schedules found"
                 description={
                   <p>

@@ -1,6 +1,4 @@
 import {gql, useQuery} from '@apollo/client';
-import {NonIdealState} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import {Link, RouteComponentProps} from 'react-router-dom';
 
@@ -9,6 +7,7 @@ import {PipelineReference} from '../pipelines/PipelineReference';
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
+import {NonIdealState} from '../ui/NonIdealState';
 import {PageHeader} from '../ui/PageHeader';
 import {Heading} from '../ui/Text';
 import {FontFamily} from '../ui/styles';
@@ -107,7 +106,7 @@ const RunById: React.FC<{data: RunRootQuery | undefined; runId: string}> = (prop
   if (data.pipelineRunOrError.__typename !== 'PipelineRun') {
     return (
       <NonIdealState
-        icon={IconNames.SEND_TO_GRAPH}
+        icon="error"
         title="No Run"
         description={'The run with this ID does not exist or has been cleaned up.'}
       />

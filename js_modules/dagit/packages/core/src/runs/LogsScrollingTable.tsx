@@ -1,13 +1,11 @@
 import {gql} from '@apollo/client';
-import {NonIdealState} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import {CellMeasurer, CellMeasurerCache, List, ListRowProps, ScrollParams} from 'react-virtualized';
 import styled from 'styled-components/macro';
 
 import {ColorsWIP} from '../ui/Colors';
-import {Spinner} from '../ui/Spinner';
+import {NonIdealState} from '../ui/NonIdealState';
 
 import {LogFilter, LogsProviderLogs} from './LogsProvider';
 import {
@@ -307,7 +305,7 @@ class LogsScrollingTableSized extends React.Component<ILogsScrollingTableSizedPr
 
   noContentRenderer = () => {
     if (this.props.filteredNodes) {
-      return <NonIdealState icon={IconNames.CONSOLE} title="No logs to display" />;
+      return <NonIdealState icon="no-results" title="No logs to display" />;
     }
     return <span />;
   };
@@ -318,7 +316,7 @@ class LogsScrollingTableSized extends React.Component<ILogsScrollingTableSizedPr
       <div>
         {loading ? (
           <ListEmptyState>
-            <NonIdealState icon={<Spinner purpose="section" />} title="Fetching logs..." />
+            <NonIdealState icon="spinner" title="Fetching logs..." />
           </ListEmptyState>
         ) : null}
         <List

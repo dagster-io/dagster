@@ -6,7 +6,6 @@ import {
   InputGroup as BlueprintInputGroup,
   Menu,
   MenuItem,
-  NonIdealState,
 } from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import {uniqBy} from 'lodash';
@@ -27,6 +26,7 @@ import {IconWIP} from '../ui/Icon';
 import {Loading} from '../ui/Loading';
 import {markdownToPlaintext} from '../ui/Markdown';
 import {MenuItemWIP, MenuWIP} from '../ui/Menu';
+import {NonIdealState} from '../ui/NonIdealState';
 import {Popover} from '../ui/Popover';
 import {Table} from '../ui/Table';
 import {Tag} from '../ui/Tag';
@@ -127,7 +127,7 @@ export const AssetsCatalogTable: React.FC<{prefixPath?: string[]}> = ({prefixPat
                 return (
                   <Wrapper>
                     <NonIdealState
-                      icon="panel-table"
+                      icon="layers"
                       title="Assets"
                       description={
                         <p>
