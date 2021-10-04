@@ -96,7 +96,8 @@ interface Props {
 export const IconWIP = (props: Props) => {
   const {color = ColorsWIP.Dark, name, size = 16} = props;
   let img = Icons[name] || require('./icon-svgs/test.svg');
-  if ('default' in img) {
+  if (typeof img === 'object' && 'default' in img) {
+    // in Dagit but not in Storybook due to webpack config differences
     img = img.default;
   }
   return <IconWrapper $color={color} $size={size} $img={img} role="img" aria-label={name} />;
