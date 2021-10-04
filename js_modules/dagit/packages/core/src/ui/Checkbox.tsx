@@ -13,7 +13,6 @@ type Props = React.DetailedHTMLProps<
 > & {
   checked: boolean;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  labelText?: string;
   label?: React.ReactNode;
   indeterminate?: boolean;
   format?: 'check' | 'star' | 'switch';
@@ -150,7 +149,7 @@ const CheckIcon: React.FC<IconProps> = ({checked, indeterminate, fillColor}) => 
   </svg>
 );
 
-const Base: React.FC<Props> = ({
+const Base = ({
   id,
   checked,
   label,
@@ -159,9 +158,8 @@ const Base: React.FC<Props> = ({
   disabled = false,
   indeterminate = false,
   fillColor = ColorsWIP.Gray800,
-  children,
   ...rest
-}) => {
+}: Props) => {
   const uid = useRef(id || uniqueId('checkbox-'));
   const Component: React.FC<IconProps> = {star: StarIcon, check: CheckIcon, switch: SwitchIcon}[
     format
