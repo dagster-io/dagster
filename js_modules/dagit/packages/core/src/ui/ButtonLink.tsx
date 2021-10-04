@@ -15,6 +15,7 @@ type Underline = 'never' | 'always' | 'hover';
 
 interface Props {
   color: Color;
+  disabled?: boolean;
   underline?: Underline;
 }
 
@@ -75,6 +76,11 @@ export const ButtonLink = styled(({color, underline, ...rest}) => <button {...re
   &:focus-visible {
     outline: 1px auto ${({color}) => outlineColor(color)};
     outline-offset: 2px;
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.7;
   }
 
   transition: 30ms color linear;

@@ -1,5 +1,4 @@
-import {Button, InputGroup, Intent} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
+import {InputGroup, Intent} from '@blueprintjs/core';
 import isEqual from 'lodash/isEqual';
 import uniq from 'lodash/uniq';
 import * as React from 'react';
@@ -8,7 +7,10 @@ import styled from 'styled-components/macro';
 import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {dynamicKeyWithoutIndex, isDynamicStep} from '../gantt/DynamicStepSupport';
 
+import {Box} from './Box';
+import {ButtonWIP} from './Button';
 import {ColorsWIP} from './Colors';
+import {IconWIP} from './Icon';
 import {MenuItemWIP, MenuWIP} from './Menu';
 import {Popover} from './Popover';
 
@@ -166,7 +168,7 @@ export const GraphQueryInput = React.memo(
     };
 
     return (
-      <>
+      <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
         <Popover
           isOpen={focused}
           position="top-left"
@@ -219,16 +221,14 @@ export const GraphQueryInput = React.memo(
         </Popover>
         {props.presets &&
           (props.presets.find((p) => p.value === pendingValue) ? (
-            <Button
-              style={{marginLeft: 5}}
-              icon={IconNames.LAYERS}
-              rightIcon={IconNames.CROSS}
-              onClick={() => {
-                props.onChange('*');
-              }}
+            <ButtonWIP
+              icon={<IconWIP name="layers" />}
+              rightIcon={<IconWIP name="cancel" />}
+              onClick={() => props.onChange('*')}
             />
           ) : (
             <Popover
+              position="top"
               content={
                 <MenuWIP>
                   {props.presets.map((preset) => (
@@ -245,14 +245,13 @@ export const GraphQueryInput = React.memo(
                 </MenuWIP>
               }
             >
-              <Button
-                style={{marginLeft: 5}}
-                icon={IconNames.LAYERS}
-                rightIcon={IconNames.CARET_UP}
+              <ButtonWIP
+                icon={<IconWIP name="layers" />}
+                rightIcon={<IconWIP name="expand_less" />}
               />
             </Popover>
           ))}
-      </>
+      </Box>
     );
   },
 

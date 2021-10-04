@@ -1,11 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {
-  Button,
-  Checkbox,
-  InputGroup as BlueprintInputGroup,
-  Menu,
-  MenuItem,
-} from '@blueprintjs/core';
+import {Checkbox, InputGroup as BlueprintInputGroup, Menu, MenuItem} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import {uniqBy} from 'lodash';
 import * as React from 'react';
@@ -19,6 +13,7 @@ import {QueryCountdown} from '../app/QueryCountdown';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {Box} from '../ui/Box';
+import {ButtonWIP} from '../ui/Button';
 import {ButtonGroup} from '../ui/ButtonGroup';
 import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
@@ -615,10 +610,10 @@ const AssetEntryRow: React.FC<{
                 }
                 position="bottom-right"
               >
-                <Button small minimal icon="chevron-down" style={{marginLeft: '4px'}} />
+                <ButtonWIP icon={<IconWIP name="expand_more" />} />
               </Popover>
             ) : (
-              <Button small minimal disabled icon="chevron-down" style={{marginLeft: '4px'}} />
+              <ButtonWIP icon={<IconWIP name="expand_more" />} />
             )}
           </td>
         ) : null}
@@ -648,14 +643,15 @@ const AssetActions: React.FC<{
   return (
     <>
       <Tooltip position="right" content={prompt}>
-        <Button
+        <ButtonWIP
           disabled={disabled}
-          icon="trash"
-          intent={disabled ? undefined : 'danger'}
+          icon={<IconWIP name="delete" />}
+          intent={disabled ? 'none' : 'danger'}
+          outlined={!disabled}
           onClick={() => setShowBulkWipeDialog(true)}
         >
           {disabled ? null : selected.length}
-        </Button>
+        </ButtonWIP>
       </Tooltip>
       <AssetWipeDialog
         assetKeys={selected.map((asset) => asset.key)}

@@ -51,6 +51,7 @@ module.exports = {
             name: '@blueprintjs/core',
             importNames: [
               'Alert',
+              'Button',
               'ButtonGroup',
               'Callout',
               'Colors',

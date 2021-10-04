@@ -1,15 +1,16 @@
 import {gql} from '@apollo/client';
-import {AnchorButton, Button} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 
 import {AppContext} from '../app/AppContext';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {PipelineRunStatus} from '../types/globalTypes';
+import {ButtonWIP} from '../ui/Button';
 import {ColorsWIP} from '../ui/Colors';
 import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
 import {HighlightedCodeBlock} from '../ui/HighlightedCodeBlock';
+import {IconWIP} from '../ui/Icon';
 import {MetadataTable} from '../ui/MetadataTable';
 
 import {RunTags} from './RunTags';
@@ -118,13 +119,16 @@ export const RunConfigDialog: React.FC<{run: RunFragment}> = ({run}) => {
   return (
     <div>
       <Group direction="row" spacing={8}>
-        <Button text="View tags and config" icon="tag" onClick={() => setShowDialog(true)} />
+        <ButtonWIP icon={<IconWIP name="local_offer" />} onClick={() => setShowDialog(true)}>
+          View tags and config
+        </ButtonWIP>
         <Tooltip content="Loadable in dagit-debug" position="bottom-right">
-          <AnchorButton
-            text="Debug file"
-            icon="download"
-            href={`${rootServerURI}/download_debug/${run.runId}`}
-          />
+          <ButtonWIP
+            icon={<IconWIP name="download_for_offline" />}
+            onClick={() => window.open(`${rootServerURI}/download_debug/${run.runId}`)}
+          >
+            Debug file
+          </ButtonWIP>
         </Tooltip>
       </Group>
       <DialogWIP
@@ -148,9 +152,9 @@ export const RunConfigDialog: React.FC<{run: RunFragment}> = ({run}) => {
           </Group>
         </DialogBody>
         <DialogFooter>
-          <Button onClick={() => setShowDialog(false)} intent="primary">
+          <ButtonWIP onClick={() => setShowDialog(false)} intent="primary">
             OK
-          </Button>
+          </ButtonWIP>
         </DialogFooter>
       </DialogWIP>
     </div>

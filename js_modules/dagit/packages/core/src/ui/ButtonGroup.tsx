@@ -31,7 +31,7 @@ export const ButtonGroup = <T extends string>(props: Props<T>) => {
             key={id}
             fillColor={isActive ? ColorsWIP.Gray200 : ColorsWIP.Gray50}
             textColor={isActive ? ColorsWIP.Gray900 : ColorsWIP.Gray700}
-            stroke={false}
+            strokeColor="transparent"
             icon={
               icon ? (
                 <IconWIP name={icon} color={isActive ? ColorsWIP.Gray900 : ColorsWIP.Gray700} />
@@ -44,7 +44,7 @@ export const ButtonGroup = <T extends string>(props: Props<T>) => {
 
         if (tooltip) {
           return (
-            <Tooltip content={tooltip} position="top">
+            <Tooltip content={tooltip} position="top" key={id}>
               {buttonElement}
             </Tooltip>
           );

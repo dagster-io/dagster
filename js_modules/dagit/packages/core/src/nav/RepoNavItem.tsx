@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports
 import {Button} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';

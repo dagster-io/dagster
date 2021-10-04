@@ -121,7 +121,7 @@ export const WorkspaceOverviewRoot = () => {
         <PageHeader title={<Heading>Workspace</Heading>} />
       </Box>
       <Box padding={{horizontal: 24, top: 24, bottom: 16}}>
-        <Group direction="row" spacing={8} alignItems="center">
+        <Group direction="row" spacing={12} alignItems="center">
           <Subheading id="repository-locations">Locations</Subheading>
           <ReloadAllButton />
         </Group>

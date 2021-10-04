@@ -1,5 +1,5 @@
 import {gql, useQuery, useMutation} from '@apollo/client';
-import {Button, Intent} from '@blueprintjs/core';
+import {Intent} from '@blueprintjs/core';
 import qs from 'qs';
 import * as React from 'react';
 import {useHistory, Link} from 'react-router-dom';
@@ -25,10 +25,12 @@ import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {BulkActionStatus, PipelineRunStatus} from '../types/globalTypes';
 import {Alert} from '../ui/Alert';
 import {Box} from '../ui/Box';
+import {ButtonWIP} from '../ui/Button';
 import {ButtonLink} from '../ui/ButtonLink';
 import {ColorsWIP} from '../ui/Colors';
 import {CursorPaginationControls} from '../ui/CursorControls';
 import {Group} from '../ui/Group';
+import {IconWIP} from '../ui/Icon';
 import {Loading} from '../ui/Loading';
 import {MenuItemWIP, MenuWIP} from '../ui/Menu';
 import {NonIdealState} from '../ui/NonIdealState';
@@ -375,7 +377,7 @@ const BackfillRow = ({
           }
           position="bottom-right"
         >
-          <Button small minimal icon="chevron-down" style={{marginLeft: '4px'}} />
+          <ButtonWIP icon={<IconWIP name="expand_more" />} />
         </Popover>
       </td>
     </tr>
