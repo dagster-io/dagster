@@ -1,5 +1,4 @@
 import {gql} from '@apollo/client';
-import {NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -14,6 +13,7 @@ import {Checkbox} from '../ui/Checkbox';
 import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
+import {NonIdealState} from '../ui/NonIdealState';
 import {Table} from '../ui/Table';
 import {Mono} from '../ui/Text';
 import {TokenizingFieldValue} from '../ui/TokenizingField';

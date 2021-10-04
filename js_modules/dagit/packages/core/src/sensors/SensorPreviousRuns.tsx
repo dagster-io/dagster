@@ -1,11 +1,11 @@
 import {gql, useQuery} from '@apollo/client';
-import {NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {DagsterTag} from '../runs/RunTag';
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
+import {NonIdealState} from '../ui/NonIdealState';
 import {Subheading} from '../ui/Text';
 import {PreviousRunsSection, PREVIOUS_RUNS_FRAGMENT} from '../workspace/PreviousRunsSection';
 import {RepoAddress} from '../workspace/types';
@@ -56,7 +56,7 @@ export const NoTargetSensorPreviousRuns: React.FC<{
       </Box>
       <div style={{color: ColorsWIP.Gray400}}>
         <Box margin={{vertical: 64}}>
-          <NonIdealState description="Sensor does not target a pipeline." />
+          <NonIdealState icon="sensors" description="Sensor does not target a pipeline." />
         </Box>
       </div>
     </Group>

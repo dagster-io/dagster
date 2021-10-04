@@ -24,6 +24,7 @@ from dagster import (
     resource,
     solid,
 )
+from dagster.core.test_utils import default_mode_def_for_test
 from dagster.core.types.dagster_type import (
     DagsterType,
     PythonObjectDagsterType,
@@ -402,14 +403,12 @@ def test_fan_in_custom_types_with_storage():
     def get_foo(_context, dicts):
         return dicts[0]["foo"]
 
-    @pipeline
+    @pipeline(mode_defs=[default_mode_def_for_test])
     def dict_pipeline():
         # Fan-in
         get_foo([return_dict_1(), return_dict_2()])
 
-    pipeline_result = execute_pipeline(
-        dict_pipeline, run_config={"intermediate_storage": {"filesystem": {}}}
-    )
+    pipeline_result = execute_pipeline(dict_pipeline)
     assert pipeline_result.success
 
 

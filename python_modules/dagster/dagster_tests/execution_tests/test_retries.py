@@ -26,13 +26,13 @@ from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.retries import RetryMode
-from dagster.core.test_utils import instance_for_test
+from dagster.core.test_utils import default_mode_def_for_test, instance_for_test
 
 executors = pytest.mark.parametrize(
     "environment",
     [
-        {"intermediate_storage": {"filesystem": {}}},
-        {"intermediate_storage": {"filesystem": {}}, "execution": {"multiprocess": {}}},
+        {},
+        {"execution": {"multiprocess": {}}},
     ],
 )
 
@@ -63,7 +63,7 @@ def define_run_retry_pipeline():
     def downstream_of_failed(_, input_str):
         return input_str
 
-    @pipeline
+    @pipeline(mode_defs=[default_mode_def_for_test])
     def pipe():
         start_fail, start_skip = two_outputs()
         downstream_of_failed(can_fail(start_fail))
@@ -118,7 +118,7 @@ def define_step_retry_pipeline():
             open(file, "a").close()
             raise RetryRequested()
 
-    @pipeline
+    @pipeline(mode_defs=[default_mode_def_for_test])
     def step_retry():
         fail_first_time()
 
@@ -156,7 +156,7 @@ def define_retry_limit_pipeline():
     def three_max():
         raise RetryRequested(max_retries=3)
 
-    @pipeline
+    @pipeline(mode_defs=[default_mode_def_for_test])
     def retry_limits():
         default_max()
         three_max()
@@ -227,7 +227,7 @@ def define_retry_wait_fixed_pipeline():
             open(file, "a").close()
             raise RetryRequested(seconds_to_wait=DELAY)
 
-    @pipeline
+    @pipeline(mode_defs=[default_mode_def_for_test])
     def step_retry():
         fail_first_and_wait()
 

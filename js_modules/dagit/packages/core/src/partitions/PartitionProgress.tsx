@@ -1,5 +1,4 @@
 import {gql, useQuery} from '@apollo/client';
-import {Button} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import qs from 'qs';
 import * as React from 'react';
@@ -21,7 +20,9 @@ import {TerminationDialog} from '../runs/TerminationDialog';
 import {POLL_INTERVAL} from '../runs/useCursorPaginatedQuery';
 import {PipelineRunStatus} from '../types/globalTypes';
 import {Box} from '../ui/Box';
+import {ButtonWIP} from '../ui/Button';
 import {Group} from '../ui/Group';
+import {IconWIP} from '../ui/Icon';
 import {stringFromValue} from '../ui/TokenizingField';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -214,9 +215,14 @@ export const PartitionProgress = (props: Props) => {
         </Tooltip>
         {Object.keys(unfinishedMap).length ? (
           <>
-            <Button minimal icon="stop" intent="danger" onClick={() => setIsTerminating(true)}>
+            <ButtonWIP
+              outlined
+              icon={<IconWIP name="cancel" />}
+              intent="danger"
+              onClick={() => setIsTerminating(true)}
+            >
               Terminate
-            </Button>
+            </ButtonWIP>
             <TerminationDialog
               isOpen={isTerminating}
               onClose={() => setIsTerminating(false)}

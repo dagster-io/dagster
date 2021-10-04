@@ -1,5 +1,4 @@
 import {gql, useLazyQuery, useMutation} from '@apollo/client';
-import {Button, Position} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as qs from 'query-string';
 import * as React from 'react';
@@ -7,7 +6,9 @@ import * as React from 'react';
 import {AppContext} from '../app/AppContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {usePermissions} from '../app/Permissions';
+import {ButtonWIP} from '../ui/Button';
 import {HighlightedCodeBlock} from '../ui/HighlightedCodeBlock';
+import {IconWIP} from '../ui/Icon';
 import {MenuDividerWIP, MenuItemWIP, MenuWIP} from '../ui/Menu';
 import {Popover} from '../ui/Popover';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
@@ -83,7 +84,7 @@ export const RunActionsMenu: React.FC<{
             <>
               <Tooltip
                 content={OPEN_PLAYGROUND_UNKNOWN}
-                position={Position.BOTTOM}
+                position="bottom"
                 disabled={infoReady}
                 targetTagName="div"
               >
@@ -106,7 +107,7 @@ export const RunActionsMenu: React.FC<{
                 content={
                   'Re-execute is unavailable because the pipeline is not present in the current workspace.'
                 }
-                position={Position.BOTTOM}
+                position="bottom"
                 disabled={infoReady && !!repoMatch}
                 targetTagName="div"
               >
@@ -161,7 +162,7 @@ export const RunActionsMenu: React.FC<{
           }
         }}
       >
-        <Button minimal={true} icon="more" style={{position: 'relative', top: '-6px'}} />
+        <ButtonWIP icon={<IconWIP name="more_horiz" />} />
       </Popover>
       {canTerminatePipelineExecution ? (
         <TerminationDialog
@@ -247,7 +248,9 @@ export const RunBulkActionsMenu: React.FC<{
         }
         position="bottom-right"
       >
-        <Button disabled={selected.length === 0} text="Actions" rightIcon="caret-down" small />
+        <ButtonWIP disabled={selected.length === 0} rightIcon={<IconWIP name="expand_more" />}>
+          Actions
+        </ButtonWIP>
       </Popover>
       <TerminationDialog
         isOpen={visibleDialog === 'terminate'}

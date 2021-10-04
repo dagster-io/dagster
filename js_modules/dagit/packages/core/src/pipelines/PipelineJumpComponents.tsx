@@ -1,9 +1,11 @@
-import {Button, MenuItem} from '@blueprintjs/core';
+import {MenuItem} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {useFeatureFlags} from '../app/Flags';
 import {ShortcutHandler} from '../app/ShortcutHandler';
+import {ButtonWIP} from '../ui/Button';
+import {IconWIP} from '../ui/Icon';
 import {SelectWIP} from '../ui/Select';
 
 import {PipelineExplorerSolidHandleFragment_solid} from './types/PipelineExplorerSolidHandleFragment';
@@ -17,11 +19,11 @@ interface SolidJumpBarProps {
 export const SolidJumpBar: React.FC<SolidJumpBarProps> = (props) => {
   const {flagPipelineModeTuples} = useFeatureFlags();
   const {solids, selectedSolid, onChange} = props;
-  const button = React.useRef<Button | null>(null);
+  const button = React.useRef<HTMLButtonElement | null>(null);
 
   return (
     <ShortcutHandler
-      onShortcut={() => button.current?.buttonRef?.click()}
+      onShortcut={() => button.current?.click()}
       shortcutLabel="⌥S"
       shortcutFilter={(e) => e.code === 'KeyS' && e.altKey}
     >
@@ -32,17 +34,13 @@ export const SolidJumpBar: React.FC<SolidJumpBarProps> = (props) => {
         noResults={<MenuItem disabled={true} text="No results." />}
         onItemSelect={(name) => onChange(solids.find((s) => s.name === name)!)}
       >
-        <SelectButton
-          ref={button}
-          text={
-            selectedSolid
-              ? selectedSolid.name
-              : flagPipelineModeTuples
-              ? 'Select an op…'
-              : 'Select a solid…'
-          }
-          rightIcon="double-caret-vertical"
-        />
+        <SelectButton ref={button} rightIcon={<IconWIP name="unfold_more" />}>
+          {selectedSolid
+            ? selectedSolid.name
+            : flagPipelineModeTuples
+            ? 'Select an op…'
+            : 'Select a solid…'}
+        </SelectButton>
       </SelectWIP>
     </ShortcutHandler>
   );
@@ -53,7 +51,7 @@ export const SolidJumpBar: React.FC<SolidJumpBarProps> = (props) => {
 // of 0px and adding "width" rules to all nested <divs> that are a function of the parent (eg: 100%)
 // tells the layout engine that this can be assigned a width by it's container. This allows
 // us to make the Select "as wide as the layout allows" and have it truncate first.
-const SelectButton = styled(Button)`
+const SelectButton = styled(ButtonWIP)`
   min-width: 0;
 
   && {

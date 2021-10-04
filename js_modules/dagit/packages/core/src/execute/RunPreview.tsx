@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Button, Code, Intent, Position} from '@blueprintjs/core';
+import {Code, Intent, Position} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -13,6 +13,7 @@ import {
   ConfigEditorRunConfigSchemaFragment,
   ConfigEditorRunConfigSchemaFragment_allConfigTypes_CompositeConfigType,
 } from '../configeditor/types/ConfigEditorRunConfigSchemaFragment';
+import {ButtonWIP} from '../ui/Button';
 import {ButtonLink} from '../ui/ButtonLink';
 import {Checkbox} from '../ui/Checkbox';
 import {ColorsWIP} from '../ui/Colors';
@@ -78,8 +79,7 @@ const RemoveExtraConfigButton = ({
 
   return (
     <div style={{marginTop: 5}}>
-      <Button
-        small={true}
+      <ButtonWIP
         onClick={async () => {
           await confirm({
             title: 'Remove extra config',
@@ -125,7 +125,7 @@ const RemoveExtraConfigButton = ({
         }}
       >
         Remove Extra Config
-      </Button>
+      </ButtonWIP>
     </div>
   );
 };
@@ -170,9 +170,7 @@ const ScaffoldConfigButton = ({
 
   return (
     <div style={{marginTop: 5}}>
-      <Button small={true} onClick={onClick}>
-        Scaffold Missing Config
-      </Button>
+      <ButtonWIP onClick={onClick}>Scaffold Missing Config</ButtonWIP>
     </div>
   );
 };

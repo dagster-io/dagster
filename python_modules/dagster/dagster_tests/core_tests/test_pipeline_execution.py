@@ -19,7 +19,6 @@ from dagster import (
     check,
     execute_pipeline,
     execute_pipeline_iterator,
-    fs_io_manager,
     pipeline,
     reconstructable,
     reexecute_pipeline,
@@ -31,7 +30,11 @@ from dagster.core.definitions.graph import _create_adjacency_lists
 from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
 from dagster.core.execution.results import SolidExecutionResult
 from dagster.core.instance import DagsterInstance
-from dagster.core.test_utils import instance_for_test, step_output_event_filter
+from dagster.core.test_utils import (
+    default_mode_def_for_test,
+    instance_for_test,
+    step_output_event_filter,
+)
 from dagster.core.utility_solids import (
     create_root_solid,
     create_solid_with_deps,
@@ -781,7 +784,7 @@ def retry_pipeline():
         solid_defs=[return_one, add_one],
         name="test",
         dependencies={"add_one": {"num": DependencyDefinition("return_one")}},
-        mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})],
+        mode_defs=[default_mode_def_for_test],
     )
 
 

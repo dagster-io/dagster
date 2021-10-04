@@ -1,11 +1,12 @@
 import {gql} from '@apollo/client';
-import {Button} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {breakOnUnderscores} from '../app/Util';
 import {SolidNameOrPath} from '../solids/SolidNameOrPath';
 import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT} from '../typeexplorer/TypeWithTooltip';
 import {Box} from '../ui/Box';
+import {ButtonWIP} from '../ui/Button';
+import {IconWIP} from '../ui/Icon';
 
 import {SidebarSection, SidebarTitle} from './SidebarComponents';
 import {DependencyHeaderRow, DependencyRow, DependencyTable} from './SidebarSolidHelpers';
@@ -54,12 +55,14 @@ export const SidebarSolidInvocation: React.FC<ISidebarSolidInvocationProps> = (p
             </tbody>
           </DependencyTable>
           {onEnterCompositeSolid && (
-            <Button
-              icon="zoom-in"
-              text="Expand Composite"
-              style={{marginTop: 15}}
-              onClick={() => onEnterCompositeSolid({name: solid.name})}
-            />
+            <Box margin={{top: 12}}>
+              <ButtonWIP
+                icon={<IconWIP name="zoom_in" />}
+                onClick={() => onEnterCompositeSolid({name: solid.name})}
+              >
+                Expand composite
+              </ButtonWIP>
+            </Box>
           )}
         </Box>
       </SidebarSection>

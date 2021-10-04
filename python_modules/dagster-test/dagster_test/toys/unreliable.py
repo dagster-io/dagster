@@ -1,6 +1,6 @@
 from random import random
 
-from dagster import Field, pipeline, solid
+from dagster import Field, ModeDefinition, fs_io_manager, pipeline, solid
 
 DEFAULT_EXCEPTION_RATE = 0.3
 
@@ -20,7 +20,10 @@ def unreliable(context, num):
     return num
 
 
-@pipeline(description="Demo pipeline of chained solids that fail with a configurable probability.")
+@pipeline(
+    description="Demo pipeline of chained solids that fail with a configurable probability.",
+    mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})],
+)
 def unreliable_pipeline():
     one = unreliable.alias("one")
     two = unreliable.alias("two")

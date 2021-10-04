@@ -1,6 +1,7 @@
 import {gql} from '@apollo/client';
 import * as React from 'react';
 
+import {METADATA_ENTRY_FRAGMENT} from './MetadataEntry';
 import {RunMetadataProviderMessageFragment} from './types/RunMetadataProviderMessageFragment';
 
 export enum IStepState {
@@ -275,4 +276,5 @@ export const RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT = gql`
       pid
     }
   }
+  ${METADATA_ENTRY_FRAGMENT}
 `;

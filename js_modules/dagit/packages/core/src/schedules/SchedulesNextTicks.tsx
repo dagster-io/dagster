@@ -1,5 +1,4 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import {NonIdealState, Button, Menu, MenuItem} from '@blueprintjs/core';
 import * as qs from 'query-string';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -20,6 +19,7 @@ import {Group} from '../ui/Group';
 import {HighlightedCodeBlock} from '../ui/HighlightedCodeBlock';
 import {IconWIP} from '../ui/Icon';
 import {MenuItemWIP, MenuWIP} from '../ui/Menu';
+import {NonIdealState} from '../ui/NonIdealState';
 import {Popover} from '../ui/Popover';
 import {Spinner} from '../ui/Spinner';
 import {Table} from '../ui/Table';
@@ -84,6 +84,7 @@ export const SchedulesNextTicks: React.FC<{
     return (
       <Box margin={{top: 32}}>
         <NonIdealState
+          icon="error"
           title="No scheduled ticks"
           description="There are no running schedules. Start a schedule to see scheduled ticks."
         />
@@ -185,7 +186,7 @@ const NextTickMenu: React.FC<{
           }
         }}
       >
-        <Button small minimal icon="chevron-down" style={{position: 'relative', top: '-4px'}} />
+        <ButtonWIP icon={<IconWIP name="expand_more" />} />
       </Popover>
       <NextTickDialog
         repoAddress={repoAddress}
@@ -353,8 +354,8 @@ const NextTickDialog: React.FC<{
                     <td>
                       <Popover
                         content={
-                          <Menu>
-                            <MenuItem
+                          <MenuWIP>
+                            <MenuItemWIP
                               text="Open in Playground..."
                               icon="edit"
                               target="_blank"
@@ -369,11 +370,11 @@ const NextTickDialog: React.FC<{
                                 })}`,
                               )}
                             />
-                          </Menu>
+                          </MenuWIP>
                         }
                         position="bottom"
                       >
-                        <Button small minimal icon="chevron-down" />
+                        <ButtonWIP icon={<IconWIP name="expand_more" />} />
                       </Popover>
                     </td>
                   </tr>

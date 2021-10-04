@@ -1,5 +1,4 @@
 import {gql, useQuery} from '@apollo/client';
-import {NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
@@ -12,6 +11,7 @@ import {InstigationType} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
+import {NonIdealState} from '../ui/NonIdealState';
 import {Subheading} from '../ui/Text';
 import {REPOSITORY_INFO_FRAGMENT} from '../workspace/RepositoryInformation';
 import {REPOSITORY_LOCATIONS_FRAGMENT} from '../workspace/WorkspaceContext';
@@ -88,7 +88,7 @@ const AllSensors: React.FC<{data: InstanceSensorsQuery}> = ({data}) => {
     return (
       <Box margin={{top: 32}}>
         <NonIdealState
-          icon="automatic-updates"
+          icon="sensors"
           title="No sensors found"
           description={
             <p>

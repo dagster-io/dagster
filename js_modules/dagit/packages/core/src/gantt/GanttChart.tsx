@@ -1,4 +1,3 @@
-import {NonIdealState} from '@blueprintjs/core';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -15,6 +14,7 @@ import {ColorsWIP} from '../ui/Colors';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
+import {NonIdealState} from '../ui/NonIdealState';
 import {Spinner} from '../ui/Spinner';
 import {SplitPanelContainer} from '../ui/SplitPanelContainer';
 
@@ -376,20 +376,21 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
             </Box>
           </WebsocketWarning>
         ) : null}
-        <GraphQueryInput
-          items={props.graph}
-          value={props.selection.query}
-          placeholder="Type a Step Subset"
-          onChange={props.onUpdateQuery}
-          presets={metadata ? interestingQueriesFor(metadata, layout) : undefined}
-          className={selection.keys.length > 0 ? 'has-step' : ''}
-        />
-        <Checkbox
-          checked={options.hideUnselectedSteps}
-          label="Hide unselected steps"
-          onChange={props.onChange}
-          style={{marginLeft: 5}}
-        />
+        <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
+          <GraphQueryInput
+            items={props.graph}
+            value={props.selection.query}
+            placeholder="Type a Step Subset"
+            onChange={props.onUpdateQuery}
+            presets={metadata ? interestingQueriesFor(metadata, layout) : undefined}
+            className={selection.keys.length > 0 ? 'has-step' : ''}
+          />
+          <Checkbox
+            checked={options.hideUnselectedSteps}
+            label="Hide unselected steps"
+            onChange={props.onChange}
+          />
+        </Box>
       </GraphQueryInputContainer>
     </>
   );
@@ -763,7 +764,11 @@ export const GanttChartLoadingState = ({runId}: {runId: string}) => (
     <SplitPanelContainer
       identifier="gantt-split"
       axis="horizontal"
-      first={<NonIdealState icon={<Spinner purpose="section" />} />}
+      first={
+        <div style={{margin: 'auto', marginTop: 100}}>
+          <Spinner purpose="section" />
+        </div>
+      }
       firstInitialPercent={70}
       second={
         <GanttStatusPanel
@@ -785,7 +790,7 @@ export const QueuedState = ({runId}: {runId: string}) => (
       axis="horizontal"
       first={
         <NonIdealState
-          icon="time"
+          icon="arrow_forward"
           description="This run is currently queued."
           action={<Link to={`/instance/runs?q=status%3AQUEUED`}>View queued runs</Link>}
         />

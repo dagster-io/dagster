@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Breadcrumbs, InputGroup, NonIdealState} from '@blueprintjs/core';
+import {Breadcrumbs, InputGroup} from '@blueprintjs/core';
 import Color from 'color';
 import * as querystring from 'query-string';
 import * as React from 'react';
@@ -15,6 +15,7 @@ import {Checkbox} from '../ui/Checkbox';
 import {ColorsWIP} from '../ui/Colors';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {IconWIP} from '../ui/Icon';
+import {NonIdealState} from '../ui/NonIdealState';
 import {SplitPanelContainer} from '../ui/SplitPanelContainer';
 import {RepoAddress} from '../workspace/types';
 
@@ -344,7 +345,7 @@ const EmptyDAGNotice = () => {
   const {flagPipelineModeTuples} = useFeatureFlags();
   return (
     <NonIdealState
-      icon="diagram-tree"
+      icon="no-results"
       title={flagPipelineModeTuples ? 'Empty graph' : 'Empty pipeline'}
       description={
         <>

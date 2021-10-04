@@ -1,6 +1,4 @@
 import {gql, useQuery} from '@apollo/client';
-import {Button, NonIdealState} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import qs from 'query-string';
 import React from 'react';
@@ -12,6 +10,7 @@ import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
 import {DagsterTag} from '../runs/RunTag';
 import {StepEventStatus} from '../types/globalTypes';
 import {ColorsWIP} from '../ui/Colors';
+import {NonIdealState} from '../ui/NonIdealState';
 import {Spinner} from '../ui/Spinner';
 
 import {STEP_STATUS_COLORS} from './RunMatrixUtils';
@@ -59,7 +58,7 @@ export const PartitionRunListForStep: React.FunctionComponent<PartitionRunListFo
   if (data.pipelineRunsOrError.__typename !== 'PipelineRuns') {
     return (
       <NonIdealState
-        icon={IconNames.ERROR}
+        icon="error"
         title="Query Error"
         description={data.pipelineRunsOrError.message}
       />
@@ -116,9 +115,7 @@ const StepStatsColumn: React.FunctionComponent<{
               <StatBox>{`${stats.materializations.length}`}</StatBox>
             </Tooltip>
           </StatSummaryLine>
-          <Link to={linkToLogs} component={Button} {...{small: true, rightIcon: 'share'}}>
-            Step Logs
-          </Link>
+          <Link to={linkToLogs}>Step logs</Link>
         </div>
       ) : (
         <div>No step data.</div>
@@ -138,6 +135,7 @@ const StatBox = styled.div`
   margin-left: 4px;
   padding: 1px 5px;
   font-size: 11px;
+  white-space: nowrap;
 `;
 
 const PARTITION_RUN_LIST_FOR_STEP_QUERY = gql`

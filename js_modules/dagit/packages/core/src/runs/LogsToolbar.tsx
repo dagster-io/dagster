@@ -1,13 +1,14 @@
-import {Button, ButtonGroup, IconName} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {useCopyToClipboard} from '../app/browser';
 import {Box} from '../ui/Box';
+import {ButtonWIP} from '../ui/Button';
+import {ButtonGroup} from '../ui/ButtonGroup';
 import {Checkbox} from '../ui/Checkbox';
 import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
+import {IconName, IconWIP} from '../ui/Icon';
 import {MenuItemWIP} from '../ui/Menu';
 import {SelectWIP} from '../ui/Select';
 import {Spinner} from '../ui/Spinner';
@@ -62,20 +63,14 @@ export const LogsToolbar: React.FC<ILogsToolbarProps> = (props) => {
   } = props;
   return (
     <LogsToolbarContainer>
-      <ButtonGroup>
-        <Button
-          icon="properties"
-          title="Structured event logs"
-          active={logType === LogType.structured}
-          onClick={() => onSetLogType(LogType.structured)}
-        />
-        <Button
-          icon="console"
-          title="Raw compute logs"
-          active={logType !== LogType.structured}
-          onClick={() => onSetLogType(LogType.stdout)}
-        />
-      </ButtonGroup>
+      <ButtonGroup
+        activeItems={new Set([logType])}
+        buttons={[
+          {id: LogType.structured, icon: 'list', tooltip: 'Structured event logs'},
+          {id: LogType.stdout, icon: 'wysiwyg', tooltip: 'Raw compute logs'},
+        ]}
+        onClick={(id) => onSetLogType(id)}
+      />
       <LogsToolbarDivider />
       {logType === 'structured' ? (
         <StructuredLogToolbar filter={filter} onSetFilter={onSetFilter} steps={steps} />
@@ -169,12 +164,9 @@ const ComputeLogToolbar = ({
             onSetComputeLogKey(logKey);
           }}
         >
-          <Button
-            text={logKeyText(computeLogKey) || 'Select a step...'}
-            disabled={!steps.length}
-            rightIcon="caret-down"
-            style={{minHeight: 25}}
-          />
+          <ButtonWIP disabled={!steps.length} rightIcon={<IconWIP name="expand_more" />}>
+            {logKeyText(computeLogKey) || 'Select a step...'}
+          </ButtonWIP>
         </SelectWIP>
         {isValidStepSelection ? (
           <Tabs selectedTabId={LogType[logType]} size="small">
@@ -228,7 +220,7 @@ const StructuredLogToolbar = ({
   onSetFilter: (filter: LogFilter) => void;
   steps: string[];
 }) => {
-  const [copyIcon, setCopyIcon] = React.useState<IconName>(IconNames.CLIPBOARD);
+  const [copyIcon, setCopyIcon] = React.useState<IconName>('assignment');
   const logQueryString = logQueryToString(filter.logQuery);
   const [queryString, setQueryString] = React.useState<string>(() => logQueryString);
   const copyToClipboard = useCopyToClipboard();
@@ -258,9 +250,9 @@ const StructuredLogToolbar = ({
   // Restore the clipboard icon after a delay.
   React.useEffect(() => {
     let token: any;
-    if (copyIcon === IconNames.SAVED) {
+    if (copyIcon === 'assignment_turned_in') {
       token = setTimeout(() => {
-        setCopyIcon(IconNames.CLIPBOARD);
+        setCopyIcon('assignment');
       }, 2000);
     }
     return () => {
@@ -318,15 +310,16 @@ const StructuredLogToolbar = ({
       {selectedStep && <LogsToolbarDivider />}
       <div style={{minWidth: 15, flex: 1}} />
       <div style={{marginRight: '8px'}}>
-        <Button
+        <ButtonWIP
           small
-          icon={copyIcon}
+          icon={<IconWIP name={copyIcon} />}
           onClick={() => {
             copyToClipboard(window.location.href);
-            setCopyIcon(IconNames.SAVED);
+            setCopyIcon('assignment_turned_in');
           }}
-          text="Copy URL"
-        />
+        >
+          Copy URL
+        </ButtonWIP>
       </div>
     </>
   );

@@ -25,6 +25,8 @@ type Query {
   instance: Instance!
   assetsOrError: AssetsOrError!
   assetOrError(assetKey: AssetKeyInput!): AssetOrError!
+  assetNodes: [AssetNode!]!
+  assetNodeOrError(assetKey: AssetKeyInput!): AssetNodeOrError!
   partitionBackfillOrError(backfillId: String!): PartitionBackfillOrError!
   partitionBackfillsOrError(cursor: String, limit: Int): PartitionBackfillsOrError!
   permissions: [GraphenePermission!]!
@@ -1379,6 +1381,8 @@ type AssetNotFoundError implements Error {
 input AssetKeyInput {
   path: [String!]!
 }
+
+union AssetNodeOrError = AssetNode | AssetNotFoundError
 
 union PartitionBackfillOrError = PartitionBackfill | PythonError
 

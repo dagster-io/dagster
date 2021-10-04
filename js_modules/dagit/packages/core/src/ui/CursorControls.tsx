@@ -1,8 +1,8 @@
-import {Button} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {Box} from './Box';
+import {ButtonWIP} from './Button';
 import {IconWIP} from './Icon';
 
 export interface CursorPaginationProps {
@@ -20,28 +20,21 @@ export const CursorPaginationControls: React.FunctionComponent<CursorPaginationP
   advanceCursor,
 }) => {
   return (
-    <div style={{textAlign: 'center', marginBottom: 10}}>
-      <Button
-        style={{
-          marginRight: 4,
-        }}
-        disabled={!hasPrevCursor}
-        icon={IconNames.ARROW_LEFT}
-        onClick={popCursor}
-      >
-        Prev Page
-      </Button>
-      <Button
-        style={{
-          marginLeft: 4,
-        }}
+    <Box
+      margin={{top: 16}}
+      flex={{direction: 'row', alignItems: 'center', gap: 12, justifyContent: 'center'}}
+    >
+      <ButtonWIP disabled={!hasPrevCursor} icon={<IconWIP name="arrow_back" />} onClick={popCursor}>
+        Previous
+      </ButtonWIP>
+      <ButtonWIP
         disabled={!hasNextCursor}
-        rightIcon={IconNames.ARROW_RIGHT}
+        icon={<IconWIP name="arrow_forward" />}
         onClick={advanceCursor}
       >
-        Next Page
-      </Button>
-    </div>
+        Next
+      </ButtonWIP>
+    </Box>
   );
 };
 
@@ -53,29 +46,29 @@ export const CursorHistoryControls: React.FunctionComponent<CursorPaginationProp
 }) => {
   return (
     <CursorHistoryControlsContainer>
-      <Button
+      <ButtonWIP
         icon={<IconWIP name="arrow_back" />}
         style={{marginRight: 4}}
         disabled={!hasNextCursor}
         onClick={advanceCursor}
       >
         <span className="hideable-button-text">Older</span>
-      </Button>
-      <Button
+      </ButtonWIP>
+      <ButtonWIP
         rightIcon={<IconWIP name="arrow_forward" />}
         style={{marginLeft: 4}}
         disabled={!hasPrevCursor}
         onClick={popCursor}
       >
         <span className="hideable-button-text">Newer</span>
-      </Button>
+      </ButtonWIP>
     </CursorHistoryControlsContainer>
   );
 };
 
 const CursorHistoryControlsContainer = styled.div`
-  text-align: center;
-  white-space: nowrap;
+  display: flex;
+  align-items: center;
 
   @media (max-width: 1000px) {
     & .hideable-button-text {

@@ -48,6 +48,31 @@ export const Intent = () => {
   );
 };
 
+export const Outlined = () => {
+  return (
+    <Group direction="column" spacing={8}>
+      <Button outlined icon={<Icon name="star" />}>
+        No intent set
+      </Button>
+      <Button outlined icon={<Icon name="star" />} intent="primary">
+        Primary
+      </Button>
+      <Button outlined icon={<Icon name="done" />} intent="success">
+        Success
+      </Button>
+      <Button outlined icon={<Icon name="error" />} intent="danger">
+        Danger
+      </Button>
+      <Button outlined icon={<Icon name="warning" />} intent="warning">
+        Warning
+      </Button>
+      <Button outlined icon={<Icon name="star" />} intent="none">
+        None
+      </Button>
+    </Group>
+  );
+};
+
 export const Disabled = () => {
   return (
     <Group direction="column" spacing={8}>
@@ -73,6 +98,18 @@ export const Disabled = () => {
         intent="primary"
       >
         Loading with two icons
+      </Button>
+      <Button outlined icon={<Icon name="cached" />} disabled intent="primary">
+        Disabled outlined
+      </Button>
+      <Button outlined loading icon={<Icon name="cached" />} intent="primary">
+        Loading outlined
+      </Button>
+      <Button outlined icon={<Icon name="cancel" />} disabled intent="danger">
+        Disabled outlined, danger
+      </Button>
+      <Button outlined icon={<Icon name="cancel" />} loading intent="danger">
+        Loading outlined, danger
       </Button>
     </Group>
   );

@@ -1,4 +1,5 @@
 import {gql, useApolloClient} from '@apollo/client';
+// eslint-disable-next-line no-restricted-imports
 import {Button, ButtonGroup} from '@blueprintjs/core';
 import React from 'react';
 import {Link} from 'react-router-dom';

@@ -1,5 +1,4 @@
 import {gql, useQuery} from '@apollo/client';
-import {NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -7,6 +6,7 @@ import styled from 'styled-components/macro';
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
+import {NonIdealState} from '../ui/NonIdealState';
 import {Table} from '../ui/Table';
 
 import {repoAddressAsString} from './repoAddressAsString';
@@ -98,6 +98,7 @@ export const RepositoryGraphsList: React.FC<Props> = (props) => {
   if (error || !graphsForTable) {
     return (
       <NonIdealState
+        icon="error"
         title="Unable to load graphs"
         description={`Could not load graphs for ${repoAddressAsString(repoAddress)}`}
       />

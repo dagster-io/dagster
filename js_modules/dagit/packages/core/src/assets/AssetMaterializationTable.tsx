@@ -16,7 +16,7 @@ import {Table} from '../ui/Table';
 import {Mono} from '../ui/Text';
 
 import {AssetLineageElements} from './AssetLineageElements';
-import {AssetQuery_assetOrError_Asset_assetMaterializations as Materialization} from './types/AssetQuery';
+import {AssetMaterializationFragment} from './types/AssetMaterializationFragment';
 import {HistoricalMaterialization} from './useMaterializationBuckets';
 
 export const AssetMaterializationTable: React.FC<{
@@ -123,7 +123,7 @@ const AssetMaterializationRow: React.FC<{
 interface PredecessorDialogProps {
   hasLineage: boolean;
   isPartitioned: boolean;
-  predecessors: Materialization[];
+  predecessors: AssetMaterializationFragment[];
 }
 
 export const AssetPredecessorLink: React.FC<PredecessorDialogProps> = ({

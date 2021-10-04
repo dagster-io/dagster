@@ -6,6 +6,7 @@ import {ColorsWIP} from './Colors';
 // Based directly on Material Icons font names.
 export type IconName =
   | 'account_tree'
+  | 'add_circle'
   | 'alternate_email'
   | 'arrow_back'
   | 'arrow_downward'
@@ -22,9 +23,12 @@ export type IconName =
   | 'chevron_right'
   | 'chevron_left'
   | 'close'
+  | 'content_copy'
   | 'delete'
   | 'done'
   | 'download_for_offline'
+  | 'drag_handle'
+  | 'dynamic_feed'
   | 'edit'
   | 'error'
   | 'expand_less'
@@ -35,11 +39,15 @@ export type IconName =
   | 'info'
   | 'history'
   | 'layers'
+  | 'line_style'
   | 'linear_scale'
   | 'link'
+  | 'list'
+  | 'local_offer'
   | 'location_on'
   | 'menu'
   | 'menu_book'
+  | 'more_horiz'
   | 'open_in_new'
   | 'refresh'
   | 'schedule'
@@ -51,21 +59,30 @@ export type IconName =
   | 'sort_by_alpha'
   | 'source'
   | 'speed'
+  | 'splitscreen'
   | 'star'
   | 'table_view'
+  | 'timer'
   | 'toggle_off'
   | 'toggle_on'
+  | 'tune'
+  | 'unfold_more'
+  | 'vertical_align_bottom'
+  | 'vertical_align_top'
   | 'view_list'
   | 'visibility'
+  | 'visibility_off'
   | 'warning'
+  | 'waterfall_chart'
   | 'workspaces'
+  | 'wysiwyg'
   | 'zoom_in'
   | 'zoom_out';
 
 interface Props {
   color?: string;
   name: IconName;
-  size?: 16 | 20 | 24;
+  size?: 16 | 20 | 24 | 48;
 }
 
 export const IconWIP = (props: Props) => {
@@ -87,5 +104,8 @@ createGlobalStyle`
   .bp3-button .material-icons {
     position: relative;
     top: 1px;
+  }
+  a .material-icons {
+    text-decoration: none;
   }
 `;

@@ -1,5 +1,4 @@
 import {gql, useQuery} from '@apollo/client';
-import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
 import {useFeatureFlags} from '../app/Flags';
@@ -56,13 +55,13 @@ export const PipelineExecutionRoot: React.FC<Props> = (props) => {
 
     return pipelineName !== '' ? (
       <ExecutionSessionContainerError
-        icon={IconNames.FLOW_BRANCH}
+        icon="error"
         title={flagPipelineModeTuples ? 'Job not found' : 'Pipeline not found'}
         description={message}
       />
     ) : (
       <ExecutionSessionContainerError
-        icon={IconNames.FLOW_BRANCH}
+        icon="error"
         title={flagPipelineModeTuples ? 'Select a job' : 'Select a pipeline'}
       />
     );
@@ -75,7 +74,7 @@ export const PipelineExecutionRoot: React.FC<Props> = (props) => {
   if (pipelineOrError && pipelineOrError.__typename === 'PythonError') {
     return (
       <ExecutionSessionContainerError
-        icon={IconNames.ERROR}
+        icon="error"
         title="Python Error"
         description={pipelineOrError.message}
       />
@@ -84,7 +83,7 @@ export const PipelineExecutionRoot: React.FC<Props> = (props) => {
   if (partitionSetsOrError && partitionSetsOrError.__typename === 'PythonError') {
     return (
       <ExecutionSessionContainerError
-        icon={IconNames.ERROR}
+        icon="error"
         title="Python Error"
         description={partitionSetsOrError.message}
       />

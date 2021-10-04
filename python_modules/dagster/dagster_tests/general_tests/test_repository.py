@@ -7,6 +7,7 @@ from dagster import (
     ModeDefinition,
     PipelineDefinition,
     PresetDefinition,
+    fs_io_manager,
     repository,
     resource,
     solid,
@@ -66,7 +67,9 @@ def define_multi_mode_with_resources_pipeline():
         name="multi_mode_with_resources",
         solid_defs=[apply_to_three],
         mode_defs=[
-            ModeDefinition(name="add_mode", resource_defs={"op": adder_resource}),
+            ModeDefinition(
+                name="add_mode", resource_defs={"op": adder_resource, "io_manager": fs_io_manager}
+            ),
             ModeDefinition(name="mult_mode", resource_defs={"op": multer_resource}),
             ModeDefinition(
                 name="double_adder_mode",
@@ -90,7 +93,6 @@ def define_multi_mode_with_resources_pipeline():
                 run_config={
                     "resources": {"op": {"config": 2}},
                     "execution": {"multiprocess": {}},
-                    "intermediate_storage": {"filesystem": {}},
                 },
             ),
         ],

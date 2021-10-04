@@ -32,31 +32,23 @@ export const Default = () => {
 export const Fill = () => {
   return (
     <Group direction="column" spacing={8}>
-      <BaseButton
-        label="Button"
-        fillColor={ColorsWIP.Dark}
-        textColor={ColorsWIP.White}
-        stroke={false}
-      />
+      <BaseButton label="Button" fillColor={ColorsWIP.Dark} textColor={ColorsWIP.White} />
       <BaseButton
         label="Button"
         fillColor={ColorsWIP.Blue500}
         textColor={ColorsWIP.White}
-        stroke={false}
         icon={<Icon name="star" />}
       />
       <BaseButton
         label="Button"
         fillColor={ColorsWIP.Green500}
         textColor={ColorsWIP.White}
-        stroke={false}
         rightIcon={<Icon name="close" />}
       />
       <BaseButton
         label="Button"
         fillColor={ColorsWIP.Red500}
         textColor={ColorsWIP.White}
-        stroke={false}
         icon={<Icon name="source" />}
         rightIcon={<Icon name="expand_more" />}
       />
@@ -64,13 +56,11 @@ export const Fill = () => {
         label="Button"
         fillColor={ColorsWIP.Olive500}
         textColor={ColorsWIP.White}
-        stroke={false}
         icon={<Icon name="folder_open" />}
       />
       <BaseButton
         fillColor={ColorsWIP.Yellow500}
         textColor={ColorsWIP.White}
-        stroke={false}
         icon={<Icon name="cached" />}
       />
     </Group>
@@ -115,13 +105,7 @@ export const Disabled = () => {
   return (
     <Group direction="column" spacing={8}>
       <BaseButton label="Button" icon={<Icon name="star" />} disabled />
-      <BaseButton
-        label="Button"
-        fillColor={ColorsWIP.Dark}
-        textColor={ColorsWIP.White}
-        stroke={false}
-        disabled
-      />
+      <BaseButton label="Button" fillColor={ColorsWIP.Dark} textColor={ColorsWIP.White} disabled />
       <BaseButton textColor={ColorsWIP.Dark} label="Button" fillColor="transparent" disabled />
     </Group>
   );

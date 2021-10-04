@@ -1,5 +1,4 @@
 import {gql, useQuery} from '@apollo/client';
-import {NonIdealState} from '@blueprintjs/core';
 import {ActiveElement, Chart, TimeUnit} from 'chart.js';
 import 'chartjs-adapter-date-fns';
 import zoomPlugin from 'chartjs-plugin-zoom';
@@ -18,6 +17,7 @@ import {Checkbox} from '../ui/Checkbox';
 import {ColorsWIP} from '../ui/Colors';
 import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
+import {NonIdealState} from '../ui/NonIdealState';
 import {Spinner} from '../ui/Spinner';
 import {Tab, Tabs} from '../ui/Tabs';
 import {Subheading} from '../ui/Text';
@@ -233,7 +233,7 @@ export const TickHistory = ({
         </>
       ) : (
         <Box margin={{top: 16, bottom: 32}} flex={{justifyContent: 'center'}}>
-          <NonIdealState description="No ticks to display" />
+          <NonIdealState icon="no-results" description="No ticks to display" />
         </Box>
       )}
       <DialogWIP

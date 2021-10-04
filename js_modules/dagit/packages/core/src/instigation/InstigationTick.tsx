@@ -1,5 +1,4 @@
 import {gql, useQuery} from '@apollo/client';
-import {NonIdealState} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -16,6 +15,7 @@ import {ColorsWIP} from '../ui/Colors';
 import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
+import {NonIdealState} from '../ui/NonIdealState';
 import {Spinner} from '../ui/Spinner';
 import {TagWIP} from '../ui/TagWIP';
 import {Body} from '../ui/Text';
@@ -154,7 +154,7 @@ export const FailedRunList: React.FunctionComponent<{
             <IconWIP name="info" color={ColorsWIP.Gray500} />
           </Tooltip>
         </Body>
-        <NonIdealState description="Sensor does not target a pipeline." />
+        <NonIdealState icon="sensors" description="Sensor does not target a pipeline." />
       </Box>
     </Group>
   );

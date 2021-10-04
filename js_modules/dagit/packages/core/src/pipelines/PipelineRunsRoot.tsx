@@ -1,6 +1,4 @@
 import {gql} from '@apollo/client';
-import {NonIdealState} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
 import {useFeatureFlags} from '../app/Flags';
@@ -18,6 +16,7 @@ import {Box} from '../ui/Box';
 import {CursorPaginationControls} from '../ui/CursorControls';
 import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
+import {NonIdealState} from '../ui/NonIdealState';
 import {Page} from '../ui/Page';
 import {TagWIP} from '../ui/TagWIP';
 import {TokenizingFieldValue} from '../ui/TokenizingField';
@@ -105,7 +104,7 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
             if (pipelineRunsOrError.__typename !== 'PipelineRuns') {
               return (
                 <NonIdealState
-                  icon={IconNames.ERROR}
+                  icon="error"
                   title="Query Error"
                   description={pipelineRunsOrError.message}
                 />

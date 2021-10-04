@@ -23,6 +23,7 @@ export const AssetValueGraph: React.FC<{
   if (!props.data) {
     return <span />;
   }
+
   let labels: React.ReactText[] | undefined = undefined;
   let xHover = props.xHover;
   if (props.data.xAxis === 'partition') {
