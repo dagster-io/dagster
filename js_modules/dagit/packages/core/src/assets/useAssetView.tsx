@@ -2,7 +2,7 @@ import * as React from 'react';
 
 const ASSET_VIEW_KEY = 'AssetViewPreference';
 
-type View = 'flat' | 'directory';
+export type View = 'flat' | 'directory';
 
 type Output = [View, (update: View) => void];
 

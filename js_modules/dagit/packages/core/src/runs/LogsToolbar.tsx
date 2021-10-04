@@ -1,10 +1,11 @@
-import {Button, ButtonGroup, Checkbox, IconName} from '@blueprintjs/core';
+import {Button, Checkbox, IconName} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {useCopyToClipboard} from '../app/browser';
 import {Box} from '../ui/Box';
+import {ButtonGroup} from '../ui/ButtonGroup';
 import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {MenuItemWIP} from '../ui/Menu';
@@ -61,20 +62,14 @@ export const LogsToolbar: React.FC<ILogsToolbarProps> = (props) => {
   } = props;
   return (
     <LogsToolbarContainer>
-      <ButtonGroup>
-        <Button
-          icon="properties"
-          title="Structured event logs"
-          active={logType === LogType.structured}
-          onClick={() => onSetLogType(LogType.structured)}
-        />
-        <Button
-          icon="console"
-          title="Raw compute logs"
-          active={logType !== LogType.structured}
-          onClick={() => onSetLogType(LogType.stdout)}
-        />
-      </ButtonGroup>
+      <ButtonGroup
+        activeItems={new Set([logType])}
+        buttons={[
+          {id: LogType.structured, icon: 'list', tooltip: 'Structured event logs'},
+          {id: LogType.stdout, icon: 'wysiwyg', tooltip: 'Raw compute logs'},
+        ]}
+        onClick={(id) => onSetLogType(id)}
+      />
       <LogsToolbarDivider />
       {logType === 'structured' ? (
         <StructuredLogToolbar filter={filter} onSetFilter={onSetFilter} steps={steps} />
