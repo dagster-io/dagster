@@ -1,8 +1,7 @@
-import {NonIdealState} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
 import React from 'react';
 
 import {useFeatureFlags} from '../app/Flags';
+import {NonIdealState} from '../ui/NonIdealState';
 
 export const NonIdealPipelineQueryResult: React.FC<{
   result:
@@ -27,7 +26,7 @@ export const NonIdealPipelineQueryResult: React.FC<{
   if (result.__typename === 'PipelineSnapshotNotFoundError') {
     return (
       <NonIdealState
-        icon={IconNames.FLOW_BRANCH}
+        icon="error"
         title={flagPipelineModeTuples ? 'Job snapshot not found' : 'Pipeline snapshot not found'}
         description={result.message}
       />
@@ -36,7 +35,7 @@ export const NonIdealPipelineQueryResult: React.FC<{
   if (result.__typename === 'PipelineNotFoundError') {
     return (
       <NonIdealState
-        icon={IconNames.FLOW_BRANCH}
+        icon="error"
         title={flagPipelineModeTuples ? 'Job not found' : 'Pipeline not found'}
         description={result.message}
       />
@@ -52,9 +51,7 @@ export const NonIdealPipelineQueryResult: React.FC<{
     );
   }
   if (result.__typename === 'PythonError') {
-    return (
-      <NonIdealState icon={IconNames.ERROR} title="Query Error" description={result.message} />
-    );
+    return <NonIdealState icon="error" title="Query Error" description={result.message} />;
   }
   return <span />;
 };

@@ -1,4 +1,4 @@
-import {Checkbox, NonIdealState} from '@blueprintjs/core';
+import {Checkbox} from '@blueprintjs/core';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -14,6 +14,7 @@ import {ColorsWIP} from '../ui/Colors';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
+import {NonIdealState} from '../ui/NonIdealState';
 import {Spinner} from '../ui/Spinner';
 import {SplitPanelContainer} from '../ui/SplitPanelContainer';
 
@@ -761,7 +762,11 @@ export const GanttChartLoadingState = ({runId}: {runId: string}) => (
     <SplitPanelContainer
       identifier="gantt-split"
       axis="horizontal"
-      first={<NonIdealState icon={<Spinner purpose="section" />} />}
+      first={
+        <div style={{margin: 'auto', marginTop: 100}}>
+          <Spinner purpose="section" />
+        </div>
+      }
       firstInitialPercent={70}
       second={
         <GanttStatusPanel
@@ -783,7 +788,7 @@ export const QueuedState = ({runId}: {runId: string}) => (
       axis="horizontal"
       first={
         <NonIdealState
-          icon="time"
+          icon="arrow_forward"
           description="This run is currently queued."
           action={<Link to={`/instance/runs?q=status%3AQUEUED`}>View queued runs</Link>}
         />

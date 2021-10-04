@@ -1,5 +1,4 @@
 import {gql, useQuery} from '@apollo/client';
-import {NonIdealState} from '@blueprintjs/core';
 import * as querystring from 'query-string';
 import * as React from 'react';
 import {useHistory, useLocation} from 'react-router-dom';
@@ -10,6 +9,7 @@ import {useFeatureFlags} from '../app/Flags';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {ColorsWIP} from '../ui/Colors';
 import {Loading} from '../ui/Loading';
+import {NonIdealState} from '../ui/NonIdealState';
 import {SplitPanelContainer} from '../ui/SplitPanelContainer';
 import {
   SuggestionProvider,
@@ -230,6 +230,7 @@ const SolidsRootWithData: React.FC<Props & {usedSolids: Solid[]}> = (props) => {
             </SolidDetailScrollContainer>
           ) : (
             <NonIdealState
+              icon="no-results"
               title={flagPipelineModeTuples ? 'No op selected' : 'No solid selected'}
               description={
                 flagPipelineModeTuples

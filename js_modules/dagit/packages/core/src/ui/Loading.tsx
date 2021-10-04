@@ -1,9 +1,8 @@
 import {QueryResult} from '@apollo/client';
-import {NonIdealState} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
 import {Box} from './Box';
+import {NonIdealState} from './NonIdealState';
 import {Spinner} from './Spinner';
 
 interface ILoadingProps<TData> {
@@ -44,7 +43,7 @@ export const Loading = <TData extends Record<string, any>>(props: ILoadingProps<
     console.error(error);
     return (
       <Box padding={64} flex={{justifyContent: 'center'}}>
-        <NonIdealState icon={IconNames.ERROR} title="GraphQL Error - see console for details" />
+        <NonIdealState icon="error" title="GraphQL Error - see console for details" />
       </Box>
     );
   }

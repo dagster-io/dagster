@@ -1,5 +1,5 @@
 import {gql, useQuery, useMutation} from '@apollo/client';
-import {NonIdealState, Button, Intent} from '@blueprintjs/core';
+import {Button, Intent} from '@blueprintjs/core';
 import qs from 'qs';
 import * as React from 'react';
 import {useHistory, Link} from 'react-router-dom';
@@ -31,6 +31,7 @@ import {CursorPaginationControls} from '../ui/CursorControls';
 import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
 import {MenuItemWIP, MenuWIP} from '../ui/Menu';
+import {NonIdealState} from '../ui/NonIdealState';
 import {Popover} from '../ui/Popover';
 import {Table} from '../ui/Table';
 import {TagWIP} from '../ui/TagWIP';
@@ -88,7 +89,7 @@ export const InstanceBackfills = () => {
           if (!partitionBackfillsOrError.results.length) {
             return (
               <NonIdealState
-                icon="multi-select"
+                icon="no-results"
                 title="No backfills found"
                 description={<p>This instance does not have any backfill jobs.</p>}
               />

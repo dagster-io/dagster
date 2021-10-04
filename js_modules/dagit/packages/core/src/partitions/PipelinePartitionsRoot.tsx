@@ -1,5 +1,4 @@
 import {gql, useQuery} from '@apollo/client';
-import {NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -8,6 +7,7 @@ import {explorerPathFromString, useStripSnapshotFromPath} from '../pipelines/Pip
 import {useJobTitle} from '../pipelines/useJobTitle';
 import {Box} from '../ui/Box';
 import {Loading} from '../ui/Loading';
+import {NonIdealState} from '../ui/NonIdealState';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -49,7 +49,7 @@ export const PipelinePartitionsRoot: React.FC<Props> = (props) => {
           return (
             <Wrapper>
               <NonIdealState
-                icon="multi-select"
+                icon="error"
                 title="Partitions"
                 description={partitionSetsOrError.message}
               />
@@ -61,7 +61,7 @@ export const PipelinePartitionsRoot: React.FC<Props> = (props) => {
           return (
             <Wrapper>
               <NonIdealState
-                icon="multi-select"
+                icon="error"
                 title="Partitions"
                 description={
                   <p>

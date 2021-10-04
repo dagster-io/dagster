@@ -1,6 +1,4 @@
 import {gql, useQuery} from '@apollo/client';
-import {NonIdealState} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
 import React from 'react';
 import styled from 'styled-components/macro';
 
@@ -13,6 +11,7 @@ import {PipelineExplorerSolidHandleFragment} from '../../pipelines/types/Pipelin
 import {METADATA_ENTRY_FRAGMENT} from '../../runs/MetadataEntry';
 import {ColorsWIP} from '../../ui/Colors';
 import {Loading} from '../../ui/Loading';
+import {NonIdealState} from '../../ui/NonIdealState';
 import {SplitPanelContainer} from '../../ui/SplitPanelContainer';
 import {repoAddressToSelector} from '../repoAddressToSelector';
 import {RepoAddress} from '../types';
@@ -72,7 +71,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
     <Loading allowStaleData queryResult={queryResult}>
       {({repositoryOrError}) => {
         if (repositoryOrError.__typename !== 'Repository') {
-          return <NonIdealState icon={IconNames.ERROR} title="Query Error" />;
+          return <NonIdealState icon="error" title="Query Error" />;
         }
 
         const graphData = buildGraphData(repositoryOrError, explorerPath.pipelineName);
@@ -80,7 +79,11 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
 
         if (hasCycles) {
           return (
-            <NonIdealState title="Cycle detected" description="Assets dependencies form a cycle" />
+            <NonIdealState
+              icon="error"
+              title="Cycle detected"
+              description="Assets dependencies form a cycle"
+            />
           );
         }
 
@@ -93,6 +96,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
         if (!Object.keys(graphData.nodes).length) {
           return (
             <NonIdealState
+              icon="no-results"
               title="No assets defined"
               description="No assets defined using the @asset definition"
             />

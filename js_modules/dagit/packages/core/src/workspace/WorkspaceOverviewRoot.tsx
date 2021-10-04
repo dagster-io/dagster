@@ -1,4 +1,3 @@
-import {NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -6,6 +5,7 @@ import {useFeatureFlags} from '../app/Flags';
 import {Box} from '../ui/Box';
 import {Group} from '../ui/Group';
 import {LoadingSpinner} from '../ui/Loading';
+import {NonIdealState} from '../ui/NonIdealState';
 import {Page} from '../ui/Page';
 import {PageHeader} from '../ui/PageHeader';
 import {Table} from '../ui/Table';
@@ -29,7 +29,7 @@ export const WorkspaceOverviewRoot = () => {
     if (error) {
       return (
         <NonIdealState
-          icon="cube"
+          icon="error"
           title="Error loading repositories"
           description="Could not load repositories in this workspace."
         />
@@ -39,7 +39,7 @@ export const WorkspaceOverviewRoot = () => {
     if (!options.length) {
       return (
         <NonIdealState
-          icon="cube"
+          icon="visibility"
           title="Empty workspace"
           description="There are no repositories in this workspace."
         />

@@ -1,4 +1,4 @@
-import {Button, NonIdealState} from '@blueprintjs/core';
+import {Button} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import React from 'react';
 
@@ -10,6 +10,7 @@ import {ButtonLink} from '../ui/ButtonLink';
 import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
+import {NonIdealState} from '../ui/NonIdealState';
 import {Table} from '../ui/Table';
 import {TagWIP} from '../ui/TagWIP';
 import {Caption} from '../ui/Text';
@@ -110,7 +111,7 @@ export const RepositoryLocationsList = () => {
   }
 
   if (!locationEntries.length) {
-    return <NonIdealState icon="cube" title="No repository locations!" />;
+    return <NonIdealState icon="error" title="No repository locations!" />;
   }
 
   return (

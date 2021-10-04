@@ -1,6 +1,4 @@
 import {gql, useQuery} from '@apollo/client';
-import {NonIdealState} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link, RouteComponentProps} from 'react-router-dom';
@@ -15,6 +13,7 @@ import {ColorsWIP} from '../ui/Colors';
 import {CursorPaginationControls} from '../ui/CursorControls';
 import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
+import {NonIdealState} from '../ui/NonIdealState';
 import {Page} from '../ui/Page';
 import {PageHeader} from '../ui/PageHeader';
 import {Tab, Tabs} from '../ui/Tabs';
@@ -163,7 +162,7 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
               if (pipelineRunsOrError.__typename !== 'PipelineRuns') {
                 return (
                   <NonIdealState
-                    icon={IconNames.ERROR}
+                    icon="error"
                     title="Query Error"
                     description={pipelineRunsOrError.message}
                   />

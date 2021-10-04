@@ -1,6 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Button, NonIdealState} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
+import {Button} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import qs from 'query-string';
 import React from 'react';
@@ -12,6 +11,7 @@ import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
 import {DagsterTag} from '../runs/RunTag';
 import {StepEventStatus} from '../types/globalTypes';
 import {ColorsWIP} from '../ui/Colors';
+import {NonIdealState} from '../ui/NonIdealState';
 import {Spinner} from '../ui/Spinner';
 
 import {STEP_STATUS_COLORS} from './RunMatrixUtils';
@@ -59,7 +59,7 @@ export const PartitionRunListForStep: React.FunctionComponent<PartitionRunListFo
   if (data.pipelineRunsOrError.__typename !== 'PipelineRuns') {
     return (
       <NonIdealState
-        icon={IconNames.ERROR}
+        icon="error"
         title="Query Error"
         description={data.pipelineRunsOrError.message}
       />
