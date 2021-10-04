@@ -13,6 +13,7 @@ from dagster import (
     pipeline,
     solid,
 )
+from dagster.core.test_utils import default_mode_def_for_test
 
 
 @solid(
@@ -71,12 +72,12 @@ def total(_, in_1, in_2, in_3, in_4):
         PresetDefinition(
             "multi",
             {
-                "intermediate_storage": {"filesystem": {}},
                 "execution": {"multiprocess": {}},
                 "solids": {"giver": {"config": [2, 2, 2, 2]}},
             },
         )
     ],
+    mode_defs=[default_mode_def_for_test],
 )
 def sleepy_pipeline():
     giver_res = giver()

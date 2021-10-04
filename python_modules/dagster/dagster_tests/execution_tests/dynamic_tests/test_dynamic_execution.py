@@ -4,12 +4,10 @@ from dagster import (
     DynamicOutputDefinition,
     Field,
     InputDefinition,
-    ModeDefinition,
     Output,
     OutputDefinition,
     composite_solid,
     execute_pipeline,
-    fs_io_manager,
     pipeline,
     reconstructable,
     solid,
@@ -17,7 +15,7 @@ from dagster import (
 from dagster.core.errors import DagsterExecutionStepNotFoundError
 from dagster.core.execution.api import create_execution_plan, reexecute_pipeline
 from dagster.core.execution.plan.state import KnownExecutionState
-from dagster.core.test_utils import instance_for_test
+from dagster.core.test_utils import default_mode_def_for_test, instance_for_test
 from dagster.utils import merge_dicts
 
 
@@ -78,7 +76,7 @@ def dynamic_echo(_, nums):
         yield DynamicOutput(value=x, mapping_key=str(x))
 
 
-@pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})])
+@pipeline(mode_defs=[default_mode_def_for_test])
 def dynamic_pipeline():
 
     numbers = emit(num_range())
@@ -87,7 +85,7 @@ def dynamic_pipeline():
     echo(n)  # test transitive downstream of collect
 
 
-@pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})])
+@pipeline(mode_defs=[default_mode_def_for_test])
 def fan_repeat():
     one = emit(num_range()).map(multiply_by_two)
     two = dynamic_echo(one.collect()).map(multiply_by_two).map(echo)

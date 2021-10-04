@@ -1,6 +1,14 @@
 import os
 
-from dagster import ModeDefinition, executor, pipeline, reconstructable, resource, solid
+from dagster import (
+    ModeDefinition,
+    executor,
+    fs_io_manager,
+    pipeline,
+    reconstructable,
+    resource,
+    solid,
+)
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.host_mode import execute_run_host_mode
@@ -33,8 +41,12 @@ def solid_that_uses_adder_resource(context, number):
 
 @pipeline(
     mode_defs=[
-        ModeDefinition(name="add_one", resource_defs={"adder": add_one_resource}),
-        ModeDefinition(name="add_two", resource_defs={"adder": add_two_resource}),
+        ModeDefinition(
+            name="add_one", resource_defs={"adder": add_one_resource, "io_manager": fs_io_manager}
+        ),
+        ModeDefinition(
+            name="add_two", resource_defs={"adder": add_two_resource, "io_manager": fs_io_manager}
+        ),
     ]
 )
 def pipeline_with_mode():
@@ -73,7 +85,6 @@ def test_host_run_worker():
     with instance_for_test() as instance:
         run_config = {
             "solids": {"solid_that_uses_adder_resource": {"inputs": {"number": {"value": 4}}}},
-            "intermediate_storage": {"filesystem": {}},
             "execution": {"multiprocess": None},
         }
         execution_plan = create_execution_plan(
@@ -119,7 +130,6 @@ def test_custom_executor_fn():
     with instance_for_test() as instance:
         run_config = {
             "solids": {"solid_that_uses_adder_resource": {"inputs": {"number": {"value": 4}}}},
-            "intermediate_storage": {"filesystem": {}},
         }
         execution_plan = create_execution_plan(
             pipeline_with_mode,

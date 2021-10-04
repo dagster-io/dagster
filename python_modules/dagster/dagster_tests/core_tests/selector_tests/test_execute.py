@@ -111,8 +111,7 @@ def test_execute_pipeline_iterator_with_solid_selection_query():
 
 def test_reexecute_pipeline_with_step_selection_single_clause():
     instance = DagsterInstance.ephemeral()
-    run_config = {"intermediate_storage": {"filesystem": {}}}
-    pipeline_result_full = execute_pipeline(foo_pipeline, run_config=run_config, instance=instance)
+    pipeline_result_full = execute_pipeline(foo_pipeline, instance=instance)
     assert pipeline_result_full.success
     assert pipeline_result_full.result_for_solid("add_one").output_value() == 7
     assert len(pipeline_result_full.solid_result_list) == 5
@@ -120,7 +119,6 @@ def test_reexecute_pipeline_with_step_selection_single_clause():
     reexecution_result_full = reexecute_pipeline(
         foo_pipeline,
         parent_run_id=pipeline_result_full.run_id,
-        run_config=run_config,
         instance=instance,
     )
 
@@ -131,7 +129,6 @@ def test_reexecute_pipeline_with_step_selection_single_clause():
     reexecution_result_up = reexecute_pipeline(
         foo_pipeline,
         parent_run_id=pipeline_result_full.run_id,
-        run_config=run_config,
         instance=instance,
         step_selection=["*add_nums"],
     )
@@ -142,7 +139,6 @@ def test_reexecute_pipeline_with_step_selection_single_clause():
     reexecution_result_down = reexecute_pipeline(
         foo_pipeline,
         parent_run_id=pipeline_result_full.run_id,
-        run_config=run_config,
         instance=instance,
         step_selection=["add_nums++"],
     )
@@ -152,8 +148,7 @@ def test_reexecute_pipeline_with_step_selection_single_clause():
 
 def test_reexecute_pipeline_with_step_selection_multi_clauses():
     instance = DagsterInstance.ephemeral()
-    run_config = {"intermediate_storage": {"filesystem": {}}}
-    pipeline_result_full = execute_pipeline(foo_pipeline, run_config=run_config, instance=instance)
+    pipeline_result_full = execute_pipeline(foo_pipeline, instance=instance)
     assert pipeline_result_full.success
     assert pipeline_result_full.result_for_solid("add_one").output_value() == 7
     assert len(pipeline_result_full.solid_result_list) == 5
@@ -161,7 +156,6 @@ def test_reexecute_pipeline_with_step_selection_multi_clauses():
     result_multi_disjoint = reexecute_pipeline(
         foo_pipeline,
         parent_run_id=pipeline_result_full.run_id,
-        run_config=run_config,
         instance=instance,
         step_selection=["return_one", "return_two", "add_nums+"],
     )
@@ -171,7 +165,6 @@ def test_reexecute_pipeline_with_step_selection_multi_clauses():
     result_multi_overlap = reexecute_pipeline(
         foo_pipeline,
         parent_run_id=pipeline_result_full.run_id,
-        run_config=run_config,
         instance=instance,
         step_selection=["return_one++", "return_two", "add_nums+"],
     )
@@ -185,7 +178,6 @@ def test_reexecute_pipeline_with_step_selection_multi_clauses():
         reexecute_pipeline(
             foo_pipeline,
             parent_run_id=pipeline_result_full.run_id,
-            run_config=run_config,
             instance=instance,
             step_selection=["a", "*add_nums"],
         )
@@ -197,7 +189,6 @@ def test_reexecute_pipeline_with_step_selection_multi_clauses():
         reexecute_pipeline(
             foo_pipeline,
             parent_run_id=pipeline_result_full.run_id,
-            run_config=run_config,
             instance=instance,
             step_selection=["a+", "*b"],
         )
@@ -205,8 +196,7 @@ def test_reexecute_pipeline_with_step_selection_multi_clauses():
 
 def test_reexecute_pipeline_iterator():
     instance = DagsterInstance.ephemeral()
-    run_config = {"intermediate_storage": {"filesystem": {}}}
-    pipeline_result_full = execute_pipeline(foo_pipeline, run_config=run_config, instance=instance)
+    pipeline_result_full = execute_pipeline(foo_pipeline, instance=instance)
     assert pipeline_result_full.success
     assert pipeline_result_full.result_for_solid("add_one").output_value() == 7
     assert len(pipeline_result_full.solid_result_list) == 5
@@ -215,7 +205,6 @@ def test_reexecute_pipeline_iterator():
         reexecute_pipeline_iterator(
             foo_pipeline,
             parent_run_id=pipeline_result_full.run_id,
-            run_config=run_config,
             instance=instance,
         )
     )
@@ -226,7 +215,6 @@ def test_reexecute_pipeline_iterator():
         reexecute_pipeline_iterator(
             foo_pipeline,
             parent_run_id=pipeline_result_full.run_id,
-            run_config=run_config,
             instance=instance,
             step_selection=["*add_nums"],
         )
