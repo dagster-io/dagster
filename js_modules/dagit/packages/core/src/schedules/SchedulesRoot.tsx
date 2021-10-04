@@ -1,5 +1,4 @@
 import {useQuery} from '@apollo/client';
-import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
