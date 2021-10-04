@@ -79,6 +79,7 @@ export const Icons = {
   sort_by_alpha: require('./icon-svgs/sort_by_alpha.svg'),
   source: require('./icon-svgs/source.svg'),
   speed: require('./icon-svgs/speed.svg'),
+  splitscreen: require('./icon-svgs/splitscreen.svg'),
   star: require('./icon-svgs/star.svg'),
   table_view: require('./icon-svgs/table_view.svg'),
   timer: require('./icon-svgs/timer.svg'),
