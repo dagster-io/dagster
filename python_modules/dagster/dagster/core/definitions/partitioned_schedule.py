@@ -9,10 +9,10 @@ from .partition import (
     PartitionSetDefinition,
     PartitionedConfig,
     ScheduleTimeBasedPartitionsDefinition,
-    ScheduleType,
+    ,
 )
 from .run_request import SkipReason
-from .schedule import ScheduleDefinition, ScheduleEvaluationContext
+from .schedule import ScheduleDefinition, ScheduleEvaluationContext, ScheduleType
 from .time_window_partitions import TimeWindow, TimeWindowPartitionsDefinition
 
 

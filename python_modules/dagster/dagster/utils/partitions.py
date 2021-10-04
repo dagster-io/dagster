@@ -187,6 +187,8 @@ def create_offset_partition_selector(
 
         valid_partitions = partition_set_def.get_partitions(context.scheduled_execution_time)
 
+        print("VALID PARTITIONS: " + str([partition.name for partition in valid_partitions]))
+
         if not context.scheduled_execution_time:
             if not valid_partitions:
                 return no_partitions_skip_reason

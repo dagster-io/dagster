@@ -126,6 +126,34 @@ class ScheduleExecutionData(NamedTuple):
     skip_message: Optional[str]
 
 
+# Should this be ScheduleIntervalType? Is it clear the difference between a DAILY (interval-based)
+# schedule and a daily cron string schedule? (The differences are subtle, mostly around how they
+# handle things like DST boundaries)
+@whitelist_for_serdes
+class ScheduleType(Enum):
+    HOURLY = "HOURLY"
+    DAILY = "DAILY"
+    WEEKLY = "WEEKLY"
+    MONTHLY = "MONTHLY"
+    CRON_BASED = "CRON_BASED"  # Arbitrary cron string
+
+
+def derive_schedule_type_from_cron(self, cron_string):
+    # For back-compat for schedules / snapshots that don't set schedule type
+    if cron_schedule.endswith(" * *") and all(is_numeric[0:3]):  # monthly
+        return ScheduleType.MONTHLY
+    elif (
+        all(is_numeric[0:2]) and is_numeric[4] and cron_parts[2] == "*" and cron_parts[3] == "*"
+    ):  # weekly
+        return ScheduleType.WEEKLY
+    elif all(is_numeric[0:2]) and cron_schedule.endswith(" * * *"):  # daily
+        return ScheduleType.DAILY
+    elif is_numeric[0] and cron_schedule.endswith(" * * * *"):  # hourly
+        return ScheduleType.HOURLY
+    else:
+        return ScheduleType.CRON_BASED
+
+
 class ScheduleDefinition:
     """Define a schedule that targets a pipeline
 
@@ -166,6 +194,7 @@ class ScheduleDefinition:
             with DagsterDaemonScheduler, and must be set when using that scheduler.
         description (Optional[str]): A human-readable description of the schedule.
         job (Optional[Union[GraphDefinition, PipelineDefinition]]): Experimental
+        schedule_type (Optional[ScheduleType])
     """
 
     def __init__(
@@ -301,6 +330,10 @@ class ScheduleDefinition:
                         schedule_name=name, timezone=self._execution_timezone
                     )
                 )
+
+    @property
+    def schedule_type(self):
+        return ScheduleType.CRON_BASED
 
     def __call__(self, *args, **kwargs):
         if not self._run_config_fn:

@@ -182,6 +182,7 @@ def launch_scheduled_runs_for_schedule(
         logger.info(f"Evaluating schedule `{schedule_name}` at the following times: {times}")
 
     for schedule_time in tick_times:
+        logger.info("HERE WE GO: " + str(schedule_time))
         schedule_timestamp = schedule_time.timestamp()
         if latest_tick and latest_tick.timestamp == schedule_timestamp:
             tick = latest_tick
@@ -263,9 +264,13 @@ def _schedule_runs_at_time(
     )
     yield
 
+    if schedule_execution_data.skip_message:
+        logger.info(f"Skip reason: " + str(schedule_execution_data.skip_message))
+        tick_context.update_state(JobTickStatus.SKIPPED)
+        return
+
     if not schedule_execution_data.run_requests:
         logger.info(f"No run requests returned for {external_schedule.name}, skipping")
-
         # Update tick to skipped state and return
         tick_context.update_state(JobTickStatus.SKIPPED)
         return
@@ -289,6 +294,7 @@ def _schedule_runs_at_time(
                     f"Run {run.run_id} already created for this execution of {external_schedule.name}"
                 )
         else:
+            logger.info("HERE A WE GO!")
             run, errors = _create_scheduler_run(
                 instance,
                 logger,

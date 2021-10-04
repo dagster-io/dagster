@@ -387,6 +387,10 @@ class InProcessRepositoryLocation(RepositoryLocation):
         check.str_param(schedule_name, "schedule_name")
         check.opt_inst_param(scheduled_execution_time, "scheduled_execution_time", PendulumDateTime)
 
+        import sys
+
+        sys.stderr.write("TIMESTAMP: " + str(scheduled_execution_time.timestamp()) + "\n")
+
         return get_external_schedule_execution(
             self._recon_repo,
             instance_ref=instance.get_ref(),

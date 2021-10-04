@@ -171,7 +171,7 @@ class ExternalPresetData(
 class ExternalScheduleData(
     namedtuple(
         "_ExternalScheduleData",
-        "name cron_schedule pipeline_name solid_selection mode environment_vars partition_set_name execution_timezone description",
+        "name cron_schedule pipeline_name solid_selection mode environment_vars partition_set_name execution_timezone description schedule_type",
     )
 ):
     def __new__(
@@ -185,6 +185,7 @@ class ExternalScheduleData(
         partition_set_name,
         execution_timezone,
         description=None,
+        schedule_type=None,
     ):
         return super(ExternalScheduleData, cls).__new__(
             cls,
@@ -197,6 +198,7 @@ class ExternalScheduleData(
             partition_set_name=check.opt_str_param(partition_set_name, "partition_set_name"),
             execution_timezone=check.opt_str_param(execution_timezone, "execution_timezone"),
             description=check.opt_str_param(description, "description"),
+            schedule_type=check.opt_str_param(schedule_type, "schedule_type"),
         )
 
 
@@ -535,6 +537,7 @@ def external_schedule_data_from_def(schedule_def):
         else None,
         execution_timezone=schedule_def.execution_timezone,
         description=schedule_def.description,
+        schedule_type=schedule_def.schedule_type,
     )
 
 

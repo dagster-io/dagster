@@ -11,9 +11,9 @@ from .partition import (
     Partition,
     PartitionedConfig,
     PartitionsDefinition,
-    ScheduleType,
     get_cron_schedule,
 )
+from .schedule import ScheduleType
 
 
 class TimeWindow(NamedTuple):
@@ -56,6 +56,7 @@ class TimeWindowPartitionsDefinition(
         start_timestamp = pendulum.instance(self.start, tz=self.timezone).timestamp()
         iterator = schedule_execution_time_iterator(
             start_timestamp=start_timestamp,
+            schedule_type=schedule_type,
             cron_schedule=get_cron_schedule(schedule_type=self.schedule_type),
             execution_timezone=self.timezone,
         )

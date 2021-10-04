@@ -1,3 +1,4 @@
 load_from:
-  - python_module: dagster_test.toys.repo
+  - grpc_server:
+      port: 4000
   - python_module: dagster_test.toys.graph_job_repos

@@ -8,8 +8,8 @@ from dagster.core.definitions.partition import (
     PartitionScheduleDefinition,
     PartitionSetDefinition,
     ScheduleTimeBasedPartitionsDefinition,
-    ScheduleType,
 )
+from dagster.core.definitions.schedule import ScheduleType
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.utils.partitions import (
     DEFAULT_DATE_FORMAT,

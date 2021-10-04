@@ -43,7 +43,7 @@ from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 from dagster.utils import merge_dicts
 from dagster.utils.partitions import DEFAULT_DATE_FORMAT
 
-_COUPLE_DAYS_AGO = datetime.datetime(year=2019, month=2, day=25)
+_COUPLE_DAYS_AGO = datetime.datetime(year=2019, month=10, day=31)
 
 
 def _throw(_context):
@@ -102,6 +102,15 @@ def partitionless_schedule(context):
     return _solid_config(context.scheduled_execution_time)
 
 
+@schedule(
+    pipeline_name="the_pipeline",
+    cron_schedule="0 */1 * * *",
+    execution_timezone="Australia/Sydney",
+)
+def partitionless_schedule_sydney(context):
+    return _solid_config(context.scheduled_execution_time)
+
+
 # Schedule that runs on a different day in Central Time vs UTC
 @daily_schedule(
     pipeline_name="the_pipeline",
@@ -145,7 +154,7 @@ def daily_eastern_time_schedule(date):
 @daily_schedule(
     pipeline_name="the_pipeline",
     start_date=_COUPLE_DAYS_AGO,
-    end_date=datetime.datetime(year=2019, month=3, day=1),
+    #    end_date=datetime.datetime(year=2019, month=3, day=1),
     execution_timezone="UTC",
 )
 def simple_temporary_schedule(date):
@@ -352,6 +361,7 @@ def the_repo():
         define_multi_run_schedule(),
         define_multi_run_schedule_with_missing_run_key(),
         partitionless_schedule,
+        partitionless_schedule_sydney,
         large_schedule,
         two_step_pipeline,
         manual_partition_schedule,

@@ -22,7 +22,7 @@ from ..storage.pipeline_run import PipelineRun
 from ..storage.tags import check_tags
 from .mode import DEFAULT_MODE_NAME
 from .run_request import RunRequest, SkipReason
-from .schedule import ScheduleDefinition, ScheduleEvaluationContext
+from .schedule import ScheduleDefinition, ScheduleEvaluationContext, ScheduleType
 from .utils import check_valid_name
 
 DEFAULT_DATE_FORMAT = "%Y-%m-%d"
@@ -60,7 +60,11 @@ def schedule_partition_range(
     timezone: Optional[str],
     execution_time_to_partition_fn: Callable,
     current_time: Optional[datetime],
+    schedule_type=None,
 ) -> List[Partition[datetime]]:
+    if not schedule_type:
+        schedule_type = derive_schedule_type_from_cron(cron_schedule)
+
     if end and start > end:
         raise DagsterInvariantViolationError(
             'Selected date range start "{start}" is after date range end "{end}'.format(
@@ -104,11 +108,21 @@ def schedule_partition_range(
     end_timestamp = end_partition_time.timestamp()
 
     partitions: List[Partition[datetime]] = []
-    for next_time in schedule_execution_time_iterator(_start.timestamp(), cron_schedule, tz):
+    for next_time in schedule_execution_time_iterator(
+        _start.timestamp(), schedule_type, cron_schedule, tz
+    ):
+
+        if current_time:
+            print("NEXT TIME: " + str(next_time.isoformat()))
 
         partition_time = execution_time_to_partition_fn(next_time)
 
+        if current_time:
+            print("PARTITION TIME: " + str(partition_time.isoformat()))
+
         if partition_time.timestamp() > end_timestamp:
+            if current_time:
+                print("BREAKING! ")
             break
 
         if partition_time.timestamp() < _start.timestamp():
@@ -117,13 +131,6 @@ def schedule_partition_range(
         partitions.append(Partition(value=partition_time, name=partition_time.strftime(fmt)))
 
     return partitions
-
-
-class ScheduleType(Enum):
-    HOURLY = "HOURLY"
-    DAILY = "DAILY"
-    WEEKLY = "WEEKLY"
-    MONTHLY = "MONTHLY"
 
 
 class PartitionsDefinition(ABC, Generic[T]):
@@ -615,6 +622,13 @@ class PartitionScheduleDefinition(ScheduleDefinition):
 
     def get_partition_set(self):
         return self._partition_set
+
+    def schedule_type(self):
+        return (
+            self._partition_set.schedule_type
+            if isinstance(self._partition_set, ScheduleTimeBasedPartitionsDefinition)
+            else ScheduleType.CRON_BASED
+        )
 
 
 class PartitionedConfig(Generic[T]):

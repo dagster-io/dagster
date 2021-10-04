@@ -216,6 +216,12 @@ def get_external_schedule_execution(
     )
     definition = recon_repo.get_definition()
     schedule_def = definition.get_schedule_def(schedule_name)
+
+    import sys
+
+    sys.stderr.write("INCOMING TIMESTAMP: " + str(scheduled_execution_timestamp) + "\n")
+    sys.stderr.write("INCOMING TIMEZONE: " + str(scheduled_execution_timezone) + "\n")
+
     scheduled_execution_time = (
         pendulum.from_timestamp(
             scheduled_execution_timestamp,
@@ -223,6 +229,10 @@ def get_external_schedule_execution(
         )
         if scheduled_execution_timestamp
         else None
+    )
+
+    sys.stderr.write(
+        "SCHEDULED EXECUTION TIME: " + str(scheduled_execution_time.isoformat()) + "\n"
     )
 
     with ScheduleEvaluationContext(instance_ref, scheduled_execution_time) as schedule_context:

@@ -42,6 +42,10 @@ def sync_get_external_schedule_execution_data_grpc(
 
     origin = repository_handle.get_external_origin()
 
+    import sys
+
+    sys.stderr.write("TIMESTAMP: " + str(scheduled_execution_time.timestamp()) + "\n")
+
     result = check.inst(
         deserialize_json_to_dagster_namedtuple(
             api_client.external_schedule_execution(

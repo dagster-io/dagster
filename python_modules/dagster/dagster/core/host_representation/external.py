@@ -467,9 +467,14 @@ class ExternalSchedule:
             ),
         )
 
+    @property
+    def schedule_type(self):
+        return self._external_schedule_data.schedule_type
+
     def execution_time_iterator(self, start_timestamp):
+
         return schedule_execution_time_iterator(
-            start_timestamp, self.cron_schedule, self.execution_timezone
+            start_timestamp, self.cron_schedule, self.execution_timezone, self.schedule_type
         )
 
 
