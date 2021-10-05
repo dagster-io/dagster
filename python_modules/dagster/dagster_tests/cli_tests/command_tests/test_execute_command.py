@@ -14,9 +14,9 @@ from dagster.utils import file_relative_path, merge_dicts
 from .test_cli_commands import (
     non_existant_python_origin_target_args,
     pipeline_or_job_python_origin_contexts,
-    valid_pipeline_python_origin_target_cli_args,
-    valid_job_python_origin_target_cli_args,
     runner_pipeline_or_job_execute,
+    valid_job_python_origin_target_cli_args,
+    valid_pipeline_python_origin_target_cli_args,
 )
 
 

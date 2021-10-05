@@ -665,7 +665,7 @@ def get_external_pipeline_or_job_from_external_repo(
                 "Must provide {flag} as there is more than one pipeline/job "
                 "in {repository}. Options are: {pipelines}."
             ).format(
-                flag='--job' if using_job_op_graph_apis else '--pipeline',
+                flag="--job" if using_job_op_graph_apis else "--pipeline",
                 repository=external_repo.name,
                 pipelines=_sorted_quoted(external_pipelines.keys()),
             )

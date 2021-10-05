@@ -1,55 +1,8 @@
-import os
-import re
-import sys
-import textwrap
 import warnings
 
 import click
-import pendulum
-import yaml
-from dagster import PipelineDefinition
 from dagster import __version__ as dagster_version
-from dagster import check, execute_pipeline
-from dagster.cli.workspace.cli_target import (
-    WORKSPACE_TARGET_WARNING,
-    get_external_pipeline_or_job_from_external_repo,
-    get_external_pipeline_or_job_from_kwargs,
-    get_external_repository_from_kwargs,
-    get_external_repository_from_repo_location,
-    get_pipeline_or_job_python_origin_from_kwargs,
-    get_repository_location_from_workspace,
-    get_workspace_from_kwargs,
-    job_target_argument,
-    python_pipeline_or_job_config_argument,
-    python_job_target_argument,
-    repository_target_argument,
-)
-from dagster.core.definitions.pipeline_base import IPipeline
-from dagster.core.errors import DagsterBackfillFailedError, DagsterInvariantViolationError
-from dagster.core.execution.api import create_execution_plan
-from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill, create_backfill_run
-from dagster.core.host_representation import (
-    ExternalPipeline,
-    ExternalRepository,
-    RepositoryHandle,
-    RepositoryLocation,
-)
-from dagster.core.host_representation.external_data import ExternalPartitionSetExecutionParamData
-from dagster.core.host_representation.selector import PipelineSelector
-from dagster.core.instance import DagsterInstance
-from dagster.core.instance.config import is_dagster_home_set
-from dagster.core.snap import PipelineSnapshot, SolidInvocationSnap
-from dagster.core.storage.tags import MEMOIZED_RUN_TAG
-from dagster.core.telemetry import log_external_repo_stats, telemetry_wrapper
-from dagster.core.utils import make_new_backfill_id
-from dagster.seven import IS_WINDOWS, JSONDecodeError, json
-from dagster.utils import DEFAULT_WORKSPACE_YAML_FILENAME, load_yaml_from_glob_list, merge_dicts
-from dagster.utils.error import serializable_error_info_from_exc_info
-from dagster.utils.hosted_user_process import recon_pipeline_from_origin
-from dagster.utils.indenting_printer import IndentingPrinter
-from dagster.utils.interrupts import capture_interrupts
-from tabulate import tabulate
-
+from dagster import check
 from dagster.cli.pipeline import (
     execute_list_command,
     execute_print_command,
@@ -57,8 +10,21 @@ from dagster.cli.pipeline import (
     add_step_to_table,
     execute_execute_command,
 )
-
-from .config_scaffolder import scaffold_pipeline_config
+from dagster.cli.workspace.cli_target import (
+    WORKSPACE_TARGET_WARNING,
+    get_pipeline_or_job_python_origin_from_kwargs,
+    job_target_argument,
+    python_job_target_argument,
+    python_pipeline_or_job_config_argument,
+    repository_target_argument,
+)
+from dagster.core.execution.api import create_execution_plan
+from dagster.core.instance import DagsterInstance
+from dagster.core.instance.config import is_dagster_home_set
+from dagster.core.storage.tags import MEMOIZED_RUN_TAG
+from dagster.utils import DEFAULT_WORKSPACE_YAML_FILENAME
+from dagster.utils.hosted_user_process import recon_pipeline_from_origin
+from dagster.utils.interrupts import capture_interrupts
 
 
 @click.group(name="job")

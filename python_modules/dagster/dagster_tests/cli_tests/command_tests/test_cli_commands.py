@@ -10,20 +10,20 @@ import pytest
 from click.testing import CliRunner
 from dagster import (
     ModeDefinition,
+    Out,
+    Output,
     Partition,
     PartitionSetDefinition,
     PresetDefinition,
     ScheduleDefinition,
+    String,
     execute_pipeline,
+    graph,
     lambda_solid,
     op,
     pipeline,
     repository,
     solid,
-    graph,
-    Output,
-    String,
-    Out,
 )
 from dagster.cli import ENV_PREFIX, cli
 from dagster.cli.job import job_execute_command
@@ -442,10 +442,10 @@ def non_existant_python_origin_target_args():
 
 
 def valid_pipeline_or_job_python_origin_target_args(using_job_op_graph_apis=False):
-    pipeline_or_job_name = 'qux' if using_job_op_graph_apis else 'foo'
-    pipeline_or_job_fn_name = 'qux_job' if using_job_op_graph_apis else 'foo_pipeline'
+    pipeline_or_job_name = "qux" if using_job_op_graph_apis else "foo"
+    pipeline_or_job_fn_name = "qux_job" if using_job_op_graph_apis else "foo_pipeline"
     pipeline_or_job_def_name = (
-        'define_qux_job' if using_job_op_graph_apis else 'define_foo_pipeline'
+        "define_qux_job" if using_job_op_graph_apis else "define_foo_pipeline"
     )
     return [
         {
