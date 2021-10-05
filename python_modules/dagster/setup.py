@@ -73,6 +73,7 @@ if __name__ == "__main__":
             "pendulum",
             "protobuf>=3.13.0",  # ensure version we require is >= that with which we generated the proto code (set in dev-requirements)
             "python-dateutil",
+            "pytz",
             "rx>=1.6,<2",  # https://github.com/dagster-io/dagster/issues/4089
             "tabulate",
             "tqdm",
