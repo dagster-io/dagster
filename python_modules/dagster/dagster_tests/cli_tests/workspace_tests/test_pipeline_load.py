@@ -102,6 +102,6 @@ def test_must_provide_name_to_multi_pipeline():
 
     assert result.exit_code == 2
     assert (
-        """Must provide --pipeline as there is more than one pipeline in """
+        """Must provide --pipeline as there is more than one pipeline/job in """
         """multi_pipeline. Options are: ['pipeline_one', 'pipeline_two']."""
     ) in result.stdout

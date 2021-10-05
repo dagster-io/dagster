@@ -92,7 +92,6 @@ def test_empty_execute_command():
         assert result.exit_code == 2
         assert "Must specify a python file or module name" in result.output
 
-        runner = CliRunner()
         result = runner.invoke(job_execute_command, [])
         assert result.exit_code == 2
         assert "Must specify a python file or module name" in result.output
@@ -280,6 +279,22 @@ def test_more_than_one_pipeline_or_job():
                     "attribute": None,
                 },
                 instance=instance,
+            )
+
+        with pytest.raises(
+            UsageError,
+            match=re.escape("Must provide --job as there is more than one pipeline/job in bar. "),
+        ):
+            execute_execute_command(
+                kwargs={
+                    "repository_yaml": None,
+                    "pipeline_or_job": None,
+                    "python_file": file_relative_path(__file__, "test_cli_commands.py"),
+                    "module_name": None,
+                    "attribute": None,
+                },
+                instance=instance,
+                using_job_op_graph_apis=True,
             )
 
 
