@@ -111,28 +111,29 @@ interface Props {
   size?: 16 | 20 | 24 | 48;
 }
 
-export const IconWIP = (props: Props) => {
+export const IconWIP = React.memo((props: Props) => {
   const {color = ColorsWIP.Dark, name, size = 16} = props;
   let img = Icons[name] || '';
   if (typeof img === 'object' && 'default' in img) {
     // in Dagit but not in Storybook due to webpack config differences
     img = img.default;
   }
-  return (
-    <IconWrapper
-      role="img"
-      $size={size}
-      aria-label={name}
-      style={{background: color, maskImage: `url('${img}')`}}
-    />
-  );
-};
+  return <IconWrapper role="img" $size={size} $img={img} $color={color} aria-label={name} />;
+});
 
-export const IconWrapper = styled.div<{$size: number}>`
+interface WrapperProps {
+  $color: string;
+  $size: number;
+  $img: string;
+}
+
+export const IconWrapper = styled.div<WrapperProps>`
+  background: ${(p) => p.$color};
   width: ${(p) => p.$size}px;
   height: ${(p) => p.$size}px;
   flex-shrink: 0;
   flex-grow: 0;
+  mask-image: url(${(p) => p.$img});
   mask-size: cover;
   object-fit: cover;
 `;
