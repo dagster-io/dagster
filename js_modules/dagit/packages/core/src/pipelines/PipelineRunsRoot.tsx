@@ -14,7 +14,6 @@ import {
 import {POLL_INTERVAL, useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {Box} from '../ui/Box';
 import {CursorPaginationControls} from '../ui/CursorControls';
-import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
 import {NonIdealState} from '../ui/NonIdealState';
 import {Page} from '../ui/Page';
