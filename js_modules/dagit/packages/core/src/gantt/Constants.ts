@@ -49,9 +49,11 @@ export enum GanttChartMode {
 
 export const MIN_SCALE = 0.0002;
 export const MAX_SCALE = 0.5;
-export const LEFT_INSET = 5;
-export const FLAT_INSET_FROM_PARENT = 15;
-export const BOX_HEIGHT = 30;
+export const LEFT_INSET = 16;
+export const TOP_INSET = 16;
+export const BOTTOM_INSET = 16;
+export const FLAT_INSET_FROM_PARENT = 16;
+export const BOX_HEIGHT = 34;
 export const BOX_MARGIN_Y = 5;
 export const BOX_SPACING_X = 20;
 export const BOX_WIDTH = 100;

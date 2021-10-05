@@ -141,7 +141,6 @@ export const LogsFilterInput: React.FC<Props> = (props) => {
         }
     }
   };
-
   return (
     <Popover
       isOpen={shown && suggestions.length > 0}
@@ -169,7 +168,6 @@ export const LogsFilterInput: React.FC<Props> = (props) => {
         onFocus={() => dispatch({type: 'show-popover'})}
         onBlur={() => dispatch({type: 'hide-popover'})}
         onKeyDown={onKeyDown}
-        style={{}}
       />
     </Popover>
   );
