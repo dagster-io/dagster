@@ -9,7 +9,7 @@ def create_file_handle_job(temp_file_handle):
 
     @job(resource_defs={"s3": s3_resource, "file_manager": s3_file_manager})
     def test():
-        return file_handle_to_s3(emit_temp_handle())
+        file_handle_to_s3(emit_temp_handle())
 
     return test
 
@@ -35,7 +35,7 @@ def test_successful_file_handle_to_s3(mock_s3_bucket):
 
     materializations = [
         event.step_materialization_data.materialization
-        for event in result.result_for_node("file_handle_to_s3").event_list
+        for event in result.events_for_node("file_handle_to_s3")
         if event.event_type == DagsterEventType.ASSET_MATERIALIZATION
     ]
     assert len(materializations) == 1
