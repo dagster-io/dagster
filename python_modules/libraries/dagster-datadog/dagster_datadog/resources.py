@@ -49,8 +49,8 @@ def datadog_resource(context):
 
         .. code-block:: python
 
-            @solid(required_resource_keys={'datadog'})
-            def datadog_solid(context):
+            @op(required_resource_keys={'datadog'})
+            def datadog_op(context):
                 dd = context.resources.datadog
 
                 dd.event('Man down!', 'This server needs assistance.')
@@ -70,13 +70,12 @@ def datadog_resource(context):
 
                 run_fn()
 
-            @pipeline(mode_defs=[ModeDefinition(resource_defs={'datadog': datadog_resource})])
-            def dd_pipeline():
-                datadog_solid()
+            @job(resource_defs={'datadog': datadog_resource})
+            def dd_job():
+                datadog_op()
 
-            result = execute_pipeline(
-                dd_pipeline,
-                {'resources': {'datadog': {'config': {'api_key': 'YOUR_KEY', 'app_key': 'YOUR_KEY'}}}},
+            result = dd_job.execute_in_process(
+                run_config={'resources': {'datadog': {'config': {'api_key': 'YOUR_KEY', 'app_key': 'YOUR_KEY'}}}}
             )
 
     """
