@@ -1,5 +1,4 @@
 import {gql} from '@apollo/client';
-import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import qs from 'qs';
 import React from 'react';
 import {Link} from 'react-router-dom';
@@ -8,6 +7,7 @@ import {Timestamp} from '../app/time/Timestamp';
 import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
 import {Group} from '../ui/Group';
+import {Tooltip} from '../ui/Tooltip';
 
 import {AssetLineageFragment} from './types/AssetLineageFragment';
 

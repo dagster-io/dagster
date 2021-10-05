@@ -1,5 +1,4 @@
 import {IconName} from '@blueprintjs/core';
-import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import React from 'react';
 import {Link, useRouteMatch} from 'react-router-dom';
 
@@ -16,6 +15,7 @@ import {Group} from '../ui/Group';
 import {PageHeader} from '../ui/PageHeader';
 import {Tab, Tabs} from '../ui/Tabs';
 import {Heading} from '../ui/Text';
+import {Tooltip} from '../ui/Tooltip';
 import {useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';

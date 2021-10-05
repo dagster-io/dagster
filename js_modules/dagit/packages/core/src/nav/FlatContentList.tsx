@@ -1,5 +1,4 @@
 import {gql, useQuery} from '@apollo/client';
-import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -8,6 +7,7 @@ import {InstigationStatus} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
 import {IconWIP} from '../ui/Icon';
+import {Tooltip} from '../ui/Tooltip';
 import {DagsterRepoOption} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';

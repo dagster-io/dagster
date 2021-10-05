@@ -72,7 +72,7 @@ module.exports = {
           },
           {
             name: '@blueprintjs/popover2',
-            importNames: ['Popover2'],
+            importNames: ['Popover2', 'Tooltip2'],
             message: 'Please use components in src/ui instead.',
           },
           {

@@ -1,4 +1,3 @@
-import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import React from 'react';
 
 import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
@@ -14,6 +13,7 @@ import {Spinner} from '../ui/Spinner';
 import {Table} from '../ui/Table';
 import {TagWIP} from '../ui/TagWIP';
 import {Caption} from '../ui/Text';
+import {Tooltip} from '../ui/Tooltip';
 
 import {RepositoryLocationNonBlockingErrorDialog} from './RepositoryLocationErrorDialog';
 import {WorkspaceContext} from './WorkspaceContext';
