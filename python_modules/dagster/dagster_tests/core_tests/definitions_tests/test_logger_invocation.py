@@ -1,8 +1,13 @@
 import logging
 
 import pytest
-from dagster import Field, build_init_logger_context, logger
-from dagster.core.errors import DagsterInvalidConfigError, DagsterInvalidInvocationError
+from dagster import Field, build_init_logger_context, logger, op, graph, pipeline, solid
+from dagster.check import CheckError
+from dagster.core.errors import (
+    DagsterInvalidConfigError,
+    DagsterInvalidInvocationError,
+    DagsterInvariantViolationError,
+)
 from dagster.core.utils import coerce_valid_log_level
 
 
@@ -101,3 +106,60 @@ def test_logger_mixed_config_defaults():
             logger_config={"bar_field": "not_using_default", "foo_field": "not_foo"}
         )
     )
+
+
+@solid
+def sample_solid():
+    return 1
+
+
+@pipeline
+def sample_pipeline():
+    sample_solid()
+
+
+@op
+def my_op():
+    return 1
+
+
+@graph
+def sample_graph():
+    my_op()
+
+
+def test_logger_pipeline_def():
+    @logger
+    def pipe_logger(init_context):
+        assert init_context.pipeline_def.name == "sample_pipeline"
+
+    pipe_logger(build_init_logger_context(pipeline_def=sample_pipeline))
+
+    with pytest.raises(AssertionError):
+        pipe_logger(build_init_logger_context(pipeline_def=sample_graph.to_job()))
+
+
+def test_logger_job_def():
+    @logger
+    def job_logger(init_context):
+        assert init_context.job_def.name == "sample_job"
+
+    job_logger(build_init_logger_context(job_def=sample_graph.to_job(name="sample_job")))
+    job_logger(build_init_logger_context(pipeline_def=sample_graph.to_job(name="sample_job")))
+
+    with pytest.raises(AssertionError):
+        job_logger(build_init_logger_context(job_def=sample_graph.to_job(name="foo")))
+
+
+def test_logger_both_def():
+    with pytest.raises(CheckError, match="pipeline_def and job_def"):
+        build_init_logger_context(pipeline_def=sample_pipeline, job_def=sample_graph.to_job())
+
+
+def test_logger_context_get_job_from_pipeline_fails():
+    @logger
+    def job_logger(init_context):
+        assert init_context.job_def.name == "sample_pipeline"
+
+    with pytest.raises(DagsterInvariantViolationError, match="Please use .pipeline_def instead."):
+        job_logger(build_init_logger_context(pipeline_def=sample_pipeline))
