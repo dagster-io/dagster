@@ -1,4 +1,3 @@
-import re
 import typing
 
 import pytest
@@ -200,11 +199,9 @@ def test_dict_type_loader_typing_fail():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=re.compile(
-            'Input "dict_input" in solid '
-            '"emit_dict" is not connected to the output of a previous solid and can not be loaded '
-            "from configuration, creating an impossible to execute pipeline. Possible solutions are:"
-        ),
+        match="Input 'dict_input' in solid "
+        "'emit_dict' is not connected to the output of a previous node and can not be loaded "
+        "from configuration, making it impossible to execute. Possible solutions are:",
     ):
         execute_solid(
             emit_dict,

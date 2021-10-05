@@ -2,4 +2,6 @@ from .solid import SolidDefinition
 
 
 class OpDefinition(SolidDefinition):
-    pass
+    @property
+    def node_type_str(self) -> str:
+        return "op"

@@ -73,7 +73,7 @@ class TestSolidSelections(NonLaunchableGraphQLContextTestMatrix):
         assert re.match(
             (
                 r".*DagsterInvalidSubsetError[\s\S]*"
-                r'add a dagster_type_loader for the type "InputTypeWithoutHydration"'
+                r"add a dagster_type_loader for the type 'InputTypeWithoutHydration'"
             ),
             result.data["runConfigSchemaOrError"]["message"],
         )

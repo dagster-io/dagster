@@ -46,8 +46,12 @@ class JobDefinition(PipelineDefinition):
             version_strategy=version_strategy,
         )
 
+    @property
+    def target_type(self):
+        return "job"
+
     def describe_target(self):
-        return f"job '{self.name}'"
+        return f"{self.target_type} '{self.name}'"
 
     def execute_in_process(
         self,

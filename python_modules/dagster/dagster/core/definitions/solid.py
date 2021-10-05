@@ -171,6 +171,10 @@ class SolidDefinition(NodeDefinition):
                 return solid_invocation_result(self, None, *args, **kwargs)
 
     @property
+    def node_type_str(self) -> str:
+        return "solid"
+
+    @property
     def compute_fn(self) -> Union[Callable[..., Any], "DecoratedSolidFunction"]:
         return self._compute_fn
 
@@ -333,9 +337,9 @@ class CompositeSolidDefinition(GraphDefinition):
         config_mapping = self._config_mapping
         if config_mapping is None:
             raise DagsterInvalidDefinitionError(
-                "Only composite solids utilizing config mapping can be pre-configured. The solid "
-                '"{graph_name}" does not have a config mapping, and thus has nothing to be '
-                "configured.".format(graph_name=self.name)
+                "Only composite solids utilizing config mapping can be pre-configured. The "
+                'composite solid "{graph_name}" does not have a config mapping, and thus has '
+                "nothing to be configured.".format(graph_name=self.name)
             )
 
         return CompositeSolidDefinition(
@@ -353,6 +357,10 @@ class CompositeSolidDefinition(GraphDefinition):
             tags=self.tags,
             positional_inputs=self.positional_inputs,
         )
+
+    @property
+    def node_type_str(self):
+        return "composite solid"
 
 
 def _check_io_managers_on_composite_solid(

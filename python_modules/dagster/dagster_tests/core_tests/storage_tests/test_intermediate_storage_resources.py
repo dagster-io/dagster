@@ -88,7 +88,7 @@ def test_resource_requirements_fail():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=r'"yup" is required by intermediate storage "storage_with_req"',
+        match=r"'yup' is required by intermediate storage storage_with_req",
     ):
 
         @pipeline(

@@ -1,4 +1,4 @@
-from abc import abstractmethod
+from abc import abstractmethod, abstractproperty
 from typing import TYPE_CHECKING
 
 from dagster import check
@@ -43,9 +43,16 @@ class NodeDefinition(NamedConfigurableDefinition):
             else list(map(lambda inp: inp.name, input_defs))
         )
 
+    @abstractproperty
+    def node_type_str(self):
+        raise NotImplementedError()
+
     @property
     def name(self):
         return self._name
+
+    def describe_node(self):
+        return f"{self.node_type_str} '{self.name}'"
 
     @property
     def description(self):
