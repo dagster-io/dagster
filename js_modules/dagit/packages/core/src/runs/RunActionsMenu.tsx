@@ -1,5 +1,4 @@
 import {gql, useLazyQuery, useMutation} from '@apollo/client';
-import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as qs from 'query-string';
 import * as React from 'react';
 
@@ -11,6 +10,7 @@ import {HighlightedCodeBlock} from '../ui/HighlightedCodeBlock';
 import {IconWIP} from '../ui/Icon';
 import {MenuDividerWIP, MenuItemWIP, MenuWIP} from '../ui/Menu';
 import {Popover} from '../ui/Popover';
+import {Tooltip} from '../ui/Tooltip';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 import {workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 

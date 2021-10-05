@@ -41,6 +41,7 @@ HEARTBEAT_CHECK_INTERVAL = 15
 
 DAEMON_GRPC_SERVER_RELOAD_INTERVAL = 60
 DAEMON_GRPC_SERVER_HEARTBEAT_TTL = 120
+DAEMON_GRPC_SERVER_STARTUP_TIMEOUT = 30
 
 
 def _sorted_quoted(strings):
@@ -58,6 +59,7 @@ def create_daemon_grpc_server_registry():
     return ProcessGrpcServerRegistry(
         reload_interval=DAEMON_GRPC_SERVER_RELOAD_INTERVAL,
         heartbeat_ttl=DAEMON_GRPC_SERVER_HEARTBEAT_TTL,
+        startup_timeout=DAEMON_GRPC_SERVER_STARTUP_TIMEOUT,
     )
 
 

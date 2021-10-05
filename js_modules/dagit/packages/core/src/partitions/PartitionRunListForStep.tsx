@@ -1,5 +1,4 @@
 import {gql, useQuery} from '@apollo/client';
-import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import qs from 'query-string';
 import React from 'react';
 import {Link} from 'react-router-dom';
@@ -12,6 +11,7 @@ import {StepEventStatus} from '../types/globalTypes';
 import {ColorsWIP} from '../ui/Colors';
 import {NonIdealState} from '../ui/NonIdealState';
 import {Spinner} from '../ui/Spinner';
+import {Tooltip} from '../ui/Tooltip';
 
 import {STEP_STATUS_COLORS} from './RunMatrixUtils';
 import {

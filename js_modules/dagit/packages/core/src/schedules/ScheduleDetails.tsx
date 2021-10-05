@@ -1,4 +1,3 @@
-import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 
 import {useFeatureFlags} from '../app/Flags';
@@ -17,6 +16,7 @@ import {PageHeader} from '../ui/PageHeader';
 import {RefreshableCountdown} from '../ui/RefreshableCountdown';
 import {TagWIP} from '../ui/TagWIP';
 import {Code, Heading, Mono} from '../ui/Text';
+import {Tooltip} from '../ui/Tooltip';
 import {RepoAddress} from '../workspace/types';
 
 import {SchedulePartitionStatus} from './SchedulePartitionStatus';

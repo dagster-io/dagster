@@ -1,4 +1,3 @@
-import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -14,6 +13,7 @@ import {CursorHistoryControls} from '../ui/CursorControls';
 import {DialogWIP} from '../ui/Dialog';
 import {IconWIP} from '../ui/Icon';
 import {Spinner} from '../ui/Spinner';
+import {Tooltip} from '../ui/Tooltip';
 import {RepoAddress} from '../workspace/types';
 
 import {PartitionGraphSet} from './PartitionGraphSet';

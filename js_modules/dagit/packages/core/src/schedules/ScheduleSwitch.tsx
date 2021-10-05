@@ -1,10 +1,10 @@
 import {gql, useMutation} from '@apollo/client';
-import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 
 import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
 import {InstigationStatus} from '../types/globalTypes';
 import {SwitchWithoutLabel} from '../ui/SwitchWithoutLabel';
+import {Tooltip} from '../ui/Tooltip';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -78,17 +78,21 @@ export const ScheduleSwitch: React.FC<Props> = (props) => {
   const lacksPermission = (running && !canStopRunningSchedule) || (!running && !canStartSchedule);
   const disabled = toggleOffInFlight || toggleOnInFlight || lacksPermission;
 
-  return (
-    <Tooltip content={lacksPermission ? DISABLED_MESSAGE : undefined}>
-      <SwitchWithoutLabel
-        checked={running || toggleOnInFlight}
-        large={large}
-        disabled={disabled}
-        innerLabelChecked="on"
-        innerLabel="off"
-        onChange={onStatusChange}
-      />
-    </Tooltip>
+  const switchElement = (
+    <SwitchWithoutLabel
+      checked={running || toggleOnInFlight}
+      large={large}
+      disabled={disabled}
+      innerLabelChecked="on"
+      innerLabel="off"
+      onChange={onStatusChange}
+    />
+  );
+
+  return lacksPermission ? (
+    <Tooltip content={DISABLED_MESSAGE}>{switchElement}</Tooltip>
+  ) : (
+    switchElement
   );
 };
 

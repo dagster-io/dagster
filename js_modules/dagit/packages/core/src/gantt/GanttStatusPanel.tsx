@@ -1,5 +1,3 @@
-import {Position} from '@blueprintjs/core';
-import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -9,6 +7,7 @@ import {IRunMetadataDict, IStepState} from '../runs/RunMetadataProvider';
 import {StepSelection} from '../runs/StepSelection';
 import {ColorsWIP} from '../ui/Colors';
 import {Spinner} from '../ui/Spinner';
+import {Tooltip} from '../ui/Tooltip';
 
 import {GanttChartMode} from './Constants';
 import {boxStyleFor} from './GanttChartLayout';
@@ -134,7 +133,7 @@ const StepItem: React.FunctionComponent<{
             preventOverflow: {enabled: false},
             flip: {enabled: false},
           }}
-          position={Position.BOTTOM}
+          position="bottom"
           content={
             'Unknown step state. Pipeline execution completed without step execution completion.'
           }

@@ -1,5 +1,4 @@
 import {gql} from '@apollo/client';
-import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 
 import {AppContext} from '../app/AppContext';
@@ -12,6 +11,7 @@ import {Group} from '../ui/Group';
 import {HighlightedCodeBlock} from '../ui/HighlightedCodeBlock';
 import {IconWIP} from '../ui/Icon';
 import {MetadataTable} from '../ui/MetadataTable';
+import {Tooltip} from '../ui/Tooltip';
 
 import {RunTags} from './RunTags';
 import {TimeElapsed} from './TimeElapsed';

@@ -1,6 +1,5 @@
 import {useMutation} from '@apollo/client';
 import {Switch} from '@blueprintjs/core';
-import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 
 import {useConfirmation} from '../app/CustomConfirmationProvider';
@@ -20,6 +19,7 @@ import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {Table} from '../ui/Table';
 import {Subheading} from '../ui/Text';
+import {Tooltip} from '../ui/Tooltip';
 import {RepositoryOriginInformation} from '../workspace/RepositoryInformation';
 
 import {TickTag} from './InstigationTick';
@@ -251,7 +251,7 @@ const ScheduleStateRow: React.FunctionComponent<{
           }}
         >
           {cronSchedule ? (
-            <Tooltip position={'bottom'} content={cronSchedule}>
+            <Tooltip position="bottom" content={cronSchedule}>
               {humanCronString(cronSchedule)}
             </Tooltip>
           ) : (

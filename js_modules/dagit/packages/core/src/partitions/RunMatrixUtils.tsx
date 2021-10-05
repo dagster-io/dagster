@@ -1,8 +1,8 @@
-import {Tooltip2} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {ColorsWIP} from '../ui/Colors';
+import {Tooltip} from '../ui/Tooltip';
 
 export const STEP_STATUS_COLORS = {
   SUCCESS: '#009857',
@@ -248,9 +248,9 @@ export const TopLabelTilted: React.FC<{label: string}> = ({label}) => {
   );
 
   return tooltip ? (
-    <Tooltip2 placement="bottom" content={label}>
+    <Tooltip placement="bottom" content={label}>
       {content}
-    </Tooltip2>
+    </Tooltip>
   ) : (
     content
   );
