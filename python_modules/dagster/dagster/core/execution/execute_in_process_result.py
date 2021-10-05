@@ -43,6 +43,11 @@ class ExecuteInProcessResult:
 
         return step_events
 
+    @property
+    def run_id(self) -> str:
+        """str: The run id for the executed run"""
+        return self._run_id
+
     def events_for_node(self, node_name: str) -> List[DagsterEvent]:
         """Retreives all dagster events for a specific node.
 
