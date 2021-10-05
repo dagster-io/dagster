@@ -12,7 +12,8 @@ type Props = React.DetailedHTMLProps<
   HTMLInputElement
 > & {
   checked: boolean;
-  label: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  label?: React.ReactNode;
   indeterminate?: boolean;
   format?: 'check' | 'star' | 'switch';
   fillColor?: string;
@@ -148,7 +149,7 @@ const CheckIcon: React.FC<IconProps> = ({checked, indeterminate, fillColor}) => 
   </svg>
 );
 
-const Base: React.FC<Props> = ({
+const Base = ({
   id,
   checked,
   label,
@@ -158,7 +159,7 @@ const Base: React.FC<Props> = ({
   indeterminate = false,
   fillColor = ColorsWIP.Gray800,
   ...rest
-}) => {
+}: Props) => {
   const uid = useRef(id || uniqueId('checkbox-'));
   const Component: React.FC<IconProps> = {star: StarIcon, check: CheckIcon, switch: SwitchIcon}[
     format
@@ -167,12 +168,12 @@ const Base: React.FC<Props> = ({
   return (
     <label htmlFor={uid.current} className={className}>
       <input
+        {...rest}
         type="checkbox"
         id={uid.current}
         tabIndex={0}
         checked={checked}
         disabled={disabled}
-        {...rest}
       />
       <Component
         disabled={disabled}
@@ -192,7 +193,9 @@ export const Checkbox = styled(Base)`
   align-items: center;
   color: ${({disabled}) => (disabled ? DISABLED_COLOR : ColorsWIP.Gray900)};
   cursor: pointer;
-  gap: 13px;
+  gap: 8px;
+  margin-top: -3px;
+  margin-left: -3px;
 
   input[type='checkbox'] {
     position: absolute;

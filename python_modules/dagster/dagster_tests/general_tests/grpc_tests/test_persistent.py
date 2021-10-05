@@ -264,6 +264,44 @@ def test_crash_during_load():
             process.terminate()
 
 
+def test_load_timeout():
+    port = find_free_port()
+    python_file = file_relative_path(__file__, "grpc_repo_that_times_out.py")
+
+    subprocess_args = [
+        "dagster",
+        "api",
+        "grpc",
+        "--port",
+        str(port),
+        "--python-file",
+        python_file,
+    ]
+
+    process = subprocess.Popen(subprocess_args, stdout=subprocess.PIPE)
+
+    timeout_exception = None
+
+    try:
+        try:
+            wait_for_grpc_server(
+                process,
+                DagsterGrpcClient(port=port, host="localhost"),
+                subprocess_args,
+                timeout=0.01,
+            )
+            assert False, "server should have timed out"
+        except Exception as e:  # pylint: disable=broad-except
+            timeout_exception = e
+
+    finally:
+        process.terminate()
+
+    assert "Timed out waiting for gRPC server to start" in str(timeout_exception)
+    assert "Most recent connection error: " in str(timeout_exception)
+    assert "StatusCode.UNAVAILABLE" in str(timeout_exception)
+
+
 def test_lazy_load_with_error():
     port = find_free_port()
     python_file = file_relative_path(__file__, "grpc_repo_with_error.py")

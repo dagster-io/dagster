@@ -1,10 +1,11 @@
 import {QueryResult} from '@apollo/client';
-import {Colors, Tabs, Tab} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {QueryCountdown} from '../app/QueryCountdown';
 import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
+import {Tab, Tabs} from '../ui/Tabs';
 
 const POLL_INTERVAL = 15000;
 
@@ -18,7 +19,8 @@ export const InstanceTabs: React.FC<Props> = (props) => {
   return (
     <Box
       flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}
-      border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}
+      border={{side: 'bottom', width: 1, color: ColorsWIP.Gray100}}
+      margin={{horizontal: 24}}
     >
       <Tabs selectedTabId={tab}>
         <Tab id="health" title={<Link to="/instance/health">Health</Link>} />

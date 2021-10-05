@@ -1,5 +1,6 @@
-import {Button, Colors} from '@blueprintjs/core';
-import {Popover2 as Popover, Tooltip2 as Tooltip} from '@blueprintjs/popover2';
+// eslint-disable-next-line no-restricted-imports
+import {Button} from '@blueprintjs/core';
+import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -11,6 +12,7 @@ import {ButtonLink} from '../ui/ButtonLink';
 import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {IconWIP, IconWrapper} from '../ui/Icon';
+import {Popover} from '../ui/Popover';
 import {Spinner} from '../ui/Spinner';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
@@ -35,7 +37,7 @@ export const RepoNavItem: React.FC<Props> = (props) => {
 
   const summary = () => {
     if (allRepos.length === 0) {
-      return <span style={{color: Colors.GRAY1}}>No repositories</span>;
+      return <span style={{color: ColorsWIP.Gray600}}>No repositories</span>;
     }
     if (allRepos.length === 1) {
       return <SingleRepoSummary repoAddress={allRepos[0].repoAddress} />;
@@ -45,7 +47,7 @@ export const RepoNavItem: React.FC<Props> = (props) => {
       return <SingleRepoSummary repoAddress={selectedRepo.repoAddress} />;
     }
     return (
-      <span style={{color: Colors.LIGHT_GRAY3, fontWeight: 500, userSelect: 'none'}}>
+      <span style={{color: ColorsWIP.Gray100, fontWeight: 500, userSelect: 'none'}}>
         {`${selected.size} of ${allRepos.length} shown`}
       </span>
     );
@@ -53,12 +55,12 @@ export const RepoNavItem: React.FC<Props> = (props) => {
 
   return (
     <Box
-      background={Colors.DARK_GRAY1}
-      border={{side: 'horizontal', width: 1, color: Colors.DARK_GRAY4}}
+      background={ColorsWIP.Gray900}
+      border={{side: 'horizontal', width: 1, color: ColorsWIP.Gray800}}
       padding={{vertical: 8, horizontal: 12}}
     >
       <Box flex={{justifyContent: 'space-between'}}>
-        <div style={{color: Colors.GRAY3, fontSize: '10.5px', textTransform: 'uppercase'}}>
+        <div style={{color: ColorsWIP.Gray400, fontSize: '10.5px', textTransform: 'uppercase'}}>
           Repository
         </div>
         {allRepos.length > 1 ? (
@@ -66,17 +68,17 @@ export const RepoNavItem: React.FC<Props> = (props) => {
             canEscapeKeyClose
             isOpen={open}
             onInteraction={onInteraction}
-            modifiers={{offset: {enabled: true, options: {offset: [0, 24]}}}}
+            modifiers={{offset: {enabled: true, options: {offset: [0, 16]}}}}
             placement="right"
             popoverClassName="bp3-dark"
             content={
               <div style={{maxWidth: '600px', borderRadius: '3px'}}>
                 <Box
                   padding={{vertical: 2, left: 8, right: 4}}
-                  background={Colors.DARK_GRAY3}
+                  background={ColorsWIP.Gray800}
                   flex={{alignItems: 'center', justifyContent: 'space-between'}}
                 >
-                  <div style={{fontSize: '12px', color: Colors.GRAY3}}>
+                  <div style={{fontSize: '12px', color: ColorsWIP.Gray400}}>
                     {`Repositories (${selected.size} of ${allRepos.length} selected)`}
                   </div>
                   <Button icon="cross" small minimal onClick={() => setOpen(false)} />
@@ -87,7 +89,7 @@ export const RepoNavItem: React.FC<Props> = (props) => {
               </div>
             }
           >
-            <ButtonLink color={Colors.GRAY5} underline="hover">
+            <ButtonLink color={ColorsWIP.Gray200} underline="hover">
               <span style={{fontSize: '11px', position: 'relative', top: '-4px'}}>Filter</span>
             </ButtonLink>
           </Popover>
@@ -147,7 +149,7 @@ const SingleRepoSummary: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) 
 };
 
 const SingleRepoNameLink = styled(Link)`
-  color: ${Colors.LIGHT_GRAY3};
+  color: ${ColorsWIP.Gray100};
   display: block;
   max-width: 234px;
   overflow-x: hidden;
@@ -155,13 +157,13 @@ const SingleRepoNameLink = styled(Link)`
   transition: color 100ms linear;
 
   && {
-    color: ${Colors.LIGHT_GRAY3};
+    color: ${ColorsWIP.Gray100};
     font-weight: 500;
   }
 
   &&:hover,
   &&:active {
-    color: ${Colors.LIGHT_GRAY5};
+    color: ${ColorsWIP.Gray50};
     text-decoration: none;
   }
 `;

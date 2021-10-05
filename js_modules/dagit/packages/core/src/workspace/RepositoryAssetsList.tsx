@@ -1,10 +1,11 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors, NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
+import {NonIdealState} from '../ui/NonIdealState';
 import {Page} from '../ui/Page';
 import {Table} from '../ui/Table';
 
@@ -51,7 +52,6 @@ export const RepositoryAssetsList: React.FC<Props> = (props) => {
   });
 
   const repo = data?.repositoryOrError;
-  console.log(repo);
   const assetsForTable = React.useMemo(() => {
     if (!repo || repo.__typename !== 'Repository') {
       return null;
@@ -73,6 +73,7 @@ export const RepositoryAssetsList: React.FC<Props> = (props) => {
   if (error || !assetsForTable) {
     return (
       <NonIdealState
+        icon="error"
         title="Unable to load graphs"
         description={`Could not load graphs for ${repoAddressAsString(repoAddress)}`}
       />
@@ -82,6 +83,7 @@ export const RepositoryAssetsList: React.FC<Props> = (props) => {
   if (!assetsForTable.length) {
     return (
       <NonIdealState
+        icon="error"
         title="No assets found"
         description={`No @asset definitions for ${repoAddressAsString(repoAddress)}`}
       />
@@ -111,6 +113,6 @@ export const RepositoryAssetsList: React.FC<Props> = (props) => {
 };
 
 const Description = styled.div`
-  color: ${Colors.GRAY3};
+  color: ${ColorsWIP.Gray400};
   font-size: 12px;
 `;

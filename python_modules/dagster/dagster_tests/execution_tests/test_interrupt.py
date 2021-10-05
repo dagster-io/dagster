@@ -18,7 +18,7 @@ from dagster import (
     solid,
 )
 from dagster.core.errors import DagsterExecutionInterruptedError, raise_execution_interrupts
-from dagster.core.test_utils import instance_for_test
+from dagster.core.test_utils import default_mode_def_for_test, instance_for_test
 from dagster.utils import safe_tempfile_path, send_interrupt
 from dagster.utils.interrupts import capture_interrupts, check_captured_interrupt
 
@@ -46,7 +46,7 @@ def should_not_start(_context):
     assert False
 
 
-@pipeline
+@pipeline(mode_defs=[default_mode_def_for_test])
 def write_files_pipeline():
     write_a_file.alias("write_1")()
     write_a_file.alias("write_2")()
@@ -119,7 +119,6 @@ def test_interrupt_multiproc():
                         "write_4": {"config": {"tempfile": file_4}},
                     },
                     "execution": {"multiprocess": {"config": {"max_concurrent": 4}}},
-                    "intermediate_storage": {"filesystem": {}},
                 },
                 instance=instance,
             ):

@@ -1,10 +1,10 @@
-import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {ConfigEditorHelpContext} from '../configeditor/ConfigEditorHelpContext';
 import {isHelpContextEqual} from '../configeditor/isHelpContextEqual';
 import {ConfigTypeSchema, TypeData} from '../typeexplorer/ConfigTypeSchema';
+import {ColorsWIP} from '../ui/Colors';
 
 interface ConfigEditorHelpProps {
   context: ConfigEditorHelpContext | null;
@@ -32,7 +32,7 @@ const AutocompletionsNote = styled.div`
   font-size: 0.75rem;
   text-align: center;
   padding: 4px;
-  border-top: 1px solid ${Colors.LIGHT_GRAY1};
+  border-top: 1px solid ${ColorsWIP.Gray200};
   background: rgba(238, 238, 238, 0.9);
   color: rgba(0, 0, 0, 0.7);
 `;

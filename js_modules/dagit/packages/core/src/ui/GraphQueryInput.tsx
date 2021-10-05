@@ -1,5 +1,4 @@
-import {Button, Colors, InputGroup, Intent, Menu, MenuItem, Popover} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
+import {InputGroup, Intent} from '@blueprintjs/core';
 import isEqual from 'lodash/isEqual';
 import uniq from 'lodash/uniq';
 import * as React from 'react';
@@ -7,6 +6,13 @@ import styled from 'styled-components/macro';
 
 import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {dynamicKeyWithoutIndex, isDynamicStep} from '../gantt/DynamicStepSupport';
+
+import {Box} from './Box';
+import {ButtonWIP} from './Button';
+import {ColorsWIP} from './Colors';
+import {IconWIP} from './Icon';
+import {MenuItemWIP, MenuWIP} from './Menu';
+import {Popover} from './Popover';
 
 interface GraphQueryInputProps {
   intent?: Intent;
@@ -81,7 +87,6 @@ export const GraphQueryInput = React.memo(
     }, [props.value]);
 
     const lastClause = /(\*?\+*)([\w\d\[\]_-]+)(\+*\*?)$/.exec(pendingValue);
-    let menu: JSX.Element | undefined = undefined;
 
     const [, prefix, lastElementName, suffix] = lastClause || [];
     const suggestions = React.useMemo(() => {
@@ -103,25 +108,6 @@ export const GraphQueryInput = React.memo(
       const preceding = lastClause ? pendingValue.substr(0, lastClause.index) : '';
       setPendingValue(preceding + prefix + suggestion + suffix);
     };
-
-    if (suggestions.length && focused) {
-      menu = (
-        <Menu style={{width: props.width || '30vw'}}>
-          {suggestions.slice(0, 15).map((suggestion) => (
-            <StyledMenuItem
-              key={suggestion}
-              text={suggestion}
-              active={active ? active.text === suggestion : false}
-              onMouseDown={(e: React.MouseEvent<any>) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onConfirmSuggestion(suggestion);
-              }}
-            />
-          ))}
-        </Menu>
-      );
-    }
 
     React.useEffect(() => {
       if (!active && suggestions.length) {
@@ -182,8 +168,31 @@ export const GraphQueryInput = React.memo(
     };
 
     return (
-      <>
-        <Popover minimal={true} isOpen={menu !== undefined} position={'bottom'} content={menu}>
+      <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+        <Popover
+          isOpen={focused}
+          position="top-left"
+          content={
+            suggestions.length ? (
+              <MenuWIP style={{width: props.width || '30vw'}}>
+                {suggestions.slice(0, 15).map((suggestion) => (
+                  <MenuItemWIP
+                    key={suggestion}
+                    text={suggestion}
+                    active={active ? active.text === suggestion : false}
+                    onMouseDown={(e: React.MouseEvent<any>) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onConfirmSuggestion(suggestion);
+                    }}
+                  />
+                ))}
+              </MenuWIP>
+            ) : (
+              <div />
+            )
+          }
+        >
           <GraphQueryInputField
             small={props.small}
             disabled={props.disabled}
@@ -212,20 +221,18 @@ export const GraphQueryInput = React.memo(
         </Popover>
         {props.presets &&
           (props.presets.find((p) => p.value === pendingValue) ? (
-            <Button
-              style={{marginLeft: 5}}
-              icon={IconNames.LAYERS}
-              rightIcon={IconNames.CROSS}
-              onClick={() => {
-                props.onChange('*');
-              }}
+            <ButtonWIP
+              icon={<IconWIP name="layers" />}
+              rightIcon={<IconWIP name="cancel" />}
+              onClick={() => props.onChange('*')}
             />
           ) : (
             <Popover
+              position="top"
               content={
-                <Menu>
+                <MenuWIP>
                   {props.presets.map((preset) => (
-                    <MenuItem
+                    <MenuItemWIP
                       key={preset.name}
                       text={preset.name}
                       onMouseDown={(e: React.MouseEvent<any>) => {
@@ -235,17 +242,16 @@ export const GraphQueryInput = React.memo(
                       }}
                     />
                   ))}
-                </Menu>
+                </MenuWIP>
               }
             >
-              <Button
-                style={{marginLeft: 5}}
-                icon={IconNames.LAYERS}
-                rightIcon={IconNames.CARET_UP}
+              <ButtonWIP
+                icon={<IconWIP name="layers" />}
+                rightIcon={<IconWIP name="expand_less" />}
               />
             </Popover>
           ))}
-      </>
+      </Box>
     );
   },
 
@@ -263,12 +269,7 @@ const GraphQueryInputField = styled(InputGroup)`
   }
 
   &.has-step {
-    box-shadow: 0 0 0 2px ${Colors.GOLD3};
+    box-shadow: 0 0 0 2px ${ColorsWIP.Yellow500};
     border-radius: 3px;
   }
-`;
-
-const StyledMenuItem = styled(MenuItem)`
-  font-size: 13px;
-  line-height: 15px;
 `;

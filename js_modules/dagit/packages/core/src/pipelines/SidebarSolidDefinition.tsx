@@ -1,7 +1,6 @@
 import {gql} from '@apollo/client';
 import * as React from 'react';
 
-import {AppContext} from '../app/AppContext';
 import {useFeatureFlags} from '../app/Flags';
 import {breakOnUnderscores} from '../app/Util';
 import {pluginForMetadata} from '../plugins';
@@ -49,8 +48,6 @@ export const SidebarSolidDefinition: React.FC<SidebarSolidDefinitionProps> = (pr
   const Plugin = pluginForMetadata(definition.metadata);
   const isComposite = definition.__typename === 'CompositeSolidDefinition';
   const configField = definition.__typename === 'SolidDefinition' ? definition.configField : null;
-
-  const {rootServerURI} = React.useContext(AppContext);
 
   const inputMappings: SolidMappingTable = {};
   const outputMappings: SolidMappingTable = {};
@@ -103,11 +100,7 @@ export const SidebarSolidDefinition: React.FC<SidebarSolidDefinitionProps> = (pr
       {definition.metadata && Plugin && Plugin.SidebarComponent && (
         <SidebarSection title={'Metadata'}>
           <Box padding={12}>
-            <Plugin.SidebarComponent
-              definition={definition}
-              rootServerURI={rootServerURI}
-              repoAddress={repoAddress}
-            />
+            <Plugin.SidebarComponent definition={definition} repoAddress={repoAddress} />
           </Box>
         </SidebarSection>
       )}
@@ -126,7 +119,7 @@ export const SidebarSolidDefinition: React.FC<SidebarSolidDefinitionProps> = (pr
           <Box padding={12}>
             {[...requiredResources].sort().map((requirement) => (
               <ResourceContainer key={requirement.resourceKey}>
-                <IconWIP name="layers" color={ColorsWIP.Gray700} />
+                <IconWIP name="resource" color={ColorsWIP.Gray700} />
                 <ResourceHeader>{requirement.resourceKey}</ResourceHeader>
               </ResourceContainer>
             ))}

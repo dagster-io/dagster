@@ -1,8 +1,6 @@
-import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {useFeatureFlags} from '../app/Flags';
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
 import {IconWIP} from '../ui/Icon';
@@ -27,10 +25,8 @@ export const PipelineReference: React.FC<Props> = ({
   snapshotId,
   showIcon,
 }) => {
-  const {flagPipelineModeTuples} = useFeatureFlags();
-
   const modeLabel =
-    mode === 'default' ? null : <span style={{color: Colors.GRAY3}}>{`: ${mode}`}</span>;
+    mode === 'default' ? null : <span style={{color: ColorsWIP.Gray400}}>{`: ${mode}`}</span>;
 
   const pipeline =
     pipelineHrefContext === 'repo-unknown' ? (
@@ -61,10 +57,7 @@ export const PipelineReference: React.FC<Props> = ({
     <Box flex={{direction: 'row', alignItems: 'center'}}>
       {showIcon && (
         <Box margin={{right: 8}}>
-          <IconWIP
-            color={ColorsWIP.Gray300}
-            name={flagPipelineModeTuples ? 'workspaces' : 'schema'}
-          />
+          <IconWIP color={ColorsWIP.Gray400} name={'job'} />
         </Box>
       )}
       <span>

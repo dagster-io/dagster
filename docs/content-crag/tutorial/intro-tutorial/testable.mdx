@@ -29,10 +29,7 @@ object="PipelineExecutionResult" />, whose methods let us investigate, in detail
 def test_diamond():
     res = diamond.execute_in_process()
     assert res.success
-    highest_protein_cereal = res.result_for_node(
-        "find_highest_protein_cereal"
-    ).output_value()
-    assert highest_protein_cereal == "Special K"
+    assert res.output_for_node("find_highest_protein_cereal") == "Special K"
 ```
 
 Now you can use pytest, or your test runner of choice, to run unit tests as you develop your data applications.

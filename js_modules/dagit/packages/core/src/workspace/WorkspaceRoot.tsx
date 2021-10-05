@@ -1,4 +1,3 @@
-import {NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 import {Redirect, Route, RouteComponentProps, Switch} from 'react-router-dom';
 
@@ -7,8 +6,8 @@ import {PipelineRoot} from '../pipelines/PipelineRoot';
 import {ScheduleRoot} from '../schedules/ScheduleRoot';
 import {SensorRoot} from '../sensors/SensorRoot';
 import {MainContent} from '../ui/MainContent';
+import {NonIdealState} from '../ui/NonIdealState';
 
-import {AssetGraphRoot} from './AssetGraphRoot';
 import {GraphRoot} from './GraphRoot';
 import {WorkspaceContext} from './WorkspaceContext';
 import {WorkspaceOverviewRoot} from './WorkspaceOverviewRoot';
@@ -20,13 +19,13 @@ const RepoRouteContainer: React.FC<{repoPath: string}> = (props) => {
   const {repoPath} = props;
   const workspaceState = React.useContext(WorkspaceContext);
   const addressForPath = repoAddressFromPath(repoPath);
-  const {flagPipelineModeTuples, flagAssetGraph} = useFeatureFlags();
+  const {flagPipelineModeTuples} = useFeatureFlags();
 
   // A RepoAddress could not be created for this path, which means it's invalid.
   if (!addressForPath) {
     return (
       <NonIdealState
-        icon="cube"
+        icon="error"
         title="Invalid repository"
         description={
           <div>
@@ -57,7 +56,7 @@ const RepoRouteContainer: React.FC<{repoPath: string}> = (props) => {
   if (!matchingRepo) {
     return (
       <NonIdealState
-        icon="cube"
+        icon="error"
         title="Unknown repository"
         description={
           <div>
@@ -106,24 +105,6 @@ const RepoRouteContainer: React.FC<{repoPath: string}> = (props) => {
           <SensorRoot sensorName={props.match.params.sensorName} repoAddress={addressForPath} />
         )}
       />
-      {flagAssetGraph ? (
-        <Route
-          path="/workspace/:repoPath/assets/(.+)"
-          render={(props) => {
-            return (
-              <AssetGraphRoot
-                {...props}
-                repoAddress={addressForPath}
-                selected={
-                  props.match.params[0]
-                    ? JSON.stringify(props.match.params[0].split('/').map(decodeURIComponent))
-                    : undefined
-                }
-              />
-            );
-          }}
-        />
-      ) : null}
       <Route
         path="/workspace/:repoPath/:tab?"
         render={(props: RouteComponentProps<{tab?: string}>) => (

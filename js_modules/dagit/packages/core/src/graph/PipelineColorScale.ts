@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports
 import {Colors} from '@blueprintjs/core';
 import {scaleOrdinal} from '@vx/scale';
 

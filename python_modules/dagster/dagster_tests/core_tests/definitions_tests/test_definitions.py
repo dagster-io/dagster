@@ -157,7 +157,7 @@ def test_mapper_errors():
         )
     assert (
         str(excinfo_1.value)
-        == 'Invalid dependencies: solid "solid_b" in dependency dictionary not found in solid list'
+        == 'Invalid dependencies: node "solid_b" in dependency dictionary not found in node list'
     )
 
     with pytest.raises(DagsterInvalidDefinitionError) as excinfo_2:
@@ -172,7 +172,7 @@ def test_mapper_errors():
         )
     assert (
         str(excinfo_2.value)
-        == 'Invalid dependencies: solid "solid_b" (aliased by "solid_c" in dependency dictionary) not found in solid list'
+        == 'Invalid dependencies: node "solid_b" (aliased by "solid_c" in dependency dictionary) not found in node list'
     )
 
 
@@ -274,7 +274,7 @@ def test_composite_mapping_collision():
     def add(a, b):
         return a + b
 
-    with pytest.raises(DagsterInvalidDefinitionError, match="already satisfied by solid output"):
+    with pytest.raises(DagsterInvalidDefinitionError, match="already satisfied by output"):
         CompositeSolidDefinition(
             name="add_one",
             solid_defs=[return_one, add],

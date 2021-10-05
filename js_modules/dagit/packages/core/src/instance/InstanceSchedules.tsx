@@ -1,17 +1,17 @@
 import {gql, useQuery} from '@apollo/client';
-import {NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
 import {UnloadableSchedules} from '../instigation/Unloadable';
-import {SchedulerTimezoneNote, SCHEDULE_FRAGMENT} from '../schedules/ScheduleUtils';
-import {SchedulerInfo, SCHEDULER_FRAGMENT} from '../schedules/SchedulerInfo';
+import {SCHEDULE_FRAGMENT} from '../schedules/ScheduleUtils';
+import {SchedulerInfo} from '../schedules/SchedulerInfo';
 import {SchedulesTable} from '../schedules/SchedulesTable';
 import {InstigationType} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
+import {NonIdealState} from '../ui/NonIdealState';
 import {Subheading} from '../ui/Text';
 import {REPOSITORY_INFO_FRAGMENT} from '../workspace/RepositoryInformation';
 import {buildRepoPath, buildRepoAddress} from '../workspace/buildRepoAddress';
@@ -40,7 +40,7 @@ export const InstanceSchedules = React.memo(() => {
 });
 
 const AllSchedules: React.FC<{data: InstanceSchedulesQuery}> = ({data}) => {
-  const {instance, scheduler, repositoriesOrError, unloadableInstigationStatesOrError} = data;
+  const {instance, repositoriesOrError, unloadableInstigationStatesOrError} = data;
 
   if (repositoriesOrError.__typename === 'PythonError') {
     return <PythonErrorInfo error={repositoriesOrError} />;
@@ -56,13 +56,14 @@ const AllSchedules: React.FC<{data: InstanceSchedulesQuery}> = ({data}) => {
 
   const loadedSchedulesSection = withSchedules.length ? (
     <Group direction="column" spacing={32}>
-      <Group direction="column" spacing={12}>
-        <SchedulerTimezoneNote schedulerOrError={scheduler} />
-        <SchedulerInfo schedulerOrError={scheduler} daemonHealth={instance.daemonHealth} />
+      <Group direction="column" spacing={12} padding={{horizontal: 24}}>
+        <SchedulerInfo daemonHealth={instance.daemonHealth} />
       </Group>
       {withSchedules.map((repository) => (
         <Group direction="column" spacing={8} key={repository.name}>
-          <Subheading>{`${buildRepoPath(repository.name, repository.location.name)}`}</Subheading>
+          <Box padding={{horizontal: 24}}>
+            <Subheading>{`${buildRepoPath(repository.name, repository.location.name)}`}</Subheading>
+          </Box>
           <SchedulesTable
             repoAddress={buildRepoAddress(repository.name, repository.location.name)}
             schedules={repository.schedules}
@@ -84,7 +85,7 @@ const AllSchedules: React.FC<{data: InstanceSchedulesQuery}> = ({data}) => {
     return (
       <Box margin={{top: 32}}>
         <NonIdealState
-          icon="time"
+          icon="schedule"
           title="No schedules found"
           description={
             <div>
@@ -132,9 +133,6 @@ const INSTANCE_SCHEDULES_QUERY = gql`
       }
       ...PythonErrorFragment
     }
-    scheduler {
-      ...SchedulerFragment
-    }
     unloadableInstigationStatesOrError {
       ... on InstigationStates {
         results {
@@ -149,7 +147,6 @@ const INSTANCE_SCHEDULES_QUERY = gql`
   ${INSTANCE_HEALTH_FRAGMENT}
   ${REPOSITORY_INFO_FRAGMENT}
   ${SCHEDULE_FRAGMENT}
-  ${SCHEDULER_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
   ${INSTIGATION_STATE_FRAGMENT}
 `;

@@ -1,14 +1,13 @@
-import {Colors} from '@blueprintjs/core';
 import {ActiveElement} from 'chart.js';
+import 'chartjs-adapter-date-fns';
 import * as React from 'react';
 import {Line} from 'react-chartjs-2';
 
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {Subheading} from '../ui/Text';
 
 import {AssetNumericHistoricalData} from './types';
-
-import 'chartjs-adapter-date-fns';
 
 export const AssetValueGraph: React.FC<{
   label: string;
@@ -24,6 +23,7 @@ export const AssetValueGraph: React.FC<{
   if (!props.data) {
     return <span />;
   }
+
   let labels: React.ReactText[] | undefined = undefined;
   let xHover = props.xHover;
   if (props.data.xAxis === 'partition') {
@@ -38,12 +38,12 @@ export const AssetValueGraph: React.FC<{
         label: props.label,
         lineTension: 0,
         data: props.data.values.map((v) => ({x: v.xNumeric, y: v.y})),
-        borderColor: Colors.BLUE3,
+        borderColor: ColorsWIP.Blue500,
         backgroundColor: 'rgba(0,0,0,0)',
         pointBorderWidth: 2,
         pointHoverBorderWidth: 2,
         pointHoverRadius: 13,
-        pointHoverBorderColor: Colors.BLUE3,
+        pointHoverBorderColor: ColorsWIP.Blue500,
       },
     ],
   };

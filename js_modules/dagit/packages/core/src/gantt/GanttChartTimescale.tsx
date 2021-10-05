@@ -1,8 +1,8 @@
-import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {formatElapsedTime} from '../app/Util';
+import {ColorsWIP} from '../ui/Colors';
 
 import {CSS_DURATION, GanttViewport, LEFT_INSET} from './Constants';
 
@@ -185,8 +185,8 @@ const TimescaleContainer = styled.div`
     font-size: 11px;
   }
   & .tick.duration {
-    color: ${Colors.GRAY2};
-    background: ${Colors.LIGHT_GRAY2};
+    color: ${ColorsWIP.Gray500};
+    background: ${ColorsWIP.Gray100};
     box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
   }
   & .tick.highlight {
@@ -224,11 +224,11 @@ const TimescaleTicksContainer = styled.div`
   height: 20px;
   z-index: 4;
   position: relative;
-  background: ${Colors.LIGHT_GRAY4};
+  background: ${ColorsWIP.Gray100};
   display: flex;
-  color: ${Colors.GRAY3};
+  color: ${ColorsWIP.Gray400};
   font-size: 11px;
-  border-bottom: 1px solid ${Colors.LIGHT_GRAY1};
+  border-bottom: 1px solid ${ColorsWIP.Gray200};
   overflow: hidden;
 `;
 

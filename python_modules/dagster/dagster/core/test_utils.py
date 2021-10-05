@@ -7,7 +7,7 @@ from contextlib import ExitStack, contextmanager
 
 import pendulum
 import yaml
-from dagster import Shape, check, composite_solid, pipeline, solid
+from dagster import ModeDefinition, Shape, check, composite_solid, fs_io_manager, pipeline, solid
 from dagster.config import Field
 from dagster.config.config_type import Array
 from dagster.core.host_representation.origin import (
@@ -20,7 +20,9 @@ from dagster.core.run_coordinator import RunCoordinator, SubmitRunContext
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.telemetry import cleanup_telemetry_logger
 from dagster.core.workspace.context import WorkspaceProcessContext
+from dagster.core.workspace.dynamic_workspace import DynamicWorkspace
 from dagster.core.workspace.load_target import WorkspaceLoadTarget
+from dagster.daemon.controller import create_daemon_grpc_server_registry
 from dagster.serdes import ConfigurableClass
 from dagster.seven.compat.pendulum import create_pendulum_time, mock_pendulum_timezone
 from dagster.utils import merge_dicts
@@ -432,6 +434,14 @@ def in_process_test_workspace(instance, recon_repo):
         yield workspace_process_context.create_request_context()
 
 
+@contextmanager
+def create_test_daemon_workspace():
+    """ Creates a DynamicWorkspace suitable for passing into a DagsterDaemon loop when running tests."""
+    with create_daemon_grpc_server_registry() as grpc_server_registry:
+        with DynamicWorkspace(grpc_server_registry) as workspace:
+            yield workspace
+
+
 def remove_none_recursively(obj):
     """Remove none values from a dict. This can be used to support comparing provided config vs.
     config we retrive from kubernetes, which returns all fields, even those which have no value
@@ -447,3 +457,6 @@ def remove_none_recursively(obj):
         )
     else:
         return obj
+
+
+default_mode_def_for_test = ModeDefinition(resource_defs={"io_manager": fs_io_manager})

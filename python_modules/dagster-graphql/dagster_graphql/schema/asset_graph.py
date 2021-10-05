@@ -4,6 +4,7 @@ from dagster.core.host_representation import ExternalRepository
 from dagster.core.host_representation.external_data import ExternalAssetNode
 
 from .asset_key import GrapheneAssetKey
+from .errors import GrapheneAssetNotFoundError
 from .pipelines.pipeline import GrapheneAssetMaterialization
 from .util import non_null_list
 
@@ -95,3 +96,9 @@ class GrapheneAssetNode(graphene.ObjectType):
                 limit=kwargs.get("limit"),
             )
         ]
+
+
+class GrapheneAssetNodeOrError(graphene.Union):
+    class Meta:
+        types = (GrapheneAssetNode, GrapheneAssetNotFoundError)
+        name = "AssetNodeOrError"

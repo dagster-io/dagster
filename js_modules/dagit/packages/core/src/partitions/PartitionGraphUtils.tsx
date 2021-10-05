@@ -1,11 +1,11 @@
 import {gql} from '@apollo/client';
-import {Colors} from '@blueprintjs/core';
 import {isEqual} from 'lodash';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {useFeatureFlags} from '../app/Flags';
 import {colorHash} from '../app/Util';
+import {ColorsWIP} from '../ui/Colors';
 
 import {PartitionGraphFragment} from './types/PartitionGraphFragment';
 
@@ -188,7 +188,7 @@ export const StepSelector: React.FC<{
             key={stepKey}
             shown={!hidden.includes(stepKey)}
             onClick={onStepClick(stepKey)}
-            color={stepKey === jobLabel ? Colors.GRAY2 : colorHash(stepKey)}
+            color={stepKey === jobLabel ? ColorsWIP.Gray500 : colorHash(stepKey)}
           >
             <div
               style={{
@@ -199,7 +199,7 @@ export const StepSelector: React.FC<{
                 width: 10,
                 backgroundColor: !hidden.includes(stepKey)
                   ? stepKey === jobLabel
-                    ? Colors.GRAY2
+                    ? ColorsWIP.Gray500
                     : colorHash(stepKey)
                   : '#aaaaaa',
               }}
@@ -213,7 +213,7 @@ export const StepSelector: React.FC<{
 };
 
 const NavSectionHeader = styled.div`
-  border-bottom: 1px solid ${Colors.GRAY5};
+  border-bottom: 1px solid ${ColorsWIP.Gray200};
   margin-bottom: 10px;
   padding-bottom: 5px;
   display: flex;

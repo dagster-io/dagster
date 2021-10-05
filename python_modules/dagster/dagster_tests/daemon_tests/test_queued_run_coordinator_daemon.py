@@ -3,12 +3,14 @@
 from contextlib import contextmanager
 
 import pytest
-from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster.core.storage.pipeline_run import IN_PROGRESS_RUN_STATUSES, PipelineRunStatus
 from dagster.core.storage.tags import PRIORITY_TAG
-from dagster.core.test_utils import create_run_for_test, instance_for_test
-from dagster.core.workspace.dynamic_workspace import DynamicWorkspace
+from dagster.core.test_utils import (
+    create_run_for_test,
+    create_test_daemon_workspace,
+    instance_for_test,
+)
 from dagster.daemon.run_coordinator.queued_run_coordinator_daemon import QueuedRunCoordinatorDaemon
 from dagster_tests.api_tests.utils import get_foo_pipeline_handle
 
@@ -51,7 +53,7 @@ def daemon_fixture():
 
 @pytest.fixture(name="workspace")
 def workspace_fixture():
-    with ProcessGrpcServerRegistry() as registry, DynamicWorkspace(registry) as workspace:
+    with create_test_daemon_workspace() as workspace:
         yield workspace
 
 

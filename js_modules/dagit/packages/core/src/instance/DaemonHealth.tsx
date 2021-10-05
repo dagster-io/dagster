@@ -1,11 +1,11 @@
-import {Colors, Tag} from '@blueprintjs/core';
 import * as React from 'react';
-import styled from 'styled-components/macro';
 
 import {ButtonWIP} from '../ui/Button';
 import {ButtonLink} from '../ui/ButtonLink';
+import {ColorsWIP} from '../ui/Colors';
 import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
+import {TagWIP} from '../ui/TagWIP';
 import {Trace} from '../ui/Trace';
 
 import {DaemonHealthFragment_allDaemonStatuses as DaemonStatus} from './types/DaemonHealthFragment';
@@ -18,26 +18,14 @@ const DaemonHealthTag = (props: Props) => {
   const {daemon} = props;
 
   if (daemon.healthy) {
-    return (
-      <HoverTag minimal intent="success">
-        Running
-      </HoverTag>
-    );
+    return <TagWIP intent="success">Running</TagWIP>;
   }
 
   if (daemon.required) {
-    return (
-      <HoverTag minimal intent="danger">
-        Not running
-      </HoverTag>
-    );
+    return <TagWIP intent="danger">Not running</TagWIP>;
   }
 
-  return (
-    <HoverTag minimal intent="none">
-      Not enabled
-    </HoverTag>
-  );
+  return <TagWIP intent="none">Not enabled</TagWIP>;
 };
 
 type State = {
@@ -79,7 +67,7 @@ export const DaemonHealth = (props: Props) => {
     if (errorCount > 0) {
       return (
         <>
-          <ButtonLink color={Colors.BLUE2} underline="hover" onClick={show}>
+          <ButtonLink color={ColorsWIP.Link} underline="hover" onClick={show}>
             {errorCount > 1 ? `View errors (${errorCount})` : 'View error'}
           </ButtonLink>
           <DialogWIP
@@ -130,7 +118,7 @@ export const DaemonHealth = (props: Props) => {
     }
 
     if (!daemon.healthy) {
-      return <div style={{color: Colors.GRAY2}}>No recent heartbeat</div>;
+      return <div style={{color: ColorsWIP.Gray500}}>No recent heartbeat</div>;
     }
 
     return null;
@@ -143,8 +131,3 @@ export const DaemonHealth = (props: Props) => {
     </Group>
   );
 };
-
-const HoverTag = styled(Tag)`
-  cursor: default;
-  user-select: none;
-`;

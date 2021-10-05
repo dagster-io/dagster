@@ -1,8 +1,7 @@
 import * as React from 'react';
 import {RouteComponentProps} from 'react-router-dom';
 
-import {Group} from '../ui/Group';
-import {Page} from '../ui/Page';
+import {Box} from '../ui/Box';
 import {PageHeader} from '../ui/PageHeader';
 import {Heading} from '../ui/Text';
 
@@ -15,11 +14,11 @@ export const AssetsCatalogRoot: React.FunctionComponent<RouteComponentProps> = (
     .map(decodeURIComponent);
 
   return (
-    <Page>
-      <Group direction="column" spacing={12}>
+    <div>
+      <Box padding={{vertical: 16, horizontal: 24}}>
         <PageHeader title={<Heading>Assets</Heading>} />
-        <AssetsCatalogTable prefixPath={currentPath} />
-      </Group>
-    </Page>
+      </Box>
+      <AssetsCatalogTable prefixPath={currentPath} />
+    </div>
   );
 };

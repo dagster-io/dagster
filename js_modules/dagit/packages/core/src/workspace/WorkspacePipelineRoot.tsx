@@ -1,4 +1,3 @@
-import {NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link, Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 
@@ -7,6 +6,7 @@ import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {Alert} from '../ui/Alert';
 import {Box} from '../ui/Box';
 import {LoadingSpinner} from '../ui/Loading';
+import {NonIdealState} from '../ui/NonIdealState';
 import {Page} from '../ui/Page';
 import {PageHeader} from '../ui/PageHeader';
 import {Table} from '../ui/Table';
@@ -41,7 +41,7 @@ export const WorkspacePipelineRoot: React.FC<Props> = (props) => {
   if (reposWithMatch.length === 0) {
     return (
       <NonIdealState
-        icon="cube"
+        icon="no-results"
         title={flagPipelineModeTuples ? 'No matching jobs' : 'No matching pipelines'}
         description={
           <div>
@@ -63,33 +63,35 @@ export const WorkspacePipelineRoot: React.FC<Props> = (props) => {
 
   return (
     <Page>
-      <PageHeader
-        title={<Heading>{pipelineName}</Heading>}
-        icon={flagPipelineModeTuples ? 'workspaces' : 'schema'}
-        description={
-          flagPipelineModeTuples
-            ? 'Job in multiple repositories'
-            : 'Pipeline in multiple repositories'
-        }
-      />
-      <Box margin={{vertical: 20}}>
-        <Alert
-          intent="info"
-          title={
-            <div>
-              {flagPipelineModeTuples ? (
-                <>
-                  Jobs named <strong>{pipelineName}</strong> were found in multiple repositories.
-                </>
-              ) : (
-                <>
-                  Pipelines named <strong>{pipelineName}</strong> were found in multiple
-                  repositories.
-                </>
-              )}
-            </div>
+      <Box padding={{horizontal: 24}}>
+        <PageHeader
+          title={<Heading>{pipelineName}</Heading>}
+          icon="job"
+          description={
+            flagPipelineModeTuples
+              ? 'Job in multiple repositories'
+              : 'Pipeline in multiple repositories'
           }
         />
+        <Box margin={{vertical: 16}}>
+          <Alert
+            intent="info"
+            title={
+              <div>
+                {flagPipelineModeTuples ? (
+                  <>
+                    Jobs named <strong>{pipelineName}</strong> were found in multiple repositories.
+                  </>
+                ) : (
+                  <>
+                    Pipelines named <strong>{pipelineName}</strong> were found in multiple
+                    repositories.
+                  </>
+                )}
+              </div>
+            }
+          />
+        </Box>
       </Box>
       <Table>
         <thead>

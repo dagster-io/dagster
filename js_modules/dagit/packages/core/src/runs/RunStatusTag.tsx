@@ -1,11 +1,11 @@
-import {Popover, Tag} from '@blueprintjs/core';
 import * as React from 'react';
-import styled from 'styled-components/macro';
 
 import {assertUnreachable} from '../app/Util';
 import {PipelineRunStatus} from '../types/globalTypes';
 import {Group} from '../ui/Group';
+import {Popover} from '../ui/Popover';
 import {Spinner} from '../ui/Spinner';
+import {TagWIP} from '../ui/TagWIP';
 
 import {RunStats} from './RunStats';
 
@@ -14,60 +14,60 @@ export const RunStatusTag = (props: {status: PipelineRunStatus}) => {
   switch (status) {
     case PipelineRunStatus.QUEUED:
       return (
-        <StatusTag minimal intent="none">
+        <TagWIP minimal intent="none">
           Queued
-        </StatusTag>
+        </TagWIP>
       );
     case PipelineRunStatus.SUCCESS:
       return (
-        <StatusTag minimal intent="success">
+        <TagWIP minimal intent="success">
           Success
-        </StatusTag>
+        </TagWIP>
       );
     case PipelineRunStatus.STARTING:
       return (
-        <StatusTag minimal intent="none">
+        <TagWIP minimal intent="none">
           Starting
-        </StatusTag>
+        </TagWIP>
       );
     case PipelineRunStatus.NOT_STARTED:
       return (
-        <StatusTag minimal intent="none">
+        <TagWIP minimal intent="none">
           Not started
-        </StatusTag>
+        </TagWIP>
       );
     case PipelineRunStatus.FAILURE:
       return (
-        <StatusTag minimal intent="danger">
+        <TagWIP minimal intent="danger">
           Failure
-        </StatusTag>
+        </TagWIP>
       );
     case PipelineRunStatus.STARTED:
       return (
-        <StatusTag minimal intent="primary">
+        <TagWIP minimal intent="primary">
           <Group direction="row" spacing={4} alignItems="center">
             <Spinner purpose="body-text" />
             <div>Started</div>
           </Group>
-        </StatusTag>
+        </TagWIP>
       );
     case PipelineRunStatus.MANAGED:
       return (
-        <StatusTag minimal intent="none">
+        <TagWIP minimal intent="none">
           Managed
-        </StatusTag>
+        </TagWIP>
       );
     case PipelineRunStatus.CANCELING:
       return (
-        <StatusTag minimal intent="none">
+        <TagWIP minimal intent="none">
           Canceling
-        </StatusTag>
+        </TagWIP>
       );
     case PipelineRunStatus.CANCELED:
       return (
-        <StatusTag minimal intent="danger">
+        <TagWIP minimal intent="danger">
           Canceled
-        </StatusTag>
+        </TagWIP>
       );
     default:
       return assertUnreachable(status);
@@ -83,8 +83,8 @@ export const RunStatusTagWithStats = (props: Props) => {
   const {runId, status} = props;
   return (
     <Popover
-      position={'bottom'}
-      interactionKind={'hover'}
+      position="bottom-left"
+      interactionKind="hover"
       content={<RunStats runId={runId} />}
       hoverOpenDelay={100}
       usePortal
@@ -93,9 +93,3 @@ export const RunStatusTagWithStats = (props: Props) => {
     </Popover>
   );
 };
-
-const StatusTag = styled(Tag)`
-  cursor: default;
-  text-transform: uppercase;
-  user-select: none;
-`;

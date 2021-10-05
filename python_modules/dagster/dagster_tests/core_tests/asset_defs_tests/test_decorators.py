@@ -24,6 +24,14 @@ def test_asset_with_inputs():
     assert my_asset.input_defs[0].get_asset_key(None) == AssetKey("arg1")
 
 
+def test_asset_with_compute_kind():
+    @asset(compute_kind="sql")
+    def my_asset(arg1):
+        return arg1
+
+    assert my_asset.tags == {"kind": "sql"}
+
+
 def test_asset_with_inputs_and_namespace():
     @asset(namespace="my_namespace")
     def my_asset(arg1):
@@ -95,3 +103,11 @@ def test_all_fields():
     output_def = my_asset.output_defs[0]
     assert output_def.io_manager_key == "my_io_key"
     assert output_def.metadata["metakey"] == "metaval"
+
+
+def test_infer_input_dagster_type():
+    @asset
+    def my_asset(_input1: str):
+        pass
+
+    assert my_asset.input_defs[0].dagster_type.display_name == "String"

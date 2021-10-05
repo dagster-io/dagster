@@ -1,21 +1,22 @@
 import {useMutation} from '@apollo/client';
-import {Colors, Switch} from '@blueprintjs/core';
+import {Switch} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {
-  STOP_SCHEDULE_MUTATION,
   displayScheduleMutationErrors,
+  STOP_SCHEDULE_MUTATION,
 } from '../schedules/ScheduleMutations';
 import {humanCronString} from '../schedules/humanCronString';
 import {StopSchedule} from '../schedules/types/StopSchedule';
 import {displaySensorMutationErrors, STOP_SENSOR_MUTATION} from '../sensors/SensorMutations';
 import {StopSensor} from '../sensors/types/StopSensor';
-import {InstigationType, InstigationStatus} from '../types/globalTypes';
+import {InstigationStatus, InstigationType} from '../types/globalTypes';
 import {Alert} from '../ui/Alert';
 import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {Table} from '../ui/Table';
 import {Subheading} from '../ui/Text';
@@ -33,9 +34,10 @@ export const UnloadableSensors: React.FunctionComponent<{
   }
   return (
     <>
-      <Subheading>Unloadable sensors</Subheading>
-      <UnloadableSensorInfo />
-
+      <Box padding={{top: 16, horizontal: 24}}>
+        <Subheading>Unloadable sensors</Subheading>
+        <UnloadableSensorInfo />
+      </Box>
       <Table>
         <thead>
           <tr>
@@ -172,7 +174,7 @@ const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) 
         {latestTick ? (
           <TickTag tick={latestTick} instigationType={InstigationType.SENSOR} />
         ) : (
-          <span style={{color: Colors.GRAY4}}>None</span>
+          <span style={{color: ColorsWIP.Gray300}}>None</span>
         )}
       </td>
       <td>

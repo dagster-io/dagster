@@ -330,8 +330,8 @@ def test_resource_not_input_manager():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match='Input "_input" for solid "solid_requires_manager" requires root_manager_key '
-        '"not_manager", but the resource definition provided is not an '
+        match="Input '_input' for solid 'solid_requires_manager' requires root_manager_key "
+        "'not_manager', but the resource definition provided is not an "
         "IInputManagerDefinition",
     ):
         execute_pipeline(basic)

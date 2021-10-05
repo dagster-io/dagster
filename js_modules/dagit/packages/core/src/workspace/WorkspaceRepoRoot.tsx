@@ -1,4 +1,3 @@
-import {Colors, Tab, Tabs} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link, Redirect, Route, Switch} from 'react-router-dom';
 
@@ -7,8 +6,10 @@ import {SchedulesRoot} from '../schedules/SchedulesRoot';
 import {SensorsRoot} from '../sensors/SensorsRoot';
 import {SolidsRoot} from '../solids/SolidsRoot';
 import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {PageHeader} from '../ui/PageHeader';
+import {Tab, Tabs} from '../ui/Tabs';
 import {Heading} from '../ui/Text';
 
 import {RepositoryAssetsList} from './RepositoryAssetsList';
@@ -75,13 +76,13 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%'}}>
-      <Group direction="column" spacing={16} padding={{top: 20, horizontal: 20}}>
+      <Group direction="column" spacing={16} padding={{top: 16, horizontal: 24}}>
         <PageHeader
           title={<Heading>{path}</Heading>}
-          icon="source"
+          icon="repo"
           description={<Link to="/workspace">Repository</Link>}
         />
-        <Box border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}>
+        <Box border={{side: 'bottom', width: 1, color: ColorsWIP.Gray100}}>
           <Tabs large={false} selectedTabId={activeTab()}>
             {tabs.map((tab) => {
               const {href, text} = tab;

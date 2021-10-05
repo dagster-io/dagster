@@ -1,10 +1,11 @@
 import {useMutation} from '@apollo/client';
-import {Checkbox, ProgressBar} from '@blueprintjs/core';
+import {ProgressBar} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {TerminatePipelinePolicy} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {ButtonWIP} from '../ui/Button';
+import {Checkbox} from '../ui/Checkbox';
 import {ColorsWIP} from '../ui/Colors';
 import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
@@ -184,7 +185,7 @@ export const TerminationDialog = (props: Props) => {
               {showCheckbox ? (
                 <Checkbox
                   checked={state.mustForce}
-                  labelElement={
+                  label={
                     <Box flex={{display: 'inline-flex'}}>
                       <Group direction="row" spacing={8}>
                         <IconWIP name="warning" color={ColorsWIP.Yellow500} />

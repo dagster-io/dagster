@@ -3,11 +3,13 @@ from dagster import (
     Int,
     ModeDefinition,
     execute_pipeline,
+    fs_io_manager,
     pipeline,
     reconstructable,
     resource,
     solid,
 )
+from dagster.utils import merge_dicts
 
 
 def define_resource(num):
@@ -18,7 +20,9 @@ def define_resource(num):
     return a_resource
 
 
-lots_of_resources = {"R" + str(r): define_resource(r) for r in range(20)}
+lots_of_resources = merge_dicts(
+    {"R" + str(r): define_resource(r) for r in range(20)}, {"io_manager": fs_io_manager}
+)
 
 
 @solid(required_resource_keys=set(lots_of_resources.keys()))
@@ -53,7 +57,6 @@ if __name__ == "__main__":
     result = execute_pipeline(
         reconstructable(resource_pipeline),
         run_config={
-            "intermediate_storage": {"filesystem": {}},
             "execution": {"multiprocessing": {}},
         },
     )

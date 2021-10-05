@@ -3,7 +3,7 @@ from dagster import graph, op
 
 @op
 def do_something():
-    ...
+    return "foo"
 
 
 @graph

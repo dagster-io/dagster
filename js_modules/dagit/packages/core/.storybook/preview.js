@@ -6,11 +6,13 @@ import '@blueprintjs/popover2/lib/css/blueprint-popover2.css';
 
 import {FontFamily} from '../src/ui/styles';
 import {GlobalDialogStyle} from '../src/ui/Dialog';
+import {GlobalPopoverStyle} from '../src/ui/Popover';
 
 import * as React from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
 import {createGlobalStyle} from 'styled-components/macro';
+
 
 const GlobalStyle = createGlobalStyle`
   * {
@@ -36,6 +38,7 @@ export const decorators = [
   (Story) => (
     <MemoryRouter>
       <GlobalStyle />
+      <GlobalPopoverStyle />
       <GlobalDialogStyle />
       <Story />
     </MemoryRouter>

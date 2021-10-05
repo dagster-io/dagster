@@ -1,5 +1,6 @@
-import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
+
+import {ColorsWIP} from '../ui/Colors';
 
 import {PipelineColorScale} from './PipelineColorScale';
 import {SVGEllipseInRect} from './SVGComponents';
@@ -18,7 +19,7 @@ export const SolidConfigPort: React.SFC<ISolidConfigPortProps> = ({x, y, minifie
         y={y}
         width={26}
         height={26}
-        stroke={Colors.GRAY3}
+        stroke={ColorsWIP.Gray400}
         fill={PipelineColorScale('solid')}
         pathLength={100}
         strokeWidth={1}
@@ -29,7 +30,7 @@ export const SolidConfigPort: React.SFC<ISolidConfigPortProps> = ({x, y, minifie
         y={y + 3}
         width={20}
         height={20}
-        stroke={Colors.WHITE}
+        stroke={ColorsWIP.White}
         fill={PipelineColorScale('solidDarker')}
         pathLength={100}
         strokeWidth={2}
@@ -39,7 +40,7 @@ export const SolidConfigPort: React.SFC<ISolidConfigPortProps> = ({x, y, minifie
           x={x + 8}
           y={y + 7.5}
           style={{font: `14px "Arial", san-serif`}}
-          fill={Colors.WHITE}
+          fill={ColorsWIP.White}
           dominantBaseline="hanging"
         >
           C

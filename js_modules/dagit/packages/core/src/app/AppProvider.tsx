@@ -14,7 +14,6 @@ import {
 } from '@apollo/client';
 import {WebSocketLink} from '@apollo/client/link/ws';
 import {getMainDefinition} from '@apollo/client/utilities';
-import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import {BrowserRouter} from 'react-router-dom';
 import {createGlobalStyle} from 'styled-components/macro';
@@ -48,7 +47,7 @@ const GlobalStyle = createGlobalStyle`
   }
 
   html, body, #root {
-    color: ${Colors.DARK_GRAY4};
+    color: ${ColorsWIP.Gray800};
     width: 100vw;
     height: 100vh;
     overflow: hidden;
@@ -56,6 +55,12 @@ const GlobalStyle = createGlobalStyle`
     flex: 1 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  a,
+  a:hover,
+  a:active {
+    color: ${ColorsWIP.Link};
   }
 
   #root {
@@ -69,8 +74,12 @@ const GlobalStyle = createGlobalStyle`
     padding: 0;
   }
 
-  body, button, input, select, textarea {
+  body,input, select, textarea {
     font-family: ${FontFamily.default};
+  }
+
+  button {
+    font-family: inherit;
   }
 
   code, pre {

@@ -5,6 +5,7 @@ from docs_snippets.guides.dagster.graph_job_op import (
     composite_solid,
     composite_solid_ins_out,
     composite_solid_multi_out,
+    execute_simple_graph,
     graph_job_test,
     graph_with_config,
     graph_with_config_and_schedule,
@@ -162,3 +163,11 @@ def test_ops():
             raise Exception(
                 f"Error while executing op or solid '{op_or_solid.name}' from module '{module.__name__}'"
             ) from ex
+
+
+def test_execute_nested_graph():
+    assert nested_graphs.nested_output == 5
+
+
+def test_execute_simple_graph():
+    execute_simple_graph.execute_simple_graph()

@@ -1,24 +1,27 @@
-import {useQuery} from '@apollo/client';
-import {Button, ButtonGroup, Colors, Tab, Tabs} from '@blueprintjs/core';
+import {gql, useQuery} from '@apollo/client';
 import flatMap from 'lodash/flatMap';
 import uniq from 'lodash/uniq';
 import * as React from 'react';
 
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {METADATA_ENTRY_FRAGMENT} from '../runs/MetadataEntry';
 import {Box} from '../ui/Box';
+import {ButtonGroup} from '../ui/ButtonGroup';
+import {ColorsWIP} from '../ui/Colors';
 import {Spinner} from '../ui/Spinner';
+import {Tab, Tabs} from '../ui/Tabs';
 import {Subheading} from '../ui/Text';
 
+import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
 import {AssetMaterializationMatrix, LABEL_STEP_EXECUTION_TIME} from './AssetMaterializationMatrix';
 import {AssetMaterializationTable} from './AssetMaterializationTable';
 import {AssetValueGraph} from './AssetValueGraph';
-import {ASSET_QUERY} from './queries';
 import {AssetKey, AssetNumericHistoricalData} from './types';
+import {AssetMaterializationFragment} from './types/AssetMaterializationFragment';
 import {
-  AssetQuery,
-  AssetQueryVariables,
-  AssetQuery_assetOrError_Asset_assetMaterializations,
-} from './types/AssetQuery';
+  AssetMaterializationsQuery,
+  AssetMaterializationsQueryVariables,
+} from './types/AssetMaterializationsQuery';
 import {HistoricalMaterialization, useMaterializationBuckets} from './useMaterializationBuckets';
 
 interface Props {
@@ -29,13 +32,16 @@ interface Props {
 
 export const AssetMaterializations: React.FC<Props> = ({assetKey, asOf, asSidebarSection}) => {
   const before = React.useMemo(() => (asOf ? `${Number(asOf) + 1}` : ''), [asOf]);
-  const {data, loading} = useQuery<AssetQuery, AssetQueryVariables>(ASSET_QUERY, {
-    variables: {
-      assetKey: {path: assetKey.path},
-      limit: 200,
-      before,
+  const {data, loading} = useQuery<AssetMaterializationsQuery, AssetMaterializationsQueryVariables>(
+    ASSET_MATERIALIZATIONS_QUERY,
+    {
+      variables: {
+        assetKey: {path: assetKey.path},
+        limit: 200,
+        before,
+      },
     },
-  });
+  );
 
   const asset = data?.assetOrError.__typename === 'Asset' ? data?.assetOrError : null;
   const assetMaterializations = asset?.assetMaterializations || [];
@@ -62,6 +68,11 @@ export const AssetMaterializations: React.FC<Props> = ({assetKey, asOf, asSideba
   });
 
   const reversed = React.useMemo(() => [...bucketed].reverse(), [bucketed]);
+  const activeItems = React.useMemo(() => new Set([xAxis]), [xAxis]);
+
+  if (process.env.NODE_ENV === 'test') {
+    return <span />; // chartjs and our useViewport hook don't play nicely with jest
+  }
 
   const content = () => {
     if (loading) {
@@ -98,27 +109,23 @@ export const AssetMaterializations: React.FC<Props> = ({assetKey, asOf, asSideba
 
   return (
     <div>
-      <Box flex={{justifyContent: 'space-between', alignItems: 'flex-end'}}>
+      <Box flex={{justifyContent: 'space-between', alignItems: 'flex-end'}} padding={{right: 4}}>
         <Subheading>Materializations over Time</Subheading>
         {isPartitioned ? (
-          <ButtonGroup>
-            <Button active={xAxis === 'partition'} onClick={() => setXAxis('partition')}>
-              By Partition
-            </Button>
-            <Button active={xAxis === 'time'} onClick={() => setXAxis('time')}>
-              By Timestamp
-            </Button>
-          </ButtonGroup>
+          <ButtonGroup
+            activeItems={activeItems}
+            buttons={[
+              {id: 'partition', label: 'By partition'},
+              {id: 'time', label: 'By timestamp'},
+            ]}
+            onClick={(id: string) => setXAxis(id as 'partition' | 'time')}
+          />
         ) : null}
       </Box>
       <Box margin={{vertical: 8}}>
-        <Tabs
-          large={false}
-          selectedTabId={activeTab}
-          onChange={(t) => setActiveTab(t as 'graphs' | 'list')}
-        >
-          <Tab id="graphs" title="Graphs" />
-          <Tab id="list" title="List" />
+        <Tabs selectedTabId={activeTab}>
+          <Tab id="graphs" title="Graphs" onClick={() => setActiveTab('graphs')} />
+          <Tab id="list" title="List" onClick={() => setActiveTab('list')} />
         </Tabs>
       </Box>
       {content()}
@@ -176,7 +183,7 @@ const AssetMaterializationMatrixAndGraph: React.FC<{
         ))}
       </div>
       {xAxis === 'partition' && (
-        <div style={{color: Colors.GRAY3, fontSize: '0.85rem'}}>
+        <div style={{color: ColorsWIP.Gray400, fontSize: '0.85rem'}}>
           When graphing values by partition, the highest data point for each materialized event
           label is displayed.
         </div>
@@ -197,7 +204,7 @@ const AssetMaterializationMatrixAndGraph: React.FC<{
  * Assumes that the data is pre-sorted in ascending partition order if using xAxis = partition.
  */
 const extractNumericData = (
-  assetMaterializations: AssetQuery_assetOrError_Asset_assetMaterializations[],
+  assetMaterializations: AssetMaterializationFragment[],
   xAxis: 'time' | 'partition',
 ) => {
   const series: AssetNumericHistoricalData = {};
@@ -284,3 +291,53 @@ const extractNumericData = (
   }
   return series;
 };
+
+export const ASSET_MATERIALIZATIONS_QUERY = gql`
+  query AssetMaterializationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $before: String) {
+    assetOrError(assetKey: $assetKey) {
+      ... on Asset {
+        id
+        key {
+          path
+        }
+        assetMaterializations(limit: $limit, beforeTimestampMillis: $before) {
+          ...AssetMaterializationFragment
+        }
+      }
+    }
+  }
+  fragment AssetMaterializationFragment on AssetMaterialization {
+    partition
+    runOrError {
+      ... on PipelineRun {
+        id
+        runId
+        mode
+        status
+        pipelineName
+        pipelineSnapshotId
+      }
+    }
+    materializationEvent {
+      runId
+      timestamp
+      stepKey
+      stepStats {
+        endTime
+        startTime
+      }
+      materialization {
+        label
+        description
+        metadataEntries {
+          ...MetadataEntryFragment
+        }
+      }
+      assetLineage {
+        ...AssetLineageFragment
+      }
+    }
+  }
+  ${METADATA_ENTRY_FRAGMENT}
+  ${ASSET_LINEAGE_FRAGMENT}
+`;

@@ -1,14 +1,9 @@
 import {gql} from '@apollo/client';
-import {Colors} from '@blueprintjs/core';
-import React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
 import {REPOSITORY_INFO_FRAGMENT} from '../workspace/RepositoryInformation';
-
-import {SCHEDULER_FRAGMENT} from './SchedulerInfo';
-import {SchedulerFragment} from './types/SchedulerFragment';
 
 export const SCHEDULE_FRAGMENT = gql`
   fragment ScheduleFragment on Schedule {
@@ -68,9 +63,6 @@ export const SCHEDULES_ROOT_QUERY = gql`
       }
       ...PythonErrorFragment
     }
-    scheduler {
-      ...SchedulerFragment
-    }
     unloadableInstigationStatesOrError(instigationType: $instigationType) {
       ... on InstigationStates {
         results {
@@ -85,32 +77,8 @@ export const SCHEDULES_ROOT_QUERY = gql`
     }
   }
 
-  ${SCHEDULER_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
   ${REPOSITORY_SCHEDULES_FRAGMENT}
   ${INSTIGATION_STATE_FRAGMENT}
   ${INSTANCE_HEALTH_FRAGMENT}
 `;
-
-export const SchedulerTimezoneNote: React.FC<{
-  schedulerOrError: SchedulerFragment;
-}> = ({schedulerOrError}) => {
-  if (
-    schedulerOrError.__typename !== 'Scheduler' ||
-    schedulerOrError.schedulerClass !== 'SystemCronScheduler'
-  ) {
-    return null;
-  }
-
-  return (
-    <div
-      style={{
-        color: Colors.GRAY3,
-        fontSize: 12.5,
-      }}
-    >
-      Schedule cron intervals displayed below are in the system time of the machine running the
-      scheduler.
-    </div>
-  );
-};

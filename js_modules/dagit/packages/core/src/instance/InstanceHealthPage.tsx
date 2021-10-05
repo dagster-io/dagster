@@ -1,8 +1,9 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {POLL_INTERVAL} from '../runs/useCursorPaginatedQuery';
+import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {Subheading} from '../ui/Text';
 import {REPOSITORY_LOCATIONS_FRAGMENT} from '../workspace/WorkspaceContext';
@@ -23,7 +24,7 @@ export const InstanceHealthPage = () => {
 
   const daemonContent = () => {
     if (loading && !data?.instance) {
-      return <div style={{color: Colors.GRAY3}}>Loading…</div>;
+      return <div style={{color: ColorsWIP.Gray400}}>Loading…</div>;
     }
     return data?.instance ? <DaemonList daemonHealth={data.instance.daemonHealth} /> : null;
   };
@@ -32,7 +33,9 @@ export const InstanceHealthPage = () => {
     <Group direction="column" spacing={20}>
       <InstanceTabs tab="health" queryData={queryData} />
       <Group direction="column" spacing={16}>
-        <Subheading>Daemon statuses</Subheading>
+        <Box padding={{horizontal: 24}}>
+          <Subheading>Daemon statuses</Subheading>
+        </Box>
         {daemonContent()}
       </Group>
     </Group>

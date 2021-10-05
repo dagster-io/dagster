@@ -796,6 +796,7 @@ def test_configuring_composite_solid_with_no_config_mapping():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match='Only composite solids utilizing config mapping can be pre-configured. The solid "composite_without_config_fn"',
+        match="Only composite solids utilizing config mapping can be pre-configured. The composite "
+        'solid "composite_without_config_fn"',
     ):
         configured(composite_without_config_fn, name="configured_composite")({})

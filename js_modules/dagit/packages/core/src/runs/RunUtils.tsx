@@ -1,5 +1,4 @@
 import {gql} from '@apollo/client';
-import {Popover} from '@blueprintjs/core';
 import * as React from 'react';
 import * as yaml from 'yaml';
 
@@ -10,6 +9,7 @@ import {ExecutionParams, PipelineRunStatus} from '../types/globalTypes';
 import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
+import {Popover} from '../ui/Popover';
 
 import {DagsterTag} from './RunTag';
 import {StepSelection} from './StepSelection';

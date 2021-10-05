@@ -1,9 +1,9 @@
-import {Colors} from '@blueprintjs/core';
 import memoize from 'lodash/memoize';
 import * as React from 'react';
 import {useRouteMatch} from 'react-router-dom';
 
 import {useFeatureFlags} from '../app/Flags';
+import {ColorsWIP} from '../ui/Colors';
 import {
   DagsterRepoOption,
   getRepositoryOptionHash,
@@ -139,8 +139,8 @@ const LoadedRepositorySection: React.FC<{allRepos: DagsterRepoOption[]}> = ({all
     <div
       className="bp3-dark"
       style={{
-        background: Colors.DARK_GRAY1,
-        color: Colors.WHITE,
+        background: ColorsWIP.Gray900,
+        color: ColorsWIP.White,
         display: 'flex',
         flex: 1,
         overflow: 'none',

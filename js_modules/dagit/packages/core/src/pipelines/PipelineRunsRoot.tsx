@@ -1,6 +1,4 @@
 import {gql} from '@apollo/client';
-import {NonIdealState, Tag} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
 import {useFeatureFlags} from '../app/Flags';
@@ -18,7 +16,9 @@ import {Box} from '../ui/Box';
 import {CursorPaginationControls} from '../ui/CursorControls';
 import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
+import {NonIdealState} from '../ui/NonIdealState';
 import {Page} from '../ui/Page';
+import {TagWIP} from '../ui/TagWIP';
 import {TokenizingFieldValue} from '../ui/TokenizingField';
 
 import {explorerPathFromString} from './PipelinePathUtils';
@@ -82,12 +82,12 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
       <Page>
         <Box
           flex={{alignItems: 'flex-start', justifyContent: 'space-between'}}
-          margin={{bottom: 8}}
+          padding={{bottom: 16, horizontal: 24}}
         >
           <Group direction="column" spacing={8}>
             <Group direction="row" spacing={8}>
               {permanentTokens.map(({token, value}) => (
-                <Tag minimal key={token}>{`${token}:${value}`}</Tag>
+                <TagWIP key={token}>{`${token}:${value}`}</TagWIP>
               ))}
             </Group>
             <RunsFilter
@@ -99,13 +99,12 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
           </Group>
           <QueryCountdown pollInterval={POLL_INTERVAL} queryResult={queryResult} />
         </Box>
-
         <Loading queryResult={queryResult} allowStaleData={true}>
           {({pipelineRunsOrError}) => {
             if (pipelineRunsOrError.__typename !== 'PipelineRuns') {
               return (
                 <NonIdealState
-                  icon={IconNames.ERROR}
+                  icon="error"
                   title="Query Error"
                   description={pipelineRunsOrError.message}
                 />

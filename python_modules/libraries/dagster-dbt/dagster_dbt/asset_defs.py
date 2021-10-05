@@ -61,6 +61,7 @@ def _dbt_node_to_asset(
         },
         required_resource_keys={"dbt"},
         io_manager_key=io_manager_key,
+        compute_kind="dbt",
     )
     def _node_asset(context):
         context.resources.dbt.run(models=[".".join([node_info["package_name"], node_info["name"]])])

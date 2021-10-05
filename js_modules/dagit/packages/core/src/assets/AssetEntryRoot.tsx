@@ -1,10 +1,11 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors, Breadcrumbs, BreadcrumbProps} from '@blueprintjs/core';
+import {BreadcrumbProps, Breadcrumbs} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link, Redirect, RouteComponentProps} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
 import {Loading} from '../ui/Loading';
@@ -80,7 +81,7 @@ export const AssetEntryRoot: React.FC<RouteComponentProps> = ({location, match})
 
   return (
     <Page>
-      <Group direction="column" spacing={20}>
+      <Group direction="column" spacing={20} padding={{horizontal: 24}}>
         <PageHeader
           title={
             view !== 'directory' ? (
@@ -99,18 +100,21 @@ export const AssetEntryRoot: React.FC<RouteComponentProps> = ({location, match})
               </Box>
             )
           }
-          icon="table_view"
+          icon="asset"
           description={<PathDetails>{pathDetails()}</PathDetails>}
         />
         <Loading queryResult={queryResult}>
-          {({assetOrError}) => {
-            if (assetOrError.__typename === 'AssetNotFoundError') {
+          {({assetOrError, assetNodeOrError}) => {
+            if (
+              assetOrError.__typename === 'AssetNotFoundError' &&
+              assetNodeOrError.__typename === 'AssetNotFoundError'
+            ) {
               return <AssetsCatalogTable prefixPath={currentPath} />;
             }
 
             return (
               <Wrapper>
-                <AssetView assetKey={assetOrError.key} asOf={asOf} />
+                <AssetView assetKey={{path: currentPath}} asOf={asOf} />
               </Wrapper>
             );
           }}
@@ -131,7 +135,7 @@ const Wrapper = styled.div`
 `;
 
 const PathDetails = styled.div`
-  color: ${Colors.GRAY2};
+  color: ${ColorsWIP.Gray500};
 
   .bp3-breadcrumbs {
     height: auto;
@@ -146,6 +150,12 @@ const PathDetails = styled.div`
 
 const ASSET_ENTRY_ROOT_QUERY = gql`
   query AssetEntryRootQuery($assetKey: AssetKeyInput!) {
+    assetNodeOrError(assetKey: $assetKey) {
+      __typename
+      ... on AssetNode {
+        id
+      }
+    }
     assetOrError(assetKey: $assetKey) {
       __typename
       ... on Asset {

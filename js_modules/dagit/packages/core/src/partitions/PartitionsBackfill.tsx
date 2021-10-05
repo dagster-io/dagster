@@ -1,5 +1,5 @@
 import {gql, useLazyQuery, useMutation, useQuery} from '@apollo/client';
-import {Checkbox, Intent, NonIdealState, Colors, InputGroup} from '@blueprintjs/core';
+import {Intent, InputGroup} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -19,11 +19,13 @@ import {PipelineRunStatus} from '../types/globalTypes';
 import {Alert} from '../ui/Alert';
 import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
+import {Checkbox} from '../ui/Checkbox';
 import {ColorsWIP} from '../ui/Colors';
 import {DialogBody, DialogFooter} from '../ui/Dialog';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
+import {NonIdealState} from '../ui/NonIdealState';
 import {Spinner} from '../ui/Spinner';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -279,7 +281,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
         <div>An unexpected error occurred. This backfill was not launched.</div>
         {errors ? (
           <ButtonLink
-            color={Colors.WHITE}
+            color={ColorsWIP.White}
             underline="always"
             onClick={() => {
               showCustomAlert({
@@ -400,20 +402,24 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
   return (
     <>
       <DialogBody>
-        <div style={{display: 'flex', alignItems: 'center', marginBottom: 4}}>
+        <Box flex={{direction: 'row', alignItems: 'center', gap: 12}} margin={{bottom: 4}}>
           <strong style={{display: 'block'}}>Partitions</strong>
           <Checkbox
             label="Select all"
             disabled={!selectablePartitions.length}
             style={{marginBottom: 0, marginLeft: 10}}
             checked={selected.length === selectablePartitions.length}
-            onClick={() =>
-              setSelected(
-                selected.length === selectablePartitions.length ? [] : selectablePartitions,
-              )
-            }
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              if (!e.target.checked) {
+                setSelected([]);
+              } else {
+                setSelected(
+                  selected.length === selectablePartitions.length ? [] : selectablePartitions,
+                );
+              }
+            }}
           />
-        </div>
+        </Box>
         <InputGroup
           small
           fill
@@ -459,14 +465,15 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
                     fromFailure: !options.fromFailure,
                   });
                 }}
-              >
-                <Box flex={{display: 'inline-flex', alignItems: 'center'}}>
-                  <Box margin={{right: 4}}>Re-execute from failures</Box>
-                  <Tooltip content="For each partition, if the most recent run failed, launch a re-execution starting from the steps that failed.">
-                    <IconWIP name="info" color={ColorsWIP.Gray500} />
-                  </Tooltip>
-                </Box>
-              </Checkbox>
+                label={
+                  <Box flex={{display: 'inline-flex', alignItems: 'center'}}>
+                    <Box margin={{right: 4}}>Re-execute from failures</Box>
+                    <Tooltip content="For each partition, if the most recent run failed, launch a re-execution starting from the steps that failed.">
+                      <IconWIP name="info" color={ColorsWIP.Gray500} />
+                    </Tooltip>
+                  </Box>
+                }
+              />
               {statusesLoading ? (
                 <div style={{marginLeft: '8px', marginTop: '3px'}}>
                   <Spinner purpose="body-text" />
@@ -480,14 +487,14 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
             display: 'flex',
             marginTop: 20,
             paddingTop: 20,
-            borderTop: `1px solid ${Colors.LIGHT_GRAY3}`,
+            borderTop: `1px solid ${ColorsWIP.Gray100}`,
             justifyContent: 'space-between',
           }}
         >
           <strong style={{display: 'block', marginBottom: 4}}>Preview</strong>
-          <div style={{color: Colors.GRAY3}}>Click or drag to edit selected partitions</div>
+          <div style={{color: ColorsWIP.Gray400}}>Click or drag to edit selected partitions</div>
         </div>
-        <div style={{display: 'flex', border: `1px solid ${Colors.LIGHT_GRAY1}`}}>
+        <div style={{display: 'flex', border: `1px solid ${ColorsWIP.Gray200}`}}>
           {query && (
             <GridFloatingContainer floating={true}>
               <GridColumn disabled>

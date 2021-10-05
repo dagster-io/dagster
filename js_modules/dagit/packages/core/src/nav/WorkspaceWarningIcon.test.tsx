@@ -18,7 +18,7 @@ describe('WorkspaceWarningIcon', () => {
   it('does not display if no errors', async () => {
     render(<Test />);
     await waitFor(() => {
-      expect(screen.queryByText(/warning/i)).toBeNull();
+      expect(screen.queryByLabelText('warning')).toBeNull();
     });
   });
 
@@ -31,7 +31,7 @@ describe('WorkspaceWarningIcon', () => {
     };
     render(<Test mocks={mocks} />);
     await waitFor(() => {
-      expect(screen.getByText(/warning/i)).toBeVisible();
+      expect(screen.queryByLabelText('warning')).toBeVisible();
     });
   });
 });

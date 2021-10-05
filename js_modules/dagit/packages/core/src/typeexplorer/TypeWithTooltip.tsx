@@ -3,6 +3,8 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {ColorsWIP} from '../ui/Colors';
+
 interface ITypeWithTooltipProps {
   type: {
     name: string | null;
@@ -35,10 +37,10 @@ export const DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT = gql`
 `;
 
 const TypeName = styled.code`
-  background: #d6ecff;
+  background: ${ColorsWIP.Blue50};
   border: none;
   padding: 1px 4px;
-  border-bottom: 1px solid #2491eb;
+  border-bottom: 1px solid ${ColorsWIP.Blue500};
   border-radius: 0.25em;
   font-size: 14px;
   font-weight: 500;

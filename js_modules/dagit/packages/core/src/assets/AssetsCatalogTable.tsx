@@ -1,51 +1,56 @@
 import {gql, useQuery} from '@apollo/client';
-import {
-  Button,
-  Checkbox,
-  Menu,
-  MenuItem,
-  Popover,
-  InputGroup as BlueprintInputGroup,
-  NonIdealState,
-  Colors,
-  ButtonGroup,
-} from '@blueprintjs/core';
+import {InputGroup as BlueprintInputGroup, Menu, MenuItem} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
+import {uniqBy} from 'lodash';
 import * as React from 'react';
-import {useHistory, Link} from 'react-router-dom';
+import {Link, useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {useFeatureFlags} from '../app/Flags';
 import {usePermissions} from '../app/Permissions';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {QueryCountdown} from '../app/QueryCountdown';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {PipelineReference} from '../pipelines/PipelineReference';
 import {Box} from '../ui/Box';
+import {ButtonWIP} from '../ui/Button';
+import {ButtonGroup} from '../ui/ButtonGroup';
+import {Checkbox} from '../ui/Checkbox';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
 import {Loading} from '../ui/Loading';
+import {markdownToPlaintext} from '../ui/Markdown';
+import {MenuItemWIP, MenuWIP} from '../ui/Menu';
+import {NonIdealState} from '../ui/NonIdealState';
+import {Popover} from '../ui/Popover';
 import {Table} from '../ui/Table';
 import {Tag} from '../ui/Tag';
+import {assetKeyToString} from '../workspace/asset-graph/Utils';
 
 import {AssetWipeDialog} from './AssetWipeDialog';
 import {AssetsFilter, filterAssets} from './AssetsFilter';
-import {
-  AssetsTableQuery,
-  AssetsTableQuery_assetsOrError_AssetConnection_nodes,
-  AssetsTableQuery_assetsOrError_AssetConnection_nodes_key,
-  AssetsTableQuery_assetsOrError_AssetConnection_nodes_tags,
-} from './types/AssetsTableQuery';
+import {AssetsTableMaterializationsQuery} from './types/AssetsTableMaterializationsQuery';
+import {AssetsTableNodesQuery} from './types/AssetsTableNodesQuery';
 import {useAssetView} from './useAssetView';
 
-type Asset = AssetsTableQuery_assetsOrError_AssetConnection_nodes;
-type AssetKey = AssetsTableQuery_assetsOrError_AssetConnection_nodes_key;
-type AssetTag = AssetsTableQuery_assetsOrError_AssetConnection_nodes_tags;
+type AssetKey = {path: string[]};
+type AssetTag = {key: string; value: string};
+export type Asset = {
+  id: string;
+  key: AssetKey;
+  tags: AssetTag[];
+  jobName?: string | null;
+  opName?: string | null;
+  description?: string | null;
+};
 
 const EXPERIMENTAL_TAGS_WARNING = (
   <Box style={{maxWidth: 300}}>
     Tags are an experimental feature of asset materializations. See the{' '}
     <a
       href="https://docs.dagster.io/_apidocs/solids#dagster.AssetMaterialization"
-      style={{color: Colors.WHITE}}
+      style={{color: ColorsWIP.White}}
     >
       AssetMaterialization documentation
     </a>{' '}
@@ -56,7 +61,14 @@ const EXPERIMENTAL_TAGS_WARNING = (
 const POLL_INTERVAL = 15000;
 
 export const AssetsCatalogTable: React.FC<{prefixPath?: string[]}> = ({prefixPath}) => {
-  const queryResult = useQuery<AssetsTableQuery>(ASSETS_TABLE_QUERY, {
+  const materializationsQuery = useQuery<AssetsTableMaterializationsQuery>(
+    ASSETS_TABLE_MATERIALIZATIONS_QUERY,
+    {
+      notifyOnNetworkStatusChange: true,
+      pollInterval: POLL_INTERVAL,
+    },
+  );
+  const nodesQuery = useQuery<AssetsTableNodesQuery>(ASSETS_TABLE_NODES_QUERY, {
     notifyOnNetworkStatusChange: true,
     pollInterval: POLL_INTERVAL,
   });
@@ -75,102 +87,111 @@ export const AssetsCatalogTable: React.FC<{prefixPath?: string[]}> = ({prefixPat
 
   return (
     <div style={{flexGrow: 1}}>
-      <Loading allowStaleData queryResult={queryResult}>
-        {({assetsOrError}) => {
-          if (assetsOrError.__typename === 'PythonError') {
-            return (
-              <Wrapper>
-                <PythonErrorInfo error={assetsOrError} />
-              </Wrapper>
-            );
-          }
+      <Loading allowStaleData queryResult={materializationsQuery}>
+        {({assetsOrError}) => (
+          <Loading allowStaleData queryResult={nodesQuery}>
+            {({assetNodes}) => {
+              if (assetsOrError.__typename === 'PythonError') {
+                return (
+                  <Wrapper>
+                    <PythonErrorInfo error={assetsOrError} />
+                  </Wrapper>
+                );
+              }
 
-          const allAssets = assetsOrError.nodes;
-          const assets = prefixPath
-            ? assetsOrError.nodes.filter(
-                (asset: Asset) =>
-                  prefixPath.length < asset.key.path.length &&
-                  prefixPath.every((part: string, i: number) => part === asset.key.path[i]),
-              )
-            : assetsOrError.nodes;
+              const allAssets: Asset[] = uniqBy(
+                [
+                  ...assetNodes.map((node) => ({...node, tags: [], key: node.assetKey})),
+                  ...assetsOrError.nodes,
+                ],
+                (item) => assetKeyToString(item.key),
+              );
 
-          const matching = isFlattened
-            ? filterAssets(assets, q)
-            : assets.filter((asset) => !q || matches(asset.key.path.join('/'), q));
+              const assets = prefixPath
+                ? allAssets.filter(
+                    (asset: Asset) =>
+                      prefixPath.length < asset.key.path.length &&
+                      prefixPath.every((part: string, i: number) => part === asset.key.path[i]),
+                  )
+                : allAssets;
 
-          if (!assets.length) {
-            return (
-              <Wrapper>
-                <NonIdealState
-                  icon="panel-table"
-                  title="Assets"
-                  description={
-                    <p>
-                      {prefixPath && prefixPath.length ? (
-                        <span>
-                          There are no matching materialized assets with the specified asset key.
-                        </span>
-                      ) : (
-                        <span>There are no known materialized assets.</span>
-                      )}
-                      Any asset keys that have been specified with an{' '}
-                      <code>AssetMaterialization</code> during a pipeline run will appear here. See
-                      the{' '}
-                      <a href="https://docs.dagster.io/_apidocs/solids#dagster.AssetMaterialization">
-                        AssetMaterialization documentation
-                      </a>{' '}
-                      for more information.
-                    </p>
-                  }
-                />
-              </Wrapper>
-            );
-          }
+              const matching = isFlattened
+                ? filterAssets(assets, q)
+                : assets.filter((asset) => !q || matches(asset.key.path.join('/'), q));
 
-          const showSwitcher = prefixPath || assets.some((asset) => asset.key.path.length > 1);
-          return (
-            <Wrapper>
-              <Box flex={{justifyContent: 'space-between'}}>
-                <div>
-                  {showSwitcher ? (
-                    <Group spacing={8} direction="row">
-                      <ButtonGroup>
-                        <Button
-                          icon="list"
-                          title="Flat"
-                          active={isFlattened}
-                          onClick={() => setIsFlattened(true)}
-                        />
-                        <Button
-                          icon="folder-close"
-                          title="Directory"
-                          active={!isFlattened}
-                          onClick={() => setIsFlattened(false)}
-                        />
-                      </ButtonGroup>
-                      {isFlattened ? (
+              if (!assets.length) {
+                return (
+                  <Wrapper>
+                    <NonIdealState
+                      icon="layers"
+                      title="Assets"
+                      description={
+                        <p>
+                          {prefixPath && prefixPath.length ? (
+                            <span>
+                              There are no matching materialized assets with the specified asset
+                              key.
+                            </span>
+                          ) : (
+                            <span>There are no known materialized assets.</span>
+                          )}
+                          Any asset keys that have been specified with an{' '}
+                          <code>AssetMaterialization</code> during a pipeline run will appear here.
+                          See the{' '}
+                          <a href="https://docs.dagster.io/_apidocs/solids#dagster.AssetMaterialization">
+                            AssetMaterialization documentation
+                          </a>{' '}
+                          for more information.
+                        </p>
+                      }
+                    />
+                  </Wrapper>
+                );
+              }
+
+              const showSwitcher = prefixPath || assets.some((asset) => asset.key.path.length > 1);
+              return (
+                <Wrapper>
+                  <Box flex={{justifyContent: 'space-between'}} padding={{horizontal: 24}}>
+                    <div>
+                      {showSwitcher ? (
+                        <Group spacing={8} direction="row">
+                          <ButtonGroup
+                            activeItems={new Set([view])}
+                            buttons={[
+                              {id: 'flat', icon: 'view_list', tooltip: 'List view'},
+                              {id: 'directory', icon: 'folder_open', tooltip: 'Folder view'},
+                            ]}
+                            onClick={(id) => setIsFlattened(id === 'flat')}
+                          />
+                          {isFlattened ? (
+                            <AssetsFilter assets={assets} query={q} onSetQuery={setQ} />
+                          ) : (
+                            <AssetSearch assets={allAssets} />
+                          )}
+                        </Group>
+                      ) : isFlattened ? (
                         <AssetsFilter assets={assets} query={q} onSetQuery={setQ} />
                       ) : (
                         <AssetSearch assets={allAssets} />
                       )}
-                    </Group>
-                  ) : isFlattened ? (
-                    <AssetsFilter assets={assets} query={q} onSetQuery={setQ} />
-                  ) : (
-                    <AssetSearch assets={allAssets} />
-                  )}
-                </div>
-                <QueryCountdown pollInterval={POLL_INTERVAL} queryResult={queryResult} />
-              </Box>
-              <AssetsTable
-                assets={matching}
-                currentPath={prefixPath || []}
-                setQuery={setQ}
-                isFlattened={isFlattened}
-              />
-            </Wrapper>
-          );
-        }}
+                    </div>
+                    <QueryCountdown
+                      pollInterval={POLL_INTERVAL}
+                      queryResult={materializationsQuery}
+                    />
+                  </Box>
+                  <AssetsTable
+                    assets={matching}
+                    currentPath={prefixPath || []}
+                    setQuery={setQ}
+                    isFlattened={isFlattened}
+                  />
+                </Wrapper>
+              );
+            }}
+          </Loading>
+        )}
       </Loading>
     </div>
   );
@@ -183,7 +204,7 @@ const matches = (haystack: string, needle: string) =>
     .filter((x) => x)
     .every((word) => haystack.toLowerCase().includes(word));
 
-const AssetSearch = ({assets}: {assets: Asset[]}) => {
+const AssetSearch: React.FC<{assets: Asset[]}> = ({assets}) => {
   const history = useHistory();
   const [open, setOpen] = React.useState(false);
   const [highlight, setHighlight] = React.useState<number>(0);
@@ -200,7 +221,9 @@ const AssetSearch = ({assets}: {assets: Asset[]}) => {
     history.push(`/instance/assets/${asset.key.path.join('/')}`);
   };
 
-  const matching = assets.filter((asset) => !q || matches(asset.key.path.join('/'), q));
+  const matching = assets
+    .filter((asset) => !q || matches(asset.key.path.join('/'), q))
+    .slice(0, 10);
 
   const onKeyDown = (e: React.KeyboardEvent<any>) => {
     // Enter and Return confirm the currently selected suggestion or
@@ -238,14 +261,13 @@ const AssetSearch = ({assets}: {assets: Asset[]}) => {
   return (
     <div style={{width: 600}}>
       <Popover
-        minimal
-        fill={true}
         isOpen={open && matching.length > 0}
-        position={'bottom-left'}
+        position="bottom-left"
+        fill
         content={
-          <Menu style={{maxWidth: 600, minWidth: 600}}>
-            {matching.slice(0, 10).map((asset, idx) => (
-              <MenuItem
+          <MenuWIP style={{maxWidth: 600, minWidth: 600}}>
+            {matching.map((asset, idx) => (
+              <MenuItemWIP
                 key={idx}
                 onMouseDown={(e: React.MouseEvent<any>) => {
                   e.preventDefault();
@@ -253,7 +275,7 @@ const AssetSearch = ({assets}: {assets: Asset[]}) => {
                   selectOption(asset);
                 }}
                 active={highlight === idx}
-                icon="panel-table"
+                icon="asset"
                 text={
                   <div>
                     <div>{asset.key.path.join('/')}</div>
@@ -261,7 +283,7 @@ const AssetSearch = ({assets}: {assets: Asset[]}) => {
                 }
               />
             ))}
-          </Menu>
+          </MenuWIP>
         }
       >
         <InputGroup
@@ -357,6 +379,7 @@ const AssetsTable = ({
   useDocumentTitle(currentPath.length ? `Assets: ${currentPath.join(' \u203A ')}` : 'Assets');
   const [toWipe, setToWipe] = React.useState<AssetKey[] | undefined>();
   const {canWipeAssets} = usePermissions();
+  const {flagAssetGraph} = useFeatureFlags();
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const {checkedPaths} = state;
 
@@ -448,6 +471,8 @@ const AssetsTable = ({
                 </Group>
               </th>
             ) : null}
+            {flagAssetGraph ? <th>Description</th> : null}
+            {flagAssetGraph ? <th style={{maxWidth: 250}}>Defined In</th> : null}
             {canWipeAssets ? <th>Actions</th> : null}
           </tr>
         </thead>
@@ -461,6 +486,7 @@ const AssetsTable = ({
                 path={path}
                 assets={pathMap[JSON.stringify(path)] || []}
                 shouldShowTags={hasTags}
+                shouldShowAssetGraphColumns={flagAssetGraph}
                 isFlattened={isFlattened}
                 isSelected={isSelected}
                 onSelectToggle={onToggle}
@@ -477,7 +503,10 @@ const AssetsTable = ({
         isOpen={!!toWipe}
         onClose={() => setToWipe(undefined)}
         onComplete={() => setToWipe(undefined)}
-        requery={(_) => [{query: ASSETS_TABLE_QUERY}]}
+        requery={(_) => [
+          {query: ASSETS_TABLE_NODES_QUERY},
+          {query: ASSETS_TABLE_MATERIALIZATIONS_QUERY},
+        ]}
       />
     </Box>
   );
@@ -490,6 +519,7 @@ const AssetEntryRow: React.FC<{
   isFlattened: boolean;
   onSelectToggle: (e: React.FormEvent<HTMLInputElement>, path: string[]) => void;
   shouldShowTags: boolean;
+  shouldShowAssetGraphColumns: boolean;
   assets: Asset[];
   onTagClick: (tag: AssetTag) => void;
   onWipe: (assets: Asset[]) => void;
@@ -499,6 +529,7 @@ const AssetEntryRow: React.FC<{
     currentPath,
     path,
     shouldShowTags,
+    shouldShowAssetGraphColumns,
     assets,
     onTagClick,
     isSelected,
@@ -510,6 +541,8 @@ const AssetEntryRow: React.FC<{
     const fullPath = [...(currentPath || []), ...path];
     const isAssetEntry = assets.length === 1 && fullPath.join('/') === assets[0].key.path.join('/');
     const linkUrl = `/instance/assets/${fullPath.map(encodeURIComponent).join('/')}`;
+    const first = assets[0];
+
     return (
       <tr>
         {canWipe ? (
@@ -538,13 +571,28 @@ const AssetEntryRow: React.FC<{
         </td>
         {shouldShowTags ? (
           <td>
-            {isAssetEntry && assets[0].tags.length ? (
-              <Box flex={{direction: 'row', wrap: 'wrap'}}>
-                {assets[0].tags.map((tag, idx) => (
+            {isAssetEntry && first.tags.length ? (
+              <Box flex={{direction: 'row', wrap: 'wrap', gap: 8}}>
+                {first.tags.map((tag, idx) => (
                   <Tag tag={tag} key={idx} onClick={() => onTagClick(tag)} />
                 ))}
               </Box>
             ) : null}
+          </td>
+        ) : null}
+        {shouldShowAssetGraphColumns ? (
+          <td>{first.description && markdownToPlaintext(first.description).split('\n')[0]}</td>
+        ) : null}
+        {shouldShowAssetGraphColumns ? (
+          <td>
+            {first.jobName && (
+              <PipelineReference
+                showIcon
+                pipelineName={first.jobName}
+                pipelineHrefContext="repo-unknown"
+                mode={'default'}
+              />
+            )}
           </td>
         ) : null}
         {canWipe ? (
@@ -561,12 +609,12 @@ const AssetEntryRow: React.FC<{
                     />
                   </Menu>
                 }
-                position="bottom"
+                position="bottom-right"
               >
-                <Button small minimal icon="chevron-down" style={{marginLeft: '4px'}} />
+                <ButtonWIP icon={<IconWIP name="expand_more" />} />
               </Popover>
             ) : (
-              <Button small minimal disabled icon="chevron-down" style={{marginLeft: '4px'}} />
+              <ButtonWIP icon={<IconWIP name="expand_more" />} />
             )}
           </td>
         ) : null}
@@ -596,14 +644,15 @@ const AssetActions: React.FC<{
   return (
     <>
       <Tooltip position="right" content={prompt}>
-        <Button
+        <ButtonWIP
           disabled={disabled}
-          icon="trash"
-          intent={disabled ? undefined : 'danger'}
+          icon={<IconWIP name="delete" />}
+          intent={disabled ? 'none' : 'danger'}
+          outlined={!disabled}
           onClick={() => setShowBulkWipeDialog(true)}
         >
           {disabled ? null : selected.length}
-        </Button>
+        </ButtonWIP>
       </Tooltip>
       <AssetWipeDialog
         assetKeys={selected.map((asset) => asset.key)}
@@ -613,7 +662,10 @@ const AssetActions: React.FC<{
           setShowBulkWipeDialog(false);
           clearSelection();
         }}
-        requery={(_) => [{query: ASSETS_TABLE_QUERY}]}
+        requery={(_) => [
+          {query: ASSETS_TABLE_NODES_QUERY},
+          {query: ASSETS_TABLE_MATERIALIZATIONS_QUERY},
+        ]}
       />
     </>
   );
@@ -634,8 +686,22 @@ const Wrapper = styled.div`
   }
 `;
 
-const ASSETS_TABLE_QUERY = gql`
-  query AssetsTableQuery {
+const ASSETS_TABLE_NODES_QUERY = gql`
+  query AssetsTableNodesQuery {
+    assetNodes {
+      id
+      opName
+      jobName
+      description
+      assetKey {
+        path
+      }
+    }
+  }
+`;
+
+const ASSETS_TABLE_MATERIALIZATIONS_QUERY = gql`
+  query AssetsTableMaterializationsQuery {
     assetsOrError {
       __typename
       ... on AssetConnection {

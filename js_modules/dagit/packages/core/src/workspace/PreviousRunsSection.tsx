@@ -1,9 +1,9 @@
 import {gql} from '@apollo/client';
-import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
 import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {Subheading} from '../ui/Text';
 
@@ -27,14 +27,10 @@ export const PreviousRunsSection: React.FC<{
 
   return (
     <Group direction="column" spacing={4}>
-      <Box
-        padding={{bottom: 12}}
-        border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}
-        flex={{direction: 'row'}}
-      >
+      <Box padding={{vertical: 16, horizontal: 24}} flex={{direction: 'row'}}>
         <Subheading>Latest runs</Subheading>
       </Box>
-      <div style={{color: Colors.GRAY3}}>{content()}</div>
+      <div style={{color: ColorsWIP.Gray400}}>{content()}</div>
     </Group>
   );
 };

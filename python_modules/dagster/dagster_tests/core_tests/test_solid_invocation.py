@@ -85,6 +85,17 @@ def test_solid_invocation_none_arg():
     assert result == 5
 
 
+def test_solid_invocation_context_arg():
+    @solid
+    def basic_solid(context):
+        context.log.info("yay")
+
+    basic_solid(None)
+    basic_solid(build_solid_context())
+    basic_solid(context=None)
+    basic_solid(context=build_solid_context())
+
+
 def test_solid_invocation_out_of_order_input_defs():
     @solid(input_defs=[InputDefinition("x"), InputDefinition("y")])
     def check_correct_order(y, x):
@@ -356,8 +367,8 @@ def test_attempted_invocation_in_composition():
         pass
 
     msg = (
-        "Must pass the output from previous solid invocations or inputs to the composition "
-        "function as inputs when invoking solids during composition."
+        "Must pass the output from previous node invocations or inputs to the composition "
+        "function as inputs when invoking nodes during composition."
     )
     with pytest.raises(
         DagsterInvalidDefinitionError,

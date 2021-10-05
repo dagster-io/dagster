@@ -22,7 +22,7 @@ from dagster import (
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.compute_log_manager import ComputeIOType
-from dagster.core.test_utils import instance_for_test
+from dagster.core.test_utils import default_mode_def_for_test, instance_for_test
 from dagster.utils import safe_tempfile_path, segfault
 
 
@@ -42,7 +42,6 @@ def test_diamond_multi_execution():
         result = execute_pipeline(
             pipe,
             run_config={
-                "intermediate_storage": {"filesystem": {}},
                 "execution": {"multiprocess": {}},
             },
             instance=instance,
@@ -82,19 +81,35 @@ def define_diamond_pipeline():
             PresetDefinition(
                 "just_adder",
                 {
-                    "intermediate_storage": {"filesystem": {}},
                     "execution": {"multiprocess": {}},
                     "solids": {"adder": {"inputs": {"left": {"value": 1}, "right": {"value": 1}}}},
                 },
                 solid_selection=["adder"],
             )
         ],
+        mode_defs=[default_mode_def_for_test],
     )
     def diamond_pipeline():
         two = return_two()
         adder(left=add_three(two), right=mult_three(two))
 
     return diamond_pipeline
+
+
+def define_in_mem_pipeline():
+    @lambda_solid
+    def return_two():
+        return 2
+
+    @lambda_solid(input_defs=[InputDefinition("num")])
+    def add_three(num):
+        return num + 3
+
+    @pipeline
+    def in_mem_pipeline():
+        add_three(return_two())
+
+    return in_mem_pipeline
 
 
 def define_error_pipeline():
@@ -106,7 +121,7 @@ def define_error_pipeline():
     def throw_error():
         raise Exception("bad programmer")
 
-    @pipeline
+    @pipeline(mode_defs=[default_mode_def_for_test])
     def error_pipeline():
         should_never_execute(throw_error())
 
@@ -124,7 +139,6 @@ def test_error_pipeline_multiprocess():
         result = execute_pipeline(
             reconstructable(define_error_pipeline),
             run_config={
-                "intermediate_storage": {"filesystem": {}},
                 "execution": {"multiprocess": {}},
             },
             instance=instance,
@@ -139,7 +153,7 @@ def test_mem_storage_error_pipeline_multiprocess():
             match="your pipeline includes solid outputs that will not be stored somewhere where other processes can retrieve them.",
         ):
             execute_pipeline(
-                reconstructable(define_diamond_pipeline),
+                reconstructable(define_in_mem_pipeline),
                 run_config={"execution": {"multiprocess": {}}},
                 instance=instance,
                 raise_on_error=False,
@@ -149,7 +163,7 @@ def test_mem_storage_error_pipeline_multiprocess():
 def test_invalid_instance():
     result = execute_pipeline(
         reconstructable(define_diamond_pipeline),
-        run_config={"intermediate_storage": {"filesystem": {}}, "execution": {"multiprocess": {}}},
+        run_config={"execution": {"multiprocess": {}}},
         instance=DagsterInstance.ephemeral(),
         raise_on_error=False,
     )
@@ -166,7 +180,7 @@ def test_invalid_instance():
 def test_no_handle():
     result = execute_pipeline(
         define_diamond_pipeline(),
-        run_config={"intermediate_storage": {"filesystem": {}}, "execution": {"multiprocess": {}}},
+        run_config={"execution": {"multiprocess": {}}},
         instance=DagsterInstance.ephemeral(),
         raise_on_error=False,
     )
@@ -216,7 +230,7 @@ def define_subdag_pipeline():
     def noop():
         pass
 
-    @pipeline
+    @pipeline(mode_defs=[default_mode_def_for_test])
     def separate():
         waiter()
         a = noop.alias("noop_1")()
@@ -235,7 +249,6 @@ def test_separate_sub_dags():
             result = execute_pipeline(
                 pipe,
                 run_config={
-                    "intermediate_storage": {"filesystem": {}},
                     "execution": {"multiprocess": {"config": {"max_concurrent": 2}}},
                     "solids": {
                         "waiter": {"config": filename},
@@ -271,7 +284,6 @@ def test_ephemeral_event_log():
         result = execute_pipeline(
             pipe,
             run_config={
-                "intermediate_storage": {"filesystem": {}},
                 "execution": {"multiprocess": {}},
             },
             instance=instance,
@@ -296,7 +308,7 @@ def echo(x):
     return x
 
 
-@pipeline
+@pipeline(mode_defs=[default_mode_def_for_test])
 def optional_stuff():
     option_1, option_2 = either_or()
     echo(echo(option_1))
@@ -313,7 +325,6 @@ def test_optional_outputs():
         multi_result = execute_pipeline(
             reconstructable(optional_stuff),
             run_config={
-                "intermediate_storage": {"filesystem": {}},
                 "execution": {"multiprocess": {}},
             },
             instance=instance,
@@ -333,7 +344,7 @@ def throw():
     )
 
 
-@pipeline
+@pipeline(mode_defs=[default_mode_def_for_test])
 def failure():
     throw()
 
@@ -344,7 +355,6 @@ def test_failure_multiprocessing():
             reconstructable(failure),
             run_config={
                 "execution": {"multiprocess": {}},
-                "intermediate_storage": {"filesystem": {}},
             },
             instance=instance,
             raise_on_error=False,
@@ -370,7 +380,7 @@ def sys_exit(context):
     sys.exit("Crashy output to stderr")
 
 
-@pipeline
+@pipeline(mode_defs=[default_mode_def_for_test])
 def sys_exit_pipeline():
     sys_exit()
 
@@ -382,7 +392,6 @@ def test_crash_multiprocessing():
             reconstructable(sys_exit_pipeline),
             run_config={
                 "execution": {"multiprocess": {}},
-                "intermediate_storage": {"filesystem": {}},
             },
             instance=instance,
             raise_on_error=False,
@@ -421,7 +430,7 @@ def segfault_solid(context):
     segfault()
 
 
-@pipeline
+@pipeline(mode_defs=[default_mode_def_for_test])
 def segfault_pipeline():
     segfault_solid()
 
@@ -433,7 +442,6 @@ def test_crash_hard_multiprocessing():
             reconstructable(segfault_pipeline),
             run_config={
                 "execution": {"multiprocess": {}},
-                "intermediate_storage": {"filesystem": {}},
             },
             instance=instance,
             raise_on_error=False,

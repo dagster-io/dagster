@@ -1,5 +1,4 @@
 import {gql, useApolloClient} from '@apollo/client';
-import {Colors} from '@blueprintjs/core';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -135,8 +134,8 @@ export const InstigationList: React.FC<InstigationListProps> = ({repos, repoPath
       <div style={{flex: 1}}>
         <Box
           padding={12}
-          style={{fontSize: '13px', color: Colors.LIGHT_GRAY3}}
-          border={{width: 1, side: 'top', color: Colors.DARK_GRAY4}}
+          style={{fontSize: '13px', color: ColorsWIP.Gray100}}
+          border={{width: 1, side: 'top', color: ColorsWIP.Gray800}}
         >
           No schedules or sensors defined
         </Box>
@@ -152,20 +151,20 @@ export const InstigationList: React.FC<InstigationListProps> = ({repos, repoPath
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
-        borderTop: `1px solid ${Colors.DARK_GRAY4}`,
+        borderTop: `1px solid ${ColorsWIP.Gray800}`,
       }}
     >
       <Box
         flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
         padding={{vertical: 8, horizontal: 12}}
-        border={{side: 'bottom', width: 1, color: Colors.DARK_GRAY3}}
+        border={{side: 'bottom', width: 1, color: ColorsWIP.Gray800}}
       >
         <ItemHeader>{'Schedules & Sensors'}</ItemHeader>
       </Box>
       <Box
         padding={{vertical: 8, horizontal: 12}}
         flex={{alignItems: 'center'}}
-        border={{side: 'bottom', width: 1, color: Colors.DARK_GRAY3}}
+        border={{side: 'bottom', width: 1, color: ColorsWIP.Gray800}}
       >
         <Item to="/instance/schedules">
           <Group direction="row" spacing={8} alignItems="center">
@@ -173,7 +172,7 @@ export const InstigationList: React.FC<InstigationListProps> = ({repos, repoPath
             <div>All schedules</div>
           </Group>
         </Item>
-        <Box border={{width: 1, side: 'left', color: Colors.DARK_GRAY4}} margin={{horizontal: 8}}>
+        <Box border={{width: 1, side: 'left', color: ColorsWIP.Gray800}} margin={{horizontal: 8}}>
           &nbsp;
         </Box>
         <Item to="/instance/sensors">
@@ -187,14 +186,14 @@ export const InstigationList: React.FC<InstigationListProps> = ({repos, repoPath
         {items.map((p) => {
           const isSelected = p.label === selector && p.repoPath === repoPath;
           const border: BorderSetting | null = isSelected
-            ? {side: 'left', width: 4, color: isSelected ? Colors.COBALT3 : Colors.GRAY3}
+            ? {side: 'left', width: 4, color: isSelected ? ColorsWIP.Blue500 : ColorsWIP.Gray400}
             : null;
           const icon = p.instigationType === InstigationType.SCHEDULE ? 'schedule' : 'sensors';
 
           return (
             <Item key={p.to} className={`${isSelected ? 'selected' : ''}`} to={p.to}>
               <Box
-                background={isSelected ? Colors.BLACK : null}
+                background={isSelected ? ColorsWIP.Dark : null}
                 border={border}
                 flex={{alignItems: 'center', justifyContent: 'space-between'}}
                 padding={{vertical: 8, right: 12, left: 12}}
@@ -230,7 +229,7 @@ const ItemHeader = styled.div`
   text-overflow: ellipsis;
   overflow: hidden;
   font-weight: bold;
-  color: ${Colors.LIGHT_GRAY3} !important;
+  color: ${ColorsWIP.Gray100} !important;
 `;
 
 const Label = styled.div`
@@ -246,7 +245,7 @@ const StatusDot = styled.div<{
   width: ${({size}) => size}px;
   height: ${({size}) => size}px;
   border-radius: ${({size}) => size / 2}px;
-  background: ${Colors.GREEN2};
+  background: ${ColorsWIP.Green700};
 `;
 
 const Items = styled.div`
@@ -258,31 +257,31 @@ const Items = styled.div`
   }
 
   scrollbar-width: thin;
-  scrollbar-color: ${Colors.GRAY1} ${Colors.DARK_GRAY1};
+  scrollbar-color: ${ColorsWIP.Gray600} ${ColorsWIP.Gray900};
 
   &::-webkit-scrollbar-track {
-    background: ${Colors.DARK_GRAY1};
+    background: ${ColorsWIP.Gray900};
   }
   &::-webkit-scrollbar-thumb {
-    background-color: ${Colors.GRAY1};
+    background-color: ${ColorsWIP.Gray600};
     border-radius: 6px;
-    border: 3px solid ${Colors.DARK_GRAY1};
+    border: 3px solid ${ColorsWIP.Gray900};
   }
 `;
 
 const Item = styled(Link)`
   font-size: 13px;
-  color: ${Colors.LIGHT_GRAY3} !important;
+  color: ${ColorsWIP.Gray100} !important;
   &:hover {
     text-decoration: none;
-    color: ${Colors.WHITE} !important;
+    color: ${ColorsWIP.White} !important;
   }
   &:focus {
     outline: 0;
   }
   &.selected {
     font-weight: 600;
-    color: ${Colors.WHITE} !important;
+    color: ${ColorsWIP.White} !important;
   }
 `;
 
@@ -292,8 +291,8 @@ const BaseTooltipStyle = {
   paddingRight: 7,
   left: 9,
   top: 5,
-  color: Colors.WHITE,
-  background: Colors.DARK_GRAY1,
+  color: ColorsWIP.White,
+  background: ColorsWIP.Gray900,
   transform: 'none',
   border: 0,
   borderRadius: 4,
@@ -301,14 +300,14 @@ const BaseTooltipStyle = {
 
 const ItemTooltipStyle = JSON.stringify({
   ...BaseTooltipStyle,
-  color: Colors.WHITE,
-  background: Colors.DARK_GRAY1,
+  color: ColorsWIP.White,
+  background: ColorsWIP.Gray900,
 });
 
 const SelectedItemTooltipStyle = JSON.stringify({
   ...BaseTooltipStyle,
-  color: Colors.WHITE,
-  background: Colors.BLACK,
+  color: ColorsWIP.White,
+  background: ColorsWIP.Dark,
   fontWeight: 600,
 });
 

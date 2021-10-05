@@ -1,4 +1,4 @@
-import {Colors, Overlay} from '@blueprintjs/core';
+import {Overlay} from '@blueprintjs/core';
 import Fuse from 'fuse.js';
 import * as React from 'react';
 import {useHistory, useLocation} from 'react-router-dom';
@@ -192,9 +192,9 @@ SearchDialog.defaultProps = {
 };
 
 const SearchTrigger = styled.button<{$theme: 'dark' | 'light'}>`
-  background-color: ${({$theme}) => ($theme === 'light' ? Colors.WHITE : Colors.DARK_GRAY1)};
+  background-color: ${({$theme}) => ($theme === 'light' ? ColorsWIP.White : ColorsWIP.Gray900)};
   border: none;
-  color: ${({$theme}) => ($theme === 'light' ? Colors.GRAY1 : Colors.GRAY4)};
+  color: ${({$theme}) => ($theme === 'light' ? ColorsWIP.Gray600 : ColorsWIP.Gray300)};
   font-size: 15px;
   font-weight: 400;
   cursor: pointer;
@@ -205,7 +205,7 @@ const SearchTrigger = styled.button<{$theme: 'dark' | 'light'}>`
   height: 100%;
 
   :focus {
-    border-color: ${({$theme}) => ($theme === 'light' ? Colors.BLUE3 : Colors.LIGHT_GRAY3)};
+    border-color: ${({$theme}) => ($theme === 'light' ? ColorsWIP.Blue500 : ColorsWIP.Gray100)};
   }
 `;
 
@@ -215,7 +215,7 @@ const Placeholder = styled.div`
 `;
 
 const Container = styled.div`
-  background-color: ${Colors.WHITE};
+  background-color: ${ColorsWIP.White};
   border-radius: 4px;
   box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
   max-height: 60vh;
@@ -232,14 +232,14 @@ interface SearchBoxProps {
 const SearchBox = styled.div<SearchBoxProps>`
   align-items: center;
   border-bottom: ${({hasQueryString}) =>
-    hasQueryString ? `1px solid ${Colors.LIGHT_GRAY2}` : 'none'};
+    hasQueryString ? `1px solid ${ColorsWIP.Gray100}` : 'none'};
   display: flex;
   padding: 12px 20px 12px 12px;
 `;
 
 const SearchInput = styled.input`
   border: none;
-  color: ${Colors.GRAY1};
+  color: ${ColorsWIP.Gray600};
   font-family: ${FontFamily.default};
   font-size: 18px;
   margin-left: 4px;
@@ -247,14 +247,14 @@ const SearchInput = styled.input`
   width: 100%;
 
   &::placeholder {
-    color: ${Colors.GRAY5};
+    color: ${ColorsWIP.Gray200};
   }
 `;
 
 const SlashShortcut = styled.div<{$theme: 'light' | 'dark'}>`
-  background-color: ${({$theme}) => ($theme === 'light' ? Colors.LIGHT_GRAY4 : Colors.DARK_GRAY3)};
+  background-color: ${({$theme}) => ($theme === 'light' ? ColorsWIP.Gray100 : ColorsWIP.Gray800)};
   border-radius: 3px;
-  color: ${({$theme}) => ($theme === 'light' ? Colors.DARK_GRAY1 : Colors.LIGHT_GRAY4)};
+  color: ${({$theme}) => ($theme === 'light' ? ColorsWIP.Gray900 : ColorsWIP.Gray100)};
   font-size: 14px;
   font-family: ${FontFamily.monospace};
   padding: 2px 6px;

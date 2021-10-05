@@ -47,7 +47,7 @@ export const SidebarPipelineOrJobOverview: React.FC<{
         }
 
         return (
-          <div>
+          <div style={{overflowY: 'scroll'}}>
             <SidebarSection title={'Description'}>
               <Box padding={12}>
                 <Description

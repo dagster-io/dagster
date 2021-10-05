@@ -21,6 +21,7 @@ from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidInv
 from dagster.core.types.dagster_type import DagsterType
 from dagster.utils.backcompat import experimental_arg_warning
 
+from ..decorator_utils import get_function_params
 from .config import ConfigMapping
 from .definition_config_schema import (
     IDefinitionConfigSchema,
@@ -150,18 +151,38 @@ class SolidDefinition(NodeDefinition):
                     "directly invoked."
                 )
             if self.compute_fn.has_context_arg():
-                if len(args) == 0:
+                if len(args) + len(kwargs) == 0:
                     raise DagsterInvalidInvocationError(
                         f"Compute function of solid '{self.name}' has context argument, but no context "
                         "was provided when invoking."
                     )
-                elif args[0] is not None and not isinstance(args[0], UnboundSolidExecutionContext):
-                    raise DagsterInvalidInvocationError(
-                        f"Compute function of solid '{self.name}' has context argument, but no context "
-                        "was provided when invoking."
-                    )
-                context = args[0]
-                return solid_invocation_result(self, context, *args[1:], **kwargs)
+                if len(args) > 0:
+                    if args[0] is not None and not isinstance(
+                        args[0], UnboundSolidExecutionContext
+                    ):
+                        raise DagsterInvalidInvocationError(
+                            f"Compute function of solid '{self.name}' has context argument, "
+                            "but no context was provided when invoking."
+                        )
+                    context = args[0]
+                    return solid_invocation_result(self, context, *args[1:], **kwargs)
+                # Context argument is provided under kwargs
+                else:
+                    context_param_name = get_function_params(self.compute_fn.decorated_fn)[0].name
+                    if context_param_name not in kwargs:
+                        raise DagsterInvalidInvocationError(
+                            f"Compute function of solid '{self.name}' has context argument "
+                            f"'{context_param_name}', but no value for '{context_param_name}' was "
+                            f"found when invoking. Provided kwargs: {kwargs}"
+                        )
+                    context = kwargs[context_param_name]
+                    kwargs_sans_context = {
+                        kwarg: val
+                        for kwarg, val in kwargs.items()
+                        if not kwarg == context_param_name
+                    }
+                    return solid_invocation_result(self, context, *args, **kwargs_sans_context)
+
             else:
                 if len(args) > 0 and isinstance(args[0], UnboundSolidExecutionContext):
                     raise DagsterInvalidInvocationError(
@@ -169,6 +190,10 @@ class SolidDefinition(NodeDefinition):
                         "context was provided when invoking."
                     )
                 return solid_invocation_result(self, None, *args, **kwargs)
+
+    @property
+    def node_type_str(self) -> str:
+        return "solid"
 
     @property
     def compute_fn(self) -> Union[Callable[..., Any], "DecoratedSolidFunction"]:
@@ -333,9 +358,9 @@ class CompositeSolidDefinition(GraphDefinition):
         config_mapping = self._config_mapping
         if config_mapping is None:
             raise DagsterInvalidDefinitionError(
-                "Only composite solids utilizing config mapping can be pre-configured. The solid "
-                '"{graph_name}" does not have a config mapping, and thus has nothing to be '
-                "configured.".format(graph_name=self.name)
+                "Only composite solids utilizing config mapping can be pre-configured. The "
+                'composite solid "{graph_name}" does not have a config mapping, and thus has '
+                "nothing to be configured.".format(graph_name=self.name)
             )
 
         return CompositeSolidDefinition(
@@ -353,6 +378,10 @@ class CompositeSolidDefinition(GraphDefinition):
             tags=self.tags,
             positional_inputs=self.positional_inputs,
         )
+
+    @property
+    def node_type_str(self):
+        return "composite solid"
 
 
 def _check_io_managers_on_composite_solid(

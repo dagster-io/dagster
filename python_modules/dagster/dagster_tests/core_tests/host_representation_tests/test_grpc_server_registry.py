@@ -53,7 +53,9 @@ def test_error_repo_in_registry():
             python_file=file_relative_path(__file__, "error_repo.py"),
         ),
     )
-    with ProcessGrpcServerRegistry(reload_interval=5, heartbeat_ttl=10) as registry:
+    with ProcessGrpcServerRegistry(
+        reload_interval=5, heartbeat_ttl=10, startup_timeout=5
+    ) as registry:
         # Repository with a loading error does not raise an exception
         endpoint = registry.get_grpc_endpoint(error_origin)
 
@@ -91,7 +93,9 @@ def test_process_server_registry():
         ),
     )
 
-    with ProcessGrpcServerRegistry(reload_interval=5, heartbeat_ttl=10) as registry:
+    with ProcessGrpcServerRegistry(
+        reload_interval=5, heartbeat_ttl=10, startup_timeout=5
+    ) as registry:
         with DynamicWorkspace(registry) as workspace:
             endpoint_one = registry.get_grpc_endpoint(origin)
             location_one = workspace.get_location(origin)
@@ -166,7 +170,9 @@ def test_registry_multithreading():
         ),
     )
 
-    with ProcessGrpcServerRegistry(reload_interval=300, heartbeat_ttl=600) as registry:
+    with ProcessGrpcServerRegistry(
+        reload_interval=300, heartbeat_ttl=600, startup_timeout=30
+    ) as registry:
         endpoint = registry.get_grpc_endpoint(origin)
 
         threads = []
@@ -196,7 +202,7 @@ class TestMockProcessGrpcServerRegistry(ProcessGrpcServerRegistry):
     def __init__(self):
         self.mocked_loadable_target_origin = None
         super(TestMockProcessGrpcServerRegistry, self).__init__(
-            reload_interval=300, heartbeat_ttl=600
+            reload_interval=300, heartbeat_ttl=600, startup_timeout=30
         )
 
     def supports_origin(self, repository_location_origin):

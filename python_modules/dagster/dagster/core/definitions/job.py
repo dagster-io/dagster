@@ -15,7 +15,7 @@ from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
     from dagster.core.instance import DagsterInstance
-    from dagster.core.execution.execution_results import InProcessGraphResult
+    from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
 
 
 class JobDefinition(PipelineDefinition):
@@ -46,15 +46,19 @@ class JobDefinition(PipelineDefinition):
             version_strategy=version_strategy,
         )
 
+    @property
+    def target_type(self):
+        return "job"
+
     def describe_target(self):
-        return f"job '{self.name}'"
+        return f"{self.target_type} '{self.name}'"
 
     def execute_in_process(
         self,
         run_config: Optional[Dict[str, Any]] = None,
         instance: Optional["DagsterInstance"] = None,
         raise_on_error: bool = True,
-    ) -> "InProcessGraphResult":
+    ) -> "ExecuteInProcessResult":
         """
         (Experimental) Execute the Job in-process, gathering results in-memory.
 
@@ -71,7 +75,7 @@ class JobDefinition(PipelineDefinition):
                 Defaults to ``True``.
 
         Returns:
-            InProcessGraphResult
+            ExecuteInProcessResult
 
         """
         from dagster.core.definitions.executor import execute_in_process_executor

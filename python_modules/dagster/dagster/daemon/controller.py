@@ -39,6 +39,11 @@ THREAD_CHECK_INTERVAL = 5
 HEARTBEAT_CHECK_INTERVAL = 15
 
 
+DAEMON_GRPC_SERVER_RELOAD_INTERVAL = 60
+DAEMON_GRPC_SERVER_HEARTBEAT_TTL = 120
+DAEMON_GRPC_SERVER_STARTUP_TIMEOUT = 30
+
+
 def _sorted_quoted(strings):
     return "[" + ", ".join(["'{}'".format(s) for s in sorted(list(strings))]) + "]"
 
@@ -48,6 +53,14 @@ def create_daemons_from_instance(instance):
         create_daemon_of_type(daemon_type, instance)
         for daemon_type in instance.get_required_daemon_types()
     ]
+
+
+def create_daemon_grpc_server_registry():
+    return ProcessGrpcServerRegistry(
+        reload_interval=DAEMON_GRPC_SERVER_RELOAD_INTERVAL,
+        heartbeat_ttl=DAEMON_GRPC_SERVER_HEARTBEAT_TTL,
+        startup_timeout=DAEMON_GRPC_SERVER_STARTUP_TIMEOUT,
+    )
 
 
 @contextmanager
@@ -64,7 +77,7 @@ def daemon_controller_from_instance(
 
     try:
         with ExitStack() as stack:
-            grpc_server_registry = stack.enter_context(ProcessGrpcServerRegistry())
+            grpc_server_registry = stack.enter_context(create_daemon_grpc_server_registry())
             daemons = [stack.enter_context(daemon) for daemon in gen_daemons(instance)]
 
             # Create this in each daemon to generate a workspace per-daemon

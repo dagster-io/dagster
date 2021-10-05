@@ -1,5 +1,4 @@
-import {Colors} from '@blueprintjs/core';
-import React from 'react';
+import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {useFeatureFlags} from '../app/Flags';
@@ -10,13 +9,14 @@ import {RunStatusTagWithStats} from '../runs/RunStatusTag';
 import {titleForRun} from '../runs/RunUtils';
 import {ButtonWIP} from '../ui/Button';
 import {ButtonLink} from '../ui/ButtonLink';
+import {ColorsWIP} from '../ui/Colors';
 import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
 import {Table} from '../ui/Table';
 import {Mono} from '../ui/Text';
 
 import {AssetLineageElements} from './AssetLineageElements';
-import {AssetQuery_assetOrError_Asset_assetMaterializations as Materialization} from './types/AssetQuery';
+import {AssetMaterializationFragment} from './types/AssetMaterializationFragment';
 import {HistoricalMaterialization} from './useMaterializationBuckets';
 
 export const AssetMaterializationTable: React.FC<{
@@ -75,7 +75,7 @@ const AssetMaterializationRow: React.FC<{
   return (
     <tr>
       {isPartitioned && (
-        <td>{latest.partition || <span style={{color: Colors.GRAY3}}>None</span>}</td>
+        <td>{latest.partition || <span style={{color: ColorsWIP.Gray400}}>None</span>}</td>
       )}
       <td style={{fontSize: 12, padding: '4px 12px 0 0'}}>
         {materialization.description ? (
@@ -123,7 +123,7 @@ const AssetMaterializationRow: React.FC<{
 interface PredecessorDialogProps {
   hasLineage: boolean;
   isPartitioned: boolean;
-  predecessors: Materialization[];
+  predecessors: AssetMaterializationFragment[];
 }
 
 export const AssetPredecessorLink: React.FC<PredecessorDialogProps> = ({

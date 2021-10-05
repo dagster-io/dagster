@@ -43,7 +43,7 @@ def execute_pipeline_on_celery(
         ).subset_for_execution(subset)
         with _instance_wrapper(instance) as wrapped_instance:
             run_config = run_config or {
-                "intermediate_storage": {"filesystem": {"config": {"base_dir": tempdir}}},
+                "resources": {"io_manager": {"config": {"base_dir": tempdir}}},
                 "execution": {"celery": {}},
             }
             result = execute_pipeline(
@@ -59,7 +59,7 @@ def execute_pipeline_on_celery(
 def execute_eagerly_on_celery(pipeline_name, instance=None, tempdir=None, tags=None, subset=None):
     with tempfile.TemporaryDirectory() as tempdir:
         run_config = {
-            "intermediate_storage": {"filesystem": {"config": {"base_dir": tempdir}}},
+            "resources": {"io_manager": {"config": {"base_dir": tempdir}}},
             "execution": {"celery": {"config": {"config_source": {"task_always_eager": True}}}},
         }
 

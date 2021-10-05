@@ -1,5 +1,4 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link, useHistory} from 'react-router-dom';
 import styled, {createGlobalStyle, css} from 'styled-components/macro';
@@ -22,7 +21,7 @@ const YamlShimStyle = createGlobalStyle`
   }
 
   .hljs-attr {
-    color: ${Colors.BLUE1};
+    color: ${ColorsWIP.Blue700};
   }
 `;
 
@@ -65,7 +64,7 @@ export const InstanceConfig = React.memo(() => {
   return (
     <Group direction="column" spacing={20}>
       <InstanceTabs tab="config" />
-      <Group direction="column" spacing={16}>
+      <Group direction="column" spacing={16} padding={{horizontal: 24}}>
         <Subheading>{`Dagster ${data.version}`}</Subheading>
         <YamlShimStyle />
         {sections.map((section) => {
@@ -104,7 +103,7 @@ const ConfigSection = styled.div<{highlighted: boolean}>`
   ${({highlighted}) =>
     highlighted
       ? css`
-          background-color: ${Colors.LIGHT_GRAY3};
+          background-color: ${ColorsWIP.Gray100};
           margin: -8px;
           padding: 8px;
         `

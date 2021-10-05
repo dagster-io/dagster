@@ -1,8 +1,8 @@
-import {Colors} from '@blueprintjs/core';
 import {Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 
 import {SolidNameOrPath} from '../solids/SolidNameOrPath';
+import {ColorsWIP} from '../ui/Colors';
 
 import {PipelineGraph} from './PipelineGraph';
 import {SVGViewport} from './SVGViewport';
@@ -103,7 +103,7 @@ export const Basic = () => {
 
   return (
     <PipelineGraph
-      backgroundColor={Colors.WHITE}
+      backgroundColor={ColorsWIP.White}
       pipelineName={'Test Pipeline'}
       solids={solids}
       layout={getDagrePipelineLayout(solids)}
@@ -132,7 +132,7 @@ export const FanOut = () => {
 
   return (
     <PipelineGraph
-      backgroundColor={Colors.WHITE}
+      backgroundColor={ColorsWIP.White}
       pipelineName={'Test Pipeline'}
       solids={solids}
       layout={getDagrePipelineLayout(solids)}
@@ -158,7 +158,7 @@ export const Tagged = () => {
 
   return (
     <PipelineGraph
-      backgroundColor={Colors.WHITE}
+      backgroundColor={ColorsWIP.White}
       pipelineName={'Test Pipeline'}
       solids={solids}
       layout={getDagrePipelineLayout(solids)}
@@ -214,7 +214,7 @@ export const Composite = () => {
 
   return (
     <PipelineGraph
-      backgroundColor={Colors.WHITE}
+      backgroundColor={ColorsWIP.White}
       pipelineName={'Test Pipeline'}
       solids={parentSolid ? childSolids : solids}
       parentSolid={parentSolid}

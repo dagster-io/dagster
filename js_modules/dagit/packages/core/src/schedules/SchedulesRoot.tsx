@@ -1,6 +1,4 @@
 import {useQuery} from '@apollo/client';
-import {Colors, NonIdealState} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
@@ -8,14 +6,16 @@ import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {UnloadableSchedules} from '../instigation/Unloadable';
 import {InstigationType} from '../types/globalTypes';
 import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
+import {NonIdealState} from '../ui/NonIdealState';
 import {Page} from '../ui/Page';
 import {Subheading} from '../ui/Text';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
-import {SCHEDULES_ROOT_QUERY, SchedulerTimezoneNote} from './ScheduleUtils';
+import {SCHEDULES_ROOT_QUERY} from './ScheduleUtils';
 import {SchedulerInfo} from './SchedulerInfo';
 import {SchedulesNextTicks} from './SchedulesNextTicks';
 import {SchedulesTable} from './SchedulesTable';
@@ -39,12 +39,7 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
     <Page>
       <Loading queryResult={queryResult} allowStaleData={true}>
         {(result) => {
-          const {
-            repositoryOrError,
-            scheduler,
-            unloadableInstigationStatesOrError,
-            instance,
-          } = result;
+          const {repositoryOrError, unloadableInstigationStatesOrError, instance} = result;
           let schedulesSection = null;
 
           if (repositoryOrError.__typename === 'PythonError') {
@@ -52,7 +47,7 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
           } else if (repositoryOrError.__typename === 'RepositoryNotFoundError') {
             schedulesSection = (
               <NonIdealState
-                icon={IconNames.ERROR}
+                icon="error"
                 title="Repository not found"
                 description="Could not load this repository."
               />
@@ -60,7 +55,7 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
           } else if (!repositoryOrError.schedules.length) {
             schedulesSection = (
               <NonIdealState
-                icon={IconNames.TIME}
+                icon="schedule"
                 title="No schedules found"
                 description={
                   <p>
@@ -76,12 +71,10 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
           } else {
             schedulesSection = repositoryOrError.schedules.length > 0 && (
               <Group direction="column" spacing={16}>
-                <SchedulerTimezoneNote schedulerOrError={scheduler} />
                 <SchedulesTable schedules={repositoryOrError.schedules} repoAddress={repoAddress} />
                 <Box
-                  margin={{vertical: 16}}
-                  padding={{bottom: 8}}
-                  border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}
+                  padding={{vertical: 16, horizontal: 24}}
+                  border={{side: 'bottom', width: 1, color: ColorsWIP.Gray100}}
                 >
                   <Subheading>Scheduled ticks</Subheading>
                 </Box>
@@ -92,7 +85,9 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
 
           return (
             <Group direction="column" spacing={20}>
-              <SchedulerInfo schedulerOrError={scheduler} daemonHealth={instance.daemonHealth} />
+              <Box padding={{horizontal: 24}}>
+                <SchedulerInfo daemonHealth={instance.daemonHealth} />
+              </Box>
               {schedulesSection}
               {unloadableInstigationStatesOrError.__typename === 'PythonError' ? (
                 <PythonErrorInfo error={unloadableInstigationStatesOrError} />

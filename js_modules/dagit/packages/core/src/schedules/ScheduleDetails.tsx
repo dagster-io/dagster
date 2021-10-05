@@ -1,4 +1,3 @@
-import {Colors} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -11,6 +10,7 @@ import {PipelineReference} from '../pipelines/PipelineReference';
 import {InstigationStatus, InstigationType} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
+import {ColorsWIP} from '../ui/Colors';
 import {CountdownStatus, useCountdown} from '../ui/Countdown';
 import {Group} from '../ui/Group';
 import {MetadataTable} from '../ui/MetadataTable';
@@ -110,7 +110,10 @@ export const ScheduleDetails: React.FC<{
                 onRefresh={onRefresh}
               />
               <Tooltip content={copyText}>
-                <ButtonLink color={{link: Colors.GRAY3, hover: Colors.GRAY1}} onClick={copyId}>
+                <ButtonLink
+                  color={{link: ColorsWIP.Gray400, hover: ColorsWIP.Gray600}}
+                  onClick={copyId}
+                >
                   <Mono>{`id: ${id.slice(0, 8)}`}</Mono>
                 </ButtonLink>
               </Tooltip>

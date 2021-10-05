@@ -1,9 +1,9 @@
-import {Colors} from '@blueprintjs/core';
 import {Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {Box} from './Box';
+import {ColorsWIP} from './Colors';
 import {Group} from './Group';
 import {
   AlignItems,
@@ -25,7 +25,7 @@ export const Padding = () => {
   return (
     <Group spacing={2} direction="row">
       {spacings.map((spacing) => (
-        <Box key={`${spacing}`} background={Colors.LIGHT_GRAY2} padding={spacing}>
+        <Box key={`${spacing}`} background={ColorsWIP.Gray100} padding={spacing}>
           {spacing}
         </Box>
       ))}
@@ -45,8 +45,8 @@ export const BorderSides = () => {
             {sides.map((side) => (
               <Box
                 key={side}
-                background={Colors.LIGHT_GRAY5}
-                border={{side, width, color: Colors.GRAY5}}
+                background={ColorsWIP.Gray50}
+                border={{side, width, color: ColorsWIP.Gray200}}
                 padding={24}
                 style={{fontSize: '12px', textTransform: 'uppercase'}}
               >
@@ -71,12 +71,12 @@ export const FlexDirections = () => {
         {directions.map((direction) => (
           <Group key={direction} direction="column" spacing={12}>
             <ExampleText>{direction}</ExampleText>
-            <Box background={Colors.LIGHT_GRAY5} flex={{direction}} padding={8}>
-              <Box padding={12} background={Colors.BLUE1} />
-              <Box padding={12} background={Colors.BLUE2} />
-              <Box padding={12} background={Colors.BLUE3} />
-              <Box padding={12} background={Colors.BLUE4} />
-              <Box padding={12} background={Colors.BLUE5} />
+            <Box background={ColorsWIP.Gray50} flex={{direction}} padding={8}>
+              <Box padding={12} background={ColorsWIP.Blue700} />
+              <Box padding={12} background={ColorsWIP.Blue700} />
+              <Box padding={12} background={ColorsWIP.Blue500} />
+              <Box padding={12} background={ColorsWIP.Blue500} />
+              <Box padding={12} background={ColorsWIP.Blue200} />
             </Box>
           </Group>
         ))}
@@ -87,15 +87,15 @@ export const FlexDirections = () => {
           <Group key={alignment} direction="column" spacing={12}>
             <ExampleText>{alignment}</ExampleText>
             <Box
-              background={Colors.LIGHT_GRAY5}
+              background={ColorsWIP.Gray50}
               flex={{direction: 'row', alignItems: alignment}}
               padding={8}
             >
-              <Box padding={12} background={Colors.BLUE1} />
-              <Box padding={24} background={Colors.BLUE2} />
-              <Box padding={32} background={Colors.BLUE3} />
-              <Box padding={4} background={Colors.BLUE4} />
-              <Box padding={16} background={Colors.BLUE5} />
+              <Box padding={12} background={ColorsWIP.Blue700} />
+              <Box padding={24} background={ColorsWIP.Blue700} />
+              <Box padding={32} background={ColorsWIP.Blue500} />
+              <Box padding={4} background={ColorsWIP.Blue500} />
+              <Box padding={16} background={ColorsWIP.Blue200} />
             </Box>
           </Group>
         ))}
@@ -122,15 +122,15 @@ export const JustifyContent = () => {
           <Group key={option} direction="column" spacing={12}>
             <ExampleText>{option}</ExampleText>
             <Box
-              background={Colors.LIGHT_GRAY5}
+              background={ColorsWIP.Gray50}
               flex={{direction: 'row', justifyContent: option}}
               padding={8}
             >
-              <Box padding={12} background={Colors.BLUE1} />
-              <Box padding={12} background={Colors.BLUE2} />
-              <Box padding={12} background={Colors.BLUE3} />
-              <Box padding={12} background={Colors.BLUE4} />
-              <Box padding={12} background={Colors.BLUE5} />
+              <Box padding={12} background={ColorsWIP.Blue700} />
+              <Box padding={12} background={ColorsWIP.Blue700} />
+              <Box padding={12} background={ColorsWIP.Blue500} />
+              <Box padding={12} background={ColorsWIP.Blue500} />
+              <Box padding={12} background={ColorsWIP.Blue200} />
             </Box>
           </Group>
         ))}

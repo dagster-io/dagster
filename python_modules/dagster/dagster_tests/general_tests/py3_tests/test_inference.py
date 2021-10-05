@@ -4,6 +4,7 @@ import pytest
 from dagster import (
     DagsterInvalidDefinitionError,
     DagsterType,
+    In,
     InputDefinition,
     Int,
     composite_solid,
@@ -11,6 +12,7 @@ from dagster import (
     execute_solid,
     lambda_solid,
     make_python_type_usable_as_dagster_type,
+    op,
     pipeline,
     solid,
     usable_as_dagster_type,
@@ -451,7 +453,30 @@ def test_unregistered_type_annotation_input():
     def my_pipeline():
         solid2(solid1())
 
+    assert solid2.input_defs[0].dagster_type.display_name == "MyClass"
     execute_pipeline(my_pipeline)
+
+
+def test_unregistered_type_annotation_input_op():
+    class MyClass:
+        pass
+
+    @op
+    def op2(_, _input1: MyClass):
+        pass
+
+    assert op2.input_defs[0].dagster_type.display_name == "MyClass"
+
+
+def test_unregistered_type_annotation_input_op_merge():
+    class MyClass:
+        pass
+
+    @op(ins={"_input1": In()})
+    def op2(_input1: MyClass):
+        pass
+
+    assert op2.input_defs[0].dagster_type.display_name == "MyClass"
 
 
 def test_use_auto_type_twice():

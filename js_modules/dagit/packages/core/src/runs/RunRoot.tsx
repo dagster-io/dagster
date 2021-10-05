@@ -1,13 +1,13 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors, NonIdealState} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
-import {RouteComponentProps, Link} from 'react-router-dom';
+import {Link, RouteComponentProps} from 'react-router-dom';
 
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
+import {NonIdealState} from '../ui/NonIdealState';
 import {PageHeader} from '../ui/PageHeader';
 import {Heading} from '../ui/Text';
 import {FontFamily} from '../ui/styles';
@@ -52,9 +52,9 @@ export const RunRoot = (props: RouteComponentProps<{runId: string}>) => {
       }}
     >
       <Box
-        background={Colors.WHITE}
+        background={ColorsWIP.White}
         padding={{top: 16, bottom: 12, horizontal: 20}}
-        border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}
+        border={{side: 'bottom', width: 1, color: ColorsWIP.Gray100}}
         flex={{direction: 'row', alignItems: 'flex-start'}}
         style={{position: 'relative', zIndex: 1}}
       >
@@ -69,7 +69,7 @@ export const RunRoot = (props: RouteComponentProps<{runId: string}>) => {
               )}
             </Group>
           }
-          icon="history"
+          icon="run"
           description={
             <Group direction="row" spacing={4} alignItems="baseline">
               <Link to="/instance/runs">Run</Link>
@@ -106,7 +106,7 @@ const RunById: React.FC<{data: RunRootQuery | undefined; runId: string}> = (prop
   if (data.pipelineRunOrError.__typename !== 'PipelineRun') {
     return (
       <NonIdealState
-        icon={IconNames.SEND_TO_GRAPH}
+        icon="error"
         title="No Run"
         description={'The run with this ID does not exist or has been cleaned up.'}
       />

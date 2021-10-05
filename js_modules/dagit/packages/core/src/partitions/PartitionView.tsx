@@ -1,5 +1,3 @@
-import {Button} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -11,8 +9,10 @@ import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useQueryPersistedRunFilters} from '../runs/RunsFilter';
 import {Box} from '../ui/Box';
+import {ButtonWIP} from '../ui/Button';
 import {CursorHistoryControls} from '../ui/CursorControls';
 import {DialogWIP} from '../ui/Dialog';
+import {IconWIP} from '../ui/Icon';
 import {Spinner} from '../ui/Spinner';
 import {RepoAddress} from '../workspace/types';
 
@@ -83,22 +83,21 @@ export const PartitionView: React.FC<PartitionViewProps> = ({
     if (!canLaunchPartitionBackfill) {
       return (
         <Tooltip content={DISABLED_MESSAGE}>
-          <Button style={{flexShrink: 0}} icon={IconNames.ADD} disabled>
+          <ButtonWIP icon={<IconWIP name="add_circle" />} disabled>
             Launch backfill
-          </Button>
+          </ButtonWIP>
         </Tooltip>
       );
     }
 
     return (
-      <Button
-        style={{flexShrink: 0}}
+      <ButtonWIP
         onClick={() => setShowBackfillSetup(!showBackfillSetup)}
-        icon={IconNames.ADD}
+        icon={<IconWIP name="add_circle" />}
         active={showBackfillSetup}
       >
         Launch backfill
-      </Button>
+      </ButtonWIP>
     );
   };
 

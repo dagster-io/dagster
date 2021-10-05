@@ -1,6 +1,4 @@
 import {useMutation} from '@apollo/client';
-import {NonIdealState} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -13,6 +11,7 @@ import {GanttChart, GanttChartLoadingState, GanttChartMode, QueuedState} from '.
 import {toGraphQueryItems} from '../gantt/toGraphQueryItems';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {NonIdealState} from '../ui/NonIdealState';
 import {FirstOrSecondPanelToggle, SplitPanelContainer} from '../ui/SplitPanelContainer';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 
@@ -300,7 +299,7 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
       );
     }
 
-    return <NonIdealState icon={IconNames.ERROR} title="Unable to build execution plan" />;
+    return <NonIdealState icon="error" title="Unable to build execution plan" />;
   };
 
   return (

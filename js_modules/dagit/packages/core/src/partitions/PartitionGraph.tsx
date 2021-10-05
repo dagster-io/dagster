@@ -1,9 +1,9 @@
-import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import {Line} from 'react-chartjs-2';
 
 import {useFeatureFlags} from '../app/Flags';
 import {colorHash} from '../app/Util';
+import {ColorsWIP} from '../ui/Colors';
 import {RowContainer} from '../ui/ListComponents';
 
 import {PartitionGraphFragment} from './types/PartitionGraphFragment';
@@ -142,7 +142,7 @@ export const PartitionGraph = React.forwardRef((props: PartitionGraphProps, ref)
       {
         label: flagPipelineModeTuples ? 'Total job' : 'Total pipeline',
         data: pipelineData,
-        borderColor: Colors.GRAY2,
+        borderColor: ColorsWIP.Gray500,
         backgroundColor: 'rgba(0,0,0,0)',
       },
       ...Object.keys(stepData).map((stepKey) => ({

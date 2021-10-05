@@ -59,7 +59,7 @@ if TYPE_CHECKING:
     from .partition import PartitionedConfig
     from .executor import ExecutorDefinition
     from .job import JobDefinition
-    from dagster.core.execution.execute_in_process import InProcessGraphResult
+    from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
 
 
 def _check_node_defs_arg(graph_name: str, node_defs: Optional[List[NodeDefinition]]):
@@ -67,7 +67,7 @@ def _check_node_defs_arg(graph_name: str, node_defs: Optional[List[NodeDefinitio
 
     if not isinstance(node_defs, list):
         raise DagsterInvalidDefinitionError(
-            '"solids" arg to "{name}" is not a list. Got {val}.'.format(
+            '"nodes" arg to "{name}" is not a list. Got {val}.'.format(
                 name=graph_name, val=repr(node_defs)
             )
         )
@@ -77,15 +77,15 @@ def _check_node_defs_arg(graph_name: str, node_defs: Optional[List[NodeDefinitio
         elif callable(node_def):
             raise DagsterInvalidDefinitionError(
                 """You have passed a lambda or function {func} into {name} that is
-                not a solid. You have likely forgetten to annotate this function with
-                an @solid or @lambda_solid decorator.'
+                not a node. You have likely forgetten to annotate this function with
+                the @op or @graph decorators.'
                 """.format(
                     name=graph_name, func=node_def.__name__
                 )
             )
         else:
             raise DagsterInvalidDefinitionError(
-                "Invalid item in solid list: {item}".format(item=repr(node_def))
+                "Invalid item in node list: {item}".format(item=repr(node_def))
             )
 
     return node_defs
@@ -185,6 +185,10 @@ class GraphDefinition(NodeDefinition):
             raise DagsterInvalidDefinitionError(str(err)) from err
 
         return [self.solid_named(solid_name) for solid_name in order]
+
+    @property
+    def node_type_str(self) -> str:
+        return "graph"
 
     @property
     def solids(self) -> List[Node]:
@@ -515,7 +519,7 @@ class GraphDefinition(NodeDefinition):
 
     def execute_in_process(
         self,
-        config: Any = None,
+        run_config: Any = None,
         instance: Optional["DagsterInstance"] = None,
         resources: Optional[Dict[str, Any]] = None,
         raise_on_error: bool = True,
@@ -524,8 +528,9 @@ class GraphDefinition(NodeDefinition):
         Execute this graph in-process, collecting results in-memory.
 
         Args:
-            config (Optional[Dict[str, Any]]):
-                Configuration for the graph.
+            run_config (Optional[Dict[str, Any]]):
+                Run config to provide to execution. The configuration for the underlying graph
+                should exist under the "ops" key.
             instance (Optional[DagsterInstance]):
                 The instance to execute against, an ephemeral one will be used if none provided.
             resources (Optional[Dict[str, Any]]):
@@ -535,7 +540,7 @@ class GraphDefinition(NodeDefinition):
                 Defaults to ``True``.
 
         Returns:
-            InProcessGraphResult
+            ExecuteInProcessResult
         """
         from dagster.core.execution.build_resources import wrap_resources_for_execution
         from dagster.core.execution.execute_in_process import core_execute_in_process
@@ -557,7 +562,7 @@ class GraphDefinition(NodeDefinition):
         )
         ephemeral_job = JobDefinition(name=self._name, graph_def=self, mode_def=in_proc_mode)
 
-        run_config = {"ops": config if config is not None else {}}
+        run_config = run_config if run_config is not None else {}
 
         return core_execute_in_process(
             node=self,
@@ -603,7 +608,7 @@ def _validate_in_mappings(
         if input_def_dict.get(mapping.definition.name):
             if input_def_dict[mapping.definition.name] != mapping.definition:
                 raise DagsterInvalidDefinitionError(
-                    "In {class_name} {name} multiple input mappings with same "
+                    "In {class_name} '{name}' multiple input mappings with same "
                     "definition name but different definitions".format(
                         name=name, class_name=class_name
                     ),
@@ -633,7 +638,7 @@ def _validate_in_mappings(
         if mapping.maps_to_fan_in:
             if not dependency_structure.has_fan_in_deps(solid_input_handle):
                 raise DagsterInvalidDefinitionError(
-                    'In {class_name} "{name}" input mapping target '
+                    "In {class_name} '{name}' input mapping target "
                     '"{mapping.maps_to.solid_name}.{mapping.maps_to.input_name}" (index {mapping.maps_to.fan_in_index} of fan-in) '
                     "is not a MultiDependencyDefinition.".format(
                         name=name, mapping=mapping, class_name=class_name
@@ -644,7 +649,7 @@ def _validate_in_mappings(
                 inner_deps[mapping.maps_to.fan_in_index] is not MappedInputPlaceholder
             ):
                 raise DagsterInvalidDefinitionError(
-                    'In {class_name} "{name}" input mapping target '
+                    "In {class_name} '{name}' input mapping target "
                     '"{mapping.maps_to.solid_name}.{mapping.maps_to.input_name}" index {mapping.maps_to.fan_in_index} in '
                     "the MultiDependencyDefinition is not a MappedInputPlaceholder".format(
                         name=name, mapping=mapping, class_name=class_name
@@ -660,9 +665,9 @@ def _validate_in_mappings(
         else:
             if dependency_structure.has_deps(solid_input_handle):
                 raise DagsterInvalidDefinitionError(
-                    'In {class_name} "{name}" input mapping target '
+                    "In {class_name} '{name}' input mapping target "
                     '"{mapping.maps_to.solid_name}.{mapping.maps_to.input_name}" '
-                    "is already satisfied by solid output".format(
+                    "is already satisfied by output".format(
                         name=name, mapping=mapping, class_name=class_name
                     )
                 )
@@ -721,16 +726,19 @@ def _validate_out_mappings(
             target_solid = solid_dict.get(mapping.maps_from.solid_name)
             if target_solid is None:
                 raise DagsterInvalidDefinitionError(
-                    "In {class_name} '{name}' output mapping references solid "
+                    "In {class_name} '{name}' output mapping references node "
                     "'{solid_name}' which it does not contain.".format(
                         name=name, solid_name=mapping.maps_from.solid_name, class_name=class_name
                     )
                 )
             if not target_solid.has_output(mapping.maps_from.output_name):
                 raise DagsterInvalidDefinitionError(
-                    "In {class_name} {name} output mapping from solid '{mapping.maps_from.solid_name}' "
+                    "In {class_name} {name} output mapping from {described_node} "
                     "which contains no output named '{mapping.maps_from.output_name}'".format(
-                        name=name, mapping=mapping, class_name=class_name
+                        described_node=target_solid.describe_node(),
+                        name=name,
+                        mapping=mapping,
+                        class_name=class_name,
                     )
                 )
 
@@ -767,7 +775,7 @@ def _validate_out_mappings(
             if dynamic_handle and not mapping.definition.is_dynamic:
                 raise DagsterInvalidDefinitionError(
                     f'In {class_name} "{name}" output "{mapping.definition.name}" mapping from '
-                    f'solid "{mapping.maps_from.solid_name}" must be a DynamicOutputDefinition since it is '
+                    f"{target_solid.describe_node()} must be a DynamicOutputDefinition since it is "
                     f'downstream of dynamic output "{dynamic_handle.describe()}".'
                 )
 

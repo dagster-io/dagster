@@ -1,4 +1,3 @@
-import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import {useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -73,7 +72,7 @@ export const AppTopNav: React.FC<Props> = ({children, searchPlaceholder}) => {
 };
 
 const AppTopNavContainer = styled.div`
-  background: ${Colors.DARK_GRAY2};
+  background: ${ColorsWIP.Gray900};
   display: flex;
   flex-direction: row;
   height: 48px;
@@ -110,19 +109,19 @@ const NavButton = styled.button`
   display: none;
 
   ${IconWrapper} {
-    transition: color 100ms linear;
+    transition: background 100ms linear;
   }
 
   :hover ${IconWrapper} {
-    color: ${ColorsWIP.Gray500};
+    background: ${ColorsWIP.Gray500};
   }
 
   :active ${IconWrapper} {
-    color: ${ColorsWIP.Blue200};
+    background: ${ColorsWIP.Blue200};
   }
 
   :focus {
-    background: ${Colors.DARK_GRAY5};
+    background: ${ColorsWIP.Gray700};
   }
 
   @media (max-width: 1440px) {

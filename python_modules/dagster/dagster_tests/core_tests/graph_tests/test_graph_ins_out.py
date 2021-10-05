@@ -39,9 +39,7 @@ def test_single_ins():
 
     result = my_graph.execute_in_process()
     assert result.success
-    assert result.result_for_node("composite_add_one").result_for_node("add_one").output_values == {
-        "result": 2
-    }
+    assert result.output_for_node("composite_add_one.add_one") == 2
 
 
 def test_multi_ins():
@@ -55,9 +53,7 @@ def test_multi_ins():
 
     result = my_graph.execute_in_process()
     assert result.success
-    assert result.result_for_node("composite_adder").result_for_node("adder").output_values == {
-        "result": 3
-    }
+    assert result.output_for_node("composite_adder.adder") == 3
 
 
 def test_single_out():
@@ -71,7 +67,7 @@ def test_single_out():
 
     result = my_graph.execute_in_process()
     assert result.success
-    assert result.result_for_node("composite_return_one").output_values == {"result": 1}
+    assert result.output_for_node("composite_return_one") == 1
 
 
 def test_multi_out():
@@ -84,9 +80,14 @@ def test_multi_out():
     def my_graph():
         composite_return_mult()
 
+    result = composite_return_mult.execute_in_process()
+    assert result.output_value("out_1") == 1
+    assert result.output_value("out_2") == 2
+
     result = my_graph.execute_in_process()
     assert result.success
-    assert result.result_for_node("composite_return_mult").output_values == {"out_1": 1, "out_2": 2}
+    assert result.output_for_node("composite_return_mult", "out_1") == 1
+    assert result.output_for_node("composite_return_mult", "out_2") == 2
 
 
 def test_graph_in_graph():
@@ -104,10 +105,6 @@ def test_graph_in_graph():
 
     result = my_graph.execute_in_process()
     assert result.success
-    assert result.result_for_node("composite_adder").output_values == {"result": 2}
-    assert result.result_for_node("composite_adder").result_for_node(
-        "inner_composite_add_one"
-    ).output_values == {"result": 2}
-    assert result.result_for_node("composite_adder").result_for_node(
-        "inner_composite_add_one"
-    ).result_for_node("add_one").output_values == {"result": 2}
+    assert result.output_for_node("composite_adder") == 2
+    assert result.output_for_node("composite_adder.inner_composite_add_one") == 2
+    assert result.output_for_node("composite_adder.inner_composite_add_one.add_one") == 2

@@ -6,7 +6,6 @@ import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {TickHistory} from '../instigation/TickHistory';
 import {DagsterTag} from '../runs/RunTag';
 import {Group} from '../ui/Group';
-import {ScrollContainer} from '../ui/ListComponents';
 import {Loading} from '../ui/Loading';
 import {Page} from '../ui/Page';
 import {PreviousRunsSection, PREVIOUS_RUNS_FRAGMENT} from '../workspace/PreviousRunsSection';
@@ -15,7 +14,7 @@ import {RepoAddress} from '../workspace/types';
 
 import {ScheduleDetails} from './ScheduleDetails';
 import {SCHEDULE_FRAGMENT} from './ScheduleUtils';
-import {SCHEDULER_FRAGMENT, SchedulerInfo} from './SchedulerInfo';
+import {SchedulerInfo} from './SchedulerInfo';
 import {PreviousRunsForScheduleQuery} from './types/PreviousRunsForScheduleQuery';
 import {
   ScheduleRootQuery,
@@ -62,20 +61,16 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
 
   return (
     <Loading queryResult={queryResult} allowStaleData={true}>
-      {({scheduleOrError, scheduler, instance}) => {
+      {({scheduleOrError, instance}) => {
         if (scheduleOrError.__typename !== 'Schedule') {
           return null;
         }
 
         return (
-          <ScrollContainer>
-            <Page>
-              <Group direction="column" spacing={20}>
-                <SchedulerInfo
-                  schedulerOrError={scheduler}
-                  daemonHealth={instance.daemonHealth}
-                  errorsOnly={true}
-                />
+          <Page>
+            <Group direction="column" spacing={20}>
+              <Group direction="column" spacing={20} padding={{horizontal: 24}}>
+                <SchedulerInfo daemonHealth={instance.daemonHealth} />
                 <ScheduleDetails
                   repoAddress={repoAddress}
                   schedule={scheduleOrError}
@@ -88,15 +83,15 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
                   name={scheduleOrError.name}
                   onHighlightRunIds={(runIds: string[]) => setSelectedRunIds(runIds)}
                 />
-                <SchedulePreviousRuns
-                  repoAddress={repoAddress}
-                  schedule={scheduleOrError}
-                  highlightedIds={selectedRunIds}
-                  runTab={runTab}
-                />
               </Group>
-            </Page>
-          </ScrollContainer>
+              <SchedulePreviousRuns
+                repoAddress={repoAddress}
+                schedule={scheduleOrError}
+                highlightedIds={selectedRunIds}
+                runTab={runTab}
+              />
+            </Group>
+          </Page>
         );
       }}
     </Loading>
@@ -138,9 +133,6 @@ const SchedulePreviousRuns: React.FC<SchedulePreviousRunsProps> = (props) => {
 
 const SCHEDULE_ROOT_QUERY = gql`
   query ScheduleRootQuery($scheduleSelector: ScheduleSelector!) {
-    scheduler {
-      ...SchedulerFragment
-    }
     scheduleOrError(scheduleSelector: $scheduleSelector) {
       ... on Schedule {
         id
@@ -159,7 +151,6 @@ const SCHEDULE_ROOT_QUERY = gql`
     }
   }
 
-  ${SCHEDULER_FRAGMENT}
   ${SCHEDULE_FRAGMENT}
   ${INSTANCE_HEALTH_FRAGMENT}
 `;

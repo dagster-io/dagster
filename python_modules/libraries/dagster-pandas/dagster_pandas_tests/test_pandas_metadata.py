@@ -20,11 +20,9 @@ def test_basic_pd_df_metadata():
 
     assert result.success
 
-    op_result = result.result_for_node("noop")
+    op_events = result.events_for_node("noop")
 
-    input_events = [
-        event for event in op_result.event_list if event.event_type == DagsterEventType.STEP_INPUT
-    ]
+    input_events = [event for event in op_events if event.event_type == DagsterEventType.STEP_INPUT]
     assert len(input_events) == 1
     input_event = input_events[0]
 

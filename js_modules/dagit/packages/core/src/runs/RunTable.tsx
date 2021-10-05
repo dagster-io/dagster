@@ -1,5 +1,4 @@
 import {gql} from '@apollo/client';
-import {Checkbox, Colors, NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -10,8 +9,11 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {PipelineSnapshotLink} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {Box} from '../ui/Box';
+import {Checkbox} from '../ui/Checkbox';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
+import {NonIdealState} from '../ui/NonIdealState';
 import {Table} from '../ui/Table';
 import {Mono} from '../ui/Text';
 import {TokenizingFieldValue} from '../ui/TokenizingField';
@@ -126,7 +128,7 @@ export const RunTable = (props: RunTableProps) => {
       <Box margin={{vertical: 64}}>
         {nonIdealState || (
           <NonIdealState
-            icon="history"
+            icon="run"
             title="No runs to display"
             description="Use the Playground to launch a run."
           />
@@ -159,8 +161,8 @@ export const RunTable = (props: RunTableProps) => {
           </th>
           <th>Run ID</th>
           <th>{flagPipelineModeTuples ? 'Job' : 'Pipeline'}</th>
-          <th style={{width: 110, minWidth: 110}}>Snapshot ID</th>
-          <th style={{width: 160}}>Timing</th>
+          <th style={{width: 120, minWidth: 120}}>Snapshot ID</th>
+          <th style={{width: 180}}>Timing</th>
           {props.additionalColumnHeaders}
           <th style={{width: 52}} />
         </tr>
@@ -238,7 +240,7 @@ const RunRow: React.FC<{
     <Row key={run.runId} highlighted={!!isHighlighted}>
       <td style={{paddingRight: '4px'}}>
         {canTerminateOrDelete && onToggleChecked ? (
-          <Checkbox checked={checked} onChange={onChange} />
+          <Checkbox checked={!!checked} onChange={onChange} />
         ) : null}
       </td>
       <td>
@@ -258,7 +260,7 @@ const RunRow: React.FC<{
               pipelineHrefContext="no-link"
             />
             <Link to={workspacePipelinePathGuessRepo(run.pipelineName, run.mode)}>
-              <IconWIP name="open_in_new" color={Colors.BLUE3} />
+              <IconWIP name="open_in_new" color={ColorsWIP.Blue500} />
             </Link>
           </Group>
           <RunTags tags={run.tags} onSetFilter={onSetFilter} />

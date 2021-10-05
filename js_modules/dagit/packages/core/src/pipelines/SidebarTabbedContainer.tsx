@@ -1,5 +1,4 @@
 import {gql} from '@apollo/client';
-import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -7,6 +6,7 @@ import styled from 'styled-components/macro';
 import {SolidNameOrPath} from '../solids/SolidNameOrPath';
 import {TypeExplorerContainer} from '../typeexplorer/TypeExplorerContainer';
 import {TypeListContainer} from '../typeexplorer/TypeListContainer';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {IconName, IconWIP} from '../ui/Icon';
 import {RepoAddress} from '../workspace/types';
@@ -115,7 +115,7 @@ export const SidebarTabbedContainer: React.FC<ISidebarTabbedContainerProps> = (p
           <Tab key={key} active={key === activeTab}>
             <Link to={{search: `?tab=${key}`}} key={key}>
               <Group direction="row" spacing={8} alignItems="center">
-                <IconWIP name={icon} color={Colors.BLUE3} />
+                <IconWIP name={icon} color={ColorsWIP.Blue500} />
                 {name}
               </Group>
             </Link>
@@ -146,9 +146,9 @@ const TabContainer = styled.div`
 `;
 
 const Tab = styled.div<{active: boolean}>`
-  color: ${(p) => (p.active ? Colors.BLUE3 : Colors.GRAY2)}
+  color: ${(p) => (p.active ? ColorsWIP.Blue500 : ColorsWIP.Gray500)}
   border-top: 3px solid transparent;
-  border-bottom: 3px solid ${(p) => (p.active ? Colors.BLUE3 : 'transparent')};
+  border-bottom: 3px solid ${(p) => (p.active ? ColorsWIP.Blue500 : 'transparent')};
   text-decoration: none;
   white-space: nowrap;
   min-width: 40px;

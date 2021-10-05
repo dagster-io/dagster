@@ -1,13 +1,6 @@
 from typing import Any, Dict, Optional
 
-from dagster import check
-from dagster.core.definitions import (
-    GraphDefinition,
-    NodeDefinition,
-    PipelineDefinition,
-    SolidDefinition,
-)
-from dagster.core.definitions.dependency import NodeHandle
+from dagster.core.definitions import NodeDefinition, PipelineDefinition
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.instance import DagsterInstance
@@ -22,7 +15,7 @@ from .context_creation_pipeline import (
     PlanOrchestrationContextManager,
     orchestration_context_event_generator,
 )
-from .execution_results import InProcessGraphResult, InProcessOpResult
+from .execute_in_process_result import ExecuteInProcessResult
 
 
 def core_execute_in_process(
@@ -39,7 +32,7 @@ def core_execute_in_process(
 
     execution_plan = create_execution_plan(pipeline, run_config=run_config, mode=mode_def.name)
 
-    recorder: Dict[StepOutputHandle, Any] = {}
+    output_capture: Dict[StepOutputHandle, Any] = {}
 
     with ephemeral_instance_if_missing(instance) as execute_instance:
         pipeline_run = execute_instance.create_run_for_pipeline(
@@ -60,29 +53,10 @@ def core_execute_in_process(
                 instance=execute_instance,
                 run_config=run_config,
                 executor_defs=None,
-                output_capture=recorder if output_capturing_enabled else None,
+                output_capture=output_capture if output_capturing_enabled else None,
                 raise_on_error=raise_on_error,
             ),
         )
         event_list = list(_execute_run_iterable)
 
-    top_level_node_handle = NodeHandle.from_string(node.name)
-
-    if isinstance(node, GraphDefinition) and node == ephemeral_pipeline.graph:
-        event_list_for_top_lvl_node = event_list
-        handle = None
-        return InProcessGraphResult(node, handle, event_list_for_top_lvl_node, recorder)
-    else:
-        event_list_for_top_lvl_node = [
-            event
-            for event in event_list
-            if event.solid_handle and event.solid_handle.is_or_descends_from(top_level_node_handle)
-        ]
-        handle = NodeHandle(node.name, None)
-
-        if isinstance(node, SolidDefinition):
-            return InProcessOpResult(node, handle, event_list_for_top_lvl_node, recorder)
-        elif isinstance(node, GraphDefinition):
-            return InProcessGraphResult(node, handle, event_list_for_top_lvl_node, recorder)
-
-    check.failed(f"Unexpected node type {node}")
+    return ExecuteInProcessResult(node, event_list, pipeline_run.run_id, output_capture)

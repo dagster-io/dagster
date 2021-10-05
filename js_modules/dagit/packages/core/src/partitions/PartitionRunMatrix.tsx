@@ -1,6 +1,4 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors, Button, MenuItem, Menu, Popover} from '@blueprintjs/core';
-import {Popover2} from '@blueprintjs/popover2';
 import qs from 'query-string';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -16,6 +14,8 @@ import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
+import {MenuItemWIP, MenuWIP} from '../ui/Menu';
+import {Popover} from '../ui/Popover';
 import {TokenizingFieldValue} from '../ui/TokenizingField';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -38,11 +38,11 @@ import {
 } from './types/PartitionRunMatrixPipelineQuery';
 import {PartitionRunMatrixRunFragment} from './types/PartitionRunMatrixRunFragment';
 import {
-  useMatrixData,
-  MatrixStep,
   DisplayOptions,
-  StatusSquareFinalColor,
   isStepKeyForNode,
+  MatrixStep,
+  StatusSquareFinalColor,
+  useMatrixData,
 } from './useMatrixData';
 
 const TITLE_TOTAL_FAILURES = 'This step failed at least once for this percent of partitions.';
@@ -229,8 +229,8 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
         <Popover
           position="bottom-left"
           content={
-            <Menu>
-              <MenuItem
+            <MenuWIP>
+              <MenuItemWIP
                 text="Show previous status"
                 icon={
                   <IconWIP
@@ -241,7 +241,7 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
                 onClick={() => setOptions({...options, showPrevious: !options.showPrevious})}
                 shouldDismissPopover={false}
               />
-              <MenuItem
+              <MenuItemWIP
                 text="Only show failures and gaps"
                 icon={
                   <IconWIP
@@ -257,7 +257,7 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
                 }
                 shouldDismissPopover={false}
               />
-              <MenuItem
+              <MenuItemWIP
                 tagName="div"
                 text={
                   <Group direction="column" spacing={8}>
@@ -282,17 +282,17 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
                 onClick={() => setOptions({...options, colorizeByAge: !options.colorizeByAge})}
                 shouldDismissPopover={false}
               />
-            </Menu>
+            </MenuWIP>
           }
         >
-          <Button icon="settings" minimal text="Settings" />
+          <ButtonWIP icon={<IconWIP name="tune" />}>Settings</ButtonWIP>
         </Popover>
       </Box>
       <div
         style={{
           position: 'relative',
           display: 'flex',
-          border: `1px solid ${Colors.GRAY5}`,
+          border: `1px solid ${ColorsWIP.Gray200}`,
           borderLeft: 0,
         }}
       >
@@ -391,17 +391,16 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
               >
                 <TopLabelTilted label={p.name} />
                 {sortPartitionSteps(p.steps).map(({name, color, unix}) => (
-                  <Popover2
+                  <Popover
                     key={name}
-                    minimal
                     disabled={p.runs.length === 0}
                     interactionKind="click"
                     placement="bottom-start"
                     content={
                       p.runs.length ? (
-                        <Menu>
-                          <MenuItem
-                            icon="share"
+                        <MenuWIP>
+                          <MenuItemWIP
+                            icon="open_in_new"
                             text="Show Logs From Last Run"
                             href={`${basePath}/instance/runs/${
                               p.runs[p.runs.length - 1].runId
@@ -410,15 +409,15 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
                               logs: `step:${name}`,
                             })}`}
                           />
-                          <MenuItem
-                            icon="list"
+                          <MenuItemWIP
+                            icon="settings_backup_restore"
                             text={`View Runs (${p.runs.length})`}
                             onClick={() =>
                               p.runs.length > 0 &&
                               setFocused({stepName: name, partitionName: p.name})
                             }
                           />
-                        </Menu>
+                        </MenuWIP>
                       ) : (
                         <span />
                       )
@@ -446,7 +445,7 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
                           : {}
                       }
                     />
-                  </Popover2>
+                  </Popover>
                 ))}
                 <Divider />
                 <LeftLabel style={{textAlign: 'center'}}>{p.runs.length}</LeftLabel>
@@ -467,7 +466,7 @@ const Divider = styled.div`
   height: 1px;
   width: 100%;
   margin-top: 5px;
-  border-top: 1px solid ${Colors.GRAY5};
+  border-top: 1px solid ${ColorsWIP.Gray200};
 `;
 
 export const PARTITION_RUN_MATRIX_RUN_FRAGMENT = gql`

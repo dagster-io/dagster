@@ -574,7 +574,7 @@ def test_hook_resource_mismatch():
         pass
 
     with pytest.raises(
-        DagsterInvalidDefinitionError, match='Resource key "b" is required by hook "a_hook"'
+        DagsterInvalidDefinitionError, match="resource key 'b' is required by hook 'a_hook'"
     ):
 
         @a_hook
@@ -583,7 +583,7 @@ def test_hook_resource_mismatch():
             a_solid()
 
     with pytest.raises(
-        DagsterInvalidDefinitionError, match='Resource key "b" is required by hook "a_hook"'
+        DagsterInvalidDefinitionError, match="resource key 'b' is required by hook 'a_hook'"
     ):
 
         @pipeline(mode_defs=[ModeDefinition(resource_defs={"a": resource_a})])

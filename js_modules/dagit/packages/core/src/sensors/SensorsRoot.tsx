@@ -1,6 +1,4 @@
 import {useQuery, gql} from '@apollo/client';
-import {NonIdealState} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
 import React from 'react';
 
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
@@ -9,8 +7,10 @@ import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
 import {UnloadableSensors} from '../instigation/Unloadable';
 import {InstigationType} from '../types/globalTypes';
+import {Box} from '../ui/Box';
 import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
+import {NonIdealState} from '../ui/NonIdealState';
 import {Page} from '../ui/Page';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -52,7 +52,7 @@ export const SensorsRoot = (props: Props) => {
             } else if (sensorsOrError.__typename === 'RepositoryNotFoundError') {
               return (
                 <NonIdealState
-                  icon={IconNames.ERROR}
+                  icon="error"
                   title="Repository not found"
                   description="Could not load this repository."
                 />
@@ -60,7 +60,7 @@ export const SensorsRoot = (props: Props) => {
             } else if (!sensorsOrError.results.length) {
               return (
                 <NonIdealState
-                  icon={IconNames.AUTOMATIC_UPDATES}
+                  icon="sensors"
                   title="No Sensors Found"
                   description={
                     <p>
@@ -81,7 +81,9 @@ export const SensorsRoot = (props: Props) => {
               return (
                 <Group direction="column" spacing={20}>
                   {sensorsOrError.results.length > 0 && (
-                    <SensorInfo daemonHealth={instance.daemonHealth} />
+                    <Box padding={{horizontal: 24}}>
+                      <SensorInfo daemonHealth={instance.daemonHealth} />
+                    </Box>
                   )}
                   <SensorsTable repoAddress={repoAddress} sensors={sensorsOrError.results} />
                   <UnloadableSensors sensorStates={unloadableInstigationStatesOrError.results} />

@@ -1,23 +1,23 @@
-import {Colors} from '@blueprintjs/core';
 import {ActiveElement, TimeUnit, TooltipItem} from 'chart.js';
 import * as React from 'react';
 import {Line} from 'react-chartjs-2';
 
 import {InstigationTickStatus} from '../types/globalTypes';
+import {ColorsWIP} from '../ui/Colors';
 
 import {
-  TickHistoryQuery_instigationStateOrError_InstigationState_ticks,
   TickHistoryQuery_instigationStateOrError_InstigationState_nextTick,
+  TickHistoryQuery_instigationStateOrError_InstigationState_ticks,
 } from './types/TickHistoryQuery';
 
 type FutureTick = TickHistoryQuery_instigationStateOrError_InstigationState_nextTick;
 type InstigationTick = TickHistoryQuery_instigationStateOrError_InstigationState_ticks;
 
 const COLOR_MAP = {
-  [InstigationTickStatus.SUCCESS]: Colors.BLUE3,
-  [InstigationTickStatus.FAILURE]: Colors.RED3,
-  [InstigationTickStatus.STARTED]: Colors.GRAY3,
-  [InstigationTickStatus.SKIPPED]: Colors.GOLD3,
+  [InstigationTickStatus.SUCCESS]: ColorsWIP.Blue500,
+  [InstigationTickStatus.FAILURE]: ColorsWIP.Red500,
+  [InstigationTickStatus.STARTED]: ColorsWIP.Gray400,
+  [InstigationTickStatus.SKIPPED]: ColorsWIP.Yellow500,
 };
 
 const REFRESH_INTERVAL = 100;
@@ -56,7 +56,7 @@ export const LiveTickTimeline: React.FC<{
 
   if (nextTick) {
     tickData.push({x: 1000 * nextTick.timestamp, y: 0});
-    tickColors.push(Colors.GRAY5);
+    tickColors.push(ColorsWIP.Gray200);
     tickRadii.push(nextTickRadius);
   }
 
@@ -69,17 +69,17 @@ export const LiveTickTimeline: React.FC<{
           {x: graphNow - 60000 * 10, y: 0},
           {x: graphNow, y: 0},
         ],
-        borderColor: Colors.LIGHT_GRAY4,
+        borderColor: ColorsWIP.Gray100,
         borderWidth: 1,
         pointBorderWidth: 2,
-        pointBorderColor: Colors.GRAY5,
+        pointBorderColor: ColorsWIP.Gray200,
         pointRadius: 1,
         pointHoverRadius: 1,
       },
       {
         label: 'ticks',
         data: tickData,
-        borderColor: Colors.LIGHT_GRAY4,
+        borderColor: ColorsWIP.Gray100,
         borderWidth: 0,
         backgroundColor: 'rgba(0,0,0,0)',
         pointBackgroundColor: 'rgba(0,0,0,0)',

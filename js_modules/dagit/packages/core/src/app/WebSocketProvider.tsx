@@ -1,8 +1,9 @@
-import {Colors} from '@blueprintjs/core';
 import debounce from 'lodash/debounce';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
+
+import {ColorsWIP} from '../ui/Colors';
 
 type Availability = 'attempting-to-connect' | 'unavailable' | 'available';
 
@@ -95,15 +96,17 @@ export const WebSocketStatus: React.FC = (props) => (
     {({status}) =>
       ({
         [WebSocket.CONNECTING]: (
-          <Circle style={{background: Colors.GREEN5}} title="Connecting..." {...props} />
+          <Circle style={{background: ColorsWIP.Green500}} title="Connecting..." {...props} />
         ),
         [WebSocket.OPEN]: (
-          <Circle style={{background: Colors.GREEN3}} title="Connected" {...props} />
+          <Circle style={{background: ColorsWIP.Green700}} title="Connected" {...props} />
         ),
         [WebSocket.CLOSING]: (
-          <Circle style={{background: Colors.GRAY3}} title="Closing..." {...props} />
+          <Circle style={{background: ColorsWIP.Gray400}} title="Closing..." {...props} />
         ),
-      }[status] || <Circle style={{background: Colors.GRAY3}} title="Disconnected" {...props} />)
+      }[status] || (
+        <Circle style={{background: ColorsWIP.Gray400}} title="Disconnected" {...props} />
+      ))
     }
   </WebSocketContext.Consumer>
 );

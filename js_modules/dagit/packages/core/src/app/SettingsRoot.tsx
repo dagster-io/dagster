@@ -36,7 +36,7 @@ const SettingsRoot = () => {
 
   return (
     <Page style={{height: '100vh', overflowY: 'auto'}}>
-      <Group direction="column" spacing={24}>
+      <Group direction="column" spacing={24} padding={{horizontal: 24}}>
         <PageHeader title={<Heading>User settings</Heading>} />
         <Group direction="column" spacing={16}>
           <Subheading>Preferences</Subheading>

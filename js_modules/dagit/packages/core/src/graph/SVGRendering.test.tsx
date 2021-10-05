@@ -1,6 +1,5 @@
 import fs from 'fs';
 
-import {Colors} from '@blueprintjs/core';
 import pretty from 'pretty';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom/server';
@@ -8,6 +7,7 @@ import {StyleSheetManager} from 'styled-components/macro';
 
 import {PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot} from '../pipelines/types/PipelineExplorerRootQuery';
 import {MOCKS} from '../testing/SVGMocks';
+import {ColorsWIP} from '../ui/Colors';
 
 import {PipelineGraphContents} from './PipelineGraph';
 import {getDagrePipelineLayout} from './getFullSolidLayout';
@@ -36,7 +36,7 @@ function svgForPipeline(
         focusSolids={[]}
         pipelineName={name}
         layout={layout}
-        backgroundColor={Colors.LIGHT_GRAY5}
+        backgroundColor={ColorsWIP.Gray50}
         highlightedSolids={[]}
       />
     </StyleSheetManager>,

@@ -49,7 +49,34 @@ module.exports = {
         paths: [
           {
             name: '@blueprintjs/core',
-            importNames: ['Alert', 'Callout', 'Dialog', 'Icon', 'Spinner', 'Tooltip'],
+            importNames: [
+              'Alert',
+              'Button',
+              'ButtonGroup',
+              'Callout',
+              'Checkbox',
+              'Colors',
+              'Dialog',
+              'Icon',
+              'NonIdealState',
+              'Popover',
+              'Select',
+              'Suggest',
+              'Spinner',
+              'Tab',
+              'Tabs',
+              'Tag',
+              'Tooltip',
+            ],
+            message: 'Please use components in src/ui instead.',
+          },
+          {
+            name: '@blueprintjs/popover2',
+            importNames: ['Popover2'],
+            message: 'Please use components in src/ui instead.',
+          },
+          {
+            name: '@blueprintjs/select',
             message: 'Please use components in src/ui instead.',
           },
           {
