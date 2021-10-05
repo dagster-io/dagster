@@ -52,7 +52,7 @@ def test_compute_log_manager(mock_s3_bucket):
         result = simple.execute_in_process(instance=instance)
         compute_steps = [
             event.step_key
-            for event in result.event_list
+            for event in result.all_node_events
             if event.event_type == DagsterEventType.STEP_START
         ]
         assert len(compute_steps) == 1
