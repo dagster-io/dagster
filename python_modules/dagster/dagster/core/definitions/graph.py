@@ -522,7 +522,6 @@ class GraphDefinition(NodeDefinition):
         instance: Optional["DagsterInstance"] = None,
         resources: Optional[Dict[str, Any]] = None,
         raise_on_error: bool = True,
-        # op_selection v2
     ):
         """
         Execute this graph in-process, collecting results in-memory.

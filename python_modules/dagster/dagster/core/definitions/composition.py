@@ -543,7 +543,6 @@ class PendingNodeInvocation:
         executor_def: Optional["ExecutorDefinition"] = None,
         hooks: Optional[AbstractSet[HookDefinition]] = None,
         version_strategy: Optional[VersionStrategy] = None,
-        # op_selection backcompat v3
     ) -> "JobDefinition":
         if not isinstance(self.node_def, GraphDefinition):
             raise DagsterInvalidInvocationError(
@@ -574,7 +573,6 @@ class PendingNodeInvocation:
         instance: Optional["DagsterInstance"] = None,
         resources: Optional[Dict[str, Any]] = None,
         raise_on_error: bool = True,
-        # op_selection backcompat v3
     ):
         if not isinstance(self.node_def, GraphDefinition):
             raise DagsterInvalidInvocationError(

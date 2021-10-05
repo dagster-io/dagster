@@ -56,7 +56,6 @@ class JobDefinition(PipelineDefinition):
         run_config: Optional[Dict[str, Any]] = None,
         instance: Optional["DagsterInstance"] = None,
         raise_on_error: bool = True,
-        # op_selection v2
     ) -> "InProcessGraphResult":
         """
         (Experimental) Execute the Job in-process, gathering results in-memory.
