@@ -30,7 +30,7 @@ class JobDefinition(PipelineDefinition):
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         solid_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
-        op_selection: Optional[str] = None,
+        op_selection: Optional[List[str]] = None,
     ):
 
         self._cached_partition_set: Optional["PartitionSetDefinition"] = None
