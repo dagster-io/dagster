@@ -384,6 +384,7 @@ class GraphDefinition(NodeDefinition):
         executor_def: Optional["ExecutorDefinition"] = None,
         hooks: Optional[AbstractSet[HookDefinition]] = None,
         version_strategy: Optional[VersionStrategy] = None,
+        op_selection: Optional[str] = None,
     ) -> "JobDefinition":
         """
         Make this graph in to an executable Job by providing remaining components required for execution.
@@ -448,6 +449,7 @@ class GraphDefinition(NodeDefinition):
             )
 
         hooks = check.opt_set_param(hooks, "hooks", of_type=HookDefinition)
+        op_selection = check.opt_list_param(op_selection, "op_selection", of_type=str)
         presets = []
         config_mapping = None
         partitioned_config = None
@@ -487,6 +489,7 @@ class GraphDefinition(NodeDefinition):
             tags=tags,
             hook_defs=hooks,
             version_strategy=version_strategy,
+            op_selection=op_selection,
         )
 
     def coerce_to_job(self):
@@ -524,6 +527,7 @@ class GraphDefinition(NodeDefinition):
         instance: Optional["DagsterInstance"] = None,
         resources: Optional[Dict[str, Any]] = None,
         raise_on_error: bool = True,
+        # op_selection v2
     ):
         """
         Execute this graph in-process, collecting results in-memory.

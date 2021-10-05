@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from dagster.core.definitions import NodeDefinition, PipelineDefinition
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
@@ -16,6 +16,7 @@ from .context_creation_pipeline import (
     orchestration_context_event_generator,
 )
 from .execute_in_process_result import ExecuteInProcessResult
+from dagster.core.selector.subset_selector import parse_step_selection
 
 
 def core_execute_in_process(
@@ -25,12 +26,26 @@ def core_execute_in_process(
     instance: Optional[DagsterInstance],
     output_capturing_enabled: bool,
     raise_on_error: bool,
+    op_selection: Optional[List[str]] = None,  # TODO: not nullable
 ):
     pipeline_def = ephemeral_pipeline
     mode_def = pipeline_def.get_mode_definition()
     pipeline = InMemoryPipeline(pipeline_def)
 
-    execution_plan = create_execution_plan(pipeline, run_config=run_config, mode=mode_def.name)
+    full_execution_plan = create_execution_plan(
+        pipeline,
+        run_config=run_config,
+        mode=mode_def.name,
+    )
+    step_keys_to_execute = parse_step_selection(
+        full_execution_plan.get_all_step_deps(), op_selection
+    )
+    final_execution_plan = create_execution_plan(
+        pipeline,
+        run_config=run_config,
+        mode=mode_def.name,
+        step_keys_to_execute=list(step_keys_to_execute),
+    )
 
     output_capture: Dict[StepOutputHandle, Any] = {}
 
@@ -43,12 +58,12 @@ def core_execute_in_process(
         )
 
         _execute_run_iterable = ExecuteRunWithPlanIterable(
-            execution_plan=execution_plan,
+            execution_plan=final_execution_plan,
             iterator=pipeline_execution_iterator,
             execution_context_manager=PlanOrchestrationContextManager(
                 context_event_generator=orchestration_context_event_generator,
                 pipeline=pipeline,
-                execution_plan=execution_plan,
+                execution_plan=final_execution_plan,
                 pipeline_run=pipeline_run,
                 instance=execute_instance,
                 run_config=run_config,
