@@ -21,8 +21,6 @@ export interface BuildLayoutParams {
   mode: GanttChartMode;
 }
 
-const ROUNDING_GRADIENT = 'linear-gradient(180deg, rgba(255,255,255,0.15), rgba(0,0,0,0.1))';
-
 export const buildLayout = (params: BuildLayoutParams) => {
   const {nodes, mode} = params;
 
@@ -233,7 +231,7 @@ const addChildren = (boxes: GanttChartBox[], box: GanttChartBox, params: BuildLa
 const ColorsForStates = {
   [IStepState.RETRY_REQUESTED]: ColorsWIP.Yellow500,
   [IStepState.RUNNING]: ColorsWIP.Gray400,
-  [IStepState.SUCCEEDED]: ColorsWIP.Green700,
+  [IStepState.SUCCEEDED]: ColorsWIP.Green500,
   [IStepState.FAILED]: ColorsWIP.Red500,
   [IStepState.SKIPPED]: 'rgb(173, 185, 152)',
 };
@@ -250,13 +248,13 @@ export const boxStyleFor = (
     !context.metadata.startedPipelineAt &&
     context.options.mode !== GanttChartMode.WATERFALL_TIMED
   ) {
-    return {background: `${ROUNDING_GRADIENT}, #2491eb`};
+    return {background: `#2491eb`};
   }
 
   // Step has started and has state? Return state color.
   if (state && state !== IStepState.PREPARING) {
     return {
-      background: `${ROUNDING_GRADIENT}, ${ColorsForStates[state] || ColorsWIP.Gray400}`,
+      background: `${ColorsForStates[state] || ColorsWIP.Gray400}`,
     };
   }
 
@@ -265,7 +263,6 @@ export const boxStyleFor = (
     color: ColorsWIP.Gray200,
     background: ColorsWIP.White,
     border: `1.5px dotted ${ColorsWIP.Gray200}`,
-    boxShadow: `none`,
   };
 };
 

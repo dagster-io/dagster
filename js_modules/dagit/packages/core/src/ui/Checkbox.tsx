@@ -158,6 +158,7 @@ const Base = ({
   disabled = false,
   indeterminate = false,
   fillColor = ColorsWIP.Gray800,
+  children, // not passed to input
   ...rest
 }: Props) => {
   const uid = useRef(id || uniqueId('checkbox-'));
@@ -194,8 +195,10 @@ export const Checkbox = styled(Base)`
   color: ${({disabled}) => (disabled ? DISABLED_COLOR : ColorsWIP.Gray900)};
   cursor: pointer;
   gap: 8px;
-  margin-top: -3px;
-  margin-left: -3px;
+
+  svg {
+    margin: -3px;
+  }
 
   input[type='checkbox'] {
     position: absolute;

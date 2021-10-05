@@ -193,5 +193,6 @@ const Elapsed = styled.div`
 
 const EmptyNotice = styled.div`
   font-size: 12px;
-  padding: 12px;
+  padding: 7px 24px;
+  color: ${ColorsWIP.Gray400};
 `;

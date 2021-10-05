@@ -31,7 +31,7 @@ export const RunGroupPanel: React.FC<{runId: string}> = ({runId}) => {
   const group = queryResult.data?.runGroupOrError;
 
   if (!group || group.__typename === 'RunGroupNotFoundError') {
-    return <div />;
+    return null;
   }
   if (group.__typename === 'PythonError') {
     return (
@@ -57,7 +57,7 @@ export const RunGroupPanel: React.FC<{runId: string}> = ({runId}) => {
   }
 
   if (group.runs?.length === 1) {
-    return <div />;
+    return null;
   }
 
   const runs = (group.runs || []).filter((g) => g !== null);
@@ -143,12 +143,11 @@ const RUN_GROUP_PANEL_QUERY = gql`
 const RunGroupRun = styled(Link)<{selected: boolean}>`
   align-items: flex-start;
   background: ${({selected}) => (selected ? ColorsWIP.Gray100 : ColorsWIP.White)};
-  padding: 3px 6px;
+  padding: 3px 6px 3px 24px;
   font-size: 13px;
   line-height: 20px;
   display: flex;
   position: relative;
-  padding-left: 6px;
   &:hover {
     text-decoration: none;
     background: ${({selected}) => (selected ? ColorsWIP.Gray100 : ColorsWIP.Gray50)};
@@ -159,8 +158,8 @@ const ThinLine = styled.div`
   position: absolute;
   top: 17px;
   width: 1px;
-  border-right: 1px solid rgba(0, 0, 0, 0.2);
-  left: 11px;
+  background: ${ColorsWIP.Gray300};
+  left: 29px;
   z-index: 2;
 `;
 
@@ -179,12 +178,12 @@ const RootTag = (
       borderRadius: 2,
       fontSize: 12,
       lineHeight: '14px',
-      background: 'rgb(118, 144, 188, 0.5)',
-      color: 'white',
+      background: ColorsWIP.Gray300,
+      color: ColorsWIP.White,
       padding: '0 4px',
       fontWeight: 400,
       userSelect: 'none',
-      marginLeft: 4,
+      marginLeft: 12,
     }}
   >
     ROOT

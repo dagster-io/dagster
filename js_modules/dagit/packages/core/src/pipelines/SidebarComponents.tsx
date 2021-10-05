@@ -31,21 +31,21 @@ export const SidebarSection: React.FC<ISidebarSectionProps> = (props) => {
   }, [storageKey]);
 
   return (
-    <div>
+    <>
       <CollapsingHeaderBar onClick={onToggle}>
         {title}
-        <DisclosureIcon name={open ? 'expand_more' : 'chevron_left'} />
+        <IconWIP
+          size={24}
+          name="arrow_drop_down"
+          style={{transform: open ? 'rotate(0)' : 'rotate(-90deg)'}}
+        />
       </CollapsingHeaderBar>
       <Collapse isOpen={open}>
         <div>{children}</div>
       </Collapse>
-    </div>
+    </>
   );
 };
-
-const DisclosureIcon = styled(IconWIP)`
-  opacity: 0.5;
-`;
 
 export const SidebarTitle = styled.h3`
   font-family: ${FontFamily.monospace};
@@ -75,7 +75,7 @@ export const SidebarSubhead = styled.div`
 `;
 
 export const SectionItemContainer = styled.div`
-  border-bottom: 1px solid ${ColorsWIP.Gray100};
+  border-bottom: 1px solid ${ColorsWIP.KeylineGray};
   margin-bottom: 20px;
   padding-bottom: 20px;
   font-size: 0.8rem;
@@ -89,17 +89,20 @@ export const SectionItemContainer = styled.div`
 // Internal
 
 const CollapsingHeaderBar = styled.div`
-  padding: 6px;
-  padding-left: 12px;
-  background: linear-gradient(to bottom, ${ColorsWIP.Gray50}, ${ColorsWIP.Gray100});
-  border-top: 1px solid ${ColorsWIP.Gray100};
-  border-bottom: 1px solid ${ColorsWIP.Gray100};
-  color: ${ColorsWIP.Gray600};
+  height: 32px;
+  padding-left: 24px;
+  background: ${ColorsWIP.White};
+  border-top: 1px solid ${ColorsWIP.KeylineGray};
+  border-bottom: 1px solid ${ColorsWIP.KeylineGray};
+  color: ${ColorsWIP.Gray900};
   cursor: pointer;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  text-transform: uppercase;
-  font-size: 0.75rem;
+  font-size: 12px;
+  font-weight: 700;
   user-select: none;
+  &:first-child {
+    border-top: 0;
+  }
 `;

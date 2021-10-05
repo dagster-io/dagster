@@ -3,6 +3,7 @@ import styled from 'styled-components/macro';
 
 import {formatElapsedTime} from '../app/Util';
 import {ColorsWIP} from '../ui/Colors';
+import {FontFamily} from '../ui/styles';
 
 import {CSS_DURATION, GanttViewport, LEFT_INSET} from './Constants';
 
@@ -171,18 +172,19 @@ export const GanttChartTimescale = ({
   );
 };
 
+const TICKS_ROW_HEIGHT = 32;
+
 const TimescaleContainer = styled.div`
   width: 100%;
 
   & .tick {
     position: absolute;
-    padding-top: 3px;
+    padding-top: 7px;
     width: ${TICK_LABEL_WIDTH}px;
-    height: 20px;
+    height: ${TICKS_ROW_HEIGHT}px;
     box-sizing: border-box;
     transition: left ${CSS_DURATION}ms linear, width ${CSS_DURATION}ms linear;
     text-align: center;
-    font-size: 11px;
   }
   & .tick.duration {
     color: ${ColorsWIP.Gray500};
@@ -212,7 +214,7 @@ const TimescaleContainer = styled.div`
 
   & .fog-of-war {
     position: absolute;
-    background: rgb(203, 216, 224, 0.3);
+    background: ${ColorsWIP.Gray50};
     transition: left ${CSS_DURATION}ms linear;
     top: 0px;
     bottom: 0px;
@@ -221,20 +223,21 @@ const TimescaleContainer = styled.div`
 `;
 
 const TimescaleTicksContainer = styled.div`
-  height: 20px;
+  height: ${TICKS_ROW_HEIGHT}px;
   z-index: 4;
   position: relative;
-  background: ${ColorsWIP.Gray100};
+  background: ${ColorsWIP.White};
   display: flex;
-  color: ${ColorsWIP.Gray400};
-  font-size: 11px;
-  border-bottom: 1px solid ${ColorsWIP.Gray200};
+  color: ${ColorsWIP.Gray500};
+  font-size: 13px;
+  font-family: ${FontFamily.monospace};
+  border-bottom: 1px solid ${ColorsWIP.KeylineGray};
   overflow: hidden;
 `;
 
 const TimescaleLinesContainer = styled.div`
   z-index: 0;
-  top: 20px;
+  top: ${TICKS_ROW_HEIGHT}px;
   left: 0;
   position: absolute;
   pointer-events: none;

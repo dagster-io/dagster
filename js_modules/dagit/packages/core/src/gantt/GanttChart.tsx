@@ -19,6 +19,7 @@ import {Spinner} from '../ui/Spinner';
 import {SplitPanelContainer} from '../ui/SplitPanelContainer';
 
 import {
+  BOTTOM_INSET,
   BOX_DOT_MARGIN_Y,
   BOX_DOT_SIZE,
   BOX_DOT_WIDTH_CUTOFF,
@@ -37,6 +38,7 @@ import {
   LINE_SIZE,
   MAX_SCALE,
   MIN_SCALE,
+  TOP_INSET,
 } from './Constants';
 import {isDynamicStep} from './DynamicStepSupport';
 import {
@@ -284,7 +286,7 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
   );
   const layoutSize = {
     width: Math.max(0, ...layout.boxes.map((b) => b.x + b.width + BOX_SPACING_X)),
-    height: Math.max(0, ...layout.boxes.map((b) => b.y * BOX_HEIGHT + BOX_HEIGHT)),
+    height: Math.max(0, ...layout.boxes.map((b) => TOP_INSET + b.y * BOX_HEIGHT + BOTTOM_INSET)),
   };
 
   React.useEffect(() => {
@@ -555,9 +557,9 @@ interface Bounds {
 const boundsForBox = (a: GanttChartPlacement): Bounds => {
   return {
     minX: a.x,
-    minY: a.y * BOX_HEIGHT,
+    minY: TOP_INSET + a.y * BOX_HEIGHT,
     maxX: a.x + a.width,
-    maxY: a.y * BOX_HEIGHT + BOX_HEIGHT,
+    maxY: TOP_INSET + a.y * BOX_HEIGHT + BOX_HEIGHT,
   };
 };
 
@@ -581,7 +583,7 @@ const boundsForLine = (a: GanttChartBox, b: GanttChartBox): Bounds => {
 
   // Line comes out of the center of the right side of the box
   const minX = Math.min(a.x + a.width, b.x + b.width);
-  const minY = straight ? a.y * BOX_HEIGHT + aCenterY : a.y * BOX_HEIGHT + aCenterY;
+  const minY = TOP_INSET + (straight ? a.y * BOX_HEIGHT + aCenterY : a.y * BOX_HEIGHT + aCenterY);
 
   // Line ends on the center left edge of the box if it is on the
   // same line, or drops into the top center of the box if it's below.
@@ -589,8 +591,8 @@ const boundsForLine = (a: GanttChartBox, b: GanttChartBox): Bounds => {
     ? Math.max(a.x, b.x)
     : Math.max(a.x + a.width / 2, b.x + (bIsDot ? BOX_DOT_SIZE : b.width) / 2);
   const maxY = straight
-    ? b.y * BOX_HEIGHT + bCenterY
-    : b.y * BOX_HEIGHT + (bIsDot ? BOX_DOT_MARGIN_Y : BOX_MARGIN_Y);
+    ? TOP_INSET + b.y * BOX_HEIGHT + bCenterY
+    : TOP_INSET + b.y * BOX_HEIGHT + (bIsDot ? BOX_DOT_MARGIN_Y : BOX_MARGIN_Y);
 
   return {minX, minY, maxX, maxY};
 };
@@ -640,7 +642,7 @@ const GanttLine = React.memo(
             style={{
               width: 1,
               left: maxXAvoidingOverlap,
-              top: minY,
+              top: minY - LINE_SIZE / 2,
               height: maxY - minY,
               borderRight: border,
               zIndex: darkened ? 100 : 1,
@@ -674,7 +676,7 @@ const GanttChartContainer = styled.div`
   }
 
   .chart-element {
-    font-size: 11px;
+    font-size: 12px;
     transition: top ${CSS_DURATION}ms linear, left ${CSS_DURATION}ms linear;
     display: inline-block;
     position: absolute;
@@ -693,15 +695,13 @@ const GanttChartContainer = styled.div`
     width: ${BOX_DOT_SIZE}px;
     height: ${BOX_DOT_SIZE}px;
     border: 1px solid transparent;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
     border-radius: ${BOX_DOT_SIZE / 2}px;
   }
 
   .box {
     height: ${BOX_HEIGHT - BOX_MARGIN_Y * 2}px;
-    padding: 2px;
+    padding: 3px;
     border: 1px solid transparent;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
     border-radius: 2px;
 
     transition: top ${CSS_DURATION}ms linear, left ${CSS_DURATION}ms linear,

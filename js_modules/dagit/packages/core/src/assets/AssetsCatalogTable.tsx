@@ -446,9 +446,8 @@ const AssetsTable = ({
           <tr>
             {canWipeAssets ? (
               <th style={{width: 50}}>
-                <div style={{display: 'flex', alignItems: 'center'}}>
+                <div style={{display: 'flex', alignItems: 'center', gap: 5}}>
                   <Checkbox
-                    style={{marginBottom: 0, marginTop: 1}}
                     indeterminate={checkedPaths.size > 0 && checkedPaths.size !== sorted.length}
                     checked={checkedPaths.size === sorted.length}
                     onChange={onChangeAll}
