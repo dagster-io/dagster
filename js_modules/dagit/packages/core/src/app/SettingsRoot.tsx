@@ -1,8 +1,8 @@
-import {Switch} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {ButtonLink} from '../ui/ButtonLink';
+import {Checkbox} from '../ui/Checkbox';
 import {Group} from '../ui/Group';
 import {MetadataTable} from '../ui/MetadataTable';
 import {Page} from '../ui/Page';
@@ -56,7 +56,8 @@ const SettingsRoot = () => {
               {
                 key: 'Debug console logging',
                 value: (
-                  <Switch
+                  <Checkbox
+                    format="switch"
                     checked={flags.includes(FeatureFlag.flagDebugConsoleLogging)}
                     onChange={() => toggleFlag(FeatureFlag.flagDebugConsoleLogging)}
                   />
@@ -65,7 +66,8 @@ const SettingsRoot = () => {
               {
                 key: 'Experimental Core APIs (Job & Graph)',
                 value: (
-                  <Switch
+                  <Checkbox
+                    format="switch"
                     checked={flags.includes(FeatureFlag.flagPipelineModeTuples)}
                     onChange={() => toggleFlag(FeatureFlag.flagPipelineModeTuples)}
                   />
@@ -74,7 +76,8 @@ const SettingsRoot = () => {
               {
                 key: 'Experimental Asset APIs',
                 value: (
-                  <Switch
+                  <Checkbox
+                    format="switch"
                     checked={flags.includes(FeatureFlag.flagAssetGraph)}
                     onChange={() => toggleFlag(FeatureFlag.flagAssetGraph)}
                   />

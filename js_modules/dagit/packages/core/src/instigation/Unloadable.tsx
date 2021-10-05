@@ -1,5 +1,4 @@
 import {useMutation} from '@apollo/client';
-import {Switch} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {useConfirmation} from '../app/CustomConfirmationProvider';
@@ -15,6 +14,7 @@ import {InstigationStatus, InstigationType} from '../types/globalTypes';
 import {Alert} from '../ui/Alert';
 import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
+import {Checkbox} from '../ui/Checkbox';
 import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {Table} from '../ui/Table';
@@ -67,7 +67,6 @@ export const UnloadableSchedules: React.FunctionComponent<{
     <>
       <Subheading>Unloadable schedules</Subheading>
       <UnloadableScheduleInfo />
-
       <Table>
         <thead>
           <tr>
@@ -148,11 +147,9 @@ const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) 
   return (
     <tr key={name}>
       <td style={{width: 60}}>
-        <Switch
+        <Checkbox
+          format="switch"
           disabled={toggleOffInFlight || status === InstigationStatus.STOPPED}
-          large
-          innerLabelChecked="on"
-          innerLabel="off"
           checked={status === InstigationStatus.RUNNING}
           onChange={onChangeSwitch}
         />
@@ -219,12 +216,10 @@ const ScheduleStateRow: React.FunctionComponent<{
   return (
     <tr key={name}>
       <td style={{width: 60}}>
-        <Switch
+        <Checkbox
+          format="switch"
           checked={status === InstigationStatus.RUNNING}
-          large={true}
           disabled={status !== InstigationStatus.RUNNING || toggleOffInFlight}
-          innerLabelChecked="on"
-          innerLabel="off"
           onChange={onChangeSwitch}
         />
       </td>

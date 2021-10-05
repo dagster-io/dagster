@@ -3,7 +3,7 @@ import * as React from 'react';
 
 import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
 import {InstigationStatus} from '../types/globalTypes';
-import {SwitchWithoutLabel} from '../ui/SwitchWithoutLabel';
+import {Checkbox} from '../ui/Checkbox';
 import {Tooltip} from '../ui/Tooltip';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -18,13 +18,12 @@ import {StartSensor} from './types/StartSensor';
 import {StopSensor} from './types/StopSensor';
 
 interface Props {
-  large?: boolean;
   repoAddress: RepoAddress;
   sensor: SensorSwitchFragment;
 }
 
 export const SensorSwitch: React.FC<Props> = (props) => {
-  const {large = true, repoAddress, sensor} = props;
+  const {repoAddress, sensor} = props;
   const {canStartSensor, canStopSensor} = usePermissions();
 
   const {jobOriginId, name, sensorState} = sensor;
@@ -54,11 +53,11 @@ export const SensorSwitch: React.FC<Props> = (props) => {
 
   if (canStartSensor && canStopSensor) {
     return (
-      <SwitchWithoutLabel
+      <Checkbox
+        format="switch"
         disabled={toggleOnInFlight || toggleOffInFlight}
-        large={large}
-        innerLabelChecked="on"
-        innerLabel="off"
+        // innerLabelChecked="on"
+        // innerLabel="off"
         checked={running || toggleOnInFlight}
         onChange={onChangeSwitch}
       />
@@ -69,11 +68,11 @@ export const SensorSwitch: React.FC<Props> = (props) => {
   const disabled = toggleOffInFlight || toggleOnInFlight || lacksPermission;
 
   const switchElement = (
-    <SwitchWithoutLabel
+    <Checkbox
+      format="switch"
       disabled={disabled}
-      large={large}
-      innerLabelChecked="on"
-      innerLabel="off"
+      // innerLabelChecked="on"
+      // innerLabel="off"
       checked={running || toggleOnInFlight}
       onChange={onChangeSwitch}
     />
