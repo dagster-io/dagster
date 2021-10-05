@@ -19,7 +19,7 @@ const msToSubsecondLabel = (ms: number) => `${(ms / 1000).toFixed(1)}s`;
 // We use the first configuration that places ticks at least 80 pixels apart
 // at the rendered scale.
 //
-const TICK_LABEL_WIDTH = 40;
+const TICK_LABEL_WIDTH = 56;
 const TICK_CONFIG = [
   {
     tickIntervalMs: 0.5 * 1000,
@@ -154,7 +154,7 @@ export const GanttChartTimescale = ({
           <div
             className="line highlight"
             key={`highlight-${idx}`}
-            style={{left: (ms - startMs) * pxPerMs, transform}}
+            style={{left: (ms - startMs) * pxPerMs + (idx === 0 ? -1 : 0), transform}}
           />
         ))}
         {nowMs > startMs && (
@@ -193,22 +193,19 @@ const TimescaleContainer = styled.div`
   }
   & .tick.highlight {
     color: white;
-    margin-top: 1px;
-    padding-top: 2px;
-    height: 17px;
-    background: linear-gradient(to bottom, #949493 0%, #757573 100%);
-    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+    height: ${TICKS_ROW_HEIGHT + 2}px;
+    background: ${ColorsWIP.Gray900};
   }
   & .line {
     position: absolute;
-    border-left: 1px solid #eee;
+    border-left: 1px solid #f0f0f0;
     transition: left ${CSS_DURATION}ms linear;
     top: 0px;
     bottom: 0px;
   }
   & .line.highlight {
-    border-left: 1px solid #949493;
-    z-index: 3;
+    border-left: 2px solid ${ColorsWIP.Gray900};
+    z-index: 1111;
     top: -1px;
   }
 
@@ -231,7 +228,7 @@ const TimescaleTicksContainer = styled.div`
   color: ${ColorsWIP.Gray500};
   font-size: 13px;
   font-family: ${FontFamily.monospace};
-  border-bottom: 1px solid ${ColorsWIP.KeylineGray};
+  box-shadow: inset 0 -1px ${ColorsWIP.KeylineGray};
   overflow: hidden;
 `;
 

@@ -618,7 +618,7 @@ const GanttLine = React.memo(
     depNotDrawn: boolean;
   } & Bounds) => {
     const border = `${LINE_SIZE}px ${dotted ? 'dotted' : 'solid'} ${
-      darkened ? ColorsWIP.Gray900 : ColorsWIP.Gray100
+      darkened ? ColorsWIP.Gray700 : ColorsWIP.Gray300
     }`;
 
     const maxXAvoidingOverlap = maxX + (depIdx % 10) * LINE_SIZE;
