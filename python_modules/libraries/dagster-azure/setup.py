@@ -21,7 +21,7 @@ if __name__ == "__main__":
         author="Elementl",
         author_email="hello@elementl.com",
         license="Apache-2.0",
-        description="Package for Azure-specific Dagster framework solid and resource components.",
+        description="Package for Azure-specific Dagster framework op and resource components.",
         url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-azure",
         classifiers=[
             "Programming Language :: Python :: 3.6",

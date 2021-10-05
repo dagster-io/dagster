@@ -99,20 +99,17 @@ def adls2_pickle_io_manager(init_context):
     as each execution node has network connectivity and credentials for ADLS and the backing
     container.
 
-    Attach this resource definition to a :py:class:`~dagster.ModeDefinition`
-    in order to make it available to your pipeline:
+    Attach this resource definition to your job in order to make it available all your ops:
 
     .. code-block:: python
 
-        pipeline_def = PipelineDefinition(
-            mode_defs=[
-                ModeDefinition(
-                    resource_defs={
-                        'io_manager': adls2_pickle_io_manager,
-                        'adls2': adls2_resource, ...},
-                ), ...
-            ], ...
-        )
+        @job(resource_defs={
+            'io_manager': adls2_pickle_io_manager,
+            'adls2': adls2_resource,
+            ...,
+        })
+        def my_job():
+            ...
 
     You may configure this storage as follows:
 
