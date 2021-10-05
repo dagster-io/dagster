@@ -30,9 +30,11 @@ class JobDefinition(PipelineDefinition):
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         solid_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
+        op_selection: Optional[str] = None,
     ):
 
         self._cached_partition_set: Optional["PartitionSetDefinition"] = None
+        self._op_selection = check.opt_list_param(op_selection, "op_selection", str)
 
         super(JobDefinition, self).__init__(
             name=name,
@@ -54,6 +56,7 @@ class JobDefinition(PipelineDefinition):
         run_config: Optional[Dict[str, Any]] = None,
         instance: Optional["DagsterInstance"] = None,
         raise_on_error: bool = True,
+        # op_selection v2
     ) -> "InProcessGraphResult":
         """
         (Experimental) Execute the Job in-process, gathering results in-memory.
@@ -102,6 +105,7 @@ class JobDefinition(PipelineDefinition):
             hook_defs=self.hook_defs,
             tags=self.tags,
             version_strategy=self.version_strategy,
+            op_selection=self._op_selection,
         )
 
         return core_execute_in_process(
@@ -111,6 +115,7 @@ class JobDefinition(PipelineDefinition):
             instance=instance,
             output_capturing_enabled=True,
             raise_on_error=raise_on_error,
+            op_selection=self._op_selection,
         )
 
     def get_pipeline_subset_def(self, solids_to_execute: AbstractSet[str]) -> PipelineDefinition:
