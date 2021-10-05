@@ -56,8 +56,6 @@ export const SensorSwitch: React.FC<Props> = (props) => {
       <Checkbox
         format="switch"
         disabled={toggleOnInFlight || toggleOffInFlight}
-        // innerLabelChecked="on"
-        // innerLabel="off"
         checked={running || toggleOnInFlight}
         onChange={onChangeSwitch}
       />
@@ -71,8 +69,6 @@ export const SensorSwitch: React.FC<Props> = (props) => {
     <Checkbox
       format="switch"
       disabled={disabled}
-      // innerLabelChecked="on"
-      // innerLabel="off"
       checked={running || toggleOnInFlight}
       onChange={onChangeSwitch}
     />
