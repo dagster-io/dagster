@@ -24,6 +24,7 @@ from .dependency import DependencyStructure, Node, NodeHandle, SolidInputHandle
 from .graph import GraphDefinition
 from .logger import LoggerDefinition
 from .mode import ModeDefinition
+from .op import OpDefinition
 from .resource import ResourceDefinition
 from .solid import NodeDefinition, SolidDefinition
 
@@ -126,15 +127,14 @@ def define_storage_field(
 def define_run_config_schema_type_for_job(creation_data: RunConfigSchemaCreationData) -> ConfigType:
     if creation_data.graph_def.has_config_mapping:
         config_schema = cast(IDefinitionConfigSchema, creation_data.graph_def.config_schema)
-        nodes_field = Field({"config": config_schema.as_field()})
+        nodes_field = config_schema.as_field()
     else:
         nodes_field = Field(
-            define_solid_dictionary_cls(
-                solids=creation_data.solids,
-                ignored_solids=creation_data.ignored_solids,
+            define_node_dictionary_cls(
+                nodes=creation_data.solids,
+                ignored_nodes=creation_data.ignored_solids,
                 dependency_structure=creation_data.dependency_structure,
                 resource_defs=creation_data.mode_definition.resource_defs,
-                is_using_graph_job_op_apis=creation_data.is_using_graph_job_op_apis,
             )
         )
 
@@ -399,6 +399,50 @@ def construct_leaf_solid_config(
     )
 
 
+def define_inode_field(
+    node: Node,
+    handle: NodeHandle,
+    dependency_structure: DependencyStructure,
+    resource_defs: Dict[str, ResourceDefinition],
+    ignored: bool,
+) -> Optional[Field]:
+
+    # All nodes regardless of compositing status get the same inputs and outputs
+    # config. The only thing the varies is on extra element of configuration
+    # 1) Vanilla op definition: a 'config' key with the config_schema as the value
+    # 2) Composite with field mapping: the config_schema of
+    #    the config mapping (via CompositeSolidDefinition#config_schema)
+    # 3) Composite without field mapping: recursively defined
+    #    nodes dictionary
+    # 4) `configured` composite with field mapping: a 'config' key with the config_schema that was
+    #    provided when `configured` was called (via GraphDefinition#config_schema)
+
+    if isinstance(node.definition, OpDefinition):
+        return construct_leaf_solid_config(
+            node,
+            dependency_structure,
+            node.definition.config_schema,
+            resource_defs,
+            ignored,
+            True,
+        )
+
+    graph_def = node.definition.ensure_graph_def()
+
+    if graph_def.has_config_mapping:
+        return graph_def.config_schema.as_field() if graph_def.config_schema else None
+    else:
+        return Field(
+            define_node_dictionary_cls(
+                nodes=graph_def.nodes,
+                ignored_nodes=None,
+                dependency_structure=graph_def.dependency_structure,
+                parent_handle=handle,
+                resource_defs=resource_defs,
+            )
+        )
+
+
 def define_isolid_field(
     solid: Node,
     handle: NodeHandle,
@@ -472,6 +516,42 @@ def define_isolid_field(
         return solid_config_field(
             fields, ignored=ignored, is_using_graph_job_op_apis=is_using_graph_job_op_apis
         )
+
+
+def define_node_dictionary_cls(
+    nodes: List[Node],
+    ignored_nodes: Optional[List[Node]],
+    dependency_structure: DependencyStructure,
+    resource_defs: Dict[str, ResourceDefinition],
+    parent_handle: Optional[NodeHandle] = None,
+) -> Shape:
+    ignored_nodes = check.opt_list_param(ignored_nodes, "ignored_solids", of_type=Node)
+
+    fields = {}
+    for node in nodes:
+        node_field = define_inode_field(
+            node,
+            NodeHandle(node.name, parent_handle),
+            dependency_structure,
+            resource_defs,
+            ignored=False,
+        )
+
+        if node_field:
+            fields[node.name] = node_field
+
+    for node in ignored_nodes:
+        node_field = define_inode_field(
+            node,
+            NodeHandle(node.name, parent_handle),
+            dependency_structure,
+            resource_defs,
+            ignored=True,
+        )
+        if node_field:
+            fields[node.name] = node_field
+
+    return Shape(fields)
 
 
 def define_solid_dictionary_cls(

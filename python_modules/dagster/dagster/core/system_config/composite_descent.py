@@ -7,8 +7,11 @@ from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.definitions.graph import GraphDefinition
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.definitions.resource import ResourceDefinition
-from dagster.core.definitions.run_config import define_solid_dictionary_cls
-from dagster.core.definitions.solid import SolidDefinition
+from dagster.core.definitions.run_config import (
+    define_node_dictionary_cls,
+    define_solid_dictionary_cls,
+)
+from dagster.core.definitions.solid import CompositeSolidDefinition, SolidDefinition
 from dagster.core.errors import (
     DagsterConfigMappingFunctionError,
     DagsterInvalidConfigError,
@@ -73,17 +76,11 @@ def composite_descent(pipeline_def, solids_config, resource_defs):
     """
 
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
-    check.dict_param(solids_config, "solids_config")
     check.dict_param(resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition)
 
     # If top-level graph has config mapping, apply that config mapping before descending.
     if pipeline_def.graph.has_config_mapping:
-        solids_config = _apply_top_level_config_mapping(
-            pipeline_def,
-            solids_config,
-            resource_defs,
-            pipeline_def._is_using_graph_job_op_apis,  # pylint: disable=protected-access
-        )
+        solids_config = _apply_top_level_config_mapping(pipeline_def, solids_config, resource_defs)
 
     return {
         handle.to_string(): solid_config
@@ -137,15 +134,18 @@ def _composite_descent(parent_stack, solids_config_dict, resource_defs, is_using
 
         graph_def = check.inst(solid.definition, GraphDefinition)
 
-        yield SolidConfigEntry(
-            current_handle,
-            SolidConfig.from_dict(
-                {
-                    "inputs": current_solid_config.get("inputs"),
-                    "outputs": current_solid_config.get("outputs"),
-                }
-            ),
-        )
+        if isinstance(graph_def, CompositeSolidDefinition):
+            yield SolidConfigEntry(
+                current_handle,
+                SolidConfig.from_dict(
+                    {
+                        "inputs": current_solid_config.get("inputs"),
+                        "outputs": current_solid_config.get("outputs"),
+                    }
+                ),
+            )
+        else:
+            yield SolidConfigEntry(current_handle, SolidConfig.from_dict({}))
         node_key = "ops" if is_using_graph_job_op_apis else "solids"
 
         # If there is a config mapping, invoke it and get the descendent solids
@@ -168,12 +168,7 @@ def _composite_descent(parent_stack, solids_config_dict, resource_defs, is_using
         )
 
 
-def _apply_top_level_config_mapping(
-    pipeline_def,
-    outer_config,
-    resource_defs,
-    is_using_graph_job_op_apis,
-):
+def _apply_top_level_config_mapping(pipeline_def, outer_config, resource_defs):
     graph_def = pipeline_def.graph
 
     if not graph_def.has_config_mapping:
@@ -192,18 +187,17 @@ def _apply_top_level_config_mapping(
             DagsterConfigMappingFunctionError, _get_top_level_error_lambda(pipeline_def)
         ):
             mapped_graph_config = graph_def.config_mapping.resolve_from_validated_config(
-                mapped_config_evr.value.get("config", {})
+                mapped_config_evr.value
             )
 
         # Dynamically construct the type that the output of the config mapping function will
         # be evaluated against
 
-        type_to_evaluate_against = define_solid_dictionary_cls(
-            solids=graph_def.solids,
-            ignored_solids=None,
+        type_to_evaluate_against = define_node_dictionary_cls(
+            nodes=graph_def.nodes,
+            ignored_nodes=None,
             dependency_structure=graph_def.dependency_structure,
             resource_defs=resource_defs,
-            is_using_graph_job_op_apis=is_using_graph_job_op_apis,
         )
 
         # process against that new type
@@ -248,9 +242,14 @@ def _get_mapped_solids_dict(
     with user_code_error_boundary(
         DagsterConfigMappingFunctionError, _get_error_lambda(current_stack)
     ):
-        mapped_solids_config = graph_def.config_mapping.resolve_from_validated_config(
-            config_mapped_solid_config.value.get("config", {})
-        )
+        if isinstance(graph_def, CompositeSolidDefinition):
+            mapped_solids_config = graph_def.config_mapping.resolve_from_validated_config(
+                config_mapped_solid_config.value.get("config", {})
+            )
+        else:
+            mapped_solids_config = graph_def.config_mapping.resolve_from_validated_config(
+                config_mapped_solid_config.value
+            )
 
     # Dynamically construct the type that the output of the config mapping function will
     # be evaluated against
