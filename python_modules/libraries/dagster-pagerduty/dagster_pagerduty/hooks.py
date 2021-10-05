@@ -40,18 +40,12 @@ def pagerduty_on_failure(
             def my_op(context):
                 pass
 
-            @graph
-            def my_graph():
+            @job(
+                resource_defs={"pagerduty": pagerduty_resource},
+                hooks={pagerduty_on_failure("info", dagit_base_url="http://localhost:3000")},
+            )
+            def my_job():
                 my_op()
-
-            @repository
-            def my_repo:
-                return [
-                    my_graph.to_job(
-                        resource_defs={ 'pagerduty': pagerduty_resource },
-                        hooks={pagerduty_on_failure("info", dagit_base_url="http://localhost:3000")},
-                    )
-                ]
 
         .. code-block:: python
 
@@ -62,8 +56,8 @@ def pagerduty_on_failure(
             def my_op(context):
                 pass
 
-            @graph(...)
-            def my_graph():
+            @job(resource_defs={"pagerduty": pagerduty_resource})
+            def my_job():
                 my_op.with_hooks(hook_defs={pagerduty_on_failure(severity="critical", summary_fn=my_summary_fn)})
 
     """
