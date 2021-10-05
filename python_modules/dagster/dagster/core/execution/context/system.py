@@ -73,6 +73,10 @@ class IPlanContext(ABC):
         return self.pipeline_run.pipeline_name
 
     @property
+    def job_name(self) -> str:
+        return self.pipeline_name
+
+    @property
     def instance(self) -> "DagsterInstance":
         return self.plan_data.instance
 

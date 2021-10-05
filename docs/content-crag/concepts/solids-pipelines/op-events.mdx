@@ -120,6 +120,9 @@ To learn more about assets and how they are surfaced once you send this event, c
 Attaching metadata to Asset Materializations is an important way of tracking aspects of a given asset over time. This functions essentially identically to other events which accept a `metadata` parameter, allowing you to attach a set of structured labels and values to display.
 
 ```python file=concepts/assets/materialization_ops.py startafter=start_materialization_ops_marker_2 endbefore=end_materialization_ops_marker_2
+from dagster import op, AssetMaterialization, Output, EventMetadata
+
+
 @op
 def my_metadata_materialization_op(context):
     df = read_df()
