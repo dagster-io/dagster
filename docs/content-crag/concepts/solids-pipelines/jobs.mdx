@@ -5,31 +5,33 @@ description: A job is a graph plus a set of resources and configuration.
 
 # Jobs
 
-A job is a graph plus a set of resources and configuration.
+A job is a set of ops plus a set of resources and configuration.
 
 ## Relevant APIs
 
 | Name                                                  | Description                                                                                                                                                                                                    |
 | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject object="job" />                             | The decorator used to create a job.                                                                                                                                                                            |
 | <PyObject object="GraphDefinition" method="to_job" /> | The method used to create a job from a graph.                                                                                                                                                                  |
 | <PyObject object="JobDefinition" />                   | A job definition.  Includes a graph, [resources](/concepts/resources), default [configuration](/concepts/configuration/config-schema), tags, [hooks](/concepts/solids-pipelines/solid-hooks), and an executor. |
 
 Dagster is built around the observation that any data DAG typically contains a logical core of transformation (the graph), which is reusable across a set of environments or scenarios. The graph usually needs to be "customized" for each environment, by plugging in configuration and services that are specific to that environment.
 
-A Dagster _job_ is the combination of a graph and a set of [resources](/concepts/resources) and [configuration](/concepts/configuration/config-schema).  You can create multiple jobs from the same graph.  For example, you might build a development job that executes a graph against sample data and stores outputs in local files, as well as production job that executes the same graph against production data and stores outputs in a cloud data lake.
+A Dagster _job_ is the combination of a set of ops organized into a logical graph and a set of [resources](/concepts/resources) and [configuration](/concepts/configuration/config-schema).
 
 Jobs are the unit of execution and monitoring in Dagster deployments - the [Dagit UI](/concepts/dagit/dagit) centers on jobs.  Dagit makes it easy to view all the runs of each job in one place, as well as to manually kick off runs for a job.
 
 You can define [schedules](/concepts/partitions-schedules-sensors/schedules) to execute jobs at fixed intervals or define [sensors](/concepts/partitions-schedules-sensors/sensors) to trigger them jobs when external changes occur. You can also launch jobs manually from Dagit, GraphQL APIs, or the command line.
 
-## Automatic coercion of graphs to jobs
+## Creating a job
 
-If your graph does not contain any ops that require resources, the simplest way to create a job is to do nothing at all.  I.e. you can directly include a graph in a repository, or target it from a schedule or sensor, and Dagster will automatically treat it as a job.
+### From scratch
 
-For example, if you define a graph, as below, and run `dagit -f <file_where_graph_is_defined>`, Dagit will show you a single job, which was created from the `do_stuff` graph.
+The simplest way of creating a job is to use the <PyObject object="job"/> decorator.
+Within the decorated function body, you can use function calls to indicate the dependency structure between the ops/graphs.
 
-```python file=/concepts/solids_pipelines/coerce_job.py
-from dagster import graph, op
+```python file=/concepts/solids_pipelines/simple_job.py
+from dagster import op, job
 
 
 @op
@@ -37,21 +39,15 @@ def do_something():
     pass
 
 
-@graph
+@job
 def do_stuff():
     do_something()
 ```
 
-Dagster can only coerce a graph into a job if none of the ops in the graph have required resource keys.
-
-<!-- TODO: add screenshot -->
-
-## `to_job`
-
-If you want to supply resources, config, tags, hooks, or an executor to a job, you can invoke the <PyObject object="GraphDefinition" method="to_job" /> method of a graph to instantiate a job.
+If you want to supply resources, config, tags, hooks, or an executor to a job, you can do this via the arguments to the <PyObject object="job"/> decorator.
 
 ```python file=/concepts/solids_pipelines/jobs.py
-from dagster import ResourceDefinition, graph, op
+from dagster import ResourceDefinition, job, op
 
 
 @op(config_schema={"config_param": str}, required_resource_keys={"my_resource"})
@@ -60,15 +56,39 @@ def do_something(context):
     context.log.info("my_resource: " + context.resources.my_resource)
 
 
-@graph
-def do_it_all():
-    do_something()
-
-
-do_it_all_job = do_it_all.to_job(
+@job(
     config={"ops": {"do_something": {"config": {"config_param": "stuff"}}}},
     resource_defs={"my_resource": ResourceDefinition.hardcoded_resource("hello")},
 )
+def do_it_all():
+    do_something()
+```
+
+### From a graph
+
+As stated earlier, a job consists of an underlying computation graph, and an execution environment. When you want to run the same set of ops within different execution environments (ie prod, local, staging), then it's useful to be able to re-use the same underlying computation graph for multiple jobs.
+To do this, we can use the `@graph` decorator to define the underlying computation graph (learn more about graphs on the [Graph Concepts Page](/concepts/solids-pipelines/pipelines.mdx)).
+
+```python file=/concepts/solids_pipelines/jobs_from_graphs.py startafter=start_define_graph endbefore=end_define_graph
+from dagster import op, graph
+
+
+@op(required_resource={"server"})
+def interact_with_server():
+    ...
+
+
+@graph
+def do_stuff():
+    interact_with_server()
+```
+
+We can construct jobs from the computation graph using the <PyObject object="GraphDefinition" method="to_job" /> method on the graph.
+
+```python file=/concepts/solids_pipelines/jobs_from_graphs.py startafter=start_define_jobs endbefore=end_define_jobs
+prod_job = do_stuff.to_job(name="do_stuff_prod", resource_defs={"server": prod_server})
+staging_job = do_stuff.to_job(name="do_stuff_staging", resource_defs={"server": staging_server})
+local_job = do_stuff.to_job(NAME="do_stuff_local", resource_defs={"local": })
 ```
 
 ## Including a job in a repository
@@ -94,10 +114,10 @@ When constructing a job, you can customize how that configuration will be satisf
 
 ### Hardcoded configuration
 
-You can supply a config dictionary to the `config` argument of <PyObject object="GraphDefinition" method="to_job" />. The supplied dictionary will be used to configure the job whenever the job is launched. It will show up in the Dagit Playground and can be overridden.
+You can supply a config dictionary to the `config` argument of the <PyObject object="job"/> decorator. The supplied dictionary will be used to configure the job whenever the job is launched. It will show up in the Dagit Playground and can be overridden.
 
 ```python file=/concepts/solids_pipelines/jobs_with_default_config.py
-from dagster import graph, op
+from dagster import job, op
 
 
 @op(config_schema={"config_param": str})
@@ -105,42 +125,36 @@ def do_something(context):
     context.log.info("config_param: " + context.op_config["config_param"])
 
 
-@graph
+default_config = {"ops": {"do_something": {"config": {"config_param": "stuff"}}}}
+
+
+@job(config=default_config)
 def do_it_all():
     do_something()
 
 
-do_it_all_with_default_config = do_it_all.to_job(
-    config={"ops": {"do_something": {"config": {"config_param": "stuff"}}}},
-)
-
 if __name__ == "__main__":
     # Will log "config_param: stuff"
-    do_it_all_with_default_config.execute_in_process()
+    do_it_all.execute_in_process()
 ```
 
 ### Partitioned jobs
 
-You can supply a <PyObject object="PartitionedConfig" /> to the `config` argument of <PyObject object="GraphDefinition" method="to_job" />. It defines a discrete set of "partitions", along with a function for generating config for a partition. You can configure a job run by selecting a partition.
+You can supply a <PyObject object="PartitionedConfig" /> to the `config` argument of the <PyObject object="job"/> decorator. It defines a discrete set of "partitions", along with a function for generating config for a partition. You can configure a job run by selecting a partition.
 
 For more information on how this works, take a look at the [Partitions concept page](/concepts/partitions-schedules-sensors/partitions).
 
 ### Config mapping
 
-You can supply a <PyObject object="ConfigMapping" /> to the `config` argument of <PyObject object="GraphDefinition" method="to_job" />. This allows you to expose a narrower config interface to your job.  Instead of needing to configure every op and resource individually when launching the job, you can supply a smaller number of values to the outer config, and the <PyObject object="ConfigMapping" /> can translate it into config for all the job's ops and resources.
+You can supply a <PyObject object="ConfigMapping" /> to the `config` argument of <PyObject object="job" />. This allows you to expose a narrower config interface to your job.  Instead of needing to configure every op and resource individually when launching the job, you can supply a smaller number of values to the outer config, and the <PyObject object="ConfigMapping" /> can translate it into config for all the job's ops and resources.
 
 ```python file=/concepts/solids_pipelines/jobs_with_config_mapping.py
-from dagster import config_mapping, graph, op
+from dagster import config_mapping, job, op
 
 
 @op(config_schema={"config_param": str})
 def do_something(context):
     context.log.info("config_param: " + context.op_config["config_param"])
-
-
-@graph
-def do_it_all():
-    do_something()
 
 
 @config_mapping(config_schema={"simplified_param": str})
@@ -148,7 +162,10 @@ def simplified_config(val):
     return {"ops": {"do_something": {"config": {"config_param": val["simplified_param"]}}}}
 
 
-do_it_all_with_simplified_config = do_it_all.to_job(config=simplified_config)
+@job(config=simplified_config)
+def do_it_all():
+    do_something()
+
 
 if __name__ == "__main__":
     # Will log "config_param: stuff"
