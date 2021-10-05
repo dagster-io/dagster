@@ -85,6 +85,8 @@ class ProcessGrpcServerRegistry(GrpcServerRegistry):
         # returned by this registry have at least one GrpcServerRepositoryLocation hitting the
         # server with a heartbeat while you want the process to stay running.
         heartbeat_ttl,
+        # How long to wait for the server to start up and receive connections before timing out
+        startup_timeout,
     ):
         # ProcessRegistryEntry map of servers being currently returned, keyed by origin ID
         self._active_entries = {}
@@ -98,6 +100,7 @@ class ProcessGrpcServerRegistry(GrpcServerRegistry):
 
         self._reload_interval = check.int_param(reload_interval, "reload_interval")
         self._heartbeat_ttl = check.int_param(heartbeat_ttl, "heartbeat_ttl")
+        self._startup_timeout = check.int_param(startup_timeout, "startup_timeout")
 
         self._lock = threading.Lock()
 
@@ -175,6 +178,7 @@ class ProcessGrpcServerRegistry(GrpcServerRegistry):
                     heartbeat=True,
                     heartbeat_timeout=self._heartbeat_ttl,
                     fixed_server_id=new_server_id,
+                    startup_timeout=self._startup_timeout,
                 )
                 self._all_processes.append(server_process)
             except Exception:  # pylint: disable=broad-except

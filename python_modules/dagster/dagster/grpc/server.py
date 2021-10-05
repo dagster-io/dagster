@@ -925,16 +925,18 @@ class CouldNotStartServerProcess(Exception):
 def wait_for_grpc_server(server_process, client, subprocess_args, timeout=60):
     start_time = time.time()
 
+    last_error = None
+
     while True:
         try:
             client.ping("")
             return
         except grpc._channel._InactiveRpcError:  # pylint: disable=protected-access
-            pass
+            last_error = serializable_error_info_from_exc_info(sys.exc_info())
 
         if time.time() - start_time > timeout:
             raise Exception(
-                f"Timed out waiting for gRPC server to start with arguments: \"{' '.join(subprocess_args)}\""
+                f"Timed out waiting for gRPC server to start with arguments: \"{' '.join(subprocess_args)}\". Most recent connection error: {str(last_error)}"
             )
 
         if server_process.poll() != None:
@@ -953,6 +955,7 @@ def open_server_process(
     heartbeat=False,
     heartbeat_timeout=30,
     fixed_server_id=None,
+    startup_timeout=20,
 ):
     check.invariant((port or socket) and not (port and socket), "Set only port or socket")
     check.opt_inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
@@ -994,7 +997,7 @@ def open_server_process(
     )
 
     try:
-        wait_for_grpc_server(server_process, client, subprocess_args)
+        wait_for_grpc_server(server_process, client, subprocess_args, timeout=startup_timeout)
     except:
         if server_process.poll() is None:
             server_process.terminate()
@@ -1010,6 +1013,7 @@ def open_server_process_on_dynamic_port(
     heartbeat=False,
     heartbeat_timeout=30,
     fixed_server_id=None,
+    startup_timeout=20,
 ):
     server_process = None
     retries = 0
@@ -1024,6 +1028,7 @@ def open_server_process_on_dynamic_port(
                 heartbeat=heartbeat,
                 heartbeat_timeout=heartbeat_timeout,
                 fixed_server_id=fixed_server_id,
+                startup_timeout=startup_timeout,
             )
         except CouldNotBindGrpcServerToAddress:
             pass
@@ -1043,6 +1048,7 @@ class GrpcServerProcess:
         heartbeat=False,
         heartbeat_timeout=30,
         fixed_server_id=None,
+        startup_timeout=20,
     ):
         self.port = None
         self.socket = None
@@ -1058,6 +1064,7 @@ class GrpcServerProcess:
         check.int_param(heartbeat_timeout, "heartbeat_timeout")
         check.invariant(heartbeat_timeout > 0, "heartbeat_timeout must be greater than 0")
         check.opt_str_param(fixed_server_id, "fixed_server_id")
+        check.int_param(startup_timeout, "startup_timeout")
         check.invariant(
             max_workers is None or max_workers > 1 if heartbeat else True,
             "max_workers must be greater than 1 or set to None if heartbeat is True. "
@@ -1072,6 +1079,7 @@ class GrpcServerProcess:
                 heartbeat=heartbeat,
                 heartbeat_timeout=heartbeat_timeout,
                 fixed_server_id=fixed_server_id,
+                startup_timeout=startup_timeout,
             )
         else:
             self.socket = safe_tempfile_path_unmanaged()
@@ -1084,6 +1092,7 @@ class GrpcServerProcess:
                 heartbeat=heartbeat,
                 heartbeat_timeout=heartbeat_timeout,
                 fixed_server_id=fixed_server_id,
+                startup_timeout=startup_timeout,
             )
 
         if self.server_process is None:
