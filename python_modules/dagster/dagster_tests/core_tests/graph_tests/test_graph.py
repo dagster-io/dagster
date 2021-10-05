@@ -597,7 +597,7 @@ def test_raise_on_error_execute_in_process():
 
     error_job = error_graph.to_job()
 
-    with pytest.raises(Exception, match=error_str):G
+    with pytest.raises(Exception, match=error_str):
         error_job.execute_in_process()
 
     result = error_job.execute_in_process(raise_on_error=False)
