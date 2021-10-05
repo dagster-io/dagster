@@ -4,11 +4,11 @@ import click
 from dagster import __version__ as dagster_version
 from dagster import check
 from dagster.cli.pipeline import (
+    add_step_to_table,
+    execute_execute_command,
     execute_list_command,
     execute_print_command,
     get_run_config_from_file_list,
-    add_step_to_table,
-    execute_execute_command,
 )
 from dagster.cli.workspace.cli_target import (
     WORKSPACE_TARGET_WARNING,
