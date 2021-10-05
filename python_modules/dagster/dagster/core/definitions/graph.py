@@ -35,7 +35,6 @@ from dagster.core.types.dagster_type import (
     construct_dagster_type_dictionary,
 )
 from dagster.utils import merge_dicts
-from dagster.utils.backcompat import experimental
 from toposort import CircularDependencyError, toposort_flatten
 
 from .dependency import (
@@ -392,7 +391,6 @@ class GraphDefinition(NodeDefinition):
     def node_names(self):
         return list(self._node_dict.keys())
 
-    @experimental
     def to_job(
         self,
         name: Optional[str] = None,
@@ -447,7 +445,7 @@ class GraphDefinition(NodeDefinition):
                 provided, memoizaton will be enabled for this job.
 
         Returns:
-            JobDefinition: The "Job" currently implemented as a single-mode job
+            JobDefinition
         """
         from .job import JobDefinition
         from .partition import PartitionedConfig
