@@ -11,6 +11,7 @@ from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.instance import DagsterInstance
+from dagster.core.selector.subset_selector import parse_step_selection
 
 from .api import (
     ExecuteRunWithPlanIterable,
@@ -23,7 +24,6 @@ from .context_creation_pipeline import (
     orchestration_context_event_generator,
 )
 from .execution_results import InProcessGraphResult, InProcessOpResult
-from dagster.core.selector.subset_selector import parse_step_selection
 
 
 def core_execute_in_process(
@@ -44,15 +44,18 @@ def core_execute_in_process(
         run_config=run_config,
         mode=mode_def.name,
     )
-    step_keys_to_execute = parse_step_selection(
-        full_execution_plan.get_all_step_deps(), op_selection
-    )
-    final_execution_plan = create_execution_plan(
-        pipeline,
-        run_config=run_config,
-        mode=mode_def.name,
-        step_keys_to_execute=list(step_keys_to_execute),
-    )
+    if op_selection:
+        step_keys_to_execute = parse_step_selection(
+            full_execution_plan.get_all_step_deps(), op_selection
+        )
+        final_execution_plan = create_execution_plan(
+            pipeline,
+            run_config=run_config,
+            mode=mode_def.name,
+            step_keys_to_execute=list(step_keys_to_execute),
+        )
+    else:
+        final_execution_plan = full_execution_plan
 
     recorder: Dict[StepOutputHandle, Any] = {}
 

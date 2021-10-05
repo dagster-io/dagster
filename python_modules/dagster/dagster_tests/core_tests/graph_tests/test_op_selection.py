@@ -1,4 +1,4 @@
-from dagster import op, graph
+from dagster import graph, op
 from dagster.core.events import DagsterEventType
 
 
