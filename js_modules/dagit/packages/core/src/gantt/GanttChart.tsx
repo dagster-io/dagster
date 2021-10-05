@@ -1,4 +1,3 @@
-import {Checkbox} from '@blueprintjs/core';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -10,6 +9,7 @@ import {WebSocketContext} from '../app/WebSocketProvider';
 import {EMPTY_RUN_METADATA, IRunMetadataDict, IStepMetadata} from '../runs/RunMetadataProvider';
 import {StepSelection} from '../runs/StepSelection';
 import {Box} from '../ui/Box';
+import {Checkbox} from '../ui/Checkbox';
 import {ColorsWIP} from '../ui/Colors';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Group} from '../ui/Group';
@@ -176,7 +176,9 @@ export const GanttChart: React.FC<GanttChartProps> = (props) => {
               style={{marginBottom: 0}}
               label="Hide not started steps"
               checked={state.hideWaiting}
-              onClick={() => updateOptions({hideWaiting: !state.hideWaiting})}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                updateOptions({hideWaiting: e.target.checked})
+              }
             />
           </>
         )}
@@ -387,7 +389,6 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
             checked={options.hideUnselectedSteps}
             label="Hide unselected steps"
             onChange={props.onChange}
-            inline={true}
           />
         </Box>
       </GraphQueryInputContainer>

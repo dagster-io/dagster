@@ -1,5 +1,4 @@
 import {gql} from '@apollo/client';
-import {Checkbox} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -10,6 +9,7 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {PipelineSnapshotLink} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {Box} from '../ui/Box';
+import {Checkbox} from '../ui/Checkbox';
 import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
@@ -240,7 +240,7 @@ const RunRow: React.FC<{
     <Row key={run.runId} highlighted={!!isHighlighted}>
       <td style={{paddingRight: '4px'}}>
         {canTerminateOrDelete && onToggleChecked ? (
-          <Checkbox checked={checked} onChange={onChange} />
+          <Checkbox checked={!!checked} onChange={onChange} />
         ) : null}
       </td>
       <td>

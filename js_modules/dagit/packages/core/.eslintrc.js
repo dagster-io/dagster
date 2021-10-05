@@ -54,6 +54,7 @@ module.exports = {
               'Button',
               'ButtonGroup',
               'Callout',
+              'Checkbox',
               'Colors',
               'Dialog',
               'Icon',

@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Checkbox, InputGroup as BlueprintInputGroup, Menu, MenuItem} from '@blueprintjs/core';
+import {InputGroup as BlueprintInputGroup, Menu, MenuItem} from '@blueprintjs/core';
 import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import {uniqBy} from 'lodash';
 import * as React from 'react';
@@ -15,6 +15,7 @@ import {PipelineReference} from '../pipelines/PipelineReference';
 import {Box} from '../ui/Box';
 import {ButtonWIP} from '../ui/Button';
 import {ButtonGroup} from '../ui/ButtonGroup';
+import {Checkbox} from '../ui/Checkbox';
 import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';

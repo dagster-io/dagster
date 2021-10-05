@@ -1,5 +1,4 @@
 import {gql, useQuery} from '@apollo/client';
-import {Checkbox} from '@blueprintjs/core';
 import {ActiveElement, Chart, TimeUnit} from 'chart.js';
 import 'chartjs-adapter-date-fns';
 import zoomPlugin from 'chartjs-plugin-zoom';
@@ -14,6 +13,7 @@ import {InstigationTickStatus, InstigationType} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {ButtonWIP} from '../ui/Button';
 import {ButtonLink} from '../ui/ButtonLink';
+import {Checkbox} from '../ui/Checkbox';
 import {ColorsWIP} from '../ui/Colors';
 import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
@@ -168,7 +168,9 @@ export const TickHistory = ({
       label={STATUS_TEXT_MAP[status]}
       checked={shownStates[status]}
       disabled={!ticks.filter((tick) => tick.status === status).length}
-      onClick={() => setShownStates({...shownStates, [status]: !shownStates[status]})}
+      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+        setShownStates({...shownStates, [status]: e.target.checked});
+      }}
     />
   );
   const onTickClick = (tick?: InstigationTick) => {
