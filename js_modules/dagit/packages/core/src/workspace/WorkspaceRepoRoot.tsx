@@ -79,7 +79,7 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
       <Group direction="column" spacing={16} padding={{top: 16, horizontal: 24}}>
         <PageHeader
           title={<Heading>{path}</Heading>}
-          icon="source"
+          icon="repo"
           description={<Link to="/workspace">Repository</Link>}
         />
         <Box border={{side: 'bottom', width: 1, color: ColorsWIP.Gray100}}>

@@ -128,7 +128,7 @@ export const RunTable = (props: RunTableProps) => {
       <Box margin={{vertical: 64}}>
         {nonIdealState || (
           <NonIdealState
-            icon="history"
+            icon="run"
             title="No runs to display"
             description="Use the Playground to launch a run."
           />

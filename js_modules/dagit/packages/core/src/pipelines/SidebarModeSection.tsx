@@ -21,7 +21,7 @@ export const SidebarModeSection: React.FunctionComponent<{
       <Description description={mode.description || NO_DESCRIPTION} />
       {mode.resources.map((resource) => (
         <ContextResourceContainer key={resource.name}>
-          <IconWIP name="layers" color={ColorsWIP.Gray700} />
+          <IconWIP name="resource" color={ColorsWIP.Gray700} />
           <div>
             <ContextResourceHeader>{resource.name}</ContextResourceHeader>
             <Description description={resource.description || NO_DESCRIPTION} />
@@ -36,7 +36,7 @@ export const SidebarModeSection: React.FunctionComponent<{
       ))}
       {mode.loggers.map((logger) => (
         <ContextLoggerContainer key={logger.name}>
-          <IconWIP name="layers" color={ColorsWIP.Gray700} />
+          <IconWIP name="resource" color={ColorsWIP.Gray700} />
           <div>
             <ContextLoggerHeader>{logger.name}</ContextLoggerHeader>
             <Description description={logger.description || NO_DESCRIPTION} />

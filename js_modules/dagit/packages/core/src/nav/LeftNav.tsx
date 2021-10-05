@@ -57,7 +57,7 @@ export const LeftNav = () => {
           shortcutFilter={(e) => e.code === 'Digit2' && e.altKey}
         >
           <Tab to="/instance/assets" className={!!assetsMatch ? 'selected' : ''}>
-            <IconWIP name="table_view" color={ColorsWIP.White} />
+            <IconWIP name="asset" color={ColorsWIP.White} />
             <TabLabel>Assets</TabLabel>
           </Tab>
         </ShortcutHandler>
@@ -78,7 +78,7 @@ export const LeftNav = () => {
           shortcutFilter={(e) => e.code === 'Digit4' && e.altKey}
         >
           <Tab to="/workspace" className={!!workspaceMatch ? 'selected' : ''}>
-            <IconWIP name="source" color={ColorsWIP.White} />
+            <IconWIP name="workspace" color={ColorsWIP.White} />
             <TabLabel>Workspace</TabLabel>
             <WorkspaceWarningIcon />
           </Tab>

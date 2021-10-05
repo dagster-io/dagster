@@ -109,15 +109,15 @@ const NavButton = styled.button`
   display: none;
 
   ${IconWrapper} {
-    transition: color 100ms linear;
+    transition: background 100ms linear;
   }
 
   :hover ${IconWrapper} {
-    color: ${ColorsWIP.Gray500};
+    background: ${ColorsWIP.Gray500};
   }
 
   :active ${IconWrapper} {
-    color: ${ColorsWIP.Blue200};
+    background: ${ColorsWIP.Blue200};
   }
 
   :focus {

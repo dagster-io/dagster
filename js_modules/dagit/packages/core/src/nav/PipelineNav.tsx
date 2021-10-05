@@ -123,7 +123,7 @@ export const PipelineNav: React.FC<Props> = (props) => {
             ) : null}
           </Heading>
         }
-        icon={flagPipelineModeTuples ? 'workspaces' : 'schema'}
+        icon={'job'}
         description={
           <>
             <Link

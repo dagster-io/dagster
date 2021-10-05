@@ -66,7 +66,7 @@ export const WorkspacePipelineRoot: React.FC<Props> = (props) => {
       <Box padding={{horizontal: 24}}>
         <PageHeader
           title={<Heading>{pipelineName}</Heading>}
-          icon={flagPipelineModeTuples ? 'workspaces' : 'schema'}
+          icon="job"
           description={
             flagPipelineModeTuples
               ? 'Job in multiple repositories'

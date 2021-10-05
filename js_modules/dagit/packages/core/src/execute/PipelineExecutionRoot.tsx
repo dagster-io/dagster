@@ -61,7 +61,7 @@ export const PipelineExecutionRoot: React.FC<Props> = (props) => {
       />
     ) : (
       <ExecutionSessionContainerError
-        icon="error"
+        icon="no-results"
         title={flagPipelineModeTuples ? 'Select a job' : 'Select a pipeline'}
       />
     );

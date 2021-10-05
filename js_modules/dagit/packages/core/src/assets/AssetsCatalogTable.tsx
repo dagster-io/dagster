@@ -274,7 +274,7 @@ const AssetSearch: React.FC<{assets: Asset[]}> = ({assets}) => {
                   selectOption(asset);
                 }}
                 active={highlight === idx}
-                icon="table_view"
+                icon="asset"
                 text={
                   <div>
                     <div>{asset.key.path.join('/')}</div>

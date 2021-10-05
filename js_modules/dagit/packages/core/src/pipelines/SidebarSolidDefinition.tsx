@@ -119,7 +119,7 @@ export const SidebarSolidDefinition: React.FC<SidebarSolidDefinitionProps> = (pr
           <Box padding={12}>
             {[...requiredResources].sort().map((requirement) => (
               <ResourceContainer key={requirement.resourceKey}>
-                <IconWIP name="layers" color={ColorsWIP.Gray700} />
+                <IconWIP name="resource" color={ColorsWIP.Gray700} />
                 <ResourceHeader>{requirement.resourceKey}</ResourceHeader>
               </ResourceContainer>
             ))}

@@ -84,7 +84,7 @@ export const DependencyRow = ({
       <Cell>{typeof from === 'string' ? <Code>{from}</Code> : <SolidLink {...from} />}</Cell>
       <td style={{whiteSpace: 'nowrap', textAlign: 'right'}}>
         <Group direction="row" spacing={2} alignItems="center">
-          {isDynamic && <IconWIP name="bolt" color={ColorsWIP.Gray700} />}
+          {isDynamic && <IconWIP name="op_dynamic" color={ColorsWIP.Gray700} />}
           <IconWIP name="arrow_forward" color={ColorsWIP.Gray700} />
         </Group>
       </td>

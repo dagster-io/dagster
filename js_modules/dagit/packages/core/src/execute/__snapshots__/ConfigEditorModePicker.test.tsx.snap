@@ -17,19 +17,31 @@ exports[`renders error mode 1`] = `
         data-test-id="mode-picker-button"
         title="Current execution mode"
       >
-        <span
-          className="Icon__IconWrapper-ovocpb-0 bhLmqF material-icons"
-        >
-          error
-        </span>
+        <div
+          aria-label="error"
+          className="Icon__IconWrapper-ovocpb-0 hYrlEN"
+          role="img"
+          style={
+            Object {
+              "background": "rgba(23, 22, 21, 1)",
+              "maskImage": "url('error.svg')",
+            }
+          }
+        />
         <span>
           Invalid Mode Selection
         </span>
-        <span
-          className="Icon__IconWrapper-ovocpb-0 bhLmqF material-icons"
-        >
-          expand_more
-        </span>
+        <div
+          aria-label="expand_more"
+          className="Icon__IconWrapper-ovocpb-0 hYrlEN"
+          role="img"
+          style={
+            Object {
+              "background": "rgba(23, 22, 21, 1)",
+              "maskImage": "url('expand_more.svg')",
+            }
+          }
+        />
       </button>
     </div>
   </span>
@@ -56,11 +68,17 @@ exports[`renders multi mode pipelines 1`] = `
         <span>
           Mode: mode_1
         </span>
-        <span
-          className="Icon__IconWrapper-ovocpb-0 bhLmqF material-icons"
-        >
-          expand_more
-        </span>
+        <div
+          aria-label="expand_more"
+          className="Icon__IconWrapper-ovocpb-0 hYrlEN"
+          role="img"
+          style={
+            Object {
+              "background": "rgba(23, 22, 21, 1)",
+              "maskImage": "url('expand_more.svg')",
+            }
+          }
+        />
       </button>
     </div>
   </span>
@@ -87,11 +105,17 @@ exports[`renders multi mode pipelines 2`] = `
         <span>
           Mode: mode_1
         </span>
-        <span
-          className="Icon__IconWrapper-ovocpb-0 bhLmqF material-icons"
-        >
-          expand_more
-        </span>
+        <div
+          aria-label="expand_more"
+          className="Icon__IconWrapper-ovocpb-0 hYrlEN"
+          role="img"
+          style={
+            Object {
+              "background": "rgba(23, 22, 21, 1)",
+              "maskImage": "url('expand_more.svg')",
+            }
+          }
+        />
       </button>
     </div>
   </span>
@@ -119,11 +143,17 @@ exports[`renders single mode pipelines 1`] = `
         <span>
           Mode: default
         </span>
-        <span
-          className="Icon__IconWrapper-ovocpb-0 bhLmqF material-icons"
-        >
-          expand_more
-        </span>
+        <div
+          aria-label="expand_more"
+          className="Icon__IconWrapper-ovocpb-0 hYrlEN"
+          role="img"
+          style={
+            Object {
+              "background": "rgba(23, 22, 21, 1)",
+              "maskImage": "url('expand_more.svg')",
+            }
+          }
+        />
       </button>
     </div>
   </span>
@@ -151,11 +181,17 @@ exports[`renders single mode pipelines 2`] = `
         <span>
           Mode: default
         </span>
-        <span
-          className="Icon__IconWrapper-ovocpb-0 bhLmqF material-icons"
-        >
-          expand_more
-        </span>
+        <div
+          aria-label="expand_more"
+          className="Icon__IconWrapper-ovocpb-0 hYrlEN"
+          role="img"
+          style={
+            Object {
+              "background": "rgba(23, 22, 21, 1)",
+              "maskImage": "url('expand_more.svg')",
+            }
+          }
+        />
       </button>
     </div>
   </span>

@@ -145,7 +145,7 @@ export const RepositoryContentList: React.FC<RepositoryContentListProps> = ({
             small={true}
             active={type === 'solids'}
             intent={type === 'solids' ? 'primary' : 'none'}
-            icon={<IconWIP name="linear_scale" color={ColorsWIP.White} />}
+            icon={<IconWIP name="op" color={ColorsWIP.White} />}
             onClick={() => setType('solids')}
           />
         </ButtonGroup>

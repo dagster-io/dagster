@@ -32,7 +32,7 @@ describe('InstanceWarningIcon', () => {
 
     render(<Test mocks={[defaultMocks, mocks]} />);
     await waitFor(() => {
-      expect(screen.getByText(/warning/i)).toBeVisible();
+      expect(screen.queryByLabelText('warning')).toBeVisible();
     });
   });
 
@@ -45,7 +45,7 @@ describe('InstanceWarningIcon', () => {
 
     render(<Test mocks={[defaultMocks, mocks]} />);
     await waitFor(() => {
-      expect(screen.queryByText(/warning/i)).toBeNull();
+      expect(screen.queryByLabelText('warning')).toBeNull();
     });
   });
 });
