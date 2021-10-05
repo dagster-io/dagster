@@ -70,7 +70,7 @@ export const AssetView: React.FC<Props> = ({assetKey, asOf}) => {
   );
 };
 
-export const ASSET_QUERY = gql`
+const ASSET_QUERY = gql`
   query AssetQuery($assetKey: AssetKeyInput!, $limit: Int!, $before: String) {
     assetNodeOrError(assetKey: $assetKey) {
       ... on AssetNode {

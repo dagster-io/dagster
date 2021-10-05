@@ -1,7 +1,6 @@
 // Before anything else, set the webpack public path.
 import './publicPath';
 
-import {Colors, Icon} from '@blueprintjs/core';
 import {App} from '@dagit/core/app/App';
 import {createAppCache} from '@dagit/core/app/AppCache';
 import {errorLink} from '@dagit/core/app/AppError';
@@ -9,6 +8,8 @@ import {AppProvider} from '@dagit/core/app/AppProvider';
 import {AppTopNav} from '@dagit/core/app/AppTopNav';
 import {ContentRoot} from '@dagit/core/app/ContentRoot';
 import {logLink, timeStartLink} from '@dagit/core/app/apolloLinks';
+import {ColorsWIP} from '@dagit/core/ui/Colors';
+import {IconWIP, IconWrapper} from '@dagit/core/ui/Icon';
 import * as React from 'react';
 import ReactDOM from 'react-dom';
 import {Link} from 'react-router-dom';
@@ -29,19 +30,18 @@ const config = {
 const appCache = createAppCache();
 
 const SettingsLink = styled(Link)`
-  background-color: ${Colors.DARK_GRAY1};
-  padding: 15px;
+  padding: 24px;
 
-  .bp3-icon svg {
-    transition: fill 50ms linear;
+  ${IconWrapper} {
+    transition: background 50ms linear;
   }
 
-  &:hover .bp3-icon svg {
-    fill: ${Colors.GRAY4};
+  &:hover ${IconWrapper} {
+    background: ${ColorsWIP.White};
   }
 
-  &:active .bp3-icon svg {
-    fill: ${Colors.GRAY5};
+  &:active ${IconWrapper} {
+    background: ${ColorsWIP.White};
   }
 `;
 
@@ -49,7 +49,7 @@ ReactDOM.render(
   <AppProvider appCache={appCache} config={config}>
     <AppTopNav searchPlaceholder="Search…">
       <SettingsLink to="/settings" title="User settings">
-        <Icon icon="cog" iconSize={16} color={Colors.GRAY2} />
+        <IconWIP name="settings" color={ColorsWIP.Gray200} />
       </SettingsLink>
     </AppTopNav>
     <App>

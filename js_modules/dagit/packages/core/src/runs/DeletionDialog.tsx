@@ -274,7 +274,6 @@ export const DeletionDialog = (props: Props) => {
       title="Delete runs"
       canEscapeKeyClose={canQuicklyClose}
       canOutsideClickClose={canQuicklyClose}
-      isCloseButtonShown={canQuicklyClose}
       onClose={onClose}
     >
       <DialogBody>

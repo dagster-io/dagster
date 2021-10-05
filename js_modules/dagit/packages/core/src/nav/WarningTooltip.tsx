@@ -4,7 +4,6 @@ import {Tooltip} from '../ui/Tooltip';
 
 export const WarningTooltip = styled(Tooltip)`
   display: block;
-  margin-left: 8px;
   outline: none;
 
   .bp3-popover-target,

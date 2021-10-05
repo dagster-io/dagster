@@ -1,16 +1,12 @@
 import {MockList} from '@graphql-tools/mock';
 import {render, screen, waitFor} from '@testing-library/react';
-import React from 'react';
+import * as React from 'react';
 
 import {TestProvider} from '../testing/TestProvider';
 
-import {LeftNav} from './LeftNav';
+import {AppTopNav} from './AppTopNav';
 
-jest.mock('./LeftNavRepositorySection', () => ({
-  LeftNavRepositorySection: () => null,
-}));
-
-describe('LeftNav', () => {
+describe('AppTopNav', () => {
   const defaultMocks = {
     Workspace: () => ({
       locationEntries: () => new MockList(2),
@@ -20,12 +16,12 @@ describe('LeftNav', () => {
   const Test: React.FC<{mocks: any}> = ({mocks}) => {
     return (
       <TestProvider apolloProps={{mocks}}>
-        <LeftNav />
+        <AppTopNav searchPlaceholder="Test..." />
       </TestProvider>
     );
   };
 
-  it('renders left nav without error', async () => {
+  it('renders top nav without error', async () => {
     const mocks = {
       Repository: () => ({
         name: () => 'my_repository',
@@ -65,14 +61,12 @@ describe('LeftNav', () => {
         apolloProps={{mocks}}
         routerProps={{initialEntries: ['/workspace/my_repository@my_location']}}
       >
-        <LeftNav />
+        <Test mocks={mocks} />
       </TestProvider>,
     );
 
     await waitFor(() => {
-      const instanceHeader = screen.getByText(/instance/i);
-      expect(instanceHeader).toBeVisible();
-      const [runsLink] = screen.getAllByText('Runs');
+      const runsLink = screen.getByRole('link', {name: /runs/i});
       expect(runsLink.closest('a')).toHaveAttribute('href', '/instance/runs');
       expect(screen.getByText('Assets').closest('a')).toHaveAttribute('href', '/instance/assets');
       expect(screen.getByText('Status').closest('a')).toHaveAttribute('href', '/instance');
@@ -83,8 +77,12 @@ describe('LeftNav', () => {
     it('does not show warning icon when no errors', async () => {
       render(<Test mocks={defaultMocks} />);
       await waitFor(() => {
-        expect(screen.queryByLabelText('workspace')).toBeVisible();
-        expect(screen.queryByLabelText('warning')).toBeNull();
+        expect(screen.getByText(/workspace/i)).toBeVisible();
+        expect(
+          screen.queryByRole('img', {
+            name: /warning/i,
+          }),
+        ).toBeNull();
       });
     });
 
@@ -98,8 +96,12 @@ describe('LeftNav', () => {
 
       render(<Test mocks={[defaultMocks, mocks]} />);
       await waitFor(() => {
-        expect(screen.queryByLabelText('workspace')).toBeVisible();
-        expect(screen.queryAllByLabelText('warning')[0]).toBeVisible();
+        expect(screen.getByText(/workspace/i)).toBeVisible();
+        expect(
+          screen.getByRole('img', {
+            name: /warning/i,
+          }),
+        ).toBeVisible();
       });
     });
   });

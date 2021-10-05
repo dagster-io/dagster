@@ -1,11 +1,14 @@
 import * as React from 'react';
-import {useHistory} from 'react-router-dom';
+import {Link, useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import navBarImage from '../images/nav-logo-icon.png';
 import navTitleImage from '../images/nav-title.png';
+import {InstanceWarningIcon} from '../nav/InstanceWarningIcon';
 import {VersionNumber} from '../nav/VersionNumber';
+import {WorkspaceWarningIcon} from '../nav/WorkspaceWarningIcon';
 import {SearchDialog} from '../search/SearchDialog';
+import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {IconWIP, IconWrapper} from '../ui/Icon';
@@ -39,50 +42,107 @@ export const AppTopNav: React.FC<Props> = ({children, searchPlaceholder}) => {
 
   return (
     <AppTopNavContainer>
-      <LogoContainer>
-        <ShortcutHandler
-          onShortcut={() => onToggle()}
-          shortcutLabel="."
-          shortcutFilter={(e) => e.key === '.'}
-        >
-          <NavButton onClick={onToggle} onKeyDown={onKeyDown} ref={navButton}>
-            <IconWIP name="menu" color={ColorsWIP.White} size={24} />
-          </NavButton>
-        </ShortcutHandler>
-        <Group direction="row" alignItems="center" spacing={12} margin={{left: 8}}>
-          <div style={{position: 'relative', top: '1px'}}>
-            <img
-              alt="logo"
-              src={navBarImage}
-              style={{height: 30}}
-              onClick={() => history.push('/')}
-            />
-            <LogoWebsocketStatus />
-          </div>
-          <div>
-            <img src={navTitleImage} style={{height: 10}} alt="title" />
-            <VersionNumber />
-          </div>
-        </Group>
-      </LogoContainer>
-      <SearchDialog theme="dark" searchPlaceholder={searchPlaceholder} />
-      {children}
+      <Box flex={{direction: 'row', alignItems: 'center', gap: 24}}>
+        <LogoContainer>
+          <ShortcutHandler
+            onShortcut={() => onToggle()}
+            shortcutLabel="."
+            shortcutFilter={(e) => e.key === '.'}
+          >
+            <NavButton onClick={onToggle} onKeyDown={onKeyDown} ref={navButton}>
+              <IconWIP name="menu" color={ColorsWIP.White} size={24} />
+            </NavButton>
+          </ShortcutHandler>
+          <Group direction="row" alignItems="center" spacing={12} margin={{left: 8}}>
+            <div style={{position: 'relative', top: '1px'}}>
+              <img
+                alt="logo"
+                src={navBarImage}
+                style={{height: 30}}
+                onClick={() => history.push('/')}
+              />
+              <LogoWebsocketStatus />
+            </div>
+            <div>
+              <img src={navTitleImage} style={{height: 10}} alt="title" />
+              <VersionNumber />
+            </div>
+          </Group>
+        </LogoContainer>
+        <SearchDialog searchPlaceholder={searchPlaceholder} />
+      </Box>
+      <Box flex={{direction: 'row', alignItems: 'center'}}>
+        <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
+          <ShortcutHandler
+            onShortcut={() => history.push('/instance/runs')}
+            shortcutLabel={`⌥1`}
+            shortcutFilter={(e) => e.code === 'Digit1' && e.altKey}
+          >
+            <NavLink to="/instance/runs">Runs</NavLink>
+          </ShortcutHandler>
+          <ShortcutHandler
+            onShortcut={() => history.push('/instance/assets')}
+            shortcutLabel={`⌥2`}
+            shortcutFilter={(e) => e.code === 'Digit2' && e.altKey}
+          >
+            <NavLink to="/instance/assets">Assets</NavLink>
+          </ShortcutHandler>
+          <ShortcutHandler
+            onShortcut={() => history.push('/instance')}
+            shortcutLabel={`⌥3`}
+            shortcutFilter={(e) => e.code === 'Digit3' && e.altKey}
+          >
+            <NavLink to="/instance">
+              <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
+                Status
+                <InstanceWarningIcon />
+              </Box>
+            </NavLink>
+          </ShortcutHandler>
+          <ShortcutHandler
+            onShortcut={() => history.push('/workspace')}
+            shortcutLabel={`⌥4`}
+            shortcutFilter={(e) => e.code === 'Digit4' && e.altKey}
+          >
+            <NavLink to="/workspace">
+              <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
+                Workspace
+                <WorkspaceWarningIcon />
+              </Box>
+            </NavLink>
+          </ShortcutHandler>
+        </Box>
+        {children}
+      </Box>
     </AppTopNavContainer>
   );
 };
+
+const NavLink = styled(Link)`
+  color: ${ColorsWIP.Gray200};
+  font-weight: 600;
+  transition: color 50ms linear;
+  padding: 24px 0;
+
+  :hover,
+  :active {
+    color: ${ColorsWIP.White};
+    text-decoration: none;
+  }
+`;
 
 const AppTopNavContainer = styled.div`
   background: ${ColorsWIP.Gray900};
   display: flex;
   flex-direction: row;
-  height: 48px;
+  justify-content: space-between;
+  height: 64px;
 `;
 
 const LogoContainer = styled.div`
   cursor: pointer;
   display: flex;
   align-items: center;
-  width: 280px;
   flex-shrink: 0;
   padding: 0 0 0 4px;
   &:hover {

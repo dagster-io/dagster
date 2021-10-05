@@ -11,8 +11,3 @@ export const RowContainer = styled.div`
   padding: 2px 10px;
   text-decoration: none;
 `;
-
-export const ScrollContainer = styled.div`
-  overflow: auto;
-  width: 100%;
-`;

@@ -52,7 +52,7 @@ const pipelineTabs: {[key: string]: TabConfig} = {
 
 const currentOrder = ['overview', 'playground', 'runs', 'partitions'];
 
-export function tabForPipelinePathComponent(component?: string): TabConfig {
+function tabForPipelinePathComponent(component?: string): TabConfig {
   const tabList = Object.keys(pipelineTabs);
   const match =
     tabList.find((t) => pipelineTabs[t].pathComponent === component) ||

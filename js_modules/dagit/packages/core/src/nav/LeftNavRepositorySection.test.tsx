@@ -33,6 +33,7 @@ describe('Repository options', () => {
       Pipeline: () => ({
         id: () => 'my_pipeline',
         name: () => 'my_pipeline',
+        modes: () => new MockList(1),
       }),
     };
 

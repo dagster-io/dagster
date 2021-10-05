@@ -35,5 +35,5 @@ const Main = styled.div<{$navOpen: boolean}>`
 
 const Container = styled.div`
   display: flex;
-  height: calc(100% - 48px);
+  height: calc(100% - 64px);
 `;

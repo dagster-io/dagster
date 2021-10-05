@@ -292,7 +292,7 @@ const extractNumericData = (
   return series;
 };
 
-export const ASSET_MATERIALIZATIONS_QUERY = gql`
+const ASSET_MATERIALIZATIONS_QUERY = gql`
   query AssetMaterializationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $before: String) {
     assetOrError(assetKey: $assetKey) {
       ... on Asset {

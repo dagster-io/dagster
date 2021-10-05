@@ -2,7 +2,6 @@ import memoize from 'lodash/memoize';
 import * as React from 'react';
 import {useRouteMatch} from 'react-router-dom';
 
-import {useFeatureFlags} from '../app/Flags';
 import {ColorsWIP} from '../ui/Colors';
 import {
   DagsterRepoOption,
@@ -12,10 +11,8 @@ import {
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {FlatContentList} from './FlatContentList';
-import {InstigationList} from './InstigationList';
 import {RepoNavItem} from './RepoNavItem';
 import {RepoDetails} from './RepoSelector';
-import {RepositoryContentList} from './RepositoryContentList';
 import {RepositoryLocationStateObserver} from './RepositoryLocationStateObserver';
 
 export const LAST_REPO_KEY = 'dagit.last-repo';
@@ -108,7 +105,6 @@ const useNavVisibleRepos = (
 };
 
 const LoadedRepositorySection: React.FC<{allRepos: DagsterRepoOption[]}> = ({allRepos}) => {
-  const {flagPipelineModeTuples} = useFeatureFlags();
   const match = useRouteMatch<
     | {repoPath: string; selector: string; tab: string; rootTab: undefined}
     | {selector: undefined; tab: undefined; rootTab: string}
@@ -156,14 +152,7 @@ const LoadedRepositorySection: React.FC<{allRepos: DagsterRepoOption[]}> = ({all
       <RepositoryLocationStateObserver />
       {visibleRepos.size ? (
         <div style={{display: 'flex', flex: 1, flexDirection: 'column', minHeight: 0}}>
-          {flagPipelineModeTuples ? (
-            <FlatContentList {...match?.params} repos={visibleOptions} />
-          ) : (
-            <>
-              <RepositoryContentList {...match?.params} repos={visibleOptions} />
-              <InstigationList {...match?.params} repos={visibleOptions} />
-            </>
-          )}
+          <FlatContentList {...match?.params} repos={visibleOptions} />
         </div>
       ) : null}
     </div>
