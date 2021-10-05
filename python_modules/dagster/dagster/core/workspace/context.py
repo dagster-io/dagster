@@ -47,6 +47,9 @@ if TYPE_CHECKING:
     )
 
 
+DAGIT_GRPC_SERVER_HEARTBEAT_TTL = 30
+
+
 class BaseWorkspaceRequestContext(IWorkspace):
     """
     This class is a request-scoped object that stores (1) a reference to all repository locations
@@ -399,7 +402,9 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             )
         else:
             self._grpc_server_registry = self._stack.enter_context(
-                ProcessGrpcServerRegistry(reload_interval=0, heartbeat_ttl=30)
+                ProcessGrpcServerRegistry(
+                    reload_interval=0, heartbeat_ttl=DAGIT_GRPC_SERVER_HEARTBEAT_TTL
+                )
             )
 
         self._location_entry_dict: Dict[str, WorkspaceLocationEntry] = OrderedDict()

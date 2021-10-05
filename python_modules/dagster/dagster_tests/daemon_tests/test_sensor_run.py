@@ -36,14 +36,12 @@ from dagster.core.host_representation import (
     InProcessRepositoryLocationOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )
-from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import JobState, JobStatus, JobTickStatus
 from dagster.core.storage.event_log.base import EventRecordsFilter
 from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.core.test_utils import instance_for_test
+from dagster.core.test_utils import create_test_daemon_workspace, instance_for_test
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.core.workspace.dynamic_workspace import DynamicWorkspace
 from dagster.daemon import get_default_daemon_logger
 from dagster.daemon.controller import (
     DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,
@@ -309,10 +307,9 @@ def the_other_repo():
 @contextmanager
 def instance_with_sensors(external_repo_context, overrides=None):
     with instance_for_test(overrides) as instance:
-        with ProcessGrpcServerRegistry() as grpc_server_registry:
-            with DynamicWorkspace(grpc_server_registry) as workspace:
-                with external_repo_context() as external_repo:
-                    yield (instance, workspace, external_repo)
+        with create_test_daemon_workspace() as workspace:
+            with external_repo_context() as external_repo:
+                yield (instance, workspace, external_repo)
 
 
 @contextmanager
