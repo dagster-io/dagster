@@ -49,7 +49,7 @@ def s3_resource(context):
 
         .. code-block:: python
 
-            from dagster import build_op_context, graph, op
+            from dagster import build_op_context, job, op
             from dagster_aws.s3 import s3_resource
 
             @op(required_resource_keys={'s3'})
@@ -59,13 +59,11 @@ def s3_resource(context):
                     Prefix='some-key'
                 )
 
-            @graph
-            def example_graph(context):
+            @job(resource_defs={'s3': s3_resource})
+            def example_job(context):
                 example_s3_op()
 
-            example_graph.to_job(
-                resource_defs={'s3': s3_resource}
-            ).execute_in_process(
+            example_job.execute_in_process(
                 run_config={
                     'resources': {
                         's3': {

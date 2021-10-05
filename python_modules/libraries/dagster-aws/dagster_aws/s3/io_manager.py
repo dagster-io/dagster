@@ -91,9 +91,9 @@ def s3_pickle_io_manager(init_context):
 
     .. code-block:: python
 
-        my_job = my_graph.to_job(
-            resource_defs={'io_manager': s3_pickle_io_manager, "s3": s3_resource, ...},
-        )
+        @job(resource_defs={'io_manager': s3_pickle_io_manager, "s3": s3_resource, ...})
+        def my_job():
+            ...
 
     You may configure this storage as follows:
 

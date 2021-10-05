@@ -3,7 +3,7 @@ import json
 
 import boto3
 import pytest
-from dagster import graph, op
+from dagster import job, op
 from dagster_aws.cloudwatch import cloudwatch_logger
 from moto import mock_logs
 
@@ -14,12 +14,9 @@ def hello_op(context):
     context.log.error("This is an error")
 
 
-@graph
+@job(logger_defs={"cloudwatch": cloudwatch_logger})
 def hello_cloudwatch():
     hello_op()
-
-
-hello_job = hello_cloudwatch.to_job(logger_defs={"cloudwatch": cloudwatch_logger})
 
 
 @pytest.fixture
@@ -52,7 +49,7 @@ def test_cloudwatch_logging_bad_log_group_name(region, log_stream):
         Exception,
         match="Failed to initialize Cloudwatch logger: Could not find log group with name fake-log-group",
     ):
-        hello_job.execute_in_process(
+        hello_cloudwatch.execute_in_process(
             {
                 "loggers": {
                     "cloudwatch": {
@@ -72,7 +69,7 @@ def test_cloudwatch_logging_bad_log_stream_name(region, log_group):
         Exception,
         match="Failed to initialize Cloudwatch logger: Could not find log stream with name fake-log-stream",
     ):
-        hello_job.execute_in_process(
+        hello_cloudwatch.execute_in_process(
             {
                 "loggers": {
                     "cloudwatch": {
@@ -94,7 +91,7 @@ def test_cloudwatch_logging_bad_region(log_group, log_stream):
             log_group=log_group
         ),
     ):
-        hello_job.execute_in_process(
+        hello_cloudwatch.execute_in_process(
             {
                 "loggers": {
                     "cloudwatch": {
@@ -110,7 +107,7 @@ def test_cloudwatch_logging_bad_region(log_group, log_stream):
 
 
 def test_cloudwatch_logging(region, cloudwatch_client, log_group, log_stream):
-    hello_job.execute_in_process(
+    hello_cloudwatch.execute_in_process(
         {
             "loggers": {
                 "cloudwatch": {

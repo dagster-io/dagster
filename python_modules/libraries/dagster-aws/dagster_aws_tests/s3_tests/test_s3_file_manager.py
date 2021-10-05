@@ -3,7 +3,7 @@ from unittest import mock
 
 import pytest
 from botocore import exceptions
-from dagster import DagsterResourceFunctionError, In, Out, build_op_context, configured, graph, op
+from dagster import DagsterResourceFunctionError, In, Out, build_op_context, configured, job, op
 from dagster_aws.s3 import S3FileHandle, S3FileManager, s3_file_manager, s3_resource
 
 
@@ -52,13 +52,11 @@ def test_depends_on_s3_resource_file_manager(mock_s3_bucket):
         assert isinstance(local_path, str)
         assert open(local_path, "rb").read() == bar_bytes
 
-    @graph
+    @job(resource_defs={"s3": s3_resource, "file_manager": s3_file_manager})
     def s3_file_manager_test():
         accept_file(emit_file())
 
-    result = s3_file_manager_test.to_job(
-        resource_defs={"s3": s3_resource, "file_manager": s3_file_manager},
-    ).execute_in_process(
+    result = s3_file_manager_test.execute_in_process(
         run_config={
             "resources": {
                 "file_manager": {

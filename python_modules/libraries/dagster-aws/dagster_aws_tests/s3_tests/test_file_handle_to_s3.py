@@ -1,4 +1,4 @@
-from dagster import DagsterEventType, graph, op
+from dagster import DagsterEventType, job, op
 from dagster_aws.s3 import S3FileHandle, file_handle_to_s3, s3_file_manager, s3_resource
 
 
@@ -7,11 +7,11 @@ def create_file_handle_job(temp_file_handle):
     def emit_temp_handle(_):
         return temp_file_handle
 
-    @graph
+    @job(resource_defs={"s3": s3_resource, "file_manager": s3_file_manager})
     def test():
         return file_handle_to_s3(emit_temp_handle())
 
-    return test.to_job(resource_defs={"s3": s3_resource, "file_manager": s3_file_manager})
+    return test
 
 
 def test_successful_file_handle_to_s3(mock_s3_bucket):
@@ -40,7 +40,8 @@ def test_successful_file_handle_to_s3(mock_s3_bucket):
     ]
     assert len(materializations) == 1
     assert len(materializations[0].metadata_entries) == 1
-    assert materializations[0].metadata_entries[
-        0
-    ].entry_data.path == "s3://{bucket}/some-key".format(bucket=mock_s3_bucket.name)
+    assert (
+        materializations[0].metadata_entries[0].entry_data.path
+        == f"s3://{mock_s3_bucket.name}/some-key"
+    )
     assert materializations[0].metadata_entries[0].label == "some-key"
