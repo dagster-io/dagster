@@ -10,17 +10,6 @@ import { AssetKeyInput } from "./../../types/globalTypes";
 // GraphQL query operation: AssetEntryRootQuery
 // ====================================================
 
-export interface AssetEntryRootQuery_assetNodeOrError_AssetNotFoundError {
-  __typename: "AssetNotFoundError";
-}
-
-export interface AssetEntryRootQuery_assetNodeOrError_AssetNode {
-  __typename: "AssetNode";
-  id: string;
-}
-
-export type AssetEntryRootQuery_assetNodeOrError = AssetEntryRootQuery_assetNodeOrError_AssetNotFoundError | AssetEntryRootQuery_assetNodeOrError_AssetNode;
-
 export interface AssetEntryRootQuery_assetOrError_AssetNotFoundError {
   __typename: "AssetNotFoundError";
 }
@@ -39,7 +28,6 @@ export interface AssetEntryRootQuery_assetOrError_Asset {
 export type AssetEntryRootQuery_assetOrError = AssetEntryRootQuery_assetOrError_AssetNotFoundError | AssetEntryRootQuery_assetOrError_Asset;
 
 export interface AssetEntryRootQuery {
-  assetNodeOrError: AssetEntryRootQuery_assetNodeOrError;
   assetOrError: AssetEntryRootQuery_assetOrError;
 }
 

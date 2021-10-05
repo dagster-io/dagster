@@ -157,6 +157,28 @@ export const useRepoSearch = () => {
   return {loading, performSearch};
 };
 
+export const useAssetSearch = () => {
+  const [performQuery, {data, loading, called}] = useLazyQuery<SearchSecondaryQuery>(
+    SEARCH_SECONDARY_QUERY,
+    {
+      fetchPolicy: 'cache-and-network',
+    },
+  );
+
+  const fuse = React.useMemo(() => secondaryDataToSearchResults(data), [data]);
+  const performSearch = React.useCallback(
+    (queryString: string): Fuse.FuseResult<SearchResult>[] => {
+      if (!called) {
+        performQuery();
+      }
+      return fuse.search(queryString);
+    },
+    [fuse, performQuery, called],
+  );
+
+  return {loading, performSearch};
+};
+
 const SEARCH_BOOTSTRAP_QUERY = gql`
   query SearchBootstrapQuery {
     workspaceOrError {
