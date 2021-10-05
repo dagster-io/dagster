@@ -194,7 +194,7 @@ def cloudwatch_logger(init_context):
 
         .. code-block:: python
 
-            from dagster import graph, op
+            from dagster import job, op
             from dagster_aws.cloudwatch import cloudwatch_logger
 
             @op
@@ -202,13 +202,11 @@ def cloudwatch_logger(init_context):
                 context.log.info('Hello, Cloudwatch!')
                 context.log.error('This is an error')
 
-            @graph
+            @job(logger_defs={'cloudwatch': cloudwatch_logger})
             def hello_cloudwatch():
                 hello_op()
 
-            hello_cloudwatch.to_job(
-                logger_defs={'cloudwatch': cloudwatch_logger}
-            ).execute_in_process(
+            hello_cloudwatch.execute_in_process(
                 run_config={
                     'loggers': {
                         'cloudwatch': {
