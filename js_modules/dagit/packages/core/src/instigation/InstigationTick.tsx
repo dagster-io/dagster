@@ -1,5 +1,4 @@
 import {gql, useQuery} from '@apollo/client';
-import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -19,6 +18,7 @@ import {NonIdealState} from '../ui/NonIdealState';
 import {Spinner} from '../ui/Spinner';
 import {TagWIP} from '../ui/TagWIP';
 import {Body} from '../ui/Text';
+import {Tooltip} from '../ui/Tooltip';
 
 import {LaunchedRunListQuery, LaunchedRunListQueryVariables} from './types/LaunchedRunListQuery';
 import {TickTagFragment} from './types/TickTagFragment';

@@ -1,6 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
 import {InputGroup as BlueprintInputGroup, Menu, MenuItem} from '@blueprintjs/core';
-import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import {uniqBy} from 'lodash';
 import * as React from 'react';
 import {Link, useHistory} from 'react-router-dom';
@@ -26,6 +25,7 @@ import {NonIdealState} from '../ui/NonIdealState';
 import {Popover} from '../ui/Popover';
 import {Table} from '../ui/Table';
 import {Tag} from '../ui/Tag';
+import {Tooltip} from '../ui/Tooltip';
 import {assetKeyToString} from '../workspace/asset-graph/Utils';
 
 import {AssetWipeDialog} from './AssetWipeDialog';

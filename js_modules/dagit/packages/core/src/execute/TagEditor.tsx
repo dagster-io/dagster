@@ -1,4 +1,3 @@
-import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -12,6 +11,7 @@ import {ColorsWIP} from '../ui/Colors';
 import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
+import {Tooltip} from '../ui/Tooltip';
 
 interface ITagEditorProps {
   tagsFromDefinition?: PipelineRunTag[];

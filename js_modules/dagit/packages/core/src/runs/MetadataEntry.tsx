@@ -1,5 +1,4 @@
 import {gql} from '@apollo/client';
-import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -12,6 +11,7 @@ import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
 import {Markdown} from '../ui/Markdown';
+import {Tooltip} from '../ui/Tooltip';
 
 import {MetadataEntryFragment} from './types/MetadataEntryFragment';
 

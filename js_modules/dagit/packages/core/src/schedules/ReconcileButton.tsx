@@ -1,10 +1,10 @@
 import {gql, useMutation} from '@apollo/client';
-import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 
 import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
 import {InstigationType} from '../types/globalTypes';
 import {ButtonLink} from '../ui/ButtonLink';
+import {Tooltip} from '../ui/Tooltip';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 

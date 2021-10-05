@@ -1,6 +1,5 @@
 // eslint-disable-next-line no-restricted-imports
 import {Button} from '@blueprintjs/core';
-import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -14,6 +13,7 @@ import {Group} from '../ui/Group';
 import {IconWIP, IconWrapper} from '../ui/Icon';
 import {Popover} from '../ui/Popover';
 import {Spinner} from '../ui/Spinner';
+import {Tooltip} from '../ui/Tooltip';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';

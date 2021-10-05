@@ -1,9 +1,9 @@
-import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 
 import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
 import {ButtonWIP} from '../ui/Button';
 import {IconWIP} from '../ui/Icon';
+import {Tooltip} from '../ui/Tooltip';
 
 import {useReloadWorkspace} from './useReloadWorkspace';
 

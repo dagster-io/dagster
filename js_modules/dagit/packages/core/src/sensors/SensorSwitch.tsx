@@ -1,10 +1,10 @@
 import {gql, useMutation} from '@apollo/client';
-import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 
 import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
 import {InstigationStatus} from '../types/globalTypes';
 import {SwitchWithoutLabel} from '../ui/SwitchWithoutLabel';
+import {Tooltip} from '../ui/Tooltip';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -68,17 +68,21 @@ export const SensorSwitch: React.FC<Props> = (props) => {
   const lacksPermission = (running && !canStartSensor) || (!running && !canStopSensor);
   const disabled = toggleOffInFlight || toggleOnInFlight || lacksPermission;
 
-  return (
-    <Tooltip content={lacksPermission ? DISABLED_MESSAGE : undefined}>
-      <SwitchWithoutLabel
-        disabled={disabled}
-        large={large}
-        innerLabelChecked="on"
-        innerLabel="off"
-        checked={running || toggleOnInFlight}
-        onChange={onChangeSwitch}
-      />
-    </Tooltip>
+  const switchElement = (
+    <SwitchWithoutLabel
+      disabled={disabled}
+      large={large}
+      innerLabelChecked="on"
+      innerLabel="off"
+      checked={running || toggleOnInFlight}
+      onChange={onChangeSwitch}
+    />
+  );
+
+  return lacksPermission ? (
+    <Tooltip content={DISABLED_MESSAGE}>{switchElement}</Tooltip>
+  ) : (
+    switchElement
   );
 };
 

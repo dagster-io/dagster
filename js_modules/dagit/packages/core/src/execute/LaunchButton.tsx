@@ -1,12 +1,12 @@
 // eslint-disable-next-line no-restricted-imports
 import {Button, Icon, IconName, Menu, MenuItem, Popover, Position} from '@blueprintjs/core';
-import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {Box} from '../ui/Box';
 import {Spinner} from '../ui/Spinner';
+import {Tooltip} from '../ui/Tooltip';
 
 export interface LaunchButtonConfiguration {
   title: string;
@@ -140,7 +140,7 @@ export const LaunchButtonDropdown = ({
                 position={Position.LEFT}
                 openOnTargetFocus={false}
                 targetTagName="div"
-                content={option.tooltip}
+                content={option.tooltip || ''}
               >
                 <LaunchMenuItem
                   text={option.title}
@@ -198,7 +198,7 @@ const ButtonWithConfiguration: React.FunctionComponent<ButtonWithConfigurationPr
       position={Position.LEFT}
       openOnTargetFocus={false}
       targetTagName="div"
-      content={tooltip}
+      content={tooltip || ''}
     >
       <ButtonContainer
         role="button"

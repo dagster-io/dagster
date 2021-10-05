@@ -1,10 +1,10 @@
-import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {ColorsWIP} from './Colors';
 import {Group} from './Group';
 import {IconWIP, IconWrapper} from './Icon';
+import {Tooltip} from './Tooltip';
 
 interface Props {
   refreshing: boolean;

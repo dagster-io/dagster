@@ -1,6 +1,5 @@
 import {gql} from '@apollo/client';
-import {Code, Intent, Position} from '@blueprintjs/core';
-import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
+import {Code, Intent} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -19,6 +18,7 @@ import {Checkbox} from '../ui/Checkbox';
 import {ColorsWIP} from '../ui/Colors';
 import {IconWIP} from '../ui/Icon';
 import {SplitPanelContainer} from '../ui/SplitPanelContainer';
+import {Tooltip} from '../ui/Tooltip';
 
 import {
   RunPreviewValidationFragment,
@@ -313,7 +313,7 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
 
         return (
           <Tooltip
-            position={Position.BOTTOM}
+            position="bottom"
             content={stateToHint[state].title}
             intent={stateToHint[state].intent}
             key={item.name}

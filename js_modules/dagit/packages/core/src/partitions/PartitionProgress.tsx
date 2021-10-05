@@ -1,5 +1,4 @@
 import {gql, useQuery} from '@apollo/client';
-import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -24,6 +23,7 @@ import {ButtonWIP} from '../ui/Button';
 import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
 import {stringFromValue} from '../ui/TokenizingField';
+import {Tooltip} from '../ui/Tooltip';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 

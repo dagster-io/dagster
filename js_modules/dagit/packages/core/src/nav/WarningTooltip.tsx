@@ -1,5 +1,6 @@
-import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import styled from 'styled-components/macro';
+
+import {Tooltip} from '../ui/Tooltip';
 
 export const WarningTooltip = styled(Tooltip)`
   display: block;
