@@ -68,17 +68,6 @@ def get_job_instructions(command_name):
     ).format(command_name=command_name, default_filename=DEFAULT_WORKSPACE_YAML_FILENAME)
 
 
-def get_partitioned_job_instructions(command_name):
-    return (
-        "This commands targets a partitioned job. The job partition set must be "
-        "defined in a repository, which can be specified in a number of ways:"
-        "\n\n1. dagster job {command_name} -j <<job_name>> (works if .{default_filename} exists)"
-        "\n\n2. dagster job {command_name} -j <<job_name>> -w path/to/{default_filename}"
-        "\n\n3. dagster job {command_name} -f /path/to/file.py -a define_some_repo -j <<job_name>>"
-        "\n\n4. dagster job {command_name} -m a_module.submodule -a define_some_repo -j <<job_name>>"
-    ).format(command_name=command_name, default_filename=DEFAULT_WORKSPACE_YAML_FILENAME)
-
-
 @job_cli.command(
     name="print",
     help="Print a job.\n\n{instructions}".format(instructions=get_job_instructions("print")),
@@ -181,7 +170,7 @@ def job_scaffold_command(**kwargs):
 @job_cli.command(
     name="backfill",
     help="Backfill a partitioned job.\n\n{instructions}".format(
-        instructions=get_partitioned_job_instructions("backfill")
+        instructions=get_job_instructions("backfill")
     ),
 )
 @job_target_argument
@@ -217,4 +206,4 @@ def job_scaffold_command(**kwargs):
 @click.option("--noprompt", is_flag=True)
 def job_backfill_command(**kwargs):
     with DagsterInstance.get() as instance:
-        execute_backfill_command(kwargs, click.echo, instance)
+        execute_backfill_command(kwargs, click.echo, instance, True)

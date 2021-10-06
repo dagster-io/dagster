@@ -851,15 +851,17 @@ def pipeline_backfill_command(**kwargs):
         execute_backfill_command(kwargs, click.echo, instance)
 
 
-def execute_backfill_command(cli_args, print_fn, instance):
+def execute_backfill_command(cli_args, print_fn, instance, using_graph_job_op_apis=False):
     with get_workspace_from_kwargs(instance, version=dagster_version, kwargs=cli_args) as workspace:
         repo_location = get_repository_location_from_workspace(workspace, cli_args.get("location"))
         _execute_backfill_command_at_location(
-            cli_args, print_fn, instance, workspace, repo_location
+            cli_args, print_fn, instance, workspace, repo_location, using_graph_job_op_apis
         )
 
 
-def _execute_backfill_command_at_location(cli_args, print_fn, instance, workspace, repo_location):
+def _execute_backfill_command_at_location(
+    cli_args, print_fn, instance, workspace, repo_location, using_graph_job_op_apis=False
+):
     external_repo = get_external_repository_from_repo_location(
         repo_location, cli_args.get("repository")
     )
@@ -925,8 +927,9 @@ def _execute_backfill_command_at_location(cli_args, print_fn, instance, workspac
     )
 
     # Print backfill info
-    print_fn("\n  Pipeline/Job: {}".format(external_pipeline.name))
-    print_fn("Partition set: {}".format(partition_set_name))
+    print_fn("\n Pipeline/Job: {}".format(external_pipeline.name))
+    if not using_graph_job_op_apis:
+        print_fn("Partition set: {}".format(partition_set_name))
     print_fn("   Partitions: {}\n".format(print_partition_format(partition_names, indent_level=15)))
 
     # Confirm and launch
