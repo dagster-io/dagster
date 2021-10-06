@@ -140,19 +140,6 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
           </Box>
         }
       />
-      {showScheduled ? null : (
-        <Box
-          padding={{vertical: 16, horizontal: 24}}
-          border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
-        >
-          <RunsFilter
-            tokens={filterTokens}
-            onChange={setFilterTokens}
-            loading={queryResult.loading}
-            enabledFilters={enabledFilters}
-          />
-        </Box>
-      )}
       {selectedTab === 'queued' ? (
         <Group direction="column" spacing={8} padding={{horizontal: 24}}>
           <Alert
@@ -191,6 +178,16 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
                 <RunTable
                   runs={pipelineRunsOrError.results.slice(0, PAGE_SIZE)}
                   onSetFilter={setFilterTokens}
+                  actionBarComponents={
+                    showScheduled ? null : (
+                      <RunsFilter
+                        tokens={filterTokens}
+                        onChange={setFilterTokens}
+                        loading={queryResult.loading}
+                        enabledFilters={enabledFilters}
+                      />
+                    )
+                  }
                 />
                 {pipelineRunsOrError.results.length > 0 ? (
                   <div style={{marginTop: '16px'}}>
