@@ -166,6 +166,7 @@ class SensorDefinition:
             Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
         ],
         pipeline_name: Optional[str] = None,
+        target_name: Optional[str] = None,
         solid_selection: Optional[List[Any]] = None,
         mode: Optional[str] = None,
         minimum_interval_seconds: Optional[int] = None,
@@ -179,6 +180,14 @@ class SensorDefinition:
                 "Attempted to provide both job and jobs to SensorDefinition. Must provide only one "
                 "of the two."
             )
+
+        if pipeline_name and target_name:
+            raise DagsterInvariantViolationError(
+                "Attempted to provide both pipeline_name and "
+                "target_name to SensorDefinition. Please provide only one of the two."
+            )
+
+        pipeline_name = pipeline_name if pipeline_name else target_name
 
         job_param_name = "job" if job else "jobs"
         jobs = jobs if jobs else [job] if job else None
@@ -370,7 +379,7 @@ class SensorDefinition:
             raise DagsterInvariantViolationError(
                 f"Error in sensor {self._name}: Sensor evaluation function returned a RunRequest "
                 "for a sensor without a specified target. Targets can be specified by providing "
-                "a job or pipeline_name."
+                "a job or target_name."
             )
 
         for run_request in run_requests:
@@ -392,6 +401,10 @@ class SensorDefinition:
     @property
     def pipeline_name(self) -> Optional[str]:
         return self._target.pipeline_name if self._target else None
+
+    @property
+    def target_name(self) -> Optional[str]:
+        return self.pipeline_name
 
     @property
     def solid_selection(self) -> Optional[List[Any]]:
@@ -531,7 +544,7 @@ class AssetSensorDefinition(SensorDefinition):
         self,
         name: str,
         asset_key: AssetKey,
-        pipeline_name: Optional[str],
+        target_name: Optional[str],
         asset_materialization_fn: Callable[
             ["SensorExecutionContext", "EventLogEntry"],
             Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
@@ -577,7 +590,7 @@ class AssetSensorDefinition(SensorDefinition):
 
         super(AssetSensorDefinition, self).__init__(
             name=check_valid_name(name),
-            pipeline_name=pipeline_name,
+            target_name=target_name,
             evaluation_fn=_wrap_asset_fn(
                 check.callable_param(asset_materialization_fn, "asset_materialization_fn"),
             ),

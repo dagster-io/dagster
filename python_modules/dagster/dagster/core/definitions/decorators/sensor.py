@@ -95,6 +95,7 @@ def sensor(
 def asset_sensor(
     asset_key: AssetKey,
     pipeline_name: Optional[str] = None,
+    target_name: Optional[str] = None,
     name: Optional[str] = None,
     solid_selection: Optional[List[str]] = None,
     mode: Optional[str] = None,
@@ -143,6 +144,14 @@ def asset_sensor(
 
     check.opt_str_param(name, "name")
 
+    if pipeline_name and target_name:
+        raise DagsterInvariantViolationError(
+            "Attempted to provide both pipeline_name and "
+            "target_name to AssetSensorDefinition. Please only provide one of the two."
+        )
+
+    target_name = pipeline_name if pipeline_name else target_name
+
     def inner(
         fn: Callable[
             [
@@ -176,7 +185,7 @@ def asset_sensor(
         return AssetSensorDefinition(
             name=sensor_name,
             asset_key=asset_key,
-            pipeline_name=pipeline_name,
+            target_name=target_name,
             asset_materialization_fn=_wrapped_fn,
             solid_selection=solid_selection,
             mode=mode,
