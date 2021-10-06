@@ -301,21 +301,24 @@ class PendingNodeInvocation:
         # If PendingNodeInvocation is not within composition context, and underlying node definition
         # is a solid definition, then permit it to be invoked and executed like a solid definition.
         if not is_in_composition() and isinstance(self.node_def, SolidDefinition):
+            node_label = (
+                self.node_def.node_type_str
+            )  # will be the string "solid" for solids, and the string "ops" for ops
             if not isinstance(self.node_def.compute_fn, DecoratedSolidFunction):
                 raise DagsterInvalidInvocationError(
-                    "Attemped to invoke solid that was not constructed using the `@solid` "
-                    "decorator. Only solids constructed using the `@solid` decorator can be "
+                    f"Attemped to invoke {node_label} that was not constructed using the `@{node_label}` "
+                    f"decorator. Only {node_label}s constructed using the `@{node_label}` decorator can be "
                     "directly invoked."
                 )
             if self.node_def.compute_fn.has_context_arg():
                 if len(args) == 0:
                     raise DagsterInvalidInvocationError(
-                        f"Compute function of solid '{self.given_alias}' has context argument, but no context "
+                        f"Compute function of {node_label} '{self.given_alias}' has context argument, but no context "
                         "was provided when invoking."
                     )
                 elif args[0] is not None and not isinstance(args[0], UnboundSolidExecutionContext):
                     raise DagsterInvalidInvocationError(
-                        f"Compute function of solid '{self.given_alias}' has context argument, but no context "
+                        f"Compute function of {node_label} '{self.given_alias}' has context argument, but no context "
                         "was provided when invoking."
                     )
                 context = args[0]
@@ -323,7 +326,7 @@ class PendingNodeInvocation:
             else:
                 if len(args) > 0 and isinstance(args[0], UnboundSolidExecutionContext):
                     raise DagsterInvalidInvocationError(
-                        f"Compute function of solid '{self.given_alias}' has no context argument, but "
+                        f"Compute function of {node_label} '{self.given_alias}' has no context argument, but "
                         "context was provided when invoking."
                     )
                 return solid_invocation_result(self, None, *args, **kwargs)

@@ -144,16 +144,18 @@ class SolidDefinition(NodeDefinition):
         if is_in_composition():
             return super(SolidDefinition, self).__call__(*args, **kwargs)
         else:
+            node_label = self.node_type_str  # string "solid" for solids, "op" for ops
+
             if not isinstance(self.compute_fn, DecoratedSolidFunction):
                 raise DagsterInvalidInvocationError(
-                    "Attemped to invoke solid that was not constructed using the `@solid` "
-                    "decorator. Only solids constructed using the `@solid` decorator can be "
+                    f"Attemped to invoke {node_label} that was not constructed using the `@{node_label}` "
+                    f"decorator. Only {node_label}s constructed using the `@{node_label}` decorator can be "
                     "directly invoked."
                 )
             if self.compute_fn.has_context_arg():
                 if len(args) + len(kwargs) == 0:
                     raise DagsterInvalidInvocationError(
-                        f"Compute function of solid '{self.name}' has context argument, but no context "
+                        f"Compute function of {node_label} '{self.name}' has context argument, but no context "
                         "was provided when invoking."
                     )
                 if len(args) > 0:
@@ -161,7 +163,7 @@ class SolidDefinition(NodeDefinition):
                         args[0], UnboundSolidExecutionContext
                     ):
                         raise DagsterInvalidInvocationError(
-                            f"Compute function of solid '{self.name}' has context argument, "
+                            f"Compute function of {node_label} '{self.name}' has context argument, "
                             "but no context was provided when invoking."
                         )
                     context = args[0]
@@ -171,7 +173,7 @@ class SolidDefinition(NodeDefinition):
                     context_param_name = get_function_params(self.compute_fn.decorated_fn)[0].name
                     if context_param_name not in kwargs:
                         raise DagsterInvalidInvocationError(
-                            f"Compute function of solid '{self.name}' has context argument "
+                            f"Compute function of {node_label} '{self.name}' has context argument "
                             f"'{context_param_name}', but no value for '{context_param_name}' was "
                             f"found when invoking. Provided kwargs: {kwargs}"
                         )
@@ -186,7 +188,7 @@ class SolidDefinition(NodeDefinition):
             else:
                 if len(args) > 0 and isinstance(args[0], UnboundSolidExecutionContext):
                     raise DagsterInvalidInvocationError(
-                        f"Compute function of solid '{self.name}' has no context argument, but "
+                        f"Compute function of {node_label} '{self.name}' has no context argument, but "
                         "context was provided when invoking."
                     )
                 return solid_invocation_result(self, None, *args, **kwargs)
