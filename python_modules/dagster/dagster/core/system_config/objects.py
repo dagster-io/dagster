@@ -220,6 +220,7 @@ class ResolvedRunConfig(
         solid_config_dict = composite_descent(
             pipeline_def, config_value.get(node_key, {}), mode_def.resource_defs
         )
+        # HERE!!! resolve run config properly with op_selection
 
         return ResolvedRunConfig(
             solids=solid_config_dict,
