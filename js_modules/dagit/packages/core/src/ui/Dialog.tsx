@@ -41,7 +41,7 @@ export const DialogHeader: React.FC<HeaderProps> = (props) => {
   const {icon, label} = props;
   return (
     <Box
-      background={ColorsWIP.Gray50}
+      background={ColorsWIP.White}
       padding={{vertical: 16, horizontal: 20}}
       border={{side: 'bottom', width: 1, color: ColorsWIP.Gray200}}
     >
@@ -89,7 +89,7 @@ const DialogHeaderText = styled.div`
 
 export const GlobalDialogStyle = createGlobalStyle`
   .dagit-portal .bp3-overlay-backdrop {
-    background-color: rgba(189, 186, 183, 0.7);
+    background-color: ${ColorsWIP.WashGray};
   }
 
   .dagit-portal .bp3-dialog-container {
