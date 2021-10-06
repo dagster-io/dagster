@@ -47,6 +47,10 @@ class NodeDefinition(NamedConfigurableDefinition):
     def node_type_str(self):
         raise NotImplementedError()
 
+    @abstractproperty
+    def is_graph_job_op_node(self) -> bool:
+        raise NotImplementedError()
+
     @property
     def name(self):
         return self._name

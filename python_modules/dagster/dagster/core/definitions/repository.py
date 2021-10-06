@@ -232,7 +232,7 @@ class RepositoryData(ABC):
         ]
         if not pipelines_with_name:
             raise DagsterInvariantViolationError(
-                f"Could not find pipeline {pipeline_name} in repository"
+                f"Could not find target {pipeline_name} in repository"
             )
         return pipelines_with_name[0]
 

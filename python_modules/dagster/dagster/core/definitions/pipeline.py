@@ -556,10 +556,17 @@ class PipelineDefinition:
 
     # make Callable for decorator reference updates
     def __call__(self, *args, **kwargs):
-        raise DagsterInvariantViolationError(
-            f"Attempted to call pipeline '{self.name}' directly. Pipelines should be invoked by "
-            "using an execution API function (e.g. `execute_pipeline`)."
-        )
+        if self.is_job:
+            msg = (
+                f"Attempted to call job '{self.name}' directly. Jobs should be invoked by "
+                "using an execution API function (e.g. `job.execute_in_process`)."
+            )
+        else:
+            msg = (
+                f"Attempted to call pipeline '{self.name}' directly. Pipelines should be invoked by "
+                "using an execution API function (e.g. `execute_pipeline`)."
+            )
+        raise DagsterInvariantViolationError(msg)
 
 
 class PipelineSubsetDefinition(PipelineDefinition):
