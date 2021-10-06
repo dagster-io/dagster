@@ -61,7 +61,7 @@ const SearchResultItem: React.FC<ItemProps> = React.memo(({isHighlight, onClickR
       <ResultLink to={item.href} onClick={onClick}>
         <IconWIP
           name={iconForType(item.type)}
-          color={isHighlight ? ColorsWIP.White : ColorsWIP.Gray500}
+          color={isHighlight ? ColorsWIP.Gray800 : ColorsWIP.Gray500}
         />
         <div style={{marginLeft: '12px'}}>
           <Label isHighlight={isHighlight}>{item.label}</Label>
@@ -101,7 +101,7 @@ export const SearchResults = (props: Props) => {
 };
 
 const NoResults = styled.div`
-  color: ${ColorsWIP.Gray100};
+  color: ${ColorsWIP.Gray500};
   font-size: 16px;
   padding: 16px;
 `;
@@ -124,8 +124,10 @@ interface HighlightableTextProps {
 
 const Item = styled.li<HighlightableTextProps>`
   align-items: center;
-  background-color: ${({isHighlight}) => (isHighlight ? ColorsWIP.Blue500 : ColorsWIP.White)};
-  color: ${({isHighlight}) => (isHighlight ? ColorsWIP.White : 'default')}
+  background-color: ${({isHighlight}) => (isHighlight ? ColorsWIP.Gray100 : 'transparent')};
+  box-shadow: ${({isHighlight}) => (isHighlight ? ColorsWIP.HighlightGreen : 'transparent')} 6px 0 0
+    inset;
+  color: ${ColorsWIP.Gray700};
   display: flex;
   flex-direction: row;
   list-style: none;
@@ -133,7 +135,7 @@ const Item = styled.li<HighlightableTextProps>`
   user-select: none;
 
   &:hover {
-    background-color: ${({isHighlight}) => (isHighlight ? ColorsWIP.Blue500 : ColorsWIP.Gray500)};
+    background-color: ${ColorsWIP.Gray100};
   }
 `;
 
@@ -152,12 +154,12 @@ const ResultLink = styled(Link)`
 `;
 
 const Label = styled.div<HighlightableTextProps>`
-  color: ${({isHighlight}) => (isHighlight ? ColorsWIP.White : ColorsWIP.Gray500)};
+  color: ${({isHighlight}) => (isHighlight ? ColorsWIP.Gray900 : ColorsWIP.Gray700)};
   font-weight: 500;
 `;
 
 const Description = styled.div<HighlightableTextProps>`
-  color: ${({isHighlight}) => (isHighlight ? ColorsWIP.White : ColorsWIP.Gray400)};
+  color: ${({isHighlight}) => (isHighlight ? ColorsWIP.Gray900 : ColorsWIP.Gray700)};
   font-size: 12px;
   max-width: 530px;
   overflow-x: hidden;
