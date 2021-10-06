@@ -1,7 +1,7 @@
 import re
 import sys
 from collections import defaultdict
-from typing import List, NamedTuple, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, List, NamedTuple, Optional
 
 from dagster.core.definitions.dependency import DependencyStructure
 from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
