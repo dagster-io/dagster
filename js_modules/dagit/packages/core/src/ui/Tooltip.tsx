@@ -18,6 +18,9 @@ export const GlobalTooltipStyle = createGlobalStyle`
   }
 `;
 
+// Overwrite arrays instead of concatting them.
+const overwriteMerge = (destination: any[], source: any[]) => source;
+
 export const Tooltip: React.FC<Tooltip2Props> = (props) => (
   <Tooltip2
     {...props}
@@ -26,6 +29,7 @@ export const Tooltip: React.FC<Tooltip2Props> = (props) => (
     modifiers={deepmerge(
       {offset: {enabled: true, options: {offset: [0, 8]}}},
       props.modifiers || {},
+      {arrayMerge: overwriteMerge},
     )}
   />
 );

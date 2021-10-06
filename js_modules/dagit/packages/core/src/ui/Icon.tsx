@@ -6,7 +6,7 @@ import {ColorsWIP} from './Colors';
 // Mostly Material Design icons - need another one? Download the SVG:
 // https://github.com/marella/material-design-icons/tree/main/svg/outlined
 
-export const Icons = {
+const Icons = {
   // Core icons
   asset: require('./icon-svgs/table_view.svg'),
   expectation: require('./icon-svgs/bp-automatic-updates.svg'),

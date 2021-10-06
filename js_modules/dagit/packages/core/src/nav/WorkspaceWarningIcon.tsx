@@ -23,7 +23,8 @@ export const WorkspaceWarningIcon = React.memo(() => {
               : 'repository locations failed to load'
           }`}</div>
         }
-        position="right"
+        position="bottom"
+        modifiers={{offset: {enabled: true, options: {offset: [0, 28]}}}}
       >
         <IconWIP name="warning" color={ColorsWIP.Yellow500} />
       </WarningTooltip>

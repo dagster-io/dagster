@@ -332,7 +332,6 @@ export const TerminationDialog = (props: Props) => {
       title="Terminate runs"
       canEscapeKeyClose={canQuicklyClose}
       canOutsideClickClose={canQuicklyClose}
-      isCloseButtonShown={canQuicklyClose}
       onClose={onClose}
     >
       <DialogBody>

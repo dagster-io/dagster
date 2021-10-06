@@ -8,7 +8,6 @@ import {useFeatureFlags} from '../app/Flags';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
-import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
 import {Spinner} from '../ui/Spinner';
 import {FontFamily} from '../ui/styles';
@@ -59,10 +58,7 @@ const initialState: State = {
   loaded: false,
 };
 
-export const SearchDialog: React.FC<{theme: 'dark' | 'light'; searchPlaceholder: string}> = ({
-  theme,
-  searchPlaceholder,
-}) => {
+export const SearchDialog: React.FC<{searchPlaceholder: string}> = ({searchPlaceholder}) => {
   const location = useLocation();
   const history = useHistory();
   const {loading, performSearch} = useRepoSearch();
@@ -141,13 +137,25 @@ export const SearchDialog: React.FC<{theme: 'dark' | 'light'; searchPlaceholder:
         shortcutLabel="/"
         shortcutFilter={(e) => e.key === '/'}
       >
-        <SearchTrigger onClick={openSearch} $theme={theme}>
+        <SearchTrigger onClick={openSearch}>
           <Box flex={{justifyContent: 'space-between', alignItems: 'center'}}>
-            <Group direction="row" alignItems="center" spacing={8}>
-              <IconWIP name="search" color={ColorsWIP.Gray500} />
+            <Box flex={{alignItems: 'center', gap: 8}}>
+              <div
+                style={{
+                  background: ColorsWIP.Gray900,
+                  borderRadius: '12px',
+                  height: '24px',
+                  width: '24px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <IconWIP name="search" color={ColorsWIP.Gray50} />
+              </div>
               <Placeholder>{searchPlaceholder}</Placeholder>
-              <SlashShortcut $theme={theme}>{'/'}</SlashShortcut>
-            </Group>
+            </Box>
+            <SlashShortcut>{'/'}</SlashShortcut>
           </Box>
         </SearchTrigger>
       </ShortcutHandler>
@@ -187,25 +195,21 @@ export const SearchDialog: React.FC<{theme: 'dark' | 'light'; searchPlaceholder:
   );
 };
 
-SearchDialog.defaultProps = {
-  theme: 'light',
-};
-
-const SearchTrigger = styled.button<{$theme: 'dark' | 'light'}>`
-  background-color: ${({$theme}) => ($theme === 'light' ? ColorsWIP.White : ColorsWIP.Gray900)};
+const SearchTrigger = styled.button`
+  background-color: ${ColorsWIP.Gray800};
+  border-radius: 24px;
   border: none;
-  color: ${({$theme}) => ($theme === 'light' ? ColorsWIP.Gray600 : ColorsWIP.Gray300)};
-  font-size: 15px;
-  font-weight: 400;
+  color: ${ColorsWIP.Gray50};
+  font-size: 14px;
   cursor: pointer;
-  padding: ${({$theme}) => ($theme === 'light' ? '6px 6px 6px 10px' : '4px 6px 4px 20px')};
+  padding: 4px 16px 4px 4px;
   outline: none;
   user-select: none;
-  width: 100%;
-  height: 100%;
+  width: 188px;
+  height: 32px;
 
   :focus {
-    border-color: ${({$theme}) => ($theme === 'light' ? ColorsWIP.Blue500 : ColorsWIP.Gray100)};
+    border-color: ${ColorsWIP.Gray100};
   }
 `;
 
@@ -251,10 +255,10 @@ const SearchInput = styled.input`
   }
 `;
 
-const SlashShortcut = styled.div<{$theme: 'light' | 'dark'}>`
-  background-color: ${({$theme}) => ($theme === 'light' ? ColorsWIP.Gray100 : ColorsWIP.Gray800)};
+const SlashShortcut = styled.div`
+  background-color: ${ColorsWIP.Gray700};
   border-radius: 3px;
-  color: ${({$theme}) => ($theme === 'light' ? ColorsWIP.Gray900 : ColorsWIP.Gray100)};
+  color: ${ColorsWIP.Gray100};
   font-size: 14px;
   font-family: ${FontFamily.monospace};
   padding: 2px 6px;

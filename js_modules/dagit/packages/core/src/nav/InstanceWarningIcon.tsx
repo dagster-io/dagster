@@ -27,7 +27,8 @@ export const InstanceWarningIcon = React.memo(() => {
             daemonErrors.length === 1 ? 'daemon not running' : 'daemons not running'
           }`}</div>
         }
-        position="right"
+        position="bottom"
+        modifiers={{offset: {enabled: true, options: {offset: [0, 28]}}}}
       >
         <IconWIP name="warning" color={ColorsWIP.Yellow500} />
       </WarningTooltip>
