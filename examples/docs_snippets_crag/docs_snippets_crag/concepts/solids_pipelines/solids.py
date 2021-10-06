@@ -1,7 +1,7 @@
 # pylint: disable=unused-argument
 
 import requests
-from dagster import DagsterType, InputDefinition, Nothing, Output, OutputDefinition, solid
+from dagster import DagsterType, In, Nothing, Out, op
 
 
 class MockResponse:
@@ -16,109 +16,103 @@ class MockRequest:
 
 requests = MockRequest()
 
-# start_solid_marker
+# start_op_marker
 
 
-@solid
-def my_solid():
+@op
+def my_op():
     return "hello"
 
 
-# end_solid_marker
+# end_op_marker
 
 
-# start_configured_solid_marker
-@solid(config_schema={"api_endpoint": str})
-def my_configurable_solid(context):
-    api_endpoint = context.solid_config["api_endpoint"]
+# start_configured_op_marker
+@op(config_schema={"api_endpoint": str})
+def my_configurable_op(context):
+    api_endpoint = context.op_config["api_endpoint"]
     data = requests.get(f"{api_endpoint}/data").json()
     return data
 
 
-# end_configured_solid_marker
+# end_configured_op_marker
 
-# start_input_solid_marker
+# start_input_op_marker
 
 
-@solid
-def my_input_solid(abc, xyz):
+@op
+def my_input_op(abc, xyz):
     pass
 
 
-# end_input_solid_marker
+# end_input_op_marker
 
 
-# start_typed_input_solid_marker
+# start_typed_input_op_marker
 
 MyDagsterType = DagsterType(type_check_fn=lambda _, value: value % 2 == 0, name="MyDagsterType")
 
 
-@solid(input_defs=[InputDefinition(name="abc", dagster_type=MyDagsterType)])
-def my_typed_input_solid(abc):
+@op(ins={"abc": In(dagster_type=MyDagsterType)})
+def my_typed_input_op(abc):
     pass
 
 
-# end_typed_input_solid_marker
+# end_typed_input_op_marker
 
 
-# start_output_solid_marker
+# start_output_op_marker
 
 
-@solid
-def my_output_solid():
+@op
+def my_output_op():
     return 5
 
 
-# end_output_solid_marker
+# end_output_op_marker
 
-# start_multi_output_solid_marker
-
-
-@solid(
-    output_defs=[
-        OutputDefinition(name="first_output"),
-        OutputDefinition(name="second_output"),
-    ],
-)
-def my_multi_output_solid():
-    yield Output(5, output_name="first_output")
-    yield Output(6, output_name="second_output")
+# start_multi_output_op_marker
 
 
-# end_multi_output_solid_marker
+@op(out={"first_output": Out(), "second_output": Out()})
+def my_multi_output_op():
+    return 5, 6
 
-# start_solid_context_marker
-@solid(config_schema={"name": str})
-def context_solid(context):
-    name = context.solid_config["name"]
+
+# end_multi_output_op_marker
+
+# start_op_context_marker
+@op(config_schema={"name": str})
+def context_op(context):
+    name = context.op_config["name"]
     context.log.info(f"My name is {name}")
 
 
-# end_solid_context_marker
+# end_op_context_marker
 
-# start_solid_factory_pattern_marker
-def x_solid(
+# start_op_factory_pattern_marker
+def x_op(
     arg,
     name="default_name",
-    input_defs=None,
+    ins=None,
     **kwargs,
 ):
     """
     Args:
-        args (any): One or more arguments used to generate the nwe solid
-        name (str): The name of the new solid.
-        input_defs (list[InputDefinition]): Any input definitions for the new solid. Default: None.
+        args (any): One or more arguments used to generate the nwe op
+        name (str): The name of the new op.
+        ins (Dict[str, In]): Any Ins for the new op. Default: None.
 
     Returns:
-        function: The new solid.
+        function: The new op.
     """
 
-    @solid(name=name, input_defs=input_defs or [InputDefinition("start", Nothing)], **kwargs)
-    def _x_solid(context):
-        # Solid logic here
+    @op(name=name, ins=ins or {"start": In(Nothing)}, **kwargs)
+    def _x_op(context):
+        # Op logic here
         pass
 
-    return _x_solid
+    return _x_op
 
 
-# end_solid_factory_pattern_marker
+# end_op_factory_pattern_marker
