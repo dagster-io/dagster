@@ -1,13 +1,16 @@
 import {gql, useQuery} from '@apollo/client';
+import {BreadcrumbProps, Breadcrumbs} from '@blueprintjs/core';
 import * as React from 'react';
-import {Redirect, RouteComponentProps} from 'react-router-dom';
+import {Link, Redirect, RouteComponentProps} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
 import {IconWIP} from '../ui/Icon';
 import {Loading} from '../ui/Loading';
 import {Page} from '../ui/Page';
 import {PageHeader} from '../ui/PageHeader';
+import {PageSection} from '../ui/PageSection';
 import {TagWIP} from '../ui/TagWIP';
 import {Heading} from '../ui/Text';
 
@@ -43,6 +46,21 @@ export const AssetEntryRoot: React.FC<RouteComponentProps> = ({location, match})
     variables: {assetKey: {path: currentPath}},
   });
 
+  const breadcrumbs = React.useMemo(() => {
+    if (currentPath.length === 1 || view !== 'directory') {
+      return null;
+    }
+
+    const list: BreadcrumbProps[] = [];
+    currentPath.reduce((accum: string, elem: string) => {
+      const href = `${accum}/${encodeURIComponent(elem)}`;
+      list.push({text: elem, href});
+      return href;
+    }, '/instance/assets');
+
+    return list;
+  }, [currentPath, view]);
+
   // If the asOf timestamp is invalid, discard it via redirect.
   if (invalidTime) {
     return <Redirect to={pathname} />;
@@ -52,17 +70,22 @@ export const AssetEntryRoot: React.FC<RouteComponentProps> = ({location, match})
     <Page>
       <PageHeader
         title={
-          view !== 'directory' ? (
+          view !== 'directory' || !breadcrumbs ? (
             <Heading>{currentPath[currentPath.length - 1]}</Heading>
           ) : (
-            <Box flex={{alignItems: 'center', gap: 4}}>
-              {currentPath
-                .map<React.ReactNode>((p, i) => <Heading key={i}>{p}</Heading>)
-                .reduce((prev, curr, i) => [
-                  prev,
-                  <IconWIP key={`separator_${i}`} name="chevron_right" size={16} />,
-                  curr,
-                ])}
+            <Box
+              flex={{alignItems: 'center', gap: 4}}
+              style={{maxWidth: '600px', overflow: 'hidden'}}
+            >
+              <Breadcrumbs
+                items={breadcrumbs}
+                breadcrumbRenderer={({text, href}) => (
+                  <Heading>
+                    <BreadcrumbLink to={href || '#'}>{text}</BreadcrumbLink>
+                  </Heading>
+                )}
+                currentBreadcrumbRenderer={({text}) => <Heading>{text}</Heading>}
+              />
             </Box>
           )
         }
@@ -98,6 +121,15 @@ const Wrapper = styled.div`
   height: 100%;
   min-width: 0;
   overflow: auto;
+`;
+
+const BreadcrumbLink = styled(Link)`
+  color: ${ColorsWIP.Gray800};
+
+  :hover,
+  :active {
+    color: ${ColorsWIP.Gray800};
+  }
 `;
 
 const ASSET_ENTRY_ROOT_QUERY = gql`
