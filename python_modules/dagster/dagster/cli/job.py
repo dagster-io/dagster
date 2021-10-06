@@ -5,6 +5,7 @@ from dagster import __version__ as dagster_version
 from dagster import check
 from dagster.cli.pipeline import (
     add_step_to_table,
+    execute_backfill_command,
     execute_execute_command,
     execute_launch_command,
     execute_list_command,
@@ -50,20 +51,31 @@ def get_job_in_same_python_env_instructions(command_name):
         "This commands targets a job. The job can be specified in a number of ways:"
         "\n\n1. dagster job {command_name} -f /path/to/file.py -a define_some_job"
         "\n\n2. dagster job {command_name} -m a_module.submodule -a define_some_job"
-        "\n\n3. dagster job {command_name} -f /path/to/file.py -a define_some_repo -p <<job_name>>"
-        "\n\n4. dagster job {command_name} -m a_module.submodule -a define_some_repo -p <<job_name>>"
+        "\n\n3. dagster job {command_name} -f /path/to/file.py -a define_some_repo -j <<job_name>>"
+        "\n\n4. dagster job {command_name} -m a_module.submodule -a define_some_repo -j <<job_name>>"
     ).format(command_name=command_name)
 
 
 def get_job_instructions(command_name):
     return (
         "This commands targets a job. The job can be specified in a number of ways:"
-        "\n\n1. dagster job {command_name} -p <<job_name>> (works if .{default_filename} exists)"
-        "\n\n2. dagster job {command_name} -p <<job_name>> -w path/to/{default_filename}"
+        "\n\n1. dagster job {command_name} -j <<job_name>> (works if .{default_filename} exists)"
+        "\n\n2. dagster job {command_name} -j <<job_name>> -w path/to/{default_filename}"
         "\n\n3. dagster job {command_name} -f /path/to/file.py -a define_some_job"
         "\n\n4. dagster job {command_name} -m a_module.submodule -a define_some_job"
-        "\n\n5. dagster job {command_name} -f /path/to/file.py -a define_some_repo -p <<job_name>>"
-        "\n\n6. dagster job {command_name} -m a_module.submodule -a define_some_repo -p <<job_name>>"
+        "\n\n5. dagster job {command_name} -f /path/to/file.py -a define_some_repo -j <<job_name>>"
+        "\n\n6. dagster job {command_name} -m a_module.submodule -a define_some_repo -j <<job_name>>"
+    ).format(command_name=command_name, default_filename=DEFAULT_WORKSPACE_YAML_FILENAME)
+
+
+def get_partitioned_job_instructions(command_name):
+    return (
+        "This commands targets a partitioned job. The job partition set must be "
+        "defined in a repository, which can be specified in a number of ways:"
+        "\n\n1. dagster job {command_name} -j <<job_name>> (works if .{default_filename} exists)"
+        "\n\n2. dagster job {command_name} -j <<job_name>> -w path/to/{default_filename}"
+        "\n\n3. dagster job {command_name} -f /path/to/file.py -a define_some_repo -j <<job_name>>"
+        "\n\n4. dagster job {command_name} -m a_module.submodule -a define_some_repo -j <<job_name>>"
     ).format(command_name=command_name, default_filename=DEFAULT_WORKSPACE_YAML_FILENAME)
 
 
@@ -164,3 +176,45 @@ def job_launch_command(**kwargs):
 @click.option("--print-only-required", default=False, is_flag=True)
 def job_scaffold_command(**kwargs):
     execute_scaffold_command(kwargs, click.echo)
+
+
+@job_cli.command(
+    name="backfill",
+    help="Backfill a partitioned job.\n\n{instructions}".format(
+        instructions=get_partitioned_job_instructions("backfill")
+    ),
+)
+@job_target_argument
+@click.option(
+    "--partitions",
+    type=click.STRING,
+    help="Comma-separated list of partition names that we want to backfill",
+)
+@click.option(
+    "--all",
+    type=click.STRING,
+    help="Specify to select all partitions to backfill.",
+)
+@click.option(
+    "--from",
+    type=click.STRING,
+    help=(
+        "Specify a start partition for this backfill job"
+        "\n\nExample: "
+        "dagster job backfill log_daily_stats --from 20191101"
+    ),
+)
+@click.option(
+    "--to",
+    type=click.STRING,
+    help=(
+        "Specify an end partition for this backfill job"
+        "\n\nExample: "
+        "dagster job backfill log_daily_stats --to 20191201"
+    ),
+)
+@click.option("--tags", type=click.STRING, help="JSON string of tags to use for this job run")
+@click.option("--noprompt", is_flag=True)
+def job_backfill_command(**kwargs):
+    with DagsterInstance.get() as instance:
+        execute_backfill_command(kwargs, click.echo, instance)

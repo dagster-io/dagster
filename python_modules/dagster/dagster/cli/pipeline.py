@@ -711,7 +711,7 @@ def gen_partition_names_from_args(partition_names, kwargs):
         if len(selected_partitions) < len(selected_args):
             selected_names = [partition for partition in selected_partitions]
             unknown = [selected for selected in selected_args if selected not in selected_names]
-            raise click.UsageError("Unknown partitions: {}".format(unknown.join(", ")))
+            raise click.UsageError("Unknown partitions: {}".format(", ".join(unknown)))
         return selected_partitions
 
     start = validate_partition_slice(partition_names, "from", kwargs.get("from"))
@@ -865,7 +865,7 @@ def _execute_backfill_command_at_location(cli_args, print_fn, instance, workspac
     )
 
     external_pipeline = get_external_pipeline_or_job_from_external_repo(
-        external_repo, cli_args.get("pipeline")
+        external_repo, cli_args.get("pipeline_or_job")
     )
 
     noprompt = cli_args.get("noprompt")
@@ -878,7 +878,7 @@ def _execute_backfill_command_at_location(cli_args, print_fn, instance, workspac
 
     if not pipeline_partition_set_names:
         raise click.UsageError(
-            "No partition sets found for pipeline `{}`".format(external_pipeline.name)
+            "No partition sets found for pipeline/job `{}`".format(external_pipeline.name)
         )
     partition_set_name = cli_args.get("partition_set")
     if not partition_set_name:
@@ -925,7 +925,7 @@ def _execute_backfill_command_at_location(cli_args, print_fn, instance, workspac
     )
 
     # Print backfill info
-    print_fn("\n     Pipeline: {}".format(external_pipeline.name))
+    print_fn("\n  Pipeline/Job: {}".format(external_pipeline.name))
     print_fn("Partition set: {}".format(partition_set_name))
     print_fn("   Partitions: {}\n".format(print_partition_format(partition_names, indent_level=15)))
 

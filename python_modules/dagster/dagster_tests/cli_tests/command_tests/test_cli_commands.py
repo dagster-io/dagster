@@ -30,6 +30,7 @@ from dagster.cli.job import job_execute_command
 from dagster.cli.pipeline import pipeline_execute_command
 from dagster.cli.run import run_delete_command, run_list_command, run_wipe_command
 from dagster.core.definitions.decorators.sensor import sensor
+from dagster.core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 from dagster.core.definitions.sensor import RunRequest
 from dagster.core.storage.memoizable_io_manager import versioned_filesystem_io_manager
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
@@ -79,7 +80,13 @@ def qux():
     do_input_op(do_something_op())
 
 
-qux_job = qux.to_job(tags={"foo": "bar"})
+qux_job = qux.to_job(
+    config=PartitionedConfig(
+        partitions_def=StaticPartitionsDefinition([Partition("abc")]),
+        run_config_for_partition_fn=lambda _: {},
+    ),
+    tags={"foo": "bar"},
+)
 
 
 def define_qux_job():
