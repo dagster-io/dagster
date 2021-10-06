@@ -82,7 +82,7 @@ export const SchedulesNextTicks: React.FC<{
 
   if (!nextTicks.length) {
     return (
-      <Box margin={{top: 32}}>
+      <Box padding={{vertical: 32}}>
         <NonIdealState
           icon="error"
           title="No scheduled ticks"

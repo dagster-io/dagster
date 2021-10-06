@@ -115,8 +115,13 @@ const StyledButton = styled.button<StyledButtonProps>`
     margin-left: 4px;
   }
 
-  ${SpinnerWrapper}:first-child:last-child,
-  ${IconWrapper}:first-child:last-child {
+  ${SpinnerWrapper}:first-child:last-child {
     margin: 2px -4px;
+   }
+   ${IconWrapper}:first-child:last-child {
+      margin: 0px -5px;
+      width: 20px;
+      height: 20px;
+    }
   }
 `;

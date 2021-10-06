@@ -5,6 +5,7 @@ import pytest
 from click import UsageError
 from click.testing import CliRunner
 from dagster import seven
+from dagster.cli.job import job_list_command
 from dagster.cli.pipeline import execute_list_command, pipeline_list_command
 from dagster.core.test_utils import instance_for_test
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
@@ -39,6 +40,42 @@ def assert_correct_bar_repository_output(result):
         "Pipeline: partitioned_scheduled_pipeline\n"
         "Solids: (Execution Order)\n"
         "    do_something\n"
+        "*************\n"
+        "Pipeline: qux\n"
+        "Solids: (Execution Order)\n"
+        "    do_something\n"
+        "    do_input\n"
+    )
+
+
+def assert_correct_job_list_bar_repository_output(result):
+    assert result.exit_code == 0
+    assert result.output == (
+        "Repository bar\n"
+        "**************\n"
+        "Job: baz\n"
+        "Description:\n"
+        "Not much tbh\n"
+        "Ops: (Execution Order)\n"
+        "    do_input\n"
+        "********\n"
+        "Job: foo\n"
+        "Ops: (Execution Order)\n"
+        "    do_something\n"
+        "    do_input\n"
+        "***************\n"
+        "Job: memoizable\n"
+        "Ops: (Execution Order)\n"
+        "    my_solid\n"
+        "***********************************\n"
+        "Job: partitioned_scheduled_pipeline\n"
+        "Ops: (Execution Order)\n"
+        "    do_something\n"
+        "********\n"
+        "Job: qux\n"
+        "Ops: (Execution Order)\n"
+        "    do_something\n"
+        "    do_input\n"
     )
 
 
@@ -49,6 +86,17 @@ def assert_correct_extra_repository_output(result):
         "****************\n"
         "Pipeline: extra\n"
         "Solids: (Execution Order)\n"
+        "    do_something\n"
+    )
+
+
+def assert_correct_job_list_extra_repository_output(result):
+    assert result.exit_code == 0
+    assert result.output == (
+        "Repository extra\n"
+        "****************\n"
+        "Job: extra\n"
+        "Ops: (Execution Order)\n"
         "    do_something\n"
     )
 
@@ -147,6 +195,12 @@ def test_list_command_cli():
         assert_correct_bar_repository_output(result)
 
         result = runner.invoke(
+            job_list_command,
+            ["-f", file_relative_path(__file__, "test_cli_commands.py"), "-a", "bar"],
+        )
+        assert_correct_job_list_bar_repository_output(result)
+
+        result = runner.invoke(
             pipeline_list_command,
             [
                 "-f",
@@ -160,15 +214,39 @@ def test_list_command_cli():
         assert_correct_bar_repository_output(result)
 
         result = runner.invoke(
+            job_list_command,
+            [
+                "-f",
+                file_relative_path(__file__, "test_cli_commands.py"),
+                "-a",
+                "bar",
+                "-d",
+                os.path.dirname(__file__),
+            ],
+        )
+        assert_correct_job_list_bar_repository_output(result)
+
+        result = runner.invoke(
             pipeline_list_command,
             ["-m", "dagster_tests.cli_tests.command_tests.test_cli_commands", "-a", "bar"],
         )
         assert_correct_bar_repository_output(result)
 
         result = runner.invoke(
+            job_list_command,
+            ["-m", "dagster_tests.cli_tests.command_tests.test_cli_commands", "-a", "bar"],
+        )
+        assert_correct_job_list_bar_repository_output(result)
+
+        result = runner.invoke(
             pipeline_list_command, ["-w", file_relative_path(__file__, "workspace.yaml")]
         )
         assert_correct_bar_repository_output(result)
+
+        result = runner.invoke(
+            job_list_command, ["-w", file_relative_path(__file__, "workspace.yaml")]
+        )
+        assert_correct_job_list_bar_repository_output(result)
 
         result = runner.invoke(
             pipeline_list_command,
@@ -182,7 +260,31 @@ def test_list_command_cli():
         assert_correct_extra_repository_output(result)
 
         result = runner.invoke(
+            job_list_command,
+            [
+                "-w",
+                file_relative_path(__file__, "workspace.yaml"),
+                "-w",
+                file_relative_path(__file__, "override.yaml"),
+            ],
+        )
+        assert_correct_job_list_extra_repository_output(result)
+
+        result = runner.invoke(
             pipeline_list_command,
+            [
+                "-f",
+                "foo.py",
+                "-m",
+                "dagster_tests.cli_tests.command_tests.test_cli_commands",
+                "-a",
+                "bar",
+            ],
+        )
+        assert result.exit_code == 2
+
+        result = runner.invoke(
+            job_list_command,
             [
                 "-f",
                 "foo.py",
@@ -201,9 +303,20 @@ def test_list_command_cli():
         assert_correct_bar_repository_output(result)
 
         result = runner.invoke(
+            job_list_command,
+            ["-m", "dagster_tests.cli_tests.command_tests.test_cli_commands"],
+        )
+        assert_correct_job_list_bar_repository_output(result)
+
+        result = runner.invoke(
             pipeline_list_command, ["-f", file_relative_path(__file__, "test_cli_commands.py")]
         )
         assert_correct_bar_repository_output(result)
+
+        result = runner.invoke(
+            job_list_command, ["-f", file_relative_path(__file__, "test_cli_commands.py")]
+        )
+        assert_correct_job_list_bar_repository_output(result)
 
 
 def test_list_command():

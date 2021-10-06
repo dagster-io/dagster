@@ -3,7 +3,6 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {NonIdealState} from '../ui/NonIdealState';
@@ -106,29 +105,25 @@ export const RepositoryGraphsList: React.FC<Props> = (props) => {
   }
 
   return (
-    <Box margin={{top: 16}}>
-      <Table>
-        <thead>
-          <tr>
-            <th>Graph</th>
+    <Table>
+      <thead>
+        <tr>
+          <th>Graph</th>
+        </tr>
+      </thead>
+      <tbody>
+        {graphsForTable.map(({name, description, path, repoAddress}) => (
+          <tr key={`${name}-${repoAddressAsString(repoAddress)}`}>
+            <td>
+              <Group direction="column" spacing={4}>
+                <Link to={workspacePath(repoAddress.name, repoAddress.location, path)}>{name}</Link>
+                <Description>{description}</Description>
+              </Group>
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          {graphsForTable.map(({name, description, path, repoAddress}) => (
-            <tr key={`${name}-${repoAddressAsString(repoAddress)}`}>
-              <td>
-                <Group direction="column" spacing={4}>
-                  <Link to={workspacePath(repoAddress.name, repoAddress.location, path)}>
-                    {name}
-                  </Link>
-                  <Description>{description}</Description>
-                </Group>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </Table>
-    </Box>
+        ))}
+      </tbody>
+    </Table>
   );
 };
 

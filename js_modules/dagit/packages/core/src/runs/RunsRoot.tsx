@@ -98,11 +98,11 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
 
   return (
     <Page>
-      <Group direction="column" spacing={8}>
-        <Group direction="column" spacing={8} padding={{horizontal: 24}}>
-          <PageHeader title={<Heading>Runs</Heading>} />
+      <PageHeader
+        title={<Heading>Runs</Heading>}
+        tabs={
           <Box
-            border={{side: 'bottom', width: 1, color: ColorsWIP.Gray100}}
+            background={ColorsWIP.Gray50}
             flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}
           >
             <Tabs selectedTabId={selectedTab} id="run-tabs">
@@ -138,62 +138,70 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
               <QueryCountdown pollInterval={POLL_INTERVAL} queryResult={queryResult} />
             </Box>
           </Box>
-          {showScheduled ? null : (
-            <RunsFilter
-              tokens={filterTokens}
-              onChange={setFilterTokens}
-              loading={queryResult.loading}
-              enabledFilters={enabledFilters}
-            />
-          )}
-          {selectedTab === 'queued' ? (
-            <Group direction="column" spacing={8}>
-              <Alert
-                intent="info"
-                title={<Link to="/instance/config#run_coordinator">View queue configuration</Link>}
-              />
-              <QueueDaemonAlert />
-            </Group>
-          ) : null}
+        }
+      />
+      {showScheduled ? null : (
+        <Box
+          padding={{vertical: 16, horizontal: 24}}
+          border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+        >
+          <RunsFilter
+            tokens={filterTokens}
+            onChange={setFilterTokens}
+            loading={queryResult.loading}
+            enabledFilters={enabledFilters}
+          />
+        </Box>
+      )}
+      {selectedTab === 'queued' ? (
+        <Group direction="column" spacing={8} padding={{horizontal: 24}}>
+          <Alert
+            intent="info"
+            title={<Link to="/instance/config#run_coordinator">View queue configuration</Link>}
+          />
+          <QueueDaemonAlert />
         </Group>
-        <RunsQueryRefetchContext.Provider value={{refetch: queryResult.refetch}}>
-          <Loading queryResult={queryResult} allowStaleData={true}>
-            {({pipelineRunsOrError}) => {
-              if (pipelineRunsOrError.__typename !== 'PipelineRuns') {
-                return (
-                  <NonIdealState
-                    icon="error"
-                    title="Query Error"
-                    description={pipelineRunsOrError.message}
-                  />
-                );
-              }
-
-              if (showScheduled) {
-                return (
-                  <Box margin={{top: 4}}>
-                    <AllScheduledTicks />
-                  </Box>
-                );
-              }
-
+      ) : null}
+      <RunsQueryRefetchContext.Provider value={{refetch: queryResult.refetch}}>
+        <Loading queryResult={queryResult} allowStaleData={true}>
+          {({pipelineRunsOrError}) => {
+            if (pipelineRunsOrError.__typename !== 'PipelineRuns') {
               return (
-                <>
-                  <RunTable
-                    runs={pipelineRunsOrError.results.slice(0, PAGE_SIZE)}
-                    onSetFilter={setFilterTokens}
-                  />
-                  {pipelineRunsOrError.results.length > 0 ? (
-                    <div style={{marginTop: '16px'}}>
-                      <CursorPaginationControls {...paginationProps} />
-                    </div>
-                  ) : null}
-                </>
+                <NonIdealState
+                  icon="error"
+                  title="Query Error"
+                  description={pipelineRunsOrError.message}
+                />
               );
-            }}
-          </Loading>
-        </RunsQueryRefetchContext.Provider>
-      </Group>
+            }
+
+            if (showScheduled) {
+              return (
+                <Box
+                  padding={{vertical: 16}}
+                  border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+                >
+                  <AllScheduledTicks />
+                </Box>
+              );
+            }
+
+            return (
+              <>
+                <RunTable
+                  runs={pipelineRunsOrError.results.slice(0, PAGE_SIZE)}
+                  onSetFilter={setFilterTokens}
+                />
+                {pipelineRunsOrError.results.length > 0 ? (
+                  <div style={{marginTop: '16px'}}>
+                    <CursorPaginationControls {...paginationProps} />
+                  </div>
+                ) : null}
+              </>
+            );
+          }}
+        </Loading>
+      </RunsQueryRefetchContext.Provider>
     </Page>
   );
 };

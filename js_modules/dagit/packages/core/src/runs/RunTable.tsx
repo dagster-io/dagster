@@ -145,9 +145,8 @@ export const RunTable = (props: RunTableProps) => {
         <tr>
           <th colSpan={2}>
             {canTerminateOrDelete ? (
-              <div style={{display: 'flex', alignItems: 'center'}}>
+              <div style={{display: 'flex', alignItems: 'center', gap: 5}}>
                 <Checkbox
-                  style={{marginBottom: 0, marginTop: 1}}
                   indeterminate={checkedRuns.size > 0 && checkedRuns.size !== runs.length}
                   checked={checkedRuns.size === runs.length}
                   onChange={onChangeAll}

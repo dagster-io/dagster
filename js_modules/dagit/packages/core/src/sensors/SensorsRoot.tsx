@@ -8,10 +8,8 @@ import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
 import {UnloadableSensors} from '../instigation/Unloadable';
 import {InstigationType} from '../types/globalTypes';
 import {Box} from '../ui/Box';
-import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
 import {NonIdealState} from '../ui/NonIdealState';
-import {Page} from '../ui/Page';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -40,62 +38,60 @@ export const SensorsRoot = (props: Props) => {
   });
 
   return (
-    <Page>
-      <Loading queryResult={queryResult} allowStaleData={true}>
-        {(result) => {
-          const {sensorsOrError, unloadableInstigationStatesOrError, instance} = result;
-          const content = () => {
-            if (sensorsOrError.__typename === 'PythonError') {
-              return <PythonErrorInfo error={sensorsOrError} />;
-            } else if (unloadableInstigationStatesOrError.__typename === 'PythonError') {
-              return <PythonErrorInfo error={unloadableInstigationStatesOrError} />;
-            } else if (sensorsOrError.__typename === 'RepositoryNotFoundError') {
-              return (
-                <NonIdealState
-                  icon="error"
-                  title="Repository not found"
-                  description="Could not load this repository."
-                />
-              );
-            } else if (!sensorsOrError.results.length) {
-              return (
-                <NonIdealState
-                  icon="sensors"
-                  title="No Sensors Found"
-                  description={
-                    <p>
-                      This repository does not have any sensors defined. Visit the{' '}
-                      <a
-                        href="https://docs.dagster.io/overview/schedules-sensors/sensors"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        sensors documentation
-                      </a>{' '}
-                      for more information about creating sensors in Dagster.
-                    </p>
-                  }
-                />
-              );
-            } else {
-              return (
-                <Group direction="column" spacing={20}>
-                  {sensorsOrError.results.length > 0 && (
-                    <Box padding={{horizontal: 24}}>
-                      <SensorInfo daemonHealth={instance.daemonHealth} />
-                    </Box>
-                  )}
-                  <SensorsTable repoAddress={repoAddress} sensors={sensorsOrError.results} />
-                  <UnloadableSensors sensorStates={unloadableInstigationStatesOrError.results} />
-                </Group>
-              );
-            }
-          };
+    <Loading queryResult={queryResult} allowStaleData={true}>
+      {(result) => {
+        const {sensorsOrError, unloadableInstigationStatesOrError, instance} = result;
+        const content = () => {
+          if (sensorsOrError.__typename === 'PythonError') {
+            return <PythonErrorInfo error={sensorsOrError} />;
+          } else if (unloadableInstigationStatesOrError.__typename === 'PythonError') {
+            return <PythonErrorInfo error={unloadableInstigationStatesOrError} />;
+          } else if (sensorsOrError.__typename === 'RepositoryNotFoundError') {
+            return (
+              <NonIdealState
+                icon="error"
+                title="Repository not found"
+                description="Could not load this repository."
+              />
+            );
+          } else if (!sensorsOrError.results.length) {
+            return (
+              <NonIdealState
+                icon="sensors"
+                title="No Sensors Found"
+                description={
+                  <p>
+                    This repository does not have any sensors defined. Visit the{' '}
+                    <a
+                      href="https://docs.dagster.io/overview/schedules-sensors/sensors"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      sensors documentation
+                    </a>{' '}
+                    for more information about creating sensors in Dagster.
+                  </p>
+                }
+              />
+            );
+          } else {
+            return (
+              <>
+                {sensorsOrError.results.length > 0 && (
+                  <Box padding={{horizontal: 24, vertical: 16}}>
+                    <SensorInfo daemonHealth={instance.daemonHealth} />
+                  </Box>
+                )}
+                <SensorsTable repoAddress={repoAddress} sensors={sensorsOrError.results} />
+                <UnloadableSensors sensorStates={unloadableInstigationStatesOrError.results} />
+              </>
+            );
+          }
+        };
 
-          return <div>{content()}</div>;
-        }}
-      </Loading>
-    </Page>
+        return <div>{content()}</div>;
+      }}
+    </Loading>
   );
 };
 

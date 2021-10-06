@@ -82,7 +82,7 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
       <Page>
         <Box
           flex={{alignItems: 'flex-start', justifyContent: 'space-between'}}
-          padding={{bottom: 16, horizontal: 24}}
+          padding={{vertical: 16, horizontal: 24}}
         >
           <Group direction="column" spacing={8}>
             <Group direction="row" spacing={8}>

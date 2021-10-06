@@ -8,16 +8,16 @@ interface TextProps {
 }
 
 export const Heading = styled.span<TextProps>`
-  font-size: 28px;
-  font-weight: 700;
-  line-height: 1;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 24px;
   -webkit-font-smoothing: antialiased;
 `;
 
 export const Subheading = styled.span<TextProps>`
-  font-size: 20px;
-  font-weight: 700;
-  line-height: 1;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
   -webkit-font-smoothing: antialiased;
 `;
 
