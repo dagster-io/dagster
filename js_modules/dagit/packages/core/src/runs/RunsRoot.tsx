@@ -16,7 +16,6 @@ import {Loading} from '../ui/Loading';
 import {NonIdealState} from '../ui/NonIdealState';
 import {Page} from '../ui/Page';
 import {PageHeader} from '../ui/PageHeader';
-import {PageSection} from '../ui/PageSection';
 import {Tab, Tabs} from '../ui/Tabs';
 import {Heading} from '../ui/Text';
 import {TokenizingFieldValue} from '../ui/TokenizingField';
@@ -140,18 +139,19 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
             </Box>
           </Box>
         }
-      />{' '}
+      />
       {showScheduled ? null : (
-        <PageSection>
-          <Box padding={{vertical: 16, horizontal: 24}}>
-            <RunsFilter
-              tokens={filterTokens}
-              onChange={setFilterTokens}
-              loading={queryResult.loading}
-              enabledFilters={enabledFilters}
-            />
-          </Box>
-        </PageSection>
+        <Box
+          padding={{vertical: 16, horizontal: 24}}
+          border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+        >
+          <RunsFilter
+            tokens={filterTokens}
+            onChange={setFilterTokens}
+            loading={queryResult.loading}
+            enabledFilters={enabledFilters}
+          />
+        </Box>
       )}
       {selectedTab === 'queued' ? (
         <Group direction="column" spacing={8} padding={{horizontal: 24}}>
@@ -177,11 +177,12 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
 
             if (showScheduled) {
               return (
-                <PageSection>
-                  <Box padding={{vertical: 16}}>
-                    <AllScheduledTicks />
-                  </Box>
-                </PageSection>
+                <Box
+                  padding={{vertical: 16}}
+                  border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+                >
+                  <AllScheduledTicks />
+                </Box>
               );
             }
 

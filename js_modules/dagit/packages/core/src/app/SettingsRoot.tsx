@@ -4,9 +4,9 @@ import * as React from 'react';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
+import {ColorsWIP} from '../ui/Colors';
 import {MetadataTable} from '../ui/MetadataTable';
 import {PageHeader} from '../ui/PageHeader';
-import {PageSection} from '../ui/PageSection';
 import {Heading, Subheading} from '../ui/Text';
 
 import {FeatureFlag, getFeatureFlags, setFeatureFlags} from './Flags';
@@ -50,44 +50,45 @@ const SettingsRoot = () => {
           ]}
         />
       </Box>
-      <PageSection>
-        <Box padding={{vertical: 16, horizontal: 24}}>
-          <Box padding={{bottom: 8}}>
-            <Subheading>Experimental features</Subheading>
-          </Box>
-          <MetadataTable
-            rows={[
-              {
-                key: 'Debug console logging',
-                value: (
-                  <Switch
-                    checked={flags.includes(FeatureFlag.flagDebugConsoleLogging)}
-                    onChange={() => toggleFlag(FeatureFlag.flagDebugConsoleLogging)}
-                  />
-                ),
-              },
-              {
-                key: 'Experimental Core APIs (Job & Graph)',
-                value: (
-                  <Switch
-                    checked={flags.includes(FeatureFlag.flagPipelineModeTuples)}
-                    onChange={() => toggleFlag(FeatureFlag.flagPipelineModeTuples)}
-                  />
-                ),
-              },
-              {
-                key: 'Experimental Asset APIs',
-                value: (
-                  <Switch
-                    checked={flags.includes(FeatureFlag.flagAssetGraph)}
-                    onChange={() => toggleFlag(FeatureFlag.flagAssetGraph)}
-                  />
-                ),
-              },
-            ]}
-          />
+      <Box
+        padding={{vertical: 16, horizontal: 24}}
+        border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+      >
+        <Box padding={{bottom: 8}}>
+          <Subheading>Experimental features</Subheading>
         </Box>
-      </PageSection>
+        <MetadataTable
+          rows={[
+            {
+              key: 'Debug console logging',
+              value: (
+                <Switch
+                  checked={flags.includes(FeatureFlag.flagDebugConsoleLogging)}
+                  onChange={() => toggleFlag(FeatureFlag.flagDebugConsoleLogging)}
+                />
+              ),
+            },
+            {
+              key: 'Experimental Core APIs (Job & Graph)',
+              value: (
+                <Switch
+                  checked={flags.includes(FeatureFlag.flagPipelineModeTuples)}
+                  onChange={() => toggleFlag(FeatureFlag.flagPipelineModeTuples)}
+                />
+              ),
+            },
+            {
+              key: 'Experimental Asset APIs',
+              value: (
+                <Switch
+                  checked={flags.includes(FeatureFlag.flagAssetGraph)}
+                  onChange={() => toggleFlag(FeatureFlag.flagAssetGraph)}
+                />
+              ),
+            },
+          ]}
+        />
+      </Box>
     </div>
   );
 };

@@ -5,9 +5,9 @@ import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {TickHistory} from '../instigation/TickHistory';
 import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
 import {Loading} from '../ui/Loading';
 import {Page} from '../ui/Page';
-import {PageSection} from '../ui/PageSection';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -68,18 +68,19 @@ export const SensorRoot: React.FC<{
               countdownStatus={countdownStatus}
               onRefresh={() => onRefresh()}
             />
-            <PageSection>
-              <Box padding={{vertical: 16, horizontal: 24}}>
-                <SensorInfo daemonHealth={instance.daemonHealth} />
-              </Box>
-            </PageSection>
+            <Box
+              padding={{vertical: 16, horizontal: 24}}
+              border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+            >
+              <SensorInfo daemonHealth={instance.daemonHealth} />
+            </Box>
             <TickHistory
               repoAddress={repoAddress}
               name={sensorOrError.name}
               showRecent={true}
               onHighlightRunIds={(runIds: string[]) => setSelectedRunIds(runIds)}
             />
-            <PageSection>
+            <Box border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}>
               {sensorOrError.targets && sensorOrError.targets.length ? (
                 <SensorPreviousRuns
                   repoAddress={repoAddress}
@@ -93,7 +94,7 @@ export const SensorRoot: React.FC<{
                   highlightedIds={selectedRunIds}
                 />
               )}
-            </PageSection>
+            </Box>
           </Page>
         );
       }}

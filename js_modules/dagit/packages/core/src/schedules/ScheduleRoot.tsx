@@ -6,9 +6,9 @@ import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {TickHistory} from '../instigation/TickHistory';
 import {DagsterTag} from '../runs/RunTag';
 import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
 import {Loading} from '../ui/Loading';
 import {Page} from '../ui/Page';
-import {PageSection} from '../ui/PageSection';
 import {PreviousRunsSection, PREVIOUS_RUNS_FRAGMENT} from '../workspace/PreviousRunsSection';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -76,11 +76,12 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
               countdownStatus={countdownStatus}
               onRefresh={() => onRefresh()}
             />
-            <PageSection>
-              <Box padding={{vertical: 16, horizontal: 24}}>
-                <SchedulerInfo daemonHealth={instance.daemonHealth} />
-              </Box>
-            </PageSection>
+            <Box
+              padding={{vertical: 16, horizontal: 24}}
+              border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+            >
+              <SchedulerInfo daemonHealth={instance.daemonHealth} />
+            </Box>
             <TickHistory
               repoAddress={repoAddress}
               name={scheduleOrError.name}

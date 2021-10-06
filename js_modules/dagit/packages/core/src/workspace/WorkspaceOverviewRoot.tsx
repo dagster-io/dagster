@@ -3,12 +3,12 @@ import {Link} from 'react-router-dom';
 
 import {useFeatureFlags} from '../app/Flags';
 import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {LoadingSpinner} from '../ui/Loading';
 import {NonIdealState} from '../ui/NonIdealState';
 import {Page} from '../ui/Page';
 import {PageHeader} from '../ui/PageHeader';
-import {PageSection} from '../ui/PageSection';
 import {Table} from '../ui/Table';
 import {Heading, Subheading} from '../ui/Text';
 
@@ -128,11 +128,12 @@ export const WorkspaceOverviewRoot = () => {
       <Box padding={{bottom: 24}}>
         <RepositoryLocationsList />
       </Box>
-      <PageSection>
-        <Box padding={{vertical: 16, horizontal: 24}}>
-          <Subheading id="repository-locations">Repositories</Subheading>
-        </Box>
-      </PageSection>
+      <Box
+        padding={{vertical: 16, horizontal: 24}}
+        border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+      >
+        <Subheading id="repository-locations">Repositories</Subheading>
+      </Box>
       {content()}
     </Page>
   );

@@ -9,10 +9,10 @@ import {SensorInfo} from '../sensors/SensorInfo';
 import {SensorsTable} from '../sensors/SensorsTable';
 import {InstigationType} from '../types/globalTypes';
 import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
 import {Loading} from '../ui/Loading';
 import {NonIdealState} from '../ui/NonIdealState';
 import {PageHeader} from '../ui/PageHeader';
-import {PageSection} from '../ui/PageSection';
 import {Heading, Subheading} from '../ui/Text';
 import {REPOSITORY_INFO_FRAGMENT} from '../workspace/RepositoryInformation';
 import {REPOSITORY_LOCATIONS_FRAGMENT} from '../workspace/WorkspaceContext';
@@ -65,18 +65,21 @@ const AllSensors: React.FC<{data: InstanceSensorsQuery}> = ({data}) => {
       {withSensors.map((repository) =>
         repository.sensors.length ? (
           <React.Fragment key={repository.name}>
-            <PageSection>
-              <Box padding={{horizontal: 24, vertical: 16}}>
-                <Subheading>{`${buildRepoPath(
-                  repository.name,
-                  repository.location.name,
-                )}`}</Subheading>
-              </Box>
-            </PageSection>
-            <SensorsTable
-              repoAddress={buildRepoAddress(repository.name, repository.location.name)}
-              sensors={repository.sensors}
-            />
+            <Box
+              padding={{horizontal: 24, vertical: 16}}
+              border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+            >
+              <Subheading>{`${buildRepoPath(
+                repository.name,
+                repository.location.name,
+              )}`}</Subheading>
+            </Box>
+            <Box padding={{bottom: 16}}>
+              <SensorsTable
+                repoAddress={buildRepoAddress(repository.name, repository.location.name)}
+                sensors={repository.sensors}
+              />
+            </Box>
           </React.Fragment>
         ) : null,
       )}
@@ -92,27 +95,25 @@ const AllSensors: React.FC<{data: InstanceSensorsQuery}> = ({data}) => {
 
   if (!sensorDefinitionsSection && !unloadableSensorsSection) {
     return (
-      <PageSection>
-        <Box padding={{vertical: 64}}>
-          <NonIdealState
-            icon="sensors"
-            title="No sensors found"
-            description={
-              <p>
-                This instance does not have any sensors defined. Visit the{' '}
-                <a
-                  href="https://docs.dagster.io/overview/schedules-sensors/sensors"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  sensor documentation
-                </a>{' '}
-                for more information about setting up sensors in Dagster.
-              </p>
-            }
-          />
-        </Box>
-      </PageSection>
+      <Box padding={{vertical: 64}} border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}>
+        <NonIdealState
+          icon="sensors"
+          title="No sensors found"
+          description={
+            <p>
+              This instance does not have any sensors defined. Visit the{' '}
+              <a
+                href="https://docs.dagster.io/overview/schedules-sensors/sensors"
+                target="_blank"
+                rel="noreferrer"
+              >
+                sensor documentation
+              </a>{' '}
+              for more information about setting up sensors in Dagster.
+            </p>
+          }
+        />
+      </Box>
     );
   }
 

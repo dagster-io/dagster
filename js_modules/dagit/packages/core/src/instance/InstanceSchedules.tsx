@@ -9,11 +9,11 @@ import {SchedulerInfo} from '../schedules/SchedulerInfo';
 import {SchedulesTable} from '../schedules/SchedulesTable';
 import {InstigationType} from '../types/globalTypes';
 import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
 import {NonIdealState} from '../ui/NonIdealState';
 import {PageHeader} from '../ui/PageHeader';
-import {PageSection} from '../ui/PageSection';
 import {Heading, Subheading} from '../ui/Text';
 import {REPOSITORY_INFO_FRAGMENT} from '../workspace/RepositoryInformation';
 import {buildRepoPath, buildRepoAddress} from '../workspace/buildRepoAddress';
@@ -66,14 +66,12 @@ const AllSchedules: React.FC<{data: InstanceSchedulesQuery}> = ({data}) => {
       </Box>
       {withSchedules.map((repository) => (
         <React.Fragment key={repository.name}>
-          <PageSection>
-            <Box padding={{vertical: 16, horizontal: 24}}>
-              <Subheading>{`${buildRepoPath(
-                repository.name,
-                repository.location.name,
-              )}`}</Subheading>
-            </Box>
-          </PageSection>
+          <Box
+            padding={{vertical: 16, horizontal: 24}}
+            border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+          >
+            <Subheading>{`${buildRepoPath(repository.name, repository.location.name)}`}</Subheading>
+          </Box>
           <Box padding={{bottom: 16}}>
             <SchedulesTable
               repoAddress={buildRepoAddress(repository.name, repository.location.name)}

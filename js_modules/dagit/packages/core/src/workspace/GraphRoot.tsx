@@ -4,8 +4,9 @@ import {RouteComponentProps} from 'react-router-dom';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {PipelineExplorerRegexRoot} from '../pipelines/PipelineExplorerRoot';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
+import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
 import {PageHeader} from '../ui/PageHeader';
-import {PageSection} from '../ui/PageSection';
 import {TagWIP} from '../ui/TagWIP';
 import {Heading} from '../ui/Text';
 
@@ -34,11 +35,11 @@ export const GraphRoot: React.FC<Props> = (props) => {
           </TagWIP>
         }
       />
-      <PageSection>
-        <div style={{position: 'relative', minHeight: 0, flex: 1, display: 'flex', top: '1px'}}>
+      <Box border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}>
+        <div style={{minHeight: 0, flex: 1, display: 'flex'}}>
           <PipelineExplorerRegexRoot {...props} repoAddress={repoAddress} />
         </div>
-      </PageSection>
+      </Box>
     </div>
   );
 };

@@ -6,11 +6,9 @@ import styled from 'styled-components/macro';
 
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
-import {IconWIP} from '../ui/Icon';
 import {Loading} from '../ui/Loading';
 import {Page} from '../ui/Page';
 import {PageHeader} from '../ui/PageHeader';
-import {PageSection} from '../ui/PageSection';
 import {TagWIP} from '../ui/TagWIP';
 import {Heading} from '../ui/Text';
 

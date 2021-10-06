@@ -18,7 +18,6 @@ import {ColorsWIP} from '../ui/Colors';
 import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
 import {NonIdealState} from '../ui/NonIdealState';
-import {PageSection} from '../ui/PageSection';
 import {Spinner} from '../ui/Spinner';
 import {Tab, Tabs} from '../ui/Tabs';
 import {Subheading} from '../ui/Text';
@@ -146,13 +145,16 @@ export const TickHistory = ({
 
   if (!data) {
     return (
-      <PageSection>
-        <Box padding={{vertical: 16, horizontal: 24}}>
+      <>
+        <Box
+          padding={{vertical: 16, horizontal: 24}}
+          border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+        >
           <Subheading>Tick History</Subheading>
           {tabs}
         </Box>
         <Spinner purpose="section" />
-      </PageSection>
+      </>
     );
   }
 
@@ -201,13 +203,14 @@ export const TickHistory = ({
   const now = Date.now();
   return (
     <>
-      <PageSection>
-        <Box padding={{top: 16, horizontal: 24}}>
-          <Subheading>Tick History</Subheading>
-          {tabs}
-        </Box>
-      </PageSection>
-      <PageSection style={{paddingBottom: '16px'}}>
+      <Box
+        padding={{top: 16, horizontal: 24}}
+        border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+      >
+        <Subheading>Tick History</Subheading>
+        {tabs}
+      </Box>
+      <Box padding={{bottom: 16}} border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}>
         {showRecent && selectedTab === 'recent' ? (
           <LiveTickTimeline
             ticks={ticks}
@@ -288,7 +291,7 @@ export const TickHistory = ({
             </ButtonWIP>
           </DialogFooter>
         </DialogWIP>
-      </PageSection>
+      </Box>
     </>
   );
 };

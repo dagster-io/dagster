@@ -87,38 +87,36 @@ export const SnapshotNav = (props: SnapshotNavProps) => {
   ];
 
   return (
-    <>
-      <PageHeader
-        title={
-          <Heading style={{fontFamily: FontFamily.monospace, fontSize: '20px'}}>
-            {explorerPath.snapshotId?.slice(0, 8)}
-          </Heading>
-        }
-        tags={
-          <>
-            <TagWIP icon="schema">
-              Snapshot of{' '}
-              <Link
-                to={workspacePipelinePathGuessRepo(
-                  explorerPath.pipelineName,
-                  explorerPath.pipelineMode,
-                )}
-              >
-                {explorerPath.pipelineName}
-              </Link>
-            </TagWIP>
-            {tag()}
-          </>
-        }
-        tabs={
-          <Tabs large={false} selectedTabId={activeTab}>
-            {tabs.map((tab) => {
-              const {href, text, pathComponent} = tab;
-              return <Tab key={text} id={pathComponent} title={<Link to={href}>{text}</Link>} />;
-            })}
-          </Tabs>
-        }
-      />
-    </>
+    <PageHeader
+      title={
+        <Heading style={{fontFamily: FontFamily.monospace, fontSize: '20px'}}>
+          {explorerPath.snapshotId?.slice(0, 8)}
+        </Heading>
+      }
+      tags={
+        <>
+          <TagWIP icon="schema">
+            Snapshot of{' '}
+            <Link
+              to={workspacePipelinePathGuessRepo(
+                explorerPath.pipelineName,
+                explorerPath.pipelineMode,
+              )}
+            >
+              {explorerPath.pipelineName}
+            </Link>
+          </TagWIP>
+          {tag()}
+        </>
+      }
+      tabs={
+        <Tabs large={false} selectedTabId={activeTab}>
+          {tabs.map((tab) => {
+            const {href, text, pathComponent} = tab;
+            return <Tab key={text} id={pathComponent} title={<Link to={href}>{text}</Link>} />;
+          })}
+        </Tabs>
+      }
+    />
   );
 };
