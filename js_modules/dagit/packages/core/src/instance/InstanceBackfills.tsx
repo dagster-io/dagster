@@ -34,10 +34,11 @@ import {IconWIP} from '../ui/Icon';
 import {Loading} from '../ui/Loading';
 import {MenuItemWIP, MenuWIP} from '../ui/Menu';
 import {NonIdealState} from '../ui/NonIdealState';
+import {PageHeader} from '../ui/PageHeader';
 import {Popover} from '../ui/Popover';
 import {Table} from '../ui/Table';
 import {TagWIP} from '../ui/TagWIP';
-import {Mono} from '../ui/Text';
+import {Heading, Mono} from '../ui/Text';
 import {stringFromValue} from '../ui/TokenizingField';
 import {workspacePipelinePath} from '../workspace/workspacePath';
 
@@ -80,8 +81,11 @@ export const InstanceBackfills = () => {
   useDocumentTitle('Backfills');
 
   return (
-    <Group direction="column" spacing={20}>
-      <InstanceTabs tab="backfills" />
+    <>
+      <PageHeader
+        title={<Heading>Instance status</Heading>}
+        tabs={<InstanceTabs tab="backfills" queryData={queryData} />}
+      />
       <Loading queryResult={queryResult} allowStaleData={true}>
         {({partitionBackfillsOrError}) => {
           if (partitionBackfillsOrError.__typename === 'PythonError') {
@@ -105,9 +109,9 @@ export const InstanceBackfills = () => {
           const isBackfillHealthy = backfillHealths.length && backfillHealths.every((x) => x);
 
           return (
-            <>
+            <div>
               {isBackfillHealthy ? null : (
-                <Box margin={{bottom: 24}} padding={{horizontal: 24}}>
+                <Box padding={{horizontal: 24, vertical: 16}}>
                   <Alert
                     intent="warning"
                     title="The backfill daemon is not running."
@@ -136,11 +140,11 @@ export const InstanceBackfills = () => {
                   <CursorPaginationControls {...paginationProps} />
                 </div>
               ) : null}
-            </>
+            </div>
           );
         }}
       </Loading>
-    </Group>
+    </>
   );
 };
 

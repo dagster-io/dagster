@@ -9,10 +9,11 @@ import {SensorInfo} from '../sensors/SensorInfo';
 import {SensorsTable} from '../sensors/SensorsTable';
 import {InstigationType} from '../types/globalTypes';
 import {Box} from '../ui/Box';
-import {Group} from '../ui/Group';
+import {ColorsWIP} from '../ui/Colors';
 import {Loading} from '../ui/Loading';
 import {NonIdealState} from '../ui/NonIdealState';
-import {Subheading} from '../ui/Text';
+import {PageHeader} from '../ui/PageHeader';
+import {Heading, Subheading} from '../ui/Text';
 import {REPOSITORY_INFO_FRAGMENT} from '../workspace/RepositoryInformation';
 import {REPOSITORY_LOCATIONS_FRAGMENT} from '../workspace/WorkspaceContext';
 import {buildRepoPath, buildRepoAddress} from '../workspace/buildRepoAddress';
@@ -31,12 +32,15 @@ export const InstanceSensors = React.memo(() => {
   });
 
   return (
-    <Group direction="column" spacing={20}>
-      <InstanceTabs tab="sensors" queryData={queryData} />
+    <>
+      <PageHeader
+        title={<Heading>Instance status</Heading>}
+        tabs={<InstanceTabs tab="sensors" queryData={queryData} />}
+      />
       <Loading queryResult={queryData} allowStaleData={true}>
         {(data) => <AllSensors data={data} />}
       </Loading>
-    </Group>
+    </>
   );
 });
 
@@ -54,27 +58,32 @@ const AllSensors: React.FC<{data: InstanceSensorsQuery}> = ({data}) => {
   const withSensors = repositoriesOrError.nodes.filter((repository) => repository.sensors.length);
 
   const sensorDefinitionsSection = withSensors.length ? (
-    <Group direction="column" spacing={32}>
-      <Box padding={{horizontal: 24}}>
+    <>
+      <Box padding={{horizontal: 24, vertical: 16}}>
         <SensorInfo daemonHealth={instance.daemonHealth} />
       </Box>
       {withSensors.map((repository) =>
         repository.sensors.length ? (
-          <Group direction="column" spacing={12} key={repository.name}>
-            <Box padding={{horizontal: 24}}>
+          <React.Fragment key={repository.name}>
+            <Box
+              padding={{horizontal: 24, vertical: 16}}
+              border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+            >
               <Subheading>{`${buildRepoPath(
                 repository.name,
                 repository.location.name,
               )}`}</Subheading>
             </Box>
-            <SensorsTable
-              repoAddress={buildRepoAddress(repository.name, repository.location.name)}
-              sensors={repository.sensors}
-            />
-          </Group>
+            <Box padding={{bottom: 16}}>
+              <SensorsTable
+                repoAddress={buildRepoAddress(repository.name, repository.location.name)}
+                sensors={repository.sensors}
+              />
+            </Box>
+          </React.Fragment>
         ) : null,
       )}
-    </Group>
+    </>
   ) : null;
 
   const unloadableSensors = unloadable.filter(
@@ -86,7 +95,7 @@ const AllSensors: React.FC<{data: InstanceSensorsQuery}> = ({data}) => {
 
   if (!sensorDefinitionsSection && !unloadableSensorsSection) {
     return (
-      <Box margin={{top: 32}}>
+      <Box padding={{vertical: 64}} border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}>
         <NonIdealState
           icon="sensors"
           title="No sensors found"
@@ -109,10 +118,10 @@ const AllSensors: React.FC<{data: InstanceSensorsQuery}> = ({data}) => {
   }
 
   return (
-    <Group direction="column" spacing={32}>
+    <>
       {sensorDefinitionsSection}
       {unloadableSensorsSection}
-    </Group>
+    </>
   );
 };
 

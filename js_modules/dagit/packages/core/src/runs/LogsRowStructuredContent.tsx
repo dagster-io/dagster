@@ -270,7 +270,7 @@ const DefaultContent: React.FunctionComponent<{
           </TagWIP>
         )}
       </EventTypeColumn>
-      <Box padding={{left: 4}} style={{flex: 1}}>
+      <Box padding={{horizontal: 12}} style={{flex: 1}}>
         {message}
         {children}
       </Box>
@@ -328,7 +328,7 @@ const FailureContent: React.FunctionComponent<{
           {eventType}
         </TagWIP>
       </EventTypeColumn>
-      <Box padding={{left: 4}} style={{flex: 1}}>
+      <Box padding={{horizontal: 12}} style={{flex: 1}}>
         {contextMessage}
         {errorMessage}
         <MetadataEntries entries={metadataEntries} />

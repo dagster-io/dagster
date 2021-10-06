@@ -31,7 +31,7 @@ class ParquetIOManager(IOManager):
         path = self._get_path(context)
         if isinstance(obj, pandas.DataFrame):
             row_count = len(obj)
-            obj.to_parquet(path=path)
+            obj.to_parquet(path=path, index=False)
         elif isinstance(obj, pyspark.sql.DataFrame):
             row_count = obj.count()
             obj.write.parquet(path=path, mode="overwrite")

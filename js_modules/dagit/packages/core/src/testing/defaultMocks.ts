@@ -142,6 +142,9 @@ export const defaultMocks = {
   AssetOrError: () => ({
     __typename: 'Asset',
   }),
+  AssetNodeOrError: () => ({
+    __typename: 'AssetNode',
+  }),
   PartitionBackfillOrError: () => ({
     __typename: 'PartitionBackfill',
   }),

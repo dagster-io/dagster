@@ -33,7 +33,7 @@ export const Row = styled.div<{level: LogLevel; highlighted: boolean}>`
   flex-direction: row;
   align-items: baseline;
   overflow: hidden;
-  border-top: 1px solid ${ColorsWIP.Gray100};
+  border-top: 1px solid ${ColorsWIP.KeylineGray};
   background: ${({highlighted, level}) => (highlighted ? '#ffe39f' : bgcolorForLevel(level))};
   &:hover {
     background: ${({highlighted}) => (highlighted ? '#ffe39f' : 'white')};
@@ -53,8 +53,7 @@ export const StructuredContent = styled.div`
   background: rgba(255, 255, 255, 0.5);
   color: ${ColorsWIP.Gray900};
   box-sizing: border-box;
-  border-left: 1px solid ${ColorsWIP.Gray100};
-  border-right: 1px solid ${ColorsWIP.Gray100};
+  border-left: 1px solid ${ColorsWIP.KeylineGray};
   word-break: break-word;
   white-space: pre-wrap;
   font-family: ${FontFamily.monospace};
@@ -102,7 +101,7 @@ export const SolidColumn = (props: {stepKey: string | false | null}) => {
 const SolidColumnContainer = styled.div`
   width: 250px;
   flex-shrink: 0;
-  padding: 4px;
+  padding: 4px 12px;
 `;
 
 const SolidColumnTooltipStyle = JSON.stringify({
@@ -155,7 +154,7 @@ export const TimestampColumn: React.FC<{time: string | null}> = React.memo((prop
 
 const TimestampColumnContainer = styled.div`
   flex-shrink: 0;
-  padding: 4px 4px 4px 8px;
+  padding: 4px 4px 4px 12px;
 
   a:link,
   a:visited,

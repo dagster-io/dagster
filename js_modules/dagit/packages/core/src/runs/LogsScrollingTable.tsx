@@ -93,7 +93,7 @@ export const LogsScrollingTable: React.FC<ILogsScrollingTableProps> = (props) =>
   return (
     <ColumnWidthsProvider onWidthsChanged={() => table.current && table.current.didResize()}>
       <Headers />
-      <div style={{flex: 1, minHeight: 0}}>
+      <div style={{flex: 1, minHeight: 0, marginTop: -1}}>
         <AutoSizer>
           {({width, height}) => (
             <LogsScrollingTableSized

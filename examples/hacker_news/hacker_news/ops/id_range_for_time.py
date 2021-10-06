@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Tuple
 
-from dagster import DynamicOut, DynamicOutput, EventMetadataEntry, Field, Out, Output, op
+from dagster import DynamicOut, DynamicOutput, EventMetadataEntry, Field, Out, Output, check, op
 
 
 def binary_search_nearest_left(get_value, start, end, min_target):
@@ -51,6 +51,8 @@ def binary_search_nearest_right(get_value, start, end, max_target):
 
 
 def _id_range_for_time(start, end, hn_client):
+    check.invariant(end >= start, "End time comes before start time")
+
     start = datetime.timestamp(
         datetime.strptime(start, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
     )

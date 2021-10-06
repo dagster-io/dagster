@@ -3,6 +3,7 @@ import {Link} from 'react-router-dom';
 
 import {useFeatureFlags} from '../app/Flags';
 import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {LoadingSpinner} from '../ui/Loading';
 import {NonIdealState} from '../ui/NonIdealState';
@@ -117,17 +118,20 @@ export const WorkspaceOverviewRoot = () => {
 
   return (
     <Page>
-      <Box padding={{horizontal: 24}}>
-        <PageHeader title={<Heading>Workspace</Heading>} />
-      </Box>
-      <Box padding={{horizontal: 24, top: 24, bottom: 16}}>
+      <PageHeader title={<Heading>Workspace</Heading>} />
+      <Box padding={{vertical: 16, horizontal: 24}}>
         <Group direction="row" spacing={12} alignItems="center">
           <Subheading id="repository-locations">Locations</Subheading>
           <ReloadAllButton />
         </Group>
       </Box>
-      <RepositoryLocationsList />
-      <Box padding={{horizontal: 24, top: 32, bottom: 16}}>
+      <Box padding={{bottom: 24}}>
+        <RepositoryLocationsList />
+      </Box>
+      <Box
+        padding={{vertical: 16, horizontal: 24}}
+        border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+      >
         <Subheading id="repository-locations">Repositories</Subheading>
       </Box>
       {content()}

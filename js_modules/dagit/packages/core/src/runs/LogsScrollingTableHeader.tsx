@@ -10,7 +10,7 @@ const ColumnWidths = Object.assign(
   {
     eventType: 140,
     solid: 150,
-    timestamp: 112,
+    timestamp: 117,
   },
   getJSONForKey(ColumnWidthsStorageKey),
 );
@@ -149,8 +149,9 @@ const HeadersContainer = styled.div`
   display: flex;
   color: ${ColorsWIP.Gray400};
   text-transform: uppercase;
-  font-size: 11px;
-  border-bottom: 1px solid #cbd4da;
+  font-size: 12px;
+  border-bottom: 1px solid ${ColorsWIP.KeylineGray};
+  z-index: 2;
 `;
 
 const HeaderContainer = styled.div`
@@ -158,7 +159,8 @@ const HeaderContainer = styled.div`
   position: relative;
   user-select: none;
   display: inline-block;
-  padding: 4px 8px;
+  padding: 0 12px;
+  line-height: 32px;
 `;
 
 // eslint-disable-next-line no-unexpected-multiline
@@ -177,6 +179,6 @@ const HeaderDragHandle = styled.div<{
   & > div {
     width: 1px;
     height: 100%;
-    background: ${({isDragging}) => (isDragging ? ColorsWIP.Gray600 : ColorsWIP.Gray100)};
+    background: ${({isDragging}) => (isDragging ? ColorsWIP.Gray400 : ColorsWIP.KeylineGray)};
   }
 `;
