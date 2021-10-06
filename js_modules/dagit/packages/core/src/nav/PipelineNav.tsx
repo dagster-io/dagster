@@ -10,10 +10,10 @@ import {
   PipelineExplorerPath,
 } from '../pipelines/PipelinePathUtils';
 import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
-import {Group} from '../ui/Group';
 import {PageHeader} from '../ui/PageHeader';
+import {Popover} from '../ui/Popover';
 import {Tab, Tabs} from '../ui/Tabs';
+import {TagWIP} from '../ui/TagWIP';
 import {Heading} from '../ui/Text';
 import {Tooltip} from '../ui/Tooltip';
 import {useRepository} from '../workspace/WorkspaceContext';
@@ -113,7 +113,7 @@ export const PipelineNav: React.FC<Props> = (props) => {
     .map(tabForKey(repoAddress, explorerPath));
 
   return (
-    <Group direction="column" spacing={12} padding={{top: 20, horizontal: 20}}>
+    <>
       <PageHeader
         title={
           <Heading>
@@ -123,46 +123,48 @@ export const PipelineNav: React.FC<Props> = (props) => {
             ) : null}
           </Heading>
         }
-        icon={'job'}
-        description={
-          <>
-            <Link
-              to={workspacePathFromAddress(
-                repoAddress,
-                flagPipelineModeTuples ? '/jobs' : '/pipelines',
-              )}
-            >
-              {flagPipelineModeTuples ? 'Job' : 'Pipeline'}
-            </Link>{' '}
-            in <RepositoryLink repoAddress={repoAddress} />
-          </>
+        tags={
+          <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+            {snapshotId ? null : (
+              <Popover
+                interactionKind="hover"
+                content={
+                  // todo dish: Move this into collapsible section.
+                  <Box padding={16}>
+                    <JobMetadata
+                      pipelineName={pipelineName}
+                      pipelineMode={pipelineMode}
+                      repoAddress={repoAddress}
+                    />
+                  </Box>
+                }
+              >
+                <TagWIP icon="info" />
+              </Popover>
+            )}
+            <TagWIP icon="job">
+              {flagPipelineModeTuples ? 'Job' : 'Pipeline'} in{' '}
+              <RepositoryLink repoAddress={repoAddress} />
+            </TagWIP>
+          </Box>
         }
-        metadata={
-          snapshotId ? null : (
-            <JobMetadata
-              pipelineName={pipelineName}
-              pipelineMode={pipelineMode}
-              repoAddress={repoAddress}
-            />
-          )
+        tabs={
+          <Tabs size="large" selectedTabId={active.title}>
+            {tabs.map((tab) => {
+              const {href, text, isAvailable} = tab;
+              const disabled = isAvailable && !isAvailable(permissions);
+              const title = disabled ? (
+                <Tooltip content={DISABLED_MESSAGE} placement="top">
+                  {text}
+                </Tooltip>
+              ) : (
+                <Link to={href}>{text}</Link>
+              );
+              return <Tab key={text} id={text} title={title} disabled={disabled} />;
+            })}
+          </Tabs>
         }
       />
-      <Box border={{side: 'bottom', width: 1, color: ColorsWIP.Gray100}}>
-        <Tabs size="large" selectedTabId={active.title}>
-          {tabs.map((tab) => {
-            const {href, text, isAvailable} = tab;
-            const disabled = isAvailable && !isAvailable(permissions);
-            const title = disabled ? (
-              <Tooltip content={DISABLED_MESSAGE} placement="top">
-                {text}
-              </Tooltip>
-            ) : (
-              <Link to={href}>{text}</Link>
-            );
-            return <Tab key={text} id={text} title={title} disabled={disabled} />;
-          })}
-        </Tabs>
-      </Box>
-    </Group>
+    </>
   );
 };

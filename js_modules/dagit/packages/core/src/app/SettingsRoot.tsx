@@ -2,10 +2,10 @@ import {Switch} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
-import {Group} from '../ui/Group';
+import {ColorsWIP} from '../ui/Colors';
 import {MetadataTable} from '../ui/MetadataTable';
-import {Page} from '../ui/Page';
 import {PageHeader} from '../ui/PageHeader';
 import {Heading, Subheading} from '../ui/Text';
 
@@ -35,56 +35,61 @@ const SettingsRoot = () => {
   );
 
   return (
-    <Page style={{height: '100vh', overflowY: 'auto'}}>
-      <Group direction="column" spacing={24} padding={{horizontal: 24}}>
-        <PageHeader title={<Heading>User settings</Heading>} />
-        <Group direction="column" spacing={16}>
+    <div style={{height: '100vh', overflowY: 'auto'}}>
+      <PageHeader title={<Heading>User settings</Heading>} />
+      <Box padding={{vertical: 16, horizontal: 24}}>
+        <Box padding={{bottom: 8}}>
           <Subheading>Preferences</Subheading>
-          <MetadataTable
-            rows={[
-              {
-                key: 'Timezone',
-                value: <TimezoneSelect trigger={trigger} />,
-              },
-            ]}
-          />
-        </Group>
-        <Group direction="column" spacing={16}>
+        </Box>
+        <MetadataTable
+          rows={[
+            {
+              key: 'Timezone',
+              value: <TimezoneSelect trigger={trigger} />,
+            },
+          ]}
+        />
+      </Box>
+      <Box
+        padding={{vertical: 16, horizontal: 24}}
+        border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+      >
+        <Box padding={{bottom: 8}}>
           <Subheading>Experimental features</Subheading>
-          <MetadataTable
-            rows={[
-              {
-                key: 'Debug console logging',
-                value: (
-                  <Switch
-                    checked={flags.includes(FeatureFlag.flagDebugConsoleLogging)}
-                    onChange={() => toggleFlag(FeatureFlag.flagDebugConsoleLogging)}
-                  />
-                ),
-              },
-              {
-                key: 'Experimental Core APIs (Job & Graph)',
-                value: (
-                  <Switch
-                    checked={flags.includes(FeatureFlag.flagPipelineModeTuples)}
-                    onChange={() => toggleFlag(FeatureFlag.flagPipelineModeTuples)}
-                  />
-                ),
-              },
-              {
-                key: 'Experimental Asset APIs',
-                value: (
-                  <Switch
-                    checked={flags.includes(FeatureFlag.flagAssetGraph)}
-                    onChange={() => toggleFlag(FeatureFlag.flagAssetGraph)}
-                  />
-                ),
-              },
-            ]}
-          />
-        </Group>
-      </Group>
-    </Page>
+        </Box>
+        <MetadataTable
+          rows={[
+            {
+              key: 'Debug console logging',
+              value: (
+                <Switch
+                  checked={flags.includes(FeatureFlag.flagDebugConsoleLogging)}
+                  onChange={() => toggleFlag(FeatureFlag.flagDebugConsoleLogging)}
+                />
+              ),
+            },
+            {
+              key: 'Experimental Core APIs (Job & Graph)',
+              value: (
+                <Switch
+                  checked={flags.includes(FeatureFlag.flagPipelineModeTuples)}
+                  onChange={() => toggleFlag(FeatureFlag.flagPipelineModeTuples)}
+                />
+              ),
+            },
+            {
+              key: 'Experimental Asset APIs',
+              value: (
+                <Switch
+                  checked={flags.includes(FeatureFlag.flagAssetGraph)}
+                  onChange={() => toggleFlag(FeatureFlag.flagAssetGraph)}
+                />
+              ),
+            },
+          ]}
+        />
+      </Box>
+    </div>
   );
 };
 

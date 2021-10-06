@@ -5,11 +5,11 @@ import styled, {createGlobalStyle, css} from 'styled-components/macro';
 
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
-import {Group} from '../ui/Group';
 import {HighlightedCodeBlock} from '../ui/HighlightedCodeBlock';
 import {IconWIP} from '../ui/Icon';
+import {PageHeader} from '../ui/PageHeader';
 import {Spinner} from '../ui/Spinner';
-import {Subheading} from '../ui/Text';
+import {Heading, Subheading} from '../ui/Text';
 
 import {InstanceTabs} from './InstanceTabs';
 import {InstanceConfigQuery} from './types/InstanceConfigQuery';
@@ -62,16 +62,18 @@ export const InstanceConfig = React.memo(() => {
   const sections = data.instance.info.split(/\n(?=\w)/g);
 
   return (
-    <Group direction="column" spacing={20}>
-      <InstanceTabs tab="config" />
-      <Group direction="column" spacing={16} padding={{horizontal: 24}}>
-        <Subheading>{`Dagster ${data.version}`}</Subheading>
+    <>
+      <PageHeader title={<Heading>Instance status</Heading>} tabs={<InstanceTabs tab="config" />} />
+      <Box padding={{vertical: 16, horizontal: 24}}>
+        <Box padding={{bottom: 16}}>
+          <Subheading>{`Dagster ${data.version}`}</Subheading>
+        </Box>
         <YamlShimStyle />
         {sections.map((section) => {
           const [id] = section.split(/\:/);
           const hashForSection = `#${id}`;
           return (
-            <Box flex={{direction: 'row', alignItems: 'flex-start'}} key={id} id={id}>
+            <Box flex={{direction: 'row', alignItems: 'flex-start'}} padding={8} key={id} id={id}>
               <ConfigLink to={`/instance/config${hashForSection}`} key={id}>
                 <IconWIP name="link" color={ColorsWIP.Gray300} />
               </ConfigLink>
@@ -81,14 +83,14 @@ export const InstanceConfig = React.memo(() => {
             </Box>
           );
         })}
-      </Group>
-    </Group>
+      </Box>
+    </>
   );
 });
 
 const ConfigLink = styled(Link)`
   margin-right: 12px;
-  margin-top: -1px;
+  margin-top: 2px;
   user-select: none;
   transition: filter ease-in-out 100ms;
 

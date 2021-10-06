@@ -7,10 +7,8 @@ import {UnloadableSchedules} from '../instigation/Unloadable';
 import {InstigationType} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
-import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
 import {NonIdealState} from '../ui/NonIdealState';
-import {Page} from '../ui/Page';
 import {Subheading} from '../ui/Text';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -36,68 +34,66 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   });
 
   return (
-    <Page>
-      <Loading queryResult={queryResult} allowStaleData={true}>
-        {(result) => {
-          const {repositoryOrError, unloadableInstigationStatesOrError, instance} = result;
-          let schedulesSection = null;
+    <Loading queryResult={queryResult} allowStaleData={true}>
+      {(result) => {
+        const {repositoryOrError, unloadableInstigationStatesOrError, instance} = result;
+        let schedulesSection = null;
 
-          if (repositoryOrError.__typename === 'PythonError') {
-            schedulesSection = <PythonErrorInfo error={repositoryOrError} />;
-          } else if (repositoryOrError.__typename === 'RepositoryNotFoundError') {
-            schedulesSection = (
-              <NonIdealState
-                icon="error"
-                title="Repository not found"
-                description="Could not load this repository."
-              />
-            );
-          } else if (!repositoryOrError.schedules.length) {
-            schedulesSection = (
-              <NonIdealState
-                icon="schedule"
-                title="No schedules found"
-                description={
-                  <p>
-                    This repository does not have any schedules defined. Visit the{' '}
-                    <a href="https://docs.dagster.io/overview/schedules-sensors/schedules">
-                      scheduler documentation
-                    </a>{' '}
-                    for more information about scheduling runs in Dagster.
-                  </p>
-                }
-              />
-            );
-          } else {
-            schedulesSection = repositoryOrError.schedules.length > 0 && (
-              <Group direction="column" spacing={16}>
-                <SchedulesTable schedules={repositoryOrError.schedules} repoAddress={repoAddress} />
-                <Box
-                  padding={{vertical: 16, horizontal: 24}}
-                  border={{side: 'bottom', width: 1, color: ColorsWIP.Gray100}}
-                >
-                  <Subheading>Scheduled ticks</Subheading>
-                </Box>
-                <SchedulesNextTicks repos={[repositoryOrError]} />
-              </Group>
-            );
-          }
-
-          return (
-            <Group direction="column" spacing={20}>
-              <Box padding={{horizontal: 24}}>
-                <SchedulerInfo daemonHealth={instance.daemonHealth} />
-              </Box>
-              {schedulesSection}
-              {unloadableInstigationStatesOrError.__typename === 'PythonError' ? (
-                <PythonErrorInfo error={unloadableInstigationStatesOrError} />
-              ) : (
-                <UnloadableSchedules scheduleStates={unloadableInstigationStatesOrError.results} />
-              )}
-            </Group>
+        if (repositoryOrError.__typename === 'PythonError') {
+          schedulesSection = <PythonErrorInfo error={repositoryOrError} />;
+        } else if (repositoryOrError.__typename === 'RepositoryNotFoundError') {
+          schedulesSection = (
+            <NonIdealState
+              icon="error"
+              title="Repository not found"
+              description="Could not load this repository."
+            />
           );
-        }}
-      </Loading>
-    </Page>
+        } else if (!repositoryOrError.schedules.length) {
+          schedulesSection = (
+            <NonIdealState
+              icon="schedule"
+              title="No schedules found"
+              description={
+                <p>
+                  This repository does not have any schedules defined. Visit the{' '}
+                  <a href="https://docs.dagster.io/overview/schedules-sensors/schedules">
+                    scheduler documentation
+                  </a>{' '}
+                  for more information about scheduling runs in Dagster.
+                </p>
+              }
+            />
+          );
+        } else {
+          schedulesSection = repositoryOrError.schedules.length > 0 && (
+            <>
+              <SchedulesTable schedules={repositoryOrError.schedules} repoAddress={repoAddress} />
+              <Box
+                padding={{vertical: 16, horizontal: 24}}
+                border={{side: 'bottom', width: 1, color: ColorsWIP.Gray100}}
+              >
+                <Subheading>Scheduled ticks</Subheading>
+              </Box>
+              <SchedulesNextTicks repos={[repositoryOrError]} />
+            </>
+          );
+        }
+
+        return (
+          <>
+            <Box padding={{horizontal: 24, vertical: 16}}>
+              <SchedulerInfo daemonHealth={instance.daemonHealth} />
+            </Box>
+            {schedulesSection}
+            {unloadableInstigationStatesOrError.__typename === 'PythonError' ? (
+              <PythonErrorInfo error={unloadableInstigationStatesOrError} />
+            ) : (
+              <UnloadableSchedules scheduleStates={unloadableInstigationStatesOrError.results} />
+            )}
+          </>
+        );
+      }}
+    </Loading>
   );
 };

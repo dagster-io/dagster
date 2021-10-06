@@ -15,10 +15,10 @@ export const AssetsCatalogRoot: React.FunctionComponent<RouteComponentProps> = (
 
   return (
     <div>
-      <Box padding={{vertical: 16, horizontal: 24}}>
-        <PageHeader title={<Heading>Assets</Heading>} />
+      <PageHeader title={<Heading>Assets</Heading>} />
+      <Box padding={{vertical: 16}}>
+        <AssetsCatalogTable prefixPath={currentPath} />
       </Box>
-      <AssetsCatalogTable prefixPath={currentPath} />
     </div>
   );
 };

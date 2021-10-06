@@ -114,21 +114,23 @@ export const SolidsRoot: React.FC<Props> = (props) => {
   });
 
   return (
-    <Loading queryResult={queryResult}>
-      {({repositoryOrError}) => {
-        if (repositoryOrError?.__typename === 'Repository' && repositoryOrError.usedSolids) {
-          return (
-            <SolidsRootWithData
-              {...props}
-              name={name}
-              repoAddress={repoAddress}
-              usedSolids={repositoryOrError.usedSolids}
-            />
-          );
-        }
-        return null;
-      }}
-    </Loading>
+    <div style={{height: '100%'}}>
+      <Loading queryResult={queryResult}>
+        {({repositoryOrError}) => {
+          if (repositoryOrError?.__typename === 'Repository' && repositoryOrError.usedSolids) {
+            return (
+              <SolidsRootWithData
+                {...props}
+                name={name}
+                repoAddress={repoAddress}
+                usedSolids={repositoryOrError.usedSolids}
+              />
+            );
+          }
+          return null;
+        }}
+      </Loading>
+    </div>
   );
 };
 
