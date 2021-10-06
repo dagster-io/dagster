@@ -1,4 +1,4 @@
-from dagster import graph, op, root_input_manager, In, DynamicOut, DynamicOutput
+from dagster import DynamicOut, DynamicOutput, In, graph, op, root_input_manager
 from dagster.core.events import DagsterEventType
 
 
