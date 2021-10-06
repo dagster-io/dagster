@@ -3,7 +3,7 @@ from contextlib import contextmanager
 from typing import Any, Dict, FrozenSet, Iterator, List, Optional, Tuple, Union
 
 from dagster import check
-from dagster.core.definitions import IPipeline, PipelineDefinition
+from dagster.core.definitions import IPipeline, JobDefinition, PipelineDefinition
 from dagster.core.definitions.pipeline import PipelineSubsetDefinition
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
@@ -139,11 +139,16 @@ def execute_run(
         PipelineExecutionResult: The result of the execution.
     """
     if isinstance(pipeline, PipelineDefinition):
+        if isinstance(pipeline, JobDefinition):
+            error = "execute_run requires a reconstructable job but received job definition directly instead."
+        else:
+            error = (
+                "execute_run requires a reconstructable pipeline but received pipeline definition "
+                "directly instead."
+            )
         raise DagsterInvariantViolationError(
-            "execute_run requires an IPipeline but received a PipelineDefinition "
-            "directly instead. To support hand-off to other processes provide a "
-            "ReconstructablePipeline which can be done using reconstructable(). For in "
-            "process only execution you can use InMemoryPipeline."
+            f"{error} To support hand-off to other processes please wrap your definition in "
+            "a call to reconstructable(). Learn more about reconstructable here: https://docs.dagster.io/_apidocs/execution#dagster.reconstructable"
         )
 
     check.inst_param(pipeline, "pipeline", IPipeline)
