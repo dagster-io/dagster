@@ -152,7 +152,7 @@ export const SearchDialog: React.FC<{theme: 'dark' | 'light'; searchPlaceholder:
         </SearchTrigger>
       </ShortcutHandler>
       <Overlay
-        backdropProps={{style: {backgroundColor: 'rgba(0, 0, 0, .35)'}}}
+        backdropProps={{style: {backgroundColor: ColorsWIP.WashGray}}}
         isOpen={shown}
         onClose={() => dispatch({type: 'hide-dialog'})}
         transitionDuration={100}
