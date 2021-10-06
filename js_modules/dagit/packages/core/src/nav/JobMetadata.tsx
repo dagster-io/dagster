@@ -206,7 +206,7 @@ const MatchingSchedule: React.FC<{schedule: Schedule; repoAddress: RepoAddress}>
     <Link to={workspacePathFromAddress(repoAddress, `/schedules/${schedule.name}`)}>
       {schedule.name}
     </Link>
-    <ScheduleSwitch large={false} repoAddress={repoAddress} schedule={schedule} />
+    <ScheduleSwitch repoAddress={repoAddress} schedule={schedule} />
   </Group>
 );
 
@@ -217,7 +217,7 @@ const MatchingSensor: React.FC<{sensor: Sensor; repoAddress: RepoAddress}> = ({
   <Group direction="row" spacing={8} alignItems="center">
     <IconWIP name="sensors" color={ColorsWIP.Gray700} />
     <Link to={workspacePathFromAddress(repoAddress, `/sensors/${sensor.name}`)}>{sensor.name}</Link>
-    <SensorSwitch large={false} repoAddress={repoAddress} sensor={sensor} />
+    <SensorSwitch repoAddress={repoAddress} sensor={sensor} />
   </Group>
 );
 

@@ -75,7 +75,7 @@ const SwitchIcon: React.FC<IconProps> = ({checked, indeterminate, disabled, fill
       width="36"
       height="22"
       rx="11"
-      fill={disabled || (checked && !indeterminate) ? fillColor : ColorsWIP.Gray500}
+      fill={disabled || (checked && !indeterminate) ? fillColor : ColorsWIP.Gray400}
       style={{transition: 'fill 100ms linear'}}
       className="interaction-darken interaction-focus-outline"
     />
@@ -157,7 +157,7 @@ const Base = ({
   format = 'check',
   disabled = false,
   indeterminate = false,
-  fillColor = ColorsWIP.Gray800,
+  fillColor = ColorsWIP.Blue500,
   children, // not passed to input
   ...rest
 }: Props) => {
