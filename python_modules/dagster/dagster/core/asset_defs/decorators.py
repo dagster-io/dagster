@@ -25,10 +25,16 @@ def asset(
     io_manager_key: Optional[str] = None,
     compute_kind: Optional[str] = None,
 ) -> Callable[[Callable[..., Any]], OpDefinition]:
-    """Create an op that computes an asset.
+    """Create a definition for how to compute an asset.
 
-    Each argument to the decorated function references an upstream asset that this asset depends on.
-    The name of the argument designates the name of the upstream asset.
+    A software-defined asset is the combination of:
+    * An asset key, e.g. the name of a table.
+    * A function, which can be run to compute the contents of the asset.
+    * A set of upstream assets that are provided as inputs to the function when computing the asset.
+
+    Unlike an op, whose dependencies are determined by the graph it lives inside, an asset knows
+    about the upstream assets it depends on. The upstream assets are inferred from the arguments
+    to the decorated function. The name of the argument designates the name of the upstream asset.
 
     Args:
         name (Optional[str]): The name of the asset.  If not provided, defaults to the name of the
@@ -44,6 +50,14 @@ def asset(
             (default: "io_manager").
         compute_kind (Optional[str]): A string to represent the kind of computation that produces
             the asset, e.g. "dbt" or "spark". It will be displayed in Dagit as a badge on the asset.
+
+    Examples:
+
+        .. code-block:: python
+
+            @asset
+            def my_asset(my_upstream_asset: int) -> int:
+                return my_upstream_asset + 1
     """
     if callable(name):
         return _Asset()(name)
