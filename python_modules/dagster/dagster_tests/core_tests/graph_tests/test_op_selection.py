@@ -40,6 +40,18 @@ def test_simple_op_selection_on_job_def():
     assert "add_one" not in [executed_step_keys]
 
 
+def test_select_all_on_job_def():
+    my_subset_job = do_it_all.to_job(op_selection=["*"])
+    result = my_subset_job.execute_in_process()
+
+    assert result.success
+
+    executed_step_keys = [
+        evt.step_key for evt in result.event_list if evt.event_type == DagsterEventType.STEP_SUCCESS
+    ]
+    assert len(executed_step_keys) == 4
+
+
 @graph
 def larger_graph():
     do_it_all()

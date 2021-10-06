@@ -44,7 +44,7 @@ def core_execute_in_process(
         run_config=run_config,
         mode=mode_def.name,
     )
-    if op_selection:
+    if op_selection and op_selection != ["*"]:
         step_keys_to_execute = parse_step_selection(
             full_execution_plan.get_all_step_deps(), op_selection
         )
