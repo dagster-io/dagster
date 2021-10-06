@@ -22,15 +22,23 @@ export const Table = styled(HTMLTable)<TableProps>`
     font-family: ${FontFamily.default};
     font-size: 12px;
     font-weight: 400;
-    padding: ${({$compact}) => ($compact ? '8px' : '6px 24px')};
+    padding: ${({$compact}) => ($compact ? '0 8px' : ' 8px 12px')};
+    min-height: 32px;
+    white-space: nowrap;
     vertical-align: bottom;
+  }
+  & tr th:first-child {
+    padding-left: ${({$compact}) => ($compact ? '8px' : ' 24px')};
   }
 
   & tr td {
     color: ${ColorsWIP.Gray900};
     font-family: ${FontFamily.monospace};
     font-size: 16px;
-    padding: ${({$compact}) => ($compact ? '8px' : '6px 24px')};
+    padding: ${({$compact}) => ($compact ? '8px' : '12px')};
+  }
+  & tr td:first-child {
+    padding-left: ${({$compact}) => ($compact ? '8px' : ' 24px')};
   }
 
   & tr:last-child td {

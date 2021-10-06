@@ -9,6 +9,7 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {PipelineSnapshotLink} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {Box} from '../ui/Box';
+import {ButtonWIP} from '../ui/Button';
 import {Checkbox} from '../ui/Checkbox';
 import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
@@ -17,6 +18,7 @@ import {NonIdealState} from '../ui/NonIdealState';
 import {Table} from '../ui/Table';
 import {Mono} from '../ui/Text';
 import {TokenizingFieldValue} from '../ui/TokenizingField';
+import {FontFamily} from '../ui/styles';
 import {workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
 import {RunActionsMenu, RunBulkActionsMenu} from './RunActionsMenu';
@@ -143,7 +145,7 @@ export const RunTable = (props: RunTableProps) => {
     <Table>
       <thead>
         <tr>
-          <th colSpan={2}>
+          <th colSpan={2} style={{padding: '4px 8px'}}>
             {canTerminateOrDelete ? (
               <div style={{display: 'flex', alignItems: 'center', gap: 5}}>
                 <Checkbox
@@ -237,7 +239,7 @@ const RunRow: React.FC<{
 
   return (
     <Row key={run.runId} highlighted={!!isHighlighted}>
-      <td style={{paddingRight: '4px'}}>
+      <td>
         {canTerminateOrDelete && onToggleChecked ? (
           <Checkbox checked={!!checked} onChange={onChange} />
         ) : null}
@@ -251,8 +253,8 @@ const RunRow: React.FC<{
         </Link>
       </td>
       <td>
-        <Group direction="column" spacing={8}>
-          <Group direction="row" spacing={8} alignItems="center">
+        <Box flex={{direction: 'column', gap: 5}}>
+          <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
             <PipelineReference
               mode={run.mode}
               pipelineName={run.pipelineName}
@@ -261,9 +263,9 @@ const RunRow: React.FC<{
             <Link to={workspacePipelinePathGuessRepo(run.pipelineName, run.mode)}>
               <IconWIP name="open_in_new" color={ColorsWIP.Blue500} />
             </Link>
-          </Group>
+          </Box>
           <RunTags tags={run.tags} onSetFilter={onSetFilter} />
-        </Group>
+        </Box>
       </td>
       <td>
         <PipelineSnapshotLink
