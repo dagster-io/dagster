@@ -35,7 +35,7 @@ if __name__ == "__main__":
         install_requires=[
             f"dagster{pin}",
             "celery>=4.3.0",
-            "click>=5.0,<8.0",
+            "click>=5.0,<9.0",
         ],
         extras_require={
             "flower": ["flower"],

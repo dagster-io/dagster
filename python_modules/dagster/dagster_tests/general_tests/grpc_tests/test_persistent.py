@@ -113,7 +113,7 @@ def test_load_with_invalid_param(capfd):
 
     _, err = capfd.readouterr()
 
-    assert "no such option" in err
+    assert "no such option" in err.lower()
 
 
 def test_load_with_error(capfd):
