@@ -43,7 +43,7 @@ if __name__ == "__main__":
         install_requires=[
             "PyYAML",
             # cli
-            "click>=7.0,<8.0",
+            "click>=7.0,<9.0",
             f"dagster{pin}",
             f"dagster-graphql{pin}",
             # server

@@ -57,7 +57,7 @@ if __name__ == "__main__":
         include_package_data=True,
         install_requires=[
             # cli
-            "click>=5.0,<8.0",
+            "click>=5.0,<9.0",
             "coloredlogs>=6.1, <=14.0",
             # https://github.com/dagster-io/dagster/issues/4167
             "Jinja2<3.0",
