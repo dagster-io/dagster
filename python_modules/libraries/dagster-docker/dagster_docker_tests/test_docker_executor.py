@@ -4,7 +4,6 @@
 import os
 import re
 import time
-from contextlib import contextmanager
 from dagster.core.execution.api import execute_pipeline
 from dagster.utils.merger import merge_dicts
 from dagster_test.test_project import (
@@ -20,7 +19,6 @@ import docker
 import pytest
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import environ, poll_for_finished_run, poll_for_step_start
-from dagster.utils.test.postgres_instance import postgres_instance_for_test
 from dagster.utils.yaml_utils import merge_yamls
 from dagster_docker.docker_run_launcher import DOCKER_CONTAINER_ID_TAG, DOCKER_IMAGE_TAG
 from dagster_test.test_project import (
@@ -33,18 +31,7 @@ from dagster_test.test_project import (
     get_test_project_workspace_and_external_pipeline,
 )
 
-IS_BUILDKITE = os.getenv("BUILDKITE") is not None
-
-
-@contextmanager
-def docker_postgres_instance(overrides=None, conn_args=None):
-    with postgres_instance_for_test(
-        __file__,
-        "test-postgres-db-docker",
-        overrides=overrides,
-        conn_args=conn_args,
-    ) as instance:
-        yield instance
+from . import docker_postgres_instance, IS_BUILDKITE
 
 
 def test_docker_executor():

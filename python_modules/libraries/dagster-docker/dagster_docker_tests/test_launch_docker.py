@@ -23,18 +23,7 @@ from dagster_test.test_project import (
     get_test_project_workspace_and_external_pipeline,
 )
 
-IS_BUILDKITE = os.getenv("BUILDKITE") is not None
-
-
-@contextmanager
-def docker_postgres_instance(overrides=None, conn_args=None):
-    with postgres_instance_for_test(
-        __file__,
-        "test-postgres-db-docker",
-        overrides=overrides,
-        conn_args=conn_args,
-    ) as instance:
-        yield instance
+from . import docker_postgres_instance, IS_BUILDKITE
 
 
 def test_launch_docker_no_network():

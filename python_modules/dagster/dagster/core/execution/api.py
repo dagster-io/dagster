@@ -754,7 +754,8 @@ def pipeline_execution_iterator(
     """
 
     # TODO: restart event?
-    yield DagsterEvent.pipeline_start(pipeline_context)
+    if not pipeline_context.resume_from_failure:
+        yield DagsterEvent.pipeline_start(pipeline_context)
 
     pipeline_exception_info = None
     pipeline_canceled_info = None

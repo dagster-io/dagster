@@ -14,6 +14,7 @@ class LaunchRunContext(NamedTuple):
 
     pipeline_run: PipelineRun
     workspace: Optional[IWorkspace]
+    resume_from_failure: bool = False
 
     @property
     def pipeline_code_origin(self) -> Optional[PipelinePythonOrigin]:

@@ -20,7 +20,7 @@ class ExecutionPlanSnapshotArgs(
     namedtuple(
         "_ExecutionPlanSnapshotArgs",
         "pipeline_origin solid_selection run_config mode step_keys_to_execute pipeline_snapshot_id "
-        "known_state resume_from_failure",
+        "known_state",
     )
 ):
     def __new__(
@@ -32,7 +32,6 @@ class ExecutionPlanSnapshotArgs(
         step_keys_to_execute,
         pipeline_snapshot_id,
         known_state=None,
-        resume_from_failure: bool = None,
     ):
         return super(ExecutionPlanSnapshotArgs, cls).__new__(
             cls,
@@ -47,15 +46,18 @@ class ExecutionPlanSnapshotArgs(
             ),
             pipeline_snapshot_id=check.str_param(pipeline_snapshot_id, "pipeline_snapshot_id"),
             known_state=check.opt_inst_param(known_state, "known_state", KnownExecutionState),
-            resume_from_failure=check.opt_bool_param(
-                resume_from_failure, "resume_from_failure", default=False
-            ),
         )
 
 
 @whitelist_for_serdes
-class ExecuteRunArgs(namedtuple("_ExecuteRunArgs", "pipeline_origin pipeline_run_id instance_ref")):
-    def __new__(cls, pipeline_origin, pipeline_run_id, instance_ref):
+class ExecuteRunArgs(
+    namedtuple(
+        "_ExecuteRunArgs", "pipeline_origin pipeline_run_id instance_ref resume_from_failure"
+    )
+):
+    def __new__(
+        cls, pipeline_origin, pipeline_run_id, instance_ref, resume_from_failure: bool = None
+    ):
         return super(ExecuteRunArgs, cls).__new__(
             cls,
             pipeline_origin=check.inst_param(
@@ -65,6 +67,9 @@ class ExecuteRunArgs(namedtuple("_ExecuteRunArgs", "pipeline_origin pipeline_run
             ),
             pipeline_run_id=check.str_param(pipeline_run_id, "pipeline_run_id"),
             instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
+            resume_from_failure=check.opt_bool_param(
+                resume_from_failure, "resume_from_failure", default=False
+            ),
         )
 
 

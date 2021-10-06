@@ -1401,7 +1401,7 @@ records = instance.get_event_records(
 
     # Run launcher
 
-    def launch_run(self, run_id: str, workspace: "IWorkspace"):
+    def launch_run(self, run_id: str, workspace: "IWorkspace", resume_from_failure=False):
         """Launch a pipeline run.
 
         This method is typically called using `instance.submit_run` rather than being invoked
@@ -1447,7 +1447,11 @@ records = instance.get_event_records(
             check.failed(f"Failed to reload run {run_id}")
 
         try:
-            self._run_launcher.launch_run(LaunchRunContext(pipeline_run=run, workspace=workspace))
+            self._run_launcher.launch_run(
+                LaunchRunContext(
+                    pipeline_run=run, workspace=workspace, resume_from_failure=resume_from_failure
+                )
+            )
         except:
             error = serializable_error_info_from_exc_info(sys.exc_info())
             self.report_engine_event(

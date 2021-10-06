@@ -44,7 +44,7 @@ def test_recover_with_step_in_flight():
     # CRASH! Now we recover
 
     with create_execution_plan(foo_pipeline).start(RetryMode.DISABLED) as active_execution:
-        active_execution.rebuild_from_events(
+        possibly_in_flight_steps = active_execution.rebuild_from_events(
             [
                 DagsterEvent(
                     DagsterEventType.STEP_START.value,
@@ -53,6 +53,7 @@ def test_recover_with_step_in_flight():
                 )
             ]
         )
+        assert possibly_in_flight_steps == [step_1]
 
         assert not active_execution.get_steps_to_execute()
 
@@ -126,12 +127,12 @@ def test_recover_in_between_steps():
     # CRASH! Now we recover
 
     with create_execution_plan(two_solid_pipeline).start(RetryMode.DISABLED) as active_execution:
-        active_execution.rebuild_from_events(events)
-
-        steps = active_execution.get_steps_to_execute()
-        assert len(steps) == 1
-        step_2 = steps[0]
+        possibly_in_flight_steps = active_execution.rebuild_from_events(events)
+        assert len(possibly_in_flight_steps) == 1
+        step_2 = possibly_in_flight_steps[0]
         assert step_2.key == "bar_solid"
+
+        assert not active_execution.get_steps_to_execute()
 
         active_execution.handle_event(
             DagsterEvent(

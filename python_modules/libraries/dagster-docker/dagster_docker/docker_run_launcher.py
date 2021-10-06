@@ -161,6 +161,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
                 pipeline_origin=pipeline_code_origin,
                 pipeline_run_id=run.run_id,
                 instance_ref=self._instance.get_ref(),
+                resume_from_failure=context.resume_from_failure,
             )
         )
 

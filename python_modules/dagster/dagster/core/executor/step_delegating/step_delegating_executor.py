@@ -87,6 +87,8 @@ class StepDelegatingExecutor(Executor):
 
         with execution_plan.start(retry_mode=self.retries) as active_execution:
 
+            running_steps: Dict[str, ExecutionStep] = {}
+
             if pipeline_context.resume_from_failure:
                 yield DagsterEvent.engine_event(
                     pipeline_context,
@@ -106,7 +108,7 @@ class StepDelegatingExecutor(Executor):
 
                     yield DagsterEvent.engine_event(
                         pipeline_context,
-                        "Checking on status of possibly launched step",
+                        "Checking on status of possibly launched steps",
                         EngineEventData(),
                         step.handle,
                     )
@@ -130,8 +132,9 @@ class StepDelegatingExecutor(Executor):
                             yield dagster_event
                             active_execution.handle_event(dagster_event)
 
+                    running_steps[step.key] = step
+
             stopping = False
-            running_steps: Dict[str, ExecutionStep] = {}
 
             last_check_step_health_time = pendulum.now("UTC")
             while (not active_execution.is_complete and not stopping) or running_steps:
@@ -157,7 +160,6 @@ class StepDelegatingExecutor(Executor):
                                 running_steps,
                             )
                         )
-                    running_steps.clear()
 
                 events.extend(
                     self._pop_events(

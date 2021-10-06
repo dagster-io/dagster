@@ -71,6 +71,14 @@ def multiply_the_word(context, word):
     return word * context.solid_config["factor"]
 
 
+@solid(
+    input_defs=[InputDefinition("word", String)], config_schema={"factor": Int, "sleep_time": Int}
+)
+def multiply_the_word_slow(context, word):
+    time.sleep(context.solid_config["sleep_time"])
+    return word * context.solid_config["factor"]
+
+
 @lambda_solid(input_defs=[InputDefinition("word")])
 def count_letters(word):
     counts = defaultdict(int)
@@ -128,6 +136,22 @@ def define_demo_pipeline_docker():
         count_letters(multiply_the_word())
 
     return demo_pipeline_docker
+
+
+def define_demo_pipeline_docker_slow():
+    @pipeline(
+        mode_defs=[
+            ModeDefinition(
+                intermediate_storage_defs=s3_plus_default_intermediate_storage_defs,
+                resource_defs={"s3": s3_resource},
+                executor_defs=[docker_executor],
+            )
+        ]
+    )
+    def demo_pipeline_docker_slow():
+        count_letters(multiply_the_word_slow())
+
+    return demo_pipeline_docker_slow
 
 
 def define_demo_pipeline_celery():
@@ -529,6 +553,7 @@ def define_demo_execution_repo():
             "pipelines": {
                 "demo_pipeline_celery": define_demo_pipeline_celery,
                 "demo_pipeline_docker": define_demo_pipeline_docker,
+                "demo_pipeline_docker_slow": define_demo_pipeline_docker_slow,
                 "large_pipeline_celery": define_large_pipeline_celery,
                 "long_running_pipeline_celery": define_long_running_pipeline_celery,
                 "optional_outputs": optional_outputs,
