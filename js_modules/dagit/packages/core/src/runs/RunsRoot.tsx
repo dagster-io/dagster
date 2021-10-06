@@ -101,10 +101,7 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
       <PageHeader
         title={<Heading>Runs</Heading>}
         tabs={
-          <Box
-            background={ColorsWIP.Gray50}
-            flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}
-          >
+          <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
             <Tabs selectedTabId={selectedTab} id="run-tabs">
               <Tab title="All runs" onClick={() => setStatusFilter([])} id="all" />
               <Tab
@@ -141,7 +138,7 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
         }
       />
       {selectedTab === 'queued' ? (
-        <Group direction="column" spacing={8} padding={{horizontal: 24}}>
+        <Group direction="column" spacing={8} padding={{horizontal: 24, vertical: 16}}>
           <Alert
             intent="info"
             title={<Link to="/instance/config#run_coordinator">View queue configuration</Link>}

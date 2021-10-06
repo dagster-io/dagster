@@ -354,7 +354,7 @@ const AssetsTable = ({
   });
 
   return (
-    <Box flex={{direction: 'column', gap: 8}}>
+    <Box flex={{direction: 'column'}}>
       <Box flex={{alignItems: 'center', gap: 12}} style={{padding: '8px 12px 8px 24px'}}>
         {actionBarComponents}
         <div style={{flex: 1}} />
