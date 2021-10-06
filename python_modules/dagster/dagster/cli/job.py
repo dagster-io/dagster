@@ -6,8 +6,10 @@ from dagster import check
 from dagster.cli.pipeline import (
     add_step_to_table,
     execute_execute_command,
+    execute_launch_command,
     execute_list_command,
     execute_print_command,
+    execute_scaffold_command,
     get_run_config_from_file_list,
 )
 from dagster.cli.workspace.cli_target import (
@@ -130,3 +132,35 @@ def job_execute_command(**kwargs):
                 "DAGSTER_HOME is not set, no metadata will be recorded for this execution.\n",
             )
             execute_execute_command(DagsterInstance.ephemeral(), kwargs, True)
+
+
+@job_cli.command(
+    name="launch",
+    help="Launch a job using the run launcher configured on the Dagster instance.\n\n{instructions}".format(
+        instructions=get_job_instructions("launch")
+    ),
+)
+@job_target_argument
+@python_pipeline_or_job_config_argument("launch")
+@click.option(
+    "--config-json",
+    type=click.STRING,
+    help="JSON string of run config to use for this job run. Cannot be used with -c / --config.",
+)
+@click.option("--tags", type=click.STRING, help="JSON string of tags to use for this job run")
+@click.option("--run-id", type=click.STRING, help="The ID to give to the launched pipeline run")
+def job_launch_command(**kwargs):
+    with DagsterInstance.get() as instance:
+        return execute_launch_command(instance, kwargs)
+
+
+@job_cli.command(
+    name="scaffold_config",
+    help="Scaffold the config for a job.\n\n{instructions}".format(
+        instructions=get_job_in_same_python_env_instructions("scaffold_config")
+    ),
+)
+@python_job_target_argument
+@click.option("--print-only-required", default=False, is_flag=True)
+def job_scaffold_command(**kwargs):
+    execute_scaffold_command(kwargs, click.echo)

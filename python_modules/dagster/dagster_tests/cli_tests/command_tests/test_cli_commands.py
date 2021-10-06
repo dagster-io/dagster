@@ -64,9 +64,19 @@ def define_foo_pipeline():
     return foo_pipeline
 
 
+@op
+def do_something_op():
+    return 1
+
+
+@op
+def do_input_op(x):
+    return x
+
+
 @graph
 def qux():
-    do_input(do_something())
+    do_input_op(do_something_op())
 
 
 qux_job = qux.to_job(tags={"foo": "bar"})
@@ -304,21 +314,21 @@ def grpc_server_bar_kwargs(pipeline_name=None):
 
 
 @contextmanager
-def python_bar_cli_args(pipeline_name=None):
+def python_bar_cli_args(pipeline_or_job_name=None, using_job_op_graph_apis=False):
     args = [
         "-m",
         "dagster_tests.cli_tests.command_tests.test_cli_commands",
         "-a",
         "bar",
     ]
-    if pipeline_name:
-        args.append("-p")
-        args.append(pipeline_name)
+    if pipeline_or_job_name:
+        args.append("-j" if using_job_op_graph_apis else "-p")
+        args.append(pipeline_or_job_name)
     yield args
 
 
 @contextmanager
-def grpc_server_bar_cli_args(pipeline_name=None):
+def grpc_server_bar_cli_args(pipeline_name=None, using_job_op_graph_apis=False):
     server_process = GrpcServerProcess(
         loadable_target_origin=LoadableTargetOrigin(
             executable_path=sys.executable,
@@ -335,7 +345,7 @@ def grpc_server_bar_cli_args(pipeline_name=None):
             args.append("--grpc-socket")
             args.append(client.socket)
         if pipeline_name:
-            args.append("--pipeline")
+            args.append("--job" if using_job_op_graph_apis else "--pipeline")
             args.append(pipeline_name)
 
         yield args
