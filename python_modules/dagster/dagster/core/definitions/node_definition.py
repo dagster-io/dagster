@@ -1,5 +1,5 @@
 from abc import abstractmethod, abstractproperty
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Mapping, Sequence
 
 from dagster import check
 from dagster.core.definitions.configurable import NamedConfigurableDefinition
@@ -11,6 +11,8 @@ from .utils import check_valid_name, validate_tags
 
 if TYPE_CHECKING:
     from .graph_definition import GraphDefinition
+    from .input import InputDefinition
+    from .output import OutputDefinition
     from .solid_definition import SolidDefinition
 
 # base class for SolidDefinition and GraphDefinition
@@ -71,11 +73,11 @@ class NodeDefinition(NamedConfigurableDefinition):
         return self._positional_inputs
 
     @property
-    def input_defs(self):
+    def input_defs(self) -> Sequence["InputDefinition"]:
         return self._input_defs
 
     @property
-    def input_dict(self):
+    def input_dict(self) -> Mapping[str, "InputDefinition"]:
         return self._input_dict
 
     def resolve_input_name_at_position(self, idx):
@@ -96,11 +98,11 @@ class NodeDefinition(NamedConfigurableDefinition):
         return self._positional_inputs[idx]
 
     @property
-    def output_defs(self):
+    def output_defs(self) -> Sequence["OutputDefinition"]:
         return self._output_defs
 
     @property
-    def output_dict(self):
+    def output_dict(self) -> Mapping[str, "OutputDefinition"]:
         return self._output_dict
 
     def has_input(self, name):

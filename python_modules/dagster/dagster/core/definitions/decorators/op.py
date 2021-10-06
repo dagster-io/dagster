@@ -1,5 +1,5 @@
 from functools import update_wrapper
-from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Set, Union
 
 from dagster import check
 from dagster.core.decorator_utils import format_docstring_for_description
@@ -16,6 +16,9 @@ from .solid import (
     NoContextDecoratedSolidFunction,
     resolve_checked_solid_fn_inputs,
 )
+
+if TYPE_CHECKING:
+    from ..op_definition import OpDefinition
 
 
 class _Op:
@@ -57,7 +60,7 @@ class _Op:
         self.ins = check.opt_nullable_dict_param(ins, "ins", key_type=str, value_type=In)
         self.out = out
 
-    def __call__(self, fn: Callable[..., Any]) -> SolidDefinition:
+    def __call__(self, fn: Callable[..., Any]) -> "OpDefinition":
         from ..op_definition import OpDefinition
 
         if self.input_defs is not None and self.ins is not None:

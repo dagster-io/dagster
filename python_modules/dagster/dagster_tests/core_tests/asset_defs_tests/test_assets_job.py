@@ -8,7 +8,7 @@ def test_single_asset_pipeline():
         return 1
 
     job = build_assets_job("a", [asset1])
-    assert job.graph.node_defs == [asset1]
+    assert job.graph.node_defs == [asset1.op]
     assert job.execute_in_process().success
 
 
@@ -22,7 +22,7 @@ def test_two_asset_pipeline():
         assert asset1 == 1
 
     job = build_assets_job("a", [asset1, asset2])
-    assert job.graph.node_defs == [asset1, asset2]
+    assert job.graph.node_defs == [asset1.op, asset2.op]
     assert job.dependencies == {
         "asset1": {},
         "asset2": {"asset1": DependencyDefinition("asset1", "result")},
@@ -44,7 +44,7 @@ def test_fork():
         assert asset1 == 1
 
     job = build_assets_job("a", [asset1, asset2, asset3])
-    assert job.graph.node_defs == [asset1, asset2, asset3]
+    assert job.graph.node_defs == [asset1.op, asset2.op, asset3.op]
     assert job.dependencies == {
         "asset1": {},
         "asset2": {"asset1": DependencyDefinition("asset1", "result")},
@@ -68,7 +68,7 @@ def test_join():
         assert asset2 == 2
 
     job = build_assets_job("a", [asset1, asset2, asset3])
-    assert job.graph.node_defs == [asset1, asset2, asset3]
+    assert job.graph.node_defs == [asset1.op, asset2.op, asset3.op]
     assert job.dependencies == {
         "asset1": {},
         "asset2": {},
@@ -103,7 +103,7 @@ def test_foreign_asset():
         source_assets=[ForeignAsset(AssetKey("source1"), io_manager_key="special_io_manager")],
         resource_defs={"special_io_manager": my_io_manager},
     )
-    assert job.graph.node_defs == [asset1]
+    assert job.graph.node_defs == [asset1.op]
     assert job.execute_in_process().success
 
 
@@ -134,5 +134,5 @@ def test_source_op_asset():
         source_assets=[source1],
         resource_defs={"special_io_manager": my_io_manager},
     )
-    assert job.graph.node_defs == [asset1]
+    assert job.graph.node_defs == [asset1.op]
     assert job.execute_in_process().success
