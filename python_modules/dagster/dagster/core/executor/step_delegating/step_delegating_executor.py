@@ -90,7 +90,7 @@ class StepDelegatingExecutor(Executor):
             running_steps: Dict[str, ExecutionStep] = {}
 
             last_check_step_health_time = pendulum.now("UTC")
-            while (not active_execution.is_complete and not stopping) or running_steps:
+            while not active_execution.is_complete and not stopping:
                 events = []
 
                 if active_execution.check_for_interrupts():
@@ -113,7 +113,6 @@ class StepDelegatingExecutor(Executor):
                                 running_steps,
                             )
                         )
-                    running_steps.clear()
 
                 events.extend(
                     self._pop_events(
