@@ -61,7 +61,7 @@ def test_not_defined_in_module(mocker):
     with pytest.raises(
         DagsterInvariantViolationError,
         match=re.escape(
-            "reconstructable() can not reconstruct pipelines defined in interactive environments"
+            "reconstructable() can not reconstruct jobs or pipelines defined in interactive environments"
         ),
     ):
         reconstructable(get_the_pipeline)
@@ -88,7 +88,7 @@ def test_bad_target():
     with pytest.raises(
         DagsterInvariantViolationError,
         match=re.escape(
-            "Loadable attributes must be either a PipelineDefinition, GraphDefinition, or a "
+            "Loadable attributes must be either a JobDefinition, GraphDefinition, PipelineDefinition, or a "
             "RepositoryDefinition. Got None."
         ),
     ):
