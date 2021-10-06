@@ -160,7 +160,7 @@ def job_execute_command(**kwargs):
     help="JSON string of run config to use for this job run. Cannot be used with -c / --config.",
 )
 @click.option("--tags", type=click.STRING, help="JSON string of tags to use for this job run")
-@click.option("--run-id", type=click.STRING, help="The ID to give to the launched pipeline run")
+@click.option("--run-id", type=click.STRING, help="The ID to give to the launched job run")
 def job_launch_command(**kwargs):
     with DagsterInstance.get() as instance:
         return execute_launch_command(instance, kwargs)

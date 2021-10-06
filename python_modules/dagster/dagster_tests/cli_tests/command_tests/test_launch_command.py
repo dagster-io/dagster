@@ -281,7 +281,7 @@ def test_launch_queued(gen_pipeline_args):
     "gen_pipeline_args",
     [python_bar_cli_args("qux", True), grpc_server_bar_cli_args("qux", True)],
 )
-def test_launch_queued(gen_pipeline_args):
+def test_job_launch_queued(gen_pipeline_args):
     runner = CliRunner()
     run_id = "my_super_cool_run_id"
     with default_cli_test_instance(
