@@ -2,11 +2,11 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {useCopyToClipboard} from '../app/browser';
+import {OptionsContainer, OptionsDivider} from '../gantt/VizComponents';
 import {Box} from '../ui/Box';
 import {ButtonWIP} from '../ui/Button';
 import {ButtonGroup} from '../ui/ButtonGroup';
 import {Checkbox} from '../ui/Checkbox';
-import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {IconName, IconWIP} from '../ui/Icon';
 import {MenuItemWIP} from '../ui/Menu';
@@ -62,7 +62,7 @@ export const LogsToolbar: React.FC<ILogsToolbarProps> = (props) => {
     computeLogUrl,
   } = props;
   return (
-    <LogsToolbarContainer>
+    <OptionsContainer>
       <ButtonGroup
         activeItems={new Set([logType])}
         buttons={[
@@ -71,7 +71,7 @@ export const LogsToolbar: React.FC<ILogsToolbarProps> = (props) => {
         ]}
         onClick={(id) => onSetLogType(id)}
       />
-      <LogsToolbarDivider />
+      <OptionsDivider />
       {logType === 'structured' ? (
         <StructuredLogToolbar filter={filter} onSetFilter={onSetFilter} steps={steps} />
       ) : (
@@ -85,7 +85,7 @@ export const LogsToolbar: React.FC<ILogsToolbarProps> = (props) => {
           computeLogUrl={computeLogUrl}
         />
       )}
-    </LogsToolbarContainer>
+    </OptionsContainer>
   );
 };
 
@@ -277,7 +277,7 @@ const StructuredLogToolbar = ({
           Hide non-matches
         </NonMatchCheckbox>
       ) : null}
-      <LogsToolbarDivider />
+      <OptionsDivider />
       <Group direction="row" spacing={4} alignItems="center">
         {Object.keys(LogLevel).map((level) => {
           const enabled = filter.levels[level];
@@ -307,7 +307,7 @@ const StructuredLogToolbar = ({
           );
         })}
       </Group>
-      {selectedStep && <LogsToolbarDivider />}
+      {selectedStep && <OptionsDivider />}
       <div style={{minWidth: 15, flex: 1}} />
       <div style={{marginRight: '8px'}}>
         <ButtonWIP
@@ -325,31 +325,12 @@ const StructuredLogToolbar = ({
   );
 };
 
-const LogsToolbarContainer = styled.div`
-  display: flex;
-  flex-direction: row;
-  background: ${ColorsWIP.White};
-  align-items: center;
-  padding: 4px 8px;
-  border-bottom: 1px solid ${ColorsWIP.Gray300};
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.07);
-  z-index: 2;
-`;
-
 const NonMatchCheckbox = styled(Checkbox)`
   &&& {
     margin: 0 4px 0 12px;
   }
 
   white-space: nowrap;
-`;
-
-const LogsToolbarDivider = styled.div`
-  display: inline-block;
-  width: 1px;
-  height: 30px;
-  margin: 0 8px;
-  border-right: 1px solid ${ColorsWIP.Gray100};
 `;
 
 const FilterButton = styled.button`

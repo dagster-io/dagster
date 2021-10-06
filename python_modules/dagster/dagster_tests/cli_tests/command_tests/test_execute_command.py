@@ -5,6 +5,7 @@ import click
 import pytest
 from click import UsageError
 from click.testing import CliRunner
+from dagster.cli.job import job_execute_command
 from dagster.cli.pipeline import execute_execute_command, pipeline_execute_command
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.test_utils import instance_for_test, new_cwd
@@ -12,7 +13,9 @@ from dagster.utils import file_relative_path, merge_dicts
 
 from .test_cli_commands import (
     non_existant_python_origin_target_args,
-    pipeline_python_origin_contexts,
+    pipeline_or_job_python_origin_contexts,
+    runner_pipeline_or_job_execute,
+    valid_job_python_origin_target_cli_args,
     valid_pipeline_python_origin_target_cli_args,
 )
 
@@ -21,7 +24,7 @@ def test_execute_mode_command():
     runner = CliRunner()
 
     with instance_for_test():
-        add_result = runner_pipeline_execute(
+        add_result = runner_pipeline_or_job_execute(
             runner,
             [
                 "-f",
@@ -41,7 +44,7 @@ def test_execute_mode_command():
 
         assert add_result
 
-        mult_result = runner_pipeline_execute(
+        mult_result = runner_pipeline_or_job_execute(
             runner,
             [
                 "-f",
@@ -61,7 +64,7 @@ def test_execute_mode_command():
 
         assert mult_result
 
-        double_adder_result = runner_pipeline_execute(
+        double_adder_result = runner_pipeline_or_job_execute(
             runner,
             [
                 "-f",
@@ -89,11 +92,15 @@ def test_empty_execute_command():
         assert result.exit_code == 2
         assert "Must specify a python file or module name" in result.output
 
+        result = runner.invoke(job_execute_command, [])
+        assert result.exit_code == 2
+        assert "Must specify a python file or module name" in result.output
+
 
 def test_execute_preset_command():
     with instance_for_test():
         runner = CliRunner()
-        add_result = runner_pipeline_execute(
+        add_result = runner_pipeline_or_job_execute(
             runner,
             [
                 "-f",
@@ -130,13 +137,19 @@ def test_execute_preset_command():
         assert bad_res.exit_code == 2
 
 
-@pytest.mark.parametrize("gen_execute_args", pipeline_python_origin_contexts())
+@pytest.mark.parametrize("gen_execute_args", pipeline_or_job_python_origin_contexts())
 def test_execute_command_no_env(gen_execute_args):
     with gen_execute_args as (cli_args, instance):
         execute_execute_command(kwargs=cli_args, instance=instance)
 
 
-@pytest.mark.parametrize("gen_execute_args", pipeline_python_origin_contexts())
+@pytest.mark.parametrize("gen_execute_args", pipeline_or_job_python_origin_contexts(True))
+def test_job_execute_command_no_env(gen_execute_args):
+    with gen_execute_args as (cli_args, instance):
+        execute_execute_command(kwargs=cli_args, instance=instance, using_job_op_graph_apis=True)
+
+
+@pytest.mark.parametrize("gen_execute_args", pipeline_or_job_python_origin_contexts())
 def test_execute_command_env(gen_execute_args):
     with gen_execute_args as (cli_args, instance):
         kwargs = merge_dicts(
@@ -149,15 +162,38 @@ def test_execute_command_env(gen_execute_args):
         )
 
 
+@pytest.mark.parametrize("gen_execute_args", pipeline_or_job_python_origin_contexts(True))
+def test_job_execute_command_env(gen_execute_args):
+    with gen_execute_args as (cli_args, instance):
+        kwargs = merge_dicts(
+            {"config": (file_relative_path(__file__, "default_log_error_env.yaml"),)},
+            cli_args,
+        )
+        execute_execute_command(kwargs=kwargs, instance=instance, using_job_op_graph_apis=True)
+
+
 @pytest.mark.parametrize("cli_args", valid_pipeline_python_origin_target_cli_args())
 def test_execute_command_runner(cli_args):
     runner = CliRunner()
     with instance_for_test():
-        runner_pipeline_execute(runner, cli_args)
+        runner_pipeline_or_job_execute(runner, cli_args)
 
-        runner_pipeline_execute(
+        runner_pipeline_or_job_execute(
             runner,
             ["--config", file_relative_path(__file__, "default_log_error_env.yaml")] + cli_args,
+        )
+
+
+@pytest.mark.parametrize("cli_args", valid_job_python_origin_target_cli_args())
+def test_job_execute_command_runner(cli_args):
+    runner = CliRunner()
+    with instance_for_test():
+        runner_pipeline_or_job_execute(runner, cli_args, True)
+
+        runner_pipeline_or_job_execute(
+            runner,
+            ["--config", file_relative_path(__file__, "default_log_error_env.yaml")] + cli_args,
+            True,
         )
 
 
@@ -182,6 +218,17 @@ def test_output_execute_log_stdout(capfd):
         # All pipeline execute output currently logged to stderr
         assert "HELLO WORLD" in captured.err
 
+        execute_execute_command(
+            kwargs={
+                "python_file": file_relative_path(__file__, "test_cli_commands.py"),
+                "attribute": "my_stdout",
+            },
+            instance=instance,
+        )
+
+        captured = capfd.readouterr()
+        assert "SPEW OP" in captured.err
+
 
 def test_output_execute_log_stderr(capfd):
     with instance_for_test(
@@ -203,17 +250,30 @@ def test_output_execute_log_stderr(capfd):
         captured = capfd.readouterr()
         assert "I AM SUPPOSED TO FAIL" in captured.err
 
+        with pytest.raises(click.ClickException, match=re.escape("resulted in failure")):
+            execute_execute_command(
+                kwargs={
+                    "python_file": file_relative_path(__file__, "test_cli_commands.py"),
+                    "attribute": "my_stderr",
+                },
+                instance=instance,
+            )
+        captured = capfd.readouterr()
+        assert "FAILURE OP" in captured.err
 
-def test_more_than_one_pipeline():
+
+def test_more_than_one_pipeline_or_job():
     with instance_for_test() as instance:
         with pytest.raises(
             UsageError,
-            match=re.escape("Must provide --pipeline as there is more than one pipeline in bar. "),
+            match=re.escape(
+                "Must provide --pipeline as there is more than one pipeline/job in bar. "
+            ),
         ):
             execute_execute_command(
                 kwargs={
                     "repository_yaml": None,
-                    "pipeline": None,
+                    "pipeline_or_job": None,
                     "python_file": file_relative_path(__file__, "test_cli_commands.py"),
                     "module_name": None,
                     "attribute": None,
@@ -221,23 +281,39 @@ def test_more_than_one_pipeline():
                 instance=instance,
             )
 
+        with pytest.raises(
+            UsageError,
+            match=re.escape("Must provide --job as there is more than one pipeline/job in bar. "),
+        ):
+            execute_execute_command(
+                kwargs={
+                    "repository_yaml": None,
+                    "pipeline_or_job": None,
+                    "python_file": file_relative_path(__file__, "test_cli_commands.py"),
+                    "module_name": None,
+                    "attribute": None,
+                },
+                instance=instance,
+                using_job_op_graph_apis=True,
+            )
+
 
 def invalid_pipeline_python_origin_target_args():
     return [
         {
-            "pipeline": "foo",
+            "pipeline_or_job": "foo",
             "python_file": file_relative_path(__file__, "test_cli_commands.py"),
             "module_name": "dagster_tests.cli_tests.command_tests.test_cli_commands",
             "attribute": "bar",
         },
         {
-            "pipeline": "foo",
+            "pipeline_or_job": "foo",
             "python_file": file_relative_path(__file__, "test_cli_commands.py"),
             "module_name": "dagster_tests.cli_tests.command_tests.test_cli_commands",
             "attribute": None,
         },
         {
-            "pipeline": "foo",
+            "pipeline_or_job": "foo",
             "python_file": None,
             "working_directory": os.path.dirname(__file__),
             "module_name": "dagster_tests.cli_tests.command_tests.test_cli_commands",
@@ -276,7 +352,7 @@ def test_attribute_not_found():
             execute_execute_command(
                 kwargs={
                     "repository_yaml": None,
-                    "pipeline": None,
+                    "pipeline_or_job": None,
                     "python_file": file_relative_path(__file__, "test_cli_commands.py"),
                     "module_name": None,
                     "attribute": "nope",
@@ -297,7 +373,7 @@ def test_attribute_is_wrong_thing():
             execute_execute_command(
                 kwargs={
                     "repository_yaml": None,
-                    "pipeline": None,
+                    "pipeline_or_job": None,
                     "python_file": file_relative_path(__file__, "test_cli_commands.py"),
                     "module_name": None,
                     "attribute": "not_a_repo_or_pipeline",
@@ -318,7 +394,7 @@ def test_attribute_fn_returns_wrong_thing():
             execute_execute_command(
                 kwargs={
                     "repository_yaml": None,
-                    "pipeline": None,
+                    "pipeline_or_job": None,
                     "python_file": file_relative_path(__file__, "test_cli_commands.py"),
                     "module_name": None,
                     "attribute": "not_a_repo_or_pipeline_fn",
@@ -327,31 +403,26 @@ def test_attribute_fn_returns_wrong_thing():
             )
 
 
-def runner_pipeline_execute(runner, cli_args):
-    result = runner.invoke(pipeline_execute_command, cli_args)
-    if result.exit_code != 0:
-        # CliRunner captures stdout so printing it out here
-        raise Exception(
-            (
-                "dagster pipeline execute commands with cli_args {cli_args} "
-                'returned exit_code {exit_code} with stdout:\n"{stdout}" and '
-                '\nresult as string: "{result}"'
-            ).format(
-                cli_args=cli_args, exit_code=result.exit_code, stdout=result.stdout, result=result
-            )
-        )
-    return result
-
-
 def test_default_memory_run_storage():
     with instance_for_test() as instance:
         cli_args = {
             "python_file": file_relative_path(__file__, "test_cli_commands.py"),
-            "atribute": "bar",
-            "pipeline": "foo",
+            "attribute": "bar",
+            "pipeline_or_job": "foo",
             "module_name": None,
         }
         result = execute_execute_command(kwargs=cli_args, instance=instance)
+        assert result.success
+
+        cli_args = {
+            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
+            "attribute": "bar",
+            "pipeline_or_job": "qux",
+            "module_name": None,
+        }
+        result = execute_execute_command(
+            kwargs=cli_args, instance=instance, using_job_op_graph_apis=True
+        )
         assert result.success
 
 
@@ -359,8 +430,8 @@ def test_override_with_in_memory_storage():
     with instance_for_test() as instance:
         cli_args = {
             "python_file": file_relative_path(__file__, "test_cli_commands.py"),
-            "atribute": "bar",
-            "pipeline": "foo",
+            "attribute": "bar",
+            "pipeline_or_job": "foo",
             "module_name": None,
             "config": (file_relative_path(__file__, "in_memory_env.yaml"),),
         }
@@ -370,13 +441,27 @@ def test_override_with_in_memory_storage():
         )
         assert result.success
 
+        cli_args = {
+            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
+            "attribute": "bar",
+            "pipeline_or_job": "qux",
+            "module_name": None,
+            "config": (file_relative_path(__file__, "in_memory_env.yaml"),),
+        }
+        result = execute_execute_command(
+            kwargs=cli_args,
+            instance=instance,
+            using_job_op_graph_apis=True,
+        )
+        assert result.success
+
 
 def test_override_with_filesystem_storage():
     with instance_for_test() as instance:
         cli_args = {
             "python_file": file_relative_path(__file__, "test_cli_commands.py"),
-            "atribute": "bar",
-            "pipeline": "foo",
+            "attribute": "bar",
+            "pipeline_or_job": "foo",
             "module_name": None,
             "config": (file_relative_path(__file__, "filesystem_env.yaml"),),
         }
@@ -386,11 +471,24 @@ def test_override_with_filesystem_storage():
         )
         assert result.success
 
+        cli_args = {
+            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
+            "attribute": "bar",
+            "pipeline_or_job": "qux",
+            "module_name": None,
+        }
+        result = execute_execute_command(
+            kwargs=cli_args,
+            instance=instance,
+            using_job_op_graph_apis=True,
+        )
+        assert result.success
+
 
 def test_multiproc():
     with instance_for_test():
         runner = CliRunner()
-        add_result = runner_pipeline_execute(
+        add_result = runner_pipeline_or_job_execute(
             runner,
             [
                 "-f",
@@ -402,6 +500,20 @@ def test_multiproc():
                 "-p",
                 "multi_mode_with_resources",  # pipeline name
             ],
+        )
+        assert add_result.exit_code == 0
+
+        assert "PIPELINE_SUCCESS" in add_result.output
+
+        add_result = runner_pipeline_or_job_execute(
+            runner,
+            [
+                "-f",
+                file_relative_path(__file__, "test_cli_commands.py"),
+                "-a",
+                "multiproc",
+            ],
+            True,
         )
         assert add_result.exit_code == 0
 
@@ -429,7 +541,7 @@ def test_multiproc_invalid():
     assert "DagsterUnmetExecutorRequirementsError" in add_result.output
 
 
-def test_tags_pipeline():
+def test_tags_pipeline_or_job():
     runner = CliRunner()
     with instance_for_test() as instance:
         result = runner.invoke(
@@ -443,6 +555,27 @@ def test_tags_pipeline():
                 '{ "foo": "bar" }',
                 "-p",
                 "foo",
+            ],
+        )
+        assert result.exit_code == 0
+        runs = instance.get_runs()
+        assert len(runs) == 1
+        run = runs[0]
+        assert len(run.tags) == 1
+        assert run.tags.get("foo") == "bar"
+
+    with instance_for_test() as instance:
+        result = runner.invoke(
+            job_execute_command,
+            [
+                "-m",
+                "dagster_tests.cli_tests.command_tests.test_cli_commands",
+                "-a",
+                "bar",
+                "--tags",
+                '{ "foo": "bar" }',
+                "-j",
+                "qux",
             ],
         )
         assert result.exit_code == 0
@@ -572,6 +705,21 @@ def test_empty_working_directory():
                     file_relative_path(__file__, "file_with_local_import.py"),
                     "-a",
                     "foo_pipeline",
+                ],
+            )
+            assert result.exit_code == 0
+            runs = instance.get_runs()
+            assert len(runs) == 1
+
+    with instance_for_test() as instance:
+        with new_cwd(os.path.dirname(__file__)):
+            result = runner.invoke(
+                job_execute_command,
+                [
+                    "-f",
+                    file_relative_path(__file__, "file_with_local_import.py"),
+                    "-a",
+                    "qux_job",
                 ],
             )
             assert result.exit_code == 0

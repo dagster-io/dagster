@@ -38,6 +38,7 @@ def run_launch_cli(execution_args, instance, expected_count=None):
 @pytest.mark.parametrize("gen_pipeline_args", launch_command_contexts())
 def test_launch_pipeline(gen_pipeline_args):
     with gen_pipeline_args as (cli_args, instance):
+        print(cli_args)
         run_launch(cli_args, instance, expected_count=1)
 
 

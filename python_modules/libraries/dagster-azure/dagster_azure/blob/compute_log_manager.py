@@ -17,7 +17,7 @@ from .utils import create_blob_client, generate_blob_sas
 
 
 class AzureBlobComputeLogManager(ComputeLogManager, ConfigurableClass):
-    """Logs solid compute function stdout and stderr to Azure Blob Storage.
+    """Logs op compute function stdout and stderr to Azure Blob Storage.
 
     This is also compatible with Azure Data Lake Storage.
 

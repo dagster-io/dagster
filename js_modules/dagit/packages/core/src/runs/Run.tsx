@@ -352,5 +352,4 @@ const LogsContainer = styled.div`
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: #f1f6f9;
 `;

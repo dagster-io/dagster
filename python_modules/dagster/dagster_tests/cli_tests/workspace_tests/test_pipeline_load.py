@@ -2,7 +2,7 @@ import click
 import pytest
 from click.testing import CliRunner
 from dagster.cli.workspace.cli_target import (
-    get_external_pipeline_from_kwargs,
+    get_external_pipeline_or_job_from_kwargs,
     pipeline_target_argument,
 )
 from dagster.core.host_representation import ExternalPipeline
@@ -17,7 +17,7 @@ def load_pipeline_via_cli_runner(cli_args):
     @click.command(name="test_pipeline_command")
     @pipeline_target_argument
     def command(**kwargs):
-        with get_external_pipeline_from_kwargs(
+        with get_external_pipeline_or_job_from_kwargs(
             DagsterInstance.get(), "", kwargs
         ) as external_pipeline:
             capture_result["external_pipeline"] = external_pipeline
@@ -102,6 +102,6 @@ def test_must_provide_name_to_multi_pipeline():
 
     assert result.exit_code == 2
     assert (
-        """Must provide --pipeline as there is more than one pipeline in """
+        """Must provide --pipeline as there is more than one pipeline/job in """
         """multi_pipeline. Options are: ['pipeline_one', 'pipeline_two']."""
     ) in result.stdout

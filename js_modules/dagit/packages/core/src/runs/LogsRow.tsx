@@ -273,7 +273,7 @@ const UnstructuredMemoizedContent: React.FC<{
   >
     <SolidColumn stepKey={node.stepKey} />
     <EventTypeColumn>{node.level}</EventTypeColumn>
-    <Box padding={{left: 4}} style={{flex: 1}}>
+    <Box padding={{horizontal: 12}} style={{flex: 1}}>
       {node.message}
     </Box>
     <TimestampColumn time={node.timestamp} />

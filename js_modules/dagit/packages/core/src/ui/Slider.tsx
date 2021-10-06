@@ -24,7 +24,7 @@ export const MultiSlider: React.FC<MultiSliderProps & {fillColor?: string}> & {
 
 MultiSlider.Handle = BlueprintMultiSlider.Handle;
 
-const StylesShared = css<{$fillColor: string}>`
+export const SliderStyles = css<{$fillColor: string}>`
   .bp3-slider-track {
     height: 8px;
     .bp3-slider-progress {
@@ -61,8 +61,8 @@ const StylesShared = css<{$fillColor: string}>`
 `;
 
 const StyledMultiSlider = styled(BlueprintMultiSlider)<{$fillColor: string}>`
-  ${StylesShared}
+  ${SliderStyles}
 `;
 const StyledSlider = styled(BlueprintSlider)<{$fillColor: string}>`
-  ${StylesShared}
+  ${SliderStyles}
 `;

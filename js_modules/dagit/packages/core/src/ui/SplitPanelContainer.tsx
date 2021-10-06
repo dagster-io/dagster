@@ -6,7 +6,7 @@ import {ButtonGroup} from './ButtonGroup';
 import {ColorsWIP} from './Colors';
 import {IconWIP} from './Icon';
 
-const DIVIDER_THICKNESS = 4;
+const DIVIDER_THICKNESS = 2;
 
 interface SplitPanelContainerProps {
   axis?: 'horizontal' | 'vertical';
@@ -192,22 +192,23 @@ export const SecondPanelToggle = ({container, axis}: PanelToggleProps) => {
   );
 };
 
+// Note: -1px margins here let the divider cover the last 1px of the previous box, hiding
+// any scrollbar border it might have.
+
 const DividerWrapper = {
   horizontal: styled.div<{resizing: boolean}>`
     width: ${DIVIDER_THICKNESS}px;
     z-index: 1;
-    background: ${ColorsWIP.White};
-    border-left: 1px solid ${(p) => (p.resizing ? ColorsWIP.Gray200 : ColorsWIP.Gray100)};
-    border-right: 1px solid ${(p) => (p.resizing ? ColorsWIP.Gray400 : ColorsWIP.Gray200)};
+    background: ${(p) => (p.resizing ? ColorsWIP.Gray400 : ColorsWIP.KeylineGray)};
+    margin-left: -1px;
     overflow: visible;
     position: relative;
   `,
   vertical: styled.div<{resizing: boolean}>`
     height: ${DIVIDER_THICKNESS}px;
     z-index: 1;
-    background: ${ColorsWIP.White};
-    border-top: 1px solid ${(p) => (p.resizing ? ColorsWIP.Gray200 : ColorsWIP.Gray100)};
-    border-bottom: 1px solid ${(p) => (p.resizing ? ColorsWIP.Gray400 : ColorsWIP.Gray200)};
+    background: ${(p) => (p.resizing ? ColorsWIP.Gray400 : ColorsWIP.KeylineGray)};
+    margin-top: -1px;
     overflow: visible;
     position: relative;
   `,
