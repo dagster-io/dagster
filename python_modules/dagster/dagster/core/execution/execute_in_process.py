@@ -4,7 +4,10 @@ from dagster.core.definitions import NodeDefinition, PipelineDefinition
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.instance import DagsterInstance
-from dagster.core.selector.subset_selector import parse_step_selection
+from dagster.core.selector.subset_selector import (
+    UnresolvedOpSelection,
+    resolve_op_selection_to_step_keys_to_execute,
+)
 
 from .api import (
     ExecuteRunWithPlanIterable,
@@ -26,7 +29,7 @@ def core_execute_in_process(
     instance: Optional[DagsterInstance],
     output_capturing_enabled: bool,
     raise_on_error: bool,
-    op_selection: Optional[List[str]] = None,  # TODO: not nullable
+    unresolved_op_selection: Optional[UnresolvedOpSelection] = None,  # TODO: not nullable
 ):
     pipeline_def = ephemeral_pipeline
     mode_def = pipeline_def.get_mode_definition()
@@ -37,15 +40,39 @@ def core_execute_in_process(
         run_config=run_config,
         mode=mode_def.name,
     )
-    if op_selection and op_selection != ["*"]:
-        step_keys_to_execute = parse_step_selection(
-            full_execution_plan.get_all_step_deps(), op_selection
-        )
+
+    if unresolved_op_selection:
+        step_keys_to_execute = None
+
+        # something if wrong here
+        scoped_execution_plan = None
+        if unresolved_op_selection.selection_scope:
+            step_keys_to_execute = resolve_op_selection_to_step_keys_to_execute(
+                full_execution_plan, unresolved_op_selection.selection_scope
+            )
+        if unresolved_op_selection.selection:
+            # this is a laziest/easies way but not ideal - it generates execution plan twice
+            # in order to resolve two layers of selection
+            scoped_execution_plan = (
+                create_execution_plan(
+                    pipeline,
+                    run_config=run_config,
+                    mode=mode_def.name,
+                    step_keys_to_execute=step_keys_to_execute,
+                )
+                if step_keys_to_execute  # if the selection scope has been defined on job def
+                else None
+            )
+            step_keys_to_execute = resolve_op_selection_to_step_keys_to_execute(
+                execution_plan=scoped_execution_plan or full_execution_plan,
+                step_selection=unresolved_op_selection.selection,
+            )
+
         final_execution_plan = create_execution_plan(
             pipeline,
             run_config=run_config,
             mode=mode_def.name,
-            step_keys_to_execute=list(step_keys_to_execute),
+            step_keys_to_execute=list(step_keys_to_execute) if step_keys_to_execute else None,
         )
     else:
         final_execution_plan = full_execution_plan

@@ -1,12 +1,34 @@
 import re
 import sys
 from collections import defaultdict
+from typing import List, NamedTuple, Optional, TYPE_CHECKING
 
 from dagster.core.definitions.dependency import DependencyStructure
 from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
 from dagster.utils import check
 
 MAX_NUM = sys.maxsize
+
+
+if TYPE_CHECKING:
+    from dagster.core.execution.plan.plan import ExecutionPlan
+
+
+class UnresolvedOpSelection(
+    NamedTuple(
+        "_UnresolvedOpSelection",
+        [
+            ("selection_scope", Optional[List[str]]),
+            ("selection", Optional[List[str]]),
+        ],
+    )
+):
+    def __new__(cls, selection_scope=None, selection=None):
+        return super(UnresolvedOpSelection, cls).__new__(
+            cls,
+            selection_scope=check.opt_list_param(selection_scope, "selection_scope", str),
+            selection=check.opt_list_param(selection, "selection", str),
+        )
 
 
 def generate_dep_graph(pipeline_def):
@@ -220,7 +242,6 @@ def parse_step_selection(step_deps, step_selection):
             subset selected.
     """
     check.list_param(step_selection, "step_selection", of_type=str)
-
     # reverse step_deps to get the downstream_deps
     # make sure we have all items as keys, including the ones without downstream dependencies
     downstream_deps = defaultdict(set, {k: set() for k in step_deps.keys()})
@@ -252,3 +273,20 @@ def parse_step_selection(step_deps, step_selection):
         steps_set.update(subset)
 
     return frozenset(steps_set)
+
+
+def resolve_op_selection_to_step_keys_to_execute(
+    execution_plan: "ExecutionPlan", step_selection: List[str]
+) -> List[str]:
+
+    from dagster.core.execution.plan.plan import ExecutionPlan
+
+    check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
+    check.list_param(step_selection, "step_selection", of_type=str)
+
+    # special case: select all
+    if len(step_selection) == 1 and step_selection[0] == "*":
+        return execution_plan.step_keys_to_execute
+
+    steps_set = parse_step_selection(execution_plan.get_all_step_deps(), step_selection)
+    return list(steps_set) if steps_set else []

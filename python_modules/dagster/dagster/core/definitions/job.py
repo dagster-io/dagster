@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, AbstractSet, Any, Dict, List, Optional
 
 from dagster import check
 from dagster.core.definitions.policy import RetryPolicy
+from dagster.core.selector.subset_selector import UnresolvedOpSelection
 
 from .graph import GraphDefinition
 from .hook import HookDefinition
@@ -34,7 +35,9 @@ class JobDefinition(PipelineDefinition):
     ):
 
         self._cached_partition_set: Optional["PartitionSetDefinition"] = None
-        self._op_selection = check.opt_list_param(op_selection, "op_selection", str)
+        self._unresolved_op_selection = UnresolvedOpSelection(
+            selection=check.opt_list_param(op_selection, "op_selection", str),
+        )
 
         super(JobDefinition, self).__init__(
             name=name,
@@ -60,6 +63,7 @@ class JobDefinition(PipelineDefinition):
         run_config: Optional[Dict[str, Any]] = None,
         instance: Optional["DagsterInstance"] = None,
         raise_on_error: bool = True,
+        op_selection: Optional[List[str]] = None,
     ) -> "ExecuteInProcessResult":
         """
         (Experimental) Execute the Job in-process, gathering results in-memory.
@@ -75,7 +79,14 @@ class JobDefinition(PipelineDefinition):
                 The instance to execute against, an ephemeral one will be used if none provided.
             raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
                 Defaults to ``True``.
-
+            op_selection (Optional[List[str]]): A list of op selection queries (including single op
+                names) to execute. For example:
+                * ``['some_op']``: selects ``some_op`` itself.
+                * ``['*some_op']``: select ``some_op`` and all its ancestors (upstream dependencies).
+                * ``['*some_op+++']``: select ``some_op``, all its ancestors, and its descendants
+                (downstream dependencies) within 3 levels down.
+                * ``['*some_op', 'other_op_a', 'other_op_b+']``: select ``some_op`` and all its
+                ancestors, ``other_op_a`` itself, and ``other_op_b`` and its direct child ops.
         Returns:
             ExecuteInProcessResult
 
@@ -84,6 +95,11 @@ class JobDefinition(PipelineDefinition):
         from dagster.core.execution.execute_in_process import core_execute_in_process
 
         run_config = check.opt_dict_param(run_config, "run_config")
+        unresolved_op_selection = UnresolvedOpSelection(
+            selection_scope=self._unresolved_op_selection.selection,
+            selection=check.opt_list_param(op_selection, "op_selection", str),
+        )
+
         check.invariant(
             len(self._mode_definitions) == 1,
             "execute_in_process only supported on job / single mode pipeline",
@@ -108,7 +124,8 @@ class JobDefinition(PipelineDefinition):
             hook_defs=self.hook_defs,
             tags=self.tags,
             version_strategy=self.version_strategy,
-            op_selection=self._op_selection,
+            # ??? this is not accurate but i dont have to provide the new value bc it's just ephemeral?
+            # unresolved_op_selection=unresolved_op_selection,
         )
 
         return core_execute_in_process(
@@ -118,7 +135,7 @@ class JobDefinition(PipelineDefinition):
             instance=instance,
             output_capturing_enabled=True,
             raise_on_error=raise_on_error,
-            op_selection=self._op_selection,
+            unresolved_op_selection=unresolved_op_selection,
         )
 
     def get_pipeline_subset_def(self, solids_to_execute: AbstractSet[str]) -> PipelineDefinition:
