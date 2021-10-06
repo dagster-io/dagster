@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {InputGroup as BlueprintInputGroup, Menu, MenuItem} from '@blueprintjs/core';
+import {Menu, MenuItem} from '@blueprintjs/core';
 import {uniqBy} from 'lodash';
 import * as React from 'react';
 import {Link, useHistory} from 'react-router-dom';
@@ -25,6 +25,7 @@ import {NonIdealState} from '../ui/NonIdealState';
 import {Popover} from '../ui/Popover';
 import {Table} from '../ui/Table';
 import {Tag} from '../ui/Tag';
+import {TextInput} from '../ui/TextInput';
 import {Tooltip} from '../ui/Tooltip';
 import {assetKeyToString} from '../workspace/asset-graph/Utils';
 
@@ -286,13 +287,11 @@ const AssetSearch: React.FC<{assets: Asset[]}> = ({assets}) => {
           </MenuWIP>
         }
       >
-        <InputGroup
-          type="text"
+        <TextInput
           value={q}
-          width={600}
-          fill={false}
-          placeholder={`Search all asset_keys...`}
-          onChange={(e: React.ChangeEvent<any>) => setQ(e.target.value)}
+          style={{width: '600px'}}
+          placeholder="Search all asset keys…"
+          onChange={(e) => setQ(e.target.value)}
           onFocus={() => setOpen(true)}
           onBlur={() => setOpen(false)}
           onKeyDown={onKeyDown}
@@ -677,7 +676,6 @@ const Wrapper = styled.div`
   width: 100%;
   height: 100%;
   min-width: 0;
-  overflow: auto;
   position: relative;
   z-index: 0;
   table th {
@@ -722,11 +720,11 @@ const ASSETS_TABLE_MATERIALIZATIONS_QUERY = gql`
   ${PYTHON_ERROR_FRAGMENT}
 `;
 
-const InputGroup = styled(BlueprintInputGroup)`
-  input,
-  input:focus {
-    outline: none;
-    box-shadow: none;
-    border: 1px solid #ececec;
-  }
-`;
+// const InputGroup = styled(BlueprintInputGroup)`
+//   input,
+//   input:focus {
+//     outline: none;
+//     box-shadow: none;
+//     border: 1px solid #ececec;
+//   }
+// `;

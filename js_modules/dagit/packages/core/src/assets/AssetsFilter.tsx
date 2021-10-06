@@ -1,4 +1,3 @@
-import {InputGroup as BlueprintInputGroup} from '@blueprintjs/core';
 import Fuse from 'fuse.js';
 import memoize from 'lodash/memoize';
 import * as React from 'react';
@@ -6,6 +5,7 @@ import styled from 'styled-components/macro';
 
 import {ColorsWIP} from '../ui/Colors';
 import {Popover} from '../ui/Popover';
+import {TextInput} from '../ui/TextInput';
 import {useSuggestionsForString} from '../ui/useSuggestionsForString';
 
 import {Asset} from './AssetsCatalogTable';
@@ -189,13 +189,10 @@ export const AssetsFilter = ({
         </Menu>
       }
     >
-      <InputGroup
-        type="text"
+      <TextInput
         value={query}
-        width={300}
-        fill={false}
-        placeholder={`Filter asset_keys...`}
-        hasSuggestions={isOpen}
+        style={{width: '300px'}}
+        placeholder="Filter asset keys…"
         onChange={onChange}
         onKeyDown={onKeyDown}
         onBlur={() => setShown(false)}
@@ -204,22 +201,6 @@ export const AssetsFilter = ({
     </Popover>
   );
 };
-
-const InputGroup = styled(({hasSuggestions, ...props}) => <BlueprintInputGroup {...props} />)`
-  input,
-  input:focus {
-    outline: none;
-    box-shadow: none;
-    border: 1px solid ${ColorsWIP.Gray200};
-    margin-left: 0px;
-    min-width: 600px;
-  }
-
-  input:focus {
-    border-bottom-left-radius: ${({hasSuggestions}) => (hasSuggestions ? 0 : 3)};
-    border-bottom-right-radius: ${({hasSuggestions}) => (hasSuggestions ? 0 : 3)};
-  }
-`;
 
 const Menu = styled.ul`
   list-style: none;

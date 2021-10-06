@@ -1,5 +1,4 @@
 import {gql, useLazyQuery, useMutation, useQuery} from '@apollo/client';
-import {Intent, InputGroup} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -26,6 +25,7 @@ import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
 import {NonIdealState} from '../ui/NonIdealState';
 import {Spinner} from '../ui/Spinner';
+import {TextInput} from '../ui/TextInput';
 import {Tooltip} from '../ui/Tooltip';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -249,7 +249,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
           <FilteredRunsLink href="/instance/backfills">{backfillId}</FilteredRunsLink>
         </div>
       ),
-      intent: Intent.SUCCESS,
+      intent: 'success',
     });
     onLaunch?.(backfillId, query);
   };
@@ -298,7 +298,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
     SharedToaster.show({
       message,
       icon: 'error',
-      intent: Intent.DANGER,
+      intent: 'danger',
     });
   };
 
@@ -402,54 +402,53 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
   return (
     <>
       <DialogBody>
-        <Box flex={{direction: 'row', alignItems: 'center', gap: 12}} margin={{bottom: 4}}>
-          <strong style={{display: 'block'}}>Partitions</strong>
-          <Checkbox
-            label="Select all"
-            disabled={!selectablePartitions.length}
-            style={{marginBottom: 0, marginLeft: 10}}
-            checked={selected.length === selectablePartitions.length}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              if (!e.target.checked) {
-                setSelected([]);
-              } else {
-                setSelected(
-                  selected.length === selectablePartitions.length ? [] : selectablePartitions,
-                );
+        <Box flex={{direction: 'column', gap: 8}}>
+          <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
+            <strong style={{display: 'block'}}>Partitions</strong>
+            <Checkbox
+              label="Select all"
+              disabled={!selectablePartitions.length}
+              style={{marginBottom: 0, marginLeft: 10}}
+              checked={selected.length === selectablePartitions.length}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                if (!e.target.checked) {
+                  setSelected([]);
+                } else {
+                  setSelected(
+                    selected.length === selectablePartitions.length ? [] : selectablePartitions,
+                  );
+                }
+              }}
+            />
+          </Box>
+          <TextInput
+            placeholder={placeholderForPartitions(partitionNames)}
+            defaultValue={selectedString}
+            style={{display: 'flex', width: '100%'}}
+            onBlur={(e) => {
+              try {
+                setSelected(textToPartitions(e.target.value, partitionNames));
+              } catch (err: any) {
+                e.preventDefault();
+                showCustomAlert({body: err.message});
               }
             }}
           />
         </Box>
-        <InputGroup
-          small
-          fill
-          placeholder={placeholderForPartitions(partitionNames)}
-          key={selectedString}
-          defaultValue={selectedString}
-          onBlur={(e) => {
-            try {
-              setSelected(textToPartitions(e.target.value, partitionNames));
-            } catch (err: any) {
-              e.preventDefault();
-              showCustomAlert({body: err.message});
-            }
-          }}
-        />
-        <div style={{display: 'flex', marginTop: 10}}>
-          <div>
-            <strong style={{display: 'block', marginBottom: 4}}>Step Subset</strong>
+        <Box flex={{direction: 'row', gap: 12}} margin={{top: 12}}>
+          <Box flex={{direction: 'column', gap: 8}}>
+            <strong>Step subset</strong>
             <GraphQueryInput
-              small
               disabled={options.fromFailure}
-              width={260}
+              width={360}
               items={solids}
               value={query}
-              placeholder="Type a Step Subset"
+              placeholder="Type a step subset"
               onChange={setQuery}
             />
-          </div>
-          <div style={{marginLeft: 20}}>
-            <strong style={{display: 'block', marginBottom: 6}}>Options</strong>
+          </Box>
+          <Box flex={{direction: 'column', gap: 12}}>
+            <strong>Options</strong>
             <div style={{display: 'flex'}}>
               <Checkbox
                 checked={options.fromFailure}
@@ -468,7 +467,10 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
                 label={
                   <Box flex={{display: 'inline-flex', alignItems: 'center'}}>
                     <Box margin={{right: 4}}>Re-execute from failures</Box>
-                    <Tooltip content="For each partition, if the most recent run failed, launch a re-execution starting from the steps that failed.">
+                    <Tooltip
+                      placement="top"
+                      content="For each partition, if the most recent run failed, launch a re-execution starting from the steps that failed."
+                    >
                       <IconWIP name="info" color={ColorsWIP.Gray500} />
                     </Tooltip>
                   </Box>
@@ -480,8 +482,8 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
                 </div>
               ) : null}
             </div>
-          </div>
-        </div>
+          </Box>
+        </Box>
         <div
           style={{
             display: 'flex',

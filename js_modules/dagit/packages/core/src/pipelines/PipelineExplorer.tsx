@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Breadcrumbs, InputGroup} from '@blueprintjs/core';
+import {Breadcrumbs} from '@blueprintjs/core';
 import Color from 'color';
 import * as querystring from 'query-string';
 import * as React from 'react';
@@ -17,6 +17,7 @@ import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {IconWIP} from '../ui/Icon';
 import {NonIdealState} from '../ui/NonIdealState';
 import {SplitPanelContainer} from '../ui/SplitPanelContainer';
+import {TextInput} from '../ui/TextInput';
 import {RepoAddress} from '../workspace/types';
 
 import {SolidJumpBar} from './PipelineJumpComponents';
@@ -184,13 +185,12 @@ export const PipelineExplorer: React.FC<PipelineExplorerProps> = (props) => {
           )}
 
           <SearchOverlay style={{background: backgroundTranslucent}}>
-            <SolidHighlightInput
-              type="text"
+            <TextInput
               name="highlighted"
-              leftIcon="search"
+              icon="search"
               value={highlighted}
-              placeholder="Highlight..."
-              onChange={(e: React.ChangeEvent<any>) => setHighlighted(e.target.value)}
+              placeholder="Highlight…"
+              onChange={(e) => setHighlighted(e.target.value)}
             />
           </SearchOverlay>
           {explodeCompositesEnabled && (
@@ -310,12 +310,6 @@ const PathOverlay = styled.div`
   align-items: center;
   position: absolute;
   left: 0;
-`;
-
-const SolidHighlightInput = styled(InputGroup)`
-  margin-left: 7px;
-  font-size: 14px;
-  width: 220px;
 `;
 
 const LargeDAGNotice = () => (
