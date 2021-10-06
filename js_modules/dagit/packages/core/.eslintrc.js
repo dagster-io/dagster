@@ -58,6 +58,7 @@ module.exports = {
               'Colors',
               'Dialog',
               'Icon',
+              'InputGroup',
               'NonIdealState',
               'Popover',
               'Select',

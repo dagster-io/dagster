@@ -300,7 +300,6 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
           <GridColumn disabled style={{flex: 1, flexShrink: 1, overflow: 'hidden'}}>
             <TopLabel>
               <GraphQueryInput
-                small
                 width={260}
                 items={solidHandles.map((h) => h.solid)}
                 value={props.stepQuery}

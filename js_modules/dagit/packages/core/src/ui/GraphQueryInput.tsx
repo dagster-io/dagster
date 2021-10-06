@@ -1,8 +1,7 @@
-import {InputGroup, Intent} from '@blueprintjs/core';
+import {Intent} from '@blueprintjs/core';
 import isEqual from 'lodash/isEqual';
 import uniq from 'lodash/uniq';
 import * as React from 'react';
-import styled from 'styled-components/macro';
 
 import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {dynamicKeyWithoutIndex, isDynamicStep} from '../gantt/DynamicStepSupport';
@@ -13,6 +12,7 @@ import {ColorsWIP} from './Colors';
 import {IconWIP} from './Icon';
 import {MenuItemWIP, MenuWIP} from './Menu';
 import {Popover} from './Popover';
+import {TextInput} from './TextInput';
 
 interface GraphQueryInputProps {
   intent?: Intent;
@@ -22,7 +22,6 @@ interface GraphQueryInputProps {
   autoFocus?: boolean;
   presets?: {name: string; value: string}[];
   width?: string | number;
-  small?: boolean;
   className?: string;
   disabled?: boolean;
 
@@ -71,6 +70,21 @@ const placeholderTextForItems = (base: string, items: GraphQueryItem[]) => {
     placeholder = `${placeholder} (ex: ++${example!.name})`;
   }
   return placeholder;
+};
+
+const intentToStrokeColor = (intent: Intent | undefined) => {
+  switch (intent) {
+    case 'danger':
+      return ColorsWIP.Red500;
+    case 'success':
+      return ColorsWIP.Green500;
+    case 'warning':
+      return ColorsWIP.Yellow500;
+    case 'none':
+    case 'primary':
+    default:
+      return ColorsWIP.Gray300;
+  }
 };
 
 export const GraphQueryInput = React.memo(
@@ -193,14 +207,12 @@ export const GraphQueryInput = React.memo(
             )
           }
         >
-          <GraphQueryInputField
-            small={props.small}
+          <TextInput
             disabled={props.disabled}
-            intent={props.intent}
             title="graph-query-input"
-            type="text"
             value={pendingValue}
-            leftIcon={'send-to-graph'}
+            icon="op_selector"
+            strokeColor={intentToStrokeColor(props.intent)}
             autoFocus={props.autoFocus}
             placeholder={placeholderTextForItems(props.placeholder, props.items)}
             onChange={(e: React.ChangeEvent<any>) => setPendingValue(e.target.value)}
@@ -262,14 +274,14 @@ export const GraphQueryInput = React.memo(
     isEqual(prevProps.presets, nextProps.presets),
 );
 
-const GraphQueryInputField = styled(InputGroup)`
-  font-size: 14px;
-  & > input {
-    transition: width 100ms ease-in-out;
-  }
+// const GraphQueryInputField = styled(InputGroup)`
+//   font-size: 14px;
+//   & > input {
+//     transition: width 100ms ease-in-out;
+//   }
 
-  &.has-step {
-    box-shadow: 0 0 0 2px ${ColorsWIP.Yellow500};
-    border-radius: 3px;
-  }
-`;
+//   &.has-step {
+//     box-shadow: 0 0 0 2px ${ColorsWIP.Yellow500};
+//     border-radius: 3px;
+//   }
+// `;

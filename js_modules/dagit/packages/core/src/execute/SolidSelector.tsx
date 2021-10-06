@@ -1,5 +1,4 @@
 import {gql, useQuery} from '@apollo/client';
-import {Intent} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -181,7 +180,7 @@ export const SolidSelector = (props: ISolidSelectorProps) => {
         <ShortcutHandler shortcutLabel="⌥S" shortcutFilter={(e) => e.keyCode === 83 && e.altKey}>
           <GraphQueryInput
             width={(pending !== '*' && pending !== '') || focused ? 350 : 90}
-            intent={errorMessage ? Intent.DANGER : Intent.NONE}
+            intent={errorMessage ? 'danger' : 'none'}
             items={
               data?.pipelineOrError.__typename === 'Pipeline' ? data?.pipelineOrError.solids : []
             }
