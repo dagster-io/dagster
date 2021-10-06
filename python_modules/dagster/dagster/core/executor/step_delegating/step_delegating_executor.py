@@ -86,11 +86,10 @@ class StepDelegatingExecutor(Executor):
         )
 
         with execution_plan.start(retry_mode=self.retries) as active_execution:
-            stopping = False
             running_steps: Dict[str, ExecutionStep] = {}
 
             last_check_step_health_time = pendulum.now("UTC")
-            while not active_execution.is_complete and not stopping:
+            while not active_execution.is_complete:
                 events = []
 
                 if active_execution.check_for_interrupts():
@@ -99,7 +98,6 @@ class StepDelegatingExecutor(Executor):
                         "Executor received termination signal, forwarding to steps",
                         EngineEventData.interrupted(list(running_steps.keys())),
                     )
-                    stopping = True
                     active_execution.mark_interrupted()
                     for _, step in running_steps.items():
                         events.extend(
@@ -114,6 +112,8 @@ class StepDelegatingExecutor(Executor):
                             )
                         )
 
+                    return
+
                 events.extend(
                     self._pop_events(
                         pipeline_context.plan_data.instance,
@@ -121,30 +121,15 @@ class StepDelegatingExecutor(Executor):
                     )
                 )
 
-                if not stopping:
-                    curr_time = pendulum.now("UTC")
-                    if (
-                        curr_time - last_check_step_health_time
-                    ).total_seconds() >= self._check_step_health_interval_seconds:
-                        last_check_step_health_time = curr_time
-                        for _, step in running_steps.items():
-                            events.extend(
-                                self._log_new_events(
-                                    self._step_handler.check_step_health(
-                                        self._get_step_handler_context(
-                                            pipeline_context, [step], active_execution
-                                        )
-                                    ),
-                                    pipeline_context,
-                                    running_steps,
-                                )
-                            )
-
-                    for step in active_execution.get_steps_to_execute():
-                        running_steps[step.key] = step
+                curr_time = pendulum.now("UTC")
+                if (
+                    curr_time - last_check_step_health_time
+                ).total_seconds() >= self._check_step_health_interval_seconds:
+                    last_check_step_health_time = curr_time
+                    for _, step in running_steps.items():
                         events.extend(
                             self._log_new_events(
-                                self._step_handler.launch_step(
+                                self._step_handler.check_step_health(
                                     self._get_step_handler_context(
                                         pipeline_context, [step], active_execution
                                     )
@@ -153,6 +138,20 @@ class StepDelegatingExecutor(Executor):
                                 running_steps,
                             )
                         )
+
+                for step in active_execution.get_steps_to_execute():
+                    running_steps[step.key] = step
+                    events.extend(
+                        self._log_new_events(
+                            self._step_handler.launch_step(
+                                self._get_step_handler_context(
+                                    pipeline_context, [step], active_execution
+                                )
+                            ),
+                            pipeline_context,
+                            running_steps,
+                        )
+                    )
 
                 for dagster_event in events:
                     yield dagster_event
