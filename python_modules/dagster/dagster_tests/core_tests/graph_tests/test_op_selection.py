@@ -111,7 +111,7 @@ def test_unselected_extra_config_input():
         takes_input(root())
 
     # Requires passing some config to the op to bypass the op block level optionality
-    run_config = {"solids": {"takes_input": {"config": {"some_config": "a"}}}}
+    run_config = {"ops": {"takes_input": {"config": {"some_config": "a"}}}}
 
     full_job = full.to_job()
     assert full_job.execute_in_process(run_config=run_config).success
@@ -121,6 +121,36 @@ def test_unselected_extra_config_input():
     assert full_job.execute_in_process(op_selection=["root"]).success
     # Should also be able to ignore the extra input config
     assert full_job.execute_in_process(run_config=run_config, op_selection=["root"]).success
+
+
+def test_unselected_extra_config_input_in_sub_graph():
+    @op
+    def root(_):
+        return "public.table_1"
+
+    @op(config_schema={"some_config": str})
+    def takes_input(_, input_table):
+        return input_table
+
+    @graph
+    def sub():
+        takes_input(root())
+
+    @graph
+    def full():
+        sub()
+
+    # Requires passing some config to the op to bypass the op block level optionality
+    run_config = {"ops": {"sub": {"ops": {"takes_input": {"config": {"some_config": "a"}}}}}}
+
+    full_job = full.to_job()
+    assert full_job.execute_in_process(run_config=run_config).success
+
+    # Subselected job shouldn't require the unselected solid's config
+    # TODO: not working
+    # assert full_job.execute_in_process(op_selection=["root"]).success
+    # Should also be able to ignore the extra input config
+    assert full_job.execute_in_process(run_config=run_config, op_selection=["sub.root"]).success
 
 
 def test_extra_config_unsatisfied_input():
@@ -139,7 +169,7 @@ def test_extra_config_unsatisfied_input():
     full_job = testing.to_job()
 
     result = full_job.execute_in_process(
-        run_config={"solids": {"start": {"inputs": {"x": {"value": 4}}}}}
+        run_config={"ops": {"start": {"inputs": {"x": {"value": 4}}}}}
     )
     assert result.success
     assert result.result_for_node("end").output_value() == 4
@@ -147,7 +177,7 @@ def test_extra_config_unsatisfied_input():
     # test to ensure that if start is not being executed its input config is still allowed (and ignored)
     # TODO: not working
     subset_result = full_job.execute_in_process(
-        run_config={"solids": {"start": {"inputs": {"x": {"value": 4}}}}},
+        run_config={"ops": {"start": {"inputs": {"x": {"value": 4}}}}},
         op_selection=["end"],
     )
     assert subset_result.success
@@ -174,7 +204,7 @@ def test_extra_config_unsatisfied_input_io_manager():
     full_job = testing_io.to_job(resource_defs={"my_loader": config_io_man})
     result = full_job.execute_in_process(
         run_config={
-            "solids": {"start": {"inputs": {"x": 4}}},
+            "ops": {"start": {"inputs": {"x": 4}}},
         },
     )
     assert result.success
@@ -184,7 +214,7 @@ def test_extra_config_unsatisfied_input_io_manager():
     # TODO: not working
     subset_result = full_job.execute_in_process(
         run_config={
-            "solids": {"start": {"inputs": {"x": 4}}},
+            "ops": {"start": {"inputs": {"x": 4}}},
         },
         op_selection=["end"],
     )
@@ -239,7 +269,7 @@ def test_op_selection_on_dynamic_orchestration():
 
     # TODO: not working
     result = full_job.execute_in_process(
-        # run_config={"solids": {"emit": {"inputs": {"num": 2}}}},
+        # run_config={"ops": {"emit": {"inputs": {"num": 2}}}},
         op_selection=["emit*", "emit_ten"],
     )
     assert result.success
