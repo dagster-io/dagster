@@ -13803,7 +13803,7 @@
       "title": "Community"
     }
   ],
-  "0.12.13": [
+  "0.12.14": [
     {
       "children": [
         {
@@ -14284,6 +14284,10 @@
             {
               "path": "/_apidocs/experimental",
               "title": "Experimental Core APIs"
+            },
+            {
+              "path": "/_apidocs/assets",
+              "title": "Software-Defined Assets"
             },
             {
               "path": "/_apidocs/memoization",
