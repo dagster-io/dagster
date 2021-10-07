@@ -109,14 +109,14 @@ def test_logging_capture_resource(managed_logs, expect_output):
     @resource
     def foo_resource():
         def fn():
-            python_log.info("log from resource foo")
+            python_log.info("log from resource %s", "foo")
 
         return fn
 
     @resource
     def bar_resource():
         def fn():
-            python_log.info("log from resource bar")
+            python_log.info("log from resource %s", "bar")
 
         return fn
 
