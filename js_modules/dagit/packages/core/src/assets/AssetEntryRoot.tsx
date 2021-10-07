@@ -98,26 +98,12 @@ export const AssetEntryRoot: React.FC<RouteComponentProps> = ({location, match})
             return <AssetsCatalogTable prefixPath={currentPath} />;
           }
 
-          return (
-            <Wrapper>
-              <AssetView assetKey={{path: currentPath}} asOf={asOf} />
-            </Wrapper>
-          );
+          return <AssetView assetKey={{path: currentPath}} asOf={asOf} />;
         }}
       </Loading>
     </Page>
   );
 };
-
-const Wrapper = styled.div`
-  flex: 1 1;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
-  min-width: 0;
-  overflow: auto;
-`;
 
 const BreadcrumbLink = styled(Link)`
   color: ${ColorsWIP.Gray800};

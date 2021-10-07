@@ -107,14 +107,12 @@ export const AssetMaterializations: React.FC<Props> = ({assetKey, asOf, asSideba
     }
 
     return (
-      <Box padding={{horizontal: 24}}>
-        <AssetMaterializationMatrixAndGraph
-          assetMaterializations={reversed}
-          isPartitioned={isPartitioned}
-          xAxis={xAxis}
-          asSidebarSection={asSidebarSection}
-        />
-      </Box>
+      <AssetMaterializationMatrixAndGraph
+        assetMaterializations={reversed}
+        isPartitioned={isPartitioned}
+        xAxis={xAxis}
+        asSidebarSection={asSidebarSection}
+      />
     );
   };
 
@@ -175,22 +173,24 @@ const AssetMaterializationMatrixAndGraph: React.FC<{
   return (
     <>
       {!props.asSidebarSection && (
-        <AssetMaterializationMatrix
-          isPartitioned={isPartitioned}
-          materializations={assetMaterializations}
-          xAxis={xAxis}
-          xHover={xHover}
-          onHoverX={(x) => x !== xHover && setXHover(x)}
-          graphDataByMetadataLabel={graphDataByMetadataLabel}
-          graphedLabels={graphedLabels}
-          setGraphedLabels={setGraphedLabels}
-        />
+        <Box padding={{horizontal: 24}}>
+          <AssetMaterializationMatrix
+            isPartitioned={isPartitioned}
+            materializations={assetMaterializations}
+            xAxis={xAxis}
+            xHover={xHover}
+            onHoverX={(x) => x !== xHover && setXHover(x)}
+            graphDataByMetadataLabel={graphDataByMetadataLabel}
+            graphedLabels={graphedLabels}
+            setGraphedLabels={setGraphedLabels}
+          />
+        </Box>
       )}
       <div
         style={{
           display: 'flex',
           flexWrap: 'wrap',
-          justifyContent: 'space-between',
+          justifyContent: 'stretch',
           flexDirection: props.asSidebarSection ? 'column' : 'row',
           marginTop: props.asSidebarSection ? 0 : 30,
         }}
@@ -199,7 +199,7 @@ const AssetMaterializationMatrixAndGraph: React.FC<{
           <AssetValueGraph
             key={label}
             label={label}
-            width={graphedLabels.length === 1 || props.asSidebarSection ? '100%' : '48%'}
+            width={graphedLabels.length === 1 || props.asSidebarSection ? '100%' : '50%'}
             data={graphDataByMetadataLabel[label]}
             xHover={xHover}
             onHoverX={(x) => x !== xHover && setXHover(x)}

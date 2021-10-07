@@ -2,9 +2,10 @@ import {ActiveElement} from 'chart.js';
 import 'chartjs-adapter-date-fns';
 import * as React from 'react';
 import {Line} from 'react-chartjs-2';
+import styled from 'styled-components/macro';
 
+import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
-import {Group} from '../ui/Group';
 import {Subheading} from '../ui/Text';
 
 import {AssetNumericHistoricalData} from './types';
@@ -101,11 +102,21 @@ export const AssetValueGraph: React.FC<{
   };
 
   return (
-    <div style={{marginBottom: 30, width: props.width}}>
-      <Group direction="column" spacing={12}>
+    <Box
+      style={{width: props.width}}
+      border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+    >
+      <Container>
         <Subheading>{props.label}</Subheading>
+      </Container>
+      <Container>
         <Line type="line" data={graphData} height={100} options={options} key={props.width} />
-      </Group>
-    </div>
+      </Container>
+    </Box>
   );
 };
+
+const Container = styled.div`
+  padding: 16px 24px;
+  box-shadow: ${ColorsWIP.KeylineGray} 0 -1px 0 inset, ${ColorsWIP.KeylineGray} -1px 0 0 inset;
+`;
