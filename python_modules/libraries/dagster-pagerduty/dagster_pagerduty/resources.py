@@ -174,13 +174,11 @@ def pagerduty_resource(context):
                 event_action='trigger',
             )
 
-        @graph
-        def pd_graph():
+        @job(resource_defs={ 'pagerduty': pagerduty_resource })
+        def pagerduty_test():
             pagerduty_op()
 
-        pd_graph.to_job(
-            resource_defs={ 'pagerduty': pagerduty_resource },
-        ).execute_in_process(
+        pagerduty_test.execute_in_process(
             run_config={
                 "resources": {
                     'pagerduty': {'config': {'routing_key': '0123456789abcdef0123456789abcdef'}}
