@@ -49,7 +49,7 @@ class ExecuteInProcessResult:
         return self._run_id
 
     def events_for_node(self, node_name: str) -> List[DagsterEvent]:
-        """Retreives all dagster events for a specific node.
+        """Retrieves all dagster events for a specific node.
 
         Args:
             node_name (str): The name of the node for which outputs should be retrieved.
@@ -120,10 +120,10 @@ def _filter_events_by_handle(
     step_events = []
     for event in event_list:
         if event.is_step_event:
-            handle = cast(
+            event_handle = cast(
                 NodeHandle, event.solid_handle
             )  # step events are guaranteed to have a node handle.
-            if handle.is_or_descends_from(handle):
+            if event_handle.is_or_descends_from(handle):
                 step_events.append(event)
 
     return step_events
