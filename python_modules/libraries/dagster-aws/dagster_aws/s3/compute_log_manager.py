@@ -15,7 +15,7 @@ from dagster.utils import ensure_dir, ensure_file
 
 
 class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
-    """Logs solid compute function stdout and stderr to S3.
+    """Logs compute function stdout and stderr to S3.
 
     Users should not instantiate this class directly. Instead, use a YAML block in ``dagster.yaml``
     such as the following:

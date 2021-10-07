@@ -4,7 +4,7 @@ import tempfile
 
 import pytest
 from botocore.exceptions import ClientError
-from dagster import DagsterEventType, execute_pipeline, pipeline, solid
+from dagster import DagsterEventType, job, op
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher import DefaultRunLauncher
 from dagster.core.run_coordinator import DefaultRunCoordinator
@@ -24,14 +24,14 @@ EXPECTED_LOGS = [
 
 
 def test_compute_log_manager(mock_s3_bucket):
-    @pipeline
-    def simple():
-        @solid
-        def easy(context):
-            context.log.info("easy")
-            print(HELLO_WORLD)  # pylint: disable=print-call
-            return "easy"
+    @op
+    def easy(context):
+        context.log.info("easy")
+        print(HELLO_WORLD)  # pylint: disable=print-call
+        return "easy"
 
+    @job
+    def simple():
         easy()
 
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -49,10 +49,10 @@ def test_compute_log_manager(mock_s3_bucket):
             run_coordinator=DefaultRunCoordinator(),
             run_launcher=DefaultRunLauncher(),
         )
-        result = execute_pipeline(simple, instance=instance)
+        result = simple.execute_in_process(instance=instance)
         compute_steps = [
             event.step_key
-            for event in result.step_event_list
+            for event in result.all_node_events
             if event.event_type == DagsterEventType.STEP_START
         ]
         assert len(compute_steps) == 1
@@ -67,9 +67,7 @@ def test_compute_log_manager(mock_s3_bucket):
 
         # Check S3 directly
         s3_object = mock_s3_bucket.Object(
-            key="{prefix}/storage/{run_id}/compute_logs/easy.err".format(
-                prefix="my_prefix", run_id=result.run_id
-            ),
+            key=f"my_prefix/storage/{result.run_id}/compute_logs/easy.err"
         )
         stderr_s3 = s3_object.get()["Body"].read().decode("utf-8")
         for expected in EXPECTED_LOGS:
@@ -116,12 +114,12 @@ compute_logs:
 
 
 def test_compute_log_manager_skip_empty_upload(mock_s3_bucket):
-    @pipeline
-    def simple():
-        @solid
-        def easy(context):
-            context.log.info("easy")
+    @op
+    def easy(context):
+        context.log.info("easy")
 
+    @job
+    def simple():
         easy()
 
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -140,7 +138,7 @@ def test_compute_log_manager_skip_empty_upload(mock_s3_bucket):
             run_coordinator=DefaultRunCoordinator(),
             run_launcher=DefaultRunLauncher(),
         )
-        result = execute_pipeline(simple, instance=instance)
+        result = simple.execute_in_process(instance=instance)
 
         stderr_object = mock_s3_bucket.Object(
             key=f"{PREFIX}/storage/{result.run_id}/compute_logs/easy.err"

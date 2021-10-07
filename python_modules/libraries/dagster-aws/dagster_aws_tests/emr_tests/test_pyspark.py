@@ -19,7 +19,7 @@ from dagster.utils.merger import deep_merge_dicts
 from dagster.utils.test import create_test_pipeline_execution_context
 from dagster_aws.emr import EmrError, EmrJobRunner
 from dagster_aws.emr.pyspark_step_launcher import EmrPySparkStepLauncher, emr_pyspark_step_launcher
-from dagster_aws.s3 import s3_plus_default_intermediate_storage_defs, s3_resource
+from dagster_aws.s3 import s3_resource
 from dagster_pyspark import DataFrame, pyspark_resource
 from moto import mock_emr
 from pyspark.sql import Row
@@ -67,7 +67,6 @@ MODE_DEFS = [
             "pyspark": pyspark_resource,
             "s3": s3_resource,
         },
-        intermediate_storage_defs=s3_plus_default_intermediate_storage_defs,
     ),
     ModeDefinition(
         "local",
@@ -220,9 +219,6 @@ def test_do_it_live_emr():
             "solids": {"blah": {"config": {"foo": "a string", "bar": 123}}},
             "resources": {
                 "pyspark_step_launcher": {"config": BASE_EMR_PYSPARK_STEP_LAUNCHER_CONFIG},
-            },
-            "intermediate_storage": {
-                "s3": {"config": {"s3_bucket": S3_BUCKET, "s3_prefix": "test_pyspark"}}
             },
         },
     )
