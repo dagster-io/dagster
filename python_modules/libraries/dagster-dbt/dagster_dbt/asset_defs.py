@@ -68,6 +68,8 @@ def _dbt_node_to_asset(
         if runtime_metadata_fn:
             metadata = runtime_metadata_fn(context, node_info)
             yield Output(None, metadata=metadata)
+        else:
+            yield Output(None)
 
     return _node_asset
 
