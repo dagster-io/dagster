@@ -1,3 +1,5 @@
+# pylint: disable=no-value-for-parameter
+
 import datetime
 import sys
 import uuid
@@ -10,12 +12,10 @@ from dagster import (
     DagsterExecutionStepExecutionError,
     InputDefinition,
     List,
-    ModeDefinition,
     Nothing,
     OutputDefinition,
-    execute_pipeline,
-    pipeline,
-    solid,
+    job,
+    op,
 )
 from dagster.config.validate import process_config, validate_config
 from dagster.core.definitions import create_run_config_schema
@@ -23,7 +23,7 @@ from dagster_gcp import (
     bigquery_resource,
     bq_create_dataset,
     bq_delete_dataset,
-    bq_solid_for_queries,
+    bq_op_for_queries,
     import_df_to_bq,
     import_gcs_paths_to_bq,
 )
@@ -50,14 +50,10 @@ def get_dataset():
     return "test_ds_" + str(uuid.uuid4()).replace("-", "_")
 
 
-def bq_modes():
-    return [ModeDefinition(resource_defs={"bigquery": bigquery_resource})]
-
-
 def test_simple_queries():
-    @pipeline(mode_defs=bq_modes())
-    def bq_pipeline():
-        bq_solid_for_queries(
+    @job(resource_defs={"bigquery": bigquery_resource})
+    def bq_test():
+        bq_op_for_queries(
             [
                 # Toy example query
                 "SELECT 1 AS field1, 2 AS field2;",
@@ -68,12 +64,12 @@ def test_simple_queries():
             ORDER BY postal_code ASC, date_valid_std ASC
             LIMIT 1""",
             ]
-        ).alias("bq_query_solid")()
+        ).alias("bq_query_op")()
 
-    res = execute_pipeline(bq_pipeline).result_for_solid("bq_query_solid")
+    res = bq_test.execute_in_process()
     assert res.success
 
-    values = res.output_value()
+    values = res.output_for_node("bq_query_op")
     for df in values:
         assert isinstance(df, pd.DataFrame)
     assert values[0].to_dict("list") == {"field1": [1], "field2": [2]}
@@ -99,35 +95,35 @@ def test_bad_config():
         (
             # Create disposition must match enum values
             {"create_disposition": "this is not a valid create disposition"},
-            "Value at path root:solids:test:config:query_job_config:create_disposition not in enum type BQCreateDisposition",
+            "Value at path root:ops:test:config:query_job_config:create_disposition not in enum type BQCreateDisposition",
         ),
         (
             # Priority must match enum values
             {"priority": "this is not a valid priority"},
-            "Value at path root:solids:test:config:query_job_config:priority not in enum type BQPriority got this is not a valid priority",
+            "Value at path root:ops:test:config:query_job_config:priority not in enum type BQPriority got this is not a valid priority",
         ),
         (
             # Schema update options must be a list
             {"schema_update_options": "this is not valid schema update options"},
-            'Value at path root:solids:test:config:query_job_config:schema_update_options must be list. Expected: "[BQSchemaUpdateOption]"',
+            'Value at path root:ops:test:config:query_job_config:schema_update_options must be list. Expected: "[BQSchemaUpdateOption]"',
         ),
         (
             {"schema_update_options": ["this is not valid schema update options"]},
-            "Value at path root:solids:test:config:query_job_config:schema_update_options[0] not in enum type BQSchemaUpdateOption",
+            "Value at path root:ops:test:config:query_job_config:schema_update_options[0] not in enum type BQSchemaUpdateOption",
         ),
         (
             {"write_disposition": "this is not a valid write disposition"},
-            "Value at path root:solids:test:config:query_job_config:write_disposition not in enum type BQWriteDisposition",
+            "Value at path root:ops:test:config:query_job_config:write_disposition not in enum type BQWriteDisposition",
         ),
     ]
 
-    @pipeline(mode_defs=bq_modes())
-    def test_config_pipeline():
-        bq_solid_for_queries(["SELECT 1"]).alias("test")()
+    @job(resource_defs={"bigquery": bigquery_resource})
+    def test_config():
+        bq_op_for_queries(["SELECT 1"]).alias("test")()
 
-    env_type = create_run_config_schema(test_config_pipeline).config_type
+    env_type = create_run_config_schema(test_config).config_type
     for config_fragment, error_message in configs_and_expected_errors:
-        config = {"solids": {"test": {"config": {"query_job_config": config_fragment}}}}
+        config = {"ops": {"test": {"config": {"query_job_config": config_fragment}}}}
         result = validate_config(env_type, config)
         assert error_message in result.errors[0].message
 
@@ -143,7 +139,7 @@ def test_bad_config():
     ]
 
     for config_fragment, error_message in configs_and_expected_validation_errors:
-        config = {"solids": {"test": {"config": {"query_job_config": config_fragment}}}}
+        config = {"ops": {"test": {"config": {"query_job_config": config_fragment}}}}
         result = process_config(env_type, config)
         assert error_message in result.errors[0].message
 
@@ -152,40 +148,49 @@ def test_create_delete_dataset():
     client = bigquery.Client()
     dataset = get_dataset()
 
-    @pipeline(mode_defs=bq_modes())
-    def create_pipeline():
-        bq_create_dataset.alias("create_solid")()
+    @job(resource_defs={"bigquery": bigquery_resource})
+    def create_dataset():
+        bq_create_dataset.alias("create_op")()
 
-    config = {"solids": {"create_solid": {"config": {"dataset": dataset, "exists_ok": True}}}}
+    result = create_dataset.execute_in_process(
+        run_config={"ops": {"create_op": {"config": {"dataset": dataset, "exists_ok": True}}}}
+    )
+    assert result.success
 
-    assert execute_pipeline(create_pipeline, config).result_for_solid("create_solid").success
-
-    config = {"solids": {"create_solid": {"config": {"dataset": dataset, "exists_ok": False}}}}
     with pytest.raises(
         google.api_core.exceptions.Conflict,
         match="Already Exists: Dataset %s:%s" % (client.project, dataset),
     ):
-        execute_pipeline(create_pipeline, config)
+        create_dataset.execute_in_process(
+            run_config={"ops": {"create_op": {"config": {"dataset": dataset, "exists_ok": False}}}}
+        )
 
-    @pipeline(mode_defs=bq_modes())
-    def delete_pipeline():
-        bq_delete_dataset.alias("delete_solid")()
+    @job(resource_defs={"bigquery": bigquery_resource})
+    def delete_dataset():
+        bq_delete_dataset.alias("delete_op")()
 
     # Delete should succeed
-    config = {"solids": {"delete_solid": {"config": {"dataset": dataset}}}}
-    assert execute_pipeline(delete_pipeline, config).result_for_solid("delete_solid").success
+    result = delete_dataset.execute_in_process(
+        run_config={"ops": {"delete_op": {"config": {"dataset": dataset}}}}
+    )
+    assert result.success
 
     # Delete non-existent with "not_found_ok" should succeed
-    config = {"solids": {"delete_solid": {"config": {"dataset": dataset, "not_found_ok": True}}}}
-    assert execute_pipeline(delete_pipeline, config).result_for_solid("delete_solid").success
+    result = delete_dataset.execute_in_process(
+        run_config={"ops": {"delete_op": {"config": {"dataset": dataset, "not_found_ok": True}}}}
+    )
+    assert result.success
 
     # Delete non-existent with "not_found_ok" False should fail
-    config = {"solids": {"delete_solid": {"config": {"dataset": dataset, "not_found_ok": False}}}}
     with pytest.raises(
         google.api_core.exceptions.NotFound,
         match="Not found: Dataset %s:%s" % (client.project, dataset),
     ):
-        execute_pipeline(delete_pipeline, config)
+        result = delete_dataset.execute_in_process(
+            run_config={
+                "ops": {"delete_op": {"config": {"dataset": dataset, "not_found_ok": False}}}
+            }
+        )
 
     assert not dataset_exists(dataset)
 
@@ -198,52 +203,60 @@ def test_pd_df_load():
 
     test_df = pd.DataFrame({"num1": [1, 3], "num2": [2, 4]})
 
-    create_solid = bq_create_dataset.alias("create_solid")
-    load_solid = import_df_to_bq.alias("load_solid")
-    query_solid = bq_solid_for_queries(["SELECT num1, num2 FROM %s" % table]).alias("query_solid")
-    delete_solid = bq_delete_dataset.alias("delete_solid")
+    create_op = bq_create_dataset.alias("create_op")
+    load_op = import_df_to_bq.alias("load_op")
+    query_op = bq_op_for_queries(["SELECT num1, num2 FROM %s" % table]).alias("query_op")
+    delete_op = bq_delete_dataset.alias("delete_op")
 
-    @solid(
-        input_defs=[InputDefinition("success", Nothing)], output_defs=[OutputDefinition(DataFrame)]
-    )
+    @op(input_defs=[InputDefinition("success", Nothing)], output_defs=[OutputDefinition(DataFrame)])
     def return_df(_context):  # pylint: disable=unused-argument
         return test_df
 
-    config = {
-        "solids": {
-            "create_solid": {"config": {"dataset": dataset, "exists_ok": True}},
-            "load_solid": {"config": {"destination": table}},
-            "delete_solid": {"config": {"dataset": dataset, "delete_contents": True}},
+    @job(resource_defs={"bigquery": bigquery_resource})
+    def bq_circle_of_life():
+        delete_op(query_op(load_op(return_df(create_op()))))
+
+    result = bq_circle_of_life.execute_in_process(
+        run_config={
+            "ops": {
+                "create_op": {"config": {"dataset": dataset, "exists_ok": True}},
+                "load_op": {"config": {"destination": table}},
+                "delete_op": {"config": {"dataset": dataset, "delete_contents": True}},
+            }
         }
-    }
-
-    @pipeline(mode_defs=bq_modes())
-    def bq_pipeline():
-        delete_solid(query_solid(load_solid(return_df(create_solid()))))
-
-    result = execute_pipeline(bq_pipeline, config)
+    )
     assert result.success
 
-    values = result.result_for_solid("query_solid").output_value()
+    values = result.output_for_node("query_op")
     assert values[0].to_dict() == test_df.to_dict()
 
     # BQ loads should throw an exception if pyarrow and fastparquet aren't available
     with mock.patch.dict(sys.modules, {"pyarrow": None, "fastparquet": None}):
         with pytest.raises(DagsterExecutionStepExecutionError) as exc_info:
-            result = execute_pipeline(bq_pipeline, config)
+            bq_circle_of_life.execute_in_process(
+                run_config={
+                    "ops": {
+                        "create_op": {"config": {"dataset": dataset, "exists_ok": True}},
+                        "load_op": {"config": {"destination": table}},
+                        "delete_op": {"config": {"dataset": dataset, "delete_contents": True}},
+                    }
+                }
+            )
         assert (
             "loading data to BigQuery from pandas DataFrames requires either pyarrow or fastparquet"
             " to be installed" in str(exc_info.value.user_exception)
         )
-        cleanup_config = {
-            "solids": {"delete_solid": {"config": {"dataset": dataset, "delete_contents": True}}}
-        }
 
-        @pipeline(mode_defs=bq_modes())
-        def cleanup():
-            delete_solid()
+        @job(resource_defs={"bigquery": bigquery_resource})
+        def cleanup_bq():
+            delete_op()
 
-        assert execute_pipeline(cleanup, cleanup_config).success
+        result = cleanup_bq.execute_in_process(
+            run_config={
+                "ops": {"delete_op": {"config": {"dataset": dataset, "delete_contents": True}}}
+            }
+        )
+        assert result.success
 
     assert not dataset_exists(dataset)
 
@@ -254,54 +267,45 @@ def test_gcs_load():
     dataset = get_dataset()
     table = "%s.%s" % (dataset, "df")
 
-    create_solid = bq_create_dataset.alias("create_solid")
-    query_solid = bq_solid_for_queries(
+    create_op = bq_create_dataset.alias("create_op")
+    query_op = bq_op_for_queries(
         [
             "SELECT string_field_0, string_field_1 FROM %s ORDER BY string_field_0 ASC LIMIT 1"
             % table
         ]
-    ).alias("query_solid")
-    delete_solid = bq_delete_dataset.alias("delete_solid")
+    ).alias("query_op")
+    delete_op = bq_delete_dataset.alias("delete_op")
 
-    @solid(
-        input_defs=[InputDefinition("success", Nothing)], output_defs=[OutputDefinition(List[str])]
-    )
+    @op(input_defs=[InputDefinition("success", Nothing)], output_defs=[OutputDefinition(List[str])])
     def return_gcs_uri(_context):  # pylint: disable=unused-argument
         return ["gs://cloud-samples-data/bigquery/us-states/us-states.csv"]
 
-    config = {
-        "solids": {
-            "create_solid": {"config": {"dataset": dataset, "exists_ok": True}},
-            "import_gcs_paths_to_bq": {
-                "config": {
-                    "destination": table,
-                    "load_job_config": {
-                        "autodetect": True,
-                        "skip_leading_rows": 1,
-                        "source_format": "CSV",
-                        "write_disposition": "WRITE_TRUNCATE",
-                    },
-                }
-            },
-            "delete_solid": {"config": {"dataset": dataset, "delete_contents": True}},
+    @job(resource_defs={"bigquery": bigquery_resource})
+    def bq_from_gcs():
+        delete_op(query_op(import_gcs_paths_to_bq(return_gcs_uri(create_op()))))
+
+    result = bq_from_gcs.execute_in_process(
+        run_config={
+            "ops": {
+                "create_op": {"config": {"dataset": dataset, "exists_ok": True}},
+                "import_gcs_paths_to_bq": {
+                    "config": {
+                        "destination": table,
+                        "load_job_config": {
+                            "autodetect": True,
+                            "skip_leading_rows": 1,
+                            "source_format": "CSV",
+                            "write_disposition": "WRITE_TRUNCATE",
+                        },
+                    }
+                },
+                "delete_op": {"config": {"dataset": dataset, "delete_contents": True}},
+            }
         }
-    }
-
-    @pipeline(mode_defs=bq_modes())
-    def bq_pipeline():
-        delete_solid(query_solid(import_gcs_paths_to_bq(return_gcs_uri(create_solid()))))
-
-    result = execute_pipeline(bq_pipeline, config)
+    )
     assert result.success
 
-    values = result.result_for_solid("query_solid").output_value()
+    values = result.result_for_node("query_op").output_value()
     assert values[0].to_dict() == {"string_field_0": {0: "Alabama"}, "string_field_1": {0: "AL"}}
 
     assert not dataset_exists(dataset)
-
-
-def test_multi_bq_solid_for_queries():
-    @pipeline(mode_defs=bq_modes())
-    def _test():
-        bq_solid_for_queries(["SELECT 1"])()
-        bq_solid_for_queries(["SELECT *"])()

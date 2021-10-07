@@ -15,7 +15,7 @@ from google.cloud import storage
 
 
 class GCSComputeLogManager(ComputeLogManager, ConfigurableClass):
-    """Logs solid compute function stdout and stderr to GCS.
+    """Logs op compute function stdout and stderr to GCS.
 
     Users should not instantiate this class directly. Instead, use a YAML block in ``dagster.yaml``
     such as the following:
