@@ -39,18 +39,32 @@ def build_assets_job(
 ) -> JobDefinition:
     """Builds a job that materializes the given assets.
 
-    The dependencies between the nodes in the job are determined by the asset dependencies defined
+    The dependencies between the ops in the job are determined by the asset dependencies defined
     in the metadata on the provided asset nodes.
 
     Args:
         name (str): The name of the job.
-        assets (List[OpDefinition]): A list of ops that are assets - i.e. that have asset_keys
-            set on their inputs and outputs.
+        assets (List[OpDefinition]): A list of assets or multi-assets - usually constructed using
+            the :py:func:`@asset` or :py:func:`@multi_asset` decorator.
         source_assets (Optional[Sequence[Union[ForeignAsset, OpDefinition]]]): A list of assets
             that are not materialized by this job, but that assets in this job depend on.
         resource_defs (Optional[Dict[str, ResourceDefinition]]): Resource defs to be included in
             this job.
         description (Optional[str]): A description of the job.
+
+    Examples:
+
+        .. code-block:: python
+
+            @asset
+            def asset1():
+                return 5
+
+            @asset
+            def asset2(asset1):
+                return my_upstream_asset + 1
+
+            my_assets_job = build_assets_job("my_assets_job", assets=[asset1, asset2])
 
     Returns:
         JobDefinition: A job that materializes the given assets.

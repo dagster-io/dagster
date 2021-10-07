@@ -485,6 +485,10 @@
             "path": "/_apidocs/experimental"
           },
           {
+            "title": "Software-Defined Assets",
+            "path": "/_apidocs/assets"
+          },
+          {
             "title": "Versioning & Memoization",
             "path": "/_apidocs/memoization"
           },
