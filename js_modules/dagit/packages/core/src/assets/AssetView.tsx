@@ -4,7 +4,6 @@ import * as React from 'react';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {METADATA_ENTRY_FRAGMENT} from '../runs/MetadataEntry';
 import {Box} from '../ui/Box';
-import {Group} from '../ui/Group';
 import {Spinner} from '../ui/Spinner';
 import {Subheading} from '../ui/Text';
 import {assetKeyToString} from '../workspace/asset-graph/Utils';
@@ -41,8 +40,8 @@ export const AssetView: React.FC<Props> = ({assetKey, asOf}) => {
   );
 
   return (
-    <Group spacing={24} direction="column">
-      <Group spacing={16} direction="column">
+    <div>
+      <div>
         {loading && (
           <Box padding={{vertical: 20}}>
             <Spinner purpose="section" />
@@ -55,18 +54,20 @@ export const AssetView: React.FC<Props> = ({assetKey, asOf}) => {
         {data?.assetNodeOrError && data.assetNodeOrError.__typename === 'AssetNode' && (
           <AssetNodeDefinition assetNode={data.assetNodeOrError} />
         )}
-        <Subheading>
-          {isPartitioned ? 'Latest Materialized Partition' : 'Latest Materialization'}
-        </Subheading>
+        <Box padding={{vertical: 16, horizontal: 24}}>
+          <Subheading>
+            {isPartitioned ? 'Latest materialized partition' : 'Latest materialization'}
+          </Subheading>
+        </Box>
         {data?.assetOrError && data.assetOrError.__typename === 'Asset' && (
           <LatestMaterializationMetadata
             latest={data.assetOrError.assetMaterializations[0]}
             asOf={asOf}
           />
         )}
-      </Group>
+      </div>
       <AssetMaterializations assetKey={assetKey} asOf={asOf} />
-    </Group>
+    </div>
   );
 };
 

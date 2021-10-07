@@ -89,24 +89,22 @@ export const AssetEntryRoot: React.FC<RouteComponentProps> = ({location, match})
         }
         tags={<TagWIP icon="asset">Asset</TagWIP>}
       />
-      <Box padding={{vertical: 16, horizontal: 24}}>
-        <Loading queryResult={queryResult}>
-          {({assetOrError, assetNodeOrError}) => {
-            if (
-              assetOrError.__typename === 'AssetNotFoundError' &&
-              assetNodeOrError.__typename === 'AssetNotFoundError'
-            ) {
-              return <AssetsCatalogTable prefixPath={currentPath} />;
-            }
+      <Loading queryResult={queryResult}>
+        {({assetOrError, assetNodeOrError}) => {
+          if (
+            assetOrError.__typename === 'AssetNotFoundError' &&
+            assetNodeOrError.__typename === 'AssetNotFoundError'
+          ) {
+            return <AssetsCatalogTable prefixPath={currentPath} />;
+          }
 
-            return (
-              <Wrapper>
-                <AssetView assetKey={{path: currentPath}} asOf={asOf} />
-              </Wrapper>
-            );
-          }}
-        </Loading>
-      </Box>
+          return (
+            <Wrapper>
+              <AssetView assetKey={{path: currentPath}} asOf={asOf} />
+            </Wrapper>
+          );
+        }}
+      </Loading>
     </Page>
   );
 };
