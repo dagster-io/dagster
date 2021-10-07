@@ -43,8 +43,8 @@ def assert_correct_bar_repository_output(result):
         "*************\n"
         "Pipeline: qux\n"
         "Solids: (Execution Order)\n"
-        "    do_something\n"
-        "    do_input\n"
+        "    do_something_op\n"
+        "    do_input_op\n"
     )
 
 
@@ -74,8 +74,8 @@ def assert_correct_job_list_bar_repository_output(result):
         "********\n"
         "Job: qux\n"
         "Ops: (Execution Order)\n"
-        "    do_something\n"
-        "    do_input\n"
+        "    do_something_op\n"
+        "    do_input_op\n"
     )
 
 
