@@ -6,8 +6,10 @@ import {ColorsWIP} from './Colors';
 import {Group} from './Group';
 import {IconName, IconWIP} from './Icon';
 
+export type AlertIntent = 'info' | 'warning' | 'error' | 'success';
+
 export interface Props {
-  intent: 'info' | 'warning' | 'error' | 'success';
+  intent: AlertIntent;
   title: React.ReactNode;
   description?: React.ReactNode;
 }
@@ -15,7 +17,7 @@ export interface Props {
 export const Alert: React.FC<Props> = (props) => {
   const {intent, title, description} = props;
 
-  const {backgroundColor, borderColor, icon, iconColor} = React.useMemo(() => {
+  const {backgroundColor, borderColor, icon, iconColor, textColor} = React.useMemo(() => {
     switch (intent) {
       case 'warning':
         return {
@@ -23,6 +25,7 @@ export const Alert: React.FC<Props> = (props) => {
           borderColor: ColorsWIP.Yellow500,
           icon: 'warning',
           iconColor: ColorsWIP.Yellow500,
+          textColor: ColorsWIP.Yellow700,
         };
       case 'error':
         return {
@@ -30,6 +33,7 @@ export const Alert: React.FC<Props> = (props) => {
           borderColor: ColorsWIP.Red500,
           icon: 'error',
           iconColor: ColorsWIP.Red500,
+          textColor: ColorsWIP.Red700,
         };
       case 'success':
         return {
@@ -37,25 +41,26 @@ export const Alert: React.FC<Props> = (props) => {
           borderColor: ColorsWIP.Green500,
           icon: 'done',
           iconColor: ColorsWIP.Green500,
+          textColor: ColorsWIP.Green700,
         };
       case 'info':
       default:
         return {
-          backgroundColor: ColorsWIP.Gray50,
+          backgroundColor: ColorsWIP.Blue50,
           borderColor: ColorsWIP.Blue500,
           icon: 'info',
           iconColor: ColorsWIP.Blue500,
+          textColor: ColorsWIP.Blue700,
         };
     }
   }, [intent]);
 
   return (
-    <Box
+    <AlertContainer
       background={backgroundColor}
+      $borderColor={borderColor}
+      $textColor={textColor}
       padding={{horizontal: 16, vertical: 12}}
-      style={{
-        boxShadow: `inset 4px 0 ${borderColor}, inset -1px 1px ${ColorsWIP.Gray100}, inset 0 -1px ${ColorsWIP.Gray100}`,
-      }}
     >
       <Group direction="row" spacing={12} alignItems="flex-start">
         <IconWIP name={icon as IconName} color={iconColor} />
@@ -64,7 +69,7 @@ export const Alert: React.FC<Props> = (props) => {
           {description ? <AlertDescription>{description}</AlertDescription> : null}
         </Group>
       </Group>
-    </Box>
+    </AlertContainer>
   );
 };
 
@@ -72,13 +77,23 @@ Alert.defaultProps = {
   intent: 'info',
 };
 
+const AlertContainer = styled(Box)<{$borderColor: string; $textColor: string}>`
+  box-shadow: inset 4px 0 ${({$borderColor}) => $borderColor};
+  color: ${({$textColor}) => $textColor};
+
+  a:link,
+  a:visited,
+  a:hover,
+  a:active {
+    color: ${({$textColor}) => $textColor};
+    text-decoration: underline;
+  }
+`;
+
 const AlertTitle = styled.div`
-  color: ${ColorsWIP.Gray800};
   font-weight: 600;
-  -webkit-font-smoothing: antialiased;
 `;
 
 const AlertDescription = styled.div`
-  color: ${ColorsWIP.Gray800};
   font-weight: 400;
 `;
