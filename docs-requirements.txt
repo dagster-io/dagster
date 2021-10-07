@@ -32,7 +32,6 @@
 -e ./python_modules/libraries/dagster-ssh
 -e ./python_modules/libraries/dagster-twilio
 -e ./python_modules/libraries/dagstermill
--e ./python_modules/libraries/lakehouse
 -e ./python_modules/automation
 docutils==0.15.2
 Sphinx==3.5.2
