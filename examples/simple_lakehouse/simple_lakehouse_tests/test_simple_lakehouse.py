@@ -1,7 +1,5 @@
-from dagster import execute_pipeline
-from simple_lakehouse.pipelines import simple_lakehouse_pipeline
+from simple_lakehouse.airport_weather_job import airport_weather_job
 
 
-def test_simple_lakehouse():
-    pipeline_result = execute_pipeline(simple_lakehouse_pipeline)
-    assert pipeline_result.success
+def test_airport_weather_job():
+    assert airport_weather_job.execute_in_process().success
