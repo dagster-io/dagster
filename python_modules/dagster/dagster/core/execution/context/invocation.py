@@ -330,7 +330,7 @@ class BoundSolidExecutionContext(SolidExecutionContext):
         if self._solid_config:
             run_config["solids"] = {self._solid_def.name: self._solid_config}
         if self.resources:
-            run_config["resources"] = {self.resources._asdict()}  # type: ignore[attr-defined]
+            run_config["resources"] = self.resources._asdict()  # type: ignore[attr-defined]
         return run_config
 
     @property
