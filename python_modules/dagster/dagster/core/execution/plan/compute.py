@@ -56,22 +56,26 @@ def create_step_outputs(
     ]
 
 
-def _validate_event(event: Any, solid_handle: NodeHandle) -> SolidOutputUnion:
+def _validate_event(event: Any, step_context: StepExecutionContext) -> SolidOutputUnion:
     if not isinstance(
         event,
         (DynamicOutput, Output, AssetMaterialization, Materialization, ExpectationResult),
     ):
         raise DagsterInvariantViolationError(
             (
-                "Compute function for solid {solid_name} yielded a value of type {type_} "
+                "Compute function for {described_node} yielded a value of type {type_} "
                 "rather than an instance of Output, AssetMaterialization, or ExpectationResult."
-                " Values yielded by solids must be wrapped in one of these types. If your "
-                "solid has a single output and yields no other events, you may want to use "
-                "`return` instead of `yield` in the body of your solid compute function. If "
+                " Values yielded by {node_type}s must be wrapped in one of these types. If your "
+                "{node_type} has a single output and yields no other events, you may want to use "
+                "`return` instead of `yield` in the body of your {node_type} compute function. If "
                 "you are already using `return`, and you expected to return a value of type "
                 "{type_}, you may be inadvertently returning a generator rather than the value "
                 "you expected."
-            ).format(solid_name=str(solid_handle), type_=type(event))
+            ).format(
+                described_node=step_context.describe_op(),
+                type_=type(event),
+                node_type=step_context.solid_def.node_type_str,
+            )
         )
 
     return event
@@ -96,10 +100,13 @@ def _yield_compute_results(
     if isinstance(user_event_generator, Output):
         raise DagsterInvariantViolationError(
             (
-                "Compute function for solid {solid_name} returned a Output rather than "
-                "yielding it. The compute_fn of the core SolidDefinition must yield "
+                "Compute function for {described_node} returned an Output rather than "
+                "yielding it. The compute_fn of the {node_type} must yield "
                 "its results"
-            ).format(solid_name=str(step_context.step.solid_handle))
+            ).format(
+                described_node=step_context.describe_op(),
+                node_type=step_context.solid_def.node_type_str,
+            )
         )
 
     if user_event_generator is None:
@@ -121,7 +128,7 @@ def _yield_compute_results(
         ),
         user_event_generator,
     ):
-        yield _validate_event(event, step_context.step.solid_handle)
+        yield _validate_event(event, step_context)
 
 
 def execute_core_compute(
