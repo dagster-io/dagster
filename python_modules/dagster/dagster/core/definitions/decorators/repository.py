@@ -176,7 +176,7 @@ def repository(
         ######################################################################
 
         def make_expensive_job():
-            @job(name='expensive_job')
+            @job
             def expensive_job():
                 for i in range(10000):
                     return_n.alias(f'return_n_{i}')()
@@ -184,7 +184,7 @@ def repository(
             return expensive_job
 
         def make_expensive_schedule():
-            @job(name='other_expensive_job')
+            @job
             def other_expensive_job():
                 for i in range(11000):
                     return_n.alias(f'my_return_n_{i}')()
@@ -200,7 +200,7 @@ def repository(
 
 
         ######################################################################
-        # A complex repository that lazily construct jobs from a directory
+        # A complex repository that lazily constructs jobs from a directory
         # of files in a bespoke YAML format
         ######################################################################
 
