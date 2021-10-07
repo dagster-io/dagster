@@ -9,15 +9,8 @@ from hacker_news_assets.resources.parquet_io_manager import partitioned_parquet_
 
 def test_download():
     with tempfile.TemporaryDirectory() as temp_dir:
-        result = download_comments_and_stories_dev.graph.execute_in_process(
-            run_config={
-                "resources": {
-                    "partition_start": {"config": "2020-12-30 00:00:00"},
-                    "partition_end": {"config": "2020-12-30 01:00:00"},
-                    "parquet_io_manager": {"config": {"base_path": temp_dir}},
-                }
-            },
-            resources={
+        result = download_comments_and_stories_dev.graph.to_job(
+            resource_defs={
                 "io_manager": fs_io_manager,
                 "partition_start": ResourceDefinition.string_resource(),
                 "partition_end": ResourceDefinition.string_resource(),
@@ -25,6 +18,14 @@ def test_download():
                 "warehouse_io_manager": mem_io_manager,
                 "pyspark": pyspark_resource,
                 "hn_client": hn_snapshot_client,
+            },
+        ).execute_in_process(
+            run_config={
+                "resources": {
+                    "partition_start": {"config": "2020-12-30 00:00:00"},
+                    "partition_end": {"config": "2020-12-30 01:00:00"},
+                    "parquet_io_manager": {"config": {"base_path": temp_dir}},
+                }
             },
         )
 
