@@ -224,6 +224,7 @@ class DagsterLogHandler(logging.Handler):
 
         # update the message to be formatted like other dagster logs
         record.msg = construct_log_string(self._logging_metadata, dagster_message_props)
+        record.args = ()
 
         return record
 
