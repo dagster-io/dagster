@@ -131,7 +131,7 @@ def my_metadata_materialization_op(context):
 
 
 # start_materialization_ops_marker_3
-from dagster import op, AssetMaterialization
+from dagster import op, AssetMaterialization, job
 
 
 @op

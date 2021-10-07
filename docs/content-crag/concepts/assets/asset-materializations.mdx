@@ -186,7 +186,7 @@ In this case, the <PyObject object="AssetMaterialization" /> and the <PyObject o
 
 Just as there are two places in which you can yield runtime <PyObject object="AssetMaterialization" /> events (within an op body and within an IOManager), we provide two different interfaces for linking an op output to to an asset. Regardless of which you choose, every time the op runs and yields that output, an <PyObject object="AssetMaterialization" /> event will automatically be created to record this information.
 
-If you specified any metadata entries on the <PyObject object="Output" /> event while yielding it (see: [Op Event Docs](/concepts/ops-jobs/op-events#attaching-metadata-to-outputs)), these entries will automatically be attached to the materialization event for this asset.
+If you specified any metadata entries on the <PyObject object="Output" /> event while yielding it (see: [Op Event Docs](/concepts/solids-pipelines/op-events#attaching-metadata-to-outputs)), these entries will automatically be attached to the materialization event for this asset.
 
 ### Linking assets to an Output Definition <Experimental />
 
