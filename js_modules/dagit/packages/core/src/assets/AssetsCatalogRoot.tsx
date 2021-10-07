@@ -1,7 +1,6 @@
 import * as React from 'react';
 import {RouteComponentProps} from 'react-router-dom';
 
-import {Box} from '../ui/Box';
 import {PageHeader} from '../ui/PageHeader';
 import {Heading} from '../ui/Text';
 
@@ -16,9 +15,7 @@ export const AssetsCatalogRoot: React.FunctionComponent<RouteComponentProps> = (
   return (
     <div>
       <PageHeader title={<Heading>Assets</Heading>} />
-      <Box padding={{vertical: 16}}>
-        <AssetsCatalogTable prefixPath={currentPath} />
-      </Box>
+      <AssetsCatalogTable prefixPath={currentPath} />
     </div>
   );
 };

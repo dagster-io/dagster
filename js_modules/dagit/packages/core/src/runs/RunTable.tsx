@@ -6,12 +6,12 @@ import styled from 'styled-components/macro';
 import {useFeatureFlags} from '../app/Flags';
 import {usePermissions} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {PipelineSnapshotLink} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {Box} from '../ui/Box';
 import {Checkbox} from '../ui/Checkbox';
 import {ColorsWIP} from '../ui/Colors';
-import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
 import {NonIdealState} from '../ui/NonIdealState';
 import {Table} from '../ui/Table';
@@ -30,98 +30,21 @@ interface RunTableProps {
   runs: RunTableRunFragment[];
   onSetFilter: (search: TokenizingFieldValue[]) => void;
   nonIdealState?: React.ReactNode;
-
+  actionBarComponents?: React.ReactNode;
   highlightedIds?: string[];
   additionalColumnHeaders?: React.ReactNode[];
   additionalColumnsForRow?: (run: RunTableRunFragment) => React.ReactNode[];
 }
 
-type State = {
-  checkedRuns: Set<string>;
-  lastCheckedID: string | null;
-};
-
-type Action =
-  | {type: 'toggle-one'; payload: {checked: boolean; runId: string}}
-  | {
-      type: 'toggle-slice';
-      payload: {checked: boolean; runId: string; allRuns: RunTableRunFragment[]};
-    }
-  | {type: 'toggle-all'; payload: {checked: boolean; allRuns: RunTableRunFragment[]}};
-
-const reducer = (state: State, action: Action): State => {
-  const copy = new Set(Array.from(state.checkedRuns));
-  switch (action.type) {
-    case 'toggle-one': {
-      const {checked, runId} = action.payload;
-      checked ? copy.add(runId) : copy.delete(runId);
-      return {lastCheckedID: runId, checkedRuns: copy};
-    }
-
-    case 'toggle-slice': {
-      const {checked, runId, allRuns} = action.payload;
-      const {lastCheckedID} = state;
-
-      const indexOfLast = allRuns.findIndex((run) => run.runId === lastCheckedID);
-      const indexOfChecked = allRuns.findIndex((run) => run.runId === runId);
-      if (indexOfLast === undefined || indexOfChecked === undefined) {
-        return state;
-      }
-
-      const [start, end] = [indexOfLast, indexOfChecked].sort();
-      for (let ii = start; ii <= end; ii++) {
-        const runAtIndex = allRuns[ii];
-        checked ? copy.add(runAtIndex.runId) : copy.delete(runAtIndex.runId);
-      }
-
-      return {
-        lastCheckedID: runId,
-        checkedRuns: copy,
-      };
-    }
-
-    case 'toggle-all': {
-      const {checked, allRuns} = action.payload;
-      return {
-        lastCheckedID: null,
-        checkedRuns: checked ? new Set(Array.from(allRuns.map((run) => run.runId))) : new Set(),
-      };
-    }
-  }
-};
-
-const initialState: State = {
-  checkedRuns: new Set(),
-  lastCheckedID: null,
-};
-
 export const RunTable = (props: RunTableProps) => {
   const {flagPipelineModeTuples} = useFeatureFlags();
-  const {runs, onSetFilter, nonIdealState, highlightedIds} = props;
-  const [state, dispatch] = React.useReducer(reducer, initialState);
-  const {checkedRuns} = state;
+  const {runs, onSetFilter, nonIdealState, highlightedIds, actionBarComponents} = props;
+  const allIds = runs.map((r) => r.runId);
+
+  const [{checkedIds}, {onToggleFactory, onToggleAll}] = useSelectionReducer(allIds);
 
   const {canTerminatePipelineExecution, canDeletePipelineRun} = usePermissions();
   const canTerminateOrDelete = canTerminatePipelineExecution || canDeletePipelineRun;
-
-  const onToggle = (runId: string) => (values: {checked: boolean; shiftKey: boolean}) => {
-    const {checked, shiftKey} = values;
-    if (shiftKey && state.lastCheckedID) {
-      dispatch({type: 'toggle-slice', payload: {checked, runId, allRuns: runs}});
-    } else {
-      dispatch({type: 'toggle-one', payload: {checked, runId}});
-    }
-  };
-
-  const toggleAll = (checked: boolean) => {
-    dispatch({type: 'toggle-all', payload: {checked, allRuns: runs}});
-  };
-
-  const onChangeAll = (e: React.FormEvent<HTMLInputElement>) => {
-    if (e.target instanceof HTMLInputElement) {
-      toggleAll(e.target.checked);
-    }
-  };
 
   if (runs.length === 0) {
     return (
@@ -137,50 +60,60 @@ export const RunTable = (props: RunTableProps) => {
     );
   }
 
-  const selectedFragments = runs.filter((run) => checkedRuns.has(run.runId));
+  const selectedFragments = runs.filter((run) => checkedIds.has(run.runId));
 
   return (
-    <Table>
-      <thead>
-        <tr>
-          <th colSpan={2}>
-            {canTerminateOrDelete ? (
-              <div style={{display: 'flex', alignItems: 'center', gap: 5}}>
+    <>
+      <Box flex={{alignItems: 'center', gap: 12}} padding={{vertical: 8, left: 24, right: 12}}>
+        {actionBarComponents}
+        <div style={{flex: 1}} />
+        <RunBulkActionsMenu
+          selected={selectedFragments}
+          clearSelection={() => onToggleAll(false)}
+        />
+      </Box>
+
+      <Table>
+        <thead>
+          <tr>
+            <th style={{paddingTop: 0, paddingBottom: 0}}>
+              {canTerminateOrDelete ? (
                 <Checkbox
-                  indeterminate={checkedRuns.size > 0 && checkedRuns.size !== runs.length}
-                  checked={checkedRuns.size === runs.length}
-                  onChange={onChangeAll}
+                  indeterminate={checkedIds.size > 0 && checkedIds.size !== runs.length}
+                  checked={checkedIds.size === runs.length}
+                  onChange={(e: React.FormEvent<HTMLInputElement>) => {
+                    if (e.target instanceof HTMLInputElement) {
+                      onToggleAll(e.target.checked);
+                    }
+                  }}
                 />
-                <RunBulkActionsMenu
-                  selected={selectedFragments}
-                  clearSelection={() => toggleAll(false)}
-                />
-              </div>
-            ) : null}
-          </th>
-          <th>Run ID</th>
-          <th>{flagPipelineModeTuples ? 'Job' : 'Pipeline'}</th>
-          <th style={{width: 120, minWidth: 120}}>Snapshot ID</th>
-          <th style={{width: 180}}>Timing</th>
-          {props.additionalColumnHeaders}
-          <th style={{width: 52}} />
-        </tr>
-      </thead>
-      <tbody>
-        {runs.map((run) => (
-          <RunRow
-            canTerminateOrDelete={canTerminateOrDelete}
-            run={run}
-            key={run.runId}
-            onSetFilter={onSetFilter}
-            checked={checkedRuns.has(run.runId)}
-            additionalColumns={props.additionalColumnsForRow?.(run)}
-            onToggleChecked={onToggle(run.runId)}
-            isHighlighted={highlightedIds && highlightedIds.includes(run.runId)}
-          />
-        ))}
-      </tbody>
-    </Table>
+              ) : null}
+            </th>
+            <th>Status</th>
+            <th>Run ID</th>
+            <th>{flagPipelineModeTuples ? 'Job' : 'Pipeline'}</th>
+            <th style={{width: 120, minWidth: 120}}>Snapshot ID</th>
+            <th style={{width: 180}}>Timing</th>
+            {props.additionalColumnHeaders}
+            <th style={{width: 52}} />
+          </tr>
+        </thead>
+        <tbody>
+          {runs.map((run) => (
+            <RunRow
+              canTerminateOrDelete={canTerminateOrDelete}
+              run={run}
+              key={run.runId}
+              onSetFilter={onSetFilter}
+              checked={checkedIds.has(run.runId)}
+              additionalColumns={props.additionalColumnsForRow?.(run)}
+              onToggleChecked={onToggleFactory(run.runId)}
+              isHighlighted={highlightedIds && highlightedIds.includes(run.runId)}
+            />
+          ))}
+        </tbody>
+      </Table>
+    </>
   );
 };
 
@@ -237,7 +170,7 @@ const RunRow: React.FC<{
 
   return (
     <Row key={run.runId} highlighted={!!isHighlighted}>
-      <td style={{paddingRight: '4px'}}>
+      <td>
         {canTerminateOrDelete && onToggleChecked ? (
           <Checkbox checked={!!checked} onChange={onChange} />
         ) : null}
@@ -251,8 +184,8 @@ const RunRow: React.FC<{
         </Link>
       </td>
       <td>
-        <Group direction="column" spacing={8}>
-          <Group direction="row" spacing={8} alignItems="center">
+        <Box flex={{direction: 'column', gap: 5}}>
+          <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
             <PipelineReference
               mode={run.mode}
               pipelineName={run.pipelineName}
@@ -261,9 +194,9 @@ const RunRow: React.FC<{
             <Link to={workspacePipelinePathGuessRepo(run.pipelineName, run.mode)}>
               <IconWIP name="open_in_new" color={ColorsWIP.Blue500} />
             </Link>
-          </Group>
+          </Box>
           <RunTags tags={run.tags} onSetFilter={onSetFilter} />
-        </Group>
+        </Box>
       </td>
       <td>
         <PipelineSnapshotLink

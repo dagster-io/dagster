@@ -10,6 +10,7 @@ import {usePermissions} from '../app/Permissions';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {QueryCountdown} from '../app/QueryCountdown';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {Box} from '../ui/Box';
 import {ButtonWIP} from '../ui/Button';
@@ -153,40 +154,40 @@ export const AssetsCatalogTable: React.FC<{prefixPath?: string[]}> = ({prefixPat
               const showSwitcher = prefixPath || assets.some((asset) => asset.key.path.length > 1);
               return (
                 <Wrapper>
-                  <Box flex={{justifyContent: 'space-between'}} padding={{horizontal: 24}}>
-                    <div>
-                      {showSwitcher ? (
-                        <Group spacing={8} direction="row">
-                          <ButtonGroup
-                            activeItems={new Set([view])}
-                            buttons={[
-                              {id: 'flat', icon: 'view_list', tooltip: 'List view'},
-                              {id: 'directory', icon: 'folder_open', tooltip: 'Folder view'},
-                            ]}
-                            onClick={(id) => setIsFlattened(id === 'flat')}
-                          />
-                          {isFlattened ? (
-                            <AssetsFilter assets={assets} query={q} onSetQuery={setQ} />
-                          ) : (
-                            <AssetSearch assets={allAssets} />
-                          )}
-                        </Group>
-                      ) : isFlattened ? (
-                        <AssetsFilter assets={assets} query={q} onSetQuery={setQ} />
-                      ) : (
-                        <AssetSearch assets={allAssets} />
-                      )}
-                    </div>
-                    <QueryCountdown
-                      pollInterval={POLL_INTERVAL}
-                      queryResult={materializationsQuery}
-                    />
-                  </Box>
                   <AssetsTable
                     assets={matching}
                     currentPath={prefixPath || []}
                     setQuery={setQ}
                     isFlattened={isFlattened}
+                    actionBarComponents={
+                      <>
+                        {showSwitcher ? (
+                          <>
+                            <ButtonGroup
+                              activeItems={new Set([view])}
+                              buttons={[
+                                {id: 'flat', icon: 'view_list', tooltip: 'List view'},
+                                {id: 'directory', icon: 'folder_open', tooltip: 'Folder view'},
+                              ]}
+                              onClick={(id) => setIsFlattened(id === 'flat')}
+                            />
+                            {isFlattened ? (
+                              <AssetsFilter assets={assets} query={q} onSetQuery={setQ} />
+                            ) : (
+                              <AssetSearch assets={allAssets} />
+                            )}
+                          </>
+                        ) : isFlattened ? (
+                          <AssetsFilter assets={assets} query={q} onSetQuery={setQ} />
+                        ) : (
+                          <AssetSearch assets={allAssets} />
+                        )}
+                        <QueryCountdown
+                          pollInterval={POLL_INTERVAL}
+                          queryResult={materializationsQuery}
+                        />
+                      </>
+                    }
                   />
                 </Wrapper>
               );
@@ -301,89 +302,28 @@ const AssetSearch: React.FC<{assets: Asset[]}> = ({assets}) => {
   );
 };
 
-type State = {
-  checkedPaths: Set<string>;
-  lastPath?: string[];
-};
-const initialState: State = {
-  checkedPaths: new Set(),
-  lastPath: undefined,
-};
-enum ActionType {
-  TOGGLE_ONE = 'toggle-one',
-  TOGGLE_SLICE = 'toggle-slice',
-  TOGGLE_ALL = 'toggle-all',
-}
-type Action = {
-  type: ActionType;
-  payload: {
-    checked: boolean;
-    path?: string[];
-    allPaths: string[][];
-  };
-};
-const reducer = (state: State, action: Action): State => {
-  const copy = new Set(Array.from(state.checkedPaths));
-  switch (action.type) {
-    case 'toggle-one': {
-      const {checked, path} = action.payload;
-      checked ? copy.add(JSON.stringify(path)) : copy.delete(JSON.stringify(path));
-      return {checkedPaths: copy, lastPath: path};
-    }
-
-    case 'toggle-slice': {
-      const {checked, path: actionPath, allPaths} = action.payload;
-      const actionPathKey = JSON.stringify(actionPath);
-      const lastPathKey = JSON.stringify(state.lastPath);
-      const allPathKeys = allPaths.map((path) => JSON.stringify(path));
-      const indexOfLast = allPathKeys.findIndex((key) => key === lastPathKey);
-      const indexOfChecked = allPathKeys.findIndex((key) => key === actionPathKey);
-      if (indexOfLast === undefined || indexOfChecked === undefined) {
-        return state;
-      }
-
-      const [start, end] = [indexOfLast, indexOfChecked].sort();
-      allPathKeys
-        .slice(start, end + 1)
-        .forEach((pathKey) => (checked ? copy.add(pathKey) : copy.delete(pathKey)));
-      return {
-        lastPath: actionPath,
-        checkedPaths: copy,
-      };
-    }
-
-    case 'toggle-all': {
-      const {checked, allPaths} = action.payload;
-      return {
-        checkedPaths: checked ? new Set(allPaths.map((path) => JSON.stringify(path))) : new Set(),
-        lastPath: undefined,
-      };
-    }
-    default:
-      return state;
-  }
-};
-
 const AssetsTable = ({
   assets,
+  actionBarComponents,
   currentPath,
   isFlattened,
   setQuery,
 }: {
   assets: Asset[];
+  actionBarComponents: React.ReactNode;
   currentPath: string[];
   setQuery: (q: string) => void;
   isFlattened: boolean;
 }) => {
   useDocumentTitle(currentPath.length ? `Assets: ${currentPath.join(' \u203A ')}` : 'Assets');
+
   const [toWipe, setToWipe] = React.useState<AssetKey[] | undefined>();
   const {canWipeAssets} = usePermissions();
   const {flagAssetGraph} = useFeatureFlags();
-  const [state, dispatch] = React.useReducer(reducer, initialState);
-  const {checkedPaths} = state;
 
   const hasTags = !!assets.filter((asset) => asset.tags.length).length;
   const pathMap: {[key: string]: Asset[]} = {};
+
   assets.forEach((asset) => {
     const path = isFlattened
       ? asset.key.path
@@ -391,6 +331,11 @@ const AssetsTable = ({
     const pathKey = JSON.stringify(path);
     pathMap[pathKey] = [...(pathMap[pathKey] || []), asset];
   });
+
+  const [{checkedIds: checkedPaths}, {onToggleFactory, onToggleAll}] = useSelectionReducer(
+    Object.keys(pathMap),
+  );
+
   const sorted = Object.keys(pathMap)
     .sort()
     .map((x) => JSON.parse(x));
@@ -398,64 +343,41 @@ const AssetsTable = ({
   const onTagClick = (tag: AssetTag) => {
     setQuery(`tag:${tag.key}=${tag.value}`);
   };
-  const onChangeAll = (e: React.FormEvent<HTMLInputElement>) => {
-    if (e.target instanceof HTMLInputElement) {
-      const checked = checkedPaths.size !== sorted.length;
-      onToggleAll(checked);
-    }
-  };
-  const onToggleAll = (checked: boolean) => {
-    dispatch({
-      type: ActionType.TOGGLE_ALL,
-      payload: {checked, allPaths: sorted},
-    });
-  };
-  const onToggle = (e: React.FormEvent<HTMLInputElement>, path: string[]) => {
-    if (e.target instanceof HTMLInputElement) {
-      const {checked} = e.target;
-      const shiftKey =
-        e.nativeEvent instanceof MouseEvent && e.nativeEvent.getModifierState('Shift');
-      if (shiftKey && state.lastPath) {
-        dispatch({
-          type: ActionType.TOGGLE_SLICE,
-          payload: {checked, path, allPaths: sorted},
-        });
-      } else {
-        dispatch({
-          type: ActionType.TOGGLE_ONE,
-          payload: {checked, path, allPaths: sorted},
-        });
-      }
-    }
-  };
 
-  const selectedAssets = new Set<Asset>();
+  const checkedAssets = new Set<Asset>();
   sorted.forEach((path) => {
     const key = JSON.stringify(path);
     if (checkedPaths.has(key)) {
       const assets = pathMap[key] || [];
-      assets.forEach((asset) => selectedAssets.add(asset));
+      assets.forEach((asset) => checkedAssets.add(asset));
     }
   });
 
   return (
-    <Box margin={{top: 20}}>
+    <Box flex={{direction: 'column'}}>
+      <Box flex={{alignItems: 'center', gap: 12}} padding={{vertical: 8, left: 24, right: 12}}>
+        {actionBarComponents}
+        <div style={{flex: 1}} />
+        <AssetActions
+          selected={Array.from(checkedAssets)}
+          clearSelection={() => onToggleAll(false)}
+        />
+      </Box>
+
       <Table>
         <thead>
           <tr>
             {canWipeAssets ? (
-              <th style={{width: 50}}>
-                <div style={{display: 'flex', alignItems: 'center', gap: 5}}>
-                  <Checkbox
-                    indeterminate={checkedPaths.size > 0 && checkedPaths.size !== sorted.length}
-                    checked={checkedPaths.size === sorted.length}
-                    onChange={onChangeAll}
-                  />
-                  <AssetActions
-                    selected={Array.from(selectedAssets)}
-                    clearSelection={() => onToggleAll(false)}
-                  />
-                </div>
+              <th style={{width: 42, paddingTop: 0, paddingBottom: 0}}>
+                <Checkbox
+                  indeterminate={checkedPaths.size > 0 && checkedPaths.size !== sorted.length}
+                  checked={checkedPaths.size === sorted.length}
+                  onChange={(e) => {
+                    if (e.target instanceof HTMLInputElement) {
+                      onToggleAll(checkedPaths.size !== sorted.length);
+                    }
+                  }}
+                />
               </th>
             ) : null}
             <th>Asset Key</th>
@@ -475,19 +397,19 @@ const AssetsTable = ({
           </tr>
         </thead>
         <tbody>
-          {sorted.map((path, idx) => {
-            const isSelected = checkedPaths.has(JSON.stringify(path));
+          {sorted.map((path) => {
+            const pathStr = JSON.stringify(path);
             return (
               <AssetEntryRow
-                key={idx}
+                key={pathStr}
                 currentPath={currentPath}
                 path={path}
-                assets={pathMap[JSON.stringify(path)] || []}
+                assets={pathMap[pathStr] || []}
                 shouldShowTags={hasTags}
                 shouldShowAssetGraphColumns={flagAssetGraph}
                 isFlattened={isFlattened}
-                isSelected={isSelected}
-                onSelectToggle={onToggle}
+                isSelected={checkedPaths.has(pathStr)}
+                onToggleChecked={onToggleFactory(pathStr)}
                 onTagClick={onTagClick}
                 onWipe={(assets: Asset[]) => setToWipe(assets.map((asset) => asset.key))}
                 canWipe={canWipeAssets}
@@ -515,7 +437,7 @@ const AssetEntryRow: React.FC<{
   path: string[];
   isSelected: boolean;
   isFlattened: boolean;
-  onSelectToggle: (e: React.FormEvent<HTMLInputElement>, path: string[]) => void;
+  onToggleChecked: (values: {checked: boolean; shiftKey: boolean}) => void;
   shouldShowTags: boolean;
   shouldShowAssetGraphColumns: boolean;
   assets: Asset[];
@@ -532,7 +454,7 @@ const AssetEntryRow: React.FC<{
     onTagClick,
     isSelected,
     isFlattened,
-    onSelectToggle,
+    onToggleChecked,
     onWipe,
     canWipe,
   }) => {
@@ -541,11 +463,20 @@ const AssetEntryRow: React.FC<{
     const linkUrl = `/instance/assets/${fullPath.map(encodeURIComponent).join('/')}`;
     const first = assets[0];
 
+    const onChange = (e: React.FormEvent<HTMLInputElement>) => {
+      if (e.target instanceof HTMLInputElement) {
+        const {checked} = e.target;
+        const shiftKey =
+          e.nativeEvent instanceof MouseEvent && e.nativeEvent.getModifierState('Shift');
+        onToggleChecked({checked, shiftKey});
+      }
+    };
+
     return (
       <tr>
         {canWipe ? (
           <td style={{paddingRight: '4px'}}>
-            <Checkbox checked={isSelected} onChange={(e) => onSelectToggle(e, path)} />
+            <Checkbox checked={isSelected} onChange={onChange} />
           </td>
         ) : null}
         <td>
@@ -633,25 +564,19 @@ const AssetActions: React.FC<{
   }
 
   const disabled = selected.length === 0;
-  const prompt = disabled
-    ? 'Select assets to wipe'
-    : selected.length === 1
-    ? 'Wipe 1 asset'
-    : `Wipe ${selected.length} assets`;
+  const label = selected.length === 1 ? 'Wipe 1 asset' : `Wipe ${selected.length} assets`;
 
   return (
     <>
-      <Tooltip position="right" content={prompt}>
-        <ButtonWIP
-          disabled={disabled}
-          icon={<IconWIP name="delete" />}
-          intent={disabled ? 'none' : 'danger'}
-          outlined={!disabled}
-          onClick={() => setShowBulkWipeDialog(true)}
-        >
-          {disabled ? null : selected.length}
-        </ButtonWIP>
-      </Tooltip>
+      <ButtonWIP
+        disabled={disabled}
+        icon={<IconWIP name="delete" />}
+        intent={disabled ? 'none' : 'danger'}
+        outlined={!disabled}
+        onClick={() => setShowBulkWipeDialog(true)}
+      >
+        {label}
+      </ButtonWIP>
       <AssetWipeDialog
         assetKeys={selected.map((asset) => asset.key)}
         isOpen={showBulkWipeDialog}
@@ -678,9 +603,6 @@ const Wrapper = styled.div`
   min-width: 0;
   position: relative;
   z-index: 0;
-  table th {
-    vertical-align: middle;
-  }
 `;
 
 const ASSETS_TABLE_NODES_QUERY = gql`
