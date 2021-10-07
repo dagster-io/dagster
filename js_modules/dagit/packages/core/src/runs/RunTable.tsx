@@ -64,7 +64,7 @@ export const RunTable = (props: RunTableProps) => {
 
   return (
     <>
-      <Box flex={{alignItems: 'center', gap: 12}} style={{padding: '8px 12px 8px 24px'}}>
+      <Box flex={{alignItems: 'center', gap: 12}} padding={{vertical: 8, left: 24, right: 12}}>
         {actionBarComponents}
         <div style={{flex: 1}} />
         <RunBulkActionsMenu

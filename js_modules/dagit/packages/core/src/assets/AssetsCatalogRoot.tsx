@@ -1,7 +1,6 @@
 import * as React from 'react';
 import {RouteComponentProps} from 'react-router-dom';
 
-import {Box} from '../ui/Box';
 import {PageHeader} from '../ui/PageHeader';
 import {Heading} from '../ui/Text';
 

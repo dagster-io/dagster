@@ -160,7 +160,7 @@ export const AssetsCatalogTable: React.FC<{prefixPath?: string[]}> = ({prefixPat
                     setQuery={setQ}
                     isFlattened={isFlattened}
                     actionBarComponents={
-                      <Box flex={{gap: 8, alignItems: 'center'}}>
+                      <>
                         {showSwitcher ? (
                           <>
                             <ButtonGroup
@@ -186,7 +186,7 @@ export const AssetsCatalogTable: React.FC<{prefixPath?: string[]}> = ({prefixPat
                           pollInterval={POLL_INTERVAL}
                           queryResult={materializationsQuery}
                         />
-                      </Box>
+                      </>
                     }
                   />
                 </Wrapper>
@@ -355,7 +355,7 @@ const AssetsTable = ({
 
   return (
     <Box flex={{direction: 'column'}}>
-      <Box flex={{alignItems: 'center', gap: 12}} style={{padding: '8px 12px 8px 24px'}}>
+      <Box flex={{alignItems: 'center', gap: 12}} padding={{vertical: 8, left: 24, right: 12}}>
         {actionBarComponents}
         <div style={{flex: 1}} />
         <AssetActions
@@ -397,22 +397,25 @@ const AssetsTable = ({
           </tr>
         </thead>
         <tbody>
-          {sorted.map((path, idx) => (
-            <AssetEntryRow
-              key={idx}
-              currentPath={currentPath}
-              path={path}
-              assets={pathMap[JSON.stringify(path)] || []}
-              shouldShowTags={hasTags}
-              shouldShowAssetGraphColumns={flagAssetGraph}
-              isFlattened={isFlattened}
-              isSelected={checkedPaths.has(JSON.stringify(path))}
-              onToggleChecked={onToggleFactory(JSON.stringify(path))}
-              onTagClick={onTagClick}
-              onWipe={(assets: Asset[]) => setToWipe(assets.map((asset) => asset.key))}
-              canWipe={canWipeAssets}
-            />
-          ))}
+          {sorted.map((path) => {
+            const pathStr = JSON.stringify(path);
+            return (
+              <AssetEntryRow
+                key={pathStr}
+                currentPath={currentPath}
+                path={path}
+                assets={pathMap[pathStr] || []}
+                shouldShowTags={hasTags}
+                shouldShowAssetGraphColumns={flagAssetGraph}
+                isFlattened={isFlattened}
+                isSelected={checkedPaths.has(pathStr)}
+                onToggleChecked={onToggleFactory(pathStr)}
+                onTagClick={onTagClick}
+                onWipe={(assets: Asset[]) => setToWipe(assets.map((asset) => asset.key))}
+                canWipe={canWipeAssets}
+              />
+            );
+          })}
         </tbody>
       </Table>
       <AssetWipeDialog
