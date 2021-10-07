@@ -253,6 +253,28 @@ class DagsterLogHandler(logging.Handler):
 
 
 class DagsterLogManager(logging.Logger):
+    """Centralized dispatch for logging from user code.
+
+    Handles the construction of uniform structured log messages and passes them through to the
+    underlying loggers/handlers.
+
+    An instance of the log manager is made available to ops as ``context.log``. Users should not
+    initialize instances of the log manager directly. To configure custom loggers, set the
+    ``logger_defs`` argument in an `@job` decorator or when calling the `to_job()` method on a
+    :py:class:`GraphDefinition`.
+
+    The log manager inherits standard convenience methods like those exposed by the Python standard
+    library :py:mod:`python:logging` module (i.e., within the body of an op,
+    ``context.log.{debug, info, warning, warn, error, critical, fatal}``).
+
+    The underlying integer API can also be called directly using, e.g.
+    ``context.log.log(5, msg)``, and the log manager will delegate to the ``log`` method
+    defined on each of the loggers it manages.
+
+    User-defined custom log levels are not supported, and calls to, e.g.,
+    ``context.log.trace`` or ``context.log.notice`` will result in hard exceptions **at runtime**.
+    """
+
     def __init__(
         self,
         dagster_handler: DagsterLogHandler,
