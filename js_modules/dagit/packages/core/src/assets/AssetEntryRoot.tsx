@@ -89,37 +89,21 @@ export const AssetEntryRoot: React.FC<RouteComponentProps> = ({location, match})
         }
         tags={<TagWIP icon="asset">Asset</TagWIP>}
       />
-      <Box padding={{vertical: 0, horizontal: 24}}>
-        <Loading queryResult={queryResult}>
-          {({assetOrError, assetNodeOrError}) => {
-            if (
-              assetOrError.__typename === 'AssetNotFoundError' &&
-              assetNodeOrError.__typename === 'AssetNotFoundError'
-            ) {
-              return <AssetsCatalogTable prefixPath={currentPath} />;
-            }
+      <Loading queryResult={queryResult}>
+        {({assetOrError, assetNodeOrError}) => {
+          if (
+            assetOrError.__typename === 'AssetNotFoundError' &&
+            assetNodeOrError.__typename === 'AssetNotFoundError'
+          ) {
+            return <AssetsCatalogTable prefixPath={currentPath} />;
+          }
 
-            return (
-              <Wrapper>
-                <AssetView assetKey={{path: currentPath}} asOf={asOf} />
-              </Wrapper>
-            );
-          }}
-        </Loading>
-      </Box>
+          return <AssetView assetKey={{path: currentPath}} asOf={asOf} />;
+        }}
+      </Loading>
     </Page>
   );
 };
-
-const Wrapper = styled.div`
-  flex: 1 1;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
-  min-width: 0;
-  overflow: auto;
-`;
 
 const BreadcrumbLink = styled(Link)`
   color: ${ColorsWIP.Gray800};

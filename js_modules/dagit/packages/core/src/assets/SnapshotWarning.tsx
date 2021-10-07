@@ -4,6 +4,8 @@ import {Link} from 'react-router-dom';
 
 import {Timestamp} from '../app/time/Timestamp';
 import {Alert} from '../ui/Alert';
+import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
 
 import {SnapshotWarningAssetFragment} from './types/SnapshotWarningAssetFragment';
 
@@ -28,25 +30,31 @@ export const SnapshotWarning: React.FC<{
   ) {
     return null;
   }
+
   return (
-    <Alert
-      intent="info"
-      title="This is a historical asset snapshot."
-      description={
-        <span>
-          This view represents{' '}
-          <span style={{fontWeight: 600}}>{asset.key.path[asset.key.path.length - 1]}</span> as of{' '}
-          <span style={{fontWeight: 600}}>
-            <Timestamp
-              timestamp={{ms: Number(asOf)}}
-              timeFormat={{showSeconds: true, showTimezone: true}}
-            />
+    <Box
+      padding={{vertical: 16, horizontal: 24}}
+      border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+    >
+      <Alert
+        intent="info"
+        title="This is a historical asset snapshot."
+        description={
+          <span>
+            This view represents{' '}
+            <span style={{fontWeight: 600}}>{asset.key.path[asset.key.path.length - 1]}</span> as of{' '}
+            <span style={{fontWeight: 600}}>
+              <Timestamp
+                timestamp={{ms: Number(asOf)}}
+                timeFormat={{showSeconds: true, showTimezone: true}}
+              />
+            </span>
+            . You can also view the <Link to={location.pathname}>latest materialization</Link> for
+            this asset.
           </span>
-          . You can also view the <Link to={location.pathname}>latest materialization</Link> for
-          this asset.
-        </span>
-      }
-    />
+        }
+      />
+    </Box>
   );
 };
 

@@ -38,7 +38,7 @@ export const AssetMaterializationTable: React.FC<{
       <thead>
         <tr>
           {isPartitioned && <th style={{minWidth: 100}}>Partition</th>}
-          <th style={{paddingLeft: 0}}>Materialization Metadata</th>
+          <th>Materialization Metadata</th>
           {hasLineage && <th style={{minWidth: 100}}>Parent Materializations</th>}
           <th style={{minWidth: 150}}>Timestamp</th>
           <th style={{minWidth: 150}}>{flagPipelineModeTuples ? 'Job' : 'Pipeline'}</th>
@@ -77,7 +77,7 @@ const AssetMaterializationRow: React.FC<{
       {isPartitioned && (
         <td>{latest.partition || <span style={{color: ColorsWIP.Gray400}}>None</span>}</td>
       )}
-      <td style={{fontSize: 12, padding: '4px 12px 0 0'}}>
+      <td style={{fontSize: 12}}>
         {materialization.description ? (
           <div style={{fontSize: '0.8rem', marginTop: 10}}>{materialization.description}</div>
         ) : null}

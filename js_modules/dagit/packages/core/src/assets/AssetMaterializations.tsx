@@ -8,6 +8,7 @@ import {METADATA_ENTRY_FRAGMENT} from '../runs/MetadataEntry';
 import {Box} from '../ui/Box';
 import {ButtonGroup} from '../ui/ButtonGroup';
 import {ColorsWIP} from '../ui/Colors';
+import {NonIdealState} from '../ui/NonIdealState';
 import {Spinner} from '../ui/Spinner';
 import {Tab, Tabs} from '../ui/Tabs';
 import {Subheading} from '../ui/Text';
@@ -83,6 +84,18 @@ export const AssetMaterializations: React.FC<Props> = ({assetKey, asOf, asSideba
       );
     }
 
+    if (!reversed.length) {
+      return (
+        <Box padding={{vertical: 20}}>
+          <NonIdealState
+            icon="asset"
+            title="No materializations"
+            description="No materializations were found for this asset."
+          />
+        </Box>
+      );
+    }
+
     if (activeTab === 'list') {
       return (
         <AssetMaterializationTable
@@ -109,8 +122,12 @@ export const AssetMaterializations: React.FC<Props> = ({assetKey, asOf, asSideba
 
   return (
     <div>
-      <Box flex={{justifyContent: 'space-between', alignItems: 'flex-end'}} padding={{right: 4}}>
-        <Subheading>Materializations over Time</Subheading>
+      <Box
+        flex={{justifyContent: 'space-between', alignItems: 'center'}}
+        padding={{vertical: 16, horizontal: 24}}
+        border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+      >
+        <Subheading>Materializations over time</Subheading>
         {isPartitioned ? (
           <ButtonGroup
             activeItems={activeItems}
@@ -122,12 +139,17 @@ export const AssetMaterializations: React.FC<Props> = ({assetKey, asOf, asSideba
           />
         ) : null}
       </Box>
-      <Box margin={{vertical: 8}}>
-        <Tabs selectedTabId={activeTab}>
-          <Tab id="graphs" title="Graphs" onClick={() => setActiveTab('graphs')} />
-          <Tab id="list" title="List" onClick={() => setActiveTab('list')} />
-        </Tabs>
-      </Box>
+      {reversed.length ? (
+        <Box
+          padding={{horizontal: 24}}
+          border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+        >
+          <Tabs selectedTabId={activeTab}>
+            <Tab id="graphs" title="Graphs" onClick={() => setActiveTab('graphs')} />
+            <Tab id="list" title="List" onClick={() => setActiveTab('list')} />
+          </Tabs>
+        </Box>
+      ) : null}
       {content()}
     </div>
   );
@@ -151,22 +173,24 @@ const AssetMaterializationMatrixAndGraph: React.FC<{
   return (
     <>
       {!props.asSidebarSection && (
-        <AssetMaterializationMatrix
-          isPartitioned={isPartitioned}
-          materializations={assetMaterializations}
-          xAxis={xAxis}
-          xHover={xHover}
-          onHoverX={(x) => x !== xHover && setXHover(x)}
-          graphDataByMetadataLabel={graphDataByMetadataLabel}
-          graphedLabels={graphedLabels}
-          setGraphedLabels={setGraphedLabels}
-        />
+        <Box padding={{horizontal: 24}}>
+          <AssetMaterializationMatrix
+            isPartitioned={isPartitioned}
+            materializations={assetMaterializations}
+            xAxis={xAxis}
+            xHover={xHover}
+            onHoverX={(x) => x !== xHover && setXHover(x)}
+            graphDataByMetadataLabel={graphDataByMetadataLabel}
+            graphedLabels={graphedLabels}
+            setGraphedLabels={setGraphedLabels}
+          />
+        </Box>
       )}
       <div
         style={{
           display: 'flex',
           flexWrap: 'wrap',
-          justifyContent: 'space-between',
+          justifyContent: 'stretch',
           flexDirection: props.asSidebarSection ? 'column' : 'row',
           marginTop: props.asSidebarSection ? 0 : 30,
         }}
@@ -175,7 +199,7 @@ const AssetMaterializationMatrixAndGraph: React.FC<{
           <AssetValueGraph
             key={label}
             label={label}
-            width={graphedLabels.length === 1 || props.asSidebarSection ? '100%' : '48%'}
+            width={graphedLabels.length === 1 || props.asSidebarSection ? '100%' : '50%'}
             data={graphDataByMetadataLabel[label]}
             xHover={xHover}
             onHoverX={(x) => x !== xHover && setXHover(x)}
