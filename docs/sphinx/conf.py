@@ -50,6 +50,35 @@ extensions = [
 # https://stackoverflow.com/a/54843636/324449
 autosectionlabel_prefix_document = True
 
+# Mock out transitive dependencies
+autodoc_mock_imports = [
+    "airflow",
+    "azure",
+    "celery",
+    "dask",
+    "databricks_api",
+    "datadog",
+    "docker_image",
+    "kubernetes",
+    "pyspark",
+    "gql",
+    "gevent",
+    "psycopg2",
+    "kombu",
+    "google.cloud",
+    "jwt",
+    "mysql",
+    "prometheus_client",
+    "slack_sdk",
+    "papermill",
+    "snowflake",
+    "great_expectations",
+    "pypd",
+    "paramiko",
+    "twilio",
+    "sshtunnel",
+]
+
 autodoc_typehints = "none"
 
 # To add a new intersphinx mapping and find the right intersphinx inv file, add a new record with
