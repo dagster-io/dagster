@@ -298,12 +298,12 @@ class FanInInputPointer(namedtuple("_FanInInputPointer", "solid_name input_name 
 
 
 class InputMapping(namedtuple("_InputMapping", "definition maps_to")):
-    """Defines an input mapping for a composite solid.
+    """Defines an input mapping for a graph, or in legacy APIs, a composite solid..
 
     Args:
-        definition (InputDefinition): Defines the input to the composite solid.
-        solid_name (str): The name of the child solid onto which to map the input.
-        input_name (str): The name of the input to the child solid onto which to map the input.
+        definition (InputDefinition): Defines the input to the graph.
+        solid_name (str): The name of the child op onto which to map the input.
+        input_name (str): The name of the input to the child op onto which to map the input.
     """
 
     def __new__(cls, definition, maps_to):
