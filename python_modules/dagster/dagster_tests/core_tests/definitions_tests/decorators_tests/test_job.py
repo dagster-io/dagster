@@ -1,6 +1,6 @@
 import logging
 
-from dagster import DagsterInstance, Field, JobDefinition, job, logger, op, resource, ConfigMapping
+from dagster import ConfigMapping, DagsterInstance, Field, JobDefinition, job, logger, op, resource
 from dagster.core.utils import coerce_valid_log_level
 
 

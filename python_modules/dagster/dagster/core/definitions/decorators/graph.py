@@ -146,6 +146,7 @@ def graph(
         check.invariant(description is None)
         return _Graph()(name)
 
+    config_mapping = None
     # Case 1: a dictionary of config is provided, convert to config mapping.
     if config is not None and not isinstance(config, ConfigMapping):
         config = check.dict_param(config, "config", key_type=str)
