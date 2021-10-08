@@ -1,4 +1,5 @@
 import os
+import json
 from contextlib import contextmanager
 
 from dagster import Field, StringSource, check, seven
@@ -35,6 +36,9 @@ class GCSComputeLogManager(ComputeLogManager, ConfigurableClass):
         local_dir (Optional[str]): Path to the local directory in which to stage logs. Default:
             ``dagster.seven.get_system_temp_directory()``.
         prefix (Optional[str]): Prefix for the log file keys.
+        json_credentials_envvar (Optional[str]): Env variable that contain the JSON with a private key
+            and other credentials information. If this is set GOOGLE_APPLICATION_CREDENTIALS will be ignored.
+            Can be used when the private key cannot be used as a file.
         inst_data (Optional[ConfigurableClassData]): Serializable representation of the compute
             log manager when newed up from config.
     """
@@ -45,11 +49,21 @@ class GCSComputeLogManager(ComputeLogManager, ConfigurableClass):
         local_dir=None,
         inst_data=None,
         prefix="dagster",
+        json_credentials_envvar=None,
     ):
         self._bucket_name = check.str_param(bucket, "bucket")
         self._prefix = check.str_param(prefix, "prefix")
 
-        self._bucket = storage.Client().get_bucket(self._bucket_name)
+        if json_credentials_envvar:
+            json_info_str = os.environ.get(json_credentials_envvar)
+            credentials_info = json.loads(json_info_str)
+            self._bucket = (
+                storage.Client()
+                .from_service_account_info(credentials_info)
+                .get_bucket(self._bucket_name)
+            )
+        else:
+            self._bucket = storage.Client().get_bucket(self._bucket_name)
 
         # proxy calls to local compute log manager (for subscriptions, etc)
         if not local_dir:
@@ -76,6 +90,7 @@ class GCSComputeLogManager(ComputeLogManager, ConfigurableClass):
             "bucket": StringSource,
             "local_dir": Field(StringSource, is_required=False),
             "prefix": Field(StringSource, is_required=False, default_value="dagster"),
+            "json_credentials_envvar": Field(StringSource, is_required=False),
         }
 
     @staticmethod
