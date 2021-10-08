@@ -236,6 +236,44 @@ class RepositoryData(ABC):
             )
         return pipelines_with_name[0]
 
+    def get_all_jobs(self):
+        """Return all pipelines/jobs in the repository as a list.
+
+        Returns:
+            List[PipelineDefinition]: All pipelines/jobs in the repository.
+        """
+        return self.get_all_pipelines()
+
+    def get_job_names(self):
+        """Get the names of all pipelines/jobs in the repository.
+
+        Returns:
+            List[str]
+        """
+        return self.get_pipeline_names()
+
+    def has_job(self, job_name):
+        """Check if a pipeline/job with a given name is present in the repository.
+
+        Args:
+            job_name (str): The name of the pipeline/job.
+
+        Returns:
+            bool
+        """
+        return self.has_pipeline(job_name)
+
+    def get_job(self, job_name):
+        """Get a pipeline/job by name.
+
+        Args:
+            job_name (str): Name of the pipeline/job to retrieve.
+
+        Returns:
+            PipelineDefinition: The pipeline/job definition corresponding to the given name.
+        """
+        return self.get_pipeline(job_name)
+
     def get_partition_set_names(self):
         """Get the names of all partition sets in the repository.
 
@@ -437,6 +475,7 @@ class CachingRepositoryData(RepositoryData):
 
                 {
                     'pipelines': Dict[str, Callable[[], PipelineDefinition]],
+                    'jobs': Dict[str, Callable[[], JobDefinition]],
                     'partition_sets': Dict[str, Callable[[], PartitionSetDefinition]],
                     'schedules': Dict[str, Callable[[], ScheduleDefinition]]
                 }
@@ -807,6 +846,11 @@ class RepositoryDefinition:
         """List[str]: Names of all pipelines in the repository"""
         return self._repository_data.get_pipeline_names()
 
+    @property
+    def job_names(self):
+        """List[str]: Names of all pipelines/jobs in the repository"""
+        return self._repository_data.get_job_names()
+
     def has_pipeline(self, name):
         """Check if a pipeline with a given name is present in the repository.
 
@@ -821,7 +865,7 @@ class RepositoryDefinition:
     def get_pipeline(self, name):
         """Get a pipeline by name.
 
-        If this pipeline is present in the lazily evaluated ``pipeline_dict`` passed to the
+        If this pipeline is present in the lazily evaluated dictionary passed to the
         constructor, but has not yet been constructed, only this pipeline is constructed, and will
         be cached for future calls.
 
@@ -836,13 +880,51 @@ class RepositoryDefinition:
     def get_all_pipelines(self):
         """Return all pipelines in the repository as a list.
 
-        Note that this will construct any pipeline in the lazily evaluated ``pipeline_dict`` that
+        Note that this will construct any pipeline in the lazily evaluated dictionary that
         has not yet been constructed.
 
         Returns:
             List[PipelineDefinition]: All pipelines in the repository.
         """
         return self._repository_data.get_all_pipelines()
+
+    def has_job(self, name):
+        """Check if a pipeline/job with a given name is present in the repository.
+
+        Args:
+            name (str): The name of the pipeline/job.
+
+        Returns:
+            bool
+        """
+        return self._repository_data.has_job(name)
+
+    def get_job(self, name):
+        """Get a pipeline/job by name.
+
+        If this pipeline/job is present in the lazily evaluated dictionary passed to the
+        constructor, but has not yet been constructed, only this pipeline/job is constructed, and
+        will be cached for future calls.
+
+        Args:
+            name (str): Name of the pipeline/job to retrieve.
+
+        Returns:
+            Union[PipelineDefinition, JobDefinition]: The pipeline/job definition corresponding to
+            the given name.
+        """
+        return self._repository_data.get_job(name)
+
+    def get_all_jobs(self):
+        """Return all pipelines/jobs in the repository as a list.
+
+        Note that this will construct any pipeline/job in the lazily evaluated dictionary that has
+        not yet been constructed.
+
+        Returns:
+            List[Union[PipelineDefinition, JobDefinition]]: All pipelines/jobs in the repository.
+        """
+        return self._repository_data.get_all_jobs()
 
     @property
     def partition_set_defs(self):

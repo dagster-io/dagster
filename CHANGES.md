@@ -1,5 +1,25 @@
 # Changelog
 
+# 0.12.14
+
+### Community Contributions
+
+* Updated click version, thanks @ashwin153!
+* Typo fix, thanks @geoHeil!
+
+### Bugfixes
+
+* Fixed a bug in `dagster_aws.s3.sensor.get_s3_keys` that would return no keys if an invalid s3 key was provided
+* Fixed a bug with capturing python logs where statements of the form `my_log.info("foo %s", "bar")` would cause errors in some scenarios.
+* Fixed a bug where the scheduler would sometimes hang during fall Daylight Savings Time transitions when Pendulum 2 was installed.
+
+### Experimental
+
+* Dagit now uses an asset graph to represent jobs built using `build_assets_job`.  The asset graph shows each node in the job’s graph with metadata about the asset it corresponds to - including asset materializations.  It also contains links to upstream jobs that produce assets consumed by the job, as well as downstream jobs that consume assets produced by the job.
+* Fixed a bug in `load_assets_from_dbt_project` and `load_assets_from_dbt_project` that would cause runs to fail if no `runtime_metadata_fn` argument were supplied.
+* Fixed a bug that caused `@asset` not to infer the type of inputs and outputs from type annotations of the decorated function.
+* `@asset` now accepts a `compute_kind` argument. You can supply values like “spark”, “pandas”, or “dbt”, and see them represented as a badge on the asset in the Dagit asset graph.
+
 # 0.12.13
 
 ### Community Contributions
