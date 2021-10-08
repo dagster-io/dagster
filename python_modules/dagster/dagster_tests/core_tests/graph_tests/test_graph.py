@@ -660,3 +660,33 @@ def test_output_for_node_non_standard_name():
     result = basic.execute_in_process()
 
     assert result.output_for_node("my_op", "foo") == 5
+
+
+def test_execute_in_process_aliased_graph():
+    @op
+    def my_op():
+        return 5
+
+    @graph
+    def my_graph():
+        return my_op()
+
+    result = my_graph.alias("foo_graph").execute_in_process()
+    assert result.success
+    assert result.output_value() == 5
+
+
+def test_execute_in_process_aliased_graph_config():
+    @op(config_schema=str)
+    def my_op(context):
+        return context.op_config
+
+    @graph
+    def my_graph():
+        return my_op()
+
+    result = my_graph.alias("foo_graph").execute_in_process(
+        run_config={"ops": {"my_op": {"config": "foo"}}}
+    )
+    assert result.success
+    assert result.output_value() == "foo"
