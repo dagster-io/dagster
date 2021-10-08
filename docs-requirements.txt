@@ -33,6 +33,7 @@
 -e ./python_modules/libraries/dagstermill
 -e ./python_modules/libraries/lakehouse
 -e ./python_modules/automation
+docutils==0.15.2
 Sphinx==3.5.2
 sphinx-click==2.5.0
 recommonmark==0.7.1
