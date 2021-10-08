@@ -132,7 +132,7 @@ def test_solid_invocation_with_resources():
     # Ensure that error is raised when we attempt to invoke with a None context
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match='Solid "solid_requires_resources" has required resources, but no context was '
+        match='solid "solid_requires_resources" has required resources, but no context was '
         "provided.",
     ):
         solid_requires_resources(None)
@@ -142,7 +142,7 @@ def test_solid_invocation_with_resources():
     context = build_solid_context()
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match='Solid "solid_requires_resources" requires resource "foo", but no resource '
+        match='solid "solid_requires_resources" requires resource "foo", but no resource '
         "with that key was found on the context.",
     ):
         solid_requires_resources(context)
@@ -205,7 +205,7 @@ def test_solid_invocation_with_config():
     # Ensure that error is raised when we attempt to invoke with a None context
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match='Solid "solid_requires_config" has required config schema, but no context was '
+        match='solid "solid_requires_config" has required config schema, but no context was '
         "provided.",
     ):
         solid_requires_config(None)
