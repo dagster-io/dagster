@@ -710,7 +710,7 @@ def test_top_level_config_mapping_graph():
     def _config_fn(_):
         return {"my_op": {"config": "foo"}}
 
-    @graph(config_mapping=ConfigMapping(config_fn=_config_fn))
+    @graph(config=ConfigMapping(config_fn=_config_fn))
     def my_graph():
         my_op()
 
@@ -728,7 +728,7 @@ def test_top_level_config_mapping_config_schema():
     def _config_fn(outer):
         return {"my_op": {"config": outer}}
 
-    @graph(config_mapping=ConfigMapping(config_fn=_config_fn, config_schema=str))
+    @graph(config=ConfigMapping(config_fn=_config_fn, config_schema=str))
     def my_graph():
         my_op()
 
@@ -751,14 +751,14 @@ def test_nested_graph_config_mapping():
     def _nested_config_fn(outer):
         return {"my_op": {"config": outer}}
 
-    @graph(config_mapping=ConfigMapping(config_fn=_nested_config_fn, config_schema=str))
+    @graph(config=ConfigMapping(config_fn=_nested_config_fn, config_schema=str))
     def my_nested_graph():
         my_op()
 
     def _config_fn(outer):
         return {"my_nested_graph": {"config": outer}}
 
-    @graph(config_mapping=ConfigMapping(config_fn=_config_fn, config_schema=str))
+    @graph(config=ConfigMapping(config_fn=_config_fn, config_schema=str))
     def my_graph():
         my_nested_graph()
 
@@ -776,7 +776,7 @@ def test_top_level_graph_config_mapping_failure():
     def _nested_config_fn(_):
         return "foo"
 
-    @graph(config_mapping=ConfigMapping(config_fn=_nested_config_fn))
+    @graph(config=ConfigMapping(config_fn=_nested_config_fn))
     def my_nested_graph():
         my_op()
 
@@ -795,7 +795,7 @@ def test_top_level_graph_outer_config_failure():
     def _config_fn(outer):
         return {"my_op": {"config": outer}}
 
-    @graph(config_mapping=ConfigMapping(config_fn=_config_fn, config_schema=str))
+    @graph(config=ConfigMapping(config_fn=_config_fn, config_schema=str))
     def my_graph():
         my_op()
 
@@ -804,3 +804,18 @@ def test_top_level_graph_outer_config_failure():
 
     with pytest.raises(DagsterInvalidConfigError, match="Invalid scalar at path root:config"):
         my_graph.to_job(config={"ops": {"config": {"bad_type": "foo"}}})
+
+
+def test_graph_dict_config():
+    @op(config_schema=str)
+    def my_op(context):
+        return context.op_config
+
+    @graph(config={"my_op": {"config": "foo"}})
+    def my_graph():
+        return my_op()
+
+    result = my_graph.execute_in_process()
+    assert result.success
+
+    assert result.output_value() == "foo"

@@ -98,7 +98,7 @@ def graph(
     ins: Optional[Dict[str, GraphIn]] = None,
     out: Optional[Union[GraphOut, Dict[str, GraphOut]]] = None,
     tags: Optional[Dict[str, Any]] = None,
-    config_mapping: Optional[ConfigMapping] = None,
+    config: Optional[Union[ConfigMapping, Dict[str, Any]]] = None,
 ) -> Union[_Graph, GraphDefinition]:
     """Create a graph with the specified parameters from the decorated composition function.
 
@@ -145,6 +145,14 @@ def graph(
     if callable(name):
         check.invariant(description is None)
         return _Graph()(name)
+
+    # Case 1: a dictionary of config is provided, convert to config mapping.
+    if not isinstance(config, ConfigMapping):
+        config = check.opt_dict_param(config, "config", key_type=str)
+        config_mapping = ConfigMapping(config_fn=lambda _: config, config_schema=None)
+    # Case 2: actual config mapping is provided.
+    else:
+        config_mapping = config
 
     return _Graph(
         name=name,
