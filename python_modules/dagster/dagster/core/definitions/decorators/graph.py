@@ -147,8 +147,8 @@ def graph(
         return _Graph()(name)
 
     # Case 1: a dictionary of config is provided, convert to config mapping.
-    if not isinstance(config, ConfigMapping):
-        config = check.opt_dict_param(config, "config", key_type=str)
+    if config is not None and not isinstance(config, ConfigMapping):
+        config = check.dict_param(config, "config", key_type=str)
         config_mapping = ConfigMapping(config_fn=lambda _: config, config_schema=None)
     # Case 2: actual config mapping is provided.
     else:
