@@ -19,4 +19,5 @@ def do_it_all():
 
 
 def test_do_it_all():
-    do_it_all.with_resources({"external_service": MagicMock()}).execute_in_process()
+    result = do_it_all.graph.execute_in_process(resources={"external_service": MagicMock()})
+    assert result.success

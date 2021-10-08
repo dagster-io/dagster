@@ -185,7 +185,8 @@ def do_it_all():
 
 
 def test_do_it_all():
-    do_it_all.with_resources({"external_service": MagicMock()}).execute_in_process()
+    result = do_it_all.graph.execute_in_process(resources={"external_service": MagicMock()})
+    assert result.success
 ```
 
 ### A pipeline with prod and dev modes
@@ -525,7 +526,7 @@ def do_it_all_repo():
 With the job APIs, you can first define a graph, and then a job with partitioning. These partitions exist independently of any schedule, and can be used for backfills. A schedule can then be derived from that partitioning, while providing execution time information. The resulting schedule can be independently passed to a repository, and the underlying job will be inferred.
 
 ```python file=/guides/dagster/graph_job_op/graph_with_partition_schedule.py
-from dagster import daily_partitioned_config, op, repository, schedule_from_partitions, job
+from dagster import daily_partitioned_config, job, op, repository, schedule_from_partitions
 
 
 @op(config_schema={"date": str})

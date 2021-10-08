@@ -1,4 +1,4 @@
-from dagster import daily_partitioned_config, op, repository, schedule_from_partitions, job
+from dagster import daily_partitioned_config, job, op, repository, schedule_from_partitions
 
 
 @op(config_schema={"date": str})
