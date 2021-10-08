@@ -586,7 +586,7 @@ class PendingNodeInvocation:
 
     def execute_in_process(
         self,
-        config: Any = None,
+        run_config: Any = None,
         instance: Optional["DagsterInstance"] = None,
         resources: Optional[Dict[str, Any]] = None,
         raise_on_error: bool = True,
@@ -620,12 +620,10 @@ class PendingNodeInvocation:
             solid_retry_policy=self.retry_policy,
         )
 
-        run_config = {"ops": config if config is not None else {}}
-
         return core_execute_in_process(
             node=self.node_def,
             ephemeral_pipeline=ephemeral_job,
-            run_config=run_config,
+            run_config=run_config if run_config is not None else {},
             instance=instance,
             output_capturing_enabled=True,
             raise_on_error=raise_on_error,
