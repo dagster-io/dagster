@@ -1,4 +1,4 @@
-from dagster import PipelineDefinition, SolidInvocation, execute_pipeline, solid
+from dagster import PipelineDefinition, NodeInvocation, execute_pipeline, solid
 
 
 def test_solid_instance_tags():
@@ -13,7 +13,7 @@ def test_solid_instance_tags():
         name="metadata_pipeline",
         solid_defs=[metadata_solid],
         dependencies={
-            SolidInvocation(
+            NodeInvocation(
                 "metadata_solid",
                 alias="aliased_metadata_solid",
                 tags={"foo": "oof", "bip": "bop"},

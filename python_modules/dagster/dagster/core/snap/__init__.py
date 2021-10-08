@@ -40,7 +40,7 @@ from dagster.config.snap import (
 
 from .config_types import build_config_schema_snapshot
 from .dagster_types import build_dagster_type_namespace_snapshot
-from .dep_snapshot import DependencyStructureIndex, SolidInvocationSnap
+from .dep_snapshot import DependencyStructureIndex, NodeInvocationSnap
 from .execution_plan_snapshot import (
     ExecutionPlanSnapshot,
     ExecutionStepInputSnap,

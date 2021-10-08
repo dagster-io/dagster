@@ -27,7 +27,7 @@ from .definition_config_schema import (
     IDefinitionConfigSchema,
     convert_user_facing_definition_config_schema,
 )
-from .dependency import IDependencyDefinition, NodeHandle, SolidInvocation
+from .dependency import IDependencyDefinition, NodeHandle, NodeInvocation
 from .graph import GraphDefinition
 from .input import InputDefinition, InputMapping
 from .node import NodeDefinition
@@ -287,9 +287,9 @@ class CompositeSolidDefinition(GraphDefinition):
             configuration for the composite solid, and a configuration mapping function, which
             is called to map the configuration of the composite solid into the configuration that
             is applied to any child solids.
-        dependencies (Optional[Dict[Union[str, SolidInvocation], Dict[str, DependencyDefinition]]]):
+        dependencies (Optional[Dict[Union[str, NodeInvocation], Dict[str, DependencyDefinition]]]):
             A structure that declares where each solid gets its inputs. The keys at the top
-            level dict are either string names of solids or SolidInvocations. The values
+            level dict are either string names of solids or NodeInvocations. The values
             are dicts that map input names to DependencyDefinitions.
         description (Optional[str]): Human readable description of this composite solid.
         tags (Optional[Dict[str, Any]]): Arbitrary metadata for the solid. Frameworks may
@@ -312,8 +312,8 @@ class CompositeSolidDefinition(GraphDefinition):
                 'add_two',
                 solid_defs=[add_one],
                 dependencies={
-                    SolidInvocation('add_one', 'adder_1'): {},
-                    SolidInvocation('add_one', 'adder_2'): {'num': DependencyDefinition('adder_1')},
+                    NodeInvocation('add_one', 'adder_1'): {},
+                    NodeInvocation('add_one', 'adder_2'): {'num': DependencyDefinition('adder_1')},
                 },
                 input_mappings=[InputDefinition('num', Int).mapping_to('adder_1', 'num')],
                 output_mappings=[OutputDefinition(Int).mapping_from('adder_2')],
@@ -328,7 +328,7 @@ class CompositeSolidDefinition(GraphDefinition):
         output_mappings: Optional[List[OutputMapping]] = None,
         config_mapping: Optional[ConfigMapping] = None,
         dependencies: Optional[
-            Dict[Union[str, SolidInvocation], Dict[str, IDependencyDefinition]]
+            Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]
         ] = None,
         description: Optional[str] = None,
         tags: Optional[Dict[str, str]] = None,

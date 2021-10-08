@@ -30,7 +30,7 @@ from .dependency import (
     Node,
     NodeHandle,
     SolidInputHandle,
-    SolidInvocation,
+    NodeInvocation,
 )
 from .graph import GraphDefinition
 from .hook import HookDefinition
@@ -68,11 +68,11 @@ class PipelineDefinition:
         name (str): The name of the pipeline. Must be unique within any
             :py:class:`RepositoryDefinition` containing the pipeline.
         description (Optional[str]): A human-readable description of the pipeline.
-        dependencies (Optional[Dict[Union[str, SolidInvocation], Dict[str, DependencyDefinition]]]):
+        dependencies (Optional[Dict[Union[str, NodeInvocation], Dict[str, DependencyDefinition]]]):
             A structure that declares the dependencies of each solid's inputs on the outputs of
             other solids in the pipeline. Keys of the top level dict are either the string names of
             solids in the pipeline or, in the case of aliased solids,
-            :py:class:`SolidInvocations <SolidInvocation>`. Values of the top level dict are
+            :py:class:`NodeInvocations <NodeInvocation>`. Values of the top level dict are
             themselves dicts, which map input names belonging to the solid or aliased solid to
             :py:class:`DependencyDefinitions <DependencyDefinition>`.
         mode_defs (Optional[List[ModeDefinition]]): The set of modes in which this pipeline can
@@ -145,7 +145,7 @@ class PipelineDefinition:
         name: Optional[str] = None,
         description: Optional[str] = None,
         dependencies: Optional[
-            Dict[Union[str, SolidInvocation], Dict[str, IDependencyDefinition]]
+            Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]
         ] = None,
         mode_defs: Optional[List[ModeDefinition]] = None,
         preset_defs: Optional[List[PresetDefinition]] = None,
@@ -598,8 +598,8 @@ class PipelineSubsetDefinition(PipelineDefinition):
         raise DagsterInvariantViolationError("Pipeline subsets may not be subset again.")
 
 
-def _dep_key_of(solid: Node) -> SolidInvocation:
-    return SolidInvocation(
+def _dep_key_of(solid: Node) -> NodeInvocation:
+    return NodeInvocation(
         name=solid.definition.name,
         alias=solid.name,
         tags=solid.tags,
@@ -637,7 +637,7 @@ def _get_pipeline_subset_def(
     )
 
     deps: Dict[
-        Union[str, SolidInvocation],
+        Union[str, NodeInvocation],
         Dict[str, IDependencyDefinition],
     ] = {_dep_key_of(solid): {} for solid in solids}
 

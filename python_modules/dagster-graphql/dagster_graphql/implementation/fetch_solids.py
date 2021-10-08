@@ -16,7 +16,7 @@ def get_used_solid_map(repo):
     from ..schema.pipelines.pipeline import GraphenePipeline
     from ..schema.solids import build_solid_handles
     from ..schema.used_solid import (
-        GrapheneSolidInvocationSite,
+        GrapheneNodeInvocationSite,
         GrapheneUsedSolid,
     )
 
@@ -31,7 +31,7 @@ def get_used_solid_map(repo):
             if definition.name not in inv_by_def_name:
                 definitions.append(definition)
             inv_by_def_name[definition.name].append(
-                GrapheneSolidInvocationSite(
+                GrapheneNodeInvocationSite(
                     pipeline=GraphenePipeline(external_pipeline),
                     solidHandle=handle,
                 )

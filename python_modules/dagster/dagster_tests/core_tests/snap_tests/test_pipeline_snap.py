@@ -16,7 +16,7 @@ from dagster.config.config_type import Array, Enum, EnumValue, Int, Noneable, St
 from dagster.core.snap import (
     DependencyStructureIndex,
     PipelineSnapshot,
-    SolidInvocationSnap,
+    NodeInvocationSnap,
     create_pipeline_snapshot_id,
     snap_from_config_type,
 )
@@ -100,7 +100,7 @@ def test_noop_deps_snap():
         noop_pipeline.graph
     ).solid_invocation_snaps
     assert len(invocations) == 1
-    assert isinstance(invocations[0], SolidInvocationSnap)
+    assert isinstance(invocations[0], NodeInvocationSnap)
 
 
 def test_two_invocations_deps_snap(snapshot):

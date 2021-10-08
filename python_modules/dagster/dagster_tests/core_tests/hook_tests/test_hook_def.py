@@ -5,7 +5,7 @@ from dagster import (
     DagsterEventType,
     ModeDefinition,
     PipelineDefinition,
-    SolidInvocation,
+    NodeInvocation,
     build_hook_context,
     check,
     execute_pipeline,
@@ -54,7 +54,7 @@ def test_hook():
         solid_defs=[a_solid],
         name="test",
         dependencies={
-            SolidInvocation("a_solid", "a_solid_with_hook", hook_defs={a_hook, named_hook}): {}
+            NodeInvocation("a_solid", "a_solid_with_hook", hook_defs={a_hook, named_hook}): {}
         },
     )
 
@@ -80,7 +80,7 @@ def test_hook_user_error():
     a_pipeline = PipelineDefinition(
         solid_defs=[a_solid],
         name="test",
-        dependencies={SolidInvocation("a_solid", "a_solid_with_hook", hook_defs={error_hook}): {}},
+        dependencies={NodeInvocation("a_solid", "a_solid_with_hook", hook_defs={error_hook}): {}},
     )
 
     result = execute_pipeline(a_pipeline)
@@ -129,7 +129,7 @@ def test_hook_with_resource():
     a_pipeline = PipelineDefinition(
         solid_defs=[a_solid],
         name="test",
-        dependencies={SolidInvocation("a_solid", "a_solid_with_hook", hook_defs={a_hook}): {}},
+        dependencies={NodeInvocation("a_solid", "a_solid_with_hook", hook_defs={a_hook}): {}},
         mode_defs=[ModeDefinition(resource_defs={"resource_a": resource_a})],
     )
 
@@ -154,7 +154,7 @@ def test_hook_resource_error():
         PipelineDefinition(
             solid_defs=[a_solid],
             name="test",
-            dependencies={SolidInvocation("a_solid", "a_solid_with_hook", hook_defs={a_hook}): {}},
+            dependencies={NodeInvocation("a_solid", "a_solid_with_hook", hook_defs={a_hook}): {}},
             mode_defs=[ModeDefinition(resource_defs={"resource_a": resource_a})],
         )
 
@@ -189,12 +189,12 @@ def test_success_hook():
         solid_defs=[succeeded_solid, failed_solid],
         name="test",
         dependencies={
-            SolidInvocation(
+            NodeInvocation(
                 "succeeded_solid",
                 "succeeded_solid_with_hook",
                 hook_defs={a_success_hook, named_success_hook, success_hook_resource},
             ): {},
-            SolidInvocation(
+            NodeInvocation(
                 "failed_solid",
                 "failed_solid_with_hook",
                 hook_defs={a_success_hook, named_success_hook},
@@ -244,12 +244,12 @@ def test_failure_hook():
         solid_defs=[failed_solid, succeeded_solid],
         name="test",
         dependencies={
-            SolidInvocation(
+            NodeInvocation(
                 "failed_solid",
                 "failed_solid_with_hook",
                 hook_defs={a_failure_hook, named_failure_hook, failure_hook_resource},
             ): {},
-            SolidInvocation(
+            NodeInvocation(
                 "succeeded_solid",
                 "succeeded_solid_with_hook",
                 hook_defs={a_failure_hook, named_failure_hook},
@@ -285,8 +285,8 @@ def test_success_hook_event():
         solid_defs=[a_solid, failed_solid],
         name="test",
         dependencies={
-            SolidInvocation("a_solid", hook_defs={a_hook}): {},
-            SolidInvocation("failed_solid", hook_defs={a_hook}): {},
+            NodeInvocation("a_solid", hook_defs={a_hook}): {},
+            NodeInvocation("failed_solid", hook_defs={a_hook}): {},
         },
     )
 
@@ -320,8 +320,8 @@ def test_failure_hook_event():
         solid_defs=[a_solid, failed_solid],
         name="test",
         dependencies={
-            SolidInvocation("a_solid", hook_defs={a_hook}): {},
-            SolidInvocation("failed_solid", hook_defs={a_hook}): {},
+            NodeInvocation("a_solid", hook_defs={a_hook}): {},
+            NodeInvocation("failed_solid", hook_defs={a_hook}): {},
         },
     )
 

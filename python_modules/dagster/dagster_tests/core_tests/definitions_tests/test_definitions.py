@@ -10,7 +10,7 @@ from dagster import (
     Int,
     OutputDefinition,
     PipelineDefinition,
-    SolidInvocation,
+    NodeInvocation,
     String,
     lambda_solid,
     solid,
@@ -165,7 +165,7 @@ def test_mapper_errors():
             solid_defs=[solid_a],
             name="test",
             dependencies={
-                SolidInvocation("solid_b", alias="solid_c"): {
+                NodeInvocation("solid_b", alias="solid_c"): {
                     "arg_a": DependencyDefinition("solid_a")
                 }
             },
@@ -237,11 +237,11 @@ def test_cycle_detect():
             solid_defs=[return_one, add],
             name="test",
             dependencies={
-                SolidInvocation("add", alias="first"): {
+                NodeInvocation("add", alias="first"): {
                     "a": DependencyDefinition("return_one"),
                     "b": DependencyDefinition("second"),
                 },
-                SolidInvocation("add", alias="second"): {
+                NodeInvocation("add", alias="second"): {
                     "a": DependencyDefinition("first"),
                     "b": DependencyDefinition("return_one"),
                 },
@@ -253,11 +253,11 @@ def test_cycle_detect():
             name="circletron",
             solid_defs=[return_one, add],
             dependencies={
-                SolidInvocation("add", alias="first"): {
+                NodeInvocation("add", alias="first"): {
                     "a": DependencyDefinition("return_one"),
                     "b": DependencyDefinition("second"),
                 },
-                SolidInvocation("add", alias="second"): {
+                NodeInvocation("add", alias="second"): {
                     "a": DependencyDefinition("first"),
                     "b": DependencyDefinition("return_one"),
                 },

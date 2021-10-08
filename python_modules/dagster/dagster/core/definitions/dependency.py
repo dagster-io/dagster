@@ -37,9 +37,9 @@ if TYPE_CHECKING:
     from .solid import NodeDefinition
 
 
-class SolidInvocation(
+class NodeInvocation(
     NamedTuple(
-        "Solid",
+        "Node",
         [
             ("name", str),
             ("alias", Optional[str]),
@@ -49,7 +49,7 @@ class SolidInvocation(
         ],
     )
 ):
-    """Identifies an instance of a solid in a pipeline dependency structure.
+    """Identifies an instance of a node in a graph dependency structure.
 
     Args:
         name (str): Name of the solid of which this is an instance.
@@ -62,30 +62,17 @@ class SolidInvocation(
 
     Examples:
 
-        .. code-block:: python
-
-            pipeline = PipelineDefinition(
-                solid_defs=[solid_1, solid_2]
-                dependencies={
-                    SolidInvocation('solid_1', alias='other_name') : {
-                        'input_name' : DependencyDefinition('solid_1'),
-                    },
-                    'solid_2' : {
-                        'input_name': DependencyDefinition('other_name'),
-                    },
-                }
-            )
-
     In general, users should prefer not to construct this class directly or use the
-    :py:class:`PipelineDefinition` API that requires instances of this class. Instead, use the
-    :py:func:`@pipeline <pipeline>` API:
+    :py:class:`JobDefinition` API that requires instances of this class. Instead, use the
+    :py:func:`@job <job>` API:
 
     .. code-block:: python
+        from dagster import job
 
-        @pipeline
-        def pipeline():
-            other_name = solid_1.alias('other_name')
-            solid_2(other_name(solid_1))
+        @job
+        def my_job():
+            other_name = some_op.alias('other_name')
+            some_graph(other_name(some_op))
 
     """
 
@@ -107,6 +94,9 @@ class SolidInvocation(
             ),
             retry_policy=check.opt_inst_param(retry_policy, "retry_policy", RetryPolicy),
         )
+
+
+SolidInvocation = NodeInvocation
 
 
 class Node:

@@ -43,7 +43,7 @@ from .dependency import (
     Node,
     NodeHandle,
     SolidInputHandle,
-    SolidInvocation,
+    NodeInvocation,
 )
 from .hook import HookDefinition
 from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer
@@ -127,7 +127,7 @@ class GraphDefinition(NodeDefinition):
         description: Optional[str] = None,
         node_defs: Optional[List[NodeDefinition]] = None,
         dependencies: Optional[
-            Dict[Union[str, SolidInvocation], Dict[str, IDependencyDefinition]]
+            Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]
         ] = None,
         input_mappings: Optional[List[InputMapping]] = None,
         output_mappings: Optional[List[OutputMapping]] = None,
@@ -338,7 +338,7 @@ class GraphDefinition(NodeDefinition):
         return mapped_solid.definition.input_has_default(mapping.maps_to.input_name)
 
     @property
-    def dependencies(self) -> Dict[Union[str, SolidInvocation], Dict[str, IDependencyDefinition]]:
+    def dependencies(self) -> Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]:
         return self._dependencies
 
     @property

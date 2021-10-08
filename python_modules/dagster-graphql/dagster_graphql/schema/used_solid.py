@@ -5,10 +5,10 @@ from .solids import GrapheneISolidDefinition, GrapheneSolidHandle
 from .util import non_null_list
 
 
-class GrapheneSolidInvocationSite(graphene.ObjectType):
+class GrapheneNodeInvocationSite(graphene.ObjectType):
     class Meta:
         description = """An invocation of a solid within a repo."""
-        name = "SolidInvocationSite"
+        name = "NodeInvocationSite"
 
     pipeline = graphene.NonNull(GraphenePipeline)
     solidHandle = graphene.NonNull(GrapheneSolidHandle)
@@ -20,4 +20,4 @@ class GrapheneUsedSolid(graphene.ObjectType):
         name = "UsedSolid"
 
     definition = graphene.NonNull(GrapheneISolidDefinition)
-    invocations = non_null_list(GrapheneSolidInvocationSite)
+    invocations = non_null_list(GrapheneNodeInvocationSite)
