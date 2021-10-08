@@ -68,6 +68,8 @@ module.exports = {
               'Tab',
               'Tabs',
               'Tag',
+              'Toast',
+              'Toaster',
               'Tooltip',
             ],
             message: 'Please use components in src/ui instead.',

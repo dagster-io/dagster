@@ -1,4 +1,4 @@
-import {IconName, Intent} from '@blueprintjs/core';
+import {IconName} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
@@ -45,7 +45,7 @@ const CancelRunButton: React.FC<{run: RunFragment | undefined; isFinalStatus: bo
         SharedToaster.show({
           message: error.message,
           icon: 'error',
-          intent: Intent.DANGER,
+          intent: 'danger',
         });
       }
     },

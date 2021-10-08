@@ -22,6 +22,7 @@ import {SubscriptionClient} from 'subscriptions-transport-ws';
 import {ColorsWIP} from '../ui/Colors';
 import {GlobalDialogStyle} from '../ui/Dialog';
 import {GlobalPopoverStyle} from '../ui/Popover';
+import {GlobalToasterStyle} from '../ui/Toaster';
 import {GlobalTooltipStyle} from '../ui/Tooltip';
 import {FontFamily} from '../ui/styles';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
@@ -163,6 +164,7 @@ export const AppProvider: React.FC<Props> = (props) => {
     <AppContext.Provider value={appContextValue}>
       <WebSocketProvider websocketClient={websocketClient}>
         <GlobalStyle />
+        <GlobalToasterStyle />
         <GlobalTooltipStyle />
         <GlobalPopoverStyle />
         <GlobalDialogStyle />

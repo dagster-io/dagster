@@ -1,5 +1,4 @@
 import {gql, useQuery, useMutation} from '@apollo/client';
-import {Intent} from '@blueprintjs/core';
 import qs from 'qs';
 import * as React from 'react';
 import {useHistory, Link} from 'react-router-dom';
@@ -187,7 +186,7 @@ const BackfillTable = ({backfills, refetch}: {backfills: Backfill[]; refetch: ()
           </Group>
         ),
         icon: 'error',
-        intent: Intent.DANGER,
+        intent: 'danger',
       });
     } else {
       const error = data.resumePartitionBackfill;
@@ -209,7 +208,7 @@ const BackfillTable = ({backfills, refetch}: {backfills: Backfill[]; refetch: ()
           </Group>
         ),
         icon: 'error',
-        intent: Intent.DANGER,
+        intent: 'danger',
       });
     }
   };

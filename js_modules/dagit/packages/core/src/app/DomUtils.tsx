@@ -1,6 +1,6 @@
-import {Intent, Position, Toaster} from '@blueprintjs/core';
+import {Toaster} from '../ui/Toaster';
 
-export const SharedToaster = Toaster.create({position: Position.TOP}, document.body);
+export const SharedToaster = Toaster.create({position: 'top'}, document.body);
 
 export async function copyValue(event: React.MouseEvent<any>, value: string) {
   event.preventDefault();
@@ -14,7 +14,7 @@ export async function copyValue(event: React.MouseEvent<any>, value: string) {
 
   SharedToaster.show({
     message: 'Copied to clipboard!',
-    icon: 'clipboard',
-    intent: Intent.NONE,
+    icon: 'copy_to_clipboard_done',
+    intent: 'none',
   });
 }
