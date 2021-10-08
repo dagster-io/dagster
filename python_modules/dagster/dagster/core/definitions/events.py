@@ -277,19 +277,19 @@ class AssetMaterialization(
         ],
     )
 ):
-    """Event indicating that a solid has materialized an asset.
+    """Event indicating that an op has materialized an asset.
 
-    Solid compute functions may yield events of this type whenever they wish to indicate to the
+    Op compute functions may yield events of this type whenever they wish to indicate to the
     Dagster framework (and the end user) that they have produced a materialized value as a
     side effect of computation. Unlike outputs, asset materializations can not be passed to other
-    solids, and their persistence is controlled by solid logic, rather than by the Dagster
+    ops, and their persistence is controlled by op logic, rather than by the Dagster
     framework.
 
-    Solid authors should use these events to organize metadata about the side effects of their
+    Op authors should use these events to organize metadata about the side effects of their
     computations, enabling tooling like the Assets dashboard in Dagit.
 
     Args:
-        asset_key (Union[str, List[str], AssetKey]): A key to identify the materialized asset across pipeline
+        asset_key (Union[str, List[str], AssetKey]): A key to identify the materialized asset across job
             runs
         description (Optional[str]): A longer human-readable description of the materialized value.
         metadata_entries (Optional[List[EventMetadataEntry]]): Arbitrary metadata about the
