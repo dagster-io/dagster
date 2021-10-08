@@ -78,7 +78,13 @@ from .output import (
     OutputDefinition,
     OutputMapping,
 )
-from .partition import Partition, PartitionScheduleDefinition, PartitionSetDefinition
+from .partition import (
+    Partition,
+    PartitionScheduleDefinition,
+    PartitionSetDefinition,
+    dynamic_partitioned_config,
+    static_partitioned_config,
+)
 from .partitioned_schedule import schedule_from_partitions
 from .pipeline import PipelineDefinition
 from .pipeline_base import IPipeline

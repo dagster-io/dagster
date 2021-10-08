@@ -547,3 +547,9 @@ class DagsterHomeNotSetError(DagsterError):
     The user has tried to use a command that requires an instance or invoke DagsterInstance.get()
     without setting DAGSTER_HOME env var.
     """
+
+
+class DagsterUnknownPartitionError(DagsterError):
+    """
+    The user has tried to access run config for a partition name that does not exist.
+    """
