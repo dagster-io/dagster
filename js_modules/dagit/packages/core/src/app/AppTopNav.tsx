@@ -201,12 +201,6 @@ const LogoContainer = styled.div`
   }
 `;
 
-// const LogoWebsocketStatus = styled(WebSocketStatus)`
-//   position: absolute;
-//   top: 20px;
-//   left: 24px;
-// `;
-
 const NavButton = styled.button`
   border-radius: 20px;
   cursor: pointer;
