@@ -5,9 +5,6 @@ import {DEFAULT_RESULT_NAME, titleOfIO} from '../app/titleOfIO';
 import {ColorsWIP} from '../ui/Colors';
 import {FontFamily} from '../ui/styles';
 
-import {PipelineColorScale} from './PipelineColorScale';
-import {SVGEllipseInRect, SVGFlowLayoutRect, SVGMonospaceText} from './SVGComponents';
-import {ILayout} from './getFullSolidLayout';
 import {Edge, isHighlighted} from './highlighting';
 import {
   SolidNodeDefinitionFragment,
@@ -91,7 +88,7 @@ const SolidIOContainer = styled.div<{$colorKey: string; $highlighted: boolean}>`
     width: 14px;
     height: 14px;
     border-radius: 50%;
-    background: ${(p) => (p.$highlighted ? ColorsWIP.Blue700 : ColorsWIP.Blue500)};
+    background: ${(p) => (p.$highlighted ? ColorsWIP.Gray700 : ColorsWIP.Gray500)};
     display: inline-block;
     margin: 6px;
   }

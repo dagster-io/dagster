@@ -7,7 +7,7 @@ import styled from 'styled-components/macro';
 
 import {AppContext} from '../../app/AppContext';
 import {showLaunchError} from '../../execute/showLaunchError';
-import {SVGNodeTag} from '../../graph/SolidTags';
+import {SolidTags} from '../../graph/SolidTags';
 import {PipelineExplorerSolidHandleFragment} from '../../pipelines/types/PipelineExplorerSolidHandleFragment';
 import {
   LAUNCH_PIPELINE_EXECUTION_MUTATION,
@@ -164,25 +164,20 @@ export const AssetNode: React.FC<{
             </Stats>
           )}
           {kind && (
-            <svg
-              height={20}
-              width={100}
-              viewBox="0 0 100 20"
-              style={{position: 'absolute', left: -1, bottom: -24}}
-            >
-              <SVGNodeTag
-                tag={{
+            <SolidTags
+              minified={false}
+              style={{right: -2, paddingTop: 5}}
+              tags={[
+                {
                   label: kind,
                   onClick: () => {
                     window.requestAnimationFrame(() =>
                       document.dispatchEvent(new Event('show-kind-info')),
                     );
                   },
-                }}
-                minified={false}
-                height={20}
-              />
-            </svg>
+                },
+              ]}
+            />
           )}
         </AssetNodeBox>
       </AssetNodeContainer>

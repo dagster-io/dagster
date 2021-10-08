@@ -1,5 +1,7 @@
 import * as React from 'react';
+import styled from 'styled-components/macro';
 
+import {ColorsWIP} from '../ui/Colors';
 import {FontFamily} from '../ui/styles';
 
 export interface ISolidTag {
@@ -8,7 +10,7 @@ export interface ISolidTag {
 }
 
 interface ISolidTagsProps {
-  y: number;
+  style: React.CSSProperties;
   minified: boolean;
   tags: ISolidTag[];
 }
@@ -26,6 +28,9 @@ function hueForTag(text = '') {
   if (text === 'pyspark' || text === 'spark') {
     return 30;
   }
+  if (text === 'Expand') {
+    return 40;
+  }
   return (
     text
       .split('')
@@ -34,39 +39,34 @@ function hueForTag(text = '') {
   );
 }
 
-const SolidTagsInner: React.FunctionComponent<ISolidTagsProps> = ({tags, y, minified}) => {
-  const height = minified ? 32 : 20;
-
+export const SolidTags = React.memo(({tags, style, minified}: ISolidTagsProps) => {
   return (
-    <div style={{position: 'absolute', left: 0, top: y, display: 'flex', gap: 6}}>
-      {tags.map((tag) => SVGNodeTag({tag, minified, height}))}
-    </div>
+    <SolidTagsContainer style={style} $minified={minified}>
+      {tags.map((tag) => (
+        <div
+          key={tag.label}
+          style={{background: `hsl(${hueForTag(tag.label)}, 75%, 50%)`}}
+          onClick={tag.onClick}
+        >
+          {tag.label}
+        </div>
+      ))}
+    </SolidTagsContainer>
   );
-};
+});
 
-export const SVGNodeTag: React.FC<{tag: ISolidTag; minified: boolean; height: number}> = ({
-  tag,
-  minified,
-  height,
-}) => {
-  const hue = hueForTag(tag.label);
-  return (
-    <div
-      key={tag.label}
-      style={{
-        padding: minified ? 8 : 4,
-        height,
-        color: `hsl(${hue}, 75%, 50%)`,
-        fontFamily: FontFamily.monospace,
-        fontSize: minified ? 24 : 14,
-        background: `hsl(${hue}, 10%, 95%)`,
-        border: `1px solid hsl(${hue}, 75%, 50%)`,
-      }}
-      onClick={tag.onClick}
-    >
-      {tag.label}
-    </div>
-  );
-};
+const SolidTagsContainer = styled.div<{$minified: boolean}>`
+  gap: 6px;
+  position: absolute;
+  display: flex;
 
-export const SolidTags = React.memo(SolidTagsInner);
+  & > div {
+    padding: 0 ${(p) => (p.$minified ? 10 : 5)}px;
+    line-height: ${(p) => (p.$minified ? 32 : 20)}px;
+    color: ${ColorsWIP.White};
+    font-family: ${FontFamily.monospace};
+    font-size: ${(p) => (p.$minified ? 24 : 14)}px;
+    font-weight: 700;
+    border-radius: 3px;
+  }
+`;
