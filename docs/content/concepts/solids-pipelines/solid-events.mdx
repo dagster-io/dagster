@@ -124,7 +124,21 @@ To learn more about assets and how they are surfaced once you send this event, c
 Attaching metadata to Asset Materializations is an important way of tracking aspects of a given asset over time. This functions essentially identically to other events which accept a `metadata` parameter, allowing you to attach a set of structured labels and values to display.
 
 ```python file=concepts/assets/materialization_solids.py startafter=start_materialization_solids_marker_2 endbefore=end_materialization_solids_marker_2
-ENOENT: no such file or directory, open '/Users/christopherdecarolis/dagster/examples/docs_snippets/docs_snippets/concepts/assets/materialization_solids.py'
+@solid
+def my_metadata_materialization_solid(context):
+    df = read_df()
+    remote_storage_path = persist_to_storage(df)
+    yield AssetMaterialization(
+        asset_key="my_dataset",
+        description="Persisted result to storage",
+        metadata={
+            "text_metadata": "Text-based metadata for this event",
+            "path": EventMetadata.path(remote_storage_path),
+            "dashboard_url": EventMetadata.url("http://mycoolsite.com/url_for_my_data"),
+            "size (bytes)": calculate_bytes(df),
+        },
+    )
+    yield Output(remote_storage_path)
 ```
 
 ### Expectation Results

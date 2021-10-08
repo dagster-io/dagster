@@ -19,7 +19,7 @@ def persist_to_model_store(_):
 
 # start_job_0
 
-from dagster import op, job, OutputDefinition, AssetKey, Out
+from dagster import op, job, AssetKey, Out
 
 
 @op(out=Out(asset_key=AssetKey("my_db.users")))
