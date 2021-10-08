@@ -2,8 +2,6 @@ import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {ColorsWIP} from '../ui/Colors';
-
 import {VersionNumberQuery} from './types/VersionNumberQuery';
 
 export const VersionNumber = () => {
@@ -15,7 +13,6 @@ export const VersionNumber = () => {
 };
 
 const Version = styled.div`
-  color: ${ColorsWIP.Gray400};
   font-size: 11px;
 `;
 
