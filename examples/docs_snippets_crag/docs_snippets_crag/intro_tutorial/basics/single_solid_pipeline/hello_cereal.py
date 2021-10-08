@@ -3,7 +3,7 @@
 # start_solid_marker
 import requests
 import csv
-from dagster import graph, op
+from dagster import job, op
 
 
 @op
@@ -20,8 +20,8 @@ def hello_cereal(context):
 
 
 # start_pipeline_marker
-@graph
-def hello_cereal_graph():
+@job
+def hello_cereal_job():
     hello_cereal()
 
 
@@ -29,6 +29,6 @@ def hello_cereal_graph():
 
 # start_execute_marker
 if __name__ == "__main__":
-    result = hello_cereal_graph.execute_in_process()
+    result = hello_cereal_job.execute_in_process()
 
 # end_execute_marker

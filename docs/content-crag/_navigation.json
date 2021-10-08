@@ -40,15 +40,15 @@
             "path": "/tutorial/intro-tutorial/setup"
           },
           {
-            "title": "A Single-Solid Pipeline",
+            "title": "A Single-Op Pipeline",
             "path": "/tutorial/intro-tutorial/single-solid-pipeline"
           },
           {
-            "title": "Connecting Solids in Pipelines",
+            "title": "Connecting Ops in Jobs",
             "path": "/tutorial/intro-tutorial/connecting-solids"
           },
           {
-            "title": "Testing Solids and Pipelines",
+            "title": "Testing Ops and Jobs",
             "path": "/tutorial/intro-tutorial/testable"
           }
         ]

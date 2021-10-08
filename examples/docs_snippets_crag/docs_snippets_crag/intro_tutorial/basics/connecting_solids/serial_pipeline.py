@@ -1,7 +1,7 @@
 import csv
 
 import requests
-from dagster import graph, op
+from dagster import job, op
 
 
 @op
@@ -17,6 +17,6 @@ def find_sugariest(context, cereals):
     context.log.info(f'{sorted_by_sugar[-1]["name"]} is the sugariest cereal')
 
 
-@graph
+@job
 def serial():
     find_sugariest(download_cereals())
