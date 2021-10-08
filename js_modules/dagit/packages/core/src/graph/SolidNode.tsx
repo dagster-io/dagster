@@ -1,12 +1,15 @@
 import {gql} from '@apollo/client';
 import * as React from 'react';
+import styled from 'styled-components/macro';
+
+import {ColorsWIP} from '../ui/Colors';
+import {FontFamily} from '../ui/styles';
 
 import {PipelineColorScale} from './PipelineColorScale';
-import {SVGFlowLayoutRect, SVGMonospaceText} from './SVGComponents';
 import {SolidConfigPort} from './SolidConfigPort';
 import {SolidIOBox, metadataForIO} from './SolidIOBox';
 import {SolidTags, ISolidTag} from './SolidTags';
-import {IFullSolidLayout} from './getFullSolidLayout';
+import {IFullSolidLayout, ILayout} from './getFullSolidLayout';
 import {Edge} from './highlighting';
 import {SolidNodeDefinitionFragment} from './types/SolidNodeDefinitionFragment';
 import {SolidNodeInvocationFragment} from './types/SolidNodeInvocationFragment';
@@ -93,51 +96,6 @@ export class SolidNode extends React.Component<ISolidNodeProps> {
     window.requestAnimationFrame(() => document.dispatchEvent(new Event('show-kind-info')));
   };
 
-  renderSurroundingBox(style: {stroke: string; fill: string; dashed: boolean}) {
-    const {x, y, width, height} = this.props.layout.boundingBox;
-    return (
-      <rect
-        x={x - 10}
-        y={y - 10}
-        width={width + 20}
-        height={height + (this.props.definition.outputDefinitions.length > 0 ? 20 : 30)}
-        stroke={style.stroke}
-        fill={style.fill}
-        strokeWidth={this.props.minified ? 5 : 3}
-        strokeDasharray={style.dashed ? (this.props.minified ? 8 : 4) : undefined}
-      />
-    );
-  }
-
-  renderSolid() {
-    const {invocation, definition, layout, minified} = this.props;
-    const composite = definition.__typename === 'CompositeSolidDefinition';
-
-    return (
-      <SVGFlowLayoutRect
-        {...layout.solid}
-        fill={PipelineColorScale(
-          composite
-            ? 'solidComposite'
-            : invocation?.name.includes('.')
-            ? 'solidCompositeChild'
-            : 'solid',
-        )}
-        stroke="#979797"
-        strokeWidth={1}
-        spacing={0}
-        padding={12}
-      >
-        <SVGMonospaceText
-          size={minified ? 30 : 16}
-          allowTwoLines={!minified}
-          text={invocation ? invocation.name : definition.name}
-          fill={'#222'}
-        />
-      </SVGFlowLayoutRect>
-    );
-  }
-
   public renderSolidCompositeIndicator() {
     const {x, y, width, height} = this.props.layout.solid;
     return (
@@ -190,35 +148,19 @@ export class SolidNode extends React.Component<ISolidNodeProps> {
     }
 
     return (
-      <g
-        onClick={this.handleClick}
-        onDoubleClick={this.handleDoubleClick}
-        data-tooltip={invocation ? invocation.name : definition.name}
-        data-tooltip-style={TOOLTIP_STYLE}
-        opacity={dim ? 0.3 : undefined}
-      >
-        {selected
-          ? this.renderSurroundingBox(SELECTED_STYLE)
-          : focused
-          ? this.renderSurroundingBox(FOCUSED_STYLE)
-          : undefined}
-
+      <div onClick={this.handleClick} onDoubleClick={this.handleDoubleClick}>
+        <NodeContainer
+          $selected={selected}
+          $secondaryHighlight={focused}
+          data-tooltip={invocation ? invocation.name : definition.name}
+          data-tooltip-style={TOOLTIP_STYLE}
+          style={{...position(layout.boundingBox), opacity: dim ? 0.3 : 1}}
+        />
         {composite && this.renderSolidCompositeIndicator()}
 
         {invocation?.isDynamicMapped && (
-          <g style={{transform: 'translate(7px, 7px)'}}>
-            <SVGFlowLayoutRect
-              {...layout.solid}
-              fill={'#F0D9CA'}
-              stroke="#979797"
-              strokeWidth={1}
-              spacing={0}
-              padding={12}
-            />
-          </g>
+          <div style={{transform: 'translate(7px, 7px)', background: 'red'}}></div>
         )}
-
-        {this.renderSolid()}
 
         {definition.inputDefinitions.map((item, idx) => (
           <SolidIOBox
@@ -226,7 +168,7 @@ export class SolidNode extends React.Component<ISolidNodeProps> {
             {...metadataForIO(item, invocation)}
             key={idx}
             item={item}
-            layout={layout.inputs[item.name].layout}
+            style={{...position(layout.inputs[item.name].layout)}}
             colorKey="input"
           />
         ))}
@@ -237,19 +179,24 @@ export class SolidNode extends React.Component<ISolidNodeProps> {
             {...metadataForIO(item, invocation)}
             key={idx}
             item={item}
-            layout={layout.outputs[item.name].layout}
+            style={{...position(layout.outputs[item.name].layout)}}
             colorKey="output"
           />
         ))}
+
+        <NodeBox style={{...position(layout.solid)}}>
+          <Name>{invocation ? invocation.name : definition.name}</Name>
+          <Description>{(definition.description || '').split('\n')[0]}</Description>
+        </NodeBox>
 
         {configField && configField.configType.key !== 'Any' ? (
           <SolidConfigPort x={x + width - 33} y={y - 13} minified={minified} />
         ) : null}
 
         {tags.length > 0 && (
-          <SolidTags x={x} y={y + height} width={width + 5} minified={minified} tags={tags} />
+          <SolidTags y={y + height - layout.boundingBox.y} minified={minified} tags={tags} />
         )}
-      </g>
+      </div>
     );
   }
 }
@@ -298,6 +245,7 @@ export const SOLID_NODE_DEFINITION_FRAGMENT = gql`
   fragment SolidNodeDefinitionFragment on ISolidDefinition {
     __typename
     name
+    description
     metadata {
       key
       value
@@ -353,3 +301,51 @@ export const SOLID_NODE_DEFINITION_FRAGMENT = gql`
     }
   }
 `;
+
+const NodeContainer = styled.div<{$selected: boolean; $secondaryHighlight: boolean}>`
+  border: ${(p) =>
+    p.$selected
+      ? `2px dashed rgba(255, 69, 0, 1)`
+      : p.$secondaryHighlight
+      ? `2px solid ${ColorsWIP.Blue500}55`
+      : '2px solid transparent'};
+  border-radius: 6px;
+  background: ${(p) => (p.$selected ? 'rgba(255, 69, 0, 0.2)' : 'transparent')};
+`;
+
+const NodeBox = styled.div`
+  border: 2px solid #dcd5ca;
+  background: #f5f3ef;
+  border-radius: 5px;
+`;
+
+const Name = styled.div`
+  display: flex;
+  padding: 4px 8px;
+  font-family: ${FontFamily.monospace};
+  background: ${ColorsWIP.White};
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 600;
+`;
+
+const Description = styled.div`
+  padding: 4px 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-top: 1px solid #e6e1d8;
+  font-size: 12px;
+`;
+
+export const position = ({x, y, width, height}: ILayout) => ({
+  left: x,
+  top: y,
+  width,
+  height,
+  position: 'absolute' as const,
+});

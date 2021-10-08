@@ -122,7 +122,7 @@ const DynamicMarker: React.FunctionComponent<{
 );
 
 const StyledPath = styled('path')`
-  stroke-width: 6;
-  stroke: ${ColorsWIP.Dark};
+  stroke-width: 4;
+  stroke: ${ColorsWIP.Gray600};
   fill: none;
 `;

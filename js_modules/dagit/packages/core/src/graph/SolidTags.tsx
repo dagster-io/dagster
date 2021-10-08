@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import {SVGFlowLayoutFiller, SVGFlowLayoutRect, SVGMonospaceText} from './SVGComponents';
+import {FontFamily} from '../ui/styles';
 
 export interface ISolidTag {
   label: string;
@@ -8,9 +8,7 @@ export interface ISolidTag {
 }
 
 interface ISolidTagsProps {
-  x: number;
   y: number;
-  width: number;
   minified: boolean;
   tags: ISolidTag[];
 }
@@ -36,30 +34,13 @@ function hueForTag(text = '') {
   );
 }
 
-const SolidTagsInner: React.FunctionComponent<ISolidTagsProps> = ({
-  tags,
-  x,
-  y,
-  width,
-  minified,
-}) => {
+const SolidTagsInner: React.FunctionComponent<ISolidTagsProps> = ({tags, y, minified}) => {
   const height = minified ? 32 : 20;
-  const overhang = 10;
 
   return (
-    <SVGFlowLayoutRect
-      x={x}
-      y={y - (height - overhang)}
-      width={width}
-      height={height}
-      fill={'transparent'}
-      stroke={'transparent'}
-      spacing={minified ? 8 : 4}
-      padding={0}
-    >
-      <SVGFlowLayoutFiller />
+    <div style={{position: 'absolute', left: 0, top: y, display: 'flex', gap: 6}}>
       {tags.map((tag) => SVGNodeTag({tag, minified, height}))}
-    </SVGFlowLayoutRect>
+    </div>
   );
 };
 
@@ -70,20 +51,21 @@ export const SVGNodeTag: React.FC<{tag: ISolidTag; minified: boolean; height: nu
 }) => {
   const hue = hueForTag(tag.label);
   return (
-    <SVGFlowLayoutRect
-      rx={0}
-      ry={0}
+    <div
       key={tag.label}
-      height={height}
-      padding={minified ? 8 : 4}
-      fill={`hsl(${hue}, 10%, 95%)`}
-      stroke={`hsl(${hue}, 75%, 50%)`}
+      style={{
+        padding: minified ? 8 : 4,
+        height,
+        color: `hsl(${hue}, 75%, 50%)`,
+        fontFamily: FontFamily.monospace,
+        fontSize: minified ? 24 : 14,
+        background: `hsl(${hue}, 10%, 95%)`,
+        border: `1px solid hsl(${hue}, 75%, 50%)`,
+      }}
       onClick={tag.onClick}
-      strokeWidth={1}
-      spacing={0}
     >
-      <SVGMonospaceText text={tag.label} fill={`hsl(${hue}, 75%, 50%)`} size={minified ? 24 : 14} />
-    </SVGFlowLayoutRect>
+      {tag.label}
+    </div>
   );
 };
 

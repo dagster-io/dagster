@@ -117,11 +117,8 @@ const StyledButton = styled.button<StyledButtonProps>`
 
   ${SpinnerWrapper}:first-child:last-child {
     margin: 2px -4px;
-   }
-   ${IconWrapper}:first-child:last-child {
-      margin: 0px -5px;
-      width: 20px;
-      height: 20px;
-    }
+  }
+  ${IconWrapper}:first-child:last-child {
+    margin: 2px -4px;
   }
 `;
