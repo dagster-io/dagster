@@ -1,7 +1,7 @@
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {LeftNav} from '../nav/LeftNav';
+import {LeftNav, LEFT_NAV_WIDTH} from '../nav/LeftNav';
 
 import {LayoutContext} from './LayoutProvider';
 
@@ -24,8 +24,8 @@ export const App: React.FC = (props) => {
 
 const Main = styled.div<{$navOpen: boolean}>`
   height: 100%;
-  margin-left: 332px;
-  width: calc(100% - 280px);
+  margin-left: ${LEFT_NAV_WIDTH}px;
+  width: calc(100% - ${LEFT_NAV_WIDTH}px);
 
   @media (max-width: 1440px) {
     margin-left: 0;

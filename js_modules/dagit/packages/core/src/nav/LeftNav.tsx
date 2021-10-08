@@ -16,6 +16,8 @@ export const LeftNav = () => {
   );
 };
 
+export const LEFT_NAV_WIDTH = 332;
+
 const LeftNavContainer = styled.div<{$open: boolean}>`
   position: fixed;
   z-index: 2;
@@ -23,7 +25,7 @@ const LeftNavContainer = styled.div<{$open: boolean}>`
   bottom: 0;
   left: 0;
   padding-top: 16px;
-  width: 332px;
+  width: ${LEFT_NAV_WIDTH}px;
   display: flex;
   flex-shrink: 0;
   flex-direction: column;
@@ -32,7 +34,7 @@ const LeftNavContainer = styled.div<{$open: boolean}>`
   box-shadow: 1px 0px 0px ${ColorsWIP.KeylineGray};
 
   @media (max-width: 1440px) {
-    transform: translateX(${({$open}) => ($open ? '0' : '-332px')});
+    transform: translateX(${({$open}) => ($open ? '0' : `-${LEFT_NAV_WIDTH}px`)});
     transition: transform 150ms ease-in-out;
   }
 `;
