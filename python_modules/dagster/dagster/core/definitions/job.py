@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, AbstractSet, Any, Dict, List, Optional
 
 from dagster import check
 from dagster.core.definitions.policy import RetryPolicy
+from dagster.core.errors import DagsterInvariantViolationError
 
 from .graph import GraphDefinition
 from .hook import HookDefinition
@@ -145,6 +146,54 @@ class JobDefinition(PipelineDefinition):
             )
 
         return self._cached_partition_set
+
+    def with_resources(
+        self, resources: Dict[str, Any], name: Optional[str] = None
+    ) -> "JobDefinition":
+        """Creates a new job where provided resources replace those on the job.
+
+        Any resource key that exists on the job that is not overridden by resources will be carried over to the new job.
+
+        Args:
+            resources (Dict[str, Any]): A dictionary of resources to provide to the job. If a non-resource definition is provided (ie a python value), then it will be wrapped in a resource definition.
+        Returns:
+            JobDefinition: A new job with the provided resources overriding old resources.
+        """
+        from ..execution.build_resources import wrap_resources_for_execution
+
+        resources = check.dict_param(resources, "resources", key_type=str)
+        name = check.opt_str_param(name, "name")
+        mode_def = self.mode_definitions[0]
+
+        for resource_key in resources.keys():
+            if resource_key not in mode_def.resource_defs:
+                raise DagsterInvariantViolationError(
+                    f"Attempted to remap resource '{resource_key}' in job '{self.name}', but no "
+                    "such resource exists on job."
+                )
+        resource_defs = wrap_resources_for_execution(resources)
+
+        mode_def = self.mode_definitions[0]
+        for key, resource_def in mode_def.resource_defs.items():
+            if key not in resource_defs:
+                resource_defs[key] = resource_def
+
+        return JobDefinition(
+            name=name if name else self.name,
+            description=self.description,
+            graph_def=self.graph,
+            mode_def=ModeDefinition(
+                resource_defs=resource_defs,
+                logger_defs=mode_def.loggers,
+                executor_defs=mode_def.executor_defs,
+                _config_mapping=mode_def.config_mapping,
+                _partitioned_config=mode_def.partitioned_config,
+            ),
+            preset_defs=self._preset_defs,
+            tags=self._tags,
+            hook_defs=self._hook_defs,
+            version_strategy=self.version_strategy,
+        )
 
 
 def _swap_default_io_man(resources: Dict[str, ResourceDefinition], job: PipelineDefinition):
