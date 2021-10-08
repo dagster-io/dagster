@@ -21,6 +21,7 @@ from dagster.core.definitions.config import ConfigMapping
 from dagster.core.definitions.definition_config_schema import IDefinitionConfigSchema
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.resource import ResourceDefinition
+from dagster.core.definitions.utils import check_valid_name
 from dagster.core.errors import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
@@ -432,7 +433,7 @@ class GraphDefinition(NodeDefinition):
         from .partition import PartitionedConfig
         from .executor import ExecutorDefinition, multiprocess_executor
 
-        job_name = name or self.name
+        job_name = check_valid_name(name or self.name)
 
         tags = check.opt_dict_param(tags, "tags", key_type=str)
         executor_def = check.opt_inst_param(
