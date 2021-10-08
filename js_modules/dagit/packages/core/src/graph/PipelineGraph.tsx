@@ -113,7 +113,6 @@ export class PipelineGraphContents extends React.PureComponent<
       onEnterCompositeSolid = NoOp,
       highlightedSolids,
       selectedSolid,
-      selectedHandleID,
     } = this.props;
 
     return (
