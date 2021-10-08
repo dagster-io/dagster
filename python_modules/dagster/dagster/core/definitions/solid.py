@@ -29,8 +29,8 @@ from .definition_config_schema import (
 )
 from .dependency import IDependencyDefinition, NodeHandle, SolidInvocation
 from .graph import GraphDefinition
-from .i_solid_definition import NodeDefinition
 from .input import InputDefinition, InputMapping
+from .node import NodeDefinition
 from .output import OutputDefinition, OutputMapping
 from .solid_invocation import solid_invocation_result
 

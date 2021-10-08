@@ -45,9 +45,9 @@ from .dependency import (
     SolidInvocation,
 )
 from .hook import HookDefinition
-from .i_solid_definition import NodeDefinition
 from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer
 from .logger import LoggerDefinition
+from .node import NodeDefinition
 from .output import OutputDefinition, OutputMapping
 from .preset import PresetDefinition
 from .solid_container import create_execution_structure, validate_dependency_dict
