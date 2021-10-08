@@ -1,5 +1,4 @@
 import {gql, useApolloClient, useMutation} from '@apollo/client';
-import {Intent} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {SharedToaster} from '../app/DomUtils';
@@ -32,18 +31,18 @@ export const useReloadWorkspace = () => {
       SharedToaster.show({
         message: 'Could not reload workspace.',
         timeout: 3000,
-        icon: 'refresh',
-        intent: Intent.DANGER,
+        icon: 'error',
+        intent: 'danger',
       });
       return;
     }
 
     const {locationEntries} = data.reloadWorkspace;
     SharedToaster.show({
-      message: 'Workspace reloaded',
+      message: 'Workspace reloaded!',
       timeout: 3000,
-      icon: 'refresh',
-      intent: Intent.SUCCESS,
+      icon: 'done',
+      intent: 'success',
     });
 
     const reposToInvalidate = locationEntries.reduce((accum, locationEntry) => {

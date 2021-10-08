@@ -1,8 +1,8 @@
 import {ErrorResponse, onError} from '@apollo/client/link/error';
-import {Intent, Position, Toaster} from '@blueprintjs/core';
 import {GraphQLError} from 'graphql';
 import * as React from 'react';
 
+import {Toaster} from '../ui/Toaster';
 import {FontFamily} from '../ui/styles';
 
 import {showCustomAlert} from './CustomAlertProvider';
@@ -12,7 +12,7 @@ interface DagsterGraphQLError extends GraphQLError {
   cause?: DagsterGraphQLError;
 }
 
-const ErrorToaster = Toaster.create({position: Position.TOP_RIGHT});
+const ErrorToaster = Toaster.create({position: 'top-right'});
 
 const showGraphQLError = (error: DagsterGraphQLError, operationName?: string) => {
   const message = (
@@ -21,7 +21,7 @@ const showGraphQLError = (error: DagsterGraphQLError, operationName?: string) =>
       <AppStackTraceLink error={error} operationName={operationName} />
     </div>
   );
-  ErrorToaster.show({message, intent: Intent.DANGER});
+  ErrorToaster.show({message, intent: 'danger'});
   console.error('[GraphQL error]', error);
 };
 
@@ -34,7 +34,7 @@ export const errorLink = onError((response: ErrorResponse) => {
   if (response.networkError) {
     ErrorToaster.show({
       message: `[Network error] ${response.networkError.message}`,
-      intent: Intent.DANGER,
+      intent: 'danger',
     });
     console.error('[Network error]', response.networkError);
   }
