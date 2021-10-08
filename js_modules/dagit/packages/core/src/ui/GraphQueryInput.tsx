@@ -111,11 +111,20 @@ export const GraphQueryInput = React.memo(
         }
       }
 
-      return lastElementName && !suffix
-        ? uniq(available)
-            .sort()
-            .filter((n) => n.startsWith(lastElementName))
-        : [];
+      const lastElementLower = lastElementName?.toLowerCase();
+      const matching =
+        lastElementLower && !suffix
+          ? uniq(available)
+              .sort()
+              .filter((n) => n.toLowerCase().startsWith(lastElementLower))
+          : [];
+
+      // No need to show a match if our string exactly matches the one suggestion.
+      if (matching.length === 1 && matching[0].toLowerCase() === lastElementLower) {
+        return [];
+      }
+
+      return matching;
     }, [lastElementName, props.items, suffix]);
 
     const onConfirmSuggestion = (suggestion: string) => {
