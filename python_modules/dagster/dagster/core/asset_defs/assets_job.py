@@ -177,6 +177,7 @@ def build_root_manager(
             config=input_context.config,
             dagster_type=input_context.dagster_type,
             upstream_output=output_context,
+            op_def=input_context.op_def,
         )
 
         io_manager = getattr(cast(Any, input_context.resources), source_asset.io_manager_key)
