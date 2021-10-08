@@ -125,7 +125,7 @@ export const ManyRepos = () => {
 
   return (
     <Box background={ColorsWIP.Gray800} padding={16}>
-      <RepoSelector options={OPTIONS} onToggle={onToggle} selected={selected} />
+      <RepoSelector options={OPTIONS} onBrowse={() => {}} onToggle={onToggle} selected={selected} />
     </Box>
   );
 };
