@@ -1,10 +1,10 @@
 import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
+import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {InstigationStatus} from '../types/globalTypes';
-import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
 import {IconWIP} from '../ui/Icon';
 import {Tooltip} from '../ui/Tooltip';
@@ -89,7 +89,7 @@ export const FlatContentList: React.FC<Props> = (props) => {
                 <Label $hasIcon={!!(schedule || sensor)}>
                   {name}
                   {modeName !== 'default' ? (
-                    <span style={{color: ColorsWIP.Gray400}}>{` : ${modeName}`}</span>
+                    <span style={{color: ColorsWIP.Gray600}}>{` : ${modeName}`}</span>
                   ) : null}
                 </Label>
               ),
@@ -154,28 +154,31 @@ const JobItem: React.FC<JobItemProps> = (props) => {
         Sensor: <strong>{sensor?.name}</strong>
       </>
     );
+    const path = schedule ? `/schedules/${schedule.name}` : `/sensors/${sensor?.name}`;
 
     return (
-      <IconWithTooltip content={tooltipContent} inheritDarkTheme={false}>
-        <IconWIP
-          name={whichIcon}
-          color={status === InstigationStatus.RUNNING ? ColorsWIP.Green500 : ColorsWIP.Gray600}
-        />
+      <IconWithTooltip content={tooltipContent}>
+        <Link to={workspacePathFromAddress(repoAddress, path)}>
+          <IconWIP
+            name={whichIcon}
+            color={status === InstigationStatus.RUNNING ? ColorsWIP.Green500 : ColorsWIP.Gray600}
+          />
+        </Link>
       </IconWithTooltip>
     );
   };
 
   return (
-    <Item
-      key={jobName}
-      className={`${jobName === selector && repoPath === jobRepoPath ? 'selected' : ''}`}
-      to={workspacePathFromAddress(repoAddress, `/jobs/${jobName}`)}
-    >
-      <Box flex={{justifyContent: 'space-between', alignItems: 'center'}}>
+    <ItemContainer>
+      <Item
+        key={jobName}
+        className={`${jobName === selector && repoPath === jobRepoPath ? 'selected' : ''}`}
+        to={workspacePathFromAddress(repoAddress, `/jobs/${jobName}`)}
+      >
         <div>{label}</div>
-        {icon()}
-      </Box>
-    </Item>
+      </Item>
+      {icon()}
+    </ItemContainer>
   );
 };
 
@@ -256,12 +259,24 @@ const NAV_QUERY = gql`
 const Label = styled.div<{$hasIcon: boolean}>`
   overflow: hidden;
   text-overflow: ellipsis;
-  width: ${({$hasIcon}) => ($hasIcon ? '224px' : '256px')};
+  width: ${({$hasIcon}) => ($hasIcon ? '218px' : '236px')};
 `;
 
 const IconWithTooltip = styled(Tooltip)`
-  .bp3-icon:focus,
-  .bp3-icon:active {
+  position: absolute;
+  right: 8px;
+  top: 6px;
+
+  & a:focus,
+  & a:active {
     outline: none;
+  }
+`;
+
+const ItemContainer = styled.div`
+  position: relative;
+
+  :hover {
+    background-color: ${ColorsWIP.Gray10};
   }
 `;

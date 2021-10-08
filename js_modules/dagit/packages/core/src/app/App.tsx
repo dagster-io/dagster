@@ -24,7 +24,7 @@ export const App: React.FC = (props) => {
 
 const Main = styled.div<{$navOpen: boolean}>`
   height: 100%;
-  margin-left: 280px;
+  margin-left: 332px;
   width: calc(100% - 280px);
 
   @media (max-width: 1440px) {

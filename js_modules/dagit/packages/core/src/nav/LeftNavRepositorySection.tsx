@@ -1,8 +1,11 @@
 import memoize from 'lodash/memoize';
 import * as React from 'react';
 import {useRouteMatch} from 'react-router-dom';
+import styled from 'styled-components/macro';
 
+import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
+import {IconWIP} from '../ui/Icon';
 import {
   DagsterRepoOption,
   getRepositoryOptionHash,
@@ -132,32 +135,53 @@ const LoadedRepositorySection: React.FC<{allRepos: DagsterRepoOption[]}> = ({all
   }, [allRepos, visibleRepos]);
 
   return (
-    <div
-      className="bp3-dark"
-      style={{
-        background: ColorsWIP.Gray900,
-        color: ColorsWIP.White,
-        display: 'flex',
-        flex: 1,
-        overflow: 'none',
-        flexDirection: 'column',
-        minHeight: 0,
-      }}
-    >
+    <Container>
+      <ListContainer>
+        <Box
+          flex={{direction: 'row', alignItems: 'center', gap: 8}}
+          padding={{horizontal: 24, bottom: 12}}
+        >
+          <IconWIP name="job" />
+          <span style={{fontSize: '16px', fontWeight: 600}}>Jobs and pipelines</span>
+        </Box>
+        {visibleRepos.size ? (
+          <FlatContentList {...match?.params} repos={visibleOptions} />
+        ) : (
+          <EmptyState>Select a repository to see a list of jobs and pipelines.</EmptyState>
+        )}
+      </ListContainer>
+      <RepositoryLocationStateObserver />
       <RepoNavItem
         allRepos={allRepos.map(buildDetails)}
         selected={visibleRepos}
         onToggle={toggleRepo}
       />
-      <RepositoryLocationStateObserver />
-      {visibleRepos.size ? (
-        <div style={{display: 'flex', flex: 1, flexDirection: 'column', minHeight: 0}}>
-          <FlatContentList {...match?.params} repos={visibleOptions} />
-        </div>
-      ) : null}
-    </div>
+    </Container>
   );
 };
+
+const Container = styled.div`
+  background: ${ColorsWIP.Gray100};
+  color: ${ColorsWIP.Gray900};
+  display: flex;
+  flex: 1;
+  overflow: none;
+  flex-direction: column;
+  min-height: 0;
+`;
+
+const ListContainer = styled.div`
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+`;
+
+const EmptyState = styled.div`
+  color: ${ColorsWIP.Gray400};
+  line-height: 20px;
+  padding: 6px 24px 0;
+`;
 
 export const LeftNavRepositorySection = React.memo(() => {
   const {allRepos, loading} = React.useContext(WorkspaceContext);

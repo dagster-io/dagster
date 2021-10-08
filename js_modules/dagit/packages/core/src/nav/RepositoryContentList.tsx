@@ -6,50 +6,47 @@ import {ColorsWIP} from '../ui/Colors';
 export const Items = styled.div`
   flex: 1;
   overflow: auto;
+  padding: 0 12px;
   &::-webkit-scrollbar {
-    width: 11px;
+    width: 8px;
   }
 
   scrollbar-width: thin;
-  scrollbar-color: ${ColorsWIP.Gray600} ${ColorsWIP.Gray900};
+  scrollbar-color: ${ColorsWIP.Gray200} ${ColorsWIP.Gray200};
 
   &::-webkit-scrollbar-track {
-    background: ${ColorsWIP.Gray900};
+    background: ${ColorsWIP.Gray100};
   }
   &::-webkit-scrollbar-thumb {
-    background-color: ${ColorsWIP.Gray600};
+    background-color: ${ColorsWIP.Gray200};
     border-radius: 6px;
-    border: 3px solid ${ColorsWIP.Gray900};
+    border: 3px solid ${ColorsWIP.Gray200};
   }
 `;
 
 export const Item = styled(Link)`
-  font-size: 13px;
+  border-radius: 8px;
+  font-size: 14px;
   text-overflow: ellipsis;
   overflow: hidden;
-  padding: 8px 12px;
-  padding-left: 8px;
-  border-left: 4px solid transparent;
-  border-bottom: 1px solid transparent;
+  padding: 6px 12px;
   display: block;
-  color: ${ColorsWIP.Gray100} !important;
+  color: ${ColorsWIP.Gray900} !important;
   user-select: none;
 
   &:hover {
     text-decoration: none;
-    color: ${ColorsWIP.White} !important;
   }
+
   &:focus {
     outline: 0;
   }
+
   &.focused {
     border-left: 4px solid ${ColorsWIP.Gray400};
   }
+
   &.selected {
-    border-left: 4px solid ${ColorsWIP.Blue500};
-    border-bottom: 1px solid ${ColorsWIP.Gray900};
-    background: ${ColorsWIP.Dark};
-    font-weight: 600;
-    color: ${ColorsWIP.White} !important;
+    background: ${ColorsWIP.Gray200};
   }
 `;
