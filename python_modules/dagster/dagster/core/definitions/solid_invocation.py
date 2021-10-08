@@ -67,16 +67,18 @@ def _check_invocation_requirements(
 
     # Check resource requirements
     if solid_def.required_resource_keys and context is None:
+        node_label = solid_def.node_type_str  # string "solid" for solids, "op" for ops
         raise DagsterInvalidInvocationError(
-            f'Solid "{solid_def.name}" has required resources, but no context was provided. Use the'
-            "`build_solid_context` function to construct a context with the required "
+            f'{node_label} "{solid_def.name}" has required resources, but no context was provided. Use the'
+            f"`build_{node_label}_context` function to construct a context with the required "
             "resources."
         )
 
     # Check config requirements
     if not context and solid_def.config_schema.as_field().is_required:
+        node_label = solid_def.node_type_str  # string "solid" for solids, "op" for ops
         raise DagsterInvalidInvocationError(
-            f'Solid "{solid_def.name}" has required config schema, but no context was provided. '
+            f'{node_label} "{solid_def.name}" has required config schema, but no context was provided. '
             "Use the `build_solid_context` function to create a context with config."
         )
 
@@ -93,9 +95,11 @@ def _resolve_inputs(
     # Check kwargs for nothing inputs, and error if someone provided one.
     for input_def in nothing_input_defs:
         if input_def.name in kwargs:
+            node_label = solid_def.node_type_str  # string "solid" for solids, "op" for ops
+
             raise DagsterInvalidInvocationError(
                 f"Attempted to provide value for nothing input '{input_def.name}'. Nothing "
-                "dependencies are ignored when directly invoking solids."
+                f"dependencies are ignored when directly invoking {node_label}s."
             )
 
     # Discard nothing dependencies - we ignore them during invocation.
@@ -118,8 +122,9 @@ def _resolve_inputs(
                 "but no context parameter was defined for the solid."
             )
 
+        node_label = solid_def.node_type_str
         raise DagsterInvalidInvocationError(
-            f"Too many input arguments were provided for solid '{context.alias}'. {suggestion}"
+            f"Too many input arguments were provided for {node_label} '{context.alias}'. {suggestion}"
         )
 
     positional_inputs = cast("DecoratedSolidFunction", solid_def.compute_fn).positional_inputs()
