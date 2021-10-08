@@ -287,7 +287,7 @@ When an op output is linked to an <PyObject object="AssetKey"/>, Dagster can aut
 As a simplified example, imagine a two-op job that first scrapes some user data from an API, storing it to a table, then trains an ML model on that data, persisting it to a model store:
 
 ```python file=/concepts/assets/materialization_jobs.py startafter=start_job_0 endbefore=end_job_0
-from dagster import op, job, OutputDefinition, AssetKey, Out
+from dagster import op, job, AssetKey, Out
 
 
 @op(out=Out(asset_key=AssetKey("my_db.users")))
