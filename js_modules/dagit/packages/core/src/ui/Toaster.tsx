@@ -16,21 +16,25 @@ export const GlobalToasterStyle = createGlobalStyle`
       color: ${ColorsWIP.White};
       background-color: ${ColorsWIP.Gray900};
     }
+
     .bp3-button-group {
       padding: 2px;
     }
+  
     .bp3-toast-message {
       display: flex;
       align-items: center;
       padding: 6px;
       gap: 8px;
     }
+
     .bp3-toast.bp3-intent-success {
       background-color: ${ColorsWIP.Blue500};
     }
+
     .bp3-toast.bp3-intent-warning,
     .bp3-toast.bp3-intent-danger {
-      background-color: ${ColorsWIP.HighlightRed};
+      background-color: ${ColorsWIP.Red500};
     }
   }
 `;
