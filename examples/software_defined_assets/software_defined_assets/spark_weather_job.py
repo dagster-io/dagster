@@ -1,5 +1,5 @@
 """
-Defines a job for materializing the airport weather assets.
+Defines a job that computes the weather assets.
 
 Data is stored in Parquet files using the "Hadoop-style" layout in which each table corresponds to a
 directory, and each file within the directory contains some of the rows.
@@ -18,13 +18,14 @@ from pandas import DataFrame as PandasDF
 from pyspark.sql import DataFrame as SparkDF
 from pyspark.sql import SparkSession
 
-from .assets import daily_temperature_high_diffs, daily_temperature_highs, sfo_q2_weather_sample
+from .assets import daily_temperature_highs, hottest_dates, sfo_q2_weather_sample
+from .spark_asset import daily_temperature_high_diffs
 
 
+# io_manager_start
 class LocalFileSystemIOManager(IOManager):
     def _get_fs_path(self, asset_key: AssetKey) -> str:
-        rpath = os.path.join(asset_key.path) + ".csv"
-        return os.path.abspath(rpath)
+        return os.path.abspath(os.path.join(*asset_key.path))
 
     def handle_output(self, context, obj: Union[PandasDF, SparkDF]):
         """This saves the dataframe as a CSV using the layout written and expected by Spark/Hadoop.
@@ -47,7 +48,7 @@ class LocalFileSystemIOManager(IOManager):
                 self._get_fs_path(context.asset_key), mode="overwrite"
             )
         else:
-            check.failed("Unexpected object type")
+            raise ValueError("Unexpected input type")
 
     def load_input(self, context) -> Union[PandasDF, SparkDF]:
         """This reads a dataframe from a CSV using the layout written and expected by Spark/Hadoop.
@@ -65,6 +66,7 @@ class LocalFileSystemIOManager(IOManager):
         if context.dagster_type.typing_type == PandasDF:
             fs_path = os.path.abspath(self._get_fs_path(context.asset_key))
             paths = glob.glob(os.path.join(fs_path, "*.csv"))
+            check.invariant(len(paths) > 0, f"No csv files found under {fs_path}")
             return pd.concat(map(pd.read_csv, paths))
         elif context.dagster_type.typing_type == SparkDF:
             return (
@@ -73,13 +75,21 @@ class LocalFileSystemIOManager(IOManager):
                 .options(header="true")
                 .load(self._get_fs_path(context.asset_key))
             )
+        else:
+            raise ValueError("Unexpected input type")
 
 
-airport_weather_job = build_assets_job(
-    "airport_weather",
-    assets=[daily_temperature_highs, daily_temperature_high_diffs],
+# io_manager_end
+
+# build_assets_job_start
+
+weather_job = build_assets_job(
+    "weather",
+    assets=[daily_temperature_highs, hottest_dates, daily_temperature_high_diffs],
     source_assets=[sfo_q2_weather_sample],
     resource_defs={
         "io_manager": IOManagerDefinition.hardcoded_io_manager(LocalFileSystemIOManager())
     },
 )
+
+# build_assets_job_end

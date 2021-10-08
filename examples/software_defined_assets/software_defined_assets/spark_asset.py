@@ -1,18 +1,7 @@
-import pandas as pd
-from dagster.core.asset_defs import ForeignAsset, asset
-from pandas import DataFrame as PandasDF
+from dagster.core.asset_defs import asset
 from pyspark.sql import DataFrame as SparkDF
 from pyspark.sql import Window
 from pyspark.sql import functions as f
-
-sfo_q2_weather_sample = ForeignAsset("sfo_q2_weather_sample")
-
-
-@asset
-def daily_temperature_highs(sfo_q2_weather_sample: PandasDF) -> PandasDF:
-    """Computes the temperature high for each day"""
-    sfo_q2_weather_sample["valid_date"] = pd.to_datetime(sfo_q2_weather_sample["valid"])
-    return sfo_q2_weather_sample.groupby("valid_date").max().rename(columns={"tmpf": "max_tmpf"})
 
 
 @asset
