@@ -96,10 +96,10 @@ export const WebSocketStatus: React.FC = (props) => (
     {({status}) =>
       ({
         [WebSocket.CONNECTING]: (
-          <Circle style={{background: ColorsWIP.Green500}} title="Connecting..." {...props} />
+          <Circle style={{background: ColorsWIP.Green200}} title="Connecting..." {...props} />
         ),
         [WebSocket.OPEN]: (
-          <Circle style={{background: ColorsWIP.Green700}} title="Connected" {...props} />
+          <Circle style={{background: ColorsWIP.Green500}} title="Connected" {...props} />
         ),
         [WebSocket.CLOSING]: (
           <Circle style={{background: ColorsWIP.Gray400}} title="Closing..." {...props} />
