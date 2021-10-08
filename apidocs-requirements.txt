@@ -1,3 +1,4 @@
+-e ./python_modules/dagster
 -e ./python_modules/dagster-graphql
 -e ./python_modules/dagit
 -e ./python_modules/libraries/dagster-airflow[test]
