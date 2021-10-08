@@ -22,17 +22,17 @@ const LeftNavContainer = styled.div<{$open: boolean}>`
   top: 64px;
   bottom: 0;
   left: 0;
-  width: 280px;
+  padding-top: 16px;
+  width: 332px;
   display: flex;
   flex-shrink: 0;
   flex-direction: column;
   justify-content: start;
-  background: ${ColorsWIP.Gray900};
-  border-right: 1px solid ${ColorsWIP.Gray700};
+  background: ${ColorsWIP.Gray100};
+  box-shadow: 1px 0px 0px ${ColorsWIP.KeylineGray};
 
   @media (max-width: 1440px) {
-    box-shadow: 2px 0px 0px ${ColorsWIP.Gray200};
-    transform: translateX(${({$open}) => ($open ? '0' : '-280px')});
+    transform: translateX(${({$open}) => ($open ? '0' : '-332px')});
     transition: transform 150ms ease-in-out;
   }
 `;
