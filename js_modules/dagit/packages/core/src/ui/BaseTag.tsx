@@ -37,7 +37,7 @@ interface StyledTagProps {
   $textColor: string;
 }
 
-const StyledTag = styled.div<StyledTagProps>`
+export const StyledTag = styled.div<StyledTagProps>`
   background-color: ${({$fillColor}) => $fillColor};
   border-radius: 8px;
   color: ${({$textColor}) => $textColor};
