@@ -124,8 +124,6 @@ class JobDefinition(PipelineDefinition):
             hook_defs=self.hook_defs,
             tags=self.tags,
             version_strategy=self.version_strategy,
-            # ??? this is not accurate but i dont have to provide the new value bc it's just ephemeral?
-            # unresolved_op_selection=unresolved_op_selection,
         )
 
         return core_execute_in_process(

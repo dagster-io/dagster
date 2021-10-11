@@ -220,17 +220,6 @@ class ResolvedRunConfig(
         solid_config_dict = composite_descent(
             pipeline_def, config_value.get(node_key, {}), mode_def.resource_defs
         )
-        # TODO: resolve run config properly with op_selection
-        # approach: pass in op_selection (step_keys_to_execute) here and use step_keys_to_execute to
-        #   resolve run config
-        # - Q: safe to mix step_keys and node def name?
-        #   -> A:
-        #       * new config syntax will work fine with the mix bc we can convert "sub_graph.my_op"
-        #         to "graph: sub_graph: my_op" and search to skip checking unselected ops.
-        #       * config mapping should work out of box if we do the recursively search-and-skip right
-        #    - follow up Q: what about back compact???
-        # - Q: possible to skip the check for unselected step_keys_to_execute? and resolve it in execution plan?????
-        #   -> A: no, thats gonna be a lot of code to change how execution plan is built
 
         return ResolvedRunConfig(
             solids=solid_config_dict,

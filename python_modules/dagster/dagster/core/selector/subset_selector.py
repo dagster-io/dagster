@@ -208,6 +208,10 @@ def parse_solid_selection(pipeline_def, solid_selection):
     """
     check.list_param(solid_selection, "solid_selection", of_type=str)
 
+    # special case: select all
+    if len(solid_selection) == 1 and solid_selection[0] == "*":
+        return frozenset(pipeline_def.graph.node_names())
+
     graph = generate_dep_graph(pipeline_def)
     solids_set = set()
 

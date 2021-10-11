@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from dagster.core.definitions import NodeDefinition, PipelineDefinition
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
@@ -6,7 +6,7 @@ from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.instance import DagsterInstance
 from dagster.core.selector.subset_selector import (
     UnresolvedOpSelection,
-    resolve_op_selection_to_step_keys_to_execute,
+    parse_solid_selection,
 )
 
 from .api import (
@@ -29,71 +29,54 @@ def core_execute_in_process(
     instance: Optional[DagsterInstance],
     output_capturing_enabled: bool,
     raise_on_error: bool,
-    unresolved_op_selection: Optional[UnresolvedOpSelection] = None,  # TODO: not nullable
+    unresolved_op_selection: Optional[UnresolvedOpSelection],
 ):
     pipeline_def = ephemeral_pipeline
     mode_def = pipeline_def.get_mode_definition()
-    pipeline = InMemoryPipeline(pipeline_def)
 
-    full_execution_plan = create_execution_plan(
+    solids_to_execute = None
+    if unresolved_op_selection:
+        if unresolved_op_selection.selection_scope:
+            solids_to_execute = parse_solid_selection(
+                pipeline_def, unresolved_op_selection.selection_scope
+            )
+        if unresolved_op_selection.selection:
+            solids_to_execute = parse_solid_selection(
+                pipeline_def.get_pipeline_subset_def(solids_to_execute),
+                unresolved_op_selection.selection,
+            )
+
+    # TODO: https://github.com/dagster-io/dagster/issues/2115
+    #   op selection currently still operates on PipelineSubsetDefinition. ideally we'd like to
+    #   1) move away from creating PipelineSubsetDefinition
+    #   2) consolidate solid selection and step selection
+    #   3) enable subsetting nested graphs/ops which isn't working with the current setting
+    pipeline = InMemoryPipeline(pipeline_def.get_pipeline_subset_def(solids_to_execute))
+
+    execution_plan = create_execution_plan(
         pipeline,
         run_config=run_config,
         mode=mode_def.name,
     )
-
-    if unresolved_op_selection:
-        step_keys_to_execute = None
-
-        # something if wrong here
-        scoped_execution_plan = None
-        if unresolved_op_selection.selection_scope:
-            step_keys_to_execute = resolve_op_selection_to_step_keys_to_execute(
-                full_execution_plan, unresolved_op_selection.selection_scope
-            )
-        if unresolved_op_selection.selection:
-            # this is a laziest/easies way but not ideal - it generates execution plan twice
-            # in order to resolve two layers of selection
-            scoped_execution_plan = (
-                create_execution_plan(
-                    pipeline,
-                    run_config=run_config,
-                    mode=mode_def.name,
-                    step_keys_to_execute=step_keys_to_execute,
-                )
-                if step_keys_to_execute  # if the selection scope has been defined on job def
-                else None
-            )
-            step_keys_to_execute = resolve_op_selection_to_step_keys_to_execute(
-                execution_plan=scoped_execution_plan or full_execution_plan,
-                step_selection=unresolved_op_selection.selection,
-            )
-
-        final_execution_plan = create_execution_plan(
-            pipeline,
-            run_config=run_config,
-            mode=mode_def.name,
-            step_keys_to_execute=list(step_keys_to_execute) if step_keys_to_execute else None,
-        )
-    else:
-        final_execution_plan = full_execution_plan
 
     output_capture: Dict[StepOutputHandle, Any] = {}
 
     with ephemeral_instance_if_missing(instance) as execute_instance:
         pipeline_run = execute_instance.create_run_for_pipeline(
             pipeline_def=pipeline_def,
+            execution_plan=execution_plan,
             run_config=run_config,
             mode=mode_def.name,
             tags=pipeline_def.tags,
         )
 
         _execute_run_iterable = ExecuteRunWithPlanIterable(
-            execution_plan=final_execution_plan,
+            execution_plan=execution_plan,
             iterator=pipeline_execution_iterator,
             execution_context_manager=PlanOrchestrationContextManager(
                 context_event_generator=orchestration_context_event_generator,
                 pipeline=pipeline,
-                execution_plan=final_execution_plan,
+                execution_plan=execution_plan,
                 pipeline_run=pipeline_run,
                 instance=execute_instance,
                 run_config=run_config,
