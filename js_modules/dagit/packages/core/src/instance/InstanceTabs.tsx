@@ -1,6 +1,5 @@
 import {QueryResult} from '@apollo/client';
 import * as React from 'react';
-import {Link} from 'react-router-dom';
 
 import {QueryCountdown} from '../app/QueryCountdown';
 import {Box} from '../ui/Box';

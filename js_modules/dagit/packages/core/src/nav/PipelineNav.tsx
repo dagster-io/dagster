@@ -1,6 +1,6 @@
 import {IconName} from '@blueprintjs/core';
 import React from 'react';
-import {Link, useRouteMatch} from 'react-router-dom';
+import {useRouteMatch} from 'react-router-dom';
 
 import {useFeatureFlags} from '../app/Flags';
 import {DISABLED_MESSAGE, PermissionsMap, usePermissions} from '../app/Permissions';
