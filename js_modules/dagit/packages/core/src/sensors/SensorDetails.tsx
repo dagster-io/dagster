@@ -9,7 +9,7 @@ import {InstigationStatus, InstigationType} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {CountdownStatus, useCountdown} from '../ui/Countdown';
 import {Group} from '../ui/Group';
-import {MetadataTable} from '../ui/MetadataTable';
+import {MetadataTableWIP} from '../ui/MetadataTable';
 import {PageHeader} from '../ui/PageHeader';
 import {RefreshableCountdown} from '../ui/RefreshableCountdown';
 import {TagWIP} from '../ui/TagWIP';
@@ -99,59 +99,65 @@ export const SensorDetails: React.FC<{
           </Box>
         }
       />
-      <Box padding={{vertical: 16, horizontal: 24}}>
-        <MetadataTable
-          rows={[
-            sensor.description
-              ? {
-                  key: 'Description',
-                  value: sensor.description,
-                }
-              : null,
-            {
-              key: 'Latest tick',
-              value: latestTick ? (
-                <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+      <MetadataTableWIP>
+        <tbody>
+          {sensor.description ? (
+            <tr>
+              <td>Description</td>
+              <td>{sensor.description}</td>
+            </tr>
+          ) : null}
+          <tr>
+            <td>Latest tick</td>
+            <td>
+              {latestTick ? (
+                <Box
+                  flex={{direction: 'row', gap: 8, alignItems: 'center'}}
+                  style={{marginTop: '-2px'}}
+                >
                   <TimestampDisplay timestamp={latestTick.timestamp} />
                   <TickTag tick={latestTick} instigationType={InstigationType.SENSOR} />
                 </Box>
               ) : (
                 'Sensor has never run'
-              ),
-            },
-            {
-              key: flagPipelineModeTuples
+              )}
+            </td>
+          </tr>
+          <tr>
+            <td>
+              {flagPipelineModeTuples
                 ? hasMultipleTargets
                   ? 'Jobs'
                   : 'Job'
                 : hasMultipleTargets
                 ? 'Pipelines'
-                : 'Pipeline',
-              value:
-                sensor.targets && sensor.targets.length ? (
-                  <Group direction="column" spacing={2}>
-                    {sensor.targets.map((target) =>
-                      target.pipelineName ? (
-                        <PipelineReference
-                          key={`${target.pipelineName}:${target.mode}`}
-                          pipelineName={target.pipelineName}
-                          pipelineHrefContext={repoAddress}
-                          mode={target.mode}
-                        />
-                      ) : null,
-                    )}
-                  </Group>
-                ) : (
-                  'Sensor does not target a pipeline'
-                ),
-            },
-            {
-              key: 'Frequency',
-              value: humanizeSensorInterval(sensor.minIntervalSeconds),
-            },
-          ]}
-        />
-      </Box>
+                : 'Pipeline'}
+            </td>
+            <td>
+              {sensor.targets && sensor.targets.length ? (
+                <Group direction="column" spacing={2}>
+                  {sensor.targets.map((target) =>
+                    target.pipelineName ? (
+                      <PipelineReference
+                        key={`${target.pipelineName}:${target.mode}`}
+                        pipelineName={target.pipelineName}
+                        pipelineHrefContext={repoAddress}
+                        mode={target.mode}
+                      />
+                    ) : null,
+                  )}
+                </Group>
+              ) : (
+                'Sensor does not target a pipeline'
+              )}
+            </td>
+          </tr>
+          <tr>
+            <td>Frequency</td>
+            <td>{humanizeSensorInterval(sensor.minIntervalSeconds)}</td>
+          </tr>
+        </tbody>
+      </MetadataTableWIP>
     </>
   );
 };
