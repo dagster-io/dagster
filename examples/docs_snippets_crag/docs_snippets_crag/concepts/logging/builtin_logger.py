@@ -1,14 +1,14 @@
-from dagster import pipeline, repository, solid
+from dagster import op, job, repository
 
 
 # start_builtin_logger_marker_0
-@solid
+@op
 def hello_logs(context):
     context.log.info("Hello, world!")
 
 
-@pipeline
-def demo_pipeline():
+@job
+def demo_job():
     hello_logs()
 
 
@@ -16,13 +16,13 @@ def demo_pipeline():
 
 
 # start_builtin_logger_error_marker_0
-@solid
+@op
 def hello_logs_error(context):
     raise Exception("Somebody set up us the bomb")
 
 
-@pipeline
-def demo_pipeline_error():
+@job
+def demo_job_error():
     hello_logs_error()
 
 
@@ -31,4 +31,4 @@ def demo_pipeline_error():
 
 @repository
 def repo():
-    return [demo_pipeline, demo_pipeline_error]
+    return [demo_job, demo_job_error]
