@@ -73,7 +73,8 @@ const StyledInput = styled.input<StyledInputProps>`
   transition: box-shadow 150ms;
 
   :disabled {
-    box-shadow: ${ColorsWIP.Gray200} inset 0px 0px 0px 1px;
+    box-shadow: ${ColorsWIP.Gray200} inset 0px 0px 0px 1px,
+      ${ColorsWIP.KeylineGray} inset 2px 2px 1.5px;
     background-color: ${ColorsWIP.Gray50};
     color: ${ColorsWIP.Gray400};
   }
@@ -84,7 +85,7 @@ const StyledInput = styled.input<StyledInputProps>`
 
   :focus {
     box-shadow: ${({$strokeColor}) => $strokeColor} inset 0px 0px 0px 1px,
-      rgba(58, 151, 212, 0.6) 0 0 0 3px;
+      ${ColorsWIP.KeylineGray} inset 2px 2px 1.5px, rgba(58, 151, 212, 0.6) 0 0 0 3px;
     outline: none;
   }
 `;
