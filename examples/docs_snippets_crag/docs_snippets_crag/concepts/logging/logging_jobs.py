@@ -1,4 +1,4 @@
-from dagster import op, graph, repository
+from dagster import graph, op, repository
 from dagster.loggers import colored_console_logger
 from dagster_aws.cloudwatch.loggers import cloudwatch_logger
 

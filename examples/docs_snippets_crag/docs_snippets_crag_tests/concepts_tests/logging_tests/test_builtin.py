@@ -1,29 +1,29 @@
 import pytest
 import yaml
-from dagster import execute_pipeline
 from dagster.utils import file_relative_path
-from docs_snippets_crag.concepts.logging.builtin_logger import demo_pipeline, demo_pipeline_error
-from docs_snippets_crag.concepts.logging.logging_modes import hello_modes
+from docs_snippets_crag.concepts.logging.builtin_logger import demo_job, demo_job_error
+from docs_snippets_crag.concepts.logging.logging_jobs import local_logs, prod_logs
 
 
-def test_demo_pipeline():
-    assert execute_pipeline(demo_pipeline).success
+def test_demo_job():
+    assert demo_job.execute_in_process().success
 
 
-def test_demo_pipeline_config():
+def test_demo_job_config():
     with open(
         file_relative_path(__file__, "../../../docs_snippets_crag/concepts/logging/config.yaml"),
         "r",
     ) as fd:
         run_config = yaml.safe_load(fd.read())
-    assert execute_pipeline(demo_pipeline, run_config=run_config).success
+    assert demo_job.execute_in_process(run_config=run_config).success
 
 
-def test_demo_pipeline_error():
+def test_demo_job_error():
     with pytest.raises(Exception) as exc_info:
-        execute_pipeline(demo_pipeline_error)
+        demo_job_error.execute_in_process()
     assert str(exc_info.value) == "Somebody set up us the bomb"
 
 
-def test_hello_modes():
-    assert execute_pipeline(hello_modes, mode="local").success
+def test_local_and_prod_jobs():
+    assert local_logs.execute_in_process().success
+    assert prod_logs.execute_in_process().success
