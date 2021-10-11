@@ -13,7 +13,7 @@ exports[`renders error mode 1`] = `
       onKeyDown={[Function]}
     >
       <button
-        className="BaseButton__StyledButton-sc-1bn4i2e-0 eVixNz"
+        className="BaseButton__StyledButton-sc-1bn4i2e-0 biaLnJ"
         data-test-id="mode-picker-button"
         title="Current execution mode"
       >
@@ -49,7 +49,7 @@ exports[`renders multi mode pipelines 1`] = `
       onKeyDown={[Function]}
     >
       <button
-        className="BaseButton__StyledButton-sc-1bn4i2e-0 iBafTn"
+        className="BaseButton__StyledButton-sc-1bn4i2e-0 kEwqqT"
         data-test-id="mode-picker-button"
         title="Current execution mode"
       >
@@ -80,7 +80,7 @@ exports[`renders multi mode pipelines 2`] = `
       onKeyDown={[Function]}
     >
       <button
-        className="BaseButton__StyledButton-sc-1bn4i2e-0 iBafTn"
+        className="BaseButton__StyledButton-sc-1bn4i2e-0 kEwqqT"
         data-test-id="mode-picker-button"
         title="Current execution mode"
       >
@@ -111,7 +111,7 @@ exports[`renders single mode pipelines 1`] = `
       onKeyDown={[Function]}
     >
       <button
-        className="BaseButton__StyledButton-sc-1bn4i2e-0 iBafTn"
+        className="BaseButton__StyledButton-sc-1bn4i2e-0 kEwqqT"
         data-test-id="mode-picker-button"
         disabled={true}
         title="To add a mode, add a ModeDefinition to the pipeline."
@@ -143,7 +143,7 @@ exports[`renders single mode pipelines 2`] = `
       onKeyDown={[Function]}
     >
       <button
-        className="BaseButton__StyledButton-sc-1bn4i2e-0 iBafTn"
+        className="BaseButton__StyledButton-sc-1bn4i2e-0 kEwqqT"
         data-test-id="mode-picker-button"
         disabled={true}
         title="To add a mode, add a ModeDefinition to the pipeline."

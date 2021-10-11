@@ -75,7 +75,7 @@ const GlobalStyle = createGlobalStyle`
     padding: 0;
   }
 
-  body,input, select, textarea {
+  body, input, select, textarea {
     font-family: ${FontFamily.default};
   }
 

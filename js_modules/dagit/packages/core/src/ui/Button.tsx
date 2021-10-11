@@ -23,6 +23,7 @@ const intentToFillColor = (intent: BlueprintIntent, outlined: BlueprintOutlined)
     case 'warning':
       return ColorsWIP.Yellow500;
     case 'none':
+      return ColorsWIP.White;
     default:
       return 'transparent';
   }
