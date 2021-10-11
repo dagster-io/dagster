@@ -34,7 +34,9 @@ def test_simple_op_selection_on_job_def():
     assert result.success
 
     executed_step_keys = [
-        evt.step_key for evt in result.event_list if evt.event_type == DagsterEventType.STEP_SUCCESS
+        evt.step_key
+        for evt in result.all_node_events
+        if evt.event_type == DagsterEventType.STEP_SUCCESS
     ]
     assert len(executed_step_keys) == 3
     assert "add_one" not in [executed_step_keys]
@@ -47,7 +49,9 @@ def test_select_all_on_job_def():
     assert result.success
 
     executed_step_keys = [
-        evt.step_key for evt in result.event_list if evt.event_type == DagsterEventType.STEP_SUCCESS
+        evt.step_key
+        for evt in result.all_node_events
+        if evt.event_type == DagsterEventType.STEP_SUCCESS
     ]
     assert len(executed_step_keys) == 4
 
@@ -59,7 +63,9 @@ def test_simple_op_selection_on_job_execution():
     assert result.success
 
     executed_step_keys = [
-        evt.step_key for evt in result.event_list if evt.event_type == DagsterEventType.STEP_SUCCESS
+        evt.step_key
+        for evt in result.all_node_events
+        if evt.event_type == DagsterEventType.STEP_SUCCESS
     ]
     assert len(executed_step_keys) == 3
     assert "add_one" not in [executed_step_keys]
@@ -73,7 +79,9 @@ def test_simple_op_selection_on_subset_execution():
     assert result.success
 
     executed_step_keys = [
-        evt.step_key for evt in result.event_list if evt.event_type == DagsterEventType.STEP_SUCCESS
+        evt.step_key
+        for evt in result.all_node_events
+        if evt.event_type == DagsterEventType.STEP_SUCCESS
     ]
     assert len(executed_step_keys) == 3
     assert "add_one" not in [executed_step_keys]
@@ -124,7 +132,7 @@ def test_unsatisfied_input_use_config():
         run_config={"ops": {"start": {"inputs": {"x": {"value": 4}}}}}
     )
     assert result.success
-    assert result.result_for_node("end").output_value() == 4
+    assert result.output_for_node("end") == 4
 
     # test to ensure that if start is not being executed its input config is still allowed (and ignored)
     subset_result = full_job.execute_in_process(
@@ -132,7 +140,7 @@ def test_unsatisfied_input_use_config():
         op_selection=["end"],
     )
     assert subset_result.success
-    assert subset_result.result_for_node("end").output_value() == 1
+    assert subset_result.output_for_node("end") == 1
 
     # test to ensure that if the input is connected we will use the input value provided in config
     subset_result = full_job.execute_in_process(
@@ -140,7 +148,7 @@ def test_unsatisfied_input_use_config():
         op_selection=["end"],
     )
     assert subset_result.success
-    assert subset_result.result_for_node("end").output_value() == 4
+    assert subset_result.output_for_node("end") == 4
 
 
 def test_unsatisfied_input_use_root_input_manager():
@@ -167,7 +175,7 @@ def test_unsatisfied_input_use_root_input_manager():
         },
     )
     assert result.success
-    assert result.result_for_node("end").output_value() == 4
+    assert result.output_for_node("end") == 4
 
     # test to ensure that if start is not being executed its input config is still allowed (and ignored)
     subset_result = full_job.execute_in_process(
@@ -177,7 +185,7 @@ def test_unsatisfied_input_use_root_input_manager():
         op_selection=["end"],
     )
     assert subset_result.success
-    assert subset_result.result_for_node("end").output_value() == 1
+    assert subset_result.output_for_node("end") == 1
 
 
 # TODO
@@ -223,13 +231,13 @@ def test_op_selection_on_dynamic_orchestration():
     full_job = dynamic_pipeline.to_job()
     result = full_job.execute_in_process()
     assert result.success
-    assert result.result_for_node("echo").output_value() == 60
+    assert result.output_for_node("echo") == 60
 
     result = full_job.execute_in_process(
         op_selection=["emit*", "emit_ten"],
     )
     assert result.success
-    assert result.result_for_node("echo").output_value() == 20
+    assert result.output_for_node("echo") == 20
 
 
 # TODO: not working for nested graphs
@@ -244,7 +252,7 @@ def test_op_selection_on_dynamic_orchestration():
 
 #     assert result.success
 #     executed_step_keys = [
-#         evt.step_key for evt in result.event_list if evt.event_type == DagsterEventType.STEP_SUCCESS
+#         evt.step_key for evt in result.all_node_events if evt.event_type == DagsterEventType.STEP_SUCCESS
 #     ]
 #     assert len(executed_step_keys) == 4
 #     assert "add_one" not in [executed_step_keys]
