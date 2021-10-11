@@ -59,9 +59,9 @@ export const Tab = styled(({id, title, count, icon, selected, disabled, to, onCl
   const containerProps: Omit<HTMLProps<unknown>, 'ref'> = {
     role: 'tab',
     tabIndex: disabled ? -1 : 0,
-    ariaDisabled: disabled,
-    ariaExpanded: selected,
-    ariaSelected: selected,
+    'aria-disabled': disabled,
+    'aria-expanded': selected,
+    'aria-selected': selected,
     onKeyDown: (e: React.KeyboardEvent) =>
       [' ', 'Return', 'Enter'].includes(e.key) &&
       e.currentTarget instanceof HTMLElement &&
