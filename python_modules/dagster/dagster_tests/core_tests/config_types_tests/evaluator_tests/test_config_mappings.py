@@ -784,7 +784,7 @@ def test_bad_solid_def():
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=re.escape(
-            "@composite_solid 'config_only' defines a configuration schema but does not define a "
+            "composite_solid 'config_only' defines a configuration schema but does not define a "
             "configuration function."
         ),
     ):

@@ -4,6 +4,7 @@ from typing import Any, Callable, Dict, List, Optional, Union
 from dagster import check
 from dagster.utils.backcompat import experimental_decorator
 
+from ..config import ConfigMapping
 from ..graph import GraphDefinition
 from ..input import GraphIn, InputDefinition
 from ..output import GraphOut, OutputDefinition
@@ -19,6 +20,7 @@ class _Graph:
         ins: Optional[Dict[str, GraphIn]] = None,
         out: Optional[Union[GraphOut, Dict[str, GraphOut]]] = None,
         tags: Optional[Dict[str, Any]] = None,
+        config_mapping: Optional[ConfigMapping] = None,
     ):
         self.name = check.opt_str_param(name, "name")
         self.description = check.opt_str_param(description, "description")
@@ -30,6 +32,7 @@ class _Graph:
         self.ins = ins
         self.out = out
         self.tags = tags
+        self.config_mapping = check.opt_inst_param(config_mapping, "config_mapping", ConfigMapping)
 
     def __call__(self, fn: Callable[..., Any]) -> GraphDefinition:
         check.callable_param(fn, "fn")
@@ -68,8 +71,7 @@ class _Graph:
             provided_input_defs=input_defs,
             provided_output_defs=output_defs,
             ignore_output_from_composition_fn=False,
-            config_schema=None,
-            config_fn=None,
+            config_mapping=self.config_mapping,
         )
 
         graph_def = GraphDefinition(
@@ -96,6 +98,7 @@ def graph(
     ins: Optional[Dict[str, GraphIn]] = None,
     out: Optional[Union[GraphOut, Dict[str, GraphOut]]] = None,
     tags: Optional[Dict[str, Any]] = None,
+    config: Optional[Union[ConfigMapping, Dict[str, Any]]] = None,
 ) -> Union[_Graph, GraphDefinition]:
     """Create a graph with the specified parameters from the decorated composition function.
 
@@ -143,6 +146,15 @@ def graph(
         check.invariant(description is None)
         return _Graph()(name)
 
+    config_mapping = None
+    # Case 1: a dictionary of config is provided, convert to config mapping.
+    if config is not None and not isinstance(config, ConfigMapping):
+        config = check.dict_param(config, "config", key_type=str)
+        config_mapping = ConfigMapping(config_fn=lambda _: config, config_schema=None)
+    # Case 2: actual config mapping is provided.
+    else:
+        config_mapping = config
+
     return _Graph(
         name=name,
         description=description,
@@ -151,4 +163,5 @@ def graph(
         ins=ins,
         out=out,
         tags=tags,
+        config_mapping=config_mapping,
     )
