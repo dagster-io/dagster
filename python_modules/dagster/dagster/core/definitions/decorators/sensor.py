@@ -19,6 +19,7 @@ if TYPE_CHECKING:
 
 def sensor(
     pipeline_name: Optional[str] = None,
+    job_name: Optional[str] = None,
     name: Optional[str] = None,
     solid_selection: Optional[List[str]] = None,
     mode: Optional[str] = None,
@@ -64,6 +65,14 @@ def sensor(
     """
     check.opt_str_param(name, "name")
 
+    if pipeline_name and job_name:
+        raise DagsterInvariantViolationError(
+            f"Retrieved both pipeline_name and job_name parameters on sensor '{name}'. Please "
+            "specify only one."
+        )
+
+    pipeline_name = pipeline_name if pipeline_name else job_name
+
     def inner(
         fn: Callable[
             ["SensorEvaluationContext"],
@@ -95,6 +104,7 @@ def sensor(
 def asset_sensor(
     asset_key: AssetKey,
     pipeline_name: Optional[str] = None,
+    job_name: Optional[str] = None,
     name: Optional[str] = None,
     solid_selection: Optional[List[str]] = None,
     mode: Optional[str] = None,
@@ -142,6 +152,14 @@ def asset_sensor(
     """
 
     check.opt_str_param(name, "name")
+
+    if pipeline_name and job_name:
+        raise DagsterInvariantViolationError(
+            f"On asset sensor '{name}', attempted to set both the pipeline_name and job_name "
+            "parameters. Please set only one."
+        )
+
+    pipeline_name = pipeline_name if pipeline_name else job_name
 
     def inner(
         fn: Callable[

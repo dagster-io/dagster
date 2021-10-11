@@ -143,19 +143,21 @@ class SensorDefinition:
         evaluation_fn (Callable[[SensorEvaluationContext]]): The core evaluation function for the
             sensor, which is run at an interval to determine whether a run should be launched or
             not. Takes a :py:class:`~dagster.SensorEvaluationContext`.
-
+        job_name (Optional[str]): The name of the job to execute when the sensor fires. Only one of
             This function must return a generator, which must yield either a single SkipReason
             or one or more RunRequest objects.
-        pipeline_name (Optional[str]): The name of the pipeline to execute when the sensor fires.
-        solid_selection (Optional[List[str]]): A list of solid subselection (including single
-            solid names) to execute when the sensor runs. e.g. ``['*some_solid+', 'other_solid']``
+        op_selection (Optional[List[str]]): A list of op subselection (including single
+            op names) to execute when the sensor runs. e.g. ``['*some_op+', 'other_op']``
         mode (Optional[str]): The mode to apply when executing runs triggered by this sensor.
             (default: 'default')
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
-        job (Optional[GraphDefinition, JobDefinition]): Experimental
-        jobs (Optional[Sequence[GraphDefinition, JobDefinition]]): Experimental
+        job (Optional[JobDefinition, GraphDefinition]): A job that will be executed when the sensor fires.
+        jobs (Optional[Sequence[GraphDefinition, JobDefinition]]): A set of jobs that will be executed when the sensor fires.
+        pipeline_name (Optional[str]): (legacy) The name of the pipeline to execute when the sensor fires.
+        solid_selection (Optional[List[str]]): (legacy) A list of solid subselection (including single
+            solid names) to execute when the sensor runs. e.g. ``['*some_solid+', 'other_solid']``
     """
 
     def __init__(
@@ -165,7 +167,9 @@ class SensorDefinition:
             ["SensorEvaluationContext"],
             Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
         ],
+        job_name: Optional[str] = None,
         pipeline_name: Optional[str] = None,
+        op_selection: Optional[List[Any]] = None,
         solid_selection: Optional[List[Any]] = None,
         mode: Optional[str] = None,
         minimum_interval_seconds: Optional[int] = None,
@@ -180,33 +184,48 @@ class SensorDefinition:
                 "of the two."
             )
 
+        if pipeline_name and job_name:
+            raise DagsterInvalidDefinitionError(
+                "Attempted to provide both job_name and pipeline_name to SensorDefinition. Must provide only one "
+                "of the two."
+            )
+
+        if op_selection and solid_selection:
+            raise DagsterInvalidDefinitionError(
+                "Attempted to provide both solid_selection and op_selection to SensorDefinition. Must provide only one "
+                "of the two."
+            )
+
         job_param_name = "job" if job else "jobs"
         jobs = jobs if jobs else [job] if job else None
 
-        if pipeline_name and jobs:
+        job_name = job_name if job_name else pipeline_name
+        op_selection = op_selection if op_selection else solid_selection
+
+        if job_name and jobs:
             raise DagsterInvalidDefinitionError(
-                f"Attempted to provide both pipeline_name and {job_param_name} to "
+                f"Attempted to provide both job_name and {job_param_name} to "
                 "SensorDefinition. Must provide only one of the two."
             )
-        if solid_selection and jobs:
+        if op_selection and jobs:
             raise DagsterInvalidDefinitionError(
                 f"Attempted to provide solid_selection and {job_param_name} to SensorDefinition. "
                 "The solid_selection argument is incompatible with jobs."
             )
-        if mode and jobs:
+        if mode and jobs or mode and job or mode and job_name:
             raise DagsterInvalidDefinitionError(
                 f"Attempted to provide mode and {job_param_name} to SensorDefinition. "
                 "The mode argument is incompatible with jobs."
             )
 
         targets: Optional[List[Union[RepoRelativeTarget, DirectTarget]]] = None
-        if pipeline_name:
+        if job_name:
             targets = [
                 RepoRelativeTarget(
-                    pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
+                    pipeline_name=check.str_param(job_name, "job_name"),
                     mode=check.opt_str_param(mode, "mode") or DEFAULT_MODE_NAME,
                     solid_selection=check.opt_nullable_list_param(
-                        solid_selection, "solid_selection", of_type=str
+                        op_selection, "op_selection", of_type=str
                     ),
                 )
             ]
@@ -390,8 +409,16 @@ class SensorDefinition:
         return self._targets[0] if self._targets else None
 
     @property
+    def job_name(self) -> Optional[str]:
+        return self.pipeline_name
+
+    @property
     def pipeline_name(self) -> Optional[str]:
         return self._target.pipeline_name if self._target else None
+
+    @property
+    def op_selection(self) -> Optional[List[Any]]:
+        return self._target.solid_selection if self._target else None
 
     @property
     def solid_selection(self) -> Optional[List[Any]]:
