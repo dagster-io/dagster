@@ -64,7 +64,8 @@ interface StyledInputProps {
 const StyledInput = styled.input<StyledInputProps>`
   border: none;
   border-radius: 8px;
-  box-shadow: ${({$strokeColor}) => $strokeColor} inset 0px 0px 0px 1px;
+  box-shadow: ${({$strokeColor}) => $strokeColor} inset 0px 0px 0px 1px,
+    ${ColorsWIP.KeylineGray} inset 2px 2px 1.5px;
   flex-grow: 1;
   line-height: 20px;
   padding: ${({$hasIcon}) => ($hasIcon ? '6px 6px 6px 28px' : '6px 6px 6px 12px')};
@@ -72,7 +73,8 @@ const StyledInput = styled.input<StyledInputProps>`
   transition: box-shadow 150ms;
 
   :disabled {
-    box-shadow: ${ColorsWIP.Gray200} inset 0px 0px 0px 1px;
+    box-shadow: ${ColorsWIP.Gray200} inset 0px 0px 0px 1px,
+      ${ColorsWIP.KeylineGray} inset 2px 2px 1.5px;
     background-color: ${ColorsWIP.Gray50};
     color: ${ColorsWIP.Gray400};
   }
@@ -83,7 +85,7 @@ const StyledInput = styled.input<StyledInputProps>`
 
   :focus {
     box-shadow: ${({$strokeColor}) => $strokeColor} inset 0px 0px 0px 1px,
-      rgba(58, 151, 212, 0.6) 0 0 0 3px;
+      ${ColorsWIP.KeylineGray} inset 2px 2px 1.5px, rgba(58, 151, 212, 0.6) 0 0 0 3px;
     outline: none;
   }
 `;
