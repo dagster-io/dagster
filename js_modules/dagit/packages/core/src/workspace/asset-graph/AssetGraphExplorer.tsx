@@ -134,7 +134,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
                         <path d="M 0 0 L 10 5 L 0 10 z" fill={ColorsWIP.Gray200} />
                       </marker>
                     </defs>
-                    <g opacity={0.8}>
+                    <g opacity={0.2}>
                       {layout.edges.map((edge, idx) => (
                         <StyledPath
                           key={idx}
@@ -274,7 +274,7 @@ const SVGContainer = styled.svg`
 `;
 const StyledPath = styled('path')<{dashed: boolean}>`
   stroke-width: 4;
-  stroke: ${ColorsWIP.Gray200};
+  stroke: ${ColorsWIP.Gray600};
   ${({dashed}) => (dashed ? `stroke-dasharray: 8 2;` : '')}
   fill: none;
 `;

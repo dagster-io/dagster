@@ -7,7 +7,7 @@ import styled from 'styled-components/macro';
 
 import {AppContext} from '../../app/AppContext';
 import {showLaunchError} from '../../execute/showLaunchError';
-import {SVGNodeTag} from '../../graph/SolidTags';
+import {SolidTags} from '../../graph/SolidTags';
 import {PipelineExplorerSolidHandleFragment} from '../../pipelines/types/PipelineExplorerSolidHandleFragment';
 import {
   LAUNCH_PIPELINE_EXECUTION_MUTATION,
@@ -18,6 +18,7 @@ import {TimeElapsed} from '../../runs/TimeElapsed';
 import {LaunchPipelineExecution} from '../../runs/types/LaunchPipelineExecution';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {ColorsWIP} from '../../ui/Colors';
+import {IconWIP} from '../../ui/Icon';
 import {markdownToPlaintext} from '../../ui/Markdown';
 import {MenuItemWIP, MenuWIP} from '../../ui/Menu';
 import {FontFamily} from '../../ui/styles';
@@ -86,75 +87,27 @@ export const AssetNode: React.FC<{
         </MenuWIP>
       }
     >
-      <div
-        style={{
-          outline: selected
-            ? `2px dashed rgba(255, 69, 0, 1)`
-            : secondaryHighlight
-            ? `2px solid ${ColorsWIP.Blue500}55`
-            : 'none',
-          outlineOffset: 0,
-          padding: 4,
-          marginTop: 10,
-          marginRight: 4,
-          marginLeft: 4,
-          marginBottom: 2,
-          position: 'absolute',
-          background: selected ? 'rgba(255, 69, 0, 0.2)' : 'white',
-          inset: 0,
-        }}
-      >
-        <div style={{border: `1px solid ${ColorsWIP.Gray200}`, position: 'relative'}}>
-          <div
-            style={{
-              display: 'flex',
-              padding: '4px 8px',
-              fontFamily: FontFamily.monospace,
-              background: ColorsWIP.White,
-              fontWeight: 600,
-            }}
-          >
+      <AssetNodeContainer $selected={selected} $secondaryHighlight={secondaryHighlight}>
+        <AssetNodeBox>
+          <Name>
+            <IconWIP name="asset" style={{marginRight: 4}} />
             {assetKeyToString(definition.assetKey)}
             <div style={{flex: 1}} />
             {computeStatus === 'old' && (
-              <div
-                style={{
-                  color: '#f58f52',
-                  lineHeight: '10px',
-                  fontSize: '11px',
-                  textAlign: 'right',
-                  marginTop: -4,
-                  marginBottom: -4,
-                  padding: '2.5px 5px',
-                  marginRight: -9,
-                  borderRight: '3px solid #f58f52',
-                }}
-              >
+              <UpstreamNotice>
                 upstream
                 <br />
                 changed
-              </div>
+              </UpstreamNotice>
             )}
-          </div>
+          </Name>
           {definition.description && (
-            <div
-              style={{
-                background: '#EFF4F7',
-                padding: '4px 8px',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                borderTop: '1px solid #ccc',
-                fontSize: 12,
-              }}
-            >
-              {markdownToPlaintext(definition.description).split('\n')[0]}
-            </div>
+            <Description>{markdownToPlaintext(definition.description).split('\n')[0]}</Description>
           )}
           {event ? (
-            <AssetNodeStats>
+            <Stats>
               {runOrError.__typename === 'PipelineRun' && (
-                <AssetNodeStatsRow>
+                <StatsRow>
                   <Link
                     data-tooltip={`${runOrError.pipelineName}${
                       runOrError.mode !== 'default' ? `:${runOrError.mode}` : ''
@@ -182,10 +135,10 @@ export const AssetNode: React.FC<{
                   >
                     {titleForRun({runId: runOrError.runId})}
                   </Link>
-                </AssetNodeStatsRow>
+                </StatsRow>
               )}
 
-              <AssetNodeStatsRow>
+              <StatsRow>
                 {event.stepStats.endTime ? (
                   <TimestampDisplay
                     timestamp={event.stepStats.endTime}
@@ -198,43 +151,38 @@ export const AssetNode: React.FC<{
                   startUnix={event.stepStats.startTime}
                   endUnix={event.stepStats.endTime}
                 />
-              </AssetNodeStatsRow>
-            </AssetNodeStats>
+              </StatsRow>
+            </Stats>
           ) : (
-            <AssetNodeStats>
-              <AssetNodeStatsRow style={{opacity: 0.5}}>
+            <Stats>
+              <StatsRow style={{opacity: 0.5}}>
                 <span>No materializations</span>
                 <span>—</span>
-              </AssetNodeStatsRow>
-              <AssetNodeStatsRow style={{opacity: 0.5}}>
+              </StatsRow>
+              <StatsRow style={{opacity: 0.5}}>
                 <span>—</span>
                 <span>—</span>
-              </AssetNodeStatsRow>
-            </AssetNodeStats>
+              </StatsRow>
+            </Stats>
           )}
           {kind && (
-            <svg
-              height={20}
-              width={100}
-              viewBox="0 0 100 20"
-              style={{position: 'absolute', left: -1, bottom: -20}}
-            >
-              <SVGNodeTag
-                tag={{
+            <SolidTags
+              minified={false}
+              style={{right: -2, paddingTop: 5}}
+              tags={[
+                {
                   label: kind,
                   onClick: () => {
                     window.requestAnimationFrame(() =>
                       document.dispatchEvent(new Event('show-kind-info')),
                     );
                   },
-                }}
-                minified={false}
-                height={20}
-              />
-            </svg>
+                },
+              ]}
+            />
           )}
-        </div>
-      </div>
+        </AssetNodeBox>
+      </AssetNodeContainer>
     </ContextMenu>
   );
 };
@@ -258,16 +206,74 @@ const RunLinkTooltipStyle = JSON.stringify({
   borderRadius: 4,
 } as CSSProperties);
 
-const AssetNodeStats = styled.div`
-  background: #e1eaf0;
+const AssetNodeContainer = styled.div<{$selected: boolean; $secondaryHighlight: boolean}>`
+  outline: ${(p) =>
+    p.$selected
+      ? `2px dashed rgba(255, 69, 0, 1)`
+      : p.$secondaryHighlight
+      ? `2px solid ${ColorsWIP.Blue500}55`
+      : 'none'};
+  border-radius: 6px;
+  outline-offset: -1px;
+  padding: 4px;
+  margin-top: 10px;
+  margin-right: 4px;
+  margin-left: 4px;
+  margin-bottom: 2px;
+  position: absolute;
+  background: ${(p) => (p.$selected ? 'rgba(255, 69, 0, 0.2)' : 'white')};
+  inset: 0;
+`;
+
+const AssetNodeBox = styled.div`
+  border: 2px solid ${ColorsWIP.Blue200};
+  background: ${ColorsWIP.White};
+  border-radius: 5px;
+  position: relative;
+`;
+
+const Name = styled.div`
+  display: flex;
+  padding: 4px 6px;
+  font-family: ${FontFamily.monospace};
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+  font-weight: 600;
+`;
+
+const Description = styled.div`
+  background: rgba(245, 245, 250, 1);
   padding: 4px 8px;
-  border-top: 1px solid #ccc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-top: 1px solid rgba(219, 219, 244, 1);
+  font-size: 12px;
+`;
+
+const Stats = styled.div`
+  background: rgba(236, 236, 248, 1);
+  padding: 4px 8px;
+  border-top: 1px solid rgba(219, 219, 244, 1);
   font-size: 12px;
   line-height: 18px;
 `;
 
-const AssetNodeStatsRow = styled.div`
+const StatsRow = styled.div`
   display: flex;
   justify-content: space-between;
   min-height: 14px;
+`;
+
+const UpstreamNotice = styled.div`
+  background: ${ColorsWIP.Yellow200};
+  color: ${ColorsWIP.Yellow700};
+  line-height: 10px;
+  font-size: 11px;
+  text-align: right;
+  margin-top: -4px;
+  margin-bottom: -4px;
+  padding: 2.5px 5px;
+  margin-right: -8px;
+  border-top-right-radius: 3px;
 `;

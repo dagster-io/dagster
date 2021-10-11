@@ -51,6 +51,7 @@ export interface SolidNodeDefinitionFragment_SolidDefinition_configField {
 export interface SolidNodeDefinitionFragment_SolidDefinition {
   __typename: "SolidDefinition";
   name: string;
+  description: string | null;
   metadata: SolidNodeDefinitionFragment_SolidDefinition_metadata[];
   inputDefinitions: SolidNodeDefinitionFragment_SolidDefinition_inputDefinitions[];
   outputDefinitions: SolidNodeDefinitionFragment_SolidDefinition_outputDefinitions[];
@@ -143,6 +144,7 @@ export interface SolidNodeDefinitionFragment_CompositeSolidDefinition_outputMapp
 export interface SolidNodeDefinitionFragment_CompositeSolidDefinition {
   __typename: "CompositeSolidDefinition";
   name: string;
+  description: string | null;
   metadata: SolidNodeDefinitionFragment_CompositeSolidDefinition_metadata[];
   inputDefinitions: SolidNodeDefinitionFragment_CompositeSolidDefinition_inputDefinitions[];
   outputDefinitions: SolidNodeDefinitionFragment_CompositeSolidDefinition_outputDefinitions[];

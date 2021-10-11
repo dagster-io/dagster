@@ -93,9 +93,9 @@ export interface IPoint {
 const MAX_PER_ROW_ENABLED = false;
 const MAX_PER_ROW = 25;
 const SOLID_WIDTH = 370;
-const SOLID_BASE_HEIGHT = 75;
-const IO_HEIGHT = 36;
-const IO_INSET = 6;
+const SOLID_BASE_HEIGHT = 52;
+const IO_HEIGHT = 26;
+const IO_INSET = 0;
 const IO_MINI_WIDTH = 35;
 const IO_THRESHOLD_FOR_MINI = 4;
 const PORT_INSET_X = 15;
@@ -482,10 +482,10 @@ export function layoutSolid(solid: ILayoutSolid, root: IPoint): IFullSolidLayout
 
   return {
     boundingBox: {
-      x: root.x,
-      y: root.y,
-      width: SOLID_WIDTH,
-      height: accY - root.y,
+      x: root.x - 5,
+      y: root.y - 5,
+      width: SOLID_WIDTH + 10,
+      height: accY - root.y + 10,
     },
     solid: solidLayout,
     inputs: inputsLayouts,

@@ -110,7 +110,7 @@ const DynamicMarker: React.FunctionComponent<{
   direction: 'output' | 'collect';
 }> = ({x, y, direction}) => (
   <g
-    fill="#9e4903"
+    fill={ColorsWIP.Gray700}
     transform={`translate(${x - 35}, ${y})${
       direction === 'collect' ? ',rotate(180),translate(-20, -40)' : ''
     }`}
@@ -122,7 +122,7 @@ const DynamicMarker: React.FunctionComponent<{
 );
 
 const StyledPath = styled('path')`
-  stroke-width: 6;
-  stroke: ${ColorsWIP.Dark};
+  stroke-width: 4;
+  stroke: ${ColorsWIP.Gray600};
   fill: none;
 `;

@@ -1,10 +1,10 @@
 import * as React from 'react';
+import styled from 'styled-components/macro';
 
 import {DEFAULT_RESULT_NAME, titleOfIO} from '../app/titleOfIO';
+import {ColorsWIP} from '../ui/Colors';
+import {FontFamily} from '../ui/styles';
 
-import {PipelineColorScale} from './PipelineColorScale';
-import {SVGEllipseInRect, SVGFlowLayoutRect, SVGMonospaceText} from './SVGComponents';
-import {ILayout} from './getFullSolidLayout';
 import {Edge, isHighlighted} from './highlighting';
 import {
   SolidNodeDefinitionFragment,
@@ -27,7 +27,7 @@ interface SolidIOBoxProps extends SolidIORenderMetadata {
   item:
     | SolidNodeDefinitionFragment_SolidDefinition_inputDefinitions
     | SolidNodeDefinitionFragment_SolidDefinition_outputDefinitions;
-  layout: ILayout;
+  style: React.CSSProperties;
 
   // Passed through from Solid props
   minified: boolean;
@@ -42,19 +42,19 @@ export const SolidIOBox: React.FunctionComponent<SolidIOBoxProps> = ({
   jumpTargetSolid,
   edges,
   highlightedEdges,
-  layout,
   colorKey,
   item,
   onDoubleClick,
   onHighlightEdges,
+  style,
 }) => {
-  const {x, y, width, height} = layout;
   const {name, type} = item;
-  const showText = width === 0 && !minified;
   const highlighted = edges.some((e) => isHighlighted(highlightedEdges, e));
 
   return (
-    <g
+    <SolidIOContainer
+      title={title}
+      style={{...style, width: 'initial'}}
       onMouseEnter={() => onHighlightEdges(edges)}
       onMouseLeave={() => onHighlightEdges([])}
       onClick={(e) => {
@@ -62,49 +62,54 @@ export const SolidIOBox: React.FunctionComponent<SolidIOBoxProps> = ({
         e.stopPropagation();
       }}
       onDoubleClick={(e) => e.stopPropagation()}
+      $colorKey={colorKey}
+      $highlighted={highlighted}
     >
-      <title>{title}</title>
-      <SVGFlowLayoutRect
-        x={x}
-        y={y}
-        stroke="#979797"
-        strokeWidth={1}
-        maxWidth={300}
-        fill={
-          highlighted ? PipelineColorScale(`${colorKey}Highlighted`) : PipelineColorScale(colorKey)
-        }
-        padding={8}
-        spacing={7}
-        height={height}
-      >
-        <SVGEllipseInRect
-          width={14}
-          height={14}
-          fill="rgba(0, 0, 0, 0.3)"
-          stroke="white"
-          strokeWidth={1.5}
-        />
-        {showText && name !== DEFAULT_RESULT_NAME && (
-          <SVGMonospaceText text={`${name}:`} fill="#FFF" size={14} />
-        )}
-        {showText && type.displayName && (
-          <SVGFlowLayoutRect
-            rx={4}
-            ry={4}
-            fill="#d6ecff"
-            stroke="#2491eb"
-            strokeWidth={1}
-            height={27}
-            spacing={0}
-            padding={4}
-          >
-            <SVGMonospaceText text={type.displayName} size={14} fill="#222" />
-          </SVGFlowLayoutRect>
-        )}
-      </SVGFlowLayoutRect>
-    </g>
+      <div>
+        <div className="circle" />
+        {!minified && name !== DEFAULT_RESULT_NAME && <div className="label">{name}</div>}
+        {!minified && type.displayName && <div className="type">{type.displayName}</div>}
+      </div>
+    </SolidIOContainer>
   );
 };
+
+const SolidIOContainer = styled.div<{$colorKey: string; $highlighted: boolean}>`
+  display: block;
+  & > div {
+    display: inline-flex;
+    align-items: center;
+    border-top-right-radius: 6px;
+    border-bottom-right-radius: 6px;
+    background: ${(p) => (p.$highlighted ? 'rgba(255, 255, 255, 1)' : 'rgba(255, 255, 255, 0.75)')};
+    font-size: 12px;
+  }
+  .circle {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: ${(p) => (p.$highlighted ? ColorsWIP.Gray700 : ColorsWIP.Gray500)};
+    display: inline-block;
+    margin: 6px;
+  }
+  .label {
+    line-height: 26px;
+    font-family: ${FontFamily.monospace};
+    font-weight: 500;
+    height: 26px;
+    padding-left: 2px;
+    padding-right: 6px;
+  }
+  .type {
+    padding: 1px 6px;
+    background: #e7e6f0;
+    margin-right: 4px;
+    color: ${ColorsWIP.Blue500};
+    font-family: ${FontFamily.monospace};
+    font-weight: 700;
+    border-radius: 4px;
+  }
+`;
 
 export function metadataForCompositeParentIO(
   parentDefinition: SolidNodeDefinitionFragment,
