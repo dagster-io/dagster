@@ -64,7 +64,8 @@ interface StyledInputProps {
 const StyledInput = styled.input<StyledInputProps>`
   border: none;
   border-radius: 8px;
-  box-shadow: ${({$strokeColor}) => $strokeColor} inset 0px 0px 0px 1px;
+  box-shadow: ${({$strokeColor}) => $strokeColor} inset 0px 0px 0px 1px,
+    ${ColorsWIP.KeylineGray} inset 2px 2px 1.5px;
   flex-grow: 1;
   line-height: 20px;
   padding: ${({$hasIcon}) => ($hasIcon ? '6px 6px 6px 28px' : '6px 6px 6px 12px')};
