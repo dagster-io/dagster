@@ -4,8 +4,8 @@ import pytest
 from dagster import (
     DagsterEventType,
     ModeDefinition,
-    PipelineDefinition,
     NodeInvocation,
+    PipelineDefinition,
     build_hook_context,
     check,
     execute_pipeline,

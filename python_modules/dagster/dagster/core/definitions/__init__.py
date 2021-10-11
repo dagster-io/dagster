@@ -25,8 +25,8 @@ from .dependency import (
     MultiDependencyDefinition,
     Node,
     NodeHandle,
-    SolidInputHandle,
     NodeInvocation,
+    SolidInputHandle,
     SolidInvocation,
     SolidOutputHandle,
 )

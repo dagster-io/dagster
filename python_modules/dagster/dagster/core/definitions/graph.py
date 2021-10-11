@@ -42,8 +42,8 @@ from .dependency import (
     IDependencyDefinition,
     Node,
     NodeHandle,
-    SolidInputHandle,
     NodeInvocation,
+    SolidInputHandle,
 )
 from .hook import HookDefinition
 from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer

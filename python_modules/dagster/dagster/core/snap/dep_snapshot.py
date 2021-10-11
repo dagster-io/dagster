@@ -29,7 +29,7 @@ def build_solid_invocation_snap(icontains_solids, solid):
             )
         )
 
-    return NodeInvocationSnap(
+    return SolidInvocationSnap(
         solid_name=solid.name,
         solid_def_name=solid.definition.name,
         tags=solid.tags,
@@ -57,7 +57,7 @@ class DependencyStructureSnapshot(
             cls,
             sorted(
                 check.list_param(
-                    solid_invocation_snaps, "solid_invocation_snaps", of_type=NodeInvocationSnap
+                    solid_invocation_snaps, "solid_invocation_snaps", of_type=SolidInvocationSnap
                 ),
                 key=lambda si: si.solid_name,
             ),
@@ -179,13 +179,13 @@ class InputDependencySnap(
 
 
 @whitelist_for_serdes
-class NodeInvocationSnap(
+class SolidInvocationSnap(
     namedtuple(
-        "_NodeInvocationSnap", "solid_name solid_def_name tags input_dep_snaps is_dynamic_mapped"
+        "_SolidInvocationSnap", "solid_name solid_def_name tags input_dep_snaps is_dynamic_mapped"
     )
 ):
     def __new__(cls, solid_name, solid_def_name, tags, input_dep_snaps, is_dynamic_mapped=False):
-        return super(NodeInvocationSnap, cls).__new__(
+        return super(SolidInvocationSnap, cls).__new__(
             cls,
             solid_name=check.str_param(solid_name, "solid_name"),
             solid_def_name=check.str_param(solid_def_name, "solid_def_name"),

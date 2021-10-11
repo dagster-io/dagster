@@ -995,7 +995,7 @@ snapshots[
       "__class__": "DependencyStructureSnapshot",
       "solid_invocation_snaps": [
         {
-          "__class__": "NodeInvocationSnap",
+          "__class__": "SolidInvocationSnap",
           "input_dep_snaps": [],
           "is_dynamic_mapped": false,
           "solid_def_name": "a_solid",
@@ -2125,7 +2125,7 @@ snapshots[
           "__class__": "DependencyStructureSnapshot",
           "solid_invocation_snaps": [
             {
-              "__class__": "NodeInvocationSnap",
+              "__class__": "SolidInvocationSnap",
               "input_dep_snaps": [],
               "is_dynamic_mapped": false,
               "solid_def_name": "a_solid",

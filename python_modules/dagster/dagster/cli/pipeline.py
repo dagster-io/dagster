@@ -36,7 +36,7 @@ from dagster.core.host_representation import (
 from dagster.core.host_representation.external_data import ExternalPartitionSetExecutionParamData
 from dagster.core.host_representation.selector import PipelineSelector
 from dagster.core.instance import DagsterInstance
-from dagster.core.snap import PipelineSnapshot, NodeInvocationSnap
+from dagster.core.snap import PipelineSnapshot, SolidInvocationSnap
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 from dagster.core.telemetry import log_external_repo_stats, telemetry_wrapper
 from dagster.core.utils import make_new_backfill_id
@@ -223,7 +223,7 @@ def print_description(printer, desc):
 
 def print_solid_or_op(printer, pipeline_snapshot, solid_invocation_snap, using_job_op_graph_apis):
     check.inst_param(pipeline_snapshot, "pipeline_snapshot", PipelineSnapshot)
-    check.inst_param(solid_invocation_snap, "solid_invocation_snap", NodeInvocationSnap)
+    check.inst_param(solid_invocation_snap, "solid_invocation_snap", SolidInvocationSnap)
     printer.line(
         f"{'Op' if using_job_op_graph_apis else 'Solid'}: {solid_invocation_snap.solid_name}"
     )

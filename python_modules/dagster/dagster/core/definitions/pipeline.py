@@ -29,8 +29,8 @@ from .dependency import (
     MultiDependencyDefinition,
     Node,
     NodeHandle,
-    SolidInputHandle,
     NodeInvocation,
+    SolidInputHandle,
 )
 from .graph import GraphDefinition
 from .hook import HookDefinition
