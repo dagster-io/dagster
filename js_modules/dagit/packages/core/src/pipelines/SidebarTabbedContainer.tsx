@@ -1,14 +1,13 @@
 import {gql} from '@apollo/client';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components/macro';
 
 import {SolidNameOrPath} from '../solids/SolidNameOrPath';
 import {TypeExplorerContainer} from '../typeexplorer/TypeExplorerContainer';
 import {TypeListContainer} from '../typeexplorer/TypeListContainer';
+import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
-import {Group} from '../ui/Group';
-import {IconName, IconWIP} from '../ui/Icon';
+import {Tab, Tabs} from '../ui/Tabs';
 import {RepoAddress} from '../workspace/types';
 
 import {PipelineExplorerJobContext} from './PipelineExplorerJobContext';
@@ -21,7 +20,6 @@ type TabKey = 'types' | 'info';
 
 interface TabDefinition {
   name: string;
-  icon: IconName;
   key: TabKey;
   content: () => React.ReactNode;
 }
@@ -60,7 +58,6 @@ export const SidebarTabbedContainer: React.FC<ISidebarTabbedContainerProps> = (p
   const TabDefinitions: Array<TabDefinition> = [
     {
       name: 'Info',
-      icon: 'schema',
       key: 'info',
       content: () =>
         solidHandleID ? (
@@ -93,7 +90,6 @@ export const SidebarTabbedContainer: React.FC<ISidebarTabbedContainerProps> = (p
     },
     {
       name: 'Types',
-      icon: 'menu_book',
       key: 'types',
       content: () =>
         typeName ? (
@@ -110,18 +106,16 @@ export const SidebarTabbedContainer: React.FC<ISidebarTabbedContainerProps> = (p
 
   return (
     <>
-      <TabContainer>
-        {TabDefinitions.map(({name, icon, key}) => (
-          <Tab key={key} active={key === activeTab}>
-            <Link to={{search: `?tab=${key}`}} key={key}>
-              <Group direction="row" spacing={8} alignItems="center">
-                <IconWIP name={icon} color={ColorsWIP.Blue500} />
-                {name}
-              </Group>
-            </Link>
-          </Tab>
-        ))}
-      </TabContainer>
+      <Box
+        padding={{horizontal: 24}}
+        border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+      >
+        <Tabs selectedTabId={activeTab}>
+          {TabDefinitions.map(({name, key}) => (
+            <Tab id={key} key={key} title={<Link to={{search: `?tab=${key}`}}>{name}</Link>} />
+          ))}
+        </Tabs>
+      </Box>
       {TabDefinitions.find((t) => t.key === activeTab)?.content()}
     </>
   );
@@ -134,30 +128,4 @@ export const SIDEBAR_TABBED_CONTAINER_PIPELINE_FRAGMENT = gql`
   }
 
   ${SIDEBAR_PIPELINE_INFO_FRAGMENT}
-`;
-
-const TabContainer = styled.div`
-  width: 100%;
-  display: flex;
-  margin-top: 10px;
-  align-items: center;
-  justify-content: center;
-  border-bottom: 1px solid #ccc;
-`;
-
-const Tab = styled.div<{active: boolean}>`
-  color: ${(p) => (p.active ? ColorsWIP.Blue500 : ColorsWIP.Gray500)}
-  border-top: 3px solid transparent;
-  border-bottom: 3px solid ${(p) => (p.active ? ColorsWIP.Blue500 : 'transparent')};
-  text-decoration: none;
-  white-space: nowrap;
-  min-width: 40px;
-  padding: 0 10px;
-  display: flex;
-  height: 36px;
-  align-items: center;
-
-  :hover > * {
-    text-decoration: none;
-  }
 `;

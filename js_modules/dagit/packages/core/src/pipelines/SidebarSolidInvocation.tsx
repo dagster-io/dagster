@@ -22,7 +22,7 @@ export const SidebarSolidInvocation: React.FC<ISidebarSolidInvocationProps> = (p
   return (
     <div>
       <SidebarSection title={'Invocation'}>
-        <Box padding={12}>
+        <Box padding={{vertical: 16, horizontal: 24}}>
           <SidebarTitle>{breakOnUnderscores(solid.name)}</SidebarTitle>
           <DependencyTable>
             <tbody>

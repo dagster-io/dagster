@@ -13,6 +13,7 @@ import {ButtonLink} from '../ui/ButtonLink';
 import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
+import {FontFamily} from '../ui/styles';
 
 import {RunGroupPanelQuery} from './types/RunGroupPanelQuery';
 
@@ -143,8 +144,9 @@ const RUN_GROUP_PANEL_QUERY = gql`
 const RunGroupRun = styled(Link)<{selected: boolean}>`
   align-items: flex-start;
   background: ${({selected}) => (selected ? ColorsWIP.Gray100 : ColorsWIP.White)};
-  padding: 3px 6px 3px 24px;
-  font-size: 13px;
+  padding: 4px 6px 4px 24px;
+  font-family: ${FontFamily.monospace};
+  font-size: 14px;
   line-height: 20px;
   display: flex;
   position: relative;
@@ -156,9 +158,9 @@ const RunGroupRun = styled(Link)<{selected: boolean}>`
 
 const ThinLine = styled.div`
   position: absolute;
-  top: 17px;
+  top: 20px;
   width: 1px;
-  background: ${ColorsWIP.Gray300};
+  background: ${ColorsWIP.Gray200};
   left: 29px;
   z-index: 2;
 `;
