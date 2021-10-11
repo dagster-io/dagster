@@ -5,6 +5,7 @@ import {useFeatureFlags} from '../app/Flags';
 import {PipelineRoot} from '../pipelines/PipelineRoot';
 import {ScheduleRoot} from '../schedules/ScheduleRoot';
 import {SensorRoot} from '../sensors/SensorRoot';
+import {Box} from '../ui/Box';
 import {MainContent} from '../ui/MainContent';
 import {NonIdealState} from '../ui/NonIdealState';
 
@@ -55,18 +56,20 @@ const RepoRouteContainer: React.FC<{repoPath: string}> = (props) => {
   // the repo path in the URL, it means we aren't able to load this repo.
   if (!matchingRepo) {
     return (
-      <NonIdealState
-        icon="error"
-        title="Unknown repository"
-        description={
-          <div>
+      <Box padding={{vertical: 64}}>
+        <NonIdealState
+          icon="error"
+          title="Unknown repository"
+          description={
             <div>
-              <strong>{repoPath}</strong>
+              <div>
+                <strong>{repoPath}</strong>
+              </div>
+              {'  is not loaded in the current workspace.'}
             </div>
-            {'  is not loaded in the current workspace.'}
-          </div>
-        }
-      />
+          }
+        />
+      </Box>
     );
   }
 
