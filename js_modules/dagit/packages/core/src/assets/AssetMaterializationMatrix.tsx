@@ -18,7 +18,9 @@ import {
 import {MetadataEntry} from '../runs/MetadataEntry';
 import {titleForRun} from '../runs/RunUtils';
 import {MetadataEntryFragment} from '../runs/types/MetadataEntryFragment';
+import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
+import {IconWIP, IconWrapper} from '../ui/Icon';
 import {FontFamily} from '../ui/styles';
 
 import {AssetPredecessorLink} from './AssetMaterializationTable';
@@ -27,7 +29,7 @@ import {AssetNumericHistoricalData} from './types';
 import {AssetMaterializationFragment} from './types/AssetMaterializationFragment';
 import {HistoricalMaterialization} from './useMaterializationBuckets';
 
-const COL_WIDTH = 120;
+const COL_WIDTH = 240;
 
 const OVERSCROLL = 150;
 
@@ -104,6 +106,10 @@ export const AssetMaterializationMatrix: React.FC<AssetMaterializationMatrixProp
             <HeaderRowLabel>Run</HeaderRowLabel>
             <HeaderRowLabel>Timestamp</HeaderRowLabel>
             {anyPredecessors ? <HeaderRowLabel>Previous materializations</HeaderRowLabel> : null}
+            <Box
+              padding={{vertical: 4}}
+              border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+            />
             {[...metadataLabels, LABEL_STEP_EXECUTION_TIME].map((label, idx) => (
               <MetadataRowLabel
                 bordered={idx === 0 || label === LABEL_STEP_EXECUTION_TIME}
@@ -143,7 +149,7 @@ export const AssetMaterializationMatrix: React.FC<AssetMaterializationMatrixProp
                   : '';
 
               return (
-                <GridColumn
+                <AssetGridColumn
                   key={materializationEvent.timestamp}
                   onMouseEnter={() => onHoverX(x)}
                   hovered={xHover === x}
@@ -163,14 +169,11 @@ export const AssetMaterializationMatrix: React.FC<AssetMaterializationMatrixProp
                       {titleForRun({runId})}
                     </Link>
                   </div>
-                  <div
-                    className="cell"
-                    style={anyPredecessors ? {} : {borderBottom: `1px solid ${ColorsWIP.Gray200}`}}
-                  >
+                  <div className="cell">
                     <Timestamp timestamp={{ms: Number(materializationEvent.timestamp)}} />
                   </div>
                   {anyPredecessors ? (
-                    <div className="cell" style={{borderBottom: `1px solid ${ColorsWIP.Gray200}`}}>
+                    <div className="cell">
                       {predecessors?.length ? (
                         <AssetPredecessorLink
                           isPartitioned={isPartitioned}
@@ -180,6 +183,7 @@ export const AssetMaterializationMatrix: React.FC<AssetMaterializationMatrixProp
                       ) : null}
                     </div>
                   ) : null}
+                  <AssetGridColumnSpacer />
                   {metadataLabels.map((label) => {
                     const entry = materializationEvent.materialization.metadataEntries.find(
                       (m) => m.label === label,
@@ -207,7 +211,7 @@ export const AssetMaterializationMatrix: React.FC<AssetMaterializationMatrixProp
                       ? formatElapsedTime((endTime - startTime) * 1000)
                       : EMPTY_CELL_DASH}
                   </div>
-                </GridColumn>
+                </AssetGridColumn>
               );
             })}
           </div>
@@ -219,8 +223,10 @@ export const AssetMaterializationMatrix: React.FC<AssetMaterializationMatrixProp
 };
 
 const HeaderRowLabel = styled(LeftLabel)`
-  padding-left: 6px;
-  color: ${ColorsWIP.Gray500};
+  padding: 4px 24px;
+  color: ${ColorsWIP.Gray700};
+  height: 32px;
+  box-shadow: ${ColorsWIP.KeylineGray} 0 -1px 0 inset;
 `;
 
 const MetadataRowLabel: React.FunctionComponent<{
@@ -230,26 +236,70 @@ const MetadataRowLabel: React.FunctionComponent<{
   graphEnabled: boolean;
   graphData?: AssetNumericHistoricalData[0];
   onToggleGraphEnabled: () => void;
-}> = ({bordered, label, hovered, graphEnabled, graphData, onToggleGraphEnabled}) => (
-  <LeftLabel
-    key={label}
-    hovered={hovered}
-    data-tooltip={label}
-    style={{display: 'flex', borderTop: bordered ? `1px solid ${ColorsWIP.Gray200}` : ''}}
-  >
+}> = ({label, hovered, graphEnabled, graphData, onToggleGraphEnabled}) => (
+  <StyledMetadataRowLabel key={label} hovered={hovered} data-tooltip={label}>
+    {graphData ? (
+      <VisibilityButton disabled={!graphData} onClick={onToggleGraphEnabled}>
+        <IconWIP name={graphEnabled ? 'visibility' : 'visibility_off'} />
+      </VisibilityButton>
+    ) : null}
     <div style={{width: 149, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>
-      <Button
-        minimal
-        small
-        disabled={!graphData}
-        onClick={onToggleGraphEnabled}
-        icon={graphData ? (graphEnabled ? 'eye-open' : 'eye-off') : 'blank'}
-      />
       {label}
     </div>
     {graphData && <Sparkline data={graphData} width={150} height={23} />}
-  </LeftLabel>
+  </StyledMetadataRowLabel>
 );
+
+const StyledMetadataRowLabel = styled(LeftLabel)`
+  display: flex;
+  align-items: center;
+  border: none;
+  color: ${ColorsWIP.Gray700};
+  height: 32px;
+  padding: 8px 0 8px 24px;
+  position: relative;
+  box-shadow: ${ColorsWIP.KeylineGray} 0 -1px 0 inset;
+`;
+
+const VisibilityButton = styled.button`
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  position: absolute;
+  left: 4px;
+
+  :focus,
+  :active {
+    outline: none;
+  }
+
+  ${IconWrapper} {
+    transition: background-color 100ms;
+  }
+
+  :hover ${IconWrapper} {
+    background-color: ${ColorsWIP.Gray900};
+  }
+`;
+
+const AssetGridColumnSpacer = styled.div`
+  padding: 4px 0;
+  box-shadow: ${ColorsWIP.KeylineGray} 0 -1px 0 inset, ${ColorsWIP.KeylineGray} -1px 0 0 inset;
+`;
+
+const AssetGridColumn = styled(GridColumn)`
+  width: 240px;
+
+  .cell {
+    height: 32px;
+    padding: 8px;
+    box-shadow: ${ColorsWIP.KeylineGray} 0 -1px 0 inset, ${ColorsWIP.KeylineGray} -1px 0 0 inset;
+    font-family: ${FontFamily.monospace};
+    font-size: 16px;
+  }
+`;
 
 const plaintextFor = (entry: MetadataEntryFragment | undefined) => {
   if (!entry) {
