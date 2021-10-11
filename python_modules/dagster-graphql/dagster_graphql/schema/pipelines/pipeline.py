@@ -443,6 +443,7 @@ class GrapheneIPipelineSnapshotMixin:
 
 
 class GrapheneIPipelineSnapshot(graphene.Interface):
+    id = graphene.NonNull(graphene.ID)
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
     pipeline_snapshot_id = graphene.NonNull(graphene.String)
@@ -461,6 +462,15 @@ class GrapheneIPipelineSnapshot(graphene.Interface):
         handleID=graphene.Argument(graphene.NonNull(graphene.String)),
     )
     tags = non_null_list(GraphenePipelineTag)
+    runs = graphene.Field(
+        non_null_list(GraphenePipelineRun),
+        cursor=graphene.String(),
+        limit=graphene.Int(),
+    )
+    schedules = non_null_list(GrapheneSchedule)
+    sensors = non_null_list(GrapheneSensor)
+    parent_snapshot_id = graphene.String()
+    graph_name = graphene.NonNull(graphene.String)
 
     class Meta:
         name = "IPipelineSnapshot"
@@ -536,6 +546,12 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
             GraphenePipelinePreset(preset, self._external_pipeline.name)
             for preset in sorted(self._external_pipeline.active_presets, key=lambda item: item.name)
         ]
+
+
+class GrapheneJob(GraphenePipeline):
+    class Meta:
+        interfaces = (GrapheneSolidContainer, GrapheneIPipelineSnapshot)
+        name = "Job"
 
 
 @lru_cache(maxsize=32)

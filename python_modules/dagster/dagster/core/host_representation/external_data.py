@@ -10,6 +10,7 @@ from typing import Dict, List, Optional, Sequence, Set, Tuple
 
 from dagster import check
 from dagster.core.definitions import (
+    JobDefinition,
     PartitionSetDefinition,
     PipelineDefinition,
     PresetDefinition,
@@ -29,7 +30,8 @@ from dagster.utils.error import SerializableErrorInfo
 class ExternalRepositoryData(
     namedtuple(
         "_ExternalRepositoryData",
-        "name external_pipeline_datas external_schedule_datas external_partition_set_datas external_sensor_datas external_asset_graph_data",
+        "name external_pipeline_datas external_schedule_datas external_partition_set_datas "
+        "external_sensor_datas external_asset_graph_data external_job_data",
     )
 ):
     def __new__(
@@ -40,6 +42,7 @@ class ExternalRepositoryData(
         external_partition_set_datas,
         external_sensor_datas=None,
         external_asset_graph_data=None,
+        external_job_data=None,
     ):
         return super(ExternalRepositoryData, cls).__new__(
             cls,
@@ -65,6 +68,11 @@ class ExternalRepositoryData(
                 "external_asset_graph_dats",
                 of_type=ExternalAssetNode,
             ),
+            external_job_data=check.opt_list_param(
+                external_job_data,
+                "external_job_data",
+                of_type=ExternalPipelineData,
+            ),
         )
 
     def get_pipeline_snapshot(self, name):
@@ -84,6 +92,15 @@ class ExternalRepositoryData(
                 return external_pipeline_data
 
         check.failed("Could not find external pipeline data named " + name)
+
+    def get_external_job_data(self, name):
+        check.str_param(name, "name")
+
+        for external_job_data in self.external_job_data:
+            if external_job_data.name == name:
+                return external_job_data
+
+        check.failed("Could not find external job data named " + name)
 
     def get_external_schedule_data(self, name):
         check.str_param(name, "name")
@@ -434,7 +451,14 @@ class ExternalAssetNode(
 def external_repository_data_from_def(repository_def):
     check.inst_param(repository_def, "repository_def", RepositoryDefinition)
 
-    pipelines = repository_def.get_all_pipelines()
+    pipelines = []
+    jobs = []
+    for obj in repository_def.get_all_pipelines():
+        if isinstance(obj, JobDefinition):
+            jobs.append(obj)
+        else:
+            pipelines.append(obj)
+
     return ExternalRepositoryData(
         name=repository_def.name,
         external_pipeline_datas=sorted(
@@ -453,7 +477,11 @@ def external_repository_data_from_def(repository_def):
             list(map(external_sensor_data_from_def, repository_def.sensor_defs)),
             key=lambda sd: sd.name,
         ),
-        external_asset_graph_data=external_asset_graph_from_defs(pipelines),
+        external_asset_graph_data=external_asset_graph_from_defs(jobs),
+        external_job_data=sorted(
+            list(map(external_pipeline_data_from_def, jobs)),
+            key=lambda jd: jd.name,
+        ),
     )
 
 

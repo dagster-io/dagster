@@ -49,14 +49,26 @@ class ExternalRepository:
         )
         self._handle = check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
 
-        jobs_list = (
+        instigation_list = (
             external_repository_data.external_schedule_datas
             + external_repository_data.external_sensor_datas
         )
-        self._job_map = OrderedDict((job_data.name, job_data) for job_data in jobs_list)
+        self._instigation_map = OrderedDict(
+            (job_data.name, job_data) for job_data in instigation_list
+        )
         self._partition_set_map = OrderedDict(
             (external_partition_set_data.name, external_partition_set_data)
             for external_partition_set_data in external_repository_data.external_partition_set_datas
+        )
+        self._job_index_map = OrderedDict(
+            (
+                external_job_data.pipeline_snapshot.name,
+                PipelineIndex(
+                    external_job_data.pipeline_snapshot,
+                    external_job_data.parent_pipeline_snapshot,
+                ),
+            )
+            for external_job_data in external_repository_data.external_job_data
         )
 
     @property
@@ -98,10 +110,10 @@ class ExternalRepository:
         ]
 
     def has_external_schedule(self, schedule_name):
-        return isinstance(self._job_map.get(schedule_name), ExternalScheduleData)
+        return isinstance(self._instigation_map.get(schedule_name), ExternalScheduleData)
 
     def has_external_sensor(self, sensor_name):
-        return isinstance(self._job_map.get(sensor_name), ExternalSensorData)
+        return isinstance(self._instigation_map.get(sensor_name), ExternalSensorData)
 
     def has_external_partition_set(self, partition_set_name):
         return partition_set_name in self._partition_set_map
@@ -128,6 +140,20 @@ class ExternalRepository:
 
     def get_all_external_pipelines(self):
         return [self.get_full_external_pipeline(pn) for pn in self._pipeline_index_map]
+
+    def has_external_job(self, job_name):
+        return job_name in self._job_index_map
+
+    def get_external_job(self, job_name):
+        check.str_param(job_name, "job_name")
+        return ExternalJob(
+            self.external_repository_data.get_external_job_data(job_name),
+            repository_handle=self.handle,
+            pipeline_index=self._job_index_map[job_name],
+        )
+
+    def get_external_jobs(self):
+        return [self.get_external_job(pn) for pn in self._job_index_map]
 
     @property
     def handle(self):
@@ -455,7 +481,7 @@ class ExternalSchedule:
     # ScheduleState that represents the state of the schedule
     # when there is no row in the schedule DB (for example, when
     # the schedule is first created in code)
-    def get_default_job_state(self, instance):
+    def get_default_instigation_state(self, instance):
         from dagster.core.scheduler.job import JobState, JobStatus, ScheduleJobData
 
         return JobState(
@@ -535,7 +561,7 @@ class ExternalSensor:
     def get_external_origin_id(self):
         return self.get_external_origin().get_id()
 
-    def get_default_job_state(self, _instance):
+    def get_default_instigation_state(self, _instance):
         from dagster.core.scheduler.job import JobState, JobStatus, SensorJobData
 
         return JobState(
@@ -576,3 +602,22 @@ class ExternalPartitionSet:
 
     def get_external_origin_id(self):
         return self.get_external_origin().get_id()
+
+
+class ExternalJob(ExternalPipeline):
+    def __init__(self, external_job_data, repository_handle, pipeline_index=None):
+        check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
+        check.inst_param(external_job_data, "external_job_data", ExternalPipelineData)
+        check.opt_inst_param(pipeline_index, "pipeline_index", PipelineIndex)
+
+        if pipeline_index is None:
+            pipeline_index = PipelineIndex(
+                external_job_data.pipeline_snapshot,
+                external_job_data.parent_pipeline_snapshot,
+            )
+
+        super(ExternalJob, self).__init__(
+            external_pipeline_data=external_job_data,
+            repository_handle=repository_handle,
+            pipeline_index=pipeline_index,
+        )

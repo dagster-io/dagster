@@ -43,6 +43,7 @@ type Repository {
   name: String!
   location: RepositoryLocation!
   pipelines: [Pipeline!]!
+  jobs: [Job!]!
   usedSolids: [UsedSolid!]!
   usedSolid(name: String!): UsedSolid
   origin: RepositoryOrigin!
@@ -64,6 +65,7 @@ type RepositoryLocation {
 
 type Pipeline implements SolidContainer & IPipelineSnapshot {
   solids: [Solid!]!
+  id: ID!
   name: String!
   description: String
   pipelineSnapshotId: String!
@@ -73,7 +75,6 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   solidHandles(parentHandleID: String): [SolidHandle!]!
   solidHandle(handleID: String!): SolidHandle
   tags: [PipelineTag!]!
-  id: ID!
   runs(cursor: String, limit: Int): [PipelineRun!]!
   schedules: [Schedule!]!
   sensors: [Sensor!]!
@@ -180,6 +181,7 @@ type Output {
 }
 
 interface IPipelineSnapshot {
+  id: ID!
   name: String!
   description: String
   pipelineSnapshotId: String!
@@ -190,6 +192,11 @@ interface IPipelineSnapshot {
   solidHandles(parentHandleID: String): [SolidHandle!]!
   solidHandle(handleID: String!): SolidHandle
   tags: [PipelineTag!]!
+  runs(cursor: String, limit: Int): [PipelineRun!]!
+  schedules: [Schedule!]!
+  sensors: [Sensor!]!
+  parentSnapshotId: String
+  graphName: String!
 }
 
 union DagsterTypeOrError = RegularDagsterType | PipelineNotFoundError | DagsterTypeNotFoundError | PythonError
@@ -1069,6 +1076,26 @@ type PipelinePreset {
   tags: [PipelineTag!]!
 }
 
+type Job implements SolidContainer & IPipelineSnapshot {
+  solids: [Solid!]!
+  id: ID!
+  name: String!
+  description: String
+  pipelineSnapshotId: String!
+  dagsterTypes: [DagsterType!]!
+  dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
+  modes: [Mode!]!
+  solidHandles(parentHandleID: String): [SolidHandle!]!
+  solidHandle(handleID: String!): SolidHandle
+  tags: [PipelineTag!]!
+  runs(cursor: String, limit: Int): [PipelineRun!]!
+  schedules: [Schedule!]!
+  sensors: [Sensor!]!
+  parentSnapshotId: String
+  graphName: String!
+  presets: [PipelinePreset!]!
+}
+
 type UsedSolid {
   definition: ISolidDefinition!
   invocations: [SolidInvocationSite!]!
@@ -1146,6 +1173,7 @@ input PipelineSelector {
 union PipelineSnapshotOrError = PipelineNotFoundError | PipelineSnapshot | PipelineSnapshotNotFoundError | PythonError
 
 type PipelineSnapshot implements IPipelineSnapshot & PipelineReference {
+  id: ID!
   name: String!
   description: String
   pipelineSnapshotId: String!
@@ -1156,13 +1184,12 @@ type PipelineSnapshot implements IPipelineSnapshot & PipelineReference {
   solidHandles(parentHandleID: String): [SolidHandle!]!
   solidHandle(handleID: String!): SolidHandle
   tags: [PipelineTag!]!
-  solidSelection: [String!]
-  id: ID!
   runs(cursor: String, limit: Int): [PipelineRun!]!
   schedules: [Schedule!]!
   sensors: [Sensor!]!
   parentSnapshotId: String
   graphName: String!
+  solidSelection: [String!]
 }
 
 type PipelineSnapshotNotFoundError implements Error {

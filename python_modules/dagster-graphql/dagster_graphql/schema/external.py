@@ -12,7 +12,7 @@ from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
 from .asset_graph import GrapheneAssetNode
 from .errors import GraphenePythonError, GrapheneRepositoryNotFoundError
 from .partition_sets import GraphenePartitionSet
-from .pipelines.pipeline import GraphenePipeline
+from .pipelines.pipeline import GrapheneJob, GraphenePipeline
 from .repository_origin import GrapheneRepositoryMetadata, GrapheneRepositoryOrigin
 from .schedules import GrapheneSchedule
 from .sensors import GrapheneSensor
@@ -148,6 +148,7 @@ class GrapheneRepository(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     location = graphene.NonNull(GrapheneRepositoryLocation)
     pipelines = non_null_list(GraphenePipeline)
+    jobs = non_null_list(GrapheneJob)
     usedSolids = graphene.Field(non_null_list(GrapheneUsedSolid))
     usedSolid = graphene.Field(GrapheneUsedSolid, name=graphene.NonNull(graphene.String))
     origin = graphene.NonNull(GrapheneRepositoryOrigin)
@@ -192,6 +193,12 @@ class GrapheneRepository(graphene.ObjectType):
             [GrapheneSensor(graphene_info, sensor) for sensor in sensors],
             key=lambda sensor: sensor.name,
         )
+
+    def resolve_jobs(self, _graphene_info):
+        return [
+            GrapheneJob(job)
+            for job in sorted(self._repository.get_external_jobs(), key=lambda job: job.name)
+        ]
 
     def resolve_pipelines(self, _graphene_info):
         return [
