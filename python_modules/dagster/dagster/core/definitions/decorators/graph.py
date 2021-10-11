@@ -81,7 +81,7 @@ class _Graph:
             description=self.description or fn.__doc__,
             input_mappings=input_mappings,
             output_mappings=output_mappings,
-            config_mapping=config_mapping,
+            config=config_mapping,
             positional_inputs=positional_inputs,
             tags=self.tags,
         )

@@ -132,7 +132,7 @@ class GraphDefinition(NodeDefinition):
         ] = None,
         input_mappings: Optional[List[InputMapping]] = None,
         output_mappings: Optional[List[OutputMapping]] = None,
-        config_mapping: Optional[ConfigMapping] = None,
+        config: Optional[ConfigMapping] = None,
         tags: Optional[Dict[str, Any]] = None,
         **kwargs,
     ):
@@ -160,7 +160,7 @@ class GraphDefinition(NodeDefinition):
             class_name=type(self).__name__,
         )
 
-        self._config_mapping = check.opt_inst_param(config_mapping, "config_mapping", ConfigMapping)
+        self._config_mapping = check.opt_inst_param(config, "config", ConfigMapping)
 
         super(GraphDefinition, self).__init__(
             name=name,
@@ -382,7 +382,7 @@ class GraphDefinition(NodeDefinition):
             dependencies=self._dependencies,
             input_mappings=self._input_mappings,
             output_mappings=self._output_mappings,
-            config_mapping=ConfigMapping(
+            config=ConfigMapping(
                 config_mapping.config_fn,
                 config_schema=config_schema,
                 receive_processed_config_values=config_mapping.receive_processed_config_values,

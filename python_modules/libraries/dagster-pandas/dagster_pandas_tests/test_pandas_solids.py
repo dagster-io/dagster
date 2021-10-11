@@ -17,7 +17,7 @@ def get_op_result_value(op_inst):
         },
         input_mappings=None,
         output_mappings=None,
-        config_mapping=None,
+        config=None,
     )
 
     result = single_op_graph.execute_in_process()
