@@ -41,6 +41,7 @@ class AssetKey(NamedTuple("_AssetKey", [("path", Union[Tuple[str, ...], List[str
     Example usage:
 
     .. code-block:: python
+
         from dagster import op
 
         @op

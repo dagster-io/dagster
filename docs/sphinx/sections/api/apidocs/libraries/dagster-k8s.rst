@@ -73,7 +73,7 @@ To run the unit tests:
 
 
 To run the integration tests, you must have `Docker <https://docs.docker.com/install/>`_\ ,
-`kind <https://kind.sigs.k8s.io/docs/user/quick-start#installation>`_\ ,
+`kind <https://kind.sigs.k8s.io/docs/user/quick-start#installation>`__\ ,
 and `helm <https://helm.sh/docs/intro/install/>`_ installed.
 
 On macOS:

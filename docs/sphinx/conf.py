@@ -47,6 +47,8 @@ extensions = [
     "sphinx.ext.autosectionlabel",
 ]
 
+autodoc_mock_imports = ["ansiwrap", "asn1crypto", "azure", "databricks_cli"]
+
 # https://stackoverflow.com/a/54843636/324449
 autosectionlabel_prefix_document = True
 

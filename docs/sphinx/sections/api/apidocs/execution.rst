@@ -11,7 +11,7 @@ Executing pipelines
 .. autofunction:: execute_pipeline_iterator
 
 Re-executing pipelines
--------------------
+----------------------
 
 .. autofunction:: reexecute_pipeline
 

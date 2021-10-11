@@ -1,3 +1,4 @@
+
 .. currentmodule:: dagster
 
 Solids
@@ -30,10 +31,14 @@ Execution
 ---------
 
 .. autoclass:: RetryPolicy
+    :noindex:
 
 .. autoclass:: Backoff
+    :noindex:
 
 .. autoclass:: Jitter
+    :noindex:
+
 
 -------
 
@@ -55,8 +60,6 @@ Composing solids
 .. currentmodule:: dagster
 
 
-.. _events:
-
 Events
 ------
 
@@ -70,20 +73,26 @@ Event types
 
 .. autoclass:: Output
     :members:
+    :noindex:
 
 .. autoclass:: AssetMaterialization
     :members:
+    :noindex:
 
 .. autoclass:: ExpectationResult
     :members:
+    :noindex:
 
 .. autoclass:: TypeCheck
     :members:
+    :noindex:
 
 .. autoclass:: Failure
     :members:
+    :noindex:
 
 .. autoclass:: RetryRequested
+    :noindex:
 
 -------
 
@@ -94,9 +103,11 @@ Dagster uses event metadata to communicate arbitrary user-specified metadata abo
 events.
 
 .. autoclass:: EventMetadata
+    :noindex:
     :members:
 
 .. autoclass:: EventMetadataEntry
+    :noindex:
     :members:
 
 Metadata types
@@ -106,27 +117,35 @@ The type alias for the union of the structured event metadata types is `EventMet
 This consists of the following data types:
 
 .. autoclass:: JsonMetadataEntryData
+    :noindex:
     :members:
 
 .. autoclass:: MarkdownMetadataEntryData
+    :noindex:
     :members:
 
 .. autoclass:: PathMetadataEntryData
+    :noindex:
     :members:
 
 .. autoclass:: TextMetadataEntryData
+    :noindex:
     :members:
 
 .. autoclass:: UrlMetadataEntryData
+    :noindex:
     :members:
 
 .. autoclass:: FloatMetadataEntryData
+    :noindex:
     :members:
 
 .. autoclass:: IntMetadataEntryData
+    :noindex:
     :members:
 
 .. autoclass:: PythonArtifactMetadataEntryData
+    :noindex:
     :members:
 
 -------
@@ -139,4 +158,5 @@ Assets materialized with an :py:class:`AssetKey` are highlighted in `dagit` on t
 dashboard.
 
 .. autoclass:: AssetKey
+    :noindex:
     :members:

@@ -14,13 +14,6 @@ We're curious what you're up to, happy to help, excited for new community contri
 to make the system as easy to work with as possible -- including for teams who are looking to
 customize it.
 
-Logging
--------
-
-.. autoclass:: DagsterLogManager
-    :members:
-
-----
 
 Executors
 ---------

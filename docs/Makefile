@@ -8,7 +8,7 @@ crag_dev:
 	cd next; yarn crag-dev;
 
 build:
-	cd sphinx; make clean; make json; cd ..; python pack_json.py
+	cd sphinx; make clean; make json SPHINXOPTS="-W"; cd ..; python pack_json.py
 
 snapshot:
 	cd next; yarn snapshot && yarn crag-snapshot; cd ..;
