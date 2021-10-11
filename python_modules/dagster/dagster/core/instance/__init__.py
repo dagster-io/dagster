@@ -188,7 +188,7 @@ class DagsterInstance:
     For example, to use Postgres for run and event log storage, you can write a ``dagster.yaml``
     such as the following:
 
-    .. literalinclude:: ../../../../docs/sections/deploying/postgres_dagster.yaml
+    .. literalinclude:: ../../../../../examples/docs_snippets/docs_snippets/deploying/postgres_dagster.yaml
        :caption: dagster.yaml
        :language: YAML
 

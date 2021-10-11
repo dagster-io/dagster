@@ -289,6 +289,7 @@ def weekly_schedule(
     configuration for the scheduled run.
 
     The decorator produces a :py:class:`~dagster.PartitionScheduleDefinition`.
+
     Args:
         pipeline_name (str): The name of the pipeline to execute when the schedule runs.
         start_date (datetime.datetime): The date from which to run the schedule.

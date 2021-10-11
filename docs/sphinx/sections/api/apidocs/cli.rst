@@ -5,34 +5,31 @@ Dagster CLI
 
 .. click:: dagster.cli.asset:asset_cli
    :prog: dagster asset
-   :show-nested:
+   :nested:
 
 .. click:: dagster.cli.debug:debug_cli
    :prog: dagster debug
-   :show-nested:
+   :nested:
 
 .. click:: dagster.cli.instance:instance_cli
    :prog: dagster instance
-   :show-nested:
-
-.. click:: dagster.cli.new_repo:new_repo_cli
-   :prog: dagster new-repo
+   :nested:
 
 .. click:: dagster.cli.pipeline:pipeline_cli
    :prog: dagster pipeline
-   :show-nested:
+   :nested:
 
 .. click:: dagster.cli.run:run_cli
    :prog: dagster run
-   :show-nested:
+   :nested:
 
 .. click:: dagster.cli.schedule:schedule_cli
    :prog: dagster schedule
-   :show-nested:
+   :nested:
 
 .. click:: dagster.cli.sensor:sensor_cli
    :prog: dagster sensor
-   :show-nested:
+   :nested:
 
 .. currentmodule:: dagster_graphql
 

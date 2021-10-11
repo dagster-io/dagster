@@ -8,7 +8,7 @@ def test_dagster_postgres_yaml():
     res, _custom_instance_class = dagster_instance_config(
         dagster_yaml_folder, "postgres_dagster.yaml"
     )
-    assert set(res.keys()) == {"run_storage", "event_log_storage"}
+    assert set(res.keys()) == {"run_storage", "event_log_storage", "schedule_storage"}
 
 
 def test_dagster_pg_yaml():

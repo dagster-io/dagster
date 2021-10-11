@@ -278,7 +278,6 @@ class DagsterEvent(
     Attributes:
         event_type_value (str): Value for a DagsterEventType.
         pipeline_name (str)
-        step_key (str)
         solid_handle (NodeHandle)
         step_kind_value (str): Value for a StepKind.
         logging_tags (Dict[str, str])
