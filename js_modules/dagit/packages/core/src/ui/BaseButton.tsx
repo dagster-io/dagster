@@ -4,6 +4,7 @@ import styled from 'styled-components/macro';
 import {ColorsWIP} from './Colors';
 import {IconWrapper} from './Icon';
 import {SpinnerWrapper} from './Spinner';
+import {FontFamily} from './styles';
 
 interface Props extends React.ComponentPropsWithRef<'button'> {
   icon?: React.ReactNode;
@@ -61,6 +62,7 @@ const StyledButton = styled.button<StyledButtonProps>`
   cursor: pointer;
   display: inline-flex;
   flex-direction: row;
+  font-family: ${FontFamily.default};
   font-size: 14px;
   line-height: 20px;
   padding: 6px 12px;
@@ -99,6 +101,7 @@ const StyledButton = styled.button<StyledButtonProps>`
   ${SpinnerWrapper},
   ${IconWrapper} {
     color: ${({$textColor}) => $textColor};
+    background-color: ${({$textColor}) => $textColor};
     align-self: center;
     display: block;
   }

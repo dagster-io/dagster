@@ -690,3 +690,13 @@ def test_execute_in_process_aliased_graph_config():
     )
     assert result.success
     assert result.output_value() == "foo"
+
+
+def test_job_name_valid():
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @graph
+        def my_graph():
+            pass
+
+        my_graph.to_job(name="a/b")

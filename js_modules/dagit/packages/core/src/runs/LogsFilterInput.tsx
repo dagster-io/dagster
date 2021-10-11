@@ -4,6 +4,7 @@ import styled from 'styled-components/macro';
 
 import {ColorsWIP} from '../ui/Colors';
 import {Popover} from '../ui/Popover';
+import {TextInput} from '../ui/TextInput';
 import {SuggestionProvider} from '../ui/TokenizingField';
 import {useSuggestionsForString} from '../ui/useSuggestionsForString';
 
@@ -159,7 +160,6 @@ export const LogsFilterInput: React.FC<Props> = (props) => {
       }
     >
       <FilterInput
-        type="text"
         placeholder="Filter…"
         spellCheck={false}
         autoCorrect="off"
@@ -201,11 +201,7 @@ const ResultItem: React.FC<{
   );
 };
 
-const FilterInput = styled.input`
-  border: 1px solid ${ColorsWIP.Gray200};
-  border-radius: 3px;
-  padding: 4px 6px;
-  font-size: 12px;
+const FilterInput = styled(TextInput)`
   width: 300px;
 `;
 

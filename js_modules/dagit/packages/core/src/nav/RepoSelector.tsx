@@ -25,13 +25,14 @@ export type RepoDetails = {
 };
 
 interface Props {
+  onBrowse: () => void;
   onToggle: (repoDetails: RepoDetails) => void;
   options: RepoDetails[];
   selected: Set<RepoDetails>;
 }
 
 export const RepoSelector: React.FC<Props> = (props) => {
-  const {onToggle, options, selected} = props;
+  const {onBrowse, onToggle, options, selected} = props;
   const {canReloadRepositoryLocation} = usePermissions();
 
   return (
@@ -73,7 +74,9 @@ export const RepoSelector: React.FC<Props> = (props) => {
                 </RepoLabel>
               </td>
               <td>
-                <Link to={workspacePathFromAddress(repoAddress)}>Browse</Link>
+                <Link to={workspacePathFromAddress(repoAddress)} onClick={() => onBrowse()}>
+                  Browse
+                </Link>
               </td>
               {canReloadRepositoryLocation ? (
                 <td>

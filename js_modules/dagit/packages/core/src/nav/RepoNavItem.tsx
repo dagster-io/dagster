@@ -55,13 +55,24 @@ export const RepoNavItem: React.FC<Props> = (props) => {
           <div style={{userSelect: 'none'}}>{summary()}</div>
         </Box>
         {allRepos.length > 1 ? (
-          <DialogWIP canEscapeKeyClose isOpen={open} style={{width: 'auto'}}>
+          <DialogWIP
+            canOutsideClickClose
+            canEscapeKeyClose
+            isOpen={open}
+            style={{width: 'auto'}}
+            onClose={() => setOpen(false)}
+          >
             <DialogHeader icon="repo" label="Repositories" />
             <div>
               <Box padding={{vertical: 8, horizontal: 24}}>
                 {`${selected.size} of ${allRepos.length} selected`}
               </Box>
-              <RepoSelector options={allRepos} onToggle={onToggle} selected={selected} />
+              <RepoSelector
+                options={allRepos}
+                onBrowse={() => setOpen(false)}
+                onToggle={onToggle}
+                selected={selected}
+              />
             </div>
             <DialogFooter>
               <Box padding={{top: 8}}>
