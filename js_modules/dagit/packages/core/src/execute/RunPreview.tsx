@@ -83,6 +83,7 @@ const RemoveExtraConfigButton = ({
         onClick={async () => {
           await confirm({
             title: 'Remove extra config',
+            confirmIntent: 'danger',
             description: (
               <div>
                 <p>
@@ -164,6 +165,7 @@ const ScaffoldConfigButton = ({
     await confirm({
       title: 'Scaffold extra config',
       description: confirmationMessage,
+      confirmIntent: 'primary',
     });
     onScaffoldMissingConfig();
   };
