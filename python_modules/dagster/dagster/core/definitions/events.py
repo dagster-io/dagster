@@ -41,23 +41,24 @@ class AssetKey(NamedTuple("_AssetKey", [("path", Union[Tuple[str, ...], List[str
     Example usage:
 
     .. code-block:: python
+        from dagster import op
 
-        @solid
-        def emit_metadata_solid(context, df):
+        @op
+        def emit_metadata(context, df):
             yield AssetMaterialization(
                 asset_key=AssetKey('flat_asset_key'),
                 metadata={"text_metadata": "Text-based metadata for this event"},
             )
 
-        @solid
-        def structured_asset_key_solid(context, df):
+        @op
+        def structured_asset_key(context, df):
             yield AssetMaterialization(
                 asset_key=AssetKey(['parent', 'child', 'grandchild']),
                 metadata={"text_metadata": "Text-based metadata for this event"},
             )
 
-        @solid
-        def structured_asset_key_solid_2(context, df):
+        @op
+        def structured_asset_key_2(context, df):
             yield AssetMaterialization(
                 asset_key=AssetKey(('parent', 'child', 'grandchild')),
                 metadata={"text_metadata": "Text-based metadata for this event"},
