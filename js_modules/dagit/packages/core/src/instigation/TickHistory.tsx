@@ -134,10 +134,10 @@ export const TickHistory = ({
   });
 
   const tabs = (
-    <Tabs selectedTabId={selectedTab}>
+    <Tabs selectedTabId={selectedTab} onChange={setSelectedTab}>
       {TABS.map((tab) =>
         tab.id === 'recent' && !showRecent ? null : (
-          <Tab id={tab.id} key={tab.id} title={tab.label} onClick={() => setSelectedTab(tab.id)} />
+          <Tab id={tab.id} key={tab.id} title={tab.label} />
         ),
       ).filter(Boolean)}
     </Tabs>

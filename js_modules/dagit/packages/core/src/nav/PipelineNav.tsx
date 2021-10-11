@@ -1,6 +1,6 @@
 import {IconName} from '@blueprintjs/core';
 import React from 'react';
-import {Link, useRouteMatch} from 'react-router-dom';
+import {useRouteMatch} from 'react-router-dom';
 
 import {useFeatureFlags} from '../app/Flags';
 import {DISABLED_MESSAGE, PermissionsMap, usePermissions} from '../app/Permissions';
@@ -158,9 +158,9 @@ export const PipelineNav: React.FC<Props> = (props) => {
                   {text}
                 </Tooltip>
               ) : (
-                <Link to={href}>{text}</Link>
+                text
               );
-              return <Tab key={text} id={text} title={title} disabled={disabled} />;
+              return <Tab key={text} id={text} title={title} disabled={disabled} to={href} />;
             })}
           </Tabs>
         }

@@ -113,7 +113,7 @@ export const SnapshotNav = (props: SnapshotNavProps) => {
         <Tabs large={false} selectedTabId={activeTab}>
           {tabs.map((tab) => {
             const {href, text, pathComponent} = tab;
-            return <Tab key={text} id={pathComponent} title={<Link to={href}>{text}</Link>} />;
+            return <Tab key={text} id={pathComponent} title={text} to={href} />;
           })}
         </Tabs>
       }

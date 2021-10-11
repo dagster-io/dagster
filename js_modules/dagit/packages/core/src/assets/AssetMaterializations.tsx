@@ -144,9 +144,9 @@ export const AssetMaterializations: React.FC<Props> = ({assetKey, asOf, asSideba
           padding={{horizontal: 24}}
           border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
         >
-          <Tabs selectedTabId={activeTab}>
-            <Tab id="graphs" title="Graphs" onClick={() => setActiveTab('graphs')} />
-            <Tab id="list" title="List" onClick={() => setActiveTab('list')} />
+          <Tabs selectedTabId={activeTab} onChange={setActiveTab}>
+            <Tab id="graphs" title="Graphs" />
+            <Tab id="list" title="List" />
           </Tabs>
         </Box>
       ) : null}
