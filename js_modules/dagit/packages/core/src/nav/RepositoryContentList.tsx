@@ -36,6 +36,7 @@ export const Item = styled(Link)`
 
   &:hover {
     text-decoration: none;
+    background-color: ${ColorsWIP.Gray10};
   }
 
   &:focus {

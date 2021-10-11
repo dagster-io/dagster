@@ -106,7 +106,15 @@ export const RepositoryLocationsList = () => {
   }
 
   if (!locationEntries.length) {
-    return <NonIdealState icon="error" title="No repository locations!" />;
+    return (
+      <Box padding={{vertical: 32}}>
+        <NonIdealState
+          icon="folder"
+          title="No repository locations"
+          description="When you add a repository location to this workspace, it will appear here."
+        />
+      </Box>
+    );
   }
 
   return (

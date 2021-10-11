@@ -29,21 +29,25 @@ export const WorkspaceOverviewRoot = () => {
 
     if (error) {
       return (
-        <NonIdealState
-          icon="error"
-          title="Error loading repositories"
-          description="Could not load repositories in this workspace."
-        />
+        <Box padding={{vertical: 32}}>
+          <NonIdealState
+            icon="error"
+            title="Error loading repositories"
+            description="Could not load repositories in this workspace."
+          />
+        </Box>
       );
     }
 
     if (!options.length) {
       return (
-        <NonIdealState
-          icon="visibility"
-          title="Empty workspace"
-          description="There are no repositories in this workspace."
-        />
+        <Box padding={{vertical: 32}}>
+          <NonIdealState
+            icon="folder"
+            title="No repositories"
+            description="When you add a repository to this workspace, it will appear here."
+          />
+        </Box>
       );
     }
 
