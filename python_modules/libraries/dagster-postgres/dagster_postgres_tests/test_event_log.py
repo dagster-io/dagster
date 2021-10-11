@@ -17,7 +17,10 @@ class TestPostgresEventLogStorage(TestEventLogStorage):
     def event_log_storage(self, conn_string):  # pylint: disable=arguments-differ
         storage = PostgresEventLogStorage.create_clean_storage(conn_string)
         assert storage
-        yield storage
+        try:
+            yield storage
+        finally:
+            storage.dispose()
 
     def test_event_log_storage_two_watchers(self, storage):
         run_id = "foo"
