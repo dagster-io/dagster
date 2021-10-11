@@ -136,7 +136,9 @@ class JobDefinition(PipelineDefinition):
             unresolved_op_selection=unresolved_op_selection,
         )
 
-    def get_pipeline_subset_def(self, solids_to_execute: AbstractSet[str]) -> PipelineDefinition:
+    def get_pipeline_subset_def(
+        self, solids_to_execute: Optional[AbstractSet[str]]
+    ) -> PipelineDefinition:
 
         warnings.warn(
             f"Attempted to subset job {self.name}. The subsetted job will be represented by a "

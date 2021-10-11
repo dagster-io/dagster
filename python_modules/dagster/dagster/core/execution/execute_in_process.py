@@ -26,7 +26,7 @@ def core_execute_in_process(
     instance: Optional[DagsterInstance],
     output_capturing_enabled: bool,
     raise_on_error: bool,
-    unresolved_op_selection: Optional[UnresolvedOpSelection],
+    unresolved_op_selection: Optional[UnresolvedOpSelection] = None,
 ):
     pipeline_def = ephemeral_pipeline
     mode_def = pipeline_def.get_mode_definition()

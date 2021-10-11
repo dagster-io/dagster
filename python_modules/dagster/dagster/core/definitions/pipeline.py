@@ -419,7 +419,9 @@ class PipelineDefinition:
     def dagster_type_named(self, name):
         return self._graph_def.dagster_type_named(name)
 
-    def get_pipeline_subset_def(self, solids_to_execute: AbstractSet[str]) -> "PipelineDefinition":
+    def get_pipeline_subset_def(
+        self, solids_to_execute: Optional[AbstractSet[str]]
+    ) -> "PipelineDefinition":
         return (
             self if solids_to_execute is None else _get_pipeline_subset_def(self, solids_to_execute)
         )
@@ -583,7 +585,7 @@ class PipelineSubsetDefinition(PipelineDefinition):
         return True
 
     def get_pipeline_subset_def(
-        self, solids_to_execute: AbstractSet[str]
+        self, solids_to_execute: Optional[AbstractSet[str]]
     ) -> "PipelineSubsetDefinition":
         raise DagsterInvariantViolationError("Pipeline subsets may not be subset again.")
 
