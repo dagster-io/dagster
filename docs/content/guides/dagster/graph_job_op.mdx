@@ -3,6 +3,108 @@ title: Migrating to Ops, Graphs, and Jobs | Dagster
 description: This guide describes how to migrate code to the new Graph, Job, and Op APIs.
 ---
 
+# Turning your pipeline into a job
+
+Converting a pipeline into a job involves a few different steps. The rough outline is:
+
+1. Converting all composite solids into graphs
+2. Constructing the correct number of jobs for your pipeline.
+3. (Optional) convert your solids to ops.
+
+## Converting composite solids into graphs
+
+If you are not using the composite_solid API, you can ignore this section.
+
+The composite solid API is no more in our new set of APIs. The `graph` API satisfies the niche of grouping together multiple solids/ops into a single composable unit.
+
+### Simple case
+
+In the simple case, a composite solid can be converted directly into a graph. For the following simple composite solid:
+
+```python file=/guides/dagster/graph_job_op/step_by_step/simple_composite_solid.py startafter=start_simple_composite endbefore=end_simple_composite
+@composite_solid
+def nest_stuff():
+    do_something()
+```
+
+All that needs to change is the decorator:
+
+```python file=/guides/dagster/graph_job_op/step_by_step/simple_graph.py startafter=start_simple_graph endbefore=end_simple_graph
+@graph
+def nest_stuff():
+    do_something()
+```
+
+Run config is slightly different between composite solids and graphs. Consider the following run config for `nest_stuff` from above:
+
+```yaml
+solids:
+  nest_stuff:
+    solids:
+      do_something: ...
+```
+
+It becomes:
+
+```yaml
+solids:
+  nest_stuff:
+    do_something: ...
+```
+
+We've removed the layer of indirection `solids` between the name of the composite (`nest_stuff`) and the config of the inner solids.
+
+### Composite solid with inputs
+
+If your composite solid has an input, there are a few changes that need to take place.
+
+Consider the following composite solid:
+
+```python file=/guides/dagster/graph_job_op/step_by_step/input_composite_solid.py startafter=start_simple_input endbefore=end_simple_input
+@composite_solid
+def nests_with_input(x):
+    requires_input_1(x)
+    requires_input_2(x)
+```
+
+The actual code change is straightforward:
+
+```python file=/guides/dagster/graph_job_op/step_by_step/input_composite_solid.py startafter=start_simple_input endbefore=end_simple_input
+@composite_solid
+def nests_with_input(x):
+    requires_input_1(x)
+    requires_input_2(x)
+```
+
+However, if you are using config to satisfy the input of your composite_solid, then more significant change is required. Config needs to be pushed down to requisite solids. That is, if I have the following config for `nests_with_input`:
+
+```yaml
+solids:
+  nests_with_input:
+    inputs:
+      x:
+        value: 5
+```
+
+You need to push down the input satisfying into the requisite solids:
+
+```yaml
+solids:
+  nests_with_input:
+    requires_input_1:
+      inputs:
+        value: 5
+    requires_input_2:
+      inputs:
+        value: 5
+```
+
+If your composite solid uses input and output definitions, these will become `GraphIn` and `GraphOut`. GraphIn and GraphOut are only used for naming and setting description on inputs, but otherwise all information will be inferred from the upstream outputs and downstream input definitions that are fed to.
+
+## Converting pipelines to jobs
+
+If you aren't using modes, presets, schedules, sensors, or partitions, then converting your pipeline is easy. ...
+
 # Migrating to Ops, Graphs, and Jobs
 
 Ops, Graphs, and Jobs, are an experimental set of APIs that aim to simplify and give more accessible names to some of Dagster's core concepts. This guide describes how to migrate code that uses Pipelines, Modes, Presets, and Partition Sets to the new APIs.
