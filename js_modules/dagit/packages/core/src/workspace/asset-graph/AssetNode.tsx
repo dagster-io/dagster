@@ -18,6 +18,7 @@ import {TimeElapsed} from '../../runs/TimeElapsed';
 import {LaunchPipelineExecution} from '../../runs/types/LaunchPipelineExecution';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {ColorsWIP} from '../../ui/Colors';
+import {IconWIP} from '../../ui/Icon';
 import {markdownToPlaintext} from '../../ui/Markdown';
 import {MenuItemWIP, MenuWIP} from '../../ui/Menu';
 import {FontFamily} from '../../ui/styles';
@@ -89,6 +90,7 @@ export const AssetNode: React.FC<{
       <AssetNodeContainer $selected={selected} $secondaryHighlight={secondaryHighlight}>
         <AssetNodeBox>
           <Name>
+            <IconWIP name="asset" style={{marginRight: 4}} />
             {assetKeyToString(definition.assetKey)}
             <div style={{flex: 1}} />
             {computeStatus === 'old' && (
@@ -232,7 +234,7 @@ const AssetNodeBox = styled.div`
 
 const Name = styled.div`
   display: flex;
-  padding: 4px 8px;
+  padding: 4px 6px;
   font-family: ${FontFamily.monospace};
   border-top-left-radius: 5px;
   border-top-right-radius: 5px;
