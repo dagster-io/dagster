@@ -566,6 +566,18 @@
             "path": "/_apidocs/libraries/dagster-k8s"
           },
           {
+            "title": "MLflow (dagster-mlflow)",
+            "path": "/_apidocs/libraries/dagster-mlflow"
+          },
+          {
+            "title": "Microsoft Teams (dagster-msteams)",
+            "path": "/_apidocs/libraries/dagster-msteams"
+          },
+          {
+            "title": "MySQL (dagster-mysql)",
+            "path": "/_apidocs/libraries/dagster-mysql"
+          },
+          {
             "title": "PagerDuty (dagster-pagerduty)",
             "path": "/_apidocs/libraries/dagster-pagerduty"
           },
