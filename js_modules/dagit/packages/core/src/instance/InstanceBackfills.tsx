@@ -459,7 +459,7 @@ const BackfillProgress = ({backfill}: {backfill: Backfill}) => {
 const PartitionSetReference: React.FunctionComponent<{
   partitionSet: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionSet;
 }> = ({partitionSet}) => (
-  <Group direction={'column'} spacing={8}>
+  <Box flex={{direction: 'column', gap: 8}}>
     <Link
       to={workspacePipelinePath(
         partitionSet.repositoryOrigin.repositoryName,
@@ -471,13 +471,13 @@ const PartitionSetReference: React.FunctionComponent<{
     >
       {partitionSet.name}
     </Link>
-    <span style={{color: ColorsWIP.Gray800, fontSize: 12}}>
+    <span style={{color: ColorsWIP.Gray600}}>
       {partitionSet.repositoryOrigin.repositoryName}@
       {partitionSet.repositoryOrigin.repositoryLocationName}
     </span>
     <PipelineReference
       showIcon
-      fontSize={13}
+      size="small"
       pipelineName={partitionSet.pipelineName}
       pipelineHrefContext={{
         name: partitionSet.repositoryOrigin.repositoryName,
@@ -485,7 +485,7 @@ const PartitionSetReference: React.FunctionComponent<{
       }}
       mode={partitionSet.mode}
     />
-  </Group>
+  </Box>
 );
 const BackfillStatusTable = ({backfill}: {backfill: Backfill}) => {
   const {

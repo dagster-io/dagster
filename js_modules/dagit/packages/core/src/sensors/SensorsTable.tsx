@@ -82,7 +82,7 @@ const SensorRow: React.FC<{
                 <PipelineReference
                   key={`${target.pipelineName}:${target.mode}`}
                   showIcon
-                  fontSize={13}
+                  size="small"
                   pipelineName={target.pipelineName}
                   pipelineHrefContext={repoAddress}
                   mode={target.mode}

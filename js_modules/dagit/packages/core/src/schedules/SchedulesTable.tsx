@@ -172,7 +172,7 @@ const ScheduleRow: React.FC<{
           </span>
           <PipelineReference
             showIcon
-            fontSize={13}
+            size="small"
             pipelineName={pipelineName}
             pipelineHrefContext={repoAddress}
             mode={mode}
