@@ -18,11 +18,11 @@ export const InstanceTabs: React.FC<Props> = (props) => {
   return (
     <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
       <Tabs selectedTabId={tab}>
-        <Tab id="health" title={<Link to="/instance/health">Health</Link>} />
-        <Tab id="schedules" title={<Link to="/instance/schedules">Schedules</Link>} />
-        <Tab id="sensors" title={<Link to="/instance/sensors">Sensors</Link>} />
-        <Tab id="backfills" title={<Link to="/instance/backfills">Backfills</Link>} />
-        <Tab id="config" title={<Link to="/instance/config">Configuration</Link>} />
+        <Tab id="health" title="Health" to="/instance/health" />
+        <Tab id="schedules" title="Schedules" to="/instance/schedules" />
+        <Tab id="sensors" title="Sensors" to="/instance/sensors" />
+        <Tab id="backfills" title="Backfills" to="/instance/backfills" />
+        <Tab id="config" title="Configuration" to="/instance/config" />
       </Tabs>
       {queryData ? (
         <Box padding={{bottom: 8}}>

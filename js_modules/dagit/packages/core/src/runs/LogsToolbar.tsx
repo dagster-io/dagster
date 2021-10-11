@@ -169,17 +169,9 @@ const ComputeLogToolbar = ({
           </ButtonWIP>
         </SelectWIP>
         {isValidStepSelection ? (
-          <Tabs selectedTabId={LogType[logType]} size="small">
-            <Tab
-              id={LogType[LogType.stdout]}
-              title="stdout"
-              onClick={() => onSetLogType(LogType.stdout)}
-            />
-            <Tab
-              id={LogType[LogType.stderr]}
-              title="stderr"
-              onClick={() => onSetLogType(LogType.stderr)}
-            />
+          <Tabs selectedTabId={logType} onChange={onSetLogType} size="small">
+            <Tab id={LogType.stdout} title="stdout" />
+            <Tab id={LogType.stderr} title="stderr" />
           </Tabs>
         ) : null}
       </Group>

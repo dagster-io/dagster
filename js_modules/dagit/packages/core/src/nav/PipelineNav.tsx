@@ -158,9 +158,9 @@ export const PipelineNav: React.FC<Props> = (props) => {
                   {text}
                 </Tooltip>
               ) : (
-                <Link to={href}>{text}</Link>
+                text
               );
-              return <Tab key={text} id={text} title={title} disabled={disabled} />;
+              return <Tab key={text} id={text} title={title} disabled={disabled} to={href} />;
             })}
           </Tabs>
         }
