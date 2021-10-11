@@ -4,10 +4,7 @@ from dagster.core.definitions import NodeDefinition, PipelineDefinition
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.instance import DagsterInstance
-from dagster.core.selector.subset_selector import (
-    UnresolvedOpSelection,
-    parse_solid_selection,
-)
+from dagster.core.selector.subset_selector import UnresolvedOpSelection, parse_solid_selection
 
 from .api import (
     ExecuteRunWithPlanIterable,
