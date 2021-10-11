@@ -56,7 +56,7 @@ const RepoRouteContainer: React.FC<{repoPath: string}> = (props) => {
   // the repo path in the URL, it means we aren't able to load this repo.
   if (!matchingRepo) {
     return (
-      <Box padding={{vertical: 48}}>
+      <Box padding={{vertical: 64}}>
         <NonIdealState
           icon="error"
           title="Unknown repository"
