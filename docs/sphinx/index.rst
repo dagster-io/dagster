@@ -38,6 +38,7 @@
    sections/api/apidocs/libraries/dagster-ge
    sections/api/apidocs/libraries/dagster-github
    sections/api/apidocs/libraries/dagster-k8s
+   sections/api/apidocs/libraries/dagster-mlflow
    sections/api/apidocs/libraries/dagster-msteams
    sections/api/apidocs/libraries/dagster-mysql
    sections/api/apidocs/libraries/dagster-pagerduty

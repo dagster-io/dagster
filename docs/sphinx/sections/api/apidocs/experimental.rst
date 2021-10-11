@@ -41,10 +41,13 @@ The replacement for :py:class:`solid`, has a more intuitive name and offers a mo
 .. currentmodule:: dagster
 
 .. autodecorator:: op
+    :noindex:
 
 .. autoclass:: In
+    :noindex:
 
 .. autoclass:: Out
+    :noindex:
 
 .. autoclass:: DynamicOut
 

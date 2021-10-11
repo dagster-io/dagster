@@ -1,3 +1,5 @@
+:orphan:
+
 .. currentmodule:: dagster.core.asset_defs
 
 Software-Defined Assets (Experimental)
@@ -21,4 +23,3 @@ A software-defined asset combines:
 .. autoclass:: AssetIn
 
 .. autoclass:: ForeignAsset
-
