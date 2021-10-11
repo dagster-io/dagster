@@ -439,8 +439,9 @@ class PartitionSetDefinition(Generic[T]):
                 determines whether a schedule should execute. Defaults to a function that always returns
                 ``True``.
             environment_vars (Optional[dict]): The environment variables to set for the schedule.
-            execution_timezone (Optional[str]): Timezone in which the schedule should run. Only works
-                with DagsterDaemonScheduler, and must be set when using that scheduler.
+            execution_timezone (Optional[str]): Timezone in which the schedule should run.
+                Supported strings for timezones are the ones provided by the
+                `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
             description (Optional[str]): A human-readable description of the schedule.
 
         Returns:
