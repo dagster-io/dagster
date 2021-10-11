@@ -1,5 +1,3 @@
-// eslint-disable-next-line no-restricted-imports
-import {Button} from '@blueprintjs/core';
 import flatMap from 'lodash/flatMap';
 import uniq from 'lodash/uniq';
 import * as React from 'react';
