@@ -101,7 +101,6 @@ export const ExecutionTabs = (props: ExecutionTabsProps) => {
     if (sessionCount > 1) {
       await confirm({
         title: 'Discard tab?',
-        confirmIntent: 'danger',
         description: `The configuration for ${
           keyToRemove ? `"${sessions[keyToRemove].name}"` : 'this tab'
         } will be discarded.`,

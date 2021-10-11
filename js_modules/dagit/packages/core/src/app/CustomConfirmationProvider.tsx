@@ -7,7 +7,6 @@ interface ConfirmationOptions {
   catchOnCancel?: boolean;
   title?: string;
   description?: JSX.Element | string;
-  confirmIntent?: 'primary' | 'danger';
 }
 
 interface ConfirmationDialogProps extends ConfirmationOptions {
@@ -20,7 +19,6 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
   open,
   title,
   description,
-  confirmIntent,
   onSubmit,
   onClose,
 }) => {
@@ -29,7 +27,7 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
       <DialogBody>{description}</DialogBody>
       <DialogFooter>
         <ButtonWIP onClick={onClose}>Cancel</ButtonWIP>
-        <ButtonWIP onClick={onSubmit} intent={confirmIntent}>
+        <ButtonWIP onClick={onSubmit} intent="danger">
           Confirm
         </ButtonWIP>
       </DialogFooter>

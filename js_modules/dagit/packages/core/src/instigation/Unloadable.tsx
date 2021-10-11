@@ -208,7 +208,6 @@ const ScheduleStateRow: React.FunctionComponent<{
           'The schedule definition for this schedule is not available. ' +
           'If you turn off this schedule, you will not be able to turn it back on from ' +
           'the currently loaded workspace.',
-        confirmIntent: 'primary',
       });
       stopSchedule({variables: {scheduleOriginId: id}});
     }
