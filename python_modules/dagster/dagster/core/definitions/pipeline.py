@@ -286,7 +286,9 @@ class PipelineDefinition:
     def dependencies(self):
         return self._graph_def.dependencies
 
-    def get_run_config_schema(self, mode: Optional[str] = None) -> "RunConfigSchema":
+    def get_run_config_schema(
+        self, mode: Optional[str] = None, resolved_op_selection: Optional[List[str]] = None
+    ) -> "RunConfigSchema":
         check.str_param(mode, "mode")
 
         mode_def = self.get_mode_definition(mode)
@@ -298,6 +300,7 @@ class PipelineDefinition:
             self,
             mode_def,
             self._resource_requirements[mode_def.name],
+            resolved_op_selection,
         )
         return self._cached_run_config_schemas[mode_def.name]
 
@@ -603,6 +606,7 @@ def _get_pipeline_subset_def(
     Only includes the solids which are in solids_to_execute.
     """
 
+    # TODO: enable sub op selection??????
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
     check.set_param(solids_to_execute, "solids_to_execute", of_type=str)
     graph = pipeline_def.graph
@@ -1000,6 +1004,7 @@ def _create_run_config_schema(
     pipeline_def: PipelineDefinition,
     mode_definition: ModeDefinition,
     required_resources: Set[str],
+    resolved_op_selection: Optional[List[str]],
 ) -> "RunConfigSchema":
     from .run_config import (
         RunConfigSchemaCreationData,
@@ -1033,6 +1038,7 @@ def _create_run_config_schema(
             ignored_solids=ignored_solids,
             required_resources=required_resources,
             is_using_graph_job_op_apis=pipeline_def._is_using_graph_job_op_apis,  # pylint: disable=protected-access
+            resolved_op_selection=resolved_op_selection,
         )
     )
 

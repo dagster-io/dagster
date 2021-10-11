@@ -215,7 +215,7 @@ class _PlanBuilder:
     def _build_from_sorted_solids(
         self,
         solids: List[Node],
-        dependency_structure: DependencyStructure,
+        dependency_structure: DependencyStructure,  # YUHAN: i think we should keep this as the full dep structure when op selection
         parent_handle: Optional[NodeHandle] = None,
         parent_step_inputs: Optional[
             List[Union[StepInput, UnresolvedMappedStepInput, UnresolvedCollectStepInput]]
@@ -223,6 +223,10 @@ class _PlanBuilder:
     ):
         for solid in solids:
             handle = NodeHandle(solid.name, parent_handle)
+
+            # Skip if the op isn't being selected to execute
+            if self.step_keys_to_execute and handle.to_string() not in self.step_keys_to_execute:
+                continue
 
             ### 1. INPUTS
             # Create and add execution plan steps for solid inputs
@@ -393,14 +397,20 @@ def get_step_input_source(
 
     if (
         input_def.root_manager_key
-        # input is unconnected inside the current dependency structure
-        and not dependency_structure.has_deps(input_handle)
+        and not dependency_structure.has_deps_inside_op_selection(  # make sure input is unsatisfied after op selection
+            input_handle, plan_builder.step_keys_to_execute
+        )
     ):
         #  make sure input is unconnected in the outer dependency structure too
         if not solid.container_maps_input(input_handle.input_name):
             return FromRootInputManager(solid_handle=handle, input_name=input_name)
 
-    if dependency_structure.has_direct_dep(input_handle):
+    if dependency_structure.has_direct_dep(
+        input_handle
+    ) and dependency_structure.has_deps_inside_op_selection(  # make sure input is connected to upstream after op selection
+        input_handle, plan_builder.step_keys_to_execute
+    ):
+
         solid_output_handle = dependency_structure.get_direct_dep(input_handle)
         step_output_handle = plan_builder.get_output_handle(solid_output_handle)
         if isinstance(step_output_handle, UnresolvedStepOutputHandle):
@@ -864,7 +874,9 @@ class ExecutionPlan(
         check.opt_nullable_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
         check.opt_inst_param(known_state, "known_state", KnownExecutionState)
         tags = check.opt_dict_param(tags, "tags", key_type=str, value_type=str)
+        # import ipdb
 
+        # ipdb.set_trace(context=5)
         plan_builder = _PlanBuilder(
             pipeline,
             resolved_run_config=resolved_run_config,

@@ -6,6 +6,7 @@ from dagster.core.definitions import (
     NodeDefinition,
     PipelineDefinition,
     SolidDefinition,
+    solid,
 )
 from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
@@ -13,6 +14,7 @@ from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.instance import DagsterInstance
 from dagster.core.selector.subset_selector import (
     UnresolvedOpSelection,
+    parse_solid_selection,
     resolve_op_selection_to_step_keys_to_execute,
 )
 
@@ -42,53 +44,36 @@ def core_execute_in_process(
     mode_def = pipeline_def.get_mode_definition()
     pipeline = InMemoryPipeline(pipeline_def)
 
-    full_execution_plan = create_execution_plan(
+    solids_to_execute = None
+    if unresolved_op_selection:
+        if unresolved_op_selection.selection_scope:
+            solids_to_execute = parse_solid_selection(
+                pipeline_def, unresolved_op_selection.selection_scope
+            )
+        if unresolved_op_selection.selection:
+            solids_to_execute = parse_solid_selection(
+                pipeline_def.get_pipeline_subset_def(solids_to_execute),
+                unresolved_op_selection.selection,
+            )
+
+    # TODO: this is currently mixing solids and node handles
+    # Curr: parse_solid_selection -> ["sub_graph", "my_super_op"]
+    # Ideal: parse_unresolved_op_selection -> ["sub_graph.my_op", "my_super_op"]
+    resolved_op_selection = list(solids_to_execute) if solids_to_execute else None
+    final_execution_plan = create_execution_plan(
         pipeline,
         run_config=run_config,
         mode=mode_def.name,
+        step_keys_to_execute=resolved_op_selection,
+        _resolved_op_selection=resolved_op_selection,
     )
-
-    if unresolved_op_selection:
-        step_keys_to_execute = None
-
-        # something if wrong here
-        scoped_execution_plan = None
-        if unresolved_op_selection.selection_scope:
-            step_keys_to_execute = resolve_op_selection_to_step_keys_to_execute(
-                full_execution_plan, unresolved_op_selection.selection_scope
-            )
-        if unresolved_op_selection.selection:
-            # this is a laziest/easies way but not ideal - it generates execution plan twice
-            # in order to resolve two layers of selection
-            scoped_execution_plan = (
-                create_execution_plan(
-                    pipeline,
-                    run_config=run_config,
-                    mode=mode_def.name,
-                    step_keys_to_execute=step_keys_to_execute,
-                )
-                if step_keys_to_execute  # if the selection scope has been defined on job def
-                else None
-            )
-            step_keys_to_execute = resolve_op_selection_to_step_keys_to_execute(
-                execution_plan=scoped_execution_plan or full_execution_plan,
-                step_selection=unresolved_op_selection.selection,
-            )
-
-        final_execution_plan = create_execution_plan(
-            pipeline,
-            run_config=run_config,
-            mode=mode_def.name,
-            step_keys_to_execute=list(step_keys_to_execute) if step_keys_to_execute else None,
-        )
-    else:
-        final_execution_plan = full_execution_plan
 
     recorder: Dict[StepOutputHandle, Any] = {}
 
     with ephemeral_instance_if_missing(instance) as execute_instance:
         pipeline_run = execute_instance.create_run_for_pipeline(
             pipeline_def=pipeline_def,
+            execution_plan=final_execution_plan,
             run_config=run_config,
             mode=mode_def.name,
             tags=pipeline_def.tags,

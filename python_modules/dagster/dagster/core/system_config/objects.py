@@ -149,6 +149,7 @@ class ResolvedRunConfig(
         pipeline_def: PipelineDefinition,
         run_config: Optional[Dict[str, Any]] = None,
         mode: Optional[str] = None,
+        resolved_op_selection: Optional[List[str]] = None,
     ) -> "ResolvedRunConfig":
         """This method validates a given run config against the pipeline config schema. If
         successful, we instantiate an ResolvedRunConfig object.
@@ -163,7 +164,7 @@ class ResolvedRunConfig(
         check.opt_str_param(mode, "mode")
 
         mode = mode or pipeline_def.get_default_mode_name()
-        run_config_schema = pipeline_def.get_run_config_schema(mode)
+        run_config_schema = pipeline_def.get_run_config_schema(mode, resolved_op_selection)
 
         if run_config_schema.config_mapping:
             # add user code boundary

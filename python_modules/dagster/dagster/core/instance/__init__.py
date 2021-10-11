@@ -696,6 +696,7 @@ class DagsterInstance:
 
         else:
             resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config, mode)
+            print("??????????????")
             execution_plan = ExecutionPlan.build(
                 InMemoryPipeline(pipeline_def),
                 resolved_run_config,

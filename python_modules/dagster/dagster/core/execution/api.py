@@ -705,6 +705,7 @@ def create_execution_plan(
     known_state: KnownExecutionState = None,
     instance: Optional[DagsterInstance] = None,
     tags: Optional[Dict[str, str]] = None,
+    _resolved_op_selection: Optional[List[str]] = None,
 ) -> ExecutionPlan:
     pipeline = _check_pipeline(pipeline)
     pipeline_def = pipeline.get_definition()
@@ -715,7 +716,9 @@ def create_execution_plan(
     check.opt_inst_param(instance, "instance", DagsterInstance)
     tags = check.opt_dict_param(tags, "tags", key_type=str, value_type=str)
 
-    resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config, mode=mode)
+    resolved_run_config = ResolvedRunConfig.build(
+        pipeline_def, run_config, mode=mode, resolved_op_selection=_resolved_op_selection
+    )
 
     return ExecutionPlan.build(
         pipeline,

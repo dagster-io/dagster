@@ -985,3 +985,21 @@ class DependencyStructure:
                 return True
 
         return False
+
+    def has_deps_inside_op_selection(
+        self, input_handle: SolidInputHandle, resolved_op_selection: List[str]
+    ) -> bool:
+        # input is unconnected inside the current dependency structure
+        if not self.has_deps(input_handle):
+            return False
+
+        # full graph is being executed
+        if not resolved_op_selection:
+            return True
+
+        if self.has_dynamic_fan_in_dep(input_handle):
+            return True
+
+        # determine if the connected dependency is inside the op selection
+        source_handle = self.get_direct_dep(input_handle)
+        return source_handle.solid_name in resolved_op_selection

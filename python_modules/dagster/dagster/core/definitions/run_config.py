@@ -71,6 +71,7 @@ class RunConfigSchemaCreationData(NamedTuple):
     ignored_solids: List[Node]
     required_resources: Set[str]
     is_using_graph_job_op_apis: bool
+    resolved_op_selection: List[str]
 
 
 def define_logger_dictionary_cls(creation_data: RunConfigSchemaCreationData) -> Shape:
@@ -156,6 +157,7 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
             dependency_structure=creation_data.dependency_structure,
             resource_defs=creation_data.mode_definition.resource_defs,
             is_using_graph_job_op_apis=creation_data.is_using_graph_job_op_apis,
+            resolved_op_selection=creation_data.resolved_op_selection,
         )
     )
     if creation_data.is_using_graph_job_op_apis:
@@ -182,11 +184,14 @@ def get_inputs_field(
     dependency_structure: DependencyStructure,
     resource_defs: Dict[str, ResourceDefinition],
     solid_ignored: bool,
+    resolved_op_selection: List[str],
 ):
     inputs_field_fields = {}
     for name, inp in solid.definition.input_dict.items():
         inp_handle = SolidInputHandle(solid, inp)
-        has_upstream = input_has_upstream(dependency_structure, inp_handle, solid, name)
+        has_upstream = input_has_upstream(
+            dependency_structure, inp_handle, solid, name, resolved_op_selection
+        )
         if inp.root_manager_key and not has_upstream:
             input_field = get_input_manager_input_field(solid, inp, resource_defs)
         elif inp.dagster_type.loader and not has_upstream:
@@ -215,8 +220,11 @@ def input_has_upstream(
     input_handle: SolidInputHandle,
     solid: Node,
     input_name: str,
+    resolved_op_selection: List[str],
 ) -> bool:
-    return dependency_structure.has_deps(input_handle) or solid.container_maps_input(input_name)
+    return dependency_structure.has_deps_inside_op_selection(
+        input_handle, resolved_op_selection
+    ) or solid.container_maps_input(input_name)
 
 
 def get_input_manager_input_field(
@@ -345,6 +353,7 @@ def construct_leaf_solid_config(
     resource_defs: Dict[str, ResourceDefinition],
     ignored: bool,
     is_using_graph_job_op_apis: bool,
+    resolved_op_selection: List[str],
 ) -> Optional[Field]:
     return solid_config_field(
         {
@@ -353,6 +362,7 @@ def construct_leaf_solid_config(
                 dependency_structure,
                 resource_defs,
                 ignored,
+                resolved_op_selection,
             ),
             "outputs": get_outputs_field(solid, resource_defs),
             "config": config_schema.as_field() if config_schema else None,
@@ -369,6 +379,7 @@ def define_isolid_field(
     resource_defs: Dict[str, ResourceDefinition],
     ignored: bool,
     is_using_graph_job_op_apis: bool,
+    resolved_op_selection: List[str],
 ) -> Optional[Field]:
 
     # All solids regardless of compositing status get the same inputs and outputs
@@ -389,6 +400,7 @@ def define_isolid_field(
             resource_defs,
             ignored,
             is_using_graph_job_op_apis,
+            resolved_op_selection,
         )
 
     graph_def = solid.definition.ensure_graph_def()
@@ -404,16 +416,14 @@ def define_isolid_field(
             resource_defs,
             ignored,
             is_using_graph_job_op_apis,
+            resolved_op_selection,
         )
         # This case omits a 'solids' key, thus if a composite solid is `configured` or has a field
         # mapping, the user cannot stub any config, inputs, or outputs for inner (child) solids.
     else:
         fields = {
             "inputs": get_inputs_field(
-                solid,
-                dependency_structure,
-                resource_defs,
-                ignored,
+                solid, dependency_structure, resource_defs, ignored, resolved_op_selection
             ),
             "outputs": get_outputs_field(solid, resource_defs),
         }
@@ -444,31 +454,39 @@ def define_solid_dictionary_cls(
     resource_defs: Dict[str, ResourceDefinition],
     is_using_graph_job_op_apis: bool,
     parent_handle: Optional[NodeHandle] = None,
+    resolved_op_selection: Optional[List[str]] = None,
 ) -> Shape:
     ignored_solids = check.opt_list_param(ignored_solids, "ignored_solids", of_type=Node)
-
+    resolved_op_selection = check.opt_list_param(
+        resolved_op_selection, "resolved_op_selection", str
+    )
     fields = {}
     for solid in solids:
+        node_handle = NodeHandle(solid.name, parent_handle)
         solid_field = define_isolid_field(
             solid,
-            NodeHandle(solid.name, parent_handle),
+            node_handle,
             dependency_structure,
             resource_defs,
-            ignored=False,
+            # right assumption?: node_handle.to_string() == step_key
+            ignored=False if node_handle.to_string() in resolved_op_selection else True,
             is_using_graph_job_op_apis=is_using_graph_job_op_apis,
+            resolved_op_selection=resolved_op_selection,
         )
 
         if solid_field:
             fields[solid.name] = solid_field
 
     for solid in ignored_solids:
+        node_handle = NodeHandle(solid.name, parent_handle)
         solid_field = define_isolid_field(
             solid,
-            NodeHandle(solid.name, parent_handle),
+            node_handle,
             dependency_structure,
             resource_defs,
             ignored=True,
             is_using_graph_job_op_apis=is_using_graph_job_op_apis,
+            resolved_op_selection=resolved_op_selection,
         )
         if solid_field:
             fields[solid.name] = solid_field

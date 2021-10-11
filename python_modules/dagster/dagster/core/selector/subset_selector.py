@@ -208,6 +208,10 @@ def parse_solid_selection(pipeline_def, solid_selection):
     """
     check.list_param(solid_selection, "solid_selection", of_type=str)
 
+    # special case: select all
+    if len(solid_selection) == 1 and solid_selection[0] == "*":
+        return frozenset(pipeline_def.graph.node_names())
+
     graph = generate_dep_graph(pipeline_def)
     solids_set = set()
 
@@ -290,3 +294,16 @@ def resolve_op_selection_to_step_keys_to_execute(
 
     steps_set = parse_step_selection(execution_plan.get_all_step_deps(), step_selection)
     return list(steps_set) if steps_set else []
+
+
+# def resolve_op_selection(pipeline_def: PipelineDefinition, op_selection: List[str]) -> List[str]:
+
+#     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+#     check.list_param(op_selection, "op_selection", of_type=str)
+
+#     # special case: select all
+#     if len(op_selection) == 1 and op_selection[0] == "*":
+#         return frozenset(pipeline_def.graph.node_names())
+
+#     steps_set = parse_step_selection(execution_plan.get_all_step_deps(), step_selection)
+#     return list(steps_set) if steps_set else []

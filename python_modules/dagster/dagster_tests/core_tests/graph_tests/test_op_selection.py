@@ -153,7 +153,7 @@ def test_unselected_extra_config_input_in_sub_graph():
     assert full_job.execute_in_process(run_config=run_config, op_selection=["sub.root"]).success
 
 
-def test_extra_config_unsatisfied_input():
+def test_unsatisfied_input_use_config():
     @op
     def start(_, x):
         return x
@@ -175,7 +175,6 @@ def test_extra_config_unsatisfied_input():
     assert result.result_for_node("end").output_value() == 4
 
     # test to ensure that if start is not being executed its input config is still allowed (and ignored)
-    # TODO: not working
     subset_result = full_job.execute_in_process(
         run_config={"ops": {"start": {"inputs": {"x": {"value": 4}}}}},
         op_selection=["end"],
@@ -183,8 +182,16 @@ def test_extra_config_unsatisfied_input():
     assert subset_result.success
     assert subset_result.result_for_node("end").output_value() == 1
 
+    # test to ensure that if the input is connected we will use the input value provided in config
+    subset_result = full_job.execute_in_process(
+        run_config={"ops": {"end": {"inputs": {"x": {"value": 4}}}}},
+        op_selection=["end"],
+    )
+    assert subset_result.success
+    assert subset_result.result_for_node("end").output_value() == 4
 
-def test_extra_config_unsatisfied_input_io_manager():
+
+def test_unsatisfied_input_use_root_input_manager():
     @root_input_manager(input_config_schema=int)
     def config_io_man(context):
         return context.config
@@ -193,8 +200,8 @@ def test_extra_config_unsatisfied_input_io_manager():
     def start(_, x):
         return x
 
-    @op
-    def end(_, x=1):
+    @op(ins={"x": In(root_manager_key="my_loader")})
+    def end(_, x):
         return x
 
     @graph
@@ -211,10 +218,9 @@ def test_extra_config_unsatisfied_input_io_manager():
     assert result.result_for_node("end").output_value() == 4
 
     # test to ensure that if start is not being executed its input config is still allowed (and ignored)
-    # TODO: not working
     subset_result = full_job.execute_in_process(
         run_config={
-            "ops": {"start": {"inputs": {"x": 4}}},
+            "ops": {"end": {"inputs": {"x": 1}}},
         },
         op_selection=["end"],
     )
@@ -267,9 +273,7 @@ def test_op_selection_on_dynamic_orchestration():
     assert result.success
     assert result.result_for_node("echo").output_value() == 60
 
-    # TODO: not working
     result = full_job.execute_in_process(
-        # run_config={"ops": {"emit": {"inputs": {"num": 2}}}},
         op_selection=["emit*", "emit_ten"],
     )
     assert result.success
