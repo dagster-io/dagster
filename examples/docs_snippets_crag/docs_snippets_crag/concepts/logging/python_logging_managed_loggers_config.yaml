@@ -1,0 +1,3 @@
+python_logs:
+  managed_python_loggers:
+    - root
