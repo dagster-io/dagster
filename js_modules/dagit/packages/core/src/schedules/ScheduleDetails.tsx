@@ -11,7 +11,7 @@ import {ButtonLink} from '../ui/ButtonLink';
 import {ColorsWIP} from '../ui/Colors';
 import {CountdownStatus, useCountdown} from '../ui/Countdown';
 import {Group} from '../ui/Group';
-import {MetadataTable} from '../ui/MetadataTable';
+import {MetadataTableWIP} from '../ui/MetadataTable';
 import {PageHeader} from '../ui/PageHeader';
 import {RefreshableCountdown} from '../ui/RefreshableCountdown';
 import {TagWIP} from '../ui/TagWIP';
@@ -114,18 +114,18 @@ export const ScheduleDetails: React.FC<{
           />
         }
       />
-      <Box padding={{vertical: 16, horizontal: 24}}>
-        <MetadataTable
-          rows={[
-            schedule.description
-              ? {
-                  key: 'Description',
-                  value: schedule.description,
-                }
-              : null,
-            {
-              key: 'Latest tick',
-              value: latestTick ? (
+      <MetadataTableWIP>
+        <tbody>
+          {schedule.description ? (
+            <tr>
+              <td>Description</td>
+              <td>{schedule.description}</td>
+            </tr>
+          ) : null}
+          <tr>
+            <td>Latest tick</td>
+            <td>
+              {latestTick ? (
                 <Group direction="row" spacing={8} alignItems="center">
                   <TimestampDisplay
                     timestamp={latestTick.timestamp}
@@ -136,46 +136,50 @@ export const ScheduleDetails: React.FC<{
                 </Group>
               ) : (
                 'Schedule has never run'
-              ),
-            },
-            {
-              key: flagPipelineModeTuples ? 'Job' : 'Pipeline',
-              value: (
-                <PipelineReference
-                  pipelineName={pipelineName}
-                  pipelineHrefContext={repoAddress}
-                  mode={schedule.mode}
-                />
-              ),
-            },
-            {
-              key: 'Partition Set',
-              value: partitionSet ? (
+              )}
+            </td>
+          </tr>
+          <tr>
+            <td>{flagPipelineModeTuples ? 'Job' : 'Pipeline'}</td>
+            <td>
+              <PipelineReference
+                pipelineName={pipelineName}
+                pipelineHrefContext={repoAddress}
+                mode={schedule.mode}
+              />
+            </td>
+          </tr>
+          <tr>
+            <td>Partition set</td>
+            <td>
+              {partitionSet ? (
                 <SchedulePartitionStatus schedule={schedule} repoAddress={repoAddress} />
               ) : (
                 'None'
-              ),
-            },
-            {
-              key: 'Schedule',
-              value: cronSchedule ? (
+              )}
+            </td>
+          </tr>
+          <tr>
+            <td>Schedule</td>
+            <td>
+              {cronSchedule ? (
                 <Group direction="row" spacing={8}>
                   <span>{humanCronString(cronSchedule)}</span>
                   <Code>({cronSchedule})</Code>
                 </Group>
               ) : (
                 <div>&mdash;</div>
-              ),
-            },
-            executionTimezone
-              ? {
-                  key: 'Execution timezone',
-                  value: executionTimezone,
-                }
-              : null,
-          ].filter(Boolean)}
-        />
-      </Box>
+              )}
+            </td>
+          </tr>
+          {executionTimezone ? (
+            <tr>
+              <td>Execution timezone</td>
+              <td>{executionTimezone}</td>
+            </tr>
+          ) : null}
+        </tbody>
+      </MetadataTableWIP>
     </>
   );
 };
