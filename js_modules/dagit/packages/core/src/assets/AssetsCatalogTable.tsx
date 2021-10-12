@@ -481,7 +481,7 @@ const AssetEntryRow: React.FC<{
         ) : null}
         <td>
           <Link to={linkUrl}>
-            <Box flex={{alignItems: 'center', wrap: 'wrap'}}>
+            <Box flex={{alignItems: 'center', wrap: 'wrap'}} style={{wordBreak: 'break-word'}}>
               {path
                 .map((p, i) => <span key={i}>{p}</span>)
                 .reduce(
