@@ -1014,8 +1014,8 @@
                         }
                     ]
                 },
-                "json_credentials_envvar": {
-                    "title": "Json Credentials Envvar",
+                "jsonCredentialsEnvvar": {
+                    "title": "Jsoncredentialsenvvar",
                     "anyOf": [
                         {
                             "type": "string"
