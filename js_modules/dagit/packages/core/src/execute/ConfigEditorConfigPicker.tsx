@@ -1,6 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-// eslint-disable-next-line no-restricted-imports
-import {Button, HTMLInputProps, IInputGroupProps, Intent, Menu, MenuItem} from '@blueprintjs/core';
+import {HTMLInputProps, InputGroupProps2, Intent} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -11,9 +10,10 @@ import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
 import {RepositorySelector} from '../types/globalTypes';
+import {Box} from '../ui/Box';
 import {ButtonWIP} from '../ui/Button';
 import {ColorsWIP} from '../ui/Colors';
-import {IconWIP} from '../ui/Icon';
+import {IconWIP, IconWrapper} from '../ui/Icon';
 import {MenuDividerWIP, MenuItemWIP, MenuWIP} from '../ui/Menu';
 import {SelectWIP} from '../ui/Select';
 import {Spinner} from '../ui/Spinner';
@@ -173,14 +173,12 @@ const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = 
     }, []);
 
     const rightElement = partitions.length ? (
-      <Button
-        icon={<IconWIP name="sort_by_alpha" color={ColorsWIP.Gray400} />}
-        minimal
-        onMouseDown={onClickSort}
-      ></Button>
+      <SortButton onMouseDown={onClickSort}>
+        <IconWIP name="sort_by_alpha" color={ColorsWIP.Gray400} />
+      </SortButton>
     ) : undefined;
 
-    const inputProps: IInputGroupProps & HTMLInputProps = {
+    const inputProps: InputGroupProps2 & HTMLInputProps = {
       placeholder: 'Partition',
       style: {width: 180},
       intent: (loading ? !!value : !!selected) ? Intent.NONE : Intent.DANGER,
@@ -196,11 +194,19 @@ const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = 
           key="loading"
           inputProps={{
             ...inputProps,
-            rightElement: !value ? <Spinner purpose="body-text" /> : undefined,
+            rightElement: !value ? (
+              <Box
+                flex={{direction: 'column', justifyContent: 'center'}}
+                padding={{right: 4}}
+                style={{height: '30px'}}
+              >
+                <Spinner purpose="body-text" />
+              </Box>
+            ) : undefined,
           }}
           items={[]}
           itemRenderer={() => null}
-          noResults={<Menu.Item disabled={true} text="Loading..." />}
+          noResults={<MenuItemWIP disabled={true} text="Loading..." />}
           inputValueRenderer={(str) => str}
           selectedItem={value}
           onItemSelect={() => {}}
@@ -227,17 +233,18 @@ const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = 
         inputValueRenderer={(partition) => partition.name}
         itemPredicate={(query, partition) => query.length === 0 || partition.name.includes(query)}
         itemRenderer={(partition, props) => (
-          <Menu.Item
+          <MenuItemWIP
             active={props.modifiers.active}
             onClick={props.handleClick}
             key={partition.name}
             text={partition.name}
           />
         )}
-        noResults={<Menu.Item disabled={true} text="No presets." />}
+        noResults={<MenuItemWIP disabled={true} text="No presets." />}
         onItemSelect={(item) => {
           onSelect(repositorySelector, partitionSetName, item.name);
         }}
+        popoverProps={{modifiers: {offset: {enabled: true, offset: '-5px 8px'}}}}
       />
     );
   },
@@ -284,10 +291,10 @@ const ConfigEditorConfigGeneratorPicker: React.FC<ConfigEditorConfigGeneratorPic
 
               return (
                 <MenuWIP ulRef={itemsParentRef}>
-                  {bothTypesPresent && <MenuItem disabled={true} text={`Presets`} />}
+                  {bothTypesPresent && <MenuItemWIP disabled={true} text={`Presets`} />}
                   {renderedPresetItems}
                   {bothTypesPresent && <MenuDividerWIP />}
-                  {bothTypesPresent && <MenuItem disabled={true} text={`Partition Sets`} />}
+                  {bothTypesPresent && <MenuItemWIP disabled={true} text={`Partition Sets`} />}
                   {renderedPartitionSetItems}
                 </MenuWIP>
               );
@@ -330,6 +337,26 @@ const ConfigEditorConfigGeneratorPicker: React.FC<ConfigEditorConfigGeneratorPic
     );
   },
 );
+
+const SortButton = styled.button`
+  border: 0;
+  cursor: pointer;
+  padding: 4px;
+  margin: 3px 3px 0 0;
+  background-color: ${ColorsWIP.White};
+  border-radius: 4px;
+  transition: background-color 100ms;
+
+  :hover,
+  :focus {
+    background-color: ${ColorsWIP.Gray100};
+    outline: none;
+
+    ${IconWrapper} {
+      background-color: ${ColorsWIP.Gray700};
+    }
+  }
+`;
 
 const PickerContainer = styled.div`
   display: flex;
