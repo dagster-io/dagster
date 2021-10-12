@@ -7,8 +7,8 @@ from dagster import hourly_partitioned_config, hourly_schedule
 def hourly_download_schedule_config(start: datetime, end: datetime):
     return {
         "resources": {
-            "partition_start": {"config": start.strftime("%Y-%m-%d %H:%m:%s")},
-            "partition_end": {"config": end.strftime("%Y-%m-%d %H:%m:%s")},
+            "partition_start": {"config": start.strftime("%Y-%m-%d %H:%M:%S")},
+            "partition_end": {"config": end.strftime("%Y-%m-%d %H:%M:%S")},
         }
     }
 
