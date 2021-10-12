@@ -19,7 +19,7 @@ export const PageHeader = (props: Props) => {
   return (
     <Box
       background={ColorsWIP.Gray50}
-      padding={{top: 16, horizontal: 24}}
+      padding={{top: 16, left: 24, right: 12}}
       border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
       style={{width: '100%'}}
     >

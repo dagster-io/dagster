@@ -246,6 +246,7 @@ export const GraphQueryInput = React.memo(
               icon={<IconWIP name="layers" />}
               rightIcon={<IconWIP name="cancel" />}
               onClick={() => props.onChange('*')}
+              intent="none"
             />
           ) : (
             <Popover
@@ -269,6 +270,7 @@ export const GraphQueryInput = React.memo(
               <ButtonWIP
                 icon={<IconWIP name="layers" />}
                 rightIcon={<IconWIP name="expand_less" />}
+                intent="none"
               />
             </Popover>
           ))}

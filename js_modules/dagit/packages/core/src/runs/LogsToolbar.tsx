@@ -301,18 +301,15 @@ const StructuredLogToolbar = ({
       </Group>
       {selectedStep && <OptionsDivider />}
       <div style={{minWidth: 15, flex: 1}} />
-      <div style={{marginRight: '8px'}}>
-        <ButtonWIP
-          small
-          icon={<IconWIP name={copyIcon} />}
-          onClick={() => {
-            copyToClipboard(window.location.href);
-            setCopyIcon('assignment_turned_in');
-          }}
-        >
-          Copy URL
-        </ButtonWIP>
-      </div>
+      <ButtonWIP
+        icon={<IconWIP name={copyIcon} />}
+        onClick={() => {
+          copyToClipboard(window.location.href);
+          setCopyIcon('assignment_turned_in');
+        }}
+      >
+        Copy URL
+      </ButtonWIP>
     </>
   );
 };
