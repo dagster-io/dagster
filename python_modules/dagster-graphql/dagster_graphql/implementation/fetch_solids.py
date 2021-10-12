@@ -25,7 +25,8 @@ def get_used_solid_map(repo):
     inv_by_def_name = defaultdict(list)
     definitions = []
 
-    for external_pipeline in repo.get_all_external_pipelines():
+    pipelines = repo.get_all_external_pipelines() + repo.get_external_jobs()
+    for external_pipeline in pipelines:
         for handle in build_solid_handles(external_pipeline, external_pipeline.dep_structure_index):
             definition = handle.solid.get_solid_definition()
             if definition.name not in inv_by_def_name:

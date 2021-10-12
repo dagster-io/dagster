@@ -149,9 +149,12 @@ def submit_backfill_runs(instance, workspace, repo_location, backfill_job, parti
     )
 
     assert isinstance(result, ExternalPartitionSetExecutionParamData)
-    external_pipeline = external_repo.get_full_external_pipeline(
-        external_partition_set.pipeline_name
-    )
+    if external_repo.has_external_job(external_partition_set.pipeline_name):
+        external_pipeline = external_repo.get_external_job(external_partition_set.pipeline_name)
+    else:
+        external_pipeline = external_repo.get_full_external_pipeline(
+            external_partition_set.pipeline_name
+        )
     for partition_data in result.partition_data:
         pipeline_run = create_backfill_run(
             instance,
