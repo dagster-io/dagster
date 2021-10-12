@@ -31,7 +31,6 @@ export const PartitionGraphSet: React.FunctionComponent<{
   const rateGraph = React.useRef<any>(undefined);
   const graphs = [durationGraph, materializationGraph, successGraph, failureGraph, rateGraph];
 
-  console.log('render PartitionGraphSet');
   const onChangeHiddenStepKeys = (hiddenKeys: string[]) => {
     setHiddenStepKeys(hiddenKeys);
 

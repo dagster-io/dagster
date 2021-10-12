@@ -1,11 +1,11 @@
 import {isEqual} from 'lodash';
 import * as React from 'react';
 import {Line} from 'react-chartjs-2';
+import styled from 'styled-components/macro';
 
 import {useFeatureFlags} from '../app/Flags';
 import {colorHash} from '../app/Util';
 import {ColorsWIP} from '../ui/Colors';
-import {RowContainer} from '../ui/ListComponents';
 
 import {PartitionGraphFragment} from './types/PartitionGraphFragment';
 
@@ -156,7 +156,7 @@ export const PartitionGraph = React.forwardRef((props: PartitionGraphProps, ref)
   };
 
   return (
-    <RowContainer>
+    <PartitionGraphContainer>
       <LineMemoized
         type="line"
         data={graphData}
@@ -164,7 +164,7 @@ export const PartitionGraph = React.forwardRef((props: PartitionGraphProps, ref)
         options={defaultOptions}
         ref={chart}
       />
-    </RowContainer>
+    </PartitionGraphContainer>
   );
 });
 
@@ -191,3 +191,12 @@ const _reverseSortRunCompare = (a: PartitionGraphFragment, b: PartitionGraphFrag
   }
   return b.stats.startTime - a.stats.startTime;
 };
+
+export const PartitionGraphContainer = styled.div`
+  display: flex;
+  color: ${ColorsWIP.Gray700};
+  border-left: 1px solid ${ColorsWIP.KeylineGray};
+  border-bottom: 1px solid ${ColorsWIP.KeylineGray};
+  padding: 24px 12px;
+  text-decoration: none;
+`;
