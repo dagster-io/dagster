@@ -95,7 +95,7 @@ def hacker_news_api_download():
     build_stories(items)
 
 
-@hourly_partitioned_config(start_date=datetime(2021, 1, 1))
+@hourly_partitioned_config(start_date=datetime(2020, 12, 1))
 def hourly_download_config(start: datetime, end: datetime):
     return {
         "resources": {
