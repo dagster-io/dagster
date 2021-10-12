@@ -112,7 +112,7 @@ export const SidebarTabbedContainer: React.FC<ISidebarTabbedContainerProps> = (p
       >
         <Tabs selectedTabId={activeTab}>
           {TabDefinitions.map(({name, key}) => (
-            <Tab id={key} key={key} title={<Link to={{search: `?tab=${key}`}}>{name}</Link>} />
+            <Tab id={key} key={key} to={{search: `?tab=${key}`}} title={name} />
           ))}
         </Tabs>
       </Box>
