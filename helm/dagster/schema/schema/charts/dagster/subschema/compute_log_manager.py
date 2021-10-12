@@ -28,6 +28,7 @@ class GCSComputeLogManager(BaseModel):
     bucket: StringSource
     localDir: Optional[StringSource]
     prefix: Optional[StringSource]
+    json_credentials_envvar: Optional[StringSource]
 
 
 class S3ComputeLogManager(BaseModel):
