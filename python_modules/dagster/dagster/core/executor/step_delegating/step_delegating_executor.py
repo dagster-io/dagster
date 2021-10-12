@@ -20,7 +20,7 @@ class StepDelegatingExecutor(Executor):
     def __init__(
         self,
         step_handler: StepHandler,
-        retries: RetryMode = RetryMode.DISABLED,
+        retries: RetryMode,
         sleep_seconds: Optional[float] = None,
         check_step_health_interval_seconds: Optional[int] = None,
     ):
