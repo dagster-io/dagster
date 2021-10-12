@@ -65,7 +65,11 @@ export const InstanceConfig = React.memo(() => {
   }, [history]);
 
   if (!data) {
-    return <Spinner purpose="section" />;
+    return (
+      <Box padding={{vertical: 64}}>
+        <Spinner purpose="section" />
+      </Box>
+    );
   }
 
   // Split by top-level yaml keys

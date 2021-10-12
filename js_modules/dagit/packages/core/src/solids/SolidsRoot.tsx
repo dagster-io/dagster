@@ -7,6 +7,7 @@ import styled from 'styled-components/macro';
 
 import {useFeatureFlags} from '../app/Flags';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
 import {Loading} from '../ui/Loading';
 import {NonIdealState} from '../ui/NonIdealState';
@@ -231,15 +232,17 @@ const SolidsRootWithData: React.FC<Props & {usedSolids: Solid[]}> = (props) => {
               />
             </SolidDetailScrollContainer>
           ) : (
-            <NonIdealState
-              icon="no-results"
-              title={flagPipelineModeTuples ? 'No op selected' : 'No solid selected'}
-              description={
-                flagPipelineModeTuples
-                  ? 'Select an op to see its definition and invocations'
-                  : 'Select a solid to see its definition and invocations.'
-              }
-            />
+            <Box padding={{vertical: 64}}>
+              <NonIdealState
+                icon="no-results"
+                title={flagPipelineModeTuples ? 'No op selected' : 'No solid selected'}
+                description={
+                  flagPipelineModeTuples
+                    ? 'Select an op to see its definition and invocations'
+                    : 'Select a solid to see its definition and invocations.'
+                }
+              />
+            </Box>
           )
         }
       />

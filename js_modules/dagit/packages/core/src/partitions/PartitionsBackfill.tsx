@@ -191,29 +191,35 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
 
   if (data.partitionSetOrError.__typename === 'PartitionSetNotFoundError') {
     return (
-      <NonIdealState
-        icon="error"
-        title="Partition Set Not Found"
-        description={data.partitionSetOrError.message}
-      />
+      <Box margin={20}>
+        <NonIdealState
+          icon="error"
+          title="Partition Set Not Found"
+          description={data.partitionSetOrError.message}
+        />
+      </Box>
     );
   }
   if (data.pipelineSnapshotOrError.__typename === 'PipelineNotFoundError') {
     return (
-      <NonIdealState
-        icon="error"
-        title={flagPipelineModeTuples ? 'Job not found' : 'Pipeline not found'}
-        description={data.pipelineSnapshotOrError.message}
-      />
+      <Box margin={20}>
+        <NonIdealState
+          icon="error"
+          title={flagPipelineModeTuples ? 'Job not found' : 'Pipeline not found'}
+          description={data.pipelineSnapshotOrError.message}
+        />
+      </Box>
     );
   }
   if (data.pipelineSnapshotOrError.__typename === 'PipelineSnapshotNotFoundError') {
     return (
-      <NonIdealState
-        icon="error"
-        title={flagPipelineModeTuples ? 'Job not found' : 'Pipeline not found'}
-        description={data.pipelineSnapshotOrError.message}
-      />
+      <Box margin={20}>
+        <NonIdealState
+          icon="error"
+          title={flagPipelineModeTuples ? 'Job not found' : 'Pipeline not found'}
+          description={data.pipelineSnapshotOrError.message}
+        />
+      </Box>
     );
   }
 

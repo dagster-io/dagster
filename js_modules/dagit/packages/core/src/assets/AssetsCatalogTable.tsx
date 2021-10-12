@@ -124,29 +124,26 @@ export const AssetsCatalogTable: React.FC<{prefixPath?: string[]}> = ({prefixPat
               if (!assets.length) {
                 return (
                   <Wrapper>
-                    <NonIdealState
-                      icon="layers"
-                      title="Assets"
-                      description={
-                        <p>
-                          {prefixPath && prefixPath.length ? (
-                            <span>
-                              There are no matching materialized assets with the specified asset
-                              key.
-                            </span>
-                          ) : (
-                            <span>There are no known materialized assets.</span>
-                          )}
-                          Any asset keys that have been specified with an{' '}
-                          <code>AssetMaterialization</code> during a pipeline run will appear here.
-                          See the{' '}
-                          <a href="https://docs.dagster.io/_apidocs/solids#dagster.AssetMaterialization">
-                            AssetMaterialization documentation
-                          </a>{' '}
-                          for more information.
-                        </p>
-                      }
-                    />
+                    <Box padding={{vertical: 64}}>
+                      <NonIdealState
+                        icon="layers"
+                        title="Assets"
+                        description={
+                          <p>
+                            {prefixPath && prefixPath.length
+                              ? `There are no matching materialized assets with the specified asset key. `
+                              : `There are no known materialized assets. `}
+                            Any asset keys that have been specified with an{' '}
+                            <code>AssetMaterialization</code> during a pipeline run will appear
+                            here. See the{' '}
+                            <a href="https://docs.dagster.io/_apidocs/solids#dagster.AssetMaterialization">
+                              AssetMaterialization documentation
+                            </a>{' '}
+                            for more information.
+                          </p>
+                        }
+                      />
+                    </Box>
                   </Wrapper>
                 );
               }

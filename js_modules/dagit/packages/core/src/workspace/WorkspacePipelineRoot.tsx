@@ -40,7 +40,7 @@ export const WorkspacePipelineRoot: React.FC<Props> = (props) => {
   const reposWithMatch = findRepoContainingPipeline(options, pipelineName);
   if (reposWithMatch.length === 0) {
     return (
-      <Box padding={{vertical: 48}}>
+      <Box padding={{vertical: 64}}>
         <NonIdealState
           icon="no-results"
           title={flagPipelineModeTuples ? 'No matching jobs' : 'No matching pipelines'}

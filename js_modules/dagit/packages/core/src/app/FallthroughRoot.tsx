@@ -1,6 +1,7 @@
 import React from 'react';
 import {Redirect, Route, RouteComponentProps, Switch} from 'react-router-dom';
 
+import {Box} from '../ui/Box';
 import {NonIdealState} from '../ui/NonIdealState';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {workspacePipelinePath} from '../workspace/workspacePath';
@@ -31,7 +32,15 @@ export const FallthroughRoot = () => {
               />
             );
           }
-          return <Route render={() => <NonIdealState icon="no-results" title="No pipelines" />} />;
+          return (
+            <Route
+              render={() => (
+                <Box padding={{vertical: 64}}>
+                  <NonIdealState icon="no-results" title="No pipelines" />
+                </Box>
+              )}
+            />
+          );
         }}
       </WorkspaceContext.Consumer>
     </Switch>

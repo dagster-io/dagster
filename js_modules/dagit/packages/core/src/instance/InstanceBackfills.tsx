@@ -93,11 +93,13 @@ export const InstanceBackfills = () => {
 
           if (!partitionBackfillsOrError.results.length) {
             return (
-              <NonIdealState
-                icon="no-results"
-                title="No backfills found"
-                description={<p>This instance does not have any backfill jobs.</p>}
-              />
+              <Box padding={{vertical: 64}}>
+                <NonIdealState
+                  icon="no-results"
+                  title="No backfills found"
+                  description={<p>This instance does not have any backfill jobs.</p>}
+                />
+              </Box>
             );
           }
 
