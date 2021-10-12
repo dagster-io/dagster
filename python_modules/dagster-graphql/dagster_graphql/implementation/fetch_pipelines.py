@@ -101,7 +101,7 @@ def get_external_job_or_raise(graphene_info, selector):
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(selector, "selector", JobSelector)
 
-    if not graphene_info.context.has_external_pipeline(selector):
+    if not graphene_info.context.has_external_job(selector):
         raise UserFacingGraphQLError(GrapheneJobNotFoundError(selector=selector))
 
     return graphene_info.context.get_external_job(selector)

@@ -348,7 +348,9 @@ def log_external_repo_stats(instance, source, external_repo, external_pipeline=N
 
         pipeline_name_hash = hash_name(external_pipeline.name) if external_pipeline else ""
         repo_hash = hash_name(external_repo.name)
-        num_pipelines_in_repo = len(external_repo.get_all_external_pipelines())
+        num_pipelines_in_repo = len(
+            external_repo.get_all_external_pipelines() + external_repo.get_external_jobs()
+        )
 
         write_telemetry_log_line(
             TelemetryEntry(

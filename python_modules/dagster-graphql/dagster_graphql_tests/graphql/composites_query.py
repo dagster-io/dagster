@@ -1,23 +1,4 @@
-COMPOSITES_QUERY = """
-query CompositesQuery($selector: PipelineSelector!) {
-  pipelineOrError(params: $selector) {
-    __typename
-    ... on Pipeline {
-      name
-      solidHandles {
-        handleID
-        solid {
-          ...SolidInfo
-        }
-      }
-    }
-    ... on PythonError {
-      message
-      stack
-    }
-  }
-}
-
+COMPOSITES_SOLID_FRAGMENT = """
 fragment SolidInfo on Solid {
   name
   inputs {
@@ -64,6 +45,54 @@ fragment SolidInfo on Solid {
 }
 """
 
+COMPOSITES_PIPELINE_QUERY = (
+    """
+query CompositesPipelineQuery($selector: PipelineSelector!) {
+  pipelineOrError(params: $selector) {
+    __typename
+    ... on Pipeline {
+      name
+      solidHandles {
+        handleID
+        solid {
+          ...SolidInfo
+        }
+      }
+    }
+    ... on PythonError {
+      message
+      stack
+    }
+  }
+}
+"""
+    + COMPOSITES_SOLID_FRAGMENT
+)
+
+COMPOSITES_JOB_QUERY = (
+    """
+query CompositesJobQuery($selector: JobSelector!) {
+  jobOrError(params: $selector) {
+    __typename
+    ... on Job {
+      name
+      solidHandles {
+        handleID
+        solid {
+          ...SolidInfo
+        }
+      }
+    }
+    ... on PythonError {
+      message
+      stack
+    }
+  }
+}
+"""
+    + COMPOSITES_SOLID_FRAGMENT
+)
+
 PARENT_ID_QUERY = """
 query withParent($selector: PipelineSelector!, $parentHandleID: String) {
   pipelineOrError(params: $selector) {
@@ -92,8 +121,8 @@ query solidFetch($selector: PipelineSelector!, $id: String!) {
 }
 """
 
-COMPOSITES_QUERY_NESTED_DEPENDS_ON_DEPENDS_BY_CORE = """
-query CompositesQuery($selector: PipelineSelector!) {
+COMPOSITES_PIPELINE_QUERY_NESTED_DEPENDS_ON_DEPENDS_BY_CORE = """
+query CompositesPipelineQuery($selector: PipelineSelector!) {
   pipelineOrError(params: $selector) {
     __typename
     ... on Pipeline {

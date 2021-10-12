@@ -83,6 +83,16 @@ class GraphenePipelineSelector(graphene.InputObjectType):
         name = "PipelineSelector"
 
 
+class GrapheneJobSelector(graphene.InputObjectType):
+    jobName = graphene.NonNull(graphene.String)
+    repositoryName = graphene.NonNull(graphene.String)
+    repositoryLocationName = graphene.NonNull(graphene.String)
+
+    class Meta:
+        description = """This type represents the fields necessary to identify a job."""
+        name = "JobSelector"
+
+
 class GrapheneRepositorySelector(graphene.InputObjectType):
     repositoryName = graphene.NonNull(graphene.String)
     repositoryLocationName = graphene.NonNull(graphene.String)

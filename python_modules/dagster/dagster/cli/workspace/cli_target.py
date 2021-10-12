@@ -652,12 +652,15 @@ def get_external_pipeline_or_job_from_external_repo(
     check.inst_param(external_repo, "external_repo", ExternalRepository)
     check.opt_str_param(provided_pipeline_or_job_name, "provided_pipeline_or_job_name")
 
-    external_pipelines = {ep.name: ep for ep in external_repo.get_all_external_pipelines()}
+    external_pipelines_or_jobs = {
+        x.name: x
+        for x in (external_repo.get_all_external_pipelines() + external_repo.get_external_jobs())
+    }
 
-    check.invariant(external_pipelines)
+    check.invariant(external_pipelines_or_jobs)
 
-    if provided_pipeline_or_job_name is None and len(external_pipelines) == 1:
-        return next(iter(external_pipelines.values()))
+    if provided_pipeline_or_job_name is None and len(external_pipelines_or_jobs) == 1:
+        return next(iter(external_pipelines_or_jobs.values()))
 
     if provided_pipeline_or_job_name is None:
         raise click.UsageError(
@@ -667,11 +670,11 @@ def get_external_pipeline_or_job_from_external_repo(
             ).format(
                 flag="--job" if using_job_op_graph_apis else "--pipeline",
                 repository=external_repo.name,
-                pipelines=_sorted_quoted(external_pipelines.keys()),
+                pipelines=_sorted_quoted(external_pipelines_or_jobs.keys()),
             )
         )
 
-    if not provided_pipeline_or_job_name in external_pipelines:
+    if not provided_pipeline_or_job_name in external_pipelines_or_jobs:
         raise click.UsageError(
             (
                 '{pipeline_or_job} "{provided_pipeline_name}" not found in repository "{repository_name}". '
@@ -680,11 +683,11 @@ def get_external_pipeline_or_job_from_external_repo(
                 pipeline_or_job="Job" if using_job_op_graph_apis else "Pipeline",
                 provided_pipeline_name=provided_pipeline_or_job_name,
                 repository_name=external_repo.name,
-                found_names=_sorted_quoted(external_pipelines.keys()),
+                found_names=_sorted_quoted(external_pipelines_or_jobs.keys()),
             )
         )
 
-    return external_pipelines[provided_pipeline_or_job_name]
+    return external_pipelines_or_jobs[provided_pipeline_or_job_name]
 
 
 @contextmanager

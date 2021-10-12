@@ -11,7 +11,7 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import instance_for_test
 from dagster.utils import check_script, pushd, script_relative_path
 
-PIPELINES_OR_ERROR_QUERY = """
+JOBS_OR_ERROR_QUERY = """
 {
     repositoriesOrError {
         ... on PythonError {
@@ -20,6 +20,9 @@ PIPELINES_OR_ERROR_QUERY = """
         }
         ... on RepositoryConnection {
             nodes {
+                jobs {
+                    name
+                }
                 pipelines {
                     name
                 }
@@ -158,14 +161,16 @@ def load_dagit_for_workspace_cli_args(n_pipelines=1, **kwargs):
 
         client = app.test_client()
 
-        res = client.get(
-            "/graphql?query={query_string}".format(query_string=PIPELINES_OR_ERROR_QUERY)
-        )
+        res = client.get("/graphql?query={query_string}".format(query_string=JOBS_OR_ERROR_QUERY))
         json_res = json.loads(res.data.decode("utf-8"))
         assert "data" in json_res
         assert "repositoriesOrError" in json_res["data"]
         assert "nodes" in json_res["data"]["repositoriesOrError"]
-        assert len(json_res["data"]["repositoriesOrError"]["nodes"][0]["pipelines"]) == n_pipelines
+        assert (
+            len(json_res["data"]["repositoriesOrError"]["nodes"][0]["jobs"])
+            + len(json_res["data"]["repositoriesOrError"]["nodes"][0]["pipelines"])
+            == n_pipelines
+        )
 
     return res
 

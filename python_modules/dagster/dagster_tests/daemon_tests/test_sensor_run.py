@@ -1311,7 +1311,7 @@ def test_run_failure_sensor_filtered(external_repo_context):
             time.sleep(1)
 
         with pendulum.test(freeze_datetime):
-            external_pipeline = external_repo.get_full_external_pipeline("failure_graph")
+            external_pipeline = external_repo.get_external_job("failure_graph")
             run = instance.create_run_for_pipeline(
                 failure_job,
                 external_pipeline_origin=external_pipeline.get_external_origin(),

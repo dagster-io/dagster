@@ -47,6 +47,7 @@ from ..external import (
 from ..inputs import (
     GrapheneAssetKeyInput,
     GrapheneInstigationSelector,
+    GrapheneJobSelector,
     GraphenePipelineRunsFilter,
     GraphenePipelineSelector,
     GrapheneRepositorySelector,
@@ -96,7 +97,7 @@ class GrapheneQuery(graphene.ObjectType):
         graphene.NonNull(GraphenePipelineOrError), params=graphene.NonNull(GraphenePipelineSelector)
     )
     jobOrError = graphene.Field(
-        graphene.NonNull(GrapheneJobOrError), params=graphene.NonNull(GraphenePipelineSelector)
+        graphene.NonNull(GrapheneJobOrError), params=graphene.NonNull(GrapheneJobSelector)
     )
 
     pipelineSnapshotOrError = graphene.Field(

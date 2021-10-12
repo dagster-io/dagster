@@ -95,6 +95,12 @@ def infer_repository_selector(graphql_context):
     }
 
 
+def infer_job_selector(graphql_context, job_name):
+    selector = infer_repository_selector(graphql_context)
+    selector.update({"jobName": job_name})
+    return selector
+
+
 def infer_pipeline_selector(graphql_context, pipeline_name, solid_selection=None):
     selector = infer_repository_selector(graphql_context)
     selector.update({"pipelineName": pipeline_name, "solidSelection": solid_selection})
