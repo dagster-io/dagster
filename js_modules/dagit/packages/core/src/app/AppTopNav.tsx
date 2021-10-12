@@ -62,7 +62,9 @@ export const AppTopNav: React.FC<Props> = ({children, searchPlaceholder}) => {
               placement="bottom"
               modifiers={{offset: {enabled: true, options: {offset: [0, 18]}}}}
             >
-              <GhostDaggy />
+              <Link to="/workspace" style={{outline: 0}}>
+                <GhostDaggy />
+              </Link>
             </DaggyTooltip>
           </Box>
         </LogoContainer>
