@@ -253,6 +253,7 @@ export const PipelineExplorer: React.FC<PipelineExplorerProps> = (props) => {
 
 export const PIPELINE_EXPLORER_FRAGMENT = gql`
   fragment PipelineExplorerFragment on IPipelineSnapshot {
+    id
     name
     description
     ...SidebarTabbedContainerPipelineFragment

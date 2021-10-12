@@ -129,6 +129,7 @@ export const SidebarTabbedContainer: React.FC<ISidebarTabbedContainerProps> = (p
 
 export const SIDEBAR_TABBED_CONTAINER_PIPELINE_FRAGMENT = gql`
   fragment SidebarTabbedContainerPipelineFragment on IPipelineSnapshot {
+    id
     name
     ...SidebarPipelineInfoFragment
   }

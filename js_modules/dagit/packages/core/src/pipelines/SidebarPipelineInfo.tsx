@@ -44,6 +44,7 @@ export const SidebarPipelineInfo: React.FC<ISidebarPipelineInfoProps> = ({pipeli
 
 export const SIDEBAR_PIPELINE_INFO_FRAGMENT = gql`
   fragment SidebarPipelineInfoFragment on IPipelineSnapshot {
+    id
     name
     description
     modes {
