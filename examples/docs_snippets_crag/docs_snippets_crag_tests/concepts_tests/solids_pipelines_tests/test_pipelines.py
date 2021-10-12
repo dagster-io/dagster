@@ -12,7 +12,7 @@ from docs_snippets_crag.concepts.solids_pipelines.order_based_dependency_pipelin
 from docs_snippets_crag.concepts.solids_pipelines.pipelines import (
     alias,
     one_plus_one,
-    one_plus_one_graph_def,
+    one_plus_one_from_constructor,
     tagged_add_one,
 )
 
@@ -23,7 +23,7 @@ def test_one_plus_one():
 
 
 def test_one_plus_one_graph_def():
-    result = one_plus_one_graph_def.execute_in_process()
+    result = one_plus_one_from_constructor.execute_in_process()
     assert result.output_for_node("add_one") == 2
 
 

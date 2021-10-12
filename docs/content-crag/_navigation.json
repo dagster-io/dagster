@@ -90,19 +90,15 @@
     "path": "/concepts",
     "children": [
       {
-        "title": "Ops, Graphs, and Jobs",
+        "title": "Ops, Jobs, and Graphs",
         "children": [
           {
             "title": "Ops",
             "path": "/concepts/solids-pipelines/solids"
           },
           {
-            "title": "Graphs",
+            "title": "Jobs & Graphs",
             "path": "/concepts/solids-pipelines/pipelines"
-          },
-          {
-            "title": "Jobs",
-            "path": "/concepts/solids-pipelines/jobs"
           },
           {
             "title": "Pipeline Execution",

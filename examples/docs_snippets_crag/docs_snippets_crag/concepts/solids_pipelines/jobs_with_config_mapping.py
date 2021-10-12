@@ -12,7 +12,7 @@ def simplified_config(val):
 
 
 @job(config=simplified_config)
-def do_it_all():
+def do_it_all_with_simplified_config():
     do_something()
 
 

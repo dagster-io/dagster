@@ -3,7 +3,7 @@
 # start_marker
 import random
 
-from dagster import Out, Output, graph, op
+from dagster import Out, Output, job, op
 
 
 @op(out={"branch_1": Out(is_required=False), "branch_2": Out(is_required=False)})
@@ -25,7 +25,7 @@ def branch_2_op(_input):
     pass
 
 
-@graph
+@job
 def branching():
     branch_1, branch_2 = branching_op()
     branch_1_op(branch_1)

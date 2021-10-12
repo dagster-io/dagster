@@ -4,7 +4,7 @@
 import os
 from typing import List
 
-from dagster import DynamicOut, DynamicOutput, Field, graph, op
+from dagster import DynamicOut, DynamicOutput, Field, job, op
 from dagster.utils import file_relative_path
 
 
@@ -35,7 +35,7 @@ def summarize_directory(sizes: List[int]) -> int:
     return sum(sizes)
 
 
-@graph
+@job
 def process_directory():
     file_results = files_in_directory().map(process_file)
     summarize_directory(file_results.collect())

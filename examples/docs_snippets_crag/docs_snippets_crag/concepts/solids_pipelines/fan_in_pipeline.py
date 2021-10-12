@@ -2,7 +2,7 @@
 
 from typing import List
 
-from dagster import graph, op
+from dagster import job, op
 
 
 @op
@@ -15,7 +15,7 @@ def sum_fan_in(nums: List[int]) -> int:
     return sum(nums)
 
 
-@graph
+@job
 def fan_in():
     fan_outs = []
     for i in range(0, 10):

@@ -1,6 +1,6 @@
 # pylint: disable=unused-argument
 
-from dagster import DependencyDefinition, GraphDefinition, graph, op
+from dagster import DependencyDefinition, GraphDefinition, job, op
 
 
 @op
@@ -19,7 +19,7 @@ def add_one(context, number: int):
     return number + 1
 
 
-@graph
+@job
 def one_plus_one():
     add_one(return_one())
 
@@ -27,7 +27,7 @@ def one_plus_one():
 # end_pipeline_example_marker
 
 # start_multiple_usage_pipeline
-@graph
+@job
 def multiple_usage():
     add_one(add_one(return_one()))
 
@@ -35,7 +35,7 @@ def multiple_usage():
 # end_multiple_usage_pipeline
 
 # start_alias_pipeline
-@graph
+@job
 def alias():
     add_one.alias("second_addition")(add_one(return_one()))
 
@@ -44,7 +44,7 @@ def alias():
 
 
 # start_tag_pipeline
-@graph
+@job
 def tagged_add_one():
     add_one.tag({"my_tag": "my_value"})(add_one(return_one()))
 
@@ -53,17 +53,17 @@ def tagged_add_one():
 
 
 # start_pipeline_definition_marker
-one_plus_one_graph_def = GraphDefinition(
+one_plus_one_from_constructor = GraphDefinition(
     name="one_plus_one",
     node_defs=[return_one, add_one],
     dependencies={"add_one": {"number": DependencyDefinition("return_one")}},
-)
+).to_job()
 # end_pipeline_definition_marker
 
 
 # start_tags_pipeline
-@graph(tags={"my_tag": "my_value"})
-def my_tags_pipeline():
+@job(tags={"my_tag": "my_value"})
+def my_tags_job():
     my_op()
 
 
