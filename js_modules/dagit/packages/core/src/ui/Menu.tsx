@@ -88,7 +88,7 @@ const StyledMenuItem = styled(MenuItem)<StyledMenuItemProps>`
   align-items: center;
 
   &.bp3-intent-primary.bp3-active {
-    background-color: ${ColorsWIP.Blue700};
+    background-color: ${ColorsWIP.Blue500};
   }
 
   &.bp3-disabled ${IconWrapper} {
