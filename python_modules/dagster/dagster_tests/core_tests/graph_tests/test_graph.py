@@ -905,3 +905,36 @@ def test_graph_configured_error_in_fn():
         "unexpected error during its execution.",
     ):
         configured_graph.execute_in_process()
+
+
+def test_nested_graph_config():
+    @op(config_schema=str)
+    def requires_config(context):
+        return context.op_config
+
+    @graph
+    def nested():
+        return requires_config()
+
+    @graph
+    def nests():
+        return nested()
+
+    result = nests.execute_in_process(
+        run_config={"graph": {"nested": {"requires_config": {"config": "foo"}}}}
+    )
+
+    assert result.success
+    assert result.output_value() == "foo"
+
+    # test double nesting
+    @graph
+    def nests_again():
+        return nests()
+
+    result = nests_again.execute_in_process(
+        run_config={"graph": {"nests": {"nested": {"requires_config": {"config": "foo"}}}}}
+    )
+
+    assert result.success
+    assert result.output_value() == "foo"

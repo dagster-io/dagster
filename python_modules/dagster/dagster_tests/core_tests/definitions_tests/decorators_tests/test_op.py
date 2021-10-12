@@ -464,7 +464,7 @@ def test_error_message_mixed_ops_and_solids():
     with pytest.raises(
         DagsterInvalidConfigError,
         match='Missing required config entry "graph" at the root. Sample config for missing '
-        "entry: {'graph': {'my_graph_with_both': {'ops': {'my_op': {'config': {'foo': '...'}}, 'my_solid': "
-        "{'config': {'foo': '...'}}}}}",
+        "entry: {'graph': {'my_graph_with_both': {'my_op': {'config': {'foo': '...'}}, 'my_solid': "
+        "{'config': {'foo': '...'}}}}",
     ):
         nested_job.execute_in_process()

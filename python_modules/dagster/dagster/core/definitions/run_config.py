@@ -25,7 +25,7 @@ from .graph import GraphDefinition
 from .logger import LoggerDefinition
 from .mode import ModeDefinition
 from .resource import ResourceDefinition
-from .solid import NodeDefinition, SolidDefinition
+from .solid import CompositeSolidDefinition, NodeDefinition, SolidDefinition
 
 
 def define_resource_dictionary_cls(
@@ -155,9 +155,9 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
         nodes_field = Field({"config": config_schema.as_field()})
     else:
         nodes_field = Field(
-            define_solid_dictionary_cls(
-                solids=creation_data.solids,
-                ignored_solids=creation_data.ignored_solids,
+            define_node_dictionary_cls(
+                nodes=creation_data.solids,
+                ignored_nodes=creation_data.ignored_solids,
                 dependency_structure=creation_data.dependency_structure,
                 resource_defs=creation_data.mode_definition.resource_defs,
                 is_using_graph_job_op_apis=creation_data.is_using_graph_job_op_apis,
@@ -344,8 +344,8 @@ def solid_config_field(
         return None
 
 
-def construct_leaf_solid_config(
-    solid: Node,
+def construct_leaf_node_config(
+    node: Node,
     dependency_structure: DependencyStructure,
     config_schema: Optional[IDefinitionConfigSchema],
     resource_defs: Dict[str, ResourceDefinition],
@@ -355,12 +355,12 @@ def construct_leaf_solid_config(
     return solid_config_field(
         {
             "inputs": get_inputs_field(
-                solid,
+                node,
                 dependency_structure,
                 resource_defs,
                 ignored,
             ),
-            "outputs": get_outputs_field(solid, resource_defs),
+            "outputs": get_outputs_field(node, resource_defs),
             "config": config_schema.as_field() if config_schema else None,
         },
         ignored=ignored,
@@ -368,8 +368,8 @@ def construct_leaf_solid_config(
     )
 
 
-def define_isolid_field(
-    solid: Node,
+def define_inode_field(
+    node: Node,
     handle: NodeHandle,
     dependency_structure: DependencyStructure,
     resource_defs: Dict[str, ResourceDefinition],
@@ -387,97 +387,129 @@ def define_isolid_field(
     # 4) `configured` composite with field mapping: a 'config' key with the config_schema that was
     #    provided when `configured` was called (via CompositeSolidDefinition#config_schema)
 
-    if isinstance(solid.definition, SolidDefinition):
-        return construct_leaf_solid_config(
-            solid,
+    if isinstance(node.definition, SolidDefinition):
+        return construct_leaf_node_config(
+            node,
             dependency_structure,
-            solid.definition.config_schema,
+            node.definition.config_schema,
             resource_defs,
             ignored,
             is_using_graph_job_op_apis,
         )
 
-    graph_def = solid.definition.ensure_graph_def()
-
+    graph_def = node.definition.ensure_graph_def()
     if graph_def.has_config_mapping:
         # has_config_mapping covers cases 2 & 4 from above (only config mapped composite solids can
         # be `configured`)...
-        return construct_leaf_solid_config(
-            solid,
-            dependency_structure,
+        return construct_leaf_node_config(
+            node=node,
+            dependency_structure=graph_def.dependency_structure,
             # ...and in both cases, the correct schema for 'config' key is exposed by this property:
-            graph_def.config_schema,
+            config_schema=graph_def.config_schema,
+            resource_defs=resource_defs,
+            ignored=ignored,
+            is_using_graph_job_op_apis=is_using_graph_job_op_apis,
+        )
+
+    elif isinstance(graph_def, CompositeSolidDefinition):
+        return composite_solid_config_field(
+            node=node,
+            top_level_dependency_structure=dependency_structure,
+            resource_defs=resource_defs,
+            ignored=ignored,
+            handle=handle,
+            is_using_graph_job_op_apis=is_using_graph_job_op_apis,
+        )
+    else:
+        return graph_config_field(
+            node=node,
+            top_level_dependency_structure=dependency_structure,
+            resource_defs=resource_defs,
+            handle=handle,
+            is_using_graph_job_op_apis=is_using_graph_job_op_apis,
+        )
+
+
+def composite_solid_config_field(
+    node, top_level_dependency_structure, resource_defs, handle, ignored, is_using_graph_job_op_apis
+):
+    composite_solid_def = node.definition.ensure_graph_def()
+    fields = {
+        "inputs": get_inputs_field(
+            node,
+            top_level_dependency_structure,
             resource_defs,
             ignored,
-            is_using_graph_job_op_apis,
-        )
-        # This case omits a 'solids' key, thus if a composite solid is `configured` or has a field
-        # mapping, the user cannot stub any config, inputs, or outputs for inner (child) solids.
-    else:
-        fields = {
-            "inputs": get_inputs_field(
-                solid,
-                dependency_structure,
-                resource_defs,
-                ignored,
-            ),
-            "outputs": get_outputs_field(solid, resource_defs),
-        }
-        nodes_field = Field(
-            define_solid_dictionary_cls(
-                solids=graph_def.solids,
-                ignored_solids=None,
-                dependency_structure=graph_def.dependency_structure,
+        ),
+        "outputs": get_outputs_field(node, resource_defs),
+        "solids": Field(
+            define_node_dictionary_cls(
+                nodes=composite_solid_def.nodes,
+                ignored_nodes=None,
+                dependency_structure=composite_solid_def.dependency_structure,
                 parent_handle=handle,
                 resource_defs=resource_defs,
                 is_using_graph_job_op_apis=is_using_graph_job_op_apis,
             )
+        ),
+    }
+
+    return solid_config_field(
+        fields, ignored=ignored, is_using_graph_job_op_apis=is_using_graph_job_op_apis
+    )
+
+
+def graph_config_field(
+    node, top_level_dependency_structure, resource_defs, handle, is_using_graph_job_op_apis
+):
+    graph_def = node.definition.ensure_graph_def()
+    return Field(
+        define_node_dictionary_cls(
+            nodes=graph_def.nodes,
+            ignored_nodes=None,
+            dependency_structure=top_level_dependency_structure,
+            parent_handle=handle,
+            resource_defs=resource_defs,
+            is_using_graph_job_op_apis=is_using_graph_job_op_apis,
         )
-        if is_using_graph_job_op_apis:
-            fields["ops"] = nodes_field
-        else:
-            fields["solids"] = nodes_field
-
-        return solid_config_field(
-            fields, ignored=ignored, is_using_graph_job_op_apis=is_using_graph_job_op_apis
-        )
+    )
 
 
-def define_solid_dictionary_cls(
-    solids: List[Node],
-    ignored_solids: Optional[List[Node]],
+def define_node_dictionary_cls(
+    nodes: List[Node],
+    ignored_nodes: Optional[List[Node]],
     dependency_structure: DependencyStructure,
     resource_defs: Dict[str, ResourceDefinition],
     is_using_graph_job_op_apis: bool,
     parent_handle: Optional[NodeHandle] = None,
 ) -> Shape:
-    ignored_solids = check.opt_list_param(ignored_solids, "ignored_solids", of_type=Node)
+    ignored_nodes = check.opt_list_param(ignored_nodes, "ignored_nodes", of_type=Node)
 
     fields = {}
-    for solid in solids:
-        solid_field = define_isolid_field(
-            solid,
-            NodeHandle(solid.name, parent_handle),
+    for node in nodes:
+        node_field = define_inode_field(
+            node,
+            NodeHandle(node.name, parent_handle),
             dependency_structure,
             resource_defs,
             ignored=False,
             is_using_graph_job_op_apis=is_using_graph_job_op_apis,
         )
 
-        if solid_field:
-            fields[solid.name] = solid_field
+        if node_field:
+            fields[node.name] = node_field
 
-    for solid in ignored_solids:
-        solid_field = define_isolid_field(
-            solid,
-            NodeHandle(solid.name, parent_handle),
+    for node in ignored_nodes:
+        node_field = define_inode_field(
+            node,
+            NodeHandle(node.name, parent_handle),
             dependency_structure,
             resource_defs,
             ignored=True,
             is_using_graph_job_op_apis=is_using_graph_job_op_apis,
         )
-        if solid_field:
-            fields[solid.name] = solid_field
+        if node_field:
+            fields[node.name] = node_field
 
     field_aliases = {"graph": "solids"} if is_using_graph_job_op_apis else {"solids": "graph"}
     return Shape(fields, field_aliases=field_aliases)

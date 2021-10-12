@@ -4,11 +4,10 @@ from dagster import check
 from dagster.config.evaluate_value_result import EvaluateValueResult
 from dagster.config.validate import process_config
 from dagster.core.definitions.dependency import NodeHandle
-from dagster.core.definitions.graph import GraphDefinition
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.definitions.resource import ResourceDefinition
-from dagster.core.definitions.run_config import define_solid_dictionary_cls
-from dagster.core.definitions.solid import SolidDefinition
+from dagster.core.definitions.run_config import define_node_dictionary_cls
+from dagster.core.definitions.solid import CompositeSolidDefinition, SolidDefinition
 from dagster.core.errors import (
     DagsterConfigMappingFunctionError,
     DagsterInvalidConfigError,
@@ -135,37 +134,98 @@ def _composite_descent(parent_stack, solids_config_dict, resource_defs, is_using
             yield SolidConfigEntry(current_handle, SolidConfig.from_dict(complete_config_object))
             continue
 
-        graph_def = check.inst(solid.definition, GraphDefinition)
-
-        yield SolidConfigEntry(
-            current_handle,
-            SolidConfig.from_dict(
-                {
-                    "inputs": current_solid_config.get("inputs"),
-                    "outputs": current_solid_config.get("outputs"),
-                }
-            ),
-        )
-        node_key = "ops" if is_using_graph_job_op_apis else "solids"
-
-        # If there is a config mapping, invoke it and get the descendent solids
-        # config that way. Else just grabs the solids entry of the current config
-        solids_dict = (
-            _get_mapped_solids_dict(
+        elif isinstance(solid.definition, CompositeSolidDefinition):
+            yield from _descend_composite_solid(
                 solid,
-                graph_def,
-                current_stack,
+                current_handle,
                 current_solid_config,
+                current_stack,
                 resource_defs,
                 is_using_graph_job_op_apis,
             )
-            if graph_def.has_config_mapping
-            else current_solid_config.get(node_key, {})
-        )
+        else:
+            yield from _descend_graph(
+                solid,
+                current_handle,
+                current_solid_config,
+                current_stack,
+                resource_defs,
+                is_using_graph_job_op_apis,
+            )
 
-        yield from _composite_descent(
-            current_stack, solids_dict, resource_defs, is_using_graph_job_op_apis
+
+def _descend_composite_solid(
+    solid,
+    current_handle,
+    current_solid_config,
+    current_stack,
+    resource_defs,
+    is_using_graph_job_op_apis,
+):
+    composite_solid_def = solid.definition
+    yield SolidConfigEntry(
+        current_handle,
+        SolidConfig.from_dict(
+            {
+                "inputs": current_solid_config.get("inputs"),
+                "outputs": current_solid_config.get("outputs"),
+            }
+        ),
+    )
+
+    # If there is a config mapping, invoke it and get the descendent solids
+    # config that way. Else just grabs the current config
+    solids_dict = (
+        _get_mapped_solids_dict(
+            solid,
+            composite_solid_def,
+            current_stack,
+            current_solid_config,
+            resource_defs,
+            is_using_graph_job_op_apis,
         )
+        if composite_solid_def.has_config_mapping
+        else current_solid_config.get("solids", {})
+    )
+
+    yield from _composite_descent(
+        current_stack, solids_dict, resource_defs, is_using_graph_job_op_apis
+    )
+
+
+def _descend_graph(
+    solid,
+    current_handle,
+    current_solid_config,
+    current_stack,
+    resource_defs,
+    is_using_graph_job_op_apis,
+):
+    graph_def = solid.definition
+
+    yield SolidConfigEntry(
+        current_handle,
+        SolidConfig.from_dict({}),
+    )
+
+    # If there is a config mapping, invoke it and get the descendent solids
+    # config that way. Else just grabs the solids entry of the current config
+    solids_dict = (
+        _get_mapped_solids_dict(
+            solid,
+            graph_def,
+            current_stack,
+            current_solid_config,
+            resource_defs,
+            is_using_graph_job_op_apis,
+        )
+        if graph_def.has_config_mapping
+        else current_solid_config
+    )
+
+    yield from _composite_descent(
+        current_stack, solids_dict, resource_defs, is_using_graph_job_op_apis
+    )
 
 
 def _apply_top_level_config_mapping(
@@ -198,9 +258,9 @@ def _apply_top_level_config_mapping(
         # Dynamically construct the type that the output of the config mapping function will
         # be evaluated against
 
-        type_to_evaluate_against = define_solid_dictionary_cls(
-            solids=graph_def.solids,
-            ignored_solids=None,
+        type_to_evaluate_against = define_node_dictionary_cls(
+            nodes=graph_def.nodes,
+            ignored_nodes=None,
             dependency_structure=graph_def.dependency_structure,
             resource_defs=resource_defs,
             is_using_graph_job_op_apis=is_using_graph_job_op_apis,
@@ -255,9 +315,9 @@ def _get_mapped_solids_dict(
     # Dynamically construct the type that the output of the config mapping function will
     # be evaluated against
 
-    type_to_evaluate_against = define_solid_dictionary_cls(
-        solids=graph_def.solids,
-        ignored_solids=None,
+    type_to_evaluate_against = define_node_dictionary_cls(
+        nodes=graph_def.nodes,
+        ignored_nodes=None,
         dependency_structure=graph_def.dependency_structure,
         parent_handle=current_stack.handle,
         resource_defs=resource_defs,
