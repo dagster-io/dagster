@@ -1,10 +1,11 @@
-import {Menu, MenuItem, TagInput} from '@blueprintjs/core';
+import {TagInput} from '@blueprintjs/core';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
 import styled from 'styled-components/macro';
 
 import {Box} from './Box';
 import {ColorsWIP} from './Colors';
+import {MenuItemWIP, MenuWIP} from './Menu';
 import {Popover} from './Popover';
 import {Spinner} from './Spinner';
 
@@ -318,7 +319,7 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
           <div style={{maxHeight: 235, overflowY: 'scroll'}} ref={menuRef}>
             <StyledMenu>
               {suggestions.map((suggestion, idx) => (
-                <StyledMenuItem
+                <MenuItemWIP
                   data-idx={idx}
                   key={suggestion.text}
                   text={suggestion.text}
@@ -451,11 +452,6 @@ const StyledTagInput = styled(TagInput)`
   }
 `;
 
-const StyledMenu = styled(Menu)`
+const StyledMenu = styled(MenuWIP)`
   width: 400px;
-`;
-
-const StyledMenuItem = styled(MenuItem)`
-  font-size: 13px;
-  line-height: 15px;
 `;
