@@ -37,6 +37,7 @@ export interface DisplayOptions {
   showFailuresAndGapsOnly: boolean;
   showPrevious: boolean;
   colorizeByAge: boolean;
+  colorizeSliceUnix: number;
 }
 
 const DYNAMIC_STEP_REGEX_SUFFIX = '\\[.*\\]';
