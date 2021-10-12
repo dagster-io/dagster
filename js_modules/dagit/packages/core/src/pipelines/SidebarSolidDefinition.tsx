@@ -159,12 +159,10 @@ export const SidebarSolidDefinition: React.FC<SidebarSolidDefinitionProps> = (pr
       </SidebarSection>
       {getInvocations && (
         <SidebarSection title={'All Invocations'}>
-          <Box padding={{vertical: 16, horizontal: 24}}>
-            <InvocationList
-              invocations={getInvocations(definition.name)}
-              onClickInvocation={onClickInvocation}
-            />
-          </Box>
+          <InvocationList
+            invocations={getInvocations(definition.name)}
+            onClickInvocation={onClickInvocation}
+          />
         </SidebarSection>
       )}
     </div>

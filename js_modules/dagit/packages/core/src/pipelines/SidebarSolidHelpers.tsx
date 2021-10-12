@@ -140,8 +140,8 @@ const DependencyHeaderCell = styled.td`
 `;
 
 const InvocationContainer = styled.div`
-  margin: 0 -10px;
-  padding: 10px;
+  user-select: none;
+  padding: 12px 9px;
   pointer: default;
   border-bottom: 1px solid ${ColorsWIP.Gray100};
   &:last-child {

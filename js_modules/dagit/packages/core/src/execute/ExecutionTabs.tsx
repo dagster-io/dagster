@@ -146,7 +146,7 @@ const ExecutionTabsContainer = styled.div`
 const TabContainer = styled.div<{$active: boolean}>`
   align-items: center;
   user-select: none;
-  padding: 8px 8px 8px 12px;
+  padding: 8px 12px;
   display: inline-flex;
   align-items: center;
   gap: 4px;

@@ -57,10 +57,10 @@ export const SOLID_TYPE_SIGNATURE_FRAGMENT = gql`
 
 const TypeSignature = styled(Code)`
   && {
-    background: ${ColorsWIP.Gray50};
+    background: ${ColorsWIP.Blue50};
     font-family: ${FontFamily.monospace};
     font-size: 14px;
-    padding: 4px 10px;
+    padding: 4px;
     box-shadow: none;
     color: black;
   }
