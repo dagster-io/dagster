@@ -50,9 +50,13 @@ export const SidebarSection: React.FC<ISidebarSectionProps> = (props) => {
 export const SidebarTitle = styled.h3`
   font-family: ${FontFamily.monospace};
   font-size: 16px;
-  margin: 0;
+  margin: 0 0 12px;
   overflow: hidden;
   text-overflow: ellipsis;
+
+  :first-child:last-child {
+    margin-bottom: 0;
+  }
 `;
 
 export const SectionHeader = styled.h4`
@@ -75,13 +79,13 @@ export const SidebarSubhead = styled.div`
 
 export const SectionItemContainer = styled.div`
   border-bottom: 1px solid ${ColorsWIP.KeylineGray};
-  margin-bottom: 20px;
-  padding-bottom: 20px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
   font-size: 0.8rem;
   &:last-child {
     border-bottom: none;
     margin-bottom: 0;
-    padding-bottom: 8px;
+    padding-bottom: 0;
   }
 `;
 
@@ -100,7 +104,4 @@ export const CollapsingHeaderBar = styled.div`
   font-size: 12px;
   font-weight: 700;
   user-select: none;
-  &:first-child {
-    border-top: 0;
-  }
 `;

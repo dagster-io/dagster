@@ -19,41 +19,51 @@ interface ISidebarSolidInvocationProps {
 
 export const SidebarSolidInvocation: React.FC<ISidebarSolidInvocationProps> = (props) => {
   const {solid, onEnterCompositeSolid} = props;
+  console.log(solid.inputs.length, solid.outputs);
+  const showInputs = solid.inputs.some((o) => o.dependsOn.length);
+  const showOutputs = solid.outputs.some((o) => o.dependedBy.length);
+
   return (
     <div>
       <SidebarSection title={'Invocation'}>
         <Box padding={{vertical: 16, horizontal: 24}}>
           <SidebarTitle>{breakOnUnderscores(solid.name)}</SidebarTitle>
-          <DependencyTable>
-            <tbody>
-              {solid.inputs.some((o) => o.dependsOn.length) && (
-                <DependencyHeaderRow label="Inputs" />
-              )}
-              {solid.inputs.map(({definition, dependsOn, isDynamicCollect}) =>
-                dependsOn.map((source, idx) => (
-                  <DependencyRow
-                    key={idx}
-                    from={source}
-                    to={definition.name}
-                    isDynamic={isDynamicCollect}
-                  />
-                )),
-              )}
-              {solid.outputs.some((o) => o.dependedBy.length) && (
-                <DependencyHeaderRow label="Outputs" style={{paddingTop: 15}} />
-              )}
-              {solid.outputs.map(({definition, dependedBy}) =>
-                dependedBy.map((target, idx) => (
-                  <DependencyRow
-                    key={idx}
-                    from={definition.name}
-                    to={target}
-                    isDynamic={definition.isDynamic}
-                  />
-                )),
-              )}
-            </tbody>
-          </DependencyTable>
+          {showInputs || showOutputs ? (
+            <DependencyTable>
+              <tbody>
+                {showInputs ? (
+                  <>
+                    <DependencyHeaderRow label="Inputs" />
+                    {solid.inputs.map(({definition, dependsOn, isDynamicCollect}) =>
+                      dependsOn.map((source, idx) => (
+                        <DependencyRow
+                          key={idx}
+                          from={source}
+                          to={definition.name}
+                          isDynamic={isDynamicCollect}
+                        />
+                      )),
+                    )}
+                  </>
+                ) : null}
+                {showOutputs ? (
+                  <>
+                    <DependencyHeaderRow label="Outputs" />
+                    {solid.outputs.map(({definition, dependedBy}) =>
+                      dependedBy.map((target, idx) => (
+                        <DependencyRow
+                          key={idx}
+                          from={definition.name}
+                          to={target}
+                          isDynamic={definition.isDynamic}
+                        />
+                      )),
+                    )}
+                  </>
+                ) : null}
+              </tbody>
+            </DependencyTable>
+          ) : null}
           {onEnterCompositeSolid && (
             <Box margin={{top: 12}}>
               <ButtonWIP
