@@ -1,6 +1,5 @@
 import {gql} from '@apollo/client';
 import * as React from 'react';
-import {Link} from 'react-router-dom';
 
 import {SolidNameOrPath} from '../solids/SolidNameOrPath';
 import {TypeExplorerContainer} from '../typeexplorer/TypeExplorerContainer';
