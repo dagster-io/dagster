@@ -38,7 +38,7 @@ def run_config_for_date_partition(partition):
     date = partition.value
 
     return {
-        "ops": {
+        "graph": {
             "download_data": {"outputs": {"result": {"partitions": [date]}}},
             "split_action_types": {
                 "outputs": {

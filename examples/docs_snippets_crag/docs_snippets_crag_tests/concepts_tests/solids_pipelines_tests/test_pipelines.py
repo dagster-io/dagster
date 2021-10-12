@@ -58,6 +58,6 @@ def test_dynamic():
 
 def test_dep_dsl():
     result = define_dep_dsl_graph().execute_in_process(
-        run_config={"ops": {"A": {"inputs": {"num": 0}}}}
+        run_config={"graph": {"A": {"inputs": {"num": 0}}}}
     )
     assert result.success

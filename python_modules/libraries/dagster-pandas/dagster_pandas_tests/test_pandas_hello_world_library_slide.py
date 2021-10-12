@@ -15,7 +15,7 @@ def test_hello_world():
 
     result = hello_world.execute_in_process(
         run_config={
-            "ops": {
+            "graph": {
                 "hello_world_op": {
                     "inputs": {
                         "num_csv": {"csv": {"path": file_relative_path(__file__, "num.csv")}}

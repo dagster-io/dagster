@@ -75,7 +75,7 @@ def longitudinal_schedule():
     @daily_partitioned_config(start_date="2020-01-01", timezone=_toys_tz_info())
     def longitudinal_config(start, _end):
         return {
-            "ops": {
+            "graph": {
                 op.name: {"config": {"partition": start.to_date_string()}}
                 for op in longitudinal_job.solids
             }

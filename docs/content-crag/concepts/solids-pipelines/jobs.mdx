@@ -66,7 +66,7 @@ def do_it_all():
 
 
 do_it_all_job = do_it_all.to_job(
-    config={"ops": {"do_something": {"config": {"config_param": "stuff"}}}},
+    config={"graph": {"do_something": {"config": {"config_param": "stuff"}}}},
     resource_defs={"my_resource": ResourceDefinition.hardcoded_resource("hello")},
 )
 ```
@@ -111,7 +111,7 @@ def do_it_all():
 
 
 do_it_all_with_default_config = do_it_all.to_job(
-    config={"ops": {"do_something": {"config": {"config_param": "stuff"}}}},
+    config={"graph": {"do_something": {"config": {"config_param": "stuff"}}}},
 )
 
 if __name__ == "__main__":
@@ -145,7 +145,7 @@ def do_it_all():
 
 @config_mapping(config_schema={"simplified_param": str})
 def simplified_config(val):
-    return {"ops": {"do_something": {"config": {"config_param": val["simplified_param"]}}}}
+    return {"graph": {"do_something": {"config": {"config_param": val["simplified_param"]}}}}
 
 
 do_it_all_with_simplified_config = do_it_all.to_job(config=simplified_config)

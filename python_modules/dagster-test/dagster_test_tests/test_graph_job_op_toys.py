@@ -147,7 +147,7 @@ def test_error_monster_success():
                 "io_manager": errorable_io_manager,
             },
             config={
-                "ops": {
+                "graph": {
                     "start": {"config": {"throw_in_op": False, "return_wrong_type": False}},
                     "middle": {"config": {"throw_in_op": False, "return_wrong_type": False}},
                     "end": {"config": {"throw_in_op": False, "return_wrong_type": False}},
@@ -168,7 +168,7 @@ def test_error_monster_success_error_on_resource():
                 "io_manager": errorable_io_manager,
             },
             config={
-                "ops": {
+                "graph": {
                     "start": {"config": {"throw_in_op": False, "return_wrong_type": False}},
                     "middle": {"config": {"throw_in_op": False, "return_wrong_type": False}},
                     "end": {"config": {"throw_in_op": False, "return_wrong_type": False}},
@@ -186,7 +186,7 @@ def test_error_monster_type_error():
                 "io_manager": errorable_io_manager,
             },
             config={
-                "ops": {
+                "graph": {
                     "start": {"config": {"throw_in_op": False, "return_wrong_type": False}},
                     "middle": {"config": {"throw_in_op": False, "return_wrong_type": True}},
                     "end": {"config": {"throw_in_op": False, "return_wrong_type": False}},

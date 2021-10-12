@@ -9,7 +9,7 @@ from dagster.utils import file_relative_path
 
 def test_execute_pipeline():
     environment = {
-        "ops": {
+        "graph": {
             "sum_op": {
                 "inputs": {"num": {"csv": {"path": file_relative_path(__file__, "num.csv")}}}
             }

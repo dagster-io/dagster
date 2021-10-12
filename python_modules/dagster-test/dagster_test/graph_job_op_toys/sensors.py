@@ -116,7 +116,7 @@ def get_toys_sensors():
         yield RunRequest(
             run_key=context.cursor,
             run_config={
-                "ops": {
+                "graph": {
                     "read_materialization": {
                         "config": {"asset_key": ["model"], "graph": asset_event.pipeline_name}
                     }

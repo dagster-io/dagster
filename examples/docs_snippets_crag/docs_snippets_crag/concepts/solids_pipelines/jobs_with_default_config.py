@@ -12,7 +12,7 @@ def do_it_all():
 
 
 do_it_all_with_default_config = do_it_all.to_job(
-    config={"ops": {"do_something": {"config": {"config_param": "stuff"}}}},
+    config={"graph": {"do_something": {"config": {"config_param": "stuff"}}}},
 )
 
 if __name__ == "__main__":

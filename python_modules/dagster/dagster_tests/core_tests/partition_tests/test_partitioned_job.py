@@ -15,7 +15,7 @@ def my_op(context):
     context.log.info(context.op_config)
 
 
-RUN_CONFIG = {"ops": {"my_op": {"config": "hello"}}}
+RUN_CONFIG = {"graph": {"my_op": {"config": "hello"}}}
 
 
 def test_static_partitioned_job():

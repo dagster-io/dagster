@@ -120,7 +120,7 @@ pyspark_assets_job = pyspark_assets.to_job(resource_defs=dir_resources)
 
 if __name__ == "__main__":
     run_config = {
-        "ops": {
+        "graph": {
             "get_max_temp_per_station": {
                 "config": {
                     "temperature_file": "temperature.csv",

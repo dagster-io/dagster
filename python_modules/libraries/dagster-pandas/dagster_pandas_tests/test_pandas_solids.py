@@ -26,7 +26,7 @@ def get_op_result_value(op_inst):
 
 
 def get_num_csv_environment(ops_config):
-    return {"ops": ops_config}
+    return {"graph": ops_config}
 
 
 @op(ins={"num_csv": In(DataFrame)}, out=Out(DataFrame))

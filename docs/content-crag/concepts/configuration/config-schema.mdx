@@ -52,7 +52,7 @@ Default run config can be provided when defining a job using the `config` parame
 
 ```python file=/concepts/configuration/execute_with_config.py startafter=start_define_job_with_config endbefore=end_define_job_with_config
 config_example_job = config_example.to_job(
-        config={"ops": {"uses_config": {"config": {"iterations": 1}}}}
+        config={"graph": {"uses_config": {"config": {"iterations": 1}}}}
     )
 ```
 
@@ -60,7 +60,7 @@ When executing a job with <PyObject module="dagster" object="JobDefinition" meth
 
 ```python file=/concepts/configuration/execute_with_config.py startafter=start_execute_with_config endbefore=end_execute_with_config
 result = config_example.to_job().execute_in_process(
-        run_config={"ops": {"uses_config": {"config": {"iterations": 1}}}}
+        run_config={"graph": {"uses_config": {"config": {"iterations": 1}}}}
     )
 ```
 
@@ -127,7 +127,7 @@ Dagster validates the `run_config` against the `config_schema`. If the values vi
 ```python file=/concepts/configuration/execute_with_config.py startafter=start_execute_with_bad_config endbefore=end_execute_with_bad_config
 result = nests_configurable.to_job().execute_in_process(
         run_config={
-            "ops": {"configurable_with_schema": {"config": {"nonexistent_config_value": 1}}}
+            "graph": {"configurable_with_schema": {"config": {"nonexistent_config_value": 1}}}
         }
     )
 ```

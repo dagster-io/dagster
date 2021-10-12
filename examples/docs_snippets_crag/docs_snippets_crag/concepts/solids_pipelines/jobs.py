@@ -13,6 +13,6 @@ def do_it_all():
 
 
 do_it_all_job = do_it_all.to_job(
-    config={"ops": {"do_something": {"config": {"config_param": "stuff"}}}},
+    config={"graph": {"do_something": {"config": {"config_param": "stuff"}}}},
     resource_defs={"my_resource": ResourceDefinition.hardcoded_resource("hello")},
 )

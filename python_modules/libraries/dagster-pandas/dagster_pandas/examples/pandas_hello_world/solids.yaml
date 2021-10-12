@@ -1,4 +1,4 @@
-ops:
+graph:
   sum_op:
     inputs:
       num:

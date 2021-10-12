@@ -202,7 +202,7 @@ Sometimes, you may want to test with different configuration. You can execute jo
 ```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_test_job_with_config endbefore=end_test_job_with_config
 def test_job_with_config():
     result = do_math_job.execute_in_process(
-        run_config={"ops": {"add_one": {"inputs": {"num": 2}}, "add_two": {"inputs": {"num": 3}}}}
+        run_config={"graph": {"add_one": {"inputs": {"num": 2}}, "add_two": {"inputs": {"num": 3}}}}
     )
 
     assert result.success
@@ -219,7 +219,7 @@ The event stream is the most generic way that an op communicates what happened d
 ```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_test_event_stream endbefore=end_test_event_stream
 def test_event_stream():
     job_result = emit_events_job.execute_in_process(
-        run_config={"ops": {"emit_events_op": {"inputs": {"input_num": 1}}}}
+        run_config={"graph": {"emit_events_op": {"inputs": {"input_num": 1}}}}
     )
 
     assert job_result.success

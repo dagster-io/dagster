@@ -17,7 +17,7 @@ def test_papermill_pandas_hello_world_pipeline():
             pipeline_result = execute_pipeline(
                 job,
                 {
-                    "ops": {
+                    "graph": {
                         "papermill_pandas_hello_world": {
                             "inputs": {
                                 "df": {

@@ -1,6 +1,6 @@
-ops:
+graph:
   sum_op:
     inputs:
       num:
         csv:
-          path: 'data/num_prod.csv'
+          path: "data/num_prod.csv"

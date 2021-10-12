@@ -202,7 +202,7 @@ def test_config_mapper_throws():
         'execution. The definition is instantiated at stack "bad_wrap"',
     ):
         wrap_invocations.to_job().execute_in_process(
-            run_config={"ops": {"bad_wrap": {"config": {"does_not_matter": "blah"}}}}
+            run_config={"graph": {"bad_wrap": {"config": {"does_not_matter": "blah"}}}}
         )
 
 

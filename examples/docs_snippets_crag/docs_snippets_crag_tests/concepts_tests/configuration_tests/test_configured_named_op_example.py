@@ -5,7 +5,7 @@ def test_job():
 
     result = datasets.to_job().execute_in_process(
         run_config={
-            "ops": {
+            "graph": {
                 "sample_dataset": {"inputs": {"xs": [4, 8, 15, 16, 23, 42]}},
                 "full_dataset": {
                     "inputs": {"xs": [33, 30, 27, 29, 32, 30, 27, 28, 30, 30, 30, 31]}

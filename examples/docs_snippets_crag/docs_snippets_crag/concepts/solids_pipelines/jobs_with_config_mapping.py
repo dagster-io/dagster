@@ -13,7 +13,7 @@ def do_it_all():
 
 @config_mapping(config_schema={"simplified_param": str})
 def simplified_config(val):
-    return {"ops": {"do_something": {"config": {"config_param": val["simplified_param"]}}}}
+    return {"graph": {"do_something": {"config": {"config_param": val["simplified_param"]}}}}
 
 
 do_it_all_with_simplified_config = do_it_all.to_job(config=simplified_config)

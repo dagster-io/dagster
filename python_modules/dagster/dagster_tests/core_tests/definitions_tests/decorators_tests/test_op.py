@@ -218,13 +218,13 @@ def test_op_config():
         my_op()
 
     result = basic.execute_in_process(
-        run_config={"ops": {"my_op": {"config": {"conf_str": "foo"}}}}
+        run_config={"graph": {"my_op": {"config": {"conf_str": "foo"}}}}
     )
 
     assert result.success
 
     result = basic.to_job(
-        config={"ops": {"my_op": {"config": {"conf_str": "foo"}}}}
+        config={"graph": {"my_op": {"config": {"conf_str": "foo"}}}}
     ).execute_in_process()
     assert result.success
 
@@ -367,7 +367,7 @@ def test_op_config_entry_collision():
         my_job.execute_in_process(
             run_config={
                 "solids": {"my_op": {"config": {"foo": "bar"}}},
-                "ops": {"my_op2": {"config": {"foo": "bar"}}},
+                "graph": {"my_op2": {"config": {"foo": "bar"}}},
             }
         )
 
@@ -379,14 +379,14 @@ def test_op_config_entry_collision():
 
     with pytest.raises(
         DagsterInvalidConfigError,
-        match="Received both field 'ops' and field 'solids' in config. Please use one or the other.",
+        match='Received unexpected config entry "graph" at path root:graph:my_graph.',
     ):
         my_nested_graph_job.execute_in_process(
             run_config={
-                "ops": {
+                "graph": {
                     "my_graph": {
                         "solids": {"my_op": {"config": {"foo": "bar"}}},
-                        "ops": {"my_op2": {"config": {"foo": "bar"}}},
+                        "graph": {"my_op2": {"config": {"foo": "bar"}}},
                     }
                 }
             }
@@ -404,8 +404,8 @@ def test_solid_and_op_config_error_messages():
 
     with pytest.raises(
         DagsterInvalidConfigError,
-        match='Missing required config entry "ops" at the root. Sample config for missing '
-        "entry: {'ops': {'my_op': {'config': {'foo': '...'}}}}",
+        match='Missing required config entry "graph" at the root. Sample config for missing '
+        "entry: {'graph': {'my_op': {'config': {'foo': '...'}}}}",
     ):
         my_graph.execute_in_process()
 
@@ -449,8 +449,8 @@ def test_error_message_mixed_ops_and_solids():
 
     with pytest.raises(
         DagsterInvalidConfigError,
-        match='Missing required config entry "ops" at the root. Sample config for missing '
-        "entry: {'ops': {'my_op': {'config': {'foo': '...'}}, 'my_solid': "
+        match='Missing required config entry "graph" at the root. Sample config for missing '
+        "entry: {'graph': {'my_op': {'config': {'foo': '...'}}, 'my_solid': "
         "{'config': {'foo': '...'}}}",
     ):
         my_job.execute_in_process()
@@ -463,8 +463,8 @@ def test_error_message_mixed_ops_and_solids():
 
     with pytest.raises(
         DagsterInvalidConfigError,
-        match='Missing required config entry "ops" at the root. Sample config for missing '
-        "entry: {'ops': {'my_graph_with_both': {'ops': {'my_op': {'config': {'foo': '...'}}, 'my_solid': "
+        match='Missing required config entry "graph" at the root. Sample config for missing '
+        "entry: {'graph': {'my_graph_with_both': {'ops': {'my_op': {'config': {'foo': '...'}}, 'my_solid': "
         "{'config': {'foo': '...'}}}}}",
     ):
         nested_job.execute_in_process()

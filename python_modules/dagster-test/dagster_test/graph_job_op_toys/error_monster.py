@@ -162,7 +162,7 @@ error_monster_passing_job = error_monster.to_job(
     },
     config={
         "resources": {"errorable_resource": {"config": {"throw_on_resource_init": False}}},
-        "ops": {
+        "graph": {
             "end": {"config": {"return_wrong_type": False, "throw_in_op": False}},
             "middle": {"config": {"return_wrong_type": False, "throw_in_op": False}},
             "start": {"config": {"return_wrong_type": False, "throw_in_op": False}},
@@ -180,7 +180,7 @@ error_monster_failing_job = error_monster.to_job(
     },
     config={
         "resources": {"errorable_resource": {"config": {"throw_on_resource_init": False}}},
-        "ops": {
+        "graph": {
             "end": {"config": {"return_wrong_type": False, "throw_in_op": False}},
             "middle": {"config": {"return_wrong_type": False, "throw_in_op": True}},
             "start": {"config": {"return_wrong_type": False, "throw_in_op": False}},
@@ -195,7 +195,7 @@ error_monster_failing_job = error_monster.to_job(
 if __name__ == "__main__":
     result = error_monster.to_job(
         config={
-            "ops": {
+            "graph": {
                 "start": {"config": {"throw_in_op": False, "return_wrong_type": False}},
                 "middle": {"config": {"throw_in_op": False, "return_wrong_type": True}},
                 "end": {"config": {"throw_in_op": False, "return_wrong_type": False}},

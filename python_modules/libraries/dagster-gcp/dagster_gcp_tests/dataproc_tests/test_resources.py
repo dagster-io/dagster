@@ -86,7 +86,7 @@ def test_dataproc_resource():
 
         result = test_dataproc.execute_in_process(
             run_config={
-                "ops": {
+                "graph": {
                     "dataproc_op": {
                         "config": {
                             "job_config": {

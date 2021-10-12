@@ -1,6 +1,6 @@
-ops:
+graph:
   papermill_pandas_hello_world:
     inputs:
       df:
         csv:
-          path: 'data/num_prod.csv'
+          path: "data/num_prod.csv"

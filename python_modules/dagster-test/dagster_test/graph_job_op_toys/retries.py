@@ -27,7 +27,7 @@ def retry():
 
 retry_job = retry.to_job(
     config={
-        "ops": {
+        "graph": {
             "retry_op": {
                 "config": {
                     "delay": 0.2,

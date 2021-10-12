@@ -95,25 +95,25 @@ def test_bad_config():
         (
             # Create disposition must match enum values
             {"create_disposition": "this is not a valid create disposition"},
-            "Value at path root:ops:test:config:query_job_config:create_disposition not in enum type BQCreateDisposition",
+            "Value at path root:graph:test:config:query_job_config:create_disposition not in enum type BQCreateDisposition",
         ),
         (
             # Priority must match enum values
             {"priority": "this is not a valid priority"},
-            "Value at path root:ops:test:config:query_job_config:priority not in enum type BQPriority got this is not a valid priority",
+            "Value at path root:graph:test:config:query_job_config:priority not in enum type BQPriority got this is not a valid priority",
         ),
         (
             # Schema update options must be a list
             {"schema_update_options": "this is not valid schema update options"},
-            'Value at path root:ops:test:config:query_job_config:schema_update_options must be list. Expected: "[BQSchemaUpdateOption]"',
+            'Value at path root:graph:test:config:query_job_config:schema_update_options must be list. Expected: "[BQSchemaUpdateOption]"',
         ),
         (
             {"schema_update_options": ["this is not valid schema update options"]},
-            "Value at path root:ops:test:config:query_job_config:schema_update_options[0] not in enum type BQSchemaUpdateOption",
+            "Value at path root:graph:test:config:query_job_config:schema_update_options[0] not in enum type BQSchemaUpdateOption",
         ),
         (
             {"write_disposition": "this is not a valid write disposition"},
-            "Value at path root:ops:test:config:query_job_config:write_disposition not in enum type BQWriteDisposition",
+            "Value at path root:graph:test:config:query_job_config:write_disposition not in enum type BQWriteDisposition",
         ),
     ]
 
@@ -123,7 +123,7 @@ def test_bad_config():
 
     env_type = create_run_config_schema(test_config).config_type
     for config_fragment, error_message in configs_and_expected_errors:
-        config = {"ops": {"test": {"config": {"query_job_config": config_fragment}}}}
+        config = {"graph": {"test": {"config": {"query_job_config": config_fragment}}}}
         result = validate_config(env_type, config)
         assert error_message in result.errors[0].message
 
@@ -139,7 +139,7 @@ def test_bad_config():
     ]
 
     for config_fragment, error_message in configs_and_expected_validation_errors:
-        config = {"ops": {"test": {"config": {"query_job_config": config_fragment}}}}
+        config = {"graph": {"test": {"config": {"query_job_config": config_fragment}}}}
         result = process_config(env_type, config)
         assert error_message in result.errors[0].message
 
@@ -153,7 +153,7 @@ def test_create_delete_dataset():
         bq_create_dataset.alias("create_op")()
 
     result = create_dataset.execute_in_process(
-        run_config={"ops": {"create_op": {"config": {"dataset": dataset, "exists_ok": True}}}}
+        run_config={"graph": {"create_op": {"config": {"dataset": dataset, "exists_ok": True}}}}
     )
     assert result.success
 
@@ -162,7 +162,9 @@ def test_create_delete_dataset():
         match="Already Exists: Dataset %s:%s" % (client.project, dataset),
     ):
         create_dataset.execute_in_process(
-            run_config={"ops": {"create_op": {"config": {"dataset": dataset, "exists_ok": False}}}}
+            run_config={
+                "graph": {"create_op": {"config": {"dataset": dataset, "exists_ok": False}}}
+            }
         )
 
     @job(resource_defs={"bigquery": bigquery_resource})
@@ -171,13 +173,13 @@ def test_create_delete_dataset():
 
     # Delete should succeed
     result = delete_dataset.execute_in_process(
-        run_config={"ops": {"delete_op": {"config": {"dataset": dataset}}}}
+        run_config={"graph": {"delete_op": {"config": {"dataset": dataset}}}}
     )
     assert result.success
 
     # Delete non-existent with "not_found_ok" should succeed
     result = delete_dataset.execute_in_process(
-        run_config={"ops": {"delete_op": {"config": {"dataset": dataset, "not_found_ok": True}}}}
+        run_config={"graph": {"delete_op": {"config": {"dataset": dataset, "not_found_ok": True}}}}
     )
     assert result.success
 
@@ -188,7 +190,7 @@ def test_create_delete_dataset():
     ):
         result = delete_dataset.execute_in_process(
             run_config={
-                "ops": {"delete_op": {"config": {"dataset": dataset, "not_found_ok": False}}}
+                "graph": {"delete_op": {"config": {"dataset": dataset, "not_found_ok": False}}}
             }
         )
 
@@ -218,7 +220,7 @@ def test_pd_df_load():
 
     result = bq_circle_of_life.execute_in_process(
         run_config={
-            "ops": {
+            "graph": {
                 "create_op": {"config": {"dataset": dataset, "exists_ok": True}},
                 "load_op": {"config": {"destination": table}},
                 "delete_op": {"config": {"dataset": dataset, "delete_contents": True}},
@@ -235,7 +237,7 @@ def test_pd_df_load():
         with pytest.raises(DagsterExecutionStepExecutionError) as exc_info:
             bq_circle_of_life.execute_in_process(
                 run_config={
-                    "ops": {
+                    "graph": {
                         "create_op": {"config": {"dataset": dataset, "exists_ok": True}},
                         "load_op": {"config": {"destination": table}},
                         "delete_op": {"config": {"dataset": dataset, "delete_contents": True}},
@@ -253,7 +255,7 @@ def test_pd_df_load():
 
         result = cleanup_bq.execute_in_process(
             run_config={
-                "ops": {"delete_op": {"config": {"dataset": dataset, "delete_contents": True}}}
+                "graph": {"delete_op": {"config": {"dataset": dataset, "delete_contents": True}}}
             }
         )
         assert result.success
@@ -286,7 +288,7 @@ def test_gcs_load():
 
     result = bq_from_gcs.execute_in_process(
         run_config={
-            "ops": {
+            "graph": {
                 "create_op": {"config": {"dataset": dataset, "exists_ok": True}},
                 "import_gcs_paths_to_bq": {
                     "config": {

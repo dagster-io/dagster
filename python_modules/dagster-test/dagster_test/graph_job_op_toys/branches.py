@@ -41,12 +41,12 @@ def branch():
 branch_failed_job = branch.to_job(
     name="branch_failed",
     config={
-        "ops": {"root": {"config": {"sleep_secs": [-10, 30]}}},
+        "graph": {"root": {"config": {"sleep_secs": [-10, 30]}}},
     },
 )
 
 branch_job = branch.to_job(
     config={
-        "ops": {"root": {"config": {"sleep_secs": [0, 10]}}},
+        "graph": {"root": {"config": {"sleep_secs": [0, 10]}}},
     },
 )

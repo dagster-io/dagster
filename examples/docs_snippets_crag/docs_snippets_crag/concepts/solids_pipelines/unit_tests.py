@@ -137,7 +137,7 @@ def test_op_resource_def():
 # start_test_job_with_config
 def test_job_with_config():
     result = do_math_job.execute_in_process(
-        run_config={"ops": {"add_one": {"inputs": {"num": 2}}, "add_two": {"inputs": {"num": 3}}}}
+        run_config={"graph": {"add_one": {"inputs": {"num": 2}}, "add_two": {"inputs": {"num": 3}}}}
     )
 
     assert result.success
@@ -153,7 +153,7 @@ def test_job_with_config():
 # start_test_event_stream
 def test_event_stream():
     job_result = emit_events_job.execute_in_process(
-        run_config={"ops": {"emit_events_op": {"inputs": {"input_num": 1}}}}
+        run_config={"graph": {"emit_events_op": {"inputs": {"input_num": 1}}}}
     )
 
     assert job_result.success

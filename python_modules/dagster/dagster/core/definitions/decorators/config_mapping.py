@@ -57,11 +57,11 @@ def config_mapping(
 
             @config_mapping
             def my_config_mapping(val):
-                return {"ops": {"my_op": {"config": {"foo": val["foo"]}}}}
+                return {"graph": {"my_op": {"config": {"foo": val["foo"]}}}}
 
             @config_mapping(config_schema={"foo": str})
             def my_config_mapping(val):
-                return {"ops": {"my_op": {"config": {"foo": val["foo"]}}}}
+                return {"graph": {"my_op": {"config": {"foo": val["foo"]}}}}
 
             result = my_graph.to_job(config=my_config_mapping).execute_in_process()
 

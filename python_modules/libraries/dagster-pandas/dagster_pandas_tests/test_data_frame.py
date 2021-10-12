@@ -191,7 +191,7 @@ def test_custom_dagster_dataframe_loading_ok():
 
         result = basic_graph.execute_in_process(
             run_config={
-                "ops": {
+                "graph": {
                     "use_test_dataframe": {
                         "inputs": {"test_df": {"csv": {"path": input_csv_fp}}},
                         "outputs": [
@@ -254,7 +254,7 @@ def test_custom_dagster_dataframe_parametrizable_input():
 
     result = basic_graph.execute_in_process(
         run_config={
-            "ops": {
+            "graph": {
                 "did_i_win": {
                     "inputs": {"df": {"door_a": "bar"}},
                     "outputs": [{"result": {"devnull": "baz"}}],

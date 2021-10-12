@@ -165,11 +165,11 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
         )
 
     if creation_data.is_using_graph_job_op_apis:
-        fields["ops"] = nodes_field
-        field_aliases = {"ops": "solids"}
+        fields["graph"] = nodes_field
+        field_aliases = {"graph": "solids"}
     else:
         fields["solids"] = nodes_field
-        field_aliases = {"solids": "ops"}
+        field_aliases = {"solids": "graph"}
 
     return Shape(
         fields=remove_none_entries(fields),
@@ -479,7 +479,7 @@ def define_solid_dictionary_cls(
         if solid_field:
             fields[solid.name] = solid_field
 
-    field_aliases = {"ops": "solids"} if is_using_graph_job_op_apis else {"solids": "ops"}
+    field_aliases = {"graph": "solids"} if is_using_graph_job_op_apis else {"solids": "graph"}
     return Shape(fields, field_aliases=field_aliases)
 
 

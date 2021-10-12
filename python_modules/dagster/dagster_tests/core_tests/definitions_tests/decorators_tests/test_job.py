@@ -42,7 +42,7 @@ def test_job_config():
     def basic(context):
         called["basic"] = context.op_config["foo"]
 
-    @job(config={"ops": {"basic": {"config": {"foo": "foo"}}}})
+    @job(config={"graph": {"basic": {"config": {"foo": "foo"}}}})
     def basic_job():
         basic()
 
@@ -56,7 +56,7 @@ def test_job_config_mapping():
         return context.op_config
 
     def _config_fn(outer):
-        return {"ops": {"my_op": {"config": outer["foo_schema"]}}}
+        return {"graph": {"my_op": {"config": outer["foo_schema"]}}}
 
     config_mapping = ConfigMapping(config_fn=_config_fn, config_schema={"foo_schema": str})
 
