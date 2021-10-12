@@ -11,7 +11,7 @@ Executing pipelines
 .. autofunction:: execute_pipeline_iterator
 
 Re-executing pipelines
--------------------
+----------------------
 
 .. autofunction:: reexecute_pipeline
 
@@ -53,7 +53,7 @@ Reconstructable pipelines
 
 .. currentmodule:: dagster.core.definitions.reconstructable
 
-.. autoclass:: ReeconstructablePipeline
+.. autoclass:: ReconstructablePipeline
    :members:
 
 .. autofunction:: build_reconstructable_pipeline
@@ -76,6 +76,7 @@ Pipeline and solid results
 
 .. autoclass:: DagsterEvent
    :members:
+   :noindex:
 
 .. autoclass:: DagsterEventType
    :members:
@@ -207,10 +208,6 @@ Executors
 
 Contexts
 --------
-
-.. autoclass:: SystemComputeExecutionContext
-  :members:
-  :inherited-members:
 
 .. autoclass:: TypeCheckContext
   :members:

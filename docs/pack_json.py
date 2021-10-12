@@ -4,7 +4,9 @@ import re
 import shutil
 from typing import Dict
 
-from dagster.utils import file_relative_path
+
+def file_relative_path(dunderfile: str, relative_path: str) -> str:
+    return os.path.join(os.path.dirname(dunderfile), relative_path)
 
 
 def read_json(filename):

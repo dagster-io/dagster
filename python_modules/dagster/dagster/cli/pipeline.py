@@ -333,10 +333,10 @@ def add_step_to_table(memoized_plan):
         "Specify the solid subselection to execute. It can be multiple clauses separated by commas."
         "Examples:"
         '\n- "some_solid" will execute "some_solid" itself'
-        '\n- "*some_solid" will execute "some_solid" and all its ancestors (upstream dependencies)'
-        '\n- "*some_solid+++" will execute "some_solid", all its ancestors, and its descendants'
+        '\n- "\*some_solid" will execute "some_solid" and all its ancestors (upstream dependencies)'
+        '\n- "\*some_solid+++" will execute "some_solid", all its ancestors, and its descendants'
         "   (downstream dependencies) within 3 levels down"
-        '\n- "*some_solid,other_solid_a,other_solid_b+" will execute "some_solid" and all its'
+        '\n- "\*some_solid,other_solid_a,other_solid_b+" will execute "some_solid" and all its'
         '   ancestors, "other_solid_a" itself, and "other_solid_b" and its direct child solids'
     ),
 )
@@ -601,10 +601,10 @@ def do_execute_command(
         "Specify the solid subselection to launch. It can be multiple clauses separated by commas."
         "Examples:"
         '\n- "some_solid" will launch "some_solid" itself'
-        '\n- "*some_solid" will launch "some_solid" and all its ancestors (upstream dependencies)'
-        '\n- "*some_solid+++" will launch "some_solid", all its ancestors, and its descendants'
+        '\n- "\*some_solid" will launch "some_solid" and all its ancestors (upstream dependencies)'
+        '\n- "\*some_solid+++" will launch "some_solid", all its ancestors, and its descendants'
         "   (downstream dependencies) within 3 levels down"
-        '\n- "*some_solid,other_solid_a,other_solid_b+" will launch "some_solid" and all its'
+        '\n- "\*some_solid,other_solid_a,other_solid_b+" will launch "some_solid" and all its'
         '   ancestors, "other_solid_a" itself, and "other_solid_b" and its direct child solids'
     ),
 )

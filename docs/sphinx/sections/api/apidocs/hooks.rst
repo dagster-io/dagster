@@ -11,5 +11,6 @@ Hooks
 
 .. autoclass:: HookContext
     :members:
+    :noindex:
 
 .. autofunction:: build_hook_context

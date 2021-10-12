@@ -63,13 +63,8 @@ Explicit in-process execution APIs have been added to better facilitate testing 
 
 Jobs can be tested with :py:meth:`JobDefinition.execute_in_process`, and Graphs with :py:meth:`GraphDefinition.execute_in_process`
 
-.. currentmodule:: dagster
-
-.. autoclass:: InProcessResult
-    :members:
-
 Partition-Based Schedules
----------
+-------------------------
 
 New APIs have been added to better integrate partition-based scheduling with the job API. These new APIs replace the existing :py:meth:`daily_schedule`, :py:meth:`weekly_schedule`, :py:meth:`monthly_schedule`, and :py:meth:`hourly_schedule` decorators.
 

@@ -309,7 +309,7 @@ def target_with_config_option(command_name, using_job_op_graph_apis):
             "enclose it in double quotes"
             "\n\nExample: "
             "dagster {pipeline_or_job} {name} -f hello_world.py {pipeline_or_job_flag} pandas_hello_world "
-            '-c "pandas_hello_world/*.yaml"'
+            '-c "pandas_hello_world/\*.yaml"'
             "\n\nYou can also specify multiple files:"
             "\n\nExample: "
             "dagster {pipeline_or_job} {name} -f hello_world.py {pipeline_or_job_flag} pandas_hello_world "

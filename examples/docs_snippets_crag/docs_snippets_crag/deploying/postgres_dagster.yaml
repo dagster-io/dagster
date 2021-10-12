@@ -19,3 +19,14 @@ event_log_storage:
       hostname: { hostname }
       db_name: { database }
       port: { port }
+
+  schedule_storage:
+    module: dagster_postgres.event_log
+    class: PostgresScheduleStorage
+    config:
+      postgres_db:
+        username: { username }
+        password: { password }
+        hostname: { hostname }
+        db_name: { database }
+        port: { port }

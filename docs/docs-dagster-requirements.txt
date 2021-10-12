@@ -1,4 +1,4 @@
--e ../python_modules/dagster[test]
+-e ../python_modules/dagster
 -e ../python_modules/dagster-graphql
 -e ../python_modules/dagit
 -e ../python_modules/libraries/dagster-airflow[test]
@@ -33,10 +33,3 @@
 -e ../python_modules/libraries/dagster-gcp # depends on dagster-pandas
 -e ../python_modules/libraries/dagster-pyspark # depends on dagster-spark
 -e ../python_modules/libraries/dagster-databricks # depends on dagster-pyspark
--e ../python_modules/automation
-docutils==0.15.2
-Sphinx==3.5.2
-sphinx-click==2.5.0
-recommonmark==0.7.1
-nbsphinx==0.8.2
-pendulum==1.4.4

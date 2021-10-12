@@ -4,6 +4,9 @@ from papermill.exceptions import PapermillExecutionError
 
 
 def is_papermill_2():
+    if not papermill.__version__:
+        return False
+
     version = parse(papermill.__version__)
     if isinstance(version, LegacyVersion):
         return False

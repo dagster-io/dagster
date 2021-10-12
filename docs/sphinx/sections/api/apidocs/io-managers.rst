@@ -3,9 +3,6 @@
 IO Managers
 ==================================
 
-IO Managers
----------------
-
 IO managers are user-provided objects that store solid outputs and load them as inputs to downstream
 solids.
 
@@ -50,7 +47,7 @@ Built-in IO Managers
 
 
 Root Input Managers (Experimental)
---------------
+----------------------------------
 
 Root input managers are user-provided objects that specify how to load inputs that aren't connected
 to upstream outputs.
