@@ -86,6 +86,10 @@ const StyledMenuItem = styled(MenuItem)<StyledMenuItemProps>`
   padding: 6px 8px 6px 12px;
   transition: background-color 50ms, box-shadow 150ms;
 
+  &.bp3-intent-primary.bp3-active {
+    background-color: ${ColorsWIP.Blue700};
+  }
+
   ${IconWrapper} {
     padding-top: 2px;
   }
