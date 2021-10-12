@@ -111,6 +111,8 @@ def daily_partitioned_config(
         start_date (Union[datetime.datetime, str]): The date from which to run the schedule. Can
             provide in either a datetime or string format.
         timezone (Optional[str]): The timezone in which each date should exist.
+            Supported strings for timezones are the ones provided by the
+            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
         fmt (Optional[str]): The date format to use. Defaults to `%Y-%m-%d`.
         end_offset (int): Extends the partition set by a number of partitions equal to the value
             passed. If end_offset is 0 (the default), the last partition ends before the current
@@ -169,6 +171,8 @@ def hourly_partitioned_config(
             provide in either a datetime or string format.
         fmt (Optional[str]): The date format to use. Defaults to `%Y-%m-%d`.
         timezone (Optional[str]): The timezone in which each date should exist.
+            Supported strings for timezones are the ones provided by the
+            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
     """
 
     experimental_fn_warning("hourly_partitioned_config")
@@ -221,6 +225,8 @@ def monthly_partitioned_config(
         start_date (Union[datetime.datetime, str]): The date from which to run the schedule. Can
             provide in either a datetime or string format.
         timezone (Optional[str]): The timezone in which each date should exist.
+            Supported strings for timezones are the ones provided by the
+            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
         fmt (Optional[str]): The date format to use. Defaults to `%Y-%m-%d`.
         end_offset (int): Extends the partition set by a number of partitions equal to the value
             passed. If end_offset is 0 (the default), the last partition ends before the current
@@ -277,6 +283,8 @@ def weekly_partitioned_config(
         start_date (Union[datetime.datetime, str]): The date from which to run the schedule. Can
             provide in either a datetime or string format.
         timezone (Optional[str]): The timezone in which each date should exist.
+            Supported strings for timezones are the ones provided by the
+            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
         fmt (Optional[str]): The date format to use. Defaults to `%Y-%m-%d`.
         end_offset (int): Extends the partition set by a number of partitions equal to the value
             passed. If end_offset is 0 (the default), the last partition ends before the current
