@@ -2,8 +2,6 @@ import {gql} from '@apollo/client';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {ColorsWIP} from '../ui/Colors';
-
 import {PartitionGraph} from './PartitionGraph';
 import {
   getPipelineDurationForRun,
@@ -33,6 +31,7 @@ export const PartitionGraphSet: React.FunctionComponent<{
   const rateGraph = React.useRef<any>(undefined);
   const graphs = [durationGraph, materializationGraph, successGraph, failureGraph, rateGraph];
 
+  console.log('render PartitionGraphSet');
   const onChangeHiddenStepKeys = (hiddenKeys: string[]) => {
     setHiddenStepKeys(hiddenKeys);
 
@@ -53,7 +52,13 @@ export const PartitionGraphSet: React.FunctionComponent<{
 
   return (
     <PartitionContentContainer>
-      <div style={{flex: 1, minWidth: 450}}>
+      <StepSelector
+        all={allStepKeys}
+        hidden={hiddenStepKeys}
+        onChangeHidden={onChangeHiddenStepKeys}
+      />
+
+      <div style={{flex: 1}}>
         <PartitionGraph
           title="Execution Time by Partition"
           yLabel="Execution time (secs)"
@@ -95,15 +100,6 @@ export const PartitionGraphSet: React.FunctionComponent<{
           ref={rateGraph}
         />
       </div>
-      <div style={{width: 450}}>
-        <NavContainer>
-          <StepSelector
-            all={allStepKeys}
-            hidden={hiddenStepKeys}
-            onChangeHidden={onChangeHiddenStepKeys}
-          />
-        </NavContainer>
-      </div>
     </PartitionContentContainer>
   );
 };
@@ -119,14 +115,6 @@ export const PARTITION_GRAPH_SET_RUN_FRAGMENT = gql`
     ...PartitionGraphFragment
   }
   ${PARTITION_GRAPH_FRAGMENT}
-`;
-
-const NavContainer = styled.div`
-  margin: 20px 0 0 10px;
-  padding: 10px;
-  background-color: #fff;
-  border: 1px solid ${ColorsWIP.Gray200};
-  overflow: auto;
 `;
 
 const PartitionContentContainer = styled.div`

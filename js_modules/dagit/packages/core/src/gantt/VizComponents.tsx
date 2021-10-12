@@ -6,7 +6,7 @@ export const OptionsContainer = styled.div`
 min-height: 56px;
 display: flex;
 align-items: center;
-padding: 5px 12px;
+padding: 5px 12px 5px 24px;
 border-bottom: 1px solid ${ColorsWIP.KeylineGray};
 background: ${ColorsWIP.White};
 flex-shrink: 0;

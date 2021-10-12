@@ -4,10 +4,10 @@ import {ColorsWIP} from './Colors';
 
 export const RowContainer = styled.div`
   display: flex;
+  box-sizing: border-box;
   color: ${ColorsWIP.Gray700};
-  margin-bottom: 9px;
-  border: 1px solid ${ColorsWIP.Gray200};
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
-  padding: 2px 10px;
+  border-left: 1px solid ${ColorsWIP.KeylineGray};
+  border-bottom: 1px solid ${ColorsWIP.KeylineGray};
+  padding: 24px 12px;
   text-decoration: none;
 `;

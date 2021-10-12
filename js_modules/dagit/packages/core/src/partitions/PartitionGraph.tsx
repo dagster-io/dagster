@@ -1,3 +1,4 @@
+import {isEqual} from 'lodash';
 import * as React from 'react';
 import {Line} from 'react-chartjs-2';
 
@@ -155,11 +156,19 @@ export const PartitionGraph = React.forwardRef((props: PartitionGraphProps, ref)
   };
 
   return (
-    <RowContainer style={{margin: '20px 0'}}>
-      <Line type="line" data={graphData} height={100} options={defaultOptions} ref={chart} />
+    <RowContainer>
+      <LineMemoized
+        type="line"
+        data={graphData}
+        height={100}
+        options={defaultOptions}
+        ref={chart}
+      />
     </RowContainer>
   );
 });
+
+const LineMemoized = React.memo(Line, isEqual);
 
 const _fillPartitions = (partitionNames: string[], points: Point[]) => {
   const pointData = {};
