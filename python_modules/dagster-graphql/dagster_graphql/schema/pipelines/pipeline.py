@@ -310,6 +310,7 @@ class GrapheneIPipelineSnapshotMixin:
     sensors = non_null_list(GrapheneSensor)
     parent_snapshot_id = graphene.String()
     graph_name = graphene.NonNull(graphene.String)
+    is_job = graphene.NonNull(graphene.Boolean)
 
     class Meta:
         name = "IPipelineSnapshotMixin"
@@ -461,6 +462,15 @@ class GrapheneIPipelineSnapshot(graphene.Interface):
         handleID=graphene.Argument(graphene.NonNull(graphene.String)),
     )
     tags = non_null_list(GraphenePipelineTag)
+    runs = graphene.Field(
+        non_null_list(GraphenePipelineRun),
+        cursor=graphene.String(),
+        limit=graphene.Int(),
+    )
+    schedules = non_null_list(GrapheneSchedule)
+    sensors = non_null_list(GrapheneSensor)
+    parent_snapshot_id = graphene.String()
+    graph_name = graphene.NonNull(graphene.String)
 
     class Meta:
         name = "IPipelineSnapshot"
@@ -509,11 +519,7 @@ class GraphenePipelinePreset(graphene.ObjectType):
 class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
     id = graphene.NonNull(graphene.ID)
     presets = non_null_list(GraphenePipelinePreset)
-    runs = graphene.Field(
-        non_null_list(GraphenePipelineRun),
-        cursor=graphene.String(),
-        limit=graphene.Int(),
-    )
+    isJob = graphene.NonNull(graphene.Boolean)
 
     class Meta:
         interfaces = (GrapheneSolidContainer, GrapheneIPipelineSnapshot)
@@ -536,6 +542,9 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
             GraphenePipelinePreset(preset, self._external_pipeline.name)
             for preset in sorted(self._external_pipeline.active_presets, key=lambda item: item.name)
         ]
+
+    def resolve_isJob(self, _graphene_info):
+        return self._external_pipeline
 
 
 @lru_cache(maxsize=32)

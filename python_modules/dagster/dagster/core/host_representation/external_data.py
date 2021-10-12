@@ -10,6 +10,7 @@ from typing import Dict, List, Optional, Sequence, Set, Tuple
 
 from dagster import check
 from dagster.core.definitions import (
+    JobDefinition,
     PartitionSetDefinition,
     PipelineDefinition,
     PresetDefinition,
@@ -131,10 +132,13 @@ class ExternalPipelineSubsetResult(
 @whitelist_for_serdes
 class ExternalPipelineData(
     namedtuple(
-        "_ExternalPipelineData", "name pipeline_snapshot active_presets parent_pipeline_snapshot"
+        "_ExternalPipelineData",
+        "name pipeline_snapshot active_presets parent_pipeline_snapshot is_job",
     )
 ):
-    def __new__(cls, name, pipeline_snapshot, active_presets, parent_pipeline_snapshot):
+    def __new__(
+        cls, name, pipeline_snapshot, active_presets, parent_pipeline_snapshot, is_job=False
+    ):
         return super(ExternalPipelineData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
@@ -147,6 +151,7 @@ class ExternalPipelineData(
             active_presets=check.list_param(
                 active_presets, "active_presets", of_type=ExternalPresetData
             ),
+            is_job=check.bool_param(is_job, "is_job"),
         )
 
 
@@ -518,6 +523,7 @@ def external_pipeline_data_from_def(pipeline_def):
             list(map(external_preset_data_from_def, pipeline_def.preset_defs)),
             key=lambda pd: pd.name,
         ),
+        is_job=isinstance(pipeline_def, JobDefinition),
     )
 
 

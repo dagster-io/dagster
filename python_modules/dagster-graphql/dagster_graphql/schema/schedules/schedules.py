@@ -48,7 +48,7 @@ class GrapheneSchedule(graphene.ObjectType):
         if not self._schedule_state:
             # Also include a ScheduleState for a stopped schedule that may not
             # have a stored database row yet
-            self._schedule_state = self._external_schedule.get_default_job_state(
+            self._schedule_state = self._external_schedule.get_default_instigation_state(
                 graphene_info.context.instance
             )
 

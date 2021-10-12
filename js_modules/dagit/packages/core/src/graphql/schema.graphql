@@ -73,12 +73,13 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   solidHandles(parentHandleID: String): [SolidHandle!]!
   solidHandle(handleID: String!): SolidHandle
   tags: [PipelineTag!]!
-  id: ID!
   runs(cursor: String, limit: Int): [PipelineRun!]!
   schedules: [Schedule!]!
   sensors: [Sensor!]!
   parentSnapshotId: String
   graphName: String!
+  id: ID!
+  isJob: Boolean!
   presets: [PipelinePreset!]!
 }
 
@@ -190,6 +191,11 @@ interface IPipelineSnapshot {
   solidHandles(parentHandleID: String): [SolidHandle!]!
   solidHandle(handleID: String!): SolidHandle
   tags: [PipelineTag!]!
+  runs(cursor: String, limit: Int): [PipelineRun!]!
+  schedules: [Schedule!]!
+  sensors: [Sensor!]!
+  parentSnapshotId: String
+  graphName: String!
 }
 
 union DagsterTypeOrError = RegularDagsterType | PipelineNotFoundError | DagsterTypeNotFoundError | PythonError
@@ -1156,13 +1162,14 @@ type PipelineSnapshot implements IPipelineSnapshot & PipelineReference {
   solidHandles(parentHandleID: String): [SolidHandle!]!
   solidHandle(handleID: String!): SolidHandle
   tags: [PipelineTag!]!
-  solidSelection: [String!]
-  id: ID!
   runs(cursor: String, limit: Int): [PipelineRun!]!
   schedules: [Schedule!]!
   sensors: [Sensor!]!
   parentSnapshotId: String
   graphName: String!
+  solidSelection: [String!]
+  id: ID!
+  isJob: Boolean!
 }
 
 type PipelineSnapshotNotFoundError implements Error {
