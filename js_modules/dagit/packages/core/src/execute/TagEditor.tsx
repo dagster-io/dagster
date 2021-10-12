@@ -6,11 +6,11 @@ import {ShortcutHandler} from '../app/ShortcutHandler';
 import {RunTag} from '../runs/RunTag';
 import {Box} from '../ui/Box';
 import {ButtonWIP} from '../ui/Button';
-import {ButtonLink} from '../ui/ButtonLink';
 import {ColorsWIP} from '../ui/Colors';
 import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
+import {TextInput} from '../ui/TextInput';
 import {Tooltip} from '../ui/Tooltip';
 
 interface ITagEditorProps {
@@ -67,7 +67,13 @@ export const TagEditor: React.FC<ITagEditorProps> = ({
   };
 
   const onRemove = (idx: number) => {
-    setEditState((current) => [...current.slice(0, idx), ...current.slice(idx + 1)]);
+    setEditState((current) => {
+      if (idx === 0 && current.length === 1) {
+        // If we're deleting the only item, just wipe it out.
+        return [{key: '', value: ''}];
+      }
+      return [...current.slice(0, idx), ...current.slice(idx + 1)];
+    });
   };
 
   const addTagEntry = () => {
@@ -78,7 +84,7 @@ export const TagEditor: React.FC<ITagEditorProps> = ({
     <DialogWIP
       icon="info"
       onClose={onRequestClose}
-      style={{minWidth: 500}}
+      style={{minWidth: 700}}
       title="Add tags to run"
       isOpen={open}
     >
@@ -107,11 +113,9 @@ export const TagEditor: React.FC<ITagEditorProps> = ({
               </TagList>
             </Group>
           ) : null}
-          <Group direction="column" spacing={8}>
-            <Box margin={{left: 2}} style={{fontSize: '13px', fontWeight: 500}}>
-              Custom tags:
-            </Box>
-            <div>
+          <Box flex={{direction: 'column', gap: 12}}>
+            <div>Custom tags:</div>
+            <Box flex={{direction: 'column', gap: 8}}>
               {editState.map((tag, idx) => {
                 const {key, value} = tag;
                 return (
@@ -120,32 +124,36 @@ export const TagEditor: React.FC<ITagEditorProps> = ({
                     style={{
                       display: 'flex',
                       flexDirection: 'row',
-                      marginBottom: 8,
+                      gap: 8,
                     }}
                   >
-                    <Input
-                      type="text"
+                    <TextInput
                       placeholder="Tag Key"
                       value={key}
                       onChange={(e) => onTagEdit(e.target.value, value, idx)}
                     />
-                    <Input
-                      type="text"
+                    <TextInput
                       placeholder="Tag Value"
                       value={value}
                       onChange={(e) => onTagEdit(key, e.target.value, idx)}
                     />
-                    <RemoveButton onClick={() => onRemove(idx)}>
-                      <IconWIP name="close" />
-                    </RemoveButton>
+                    <ButtonWIP
+                      disabled={editState.length === 1 && !key.trim() && !value.trim()}
+                      onClick={() => onRemove(idx)}
+                      icon={<IconWIP name="delete" />}
+                    >
+                      Remove
+                    </ButtonWIP>
                   </div>
                 );
               })}
-              <Box margin={{left: 2}}>
-                <ButtonLink onClick={addTagEntry}>+ Add custom tag</ButtonLink>
-              </Box>
-            </div>
-          </Group>
+            </Box>
+            <Box margin={{left: 2}} flex={{direction: 'row', justifyContent: 'center'}}>
+              <ButtonWIP onClick={addTagEntry} icon={<IconWIP name="add_circle" />}>
+                Add custom tag
+              </ButtonWIP>
+            </Box>
+          </Box>
         </Group>
       </DialogBody>
       <DialogFooter>
@@ -211,26 +219,6 @@ const TagEditorLink = ({onRequestOpen, children}: ITagEditorLinkProps) => (
   </ShortcutHandler>
 );
 
-const RemoveButton = styled.button`
-  background: none;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  padding: 0 3px;
-
-  :hover {
-    background-color: ${ColorsWIP.Gray200};
-  }
-`;
-
-const Input = styled.input`
-  flex: 1;
-  margin-right: 10px;
-  border-radius: 3px;
-  font-size: 14px;
-  padding: 3px 7px;
-  border: 1px solid #cccccc;
-`;
 const Container = styled.div`
   align-items: flex-start;
   display: flex;

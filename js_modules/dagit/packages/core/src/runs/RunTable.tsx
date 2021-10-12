@@ -206,6 +206,7 @@ const RunRow: React.FC<{
           snapshotId={run.pipelineSnapshotId || ''}
           pipelineMode={run.mode}
           pipelineName={run.pipelineName}
+          size="normal"
         />
       </td>
       <td>

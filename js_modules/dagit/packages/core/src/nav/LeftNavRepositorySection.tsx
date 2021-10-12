@@ -167,7 +167,6 @@ const LoadedRepositorySection: React.FC<{allRepos: DagsterRepoOption[]}> = ({all
 
 const Container = styled.div`
   background: ${ColorsWIP.Gray100};
-  color: ${ColorsWIP.Gray900};
   display: flex;
   flex: 1;
   overflow: none;

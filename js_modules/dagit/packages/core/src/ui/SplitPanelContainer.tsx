@@ -170,8 +170,13 @@ export const SecondPanelToggle = ({container, axis}: PanelToggleProps) => {
   return (
     <ButtonWIP
       active={open}
-      title="Toggle Second Pane"
-      icon={<IconWIP name={axis === 'vertical' ? 'vertical_align_top' : 'vertical_align_top'} />}
+      title="Toggle second pane"
+      icon={
+        <IconWIP
+          name="vertical_align_top"
+          style={axis === 'horizontal' ? {transform: 'rotate(-90deg)'} : undefined}
+        />
+      }
       onClick={() => {
         if (!container.current) {
           return;

@@ -28,7 +28,6 @@ import {DagsterTag} from '../runs/RunTag';
 import {RepositorySelector} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {ButtonWIP} from '../ui/Button';
-import {ButtonLink} from '../ui/ButtonLink';
 import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
@@ -581,23 +580,6 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
                   />
                 </>
               )}
-              {tagsFromSession.length ? null : (
-                <Box margin={{left: 12}}>
-                  <ShortcutHandler
-                    shortcutLabel={'⌥T'}
-                    shortcutFilter={(e) => e.keyCode === 84 && e.altKey}
-                    onShortcut={openTagEditor}
-                  >
-                    <ButtonLink
-                      color={{link: ColorsWIP.Gray400, hover: ColorsWIP.Gray800}}
-                      onClick={openTagEditor}
-                      underline="always"
-                    >
-                      + Add tags
-                    </ButtonLink>
-                  </ShortcutHandler>
-                </Box>
-              )}
               <TagEditor
                 tagsFromDefinition={tagsFromDefinition}
                 tagsFromSession={tagsFromSession}
@@ -606,6 +588,20 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
                 onRequestClose={closeTagEditor}
               />
               <div style={{flex: 1}} />
+              {tagsFromSession.length ? null : (
+                <>
+                  <ShortcutHandler
+                    shortcutLabel={'⌥T'}
+                    shortcutFilter={(e) => e.keyCode === 84 && e.altKey}
+                    onShortcut={openTagEditor}
+                  >
+                    <ButtonWIP onClick={openTagEditor} icon={<IconWIP name="add_circle" />}>
+                      Add tags
+                    </ButtonWIP>
+                  </ShortcutHandler>
+                  <SessionSettingsSpacer />
+                </>
+              )}
               <ButtonWIP
                 title="Toggle whitespace"
                 icon={<IconWIP name="line_style" />}
@@ -689,7 +685,7 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
           </>
         }
       />
-      <div style={{position: 'absolute', bottom: 14, right: 14, zIndex: 1}}>
+      <div style={{position: 'absolute', bottom: 12, right: 12, zIndex: 1}}>
         <LaunchRootExecutionButton
           pipelineName={pipeline.name}
           getVariables={buildExecutionVariables}

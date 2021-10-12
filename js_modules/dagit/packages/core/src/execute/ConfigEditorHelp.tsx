@@ -21,7 +21,7 @@ export const ConfigEditorHelp: React.FunctionComponent<ConfigEditorHelpProps> = 
         <ConfigScrollWrap>
           <ConfigTypeSchema type={context.type} typesInScope={allInnerTypes} maxDepth={2} />
         </ConfigScrollWrap>
-        <AutocompletionsNote>Ctrl+Space to show auto-completions inline.</AutocompletionsNote>
+        <AutocompletionsNote>Use Ctrl+Space to show auto-completions inline.</AutocompletionsNote>
       </Container>
     );
   },
@@ -32,14 +32,14 @@ const AutocompletionsNote = styled.div`
   font-size: 0.75rem;
   text-align: center;
   padding: 4px;
-  border-top: 1px solid ${ColorsWIP.Gray200};
-  background: rgba(238, 238, 238, 0.9);
-  color: rgba(0, 0, 0, 0.7);
+  border-top: 1px solid ${ColorsWIP.KeylineGray};
+  background: ${ColorsWIP.Gray100};
+  color: ${ColorsWIP.Gray500};
 `;
 
 const ConfigScrollWrap = styled.div`
   padding: 8px;
-  color: black;
+  color: ${ColorsWIP.Dark};
   flex: 1;
   pointer-events: initial;
   max-height: 100%;
@@ -50,6 +50,6 @@ const Container = styled.div`
   position: relative;
   display: flex;
   flex-direction: column;
-  background-color: #e1e8edd1;
+  background-color: ${ColorsWIP.Gray50};
   height: 100%;
 `;

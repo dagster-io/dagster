@@ -51,20 +51,19 @@ export const SidebarTitle = styled.h3`
   font-family: ${FontFamily.monospace};
   font-size: 16px;
   margin: 0;
-  margin-bottom: 16px;
   overflow: hidden;
   text-overflow: ellipsis;
 `;
 
 export const SectionHeader = styled.h4`
   font-family: ${FontFamily.monospace};
-  font-size: 18px;
+  font-size: 16px;
   margin: 2px 0 0 0;
 `;
 
 export const SectionSmallHeader = styled.h4`
   font-family: ${FontFamily.monospace};
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
   margin: 2px 0;
 `;
@@ -82,15 +81,14 @@ export const SectionItemContainer = styled.div`
   &:last-child {
     border-bottom: none;
     margin-bottom: 0;
-    padding-bottom: 5px;
+    padding-bottom: 8px;
   }
 `;
 
-// Internal
-
-const CollapsingHeaderBar = styled.div`
+export const CollapsingHeaderBar = styled.div`
   height: 32px;
   padding-left: 24px;
+  padding-right: 8px;
   background: ${ColorsWIP.White};
   border-top: 1px solid ${ColorsWIP.KeylineGray};
   border-bottom: 1px solid ${ColorsWIP.KeylineGray};
