@@ -689,7 +689,7 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
           </>
         }
       />
-      <div style={{position: 'absolute', bottom: 14, right: 14, zIndex: 1}}>
+      <div style={{position: 'absolute', bottom: 12, right: 12, zIndex: 1}}>
         <LaunchRootExecutionButton
           pipelineName={pipeline.name}
           getVariables={buildExecutionVariables}

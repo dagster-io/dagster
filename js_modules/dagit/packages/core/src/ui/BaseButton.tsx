@@ -98,7 +98,11 @@ const StyledButton = styled.button<StyledButtonProps>`
     box-shadow: ${({$strokeColor}) => `${$strokeColor} inset 0px 0px 0px 1px`};
   }
 
-  ${SpinnerWrapper},
+  ${SpinnerWrapper} {
+    align-self: center;
+    display: block;
+  }
+
   ${IconWrapper} {
     color: ${({$textColor}) => $textColor};
     background-color: ${({$textColor}) => $textColor};

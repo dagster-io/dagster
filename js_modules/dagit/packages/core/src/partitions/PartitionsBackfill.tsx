@@ -732,7 +732,7 @@ const LaunchBackfillButton: React.FC<{
         runCount={count}
         config={{
           title: buttonTitle,
-          icon: 'send-to',
+          icon: 'open_in_new',
           disabled: !count || loading,
           onClick: onLaunch,
         }}

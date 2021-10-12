@@ -42,17 +42,15 @@ export const LaunchRootExecutionButton: React.FunctionComponent<LaunchRootExecut
   };
 
   return (
-    <div style={{marginRight: 20}}>
-      <LaunchButton
-        runCount={1}
-        config={{
-          icon: 'send-to',
-          onClick: onLaunch,
-          title: 'Launch Execution',
-          disabled: props.disabled || !canLaunchPipelineExecution,
-          tooltip: !canLaunchPipelineExecution ? DISABLED_MESSAGE : undefined,
-        }}
-      />
-    </div>
+    <LaunchButton
+      runCount={1}
+      config={{
+        icon: 'open_in_new',
+        onClick: onLaunch,
+        title: 'Launch Execution',
+        disabled: props.disabled || !canLaunchPipelineExecution,
+        tooltip: !canLaunchPipelineExecution ? DISABLED_MESSAGE : undefined,
+      }}
+    />
   );
 };
