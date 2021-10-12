@@ -1,12 +1,10 @@
 from tempfile import TemporaryDirectory
 
-from dagster import execute_pipeline
-from docs_snippets_crag.concepts.io_management.io_manager_per_output import my_pipeline
+from docs_snippets_crag.concepts.io_management.io_manager_per_output import my_job
 
 
 def test_io_manager_per_output():
     with TemporaryDirectory() as tmpdir:
-        execute_pipeline(
-            my_pipeline,
+        my_job.execute_in_process(
             run_config={"resources": {"fs": {"config": {"base_dir": tmpdir}}}},
         )

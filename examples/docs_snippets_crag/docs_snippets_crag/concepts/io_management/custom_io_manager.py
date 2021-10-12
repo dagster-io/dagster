@@ -1,14 +1,14 @@
 """isort:skip_file"""
-from dagster import solid, EventMetadataEntry
+from dagster import job, op, EventMetadataEntry
 
 
-@solid
-def solid1():
+@op
+def op_1():
     return []
 
 
-@solid
-def solid2(_a):
+@op
+def op_2(_a):
     return []
 
 
@@ -21,7 +21,7 @@ def read_dataframe_from_table(**_kwargs):
 
 
 # start_marker
-from dagster import IOManager, ModeDefinition, io_manager, pipeline
+from dagster import IOManager, io_manager
 
 
 class DataframeTableIOManager(IOManager):
@@ -41,9 +41,9 @@ def df_table_io_manager(_):
     return DataframeTableIOManager()
 
 
-@pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": df_table_io_manager})])
-def my_pipeline():
-    solid2(solid1())
+@job(resource_defs={"io_manager": df_table_io_manager})
+def my_job():
+    op_2(op_1())
 
 
 # end_marker
@@ -71,8 +71,6 @@ def df_table_io_manager_with_metadata(_):
     return DataframeTableIOManagerWithMetadata()
 
 
-@pipeline(
-    mode_defs=[ModeDefinition(resource_defs={"io_manager": df_table_io_manager_with_metadata})]
-)
-def my_pipeline_with_metadata():
-    solid2(solid1())
+@job(resource_defs={"io_manager": df_table_io_manager_with_metadata})
+def my_job_with_metadata():
+    op_2(op_1())
