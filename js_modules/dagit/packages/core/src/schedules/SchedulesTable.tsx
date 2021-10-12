@@ -49,7 +49,7 @@ export const SchedulesTable: React.FC<{
           <th style={{width: '60px'}}></th>
           <th style={{minWidth: '300px'}}>Schedule Name</th>
           <th style={{minWidth: '150px'}}>Schedule</th>
-          <th style={{width: '160px'}}>Next Tick</th>
+          <th style={{minWidth: '170px'}}>Next Tick</th>
           <th style={{width: '120px'}}>
             <Group direction="row" spacing={8} alignItems="center">
               Last Tick
