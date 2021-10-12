@@ -230,6 +230,7 @@ const TagList = styled.div`
   display: flex;
   flex: 1;
   flex-wrap: wrap;
+  gap: 4px;
 `;
 const Link = styled.div`
   color: #666;
