@@ -1,4 +1,5 @@
 from dagster import check
+from dagster.core.host_representation import JobSelector
 from dagster.core.storage.pipeline_run import PipelineRun
 from graphql.execution.base import ResolveInfo
 
@@ -77,3 +78,30 @@ def get_pipeline_from_selector(graphene_info, selector):
     check.inst_param(selector, "selector", PipelineSelector)
 
     return GraphenePipeline(get_external_pipeline_or_raise(graphene_info, selector))
+
+
+@capture_error
+def get_job_or_error(graphene_info, selector):
+    """Returns a PipelineOrError."""
+    return get_job_from_selector(graphene_info, selector)
+
+
+def get_job_from_selector(graphene_info, selector):
+    from ..schema.pipelines.pipeline import GrapheneJob
+
+    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
+    check.inst_param(selector, "selector", JobSelector)
+
+    return GrapheneJob(get_external_job_or_raise(graphene_info, selector))
+
+
+def get_external_job_or_raise(graphene_info, selector):
+    from ..schema.errors import GrapheneJobNotFoundError
+
+    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
+    check.inst_param(selector, "selector", JobSelector)
+
+    if not graphene_info.context.has_external_pipeline(selector):
+        raise UserFacingGraphQLError(GrapheneJobNotFoundError(selector=selector))
+
+    return graphene_info.context.get_external_job(selector)

@@ -12,8 +12,10 @@ from dagster.core.errors import DagsterInvariantViolationError, DagsterRepositor
 from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.host_representation import (
     ExternalExecutionPlan,
+    ExternalJob,
     ExternalPipeline,
     GrpcServerRepositoryLocation,
+    JobSelector,
     PipelineSelector,
     RepositoryHandle,
     RepositoryLocation,
@@ -181,6 +183,22 @@ class BaseWorkspaceRequestContext(IWorkspace):
             self.get_repository_location(selector.location_name)
             .get_repository(selector.repository_name)
             .get_full_external_pipeline(selector.pipeline_name)
+        )
+
+    def has_external_job(self, selector: JobSelector) -> bool:
+        check.inst_param(selector, "selector", JobSelector)
+        loc = self.get_repository_location(selector.location_name)
+        return (
+            loc is not None
+            and loc.has_repository(selector.repository_name)
+            and loc.get_repository(selector.repository_name).has_external_job(selector.job_name)
+        )
+
+    def get_external_job(self, selector: JobSelector) -> ExternalJob:
+        return (
+            self.get_repository_location(selector.location_name)
+            .get_repository(selector.repository_name)
+            .get_external_job(selector.job_name)
         )
 
     def get_external_execution_plan(

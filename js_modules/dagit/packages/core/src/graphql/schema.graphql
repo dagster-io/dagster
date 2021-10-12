@@ -4,6 +4,7 @@ type Query {
   repositoryOrError(repositorySelector: RepositorySelector!): RepositoryOrError!
   workspaceOrError: WorkspaceOrError!
   pipelineOrError(params: PipelineSelector!): PipelineOrError!
+  jobOrError(params: PipelineSelector!): JobOrError!
   pipelineSnapshotOrError(snapshotId: String, activePipelineSelector: PipelineSelector): PipelineSnapshotOrError!
   scheduler: SchedulerOrError!
   scheduleOrError(scheduleSelector: ScheduleSelector!): ScheduleOrError!
@@ -1168,6 +1169,15 @@ input PipelineSelector {
   repositoryName: String!
   repositoryLocationName: String!
   solidSelection: [String!]
+}
+
+union JobOrError = Job | JobNotFoundError | PythonError
+
+type JobNotFoundError implements Error {
+  message: String!
+  jobName: String!
+  repositoryName: String!
+  repositoryLocationName: String!
 }
 
 union PipelineSnapshotOrError = PipelineNotFoundError | PipelineSnapshot | PipelineSnapshotNotFoundError | PythonError

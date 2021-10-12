@@ -1,6 +1,7 @@
 import graphene
 from dagster import check
 from dagster.core.definitions.events import AssetKey
+from dagster.core.host_representation import JobSelector
 from dagster.utils.error import SerializableErrorInfo
 
 from .util import non_null_list
@@ -94,6 +95,28 @@ class GraphenePipelineNotFoundError(graphene.ObjectType):
         self.message = (
             "Could not find Pipeline "
             f"{selector.location_name}.{selector.repository_name}.{selector.pipeline_name}"
+        )
+
+
+class GrapheneJobNotFoundError(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneError,)
+        name = "JobNotFoundError"
+
+    job_name = graphene.NonNull(graphene.String)
+    repository_name = graphene.NonNull(graphene.String)
+    repository_location_name = graphene.NonNull(graphene.String)
+
+    def __init__(self, selector):
+
+        super().__init__()
+        check.inst_param(selector, "selector", JobSelector)
+        self.job_name = selector.job_name
+        self.repository_name = selector.repository_name
+        self.repository_location_name = selector.location_name
+        self.message = (
+            "Could not find Job "
+            f"{selector.location_name}.{selector.repository_name}.{selector.job_name}"
         )
 
 

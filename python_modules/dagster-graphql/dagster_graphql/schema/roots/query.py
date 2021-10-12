@@ -3,6 +3,7 @@ from dagster import check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.host_representation import (
     InstigationSelector,
+    JobSelector,
     RepositorySelector,
     ScheduleSelector,
     SensorSelector,
@@ -15,6 +16,7 @@ from ...implementation.fetch_backfills import get_backfill, get_backfills
 from ...implementation.fetch_jobs import get_job_state_or_error, get_unloadable_job_states_or_error
 from ...implementation.fetch_partition_sets import get_partition_set, get_partition_sets_or_error
 from ...implementation.fetch_pipelines import (
+    get_job_or_error,
     get_pipeline_or_error,
     get_pipeline_snapshot_or_error_from_pipeline_selector,
     get_pipeline_snapshot_or_error_from_snapshot_id,
@@ -76,7 +78,7 @@ from ..tags import GraphenePipelineTagAndValues
 from ..util import non_null_list
 from .assets import GrapheneAssetOrError, GrapheneAssetsOrError
 from .execution_plan import GrapheneExecutionPlanOrError
-from .pipeline import GraphenePipelineOrError
+from .pipeline import GrapheneJobOrError, GraphenePipelineOrError
 
 
 class GrapheneQuery(graphene.ObjectType):
@@ -92,6 +94,9 @@ class GrapheneQuery(graphene.ObjectType):
 
     pipelineOrError = graphene.Field(
         graphene.NonNull(GraphenePipelineOrError), params=graphene.NonNull(GraphenePipelineSelector)
+    )
+    jobOrError = graphene.Field(
+        graphene.NonNull(GrapheneJobOrError), params=graphene.NonNull(GraphenePipelineSelector)
     )
 
     pipelineSnapshotOrError = graphene.Field(
@@ -298,6 +303,9 @@ class GrapheneQuery(graphene.ObjectType):
             graphene_info,
             pipeline_selector_from_graphql(kwargs["params"]),
         )
+
+    def resolve_jobOrError(self, graphene_info, **kwargs):
+        return get_job_or_error(graphene_info, JobSelector.from_graphql_input(kwargs["params"]))
 
     def resolve_pipelineRunsOrError(self, _graphene_info, **kwargs):
         filters = kwargs.get("filter")

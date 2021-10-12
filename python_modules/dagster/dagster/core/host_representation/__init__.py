@@ -8,6 +8,7 @@ that have been persisted. e.g. HistoricalPipeline
 """
 from .external import (
     ExternalExecutionPlan,
+    ExternalJob,
     ExternalPartitionSet,
     ExternalPipeline,
     ExternalRepository,
@@ -55,6 +56,7 @@ from .repository_location import (
 from .represented import RepresentedPipeline
 from .selector import (
     InstigationSelector,
+    JobSelector,
     PipelineSelector,
     RepositorySelector,
     ScheduleSelector,
