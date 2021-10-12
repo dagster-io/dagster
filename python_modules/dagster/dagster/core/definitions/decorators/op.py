@@ -58,7 +58,7 @@ class _Op:
         self.out = out
 
     def __call__(self, fn: Callable[..., Any]) -> SolidDefinition:
-        from ..op import OpDefinition
+        from ..op_def import OpDefinition
 
         if self.input_defs is not None and self.ins is not None:
             check.failed("Values cannot be provided for both the 'input_defs' and 'ins' arguments")

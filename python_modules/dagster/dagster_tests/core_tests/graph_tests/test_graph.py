@@ -441,7 +441,12 @@ def test_to_job_incomplete_default_config():
             default_config_error,
         ),  # Not providing required config nested into the op config schema.
         (
-            {"ops": {"my_op": {"config": {"foo": "bar"}}, "not_my_op": {"config": {"foo": "bar"}}}},
+            {
+                "ops": {
+                    "my_op": {"config": {"foo": "bar"}},
+                    "not_my_op": {"config": {"foo": "bar"}},
+                }
+            },
             invalid_default_error,
         ),  # Providing extraneous config for an op that doesn't exist.
         (

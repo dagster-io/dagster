@@ -7,7 +7,7 @@ from dagster.core.definitions.composition import PendingNodeInvocation
 from dagster.core.definitions.dependency import Node, NodeHandle
 from dagster.core.definitions.hook import HookDefinition
 from dagster.core.definitions.mode import ModeDefinition
-from dagster.core.definitions.op import OpDefinition
+from dagster.core.definitions.op_def import OpDefinition
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.definitions.resource import IContainsGenerator, Resources, ScopedResourcesBuilder
 from dagster.core.definitions.solid import SolidDefinition
