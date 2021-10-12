@@ -34,8 +34,8 @@ export const Caption = styled.span<TextProps>`
 `;
 
 export const Code = styled.span`
-  background-color: ${ColorsWIP.Gray100};
-  border-radius: 3px;
+  background-color: ${ColorsWIP.Blue50};
+  border-radius: 2px;
   font-family: ${FontFamily.monospace};
   font-size: 14px;
   padding: 2px 4px;
