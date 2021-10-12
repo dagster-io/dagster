@@ -19,3 +19,9 @@ update_version:
 
 reindex_search:
 	docker run -it --env-file=.env -e "CONFIG=$(cat ./config.json | jq -r tostring)" algolia/docsearch-scraper
+
+cloud_dev:
+	cd cloud-next; yarn dev;
+
+cloud_snapshot:
+	cd cloud-next; yarn snapshot; cd ..;

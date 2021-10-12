@@ -9,11 +9,11 @@
         "children": [
           {
             "title": "Page A",
-            "path": "/community/page-a"
+            "path": "/section-1/page-a"
           },
           {
             "title": "Page B",
-            "path": "/community/page-b"
+            "path": "/section-1/page-b"
           }
         ]
       }
