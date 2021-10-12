@@ -371,27 +371,6 @@ def test_op_config_entry_collision():
             }
         )
 
-    @graph
-    def nest_collision():
-        my_graph()
-
-    my_nested_graph_job = nest_collision.to_job()
-
-    with pytest.raises(
-        DagsterInvalidConfigError,
-        match="Received both field 'ops' and field 'solids' in config. Please use one or the other.",
-    ):
-        my_nested_graph_job.execute_in_process(
-            run_config={
-                "ops": {
-                    "my_graph": {
-                        "solids": {"my_op": {"config": {"foo": "bar"}}},
-                        "ops": {"my_op2": {"config": {"foo": "bar"}}},
-                    }
-                }
-            }
-        )
-
 
 def test_solid_and_op_config_error_messages():
     @op(config_schema={"foo": str})
@@ -454,17 +433,3 @@ def test_error_message_mixed_ops_and_solids():
         "{'config': {'foo': '...'}}}",
     ):
         my_job.execute_in_process()
-
-    @graph
-    def nested_ops():
-        my_graph_with_both()
-
-    nested_job = nested_ops.to_job()
-
-    with pytest.raises(
-        DagsterInvalidConfigError,
-        match='Missing required config entry "ops" at the root. Sample config for missing '
-        "entry: {'ops': {'my_graph_with_both': {'ops': {'my_op': {'config': {'foo': '...'}}, 'my_solid': "
-        "{'config': {'foo': '...'}}}}}",
-    ):
-        nested_job.execute_in_process()

@@ -24,7 +24,7 @@ from dagster.config.validate import process_config
 from dagster.core.definitions import create_run_config_schema
 from dagster.core.definitions.run_config import (
     RunConfigSchemaCreationData,
-    define_solid_dictionary_cls,
+    define_node_dictionary_cls,
 )
 from dagster.core.system_config.objects import ResolvedRunConfig, ResourceConfig, SolidConfig
 from dagster.loggers import default_loggers
@@ -279,9 +279,9 @@ def test_whole_environment():
 
 def test_solid_config_error():
     pipeline_def = define_test_solids_config_pipeline()
-    solid_dict_type = define_solid_dictionary_cls(
-        solids=pipeline_def.solids,
-        ignored_solids=None,
+    solid_dict_type = define_node_dictionary_cls(
+        nodes=pipeline_def.solids,
+        ignored_nodes=None,
         dependency_structure=pipeline_def.dependency_structure,
         parent_handle=None,
         resource_defs={},

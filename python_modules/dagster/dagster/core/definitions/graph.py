@@ -193,6 +193,10 @@ class GraphDefinition(NodeDefinition):
 
     @property
     def solids(self) -> List[Node]:
+        return self.nodes
+
+    @property
+    def nodes(self) -> List[Node]:
         return list(set(self._node_dict.values()))
 
     @property
