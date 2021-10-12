@@ -177,7 +177,7 @@ class PipelineDefinition:
                 node_defs=solid_defs,
                 input_mappings=None,
                 output_mappings=None,
-                config_mapping=None,
+                config=None,
                 description=None,
             )
 

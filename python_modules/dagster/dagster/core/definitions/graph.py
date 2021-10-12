@@ -11,6 +11,7 @@ from typing import (
     Set,
     Tuple,
     Union,
+    cast,
 )
 
 from dagster import check
@@ -131,7 +132,7 @@ class GraphDefinition(NodeDefinition):
         ] = None,
         input_mappings: Optional[List[InputMapping]] = None,
         output_mappings: Optional[List[OutputMapping]] = None,
-        config_mapping: Optional[ConfigMapping] = None,
+        config: Optional[ConfigMapping] = None,
         tags: Optional[Dict[str, Any]] = None,
         **kwargs,
     ):
@@ -159,7 +160,7 @@ class GraphDefinition(NodeDefinition):
             class_name=type(self).__name__,
         )
 
-        self._config_mapping = check.opt_inst_param(config_mapping, "config_mapping", ConfigMapping)
+        self._config_mapping = check.opt_inst_param(config, "config", ConfigMapping)
 
         super(GraphDefinition, self).__init__(
             name=name,
@@ -367,7 +368,26 @@ class GraphDefinition(NodeDefinition):
         config_schema: Any,
         config_or_config_fn: Any,
     ):
-        check.not_implemented("@graph does not yet implement configured")
+        if not self.has_config_mapping:
+            raise DagsterInvalidDefinitionError(
+                "Only graphs utilizing config mapping can be pre-configured. The graph "
+                '"{graph_name}" does not have a config mapping, and thus has nothing to be '
+                "configured.".format(graph_name=self.name)
+            )
+        config_mapping = cast(ConfigMapping, self.config_mapping)
+        return GraphDefinition(
+            name=name,
+            description=check.opt_str_param(description, "description", default=self.description),
+            node_defs=self._node_defs,
+            dependencies=self._dependencies,
+            input_mappings=self._input_mappings,
+            output_mappings=self._output_mappings,
+            config=ConfigMapping(
+                config_mapping.config_fn,
+                config_schema=config_schema,
+                receive_processed_config_values=config_mapping.receive_processed_config_values,
+            ),
+        )
 
     def node_names(self):
         return list(self._node_dict.keys())

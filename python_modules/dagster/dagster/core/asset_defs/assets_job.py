@@ -85,7 +85,7 @@ def build_assets_job(
         description=description,
         input_mappings=None,
         output_mappings=None,
-        config_mapping=None,
+        config=None,
     ).to_job(
         resource_defs=merge_dicts(resource_defs or {}, {"root_manager": root_manager}),
         config=config,
