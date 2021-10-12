@@ -157,7 +157,6 @@ const StepItem: React.FunctionComponent<{
 };
 
 const StepLabel = styled.div`
-  margin-left: 5px;
   overflow: hidden;
   text-overflow: ellipsis;
   flex: 1;
@@ -165,12 +164,13 @@ const StepLabel = styled.div`
 
 const StepItemContainer = styled.div<{selected: boolean}>`
   display: flex;
-  line-height: 28px;
-  height: 28px;
-  padding: 0 5px;
+  line-height: 32px;
+  height: 32px;
+  padding: 0 6px;
+  gap: 6px;
   align-items: center;
   border-bottom: 1px solid ${ColorsWIP.Gray200};
-  font-size: 13px;
+  font-size: 12px;
   ${({selected}) => selected && `background: ${ColorsWIP.Gray100};`}
 
   &:hover {
@@ -179,10 +179,10 @@ const StepItemContainer = styled.div<{selected: boolean}>`
 `;
 
 const StepStatusDot = styled.div`
-  width: 11px;
-  height: 11px;
+  width: 12px;
+  height: 12px;
   flex-shrink: 0;
-  border-radius: 5.5px;
+  border-radius: 50%;
 `;
 
 const Elapsed = styled.div`
@@ -191,7 +191,8 @@ const Elapsed = styled.div`
 `;
 
 const EmptyNotice = styled.div`
+  height: 32px;
   font-size: 12px;
-  padding: 7px 24px;
+  padding: 8px 24px;
   color: ${ColorsWIP.Gray400};
 `;

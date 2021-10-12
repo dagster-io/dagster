@@ -84,7 +84,7 @@ export const SidebarSolidDefinition: React.FC<SidebarSolidDefinitionProps> = (pr
   return (
     <div>
       <SidebarSection title={'Definition'}>
-        <Box padding={12}>
+        <Box padding={{vertical: 16, horizontal: 24}}>
           <SidebarSubhead>{subheadString}</SidebarSubhead>
           <SidebarTitle>{breakOnUnderscores(definition.name)}</SidebarTitle>
           <SolidTypeSignature definition={definition} />
@@ -92,21 +92,21 @@ export const SidebarSolidDefinition: React.FC<SidebarSolidDefinitionProps> = (pr
       </SidebarSection>
       {definition.description && (
         <SidebarSection title={'Description'}>
-          <Box padding={12}>
+          <Box padding={{vertical: 16, horizontal: 24}}>
             <Description description={definition.description} />
           </Box>
         </SidebarSection>
       )}
       {definition.metadata && Plugin && Plugin.SidebarComponent && (
         <SidebarSection title={'Metadata'}>
-          <Box padding={12}>
+          <Box padding={{vertical: 16, horizontal: 24}}>
             <Plugin.SidebarComponent definition={definition} repoAddress={repoAddress} />
           </Box>
         </SidebarSection>
       )}
       {configField && (
         <SidebarSection title={'Config'}>
-          <Box padding={12}>
+          <Box padding={{vertical: 16, horizontal: 24}}>
             <ConfigTypeSchema
               type={configField.configType}
               typesInScope={configField.configType.recursiveConfigTypes}
@@ -116,7 +116,7 @@ export const SidebarSolidDefinition: React.FC<SidebarSolidDefinitionProps> = (pr
       )}
       {requiredResources && (
         <SidebarSection title={'Required Resources'}>
-          <Box padding={12}>
+          <Box padding={{vertical: 16, horizontal: 24}}>
             {[...requiredResources].sort().map((requirement) => (
               <ResourceContainer key={requirement.resourceKey}>
                 <IconWIP name="resource" color={ColorsWIP.Gray700} />
@@ -127,7 +127,7 @@ export const SidebarSolidDefinition: React.FC<SidebarSolidDefinitionProps> = (pr
         </SidebarSection>
       )}
       <SidebarSection title={'Inputs'}>
-        <Box padding={12}>
+        <Box padding={{vertical: 16, horizontal: 24}}>
           {definition.inputDefinitions.map((inputDef, idx) => (
             <SectionItemContainer key={idx}>
               <SectionSmallHeader>{breakOnUnderscores(inputDef.name)}</SectionSmallHeader>
@@ -141,7 +141,7 @@ export const SidebarSolidDefinition: React.FC<SidebarSolidDefinitionProps> = (pr
         </Box>
       </SidebarSection>
       <SidebarSection title={'Outputs'}>
-        <Box padding={12}>
+        <Box padding={{vertical: 16, horizontal: 24}}>
           {definition.outputDefinitions.map((outputDef, idx) => (
             <SectionItemContainer key={idx}>
               <SectionSmallHeader>
@@ -159,7 +159,7 @@ export const SidebarSolidDefinition: React.FC<SidebarSolidDefinitionProps> = (pr
       </SidebarSection>
       {getInvocations && (
         <SidebarSection title={'All Invocations'}>
-          <Box padding={12}>
+          <Box padding={{vertical: 16, horizontal: 24}}>
             <InvocationList
               invocations={getInvocations(definition.name)}
               onClickInvocation={onClickInvocation}

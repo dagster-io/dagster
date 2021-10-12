@@ -100,7 +100,7 @@ const Container = styled.div`
   font-size: 0.8rem;
   position: relative;
   p:last-child {
-    margin-bottom: 5px;
+    margin-bottom: 0;
   }
 `;
 
