@@ -38,6 +38,7 @@ const Container = styled.div<{$disabled: boolean}>`
   color: ${ColorsWIP.Gray600};
   display: inline-flex;
   flex-direction: row;
+  flex: 1;
   font-family: ${FontFamily.default};
   font-size: 14px;
   font-weight: 400;
