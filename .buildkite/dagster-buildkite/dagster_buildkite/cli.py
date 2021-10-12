@@ -18,11 +18,13 @@ def dagster():
 
     branch_name = os.getenv("BUILDKITE_BRANCH")
     build_creator_email = os.getenv("BUILDKITE_BUILD_CREATOR_EMAIL")
+    oss_contribution = os.getenv("OSS_CONTRIBUTION")
 
     if (
         build_creator_email
         and build_creator_email.endswith("@elementl.com")
         and build_creator_email != "devtools@elementl.com"
+        and not oss_contribution
     ):
         if branch_name == "master" or is_release_branch(branch_name):
             pipeline_name = "internal"
