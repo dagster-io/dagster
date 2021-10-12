@@ -15,7 +15,7 @@ interface Props {
   snapshotId?: string | null;
   mode: string;
   showIcon?: boolean;
-  fontSize?: number;
+  size?: 'small' | 'normal';
 }
 
 export const PipelineReference: React.FC<Props> = ({
@@ -24,6 +24,7 @@ export const PipelineReference: React.FC<Props> = ({
   mode,
   snapshotId,
   showIcon,
+  size = 'normal',
 }) => {
   const modeLabel =
     mode === 'default' ? null : <span style={{color: ColorsWIP.Gray400}}>{`: ${mode}`}</span>;
@@ -68,6 +69,7 @@ export const PipelineReference: React.FC<Props> = ({
             snapshotId={snapshotId}
             pipelineName={pipelineName}
             pipelineMode={mode}
+            size={size}
           />
         )}
       </span>
