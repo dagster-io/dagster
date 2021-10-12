@@ -531,7 +531,7 @@ const AssetEntryRow: React.FC<{
                 content={
                   <Menu>
                     <MenuItem
-                      text="Wipe ..."
+                      text="Wipe…"
                       icon="trash"
                       target="_blank"
                       onClick={() => onWipe(assets)}
