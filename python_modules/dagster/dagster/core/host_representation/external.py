@@ -333,6 +333,7 @@ class ExternalPipeline(RepresentedPipeline):
     def is_job(self):
         return self._external_pipeline_data.is_job
 
+
 class ExternalExecutionPlan:
     """
     ExternalExecution is a object that represents an execution plan that

@@ -111,6 +111,3 @@ class RepresentedPipeline(ABC):
 
     def get_graph_name(self):
         return self._pipeline_index.pipeline_snapshot.graph_def_name
-
-    def is_job(self):
-        return self._pipeline_index.pipeline_snapshot.is_job

@@ -310,7 +310,6 @@ class GrapheneIPipelineSnapshotMixin:
     sensors = non_null_list(GrapheneSensor)
     parent_snapshot_id = graphene.String()
     graph_name = graphene.NonNull(graphene.String)
-    is_job = graphene.NonNull(graphene.Boolean)
 
     class Meta:
         name = "IPipelineSnapshotMixin"
@@ -544,7 +543,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         ]
 
     def resolve_isJob(self, _graphene_info):
-        return self._external_pipeline
+        return self._external_pipeline.is_job
 
 
 @lru_cache(maxsize=32)

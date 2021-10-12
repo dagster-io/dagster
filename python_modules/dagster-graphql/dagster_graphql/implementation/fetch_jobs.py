@@ -46,14 +46,18 @@ def get_job_state_or_error(graphene_info, selector):
             external_sensor.get_external_origin_id()
         )
         if not job_state:
-            job_state = external_sensor.get_default_instigation_state(graphene_info.context.instance)
+            job_state = external_sensor.get_default_instigation_state(
+                graphene_info.context.instance
+            )
     elif repository.has_external_schedule(selector.name):
         external_schedule = repository.get_external_schedule(selector.name)
         job_state = graphene_info.context.instance.get_job_state(
             external_schedule.get_external_origin_id()
         )
         if not job_state:
-            job_state = external_schedule.get_default_instigation_state(graphene_info.context.instance)
+            job_state = external_schedule.get_default_instigation_state(
+                graphene_info.context.instance
+            )
     else:
         check.failed(f"Could not find a definition for {selector.name}")
 
