@@ -1,11 +1,9 @@
 # pylint: disable=unused-argument
 from dagster import (
-    InputDefinition,
-    ModeDefinition,
-    execute_pipeline,
-    pipeline,
+    In,
+    job,
+    op,
     root_input_manager,
-    solid,
 )
 
 
@@ -13,8 +11,8 @@ def read_dataframe_from_table(**_kwargs):
     pass
 
 
-@solid(input_defs=[InputDefinition("dataframe", root_manager_key="my_root_manager")])
-def my_solid(dataframe):
+@op(ins={"dataframe": In(root_manager_key="my_root_manager")})
+def my_op(dataframe):
     """Do some stuff"""
 
 
@@ -29,13 +27,11 @@ def table_loader(context):
 
 def execute_with_config():
     # execute_start_marker
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"my_root_manager": table_loader})])
-    def my_pipeline():
-        my_solid()
+    @job(resource_defs={"my_root_manager": table_loader})
+    def my_job():
+        my_op()
 
-    execute_pipeline(
-        my_pipeline,
-        run_config={"solids": {"my_solid": {"inputs": {"dataframe": {"table_name": "table1"}}}}},
+    my_job.execute_in_process(
+        run_config={"ops": {"my_op": {"inputs": {"dataframe": {"table_name": "table1"}}}}},
     )
-
     # execute_end_marker
