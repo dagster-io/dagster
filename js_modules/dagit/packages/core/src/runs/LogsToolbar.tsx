@@ -302,7 +302,6 @@ const StructuredLogToolbar = ({
       {selectedStep && <OptionsDivider />}
       <div style={{minWidth: 15, flex: 1}} />
       <ButtonWIP
-        small
         icon={<IconWIP name={copyIcon} />}
         onClick={() => {
           copyToClipboard(window.location.href);
