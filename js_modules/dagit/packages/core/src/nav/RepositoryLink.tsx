@@ -56,7 +56,7 @@ export const RepositoryLink: React.FC<{repoAddress: RepoAddress}> = ({repoAddres
 };
 
 const RepositoryName = styled(Link)`
-  max-width: 300px;
+  max-width: 280px;
   overflow: hidden;
   text-overflow: ellipsis;
 `;

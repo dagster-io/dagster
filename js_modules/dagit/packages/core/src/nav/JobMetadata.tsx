@@ -1,7 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components/macro';
 
 import {useFeatureFlags} from '../app/Flags';
 import {timingStringForStatus} from '../runs/RunDetails';
@@ -10,15 +9,15 @@ import {RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {ScheduleSwitch, SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {SensorSwitch, SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
+import {PipelineRunStatus} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {ButtonWIP} from '../ui/Button';
 import {ButtonLink} from '../ui/ButtonLink';
 import {ColorsWIP} from '../ui/Colors';
 import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
-import {IconWIP} from '../ui/Icon';
-import {MetadataTable, StyledTable} from '../ui/MetadataTable';
-import {Mono} from '../ui/Text';
+import {StyledTable} from '../ui/MetadataTable';
+import {TagWIP} from '../ui/TagWIP';
 import {Tooltip} from '../ui/Tooltip';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -41,7 +40,7 @@ export const JobMetadata: React.FC<Props> = (props) => {
   const {pipelineName, pipelineMode, repoAddress} = props;
   const {flagPipelineModeTuples} = useFeatureFlags();
 
-  const {data, loading} = useQuery<JobMetadataQuery>(JOB_METADATA_QUERY, {
+  const {data} = useQuery<JobMetadataQuery>(JOB_METADATA_QUERY, {
     variables: {
       params: {
         pipelineName,
@@ -72,39 +71,15 @@ export const JobMetadata: React.FC<Props> = (props) => {
   const lastRun = runs[0] || null;
 
   return (
-    <MetadataTable
-      spacing={2}
-      rows={[
-        {
-          key: 'Schedule/sensor',
-          value: job ? (
-            <ScheduleOrSensor job={job} mode={pipelineMode} repoAddress={repoAddress} />
-          ) : (
-            <GrayText>{loading ? 'Loading…' : 'None'}</GrayText>
-          ),
-        },
-        {
-          key: 'Latest run',
-          value: lastRun ? (
-            <LatestRun run={lastRun} />
-          ) : (
-            <GrayText>{loading ? 'Loading…' : 'None'}</GrayText>
-          ),
-        },
-        {
-          key: 'Related assets',
-          value: runs.length ? (
-            <RelatedAssets runs={runs} />
-          ) : (
-            <GrayText>{loading ? 'Loading…' : 'None'}</GrayText>
-          ),
-        },
-      ]}
-    />
+    <>
+      {job ? <ScheduleOrSensorTag job={job} mode={pipelineMode} repoAddress={repoAddress} /> : null}
+      {lastRun ? <LatestRunTag run={lastRun} /> : null}
+      {runs.length ? <RelatedAssetsTag runs={runs} /> : null}
+    </>
   );
 };
 
-const ScheduleOrSensor: React.FC<{job: Job; mode: string; repoAddress: RepoAddress}> = ({
+const ScheduleOrSensorTag: React.FC<{job: Job; mode: string; repoAddress: RepoAddress}> = ({
   job,
   mode,
   repoAddress,
@@ -152,9 +127,15 @@ const ScheduleOrSensor: React.FC<{job: Job; mode: string; repoAddress: RepoAddre
         ? 'Schedules'
         : 'Sensors';
 
+    const icon = scheduleCount > 1 ? 'schedule' : 'sensors';
+
     return (
       <>
-        <ButtonLink onClick={() => setOpen(true)}>{buttonText}</ButtonLink>
+        <TagWIP icon={icon}>
+          <ButtonLink onClick={() => setOpen(true)} color={ColorsWIP.Link}>
+            {buttonText}
+          </ButtonLink>
+        </TagWIP>
         <DialogWIP
           title={dialogTitle}
           canOutsideClickClose
@@ -194,36 +175,48 @@ const ScheduleOrSensor: React.FC<{job: Job; mode: string; repoAddress: RepoAddre
     return <MatchingSensor sensor={matchingSensors[0]} repoAddress={repoAddress} />;
   }
 
-  return <GrayText>None</GrayText>;
+  return null;
 };
 
 const MatchingSchedule: React.FC<{schedule: Schedule; repoAddress: RepoAddress}> = ({
   schedule,
   repoAddress,
-}) => (
-  <Group direction="row" spacing={8} alignItems="center">
-    <IconWIP name="schedule" color={ColorsWIP.Gray700} />
-    <Link to={workspacePathFromAddress(repoAddress, `/schedules/${schedule.name}`)}>
-      {schedule.name}
-    </Link>
-    <ScheduleSwitch repoAddress={repoAddress} schedule={schedule} />
-  </Group>
-);
+}) => {
+  const running = schedule.scheduleState.status === 'RUNNING';
+  return (
+    <TagWIP intent={running ? 'primary' : 'none'} icon="schedule">
+      <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+        Schedule:
+        <Link to={workspacePathFromAddress(repoAddress, `/schedules/${schedule.name}`)}>
+          {schedule.name}
+        </Link>
+        <ScheduleSwitch size="small" repoAddress={repoAddress} schedule={schedule} />
+      </Box>
+    </TagWIP>
+  );
+};
 
 const MatchingSensor: React.FC<{sensor: Sensor; repoAddress: RepoAddress}> = ({
   sensor,
   repoAddress,
-}) => (
-  <Group direction="row" spacing={8} alignItems="center">
-    <IconWIP name="sensors" color={ColorsWIP.Gray700} />
-    <Link to={workspacePathFromAddress(repoAddress, `/sensors/${sensor.name}`)}>{sensor.name}</Link>
-    <SensorSwitch repoAddress={repoAddress} sensor={sensor} />
-  </Group>
-);
+}) => {
+  const running = sensor.sensorState.status === 'RUNNING';
+  return (
+    <TagWIP intent={running ? 'primary' : 'none'} icon="sensors">
+      <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+        Sensor:
+        <Link to={workspacePathFromAddress(repoAddress, `/sensors/${sensor.name}`)}>
+          {sensor.name}
+        </Link>
+        <SensorSwitch size="small" repoAddress={repoAddress} sensor={sensor} />
+      </Box>
+    </TagWIP>
+  );
+};
 
 const TIME_FORMAT = {showSeconds: true, showTimezone: false};
 
-const LatestRun: React.FC<{run: RunMetadataFragment}> = ({run}) => {
+const LatestRunTag: React.FC<{run: RunMetadataFragment}> = ({run}) => {
   const stats = React.useMemo(() => {
     if (run.stats.__typename === 'PipelineRunStatsSnapshot') {
       return {start: run.stats.startTime, end: run.stats.endTime, status: run.status};
@@ -231,52 +224,67 @@ const LatestRun: React.FC<{run: RunMetadataFragment}> = ({run}) => {
     return null;
   }, [run]);
 
+  const intent = () => {
+    switch (run.status) {
+      case PipelineRunStatus.SUCCESS:
+        return 'success';
+      case PipelineRunStatus.CANCELED:
+      case PipelineRunStatus.CANCELING:
+      case PipelineRunStatus.FAILURE:
+        return 'danger';
+      default:
+        return 'none';
+    }
+  };
+
   return (
-    <Group direction="row" spacing={8} alignItems="baseline">
-      <RunStatus status={run.status} size={10} />
-      <Mono>
-        <Link to={`/instance/runs/${run.id}`}>{run.id.slice(0, 8)}</Link>
-      </Mono>
-      {stats ? (
-        <Tooltip
-          placement="bottom"
-          content={
-            <StyledTable>
-              <tbody>
-                <tr>
-                  <td style={{color: ColorsWIP.Gray300}}>
-                    <Box padding={{right: 16}}>Started</Box>
-                  </td>
-                  <td>
-                    {stats.start ? (
-                      <TimestampDisplay timestamp={stats.start} timeFormat={TIME_FORMAT} />
-                    ) : (
-                      timingStringForStatus(stats.status)
-                    )}
-                  </td>
-                </tr>
-                <tr>
-                  <td style={{color: ColorsWIP.Gray300}}>Ended</td>
-                  <td>
-                    {stats.end ? (
-                      <TimestampDisplay timestamp={stats.end} timeFormat={TIME_FORMAT} />
-                    ) : (
-                      timingStringForStatus(stats.status)
-                    )}
-                  </td>
-                </tr>
-              </tbody>
-            </StyledTable>
-          }
-        >
-          <RunTime run={run} />
-        </Tooltip>
-      ) : null}
-    </Group>
+    <TagWIP intent={intent()}>
+      <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+        <RunStatus status={run.status} size={10} />
+        Latest run:
+        {stats ? (
+          <Tooltip
+            placement="bottom"
+            content={
+              <StyledTable>
+                <tbody>
+                  <tr>
+                    <td style={{color: ColorsWIP.Gray300}}>
+                      <Box padding={{right: 16}}>Started</Box>
+                    </td>
+                    <td>
+                      {stats.start ? (
+                        <TimestampDisplay timestamp={stats.start} timeFormat={TIME_FORMAT} />
+                      ) : (
+                        timingStringForStatus(stats.status)
+                      )}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{color: ColorsWIP.Gray300}}>Ended</td>
+                    <td>
+                      {stats.end ? (
+                        <TimestampDisplay timestamp={stats.end} timeFormat={TIME_FORMAT} />
+                      ) : (
+                        timingStringForStatus(stats.status)
+                      )}
+                    </td>
+                  </tr>
+                </tbody>
+              </StyledTable>
+            }
+          >
+            <Link to={`/instance/runs/${run.id}`}>
+              <RunTime run={run} />
+            </Link>
+          </Tooltip>
+        ) : null}
+      </Box>
+    </TagWIP>
   );
 };
 
-const RelatedAssets: React.FC<{runs: RunMetadataFragment[]}> = ({runs}) => {
+const RelatedAssetsTag: React.FC<{runs: RunMetadataFragment[]}> = ({runs}) => {
   const [open, setOpen] = React.useState(false);
 
   const assetMap = {};
@@ -289,17 +297,26 @@ const RelatedAssets: React.FC<{runs: RunMetadataFragment[]}> = ({runs}) => {
 
   const keys = Object.keys(assetMap);
   if (keys.length === 0) {
-    return <GrayText>None</GrayText>;
+    return null;
   }
 
   if (keys.length === 1) {
     const key = keys[0];
-    return <Link to={`/instance/assets/${key}`}>{key}</Link>;
+    return (
+      <TagWIP icon="asset">
+        Asset: <Link to={`/instance/assets/${key}`}>{key}</Link>
+      </TagWIP>
+    );
   }
 
   return (
     <>
-      <ButtonLink onClick={() => setOpen(true)}>{`View ${keys.length} assets`}</ButtonLink>
+      <TagWIP icon="asset">
+        <ButtonLink
+          color={ColorsWIP.Link}
+          onClick={() => setOpen(true)}
+        >{`View ${keys.length} assets`}</ButtonLink>
+      </TagWIP>
       <DialogWIP
         title="Related assets"
         canOutsideClickClose
@@ -326,10 +343,6 @@ const RelatedAssets: React.FC<{runs: RunMetadataFragment[]}> = ({runs}) => {
     </>
   );
 };
-
-const GrayText = styled.div`
-  color: ${ColorsWIP.Gray400};
-`;
 
 const RUN_METADATA_FRAGMENT = gql`
   fragment RunMetadataFragment on PipelineRun {

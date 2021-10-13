@@ -11,7 +11,6 @@ import {
 } from '../pipelines/PipelinePathUtils';
 import {Box} from '../ui/Box';
 import {PageHeader} from '../ui/PageHeader';
-import {Popover} from '../ui/Popover';
 import {Tab, Tabs} from '../ui/Tabs';
 import {TagWIP} from '../ui/TagWIP';
 import {Heading} from '../ui/Text';
@@ -124,28 +123,18 @@ export const PipelineNav: React.FC<Props> = (props) => {
           </Heading>
         }
         tags={
-          <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-            {snapshotId ? null : (
-              <Popover
-                interactionKind="hover"
-                content={
-                  // todo dish: Move this into collapsible section.
-                  <Box padding={16}>
-                    <JobMetadata
-                      pipelineName={pipelineName}
-                      pipelineMode={pipelineMode}
-                      repoAddress={repoAddress}
-                    />
-                  </Box>
-                }
-              >
-                <TagWIP icon="info" />
-              </Popover>
-            )}
+          <Box flex={{direction: 'row', alignItems: 'center', gap: 8, wrap: 'wrap'}}>
             <TagWIP icon="job">
               {flagPipelineModeTuples ? 'Job' : 'Pipeline'} in{' '}
               <RepositoryLink repoAddress={repoAddress} />
             </TagWIP>
+            {snapshotId ? null : (
+              <JobMetadata
+                pipelineName={pipelineName}
+                pipelineMode={pipelineMode}
+                repoAddress={repoAddress}
+              />
+            )}
           </Box>
         }
         tabs={
