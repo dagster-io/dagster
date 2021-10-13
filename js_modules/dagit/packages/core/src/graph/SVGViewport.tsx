@@ -1,7 +1,11 @@
-import {Colors, Icon, Slider} from '@blueprintjs/core';
 import animate from 'amator';
 import * as React from 'react';
 import styled from 'styled-components/macro';
+
+import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
+import {IconWIP} from '../ui/Icon';
+import {Slider} from '../ui/Slider';
 
 export interface SVGViewportInteractor {
   onMouseDown(viewport: SVGViewport, event: React.MouseEvent<HTMLDivElement>): void;
@@ -9,11 +13,14 @@ export interface SVGViewportInteractor {
   render?(viewport: SVGViewport): React.ReactElement<any> | null;
 }
 
+const DEFAULT_ZOOM = 0.75;
 interface SVGViewportProps {
   graphWidth: number;
   graphHeight: number;
   backgroundColor?: string;
   interactor: SVGViewportInteractor;
+  maxZoom: number;
+  maxAutocenterZoom: number;
   onDoubleClick: (event: React.MouseEvent<HTMLDivElement>) => void;
   onKeyDown: (event: React.KeyboardEvent<HTMLDivElement>) => void;
   children: (state: SVGViewportState) => React.ReactNode;
@@ -32,9 +39,10 @@ interface Point {
 }
 
 export const DETAIL_ZOOM = 0.75;
-const MAX_AUTOCENTER_ZOOM = 0.39;
-const MIN_AUTOCENTER_ZOOM = 0.15;
-const MIN_ZOOM = 0.015;
+const DEFAULT_MAX_AUTOCENTER_ZOOM = 0.39;
+
+const MIN_AUTOCENTER_ZOOM = 0.17;
+const MIN_ZOOM = 0.17;
 
 const PanAndZoomInteractor: SVGViewportInteractor = {
   onMouseDown(viewport: SVGViewport, event: React.MouseEvent<HTMLDivElement>) {
@@ -89,27 +97,28 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
     }
 
     const targetScale = viewport.state.scale * (1 - event.deltaY * 0.0025);
-    const scale = Math.max(MIN_ZOOM, Math.min(DETAIL_ZOOM, targetScale));
+    const scale = Math.max(MIN_ZOOM, Math.min(viewport.getMaxZoom(), targetScale));
     viewport.adjustZoomRelativeToScreenPoint(scale, cursorPosition);
   },
 
   render(viewport: SVGViewport) {
     return (
       <ZoomSliderContainer id="zoom-slider-container">
-        <Icon
-          iconSize={17}
-          icon="zoom-in"
-          style={{color: Colors.LIGHT_GRAY1, marginBottom: 12}}
-          onClick={() => {
-            const x = viewport.element.current!.clientWidth / 2;
-            const y = viewport.element.current!.clientHeight / 2;
-            viewport.adjustZoomRelativeToScreenPoint(DETAIL_ZOOM, {x, y});
-          }}
-        />
+        <Box margin={{bottom: 8}}>
+          <IconButton
+            onClick={() => {
+              const x = viewport.element.current!.clientWidth / 2;
+              const y = viewport.element.current!.clientHeight / 2;
+              viewport.adjustZoomRelativeToScreenPoint(viewport.getMaxZoom(), {x, y});
+            }}
+          >
+            <IconWIP size={24} name="zoom_in" color={ColorsWIP.Gray300} />
+          </IconButton>
+        </Box>
         <Slider
           vertical
           min={MIN_ZOOM}
-          max={DETAIL_ZOOM}
+          max={viewport.getMaxZoom()}
           stepSize={0.001}
           value={viewport.state.scale}
           labelRenderer={false}
@@ -119,20 +128,30 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
             viewport.adjustZoomRelativeToScreenPoint(scale, {x, y});
           }}
         />
-        <Icon
-          iconSize={17}
-          icon="zoom-out"
-          style={{color: Colors.LIGHT_GRAY1, marginTop: 12}}
-          onClick={() => {
-            const x = viewport.element.current!.clientWidth / 2;
-            const y = viewport.element.current!.clientHeight / 2;
-            viewport.adjustZoomRelativeToScreenPoint(MIN_ZOOM, {x, y});
-          }}
-        />
+        <Box margin={{top: 8}}>
+          <IconButton
+            onClick={() => {
+              const x = viewport.element.current!.clientWidth / 2;
+              const y = viewport.element.current!.clientHeight / 2;
+              viewport.adjustZoomRelativeToScreenPoint(MIN_ZOOM, {x, y});
+            }}
+          >
+            <IconWIP size={24} name="zoom_out" color={ColorsWIP.Gray300} />
+          </IconButton>
+        </Box>
       </ZoomSliderContainer>
     );
   },
 };
+
+const IconButton = styled.button`
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  position: relative;
+  left: -4px;
+`;
 
 const NoneInteractor: SVGViewportInteractor = {
   onMouseDown(viewport: SVGViewport, event: React.MouseEvent<HTMLDivElement>) {
@@ -153,6 +172,11 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
   static Interactors = {
     PanAndZoom: PanAndZoomInteractor,
     None: NoneInteractor,
+  };
+
+  static defaultProps = {
+    maxZoom: DEFAULT_ZOOM,
+    maxAutocenterZoom: DEFAULT_MAX_AUTOCENTER_ZOOM,
   };
 
   element: React.RefObject<HTMLDivElement> = React.createRef();
@@ -186,7 +210,10 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
     const dw = ownerRect.width / this.props.graphWidth;
     const dh = ownerRect.height / this.props.graphHeight;
     const desiredScale = Math.min(dw, dh);
-    const boundedScale = Math.max(Math.min(desiredScale, MAX_AUTOCENTER_ZOOM), MIN_AUTOCENTER_ZOOM);
+    const boundedScale = Math.max(
+      Math.min(desiredScale, this.props.maxAutocenterZoom),
+      MIN_AUTOCENTER_ZOOM,
+    );
 
     if (
       this.state.scale < boundedScale &&
@@ -269,16 +296,22 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
     });
   }
 
+  public getMaxZoom() {
+    return this.props.maxZoom;
+  }
+
   onZoomAndCenter = (event: React.MouseEvent<HTMLDivElement>) => {
     const offsetXY = this.getOffsetXY(event);
     if (!offsetXY) {
       return;
     }
     const offset = this.screenToSVGCoords(offsetXY);
-    if (Math.abs(DETAIL_ZOOM - this.state.scale) < 0.01) {
+    const maxZoom = this.props.maxZoom || DEFAULT_ZOOM;
+
+    if (Math.abs(maxZoom - this.state.scale) < 0.01) {
       this.smoothZoomToSVGCoords(offset.x, offset.y, this.state.minScale);
     } else {
-      this.smoothZoomToSVGCoords(offset.x, offset.y, DETAIL_ZOOM);
+      this.smoothZoomToSVGCoords(offset.x, offset.y, maxZoom);
     }
   };
 

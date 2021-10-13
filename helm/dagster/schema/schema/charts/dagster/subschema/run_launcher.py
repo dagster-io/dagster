@@ -53,6 +53,8 @@ class K8sRunLauncherConfig(BaseModel):
     envConfigMaps: List[kubernetes.ConfigMapEnvSource]
     envSecrets: List[kubernetes.SecretEnvSource]
     envVars: List[str]
+    volumeMounts: List[kubernetes.VolumeMount]
+    volumes: List[kubernetes.Volume]
 
     class Config:
         extra = Extra.forbid

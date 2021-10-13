@@ -2,7 +2,7 @@ import logging
 from abc import abstractmethod
 from collections import defaultdict
 from datetime import datetime
-from typing import Iterable, Optional
+from typing import Iterable, Optional, Sequence
 
 import pendulum
 import sqlalchemy as db
@@ -849,6 +849,43 @@ class SqlEventLogStorage(EventLogStorage):
                 )
 
         return list(asset_keys.difference(wiped))
+
+    def get_asset_keys(
+        self,
+        prefix: Optional[Sequence[str]] = None,
+        limit: Optional[int] = None,
+        cursor: Optional[str] = None,
+    ) -> Sequence[AssetKey]:
+        query = (
+            db.select([AssetKeyTable.c.asset_key])
+            .where(
+                db.or_(
+                    AssetKeyTable.c.wipe_timestamp == None,
+                    AssetKeyTable.c.last_materialization_timestamp > AssetKeyTable.c.wipe_timestamp,
+                )
+            )
+            .order_by(AssetKeyTable.c.asset_key.asc())
+        )
+
+        if prefix:
+            prefix_str = seven.dumps(prefix)[:-1]
+            query = query.where(AssetKeyTable.c.asset_key.startswith(prefix_str))
+
+        if cursor:
+            query = query.where(AssetKeyTable.c.asset_key > cursor)
+
+        if limit:
+            query = query.limit(limit)
+
+        asset_keys = []
+        with self.index_connection() as conn:
+            results = conn.execute(query).fetchall()
+            for result in results:
+                asset_key = AssetKey.from_db_string(result[0])
+                if asset_key:
+                    asset_keys.append(asset_key)
+
+        return asset_keys
 
     def _get_asset_details(self, asset_key):
         check.inst_param(asset_key, "asset_key", AssetKey)

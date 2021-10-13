@@ -120,6 +120,7 @@ export interface SolidSelectorQuery_pipelineOrError_Pipeline_solids_definition_S
 export interface SolidSelectorQuery_pipelineOrError_Pipeline_solids_definition_SolidDefinition {
   __typename: "SolidDefinition";
   name: string;
+  description: string | null;
   metadata: SolidSelectorQuery_pipelineOrError_Pipeline_solids_definition_SolidDefinition_metadata[];
   inputDefinitions: SolidSelectorQuery_pipelineOrError_Pipeline_solids_definition_SolidDefinition_inputDefinitions[];
   outputDefinitions: SolidSelectorQuery_pipelineOrError_Pipeline_solids_definition_SolidDefinition_outputDefinitions[];
@@ -212,6 +213,7 @@ export interface SolidSelectorQuery_pipelineOrError_Pipeline_solids_definition_C
 export interface SolidSelectorQuery_pipelineOrError_Pipeline_solids_definition_CompositeSolidDefinition {
   __typename: "CompositeSolidDefinition";
   name: string;
+  description: string | null;
   metadata: SolidSelectorQuery_pipelineOrError_Pipeline_solids_definition_CompositeSolidDefinition_metadata[];
   inputDefinitions: SolidSelectorQuery_pipelineOrError_Pipeline_solids_definition_CompositeSolidDefinition_inputDefinitions[];
   outputDefinitions: SolidSelectorQuery_pipelineOrError_Pipeline_solids_definition_CompositeSolidDefinition_outputDefinitions[];

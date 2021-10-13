@@ -60,7 +60,7 @@ def test_basic_pipeline_with_pandas_dataframe_dagster_type():
 
     result = basic_graph.execute_in_process()
     assert result.success
-    for event in result.event_list:
+    for event in result.all_node_events:
         if event.event_type_value == "STEP_OUTPUT":
             mock_df_output_event_metadata = (
                 event.event_specific_data.type_check_data.metadata_entries
@@ -190,12 +190,14 @@ def test_custom_dagster_dataframe_loading_ok():
             use_test_dataframe()
 
         result = basic_graph.execute_in_process(
-            config={
-                "use_test_dataframe": {
-                    "inputs": {"test_df": {"csv": {"path": input_csv_fp}}},
-                    "outputs": [
-                        {"result": {"csv": {"path": output_csv_fp}}},
-                    ],
+            run_config={
+                "ops": {
+                    "use_test_dataframe": {
+                        "inputs": {"test_df": {"csv": {"path": input_csv_fp}}},
+                        "outputs": [
+                            {"result": {"csv": {"path": output_csv_fp}}},
+                        ],
+                    }
                 }
             }
         )
@@ -251,18 +253,22 @@ def test_custom_dagster_dataframe_parametrizable_input():
         did_i_win()
 
     result = basic_graph.execute_in_process(
-        config={
-            "did_i_win": {
-                "inputs": {"df": {"door_a": "bar"}},
-                "outputs": [{"result": {"devnull": "baz"}}],
+        run_config={
+            "ops": {
+                "did_i_win": {
+                    "inputs": {"df": {"door_a": "bar"}},
+                    "outputs": [{"result": {"devnull": "baz"}}],
+                }
             }
         }
     )
     assert result.success
-    output_df = result.result_for_node("did_i_win").output_value()
+    output_df = result.output_for_node("did_i_win")
     assert isinstance(output_df, DataFrame)
     assert output_df["foo"].tolist() == ["goat"]
-    materialization_events = [event for event in result.event_list if event.is_step_materialization]
+    materialization_events = [
+        event for event in result.all_node_events if event.is_step_materialization
+    ]
     assert len(materialization_events) == 1
     assert materialization_events[0].event_specific_data.materialization.label == "nothing"
 
@@ -295,7 +301,7 @@ def test_basic_pipeline_with_pandas_dataframe_dagster_type_metadata_entries():
 
     result = basic_graph.execute_in_process()
     assert result.success
-    for event in result.event_list:
+    for event in result.all_node_events:
         if event.event_type_value == "STEP_OUTPUT":
             mock_df_output_event_metadata = (
                 event.event_specific_data.type_check_data.metadata_entries

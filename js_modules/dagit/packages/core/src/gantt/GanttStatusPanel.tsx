@@ -1,5 +1,3 @@
-import {Colors, Position} from '@blueprintjs/core';
-import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -7,7 +5,9 @@ import {formatElapsedTime} from '../app/Util';
 import {SidebarSection} from '../pipelines/SidebarComponents';
 import {IRunMetadataDict, IStepState} from '../runs/RunMetadataProvider';
 import {StepSelection} from '../runs/StepSelection';
+import {ColorsWIP} from '../ui/Colors';
 import {Spinner} from '../ui/Spinner';
+import {Tooltip} from '../ui/Tooltip';
 
 import {GanttChartMode} from './Constants';
 import {boxStyleFor} from './GanttChartLayout';
@@ -133,7 +133,7 @@ const StepItem: React.FunctionComponent<{
             preventOverflow: {enabled: false},
             flip: {enabled: false},
           }}
-          position={Position.BOTTOM}
+          position="bottom"
           content={
             'Unknown step state. Pipeline execution completed without step execution completion.'
           }
@@ -157,7 +157,6 @@ const StepItem: React.FunctionComponent<{
 };
 
 const StepLabel = styled.div`
-  margin-left: 5px;
   overflow: hidden;
   text-overflow: ellipsis;
   flex: 1;
@@ -165,32 +164,35 @@ const StepLabel = styled.div`
 
 const StepItemContainer = styled.div<{selected: boolean}>`
   display: flex;
-  line-height: 28px;
-  height: 28px;
-  padding: 0 5px;
+  line-height: 32px;
+  height: 32px;
+  padding: 0 6px;
+  gap: 6px;
   align-items: center;
-  border-bottom: 1px solid ${Colors.LIGHT_GRAY1};
-  font-size: 13px;
-  ${({selected}) => selected && `background: ${Colors.LIGHT_GRAY4};`}
+  border-bottom: 1px solid ${ColorsWIP.Gray200};
+  font-size: 12px;
+  ${({selected}) => selected && `background: ${ColorsWIP.Gray100};`}
 
   &:hover {
-    background: ${Colors.LIGHT_GRAY3};
+    background: ${ColorsWIP.Gray100};
   }
 `;
 
 const StepStatusDot = styled.div`
-  width: 11px;
-  height: 11px;
+  width: 12px;
+  height: 12px;
   flex-shrink: 0;
-  border-radius: 5.5px;
+  border-radius: 50%;
 `;
 
 const Elapsed = styled.div`
-  color: ${Colors.GRAY3};
+  color: ${ColorsWIP.Gray400};
   font-variant-numeric: tabular-nums;
 `;
 
 const EmptyNotice = styled.div`
+  height: 32px;
   font-size: 12px;
-  padding: 12px;
+  padding: 8px 24px;
+  color: ${ColorsWIP.Gray400};
 `;

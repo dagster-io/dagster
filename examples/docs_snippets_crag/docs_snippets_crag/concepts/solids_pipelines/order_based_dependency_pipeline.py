@@ -11,21 +11,21 @@ def get_database_connection():
 
 
 # start_marker
-from dagster import InputDefinition, Nothing, pipeline, solid
+from dagster import In, Nothing, graph, op
 
 
-@solid
+@op
 def create_table_1():
     get_database_connection().execute("create table_1 as select * from some_source_table")
 
 
-@solid(input_defs=[InputDefinition("start", Nothing)])
+@op(ins={"start": In(Nothing)})
 def create_table_2():
     get_database_connection().execute("create table_2 as select * from table_1")
 
 
-@pipeline
-def nothing_dependency_pipeline():
+@graph
+def nothing_dependency():
     create_table_2(start=create_table_1())
 
 

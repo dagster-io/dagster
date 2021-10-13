@@ -1,10 +1,10 @@
 import {gql, useMutation} from '@apollo/client';
-import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 
 import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
 import {InstigationStatus} from '../types/globalTypes';
-import {SwitchWithoutLabel} from '../ui/SwitchWithoutLabel';
+import {Checkbox} from '../ui/Checkbox';
+import {Tooltip} from '../ui/Tooltip';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -18,13 +18,12 @@ import {StartSchedule} from './types/StartSchedule';
 import {StopSchedule} from './types/StopSchedule';
 
 interface Props {
-  large?: boolean;
   repoAddress: RepoAddress;
   schedule: ScheduleSwitchFragment;
 }
 
 export const ScheduleSwitch: React.FC<Props> = (props) => {
-  const {large = true, repoAddress, schedule} = props;
+  const {repoAddress, schedule} = props;
   const {name, scheduleState} = schedule;
   const {status, id} = scheduleState;
 
@@ -64,12 +63,10 @@ export const ScheduleSwitch: React.FC<Props> = (props) => {
 
   if (canStartSchedule && canStopRunningSchedule) {
     return (
-      <SwitchWithoutLabel
+      <Checkbox
+        format="switch"
         checked={running || toggleOnInFlight}
-        large={large}
         disabled={toggleOffInFlight || toggleOnInFlight}
-        innerLabelChecked="on"
-        innerLabel="off"
         onChange={onStatusChange}
       />
     );
@@ -78,17 +75,19 @@ export const ScheduleSwitch: React.FC<Props> = (props) => {
   const lacksPermission = (running && !canStopRunningSchedule) || (!running && !canStartSchedule);
   const disabled = toggleOffInFlight || toggleOnInFlight || lacksPermission;
 
-  return (
-    <Tooltip content={lacksPermission ? DISABLED_MESSAGE : undefined}>
-      <SwitchWithoutLabel
-        checked={running || toggleOnInFlight}
-        large={large}
-        disabled={disabled}
-        innerLabelChecked="on"
-        innerLabel="off"
-        onChange={onStatusChange}
-      />
-    </Tooltip>
+  const switchElement = (
+    <Checkbox
+      format="switch"
+      checked={running || toggleOnInFlight}
+      disabled={disabled}
+      onChange={onStatusChange}
+    />
+  );
+
+  return lacksPermission ? (
+    <Tooltip content={DISABLED_MESSAGE}>{switchElement}</Tooltip>
+  ) : (
+    switchElement
   );
 };
 

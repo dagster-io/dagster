@@ -1,8 +1,8 @@
-import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
+import {ColorsWIP} from '../ui/Colors';
 
 const OverflowFade = styled.div`
   position: absolute;
@@ -31,12 +31,13 @@ const OverflowButton = styled.button`
   user-select: none;
   font-size: 12px;
   font-weight: 500;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(100, 100, 100, 0.7);
   border-radius: 4px;
-  padding: 12px 24px;
-  color: ${Colors.WHITE};
+  line-height: 32px;
+  padding: 0 12px;
+  color: ${ColorsWIP.White};
   &:hover {
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(100, 100, 100, 0.85);
   }
 
   &:focus,

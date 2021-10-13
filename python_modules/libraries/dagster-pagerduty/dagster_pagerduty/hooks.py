@@ -1,25 +1,22 @@
 from typing import Callable, Optional
 
-from dagster.core.definitions import failure_hook
+from dagster.core.definitions import OpDefinition, failure_hook
 from dagster.core.execution.context.hook import HookContext
 
 
 def _default_summary_fn(context: HookContext) -> str:
-    return "Solid {solid_name} on pipeline {pipeline_name} failed!".format(
-        solid_name=context.solid.name,
-        pipeline_name=context.pipeline_name,
-    )
+    if isinstance(context.op, OpDefinition):
+        return f"Op {context.op.name} on job {context.job_name} failed!"
+    else:
+        return f"Solid {context.solid.name} on pipeline {context.pipeline_name} failed!"
 
 
 def _dedup_key_fn(context: HookContext) -> str:
-    return "{pipeline_name}|{solid_name}".format(
-        pipeline_name=context.pipeline_name,
-        solid_name=context.solid.name,
-    )
+    return f"{context.job_name}|{context.op.name}"
 
 
 def _source_fn(context: HookContext):
-    return "{pipeline_name}".format(pipeline_name=context.pipeline_name)
+    return f"{context.job_name}"
 
 
 def pagerduty_on_failure(
@@ -35,30 +32,33 @@ def pagerduty_on_failure(
         summary_fn (Optional(Callable[[HookContext], str])): Function which takes in the HookContext
             outputs a summary of the issue.
         dagit_base_url: (Optional[str]): The base url of your Dagit instance. Specify this to allow
-            alerts to include deeplinks to the specific pipeline run that triggered the hook.
+            alerts to include deeplinks to the specific job/pipeline run that triggered the hook.
 
     Examples:
         .. code-block:: python
-
-            @pagerduty_on_failure("info", dagit_base_url="http://localhost:3000")
-            @pipeline(...)
-            def my_pipeline():
+            @op
+            def my_op(context):
                 pass
+
+            @job(
+                resource_defs={"pagerduty": pagerduty_resource},
+                hooks={pagerduty_on_failure("info", dagit_base_url="http://localhost:3000")},
+            )
+            def my_job():
+                my_op()
 
         .. code-block:: python
 
             def my_summary_fn(context: HookContext) -> str:
-                return "Solid {solid_name} failed!".format(
-                    solid_name=context.solid
-                )
+                return f"Op {context.op.name} failed!"
 
-            @solid
-            def a_solid(context):
+            @op
+            def my_op(context):
                 pass
 
-            @pipeline(...)
-            def my_pipeline():
-                a_solid.with_hooks(hook_defs={pagerduty_on_failure(severity="critical", summary_fn=my_summary_fn)})
+            @job(resource_defs={"pagerduty": pagerduty_resource})
+            def my_job():
+                my_op.with_hooks(hook_defs={pagerduty_on_failure(severity="critical", summary_fn=my_summary_fn)})
 
     """
 

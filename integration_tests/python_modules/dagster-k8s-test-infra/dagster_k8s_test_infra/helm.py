@@ -20,6 +20,8 @@ TEST_OTHER_CONFIGMAP_NAME = "test-other-env-configmap"
 TEST_SECRET_NAME = "test-env-secret"
 TEST_OTHER_SECRET_NAME = "test-other-env-secret"
 
+TEST_VOLUME_CONFIGMAP_NAME = "test-volume-configmap"
+
 TEST_IMAGE_PULL_SECRET_NAME = "test-image-pull-secret"
 TEST_OTHER_IMAGE_PULL_SECRET_NAME = "test-other-image-pull-secret"
 
@@ -72,7 +74,9 @@ def namespace(pytestconfig, should_cleanup):
 
 @pytest.fixture(scope="session")
 def configmaps(namespace, should_cleanup):
-    print("Creating k8s test object ConfigMap %s" % (TEST_CONFIGMAP_NAME))
+    print(
+        f"Creating k8s test object ConfigMaps: {TEST_CONFIGMAP_NAME}, {TEST_OTHER_CONFIGMAP_NAME}, {TEST_VOLUME_CONFIGMAP_NAME}"
+    )
     kube_api = kubernetes.client.CoreV1Api()
 
     configmap = kubernetes.client.V1ConfigMap(
@@ -91,10 +95,20 @@ def configmaps(namespace, should_cleanup):
     )
     kube_api.create_namespaced_config_map(namespace=namespace, body=other_configmap)
 
+    volume_configmap = kubernetes.client.V1ConfigMap(
+        api_version="v1",
+        kind="ConfigMap",
+        data={"volume_mounted_file.yaml": "BAR_CONTENTS"},
+        metadata=kubernetes.client.V1ObjectMeta(name=TEST_VOLUME_CONFIGMAP_NAME),
+    )
+
+    kube_api.create_namespaced_config_map(namespace=namespace, body=volume_configmap)
+
     yield
 
     if should_cleanup:
         kube_api.delete_namespaced_config_map(name=TEST_CONFIGMAP_NAME, namespace=namespace)
+        kube_api.delete_namespaced_config_map(name=TEST_OTHER_CONFIGMAP_NAME, namespace=namespace)
         kube_api.delete_namespaced_config_map(name=TEST_OTHER_CONFIGMAP_NAME, namespace=namespace)
 
 
@@ -535,6 +549,17 @@ def helm_chart_for_k8s_run_launcher(namespace, docker_image, should_cleanup=True
                     + ([{"name": TEST_AWS_CONFIGMAP_NAME}] if not IS_BUILDKITE else []),
                     "envSecrets": [{"name": TEST_SECRET_NAME}],
                     "envVars": ["BUILDKITE"],
+                    "imagePullPolicy": image_pull_policy(),
+                    "volumeMounts": [
+                        {
+                            "name": "test-volume",
+                            "mountPath": "/opt/dagster/test_mount_path/volume_mounted_file.yaml",
+                            "subPath": "volume_mounted_file.yaml",
+                        }
+                    ],
+                    "volumes": [
+                        {"name": "test-volume", "configMap": {"name": TEST_VOLUME_CONFIGMAP_NAME}}
+                    ],
                 }
             },
         },

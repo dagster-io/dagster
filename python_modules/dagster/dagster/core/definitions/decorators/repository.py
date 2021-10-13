@@ -61,8 +61,9 @@ class _Repository:
                 )
                 raise DagsterInvalidDefinitionError(
                     "Bad return value from repository construction function: all elements of list "
-                    "must be of type PipelineDefinition, PartitionSetDefinition, "
-                    f"ScheduleDefinition, or SensorDefinition. Got {bad_definitions_str}."
+                    "must be of type JobDefinition, GraphDefinition, PipelineDefinition, "
+                    "PartitionSetDefinition, ScheduleDefinition, or SensorDefinition. "
+                    f"Got {bad_definitions_str}."
                 )
             repository_data = CachingRepositoryData.from_list(repository_definitions)
 
@@ -100,7 +101,7 @@ def repository(
 
     The decorated function should take no arguments and its return value should one of:
 
-    1. ``List[Union[PipelineDefinition, PartitionSetDefinition, ScheduleDefinition, SensorDefinition]]``.
+    1. ``List[Union[JobDefinition, PipelineDefinition, PartitionSetDefinition, ScheduleDefinition, SensorDefinition]]``.
         Use this form when you have no need to lazy load pipelines or other definitions. This is the
         typical use case.
 
@@ -109,6 +110,7 @@ def repository(
     .. code-block:: python
 
         {
+            'jobs': Dict[str, Callable[[], JobDefinition]],
             'pipelines': Dict[str, Callable[[], PipelineDefinition]],
             'partition_sets': Dict[str, Callable[[], PartitionSetDefinition]],
             'schedules': Dict[str, Callable[[], ScheduleDefinition]]
@@ -119,7 +121,7 @@ def repository(
     which can be helpful for performance when there are many definitions in a repository, or
     when constructing the definitions is costly.
 
-    3. An object of type :py:class:`RepositoryData`. Return this object if you need fine-grained
+    3. :py:class:`RepositoryData`. Return this object if you need fine-grained
         control over the construction and indexing of definitions within the repository, e.g., to
         create definitions dynamically from .yaml files in a directory.
 
@@ -136,80 +138,69 @@ def repository(
         # A simple repository using the first form of the decorated function
         ######################################################################
 
-        @solid(config_schema={n: Field(Int)})
+        @op(config_schema={n: Field(Int)})
         def return_n(context):
-            return context.solid_config['n']
+            return context.op_config['n']
 
-        @pipeline(name='simple_pipeline')
-        def simple_pipeline():
+        @job
+        def simple_job():
             return_n()
 
-        simple_partition_set = PartitionSetDefinition(
-            name='simple_partition_set',
-            pipeline_name='simple_pipeline',
-            partition_fn=lambda: range(10),
-            run_config_fn_for_partition=(
-                lambda partition: {
-                    'solids': {'return_n': {'config': {'n': partition}}}
-                }
-            ),
-        )
+        @job
+        def some_job():
+            ...
 
-        simple_schedule = simple_partition_set.create_schedule_definition(
-            schedule_name='simple_daily_10_pm_schedule',
-            cron_schedule='0 22 * * *',
-        )
+        @sensor(job=some_job)
+        def some_sensor():
+            if foo():
+                yield RunRequest(
+                    run_key= ...,
+                    run_config={
+                        'ops': {'return_n': {'config': {'n': bar()}}}
+                    }
+                )
+
+        @job
+        def my_job():
+            ...
+
+        my_schedule = ScheduleDefinition(cron_schedule="0 0 * * *", job=my_job)
 
         @repository
         def simple_repository():
-            return [simple_pipeline, simple_partition_set, simple_schedule]
+            return [simple_job, some_sensor, my_schedule]
 
 
         ######################################################################
         # A lazy-loaded repository
         ######################################################################
 
-        def make_expensive_pipeline():
-            @pipeline(name='expensive_pipeline')
-            def expensive_pipeline():
+        def make_expensive_job():
+            @job
+            def expensive_job():
                 for i in range(10000):
-                    return_n.alias('return_n_{i}'.format(i=i))()
+                    return_n.alias(f'return_n_{i}')()
 
-            return expensive_pipeline
-
-        expensive_partition_set = PartitionSetDefinition(
-            name='expensive_partition_set',
-            pipeline_name='expensive_pipeline',
-            partition_fn=lambda: range(10),
-            run_config_fn_for_partition=(
-                lambda partition: {
-                    'solids': {
-                        'return_n_{i}'.format(i=i): {'config': {'n': partition}}
-                        for i in range(10000)
-                    }
-                }
-            ),
-        )
+            return expensive_job
 
         def make_expensive_schedule():
-            expensive_partition_set.create_schedule_definition(
-                schedule_name='expensive_schedule',
-                cron_schedule='0 22 * * *',
-        )
+            @job
+            def other_expensive_job():
+                for i in range(11000):
+                    return_n.alias(f'my_return_n_{i}')()
+
+            return ScheduleDefinition(cron_schedule="0 0 * * *", job=other_expensive_job)
 
         @repository
         def lazy_loaded_repository():
             return {
-                'pipelines': {'expensive_pipeline': make_expensive_pipeline},
-                'partition_sets': {
-                    'expensive_partition_set': expensive_partition_set
-                },
+                'jobs': {'expensive_job': make_expensive_job},
                 'schedules': {'expensive_schedule: make_expensive_schedule}
             }
 
 
         ######################################################################
-        # A complex repository that lazily construct pipelines from a directory
+        # A complex repository that lazily constructs jobs from a directory
         # of files in a bespoke YAML format
         ######################################################################
 
@@ -217,10 +208,10 @@ def repository(
             def __init__(self, yaml_directory):
                 self._yaml_directory = yaml_directory
 
-            def get_all_pipelines(self):
+            def get_all_jobs(self):
                 return [
-                    self._construct_pipeline_def_from_yaml_file(
-                      self._yaml_file_for_pipeline_name(file_name)
+                    self._construct_job_def_from_yaml_file(
+                      self._yaml_file_for_job_name(file_name)
                     )
                     for file_name in os.listdir(self._yaml_directory)
                 ]

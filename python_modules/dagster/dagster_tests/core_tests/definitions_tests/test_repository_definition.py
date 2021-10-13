@@ -10,9 +10,7 @@ from dagster import (
     daily_partitioned_config,
     daily_schedule,
     graph,
-    hourly_schedule,
     lambda_solid,
-    monthly_schedule,
     op,
     pipeline,
     repository,
@@ -20,7 +18,6 @@ from dagster import (
     schedule_from_partitions,
     sensor,
     solid,
-    weekly_schedule,
 )
 from dagster.core.definitions.partition import (
     Partition,
@@ -126,7 +123,7 @@ def test_non_lazy_pipeline_dict():
 
 def test_conflict():
     called = defaultdict(int)
-    with pytest.raises(Exception, match="Duplicate pipeline definition found for pipeline foo"):
+    with pytest.raises(Exception, match="Duplicate pipeline definition found for pipeline 'foo'"):
 
         @repository
         def _some_repo():
@@ -185,7 +182,7 @@ def test_bad_schedule():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match='targets pipeline "foo" which was not found in this repository',
+        match='targets job/pipeline "foo" which was not found in this repository',
     ):
 
         @repository
@@ -202,7 +199,7 @@ def test_bad_sensor():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match='targets pipeline "foo" which was not found in this repository',
+        match='targets job/pipeline "foo" which was not found in this repository',
     ):
 
         @repository
@@ -287,6 +284,7 @@ def test_bare_graph():
 
     # should get updated once "executable" exists
     assert test.get_pipeline("bare")
+    assert test.get_job("bare")
 
 
 def test_bare_graph_with_resources():
@@ -340,6 +338,7 @@ def test_job_with_partitions():
     # do it twice to make sure we don't overwrite cache on second time
     assert test.get_partition_set_def("bare_partition_set")
     assert test.get_pipeline("bare")
+    assert test.get_job("bare")
 
 
 def test_dupe_graph_defs():
@@ -358,26 +357,36 @@ def test_dupe_graph_defs():
     with pytest.raises(
         DagsterInvalidDefinitionError,
         # expect to change as migrate to graph/job
-        match="Duplicate pipeline definition found for pipeline foo",
+        match="Duplicate pipeline definition found for pipeline 'foo'",
     ):
 
         @repository
         def _pipe_collide():
             return [graph_foo, pipe_foo]
 
-    @repository
-    def graph_collide():
-        return [
-            graph_foo.to_job(name="bar"),
-            pipe_foo,
-        ]
+    def get_collision_repo():
+        @repository
+        def graph_collide():
+            return [
+                graph_foo.to_job(name="bar"),
+                pipe_foo,
+            ]
+
+        return graph_collide
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match="Solid & Graph/CompositeSolid definition names must be unique within a repository",
     ):
 
-        graph_collide.get_all_pipelines()
+        get_collision_repo().get_all_pipelines()
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Solid & Graph/CompositeSolid definition names must be unique within a repository",
+    ):
+
+        get_collision_repo().get_all_jobs()
 
 
 def test_dict_jobs():
@@ -396,6 +405,8 @@ def test_dict_jobs():
 
     assert jobs.get_pipeline("my_graph")
     assert jobs.get_pipeline("other_graph")
+    assert jobs.get_job("my_graph")
+    assert jobs.get_job("other_graph")
 
 
 def test_job_scheduled_partitions():
@@ -428,6 +439,7 @@ def test_job_scheduled_partitions():
     assert job_repo.get_partition_set_def("my_graph_partition_set")
     assert len(schedule_job_repo.partition_set_defs) == 1
     assert schedule_job_repo.get_partition_set_def("my_graph_partition_set")
+    assert len(schedule_job_repo.job_names) == 1
 
 
 def test_bad_job_pipeline():

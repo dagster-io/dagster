@@ -10,31 +10,6 @@ import { ScheduleSelector, InstigationType, InstigationStatus, PipelineRunStatus
 // GraphQL query operation: ScheduleRootQuery
 // ====================================================
 
-export interface ScheduleRootQuery_scheduler_SchedulerNotDefinedError {
-  __typename: "SchedulerNotDefinedError";
-  message: string;
-}
-
-export interface ScheduleRootQuery_scheduler_Scheduler {
-  __typename: "Scheduler";
-  schedulerClass: string | null;
-}
-
-export interface ScheduleRootQuery_scheduler_PythonError_cause {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-}
-
-export interface ScheduleRootQuery_scheduler_PythonError {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-  cause: ScheduleRootQuery_scheduler_PythonError_cause | null;
-}
-
-export type ScheduleRootQuery_scheduler = ScheduleRootQuery_scheduler_SchedulerNotDefinedError | ScheduleRootQuery_scheduler_Scheduler | ScheduleRootQuery_scheduler_PythonError;
-
 export interface ScheduleRootQuery_scheduleOrError_Schedule_partitionSet {
   __typename: "PartitionSet";
   id: string;
@@ -183,7 +158,6 @@ export interface ScheduleRootQuery_instance {
 }
 
 export interface ScheduleRootQuery {
-  scheduler: ScheduleRootQuery_scheduler;
   scheduleOrError: ScheduleRootQuery_scheduleOrError;
   instance: ScheduleRootQuery_instance;
 }

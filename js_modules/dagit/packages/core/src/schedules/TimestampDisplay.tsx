@@ -1,12 +1,13 @@
-import {Colors, Icon} from '@blueprintjs/core';
-import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {DEFAULT_TIME_FORMAT, TimeFormat} from '../app/time/TimestampFormat';
 import {TimezoneContext} from '../app/time/TimezoneContext';
 import {timestampToString} from '../app/time/timestampToString';
-import {Group} from '../ui/Group';
+import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
+import {IconWIP} from '../ui/Icon';
+import {Tooltip} from '../ui/Tooltip';
 
 interface Props {
   timestamp: number;
@@ -21,7 +22,9 @@ export const TimestampDisplay = (props: Props) => {
   const locale = navigator.language;
 
   return (
-    <Group direction="row" spacing={8} alignItems="center" wrap="wrap">
+    <Box
+      flex={{display: 'inline-flex', direction: 'row', alignItems: 'center', wrap: 'wrap', gap: 8}}
+    >
       <TabularNums>
         {timestampToString({
           timestamp: {unix: timestamp},
@@ -43,10 +46,10 @@ export const TimestampDisplay = (props: Props) => {
             </TabularNums>
           }
         >
-          <Icon icon="time" iconSize={12} color={Colors.GRAY3} style={{display: 'block'}} />
+          <IconWIP name="schedule" color={ColorsWIP.Gray400} />
         </TimestampTooltip>
       ) : null}
-    </Group>
+    </Box>
   );
 };
 
@@ -62,7 +65,7 @@ const TabularNums = styled.div`
 const TimestampTooltip = styled(Tooltip)`
   cursor: pointer;
 
-  .bp3-popover-target {
+  &.bp3-popover2-target {
     display: block;
   }
 `;

@@ -1,14 +1,15 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors, Icon} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link, useHistory} from 'react-router-dom';
 import styled, {createGlobalStyle, css} from 'styled-components/macro';
 
 import {Box} from '../ui/Box';
-import {Group} from '../ui/Group';
+import {ColorsWIP} from '../ui/Colors';
 import {HighlightedCodeBlock} from '../ui/HighlightedCodeBlock';
+import {IconWIP} from '../ui/Icon';
+import {PageHeader} from '../ui/PageHeader';
 import {Spinner} from '../ui/Spinner';
-import {Subheading} from '../ui/Text';
+import {Code, Heading, Subheading} from '../ui/Text';
 
 import {InstanceTabs} from './InstanceTabs';
 import {InstanceConfigQuery} from './types/InstanceConfigQuery';
@@ -19,8 +20,18 @@ const YamlShimStyle = createGlobalStyle`
     padding: 0;
   }
 
-  .hljs-attr {
-    color: ${Colors.BLUE1};
+  .config-yaml {
+    .hljs-attr {
+      color: ${ColorsWIP.Blue700};
+    }
+
+    .hljs-string {
+      color: ${ColorsWIP.Green700};
+    }
+
+    .hljs-number {
+      color: ${ColorsWIP.Red700};
+    }
   }
 `;
 
@@ -61,33 +72,45 @@ export const InstanceConfig = React.memo(() => {
   const sections = data.instance.info.split(/\n(?=\w)/g);
 
   return (
-    <Group direction="column" spacing={20}>
-      <InstanceTabs tab="config" />
-      <Group direction="column" spacing={16}>
-        <Subheading>{`Dagster ${data.version}`}</Subheading>
-        <YamlShimStyle />
+    <>
+      <PageHeader title={<Heading>Instance status</Heading>} tabs={<InstanceTabs tab="config" />} />
+      <Box
+        padding={{vertical: 16, horizontal: 24}}
+        border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+      >
+        <Subheading>
+          Dagster version: <Code style={{fontSize: '16px'}}>{data.version}</Code>
+        </Subheading>
+      </Box>
+      <YamlShimStyle />
+      <Box padding={{vertical: 16, horizontal: 24}}>
         {sections.map((section) => {
           const [id] = section.split(/\:/);
           const hashForSection = `#${id}`;
           return (
-            <Box flex={{direction: 'row', alignItems: 'flex-start'}} key={id} id={id}>
+            <Box
+              flex={{direction: 'row', alignItems: 'flex-start'}}
+              padding={{vertical: 8}}
+              key={id}
+              id={id}
+            >
               <ConfigLink to={`/instance/config${hashForSection}`} key={id}>
-                <Icon icon="link" color={Colors.GRAY4} iconSize={11} />
+                <IconWIP name="link" color={ColorsWIP.Gray300} />
               </ConfigLink>
               <ConfigSection highlighted={hash === hashForSection}>
-                <HighlightedCodeBlock value={section} language="yaml" />
+                <HighlightedCodeBlock value={section} language="yaml" className="config-yaml" />
               </ConfigSection>
             </Box>
           );
         })}
-      </Group>
-    </Group>
+      </Box>
+    </>
   );
 });
 
 const ConfigLink = styled(Link)`
   margin-right: 12px;
-  margin-top: -1px;
+  margin-top: 2px;
   user-select: none;
   transition: filter ease-in-out 100ms;
 
@@ -102,7 +125,7 @@ const ConfigSection = styled.div<{highlighted: boolean}>`
   ${({highlighted}) =>
     highlighted
       ? css`
-          background-color: ${Colors.LIGHT_GRAY3};
+          background-color: ${ColorsWIP.Gray100};
           margin: -8px;
           padding: 8px;
         `

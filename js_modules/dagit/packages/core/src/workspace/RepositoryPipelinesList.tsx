@@ -1,9 +1,8 @@
 import {gql, useQuery} from '@apollo/client';
-import {NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {PipelineTable, PIPELINE_TABLE_FRAGMENT} from '../pipelines/PipelineTable';
-import {Page} from '../ui/Page';
+import {NonIdealState} from '../ui/NonIdealState';
 
 import {repoAddressAsString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
@@ -63,15 +62,12 @@ export const RepositoryPipelinesList: React.FC<Props> = (props) => {
   if (error || !pipelinesForTable) {
     return (
       <NonIdealState
+        icon="error"
         title="Unable to load pipelines"
         description={`Could not load pipelines for ${repoAddressAsString(repoAddress)}`}
       />
     );
   }
 
-  return (
-    <Page>
-      <PipelineTable pipelines={pipelinesForTable} showRepo={false} />
-    </Page>
-  );
+  return <PipelineTable pipelines={pipelinesForTable} showRepo={false} />;
 };

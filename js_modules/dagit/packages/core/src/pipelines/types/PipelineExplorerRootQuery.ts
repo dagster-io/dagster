@@ -4,11 +4,36 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineSelector } from "./../../types/globalTypes";
+import { RepositorySelector, PipelineSelector } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: PipelineExplorerRootQuery
 // ====================================================
+
+export interface PipelineExplorerRootQuery_repositoryOrError_Repository_assetNodes {
+  __typename: "AssetNode";
+  id: string;
+  opName: string | null;
+  jobName: string | null;
+}
+
+export interface PipelineExplorerRootQuery_repositoryOrError_Repository {
+  __typename: "Repository";
+  id: string;
+  assetNodes: PipelineExplorerRootQuery_repositoryOrError_Repository_assetNodes[];
+}
+
+export interface PipelineExplorerRootQuery_repositoryOrError_RepositoryNotFoundError {
+  __typename: "RepositoryNotFoundError";
+  message: string;
+}
+
+export interface PipelineExplorerRootQuery_repositoryOrError_PythonError {
+  __typename: "PythonError";
+  message: string;
+}
+
+export type PipelineExplorerRootQuery_repositoryOrError = PipelineExplorerRootQuery_repositoryOrError_Repository | PipelineExplorerRootQuery_repositoryOrError_RepositoryNotFoundError | PipelineExplorerRootQuery_repositoryOrError_PythonError;
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
@@ -823,6 +848,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandle_solid_definition_SolidDefinition {
   __typename: "SolidDefinition";
   name: string;
+  description: string | null;
   metadata: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandle_solid_definition_SolidDefinition_metadata[];
   inputDefinitions: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandle_solid_definition_SolidDefinition_inputDefinitions[];
   outputDefinitions: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandle_solid_definition_SolidDefinition_outputDefinitions[];
@@ -915,6 +941,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandle_solid_definition_CompositeSolidDefinition {
   __typename: "CompositeSolidDefinition";
   name: string;
+  description: string | null;
   metadata: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandle_solid_definition_CompositeSolidDefinition_metadata[];
   inputDefinitions: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandle_solid_definition_CompositeSolidDefinition_inputDefinitions[];
   outputDefinitions: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandle_solid_definition_CompositeSolidDefinition_outputDefinitions[];
@@ -1049,6 +1076,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_SolidDefinition {
   __typename: "SolidDefinition";
   name: string;
+  description: string | null;
   metadata: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_SolidDefinition_metadata[];
   inputDefinitions: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_SolidDefinition_inputDefinitions[];
   outputDefinitions: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_SolidDefinition_outputDefinitions[];
@@ -1141,6 +1169,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_CompositeSolidDefinition {
   __typename: "CompositeSolidDefinition";
   name: string;
+  description: string | null;
   metadata: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_CompositeSolidDefinition_metadata[];
   inputDefinitions: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_CompositeSolidDefinition_inputDefinitions[];
   outputDefinitions: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_CompositeSolidDefinition_outputDefinitions[];
@@ -1193,10 +1222,12 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PythonError {
 export type PipelineExplorerRootQuery_pipelineSnapshotOrError = PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineNotFoundError | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshotNotFoundError | PipelineExplorerRootQuery_pipelineSnapshotOrError_PythonError;
 
 export interface PipelineExplorerRootQuery {
+  repositoryOrError: PipelineExplorerRootQuery_repositoryOrError;
   pipelineSnapshotOrError: PipelineExplorerRootQuery_pipelineSnapshotOrError;
 }
 
 export interface PipelineExplorerRootQueryVariables {
+  repositorySelector: RepositorySelector;
   pipelineSelector?: PipelineSelector | null;
   snapshotId?: string | null;
   rootHandleID: string;

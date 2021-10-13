@@ -1,30 +1,31 @@
-import {Popover, Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled, {css, keyframes} from 'styled-components/macro';
 
 import {PipelineRunStatus} from '../types/globalTypes';
+import {ColorsWIP} from '../ui/Colors';
+import {Popover} from '../ui/Popover';
 import {Spinner} from '../ui/Spinner';
 
 import {RunStats} from './RunStats';
 import {inProgressStatuses, queuedStatuses} from './RunStatuses';
 
 const RUN_STATUS_COLORS = {
-  QUEUED: Colors.BLUE5,
-  NOT_STARTED: Colors.GRAY1,
-  STARTING: Colors.GRAY3,
-  MANAGED: Colors.GRAY3,
-  STARTED: Colors.GRAY3,
-  SUCCESS: Colors.GREEN4,
-  FAILURE: Colors.RED3,
-  CANCELING: Colors.RED3,
-  CANCELED: Colors.RED3,
+  QUEUED: ColorsWIP.Blue200,
+  NOT_STARTED: ColorsWIP.Gray600,
+  STARTING: ColorsWIP.Gray400,
+  MANAGED: ColorsWIP.Gray400,
+  STARTED: ColorsWIP.Gray400,
+  SUCCESS: ColorsWIP.Green500,
+  FAILURE: ColorsWIP.Red500,
+  CANCELING: ColorsWIP.Red500,
+  CANCELED: ColorsWIP.Red500,
 };
 
 export const RunStatusWithStats: React.FC<RunStatusProps & {runId: string}> = React.memo(
   ({runId, ...rest}) => (
     <Popover
-      position={'bottom'}
-      interactionKind={'hover'}
+      position="bottom"
+      interactionKind="hover"
       content={<RunStats runId={runId} />}
       hoverOpenDelay={100}
     >

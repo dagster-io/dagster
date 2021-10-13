@@ -1,8 +1,9 @@
-import {Collapse, Colors, Icon} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
+import {Collapse} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {ColorsWIP} from '../ui/Colors';
+import {IconWIP} from '../ui/Icon';
 import {FontFamily} from '../ui/styles';
 
 interface ISidebarSectionProps {
@@ -30,71 +31,77 @@ export const SidebarSection: React.FC<ISidebarSectionProps> = (props) => {
   }, [storageKey]);
 
   return (
-    <div>
+    <>
       <CollapsingHeaderBar onClick={onToggle}>
         {title}
-        <DisclosureIcon icon={open ? IconNames.CHEVRON_DOWN : IconNames.CHEVRON_UP} />
+        <IconWIP
+          size={24}
+          name="arrow_drop_down"
+          style={{transform: open ? 'rotate(0)' : 'rotate(-90deg)'}}
+        />
       </CollapsingHeaderBar>
       <Collapse isOpen={open}>
         <div>{children}</div>
       </Collapse>
-    </div>
+    </>
   );
 };
-
-const DisclosureIcon = styled(Icon)`
-  float: right;
-  opacity: 0.5;
-`;
 
 export const SidebarTitle = styled.h3`
   font-family: ${FontFamily.monospace};
   font-size: 16px;
-  margin: 0;
-  margin-bottom: 16px;
+  margin: 0 0 12px;
   overflow: hidden;
   text-overflow: ellipsis;
+
+  :first-child:last-child {
+    margin-bottom: 0;
+  }
 `;
 
 export const SectionHeader = styled.h4`
   font-family: ${FontFamily.monospace};
-  font-size: 18px;
+  font-size: 16px;
   margin: 2px 0 0 0;
 `;
 
 export const SectionSmallHeader = styled.h4`
   font-family: ${FontFamily.monospace};
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
   margin: 2px 0;
 `;
 
 export const SidebarSubhead = styled.div`
-  color: ${Colors.GRAY3};
+  color: ${ColorsWIP.Gray400};
   font-size: 0.7rem;
 `;
 
 export const SectionItemContainer = styled.div`
-  border-bottom: 1px solid ${Colors.LIGHT_GRAY2};
-  margin-bottom: 20px;
-  padding-bottom: 20px;
+  border-bottom: 1px solid ${ColorsWIP.KeylineGray};
+  margin-bottom: 12px;
+  padding-bottom: 12px;
   font-size: 0.8rem;
   &:last-child {
     border-bottom: none;
     margin-bottom: 0;
-    padding-bottom: 5px;
+    padding-bottom: 0;
   }
 `;
 
-// Internal
-
-const CollapsingHeaderBar = styled.div`
-  padding: 6px;
-  padding-left: 12px;
-  background: linear-gradient(to bottom, ${Colors.LIGHT_GRAY5}, ${Colors.LIGHT_GRAY4});
-  border-top: 1px solid ${Colors.LIGHT_GRAY4};
-  border-bottom: 1px solid ${Colors.LIGHT_GRAY3};
-  color: ${Colors.GRAY1};
-  text-transform: uppercase;
-  font-size: 0.75rem;
+export const CollapsingHeaderBar = styled.div`
+  height: 32px;
+  padding-left: 24px;
+  padding-right: 8px;
+  background: ${ColorsWIP.White};
+  border-top: 1px solid ${ColorsWIP.KeylineGray};
+  border-bottom: 1px solid ${ColorsWIP.KeylineGray};
+  color: ${ColorsWIP.Gray900};
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  user-select: none;
 `;

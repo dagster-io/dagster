@@ -1,14 +1,17 @@
 import {gql} from '@apollo/client';
-import {AnchorButton, Button, Classes, Colors, Dialog} from '@blueprintjs/core';
-import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 
 import {AppContext} from '../app/AppContext';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {PipelineRunStatus} from '../types/globalTypes';
+import {ButtonWIP} from '../ui/Button';
+import {ColorsWIP} from '../ui/Colors';
+import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
 import {HighlightedCodeBlock} from '../ui/HighlightedCodeBlock';
+import {IconWIP} from '../ui/Icon';
 import {MetadataTable} from '../ui/MetadataTable';
+import {Tooltip} from '../ui/Tooltip';
 
 import {RunTags} from './RunTags';
 import {TimeElapsed} from './TimeElapsed';
@@ -42,7 +45,7 @@ const LoadingOrValue: React.FC<{
   loading: boolean;
   children: () => React.ReactNode;
 }> = ({loading, children}) =>
-  loading ? <div style={{color: Colors.GRAY3}}>Loading…</div> : <div>{children()}</div>;
+  loading ? <div style={{color: ColorsWIP.Gray400}}>Loading…</div> : <div>{children()}</div>;
 
 const TIME_FORMAT = {showSeconds: true, showTimezone: false};
 
@@ -65,7 +68,7 @@ export const RunDetails: React.FC<{
                   );
                 }
                 return (
-                  <div style={{color: Colors.GRAY3}}>{timingStringForStatus(run?.status)}</div>
+                  <div style={{color: ColorsWIP.Gray400}}>{timingStringForStatus(run?.status)}</div>
                 );
               }}
             </LoadingOrValue>
@@ -82,7 +85,7 @@ export const RunDetails: React.FC<{
                   );
                 }
                 return (
-                  <div style={{color: Colors.GRAY3}}>{timingStringForStatus(run?.status)}</div>
+                  <div style={{color: ColorsWIP.Gray400}}>{timingStringForStatus(run?.status)}</div>
                 );
               }}
             </LoadingOrValue>
@@ -99,7 +102,7 @@ export const RunDetails: React.FC<{
                   );
                 }
                 return (
-                  <div style={{color: Colors.GRAY3}}>{timingStringForStatus(run?.status)}</div>
+                  <div style={{color: ColorsWIP.Gray400}}>{timingStringForStatus(run?.status)}</div>
                 );
               }}
             </LoadingOrValue>
@@ -116,23 +119,25 @@ export const RunConfigDialog: React.FC<{run: RunFragment}> = ({run}) => {
   return (
     <div>
       <Group direction="row" spacing={8}>
-        <Button text="View tags and config" icon="tag" onClick={() => setShowDialog(true)} />
+        <ButtonWIP icon={<IconWIP name="local_offer" />} onClick={() => setShowDialog(true)}>
+          View tags and config
+        </ButtonWIP>
         <Tooltip content="Loadable in dagit-debug" position="bottom-right">
-          <AnchorButton
-            text="Debug file"
-            icon="download"
-            href={`${rootServerURI}/download_debug/${run.runId}`}
-          />
+          <ButtonWIP
+            icon={<IconWIP name="download_for_offline" />}
+            onClick={() => window.open(`${rootServerURI}/download_debug/${run.runId}`)}
+          >
+            Debug file
+          </ButtonWIP>
         </Tooltip>
       </Group>
-
-      <Dialog
+      <DialogWIP
         isOpen={showDialog}
         onClose={() => setShowDialog(false)}
         style={{width: '800px'}}
         title="Run configuration"
       >
-        <div className={Classes.DIALOG_BODY}>
+        <DialogBody>
           <Group direction="column" spacing={20}>
             <Group direction="column" spacing={12}>
               <div style={{fontSize: '16px', fontWeight: 600}}>Tags</div>
@@ -145,15 +150,13 @@ export const RunConfigDialog: React.FC<{run: RunFragment}> = ({run}) => {
               <HighlightedCodeBlock value={run?.runConfigYaml || ''} language="yaml" />
             </Group>
           </Group>
-        </div>
-        <div className={Classes.DIALOG_FOOTER}>
-          <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-            <Button onClick={() => setShowDialog(false)} intent="primary">
-              OK
-            </Button>
-          </div>
-        </div>
-      </Dialog>
+        </DialogBody>
+        <DialogFooter>
+          <ButtonWIP onClick={() => setShowDialog(false)} intent="primary">
+            OK
+          </ButtonWIP>
+        </DialogFooter>
+      </DialogWIP>
     </div>
   );
 };

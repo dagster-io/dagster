@@ -1,4 +1,3 @@
-import {NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 import {Redirect, Route, RouteComponentProps, Switch} from 'react-router-dom';
 
@@ -6,7 +5,9 @@ import {useFeatureFlags} from '../app/Flags';
 import {PipelineRoot} from '../pipelines/PipelineRoot';
 import {ScheduleRoot} from '../schedules/ScheduleRoot';
 import {SensorRoot} from '../sensors/SensorRoot';
+import {Box} from '../ui/Box';
 import {MainContent} from '../ui/MainContent';
+import {NonIdealState} from '../ui/NonIdealState';
 
 import {GraphRoot} from './GraphRoot';
 import {WorkspaceContext} from './WorkspaceContext';
@@ -25,7 +26,7 @@ const RepoRouteContainer: React.FC<{repoPath: string}> = (props) => {
   if (!addressForPath) {
     return (
       <NonIdealState
-        icon="cube"
+        icon="error"
         title="Invalid repository"
         description={
           <div>
@@ -55,18 +56,20 @@ const RepoRouteContainer: React.FC<{repoPath: string}> = (props) => {
   // the repo path in the URL, it means we aren't able to load this repo.
   if (!matchingRepo) {
     return (
-      <NonIdealState
-        icon="cube"
-        title="Unknown repository"
-        description={
-          <div>
+      <Box padding={{vertical: 64}}>
+        <NonIdealState
+          icon="error"
+          title="Unknown repository"
+          description={
             <div>
-              <strong>{repoPath}</strong>
+              <div>
+                <strong>{repoPath}</strong>
+              </div>
+              {'  is not loaded in the current workspace.'}
             </div>
-            {'  is not loaded in the current workspace.'}
-          </div>
-        }
-      />
+          }
+        />
+      </Box>
     );
   }
 

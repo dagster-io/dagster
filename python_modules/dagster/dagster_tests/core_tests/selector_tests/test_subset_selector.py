@@ -9,6 +9,7 @@ from dagster.core.selector.subset_selector import (
     parse_solid_selection,
     parse_step_selection,
 )
+from dagster.core.test_utils import default_mode_def_for_test
 
 
 @lambda_solid
@@ -36,7 +37,7 @@ def add_one(num):
     return num + 1
 
 
-@pipeline
+@pipeline(mode_defs=[default_mode_def_for_test])
 def foo_pipeline():
     """
     return_one ---> add_nums --> multiply_two --> add_one

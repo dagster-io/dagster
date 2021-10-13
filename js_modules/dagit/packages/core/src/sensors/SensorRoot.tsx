@@ -4,7 +4,8 @@ import * as React from 'react';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {TickHistory} from '../instigation/TickHistory';
-import {Group} from '../ui/Group';
+import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
 import {Loading} from '../ui/Loading';
 import {Page} from '../ui/Page';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -59,22 +60,27 @@ export const SensorRoot: React.FC<{
 
         return (
           <Page>
-            <Group direction="column" spacing={24}>
+            <SensorDetails
+              repoAddress={repoAddress}
+              sensor={sensorOrError}
+              daemonHealth={instance.daemonHealth.daemonStatus.healthy}
+              countdownDuration={INTERVAL}
+              countdownStatus={countdownStatus}
+              onRefresh={() => onRefresh()}
+            />
+            <Box
+              padding={{vertical: 16, horizontal: 24}}
+              border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+            >
               <SensorInfo daemonHealth={instance.daemonHealth} />
-              <SensorDetails
-                repoAddress={repoAddress}
-                sensor={sensorOrError}
-                daemonHealth={instance.daemonHealth.daemonStatus.healthy}
-                countdownDuration={INTERVAL}
-                countdownStatus={countdownStatus}
-                onRefresh={() => onRefresh()}
-              />
-              <TickHistory
-                repoAddress={repoAddress}
-                name={sensorOrError.name}
-                showRecent={true}
-                onHighlightRunIds={(runIds: string[]) => setSelectedRunIds(runIds)}
-              />
+            </Box>
+            <TickHistory
+              repoAddress={repoAddress}
+              name={sensorOrError.name}
+              showRecent={true}
+              onHighlightRunIds={(runIds: string[]) => setSelectedRunIds(runIds)}
+            />
+            <Box border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}>
               {sensorOrError.targets && sensorOrError.targets.length ? (
                 <SensorPreviousRuns
                   repoAddress={repoAddress}
@@ -88,7 +94,7 @@ export const SensorRoot: React.FC<{
                   highlightedIds={selectedRunIds}
                 />
               )}
-            </Group>
+            </Box>
           </Page>
         );
       }}

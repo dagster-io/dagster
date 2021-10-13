@@ -57,7 +57,7 @@ if __name__ == "__main__":
         include_package_data=True,
         install_requires=[
             # cli
-            "click>=5.0,<8.0",
+            "click>=5.0,<9.0",
             "coloredlogs>=6.1, <=14.0",
             # https://github.com/dagster-io/dagster/issues/4167
             "Jinja2<3.0",
@@ -73,6 +73,7 @@ if __name__ == "__main__":
             "pendulum",
             "protobuf>=3.13.0",  # ensure version we require is >= that with which we generated the proto code (set in dev-requirements)
             "python-dateutil",
+            "pytz",
             "rx>=1.6,<2",  # https://github.com/dagster-io/dagster/issues/4089
             "tabulate",
             "tqdm",

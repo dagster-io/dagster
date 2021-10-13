@@ -4,8 +4,8 @@ import uuid
 from unittest import mock
 
 import httplib2
-from dagster import ModeDefinition, PipelineDefinition, execute_pipeline, seven
-from dagster_gcp import dataproc_resource, dataproc_solid
+from dagster import job, seven
+from dagster_gcp import dataproc_op, dataproc_resource
 
 PROJECT_ID = os.getenv("GCP_PROJECT_ID", "default_project")
 CLUSTER_NAME = "test-%s" % uuid.uuid4().hex
@@ -80,17 +80,14 @@ def test_dataproc_resource():
     """
     with mock.patch("httplib2.Http", new=HttpSnooper):
 
-        pipeline = PipelineDefinition(
-            name="test_dataproc_resource",
-            solid_defs=[dataproc_solid],
-            mode_defs=[ModeDefinition(resource_defs={"dataproc": dataproc_resource})],
-        )
+        @job(resource_defs={"dataproc": dataproc_resource})
+        def test_dataproc():
+            dataproc_op()
 
-        result = execute_pipeline(
-            pipeline,
-            {
-                "solids": {
-                    "dataproc_solid": {
+        result = test_dataproc.execute_in_process(
+            run_config={
+                "ops": {
+                    "dataproc_op": {
                         "config": {
                             "job_config": {
                                 "projectId": PROJECT_ID,
@@ -124,6 +121,6 @@ def test_dataproc_resource():
                         }
                     }
                 },
-            },
+            }
         )
         assert result.success

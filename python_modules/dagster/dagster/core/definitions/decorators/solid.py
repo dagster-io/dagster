@@ -332,9 +332,9 @@ def resolve_checked_solid_fn_inputs(
         elif param.kind == funcsigs.Parameter.VAR_POSITIONAL:
             raise DagsterInvalidDefinitionError(
                 f"{decorator_name} '{fn_name}' decorated function has positional vararg parameter "
-                f"'{param}'. Solid functions should only have keyword arguments that match "
-                "input names and, if system information is required, a first positional "
-                "parameter named 'context'."
+                f"'{param}'. {decorator_name} decorated functions should only have keyword "
+                "arguments that match input names and, if system information is required, a first "
+                "positional parameter named 'context'."
             )
 
         else:
@@ -342,7 +342,7 @@ def resolve_checked_solid_fn_inputs(
                 if param.name in nothing_names:
                     raise DagsterInvalidDefinitionError(
                         f"{decorator_name} '{fn_name}' decorated function has parameter '{param.name}' that is "
-                        "one of the solid input_defs of type 'Nothing' which should not be included since "
+                        "one of the input_defs of type 'Nothing' which should not be included since "
                         "no data will be passed for it. "
                     )
                 else:
@@ -356,9 +356,9 @@ def resolve_checked_solid_fn_inputs(
         undeclared_inputs_printed = ", '".join(undeclared_inputs)
         raise DagsterInvalidDefinitionError(
             f"{decorator_name} '{fn_name}' decorated function does not have parameter(s) "
-            f"'{undeclared_inputs_printed}', which are in solid's input_defs. Solid functions "
-            "should only have keyword arguments that match input names and, if system information "
-            "is required, a first positional parameter named 'context'."
+            f"'{undeclared_inputs_printed}', which are in provided input_defs. {decorator_name} "
+            "decorated functions should only have keyword arguments that match input names and, if "
+            "system information is required, a first positional parameter named 'context'."
         )
 
     inferred_props = {

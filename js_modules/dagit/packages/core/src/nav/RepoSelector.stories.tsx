@@ -1,9 +1,9 @@
-import {Colors} from '@blueprintjs/core';
 import {Meta} from '@storybook/react/types-6-0';
 import faker from 'faker';
 import * as React from 'react';
 
 import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {RepoDetails, RepoSelector} from './RepoSelector';
@@ -124,8 +124,8 @@ export const ManyRepos = () => {
   );
 
   return (
-    <Box background={Colors.DARK_GRAY3} padding={16}>
-      <RepoSelector options={OPTIONS} onToggle={onToggle} selected={selected} />
+    <Box background={ColorsWIP.Gray800} padding={16}>
+      <RepoSelector options={OPTIONS} onBrowse={() => {}} onToggle={onToggle} selected={selected} />
     </Box>
   );
 };

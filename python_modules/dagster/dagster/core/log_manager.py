@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Union
 
 from dagster import check
 from dagster.core.utils import coerce_valid_log_level, make_new_run_id
+from dagster.utils.log import get_dagster_logger
 
 if TYPE_CHECKING:
     from dagster import DagsterInstance, PipelineRun
@@ -224,6 +225,7 @@ class DagsterLogHandler(logging.Handler):
 
         # update the message to be formatted like other dagster logs
         record.msg = construct_log_string(self._logging_metadata, dagster_message_props)
+        record.args = ()
 
         return record
 
@@ -244,14 +246,36 @@ class DagsterLogHandler(logging.Handler):
         # user-defined @loggers
         for logger in self._loggers:
             logger.log(
-                level=dagster_record.levelno,
-                msg=dagster_record.msg,
+                dagster_record.levelno,
+                dagster_record.msg,
                 exc_info=dagster_record.exc_info,
                 extra=self._extract_extra(record),
             )
 
 
 class DagsterLogManager(logging.Logger):
+    """Centralized dispatch for logging from user code.
+
+    Handles the construction of uniform structured log messages and passes them through to the
+    underlying loggers/handlers.
+
+    An instance of the log manager is made available to ops as ``context.log``. Users should not
+    initialize instances of the log manager directly. To configure custom loggers, set the
+    ``logger_defs`` argument in an `@job` decorator or when calling the `to_job()` method on a
+    :py:class:`GraphDefinition`.
+
+    The log manager inherits standard convenience methods like those exposed by the Python standard
+    library :py:mod:`python:logging` module (i.e., within the body of an op,
+    ``context.log.{debug, info, warning, warn, error, critical, fatal}``).
+
+    The underlying integer API can also be called directly using, e.g.
+    ``context.log.log(5, msg)``, and the log manager will delegate to the ``log`` method
+    defined on each of the loggers it manages.
+
+    User-defined custom log levels are not supported, and calls to, e.g.,
+    ``context.log.trace`` or ``context.log.notice`` will result in hard exceptions **at runtime**.
+    """
+
     def __init__(
         self,
         dagster_handler: DagsterLogHandler,
@@ -276,21 +300,22 @@ class DagsterLogManager(logging.Logger):
         """Create a DagsterLogManager with a set of subservient loggers."""
 
         handlers = check.opt_list_param(handlers, "handlers", of_type=logging.Handler)
+
+        managed_loggers = [get_dagster_logger()]
+        python_log_level = logging.NOTSET
+
         if instance:
             handlers += instance.get_handlers()
-            managed_loggers = [
+            managed_loggers += [
                 logging.getLogger(lname) if lname != "root" else logging.getLogger()
                 for lname in instance.managed_python_loggers
             ]
             if instance.python_log_level is not None:
                 python_log_level = coerce_valid_log_level(instance.python_log_level)
+
                 # set all loggers to the declared logging level
                 for logger in managed_loggers:
                     logger.setLevel(python_log_level)
-            else:
-                python_log_level = logging.NOTSET
-        else:
-            managed_loggers, python_log_level = [], logging.NOTSET
 
         if pipeline_run:
             logging_metadata = DagsterLoggingMetadata(

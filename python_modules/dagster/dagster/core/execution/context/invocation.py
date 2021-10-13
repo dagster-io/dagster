@@ -221,7 +221,7 @@ def _validate_resource_requirements(resources: "Resources", solid_def: SolidDefi
     for resource_key in required_resource_keys:
         if resource_key not in resources_dict:
             raise DagsterInvalidInvocationError(
-                f'Solid "{solid_def.name}" requires resource "{resource_key}", but no resource '
+                f'{solid_def.node_type_str} "{solid_def.name}" requires resource "{resource_key}", but no resource '
                 "with that key was found on the context."
             )
 

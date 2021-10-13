@@ -1,6 +1,7 @@
 from typing import Any, Optional
 
 from dagster import check
+from dagster.core.definitions.job import JobDefinition
 from dagster.core.definitions.logger import LoggerDefinition
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.errors import DagsterInvariantViolationError
@@ -19,7 +20,7 @@ class InitLoggerContext:
     Attributes:
         logger_config (Any): The configuration data provided by the run config. The
             schema for this data is defined by ``config_schema`` on the :py:class:`LoggerDefinition`
-        pipeline_def (Optional[PipelineDefinition]): The pipeline definition currently being executed.
+        pipeline_def (Optional[PipelineDefinition]): The pipeline/job definition currently being executed.
         logger_def (Optional[LoggerDefinition]): The logger definition for the logger being constructed.
         run_id (str): The ID for this run of the pipeline.
     """
@@ -42,6 +43,17 @@ class InitLoggerContext:
 
     @property
     def pipeline_def(self) -> Optional[PipelineDefinition]:
+        return self._pipeline_def
+
+    @property
+    def job_def(self) -> Optional[JobDefinition]:
+        if not self._pipeline_def:
+            return None
+        if not isinstance(self._pipeline_def, JobDefinition):
+            raise DagsterInvariantViolationError(
+                "Attempted to access the .job_def property on an InitLoggerContext that was "
+                "initialized with a PipelineDefinition. Please use .pipeline_def instead."
+            )
         return self._pipeline_def
 
     @property

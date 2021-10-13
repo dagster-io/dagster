@@ -1,6 +1,4 @@
 import {gql, useQuery} from '@apollo/client';
-import {Button, Classes, Colors, Dialog, Icon} from '@blueprintjs/core';
-import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -13,10 +11,15 @@ import {ScheduleSwitch, SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwi
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {SensorSwitch, SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {Box} from '../ui/Box';
+import {ButtonWIP} from '../ui/Button';
 import {ButtonLink} from '../ui/ButtonLink';
+import {ColorsWIP} from '../ui/Colors';
+import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
+import {IconWIP} from '../ui/Icon';
 import {MetadataTable, StyledTable} from '../ui/MetadataTable';
 import {Mono} from '../ui/Text';
+import {Tooltip} from '../ui/Tooltip';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -152,14 +155,14 @@ const ScheduleOrSensor: React.FC<{job: Job; mode: string; repoAddress: RepoAddre
     return (
       <>
         <ButtonLink onClick={() => setOpen(true)}>{buttonText}</ButtonLink>
-        <Dialog
+        <DialogWIP
           title={dialogTitle}
           canOutsideClickClose
           canEscapeKeyClose
           isOpen={open}
           onClose={() => setOpen(false)}
         >
-          <div className={Classes.DIALOG_BODY}>
+          <DialogBody>
             <Group direction="column" spacing={16}>
               {matchingSchedules.map((schedule) => (
                 <MatchingSchedule
@@ -172,13 +175,13 @@ const ScheduleOrSensor: React.FC<{job: Job; mode: string; repoAddress: RepoAddre
                 <MatchingSensor key={sensor.name} sensor={sensor} repoAddress={repoAddress} />
               ))}
             </Group>
-          </div>
-          <div className={Classes.DIALOG_FOOTER}>
-            <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-              <Button text="OK" onClick={() => setOpen(false)} />
-            </div>
-          </div>
-        </Dialog>
+          </DialogBody>
+          <DialogFooter>
+            <ButtonWIP intent="primary" onClick={() => setOpen(false)}>
+              OK
+            </ButtonWIP>
+          </DialogFooter>
+        </DialogWIP>
       </>
     );
   }
@@ -198,17 +201,12 @@ const MatchingSchedule: React.FC<{schedule: Schedule; repoAddress: RepoAddress}>
   schedule,
   repoAddress,
 }) => (
-  <Group direction="row" spacing={8}>
-    <Icon
-      icon="time"
-      color={Colors.GRAY3}
-      iconSize={13}
-      style={{position: 'relative', top: '-2px'}}
-    />
+  <Group direction="row" spacing={8} alignItems="center">
+    <IconWIP name="schedule" color={ColorsWIP.Gray700} />
     <Link to={workspacePathFromAddress(repoAddress, `/schedules/${schedule.name}`)}>
       {schedule.name}
     </Link>
-    <ScheduleSwitch large={false} repoAddress={repoAddress} schedule={schedule} />
+    <ScheduleSwitch repoAddress={repoAddress} schedule={schedule} />
   </Group>
 );
 
@@ -216,15 +214,10 @@ const MatchingSensor: React.FC<{sensor: Sensor; repoAddress: RepoAddress}> = ({
   sensor,
   repoAddress,
 }) => (
-  <Group direction="row" spacing={8}>
-    <Icon
-      icon="automatic-updates"
-      color={Colors.GRAY3}
-      iconSize={13}
-      style={{position: 'relative', top: '-2px'}}
-    />
+  <Group direction="row" spacing={8} alignItems="center">
+    <IconWIP name="sensors" color={ColorsWIP.Gray700} />
     <Link to={workspacePathFromAddress(repoAddress, `/sensors/${sensor.name}`)}>{sensor.name}</Link>
-    <SensorSwitch large={false} repoAddress={repoAddress} sensor={sensor} />
+    <SensorSwitch repoAddress={repoAddress} sensor={sensor} />
   </Group>
 );
 
@@ -251,7 +244,7 @@ const LatestRun: React.FC<{run: RunMetadataFragment}> = ({run}) => {
             <StyledTable>
               <tbody>
                 <tr>
-                  <td style={{color: Colors.GRAY4}}>
+                  <td style={{color: ColorsWIP.Gray300}}>
                     <Box padding={{right: 16}}>Started</Box>
                   </td>
                   <td>
@@ -263,7 +256,7 @@ const LatestRun: React.FC<{run: RunMetadataFragment}> = ({run}) => {
                   </td>
                 </tr>
                 <tr>
-                  <td style={{color: Colors.GRAY4}}>Ended</td>
+                  <td style={{color: ColorsWIP.Gray300}}>Ended</td>
                   <td>
                     {stats.end ? (
                       <TimestampDisplay timestamp={stats.end} timeFormat={TIME_FORMAT} />
@@ -307,7 +300,7 @@ const RelatedAssets: React.FC<{runs: RunMetadataFragment[]}> = ({runs}) => {
   return (
     <>
       <ButtonLink onClick={() => setOpen(true)}>{`View ${keys.length} assets`}</ButtonLink>
-      <Dialog
+      <DialogWIP
         title="Related assets"
         canOutsideClickClose
         canEscapeKeyClose
@@ -315,7 +308,7 @@ const RelatedAssets: React.FC<{runs: RunMetadataFragment[]}> = ({runs}) => {
         onClose={() => setOpen(false)}
         style={{maxWidth: '80%', minWidth: '500px', width: 'auto'}}
       >
-        <div className={Classes.DIALOG_BODY}>
+        <DialogBody>
           <Group direction="column" spacing={16}>
             {keys.map((key) => (
               <Link key={key} to={`/instance/assets/${key}`} style={{wordBreak: 'break-word'}}>
@@ -323,19 +316,19 @@ const RelatedAssets: React.FC<{runs: RunMetadataFragment[]}> = ({runs}) => {
               </Link>
             ))}
           </Group>
-        </div>
-        <div className={Classes.DIALOG_FOOTER}>
-          <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-            <Button text="OK" onClick={() => setOpen(false)} />
-          </div>
-        </div>
-      </Dialog>
+        </DialogBody>
+        <DialogFooter>
+          <ButtonWIP intent="primary" onClick={() => setOpen(false)}>
+            OK
+          </ButtonWIP>
+        </DialogFooter>
+      </DialogWIP>
     </>
   );
 };
 
 const GrayText = styled.div`
-  color: ${Colors.GRAY3};
+  color: ${ColorsWIP.Gray400};
 `;
 
 const RUN_METADATA_FRAGMENT = gql`

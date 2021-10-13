@@ -1,8 +1,8 @@
-import {Colors} from '@blueprintjs/core';
 import {Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 
 import {Box} from './Box';
+import {ColorsWIP} from './Colors';
 import {Group} from './Group';
 import {Spinner} from './Spinner';
 import {Caption, Code} from './Text';
@@ -16,7 +16,7 @@ export default {
 export const Sizes = () => {
   return (
     <Group direction="column" spacing={32}>
-      <Box padding={20} border={{side: 'all', width: 1, color: Colors.LIGHT_GRAY3}}>
+      <Box padding={20} border={{side: 'all', width: 1, color: ColorsWIP.Gray100}}>
         <Group direction="column" spacing={16}>
           <Code>{`purpose="caption-text"`}</Code>
           <Group direction="row" spacing={8} alignItems="center">
@@ -25,7 +25,7 @@ export const Sizes = () => {
           </Group>
         </Group>
       </Box>
-      <Box padding={20} border={{side: 'all', width: 1, color: Colors.LIGHT_GRAY3}}>
+      <Box padding={20} border={{side: 'all', width: 1, color: ColorsWIP.Gray100}}>
         <Group direction="column" spacing={16}>
           <Code>{`purpose="body-text"`}</Code>
           <Group direction="row" spacing={8} alignItems="center">
@@ -34,19 +34,21 @@ export const Sizes = () => {
           </Group>
         </Group>
       </Box>
-      <Box padding={20} border={{side: 'all', width: 1, color: Colors.LIGHT_GRAY3}}>
+      <Box padding={20} border={{side: 'all', width: 1, color: ColorsWIP.Gray100}}>
         <Group direction="column" spacing={16}>
           <Code>{`purpose="section"`}</Code>
-          <Box flex={{direction: 'row', justifyContent: 'center'}} padding={24}>
+          <Box flex={{direction: 'row', justifyContent: 'center', gap: 10}} padding={24}>
             <Spinner purpose="section" />
+            <Spinner purpose="section" fillColor={ColorsWIP.Blue500} />
           </Box>
         </Group>
       </Box>
-      <Box padding={20} border={{side: 'all', width: 1, color: Colors.LIGHT_GRAY3}}>
+      <Box padding={20} border={{side: 'all', width: 1, color: ColorsWIP.Gray100}}>
         <Group direction="column" spacing={16}>
           <Code>{`purpose="page"`}</Code>
-          <Box flex={{direction: 'row', justifyContent: 'center'}} padding={48}>
+          <Box flex={{direction: 'row', justifyContent: 'center', gap: 10}} padding={48}>
             <Spinner purpose="page" />
+            <Spinner purpose="page" fillColor={ColorsWIP.Blue500} />
           </Box>
         </Group>
       </Box>

@@ -1,11 +1,14 @@
-import {Button, Icon, IconName, Menu, MenuItem, Popover, Position} from '@blueprintjs/core';
-import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {ShortcutHandler} from '../app/ShortcutHandler';
-import {Box} from '../ui/Box';
+import {ButtonWIP} from '../ui/Button';
+import {ColorsWIP} from '../ui/Colors';
+import {IconWIP, IconName} from '../ui/Icon';
+import {MenuWIP, MenuItemWIP} from '../ui/Menu';
+import {Popover} from '../ui/Popover';
 import {Spinner} from '../ui/Spinner';
+import {Tooltip} from '../ui/Tooltip';
 
 export interface LaunchButtonConfiguration {
   title: string;
@@ -51,12 +54,11 @@ function useLaunchButtonCommonState({runCount, disabled}: {runCount: number; dis
 }
 
 interface LaunchButtonProps {
-  small?: boolean;
   config: LaunchButtonConfiguration;
   runCount: number;
 }
 
-export const LaunchButton = ({config, runCount, small}: LaunchButtonProps) => {
+export const LaunchButton = ({config, runCount}: LaunchButtonProps) => {
   const {forced, status, onConfigSelected} = useLaunchButtonCommonState({
     runCount,
     disabled: config.disabled,
@@ -72,10 +74,10 @@ export const LaunchButton = ({config, runCount, small}: LaunchButtonProps) => {
     >
       <ButtonWithConfiguration
         status={status}
-        small={small}
         {...config}
         {...forced}
         onClick={onClick}
+        disabled={status === 'disabled'}
       />
     </ShortcutHandler>
   );
@@ -83,7 +85,6 @@ export const LaunchButton = ({config, runCount, small}: LaunchButtonProps) => {
 
 interface LaunchButtonDropdownProps {
   title: string;
-  small?: boolean;
   primary: LaunchButtonConfiguration;
   options: LaunchButtonConfiguration[];
   disabled?: boolean;
@@ -94,7 +95,6 @@ interface LaunchButtonDropdownProps {
 
 export const LaunchButtonDropdown = ({
   title,
-  small,
   primary,
   options,
   disabled,
@@ -116,7 +116,6 @@ export const LaunchButtonDropdown = ({
     >
       <ButtonWithConfiguration
         status={status}
-        small={small}
         title={title}
         joined="right"
         icon={icon}
@@ -131,33 +130,33 @@ export const LaunchButtonDropdown = ({
         disabled={status === LaunchButtonStatus.Disabled}
         position="bottom-right"
         content={
-          <Menu>
+          <MenuWIP>
             {options.map((option, idx) => (
               <Tooltip
                 key={idx}
                 hoverOpenDelay={300}
-                position={Position.LEFT}
+                position="left"
                 openOnTargetFocus={false}
                 targetTagName="div"
-                content={option.tooltip}
+                content={option.tooltip || ''}
               >
                 <LaunchMenuItem
                   text={option.title}
                   disabled={option.disabled}
                   onClick={() => onConfigSelected(option)}
-                  icon={option.icon === 'dagster-spinner' ? 'blank' : option.icon}
+                  icon={option.icon !== 'dagster-spinner' ? option.icon : undefined}
                 />
               </Tooltip>
             ))}
-          </Menu>
+          </MenuWIP>
         }
       >
         <ButtonContainer
           role="button"
           status={status}
-          small={small}
-          style={{minWidth: 'initial', padding: '0 15px'}}
-          icon={'caret-down'}
+          style={{minWidth: 'initial'}}
+          icon={<IconWIP name="arrow_drop_down" />}
+          intent="primary"
           joined={'left'}
         />
       </Popover>
@@ -172,7 +171,6 @@ interface ButtonWithConfigurationProps {
   icon?: IconName | JSX.Element | 'dagster-spinner';
   joined?: 'left' | 'right';
   tooltip?: string | JSX.Element;
-  small?: boolean;
   onClick?: () => void;
   disabled?: boolean;
 }
@@ -183,109 +181,57 @@ const ButtonWithConfiguration: React.FunctionComponent<ButtonWithConfigurationPr
   tooltip,
   icon,
   title,
-  small,
   status,
   style,
   onClick,
   joined,
   disabled,
 }) => {
-  const sizeStyles = small ? {height: 24, minWidth: 120, paddingLeft: 15, paddingRight: 15} : {};
-
   return (
-    <Tooltip
-      position={Position.LEFT}
-      openOnTargetFocus={false}
-      targetTagName="div"
-      content={tooltip}
-    >
+    <Tooltip position="left" openOnTargetFocus={false} targetTagName="div" content={tooltip || ''}>
       <ButtonContainer
         role="button"
-        style={{...sizeStyles, ...style}}
+        intent="primary"
+        style={{...style}}
         status={status}
         onClick={onClick}
         joined={joined}
         disabled={disabled}
+        icon={
+          icon === 'dagster-spinner' ? (
+            <Spinner purpose="body-text" fillColor={ColorsWIP.White} />
+          ) : typeof icon === 'string' ? (
+            <IconWIP name={icon} size={16} style={{textAlign: 'center', marginRight: 5}} />
+          ) : (
+            icon
+          )
+        }
       >
-        {icon === 'dagster-spinner' ? (
-          <Box padding={{right: 8}}>
-            <Spinner purpose="body-text" />
-          </Box>
-        ) : (
-          <Icon
-            icon={icon}
-            iconSize={small ? 12 : 17}
-            style={{textAlign: 'center', marginRight: 5}}
-          />
-        )}
-        <ButtonText>{title}</ButtonText>
+        <MaxwidthText>{title}</MaxwidthText>
       </ButtonContainer>
     </Tooltip>
   );
 };
 
-const ButtonContainer = styled(Button)<{
+const ButtonContainer = styled(ButtonWIP)<{
   status: LaunchButtonStatus;
-  small?: boolean;
   joined?: 'right' | 'left';
 }>`
-  &&& {
-    height: ${({small}) => (small ? '24' : '30')}px;
-    flex-shrink: 0;
-    background: ${({status}) =>
-      ({
-        disabled: 'linear-gradient(to bottom, rgb(145, 145, 145) 30%, rgb(130, 130, 130) 100%);',
-        ready: 'linear-gradient(to bottom, rgb(36, 145, 235) 30%, rgb(27, 112, 187) 100%);',
-        starting: 'linear-gradient(to bottom, rgb(21, 89, 150) 30%, rgb(21, 89, 150) 100%);',
-      }[status])};
-    border-top: 1px solid rgba(255, 255, 255, 0.25);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.25);
-    border-radius: 3px;
-    border-top-${({joined}) => joined}-radius: 0;
-    border-bottom-${({joined}) => joined}-radius: 0;
-    transition: background 200ms linear;
-    justify-content: center;
-    align-items: center;
-    display: inline-flex;
-    color: ${({status}) => (status === 'disabled' ? 'rgba(255,255,255,0.5)' : 'white')};
-    cursor: ${({status}) => (status !== 'ready' ? 'normal' : 'pointer')};
-    z-index: 2;
-    min-width: 150px;
-    margin-left: ${({joined}) => (joined ? '0' : '6px')};
-    padding: 0 25px;
-    min-height: 0;
-
-    &:hover,
-    &.bp3-active {
-      background: ${({status}) =>
-        ({
-          disabled: 'linear-gradient(to bottom, rgb(145, 145, 145) 30%, rgb(130, 130, 130) 100%);',
-          ready: 'linear-gradient(to bottom, rgb(27, 112, 187) 30%, rgb(21, 89, 150) 100%);',
-          starting: 'linear-gradient(to bottom, rgb(21, 89, 150) 30%, rgb(21, 89, 150) 100%);',
-        }[status])};
-    }
-
-    path.bp3-spinner-head {
-      stroke: white;
-    }
-
-    .bp3-icon {
-      color: ${({status}) => (status === 'disabled' ? 'rgba(255,255,255,0.5)' : 'white')};
-    }
-    .bp3-button-text {
-      display: flex;
-      align-items: center;
-    }
-  }
+  border-top-${({joined}) => joined}-radius: 0;
+  border-bottom-${({joined}) => joined}-radius: 0;
+  border-left: ${({joined}) =>
+    joined === 'left' ? `1px solid rgba(255,255,255,0.2)` : 'transparent'};
+  cursor: ${({status}) => (status !== 'ready' ? 'normal' : 'pointer')};
+  margin-left: ${({joined}) => (joined ? '0' : '6px')};
 `;
 
-const ButtonText = styled.span`
+const MaxwidthText = styled.div`
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 350px;
 `;
 
-const LaunchMenuItem = styled(MenuItem)`
+const LaunchMenuItem = styled(MenuItemWIP)`
   max-width: 200px;
 `;

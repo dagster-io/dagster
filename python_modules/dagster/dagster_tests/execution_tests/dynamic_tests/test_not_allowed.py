@@ -113,7 +113,7 @@ def test_multi_composite_out():
 def test_multi_composite_in():
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match='cannot be downstream of dynamic output "dynamic_solid:result" since input "a" maps to a solid that is already downstream of another dynamic output',
+        match='cannot be downstream of dynamic output "dynamic_solid:result" since input "a" maps to a node that is already downstream of another dynamic output',
     ):
 
         @composite_solid
@@ -128,7 +128,7 @@ def test_multi_composite_in():
 def test_multi_composite_in_2():
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match='cannot be downstream of dynamic output "dynamic_solid:result" since input "a" maps to a solid that is already downstream of another dynamic output',
+        match='cannot be downstream of dynamic output "dynamic_solid:result" since input "a" maps to a node that is already downstream of another dynamic output',
     ):
 
         @composite_solid
@@ -147,7 +147,7 @@ def test_multi_composite_in_2():
 def test_multi_composite_in_3():
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match='cannot be downstream of dynamic output "dynamic_solid:result" since input "a" maps to a solid that is already downstream of another dynamic output',
+        match='cannot be downstream of dynamic output "dynamic_solid:result" since input "a" maps to a node that is already downstream of another dynamic output',
     ):
 
         @composite_solid
@@ -162,7 +162,7 @@ def test_multi_composite_in_3():
 def test_multi_composite_in_4():
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match='cannot be downstream of dynamic output "dynamic_solid:result" since input "a" maps to a solid that is already downstream of another dynamic output',
+        match='cannot be downstream of dynamic output "dynamic_solid:result" since input "a" maps to a node that is already downstream of another dynamic output',
     ):
 
         @composite_solid

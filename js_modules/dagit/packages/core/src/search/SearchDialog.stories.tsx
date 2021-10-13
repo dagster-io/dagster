@@ -13,7 +13,7 @@ export default {
 
 const Template: Story = (props) => (
   <StorybookProvider>
-    <SearchDialog theme="light" searchPlaceholder="" {...props} />
+    <SearchDialog searchPlaceholder="" {...props} />
   </StorybookProvider>
 );
 

@@ -211,6 +211,28 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
     def all_asset_keys(self) -> Iterable[AssetKey]:
         pass
 
+    def get_asset_keys(
+        self,
+        prefix: Optional[List[str]] = None,
+        limit: Optional[int] = None,
+        cursor: Optional[str] = None,
+    ) -> Iterable[AssetKey]:
+        # base implementation of get_asset_keys, using the existing `all_asset_keys` and doing the
+        # filtering in-memory
+        asset_keys = sorted(self.all_asset_keys(), key=str)
+        if prefix:
+            asset_keys = [
+                asset_key for asset_key in asset_keys if asset_key.path[: len(prefix)] == prefix
+            ]
+        if cursor:
+            cursor_asset = AssetKey.from_db_string(cursor)
+            if cursor_asset and cursor_asset in asset_keys:
+                idx = asset_keys.index(cursor_asset)
+                asset_keys = asset_keys[idx + 1 :]
+        if limit:
+            asset_keys = asset_keys[:limit]
+        return asset_keys
+
     @abstractmethod
     def all_asset_tags(self) -> Dict[AssetKey, Dict[str, str]]:
         pass

@@ -1,23 +1,25 @@
-import {Checkbox, Colors, Icon, NonIdealState} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {AppContext} from '../app/AppContext';
-import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
+import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
 import {WebSocketContext} from '../app/WebSocketProvider';
-import {useWebsocketAvailability} from '../app/useWebsocketAvailability';
 import {EMPTY_RUN_METADATA, IRunMetadataDict, IStepMetadata} from '../runs/RunMetadataProvider';
 import {StepSelection} from '../runs/StepSelection';
 import {Box} from '../ui/Box';
+import {Checkbox} from '../ui/Checkbox';
+import {ColorsWIP} from '../ui/Colors';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Group} from '../ui/Group';
+import {IconWIP} from '../ui/Icon';
+import {NonIdealState} from '../ui/NonIdealState';
 import {Spinner} from '../ui/Spinner';
 import {SplitPanelContainer} from '../ui/SplitPanelContainer';
 
 import {
+  BOTTOM_INSET,
   BOX_DOT_MARGIN_Y,
   BOX_DOT_SIZE,
   BOX_DOT_WIDTH_CUTOFF,
@@ -36,13 +38,14 @@ import {
   LINE_SIZE,
   MAX_SCALE,
   MIN_SCALE,
+  TOP_INSET,
 } from './Constants';
 import {isDynamicStep} from './DynamicStepSupport';
 import {
-  BuildLayoutParams,
   adjustLayoutWithRunMetadata,
   boxStyleFor,
   buildLayout,
+  BuildLayoutParams,
   interestingQueriesFor,
 } from './GanttChartLayout';
 import {GanttChartModeControl} from './GanttChartModeControl';
@@ -175,7 +178,9 @@ export const GanttChart: React.FC<GanttChartProps> = (props) => {
               style={{marginBottom: 0}}
               label="Hide not started steps"
               checked={state.hideWaiting}
-              onClick={() => updateOptions({hideWaiting: !state.hideWaiting})}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                updateOptions({hideWaiting: e.target.checked})
+              }
             />
           </>
         )}
@@ -217,9 +222,8 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
 
   const {rootServerURI} = React.useContext(AppContext);
 
-  const websocketAvailability = useWebsocketAvailability();
-  const {status} = React.useContext(WebSocketContext);
-  const lostWebsocket = websocketAvailability === 'success' && status === WebSocket.CLOSED;
+  const {availability, status} = React.useContext(WebSocketContext);
+  const lostWebsocket = availability === 'available' && status === WebSocket.CLOSED;
 
   // The slider in the UI updates `options.zoom` from 1-100. We convert that value
   // into a px-per-ms "scale", where the minimum is the value required to zoom-to-fit.
@@ -282,7 +286,7 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
   );
   const layoutSize = {
     width: Math.max(0, ...layout.boxes.map((b) => b.x + b.width + BOX_SPACING_X)),
-    height: Math.max(0, ...layout.boxes.map((b) => b.y * BOX_HEIGHT + BOX_HEIGHT)),
+    height: Math.max(0, ...layout.boxes.map((b) => TOP_INSET + b.y * BOX_HEIGHT + BOTTOM_INSET)),
   };
 
   React.useEffect(() => {
@@ -359,16 +363,11 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
               <Group
                 direction="row"
                 spacing={8}
-                background={`${Colors.ORANGE3}26`}
+                background={`${ColorsWIP.Yellow500}26`}
                 padding={{vertical: 8, horizontal: 12}}
                 alignItems="flex-start"
               >
-                <Icon
-                  icon="warning-sign"
-                  color={Colors.ORANGE2}
-                  iconSize={14}
-                  style={{display: 'block', position: 'relative', top: '2px'}}
-                />
+                <IconWIP name="warning" color={ColorsWIP.Yellow700} />
                 <div style={{maxWidth: '400px', whiteSpace: 'normal', overflow: 'hidden'}}>
                   <strong>Lost connection to Dagit server.</strong>
                   <span>
@@ -379,21 +378,21 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
             </Box>
           </WebsocketWarning>
         ) : null}
-        <GraphQueryInput
-          items={props.graph}
-          value={props.selection.query}
-          placeholder="Type a Step Subset"
-          onChange={props.onUpdateQuery}
-          presets={metadata ? interestingQueriesFor(metadata, layout) : undefined}
-          className={selection.keys.length > 0 ? 'has-step' : ''}
-        />
-        <Checkbox
-          checked={options.hideUnselectedSteps}
-          label="Hide unselected steps"
-          onChange={props.onChange}
-          inline={true}
-          style={{marginLeft: 5}}
-        />
+        <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
+          <GraphQueryInput
+            items={props.graph}
+            value={props.selection.query}
+            placeholder="Type a Step Subset"
+            onChange={props.onUpdateQuery}
+            presets={metadata ? interestingQueriesFor(metadata, layout) : undefined}
+            className={selection.keys.length > 0 ? 'has-step' : ''}
+          />
+          <Checkbox
+            checked={options.hideUnselectedSteps}
+            label="Hide unselected steps"
+            onChange={props.onChange}
+          />
+        </Box>
       </GraphQueryInputContainer>
     </>
   );
@@ -558,9 +557,9 @@ interface Bounds {
 const boundsForBox = (a: GanttChartPlacement): Bounds => {
   return {
     minX: a.x,
-    minY: a.y * BOX_HEIGHT,
+    minY: TOP_INSET + a.y * BOX_HEIGHT,
     maxX: a.x + a.width,
-    maxY: a.y * BOX_HEIGHT + BOX_HEIGHT,
+    maxY: TOP_INSET + a.y * BOX_HEIGHT + BOX_HEIGHT,
   };
 };
 
@@ -584,7 +583,7 @@ const boundsForLine = (a: GanttChartBox, b: GanttChartBox): Bounds => {
 
   // Line comes out of the center of the right side of the box
   const minX = Math.min(a.x + a.width, b.x + b.width);
-  const minY = straight ? a.y * BOX_HEIGHT + aCenterY : a.y * BOX_HEIGHT + aCenterY;
+  const minY = TOP_INSET + (straight ? a.y * BOX_HEIGHT + aCenterY : a.y * BOX_HEIGHT + aCenterY);
 
   // Line ends on the center left edge of the box if it is on the
   // same line, or drops into the top center of the box if it's below.
@@ -592,8 +591,8 @@ const boundsForLine = (a: GanttChartBox, b: GanttChartBox): Bounds => {
     ? Math.max(a.x, b.x)
     : Math.max(a.x + a.width / 2, b.x + (bIsDot ? BOX_DOT_SIZE : b.width) / 2);
   const maxY = straight
-    ? b.y * BOX_HEIGHT + bCenterY
-    : b.y * BOX_HEIGHT + (bIsDot ? BOX_DOT_MARGIN_Y : BOX_MARGIN_Y);
+    ? TOP_INSET + b.y * BOX_HEIGHT + bCenterY
+    : TOP_INSET + b.y * BOX_HEIGHT + (bIsDot ? BOX_DOT_MARGIN_Y : BOX_MARGIN_Y);
 
   return {minX, minY, maxX, maxY};
 };
@@ -619,7 +618,7 @@ const GanttLine = React.memo(
     depNotDrawn: boolean;
   } & Bounds) => {
     const border = `${LINE_SIZE}px ${dotted ? 'dotted' : 'solid'} ${
-      darkened ? Colors.DARK_GRAY1 : Colors.LIGHT_GRAY3
+      darkened ? ColorsWIP.Gray700 : ColorsWIP.Gray300
     }`;
 
     const maxXAvoidingOverlap = maxX + (depIdx % 10) * LINE_SIZE;
@@ -643,7 +642,7 @@ const GanttLine = React.memo(
             style={{
               width: 1,
               left: maxXAvoidingOverlap,
-              top: minY,
+              top: minY - LINE_SIZE / 2,
               height: maxY - minY,
               borderRight: border,
               zIndex: darkened ? 100 : 1,
@@ -666,7 +665,7 @@ const GanttChartContainer = styled.div`
   flex-direction: column;
   z-index: 2;
   user-select: none;
-  background: ${Colors.WHITE};
+  background: ${ColorsWIP.White};
 
   .line {
     position: absolute;
@@ -677,7 +676,7 @@ const GanttChartContainer = styled.div`
   }
 
   .chart-element {
-    font-size: 11px;
+    font-size: 12px;
     transition: top ${CSS_DURATION}ms linear, left ${CSS_DURATION}ms linear;
     display: inline-block;
     position: absolute;
@@ -696,26 +695,24 @@ const GanttChartContainer = styled.div`
     width: ${BOX_DOT_SIZE}px;
     height: ${BOX_DOT_SIZE}px;
     border: 1px solid transparent;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
     border-radius: ${BOX_DOT_SIZE / 2}px;
   }
 
   .box {
     height: ${BOX_HEIGHT - BOX_MARGIN_Y * 2}px;
-    padding: 2px;
+    padding: 3px;
     border: 1px solid transparent;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
     border-radius: 2px;
 
     transition: top ${CSS_DURATION}ms linear, left ${CSS_DURATION}ms linear,
       width ${CSS_DURATION}ms linear, height ${CSS_DURATION}ms linear;
 
     &.focused {
-      border: 1px solid ${Colors.DARK_GRAY1};
-      box-shadow: 0 0 0 2px ${Colors.GOLD3};
+      border: 1px solid ${ColorsWIP.Gray900};
+      box-shadow: 0 0 0 2px ${ColorsWIP.Yellow500};
     }
     &.hovered {
-      border: 1px solid ${Colors.DARK_GRAY3};
+      border: 1px solid ${ColorsWIP.Gray800};
     }
     &.dynamic {
       filter: brightness(125%);
@@ -748,7 +745,7 @@ const GanttChartContainer = styled.div`
 const WebsocketWarning = styled.div`
   position: absolute;
   bottom: 100%;
-  color: ${Colors.ORANGE2};
+  color: ${ColorsWIP.Yellow700};
   width: 100%;
 `;
 
@@ -767,7 +764,11 @@ export const GanttChartLoadingState = ({runId}: {runId: string}) => (
     <SplitPanelContainer
       identifier="gantt-split"
       axis="horizontal"
-      first={<NonIdealState icon={<Spinner purpose="section" />} />}
+      first={
+        <div style={{margin: 'auto', marginTop: 100}}>
+          <Spinner purpose="section" />
+        </div>
+      }
       firstInitialPercent={70}
       second={
         <GanttStatusPanel
@@ -789,7 +790,7 @@ export const QueuedState = ({runId}: {runId: string}) => (
       axis="horizontal"
       first={
         <NonIdealState
-          icon={IconNames.TIME}
+          icon="arrow_forward"
           description="This run is currently queued."
           action={<Link to={`/instance/runs?q=status%3AQUEUED`}>View queued runs</Link>}
         />

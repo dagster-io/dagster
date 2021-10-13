@@ -1,5 +1,4 @@
 import {gql, useApolloClient, useQuery} from '@apollo/client';
-import {Button, Colors, Icon} from '@blueprintjs/core';
 import merge from 'deepmerge';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -8,12 +7,12 @@ import * as yaml from 'yaml';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useFeatureFlags} from '../app/Flags';
 import {
-  PipelineRunTag,
-  SessionBase,
-  useStorage,
   applyChangesToSession,
   applyCreateSession,
   IExecutionSessionChanges,
+  PipelineRunTag,
+  SessionBase,
+  useStorage,
 } from '../app/LocalStorage';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {ShortcutHandler} from '../app/ShortcutHandler';
@@ -28,8 +27,10 @@ import {isHelpContextEqual} from '../configeditor/isHelpContextEqual';
 import {DagsterTag} from '../runs/RunTag';
 import {RepositorySelector} from '../types/globalTypes';
 import {Box} from '../ui/Box';
-import {ButtonLink} from '../ui/ButtonLink';
+import {ButtonWIP} from '../ui/Button';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
+import {IconWIP} from '../ui/Icon';
 import {SecondPanelToggle, SplitPanelContainer} from '../ui/SplitPanelContainer';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -579,23 +580,6 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
                   />
                 </>
               )}
-              {tagsFromSession.length ? null : (
-                <Box margin={{left: 12}}>
-                  <ShortcutHandler
-                    shortcutLabel={'⌥T'}
-                    shortcutFilter={(e) => e.keyCode === 84 && e.altKey}
-                    onShortcut={openTagEditor}
-                  >
-                    <ButtonLink
-                      color={{link: Colors.GRAY3, hover: Colors.DARK_GRAY3}}
-                      onClick={openTagEditor}
-                      underline="always"
-                    >
-                      + Add tags
-                    </ButtonLink>
-                  </ShortcutHandler>
-                </Box>
-              )}
               <TagEditor
                 tagsFromDefinition={tagsFromDefinition}
                 tagsFromSession={tagsFromSession}
@@ -604,11 +588,24 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
                 onRequestClose={closeTagEditor}
               />
               <div style={{flex: 1}} />
-              <Button
-                icon="paragraph"
-                small={true}
+              {tagsFromSession.length ? null : (
+                <>
+                  <ShortcutHandler
+                    shortcutLabel={'⌥T'}
+                    shortcutFilter={(e) => e.keyCode === 84 && e.altKey}
+                    onShortcut={openTagEditor}
+                  >
+                    <ButtonWIP onClick={openTagEditor} icon={<IconWIP name="add_circle" />}>
+                      Add tags
+                    </ButtonWIP>
+                  </ShortcutHandler>
+                  <SessionSettingsSpacer />
+                </>
+              )}
+              <ButtonWIP
+                title="Toggle whitespace"
+                icon={<IconWIP name="line_style" />}
                 active={showWhitespace}
-                style={{marginLeft: 'auto'}}
                 onClick={() => dispatch({type: 'toggle-whitepsace', payload: !showWhitespace})}
               />
               <SessionSettingsSpacer />
@@ -620,25 +617,22 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
             {refreshableSessionBase ? (
               <Box
                 padding={{vertical: 8, horizontal: 12}}
-                border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY1}}
+                border={{side: 'bottom', width: 1, color: ColorsWIP.Gray200}}
               >
                 <Group direction="row" spacing={8} alignItems="center">
-                  <Icon icon="warning-sign" color={Colors.GOLD3} />
+                  <IconWIP name="warning" color={ColorsWIP.Yellow500} />
                   <div>
                     Your repository has been manually refreshed, and this configuration may now be
                     out of date.
                   </div>
-                  <Button
-                    small
+                  <ButtonWIP
                     intent="primary"
                     onClick={() => onRefreshConfig(refreshableSessionBase)}
                     disabled={state.configLoading}
                   >
                     Refresh config
-                  </Button>
-                  <Button small onClick={onDismissRefreshWarning}>
-                    Dismiss
-                  </Button>
+                  </ButtonWIP>
+                  <ButtonWIP onClick={onDismissRefreshWarning}>Dismiss</ButtonWIP>
                 </Group>
               </Box>
             ) : null}
@@ -691,7 +685,7 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
           </>
         }
       />
-      <div style={{position: 'absolute', bottom: 14, right: 14, zIndex: 1}}>
+      <div style={{position: 'absolute', bottom: 12, right: 12, zIndex: 1}}>
         <LaunchRootExecutionButton
           pipelineName={pipeline.name}
           getVariables={buildExecutionVariables}

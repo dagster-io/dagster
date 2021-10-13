@@ -13,13 +13,13 @@ Dagster includes a rich and extensible logging system. Dagster comes with a buil
 | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | <PyObject object="logger" decorator />         | The decorator used to define loggers. The decorator returns a <PyObject object="LoggerDefinition" />                               |
 | <PyObject object="LoggerDefinition" />         | Class for loggers. You almost never want to use initialize this class directly. Instead, you should use the decorator above        |
-| <PyObject object="SolidExecutionContext" />    | The `context` object available to a solid compute function                                                                         |
+| <PyObject object="OpExecutionContext" />       | The `context` object available to an op compute function                                                                           |
 | <PyObject object="InitLoggerContext" />        | The context object passed to a custom logger's initialization function.                                                            |
 | <PyObject object="build_init_logger_context"/> | A function to construct a <PyObject object="InitLoggerContext" /> outside of execution, primarily to be used for testing purposes. |
 
 ## Overview
 
-Loggers are pipeline-scoped logging handlers, which will be automatically invoked whenever solids in a pipeline log messages.
+Loggers are job-scoped logging handlers, which will be automatically invoked whenever ops in a job log messages.
 
 ---
 
@@ -31,89 +31,89 @@ The built-in Loggers are defined internally using the <PyObject object="LoggerDe
 
 ## Using a Logger
 
-### Logging from a Solid
+### Logging from an Op
 
-Any solid can emit log messages at any point in its computation:
+Any op can emit log messages at any point in its computation:
 
 ```python file=/concepts/logging/builtin_logger.py startafter=start_builtin_logger_marker_0 endbefore=end_builtin_logger_marker_0
-@solid
+@op
 def hello_logs(context):
     context.log.info("Hello, world!")
 
 
-@pipeline
-def demo_pipeline():
+@job
+def demo_job():
     hello_logs()
 ```
 
 ### Using Built-in Loggers
 
-When you run the above pipeline in terminal, you'll find the messages have been logged through a built-in logger.
+When you run the above job in terminal, you'll find the messages have been logged through a built-in logger.
 
 <Image
-alt="cli"
-src="/images/concepts/logging/cli.png"
-width={1280}
-height={582}
+alt="job-cli"
+src="/images/concepts/logging/job-cli.png"
+width={1024}
+height={618}
 />
 
-The `context` object passed to every solid execution includes the built-in log manager, `context.log`. It exposes the usual `debug`, `info`, `warning`, `error`, and `critical` methods you would expect anywhere else in Python.
+The `context` object passed to every op execution includes the built-in log manager, `context.log`. It exposes the usual `debug`, `info`, `warning`, `error`, and `critical` methods you would expect anywhere else in Python.
 
-When you run Dagster pipelines in Dagit, you'll notice that log messages are visible as colored messages in the console:
+When you run Dagster jobs in Dagit, you'll notice that log messages are visible as colored messages in the console:
 
 Logs also stream back to the Dagit frontend in real time:
 
 <Image
-alt="log-dagit"
-src="/images/concepts/logging/log-dagit.png"
-width={4032}
-height={2454}
+alt="job-log-dagit"
+src="/images/concepts/logging/job-log-dagit.png"
+width={2968}
+height={2236}
 />
 
 Dagit exposes a powerful facility for filtering log messages based on execution steps and log levels.
 
 <Image
-alt="log-dagit-filter"
-src="/images/concepts/logging/log-dagit-filter.png"
-width={4032}
-height={2454}
+alt="job-dagit-filter"
+src="/images/concepts/logging/job-dagit-filter.png"
+width={2968}
+height={2236}
 />
 
 ### Debugging with Logs
 
-What happens if we introduce an error into our solid logic?
+What happens if we introduce an error into our op logic?
 
 ```python file=/concepts/logging/builtin_logger.py startafter=start_builtin_logger_error_marker_0 endbefore=end_builtin_logger_error_marker_0
-@solid
+@op
 def hello_logs_error(context):
     raise Exception("Somebody set up us the bomb")
 
 
-@pipeline
-def demo_pipeline_error():
+@job
+def demo_job_error():
     hello_logs_error()
 ```
 
-Errors in user code are caught by the Dagster machinery to ensure pipelines gracefully halt or continue to execute, but messages including the original stack trace get logged both to the console and back to Dagit.
+Errors in user code are caught by the Dagster machinery to ensure jobs gracefully halt or continue to execute, but messages including the original stack trace get logged both to the console and back to Dagit.
 
 Messages at level `ERROR` or above are highlighted both in Dagit and in the console logs, so we can easily pick them out of logs even without filtering.
 
 <Image
-alt="log-dagit-error"
-src="/images/concepts/logging/log-dagit-error.png"
-width={4032}
-height={2454}
+alt="job-dagit-error"
+src="/images/concepts/logging/job-dagit-error.png"
+width={2968}
+height={2236}
 />
 
-In many cases, especially for local development, this log viewer, coupled with solid reexecution, is sufficient to enable a fast debug cycle for data pipelines.
+In many cases, especially for local development, this log viewer, coupled with op reexecution, is sufficient to enable a fast debug cycle for job implementation.
 
 ## Examples
 
 ### Configuring the built-in loggers
 
-Suppose that we've gotten the kinks out of our pipelines developing locally, and now we want to run in production—without all of the log spew from `DEBUG` messages that was helpful during development.
+Suppose that we've gotten the kinks out of our jobs developing locally, and now we want to run in production—without all of the log spew from `DEBUG` messages that was helpful during development.
 
-Just like solids, loggers can be configured when you run a pipeline. For example, to filter all messages below `ERROR` out of the colored console logger, add the following snippet to your config YAML:
+Just like ops, loggers can be configured when you run a job. For example, to filter all messages below `ERROR` out of the colored console logger, add the following snippet to your config YAML:
 
 ```yaml file=/concepts/logging/config.yaml
 loggers:
@@ -122,7 +122,7 @@ loggers:
       log_level: ERROR
 ```
 
-So when you execute the pipeline with that config, you'll only see the ERROR level logs.
+So when you execute the job with that config, you'll only see the ERROR level logs.
 
 ### Customizing Loggers
 
@@ -165,13 +165,13 @@ def json_console_logger(init_context):
     return logger_
 
 
-@solid
+@op
 def hello_logs(context):
     context.log.info("Hello, world!")
 
 
-@pipeline(mode_defs=[ModeDefinition(logger_defs={"my_json_logger": json_console_logger})])
-def demo_pipeline():
+@job(logger_defs={"my_json_logger": json_console_logger})
+def demo_job():
     hello_logs()
 ```
 
@@ -184,13 +184,13 @@ loggers:
       log_level: INFO
 ```
 
-When you execute the pipeline, you'll notice that you are no longer using the built-in logger but your custom json logger instead.
+When you execute the job, you'll notice that you are no longer using the built-in logger but your custom json logger instead.
 
 <Image
-alt="custom-logger"
-src="/images/concepts/logging/custom-logger.png"
-width={1280}
-height={330}
+alt="job-custom-logger"
+src="/images/concepts/logging/job-custom-logger.png"
+width={2048}
+height={804}
 />
 
 ### Testing Custom Loggers
@@ -218,31 +218,30 @@ def test_init_json_console_logger_with_context():
 
 ## Patterns
 
-### <Check/> Environment-specific logging using modes
+### <Check/> Environment-specific logging using jobs
 
 Logging is environment-specific: you don't want messages generated by data scientists' local development loops to be aggregated with production messages; on the other hand, you may find that in production console logging is irrelevant or even counterproductive.
 
-Dagster recognizes this by attaching loggers to [modes](/concepts/resources) so that you can seamlessly switch from, e.g., Cloudwatch logging in production to console logging in development and test, without changing any of your code.
+Dagster recognizes this by attaching loggers to jobs so that you can seamlessly switch from, e.g., Cloudwatch logging in production to console logging in development and test, without changing any of your code.
 
-```python file=/concepts/logging/logging_modes.py startafter=start_logging_mode_marker_0 endbefore=end_logging_mode_marker_0
-@solid
-def hello_logs(context):
+```python file=/concepts/logging/logging_jobs.py startafter=start_logging_mode_marker_0 endbefore=end_logging_mode_marker_0
+@op
+def log_op(context):
     context.log.info("Hello, world!")
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(name="local", logger_defs={"console": colored_console_logger}),
-        ModeDefinition(name="prod", logger_defs={"cloudwatch": cloudwatch_logger}),
-    ]
-)
-def hello_modes():
-    hello_logs()
+@graph
+def hello_logs():
+    log_op()
+
+
+local_logs = hello_logs.to_job(name="local_logs", logger_defs={"console": colored_console_logger})
+prod_logs = hello_logs.to_job(name="prod_logs", logger_defs={"cloudwatch": cloudwatch_logger})
 ```
 
-From Dagit, you can switch your pipeline mode to 'prod' and edit config in order to use the new Cloudwatch logger, for example:
+From Dagit, you can view and execute the `prod_logs` job and edit config in order to use the new Cloudwatch logger, for example:
 
-```yaml file=/concepts/logging/config_modes.yaml
+```yaml file=/concepts/logging/config_prod_job.yaml
 loggers:
   cloudwatch:
     config:

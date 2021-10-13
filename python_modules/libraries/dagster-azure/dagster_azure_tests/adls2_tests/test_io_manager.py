@@ -5,14 +5,13 @@ from dagster import (
     DynamicOutputDefinition,
     InputDefinition,
     Int,
-    ModeDefinition,
     OutputDefinition,
     PipelineRun,
     build_input_context,
     build_output_context,
-    pipeline,
+    graph,
+    op,
     resource,
-    solid,
 )
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.events import DagsterEventType
@@ -45,12 +44,12 @@ def get_step_output(step_events, step_key, output_name="result"):
     return None
 
 
-def define_inty_pipeline():
-    @solid(output_defs=[OutputDefinition(Int)])
+def define_inty_job():
+    @op(output_defs=[OutputDefinition(Int)])
     def return_one():
         return 1
 
-    @solid(
+    @op(
         input_defs=[InputDefinition("num", Int)],
         output_defs=[DynamicOutputDefinition(Int)],
     )
@@ -58,17 +57,13 @@ def define_inty_pipeline():
         yield DynamicOutput(num + 1, "foo")
         yield DynamicOutput(num + 1, "bar")
 
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={"io_manager": adls2_pickle_io_manager, "adls2": adls2_resource}
-            )
-        ]
-    )
+    @graph
     def basic_external_plan_execution():
         add_one(return_one())
 
-    return basic_external_plan_execution
+    return basic_external_plan_execution.to_job(
+        resource_defs={"io_manager": adls2_pickle_io_manager, "adls2": adls2_resource}
+    )
 
 
 nettest = pytest.mark.nettest
@@ -76,7 +71,7 @@ nettest = pytest.mark.nettest
 
 @nettest
 def test_adls2_pickle_io_manager_execution(storage_account, file_system, credential):
-    pipeline_def = define_inty_pipeline()
+    job = define_inty_job()
 
     run_config = {
         "resources": {
@@ -89,21 +84,19 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
 
     run_id = make_new_run_id()
 
-    resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config=run_config)
-    execution_plan = ExecutionPlan.build(InMemoryPipeline(pipeline_def), resolved_run_config)
+    resolved_run_config = ResolvedRunConfig.build(job, run_config=run_config)
+    execution_plan = ExecutionPlan.build(InMemoryPipeline(job), resolved_run_config)
 
     assert execution_plan.get_step_by_key("return_one")
 
     step_keys = ["return_one"]
     instance = DagsterInstance.ephemeral()
-    pipeline_run = PipelineRun(
-        pipeline_name=pipeline_def.name, run_id=run_id, run_config=run_config
-    )
+    pipeline_run = PipelineRun(pipeline_name=job.name, run_id=run_id, run_config=run_config)
 
     return_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(step_keys, pipeline_def, resolved_run_config),
-            pipeline=InMemoryPipeline(pipeline_def),
+            execution_plan.build_subset_plan(step_keys, job, resolved_run_config),
+            pipeline=InMemoryPipeline(job),
             run_config=run_config,
             pipeline_run=pipeline_run,
             instance=instance,
@@ -128,8 +121,8 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
 
     add_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(["add_one"], pipeline_def, resolved_run_config),
-            pipeline=InMemoryPipeline(pipeline_def),
+            execution_plan.build_subset_plan(["add_one"], job, resolved_run_config),
+            pipeline=InMemoryPipeline(job),
             pipeline_run=pipeline_run,
             run_config=run_config,
             instance=instance,

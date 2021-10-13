@@ -8,6 +8,7 @@ from .decorators import (
     graph,
     hook,
     hourly_schedule,
+    job,
     lambda_solid,
     monthly_schedule,
     op,
@@ -63,14 +64,27 @@ from .executor import (
 )
 from .graph import GraphDefinition
 from .hook import HookDefinition
-from .input import In, InputDefinition, InputMapping
+from .input import GraphIn, In, InputDefinition, InputMapping
 from .intermediate_storage import IntermediateStorageDefinition, intermediate_storage
 from .job import JobDefinition
 from .logger import LoggerDefinition, build_init_logger_context, logger
 from .mode import ModeDefinition
 from .op import OpDefinition
-from .output import DynamicOut, DynamicOutputDefinition, Out, OutputDefinition, OutputMapping
-from .partition import Partition, PartitionScheduleDefinition, PartitionSetDefinition
+from .output import (
+    DynamicOut,
+    DynamicOutputDefinition,
+    GraphOut,
+    Out,
+    OutputDefinition,
+    OutputMapping,
+)
+from .partition import (
+    Partition,
+    PartitionScheduleDefinition,
+    PartitionSetDefinition,
+    dynamic_partitioned_config,
+    static_partitioned_config,
+)
 from .partitioned_schedule import schedule_from_partitions
 from .pipeline import PipelineDefinition
 from .pipeline_base import IPipeline

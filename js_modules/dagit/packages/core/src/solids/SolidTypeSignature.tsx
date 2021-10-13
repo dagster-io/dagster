@@ -1,10 +1,11 @@
 import {gql} from '@apollo/client';
-import {Code, Colors} from '@blueprintjs/core';
+import {Code} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {breakOnUnderscores} from '../app/Util';
 import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from '../typeexplorer/TypeWithTooltip';
+import {ColorsWIP} from '../ui/Colors';
 import {FontFamily} from '../ui/styles';
 
 import {SolidTypeSignatureFragment} from './types/SolidTypeSignatureFragment';
@@ -56,10 +57,10 @@ export const SOLID_TYPE_SIGNATURE_FRAGMENT = gql`
 
 const TypeSignature = styled(Code)`
   && {
-    background: ${Colors.LIGHT_GRAY5};
+    background: ${ColorsWIP.Blue50};
     font-family: ${FontFamily.monospace};
     font-size: 14px;
-    padding: 4px 10px;
+    padding: 4px;
     box-shadow: none;
     color: black;
   }

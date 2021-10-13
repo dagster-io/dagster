@@ -1,19 +1,19 @@
-# pylint: disable=unused-argument, no-value-for-parameter
+# pylint: disable=unused-argument, no-value-for-parameter, no-member
 
 # start_marker
 import os
 from typing import List
 
-from dagster import DynamicOutput, DynamicOutputDefinition, Field, pipeline, solid
+from dagster import DynamicOut, DynamicOutput, Field, graph, op
 from dagster.utils import file_relative_path
 
 
-@solid(
+@op(
     config_schema={"path": Field(str, default_value=file_relative_path(__file__, "sample"))},
-    output_defs=[DynamicOutputDefinition(str)],
+    out=DynamicOut(str),
 )
 def files_in_directory(context):
-    path = context.solid_config["path"]
+    path = context.op_config["path"]
     dirname, _, filenames = next(os.walk(path))
     for file in filenames:
         yield DynamicOutput(
@@ -23,19 +23,19 @@ def files_in_directory(context):
         )
 
 
-@solid
+@op
 def process_file(path: str) -> int:
     # simple example of calculating size
     return os.path.getsize(path)
 
 
-@solid
+@op
 def summarize_directory(sizes: List[int]) -> int:
     # simple example of totalling sizes
     return sum(sizes)
 
 
-@pipeline
+@graph
 def process_directory():
     file_results = files_in_directory().map(process_file)
     summarize_directory(file_results.collect())

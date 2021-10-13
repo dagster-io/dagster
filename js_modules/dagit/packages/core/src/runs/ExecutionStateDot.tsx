@@ -1,5 +1,6 @@
-import {Colors} from '@blueprintjs/core';
 import styled from 'styled-components/macro';
+
+import {ColorsWIP} from '../ui/Colors';
 
 import {IStepState} from './RunMetadataProvider';
 
@@ -11,24 +12,24 @@ export const ExecutionStateDot = styled.div<{state: IStepState}>`
   transition: background 200ms linear;
   background: ${({state}) =>
     ({
-      [IStepState.RUNNING]: Colors.GRAY3,
-      [IStepState.SUCCEEDED]: Colors.GREEN2,
-      [IStepState.SKIPPED]: Colors.GOLD3,
-      [IStepState.FAILED]: Colors.RED3,
-      [IStepState.PREPARING]: Colors.RED3,
-      [IStepState.RETRY_REQUESTED]: Colors.RED3,
-      [IStepState.UNKNOWN]: Colors.RED3,
+      [IStepState.RUNNING]: ColorsWIP.Gray400,
+      [IStepState.SUCCEEDED]: ColorsWIP.Green700,
+      [IStepState.SKIPPED]: ColorsWIP.Yellow500,
+      [IStepState.FAILED]: ColorsWIP.Red500,
+      [IStepState.PREPARING]: ColorsWIP.Red500,
+      [IStepState.RETRY_REQUESTED]: ColorsWIP.Red500,
+      [IStepState.UNKNOWN]: ColorsWIP.Red500,
     }[state])};
   &:hover {
     background: ${({state}) =>
       ({
-        [IStepState.RUNNING]: Colors.GRAY3,
-        [IStepState.SUCCEEDED]: Colors.GREEN2,
-        [IStepState.SKIPPED]: Colors.GOLD3,
-        [IStepState.FAILED]: Colors.RED5,
-        [IStepState.PREPARING]: Colors.RED3,
-        [IStepState.RETRY_REQUESTED]: Colors.RED3,
-        [IStepState.UNKNOWN]: Colors.RED3,
+        [IStepState.RUNNING]: ColorsWIP.Gray400,
+        [IStepState.SUCCEEDED]: ColorsWIP.Green700,
+        [IStepState.SKIPPED]: ColorsWIP.Yellow500,
+        [IStepState.FAILED]: ColorsWIP.Red200,
+        [IStepState.PREPARING]: ColorsWIP.Red500,
+        [IStepState.RETRY_REQUESTED]: ColorsWIP.Red500,
+        [IStepState.UNKNOWN]: ColorsWIP.Red500,
       }[state])};
   }
 `;

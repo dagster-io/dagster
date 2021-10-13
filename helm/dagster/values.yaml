@@ -155,6 +155,7 @@ computeLogManager:
   #     bucket: ~
   #     localDir: ~
   #     prefix: ~
+  #     jsonCredentialsEnvvar: ~
   ##  Uncomment this configuration if the S3ComputeLogManager is selected
   #   s3ComputeLogManager:
   #     bucket: ~
@@ -390,6 +391,28 @@ runLauncher:
       # envVars:
       #   - "ENV_VAR"
       envVars: []
+
+      # Additional volumes that should be included in the Job's Pod. See:
+      # https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core
+      #
+      # Example:
+      #
+      # volumes:
+      #   - name: my-volume
+      #     configMap: my-config-map
+      volumes: []
+
+      # Additional volume mounts that should be included in the container in the Job's Pod. See:
+      # See: https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core
+      #
+      # Example:
+      #
+      # volumeMounts:
+      #   - name: test-volume
+      #     mountPath: /opt/dagster/test_folder
+      #     subPath: test_file.yaml
+      volumeMounts: []
+
 
     # This configuration will only be used if the CeleryK8sRunLauncher is selected
     celeryK8sRunLauncher:

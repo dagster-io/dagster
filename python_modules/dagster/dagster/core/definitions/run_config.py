@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterator, List, NamedTuple, Optional, Set, Tuple
+from typing import Any, Dict, Iterator, List, NamedTuple, Optional, Set, Tuple, cast
 
 from dagster.config import Field, Permissive, Selector
 from dagster.config.config_type import ALL_CONFIG_BUILTINS, Array, ConfigType
@@ -65,6 +65,7 @@ def def_config_field(configurable_def: ConfigurableDefinition, is_required: bool
 class RunConfigSchemaCreationData(NamedTuple):
     pipeline_name: str
     solids: List[Node]
+    graph_def: GraphDefinition
     dependency_structure: DependencyStructure
     mode_definition: ModeDefinition
     logger_defs: Dict[str, LoggerDefinition]
@@ -149,15 +150,20 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
         ),
     }
 
-    nodes_field = Field(
-        define_solid_dictionary_cls(
-            solids=creation_data.solids,
-            ignored_solids=creation_data.ignored_solids,
-            dependency_structure=creation_data.dependency_structure,
-            resource_defs=creation_data.mode_definition.resource_defs,
-            is_using_graph_job_op_apis=creation_data.is_using_graph_job_op_apis,
+    if creation_data.graph_def.has_config_mapping:
+        config_schema = cast(IDefinitionConfigSchema, creation_data.graph_def.config_schema)
+        nodes_field = Field({"config": config_schema.as_field()})
+    else:
+        nodes_field = Field(
+            define_solid_dictionary_cls(
+                solids=creation_data.solids,
+                ignored_solids=creation_data.ignored_solids,
+                dependency_structure=creation_data.dependency_structure,
+                resource_defs=creation_data.mode_definition.resource_defs,
+                is_using_graph_job_op_apis=creation_data.is_using_graph_job_op_apis,
+            )
         )
-    )
+
     if creation_data.is_using_graph_job_op_apis:
         fields["ops"] = nodes_field
         field_aliases = {"ops": "solids"}
@@ -226,16 +232,16 @@ def get_input_manager_input_field(
 ) -> Optional[Field]:
     if input_def.root_manager_key not in resource_defs:
         raise DagsterInvalidDefinitionError(
-            f'Input "{input_def.name}" for solid "{solid.name}" requires root_manager_key '
-            f'"{input_def.root_manager_key}", but no resource has been provided. Please include a '
-            f"resource definition for that key in the resource_defs of your ModeDefinition."
+            f"Input '{input_def.name}' for {solid.describe_node()} requires root_manager_key "
+            f"'{input_def.root_manager_key}', but no resource has been provided. Please include a "
+            f"resource definition for that key in the provided resource_defs."
         )
 
     root_manager = resource_defs[input_def.root_manager_key]
     if not isinstance(root_manager, IInputManagerDefinition):
         raise DagsterInvalidDefinitionError(
-            f'Input "{input_def.name}" for solid "{solid.name}" requires root_manager_key '
-            f'"{input_def.root_manager_key}", but the resource definition provided is not an '
+            f"Input '{input_def.name}' for {solid.describe_node()} requires root_manager_key "
+            f"'{input_def.root_manager_key}', but the resource definition provided is not an "
             "IInputManagerDefinition"
         )
 
@@ -291,13 +297,13 @@ def get_output_manager_output_field(
 ) -> Optional[ConfigType]:
     if output_def.io_manager_key not in resource_defs:
         raise DagsterInvalidDefinitionError(
-            f'Output "{output_def.name}" for solid "{solid.name}" requires io_manager_key '
+            f'Output "{output_def.name}" for {solid.describe_node()} requires io_manager_key '
             f'"{output_def.io_manager_key}", but no resource has been provided. Please include a '
-            f"resource definition for that key in the resource_defs of your ModeDefinition."
+            f"resource definition for that key in the provided resource_defs."
         )
     if not isinstance(resource_defs[output_def.io_manager_key], IOutputManagerDefinition):
         raise DagsterInvalidDefinitionError(
-            f'Output "{output_def.name}" for solid "{solid.name}" requires io_manager_key '
+            f'Output "{output_def.name}" for {solid.describe_node()} requires io_manager_key '
             f'"{output_def.io_manager_key}", but the resource definition provided is not an '
             "IOutputManagerDefinition"
         )

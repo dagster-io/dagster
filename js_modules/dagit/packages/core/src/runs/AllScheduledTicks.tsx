@@ -1,15 +1,16 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {REPOSITORY_SCHEDULES_FRAGMENT} from '../schedules/ScheduleUtils';
-import {SchedulerInfo, SCHEDULER_FRAGMENT} from '../schedules/SchedulerInfo';
+import {SchedulerInfo} from '../schedules/SchedulerInfo';
 import {SchedulesNextTicks} from '../schedules/SchedulesNextTicks';
 import {Alert} from '../ui/Alert';
+import {Box} from '../ui/Box';
 import {ButtonLink} from '../ui/ButtonLink';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {Loading} from '../ui/Loading';
 
@@ -26,7 +27,7 @@ export const AllScheduledTicks = () => {
   return (
     <Loading queryResult={queryResult}>
       {(result) => {
-        const {repositoriesOrError, instance, scheduler} = result;
+        const {repositoriesOrError, instance} = result;
         if (repositoriesOrError.__typename === 'PythonError') {
           const message = repositoriesOrError.message;
           return (
@@ -36,7 +37,7 @@ export const AllScheduledTicks = () => {
                 <Group direction="row" spacing={4}>
                   <div>Could not load scheduled ticks.</div>
                   <ButtonLink
-                    color={Colors.BLUE3}
+                    color={ColorsWIP.Link}
                     underline="always"
                     onClick={() => {
                       showCustomAlert({
@@ -54,7 +55,9 @@ export const AllScheduledTicks = () => {
         }
         return (
           <Group direction="column" spacing={16}>
-            <SchedulerInfo schedulerOrError={scheduler} daemonHealth={instance.daemonHealth} />
+            <Box padding={{horizontal: 24}}>
+              <SchedulerInfo daemonHealth={instance.daemonHealth} />
+            </Box>
             <SchedulesNextTicks repos={repositoriesOrError.nodes} />
           </Group>
         );
@@ -65,9 +68,6 @@ export const AllScheduledTicks = () => {
 
 const SCHEDULER_INFO_QUERY = gql`
   query SchedulerInfoQuery {
-    scheduler {
-      ...SchedulerFragment
-    }
     instance {
       ...InstanceHealthFragment
     }
@@ -84,7 +84,6 @@ const SCHEDULER_INFO_QUERY = gql`
       ...PythonErrorFragment
     }
   }
-  ${SCHEDULER_FRAGMENT}
   ${INSTANCE_HEALTH_FRAGMENT}
   ${REPOSITORY_SCHEDULES_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}

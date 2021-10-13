@@ -1,5 +1,4 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -14,7 +13,6 @@ export const VersionNumber = () => {
 };
 
 const Version = styled.div`
-  color: ${Colors.GRAY3};
   font-size: 11px;
 `;
 

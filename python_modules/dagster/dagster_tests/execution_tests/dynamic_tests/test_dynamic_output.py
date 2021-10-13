@@ -6,6 +6,7 @@ from dagster import (
     build_solid_context,
     execute_pipeline,
     execute_solid,
+    graph,
     op,
     pipeline,
     solid,
@@ -201,3 +202,20 @@ def test_context_mapping_key():
     _observed = []
     observe_key(build_solid_context())
     assert _observed == [None]
+
+
+def test_dynamic_with_op():
+    @op
+    def passthrough(_ctx, _dep=None):
+        pass
+
+    @op(output_defs=[DynamicOutputDefinition()])
+    def emit():
+        yield DynamicOutput(1, mapping_key="key_1")
+        yield DynamicOutput(2, mapping_key="key_2")
+
+    @graph
+    def test_graph():
+        emit().map(passthrough)
+
+    assert test_graph.execute_in_process().success

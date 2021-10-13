@@ -27,13 +27,13 @@ export const TypeExplorer: React.FC<ITypeExplorerProps> = (props) => {
         </SidebarTitle>
       </Box>
       <SidebarSection title={'Description'}>
-        <Box padding={12}>
+        <Box padding={{vertical: 16, horizontal: 24}}>
           <Description description={description || 'No Description Provided'} />
         </Box>
       </SidebarSection>
       {inputSchemaType && (
         <SidebarSection title={'Input'}>
-          <Box padding={12}>
+          <Box padding={{vertical: 16, horizontal: 24}}>
             <ConfigTypeSchema
               type={inputSchemaType}
               typesInScope={inputSchemaType.recursiveConfigTypes}
@@ -43,7 +43,7 @@ export const TypeExplorer: React.FC<ITypeExplorerProps> = (props) => {
       )}
       {outputSchemaType && (
         <SidebarSection title={'Output'}>
-          <Box padding={12}>
+          <Box padding={{vertical: 16, horizontal: 24}}>
             <ConfigTypeSchema
               type={outputSchemaType}
               typesInScope={outputSchemaType.recursiveConfigTypes}

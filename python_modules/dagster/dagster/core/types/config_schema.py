@@ -180,7 +180,7 @@ def dagster_type_loader(
         if missing_positional:
             raise DagsterInvalidDefinitionError(
                 "@dagster_type_loader '{solid_name}' decorated function does not have required positional "
-                "parameter '{missing_param}'. Solid functions should only have keyword arguments "
+                "parameter '{missing_param}'. @dagster_type_loader decorated functions should only have keyword arguments "
                 "that match input names and a first positional parameter named 'context'.".format(
                     solid_name=func.__name__, missing_param=missing_positional
                 )

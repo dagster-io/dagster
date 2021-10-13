@@ -1,22 +1,21 @@
 import {gql} from '@apollo/client';
-import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {PartitionGraph} from './PartitionGraph';
 import {
-  PARTITION_GRAPH_FRAGMENT,
-  StepSelector,
   getPipelineDurationForRun,
-  getStepDurationsForRun,
   getPipelineExpectationFailureForRun,
-  getPipelineExpectationSuccessForRun,
   getPipelineExpectationRateForRun,
+  getPipelineExpectationSuccessForRun,
   getPipelineMaterializationCountForRun,
+  getStepDurationsForRun,
   getStepExpectationFailureForRun,
   getStepExpectationRateForRun,
   getStepExpectationSuccessForRun,
   getStepMaterializationCountForRun,
+  PARTITION_GRAPH_FRAGMENT,
+  StepSelector,
 } from './PartitionGraphUtils';
 import {PartitionGraphSetRunFragment} from './types/PartitionGraphSetRunFragment';
 
@@ -52,7 +51,13 @@ export const PartitionGraphSet: React.FunctionComponent<{
 
   return (
     <PartitionContentContainer>
-      <div style={{flex: 1, minWidth: 450}}>
+      <StepSelector
+        all={allStepKeys}
+        hidden={hiddenStepKeys}
+        onChangeHidden={onChangeHiddenStepKeys}
+      />
+
+      <div style={{flex: 1}}>
         <PartitionGraph
           title="Execution Time by Partition"
           yLabel="Execution time (secs)"
@@ -94,15 +99,6 @@ export const PartitionGraphSet: React.FunctionComponent<{
           ref={rateGraph}
         />
       </div>
-      <div style={{width: 450}}>
-        <NavContainer>
-          <StepSelector
-            all={allStepKeys}
-            hidden={hiddenStepKeys}
-            onChangeHidden={onChangeHiddenStepKeys}
-          />
-        </NavContainer>
-      </div>
     </PartitionContentContainer>
   );
 };
@@ -118,14 +114,6 @@ export const PARTITION_GRAPH_SET_RUN_FRAGMENT = gql`
     ...PartitionGraphFragment
   }
   ${PARTITION_GRAPH_FRAGMENT}
-`;
-
-const NavContainer = styled.div`
-  margin: 20px 0 0 10px;
-  padding: 10px;
-  background-color: #fff;
-  border: 1px solid ${Colors.GRAY5};
-  overflow: auto;
 `;
 
 const PartitionContentContainer = styled.div`

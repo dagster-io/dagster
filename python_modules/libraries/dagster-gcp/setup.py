@@ -21,7 +21,7 @@ if __name__ == "__main__":
         author="Elementl",
         author_email="hello@elementl.com",
         license="Apache-2.0",
-        description="Package for GCP-specific Dagster framework solid and resource components.",
+        description="Package for GCP-specific Dagster framework op and resource components.",
         # pylint: disable=line-too-long
         url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-gcp",
         classifiers=[

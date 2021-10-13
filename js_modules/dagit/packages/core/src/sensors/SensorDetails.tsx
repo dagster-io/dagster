@@ -1,5 +1,4 @@
 import * as React from 'react';
-import {Link} from 'react-router-dom';
 
 import {useFeatureFlags} from '../app/Flags';
 import {TickTag} from '../instigation/InstigationTick';
@@ -10,12 +9,12 @@ import {InstigationStatus, InstigationType} from '../types/globalTypes';
 import {Box} from '../ui/Box';
 import {CountdownStatus, useCountdown} from '../ui/Countdown';
 import {Group} from '../ui/Group';
-import {MetadataTable} from '../ui/MetadataTable';
+import {MetadataTableWIP} from '../ui/MetadataTable';
 import {PageHeader} from '../ui/PageHeader';
 import {RefreshableCountdown} from '../ui/RefreshableCountdown';
+import {TagWIP} from '../ui/TagWIP';
 import {Heading} from '../ui/Text';
 import {RepoAddress} from '../workspace/types';
-import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {SensorSwitch} from './SensorSwitch';
 import {SensorFragment} from './types/SensorFragment';
@@ -69,27 +68,25 @@ export const SensorDetails: React.FC<{
   const hasMultipleTargets = sensor.targets && sensor.targets.length > 1;
 
   return (
-    <Group direction="column" spacing={16}>
+    <>
       <PageHeader
         title={
-          <Group alignItems="center" direction="row" spacing={2}>
+          <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
             <Heading>{name}</Heading>
-            <Box margin={{horizontal: 12}}>
-              <SensorSwitch repoAddress={repoAddress} sensor={sensor} />
-            </Box>
-            {sensor.nextTick && daemonHealth && status === InstigationStatus.RUNNING ? (
-              <Group direction="row" spacing={4}>
-                <div>Next tick:</div>
-                <TimestampDisplay timestamp={sensor.nextTick.timestamp} />
-              </Group>
-            ) : null}
-          </Group>
+            <SensorSwitch repoAddress={repoAddress} sensor={sensor} />
+          </Box>
         }
-        icon="automatic-updates"
-        description={
+        icon="sensors"
+        tags={
           <>
-            <Link to={workspacePathFromAddress(repoAddress, '/sensors')}>Sensor</Link> in{' '}
-            <RepositoryLink repoAddress={repoAddress} />
+            <TagWIP icon="sensors">
+              Sensor in <RepositoryLink repoAddress={repoAddress} />
+            </TagWIP>
+            {sensor.nextTick && daemonHealth && status === InstigationStatus.RUNNING ? (
+              <TagWIP icon="timer">
+                Next tick: <TimestampDisplay timestamp={sensor.nextTick.timestamp} />
+              </TagWIP>
+            ) : null}
           </>
         }
         right={
@@ -102,35 +99,42 @@ export const SensorDetails: React.FC<{
           </Box>
         }
       />
-      <MetadataTable
-        rows={[
-          sensor.description
-            ? {
-                key: 'Description',
-                value: sensor.description,
-              }
-            : null,
-          {
-            key: 'Latest tick',
-            value: latestTick ? (
-              <Group direction="row" spacing={8} alignItems="center">
-                <TimestampDisplay timestamp={latestTick.timestamp} />
-                <TickTag tick={latestTick} instigationType={InstigationType.SENSOR} />
-              </Group>
-            ) : (
-              'Sensor has never run'
-            ),
-          },
-          {
-            key: flagPipelineModeTuples
-              ? hasMultipleTargets
-                ? 'Jobs'
-                : 'Job'
-              : hasMultipleTargets
-              ? 'Pipelines'
-              : 'Pipeline',
-            value:
-              sensor.targets && sensor.targets.length ? (
+      <MetadataTableWIP>
+        <tbody>
+          {sensor.description ? (
+            <tr>
+              <td>Description</td>
+              <td>{sensor.description}</td>
+            </tr>
+          ) : null}
+          <tr>
+            <td>Latest tick</td>
+            <td>
+              {latestTick ? (
+                <Box
+                  flex={{direction: 'row', gap: 8, alignItems: 'center'}}
+                  style={{marginTop: '-2px'}}
+                >
+                  <TimestampDisplay timestamp={latestTick.timestamp} />
+                  <TickTag tick={latestTick} instigationType={InstigationType.SENSOR} />
+                </Box>
+              ) : (
+                'Sensor has never run'
+              )}
+            </td>
+          </tr>
+          <tr>
+            <td>
+              {flagPipelineModeTuples
+                ? hasMultipleTargets
+                  ? 'Jobs'
+                  : 'Job'
+                : hasMultipleTargets
+                ? 'Pipelines'
+                : 'Pipeline'}
+            </td>
+            <td>
+              {sensor.targets && sensor.targets.length ? (
                 <Group direction="column" spacing={2}>
                   {sensor.targets.map((target) =>
                     target.pipelineName ? (
@@ -145,14 +149,15 @@ export const SensorDetails: React.FC<{
                 </Group>
               ) : (
                 'Sensor does not target a pipeline'
-              ),
-          },
-          {
-            key: 'Frequency',
-            value: humanizeSensorInterval(sensor.minIntervalSeconds),
-          },
-        ]}
-      />
-    </Group>
+              )}
+            </td>
+          </tr>
+          <tr>
+            <td>Frequency</td>
+            <td>{humanizeSensorInterval(sensor.minIntervalSeconds)}</td>
+          </tr>
+        </tbody>
+      </MetadataTableWIP>
+    </>
   );
 };

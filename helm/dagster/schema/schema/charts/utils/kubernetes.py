@@ -142,3 +142,8 @@ class ConfigMapEnvSource(BaseModel):
 class VolumeMount(BaseModel):
     class Config:
         schema_extra = {"$ref": create_definition_ref("io.k8s.api.core.v1.VolumeMount")}
+
+
+class Volume(BaseModel):
+    class Config:
+        schema_extra = {"$ref": create_definition_ref("io.k8s.api.core.v1.Volume")}

@@ -1,24 +1,19 @@
-import {
-  Button,
-  ButtonGroup,
-  Checkbox,
-  Colors,
-  IconName,
-  MenuItem,
-  Tab,
-  Tabs,
-  Tag,
-} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
-import {Select} from '@blueprintjs/select';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {useCopyToClipboard} from '../app/browser';
+import {OptionsContainer, OptionsDivider} from '../gantt/VizComponents';
 import {Box} from '../ui/Box';
-import {ButtonLink} from '../ui/ButtonLink';
+import {ButtonWIP} from '../ui/Button';
+import {ButtonGroup} from '../ui/ButtonGroup';
+import {Checkbox} from '../ui/Checkbox';
 import {Group} from '../ui/Group';
+import {IconName, IconWIP} from '../ui/Icon';
+import {MenuItemWIP} from '../ui/Menu';
+import {SelectWIP} from '../ui/Select';
 import {Spinner} from '../ui/Spinner';
+import {Tab, Tabs} from '../ui/Tabs';
+import {TagWIP} from '../ui/TagWIP';
 
 import {ExecutionStateDot} from './ExecutionStateDot';
 import {LogLevel} from './LogLevel';
@@ -67,22 +62,16 @@ export const LogsToolbar: React.FC<ILogsToolbarProps> = (props) => {
     computeLogUrl,
   } = props;
   return (
-    <LogsToolbarContainer>
-      <ButtonGroup>
-        <Button
-          icon="properties"
-          title="Structured event logs"
-          active={logType === LogType.structured}
-          onClick={() => onSetLogType(LogType.structured)}
-        />
-        <Button
-          icon="console"
-          title="Raw compute logs"
-          active={logType !== LogType.structured}
-          onClick={() => onSetLogType(LogType.stdout)}
-        />
-      </ButtonGroup>
-      <LogsToolbarDivider />
+    <OptionsContainer>
+      <ButtonGroup
+        activeItems={new Set([logType])}
+        buttons={[
+          {id: LogType.structured, icon: 'list', tooltip: 'Structured event logs'},
+          {id: LogType.stdout, icon: 'wysiwyg', tooltip: 'Raw compute logs'},
+        ]}
+        onClick={(id) => onSetLogType(id)}
+      />
+      <OptionsDivider />
       {logType === 'structured' ? (
         <StructuredLogToolbar filter={filter} onSetFilter={onSetFilter} steps={steps} />
       ) : (
@@ -96,7 +85,7 @@ export const LogsToolbar: React.FC<ILogsToolbarProps> = (props) => {
           computeLogUrl={computeLogUrl}
         />
       )}
-    </LogsToolbarContainer>
+    </OptionsContainer>
   );
 };
 
@@ -158,11 +147,11 @@ const ComputeLogToolbar = ({
       style={{flex: 1}}
     >
       <Group direction="row" spacing={24} alignItems="center">
-        <Select
+        <SelectWIP
           disabled={!steps.length}
           items={Object.keys(logCaptureSteps)}
           itemRenderer={(item: string, options: {handleClick: any; modifiers: any}) => (
-            <MenuItem
+            <MenuItemWIP
               key={item}
               onClick={options.handleClick}
               text={logKeyText(item)}
@@ -175,47 +164,14 @@ const ComputeLogToolbar = ({
             onSetComputeLogKey(logKey);
           }}
         >
-          <Button
-            text={logKeyText(computeLogKey) || 'Select a step...'}
-            disabled={!steps.length}
-            rightIcon="caret-down"
-            style={{minHeight: 25}}
-          />
-        </Select>
+          <ButtonWIP disabled={!steps.length} rightIcon={<IconWIP name="expand_more" />}>
+            {logKeyText(computeLogKey) || 'Select a step...'}
+          </ButtonWIP>
+        </SelectWIP>
         {isValidStepSelection ? (
-          <Tabs selectedTabId={LogType[logType]}>
-            <Tab
-              id={LogType[LogType.stdout]}
-              title={
-                <ButtonLink
-                  color={
-                    logType === LogType.stdout
-                      ? Colors.BLUE1
-                      : {link: Colors.GRAY2, hover: Colors.BLUE1}
-                  }
-                  underline="never"
-                  onClick={() => onSetLogType(LogType.stdout)}
-                >
-                  stdout
-                </ButtonLink>
-              }
-            />
-            <Tab
-              id={LogType[LogType.stderr]}
-              title={
-                <ButtonLink
-                  color={
-                    logType === LogType.stderr
-                      ? Colors.BLUE1
-                      : {link: Colors.GRAY2, hover: Colors.BLUE1}
-                  }
-                  underline="never"
-                  onClick={() => onSetLogType(LogType.stderr)}
-                >
-                  stderr
-                </ButtonLink>
-              }
-            />
+          <Tabs selectedTabId={logType} onChange={onSetLogType} size="small">
+            <Tab id={LogType.stdout} title="stdout" />
+            <Tab id={LogType.stderr} title="stderr" />
           </Tabs>
         ) : null}
       </Group>
@@ -256,7 +212,7 @@ const StructuredLogToolbar = ({
   onSetFilter: (filter: LogFilter) => void;
   steps: string[];
 }) => {
-  const [copyIcon, setCopyIcon] = React.useState<IconName>(IconNames.CLIPBOARD);
+  const [copyIcon, setCopyIcon] = React.useState<IconName>('assignment');
   const logQueryString = logQueryToString(filter.logQuery);
   const [queryString, setQueryString] = React.useState<string>(() => logQueryString);
   const copyToClipboard = useCopyToClipboard();
@@ -286,9 +242,9 @@ const StructuredLogToolbar = ({
   // Restore the clipboard icon after a delay.
   React.useEffect(() => {
     let token: any;
-    if (copyIcon === IconNames.SAVED) {
+    if (copyIcon === 'assignment_turned_in') {
       token = setTimeout(() => {
-        setCopyIcon(IconNames.CLIPBOARD);
+        setCopyIcon('assignment');
       }, 2000);
     }
     return () => {
@@ -305,7 +261,6 @@ const StructuredLogToolbar = ({
       />
       {filterText ? (
         <NonMatchCheckbox
-          inline
           checked={filter.hideNonMatches}
           onChange={(event) =>
             onSetFilter({...filter, hideNonMatches: event.currentTarget.checked})
@@ -314,16 +269,13 @@ const StructuredLogToolbar = ({
           Hide non-matches
         </NonMatchCheckbox>
       ) : null}
-      <LogsToolbarDivider />
-      <div style={{display: 'flex'}}>
+      <OptionsDivider />
+      <Group direction="row" spacing={4} alignItems="center">
         {Object.keys(LogLevel).map((level) => {
           const enabled = filter.levels[level];
           return (
-            <FilterTag
+            <FilterButton
               key={level}
-              intent={enabled ? 'primary' : 'none'}
-              interactive
-              minimal={!enabled}
               onClick={() =>
                 onSetFilter({
                   ...filter,
@@ -333,40 +285,34 @@ const StructuredLogToolbar = ({
                   },
                 })
               }
-              round
             >
-              {level.toLowerCase()}
-            </FilterTag>
+              <TagWIP
+                key={level}
+                intent={enabled ? 'primary' : 'none'}
+                interactive
+                minimal={!enabled}
+                round
+              >
+                {level.toLowerCase()}
+              </TagWIP>
+            </FilterButton>
           );
         })}
-      </div>
-      {selectedStep && <LogsToolbarDivider />}
+      </Group>
+      {selectedStep && <OptionsDivider />}
       <div style={{minWidth: 15, flex: 1}} />
-      <div style={{marginRight: '8px'}}>
-        <Button
-          small
-          icon={copyIcon}
-          onClick={() => {
-            copyToClipboard(window.location.href);
-            setCopyIcon(IconNames.SAVED);
-          }}
-          text="Copy URL"
-        />
-      </div>
+      <ButtonWIP
+        icon={<IconWIP name={copyIcon} />}
+        onClick={() => {
+          copyToClipboard(window.location.href);
+          setCopyIcon('assignment_turned_in');
+        }}
+      >
+        Copy URL
+      </ButtonWIP>
     </>
   );
 };
-
-const LogsToolbarContainer = styled.div`
-  display: flex;
-  flex-direction: row;
-  background: ${Colors.WHITE};
-  align-items: center;
-  padding: 4px 8px;
-  border-bottom: 1px solid ${Colors.GRAY4};
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.07);
-  z-index: 2;
-`;
 
 const NonMatchCheckbox = styled(Checkbox)`
   &&& {
@@ -376,16 +322,15 @@ const NonMatchCheckbox = styled(Checkbox)`
   white-space: nowrap;
 `;
 
-const LogsToolbarDivider = styled.div`
-  display: inline-block;
-  width: 1px;
-  height: 30px;
-  margin: 0 8px;
-  border-right: 1px solid ${Colors.LIGHT_GRAY3};
-`;
+const FilterButton = styled.button`
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  display: block;
 
-const FilterTag = styled(Tag)`
-  margin-right: 8px;
-  text-transform: capitalize;
-  opacity: ${({minimal}) => (minimal ? '0.5' : '1')};
+  :focus {
+    outline: none;
+  }
 `;

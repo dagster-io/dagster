@@ -40,6 +40,7 @@ export type FlexProperties = {
   direction?: FlexDirection;
   display?: 'flex' | 'inline-flex';
   grow?: number;
+  gap?: number;
   justifyContent?: JustifyContent;
   shrink?: number;
   wrap?: FlexWrap;

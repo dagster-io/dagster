@@ -30,13 +30,15 @@ from dagster.core.host_representation import (
     InProcessRepositoryLocationOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )
-from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.scheduler.job import JobState, JobStatus, JobTickStatus, JobType, ScheduleJobData
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import PARTITION_NAME_TAG, SCHEDULED_EXECUTION_TIME_TAG
-from dagster.core.test_utils import instance_for_test, mock_system_timezone
+from dagster.core.test_utils import (
+    create_test_daemon_workspace,
+    instance_for_test,
+    mock_system_timezone,
+)
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.core.workspace.dynamic_workspace import DynamicWorkspace
 from dagster.daemon import get_default_daemon_logger
 from dagster.scheduler.scheduler import launch_scheduled_runs
 from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
@@ -379,10 +381,9 @@ def logger():
 @contextmanager
 def instance_with_schedules(external_repo_context, overrides=None):
     with schedule_instance(overrides) as instance:
-        with ProcessGrpcServerRegistry() as grpc_server_registry:
-            with DynamicWorkspace(grpc_server_registry) as workspace:
-                with external_repo_context() as external_repo:
-                    yield (instance, workspace, external_repo)
+        with create_test_daemon_workspace() as workspace:
+            with external_repo_context() as external_repo:
+                yield (instance, workspace, external_repo)
 
 
 @contextmanager
@@ -1155,48 +1156,47 @@ def test_bad_load_schedule(external_repo_context, capfd):
 
 
 def test_bad_load_repository_location(capfd):
-    with schedule_instance() as instance, ProcessGrpcServerRegistry() as grpc_server_registry:
-        with DynamicWorkspace(grpc_server_registry) as workspace:
-            fake_origin = _get_unloadable_schedule_origin()
-            initial_datetime = create_pendulum_time(
-                year=2019,
-                month=2,
-                day=27,
-                hour=23,
-                minute=59,
-                second=59,
+    with schedule_instance() as instance, create_test_daemon_workspace() as workspace:
+        fake_origin = _get_unloadable_schedule_origin()
+        initial_datetime = create_pendulum_time(
+            year=2019,
+            month=2,
+            day=27,
+            hour=23,
+            minute=59,
+            second=59,
+        )
+        with pendulum.test(initial_datetime):
+            schedule_state = JobState(
+                fake_origin,
+                JobType.SCHEDULE,
+                JobStatus.RUNNING,
+                ScheduleJobData(
+                    "0 0 * * *", pendulum.now("UTC").timestamp(), "DagsterDaemonScheduler"
+                ),
             )
-            with pendulum.test(initial_datetime):
-                schedule_state = JobState(
-                    fake_origin,
-                    JobType.SCHEDULE,
-                    JobStatus.RUNNING,
-                    ScheduleJobData(
-                        "0 0 * * *", pendulum.now("UTC").timestamp(), "DagsterDaemonScheduler"
-                    ),
-                )
-                instance.add_job_state(schedule_state)
+            instance.add_job_state(schedule_state)
 
-            initial_datetime = initial_datetime.add(seconds=1)
-            with pendulum.test(initial_datetime):
-                list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+        initial_datetime = initial_datetime.add(seconds=1)
+        with pendulum.test(initial_datetime):
+            list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
 
-                assert instance.get_runs_count() == 0
+            assert instance.get_runs_count() == 0
 
-                ticks = instance.get_job_ticks(fake_origin.get_id())
+            ticks = instance.get_job_ticks(fake_origin.get_id())
 
-                assert len(ticks) == 0
+            assert len(ticks) == 0
 
-                captured = capfd.readouterr()
-                assert "Scheduler caught an error for schedule doesnt_exist" in captured.out
-                assert "doesnt_exist not found at module scope" in captured.out
+            captured = capfd.readouterr()
+            assert "Scheduler caught an error for schedule doesnt_exist" in captured.out
+            assert "doesnt_exist not found at module scope" in captured.out
 
-            initial_datetime = initial_datetime.add(days=1)
-            with pendulum.test(initial_datetime):
-                list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
-                assert instance.get_runs_count() == 0
-                ticks = instance.get_job_ticks(fake_origin.get_id())
-                assert len(ticks) == 0
+        initial_datetime = initial_datetime.add(days=1)
+        with pendulum.test(initial_datetime):
+            list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
+            assert instance.get_runs_count() == 0
+            ticks = instance.get_job_ticks(fake_origin.get_id())
+            assert len(ticks) == 0
 
 
 @pytest.mark.parametrize("external_repo_context", repos())

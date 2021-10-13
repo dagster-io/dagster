@@ -1,6 +1,5 @@
 import {gql} from '@apollo/client';
-import {Button, Checkbox, Code, Colors, Icon, Intent, Position} from '@blueprintjs/core';
-import {Tooltip2 as Tooltip} from '@blueprintjs/popover2';
+import {Code, Intent} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -13,8 +12,15 @@ import {
   ConfigEditorRunConfigSchemaFragment,
   ConfigEditorRunConfigSchemaFragment_allConfigTypes_CompositeConfigType,
 } from '../configeditor/types/ConfigEditorRunConfigSchemaFragment';
+import {Box} from '../ui/Box';
+import {ButtonWIP} from '../ui/Button';
 import {ButtonLink} from '../ui/ButtonLink';
+import {Checkbox} from '../ui/Checkbox';
+import {ColorsWIP} from '../ui/Colors';
+import {IconWIP} from '../ui/Icon';
 import {SplitPanelContainer} from '../ui/SplitPanelContainer';
+import {TagWIP} from '../ui/TagWIP';
+import {Tooltip} from '../ui/Tooltip';
 
 import {
   RunPreviewValidationFragment,
@@ -28,20 +34,20 @@ function isValidationError(e: ValidationErrorOrNode): e is ValidationError {
   return e && typeof e === 'object' && '__typename' in e ? true : false;
 }
 
-const stateToHint = {
+const stateToHint: {[key: string]: {title: string; intent: Intent}} = {
   invalid: {
     title: `You need to fix this configuration section.`,
-    intent: Intent.DANGER,
+    intent: 'danger',
   },
   missing: {
     title: `You need to add this configuration section.`,
-    intent: Intent.DANGER,
+    intent: 'danger',
   },
   present: {
     title: `This section is present and valid.`,
-    intent: Intent.SUCCESS,
+    intent: 'none',
   },
-  none: {title: `This section is empty and valid.`, intent: Intent.PRIMARY},
+  none: {title: `This section is empty and valid.`, intent: 'none'},
 };
 
 const RemoveExtraConfigButton = ({
@@ -73,58 +79,51 @@ const RemoveExtraConfigButton = ({
     }
   }
 
-  return (
-    <div style={{marginTop: 5}}>
-      <Button
-        small={true}
-        onClick={async () => {
-          await confirm({
-            title: 'Remove extra config',
-            description: (
-              <div>
-                <p>
-                  You have provided extra configuration in your run config which does not conform to
-                  your pipeline{`'`}s config schema.
-                </p>
-                {Object.entries(knownKeyExtraPaths).length > 0 &&
-                  Object.entries(knownKeyExtraPaths).map(([key, value]) => (
-                    <>
-                      <p>Extra {key}:</p>
-                      <ul>
-                        {value.map((v) => (
-                          <li key={v}>
-                            <Code>{v}</Code>
-                          </li>
-                        ))}
-                      </ul>
-                    </>
+  const onClick = async () => {
+    await confirm({
+      title: 'Remove extra config',
+      description: (
+        <div>
+          <p>
+            {`You have provided extra configuration in your run config which does not conform to your
+            pipeline's config schema.`}
+          </p>
+          {Object.entries(knownKeyExtraPaths).length > 0 &&
+            Object.entries(knownKeyExtraPaths).map(([key, value]) => (
+              <>
+                <p>Extra {key}:</p>
+                <ul>
+                  {value.map((v) => (
+                    <li key={v}>
+                      <Code>{v}</Code>
+                    </li>
                   ))}
-                {otherPaths.length > 0 && (
-                  <>
-                    <p>Other extra paths:</p>
-                    <ul>
-                      {otherPaths.map((v) => (
-                        <li key={v}>
-                          <Code>{v}</Code>
-                        </li>
-                      ))}
-                    </ul>
-                  </>
-                )}
-                <p>
-                  Clicking confirm will automatically remove this extra configuration from your run
-                  config.
-                </p>{' '}
-              </div>
-            ),
-          });
-          onRemoveExtraPaths(extraNodes);
-        }}
-      >
-        Remove Extra Config
-      </Button>
-    </div>
-  );
+                </ul>
+              </>
+            ))}
+          {otherPaths.length > 0 && (
+            <>
+              <p>Other extra paths:</p>
+              <ul>
+                {otherPaths.map((v) => (
+                  <li key={v}>
+                    <Code>{v}</Code>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+          <p>
+            Clicking confirm will automatically remove this extra configuration from your run
+            config.
+          </p>
+        </div>
+      ),
+    });
+    onRemoveExtraPaths(extraNodes);
+  };
+
+  return <ButtonWIP onClick={onClick}>Remove Extra Config</ButtonWIP>;
 };
 
 const ScaffoldConfigButton = ({
@@ -165,13 +164,7 @@ const ScaffoldConfigButton = ({
     onScaffoldMissingConfig();
   };
 
-  return (
-    <div style={{marginTop: 5}}>
-      <Button small={true} onClick={onClick}>
-        Scaffold Missing Config
-      </Button>
-    </div>
-  );
+  return <ButtonWIP onClick={onClick}>Scaffold Missing Config</ButtonWIP>;
 };
 
 interface RunPreviewProps {
@@ -312,21 +305,21 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
 
         return (
           <Tooltip
-            position={Position.BOTTOM}
+            position="bottom"
             content={stateToHint[state].title}
             intent={stateToHint[state].intent}
             key={item.name}
           >
-            <Item
+            <TagWIP
               key={item.name}
-              state={state}
+              intent={stateToHint[state].intent}
               onClick={() => {
                 const first = pathErrors.find(isValidationError);
                 onHighlightPath(first ? errorStackToYamlPath(first.stack.entries) : path);
               }}
             >
               {item.name}
-            </Item>
+            </TagWIP>
           </Tooltip>
         );
       })
@@ -354,18 +347,20 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
           {(extraNodes.length > 0 || missingNodes.length > 0) && (
             <Section>
               <SectionTitle>Bulk Actions:</SectionTitle>
-              {extraNodes.length ? (
-                <RemoveExtraConfigButton
-                  onRemoveExtraPaths={onRemoveExtraPaths}
-                  extraNodes={extraNodes}
-                />
-              ) : null}
-              {missingNodes.length ? (
-                <ScaffoldConfigButton
-                  onScaffoldMissingConfig={onScaffoldMissingConfig}
-                  missingNodes={missingNodes}
-                />
-              ) : null}
+              <Box flex={{direction: 'row', alignItems: 'center', gap: 8}} padding={{top: 4}}>
+                {extraNodes.length ? (
+                  <RemoveExtraConfigButton
+                    onRemoveExtraPaths={onRemoveExtraPaths}
+                    extraNodes={extraNodes}
+                  />
+                ) : null}
+                {missingNodes.length ? (
+                  <ScaffoldConfigButton
+                    onScaffoldMissingConfig={onScaffoldMissingConfig}
+                    missingNodes={missingNodes}
+                  />
+                ) : null}
+              </Box>
             </Section>
           )}
         </ErrorListContainer>
@@ -469,9 +464,10 @@ export const RUN_PREVIEW_VALIDATION_FRAGMENT = gql`
 `;
 
 const SectionTitle = styled.div`
-  color: ${Colors.GRAY3};
+  color: ${ColorsWIP.Gray400};
   text-transform: uppercase;
   font-size: 12px;
+  margin-bottom: 8px;
 `;
 
 const Section = styled.div`
@@ -483,62 +479,13 @@ const ItemSet = styled.div`
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
+  gap: 4px;
 `;
 
 const ItemsEmptyNotice = styled.div`
   font-size: 13px;
   padding-top: 7px;
   padding-bottom: 7px;
-`;
-
-const ItemBorder = {
-  invalid: `1px solid #CE1126`,
-  missing: `1px solid #CE1126`,
-  present: `1px solid #AFCCE1`,
-  none: `1px solid ${Colors.LIGHT_GRAY2}`,
-};
-
-const ItemBackground = {
-  invalid: Colors.RED5,
-  missing: Colors.RED5,
-  present: '#C8E1F4',
-  none: Colors.LIGHT_GRAY4,
-};
-
-const ItemBackgroundHover = {
-  invalid: '#E15858',
-  missing: '#E15858',
-  present: '#AFCCE1',
-  none: Colors.LIGHT_GRAY4,
-};
-
-const ItemColor = {
-  invalid: Colors.WHITE,
-  missing: Colors.WHITE,
-  present: Colors.BLACK,
-  none: Colors.BLACK,
-};
-
-const Item = styled.div<{
-  state: 'present' | 'missing' | 'invalid' | 'none';
-}>`
-  white-space: nowrap;
-  font-size: 13px;
-  color: ${({state}) => ItemColor[state]};
-  background: ${({state}) => ItemBackground[state]};
-  border-radius: 3px;
-  border: ${({state}) => ItemBorder[state]};
-  padding: 3px 5px;
-  margin: 3px;
-  transition: background 150ms linear, color 150ms linear;
-  cursor: ${({state}) => (state === 'present' ? 'default' : 'not-allowed')};
-  overflow: hidden;
-  text-overflow: ellipsis;
-
-  &:hover {
-    transition: none;
-    background: ${({state}) => ItemBackgroundHover[state]};
-  }
 `;
 
 const ErrorListContainer = styled.div`
@@ -566,13 +513,14 @@ const ErrorRowContainer = styled.div<{hoverable: boolean}>`
   ${({hoverable}) =>
     hoverable &&
     `&:hover {
-      background: ${Colors.LIGHT_GRAY5};
+      background: ${ColorsWIP.Gray50};
     }
   `}
 `;
 
 const RuntimeAndResourcesSection = styled.div`
   display: flex;
+  gap: 12px;
   @media (max-width: 800px) {
     flex-direction: column;
   }
@@ -599,8 +547,8 @@ const ErrorRow: React.FunctionComponent<{
       hoverable={!!target}
       onClick={() => target && onHighlight(errorStackToYamlPath(target.stack.entries))}
     >
-      <div style={{paddingRight: 8}}>
-        <Icon icon="error" iconSize={14} color={Colors.RED4} />
+      <div style={{paddingRight: 4}}>
+        <IconWIP name="error" color={ColorsWIP.Red500} />
       </div>
       <div>
         {displayed}

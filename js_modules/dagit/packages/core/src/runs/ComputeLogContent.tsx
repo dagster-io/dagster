@@ -1,10 +1,11 @@
 import {gql} from '@apollo/client';
-import {Colors, Icon} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
 import Ansi from 'ansi-to-react';
 import * as React from 'react';
 import styled, {createGlobalStyle} from 'styled-components/macro';
 
+import {ColorsWIP} from '../ui/Colors';
+import {Group} from '../ui/Group';
+import {IconWIP} from '../ui/Icon';
 import {Spinner} from '../ui/Spinner';
 import {FontFamily} from '../ui/styles';
 
@@ -79,8 +80,10 @@ export class ComputeLogContent extends React.Component<{
           onMouseOver={this.cancelHideWarning}
           onMouseOut={this.scheduleHideWarning}
         >
-          <Icon icon={IconNames.ARROW_UP} style={{marginRight: 10}} />
-          Scroll to top
+          <Group direction="row" spacing={8} alignItems="center">
+            <IconWIP name="arrow_upward" color={ColorsWIP.White} />
+            Scroll to top
+          </Group>
         </ScrollToTop>
       </ScrollToast>
     );
@@ -98,14 +101,18 @@ export class ComputeLogContent extends React.Component<{
     }
     const warning = isTruncated ? (
       <FileWarning>
-        <Icon icon={IconNames.WARNING_SIGN} style={{marginRight: 10, color: Colors.ORANGE5}} />
-        This log has exceeded the 5MB limit.{' '}
-        {downloadUrl ? (
-          <a href={downloadUrl} download>
-            Download the full log file
-          </a>
-        ) : null}
-        .
+        <Group direction="row" spacing={8} alignItems="center">
+          <IconWIP name="warning" color={ColorsWIP.Yellow500} />
+          <div>
+            This log has exceeded the 5MB limit.{' '}
+            {downloadUrl ? (
+              <a href={downloadUrl} download>
+                Download the full log file
+              </a>
+            ) : null}
+            .
+          </div>
+        </Group>
       </FileWarning>
     ) : null;
 
@@ -288,7 +295,7 @@ const FileFooter = styled.div`
   flex-direction: row;
   align-items: center;
   height: 30px;
-  background-color: ${Colors.DARK_GRAY2};
+  background-color: ${ColorsWIP.Gray900};
   border-top: 0.5px solid #5c7080;
   color: #aaaaaa;
   padding: 2px 5px;
@@ -299,11 +306,11 @@ const ContentContainer = styled.div`
   display: flex;
   flex-direction: row;
   min-height: 100%;
-  background-color: ${Colors.DARK_GRAY2};
+  background-color: ${ColorsWIP.Gray900};
 `;
 const Content = styled.div`
   padding: 10px;
-  background-color: ${Colors.DARK_GRAY2};
+  background-color: ${ColorsWIP.Gray900};
 `;
 const LineNumberContainer = styled.div`
   display: flex;
@@ -312,7 +319,7 @@ const LineNumberContainer = styled.div`
   border-right: 1px solid #5c7080;
   padding: 10px 10px 10px 20px;
   margin-right: 5px;
-  background-color: ${Colors.DARK_GRAY2};
+  background-color: ${ColorsWIP.Gray900};
   opacity: 0.8;
   color: #858585;
   min-height: 100%;
@@ -392,9 +399,6 @@ const ScrollToTop = styled.div`
   border-left: 0.5px solid #5c7080;
   border-right: 0.5px solid #5c7080;
   cursor: pointer;
-  &:hover {
-    text-decoration: underline;
-  }
 `;
 const LoadingContainer = styled.div`
   display: flex;
@@ -405,6 +409,6 @@ const LoadingContainer = styled.div`
   bottom: 0;
   left: 0;
   right: 0;
-  backgroundcolor: ${Colors.DARK_GRAY3};
+  backgroundcolor: ${ColorsWIP.Gray800};
   opacity: 0.3;
 `;

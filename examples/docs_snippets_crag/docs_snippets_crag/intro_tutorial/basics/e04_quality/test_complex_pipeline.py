@@ -14,16 +14,13 @@ def test_find_highest_calorie_cereal():
     assert result == "hi-cal cereal"
 
 
-# end_optest
+# end_op_test
 
-# start_graph_test
+# start_job_test
 def test_diamond():
     res = diamond.execute_in_process()
     assert res.success
-    highest_protein_cereal = res.result_for_node(
-        "find_highest_protein_cereal"
-    ).output_value()
-    assert highest_protein_cereal == "Special K"
+    assert res.output_for_node("find_highest_protein_cereal") == "Special K"
 
 
-# end_graph_test
+# end_job_test

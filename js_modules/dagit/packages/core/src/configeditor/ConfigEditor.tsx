@@ -21,6 +21,7 @@ import {Controlled as CodeMirrorReact} from 'react-codemirror2';
 import {createGlobalStyle} from 'styled-components/macro';
 import * as yaml from 'yaml';
 
+import {ColorsWIP} from '../ui/Colors';
 import {FontFamily} from '../ui/styles';
 
 import {ConfigEditorHelpContext} from './ConfigEditorHelpContext';
@@ -77,7 +78,50 @@ const CodeMirrorShimStyle = createGlobalStyle`
     font-family: ${FontFamily.monospace};
     font-size: 16px;
   }
+
+  .react-codemirror2 .CodeMirror.cm-s-dagit {
+    .cm-atom {
+      color: ${ColorsWIP.Blue700};
+    }
+
+    .cm-comment {
+      color: ${ColorsWIP.Gray400};
+    }
+
+    .cm-meta {
+      color: ${ColorsWIP.Gray700};
+    }
+
+    .cm-number {
+      color: ${ColorsWIP.Red700};
+    }
+
+    .cm-string {
+      color: ${ColorsWIP.Green700};
+    }
+
+    .cm-string-2 {
+      color: ${ColorsWIP.Olive700};
+    }
+
+    .cm-variable-2 {
+      color: ${ColorsWIP.Blue500};
+    }
+
+    .cm-keyword {
+      color: ${ColorsWIP.Yellow700};
+    }
+
+    .CodeMirror-selected {
+      background-color: ${ColorsWIP.Blue50};
+    }
+
+    .CodeMirror-gutters {
+      background-color: ${ColorsWIP.Gray50};
+    }
+  }
 `;
+
 const CodeMirrorWhitespaceStyle = createGlobalStyle`
 .cm-whitespace {
   /*
@@ -87,6 +131,9 @@ const CodeMirrorWhitespaceStyle = createGlobalStyle`
     modified if we change the Codemirror font.
   */
   background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAEKADAAQAAAABAAAAEAAAAAA0VXHyAAAAm0lEQVQ4Ee2RMQ7DIAxFMVIvBEvm7FXXniIXak4RhnTujMSBkKDfCgPCzg2whAzf9hN8jJlBmgUxxgf0DWvFykR0Ouc+yGXsFwAeRuOv1rr0zdACIC/k2uu2P7T9Ng6zDu2ZUnqP/RqAr61GKUXUNEBWpy9R1AQAbzzvAFpNAJrbQYHs3nuhi1/gQRhGbFh7c7bWfgE+FOiU4MAfhpIwd0LjE+wAAAAASUVORK5CYII=') center left / 8.4px 8.4px repeat-x;
+  opacity: 0.5;
+  background-position-x: -1px;
+  background-position-y: 6px;
 }
 .cm-whitespace.CodeMirror-lint-mark-error {
   background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAEKADAAQAAAABAAAAEAAAAAA0VXHyAAAAm0lEQVQ4Ee2RMQ7DIAxFMVIvBEvm7FXXniIXak4RhnTujMSBkKDfCgPCzg2whAzf9hN8jJlBmgUxxgf0DWvFykR0Ouc+yGXsFwAeRuOv1rr0zdACIC/k2uu2P7T9Ng6zDu2ZUnqP/RqAr61GKUXUNEBWpy9R1AQAbzzvAFpNAJrbQYHs3nuhi1/gQRhGbFh7c7bWfgE+FOiU4MAfhpIwd0LjE+wAAAAASUVORK5CYII=') center left / 8.4px 8.4px repeat-x;
@@ -180,7 +227,7 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
           options={
             {
               mode: 'yaml',
-              theme: 'default',
+              theme: 'dagit',
               lineNumbers: true,
               readOnly: this.props.readOnly,
               indentUnit: 2,

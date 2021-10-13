@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Breadcrumbs, Checkbox, Colors, Icon, InputGroup, NonIdealState} from '@blueprintjs/core';
+import {Breadcrumbs} from '@blueprintjs/core';
 import Color from 'color';
 import * as querystring from 'query-string';
 import * as React from 'react';
@@ -11,8 +11,13 @@ import {filterByQuery} from '../app/GraphQueryImpl';
 import {PIPELINE_GRAPH_SOLID_FRAGMENT} from '../graph/PipelineGraph';
 import {PipelineGraphContainer} from '../graph/PipelineGraphContainer';
 import {SolidNameOrPath} from '../solids/SolidNameOrPath';
+import {Checkbox} from '../ui/Checkbox';
+import {ColorsWIP} from '../ui/Colors';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
+import {IconWIP} from '../ui/Icon';
+import {NonIdealState} from '../ui/NonIdealState';
 import {SplitPanelContainer} from '../ui/SplitPanelContainer';
+import {TextInput} from '../ui/TextInput';
 import {RepoAddress} from '../workspace/types';
 
 import {SolidJumpBar} from './PipelineJumpComponents';
@@ -138,7 +143,7 @@ export const PipelineExplorer: React.FC<PipelineExplorerProps> = (props) => {
     all,
   ]);
 
-  const backgroundColor = parentHandle ? Colors.WHITE : Colors.WHITE;
+  const backgroundColor = parentHandle ? ColorsWIP.White : ColorsWIP.White;
   const backgroundTranslucent = Color(backgroundColor).fade(0.6).toString();
 
   return (
@@ -180,13 +185,12 @@ export const PipelineExplorer: React.FC<PipelineExplorerProps> = (props) => {
           )}
 
           <SearchOverlay style={{background: backgroundTranslucent}}>
-            <SolidHighlightInput
-              type="text"
+            <TextInput
               name="highlighted"
-              leftIcon="search"
+              icon="search"
               value={highlighted}
-              placeholder="Highlight..."
-              onChange={(e: React.ChangeEvent<any>) => setHighlighted(e.target.value)}
+              placeholder="Highlight…"
+              onChange={(e) => setHighlighted(e.target.value)}
             />
           </SearchOverlay>
           {explodeCompositesEnabled && (
@@ -275,7 +279,7 @@ const RightInfoPanel = styled.div`
 
   height: 100%;
   overflow-y: scroll;
-  background: ${Colors.WHITE};
+  background: ${ColorsWIP.White};
 `;
 
 const OptionsOverlay = styled.div`
@@ -308,12 +312,6 @@ const PathOverlay = styled.div`
   left: 0;
 `;
 
-const SolidHighlightInput = styled(InputGroup)`
-  margin-left: 7px;
-  font-size: 14px;
-  width: 220px;
-`;
-
 const LargeDAGNotice = () => (
   <LargeDAGContainer>
     <LargeDAGInstructionBox>
@@ -333,7 +331,7 @@ const LargeDAGNotice = () => (
         </li>
       </ul>
     </LargeDAGInstructionBox>
-    <Icon icon="arrow-down" iconSize={40} />
+    <IconWIP name="arrow_downward" size={24} />
   </LargeDAGContainer>
 );
 
@@ -341,7 +339,7 @@ const EmptyDAGNotice = () => {
   const {flagPipelineModeTuples} = useFeatureFlags();
   return (
     <NonIdealState
-      icon="diagram-tree"
+      icon="no-results"
       title={flagPipelineModeTuples ? 'Empty graph' : 'Empty pipeline'}
       description={
         <>
@@ -363,7 +361,7 @@ const LargeDAGContainer = styled.div`
   max-width: 600px;
   text-align: center;
   .bp3-icon {
-    color: ${Colors.LIGHT_GRAY1};
+    color: ${ColorsWIP.Gray200};
   }
 `;
 
@@ -371,7 +369,7 @@ const LargeDAGInstructionBox = styled.div`
   padding: 15px 20px;
   border: 1px solid #fff5c3;
   margin-bottom: 20px;
-  color: ${Colors.DARK_GRAY3};
+  color: ${ColorsWIP.Gray800};
   background: #fffbe5;
   text-align: left;
   line-height: 1.4rem;

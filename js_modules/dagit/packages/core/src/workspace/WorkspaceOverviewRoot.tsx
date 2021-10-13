@@ -1,10 +1,12 @@
-import {NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {useFeatureFlags} from '../app/Flags';
+import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
 import {LoadingSpinner} from '../ui/Loading';
+import {NonIdealState} from '../ui/NonIdealState';
 import {Page} from '../ui/Page';
 import {PageHeader} from '../ui/PageHeader';
 import {Table} from '../ui/Table';
@@ -18,7 +20,7 @@ import {workspacePath} from './workspacePath';
 
 export const WorkspaceOverviewRoot = () => {
   const {loading, error, options} = useRepositoryOptions();
-  const {flagPipelineModeTuples} = useFeatureFlags();
+  const {flagPipelineModeTuples, flagAssetGraph} = useFeatureFlags();
 
   const content = () => {
     if (loading) {
@@ -27,21 +29,25 @@ export const WorkspaceOverviewRoot = () => {
 
     if (error) {
       return (
-        <NonIdealState
-          icon="cube"
-          title="Error loading repositories"
-          description="Could not load repositories in this workspace."
-        />
+        <Box padding={{vertical: 32}}>
+          <NonIdealState
+            icon="error"
+            title="Error loading repositories"
+            description="Could not load repositories in this workspace."
+          />
+        </Box>
       );
     }
 
     if (!options.length) {
       return (
-        <NonIdealState
-          icon="cube"
-          title="Empty workspace"
-          description="There are no repositories in this workspace."
-        />
+        <Box padding={{vertical: 32}}>
+          <NonIdealState
+            icon="folder"
+            title="No repositories"
+            description="When you add a repository to this workspace, it will appear here."
+          />
+        </Box>
       );
     }
 
@@ -59,6 +65,7 @@ export const WorkspaceOverviewRoot = () => {
               <th>Pipelines</th>
             )}
             <th>{flagPipelineModeTuples ? 'Ops' : 'Solids'}</th>
+            {flagAssetGraph ? <th>Assets</th> : null}
             <th>Schedules</th>
             <th>Sensors</th>
           </tr>
@@ -94,6 +101,11 @@ export const WorkspaceOverviewRoot = () => {
                     {flagPipelineModeTuples ? 'Ops' : 'Solids'}
                   </Link>
                 </td>
+                {flagAssetGraph ? (
+                  <td>
+                    <Link to={workspacePath(name, location, '/assets')}>Assets</Link>
+                  </td>
+                ) : null}
                 <td>
                   <Link to={workspacePath(name, location, '/schedules')}>Schedules</Link>
                 </td>
@@ -110,18 +122,23 @@ export const WorkspaceOverviewRoot = () => {
 
   return (
     <Page>
-      <Group direction="column" spacing={16}>
-        <PageHeader title={<Heading>Workspace</Heading>} />
-        <Group direction="column" spacing={16}>
-          <Group direction="row" spacing={12} alignItems="center">
-            <Subheading id="repository-locations">Locations</Subheading>
-            <ReloadAllButton />
-          </Group>
-          <RepositoryLocationsList />
+      <PageHeader title={<Heading>Workspace</Heading>} />
+      <Box padding={{vertical: 16, horizontal: 24}}>
+        <Group direction="row" spacing={12} alignItems="center">
+          <Subheading id="repository-locations">Locations</Subheading>
+          <ReloadAllButton />
         </Group>
+      </Box>
+      <Box padding={{bottom: 24}}>
+        <RepositoryLocationsList />
+      </Box>
+      <Box
+        padding={{vertical: 16, horizontal: 24}}
+        border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+      >
         <Subheading id="repository-locations">Repositories</Subheading>
-        {content()}
-      </Group>
+      </Box>
+      {content()}
     </Page>
   );
 };

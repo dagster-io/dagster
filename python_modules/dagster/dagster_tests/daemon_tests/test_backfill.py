@@ -8,7 +8,17 @@ from contextlib import contextmanager
 
 import pendulum
 import pytest
-from dagster import Any, Field, daily_partitioned_config, graph, pipeline, repository, solid
+from dagster import (
+    Any,
+    Field,
+    ModeDefinition,
+    daily_partitioned_config,
+    fs_io_manager,
+    graph,
+    pipeline,
+    repository,
+    solid,
+)
 from dagster.core.definitions import Partition, PartitionSetDefinition
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.execution.api import execute_pipeline
@@ -18,17 +28,17 @@ from dagster.core.host_representation import (
     InProcessRepositoryLocationOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )
-from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG, PARTITION_SET_TAG
-from dagster.core.test_utils import instance_for_test
+from dagster.core.test_utils import create_test_daemon_workspace, instance_for_test
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.core.workspace.dynamic_workspace import DynamicWorkspace
 from dagster.daemon import get_default_daemon_logger
 from dagster.daemon.backfill import execute_backfill_iteration
 from dagster.seven import IS_WINDOWS, get_system_temp_directory
 from dagster.utils import touch_file
 from dagster.utils.error import SerializableErrorInfo
+
+default_mode_def = ModeDefinition(resource_defs={"io_manager": fs_io_manager})
 
 
 def _failure_flag_file():
@@ -81,24 +91,24 @@ def after_failure(_, _input):
     return 1
 
 
-@pipeline
+@pipeline(mode_defs=[default_mode_def])
 def the_pipeline():
     always_succeed()
 
 
-@pipeline
+@pipeline(mode_defs=[default_mode_def])
 def conditional_failure_pipeline():
     after_failure(conditionally_fail(always_succeed()))
 
 
-@pipeline
+@pipeline(mode_defs=[default_mode_def])
 def partial_pipeline():
     always_succeed.alias("step_one")()
     always_succeed.alias("step_two")()
     always_succeed.alias("step_three")()
 
 
-@pipeline
+@pipeline(mode_defs=[default_mode_def])
 def parallel_failure_pipeline():
     fail_solid.alias("fail_one")()
     fail_solid.alias("fail_two")()
@@ -111,7 +121,7 @@ def config_solid(_):
     return 1
 
 
-@pipeline
+@pipeline(mode_defs=[default_mode_def])
 def config_pipeline():
     config_solid()
 
@@ -120,28 +130,24 @@ simple_partition_set = PartitionSetDefinition(
     name="simple_partition_set",
     pipeline_name="the_pipeline",
     partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],
-    run_config_fn_for_partition=lambda _partition: {"intermediate_storage": {"filesystem": {}}},
 )
 
 conditionally_fail_partition_set = PartitionSetDefinition(
     name="conditionally_fail_partition_set",
     pipeline_name="conditional_failure_pipeline",
     partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],
-    run_config_fn_for_partition=lambda _partition: {"intermediate_storage": {"filesystem": {}}},
 )
 
 partial_partition_set = PartitionSetDefinition(
     name="partial_partition_set",
     pipeline_name="partial_pipeline",
     partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],
-    run_config_fn_for_partition=lambda _partition: {"intermediate_storage": {"filesystem": {}}},
 )
 
 parallel_failure_partition_set = PartitionSetDefinition(
     name="parallel_failure_partition_set",
     pipeline_name="parallel_failure_pipeline",
     partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],
-    run_config_fn_for_partition=lambda _partition: {"intermediate_storage": {"filesystem": {}}},
 )
 
 
@@ -219,10 +225,9 @@ def repos():
 @contextmanager
 def instance_for_context(external_repo_context, overrides=None):
     with instance_for_test(overrides) as instance:
-        with ProcessGrpcServerRegistry() as grpc_server_registry:
-            with DynamicWorkspace(grpc_server_registry) as workspace:
-                with external_repo_context() as external_repo:
-                    yield (instance, workspace, external_repo)
+        with create_test_daemon_workspace() as workspace:
+            with external_repo_context() as external_repo:
+                yield (instance, workspace, external_repo)
 
 
 def step_did_not_run(instance, run, step_name):

@@ -41,23 +41,24 @@ class AssetKey(NamedTuple("_AssetKey", [("path", Union[Tuple[str, ...], List[str
     Example usage:
 
     .. code-block:: python
+        from dagster import op
 
-        @solid
-        def emit_metadata_solid(context, df):
+        @op
+        def emit_metadata(context, df):
             yield AssetMaterialization(
                 asset_key=AssetKey('flat_asset_key'),
                 metadata={"text_metadata": "Text-based metadata for this event"},
             )
 
-        @solid
-        def structured_asset_key_solid(context, df):
+        @op
+        def structured_asset_key(context, df):
             yield AssetMaterialization(
                 asset_key=AssetKey(['parent', 'child', 'grandchild']),
                 metadata={"text_metadata": "Text-based metadata for this event"},
             )
 
-        @solid
-        def structured_asset_key_solid_2(context, df):
+        @op
+        def structured_asset_key_2(context, df):
             yield AssetMaterialization(
                 asset_key=AssetKey(('parent', 'child', 'grandchild')),
                 metadata={"text_metadata": "Text-based metadata for this event"},
@@ -276,19 +277,19 @@ class AssetMaterialization(
         ],
     )
 ):
-    """Event indicating that a solid has materialized an asset.
+    """Event indicating that an op has materialized an asset.
 
-    Solid compute functions may yield events of this type whenever they wish to indicate to the
+    Op compute functions may yield events of this type whenever they wish to indicate to the
     Dagster framework (and the end user) that they have produced a materialized value as a
     side effect of computation. Unlike outputs, asset materializations can not be passed to other
-    solids, and their persistence is controlled by solid logic, rather than by the Dagster
+    ops, and their persistence is controlled by op logic, rather than by the Dagster
     framework.
 
-    Solid authors should use these events to organize metadata about the side effects of their
+    Op authors should use these events to organize metadata about the side effects of their
     computations, enabling tooling like the Assets dashboard in Dagit.
 
     Args:
-        asset_key (Union[str, List[str], AssetKey]): A key to identify the materialized asset across pipeline
+        asset_key (Union[str, List[str], AssetKey]): A key to identify the materialized asset across job
             runs
         description (Optional[str]): A longer human-readable description of the materialized value.
         metadata_entries (Optional[List[EventMetadataEntry]]): Arbitrary metadata about the
@@ -370,10 +371,10 @@ class AssetMaterialization(
 
 class MaterializationSerializer(DefaultNamedTupleSerializer):
     @classmethod
-    def value_from_storage_dict(cls, storage_dict, klass, args_for_class):
+    def value_from_unpacked(cls, unpacked_dict, klass):
         # override the default `from_storage_dict` implementation in order to skip the deprecation
         # warning for historical Materialization events, loaded from event_log storage
-        return Materialization(skip_deprecation_warning=True, **storage_dict)
+        return Materialization(skip_deprecation_warning=True, **unpacked_dict)
 
 
 @whitelist_for_serdes(serializer=MaterializationSerializer)

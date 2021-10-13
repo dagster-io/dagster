@@ -1,31 +1,28 @@
-from docs_snippets_crag.concepts.configuration.configurable_solid import config_example_pipeline
-from docs_snippets_crag.concepts.configuration.configurable_solid_with_schema import (
-    configurable_pipeline_with_schema,
-)
+from docs_snippets_crag.concepts.configuration.configurable_op import config_example
+from docs_snippets_crag.concepts.configuration.configurable_op_with_schema import nests_configurable
 
 
 def execute_with_config():
+    # start_define_job_with_config
+    config_example_job = config_example.to_job(
+        config={"ops": {"uses_config": {"config": {"iterations": 1}}}}
+    )
+    # end_define_job_with_config
+    assert config_example_job.execute_in_process().success
     # start_execute_with_config
-    from dagster import execute_pipeline
-
-    execute_pipeline(
-        config_example_pipeline,
-        run_config={"solids": {"config_example_solid": {"config": {"iterations": 1}}}},
+    result = config_example.to_job().execute_in_process(
+        run_config={"ops": {"uses_config": {"config": {"iterations": 1}}}}
     )
     # end_execute_with_config
+    assert result.success
 
 
 def execute_with_bad_config():
     # start_execute_with_bad_config
-    from dagster import execute_pipeline
-
-    execute_pipeline(
-        configurable_pipeline_with_schema,
+    result = nests_configurable.to_job().execute_in_process(
         run_config={
-            "solids": {
-                "configurable_solid_with_schema": {"config": {"nonexistent_config_value": 1}}
-            }
-        },
+            "ops": {"configurable_with_schema": {"config": {"nonexistent_config_value": 1}}}
+        }
     )
-
     # end_execute_with_bad_config
+    assert result.success

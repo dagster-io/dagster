@@ -1,14 +1,14 @@
-import {Colors} from '@blueprintjs/core';
 import {ActiveElement} from 'chart.js';
+import 'chartjs-adapter-date-fns';
 import * as React from 'react';
 import {Line} from 'react-chartjs-2';
+import styled from 'styled-components/macro';
 
-import {Group} from '../ui/Group';
+import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
 import {Subheading} from '../ui/Text';
 
 import {AssetNumericHistoricalData} from './types';
-
-import 'chartjs-adapter-date-fns';
 
 export const AssetValueGraph: React.FC<{
   label: string;
@@ -21,6 +21,10 @@ export const AssetValueGraph: React.FC<{
   // and pass the partition index as the x value. This prevents ChartJS from auto-coercing
   // ISO date partition names to dates and then re-formatting the labels away from 2020-01-01.
   //
+  if (!props.data) {
+    return <span />;
+  }
+
   let labels: React.ReactText[] | undefined = undefined;
   let xHover = props.xHover;
   if (props.data.xAxis === 'partition') {
@@ -35,12 +39,12 @@ export const AssetValueGraph: React.FC<{
         label: props.label,
         lineTension: 0,
         data: props.data.values.map((v) => ({x: v.xNumeric, y: v.y})),
-        borderColor: Colors.BLUE3,
+        borderColor: ColorsWIP.Blue500,
         backgroundColor: 'rgba(0,0,0,0)',
         pointBorderWidth: 2,
         pointHoverBorderWidth: 2,
         pointHoverRadius: 13,
-        pointHoverBorderColor: Colors.BLUE3,
+        pointHoverBorderColor: ColorsWIP.Blue500,
       },
     ],
   };
@@ -98,11 +102,21 @@ export const AssetValueGraph: React.FC<{
   };
 
   return (
-    <div style={{marginTop: 30, width: props.width}}>
-      <Group direction="column" spacing={12}>
+    <Box
+      style={{width: props.width}}
+      border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+    >
+      <Container>
         <Subheading>{props.label}</Subheading>
+      </Container>
+      <Container>
         <Line type="line" data={graphData} height={100} options={options} key={props.width} />
-      </Group>
-    </div>
+      </Container>
+    </Box>
   );
 };
+
+const Container = styled.div`
+  padding: 16px 24px;
+  box-shadow: ${ColorsWIP.KeylineGray} 0 -1px 0 inset, ${ColorsWIP.KeylineGray} -1px 0 0 inset;
+`;

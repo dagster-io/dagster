@@ -1,20 +1,24 @@
-from dagster import ModeDefinition, execute_pipeline, make_values_resource, pipeline, solid
+from dagster import graph, make_values_resource, op
 
 
-@solid(required_resource_keys={"value"})
-def solid1(context):
+@op(required_resource_keys={"value"})
+def needs_value(context):
     context.log.info(f"value: {context.resources.value}")
 
 
-@solid(required_resource_keys={"value"})
-def solid2(context):
+@op(required_resource_keys={"value"})
+def also_needs_value(context):
     context.log.info(f"value: {context.resources.value}")
 
 
-@pipeline(mode_defs=[ModeDefinition(resource_defs={"value": make_values_resource()})])
-def my_pipeline():
-    solid1()
-    solid2()
+@graph
+def basic():
+    needs_value()
+    also_needs_value()
 
 
-execute_pipeline(my_pipeline, run_config={"resources": {"value": {"config": "some_value"}}})
+basic_job = basic.to_job(resource_defs={"value": make_values_resource()})
+
+basic_result = basic_job.execute_in_process(
+    run_config={"resources": {"value": {"config": "some_value"}}}
+)

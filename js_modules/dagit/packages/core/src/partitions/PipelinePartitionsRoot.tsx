@@ -1,13 +1,12 @@
 import {gql, useQuery} from '@apollo/client';
-import {NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {explorerPathFromString, useStripSnapshotFromPath} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
-import {Box} from '../ui/Box';
 import {Loading} from '../ui/Loading';
+import {NonIdealState} from '../ui/NonIdealState';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -49,7 +48,7 @@ export const PipelinePartitionsRoot: React.FC<Props> = (props) => {
           return (
             <Wrapper>
               <NonIdealState
-                icon="multi-select"
+                icon="error"
                 title="Partitions"
                 description={partitionSetsOrError.message}
               />
@@ -61,7 +60,7 @@ export const PipelinePartitionsRoot: React.FC<Props> = (props) => {
           return (
             <Wrapper>
               <NonIdealState
-                icon="multi-select"
+                icon="error"
                 title="Partitions"
                 description={
                   <p>
@@ -81,16 +80,14 @@ export const PipelinePartitionsRoot: React.FC<Props> = (props) => {
             : partitionSetsOrError.results[0];
 
         return (
-          <Box padding={20}>
-            <PartitionView
-              partitionSet={partitionSet}
-              partitionSets={partitionSetsOrError.results}
-              onChangePartitionSet={(x) => setSelected(x.name)}
-              pipelineName={pipelineName}
-              pipelineMode={pipelineMode}
-              repoAddress={repoAddress}
-            />
-          </Box>
+          <PartitionView
+            partitionSet={partitionSet}
+            partitionSets={partitionSetsOrError.results}
+            onChangePartitionSet={(x) => setSelected(x.name)}
+            pipelineName={pipelineName}
+            pipelineMode={pipelineMode}
+            repoAddress={repoAddress}
+          />
         );
       }}
     </Loading>

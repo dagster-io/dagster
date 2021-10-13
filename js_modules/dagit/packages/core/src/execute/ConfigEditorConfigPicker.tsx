@@ -1,16 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
-import {
-  Button,
-  HTMLInputProps,
-  Icon,
-  IInputGroupProps,
-  Intent,
-  Menu,
-  MenuItem,
-} from '@blueprintjs/core';
-import {Select, Suggest} from '@blueprintjs/select';
+import {HTMLInputProps, InputGroupProps2, Intent} from '@blueprintjs/core';
 import * as React from 'react';
-import * as ReactDOM from 'react-dom';
 import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
@@ -20,7 +10,14 @@ import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
 import {RepositorySelector} from '../types/globalTypes';
+import {Box} from '../ui/Box';
+import {ButtonWIP} from '../ui/Button';
+import {ColorsWIP} from '../ui/Colors';
+import {IconWIP, IconWrapper} from '../ui/Icon';
+import {MenuDividerWIP, MenuItemWIP, MenuWIP} from '../ui/Menu';
+import {SelectWIP} from '../ui/Select';
 import {Spinner} from '../ui/Spinner';
+import {SuggestWIP} from '../ui/Suggest';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -110,7 +107,7 @@ export const ConfigEditorConfigPicker: React.FC<ConfigEditorConfigPickerProps> =
 
   return (
     <PickerContainer>
-      {pipelineMode && configGenerators.length <= 1 ? null : (
+      {(pipelineMode && configGenerators.length === 1) || configGenerators.length < 1 ? null : (
         <ConfigEditorConfigGeneratorPicker
           label={label()}
           configGenerators={configGenerators}
@@ -176,12 +173,12 @@ const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = 
     }, []);
 
     const rightElement = partitions.length ? (
-      <Button text={undefined} minimal onMouseDown={onClickSort}>
-        <Icon icon={sortOrder === 'asc' ? 'sort-alphabetical' : 'sort-alphabetical-desc'} />
-      </Button>
+      <SortButton onMouseDown={onClickSort}>
+        <IconWIP name="sort_by_alpha" color={ColorsWIP.Gray400} />
+      </SortButton>
     ) : undefined;
 
-    const inputProps: IInputGroupProps & HTMLInputProps = {
+    const inputProps: InputGroupProps2 & HTMLInputProps = {
       placeholder: 'Partition',
       style: {width: 180},
       intent: (loading ? !!value : !!selected) ? Intent.NONE : Intent.DANGER,
@@ -193,17 +190,26 @@ const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = 
     // current partition's name so it doesn't flicker (if one is set already.)
     if (loading && partitions.length === 0) {
       return (
-        <Suggest<string>
+        <SuggestWIP<string>
           key="loading"
           inputProps={{
             ...inputProps,
-            rightElement: !value ? <Spinner purpose="body-text" /> : undefined,
+            rightElement: !value ? (
+              <Box
+                flex={{direction: 'column', justifyContent: 'center'}}
+                padding={{right: 4}}
+                style={{height: '30px'}}
+              >
+                <Spinner purpose="body-text" />
+              </Box>
+            ) : undefined,
           }}
           items={[]}
           itemRenderer={() => null}
-          noResults={<Menu.Item disabled={true} text="Loading..." />}
+          noResults={<MenuItemWIP disabled={true} text="Loading..." />}
           inputValueRenderer={(str) => str}
           selectedItem={value}
+          onItemSelect={() => {}}
         />
       );
     }
@@ -219,7 +225,7 @@ const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = 
     // selection change. However, we need to set an initial value (defaultSelectedItem)
     // and ensure it is re-applied to the internal state when it changes (via `key` below).
     return (
-      <Suggest<Partition>
+      <SuggestWIP<Partition>
         key={selected ? selected.name : 'none'}
         defaultSelectedItem={selected}
         items={partitions}
@@ -227,17 +233,18 @@ const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = 
         inputValueRenderer={(partition) => partition.name}
         itemPredicate={(query, partition) => query.length === 0 || partition.name.includes(query)}
         itemRenderer={(partition, props) => (
-          <Menu.Item
+          <MenuItemWIP
             active={props.modifiers.active}
             onClick={props.handleClick}
             key={partition.name}
             text={partition.name}
           />
         )}
-        noResults={<Menu.Item disabled={true} text="No presets." />}
+        noResults={<MenuItemWIP disabled={true} text="No presets." />}
         onItemSelect={(item) => {
           onSelect(repositorySelector, partitionSetName, item.name);
         }}
+        popoverProps={{modifiers: {offset: {enabled: true, offset: '-5px 8px'}}}}
       />
     );
   },
@@ -253,7 +260,7 @@ const ConfigEditorConfigGeneratorPicker: React.FC<ConfigEditorConfigGeneratorPic
   (props) => {
     const {configGenerators, label, onSelect} = props;
     const {flagPipelineModeTuples} = useFeatureFlags();
-    const select = React.useRef<Select<ConfigGenerator>>(null);
+    const button = React.useRef<HTMLButtonElement>(null);
     const itemLabel = flagPipelineModeTuples ? 'Ops' : 'Solids';
 
     return (
@@ -261,10 +268,9 @@ const ConfigEditorConfigGeneratorPicker: React.FC<ConfigEditorConfigGeneratorPic
         <ShortcutHandler
           shortcutLabel={'⌥E'}
           shortcutFilter={(e) => e.keyCode === 69 && e.altKey}
-          onShortcut={() => activateSelect(select.current)}
+          onShortcut={() => button.current?.click()}
         >
-          <Select<ConfigGenerator>
-            ref={select}
+          <SelectWIP<ConfigGenerator>
             items={configGenerators}
             itemPredicate={(query, configGenerator) =>
               query.length === 0 || configGenerator.name.includes(query)
@@ -284,17 +290,17 @@ const ConfigEditorConfigGeneratorPicker: React.FC<ConfigEditorConfigGeneratorPic
                 renderedPresetItems.length > 0 && renderedPartitionSetItems.length > 0;
 
               return (
-                <Menu ulRef={itemsParentRef}>
-                  {bothTypesPresent && <MenuItem disabled={true} text={`Presets`} />}
+                <MenuWIP ulRef={itemsParentRef}>
+                  {bothTypesPresent && <MenuItemWIP disabled={true} text={`Presets`} />}
                   {renderedPresetItems}
-                  {bothTypesPresent && <Menu.Divider />}
-                  {bothTypesPresent && <MenuItem disabled={true} text={`Partition Sets`} />}
+                  {bothTypesPresent && <MenuDividerWIP />}
+                  {bothTypesPresent && <MenuItemWIP disabled={true} text={`Partition Sets`} />}
                   {renderedPartitionSetItems}
-                </Menu>
+                </MenuWIP>
               );
             }}
             itemRenderer={(item, props) => (
-              <Menu.Item
+              <MenuItemWIP
                 active={props.modifiers.active}
                 onClick={props.handleClick}
                 key={item.name}
@@ -315,33 +321,48 @@ const ConfigEditorConfigGeneratorPicker: React.FC<ConfigEditorConfigGeneratorPic
                 }
               />
             )}
-            noResults={<Menu.Item disabled={true} text="No presets." />}
+            noResults={<MenuItemWIP disabled={true} text="No presets." />}
             onItemSelect={onSelect}
           >
-            <Button text={label} data-test-id="preset-selector-button" rightIcon="caret-down" />
-          </Select>
+            <ButtonWIP
+              ref={button}
+              data-test-id="preset-selector-button"
+              rightIcon={<IconWIP name="expand_more" />}
+            >
+              {label}
+            </ButtonWIP>
+          </SelectWIP>
         </ShortcutHandler>
       </div>
     );
   },
 );
 
-function activateSelect(select: Select<any> | null) {
-  if (!select) {
-    return;
+const SortButton = styled.button`
+  border: 0;
+  cursor: pointer;
+  padding: 4px;
+  margin: 3px 3px 0 0;
+  background-color: ${ColorsWIP.White};
+  border-radius: 4px;
+  transition: background-color 100ms;
+
+  :hover,
+  :focus {
+    background-color: ${ColorsWIP.Gray100};
+    outline: none;
+
+    ${IconWrapper} {
+      background-color: ${ColorsWIP.Gray700};
+    }
   }
-  // eslint-disable-next-line react/no-find-dom-node
-  const selectEl = ReactDOM.findDOMNode(select) as HTMLElement;
-  const btnEl = selectEl.querySelector('button');
-  if (btnEl) {
-    btnEl.click();
-  }
-}
+`;
 
 const PickerContainer = styled.div`
   display: flex;
   justify: space-between;
   align-items: center;
+  gap: 6px;
 `;
 
 export const CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT = gql`

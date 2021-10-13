@@ -29,28 +29,32 @@ def papertrail_logger(init_context):
 
     .. code-block:: python
 
-        @solid(required_resource_keys={'pagerduty'})
-        def pagerduty_solid(context):
-            context.resources.pagerduty.EventV2_create(
-                summary='alert from dagster'
-                source='localhost',
-                severity='error',
-                event_action='trigger',
-            )
+        @job(logger_defs={
+            "console": colored_console_logger,
+            "papertrail": papertrail_logger,
+        })
+        def simple_job():
+            ...
 
-        @pipeline(
-            mode_defs=[ModeDefinition(resource_defs={'pagerduty': pagerduty_resource})],
-        )
-        def pd_pipeline():
-            pagerduty_solid()
 
-        execute_pipeline(
-            pd_pipeline,
-            {
-                'resources': {
-                    'pagerduty': {'config': {'routing_key': '0123456789abcdef0123456789abcdef'}}
+        simple_job.execute_in_process(
+            run_config={
+                "loggers": {
+                    "console": {
+                        "config": {
+                            "log_level": "INFO",
+                        }
+                    },
+                    "papertrail": {
+                        "config": {
+                            "log_level": "INFO",
+                            "name": "hello_pipeline",
+                            "papertrail_address": "127.0.0.1",
+                            "papertrail_port": 12345,
+                        }
+                    },
                 }
-            },
+            }
         )
     """
     level, name, papertrail_address, papertrail_port = (

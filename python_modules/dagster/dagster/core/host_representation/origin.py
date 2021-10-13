@@ -205,8 +205,16 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
     def create_test_location(self):
         from dagster.core.workspace.dynamic_workspace import DynamicWorkspace
         from .grpc_server_registry import ProcessGrpcServerRegistry
+        from dagster.core.workspace.context import (
+            DAGIT_GRPC_SERVER_HEARTBEAT_TTL,
+            DAGIT_GRPC_SERVER_STARTUP_TIMEOUT,
+        )
 
-        with ProcessGrpcServerRegistry(reload_interval=0, heartbeat_ttl=30) as grpc_server_registry:
+        with ProcessGrpcServerRegistry(
+            reload_interval=0,
+            heartbeat_ttl=DAGIT_GRPC_SERVER_HEARTBEAT_TTL,
+            startup_timeout=DAGIT_GRPC_SERVER_STARTUP_TIMEOUT,
+        ) as grpc_server_registry:
             with DynamicWorkspace(grpc_server_registry) as workspace:
                 with workspace.get_location(self) as location:
                     yield location

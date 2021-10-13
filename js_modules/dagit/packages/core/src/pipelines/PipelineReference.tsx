@@ -1,8 +1,9 @@
-import {Colors, Icon} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {useFeatureFlags} from '../app/Flags';
+import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
+import {IconWIP} from '../ui/Icon';
 import {RepoAddress} from '../workspace/types';
 import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
@@ -14,7 +15,7 @@ interface Props {
   snapshotId?: string | null;
   mode: string;
   showIcon?: boolean;
-  fontSize?: number;
+  size?: 'small' | 'normal';
 }
 
 export const PipelineReference: React.FC<Props> = ({
@@ -23,12 +24,10 @@ export const PipelineReference: React.FC<Props> = ({
   mode,
   snapshotId,
   showIcon,
-  fontSize,
+  size = 'normal',
 }) => {
-  const {flagPipelineModeTuples} = useFeatureFlags();
-
   const modeLabel =
-    mode === 'default' ? null : <span style={{color: Colors.GRAY3}}>{`: ${mode}`}</span>;
+    mode === 'default' ? null : <span style={{color: ColorsWIP.Gray400}}>{`: ${mode}`}</span>;
 
   const pipeline =
     pipelineHrefContext === 'repo-unknown' ? (
@@ -56,24 +55,24 @@ export const PipelineReference: React.FC<Props> = ({
     );
 
   return (
-    <span style={{fontSize: fontSize}}>
+    <Box flex={{direction: 'row', alignItems: 'center', display: 'inline-flex'}}>
       {showIcon && (
-        <Icon
-          color={Colors.GRAY2}
-          icon={flagPipelineModeTuples ? 'send-to-graph' : 'diagram-tree'}
-          iconSize={Math.floor((fontSize || 16) * 0.8)}
-          style={{position: 'relative', top: -2, paddingRight: 5}}
-        />
+        <Box margin={{right: 8}}>
+          <IconWIP color={ColorsWIP.Gray400} name={'job'} />
+        </Box>
       )}
-      {pipeline}
-      {snapshotId && ' @ '}
-      {snapshotId && (
-        <PipelineSnapshotLink
-          snapshotId={snapshotId}
-          pipelineName={pipelineName}
-          pipelineMode={mode}
-        />
-      )}
-    </span>
+      <span>
+        {pipeline}
+        {snapshotId && ' @ '}
+        {snapshotId && (
+          <PipelineSnapshotLink
+            snapshotId={snapshotId}
+            pipelineName={pipelineName}
+            pipelineMode={mode}
+            size={size}
+          />
+        )}
+      </span>
+    </Box>
   );
 };

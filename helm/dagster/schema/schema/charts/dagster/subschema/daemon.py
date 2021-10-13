@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 from pydantic import Extra  # pylint: disable=no-name-in-module
 
@@ -13,9 +13,16 @@ class RunCoordinatorType(str, Enum):
     CUSTOM = "CustomRunCoordinator"
 
 
+class TagConcurrencyLimitConfig(BaseModel):
+    applyLimitPerUniqueValue: bool
+
+    class Config:
+        extra = Extra.forbid
+
+
 class TagConcurrencyLimit(BaseModel):
     key: str
-    value: Optional[str]
+    value: Optional[Union[str, TagConcurrencyLimitConfig]]
     limit: int
 
     class Config:

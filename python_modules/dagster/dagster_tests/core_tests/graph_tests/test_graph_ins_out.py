@@ -1,8 +1,6 @@
-import pytest
 from dagster import graph, op
-from dagster.core.definitions.input import GraphIn, In
+from dagster.core.definitions.input import In
 from dagster.core.definitions.output import GraphOut, Out
-from dagster.core.errors import DagsterInvalidDefinitionError
 
 
 @op(out=Out(int))
@@ -31,7 +29,7 @@ def return_mult():
 
 
 def test_single_ins():
-    @graph(ins={"int_1": GraphIn(int)})
+    @graph
     def composite_add_one(int_1):
         add_one(int_1)
 
@@ -41,13 +39,11 @@ def test_single_ins():
 
     result = my_graph.execute_in_process()
     assert result.success
-    assert result.result_for_node("composite_add_one").result_for_node("add_one").output_values == {
-        "result": 2
-    }
+    assert result.output_for_node("composite_add_one.add_one") == 2
 
 
 def test_multi_ins():
-    @graph(ins={"int_1": GraphIn(int), "int_2": GraphIn(int)})
+    @graph
     def composite_adder(int_1, int_2):
         adder(int_1, int_2)
 
@@ -57,37 +53,11 @@ def test_multi_ins():
 
     result = my_graph.execute_in_process()
     assert result.success
-    assert result.result_for_node("composite_adder").result_for_node("adder").output_values == {
-        "result": 3
-    }
-
-
-def test_ins_fail():
-    with pytest.raises(DagsterInvalidDefinitionError):
-
-        @graph(ins={"int_1": GraphIn(), "int_2": GraphIn()})
-        def _fail(int_1, int_2):
-            adder(int_1, int_2)
-
-    with pytest.raises(DagsterInvalidDefinitionError):
-
-        @graph(ins={"int_1": GraphIn(str), "int_2": GraphIn(str)})
-        def _fail(int_1, int_2):
-            adder(int_1, int_2)
-
-    with pytest.raises(DagsterInvalidDefinitionError):
-
-        @graph(ins={"int_1": GraphIn(int)}, out=GraphOut(int))
-        def inner_composite_add_one(int_1):
-            return add_one(int_1)
-
-        @graph(ins={"int_1": GraphIn(str)})
-        def _fail(int_1):
-            inner_composite_add_one(int_1)
+    assert result.output_for_node("composite_adder.adder") == 3
 
 
 def test_single_out():
-    @graph(out=GraphOut(int))
+    @graph(out=GraphOut())
     def composite_return_one():
         return return_one()
 
@@ -97,11 +67,11 @@ def test_single_out():
 
     result = my_graph.execute_in_process()
     assert result.success
-    assert result.result_for_node("composite_return_one").output_values == {"result": 1}
+    assert result.output_for_node("composite_return_one") == 1
 
 
 def test_multi_out():
-    @graph(out={"out_1": GraphOut(int), "out_2": GraphOut(int)})
+    @graph(out={"out_1": GraphOut(), "out_2": GraphOut()})
     def composite_return_mult():
         one, two = return_mult()
         return {"out_1": one, "out_2": two}
@@ -110,42 +80,22 @@ def test_multi_out():
     def my_graph():
         composite_return_mult()
 
+    result = composite_return_mult.execute_in_process()
+    assert result.output_value("out_1") == 1
+    assert result.output_value("out_2") == 2
+
     result = my_graph.execute_in_process()
     assert result.success
-    assert result.result_for_node("composite_return_mult").output_values == {"out_1": 1, "out_2": 2}
-
-
-def test_out_fail():
-
-    with pytest.raises(DagsterInvalidDefinitionError):
-
-        @graph(out=GraphOut(int))
-        def _fail():
-            return_one()
-
-    with pytest.raises(DagsterInvalidDefinitionError):
-
-        @graph(out=GraphOut(str))
-        def _fail():
-            return return_one()
-
-    with pytest.raises(DagsterInvalidDefinitionError):
-
-        @graph(ins={"int_1": GraphIn(int)}, out=GraphOut(int))
-        def inner_composite_add_one(int_1):
-            return add_one(int_1)
-
-        @graph(ins={"int_1": GraphIn(int)}, out=GraphOut(str))
-        def _fail(int_1):
-            return inner_composite_add_one(int_1)
+    assert result.output_for_node("composite_return_mult", "out_1") == 1
+    assert result.output_for_node("composite_return_mult", "out_2") == 2
 
 
 def test_graph_in_graph():
-    @graph(ins={"int_1": GraphIn(int)}, out=GraphOut(int))
+    @graph(out=GraphOut())
     def inner_composite_add_one(int_1):
         return add_one(int_1)
 
-    @graph(ins={"int_1": GraphIn(int)}, out=GraphOut(int))
+    @graph(out=GraphOut())
     def composite_adder(int_1):
         return inner_composite_add_one(int_1)
 
@@ -155,10 +105,6 @@ def test_graph_in_graph():
 
     result = my_graph.execute_in_process()
     assert result.success
-    assert result.result_for_node("composite_adder").output_values == {"result": 2}
-    assert result.result_for_node("composite_adder").result_for_node(
-        "inner_composite_add_one"
-    ).output_values == {"result": 2}
-    assert result.result_for_node("composite_adder").result_for_node(
-        "inner_composite_add_one"
-    ).result_for_node("add_one").output_values == {"result": 2}
+    assert result.output_for_node("composite_adder") == 2
+    assert result.output_for_node("composite_adder.inner_composite_add_one") == 2
+    assert result.output_for_node("composite_adder.inner_composite_add_one.add_one") == 2

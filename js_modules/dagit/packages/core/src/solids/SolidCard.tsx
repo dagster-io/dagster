@@ -29,23 +29,21 @@ export const SolidCard: React.FC<SolidCardProps> = (props) => {
   );
 
   return (
-    <SolidCardContainer>
-      <SVGContainer width={layout.boundingBox.width} height={layout.boundingBox.height}>
-        <SolidNode
-          invocation={undefined}
-          definition={props.definition}
-          minified={false}
-          onClick={() => {}}
-          onDoubleClick={() => {}}
-          onEnterComposite={() => {}}
-          onHighlightEdges={() => {}}
-          layout={layout}
-          selected={false}
-          focused={false}
-          highlightedEdges={[]}
-          dim={false}
-        />
-      </SVGContainer>
+    <SolidCardContainer style={{height: layout.boundingBox.height}}>
+      <SolidNode
+        invocation={undefined}
+        definition={props.definition}
+        minified={false}
+        onClick={() => {}}
+        onDoubleClick={() => {}}
+        onEnterComposite={() => {}}
+        onHighlightEdges={() => {}}
+        layout={layout}
+        selected={false}
+        focused={false}
+        highlightedEdges={[]}
+        dim={false}
+      />
     </SolidCardContainer>
   );
 };
@@ -71,16 +69,11 @@ export const SOLID_CARD_SOLID_DEFINITION_FRAGMENT = gql`
   ${SOLID_NODE_DEFINITION_FRAGMENT}
 `;
 
-const SVGContainer = styled.svg`
-  overflow: visible;
-  border-radius: 0;
-  display: block;
-`;
-
 const SolidCardContainer = styled.div`
   flex: 1;
   padding: 20px;
   margin-right: 10px;
   margin-bottom: 10px;
   max-width: 450px;
+  box-sizing: border-box;
 `;

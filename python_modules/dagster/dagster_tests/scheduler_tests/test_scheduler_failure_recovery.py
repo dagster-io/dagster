@@ -1,12 +1,15 @@
 import pendulum
 import pytest
-from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import JobTickStatus
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import PARTITION_NAME_TAG, SCHEDULED_EXECUTION_TIME_TAG
-from dagster.core.test_utils import cleanup_test_instance, get_crash_signals, get_terminate_signal
-from dagster.core.workspace.dynamic_workspace import DynamicWorkspace
+from dagster.core.test_utils import (
+    cleanup_test_instance,
+    create_test_daemon_workspace,
+    get_crash_signals,
+    get_terminate_signal,
+)
 from dagster.scheduler.scheduler import launch_scheduled_runs
 from dagster.seven import IS_WINDOWS, multiprocessing
 from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
@@ -24,18 +27,17 @@ from .test_scheduler_run import (
 def _test_launch_scheduled_runs_in_subprocess(instance_ref, execution_datetime, debug_crash_flags):
     with DagsterInstance.from_ref(instance_ref) as instance:
         try:
-            with ProcessGrpcServerRegistry() as grpc_server_registry:
-                with DynamicWorkspace(grpc_server_registry) as workspace:
-                    with pendulum.test(execution_datetime):
-                        list(
-                            launch_scheduled_runs(
-                                instance,
-                                workspace,
-                                logger(),
-                                pendulum.now("UTC"),
-                                debug_crash_flags=debug_crash_flags,
-                            )
+            with create_test_daemon_workspace() as workspace:
+                with pendulum.test(execution_datetime):
+                    list(
+                        launch_scheduled_runs(
+                            instance,
+                            workspace,
+                            logger(),
+                            pendulum.now("UTC"),
+                            debug_crash_flags=debug_crash_flags,
                         )
+                    )
         finally:
             cleanup_test_instance(instance)
 

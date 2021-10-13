@@ -313,6 +313,13 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         supported_pythons=ExamplePythons,
     ),
     ModuleBuildSpec(
+        "examples/hacker_news_assets",
+        env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_USER", "SNOWFLAKE_PASSWORD"],
+        buildkite_label="hacker_news_assets",
+        upload_coverage=False,
+        supported_pythons=ExamplePythons,
+    ),
+    ModuleBuildSpec(
         "examples/hacker_news",
         env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_USER", "SNOWFLAKE_PASSWORD"],
         buildkite_label="hacker_news_example",
@@ -481,6 +488,7 @@ def examples_tests():
         "dbt_example",
         "deploy_docker",
         "hacker_news",
+        "hacker_news_assets",
     ]
 
     examples_root = os.path.join(GIT_REPO_ROOT, "examples")
@@ -589,8 +597,7 @@ def graphql_python_client_backcompat_checks(version=SupportedPython.V3_8):
         StepBuilder("Backwards compat checks for the GraphQL Python Client")
         .on_integration_image(version)
         .run(
-            "pip install -e python_modules/dagster-graphql",
-            "pip install -e python_modules/automation",
+            "pip install -e python_modules/dagster[test] -e python_modules/dagster-graphql -e python_modules/automation",
             "dagster-graphql-client query check",
         )
         .build()

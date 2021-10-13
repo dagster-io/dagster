@@ -7,6 +7,6 @@ Repositories
   :annotation: RepositoryDefinition
 
 .. autoclass:: RepositoryDefinition
-    :members:
+    :members: get_all_jobs, get_job, has_job, job_names
 
 .. autoclass:: RepositoryData

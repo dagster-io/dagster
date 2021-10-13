@@ -1,8 +1,8 @@
-import {Story, Meta} from '@storybook/react/types-6-0';
+import {Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 
-import {Alert, Props} from './Alert';
-import {ButtonLink} from './ButtonLink';
+import {Alert, AlertIntent} from './Alert';
+import {Box} from './Box';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -10,15 +10,23 @@ export default {
   component: Alert,
 } as Meta;
 
-const Template: Story<Props> = (props) => <Alert {...props} />;
+const intents: AlertIntent[] = ['info', 'warning', 'error', 'success'];
 
-export const Example = Template.bind({});
-Example.args = {
-  intent: 'info',
-  title: 'This pipeline run is queued.',
-  description: (
-    <div>
-      Click <ButtonLink>here</ButtonLink> to proceed.
-    </div>
-  ),
+export const Intents = () => {
+  return (
+    <Box flex={{direction: 'column', gap: 8}}>
+      {intents.map((intent) => (
+        <Alert
+          key={intent}
+          intent={intent}
+          title="This pipeline run is queued."
+          description={
+            <div>
+              Click <a href="#">here</a> to proceed.
+            </div>
+          }
+        />
+      ))}
+    </Box>
+  );
 };

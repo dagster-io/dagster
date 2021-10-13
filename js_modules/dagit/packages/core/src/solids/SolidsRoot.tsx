@@ -1,5 +1,4 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors, NonIdealState} from '@blueprintjs/core';
 import * as querystring from 'query-string';
 import * as React from 'react';
 import {useHistory, useLocation} from 'react-router-dom';
@@ -8,7 +7,9 @@ import styled from 'styled-components/macro';
 
 import {useFeatureFlags} from '../app/Flags';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {ColorsWIP} from '../ui/Colors';
 import {Loading} from '../ui/Loading';
+import {NonIdealState} from '../ui/NonIdealState';
 import {SplitPanelContainer} from '../ui/SplitPanelContainer';
 import {
   SuggestionProvider,
@@ -113,21 +114,23 @@ export const SolidsRoot: React.FC<Props> = (props) => {
   });
 
   return (
-    <Loading queryResult={queryResult}>
-      {({repositoryOrError}) => {
-        if (repositoryOrError?.__typename === 'Repository' && repositoryOrError.usedSolids) {
-          return (
-            <SolidsRootWithData
-              {...props}
-              name={name}
-              repoAddress={repoAddress}
-              usedSolids={repositoryOrError.usedSolids}
-            />
-          );
-        }
-        return null;
-      }}
-    </Loading>
+    <div style={{height: '100%'}}>
+      <Loading queryResult={queryResult}>
+        {({repositoryOrError}) => {
+          if (repositoryOrError?.__typename === 'Repository' && repositoryOrError.usedSolids) {
+            return (
+              <SolidsRootWithData
+                {...props}
+                name={name}
+                repoAddress={repoAddress}
+                usedSolids={repositoryOrError.usedSolids}
+              />
+            );
+          }
+          return null;
+        }}
+      </Loading>
+    </div>
   );
 };
 
@@ -191,7 +194,7 @@ const SolidsRootWithData: React.FC<Props & {usedSolids: Solid[]}> = (props) => {
             <div
               style={{
                 padding: '15px 10px',
-                borderBottom: `1px solid ${Colors.LIGHT_GRAY2}`,
+                borderBottom: `1px solid ${ColorsWIP.Gray100}`,
               }}
             >
               <TokenizingField
@@ -229,6 +232,7 @@ const SolidsRootWithData: React.FC<Props & {usedSolids: Solid[]}> = (props) => {
             </SolidDetailScrollContainer>
           ) : (
             <NonIdealState
+              icon="no-results"
               title={flagPipelineModeTuples ? 'No op selected' : 'No solid selected'}
               description={
                 flagPipelineModeTuples
@@ -318,16 +322,16 @@ const SOLIDS_ROOT_QUERY = gql`
 `;
 
 const SolidListItem = styled.div<{selected: boolean}>`
-  background: ${({selected}) => (selected ? Colors.BLUE3 : Colors.WHITE)};
-  color: ${({selected}) => (selected ? Colors.WHITE : Colors.DARK_GRAY3)};
+  background: ${({selected}) => (selected ? ColorsWIP.Blue500 : ColorsWIP.White)};
+  color: ${({selected}) => (selected ? ColorsWIP.White : ColorsWIP.Gray800)};
   font-size: 14px;
   display: flex;
   flex-direction: column;
   padding: 10px 15px;
   user-select: none;
-  border-bottom: 1px solid ${Colors.LIGHT_GRAY2};
+  border-bottom: 1px solid ${ColorsWIP.Gray100};
   & > code.bp3-code {
-    color: ${({selected}) => (selected ? Colors.WHITE : Colors.DARK_GRAY3)};
+    color: ${({selected}) => (selected ? ColorsWIP.White : ColorsWIP.Gray800)};
     background: transparent;
     font-family: ${FontFamily.monospace};
     padding: 5px 0 0 0;

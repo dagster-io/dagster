@@ -14,11 +14,17 @@ import {
 } from '@apollo/client';
 import {WebSocketLink} from '@apollo/client/link/ws';
 import {getMainDefinition} from '@apollo/client/utilities';
-import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import {BrowserRouter} from 'react-router-dom';
 import {createGlobalStyle} from 'styled-components/macro';
+import {SubscriptionClient} from 'subscriptions-transport-ws';
 
+import {ColorsWIP} from '../ui/Colors';
+import {GlobalDialogStyle} from '../ui/Dialog';
+import {GlobalPopoverStyle} from '../ui/Popover';
+import {GlobalSuggestStyle} from '../ui/Suggest';
+import {GlobalToasterStyle} from '../ui/Toaster';
+import {GlobalTooltipStyle} from '../ui/Tooltip';
 import {FontFamily} from '../ui/styles';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
 
@@ -43,7 +49,7 @@ const GlobalStyle = createGlobalStyle`
   }
 
   html, body, #root {
-    color: ${Colors.DARK_GRAY4};
+    color: ${ColorsWIP.Gray800};
     width: 100vw;
     height: 100vh;
     overflow: hidden;
@@ -51,6 +57,12 @@ const GlobalStyle = createGlobalStyle`
     flex: 1 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  a,
+  a:hover,
+  a:active {
+    color: ${ColorsWIP.Link};
   }
 
   #root {
@@ -64,13 +76,32 @@ const GlobalStyle = createGlobalStyle`
     padding: 0;
   }
 
-  body, button, input, select, textarea {
+  body, input, select, textarea {
     font-family: ${FontFamily.default};
+  }
+
+  button {
+    font-family: inherit;
   }
 
   code, pre {
     font-family: ${FontFamily.monospace};
     font-size: 16px;
+  }
+
+  .material-icons {
+    display: block;
+  }
+
+  /* todo dish: Remove these when we have buttons updated. */
+
+  .bp3-button .material-icons {
+    position: relative;
+    top: 1px;
+  }
+
+  .bp3-button:disabled .material-icons {
+    color: ${ColorsWIP.Gray300}
   }
 `;
 
@@ -96,6 +127,15 @@ export const AppProvider: React.FC<Props> = (props) => {
   const headersAsString = JSON.stringify(headers);
   const headerObject = React.useMemo(() => JSON.parse(headersAsString), [headersAsString]);
 
+  const websocketClient = React.useMemo(
+    () =>
+      new SubscriptionClient(websocketURI, {
+        reconnect: true,
+        connectionParams: {...headerObject},
+      }),
+    [headerObject, websocketURI],
+  );
+
   const apolloClient = React.useMemo(() => {
     // Subscriptions use WebSocketLink, queries & mutations use HttpLink.
     const splitLink = split(
@@ -103,13 +143,7 @@ export const AppProvider: React.FC<Props> = (props) => {
         const definition = getMainDefinition(query);
         return definition.kind === 'OperationDefinition' && definition.operation === 'subscription';
       },
-      new WebSocketLink({
-        uri: websocketURI,
-        options: {
-          reconnect: true,
-          connectionParams: {...headerObject},
-        },
-      }),
+      new WebSocketLink(websocketClient),
       new HttpLink({uri: graphqlPath, headers: headerObject}),
     );
 
@@ -117,7 +151,7 @@ export const AppProvider: React.FC<Props> = (props) => {
       cache: appCache,
       link: ApolloLink.from([...apolloLinks, splitLink]),
     });
-  }, [apolloLinks, appCache, graphqlPath, headerObject, websocketURI]);
+  }, [apolloLinks, appCache, graphqlPath, headerObject, websocketClient]);
 
   const appContextValue = React.useMemo(
     () => ({
@@ -129,8 +163,13 @@ export const AppProvider: React.FC<Props> = (props) => {
 
   return (
     <AppContext.Provider value={appContextValue}>
-      <WebSocketProvider websocketURI={websocketURI} connectionParams={headerObject}>
+      <WebSocketProvider websocketClient={websocketClient}>
         <GlobalStyle />
+        <GlobalToasterStyle />
+        <GlobalTooltipStyle />
+        <GlobalPopoverStyle />
+        <GlobalDialogStyle />
+        <GlobalSuggestStyle />
         <ApolloProvider client={apolloClient}>
           <PermissionsProvider>
             <BrowserRouter basename={basePath || ''}>

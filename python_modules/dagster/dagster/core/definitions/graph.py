@@ -11,6 +11,7 @@ from typing import (
     Set,
     Tuple,
     Union,
+    cast,
 )
 
 from dagster import check
@@ -21,6 +22,7 @@ from dagster.core.definitions.config import ConfigMapping
 from dagster.core.definitions.definition_config_schema import IDefinitionConfigSchema
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.resource import ResourceDefinition
+from dagster.core.definitions.utils import check_valid_name
 from dagster.core.errors import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
@@ -45,9 +47,9 @@ from .dependency import (
     SolidInvocation,
 )
 from .hook import HookDefinition
-from .i_solid_definition import NodeDefinition
 from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer
 from .logger import LoggerDefinition
+from .node import NodeDefinition
 from .output import OutputDefinition, OutputMapping
 from .preset import PresetDefinition
 from .solid_container import create_execution_structure, validate_dependency_dict
@@ -59,13 +61,15 @@ if TYPE_CHECKING:
     from .partition import PartitionedConfig
     from .executor import ExecutorDefinition
     from .job import JobDefinition
-    from dagster.core.execution.execute_in_process import InProcessGraphResult
+    from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
 
 
-def _check_node_defs_arg(graph_name: str, node_defs: List[NodeDefinition]):
+def _check_node_defs_arg(graph_name: str, node_defs: Optional[List[NodeDefinition]]):
+    node_defs = node_defs or []
+
     if not isinstance(node_defs, list):
         raise DagsterInvalidDefinitionError(
-            '"solids" arg to "{name}" is not a list. Got {val}.'.format(
+            '"nodes" arg to "{name}" is not a list. Got {val}.'.format(
                 name=graph_name, val=repr(node_defs)
             )
         )
@@ -75,15 +79,15 @@ def _check_node_defs_arg(graph_name: str, node_defs: List[NodeDefinition]):
         elif callable(node_def):
             raise DagsterInvalidDefinitionError(
                 """You have passed a lambda or function {func} into {name} that is
-                not a solid. You have likely forgetten to annotate this function with
-                an @solid or @lambda_solid decorator.'
+                not a node. You have likely forgetten to annotate this function with
+                the @op or @graph decorators.'
                 """.format(
                     name=graph_name, func=node_def.__name__
                 )
             )
         else:
             raise DagsterInvalidDefinitionError(
-                "Invalid item in solid list: {item}".format(item=repr(node_def))
+                "Invalid item in node list: {item}".format(item=repr(node_def))
             )
 
     return node_defs
@@ -121,12 +125,14 @@ class GraphDefinition(NodeDefinition):
     def __init__(
         self,
         name: str,
-        description: Optional[str],
-        node_defs: List[NodeDefinition],
-        dependencies: Optional[Dict[Union[str, SolidInvocation], Dict[str, IDependencyDefinition]]],
-        input_mappings: Optional[List[InputMapping]],
-        output_mappings: Optional[List[OutputMapping]],
-        config_mapping: Optional[ConfigMapping],
+        description: Optional[str] = None,
+        node_defs: Optional[List[NodeDefinition]] = None,
+        dependencies: Optional[
+            Dict[Union[str, SolidInvocation], Dict[str, IDependencyDefinition]]
+        ] = None,
+        input_mappings: Optional[List[InputMapping]] = None,
+        output_mappings: Optional[List[OutputMapping]] = None,
+        config: Optional[ConfigMapping] = None,
         tags: Optional[Dict[str, Any]] = None,
         **kwargs,
     ):
@@ -134,7 +140,7 @@ class GraphDefinition(NodeDefinition):
         self._dagster_type_dict = construct_dagster_type_dictionary(self._node_defs)
         self._dependencies = validate_dependency_dict(dependencies)
         self._dependency_structure, self._node_dict = create_execution_structure(
-            node_defs, self._dependencies, graph_definition=self
+            self._node_defs, self._dependencies, graph_definition=self
         )
 
         # List[InputMapping]
@@ -154,7 +160,7 @@ class GraphDefinition(NodeDefinition):
             class_name=type(self).__name__,
         )
 
-        self._config_mapping = check.opt_inst_param(config_mapping, "config_mapping", ConfigMapping)
+        self._config_mapping = check.opt_inst_param(config, "config", ConfigMapping)
 
         super(GraphDefinition, self).__init__(
             name=name,
@@ -181,6 +187,10 @@ class GraphDefinition(NodeDefinition):
             raise DagsterInvalidDefinitionError(str(err)) from err
 
         return [self.solid_named(solid_name) for solid_name in order]
+
+    @property
+    def node_type_str(self) -> str:
+        return "graph"
 
     @property
     def solids(self) -> List[Node]:
@@ -358,7 +368,26 @@ class GraphDefinition(NodeDefinition):
         config_schema: Any,
         config_or_config_fn: Any,
     ):
-        check.not_implemented("@graph does not yet implement configured")
+        if not self.has_config_mapping:
+            raise DagsterInvalidDefinitionError(
+                "Only graphs utilizing config mapping can be pre-configured. The graph "
+                '"{graph_name}" does not have a config mapping, and thus has nothing to be '
+                "configured.".format(graph_name=self.name)
+            )
+        config_mapping = cast(ConfigMapping, self.config_mapping)
+        return GraphDefinition(
+            name=name,
+            description=check.opt_str_param(description, "description", default=self.description),
+            node_defs=self._node_defs,
+            dependencies=self._dependencies,
+            input_mappings=self._input_mappings,
+            output_mappings=self._output_mappings,
+            config=ConfigMapping(
+                config_mapping.config_fn,
+                config_schema=config_schema,
+                receive_processed_config_values=config_mapping.receive_processed_config_values,
+            ),
+        )
 
     def node_names(self):
         return list(self._node_dict.keys())
@@ -418,13 +447,13 @@ class GraphDefinition(NodeDefinition):
                 provided, memoizaton will be enabled for this job.
 
         Returns:
-            PipelineDefinition: The "Job" currently implemented as a single-mode pipeline
+            JobDefinition: The "Job" currently implemented as a single-mode job
         """
         from .job import JobDefinition
         from .partition import PartitionedConfig
         from .executor import ExecutorDefinition, multiprocess_executor
 
-        job_name = name or self.name
+        job_name = check_valid_name(name or self.name)
 
         tags = check.opt_dict_param(tags, "tags", key_type=str)
         executor_def = check.opt_inst_param(
@@ -495,15 +524,13 @@ class GraphDefinition(NodeDefinition):
         resource_defs: Optional[Dict[str, ResourceDefinition]],
         executor_def: "ExecutorDefinition",
     ) -> ConfigType:
-        from .pipeline import PipelineDefinition
+        from .job import JobDefinition
 
         return (
-            PipelineDefinition(
+            JobDefinition(
                 name=self.name,
                 graph_def=self,
-                mode_defs=[
-                    ModeDefinition(resource_defs=resource_defs, executor_defs=[executor_def])
-                ],
+                mode_def=ModeDefinition(resource_defs=resource_defs, executor_defs=[executor_def]),
             )
             .get_run_config_schema("default")
             .run_config_schema_type
@@ -511,7 +538,7 @@ class GraphDefinition(NodeDefinition):
 
     def execute_in_process(
         self,
-        config: Any = None,
+        run_config: Any = None,
         instance: Optional["DagsterInstance"] = None,
         resources: Optional[Dict[str, Any]] = None,
         raise_on_error: bool = True,
@@ -520,8 +547,9 @@ class GraphDefinition(NodeDefinition):
         Execute this graph in-process, collecting results in-memory.
 
         Args:
-            config (Optional[Dict[str, Any]]):
-                Configuration for the graph.
+            run_config (Optional[Dict[str, Any]]):
+                Run config to provide to execution. The configuration for the underlying graph
+                should exist under the "ops" key.
             instance (Optional[DagsterInstance]):
                 The instance to execute against, an ephemeral one will be used if none provided.
             resources (Optional[Dict[str, Any]]):
@@ -531,11 +559,11 @@ class GraphDefinition(NodeDefinition):
                 Defaults to ``True``.
 
         Returns:
-            InProcessGraphResult
+            ExecuteInProcessResult
         """
+        from dagster.core.execution.build_resources import wrap_resources_for_execution
         from dagster.core.execution.execute_in_process import core_execute_in_process
         from dagster.core.instance import DagsterInstance
-        from dagster.core.storage.io_manager import IOManagerDefinition, IOManager
         from .job import JobDefinition
         from .executor import execute_in_process_executor
 
@@ -547,24 +575,13 @@ class GraphDefinition(NodeDefinition):
         instance = check.opt_inst_param(instance, "instance", DagsterInstance)
         resources = check.opt_dict_param(resources, "resources", key_type=str)
 
-        resource_defs = {}
-        # Wrap instantiated resource values in a resource definition.
-        # If an instantiated IO manager is provided, wrap it in an IO manager definition.
-        for resource_key, resource in resources.items():
-            if isinstance(resource, ResourceDefinition):
-                resource_defs[resource_key] = resource
-            elif isinstance(resource, IOManager):
-                resource_defs[resource_key] = IOManagerDefinition.hardcoded_io_manager(resource)
-            else:
-                resource_defs[resource_key] = ResourceDefinition.hardcoded_resource(resource)
-
+        resource_defs = wrap_resources_for_execution(resources)
         in_proc_mode = ModeDefinition(
             executor_defs=[execute_in_process_executor], resource_defs=resource_defs
         )
-
         ephemeral_job = JobDefinition(name=self._name, graph_def=self, mode_def=in_proc_mode)
 
-        run_config = {"ops": config if config is not None else {}}
+        run_config = run_config if run_config is not None else {}
 
         return core_execute_in_process(
             node=self,
@@ -610,7 +627,7 @@ def _validate_in_mappings(
         if input_def_dict.get(mapping.definition.name):
             if input_def_dict[mapping.definition.name] != mapping.definition:
                 raise DagsterInvalidDefinitionError(
-                    "In {class_name} {name} multiple input mappings with same "
+                    "In {class_name} '{name}' multiple input mappings with same "
                     "definition name but different definitions".format(
                         name=name, class_name=class_name
                     ),
@@ -640,7 +657,7 @@ def _validate_in_mappings(
         if mapping.maps_to_fan_in:
             if not dependency_structure.has_fan_in_deps(solid_input_handle):
                 raise DagsterInvalidDefinitionError(
-                    'In {class_name} "{name}" input mapping target '
+                    "In {class_name} '{name}' input mapping target "
                     '"{mapping.maps_to.solid_name}.{mapping.maps_to.input_name}" (index {mapping.maps_to.fan_in_index} of fan-in) '
                     "is not a MultiDependencyDefinition.".format(
                         name=name, mapping=mapping, class_name=class_name
@@ -651,7 +668,7 @@ def _validate_in_mappings(
                 inner_deps[mapping.maps_to.fan_in_index] is not MappedInputPlaceholder
             ):
                 raise DagsterInvalidDefinitionError(
-                    'In {class_name} "{name}" input mapping target '
+                    "In {class_name} '{name}' input mapping target "
                     '"{mapping.maps_to.solid_name}.{mapping.maps_to.input_name}" index {mapping.maps_to.fan_in_index} in '
                     "the MultiDependencyDefinition is not a MappedInputPlaceholder".format(
                         name=name, mapping=mapping, class_name=class_name
@@ -667,9 +684,9 @@ def _validate_in_mappings(
         else:
             if dependency_structure.has_deps(solid_input_handle):
                 raise DagsterInvalidDefinitionError(
-                    'In {class_name} "{name}" input mapping target '
+                    "In {class_name} '{name}' input mapping target "
                     '"{mapping.maps_to.solid_name}.{mapping.maps_to.input_name}" '
-                    "is already satisfied by solid output".format(
+                    "is already satisfied by output".format(
                         name=name, mapping=mapping, class_name=class_name
                     )
                 )
@@ -680,7 +697,7 @@ def _validate_in_mappings(
             target_type = target_input.dagster_type
             fan_in_msg = ""
 
-        if target_type != mapping.definition.dagster_type:
+        if target_type != mapping.definition.dagster_type and class_name != "GraphDefinition":
             raise DagsterInvalidDefinitionError(
                 "In {class_name} '{name}' input "
                 "'{mapping.definition.name}' of type {mapping.definition.dagster_type.display_name} maps to "
@@ -728,23 +745,28 @@ def _validate_out_mappings(
             target_solid = solid_dict.get(mapping.maps_from.solid_name)
             if target_solid is None:
                 raise DagsterInvalidDefinitionError(
-                    "In {class_name} '{name}' output mapping references solid "
+                    "In {class_name} '{name}' output mapping references node "
                     "'{solid_name}' which it does not contain.".format(
                         name=name, solid_name=mapping.maps_from.solid_name, class_name=class_name
                     )
                 )
             if not target_solid.has_output(mapping.maps_from.output_name):
                 raise DagsterInvalidDefinitionError(
-                    "In {class_name} {name} output mapping from solid '{mapping.maps_from.solid_name}' "
+                    "In {class_name} {name} output mapping from {described_node} "
                     "which contains no output named '{mapping.maps_from.output_name}'".format(
-                        name=name, mapping=mapping, class_name=class_name
+                        described_node=target_solid.describe_node(),
+                        name=name,
+                        mapping=mapping,
+                        class_name=class_name,
                     )
                 )
 
             target_output = target_solid.output_def_named(mapping.maps_from.output_name)
 
-            if mapping.definition.dagster_type.kind != DagsterTypeKind.ANY and (
-                target_output.dagster_type != mapping.definition.dagster_type
+            if (
+                mapping.definition.dagster_type.kind != DagsterTypeKind.ANY
+                and (target_output.dagster_type != mapping.definition.dagster_type)
+                and class_name != "GraphDefinition"
             ):
                 raise DagsterInvalidDefinitionError(
                     "In {class_name} '{name}' output "
@@ -772,7 +794,7 @@ def _validate_out_mappings(
             if dynamic_handle and not mapping.definition.is_dynamic:
                 raise DagsterInvalidDefinitionError(
                     f'In {class_name} "{name}" output "{mapping.definition.name}" mapping from '
-                    f'solid "{mapping.maps_from.solid_name}" must be a DynamicOutputDefinition since it is '
+                    f"{target_solid.describe_node()} must be a DynamicOutputDefinition since it is "
                     f'downstream of dynamic output "{dynamic_handle.describe()}".'
                 )
 

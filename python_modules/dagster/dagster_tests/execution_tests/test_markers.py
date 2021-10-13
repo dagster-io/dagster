@@ -1,5 +1,5 @@
 from dagster import execute_pipeline, lambda_solid, pipeline, reconstructable
-from dagster.core.test_utils import instance_for_test
+from dagster.core.test_utils import default_mode_def_for_test, instance_for_test
 
 
 def define_pipeline():
@@ -7,7 +7,7 @@ def define_pipeline():
     def ping():
         return "ping"
 
-    @pipeline
+    @pipeline(mode_defs=[default_mode_def_for_test])
     def simple():
         ping()
 
@@ -21,7 +21,6 @@ def test_multiproc_markers():
             instance=instance,
             run_config={
                 "execution": {"multiprocess": {}},
-                "intermediate_storage": {"filesystem": {}},
             },
         )
         assert result.success

@@ -1,10 +1,8 @@
 import os
 import subprocess
-import warnings
 from contextlib import contextmanager
 from tempfile import TemporaryDirectory
 
-import pytest
 from dagster import check, file_relative_path
 from dagster.core.test_utils import instance_for_test
 from dagster.utils import merge_dicts
@@ -183,16 +181,10 @@ class TestMySQLInstance:
     @staticmethod
     @contextmanager
     def docker_service_up_or_skip(docker_compose_file, service_name, conn_args=None):
-        try:
-            with TestMySQLInstance.docker_service_up(
-                docker_compose_file, service_name, conn_args
-            ) as conn_str:
-                yield conn_str
-        except MySQLDockerError as ex:
-            warnings.warn(
-                "Error launching Dockerized MySQL: {}".format(ex), RuntimeWarning, stacklevel=3
-            )
-            pytest.skip("Skipping due to error launching Dockerized MySQL: {}".format(ex))
+        with TestMySQLInstance.docker_service_up(
+            docker_compose_file, service_name, conn_args
+        ) as conn_str:
+            yield conn_str
 
 
 def is_mysql_running(service_name):

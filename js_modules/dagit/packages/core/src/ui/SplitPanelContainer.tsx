@@ -1,8 +1,12 @@
-import {Button, ButtonGroup, Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-const DIVIDER_THICKNESS = 4;
+import {ButtonWIP} from './Button';
+import {ButtonGroup} from './ButtonGroup';
+import {ColorsWIP} from './Colors';
+import {IconWIP} from './Icon';
+
+const DIVIDER_THICKNESS = 2;
 
 interface SplitPanelContainerProps {
   axis?: 'horizontal' | 'vertical';
@@ -133,21 +137,21 @@ interface PanelToggleProps {
 }
 
 export const FirstOrSecondPanelToggle = ({container, axis}: PanelToggleProps) => {
+  // todo dish/bengotow: Fix these icons.
   return (
-    <ButtonGroup style={{flexShrink: 0}}>
-      <Button
-        small={true}
-        title={'Focus First Pane'}
-        icon={axis === 'vertical' ? 'add-row-top' : 'add-column-left'}
-        onClick={() => container.current?.onChangeSize(100)}
-      />
-      <Button
-        small={true}
-        title={'Focus Second Pane'}
-        icon={axis === 'vertical' ? 'add-row-bottom' : 'add-column-right'}
-        onClick={() => container.current?.onChangeSize(0)}
-      />
-    </ButtonGroup>
+    <ButtonGroup
+      buttons={[
+        {
+          id: 'first-pane',
+          icon: axis === 'vertical' ? 'vertical_align_bottom' : 'vertical_align_bottom',
+        },
+        {
+          id: 'second-pane',
+          icon: axis === 'vertical' ? 'vertical_align_top' : 'vertical_align_top',
+        },
+      ]}
+      onClick={(id) => container.current?.onChangeSize(id === 'first-pane' ? 100 : 0)}
+    />
   );
 };
 
@@ -164,11 +168,15 @@ export const SecondPanelToggle = ({container, axis}: PanelToggleProps) => {
   React.useEffect(() => setOpen(initialIsOpen), [initialIsOpen]);
 
   return (
-    <Button
-      small={true}
+    <ButtonWIP
       active={open}
-      title={'Toggle Second Pane'}
-      icon={axis === 'vertical' ? 'add-row-bottom' : 'add-column-right'}
+      title="Toggle second pane"
+      icon={
+        <IconWIP
+          name="vertical_align_top"
+          style={axis === 'horizontal' ? {transform: 'rotate(-90deg)'} : undefined}
+        />
+      }
       onClick={() => {
         if (!container.current) {
           return;
@@ -189,22 +197,23 @@ export const SecondPanelToggle = ({container, axis}: PanelToggleProps) => {
   );
 };
 
+// Note: -1px margins here let the divider cover the last 1px of the previous box, hiding
+// any scrollbar border it might have.
+
 const DividerWrapper = {
   horizontal: styled.div<{resizing: boolean}>`
     width: ${DIVIDER_THICKNESS}px;
     z-index: 1;
-    background: ${Colors.WHITE};
-    border-left: 1px solid ${(p) => (p.resizing ? Colors.GRAY5 : Colors.LIGHT_GRAY2)};
-    border-right: 1px solid ${(p) => (p.resizing ? Colors.GRAY3 : Colors.GRAY5)};
+    background: ${(p) => (p.resizing ? ColorsWIP.Gray400 : ColorsWIP.KeylineGray)};
+    margin-left: -1px;
     overflow: visible;
     position: relative;
   `,
   vertical: styled.div<{resizing: boolean}>`
     height: ${DIVIDER_THICKNESS}px;
     z-index: 1;
-    background: ${Colors.WHITE};
-    border-top: 1px solid ${(p) => (p.resizing ? Colors.GRAY5 : Colors.LIGHT_GRAY2)};
-    border-bottom: 1px solid ${(p) => (p.resizing ? Colors.GRAY3 : Colors.GRAY5)};
+    background: ${(p) => (p.resizing ? ColorsWIP.Gray400 : ColorsWIP.KeylineGray)};
+    margin-top: -1px;
     overflow: visible;
     position: relative;
   `,

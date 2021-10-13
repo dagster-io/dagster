@@ -1,5 +1,6 @@
 from dagster.core.utils import check_dagster_package_version
 
+from .docker_executor import docker_executor
 from .docker_run_launcher import DockerRunLauncher
 from .version import __version__
 

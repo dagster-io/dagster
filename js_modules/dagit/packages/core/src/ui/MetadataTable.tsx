@@ -1,8 +1,9 @@
-import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {Box} from './Box';
+import {ColorsWIP} from './Colors';
+import {Table} from './Table';
 
 type Row = {key: string; value: React.ReactNode};
 
@@ -56,6 +57,18 @@ export const StyledTable = styled.table`
 `;
 
 const MetadataKey = styled.div`
-  color: ${Colors.GRAY1};
+  color: ${ColorsWIP.Gray600};
   font-weight: 400;
+`;
+
+export const MetadataTableWIP = styled(Table)`
+  td:first-child {
+    white-space: nowrap;
+    width: 1px;
+    max-width: 400px;
+    word-break: break-word;
+    overflow: hidden;
+    padding-right: 24px;
+    text-overflow: ellipsis;
+  }
 `;

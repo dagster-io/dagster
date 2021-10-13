@@ -17,14 +17,12 @@ def get_op_result_value(op_inst):
         },
         input_mappings=None,
         output_mappings=None,
-        config_mapping=None,
+        config=None,
     )
 
     result = single_op_graph.execute_in_process()
 
-    execution_result = result.result_for_node(op_inst.name)
-
-    return execution_result.output_value()
+    return result.output_for_node(op_inst.name)
 
 
 def get_num_csv_environment(ops_config):
@@ -77,7 +75,7 @@ def test_two_input_op():
     result = two_input.execute_in_process()
     assert result.success
 
-    df = result.result_for_node("two_input_op").output_value()
+    df = result.output_for_node("two_input_op")
 
     assert isinstance(df, pd.DataFrame)
     assert df.to_dict("list") == {"num1": [1, 3], "num2": [2, 4], "sum": [3, 7]}
@@ -124,7 +122,7 @@ def test_pandas_multiple_inputs():
     def multiple_inputs():
         double_sum(load_one(), load_two())
 
-    output_df = multiple_inputs.execute_in_process().result_for_node("double_sum").output_value()
+    output_df = multiple_inputs.execute_in_process().output_for_node("double_sum")
 
     assert not output_df.empty
 
@@ -143,8 +141,8 @@ def test_rename_input():
     assert result.success
 
     expected = {"num1": [1, 3], "num2": [2, 4], "sum": [3, 7], "sum_squared": [9, 49]}
-    op_result = result.result_for_node("sum_sq_table_renamed_input")
-    assert op_result.output_value().to_dict("list") == expected
+    op_output = result.output_for_node("sum_sq_table_renamed_input")
+    assert op_output.to_dict("list") == expected
 
 
 def test_date_column():

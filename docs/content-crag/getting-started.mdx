@@ -38,26 +38,26 @@ pip install dagster
 
 This will install the latest stable version of the core Dagster packages in your current Python environment.
 
-### Writing a Pipeline
+### Writing a Job
 
-Let's get your first pipeline up and running.
+Let's get your first job up and running.
 
 ```python file=/getting_started/hello_world.py startafter=start_pipeline_marker endbefore=end_pipeline_marker
-from dagster import pipeline, solid
+from dagster import job, op
 
 
-@solid
+@op
 def get_name():
     return "dagster"
 
 
-@solid
+@op
 def hello(context, name: str):
     context.log.info(f"Hello, {name}!")
 
 
-@pipeline
-def hello_graph():
+@job
+def hello_dagster():
     hello(get_name())
 ```
 
@@ -68,9 +68,9 @@ Save the code above in a file named `hello_world.py`.
   https://github.com/dagster-io/dagster/issues/3964
 -->
 
-You can execute the pipeline in three different ways: [Dagit](/concepts/dagit/dagit), [Dagster Python API](/\_apidocs/execution#dagster.execute_pipeline), or [Dagster CLI](/\_apidocs/cli#dagster-pipeline-execute).
+You can execute the job in three different ways: [Dagit](/concepts/dagit/dagit), Dagster Python API, or [Dagster CLI](/\_apidocs/cli#dagster-pipeline-execute).
 
-### Running the Pipeline in Dagit
+### Running the Job in Dagit
 
 It's highly recommended to use Dagit with Dagster. Dagit is a web-based interface for viewing and interacting with Dagster objects.
 
@@ -78,7 +78,7 @@ It's highly recommended to use Dagit with Dagster. Dagit is a web-based interfac
 pip install dagit
 ```
 
-To visualize your pipeline in Dagit, run the following command:
+To visualize your job in Dagit, run the following command:
 
 ```bash
 dagit -f hello_world.py
@@ -93,7 +93,7 @@ width={4032}
 height={2454}
 />
 
-Click on the "Playground" tab, then press the "Launch Execution" button to execute the pipeline. You will then see Dagit launches a pipeline run:
+Click on the "Playground" tab, then press the "Launch Execution" button to execute the job. You will then see Dagit launches a job run:
 
 <Image
 alt="dagit-run"
@@ -102,23 +102,21 @@ width={4032}
 height={2454}
 />
 
-### Other Options to Run Dagster Pipelines
+### Other Options to Run Dagster Jobs
 
-You can also execute the pipeline without the UI in the following methods:
+You can also execute the job without the UI in the following methods:
 
 **Dagster Python API**
 
 ```python file=/getting_started/hello_world.py startafter=start_execute_marker endbefore=end_execute_marker
-from dagster import execute_pipeline
-
 if __name__ == "__main__":
-    result = execute_pipeline(hello_graph)
+    result = hello_dagster.execute_in_process()
 ```
 
 **Dagster CLI**
 
 ```bash
-dagster pipeline execute -f hello_world.py
+dagster job execute -f hello_world.py
 ```
 
 ## If You Get Stuck

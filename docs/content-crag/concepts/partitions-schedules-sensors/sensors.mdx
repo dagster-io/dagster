@@ -59,7 +59,7 @@ def log_file_pipeline():
     process_file()
 ```
 
-You can write a sensor that watches for new files in a specific directory and `yields` a `RunRequest` for each new file in the directory. By default, this sensor every 30 seconds.
+You can write a sensor that watches for new files in a specific directory and `yields` a `RunRequest` for each new file in the directory. By default, this sensor runs every 30 seconds.
 
 ```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_directory_sensor_marker endbefore=end_directory_sensor_marker
 import os
@@ -301,7 +301,7 @@ def my_asset_sensor(context, asset_event):
             "solids": {
                 "read_materialization": {
                     "config": {
-                        "asset_key": asset_event.asset_key.path,
+                        "asset_key": asset_event.dagster_event.asset_key.path,
                         "pipeline": asset_event.pipeline_name,
                     }
                 }

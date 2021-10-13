@@ -1,33 +1,32 @@
-import {Colors, Icon, IconName} from '@blueprintjs/core';
 import Fuse from 'fuse.js';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {useFeatureFlags} from '../app/Flags';
+import {ColorsWIP} from '../ui/Colors';
+import {IconName, IconWIP} from '../ui/Icon';
 
 import {SearchResult, SearchResultType} from './types';
 
-const iconForType = (type: SearchResultType, flagPipelineModeTuples: boolean): IconName => {
+const iconForType = (type: SearchResultType): IconName => {
   switch (type) {
     case SearchResultType.Asset:
-      return 'th';
+      return 'asset';
     case SearchResultType.PartitionSet:
-      return 'time';
+    case SearchResultType.Schedule:
+      return 'schedule';
     case SearchResultType.Pipeline:
-      return flagPipelineModeTuples ? 'send-to-graph' : 'diagram-tree';
+      return 'job';
     case SearchResultType.Repository:
-      return 'folder-open';
+      return 'source';
     case SearchResultType.Run:
       return 'history';
-    case SearchResultType.Schedule:
-      return 'time';
     case SearchResultType.Sensor:
-      return 'automatic-updates';
+      return 'sensors';
     case SearchResultType.Solid:
-      return 'git-commit';
+      return 'op';
     default:
-      return 'cube';
+      return 'source';
   }
 };
 
@@ -40,7 +39,6 @@ interface ItemProps {
 const SearchResultItem: React.FC<ItemProps> = React.memo(({isHighlight, onClickResult, result}) => {
   const {item} = result;
   const element = React.useRef<HTMLLIElement>(null);
-  const {flagPipelineModeTuples} = useFeatureFlags();
 
   React.useEffect(() => {
     if (element.current && isHighlight) {
@@ -61,10 +59,9 @@ const SearchResultItem: React.FC<ItemProps> = React.memo(({isHighlight, onClickR
   return (
     <Item isHighlight={isHighlight} ref={element}>
       <ResultLink to={item.href} onClick={onClick}>
-        <Icon
-          iconSize={16}
-          icon={iconForType(item.type, flagPipelineModeTuples)}
-          color={isHighlight ? Colors.WHITE : Colors.GRAY3}
+        <IconWIP
+          name={iconForType(item.type)}
+          color={isHighlight ? ColorsWIP.Gray800 : ColorsWIP.Gray500}
         />
         <div style={{marginLeft: '12px'}}>
           <Label isHighlight={isHighlight}>{item.label}</Label>
@@ -104,7 +101,7 @@ export const SearchResults = (props: Props) => {
 };
 
 const NoResults = styled.div`
-  color: ${Colors.GRAY5};
+  color: ${ColorsWIP.Gray500};
   font-size: 16px;
   padding: 16px;
 `;
@@ -127,8 +124,10 @@ interface HighlightableTextProps {
 
 const Item = styled.li<HighlightableTextProps>`
   align-items: center;
-  background-color: ${({isHighlight}) => (isHighlight ? Colors.BLUE3 : Colors.WHITE)};
-  color: ${({isHighlight}) => (isHighlight ? Colors.WHITE : 'default')}
+  background-color: ${({isHighlight}) => (isHighlight ? ColorsWIP.Gray100 : 'transparent')};
+  box-shadow: ${({isHighlight}) => (isHighlight ? ColorsWIP.HighlightGreen : 'transparent')} 6px 0 0
+    inset;
+  color: ${ColorsWIP.Gray700};
   display: flex;
   flex-direction: row;
   list-style: none;
@@ -136,7 +135,7 @@ const Item = styled.li<HighlightableTextProps>`
   user-select: none;
 
   &:hover {
-    background-color: ${({isHighlight}) => (isHighlight ? Colors.BLUE3 : Colors.LIGHT_GRAY3)};
+    background-color: ${ColorsWIP.Gray100};
   }
 `;
 
@@ -155,12 +154,12 @@ const ResultLink = styled(Link)`
 `;
 
 const Label = styled.div<HighlightableTextProps>`
-  color: ${({isHighlight}) => (isHighlight ? Colors.WHITE : Colors.GRAY1)};
+  color: ${({isHighlight}) => (isHighlight ? ColorsWIP.Gray900 : ColorsWIP.Gray700)};
   font-weight: 500;
 `;
 
 const Description = styled.div<HighlightableTextProps>`
-  color: ${({isHighlight}) => (isHighlight ? Colors.WHITE : Colors.GRAY3)};
+  color: ${({isHighlight}) => (isHighlight ? ColorsWIP.Gray900 : ColorsWIP.Gray700)};
   font-size: 12px;
   max-width: 530px;
   overflow-x: hidden;

@@ -21,39 +21,31 @@ ADLS2_CLIENT_CONFIG = {
 
 @resource(ADLS2_CLIENT_CONFIG)
 def adls2_resource(context):
-    """Resource that gives solids access to Azure Data Lake Storage Gen2.
+    """Resource that gives ops access to Azure Data Lake Storage Gen2.
 
     The underlying client is a :py:class:`~azure.storage.filedatalake.DataLakeServiceClient`.
 
     Attach this resource definition to a :py:class:`~dagster.ModeDefinition` in order to make it
-    available to your solids.
+    available to your ops.
 
     Example:
 
         .. code-block:: python
 
-            from dagster import ModeDefinition, execute_solid, solid
+            from dagster import build_op_context, op
             from dagster_azure.adls2 import adls2_resource
 
-            @solid(required_resource_keys={'adls2'})
-            def example_adls2_solid(context):
+            @op(required_resource_keys={'adls2'})
+            def example_adls2_op(context):
                 return list(context.resources.adls2.adls2_client.list_file_systems())
 
-            result = execute_solid(
-                example_adls2_solid,
-                run_config={
-                    'resources': {
-                        'adls2': {
-                            'config': {
-                                'storage_account': 'my_storage_account'
-                            }
-                        }
-                    }
-                },
-                mode_def=ModeDefinition(resource_defs={'adls2': adls2_resource}),
-            )
+            adls2_resource_configured = adls2_resource.configured({
+                'storage_account': 'my_storage_account'
+            })
+            context = build_op_context(resources={'adls2': adls2_resource_configured})
+            result = example_adls2_op(context)
 
-    Note that your solids must also declare that they require this resource with
+    Note that your ops must also declare that they require this resource with
     `required_resource_keys`, or it will not be initialized for the execution of their compute
     functions.
 

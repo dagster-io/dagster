@@ -1,27 +1,27 @@
 ---
-title: Solids | Dagster
-description: Solids are the functional unit of computation in Dagster and contain the core logic of your orchestration graph.
+title: Ops | Dagster
+description: Ops are the functional unit of computation in Dagster and contain the core logic of your orchestration graph.
 ---
 
-# Solids
+# Ops
 
-Solids are the functional unit of work in Dagster. A solid's responsibility is to read its inputs, perform an action, and emit outputs. Multiple solids can be connected to create a [Pipeline](/concepts/solids-pipelines/pipelines).
+Ops are the functional unit of work in Dagster. An op's responsibility is to read its inputs, perform an action, and emit outputs. Multiple ops can be connected to create a [Job](/concepts/solids-pipelines/jobs).
 
-<Image alt="solids" src="/images/solids.png" width={3200} height={1040} />
+<Image alt="ops" src="/images/solids.png" width={3200} height={1040} />
 
 ## Relevant APIs
 
-| Name                                       | Description                                                                                                                                                                                             |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| <PyObject object="solid" decorator />      | The decorator used to define solids. The decorated function is called the `compute_fn`. The decorator returns a <PyObject object="SolidDefinition" />.                                                  |
-| <PyObject object="InputDefinition" />      | InputDefinitions define the inputs to a solid compute function. These are defined on the `input_defs` argument to the <PyObject object="solid" decorator/> decorator.                                   |
-| <PyObject object="OutputDefinition" />     | OutputDefinitions define the outputs of a solid compute function. These are defined on the `output_defs` argument to the <PyObject object="solid" displayText="@solid"/> decorator.                     |
-| <PyObject object="SolidExecutionContext"/> | An optional first argument to a solid's compute function, providing access to Dagster system information such as resources, logging, and the underlying Dagster instance.                               |
-| <PyObject object="SolidDefinition"  />     | Class for solids. You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="solid" decorator /> which returns a <PyObject object="SolidDefinition" />. |
+| Name                                    | Description                                                                                                                                                                                     |
+| --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject object="op" decorator />      | The decorator used to define ops. The decorated function is called the `compute_fn`. The decorator returns an <PyObject object="OpDefinition" />.                                               |
+| <PyObject object="In" />                | Ins define the inputs to an op compute function. These are defined on the `ins` argument to the <PyObject object="op" decorator/> decorator.                                                    |
+| <PyObject object="Out" />               | Outs define the outputs of an op compute function. These are defined on the `outs` argument to the <PyObject object="op" displayText="op" decorator/> decorator.                                |
+| <PyObject object="OpExecutionContext"/> | An optional first argument to a op's compute function, providing access to Dagster system information such as resources, logging, and the underlying Dagster instance.                          |
+| <PyObject object="OpDefinition"  />     | Class for ops. You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="op" decorator /> which returns an <PyObject object="OpDefinition" />. |
 
 ## Overview
 
-Solids are used to define computations. Solids can later be assembled into [Pipelines](/concepts/solids-pipelines/pipelines). Solids generally perform one specific action and are used for batch computations. For example, you can use a solid to:
+Ops are used to define computations. Ops can later be assembled into [Jobs](/concepts/solids-pipelines/jobs). Ops generally perform one specific action and are used for batch computations. For example, you can use an op to:
 
 - Derive a data set from some other data sets.
 - Execute a database query.
@@ -29,31 +29,30 @@ Solids are used to define computations. Solids can later be assembled into [Pipe
 - Query an API and store the result in a data warehouse.
 - Send an email or Slack message.
 
-By default, all solids in a pipeline execute in the same process. In production environments, Dagster is usually configured so that each solid executes in its own process.
+Depending on how you execute a job, Dagster can run all the ops in the job within the same process or isolate them in different processes.
 
-Solids have several important properties:
+Ops have several important properties:
 
-- **Inputs and Outputs**: Solids have defined [inputs and outputs](#inputs-and-outputs), which can be optionally typed. These types are validated at runtime.
-- **Configurable**: Solids can be configured, using a strongly typed [configuration system](/concepts/configuration/config-schema).
-- **Dependencies**: Solids inputs can depend on the outputs from other solids. A solid will not execute until all of its inputs have been resolved successfully. The dependency structure is defined using a [Pipeline](/concepts/solids-pipelines/pipelines).
-- **Emit an Event Stream**: Solids can emit a stream of structured events, such as AssetMaterializations. These events can be viewed in [Dagit](/concepts/dagit/dagit), Dagster's UI tool.
+- **Inputs and Outputs**: Ops have defined [inputs and outputs](#inputs-and-outputs), which can be optionally typed. These types are validated at runtime.
+- **Configurable**: Ops can be configured, using a strongly typed [configuration system](/concepts/configuration/config-schema).
+- **Emit an Event Stream**: Ops can emit a stream of structured events, such as AssetMaterializations. These events can be viewed in [Dagit](/concepts/dagit/dagit), Dagster's UI tool.
 - **Individually testable**: See the [testing page](/concepts/testing) for more detail.
 
 ---
 
-## Defining a solid
+## Defining an op
 
-To define a solid, use the <PyObject object="solid" decorator /> decorator. The decorated function is called the `compute_fn`.
+To define an op, use the <PyObject object="op" decorator /> decorator. The decorated function is called the `compute_fn`.
 
-```python file=/concepts/solids_pipelines/solids.py startafter=start_solid_marker endbefore=end_solid_marker
-@solid
-def my_solid():
+```python file=/concepts/solids_pipelines/solids.py startafter=start_op_marker endbefore=end_op_marker
+@op
+def my_op():
     return "hello"
 ```
 
 ### Inputs and Outputs
 
-Each solid has a set of inputs and outputs, which define the data it consumes and produces. Inputs and outputs are used to define dependencies between solids and to pass data between solids.
+Each op has a set of inputs and outputs, which define the data it consumes and produces. Inputs and outputs are used to define dependencies between ops and to pass data between ops.
 
 Both definitions have a few important properties:
 
@@ -63,132 +62,118 @@ Both definitions have a few important properties:
 
 #### Inputs
 
-Inputs are passed as arguments to a solid's `compute_fn`. The value of an input can be passed from the output of another solid, or stubbed (hardcoded) using config.
+Inputs are passed as arguments to an op's `compute_fn`. The value of an input can be passed from the output of another op, or stubbed (hardcoded) using config.
 
 The most common way to define inputs is just to add arguments to the decorated function:
 
-```python file=/concepts/solids_pipelines/solids.py startafter=start_input_solid_marker endbefore=end_input_solid_marker
-@solid
-def my_input_solid(abc, xyz):
+```python file=/concepts/solids_pipelines/solids.py startafter=start_input_op_marker endbefore=end_input_op_marker
+@op
+def my_input_op(abc, xyz):
     pass
 ```
 
-A solid only starts to execute once all of its inputs have been resolved. Inputs can be resolved in two ways:
+An op only starts to execute once all of its inputs have been resolved. Inputs can be resolved in two ways:
 
 - The upstream output that the input depends on has been successfully emitted and stored.
 - The input was stubbed through config.
 
-You can use a [Dagster Type](/concepts/types) to provide a function that validates a solid's input every time the solid runs. In this case, you use <PyObject object="InputDefinition" pluralize /> corresponding to the decorated function arguments.
+You can use a [Dagster Type](/concepts/types) to provide a function that validates an op's input every time the op runs. In this case, you use a dictionary of <PyObject object="In" pluralize /> corresponding to the decorated function arguments.
 
-```python file=/concepts/solids_pipelines/solids.py startafter=start_typed_input_solid_marker endbefore=end_typed_input_solid_marker
+```python file=/concepts/solids_pipelines/solids.py startafter=start_typed_input_op_marker endbefore=end_typed_input_op_marker
 MyDagsterType = DagsterType(type_check_fn=lambda _, value: value % 2 == 0, name="MyDagsterType")
 
 
-@solid(input_defs=[InputDefinition(name="abc", dagster_type=MyDagsterType)])
-def my_typed_input_solid(abc):
+@op(ins={"abc": In(dagster_type=MyDagsterType)})
+def my_typed_input_op(abc):
     pass
 ```
 
 #### Outputs
 
-Outputs are yielded from a solid's `compute_fn`. By default, all solids have a single output called "result".
+Outputs are yielded from an op's `compute_fn`. By default, all ops have a single output called "result".
 
 When you have one output, you can return the output value directly.
 
-```python file=/concepts/solids_pipelines/solids.py startafter=start_output_solid_marker endbefore=end_output_solid_marker
-@solid
-def my_output_solid():
+```python file=/concepts/solids_pipelines/solids.py startafter=start_output_op_marker endbefore=end_output_op_marker
+@op
+def my_output_op():
     return 5
 ```
 
-To define multiple outputs, or to use a different output name than "result", you can provide <PyObject object="OutputDefinition" pluralize /> to the <PyObject object="solid" decorator /> decorator.
+To define multiple outputs, or to use a different output name than "result", you can provide a dictionary of <PyObject object="Out" pluralize /> to the <PyObject object="op" decorator /> decorator.
 
-When you have more than one output, you must `yield` an instance of the <PyObject object="Output"/> class to disambiguate between outputs.
+When you have more than one output, you can return a tuple of values, one for each output.
 
-```python file=/concepts/solids_pipelines/solids.py startafter=start_multi_output_solid_marker endbefore=end_multi_output_solid_marker
-@solid(
-    output_defs=[
-        OutputDefinition(name="first_output"),
-        OutputDefinition(name="second_output"),
-    ],
-)
-def my_multi_output_solid():
-    yield Output(5, output_name="first_output")
-    yield Output(6, output_name="second_output")
+```python file=/concepts/solids_pipelines/solids.py startafter=start_multi_output_op_marker endbefore=end_multi_output_op_marker
+@op(out={"first_output": Out(), "second_output": Out()})
+def my_multi_output_op():
+    return 5, 6
 ```
 
 Like inputs, outputs can also have [Dagster Types](/concepts/types).
 
-### Solid Context
+### Op Context
 
-When writing a solid, users can optionally provide a first parameter, `context`. When this parameter is supplied, Dagster will supply a context object to the body of the solid. The context provides access to system information like solid configuration, loggers, resources, and the current run id. See <PyObject object="SolidExecutionContext"/> for the full list of properties accessible from the solid context.
+When writing an op, users can optionally provide a first parameter, `context`. When this parameter is supplied, Dagster will supply a context object to the body of the op. The context provides access to system information like op configuration, loggers, resources, and the current run id. See <PyObject object="OpExecutionContext"/> for the full list of properties accessible from the op context.
 
 For example, to access the logger and log a info message:
 
-```python file=/concepts/solids_pipelines/solids.py startafter=start_solid_context_marker endbefore=end_solid_context_marker
-@solid(config_schema={"name": str})
-def context_solid(context):
-    name = context.solid_config["name"]
+```python file=/concepts/solids_pipelines/solids.py startafter=start_op_context_marker endbefore=end_op_context_marker
+@op(config_schema={"name": str})
+def context_op(context):
+    name = context.op_config["name"]
     context.log.info(f"My name is {name}")
 ```
 
-### Solid Configuration
+### Op Configuration
 
 All definitions in dagster expose a `config_schema`, making them configurable and parameterizable. The configuration system is explained in detail on [Config Schema](/concepts/configuration/config-schema).
 
-Solid definitions can specify a `config_schema` for the solid's configuration. The configuration is accessible through the [solid context](#solid-context) at runtime. Therefore, solid configuration can be used to specify solid behavior at runtime, making solids more flexible and reusable.
+Op definitions can specify a `config_schema` for the op's configuration. The configuration is accessible through the [op context](#op-context) at runtime. Therefore, op configuration can be used to specify op behavior at runtime, making ops more flexible and reusable.
 
-For example, we can define a solid where the API endpoint it queries is define through it's configuration:
+For example, we can define an op where the API endpoint it queries is define through it's configuration:
 
-```python file=/concepts/solids_pipelines/solids.py startafter=start_configured_solid_marker endbefore=end_configured_solid_marker
-@solid(config_schema={"api_endpoint": str})
-def my_configurable_solid(context):
-    api_endpoint = context.solid_config["api_endpoint"]
+```python file=/concepts/solids_pipelines/solids.py startafter=start_configured_op_marker endbefore=end_configured_op_marker
+@op(config_schema={"api_endpoint": str})
+def my_configurable_op(context):
+    api_endpoint = context.op_config["api_endpoint"]
     data = requests.get(f"{api_endpoint}/data").json()
     return data
 ```
 
-## Using a solid
+## Using an op
 
-Solids are used within a <PyObject object="pipeline" displayText="@pipeline" />. You can see more information on the [Pipelines](/concepts/solids-pipelines/pipelines) page. You can also execute a single solid, usually within a test context, by directly invoking it. More information can be found at [Testing solids](/concepts/testing#testing-solids)
+Ops are used within a [Job](/concepts/solids-pipelines/jobs) or [Graph](/concepts/solids-pipelines/pipelines). You can also execute a single op, usually within a test context, by directly invoking it. More information can be found at [Testing ops](/concepts/testing#testing-ops).
 
 ## Patterns
 
-### Solid Factory
+### Op Factory
 
-You may find the need to create utilities that help generate solids. In most cases, you should parameterize solid behavior by adding solid configuration. You should reach for this pattern if you find yourself needing to vary the arguments to the <PyObject object="solid" decorator /> decorator or <PyObject object="SolidDefinition"/> themselves, since they cannot be modified based on solid configuration.
+You may find the need to create utilities that help generate ops. In most cases, you should parameterize op behavior by adding op configuration. You should reach for this pattern if you find yourself needing to vary the arguments to the <PyObject object="op" decorator /> decorator or <PyObject object="OpDefinition"/> themselves, since they cannot be modified based on op configuration.
 
-To create a solid factory, you define a function that returns a <PyObject object="SolidDefinition"/>, either directly or by decorating a function with the solid dectorator.
+To create an op factory, you define a function that returns an <PyObject object="OpDefinition"/>, either directly or by decorating a function with the op decorator.
 
-```python file=/concepts/solids_pipelines/solids.py startafter=start_solid_factory_pattern_marker endbefore=end_solid_factory_pattern_marker
-def x_solid(
+```python file=/concepts/solids_pipelines/solids.py startafter=start_op_factory_pattern_marker endbefore=end_op_factory_pattern_marker
+def x_op(
     arg,
     name="default_name",
-    input_defs=None,
+    ins=None,
     **kwargs,
 ):
     """
     Args:
-        args (any): One or more arguments used to generate the nwe solid
-        name (str): The name of the new solid.
-        input_defs (list[InputDefinition]): Any input definitions for the new solid. Default: None.
+        args (any): One or more arguments used to generate the nwe op
+        name (str): The name of the new op.
+        ins (Dict[str, In]): Any Ins for the new op. Default: None.
 
     Returns:
-        function: The new solid.
+        function: The new op.
     """
 
-    @solid(name=name, input_defs=input_defs or [InputDefinition("start", Nothing)], **kwargs)
-    def _x_solid(context):
-        # Solid logic here
+    @op(name=name, ins=ins or {"start": In(Nothing)}, **kwargs)
+    def _x_op(context):
+        # Op logic here
         pass
 
-    return _x_solid
+    return _x_op
 ```
-
-## FAQ
-
-### Why "Solid"?
-
-Why is a solid called a "solid"? It is a journey from a novel concept, to a familiar acronym, and back to a word.
-
-In a data management system, there are two broad categories of data: source data––meaning the data directly inputted by a user, gathered from an uncontrolled external system, or generated directly by a device––and computed data––data produced by computation over other data. Management of computed data is the primary concern of Dagster. Another name for computed data would be software-structured data. Or SSD. Given that SSD is already a well-known acronym for Solid State Drives we named our core concept for software-structured data a Solid.

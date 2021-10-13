@@ -1,6 +1,7 @@
-import {Colors, Icon} from '@blueprintjs/core';
 import * as React from 'react';
 
+import {ColorsWIP} from '../ui/Colors';
+import {IconWIP} from '../ui/Icon';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 
 import {WarningTooltip} from './WarningTooltip';
@@ -22,9 +23,10 @@ export const WorkspaceWarningIcon = React.memo(() => {
               : 'repository locations failed to load'
           }`}</div>
         }
-        position="right"
+        position="bottom"
+        modifiers={{offset: {enabled: true, options: {offset: [0, 28]}}}}
       >
-        <Icon icon="warning-sign" iconSize={14} color={Colors.GOLD4} title="Warnings found" />
+        <IconWIP name="warning" color={ColorsWIP.Yellow500} />
       </WarningTooltip>
     );
   }

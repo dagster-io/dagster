@@ -149,7 +149,7 @@ def test_hook_resource_error():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match='Resource key "resource_b" is required by hook "a_hook"',
+        match="resource key 'resource_b' is required by hook 'a_hook'",
     ):
         PipelineDefinition(
             solid_defs=[a_solid],
@@ -469,10 +469,6 @@ def test_hook_graph_job_op():
 
 
 def test_hook_context_op_solid_provided():
-    @success_hook()
-    def hook_one(context):
-        pass
-
     @op
     def hook_op(_):
         pass

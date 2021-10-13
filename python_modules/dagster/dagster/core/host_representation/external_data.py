@@ -17,8 +17,8 @@ from dagster.core.definitions import (
     ScheduleDefinition,
 )
 from dagster.core.definitions.events import AssetKey
-from dagster.core.definitions.i_solid_definition import NodeDefinition
 from dagster.core.definitions.mode import DEFAULT_MODE_NAME
+from dagster.core.definitions.node import NodeDefinition
 from dagster.core.definitions.partition import PartitionScheduleDefinition
 from dagster.core.snap import PipelineSnapshot
 from dagster.serdes import whitelist_for_serdes

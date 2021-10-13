@@ -1,14 +1,14 @@
-import {InputGroup as BlueprintInputGroup, Colors, Popover} from '@blueprintjs/core';
 import Fuse from 'fuse.js';
 import memoize from 'lodash/memoize';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {ColorsWIP} from '../ui/Colors';
+import {Popover} from '../ui/Popover';
+import {TextInput} from '../ui/TextInput';
 import {useSuggestionsForString} from '../ui/useSuggestionsForString';
 
-import {AssetsTableQuery_assetsOrError_AssetConnection_nodes} from './types/AssetsTableQuery';
-
-type Asset = AssetsTableQuery_assetsOrError_AssetConnection_nodes;
+import {Asset} from './AssetsCatalogTable';
 
 const getAssetFilterProviders = memoize((assets: Asset[] = []) => {
   const allTags = {};
@@ -168,7 +168,7 @@ export const AssetsFilter = ({
       minimal
       usePortal
       isOpen={isOpen}
-      position={'bottom-left'}
+      position="bottom-left"
       content={
         <Menu>
           {suggestions.map((suggestion, idx) => (
@@ -189,13 +189,10 @@ export const AssetsFilter = ({
         </Menu>
       }
     >
-      <InputGroup
-        type="text"
+      <TextInput
         value={query}
-        width={300}
-        fill={false}
-        placeholder={`Filter asset_keys...`}
-        hasSuggestions={isOpen}
+        style={{width: '300px'}}
+        placeholder="Filter asset keys…"
         onChange={onChange}
         onKeyDown={onKeyDown}
         onBlur={() => setShown(false)}
@@ -204,22 +201,6 @@ export const AssetsFilter = ({
     </Popover>
   );
 };
-
-const InputGroup = styled(({hasSuggestions, ...props}) => <BlueprintInputGroup {...props} />)`
-  input,
-  input:focus {
-    outline: none;
-    box-shadow: none;
-    border: 1px solid ${Colors.LIGHT_GRAY1};
-    margin-left: 0px;
-    min-width: 600px;
-  }
-
-  input:focus {
-    border-bottom-left-radius: ${({hasSuggestions}) => (hasSuggestions ? 0 : 3)};
-    border-bottom-right-radius: ${({hasSuggestions}) => (hasSuggestions ? 0 : 3)};
-  }
-`;
 
 const Menu = styled.ul`
   list-style: none;
@@ -234,8 +215,8 @@ const Item = styled.li<{
   readonly isHighlight: boolean;
 }>`
   align-items: center;
-  background-color: ${({isHighlight}) => (isHighlight ? Colors.BLUE3 : Colors.WHITE)};
-  color: ${({isHighlight}) => (isHighlight ? Colors.WHITE : 'default')};
+  background-color: ${({isHighlight}) => (isHighlight ? ColorsWIP.Blue500 : ColorsWIP.White)};
+  color: ${({isHighlight}) => (isHighlight ? ColorsWIP.White : 'default')};
   cursor: pointer;
   display: flex;
   flex-direction: row;
@@ -247,6 +228,6 @@ const Item = styled.li<{
   text-overflow: ellipsis;
 
   &:hover {
-    background-color: ${({isHighlight}) => (isHighlight ? Colors.BLUE3 : Colors.LIGHT_GRAY3)};
+    background-color: ${({isHighlight}) => (isHighlight ? ColorsWIP.Blue500 : ColorsWIP.Gray100)};
   }
 `;

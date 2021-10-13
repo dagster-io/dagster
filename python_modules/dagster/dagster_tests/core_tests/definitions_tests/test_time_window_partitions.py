@@ -4,8 +4,10 @@ import pendulum
 from dagster.core.definitions.time_window_partitions import (
     TimeWindow,
     daily_partitioned_config,
+    hourly_partitioned_config,
     monthly_partitioned_config,
 )
+from dagster.utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 
 DATE_FORMAT = "%Y-%m-%d"
 
@@ -79,4 +81,24 @@ def test_monthly_partitions_with_end_offset():
         time_window("2021-06-01", "2021-07-01"),
         time_window("2021-07-01", "2021-08-01"),
         time_window("2021-08-01", "2021-09-01"),
+    ]
+
+
+def test_hourly_partitions():
+    @hourly_partitioned_config(start_date="2021-05-05-01:00")
+    def my_partitioned_config(_start, _end):
+        return {}
+
+    partitions = my_partitioned_config.partitions_def.get_partitions(
+        datetime.strptime("2021-05-05-03:00", DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE)
+    )
+
+    assert [partition.value for partition in partitions] == [
+        time_window("2021-05-05T01:00:00", "2021-05-05T02:00:00"),
+        time_window("2021-05-05T02:00:00", "2021-05-05T03:00:00"),
+    ]
+
+    assert [partition.name for partition in partitions] == [
+        "2021-05-05-01:00",
+        "2021-05-05-02:00",
     ]

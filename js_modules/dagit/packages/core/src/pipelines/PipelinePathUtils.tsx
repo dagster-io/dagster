@@ -25,7 +25,7 @@ export function explorerPathToString(path: PipelineExplorerPath) {
   return `${root}/${path.pathSolids.join('/')}`;
 }
 
-export function explorerPathFromString(path: string) {
+export function explorerPathFromString(path: string): PipelineExplorerPath {
   const [root, ...pathSolids] = path.split('/');
   const match = /^([^:@~]+)@?([^:~]+)?:?([^:~]+)?~?(.*)$/.exec(root);
   const [, pipelineName, snapshotId, pipelineMode, solidsQuery] = [
@@ -111,6 +111,7 @@ export const PipelineSnapshotLink: React.FunctionComponent<{
   pipelineName: string;
   pipelineMode: string;
   snapshotId: string;
+  size: 'small' | 'normal';
 }> = (props) => {
   const snapshotLink = `/instance/snapshots/${explorerPathToString({
     pipelineName: props.pipelineName,
@@ -121,7 +122,7 @@ export const PipelineSnapshotLink: React.FunctionComponent<{
   })}`;
 
   return (
-    <Mono>
+    <Mono style={{fontSize: props.size === 'small' ? '14px' : '16px'}}>
       <Link to={snapshotLink}>{props.snapshotId.slice(0, 8)}</Link>
     </Mono>
   );

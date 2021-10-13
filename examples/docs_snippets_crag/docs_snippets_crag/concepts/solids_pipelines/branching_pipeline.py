@@ -3,16 +3,11 @@
 # start_marker
 import random
 
-from dagster import Output, OutputDefinition, pipeline, solid
+from dagster import Out, Output, graph, op
 
 
-@solid(
-    output_defs=[
-        OutputDefinition(name="branch_1", is_required=False),
-        OutputDefinition(name="branch_2", is_required=False),
-    ]
-)
-def branching_solid():
+@op(out={"branch_1": Out(is_required=False), "branch_2": Out(is_required=False)})
+def branching_op():
     num = random.randint(0, 1)
     if num == 0:
         yield Output(1, "branch_1")
@@ -20,21 +15,21 @@ def branching_solid():
         yield Output(2, "branch_2")
 
 
-@solid
-def branch_1_solid(_input):
+@op
+def branch_1_op(_input):
     pass
 
 
-@solid
-def branch_2_solid(_input):
+@op
+def branch_2_op(_input):
     pass
 
 
-@pipeline
-def branching_pipeline():
-    branch_1, branch_2 = branching_solid()
-    branch_1_solid(branch_1)
-    branch_2_solid(branch_2)
+@graph
+def branching():
+    branch_1, branch_2 = branching_op()
+    branch_1_op(branch_1)
+    branch_2_op(branch_2)
 
 
 # end_marker

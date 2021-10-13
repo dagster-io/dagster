@@ -65,8 +65,28 @@ def k8s_mode_defs(resources=None, name="default"):
     ]
 
 
+def docker_mode_defs():
+    from dagster_docker import docker_executor
+
+    return [
+        ModeDefinition(
+            intermediate_storage_defs=s3_plus_default_intermediate_storage_defs,
+            resource_defs={"s3": s3_resource},
+            executor_defs=[docker_executor],
+        )
+    ]
+
+
 @solid(input_defs=[InputDefinition("word", String)], config_schema={"factor": Int})
 def multiply_the_word(context, word):
+    return word * context.solid_config["factor"]
+
+
+@solid(
+    input_defs=[InputDefinition("word", String)], config_schema={"factor": Int, "sleep_time": Int}
+)
+def multiply_the_word_slow(context, word):
+    time.sleep(context.solid_config["sleep_time"])
     return word * context.solid_config["factor"]
 
 
@@ -111,6 +131,22 @@ def hanging_pipeline():
 )
 def demo_pipeline():
     count_letters(multiply_the_word())
+
+
+def define_demo_pipeline_docker():
+    @pipeline(mode_defs=docker_mode_defs())
+    def demo_pipeline_docker():
+        count_letters(multiply_the_word())
+
+    return demo_pipeline_docker
+
+
+def define_demo_pipeline_docker_slow():
+    @pipeline(mode_defs=docker_mode_defs())
+    def demo_pipeline_docker_slow():
+        count_letters(multiply_the_word_slow())
+
+    return demo_pipeline_docker_slow
 
 
 def define_demo_pipeline_celery():
@@ -505,12 +541,32 @@ def define_demo_k8s_executor_pipeline():
     return demo_k8s_executor_pipeline
 
 
+@solid
+def check_volume_mount(context):
+    with open("/opt/dagster/test_mount_path/volume_mounted_file.yaml", "r") as mounted_file:
+        contents = mounted_file.read()
+        context.log.info(f"Contents of mounted file: {contents}")
+        assert contents == "BAR_CONTENTS"
+
+
+def define_volume_mount_pipeline():
+    @pipeline(
+        mode_defs=k8s_mode_defs(),
+    )
+    def volume_mount_pipeline():
+        check_volume_mount()
+
+    return volume_mount_pipeline
+
+
 def define_demo_execution_repo():
     @repository
     def demo_execution_repo():
         return {
             "pipelines": {
                 "demo_pipeline_celery": define_demo_pipeline_celery,
+                "demo_pipeline_docker": define_demo_pipeline_docker,
+                "demo_pipeline_docker_slow": define_demo_pipeline_docker_slow,
                 "large_pipeline_celery": define_large_pipeline_celery,
                 "long_running_pipeline_celery": define_long_running_pipeline_celery,
                 "optional_outputs": optional_outputs,
@@ -527,6 +583,7 @@ def define_demo_execution_repo():
                 "hanging_pipeline": hanging_pipeline,
                 "hard_failer": define_hard_failer,
                 "demo_k8s_executor_pipeline": define_demo_k8s_executor_pipeline,
+                "volume_mount_pipeline": define_volume_mount_pipeline,
             },
             "schedules": define_schedules(),
         }

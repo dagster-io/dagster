@@ -1,4 +1,4 @@
-import {Colors, Intent, Tag} from '@blueprintjs/core';
+import {Intent} from '@blueprintjs/core';
 import qs from 'qs';
 import querystring from 'query-string';
 import * as React from 'react';
@@ -8,6 +8,8 @@ import {assertUnreachable} from '../app/Util';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
 import {ErrorSource} from '../types/globalTypes';
 import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
+import {TagWIP} from '../ui/TagWIP';
 
 import {EventTypeColumn} from './LogsRowComponents';
 import {LogRowStructuredContentTable, MetadataEntries, MetadataEntryLink} from './MetadataEntry';
@@ -250,8 +252,7 @@ const DefaultContent: React.FunctionComponent<{
     <>
       <EventTypeColumn>
         {eventType && (
-          <Tag
-            minimal={true}
+          <TagWIP
             intent={eventIntent}
             style={
               eventColor
@@ -266,10 +267,10 @@ const DefaultContent: React.FunctionComponent<{
             }
           >
             {eventType}
-          </Tag>
+          </TagWIP>
         )}
       </EventTypeColumn>
-      <Box padding={{left: 4}} style={{flex: 1}}>
+      <Box padding={{horizontal: 12}} style={{flex: 1}}>
         {message}
         {children}
       </Box>
@@ -299,20 +300,22 @@ const FailureContent: React.FunctionComponent<{
   }
 
   if (error) {
-    errorMessage = <span style={{color: Colors.RED3}}>{`${error.message}`}</span>;
+    errorMessage = <span style={{color: ColorsWIP.Red500}}>{`${error.message}`}</span>;
 
     // omit the outer stack for user code errors with a cause
     // as the outer stack is just framework code
     if (!(errorSource === ErrorSource.USER_CODE_ERROR && error.cause)) {
-      errorStack = <span style={{color: Colors.RED3}}>{`\nStack Trace:\n${error.stack}`}</span>;
+      errorStack = (
+        <span style={{color: ColorsWIP.Red500}}>{`\nStack Trace:\n${error.stack}`}</span>
+      );
     }
 
     if (error.cause) {
       errorCause = (
         <>
           {`The above exception was caused by the following exception:\n`}
-          <span style={{color: Colors.RED3}}>{`${error.cause.message}`}</span>
-          <span style={{color: Colors.RED3}}>{`\nStack Trace:\n${error.cause.stack}`}</span>
+          <span style={{color: ColorsWIP.Red500}}>{`${error.cause.message}`}</span>
+          <span style={{color: ColorsWIP.Red500}}>{`\nStack Trace:\n${error.cause.stack}`}</span>
         </>
       );
     }
@@ -321,11 +324,11 @@ const FailureContent: React.FunctionComponent<{
   return (
     <>
       <EventTypeColumn>
-        <Tag minimal={true} intent="danger" style={{fontSize: '0.9em'}}>
+        <TagWIP minimal intent="danger">
           {eventType}
-        </Tag>
+        </TagWIP>
       </EventTypeColumn>
-      <Box padding={{left: 4}} style={{flex: 1}}>
+      <Box padding={{horizontal: 12}} style={{flex: 1}}>
         {contextMessage}
         {errorMessage}
         <MetadataEntries entries={metadataEntries} />

@@ -1,11 +1,11 @@
-import {Colors} from '@blueprintjs/core';
 import qs from 'qs';
 import * as React from 'react';
-import {useLocation, Link} from 'react-router-dom';
+import {Link, useLocation} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {TimezoneContext} from '../app/time/TimezoneContext';
 import {browserTimezone} from '../app/time/browserTimezone';
+import {ColorsWIP} from '../ui/Colors';
 import {FontFamily} from '../ui/styles';
 
 import {LogLevel} from './LogLevel';
@@ -13,12 +13,12 @@ import {ColumnWidthsContext} from './LogsScrollingTableHeader';
 
 const bgcolorForLevel = (level: LogLevel) =>
   ({
-    [LogLevel.DEBUG]: `transparent`,
-    [LogLevel.INFO]: `transparent`,
-    [LogLevel.EVENT]: `transparent`,
-    [LogLevel.WARNING]: `rgba(166, 121, 8, 0.05)`,
-    [LogLevel.ERROR]: `rgba(206, 17, 38, 0.05)`,
-    [LogLevel.CRITICAL]: `rgba(206, 17, 38, 0.05)`,
+    [LogLevel.DEBUG]: ColorsWIP.White,
+    [LogLevel.INFO]: ColorsWIP.White,
+    [LogLevel.EVENT]: ColorsWIP.White,
+    [LogLevel.WARNING]: ColorsWIP.Yellow50,
+    [LogLevel.ERROR]: ColorsWIP.Red50,
+    [LogLevel.CRITICAL]: ColorsWIP.Red50,
   }[level]);
 
 export const Row = styled.div<{level: LogLevel; highlighted: boolean}>`
@@ -33,28 +33,27 @@ export const Row = styled.div<{level: LogLevel; highlighted: boolean}>`
   flex-direction: row;
   align-items: baseline;
   overflow: hidden;
-  border-top: 1px solid ${Colors.LIGHT_GRAY3};
+  border-top: 1px solid ${ColorsWIP.KeylineGray};
   background: ${({highlighted, level}) => (highlighted ? '#ffe39f' : bgcolorForLevel(level))};
   &:hover {
     background: ${({highlighted}) => (highlighted ? '#ffe39f' : 'white')};
   }
   color: ${(props) =>
     ({
-      [LogLevel.DEBUG]: Colors.GRAY3,
-      [LogLevel.INFO]: Colors.DARK_GRAY2,
-      [LogLevel.EVENT]: Colors.DARK_GRAY2,
-      [LogLevel.WARNING]: Colors.GOLD2,
-      [LogLevel.ERROR]: Colors.RED3,
-      [LogLevel.CRITICAL]: Colors.RED3,
+      [LogLevel.DEBUG]: ColorsWIP.Gray400,
+      [LogLevel.INFO]: ColorsWIP.Gray900,
+      [LogLevel.EVENT]: ColorsWIP.Gray900,
+      [LogLevel.WARNING]: ColorsWIP.Yellow700,
+      [LogLevel.ERROR]: ColorsWIP.Red500,
+      [LogLevel.CRITICAL]: ColorsWIP.Red500,
     }[props.level])};
 `;
 
 export const StructuredContent = styled.div`
   background: rgba(255, 255, 255, 0.5);
-  color: ${Colors.DARK_GRAY2};
+  color: ${ColorsWIP.Gray900};
   box-sizing: border-box;
-  border-left: 1px solid ${Colors.LIGHT_GRAY4};
-  border-right: 1px solid ${Colors.LIGHT_GRAY4};
+  border-left: 1px solid ${ColorsWIP.KeylineGray};
   word-break: break-word;
   white-space: pre-wrap;
   font-family: ${FontFamily.monospace};
@@ -102,15 +101,15 @@ export const SolidColumn = (props: {stepKey: string | false | null}) => {
 const SolidColumnContainer = styled.div`
   width: 250px;
   flex-shrink: 0;
-  padding: 4px;
+  padding: 4px 12px;
 `;
 
 const SolidColumnTooltipStyle = JSON.stringify({
   fontSize: '0.9em',
   fontFamily: FontFamily.monospace,
-  color: Colors.BLACK,
-  background: Colors.WHITE,
-  border: `1px solid ${Colors.LIGHT_GRAY3}`,
+  color: ColorsWIP.Dark,
+  background: ColorsWIP.White,
+  border: `1px solid ${ColorsWIP.Gray100}`,
   top: -8,
   left: 1,
 });
@@ -155,13 +154,13 @@ export const TimestampColumn: React.FC<{time: string | null}> = React.memo((prop
 
 const TimestampColumnContainer = styled.div`
   flex-shrink: 0;
-  padding: 4px 4px 4px 8px;
+  padding: 4px 4px 4px 12px;
 
   a:link,
   a:visited,
   a:hover,
   a:active {
-    color: ${Colors.GRAY3};
+    color: ${ColorsWIP.Gray400};
   }
 
   a:hover,
@@ -181,6 +180,6 @@ export const EventTypeColumn: React.FC = (props) => {
 
 const EventTypeColumnContainer = styled.div`
   flex-shrink: 0;
-  color: ${Colors.GRAY3};
+  color: ${ColorsWIP.Gray400};
   padding: 4px;
 `;

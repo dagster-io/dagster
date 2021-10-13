@@ -11,6 +11,7 @@ from dagster.core.errors import (
 )
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.instance import DagsterInstance, InstanceRef
+from dagster.core.launcher import LaunchRunContext, RunLauncher
 from dagster.core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
 from dagster.core.snap import (
     create_execution_plan_snapshot_id,
@@ -18,6 +19,7 @@ from dagster.core.snap import (
     snapshot_from_execution_plan,
 )
 from dagster.core.test_utils import create_run_for_test, environ, instance_for_test
+from dagster.serdes import ConfigurableClass
 from dagster.serdes.config_class import ConfigurableClassData
 from dagster_tests.api_tests.utils import get_bar_workspace
 
@@ -268,4 +270,32 @@ def test_instance_subclass():
                 "baz": "quux",
             }
         ) as subclass_instance:
+            pass
+
+
+# class that doesn't implement needed methods on ConfigurableClass
+class InvalidRunLauncher(RunLauncher, ConfigurableClass):
+    def can_terminate(self, run_id):
+        return False
+
+    def launch_run(self, context: LaunchRunContext) -> None:
+        pass
+
+    def terminate(self, run_id):
+        pass
+
+
+def test_configurable_class_missing_methods():
+    with pytest.raises(
+        NotImplementedError,
+        match="InvalidRunLauncher must implement the config_type classmethod",
+    ):
+        with instance_for_test(
+            overrides={
+                "run_launcher": {
+                    "module": "dagster_tests.core_tests.instance_tests.test_instance",
+                    "class": "InvalidRunLauncher",
+                }
+            }
+        ):
             pass

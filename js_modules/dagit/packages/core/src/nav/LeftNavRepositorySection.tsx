@@ -1,9 +1,11 @@
-import {Colors} from '@blueprintjs/core';
 import memoize from 'lodash/memoize';
 import * as React from 'react';
 import {useRouteMatch} from 'react-router-dom';
+import styled from 'styled-components/macro';
 
-import {useFeatureFlags} from '../app/Flags';
+import {Box} from '../ui/Box';
+import {ColorsWIP} from '../ui/Colors';
+import {IconWIP} from '../ui/Icon';
 import {
   DagsterRepoOption,
   getRepositoryOptionHash,
@@ -12,10 +14,8 @@ import {
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {FlatContentList} from './FlatContentList';
-import {InstigationList} from './InstigationList';
 import {RepoNavItem} from './RepoNavItem';
 import {RepoDetails} from './RepoSelector';
-import {RepositoryContentList} from './RepositoryContentList';
 import {RepositoryLocationStateObserver} from './RepositoryLocationStateObserver';
 
 export const LAST_REPO_KEY = 'dagit.last-repo';
@@ -108,7 +108,6 @@ const useNavVisibleRepos = (
 };
 
 const LoadedRepositorySection: React.FC<{allRepos: DagsterRepoOption[]}> = ({allRepos}) => {
-  const {flagPipelineModeTuples} = useFeatureFlags();
   const match = useRouteMatch<
     | {repoPath: string; selector: string; tab: string; rootTab: undefined}
     | {selector: undefined; tab: undefined; rootTab: string}
@@ -136,39 +135,57 @@ const LoadedRepositorySection: React.FC<{allRepos: DagsterRepoOption[]}> = ({all
   }, [allRepos, visibleRepos]);
 
   return (
-    <div
-      className="bp3-dark"
-      style={{
-        background: Colors.DARK_GRAY1,
-        color: Colors.WHITE,
-        display: 'flex',
-        flex: 1,
-        overflow: 'none',
-        flexDirection: 'column',
-        minHeight: 0,
-      }}
-    >
+    <Container>
+      <ListContainer>
+        <Box
+          flex={{direction: 'row', alignItems: 'center', gap: 8}}
+          padding={{horizontal: 24, bottom: 12}}
+        >
+          <IconWIP name="job" />
+          <span style={{fontSize: '16px', fontWeight: 600}}>Jobs and pipelines</span>
+        </Box>
+        {visibleRepos.size ? (
+          <FlatContentList {...match?.params} repos={visibleOptions} />
+        ) : allRepos.length > 0 ? (
+          <EmptyState>Select a repository to see a list of jobs and pipelines.</EmptyState>
+        ) : (
+          <EmptyState>
+            There are no repositories in this workspace. Add a repository to see a list of jobs and
+            pipelines.
+          </EmptyState>
+        )}
+      </ListContainer>
+      <RepositoryLocationStateObserver />
       <RepoNavItem
         allRepos={allRepos.map(buildDetails)}
         selected={visibleRepos}
         onToggle={toggleRepo}
       />
-      <RepositoryLocationStateObserver />
-      {visibleRepos.size ? (
-        <div style={{display: 'flex', flex: 1, flexDirection: 'column', minHeight: 0}}>
-          {flagPipelineModeTuples ? (
-            <FlatContentList {...match?.params} repos={visibleOptions} />
-          ) : (
-            <>
-              <RepositoryContentList {...match?.params} repos={visibleOptions} />
-              <InstigationList {...match?.params} repos={visibleOptions} />
-            </>
-          )}
-        </div>
-      ) : null}
-    </div>
+    </Container>
   );
 };
+
+const Container = styled.div`
+  background: ${ColorsWIP.Gray100};
+  display: flex;
+  flex: 1;
+  overflow: none;
+  flex-direction: column;
+  min-height: 0;
+`;
+
+const ListContainer = styled.div`
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+`;
+
+const EmptyState = styled.div`
+  color: ${ColorsWIP.Gray400};
+  line-height: 20px;
+  padding: 6px 24px 0;
+`;
 
 export const LeftNavRepositorySection = React.memo(() => {
   const {allRepos, loading} = React.useContext(WorkspaceContext);

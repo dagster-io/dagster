@@ -47,16 +47,16 @@ export const SidebarPipelineOrJobOverview: React.FC<{
         }
 
         return (
-          <div>
+          <div style={{overflowY: 'scroll'}}>
             <SidebarSection title={'Description'}>
-              <Box padding={12}>
+              <Box padding={{vertical: 16, horizontal: 24}}>
                 <Description
                   description={pipelineSnapshotOrError.description || 'No description provided'}
                 />
               </Box>
             </SidebarSection>
             <SidebarSection title={'Resources'}>
-              <Box padding={12}>
+              <Box padding={{vertical: 16, horizontal: 24}}>
                 {modes.map((mode) => (
                   <SidebarModeSection mode={mode} key={mode.name} />
                 ))}

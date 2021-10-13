@@ -718,7 +718,7 @@ def test_type_missing_resource_fails():
     def custom_type_solid(_):
         return "A"
 
-    with pytest.raises(DagsterInvalidDefinitionError, match='required by type "NeedsA"'):
+    with pytest.raises(DagsterInvalidDefinitionError, match="required by type 'NeedsA'"):
 
         @pipeline
         def _type_check_pipeline():
@@ -740,7 +740,7 @@ def test_loader_missing_resource_fails():
         return "A"
 
     with pytest.raises(
-        DagsterInvalidDefinitionError, match='required by the loader on type "CustomType"'
+        DagsterInvalidDefinitionError, match="required by the loader on type 'CustomType'"
     ):
 
         @pipeline
@@ -761,7 +761,7 @@ def test_materialize_missing_resource_fails():
         return "A"
 
     with pytest.raises(
-        DagsterInvalidDefinitionError, match='required by the materializer on type "CustomType"'
+        DagsterInvalidDefinitionError, match="required by the materializer on type 'CustomType'"
     ):
 
         @pipeline
@@ -772,7 +772,7 @@ def test_materialize_missing_resource_fails():
 def test_plugin_missing_resource_fails():
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=r'required by the plugin "CustomStoragePlugin" on type "CustomType" \(used with storages',
+        match=r"required by the plugin 'CustomStoragePlugin' on type 'CustomType' \(used with storages",
     ):
         define_plugin_pipeline(mode_defines_resource=False)
 
@@ -871,7 +871,7 @@ def test_root_input_manager_missing_fails():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=r'"missing_root_input_manager" is required by unsatisfied input "root_input" of solid requires_missing_root_input_manager',
+        match=r"'missing_root_input_manager' is required by unsatisfied input 'root_input' of solid 'requires_missing_root_input_manager'",
     ):
 
         @pipeline
@@ -886,7 +886,7 @@ def test_io_manager_missing_fails():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=r'"missing_io_manager" is required by output "result" of solid def requires_missing_io_manager',
+        match=r"'missing_io_manager' is required by output 'result' of solid 'requires_missing_io_manager'",
     ):
 
         @pipeline

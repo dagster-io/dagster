@@ -1,6 +1,70 @@
 # Changelog
+
+# 0.12.14
+
+### Community Contributions
+
+* Updated click version, thanks @ashwin153!
+* Typo fix, thanks @geoHeil!
+
+### Bugfixes
+
+* Fixed a bug in `dagster_aws.s3.sensor.get_s3_keys` that would return no keys if an invalid s3 key was provided
+* Fixed a bug with capturing python logs where statements of the form `my_log.info("foo %s", "bar")` would cause errors in some scenarios.
+* Fixed a bug where the scheduler would sometimes hang during fall Daylight Savings Time transitions when Pendulum 2 was installed.
+
+### Experimental
+
+* Dagit now uses an asset graph to represent jobs built using `build_assets_job`.  The asset graph shows each node in the job’s graph with metadata about the asset it corresponds to - including asset materializations.  It also contains links to upstream jobs that produce assets consumed by the job, as well as downstream jobs that consume assets produced by the job.
+* Fixed a bug in `load_assets_from_dbt_project` and `load_assets_from_dbt_project` that would cause runs to fail if no `runtime_metadata_fn` argument were supplied.
+* Fixed a bug that caused `@asset` not to infer the type of inputs and outputs from type annotations of the decorated function.
+* `@asset` now accepts a `compute_kind` argument. You can supply values like “spark”, “pandas”, or “dbt”, and see them represented as a badge on the asset in the Dagit asset graph.
+
+# 0.12.13
+
+### Community Contributions
+
+- Changed `VersionStrategy.get_solid_version` and `VersionStrategy.get_resource_version` to take in a `SolidVersionContext` and `ResourceVersionContext`, respectively. This gives VersionStrategy access to the config (in addition to the definition object) when determining the code version for memoization. (Thanks [@RBrossard](https://github.com/RBrossard)!).
+
+  **Note:** This is a breaking change for anyone using the experimental `VersionStrategy` API. Instead of directly being passed `solid_def` and `resource_def`, you should access them off of the context object using `context.solid_def` and `context.resource_def` respectively.
+
+### New
+
+- [dagster-k8s] When launching a pipeline using the K8sRunLauncher or k8s_job_executor, you can know specify a list of volumes to be mounted in the created pod. See the [API docs](https://docs.dagster.io/_apidocs/libraries/dagster-k8s#dagster_k8s.K8sRunLauncher) for for information.
+- [dagster-k8s] When specifying a list of environment variables to be included in a pod using [custom configuration](https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment#solid-or-pipeline-kubernetes-configuration), you can now specify the full set of parameters allowed by a [V1EnvVar](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#envvar-v1-core) in Kubernetes.
+
+### Bugfixes
+
+- Fixed a bug where mapping inputs through nested composite solids incorrectly caused validation errors.
+- Fixed a bug in Dagit, where WebSocket reconnections sometimes led to logs being duplicated on the Run page.
+- Fixed a bug In Dagit, where log views that were scrolled all the way down would not auto-scroll as new logs came in.
+
+### Documentation
+
+- Added documentation for new (experimental) python logging [configuration options](https://docs.dagster.io/concepts/logging/python-logging#python-logging)
+
+# 0.12.12
+
+### Community Contributions
+
+- [dagster-msteams] Introduced a new integration with Microsoft Teams, which includes a connection resource and support for sending messages to Microsoft Teams. See details in the [API Docs](https://docs.dagster.io/_apidocs/libraries/dagster-msteams) (thanks [@iswariyam](https://github.com/iswariyam)!).
+- Fixed a mistake in the sensors docs (thanks [@vitorbaptista](https://github.com/vitorbaptista))!
+
+### Bugfixes
+
+- Fixed a bug that caused run status sensors to sometimes repeatedly fire alerts.
+- Fixed a bug that caused the `emr_pyspark_step_launcher` to fail when stderr included non-Log4J-formatted lines.
+- Fixed a bug that caused `applyPerUniqueValue` config on the `QueuedRunCoordinator` to fail Helm schema validation.
+- [dagster-shell] Fixed an issue where a failure while executing a shell command sometimes didn’t raise a clear explanation for the failure.
+
+### Experimental
+
+- Added experimental `@asset` decorator and `build_assets_job` APIs to construct asset-based jobs, along with Dagit support.
+- Added `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest`, which enable constructing asset-based jobs from DBT models.
+
 # 0.12.11
-## Community Contributions
+
+### Community Contributions
 
 - [helm] The ingress now supports TLS (thanks @cpmoser!)
 - [helm] Fixed an issue where dagit could not be configured with an empty workspace (thanks @yamrzou!)
@@ -8,10 +72,10 @@
 ### New
 
 - [dagstermill] You can now have more precise IO control over the output notebooks by specifying `output_notebook_name` in `define_dagstermill_solid` and providing your own IO manager via "output_notebook_io_manager" resource key.
-  - We've deprecated `output_notebook` argument in `define_dagstermill_solid` in favor of `output_notebook_name`.
-  - Previously, the output notebook functionality requires “file_manager“ resource and result in a FileHandle output. Now, when specifying output_notebook_name, it requires "output_notebook_io_manager" resource and results in a bytes output.
-  - You can now customize your own "output_notebook_io_manager" by extending OutputNotebookIOManager. A built-in `local_output_notebook_io_manager` is provided for handling local output notebook materialization.
-  - See detailed migration guide in https://github.com/dagster-io/dagster/pull/4490.
+- We've deprecated `output_notebook` argument in `define_dagstermill_solid` in favor of `output_notebook_name`.
+- Previously, the output notebook functionality requires “file_manager“ resource and result in a FileHandle output. Now, when specifying output_notebook_name, it requires "output_notebook_io_manager" resource and results in a bytes output.
+- You can now customize your own "output_notebook_io_manager" by extending OutputNotebookIOManager. A built-in `local_output_notebook_io_manager` is provided for handling local output notebook materialization.
+- See detailed migration guide in https://github.com/dagster-io/dagster/pull/4490.
 
 - Dagit fonts have been updated.
 
