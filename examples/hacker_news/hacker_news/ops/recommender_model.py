@@ -32,7 +32,7 @@ model_perf_notebook = define_dagstermill_solid(
     "recommender_model_perf",
     notebook_path=file_relative_path(__file__, "../notebooks/recommender_model_perf.ipynb"),
     input_defs=[InputDefinition(dagster_type=TruncatedSVD, name="recommender_model")],
-    output_notebook="perf_notebook",
+    output_notebook_name="perf_notebook",
 )
 
 
