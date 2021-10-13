@@ -79,8 +79,8 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   parentSnapshotId: String
   graphName: String!
   id: ID!
-  isJob: Boolean!
   presets: [PipelinePreset!]!
+  isJob: Boolean!
 }
 
 interface SolidContainer {
@@ -1170,7 +1170,6 @@ type PipelineSnapshot implements IPipelineSnapshot & PipelineReference {
   graphName: String!
   solidSelection: [String!]
   id: ID!
-  isJob: Boolean!
 }
 
 type PipelineSnapshotNotFoundError implements Error {
