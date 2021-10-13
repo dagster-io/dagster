@@ -4,8 +4,9 @@ from typing import Any, Callable, Dict, List, NamedTuple, Optional, Union
 import pendulum
 from dagster import check
 from dagster.utils.backcompat import experimental_fn_warning
+from dagster.utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
+from dagster.utils.schedules import schedule_execution_time_iterator
 
-from ...utils.schedules import schedule_execution_time_iterator
 from .partition import (
     DEFAULT_DATE_FORMAT,
     Partition,
@@ -177,7 +178,7 @@ def hourly_partitioned_config(
 
     experimental_fn_warning("hourly_partitioned_config")
 
-    _fmt = fmt or DEFAULT_DATE_FORMAT
+    _fmt = fmt or DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
     _timezone = timezone or "UTC"
 
     if isinstance(start_date, str):

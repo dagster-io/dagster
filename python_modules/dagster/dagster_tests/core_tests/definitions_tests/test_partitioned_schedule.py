@@ -61,7 +61,7 @@ def test_daily_schedule_from_partitions():
 
 
 def test_hourly_schedule_from_partitions():
-    @hourly_partitioned_config(start_date="2021-05-05")
+    @hourly_partitioned_config(start_date=datetime(2021, 5, 5))
     def my_partitioned_config(start, end):
         return {"start": str(start), "end": str(end)}
 
