@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 import 'codemirror/addon/comment/comment';
 import 'codemirror/addon/dialog/dialog';
 import 'codemirror/addon/fold/foldgutter';
@@ -54,6 +55,7 @@ const CodeMirrorShimStyle = createGlobalStyle`
     flex: 1;
     position: relative;
   }
+  
   .react-codemirror2 .CodeMirror {
     position: absolute;
     top: 0;
@@ -67,6 +69,15 @@ const CodeMirrorShimStyle = createGlobalStyle`
     /* Note: Theme overrides */
     &.cm-s-default .cm-comment {
       color: #999;
+    }
+  }
+  .CodeMirror-gutter-elt {
+    .CodeMirror-lint-marker-error {
+      background-image: none;
+      background: ${ColorsWIP.Red500};
+      mask-image: url(${require('../ui/icon-svgs/error.svg').default});
+      mask-size: cover;
+      margin-bottom: 2px;
     }
   }
 
@@ -119,6 +130,18 @@ const CodeMirrorShimStyle = createGlobalStyle`
     .CodeMirror-gutters {
       background-color: ${ColorsWIP.Gray50};
     }
+  }
+
+  div.CodeMirror-lint-tooltip {
+    background: rgba(255, 247, 231, 1);
+    border: 1px solid ${ColorsWIP.Gray200};
+  }
+
+  .CodeMirror-lint-message {
+    background: transparent;
+  }
+  .CodeMirror-lint-message.CodeMirror-lint-message-error {
+    background: transparent;
   }
 `;
 
