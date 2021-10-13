@@ -121,9 +121,10 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
   partitionSetName: string;
   pipelineName: string;
   onLaunch?: (backfillId: string, stepQuery: string) => void;
+  onCancel?: () => void;
   onSubmit: () => void;
   repoAddress: RepoAddress;
-}> = ({partitionSetName, pipelineName, onLaunch, onSubmit, repoAddress}) => {
+}> = ({partitionSetName, pipelineName, onLaunch, onCancel, onSubmit, repoAddress}) => {
   const repositorySelector = repoAddressToSelector(repoAddress);
   const [currentSelectionRange, setCurrentSelectionRange] = React.useState<
     SelectionRange | undefined
@@ -491,9 +492,14 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
             </div>
           </Box>
         </Box>
-        <Box flex={{direction: 'column', gap: 12}} margin={{top: 16}}>
+        <Box flex={{direction: 'column', gap: 8}} margin={{top: 16}}>
+          <TagEditor
+            tagsFromSession={tags}
+            onChange={setTags}
+            open={tagEditorOpen}
+            onRequestClose={() => setTagEditorOpen(false)}
+          />
           <strong>Tags</strong>
-
           {tags.length ? (
             <div style={{border: `1px solid ${ColorsWIP.Gray300}`, borderRadius: 8, padding: 3}}>
               <TagContainer
@@ -628,29 +634,24 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
         ) : null}
       </DialogBody>
       <DialogFooter>
-        <TagEditor
-          tagsFromSession={tags}
-          onChange={setTags}
-          open={tagEditorOpen}
-          onRequestClose={() => setTagEditorOpen(false)}
+        <ButtonWIP intent="none" onClick={onCancel}>
+          Cancel
+        </ButtonWIP>
+        <LaunchBackfillButton
+          partitionNames={selected}
+          partitionSetName={partitionSet.name}
+          reexecutionSteps={
+            !options.fromFailure && solidsFiltered.all.length < solids.length
+              ? stepRows.map((step) => step.name)
+              : undefined
+          }
+          fromFailure={options.fromFailure}
+          tags={tags}
+          onSubmit={onSubmit}
+          onSuccess={onSuccess}
+          onError={onError}
+          repoAddress={repoAddress}
         />
-        <Box flex={{justifyContent: 'flex-end', alignItems: 'center'}} margin={{top: 12}}>
-          <LaunchBackfillButton
-            partitionNames={selected}
-            partitionSetName={partitionSet.name}
-            reexecutionSteps={
-              !options.fromFailure && solidsFiltered.all.length < solids.length
-                ? stepRows.map((step) => step.name)
-                : undefined
-            }
-            fromFailure={options.fromFailure}
-            tags={tags}
-            onSubmit={onSubmit}
-            onSuccess={onSuccess}
-            onError={onError}
-            repoAddress={repoAddress}
-          />
-        </Box>
       </DialogFooter>
     </>
   );
