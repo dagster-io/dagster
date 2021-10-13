@@ -15,7 +15,7 @@ To host Dagit or Dagster Daemon on a bare VM or in Docker on EC2 or ECS, see [Ru
 
 <CodeReferenceLink filePath="examples/deploy_ecs" />
 
-This example demonstrates how you can use `docker-compose` to manage a Dagster deployment on ECS. It includes a Dagit container for loading and launching pipelines, a `dagster-daemon` container for managing a run queue and submitting runs from schedules and sensors, a postgres container for persistent storage, and a container with user pipeline code. The Dagster instance uses the EcsRunLauncher to launch each run in its own ECS task.
+This example demonstrates how you can use `docker-compose` to manage a Dagster deployment on ECS. It includes a Dagit container for loading and launching jobs, a `dagster-daemon` container for managing a run queue and submitting runs from schedules and sensors, a postgres container for persistent storage, and a container with user job code. The Dagster instance uses the EcsRunLauncher to launch each run in its own ECS task.
 
 ## Using RDS for run and event log storage
 
@@ -89,7 +89,7 @@ def my_job():
     my_op()
 ```
 
-Then, add the following YAML block in your pipeline config:
+Then, add the following YAML block in your job's config:
 
 ```yaml file=/deploying/aws/io_manager.yaml
 resources:
@@ -101,4 +101,4 @@ resources:
 
 The resource uses `boto` under the hood, so if you are accessing your private buckets, you will need to provide the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables or follow one of the other boto authentication methods.
 
-With this in place, your pipeline runs will store intermediates on S3 in the location `s3://<bucket>/dagster/storage/<pipeline run id>/intermediates/<solid name>.compute`.
+With this in place, your job runs will store intermediates on S3 in the location `s3://<bucket>/dagster/storage/<job run id>/intermediates/<op name>.compute`.
