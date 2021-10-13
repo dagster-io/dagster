@@ -3,7 +3,6 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {usePermissions} from '../app/Permissions';
-import {ShortcutHandler} from '../app/ShortcutHandler';
 import {Box} from '../ui/Box';
 import {ColorsWIP} from '../ui/Colors';
 import {IconWIP, IconWrapper} from '../ui/Icon';
@@ -30,31 +29,25 @@ export const RepositoryLink: React.FC<{repoAddress: RepoAddress}> = ({repoAddres
       {canReloadRepositoryLocation ? (
         <ReloadRepositoryLocationButton location={location}>
           {({tryReload, reloading}) => (
-            <ShortcutHandler
-              onShortcut={tryReload}
-              shortcutLabel={`⌥R`}
-              shortcutFilter={(e) => e.code === 'KeyR' && e.altKey}
-            >
-              <ReloadTooltip
-                content={
-                  reloading ? (
-                    'Reloading…'
-                  ) : (
-                    <>
-                      Reload location <strong>{location}</strong>
-                    </>
-                  )
-                }
-              >
-                {reloading ? (
-                  <Spinner purpose="body-text" />
+            <ReloadTooltip
+              content={
+                reloading ? (
+                  'Reloading…'
                 ) : (
-                  <StyledButton onClick={tryReload}>
-                    <IconWIP name="refresh" color={ColorsWIP.Gray400} />
-                  </StyledButton>
-                )}
-              </ReloadTooltip>
-            </ShortcutHandler>
+                  <>
+                    Reload location <strong>{location}</strong>
+                  </>
+                )
+              }
+            >
+              {reloading ? (
+                <Spinner purpose="body-text" />
+              ) : (
+                <StyledButton onClick={tryReload}>
+                  <IconWIP name="refresh" color={ColorsWIP.Gray400} />
+                </StyledButton>
+              )}
+            </ReloadTooltip>
           )}
         </ReloadRepositoryLocationButton>
       ) : null}
