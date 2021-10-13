@@ -1,5 +1,5 @@
 import {MockList} from '@graphql-tools/mock';
-import {render, screen, waitFor, within} from '@testing-library/react';
+import {render, screen, waitFor} from '@testing-library/react';
 import * as React from 'react';
 
 import * as Flags from '../app/Flags';
@@ -9,6 +9,9 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {JobMetadata} from './JobMetadata';
 
 jest.mock('../app/Flags');
+
+// Jan 1, 2020
+const START_TIME = 1577858400;
 
 describe('JobMetadata', () => {
   const PIPELINE_NAME = 'my_pipeline';
@@ -20,6 +23,11 @@ describe('JobMetadata', () => {
       name: () => 'my_pipeline',
       schedules: () => new MockList(0),
       sensors: () => new MockList(0),
+    }),
+    PipelineRunStatsSnapshot: () => ({
+      startTime: () => START_TIME,
+      launchTime: () => START_TIME,
+      endTime: () => START_TIME + 1,
     }),
     Mode: () => ({
       name: () => 'my_mode',
@@ -72,8 +80,8 @@ describe('JobMetadata', () => {
       it('renders empty state', async () => {
         renderWithMocks();
         await waitFor(() => {
-          const row = screen.getByRole('row', {name: /schedule\/sensor/i});
-          expect(within(row).getByText(/none/i)).toBeVisible();
+          expect(screen.getByText(/latest run:/i)).toBeVisible();
+          expect(screen.getByRole('link', {name: /jan 1/i})).toBeVisible();
         });
       });
 
@@ -92,10 +100,8 @@ describe('JobMetadata', () => {
         renderWithMocks(mocks);
 
         await waitFor(() => {
-          const row = screen.getByRole('row', {name: /schedule\/sensor/i});
-          const link = within(row).getByRole('link');
-          expect(link).toBeVisible();
-          expect(link.textContent).toMatch(/cool_schedule/i);
+          expect(screen.getByText(/schedule:/i)).toBeVisible();
+          expect(screen.getByRole('link', {name: /cool_schedule/i})).toBeVisible();
         });
       });
 
@@ -110,10 +116,7 @@ describe('JobMetadata', () => {
 
         renderWithMocks(mocks);
         await waitFor(() => {
-          const row = screen.getByRole('row', {name: /schedule\/sensor/i});
-          const link = within(row).getByRole('button');
-          expect(link).toBeVisible();
-          expect(link.textContent).toMatch(/view 2 schedules/i);
+          expect(screen.getByRole('button', {name: /view 2 schedules/i})).toBeVisible();
         });
       });
 
@@ -128,10 +131,8 @@ describe('JobMetadata', () => {
 
         renderWithMocks(mocks);
         await waitFor(() => {
-          const row = screen.getByRole('row', {name: /schedule\/sensor/i});
-          const link = within(row).getByRole('link');
-          expect(link).toBeVisible();
-          expect(link.textContent).toMatch(/cool_sensor/i);
+          expect(screen.getByText(/sensor:/i)).toBeVisible();
+          expect(screen.getByRole('link', {name: /cool_sensor/i})).toBeVisible();
         });
       });
 
@@ -146,10 +147,7 @@ describe('JobMetadata', () => {
 
         renderWithMocks(mocks);
         await waitFor(() => {
-          const row = screen.getByRole('row', {name: /schedule\/sensor/i});
-          const link = within(row).getByRole('button');
-          expect(link).toBeVisible();
-          expect(link.textContent).toMatch(/view 2 sensors/i);
+          expect(screen.getByRole('button', {name: /view 2 sensors/i})).toBeVisible();
         });
       });
 
@@ -164,10 +162,7 @@ describe('JobMetadata', () => {
 
         renderWithMocks(mocks);
         await waitFor(() => {
-          const row = screen.getByRole('row', {name: /schedule\/sensor/i});
-          const link = within(row).getByRole('button');
-          expect(link).toBeVisible();
-          expect(link.textContent).toMatch(/view 4 schedules\/sensors/i);
+          expect(screen.getByRole('button', {name: /view 4 schedules\/sensors/i})).toBeVisible();
         });
       });
     });
@@ -187,8 +182,8 @@ describe('JobMetadata', () => {
       it('renders empty state', async () => {
         renderWithMocks();
         await waitFor(() => {
-          const row = screen.getByRole('row', {name: /schedule\/sensor/i});
-          expect(within(row).getByText(/none/i)).toBeVisible();
+          expect(screen.getByText(/latest run:/i)).toBeVisible();
+          expect(screen.getByRole('link', {name: /jan 1/i})).toBeVisible();
         });
       });
 
@@ -213,10 +208,9 @@ describe('JobMetadata', () => {
         };
 
         renderWithMocks(mocks);
-
         await waitFor(() => {
-          const row = screen.getByRole('row', {name: /schedule\/sensor/i});
-          expect(within(row).getByText(/none/i)).toBeVisible();
+          expect(screen.queryByText(/schedule:/i)).toBeNull();
+          expect(screen.queryByRole('link', {name: /cool_schedule/i})).toBeNull();
         });
       });
 
@@ -230,12 +224,9 @@ describe('JobMetadata', () => {
         };
 
         renderWithMocks(mocks);
-
         await waitFor(() => {
-          const row = screen.getByRole('row', {name: /schedule\/sensor/i});
-          const link = within(row).getByRole('link');
-          expect(link).toBeVisible();
-          expect(link.textContent).toMatch(/cool_schedule/i);
+          expect(screen.getByText(/schedule:/i)).toBeVisible();
+          expect(screen.getByRole('link', {name: /cool_schedule/i})).toBeVisible();
         });
       });
 
@@ -250,10 +241,7 @@ describe('JobMetadata', () => {
 
         renderWithMocks(mocks);
         await waitFor(() => {
-          const row = screen.getByRole('row', {name: /schedule\/sensor/i});
-          const link = within(row).getByRole('button');
-          expect(link).toBeVisible();
-          expect(link.textContent).toMatch(/view 2 schedules/i);
+          expect(screen.getByRole('button', {name: /view 2 schedules/i})).toBeVisible();
         });
       });
 
@@ -268,10 +256,8 @@ describe('JobMetadata', () => {
 
         renderWithMocks(mocks);
         await waitFor(() => {
-          const row = screen.getByRole('row', {name: /schedule\/sensor/i});
-          const link = within(row).getByRole('link');
-          expect(link).toBeVisible();
-          expect(link.textContent).toMatch(/cool_sensor/i);
+          expect(screen.getByText(/sensor:/i)).toBeVisible();
+          expect(screen.getByRole('link', {name: /cool_sensor/i})).toBeVisible();
         });
       });
 
@@ -286,10 +272,7 @@ describe('JobMetadata', () => {
 
         renderWithMocks(mocks);
         await waitFor(() => {
-          const row = screen.getByRole('row', {name: /schedule\/sensor/i});
-          const link = within(row).getByRole('button');
-          expect(link).toBeVisible();
-          expect(link.textContent).toMatch(/view 2 sensors/i);
+          expect(screen.getByRole('button', {name: /view 2 sensors/i})).toBeVisible();
         });
       });
 
@@ -304,10 +287,7 @@ describe('JobMetadata', () => {
 
         renderWithMocks(mocks);
         await waitFor(() => {
-          const row = screen.getByRole('row', {name: /schedule\/sensor/i});
-          const link = within(row).getByRole('button');
-          expect(link).toBeVisible();
-          expect(link.textContent).toMatch(/view 4 schedules\/sensors/i);
+          expect(screen.getByRole('button', {name: /view 4 schedules\/sensors/i})).toBeVisible();
         });
       });
     });
