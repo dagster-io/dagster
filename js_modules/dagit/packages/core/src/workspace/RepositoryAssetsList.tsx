@@ -58,7 +58,9 @@ export const RepositoryAssetsList: React.FC<Props> = (props) => {
     }
     const items = repo.assetNodes.map((asset) => ({
       name: asset.assetKey.path.join(' > '),
-      path: `/assets/${asset.assetKey.path.map(encodeURIComponent).join('/')}`,
+      path: `/jobs/${asset.jobName}:default/${asset.assetKey.path
+        .map(encodeURIComponent)
+        .join('/')}`,
       description: asset.description,
       repoAddress,
     }));
