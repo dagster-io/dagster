@@ -1,9 +1,8 @@
 from dagster import repository
 
-from ..schedules.hourly_hn_download_schedule import hourly_hn_download_schedule
-from ..sensors.download_pipeline_finished_sensor import dbt_on_hn_download_finished
-from ..sensors.hn_tables_updated_sensor import story_recommender_on_hn_table_update
-from ..sensors.slack_on_failure_sensor import make_pipeline_failure_sensor
+from ..sensors.hn_tables_updated_sensor import make_hn_tables_updated_sensor
+from ..sensors.slack_on_failure_sensor import make_slack_on_failure_sensor
+from .hourly_hn_download_schedule import hourly_hn_download_schedule
 from .pipelines.dbt_pipeline import dbt_pipeline
 from .pipelines.download_pipeline import download_pipeline
 from .pipelines.story_recommender import story_recommender
@@ -23,9 +22,9 @@ def hacker_news_legacy():
         hourly_hn_download_schedule,
     ]
     sensors = [
-        make_pipeline_failure_sensor(base_url="my_dagit_url.com"),
-        story_recommender_on_hn_table_update,
-        dbt_on_hn_download_finished,
+        make_slack_on_failure_sensor(base_url="my_dagit_url.com"),
+        make_hn_tables_updated_sensor(pipeline_name="download_pipeline", mode="prod"),
+        make_hn_tables_updated_sensor(pipeline_name="dbt_pipeline", mode="prod"),
     ]
 
     return pipelines + schedules + sensors
