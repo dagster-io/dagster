@@ -1,6 +1,4 @@
 from dagster import ModeDefinition, fs_io_manager, pipeline
-from dagster.core.storage.file_manager import local_file_manager
-from dagster_aws.s3 import s3_file_manager
 from dagstermill.io_managers import local_output_notebook_io_manager
 from hacker_news.ops.comment_stories import build_comment_stories
 from hacker_news.ops.recommender_model import (
