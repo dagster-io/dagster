@@ -1,19 +1,19 @@
 import time
 
-import dagster
+from dagster import job, op, repository
 
 
-@dagster.solid
-def solid():
+@op
+def my_op():
     time.sleep(30)
     return True
 
 
-@dagster.pipeline
-def pipeline():
-    solid()
+@job
+def my_job():
+    job()
 
 
-@dagster.repository
-def repository():
-    return [pipeline]
+@repository
+def repo():
+    return [my_job]
