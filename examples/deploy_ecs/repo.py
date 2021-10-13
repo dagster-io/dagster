@@ -1,6 +1,6 @@
 import time
 
-from dagster import job, op, repository
+from dagster import graph, op, repository
 
 
 @op
@@ -9,9 +9,12 @@ def my_op():
     return True
 
 
-@job
-def my_job():
-    job()
+@graph
+def my_graph():
+    my_op()
+
+
+my_job = my_graph.to_job()
 
 
 @repository
