@@ -163,11 +163,13 @@ class PlanOrchestrationContext(IPlanContext):
         log_manager: DagsterLogManager,
         executor: Executor,
         output_capture: Optional[Dict[StepOutputHandle, Any]],
+        resume_from_failure: bool = False,
     ):
         self._plan_data = plan_data
         self._log_manager = log_manager
         self._executor = executor
         self._output_capture = output_capture
+        self._resume_from_failure = resume_from_failure
 
     @property
     def plan_data(self) -> PlanData:
@@ -201,6 +203,10 @@ class PlanOrchestrationContext(IPlanContext):
             step=step,
             output_capture=self.output_capture,
         )
+
+    @property
+    def resume_from_failure(self) -> bool:
+        return self._resume_from_failure
 
 
 class StepOrchestrationContext(PlanOrchestrationContext, IStepContext):

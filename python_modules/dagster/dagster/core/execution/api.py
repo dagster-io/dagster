@@ -54,7 +54,10 @@ from .results import PipelineExecutionResult
 
 
 def execute_run_iterator(
-    pipeline: IPipeline, pipeline_run: PipelineRun, instance: DagsterInstance
+    pipeline: IPipeline,
+    pipeline_run: PipelineRun,
+    instance: DagsterInstance,
+    resume_from_failure: bool = False,
 ) -> Iterator[DagsterEvent]:
     check.inst_param(pipeline, "pipeline", IPipeline)
     check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
@@ -70,13 +73,24 @@ def execute_run_iterator(
 
         return gen_execute_on_cancel()
 
-    check.invariant(
-        pipeline_run.status == PipelineRunStatus.NOT_STARTED
-        or pipeline_run.status == PipelineRunStatus.STARTING,
-        desc="Pipeline run {} ({}) in state {}, expected NOT_STARTED or STARTING".format(
-            pipeline_run.pipeline_name, pipeline_run.run_id, pipeline_run.status
-        ),
-    )
+    if not resume_from_failure:
+        # this should be the first run worker to start
+        check.invariant(
+            pipeline_run.status == PipelineRunStatus.NOT_STARTED
+            or pipeline_run.status == PipelineRunStatus.STARTING,
+            desc="Pipeline run {} ({}) in state {}, expected NOT_STARTED or STARTING".format(
+                pipeline_run.pipeline_name, pipeline_run.run_id, pipeline_run.status
+            ),
+        )
+    else:
+        check.invariant(
+            pipeline_run.status == PipelineRunStatus.STARTED
+            or pipeline_run.status == PipelineRunStatus.STARTING,
+            desc="Pipeline run {} ({}) in state {}, expected STARTED or STARTING because it's "
+            "resuming from a run worker failure".format(
+                pipeline_run.pipeline_name, pipeline_run.run_id, pipeline_run.status
+            ),
+        )
 
     if pipeline_run.solids_to_execute:
         pipeline_def = pipeline.get_definition()
@@ -113,6 +127,7 @@ def execute_run_iterator(
                 raise_on_error=False,
                 executor_defs=None,
                 output_capture=None,
+                resume_from_failure=resume_from_failure,
             ),
         )
     )
@@ -747,7 +762,9 @@ def pipeline_execution_iterator(
         execution_plan (ExecutionPlan):
     """
 
-    yield DagsterEvent.pipeline_start(pipeline_context)
+    # TODO: restart event?
+    if not pipeline_context.resume_from_failure:
+        yield DagsterEvent.pipeline_start(pipeline_context)
 
     pipeline_exception_info = None
     pipeline_canceled_info = None
