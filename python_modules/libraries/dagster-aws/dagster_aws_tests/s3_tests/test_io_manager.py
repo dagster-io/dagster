@@ -37,13 +37,13 @@ def define_inty_job():
     def test_s3_resource(_):
         return construct_s3_client(max_attempts=5)
 
-    @op(out=Out(Int, io_manager_key="io_manager"))
+    @op(out=Out(Int))
     def return_one():
         return 1
 
     @op(
         ins={"num": In(Int)},
-        out=Out(Int, io_manager_key="io_manager"),
+        out=Out(Int),
     )
     def add_one(num):
         return num + 1
