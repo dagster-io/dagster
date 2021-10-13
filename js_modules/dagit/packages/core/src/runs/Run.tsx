@@ -11,6 +11,7 @@ import {GanttChart, GanttChartLoadingState, GanttChartMode, QueuedState} from '.
 import {toGraphQueryItems} from '../gantt/toGraphQueryItems';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {PipelineRunStatus} from '../types/globalTypes';
 import {NonIdealState} from '../ui/NonIdealState';
 import {FirstOrSecondPanelToggle, SplitPanelContainer} from '../ui/SplitPanelContainer';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
@@ -38,12 +39,24 @@ import {
   RunPipelineRunEventFragment_ExecutionStepFailureEvent,
 } from './types/RunPipelineRunEventFragment';
 import {useQueryPersistedLogFilter} from './useQueryPersistedLogFilter';
-import {useRunFavicon} from './useRunFavicon';
 
 interface RunProps {
   runId: string;
   run?: RunFragment;
 }
+
+const runStatusEmoji = (status: PipelineRunStatus) => {
+  switch (status) {
+    case PipelineRunStatus.CANCELED:
+    case PipelineRunStatus.CANCELING:
+    case PipelineRunStatus.FAILURE:
+      return '🔴';
+    case PipelineRunStatus.SUCCESS:
+      return '🟢';
+    default:
+      return '🔵';
+  }
+};
 
 export const Run: React.FC<RunProps> = (props) => {
   const {run, runId} = props;
@@ -53,8 +66,11 @@ export const Run: React.FC<RunProps> = (props) => {
     defaults: {selection: ''},
   });
 
-  useRunFavicon(run?.status);
-  useDocumentTitle(run ? `${run.pipeline.name} ${runId} [${run.status}]` : `Run: ${runId}`);
+  useDocumentTitle(
+    run
+      ? `${runStatusEmoji(run.status)} ${run.pipeline.name} ${runId.slice(0, 8)} [${run.status}]`
+      : `Run: ${runId}`,
+  );
 
   const onShowStateDetails = (stepKey: string, logs: RunPipelineRunEventFragment[]) => {
     const errorNode = logs.find(
