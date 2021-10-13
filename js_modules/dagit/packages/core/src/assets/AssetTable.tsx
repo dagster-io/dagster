@@ -209,7 +209,7 @@ const AssetEntryRow: React.FC<{
                 content={
                   <MenuWIP>
                     <MenuItemWIP
-                      text="Wipe ..."
+                      text="Wipe…"
                       icon="delete"
                       intent="danger"
                       onClick={() => onWipe(assets)}

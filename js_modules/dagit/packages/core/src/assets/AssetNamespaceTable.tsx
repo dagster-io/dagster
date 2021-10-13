@@ -7,10 +7,10 @@ import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {Box} from '../ui/Box';
 import {CursorPaginationControls, CursorPaginationProps} from '../ui/CursorControls';
 import {Loading} from '../ui/Loading';
-import {NonIdealState} from '../ui/NonIdealState';
 
 import {AssetSearch} from './AssetSearch';
 import {AssetTable, ASSET_TABLE_FRAGMENT} from './AssetTable';
+import {AssetsEmptyState} from './AssetsEmptyState';
 import {AssetNamespaceTableQuery} from './types/AssetNamespaceTableQuery';
 import {AssetTableFragment as Asset} from './types/AssetTableFragment';
 
@@ -43,32 +43,9 @@ export const AssetNamespaceTable: React.FC<{prefixPath: string[]; switcher: Reac
 
           if (!assets.length) {
             return (
-              <NonIdealState
-                icon="asset"
-                title="Assets"
-                description={
-                  <div>
-                    {prefixPath && prefixPath.length ? (
-                      <span>
-                        There are no matching materialized assets with the specified asset key.
-                      </span>
-                    ) : (
-                      <span>There are no known materialized assets.</span>
-                    )}
-                    Any asset keys that have been specified with an{' '}
-                    <code>AssetMaterialization</code> during a pipeline run will appear here. See
-                    the{' '}
-                    <a
-                      href="https://docs.dagster.io/_apidocs/solids#dagster.AssetMaterialization"
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      AssetMaterialization documentation
-                    </a>{' '}
-                    for more information.
-                  </div>
-                }
-              />
+              <Box padding={{vertical: 64}}>
+                <AssetsEmptyState prefixPath={prefixPath} />
+              </Box>
             );
           }
 
