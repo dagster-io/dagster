@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports
 import {Menu, MenuDivider, MenuItem} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
