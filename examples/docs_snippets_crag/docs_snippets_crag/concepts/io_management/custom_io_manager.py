@@ -26,12 +26,12 @@ from dagster import IOManager, io_manager
 
 class DataframeTableIOManager(IOManager):
     def handle_output(self, context, obj):
-        # name is the name given to the OutputDefinition that we're storing for
+        # name is the name given to the Out that we're storing for
         table_name = context.name
         write_dataframe_to_table(name=table_name, dataframe=obj)
 
     def load_input(self, context):
-        # upstream_output.name is the name given to the OutputDefinition that we're loading for
+        # upstream_output.name is the name given to the Out that we're loading for
         table_name = context.upstream_output.name
         return read_dataframe_from_table(name=table_name)
 
