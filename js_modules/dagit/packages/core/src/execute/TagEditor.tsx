@@ -148,7 +148,7 @@ export const TagEditor: React.FC<ITagEditorProps> = ({
                 );
               })}
             </Box>
-            <Box margin={{left: 2}} flex={{direction: 'row', justifyContent: 'center'}}>
+            <Box margin={{left: 2}} flex={{direction: 'row'}}>
               <ButtonWIP onClick={addTagEntry} icon={<IconWIP name="add_circle" />}>
                 Add custom tag
               </ButtonWIP>
