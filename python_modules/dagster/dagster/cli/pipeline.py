@@ -84,10 +84,13 @@ def execute_list_command(cli_args, print_fn, using_job_op_graph_apis=False):
             print_fn(title)
             print_fn("*" * len(title))
             first = True
-            for pipeline in external_repository.get_all_external_pipelines():
+            for pipeline_or_job in (
+                external_repository.get_all_external_pipelines()
+                + external_repository.get_external_jobs()
+            ):
                 pipeline_title = "{pipeline_or_job}: {name}".format(
                     pipeline_or_job="Job" if using_job_op_graph_apis else "Pipeline",
-                    name=pipeline.name,
+                    name=pipeline_or_job.name,
                 )
 
                 if not first:
@@ -95,15 +98,17 @@ def execute_list_command(cli_args, print_fn, using_job_op_graph_apis=False):
                 first = False
 
                 print_fn(pipeline_title)
-                if pipeline.description:
+                if pipeline_or_job.description:
                     print_fn("Description:")
-                    print_fn(format_description(pipeline.description, indent=" " * 4))
+                    print_fn(format_description(pipeline_or_job.description, indent=" " * 4))
                 print_fn(
                     "{solid_or_op}: (Execution Order)".format(
                         solid_or_op="Ops" if using_job_op_graph_apis else "Solids"
                     )
                 )
-                for solid_name in pipeline.pipeline_snapshot.solid_names_in_topological_order:
+                for (
+                    solid_name
+                ) in pipeline_or_job.pipeline_snapshot.solid_names_in_topological_order:
                     print_fn("    " + solid_name)
 
 
