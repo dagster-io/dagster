@@ -51,7 +51,7 @@ import {
 import {GanttChartModeControl} from './GanttChartModeControl';
 import {GanttChartTimescale} from './GanttChartTimescale';
 import {GanttStatusPanel} from './GanttStatusPanel';
-import {OptionsContainer, OptionsDivider, OptionsSpacer} from './VizComponents';
+import {OptionsContainer, OptionsSpacer} from './VizComponents';
 import {ZoomSlider} from './ZoomSlider';
 import {useGanttChartMode} from './useGanttChartMode';
 import {useViewport} from './useViewport';
@@ -84,7 +84,6 @@ interface GanttChartProps {
   options?: Partial<GanttChartLayoutOptions>;
   metadata?: IRunMetadataDict;
   toolbarActions?: React.ReactChild;
-  toolbarLeftActions?: React.ReactChild;
 
   onClickStep: (step: string, evt: React.MouseEvent<any>) => void;
   onSetSelection: (query: string) => void;
@@ -98,7 +97,7 @@ interface GanttChartState {
 }
 
 export const GanttChart: React.FC<GanttChartProps> = (props) => {
-  const {graph, onSetSelection, options, selection, toolbarActions, toolbarLeftActions} = props;
+  const {graph, onSetSelection, options, selection, toolbarActions} = props;
   const [mode, setMode] = useGanttChartMode();
   const [state, setState] = React.useState(() => ({
     ...DEFAULT_OPTIONS,
@@ -160,8 +159,6 @@ export const GanttChart: React.FC<GanttChartProps> = (props) => {
   return (
     <GanttChartContainer>
       <OptionsContainer>
-        {toolbarLeftActions}
-        {toolbarLeftActions && <OptionsDivider />}
         <GanttChartModeControl
           value={state.mode}
           onChange={onChangeMode}
