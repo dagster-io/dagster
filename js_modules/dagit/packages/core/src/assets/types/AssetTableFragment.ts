@@ -5,23 +5,25 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL query operation: AssetsTableNodesQuery
+// GraphQL fragment: AssetTableFragment
 // ====================================================
 
-export interface AssetsTableNodesQuery_assetNodes_assetKey {
+export interface AssetTableFragment_key {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface AssetsTableNodesQuery_assetNodes {
+export interface AssetTableFragment_definition {
   __typename: "AssetNode";
   id: string;
   opName: string | null;
   jobName: string | null;
   description: string | null;
-  assetKey: AssetsTableNodesQuery_assetNodes_assetKey;
 }
 
-export interface AssetsTableNodesQuery {
-  assetNodes: AssetsTableNodesQuery_assetNodes[];
+export interface AssetTableFragment {
+  __typename: "Asset";
+  id: string;
+  key: AssetTableFragment_key;
+  definition: AssetTableFragment_definition | null;
 }

@@ -30,6 +30,7 @@ snapshots['test_external_pipeline_data 1'] = '''{
       "tags": {}
     }
   ],
+  "is_job": false,
   "name": "a_pipeline",
   "parent_pipeline_snapshot": null,
   "pipeline_snapshot": {
@@ -1253,6 +1254,7 @@ snapshots['test_external_repository_data 1'] = '''{
           "tags": {}
         }
       ],
+      "is_job": false,
       "name": "a_pipeline",
       "parent_pipeline_snapshot": null,
       "pipeline_snapshot": {

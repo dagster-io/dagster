@@ -1,11 +1,10 @@
-import tempfile
+import json
 from typing import List, Tuple
 from unittest import mock
 
-from dagster import SensorEvaluationContext
-from dagster.core.instance.ref import InstanceRef
-from dagster.core.storage.event_log.base import EventLogRecord
-from hacker_news.sensors.hn_tables_updated_sensor import story_recommender_on_hn_table_update_prod
+from dagster import EventLogRecord, GraphDefinition, build_sensor_context
+from dagster.core.test_utils import instance_for_test
+from hacker_news.sensors.hn_tables_updated_sensor import make_hn_tables_updated_sensor
 
 
 def get_mock_event_records(asset_events: List[Tuple[str, int]]):
@@ -28,33 +27,24 @@ def get_mock_event_records(asset_events: List[Tuple[str, int]]):
 def test_first_events(mock_event_records):
     mock_event_records.side_effect = get_mock_event_records([("comments", 1), ("stories", 2)])
 
-    with tempfile.TemporaryDirectory() as tmpdir_path:
-        context = SensorEvaluationContext(
-            instance_ref=InstanceRef.from_dir(tmpdir_path),
-            last_run_key=None,
-            last_completion_time=None,
-            cursor=None,
-            repository_name=None,
-        )
-        requests = story_recommender_on_hn_table_update_prod.evaluate_tick(context).run_requests
-        assert len(requests) == 1
-        assert requests[0].run_key == "1|2"
+    with instance_for_test() as instance:
+        context = build_sensor_context(instance=instance)
+        result = make_hn_tables_updated_sensor(job=GraphDefinition("test")).evaluate_tick(context)
+        assert len(result.run_requests) == 1
+        assert result.cursor == json.dumps({"comments": 1, "stories": 2})
 
 
 @mock.patch("dagster.core.instance.DagsterInstance.get_event_records")
 def test_nothing_new(mock_event_records):
     mock_event_records.side_effect = get_mock_event_records([("comments", 1), ("stories", 2)])
 
-    with tempfile.TemporaryDirectory() as tmpdir_path:
-        context = SensorEvaluationContext(
-            instance_ref=InstanceRef.from_dir(tmpdir_path),
-            last_run_key="1|2",
-            last_completion_time=None,
-            cursor=None,
-            repository_name=None,
+    with instance_for_test() as instance:
+        context = build_sensor_context(
+            instance=instance, cursor=json.dumps({"comments": 1, "stories": 2})
         )
-        requests = story_recommender_on_hn_table_update_prod.evaluate_tick(context).run_requests
-        assert len(requests) == 0
+        result = make_hn_tables_updated_sensor(job=GraphDefinition("test")).evaluate_tick(context)
+        assert len(result.run_requests) == 0
+        assert result.cursor == json.dumps({"comments": 1, "stories": 2})
 
 
 @mock.patch("dagster.core.instance.DagsterInstance.get_event_records")
@@ -63,16 +53,12 @@ def test_new_comments_old_stories(mock_event_records):
         [("comments", 1), ("comments", 2), ("stories", 2)]
     )
 
-    with tempfile.TemporaryDirectory() as tmpdir_path:
-        context = SensorEvaluationContext(
-            instance_ref=InstanceRef.from_dir(tmpdir_path),
-            last_run_key="1|2",
-            last_completion_time=None,
-            cursor=None,
-            repository_name=None,
+    with instance_for_test() as instance:
+        context = build_sensor_context(
+            instance=instance, cursor=json.dumps({"comments": 1, "stories": 2})
         )
-        requests = story_recommender_on_hn_table_update_prod.evaluate_tick(context).run_requests
-        assert len(requests) == 0
+        result = make_hn_tables_updated_sensor(job=GraphDefinition("test")).evaluate_tick(context)
+        assert len(result.run_requests) == 0
 
 
 @mock.patch("dagster.core.instance.DagsterInstance.get_event_records")
@@ -81,17 +67,12 @@ def test_old_comments_new_stories(mock_event_records):
         [("comments", 1), ("stories", 2), ("stories", 3)]
     )
 
-    with tempfile.TemporaryDirectory() as tmpdir_path:
-
-        context = SensorEvaluationContext(
-            instance_ref=InstanceRef.from_dir(tmpdir_path),
-            last_run_key="1|2",
-            last_completion_time=None,
-            cursor=None,
-            repository_name=None,
+    with instance_for_test() as instance:
+        context = build_sensor_context(
+            instance=instance, cursor=json.dumps({"comments": 1, "stories": 2})
         )
-        requests = story_recommender_on_hn_table_update_prod.evaluate_tick(context).run_requests
-        assert len(requests) == 0
+        result = make_hn_tables_updated_sensor(job=GraphDefinition("test")).evaluate_tick(context)
+        assert len(result.run_requests) == 0
 
 
 @mock.patch("dagster.core.instance.DagsterInstance.get_event_records")
@@ -100,14 +81,10 @@ def test_both_new(mock_event_records):
         [("comments", 1), ("comments", 2), ("stories", 2), ("stories", 3)]
     )
 
-    with tempfile.TemporaryDirectory() as tmpdir_path:
-        context = SensorEvaluationContext(
-            instance_ref=InstanceRef.from_dir(tmpdir_path),
-            last_run_key="1|2",
-            last_completion_time=None,
-            cursor=None,
-            repository_name=None,
+    with instance_for_test() as instance:
+        context = build_sensor_context(
+            instance=instance, cursor=json.dumps({"comments": 1, "stories": 2})
         )
-        requests = story_recommender_on_hn_table_update_prod.evaluate_tick(context).run_requests
-        assert len(requests) == 1
-        assert requests[0].run_key == "2|3"
+        result = make_hn_tables_updated_sensor(job=GraphDefinition("test")).evaluate_tick(context)
+        assert len(result.run_requests) == 1
+        assert result.cursor == json.dumps({"comments": 2, "stories": 3})
