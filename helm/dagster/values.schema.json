@@ -1013,6 +1013,20 @@
                             "type": "null"
                         }
                     ]
+                },
+                "jsonCredentialsEnvvar": {
+                    "title": "Jsoncredentialsenvvar",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "$ref": "#/definitions/Source"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [

@@ -292,12 +292,16 @@ def test_gcs_compute_log_manager(template: HelmTemplate):
     bucket = "bucket"
     local_dir = "/dir"
     prefix = "prefix"
+    json_credentials_envvar = "ENV_VAR"
     helm_values = DagsterHelmValues.construct(
         computeLogManager=ComputeLogManager.construct(
             type=ComputeLogManagerType.GCS,
             config=ComputeLogManagerConfig.construct(
                 gcsComputeLogManager=GCSComputeLogManagerModel(
-                    bucket=bucket, localDir=local_dir, prefix=prefix
+                    bucket=bucket,
+                    localDir=local_dir,
+                    prefix=prefix,
+                    jsonCredentialsEnvvar=json_credentials_envvar,
                 )
             ),
         )
@@ -313,6 +317,7 @@ def test_gcs_compute_log_manager(template: HelmTemplate):
         "bucket": bucket,
         "local_dir": local_dir,
         "prefix": prefix,
+        "json_credentials_envvar": json_credentials_envvar,
     }
 
     # Test all config fields in configurable class
