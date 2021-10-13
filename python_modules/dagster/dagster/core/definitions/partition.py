@@ -640,62 +640,60 @@ class PartitionedConfig(Generic[T]):
     def run_config_for_partition_fn(self) -> Callable[[Partition[T]], Dict[str, Any]]:
         return self._run_config_for_partition_fn
 
-    def get_partitions(self, current_time: Optional[datetime] = None) -> List[Partition[T]]:
-        return self.partitions_def.get_partitions(current_time)
-
-    def get_partition_names(self, current_time: Optional[datetime] = None) -> List[str]:
+    def get_partition_keys(self, current_time: Optional[datetime] = None) -> List[str]:
         return [partition.name for partition in self.partitions_def.get_partitions(current_time)]
 
-    def get_partition(self, partition_name: str) -> Optional[Partition[T]]:
+    def get_run_config(self, partition_key: str) -> Dict[str, Any]:
         matching = [
             partition
             for partition in self.partitions_def.get_partitions()
-            if partition.name == partition_name
-        ]
-        if not matching:
-            return None
-        return matching[0]
-
-    def get_run_config(self, partition_name: str) -> Dict[str, Any]:
-        matching = [
-            partition
-            for partition in self.partitions_def.get_partitions()
-            if partition.name == partition_name
+            if partition.name == partition_key
         ]
         if not matching:
             raise DagsterUnknownPartitionError(
-                f"Could not find a partition named `{partition_name}`"
+                f"Could not find a partition with key `{partition_key}`"
             )
         return self.run_config_for_partition_fn(matching[0])
 
 
 def static_partitioned_config(
-    partitions: List[Union[str, Partition]],
-    run_config_for_partition_fn: Callable[[Partition[T]], Dict[str, Any]],
-) -> PartitionedConfig:
-    # makes it easier to construct simple string-label partitions
-    partitions_list = []
-    for partition in partitions:
-        if isinstance(partition, Partition):
-            partitions_list.append(partition)
-        else:
-            partitions_list.append(Partition(partition))
+    partition_keys: List[str],
+) -> Callable[[Callable[[str], Dict[str, Any]]], PartitionedConfig]:
+    def inner(fn: Callable[[str], Dict[str, Any]]) -> PartitionedConfig:
+        check.callable_param(fn, "fn")
 
-    return PartitionedConfig(
-        partitions_def=StaticPartitionsDefinition(partitions_list),
-        run_config_for_partition_fn=run_config_for_partition_fn,
-    )
+        partitions_list = [Partition(key) for key in partition_keys]
+
+        def _run_config_wrapper(partition: Partition[T]) -> Dict[str, Any]:
+            return fn(partition.name)
+
+        return PartitionedConfig(
+            partitions_def=StaticPartitionsDefinition(partitions_list),
+            run_config_for_partition_fn=_run_config_wrapper,
+        )
+
+    return inner
 
 
 def dynamic_partitioned_config(
-    partition_fn: Callable[[Optional[datetime]], List[Partition]],
-    run_config_for_partition_fn: Callable[[Partition[T]], Dict[str, Any]],
-) -> PartitionedConfig:
+    partition_fn: Callable[[Optional[datetime]], List[str]],
+) -> Callable[[Callable[[str], Dict[str, Any]]], PartitionedConfig]:
+    def inner(fn: Callable[[str], Dict[str, Any]]) -> PartitionedConfig:
+        check.callable_param(fn, "fn")
 
-    return PartitionedConfig(
-        partitions_def=DynamicPartitionsDefinition(partition_fn),
-        run_config_for_partition_fn=run_config_for_partition_fn,
-    )
+        def _partitions_wrapper(current_time: Optional[datetime] = None):
+            partition_keys = partition_fn(current_time)
+            return [Partition(key) for key in partition_keys]
+
+        def _run_config_wrapper(partition: Partition[T]) -> Dict[str, Any]:
+            return fn(partition.name)
+
+        return PartitionedConfig(
+            partitions_def=DynamicPartitionsDefinition(_partitions_wrapper),
+            run_config_for_partition_fn=_run_config_wrapper,
+        )
+
+    return inner
 
 
 def get_cron_schedule(

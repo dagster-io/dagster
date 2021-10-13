@@ -1,5 +1,12 @@
 import pytest
-from dagster import daily_partitioned_config, job, op, static_partitioned_config
+from dagster import (
+    DagsterUnknownPartitionError,
+    daily_partitioned_config,
+    dynamic_partitioned_config,
+    job,
+    op,
+    static_partitioned_config,
+)
 from dagster.seven.compat.pendulum import create_pendulum_time
 
 
@@ -12,50 +19,71 @@ RUN_CONFIG = {"ops": {"my_op": {"config": "hello"}}}
 
 
 def test_static_partitioned_job():
-    partitioned_config = static_partitioned_config(
-        ["blah"],
-        run_config_for_partition_fn=lambda _partition: RUN_CONFIG,
-    )
+    @static_partitioned_config(["blah"])
+    def my_static_partitioned_config(_partition_key: str):
+        return RUN_CONFIG
 
-    @job(config=partitioned_config)
+    @job(config=my_static_partitioned_config)
     def my_job():
         my_op()
 
-    all_partitions = partitioned_config.get_partitions()
-    assert len(all_partitions) == 1
+    partition_keys = my_static_partitioned_config.get_partition_keys()
+    assert partition_keys == ["blah"]
 
-    blah_partition = partitioned_config.get_partition("blah")
-    assert blah_partition.name == "blah"
-    assert blah_partition.value == "blah"
-
-    result = my_job.execute_in_process(partition_name="blah")
+    result = my_job.execute_in_process(partition_key="blah")
     assert result.success
 
-    # TODO create custom exception type
-    with pytest.raises(Exception, match="no matching partition named `doesnotexist`"):
-        result = my_job.execute_in_process(partition_name="doesnotexist")
+    with pytest.raises(
+        DagsterUnknownPartitionError, match="Could not find a partition with key `doesnotexist`"
+    ):
+        result = my_job.execute_in_process(partition_key="doesnotexist")
 
 
 def test_time_based_partitioned_job():
     @daily_partitioned_config(start_date="2021-05-05")
-    def partitioned_config(_start, _end):
+    def my_daily_partitioned_config(_start, _end):
         return RUN_CONFIG
 
-    @job(config=partitioned_config)
+    @job(config=my_daily_partitioned_config)
     def my_job():
         my_op()
 
     freeze_datetime = create_pendulum_time(
         year=2021, month=5, day=6, hour=23, minute=59, second=59, tz="UTC"
     )
-    all_partitions = partitioned_config.get_partitions(freeze_datetime)
-    assert len(all_partitions) == 1
+    partition_keys = my_daily_partitioned_config.get_partition_keys(freeze_datetime)
+    assert len(partition_keys) == 1
 
-    partition = all_partitions[0]
+    partition_key = partition_keys[0]
 
-    result = my_job.execute_in_process(partition_name=partition.name)
+    result = my_job.execute_in_process(partition_key=partition_key)
     assert result.success
 
-    # TODO create custom exception type
-    with pytest.raises(Exception, match="no matching partition named `doesnotexist`"):
-        result = my_job.execute_in_process(partition_name="doesnotexist")
+    with pytest.raises(
+        DagsterUnknownPartitionError, match="Could not find a partition with key `doesnotexist`"
+    ):
+        result = my_job.execute_in_process(partition_key="doesnotexist")
+
+
+def test_dynamic_partitioned_config():
+    def partition_fn(_current_time=None):
+        return ["blah"]
+
+    @dynamic_partitioned_config(partition_fn)
+    def my_dynamic_partitioned_config(_partition_key):
+        return RUN_CONFIG
+
+    @job(config=my_dynamic_partitioned_config)
+    def my_job():
+        my_op()
+
+    partition_keys = my_dynamic_partitioned_config.get_partition_keys()
+    assert partition_keys == ["blah"]
+
+    result = my_job.execute_in_process(partition_key="blah")
+    assert result.success
+
+    with pytest.raises(
+        DagsterUnknownPartitionError, match="Could not find a partition with key `doesnotexist`"
+    ):
+        result = my_job.execute_in_process(partition_key="doesnotexist")
