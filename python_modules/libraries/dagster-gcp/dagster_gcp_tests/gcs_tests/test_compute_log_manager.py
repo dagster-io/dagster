@@ -93,9 +93,9 @@ def test_compute_log_manager(gcs_bucket):
 
 
 def test_compute_log_manager_with_envvar(gcs_bucket):
-    @job
+    @pipeline
     def simple():
-        @op
+        @solid
         def easy(context):
             context.log.info("easy")
             print(HELLO_WORLD)  # pylint: disable=print-call
