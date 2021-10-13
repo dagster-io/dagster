@@ -12,6 +12,7 @@ import {toGraphQueryItems} from '../gantt/toGraphQueryItems';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {PipelineRunStatus} from '../types/globalTypes';
+import {Box} from '../ui/Box';
 import {NonIdealState} from '../ui/NonIdealState';
 import {FirstOrSecondPanelToggle, SplitPanelContainer} from '../ui/SplitPanelContainer';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
@@ -292,17 +293,17 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
           options={{
             mode: GanttChartMode.WATERFALL_TIMED,
           }}
-          toolbarLeftActions={
-            <FirstOrSecondPanelToggle axis={'vertical'} container={splitPanelContainer} />
-          }
           toolbarActions={
-            <RunActionButtons
-              run={run}
-              onLaunch={onLaunch}
-              graph={runtimeGraph}
-              metadata={metadata}
-              selection={{query: selectionQuery, keys: selectionStepKeys}}
-            />
+            <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
+              <FirstOrSecondPanelToggle axis="vertical" container={splitPanelContainer} />
+              <RunActionButtons
+                run={run}
+                onLaunch={onLaunch}
+                graph={runtimeGraph}
+                metadata={metadata}
+                selection={{query: selectionQuery, keys: selectionStepKeys}}
+              />
+            </Box>
           }
           runId={runId}
           graph={runtimeGraph}
@@ -322,10 +323,10 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
     <>
       <SplitPanelContainer
         ref={splitPanelContainer}
-        axis={'vertical'}
+        axis="vertical"
         identifier="run-gantt"
         firstInitialPercent={35}
-        firstMinSize={40}
+        firstMinSize={56}
         first={gantt(metadata)}
         second={
           <LogsContainer>
