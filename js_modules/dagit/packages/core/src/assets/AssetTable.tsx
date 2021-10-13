@@ -1,5 +1,4 @@
 import {gql, RefetchQueriesFunction} from '@apollo/client';
-import {Menu, MenuItem} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -12,6 +11,7 @@ import {ButtonWIP} from '../ui/Button';
 import {Checkbox} from '../ui/Checkbox';
 import {IconWIP} from '../ui/Icon';
 import {markdownToPlaintext} from '../ui/Markdown';
+import {MenuItemWIP, MenuWIP} from '../ui/Menu';
 import {Popover} from '../ui/Popover';
 import {Table} from '../ui/Table';
 
@@ -207,22 +207,20 @@ const AssetEntryRow: React.FC<{
             {isAssetEntry ? (
               <Popover
                 content={
-                  <Menu>
-                    <MenuItem
+                  <MenuWIP>
+                    <MenuItemWIP
                       text="Wipe ..."
-                      icon="trash"
-                      target="_blank"
+                      icon="delete"
+                      intent="danger"
                       onClick={() => onWipe(assets)}
                     />
-                  </Menu>
+                  </MenuWIP>
                 }
                 position="bottom-right"
               >
                 <ButtonWIP icon={<IconWIP name="expand_more" />} />
               </Popover>
-            ) : (
-              <ButtonWIP icon={<IconWIP name="expand_more" />} />
-            )}
+            ) : null}
           </td>
         ) : null}
       </tr>
@@ -243,7 +241,12 @@ const AssetActions: React.FC<{
   }
 
   const disabled = selected.length === 0;
-  const label = selected.length === 1 ? 'Wipe 1 asset' : `Wipe ${selected.length} assets`;
+  const label =
+    selected.length === 0
+      ? 'Wipe assets'
+      : selected.length === 1
+      ? 'Wipe 1 asset'
+      : `Wipe ${selected.length} assets`;
 
   return (
     <>
