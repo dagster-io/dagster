@@ -8,6 +8,7 @@ import {RunStatus} from '../runs/RunStatusDots';
 import {RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {ScheduleSwitch, SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
+import {humanCronString} from '../schedules/humanCronString';
 import {SensorSwitch, SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {PipelineRunStatus} from '../types/globalTypes';
 import {Box} from '../ui/Box';
@@ -18,6 +19,7 @@ import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 import {Group} from '../ui/Group';
 import {StyledTable} from '../ui/MetadataTable';
 import {TagWIP} from '../ui/TagWIP';
+import {Code} from '../ui/Text';
 import {Tooltip} from '../ui/Tooltip';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -183,7 +185,7 @@ const MatchingSchedule: React.FC<{schedule: Schedule; repoAddress: RepoAddress}>
   repoAddress,
 }) => {
   const running = schedule.scheduleState.status === 'RUNNING';
-  return (
+  const tag = (
     <TagWIP intent={running ? 'primary' : 'none'} icon="schedule">
       <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
         Schedule:
@@ -193,6 +195,22 @@ const MatchingSchedule: React.FC<{schedule: Schedule; repoAddress: RepoAddress}>
         <ScheduleSwitch size="small" repoAddress={repoAddress} schedule={schedule} />
       </Box>
     </TagWIP>
+  );
+
+  return schedule.cronSchedule ? (
+    <Tooltip
+      placement="bottom"
+      content={
+        <div>
+          <span>{humanCronString(schedule.cronSchedule)}</span>
+          <Code style={{marginLeft: '4px'}}>({schedule.cronSchedule})</Code>
+        </div>
+      }
+    >
+      {tag}
+    </Tooltip>
+  ) : (
+    tag
   );
 };
 
@@ -367,6 +385,7 @@ const JOB_METADATA_QUERY = gql`
         name
         schedules {
           id
+          cronSchedule
           mode
           ...ScheduleSwitchFragment
         }
