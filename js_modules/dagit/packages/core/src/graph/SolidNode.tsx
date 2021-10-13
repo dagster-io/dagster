@@ -334,7 +334,7 @@ const NodeContainer = styled.div<{
     display: flex;
     gap: 5px;
     padding: 4px ${(p) => (p.$minified ? '8px' : '3px')};
-    font-size: ${(p) => (p.$minified ? '28px' : '14px')};
+    font-size: ${(p) => (p.$minified ? '32px' : '14px')};
     font-family: ${FontFamily.monospace};
     border-top-left-radius: 5px;
     border-top-right-radius: 5px;

@@ -308,14 +308,6 @@ export class PipelineGraph extends React.Component<IPipelineGraphProps> {
     e.stopPropagation();
   };
 
-  unfocusOutsideContainer = (e: React.MouseEvent<any>) => {
-    if (this.props.parentSolid && this.props.onLeaveCompositeSolid) {
-      this.props.onLeaveCompositeSolid();
-    } else {
-      this.unfocus(e);
-    }
-  };
-
   componentDidUpdate(prevProps: IPipelineGraphProps) {
     if (prevProps.parentSolid !== this.props.parentSolid) {
       this.viewportEl.current!.cancelAnimations();
@@ -349,16 +341,12 @@ export class PipelineGraph extends React.Component<IPipelineGraphProps> {
         graphWidth={layout.width}
         graphHeight={layout.height}
         onKeyDown={this.onKeyDown}
-        onDoubleClick={this.unfocusOutsideContainer}
+        onClick={onClickBackground}
+        onDoubleClick={this.unfocus}
       >
         {({scale}: any) => (
           <>
-            <SVGContainer
-              width={layout.width}
-              height={layout.height + 200}
-              onClick={onClickBackground}
-              onDoubleClick={this.unfocus}
-            >
+            <SVGContainer width={layout.width} height={layout.height + 200}>
               <PipelineGraphContents
                 {...this.props}
                 layout={layout}
