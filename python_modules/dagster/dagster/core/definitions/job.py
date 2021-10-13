@@ -57,6 +57,7 @@ class JobDefinition(PipelineDefinition):
         self,
         run_config: Optional[Dict[str, Any]] = None,
         instance: Optional["DagsterInstance"] = None,
+        partition_key: Optional[str] = None,
         raise_on_error: bool = True,
     ) -> "ExecuteInProcessResult":
         """
@@ -71,6 +72,9 @@ class JobDefinition(PipelineDefinition):
                 The configuration for the run
             instance (Optional[DagsterInstance]):
                 The instance to execute against, an ephemeral one will be used if none provided.
+            partition_key: (Optional[str])
+                The string partition key that specifies the run config to execute. Can only be used
+                to select run config for jobs with partitioned config.
             raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
                 Defaults to ``True``.
 
@@ -82,6 +86,8 @@ class JobDefinition(PipelineDefinition):
         from dagster.core.execution.execute_in_process import core_execute_in_process
 
         run_config = check.opt_dict_param(run_config, "run_config")
+        partition_key = check.opt_str_param(partition_key, "partition_key")
+
         check.invariant(
             len(self._mode_definitions) == 1,
             "execute_in_process only supported on job / single mode pipeline",
@@ -107,6 +113,17 @@ class JobDefinition(PipelineDefinition):
             tags=self.tags,
             version_strategy=self.version_strategy,
         )
+
+        if partition_key:
+            if not base_mode.partitioned_config:
+                check.failed(
+                    f"Provided partition key `{partition_key}` for job `{self._name}` without a partitioned config"
+                )
+            check.invariant(
+                not run_config,
+                "Cannot provide both run_config and partition_key arguments to `execute_in_process`",
+            )
+            run_config = base_mode.partitioned_config.get_run_config(partition_key)
 
         return core_execute_in_process(
             node=self._graph_def,
