@@ -90,11 +90,8 @@ export const AssetEntryRoot: React.FC<RouteComponentProps> = ({location, match})
         tags={<TagWIP icon="asset">Asset</TagWIP>}
       />
       <Loading queryResult={queryResult}>
-        {({assetOrError, assetNodeOrError}) => {
-          if (
-            assetOrError.__typename === 'AssetNotFoundError' &&
-            assetNodeOrError.__typename === 'AssetNotFoundError'
-          ) {
+        {({assetOrError}) => {
+          if (assetOrError.__typename === 'AssetNotFoundError') {
             return <AssetsCatalogTable prefixPath={currentPath} />;
           }
 
@@ -116,12 +113,6 @@ const BreadcrumbLink = styled(Link)`
 
 const ASSET_ENTRY_ROOT_QUERY = gql`
   query AssetEntryRootQuery($assetKey: AssetKeyInput!) {
-    assetNodeOrError(assetKey: $assetKey) {
-      __typename
-      ... on AssetNode {
-        id
-      }
-    }
     assetOrError(assetKey: $assetKey) {
       __typename
       ... on Asset {
