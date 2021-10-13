@@ -223,8 +223,6 @@ const Container = styled.div`
   align-items: flex-start;
   display: flex;
   flex-direction: row;
-  border-bottom: 1px solid #ececec;
-  padding: 4px 8px;
 `;
 const TagList = styled.div`
   display: flex;

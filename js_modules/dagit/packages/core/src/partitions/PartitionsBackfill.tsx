@@ -16,6 +16,7 @@ import {useViewport} from '../gantt/useViewport';
 import {PipelineRunStatus} from '../types/globalTypes';
 import {Alert} from '../ui/Alert';
 import {Box} from '../ui/Box';
+import {ButtonWIP} from '../ui/Button';
 import {ButtonLink} from '../ui/ButtonLink';
 import {Checkbox} from '../ui/Checkbox';
 import {ColorsWIP} from '../ui/Colors';
@@ -441,12 +442,12 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
             }}
           />
         </Box>
-        <Box flex={{direction: 'row', gap: 12}} margin={{top: 12}}>
+        <Box flex={{direction: 'row', gap: 24}} margin={{top: 16}}>
           <Box flex={{direction: 'column', gap: 8}}>
             <strong>Step subset</strong>
             <GraphQueryInput
               disabled={options.fromFailure}
-              width={360}
+              width={520}
               items={solids}
               value={query}
               placeholder="Type a step subset"
@@ -490,6 +491,25 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
             </div>
           </Box>
         </Box>
+        <Box flex={{direction: 'column', gap: 12}} margin={{top: 16}}>
+          <strong>Tags</strong>
+
+          {tags.length ? (
+            <div style={{border: `1px solid ${ColorsWIP.Gray300}`, borderRadius: 8, padding: 3}}>
+              <TagContainer
+                tags={{fromSession: tags}}
+                onRequestEdit={() => setTagEditorOpen(true)}
+              />
+            </div>
+          ) : (
+            <div>
+              <ButtonWIP onClick={() => setTagEditorOpen(true)}>
+                Add tags to backfill runs
+              </ButtonWIP>
+            </div>
+          )}
+        </Box>
+
         <div
           style={{
             display: 'flex',
@@ -614,34 +634,23 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
           open={tagEditorOpen}
           onRequestClose={() => setTagEditorOpen(false)}
         />
-        {tags.length ? (
-          <div style={{border: '1px solid #ececec', borderBottom: 'none'}}>
-            <TagContainer tags={{fromSession: tags}} onRequestEdit={() => setTagEditorOpen(true)} />
-          </div>
-        ) : (
-          <ButtonLink
-            color="#106ba3"
-            onClick={() => setTagEditorOpen(true)}
-            style={{margin: '9px  9px 0 9px'}}
-          >
-            + Add tags to backfill runs
-          </ButtonLink>
-        )}
-        <LaunchBackfillButton
-          partitionNames={selected}
-          partitionSetName={partitionSet.name}
-          reexecutionSteps={
-            !options.fromFailure && solidsFiltered.all.length < solids.length
-              ? stepRows.map((step) => step.name)
-              : undefined
-          }
-          fromFailure={options.fromFailure}
-          tags={tags}
-          onSubmit={onSubmit}
-          onSuccess={onSuccess}
-          onError={onError}
-          repoAddress={repoAddress}
-        />
+        <Box flex={{justifyContent: 'flex-end', alignItems: 'center'}} margin={{top: 12}}>
+          <LaunchBackfillButton
+            partitionNames={selected}
+            partitionSetName={partitionSet.name}
+            reexecutionSteps={
+              !options.fromFailure && solidsFiltered.all.length < solids.length
+                ? stepRows.map((step) => step.name)
+                : undefined
+            }
+            fromFailure={options.fromFailure}
+            tags={tags}
+            onSubmit={onSubmit}
+            onSuccess={onSuccess}
+            onError={onError}
+            repoAddress={repoAddress}
+          />
+        </Box>
       </DialogFooter>
     </>
   );
@@ -733,17 +742,15 @@ const LaunchBackfillButton: React.FC<{
   const buttonTitle = [title(), subtitle()].join(' ');
 
   return (
-    <Box flex={{justifyContent: 'flex-end', alignItems: 'center'}} margin={{top: 12}}>
-      <LaunchButton
-        runCount={count}
-        config={{
-          title: buttonTitle,
-          icon: 'open_in_new',
-          disabled: !count || loading,
-          onClick: onLaunch,
-        }}
-      />
-    </Box>
+    <LaunchButton
+      runCount={count}
+      config={{
+        title: buttonTitle,
+        icon: 'open_in_new',
+        disabled: !count || loading,
+        onClick: onLaunch,
+      }}
+    />
   );
 };
 

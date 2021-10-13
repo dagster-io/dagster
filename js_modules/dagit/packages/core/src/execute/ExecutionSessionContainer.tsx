@@ -612,7 +612,12 @@ const ExecutionSessionContainer: React.FC<IExecutionSessionContainerProps> = (pr
               <SecondPanelToggle axis="horizontal" container={editorSplitPanelContainer} />
             </SessionSettingsBar>
             {allTags.fromDefinition.length || allTags.fromSession.length ? (
-              <TagContainer tags={allTags} onRequestEdit={openTagEditor} />
+              <Box
+                padding={{vertical: 8, left: 12, right: 0}}
+                border={{side: 'bottom', width: 1, color: ColorsWIP.Gray200}}
+              >
+                <TagContainer tags={allTags} onRequestEdit={openTagEditor} />
+              </Box>
             ) : null}
             {refreshableSessionBase ? (
               <Box
