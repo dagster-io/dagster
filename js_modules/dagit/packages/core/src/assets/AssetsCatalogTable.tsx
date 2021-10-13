@@ -1,5 +1,4 @@
 import {gql, useQuery} from '@apollo/client';
-import {Menu, MenuItem} from '@blueprintjs/core';
 import {uniqBy} from 'lodash';
 import * as React from 'react';
 import {Link, useHistory} from 'react-router-dom';
@@ -526,22 +525,20 @@ const AssetEntryRow: React.FC<{
             {isAssetEntry ? (
               <Popover
                 content={
-                  <Menu>
-                    <MenuItem
+                  <MenuWIP>
+                    <MenuItemWIP
+                      intent="danger"
                       text="Wipe…"
-                      icon="trash"
-                      target="_blank"
+                      icon="delete"
                       onClick={() => onWipe(assets)}
                     />
-                  </Menu>
+                  </MenuWIP>
                 }
                 position="bottom-right"
               >
                 <ButtonWIP icon={<IconWIP name="expand_more" />} />
               </Popover>
-            ) : (
-              <ButtonWIP icon={<IconWIP name="expand_more" />} />
-            )}
+            ) : null}
           </td>
         ) : null}
       </tr>
@@ -561,7 +558,12 @@ const AssetActions: React.FC<{
   }
 
   const disabled = selected.length === 0;
-  const label = selected.length === 1 ? 'Wipe 1 asset' : `Wipe ${selected.length} assets`;
+  const label =
+    selected.length === 0
+      ? 'Wipe assets'
+      : selected.length === 1
+      ? 'Wipe 1 asset'
+      : `Wipe ${selected.length} assets`;
 
   return (
     <>
