@@ -216,9 +216,7 @@ def test_no_location_or_repo_provided_duplicate_pipeline_failure(mock_client: Mo
             pipeline_name, run_config={}, mode="default"
         )
 
-    assert (
-        exc_info.value.args[0].find(f"multiple jobs/pipelines with the name {pipeline_name}") != -1
-    )
+    assert exc_info.value.args[0].find(f"multiple pipelines with the name {pipeline_name}") != -1
 
 
 @python_client_test_suite
@@ -228,7 +226,7 @@ def test_no_location_or_repo_provided_duplicate_job_failure(mock_client: MockCli
     with pytest.raises(DagsterGraphQLClientError) as exc_info:
         mock_client.python_client.submit_job_execution(job_name, run_config={})
 
-    assert exc_info.value.args[0].find(f"multiple jobs/pipelines with the name {job_name}") != -1
+    assert exc_info.value.args[0].find(f"multiple jobs with the name {job_name}") != -1
 
 
 def no_location_or_repo_provided_mock_config(mock_client):
@@ -436,7 +434,7 @@ def test_failure_with_job_run_conflict(mock_client: MockClient):
         )
     exc_args = exc_info.value.args
 
-    assert exc_args[0] == "JobRunConflict"
+    assert exc_args[0] == "PipelineRunConflict"
     assert exc_args[1] == "some conflict"
 
 

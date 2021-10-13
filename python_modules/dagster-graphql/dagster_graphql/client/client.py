@@ -116,7 +116,7 @@ class DagsterGraphQLClient:
         else:
             raise DagsterGraphQLClientError(repo_connection_status, query_res["message"])
 
-    def _submit_pipeline_execution(
+    def _core_submit_execution(
         self,
         pipeline_name: str,
         repository_location_name: Optional[str] = None,
@@ -132,6 +132,8 @@ class DagsterGraphQLClient:
         check.str_param(pipeline_name, "pipeline_name")
         check.opt_str_param(mode, "mode")
         check.opt_str_param(preset, "preset")
+        run_config = check.opt_dict_param(run_config, "run_config")
+
         # The following invariant will never fail when a job is executed
         check.invariant(
             (mode is not None and run_config is not None) or preset is not None,
@@ -147,7 +149,7 @@ class DagsterGraphQLClient:
             if len(pipeline_info_lst) == 0:
                 raise DagsterGraphQLClientError(
                     f"{pipeline_or_job}NotFoundError",
-                    f"No jobs/pipelines with the name `{pipeline_name}` exist",
+                    f"No {'jobs' if is_using_job_op_graph_apis else 'pipelines'} with the name `{pipeline_name}` exist",
                 )
             elif len(pipeline_info_lst) == 1:
                 pipeline_info = pipeline_info_lst[0]
@@ -156,7 +158,7 @@ class DagsterGraphQLClient:
             else:
                 raise DagsterGraphQLClientError(
                     "Must specify repository_location_name and repository_name"
-                    f" since there are multiple jobs/pipelines with the name {pipeline_name}."
+                    f" since there are multiple {'jobs' if is_using_job_op_graph_apis else 'pipelines'} with the name {pipeline_name}."
                     f"\n\tchoose one of: {pipeline_info_lst}"
                 )
 
@@ -184,13 +186,6 @@ class DagsterGraphQLClient:
         res_data: Dict[str, Any] = self._execute(CLIENT_SUBMIT_PIPELINE_RUN_MUTATION, variables)
         query_result = res_data["launchPipelineExecution"]
         query_result_type = query_result["__typename"]
-
-        formatted_query_result_type = query_result_type
-        if "Pipeline" in formatted_query_result_type:
-            formatted_query_result_type = formatted_query_result_type.replace(
-                "Pipeline", pipeline_or_job
-            )
-
         if query_result_type == "LaunchPipelineRunSuccess":
             return query_result["run"]["runId"]
         elif query_result_type == "InvalidStepError":
@@ -202,11 +197,11 @@ class DagsterGraphQLClient:
             )
             raise DagsterGraphQLClientError(query_result_type, body=error_info)
         elif query_result_type == "PipelineConfigValidationInvalid":
-            raise DagsterGraphQLClientError(formatted_query_result_type, query_result["errors"])
+            raise DagsterGraphQLClientError(query_result_type, query_result["errors"])
         else:
             # query_result_type is a ConflictingExecutionParamsError, a PresetNotFoundError
             # a PipelineNotFoundError, a PipelineRunConflict, or a PythonError
-            raise DagsterGraphQLClientError(formatted_query_result_type, query_result["message"])
+            raise DagsterGraphQLClientError(query_result_type, query_result["message"])
 
     def submit_pipeline_execution(
         self,
@@ -256,7 +251,7 @@ class DagsterGraphQLClient:
         Returns:
             str: run id of the submitted pipeline run
         """
-        return self._submit_pipeline_execution(
+        return self._core_submit_execution(
             pipeline_name,
             repository_location_name,
             repository_name,
@@ -272,7 +267,7 @@ class DagsterGraphQLClient:
         job_name: str,
         repository_location_name: Optional[str] = None,
         repository_name: Optional[str] = None,
-        run_config: Optional[Any] = {},
+        run_config: Optional[Dict[str, Any]] = None,
         tags: Optional[Dict[str, Any]] = None,
     ) -> str:
         """Submits a job with attached configuration for execution.
@@ -306,7 +301,7 @@ class DagsterGraphQLClient:
         Returns:
             str: run id of the submitted pipeline run
         """
-        return self._submit_pipeline_execution(
+        return self._core_submit_execution(
             pipeline_name=job_name,
             repository_location_name=repository_location_name,
             repository_name=repository_name,
