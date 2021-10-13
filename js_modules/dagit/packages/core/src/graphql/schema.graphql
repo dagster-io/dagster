@@ -23,7 +23,7 @@ type Query {
   executionPlanOrError(pipeline: PipelineSelector!, runConfigData: RunConfigData, mode: String!): ExecutionPlanOrError!
   runConfigSchemaOrError(selector: PipelineSelector!, mode: String): RunConfigSchemaOrError!
   instance: Instance!
-  assetsOrError: AssetsOrError!
+  assetsOrError(prefix: [String!], cursor: String, limit: Int): AssetsOrError!
   assetOrError(assetKey: AssetKeyInput!): AssetOrError!
   assetNodes: [AssetNode!]!
   assetNodeOrError(assetKey: AssetKeyInput!): AssetNodeOrError!
@@ -426,6 +426,7 @@ type Asset {
   key: AssetKey!
   assetMaterializations(partitions: [String], beforeTimestampMillis: String, limit: Int): [AssetMaterialization!]!
   tags: [AssetTag!]!
+  definition: AssetNode
 }
 
 type AssetMaterialization {
@@ -517,6 +518,21 @@ type PipelineRunNotFoundError implements Error {
 type AssetTag {
   key: String!
   value: String!
+}
+
+type AssetNode {
+  id: ID!
+  assetKey: AssetKey!
+  description: String
+  opName: String
+  jobName: String
+  dependencies: [AssetDependency!]!
+  assetMaterializations(partitions: [String], beforeTimestampMillis: String, limit: Int): [AssetMaterialization!]!
+}
+
+type AssetDependency {
+  inputName: String!
+  upstreamAsset: AssetNode!
 }
 
 union PipelineRunEvent = ExecutionStepFailureEvent | ExecutionStepInputEvent | ExecutionStepOutputEvent | ExecutionStepSkippedEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | ExecutionStepUpForRetryEvent | ExecutionStepRestartEvent | LogMessageEvent | PipelineFailureEvent | PipelineStartEvent | PipelineEnqueuedEvent | PipelineDequeuedEvent | PipelineStartingEvent | PipelineCancelingEvent | PipelineCanceledEvent | PipelineSuccessEvent | HandledOutputEvent | LoadedInputEvent | LogsCapturedEvent | ObjectStoreOperationEvent | StepExpectationResultEvent | StepMaterializationEvent | EngineEvent | HookCompletedEvent | HookSkippedEvent | HookErroredEvent | AlertStartEvent | AlertSuccessEvent
@@ -1077,21 +1093,6 @@ type UsedSolid {
 type SolidInvocationSite {
   pipeline: Pipeline!
   solidHandle: SolidHandle!
-}
-
-type AssetNode {
-  id: ID!
-  assetKey: AssetKey!
-  description: String
-  opName: String
-  jobName: String
-  dependencies: [AssetDependency!]!
-  assetMaterializations(partitions: [String], beforeTimestampMillis: String, limit: Int): [AssetMaterialization!]!
-}
-
-type AssetDependency {
-  inputName: String!
-  upstreamAsset: AssetNode!
 }
 
 union RepositoryOrError = PythonError | Repository | RepositoryNotFoundError

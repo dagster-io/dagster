@@ -73,8 +73,9 @@ def schedule(
             schedule should execute). Defaults to a function that always returns ``True``.
         environment_vars (Optional[Dict[str, str]]): Any environment variables to set when executing
             the schedule.
-        execution_timezone (Optional[str]): Timezone in which the schedule should run. Only works
-            with DagsterDaemonScheduler, and must be set when using that scheduler.
+        execution_timezone (Optional[str]): Timezone in which the schedule should run.
+            Supported strings for timezones are the ones provided by the
+            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
         description (Optional[str]): A human-readable description of the schedule.
         job (Optional[Union[PipelineDefinition, GraphDefinition]]): Experimental
     """
@@ -155,8 +156,9 @@ def monthly_schedule(
             the schedule.
         end_date (Optional[datetime.datetime]): The last time to run the schedule to, defaults to
             current time.
-        execution_timezone (Optional[str]): Timezone in which the schedule should run. Only works
-            with DagsterDaemonScheduler, and must be set when using that scheduler.
+        execution_timezone (Optional[str]): Timezone in which the schedule should run.
+            Supported strings for timezones are the ones provided by the
+            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
         partition_months_offset (Optional[int]): How many months back to go when choosing the partition
             for a given schedule execution. For example, when partition_months_offset=1, the schedule
             that executes during month N will fill in the partition for month N-1.
@@ -309,8 +311,9 @@ def weekly_schedule(
             the schedule.
         end_date (Optional[datetime.datetime]): The last time to run the schedule to, defaults to
             current time.
-        execution_timezone (Optional[str]): Timezone in which the schedule should run. Only works
-            with DagsterDaemonScheduler, and must be set when using that scheduler.
+        execution_timezone (Optional[str]): Timezone in which the schedule should run.
+            Supported strings for timezones are the ones provided by the
+            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
         partition_weeks_offset (Optional[int]): How many weeks back to go when choosing the partition
             for a given schedule execution. For example, when partition_weeks_offset=1, the schedule
             that executes during week N will fill in the partition for week N-1.
@@ -456,8 +459,9 @@ def daily_schedule(
             the schedule.
         end_date (Optional[datetime.datetime]): The last time to run the schedule to, defaults to
             current time.
-        execution_timezone (Optional[str]): Timezone in which the schedule should run. Only works
-            with DagsterDaemonScheduler, and must be set when using that scheduler.
+        execution_timezone (Optional[str]): Timezone in which the schedule should run.
+            Supported strings for timezones are the ones provided by the
+            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
         partition_days_offset (Optional[int]): How many days back to go when choosing the partition
             for a given schedule execution. For example, when partition_days_offset=1, the schedule
             that executes during day N will fill in the partition for day N-1.
@@ -595,8 +599,9 @@ def hourly_schedule(
             the schedule.
         end_date (Optional[datetime.datetime]): The last time to run the schedule to, defaults to
             current time.
-        execution_timezone (Optional[str]): Timezone in which the schedule should run. Only works
-            with DagsterDaemonScheduler, and must be set when using that scheduler.
+        execution_timezone (Optional[str]): Timezone in which the schedule should run.
+            Supported strings for timezones are the ones provided by the
+            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
         partition_hours_offset (Optional[int]): How many hours back to go when choosing the partition
             for a given schedule execution. For example, when partition_hours_offset=1, the schedule
             that executes during hour N will fill in the partition for hour N-1.

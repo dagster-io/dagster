@@ -90,12 +90,13 @@ class GrapheneAsset(graphene.ObjectType):
         limit=graphene.Int(),
     )
     tags = non_null_list(GrapheneAssetTag)
+    definition = graphene.Field("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
 
     class Meta:
         name = "Asset"
 
-    def __init__(self, key, tags=None):
-        super().__init__(key=key)
+    def __init__(self, key, definition=None, tags=None):
+        super().__init__(key=key, definition=definition)
         check.opt_dict_param(tags, "tags", key_type=str, value_type=str)
         self._tags = tags
 
