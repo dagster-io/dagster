@@ -35,6 +35,7 @@ export const TimestampDisplay = (props: Props) => {
       </TabularNums>
       {timezone && timezone !== userTimezone ? (
         <TimestampTooltip
+          placement="top"
           content={
             <TabularNums>
               {timestampToString({
