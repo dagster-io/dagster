@@ -155,6 +155,7 @@ computeLogManager:
   #     bucket: ~
   #     localDir: ~
   #     prefix: ~
+  #     jsonCredentialsEnvvar: ~
   ##  Uncomment this configuration if the S3ComputeLogManager is selected
   #   s3ComputeLogManager:
   #     bucket: ~

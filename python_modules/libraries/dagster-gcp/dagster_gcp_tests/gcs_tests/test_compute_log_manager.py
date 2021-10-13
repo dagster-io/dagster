@@ -1,6 +1,7 @@
 import os
 import sys
 import tempfile
+from unittest import mock
 
 from dagster import DagsterEventType, execute_pipeline, pipeline, solid
 from dagster.core.instance import DagsterInstance, InstanceType
@@ -89,6 +90,78 @@ def test_compute_log_manager(gcs_bucket):
         stderr = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDERR)
         for expected in EXPECTED_LOGS:
             assert expected in stderr.data
+
+
+def test_compute_log_manager_with_envvar(gcs_bucket):
+    @job
+    def simple():
+        @op
+        def easy(context):
+            context.log.info("easy")
+            print(HELLO_WORLD)  # pylint: disable=print-call
+            return "easy"
+
+        easy()
+
+    with open(os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")) as f:
+        with mock.patch.dict(os.environ, {"ENV_VAR": f.read()}):
+            with tempfile.TemporaryDirectory() as temp_dir:
+                run_store = SqliteRunStorage.from_local(temp_dir)
+                event_store = SqliteEventLogStorage(temp_dir)
+                manager = GCSComputeLogManager(
+                    bucket=gcs_bucket,
+                    prefix="my_prefix",
+                    local_dir=temp_dir,
+                    json_credentials_envvar="ENV_VAR",
+                )
+                instance = DagsterInstance(
+                    instance_type=InstanceType.PERSISTENT,
+                    local_artifact_storage=LocalArtifactStorage(temp_dir),
+                    run_storage=run_store,
+                    event_storage=event_store,
+                    compute_log_manager=manager,
+                    run_coordinator=DefaultRunCoordinator(),
+                    run_launcher=DefaultRunLauncher(),
+                )
+                result = simple.execute_in_process(instance=instance)
+                compute_steps = [
+                    event.step_key
+                    for event in result.all_node_events
+                    if event.event_type == DagsterEventType.STEP_START
+                ]
+                assert len(compute_steps) == 1
+                step_key = compute_steps[0]
+
+                stdout = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDOUT)
+                assert stdout.data == HELLO_WORLD + SEPARATOR
+
+                stderr = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDERR)
+                for expected in EXPECTED_LOGS:
+                    assert expected in stderr.data
+
+                # Check GCS directly
+                stderr_gcs = (
+                    storage.Client()
+                    .get_bucket(gcs_bucket)
+                    .blob(f"my_prefix/storage/{result.run_id}/compute_logs/easy.err")
+                    .download_as_bytes()
+                    .decode("utf-8")
+                )
+
+                for expected in EXPECTED_LOGS:
+                    assert expected in stderr_gcs
+
+                # Check download behavior by deleting locally cached logs
+                compute_logs_dir = os.path.join(temp_dir, result.run_id, "compute_logs")
+                for filename in os.listdir(compute_logs_dir):
+                    os.unlink(os.path.join(compute_logs_dir, filename))
+
+                stdout = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDOUT)
+                assert stdout.data == HELLO_WORLD + SEPARATOR
+
+                stderr = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDERR)
+                for expected in EXPECTED_LOGS:
+                    assert expected in stderr.data
 
 
 def test_compute_log_manager_from_config(gcs_bucket):
