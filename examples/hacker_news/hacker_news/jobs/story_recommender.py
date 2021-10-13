@@ -1,6 +1,5 @@
 from dagster import fs_io_manager, graph
-from dagster.core.storage.file_manager import local_file_manager
-from dagster_aws.s3 import s3_file_manager
+from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 from hacker_news.ops.comment_stories import build_comment_stories
 from hacker_news.ops.recommender_model import (
     build_component_top_stories,
@@ -26,21 +25,27 @@ STORY_RECOMMENDER_RESOURCES_DEV = {
     "io_manager": fs_io_manager,
     "warehouse_io_manager": fs_io_manager,
     "warehouse_loader": snowflake_manager,
-    "file_manager": local_file_manager,
+    "output_notebook_io_manager": fs_io_manager,
 }
 
 STORY_RECOMMENDER_RESOURCES_STAGING = {
     "io_manager": fixed_s3_pickle_io_manager.configured({"bucket": "hackernews-elementl-dev"}),
     "warehouse_io_manager": snowflake_manager,
     "warehouse_loader": snowflake_manager,
-    "file_manager": s3_file_manager.configured({"s3_bucket": "hackernews-elementl-dev"}),
+    "s3": s3_resource,
+    "output_notebook_io_manager": s3_pickle_io_manager.configured(
+        {"s3_bucket": "hackernews-elementl-dev", "s3_prefix": "notebooks"}
+    ),
 }
 
 STORY_RECOMMENDER_RESOURCES_PROD = {
     "io_manager": fixed_s3_pickle_io_manager.configured({"bucket": "hackernews-elementl-prod"}),
     "warehouse_io_manager": snowflake_manager,
     "warehouse_loader": snowflake_manager,
-    "file_manager": s3_file_manager.configured({"s3_bucket": "hackernews-elementl-prod"}),
+    "s3": s3_resource,
+    "output_notebook_io_manager": s3_pickle_io_manager.configured(
+        {"s3_bucket": "hackernews-elementl-prod", "s3_prefix": "notebooks"}
+    ),
 }
 
 
