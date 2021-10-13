@@ -98,7 +98,7 @@ export const SolidColumn = (props: {stepKey: string | false | null}) => {
   );
 };
 
-const SolidColumnContainer = styled.div`
+export const SolidColumnContainer = styled.div`
   width: 250px;
   flex-shrink: 0;
   padding: 4px 12px;

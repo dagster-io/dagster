@@ -4,6 +4,7 @@ import styled from 'styled-components/macro';
 
 import {SolidNode, SOLID_NODE_DEFINITION_FRAGMENT} from '../graph/SolidNode';
 import {layoutSolid} from '../graph/getFullSolidLayout';
+import {Box} from '../ui/Box';
 
 import {SolidCardSolidDefinitionFragment} from './types/SolidCardSolidDefinitionFragment';
 
@@ -29,22 +30,24 @@ export const SolidCard: React.FC<SolidCardProps> = (props) => {
   );
 
   return (
-    <SolidCardContainer style={{height: layout.boundingBox.height}}>
-      <SolidNode
-        invocation={undefined}
-        definition={props.definition}
-        minified={false}
-        onClick={() => {}}
-        onDoubleClick={() => {}}
-        onEnterComposite={() => {}}
-        onHighlightEdges={() => {}}
-        layout={layout}
-        selected={false}
-        focused={false}
-        highlightedEdges={[]}
-        dim={false}
-      />
-    </SolidCardContainer>
+    <Box padding={24}>
+      <SolidCardContainer style={{height: layout.boundingBox.height}}>
+        <SolidNode
+          invocation={undefined}
+          definition={props.definition}
+          minified={false}
+          onClick={() => {}}
+          onDoubleClick={() => {}}
+          onEnterComposite={() => {}}
+          onHighlightEdges={() => {}}
+          layout={layout}
+          selected={false}
+          focused={false}
+          highlightedEdges={[]}
+          dim={false}
+        />
+      </SolidCardContainer>
+    </Box>
   );
 };
 
@@ -71,9 +74,6 @@ export const SOLID_CARD_SOLID_DEFINITION_FRAGMENT = gql`
 
 const SolidCardContainer = styled.div`
   flex: 1;
-  padding: 20px;
-  margin-right: 10px;
-  margin-bottom: 10px;
   max-width: 450px;
-  box-sizing: border-box;
+  position: relative;
 `;
