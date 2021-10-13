@@ -107,6 +107,14 @@ def is_in_composition() -> bool:
     return bool(_composition_stack)
 
 
+def is_using_graph_job_op_apis():
+    if not is_in_composition():
+        return False
+    else:
+        source_decorator = _composition_stack[0].source
+        return source_decorator == "@job" or source_decorator == "@graph"
+
+
 def assert_in_composition(name: str) -> None:
     if len(_composition_stack) < 1:
         raise DagsterInvariantViolationError(

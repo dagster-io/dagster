@@ -344,6 +344,19 @@ class CompositeSolidDefinition(GraphDefinition):
             config=config_mapping,
         )
 
+    def __call__(self, *args, **kwargs):
+        from .composition import is_using_graph_job_op_apis
+
+        if is_using_graph_job_op_apis():
+            raise DagsterInvalidDefinitionError(
+                "Attempted to invoke composite solid within the context of a Dagster job or graph. "
+                "Composite solids are deprecated in favor of @graph, and not supported within the "
+                "job and graph APIs. In order to convert your composite solid to a graph, refer to the "
+                "migration guide: "
+                "https://docs.dagster.io/guides/dagster/graph_job_op#composite-solids."
+            )
+        super(CompositeSolidDefinition, self).__call__(*args, **kwargs)
+
     def all_dagster_types(self) -> Iterator[DagsterType]:
         yield from self.all_input_output_types()
 
