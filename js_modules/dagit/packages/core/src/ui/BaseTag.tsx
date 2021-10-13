@@ -47,14 +47,17 @@ export const StyledTag = styled.div<StyledTagProps>`
   font-size: 12px;
   line-height: 16px;
   align-items: center;
-  max-width: 400px;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
   padding: 4px 8px;
   user-select: none;
   transition: filter 100ms linear;
+  max-width: 100%;
 
+  & > span {
+    max-width: 400px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
   > ${IconWrapper}:first-child {
     margin-right: 4px;
     margin-left: -4px;

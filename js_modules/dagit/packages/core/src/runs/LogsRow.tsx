@@ -272,7 +272,9 @@ const UnstructuredMemoizedContent: React.FC<{
     highlighted={highlighted}
   >
     <SolidColumn stepKey={node.stepKey} />
-    <EventTypeColumn>{node.level}</EventTypeColumn>
+    <EventTypeColumn>
+      <span style={{marginLeft: 8}}>{node.level}</span>
+    </EventTypeColumn>
     <Box padding={{horizontal: 12}} style={{flex: 1}}>
       {node.message}
     </Box>
