@@ -1,6 +1,20 @@
 import logging
 
-from dagster import ConfigMapping, DagsterInstance, Field, JobDefinition, job, logger, op, resource
+import pytest
+from dagster import (
+    ConfigMapping,
+    DagsterInstance,
+    DagsterInvalidDefinitionError,
+    Field,
+    JobDefinition,
+    composite_solid,
+    graph,
+    job,
+    logger,
+    op,
+    resource,
+    solid,
+)
 from dagster.core.utils import coerce_valid_log_level
 
 
@@ -107,3 +121,43 @@ def test_job_logger():
         run_config={"loggers": {"basic_logger": {"config": "hullo"}}},
     )
     assert called["basic_logger"] == "hullo"
+
+
+def test_solid_in_job():
+    @solid
+    def my_solid():
+        return 5
+
+    @job
+    def my_job():
+        my_solid()
+
+    assert my_job.execute_in_process().success
+
+
+def test_composite_solid_in_job():
+    @solid
+    def my_solid():
+        pass
+
+    @composite_solid
+    def my_composite():
+        my_solid()
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Attempted to invoke composite solid within the context of a Dagster job or graph.",
+    ):
+
+        @job
+        def _():
+            my_composite()
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Attempted to invoke composite solid within the context of a Dagster job or graph.",
+    ):
+
+        @graph
+        def _():
+            my_composite()
