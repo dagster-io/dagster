@@ -196,17 +196,6 @@ class JobDefinition(PipelineDefinition):
             ),
         )
 
-    def get_pipeline_subset_def(
-        self, solids_to_execute: Optional[AbstractSet[str]]
-    ) -> PipelineDefinition:
-
-        warnings.warn(
-            f"Attempted to subset job {self.name}. The subsetted job will be represented by a "
-            "PipelineDefinition."
-        )
-
-        return super(JobDefinition, self).get_pipeline_subset_def(solids_to_execute)
-
     def get_partition_set_def(self) -> Optional["PartitionSetDefinition"]:
         if not self.is_single_mode:
             return None

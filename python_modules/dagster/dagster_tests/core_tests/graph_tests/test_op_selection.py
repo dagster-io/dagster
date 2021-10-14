@@ -220,13 +220,13 @@ def test_op_selection_on_dynamic_orchestration():
         return x
 
     @graph
-    def dynamic_pipeline():
+    def dynamic_graph():
         numbers = emit(num_range())
         dynamic = numbers.map(lambda num: multiply_by_two(multiply_inputs(num, emit_ten())))
         n = sum_numbers(dynamic.collect())
         echo(n)  # test transitive downstream of collect
 
-    full_job = dynamic_pipeline.to_job()
+    full_job = dynamic_graph.to_job()
     result = full_job.execute_in_process()
     assert result.success
     assert result.output_for_node("echo") == 60
@@ -316,50 +316,3 @@ def test_op_selection_with_config_mapping():
     )
     assert subset_result.success
     assert subset_result.output_for_node("my_other_op") == "bar"
-
-
-# TODO: not working for nested graphs
-# def test_nested_op_selection_on_job_def():
-#     @graph
-#     def larger_graph():
-#         do_it_all()
-#         return_one()
-
-#     my_subset_job = larger_graph.to_job(op_selection=["*do_it_all.adder", "return_one"])
-#     result = my_subset_job.execute_in_process()
-
-#     assert result.success
-#     executed_step_keys = [
-#         evt.step_key for evt in result.all_node_events if evt.event_type == DagsterEventType.STEP_SUCCESS
-#     ]
-#     assert len(executed_step_keys) == 4
-#     assert "add_one" not in [executed_step_keys]
-
-
-# def test_unselected_extra_config_input_in_sub_graph():
-#     @op
-#     def root(_):
-#         return "public.table_1"
-
-#     @op(config_schema={"some_config": str})
-#     def takes_input(_, input_table):
-#         return input_table
-
-#     @graph
-#     def sub():
-#         takes_input(root())
-
-#     @graph
-#     def full():
-#         sub()
-
-#     # Requires passing some config to the op to bypass the op block level optionality
-#     run_config = {"ops": {"sub": {"ops": {"takes_input": {"config": {"some_config": "a"}}}}}}
-
-#     full_job = full.to_job()
-#     assert full_job.execute_in_process(run_config=run_config).success
-
-#     # Subselected job shouldn't require the unselected solid's config
-#     # assert full_job.execute_in_process(op_selection=["root"]).success
-#     # Should also be able to ignore the extra input config
-#     assert full_job.execute_in_process(run_config=run_config, op_selection=["sub.root"]).success

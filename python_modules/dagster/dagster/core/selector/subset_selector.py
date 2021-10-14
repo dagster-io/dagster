@@ -23,6 +23,14 @@ class OpSelectionData(
         ],
     )
 ):
+    """The data about op selection.
+
+    Attributes:
+        resolved_op_selection (Optional[AbstractSet[str]])): The names of selected ops.
+        ignored_solids (List[Node]): The solids in the original full graph but outside the current
+            selection. This is used in run config resolution to handle unsatisfied inputs correctly.
+    """
+
     def __new__(cls, resolved_op_selection=None, ignored_solids=None):
         return super(OpSelectionData, cls).__new__(
             cls,
