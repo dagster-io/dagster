@@ -126,7 +126,7 @@ class JobDefinition(PipelineDefinition):
             hook_defs=self.hook_defs,
             tags=self.tags,
             version_strategy=self.version_strategy,
-        ).get_job_subset_def(op_selection)
+        ).get_job_def_for_op_selection(op_selection)
 
         if partition_key:
             if not base_mode.partitioned_config:
@@ -152,7 +152,7 @@ class JobDefinition(PipelineDefinition):
     def op_selection_data(self) -> Optional[OpSelectionData]:
         return self._op_selection_data
 
-    def get_job_subset_def(
+    def get_job_def_for_op_selection(
         self,
         op_selection: Optional[List[str]] = None,
     ) -> "JobDefinition":

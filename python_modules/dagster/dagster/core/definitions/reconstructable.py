@@ -113,7 +113,7 @@ class ReconstructablePipeline(
             return (
                 self.repository.get_definition()
                 .get_pipeline(self.pipeline_name)
-                .get_job_subset_def(
+                .get_job_def_for_op_selection(
                     list(self.solids_to_execute) if self.solids_to_execute else None
                 )
             )
