@@ -60,8 +60,8 @@ def define_multiple_output_job():
 
     @op(
         out={
-            "foo": Out(Int, io_manager_key="io_manager"),
-            "foobar": Out(Int, io_manager_key="io_manager"),
+            "foo": Out(Int),
+            "foobar": Out(Int),
         }
     )
     def return_two_outputs():
