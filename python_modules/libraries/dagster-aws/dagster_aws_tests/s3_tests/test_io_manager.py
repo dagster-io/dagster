@@ -1,5 +1,4 @@
 from dagster import In, Int, Out, Output, job, op, resource
-
 from dagster_aws.s3.io_manager import s3_pickle_io_manager
 from dagster_aws.s3.utils import construct_s3_client
 
