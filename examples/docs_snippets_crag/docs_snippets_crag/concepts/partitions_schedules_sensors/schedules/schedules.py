@@ -1,64 +1,38 @@
-import datetime
-
-from dagster import daily_schedule, schedule
-
-# start_partition_based_schedule
+from dagster import ScheduleDefinition, ScheduleEvaluationContext, job, op, schedule
 
 
-@daily_schedule(
-    pipeline_name="my_pipeline",
-    start_date=datetime.datetime(2021, 1, 1),
-    execution_time=datetime.time(11, 0),
-    execution_timezone="US/Central",
-)
-def my_daily_schedule(date):
-    return {"solids": {"process_data_for_date": {"config": {"date": date.strftime("%Y-%m-%d")}}}}
+# start_basic_schedule
+@job
+def my_job():
+    ...
 
 
-# end_partition_based_schedule
+basic_schedule = ScheduleDefinition(job=my_job, cron_schedule="0 0 * * *")
+# end_basic_schedule
+
+# start_run_config_schedule
+@op(config_schema={"scheduled_date": str})
+def configurable_op(context):
+    context.log.info(context.op_config["scheduled_date"])
 
 
-# start_non_partition_based_schedule
+@job
+def configurable_job():
+    configurable_op()
 
 
-@schedule(cron_schedule="0 1 * * *", pipeline_name="my_pipeline", execution_timezone="US/Central")
-def my_schedule():
-    return {"solids": {"process_data": {"config": {"dataset_name": "my_dataset"}}}}
+@schedule(job=configurable_job, cron_schedule="0 0 * * *")
+def configurable_job_schedule(context: ScheduleEvaluationContext):
+    scheduled_date = context.scheduled_execution_time.strftime("%Y-%m-%d")
+    return {"ops": {"configurable_op": {"config": {"scheduled_date": scheduled_date}}}}
 
 
-# end_non_partition_based_schedule
+# end_run_config_schedule
 
-
-# start_execution_time
-
-
-@schedule(cron_schedule="0 1 * * *", pipeline_name="my_pipeline", execution_timezone="US/Central")
-def my_execution_time_schedule(context):
-    date = context.scheduled_execution_time.strftime("%Y-%m-%d")
-    return {
-        "solids": {
-            "process_data": {"config": {"dataset_name": "my_dataset", "execution_date": date}}
-        }
-    }
-
-
-# end_execution_time
 
 # start_timezone
-
-
-@daily_schedule(
-    pipeline_name="my_data_pipeline",
-    start_date=datetime.datetime(2020, 1, 1),
-    execution_time=datetime.time(9, 0),
-    execution_timezone="US/Pacific",
+my_timezone_schedule = ScheduleDefinition(
+    job=my_job, cron_schedule="0 9 * * *", execution_timezone="US/Pacific"
 )
-def my_timezone_schedule(date):
-    return {
-        "solids": {
-            "process_data_for_date": {"config": {"date": date.strftime("%Y-%m-%d %H:%M:%S")}}
-        }
-    }
-
 
 # end_timezone
