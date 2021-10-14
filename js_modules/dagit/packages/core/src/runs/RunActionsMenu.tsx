@@ -173,7 +173,7 @@ export const RunActionsMenu: React.FC<{
           }
         }}
       >
-        <ButtonWIP icon={<IconWIP name="more_horiz" />} />
+        <ButtonWIP icon={<IconWIP name="expand_more" />} />
       </Popover>
       {canTerminatePipelineExecution ? (
         <TerminationDialog
