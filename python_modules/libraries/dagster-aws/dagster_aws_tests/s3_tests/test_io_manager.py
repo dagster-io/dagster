@@ -64,13 +64,13 @@ def define_multiple_output_job():
             "foobar": Out(Int, io_manager_key="io_manager"),
         }
     )
-    def baz():
+    def return_two_outputs():
         yield Output(5, "foo")
         yield Output(10, "foobar")
 
     @job(resource_defs={"io_manager": s3_pickle_io_manager, "s3": test_s3_resource})
     def output_prefix_execution_plan():
-        baz()
+        return_two_outputs()
 
     return output_prefix_execution_plan
 
@@ -84,7 +84,7 @@ def test_s3_pickle_io_manager_prefix(mock_s3_bucket):
 
     result = prefixy_job.execute_in_process(run_config)
 
-    assert result.output_for_node("baz", "foo") == 5
-    assert result.output_for_node("baz", "foobar") == 10
+    assert result.output_for_node("return_two_outputs", "foo") == 5
+    assert result.output_for_node("return_two_outputs", "foobar") == 10
 
     assert len(list(mock_s3_bucket.objects.all())) == 2
