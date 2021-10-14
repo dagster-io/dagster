@@ -48,7 +48,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition):
     """Core class for defining resources.
 
     Resources are scoped ways to make external resources (like database connections) available to
-    solids during pipeline execution and to clean up after execution resolves.
+    during job execution and to clean up after execution resolves.
 
     If resource_fn yields once rather than returning (in the manner of functions decorable with
     :py:func:`@contextlib.contextmanager <python:contextlib.contextmanager>`) then the body of the
@@ -56,11 +56,11 @@ class ResourceDefinition(AnonymousConfigurableDefinition):
     own teardown/cleanup logic.
 
     Depending on your executor, resources may be instantiated and cleaned up more than once in a
-    pipeline execution.
+    job execution.
 
     Args:
         resource_fn (Callable[[InitResourceContext], Any]): User-provided function to instantiate
-            the resource, which will be made available to solid executions keyed on the
+            the resource, which will be made available to executions keyed on the
             ``context.resources`` object.
         config_schema (Optional[ConfigSchema): The schema for the config. If set, Dagster will check
             that config provided for the resource matches this schema and fail if it does not. If
@@ -337,7 +337,7 @@ class IContainsGenerator:
 class ScopedResourcesBuilder(
     namedtuple("ScopedResourcesBuilder", "resource_instance_dict contains_generator")
 ):
-    """There are concepts in the codebase (e.g. solids, system storage) that receive
+    """There are concepts in the codebase (e.g. ops, system storage) that receive
     only the resources that they have specified in required_resource_keys.
     ScopedResourcesBuilder is responsible for dynamically building a class with
     only those required resources and returning an instance of that class."""
@@ -410,7 +410,7 @@ class ScopedResourcesBuilder(
 def make_values_resource(**kwargs: Any) -> ResourceDefinition:
     """A helper function that creates a ``ResourceDefinition`` to take in user-defined values.
 
-        This is useful for sharing values between solids.
+        This is useful for sharing values between ops.
 
     Args:
         **kwargs: Arbitrary keyword arguments that will be passed to the config schema of the
@@ -421,19 +421,13 @@ def make_values_resource(**kwargs: Any) -> ResourceDefinition:
 
     .. code-block:: python
 
-        @solid(required_resource_keys={"globals"})
-        def my_solid_a(context):
+        @op(required_resource_keys={"globals"})
+        def my_op(context):
             print(context.resources.globals["my_str_var"])
 
-        @pipeline(
-            mode_defs=[
-                ModeDefinition(
-                    resource_defs={"globals": make_values_resource(my_str_var=str, my_int_var=int)}
-                )
-            ]
-        )
-        def my_pipeline():
-            my_solid()
+        @job(resource_defs={"globals": make_values_resource(my_str_var=str, my_int_var=int)})
+        def my_job():
+            my_op()
 
     Returns:
         ResourceDefinition: A resource that passes in user-defined values.

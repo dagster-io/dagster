@@ -28,12 +28,12 @@ class DagsterTypeKind(PythonEnum):
 
 
 class DagsterType:
-    """Define a type in dagster. These can be used in the inputs and outputs of solids.
+    """Define a type in dagster. These can be used in the inputs and outputs of ops.
 
     Args:
         type_check_fn (Callable[[TypeCheckContext, Any], [Union[bool, TypeCheck]]]):
             The function that defines the type check. It takes the value flowing
-            through the input or output of the solid. If it passes, return either
+            through the input or output of the op. If it passes, return either
             ``True`` or a :py:class:`~dagster.TypeCheck` with ``success`` set to ``True``. If it fails,
             return either ``False`` or a :py:class:`~dagster.TypeCheck` with ``success`` set to ``False``.
             The first argument must be named ``context`` (or, if unused, ``_``, ``_context``, or ``context_``).

@@ -3,7 +3,7 @@ Types
 
 .. currentmodule:: dagster
 
-Dagster includes facilities for typing the input and output values of solids ("runtime" types).
+Dagster includes facilities for typing the input and output values of ops ("runtime" types).
 
 .. _builtin:
 
@@ -20,26 +20,26 @@ Built-in primitive types
 
     .. code-block:: python
 
-        @solid
+        @op
         def identity(_, x: Any) -> Any:
             return x
 
         # Untyped inputs and outputs are implicitly typed Any
-        @solid
+        @op
         def identity_imp(_, x):
             return x
 
         # Explicitly typed
-        @solid(
-            input_defs=[InputDefinition('x', dagster_type=Any)],
-            output_defs=[OutputDefinition(dagster_type=Any)]
+        @op(
+            ins={'x': In(dagster_type=Any)},
+            out=Out(dagster_type=Any),
         )
         def identity(_, x):
             return x
 
-        @solid(config_schema=Field(Any))
+        @op(config_schema=Field(Any))
         def any_config(context):
-            return context.solid_config
+            return context.op_config
 
 
 .. attribute:: Bool
@@ -52,32 +52,32 @@ Built-in primitive types
 
     .. code-block:: python
 
-        @solid
+        @op
         def boolean(_, x: Bool) -> String:
             return 'true' if x else 'false'
 
-        @solid
+        @op
         def empty_string(_, x: String) -> bool:
             return len(x) == 0
 
         # Explicit
-        @solid(
-            input_defs=[InputDefinition('x', dagster_type=Bool)],
-            output_defs=[OutputDefinition(dagster_type=String)]
+        @op(
+            ins={'x': In(dagster_type=Bool)},
+            out=Out(dagster_type=String),
         )
         def boolean(_, x):
             return 'true' if x else 'false'
 
-        @solid(
-            input_defs=[InputDefinition('x', dagster_type=String)],
-            output_defs=[OutputDefinition(dagster_type=bool)]
+        @op(
+            ins={'x': In(dagster_type=String)},
+            out=Out(dagster_type=bool),
         )
         def empty_string(_, x):
             return len(x) == 0
 
-        @solid(config_schema=Field(Bool))
+        @op(config_schema=Field(Bool))
         def bool_config(context):
-            return 'true' if context.solid_config else 'false'
+            return 'true' if context.op_config else 'false'
 
 
 .. attribute:: Int
@@ -90,14 +90,14 @@ Built-in primitive types
 
     .. code-block:: python
 
-        @solid
+        @op
         def add_3(_, x: Int) -> int:
             return x + 3
 
         # Explicit
-        @solid(
-            input_defs=[InputDefinition('x', dagster_type=Int)],
-            output_defs=[OutputDefinition(dagster_type=Int)]
+        @op(
+            ins={'x', In(dagster_type=Int)},
+            out=Out(dagster_type=Int),
         )
         def add_3(_, x):
             return x + 3
@@ -113,21 +113,21 @@ Built-in primitive types
 
     .. code-block:: python
 
-        @solid
+        @op
         def div_2(_, x: Float) -> float:
             return x / 2
 
         # Explicit
-        @solid(
-            input_defs=[InputDefinition('x', dagster_type=Float)],
-            output_defs=[OutputDefinition(dagster_type=float)]
+        @op(
+            ins={'x', In(dagster_type=Float)},
+            out=Out(dagster_type=float),
         )
         def div_2(_, x):
             return x / 2
 
-        @solid(config_schema=Field(Float))
+        @op(config_schema=Field(Float))
         def div_y(context, x: Float) -> float:
-            return x / context.solid_config
+            return x / context.op_config
 
 
 .. attribute:: String
@@ -140,30 +140,30 @@ Built-in primitive types
 
     .. code-block:: python
 
-        @solid
+        @op
         def concat(_, x: String, y: str) -> str:
             return x + y
 
         # Explicit
-        @solid(
-            input_defs=[
-                InputDefinition('x', dagster_type=String),
-                InputDefinition('y', dagster_type=str)
-            ],
-            output_defs=[OutputDefinition(dagster_type=str)]
+        @op(
+            ins= {
+                'x': In(dagster_type=String),
+                'y': In(dagster_type=str),
+            },
+            out= Out(dagster_type=str),
         )
         def concat(_, x, y):
             return x + y
 
-        @solid(config_schema=Field(String))
+        @op(config_schema=Field(String))
         def hello(context) -> str:
-            return 'Hello, {friend}!'.format(friend=context.solid_config)
+            return 'Hello, {friend}!'.format(friend=context.op_config)
 
 
 .. attribute:: Nothing
 
     Use this type only for inputs and outputs, in order to establish an execution dependency without
-    communicating a value. Inputs of this type will not be pased to the solid compute function, so
+    communicating a value. Inputs of this type will not be pased to the op compute function, so
     it is necessary to use the explicit :py:class:`InputDefinition` API to define them rather than
     the Python 3 type hint syntax.
 
@@ -173,29 +173,29 @@ Built-in primitive types
 
     .. code-block:: python
 
-        @solid
+        @op
         def wait(_) -> Nothing:
             time.sleep(1)
             return
 
-        @solid(
-            InputDefinition('ready', dagster_type=Nothing)
+        @op(
+            ins={"ready": In(dagster_type=Nothing)},
         )
         def done(_) -> str:
             return 'done'
 
-        @pipeline
-        def nothing_pipeline():
+        @job
+        def nothing_job():
             done(wait())
 
         # Any value will pass the type check for Nothing
-        @solid
+        @op
         def wait_int(_) -> Int:
             time.sleep(1)
             return 1
 
-        @pipeline
-        def nothing_int_pipeline():
+        @job
+        def nothing_int_job():
             done(wait_int())
 
 
@@ -207,17 +207,17 @@ Built-in primitive types
 
     .. code-block:: python
 
-        @solid
-        def nullable_concat(_, x: String, y: Optional[String]) -> String:
+        @op
+        def nullable_concat(_, x: str, y: Optional[str]) -> str:
             return x + (y or '')
 
         # Explicit
-        @solid(
-            input_defs=[
-                InputDefinition('x', dagster_type=String),
-                InputDefinition('y', dagster_type=Optional[String])
-            ],
-            output_defs=[OutputDefinition(dagster_type=String)]
+        @op(
+            ins={
+                'x': In(String),
+                'y': In(Optional[String]),
+            },
+            out=Out(String),
         )
         def nullable_concat(_, x, y):
             return x + (y or '')
@@ -233,38 +233,38 @@ Built-in primitive types
 
     .. code-block:: python
 
-        @solid
-        def concat_list(_, xs: List[String]) -> String:
+        @op
+        def concat_list(_, xs: List[str]) -> str:
             return ''.join(xs)
 
         # Explicit
-        @solid(
-            input_defs=[InputDefinition('xs', dagster_type=List[String])],
-            output_defs=[OutputDefinition(dagster_type=String)]
+        @op(
+            ins={'xs': In(dagster_type=List[str])},
+            out=Out(dagster_type=String),
         )
-        def concat_list(_, xs) -> String:
+        def concat_list(_, xs) -> str:
             return ''.join(xs)
 
         # Fanning in multiple outputs
-        @solid
+        @op
         def emit_1(_) -> int:
             return 1
 
-        @solid
+        @op
         def emit_2(_) -> int:
             return 2
 
-        @solid
+        @op
         def emit_3(_) -> int:
             return 3
 
-        @solid
-        def sum_solid(_, xs: List[int]) -> int:
+        @op
+        def sum_op(_, xs: List[int]) -> int:
             return sum(xs)
 
-        @pipeline
-        def sum_pipeline():
-            sum_solid([emit_1(), emit_2(), emit_3()])
+        @job
+        def sum_job():
+            sum_op([emit_1(), emit_2(), emit_3()])
 
 
 .. attribute:: Dict
@@ -278,14 +278,14 @@ Built-in primitive types
 
     .. code-block:: python
 
-        @solid
+        @op
         def repeat(_, spec: Dict) -> str:
             return spec['word'] * spec['times']
 
         # Explicit
-        @solid(
-            input_defs=[InputDefinition('spec', dagster_type=Dict)],
-            output_defs=[OutputDefinition(String)]
+        @op(
+            ins={'spec': In(Dict)},
+            out=Out(String),
         )
         def repeat(_, spec):
             return spec['word'] * spec['times']
@@ -302,16 +302,16 @@ Built-in primitive types
 
     .. code-block:: python
 
-        @solid
-        def set_solid(_, set_input: Set[String]) -> List[String]:
+        @op
+        def set_op(_, set_input: Set[String]) -> List[str]:
             return sorted([x for x in set_input])
 
         # Explicit
-        @solid(
-            input_defs=[InputDefinition('set_input', dagster_type=Set[String])],
-            output_defs=[OutputDefinition(List[String])],
+        @op(
+            ins={"set_input": In(dagster_type=Set[String])},
+            out=Out(List[String]),
         )
-        def set_solid(_, set_input):
+        def set_op(_, set_input):
             return sorted([x for x in set_input])
 
 .. attribute:: Tuple
@@ -327,16 +327,16 @@ Built-in primitive types
 
     .. code-block:: python
 
-        @solid
-        def tuple_solid(_, tuple_input: Tuple[String, Int, Float]) -> List:
+        @op
+        def tuple_op(_, tuple_input: Tuple[str, int, float]) -> List:
             return [x for x in tuple_input]
 
         # Explicit
-        @solid(
-            input_defs=[InputDefinition('tuple_input', dagster_type=Tuple[String, Int, Float])],
-            output_defs=[OutputDefinition(List)],
+        @op(
+            ins={'tuple_input': In(dagster_type=Tuple[String, Int, Float])},
+            out=Out(List),
         )
-        def tuple_solid(_, tuple_input):
+        def tuple_op(_, tuple_input):
             return [x for x in tuple_input]
 
 

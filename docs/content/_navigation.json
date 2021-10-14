@@ -425,8 +425,8 @@
             "path": "/_apidocs/pipeline"
           },
           {
-            "title": "Modes & Resources",
-            "path": "/_apidocs/modes-resources"
+            "title": "Resources",
+            "path": "/_apidocs/resources"
           },
           {
             "title": "Presets",
@@ -479,10 +479,6 @@
           {
             "title": "Dynamic Mapping & Collect",
             "path": "/_apidocs/dynamic"
-          },
-          {
-            "title": "Experimental Core APIs",
-            "path": "/_apidocs/experimental"
           },
           {
             "title": "Software-Defined Assets",
