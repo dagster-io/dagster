@@ -123,7 +123,7 @@ def test_compute_log_manager_with_envvar(gcs_bucket):
                     run_coordinator=DefaultRunCoordinator(),
                     run_launcher=DefaultRunLauncher(),
                 )
-                result = simple.execute_in_process(instance=instance)
+                result = execute_pipeline(simple, instance=instance)
                 compute_steps = [
                     event.step_key
                     for event in result.all_node_events
