@@ -54,7 +54,7 @@ class InMemoryRunStorage(RunStorage):
         if pipeline_run.pipeline_snapshot_id:
             if not self.has_pipeline_snapshot(pipeline_run.pipeline_snapshot_id):
                 raise DagsterSnapshotDoesNotExist(
-                    "pipeline_snapshot_id {ss_id} does not exist in run storage.".format(
+                    "Snapshot ID {ss_id} does not exist in run storage.".format(
                         ss_id=pipeline_run.pipeline_snapshot_id
                     )
                 )
