@@ -1,7 +1,5 @@
-from dagster import execute_pipeline
-
-from ..repo import pipeline
+from ..repo import my_job
 
 
-def test_pipeline():
-    assert execute_pipeline(pipeline).success
+def test_repo():
+    assert my_job.execute_in_process().output_for_node("my_op")
