@@ -265,9 +265,8 @@ const StructuredLogToolbar = ({
           onChange={(event) =>
             onSetFilter({...filter, hideNonMatches: event.currentTarget.checked})
           }
-        >
-          Hide non-matches
-        </NonMatchCheckbox>
+          label="Hide non-matches"
+        />
       ) : null}
       <OptionsDivider />
       <Group direction="row" spacing={4} alignItems="center">
