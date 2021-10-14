@@ -1,0 +1,27 @@
+---
+title: Tags | Dagster
+description: Tags let you annotate jobs, graphs, and ops with key-value that Dagit can display and external systems can consume.
+---
+
+
+### Op Tags
+
+Similar to aliases, you can also define op tags on an op invocation.
+
+```python file=/concepts/solids_pipelines/pipelines.py startafter=start_tag_pipeline endbefore=end_tag_pipeline
+@job
+def tagged_add_one():
+    add_one.tag({"my_tag": "my_value"})(add_one(return_one()))
+```
+
+### Graph Tags
+
+Graphs can specify a set of tags that are also automatically set on the resulting runs.
+
+```python file=/concepts/solids_pipelines/pipelines.py startafter=start_tags_pipeline endbefore=end_tags_pipeline
+@job(tags={"my_tag": "my_value"})
+def my_tags_job():
+    my_op()
+```
+
+This graph defines a `my_tag` tag. Any runs created using this graph will also have the same tag.
