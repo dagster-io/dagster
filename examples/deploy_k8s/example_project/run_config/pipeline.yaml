@@ -1,4 +1,4 @@
-solids:
+ops:
   multiply_the_word:
     inputs:
       word: test

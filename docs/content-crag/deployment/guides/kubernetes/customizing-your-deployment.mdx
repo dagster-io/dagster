@@ -1,26 +1,22 @@
 ---
 title: Customizing Helm | Dagster
-description: We go over common ways to customize your Dagster Helm deployment. This includes adding Kubernetes and Celery configuration at the pipeline and solid level, configuring Celery queues, and configuring your Helm release to use external resources.
+description: We go over common ways to customize your Dagster Helm deployment. This includes adding Kubernetes configuration at the job and op level, and configuring your Helm release to use external resources.
 ---
 
 # Customizing your Kubernetes Deployment
 
 ## Overview
 
-We go over common ways to customize your Dagster Helm deployment. This includes adding Kubernetes and Celery configuration at the pipeline and solid level, configuring Celery queues, and configuring your Helm release to use external resources.
-
-## Prerequsites
-
-We expect familiarity with the [basic guide](/deployment/guides/kubernetes/deploying-with-helm) and [advanced guide](/deployment/guides/kubernetes/deploying-with-helm-advanced) on deploying Dagster with Helm.
+We go over common ways to customize your Dagster Helm deployment, including adding Kubernetes configuration at the job and op level, and configuring your Helm release to use external resources.
 
 ## Walkthrough
 
-### Solid or Pipeline Kubernetes Configuration
+### Job or Op Kubernetes Configuration
 
-The `dagster-k8s/config` allows users to pass custom configuration to the Kubernetes Job, Job metadata, JobSpec, PodSpec, and PodTemplateSpec metadata. We can specify this information in a solid or pipeline's tags.
+The `dagster-k8s/config` allows users to pass custom configuration to the Kubernetes Job, Job metadata, JobSpec, PodSpec, and PodTemplateSpec metadata. We can specify this information in an op or job's tags.
 
 ```python
-@solid(
+@op(
   tags = {
     'dagster-k8s/config': {
       'container_config': {
@@ -48,10 +44,10 @@ The `dagster-k8s/config` allows users to pass custom configuration to the Kubern
     },
   },
 )
-def my_solid(context):
+def my_op(context):
   context.log.info('running')
 
-@pipeline(
+@job(
   tags = {
     'dagster-k8s/config': {
       'container_config': {
@@ -62,48 +58,8 @@ def my_solid(context):
     }
   }
 )
-def my_pipeline():
-  my_solid()
-```
-
-### Configuring Celery Queues
-
-Users can configure multiple Celery queues (for example, one queue for each resource to be limited) and multiple Celery workers per queue via the `runLauncher.config.celeryK8sRunLauncher.workerQueues` section of `values.yaml`.
-
-To use the queues, `dagster-celery/queue` can be set on solid tags.
-
-By default, all solids will be sent to the default Celery queue named `dagster`.
-
-```python
-@solid(
-  tags = {
-    'dagster-celery/queue': 'snowflake_queue',
-  }
-)
-def my_solid(context):
-  context.log.info('running')
-```
-
-### Celery Priority
-
-Users can set `dagster-celery/run_priority` on the pipeline tags to configure the baseline priority of all solids from that pipeline. To set priority at the solid level, users can set `dagster-celery/priority` on the solid tags to configure additional priority. When priorities are set on both the pipeline and solid, the sum of both priorities will be used.
-
-```python
-@solid(
-  tags = {
-    'dagster-celery/priority': 2,
-  }
-)
-def my_solid(context):
-  context.log.info('running')
-
-@pipeline(
-  tags = {
-    'dagster-celery/run_priority': 3,
-  }
-)
-def my_pipeline():
-  my_solid()
+def my_job():
+  my_op()
 ```
 
 ### Configuring an External Database
@@ -130,23 +86,6 @@ global:
   postgresqlSecretName: "dagster-postgresql-secret"
 
 generatePostgresqlPasswordSecret: false
-```
-
-### Configuring an External Message Broker
-
-In a real deployment, users will likely want to set up an external message broker like Redis, and configure `rabbitmq` and `redis` sections of `values.yaml`.
-
-```yaml
-rabbitmq:
-  enabled: false
-
-redis:
-  enabled: true
-  internal: false
-  host: "redisHost"
-  port: 6379
-  brokerDbNumber: 0
-  backendDbNumber: 0
 ```
 
 ### Security

@@ -3,10 +3,6 @@ FROM "${BASE_IMAGE}"
 
 ARG DAGSTER_VERSION
 
-# remove once daemon scheduler is default
-RUN apt-get update -yqq && \
-    apt-get install -yqq --no-install-recommends cron
-
 RUN pip install \
     dagster==${DAGSTER_VERSION} \
     dagster-azure==${DAGSTER_VERSION} \
