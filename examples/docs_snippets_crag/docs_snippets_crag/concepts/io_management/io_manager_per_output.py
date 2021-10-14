@@ -1,5 +1,5 @@
 # start_marker
-from dagster import Out, fs_io_manager, in_process_executor, job, op
+from dagster import Out, fs_io_manager, job, op
 from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 
 

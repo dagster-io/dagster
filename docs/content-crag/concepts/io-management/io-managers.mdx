@@ -91,7 +91,7 @@ Not all the outputs in a job should necessarily be stored the same way. Maybe so
 To select the IOManager for a particular output, you can set an `io_manager_key` on <PyObject module="dagster" object="Out" />, and then refer to that `io_manager_key` when setting IO managers in your job. In this example, the output of `op_1` will go to `fs_io_manager` and the output of `op_2` will go to `s3_pickle_io_manager`.
 
 ```python file=/concepts/io_management/io_manager_per_output.py startafter=start_marker endbefore=end_marker
-from dagster import Out, fs_io_manager, in_process_executor, job, op
+from dagster import Out, fs_io_manager, job, op
 from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 
 
