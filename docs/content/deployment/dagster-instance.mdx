@@ -110,7 +110,7 @@ run_storage:
 DB as the backing run storage solution.
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_run_storage_postgres endbefore=end_marker_run_storage_postgres
-# There are three ways to set run_storage to PostgresRunStorage
+# Postgres storage can be set using either credentials or a connection string
 
 # this config manually sets the Postgres credentials
 run_storage:
@@ -162,7 +162,7 @@ run_storage:
 backing run storage solution.
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_run_storage_mysql endbefore=end_marker_run_storage_mysql
-# There are three ways to set run_storage to MySQLRunStorage
+# MySQL storage can be set using either credentials or a connection string
 
 # this config manually sets the MySQL credentials
 run_storage:
@@ -281,7 +281,7 @@ event_log_storage:
 a Postgres Database as the backing Event Log Storage solution.
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_event_log_storage_postgres endbefore=end_marker_event_log_storage_postgres
-# There are four ways to set event_log_storage to PostgresEventLogStorage
+# Postgres storage can be set using either credentials or a connection string
 
 # this config manually sets the Postgres credentials
 event_log_storage:
@@ -333,7 +333,7 @@ event_log_storage:
 as the backing event log storage solution.
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_event_log_storage_mysql endbefore=end_marker_event_log_storage_mysql
-# There are four ways to set event_log_storage to MySQLRunStorage
+# MySQL storage can be set using either credentials or a connection string
 
 # this config manually sets the MySQL credentials
 event_log_storage:
@@ -418,7 +418,7 @@ schedule_storage:
 DB as the backing schedule storage solution.
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_schedule_storage_postgres endbefore=end_marker_schedule_storage_postgres
-# There are three ways to set schedule_storage to PostgresScheduleStorage
+# Postgres storage can be set using either credentials or a connection string
 
 # this config manually sets the Postgres credentials
 schedule_storage:
@@ -470,7 +470,7 @@ schedule_storage:
 as the backing schedule storage solution.
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_schedule_storage_mysql endbefore=end_marker_schedule_storage_mysql
-# There are three ways to set schedule_storage to MySQLScheduleStorage
+# MySQL storage can be set using either credentials or a connection string
 
 # this config manually sets the MySQL credentials
 schedule_storage:
