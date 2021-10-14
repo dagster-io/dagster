@@ -8,7 +8,7 @@ def do_something(_):
 
 @job(
     config={
-        "ops": {
+        "graph": {
             "do_something": {
                 "config": {
                     "param": "some_val",

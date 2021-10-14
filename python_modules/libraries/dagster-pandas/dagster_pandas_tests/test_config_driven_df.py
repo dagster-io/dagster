@@ -130,7 +130,7 @@ def test_dataframe_csv_missing_inputs():
 
     expected_suggested_config = {"df_as_input": {"inputs": {"df": "<selector>"}}}
     assert exc_info.value.errors[0].message.startswith(
-        'Missing required config entry "ops" at the root.'
+        'Missing required config entry "graph" at the root.'
     )
     assert str(expected_suggested_config) in exc_info.value.errors[0].message
 
@@ -164,7 +164,7 @@ def test_dataframe_csv_missing_input_collision():
         )
 
     assert (
-        'Error 1: Received unexpected config entry "inputs" at path root:ops:df_as_input.'
+        'Error 1: Received unexpected config entry "inputs" at path root:graph:df_as_input.'
         in str(exc_info.value)
     )
 

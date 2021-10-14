@@ -417,20 +417,20 @@ def test_solid_and_op_config_error_messages():
     def my_graph_with_solid():
         my_solid()
 
-    # Document that for now, using graphs/jobs with only solids will result in config errors being
-    # in terms of solids.
+    # Document that for now, using jobs at the top level will result in config errors being
+    # in terms of graph.
     with pytest.raises(
         DagsterInvalidConfigError,
-        match='Missing required config entry "solids" at the root. Sample config for missing '
-        "entry: {'solids': {'my_solid': {'config': {'foo': '...'"
+        match='Missing required config entry "graph" at the root. Sample config for missing '
+        "entry: {'graph': {'my_solid': {'config': {'foo': '...'"
         "}}}}",
     ):
         my_graph_with_solid.to_job().execute_in_process()
 
 
 def test_error_message_mixed_ops_and_solids():
-    # Document that opting into using ops at all (even one op) will switch error messages entirely
-    # to ops, including in the recursive case.
+    # Document that opting into using job at the top level (even one op) will switch error messages entirely
+    # to graph, including in the recursive case.
 
     @op(config_schema={"foo": str})
     def my_op(context):
