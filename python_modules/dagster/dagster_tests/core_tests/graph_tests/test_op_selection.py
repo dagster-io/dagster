@@ -1,4 +1,4 @@
-from dagster import DynamicOut, DynamicOutput, In, graph, op, root_input_manager
+from dagster import ConfigMapping, DynamicOut, DynamicOutput, In, graph, op, root_input_manager
 from dagster.core.events import DagsterEventType
 
 
@@ -107,7 +107,6 @@ def test_unselected_extra_config_input():
     assert full_job.execute_in_process(run_config=run_config).success
 
     # Subselected job shouldn't require the unselected solid's config
-    # TODO: not working
     assert full_job.execute_in_process(op_selection=["root"]).success
     # Should also be able to ignore the extra input config
     assert full_job.execute_in_process(run_config=run_config, op_selection=["root"]).success
@@ -188,7 +187,6 @@ def test_unsatisfied_input_use_root_input_manager():
     assert subset_result.output_for_node("end") == 1
 
 
-# TODO
 def test_op_selection_on_dynamic_orchestration():
     @op
     def num_range():
@@ -238,6 +236,86 @@ def test_op_selection_on_dynamic_orchestration():
     )
     assert result.success
     assert result.output_for_node("echo") == 20
+
+
+def test_op_selection_on_alias():
+    @graph
+    def _aliased():
+        add_one.alias("add_one_1")(return_one.alias("return_one_1")())
+        add_one.alias("add_one_2")(return_one.alias("return_one_2")())
+
+    full_job = _aliased.to_job()
+    result = full_job.execute_in_process()
+    assert result.success
+    assert (
+        len(
+            [
+                evt.step_key
+                for evt in result.all_node_events
+                if evt.event_type == DagsterEventType.STEP_SUCCESS
+            ]
+        )
+        == 4
+    )
+
+    subsetted_job = _aliased.to_job(op_selection=["return_one_2*"])
+    result_for_subset_def = subsetted_job.execute_in_process()
+    assert result_for_subset_def.success
+    assert (
+        len(
+            [
+                evt.step_key
+                for evt in result_for_subset_def.all_node_events
+                if evt.event_type == DagsterEventType.STEP_SUCCESS
+            ]
+        )
+        == 2
+    )
+
+    result_for_subset = subsetted_job.execute_in_process(op_selection=["return_one_2*"])
+    assert result_for_subset.success
+    assert (
+        len(
+            [
+                evt.step_key
+                for evt in result_for_subset.all_node_events
+                if evt.event_type == DagsterEventType.STEP_SUCCESS
+            ]
+        )
+        == 2
+    )
+
+
+def test_op_selection_with_config_mapping():
+    def my_config_fn(val):
+        config_val = {"config": {"foo": val["foo"]}}
+        return {
+            "ops": {
+                "my_op": config_val,
+                "my_other_op": config_val,
+            }
+        }
+
+    @op
+    def my_op(context):
+        return context.op_config["foo"]
+
+    @graph
+    def my_graph():
+        my_op()
+        my_op.alias("my_other_op")()
+
+    my_job = my_graph.to_job(config=ConfigMapping(my_config_fn))
+    result = my_job.execute_in_process(run_config={"foo": "bar"})
+    assert result.success
+    assert result.output_for_node("my_op") == "bar"
+    assert result.output_for_node("my_other_op") == "bar"
+
+    subset_result = my_job.execute_in_process(
+        run_config={"foo": "bar"}, op_selection=["my_other_op"]
+    )
+    assert subset_result.success
+    assert subset_result.output_for_node("my_other_op") == "bar"
 
 
 # TODO: not working for nested graphs

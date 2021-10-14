@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, AbstractSet, Any, Dict, List, Optional
 
 from dagster import check
 from dagster.core.definitions.policy import RetryPolicy
-from dagster.core.selector.subset_selector import UnresolvedOpSelection
+from dagster.core.selector.subset_selector import OpSelectionData, parse_solid_selection
 
 from .graph import GraphDefinition
 from .hook import HookDefinition
@@ -31,12 +31,12 @@ class JobDefinition(PipelineDefinition):
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         solid_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
-        op_selection: Optional[List[str]] = None,
+        _op_selection_data: Optional[OpSelectionData] = None,
     ):
 
         self._cached_partition_set: Optional["PartitionSetDefinition"] = None
-        self._unresolved_op_selection = UnresolvedOpSelection(
-            selection=check.opt_list_param(op_selection, "op_selection", str),
+        self._op_selection_data = check.opt_inst_param(
+            _op_selection_data, "_op_selection_data", OpSelectionData
         )
 
         super(JobDefinition, self).__init__(
@@ -95,10 +95,7 @@ class JobDefinition(PipelineDefinition):
         from dagster.core.execution.execute_in_process import core_execute_in_process
 
         run_config = check.opt_dict_param(run_config, "run_config")
-        unresolved_op_selection = UnresolvedOpSelection(
-            selection_scope=self._unresolved_op_selection.selection,
-            selection=check.opt_list_param(op_selection, "op_selection", str),
-        )
+        op_selection = check.opt_list_param(op_selection, "op_selection", str)
 
         check.invariant(
             len(self._mode_definitions) == 1,
@@ -124,7 +121,7 @@ class JobDefinition(PipelineDefinition):
             hook_defs=self.hook_defs,
             tags=self.tags,
             version_strategy=self.version_strategy,
-        )
+        ).get_job_subset_def(op_selection)
 
         return core_execute_in_process(
             node=self._graph_def,
@@ -133,7 +130,54 @@ class JobDefinition(PipelineDefinition):
             instance=instance,
             output_capturing_enabled=True,
             raise_on_error=raise_on_error,
-            unresolved_op_selection=unresolved_op_selection,
+        )
+
+    @property
+    def op_selection_data(self) -> OpSelectionData:
+        return self._op_selection_data
+
+    def get_job_subset_def(
+        self,
+        op_selection: Optional[List[str]] = None,
+    ) -> "JobDefinition":
+        if not op_selection:
+            return self
+
+        op_selection = check.opt_list_param(op_selection, "op_selection", str)
+
+        # TODO: https://github.com/dagster-io/dagster/issues/2115
+        #   op selection currently still operates on PipelineSubsetDefinition. ideally we'd like to
+        #   1) move away from creating PipelineSubsetDefinition
+        #   2) consolidate solid selection and step selection
+        #   3) enable subsetting nested graphs/ops which isn't working with the current setting
+        solids_to_execute = (
+            self._op_selection_data.resolved_op_selection if self._op_selection_data else None
+        )
+        if op_selection:
+            solids_to_execute = parse_solid_selection(
+                super(JobDefinition, self).get_pipeline_subset_def(solids_to_execute),
+                op_selection,
+            )
+        subset_pipeline_def = super(JobDefinition, self).get_pipeline_subset_def(solids_to_execute)
+        ignored_solids = [
+            solid
+            for solid in self._graph_def.solids
+            if not subset_pipeline_def.has_solid_named(solid.name)
+        ]
+
+        return JobDefinition(
+            name=self.name,
+            description=self.description,
+            mode_def=self.get_mode_definition(),
+            preset_defs=self.preset_defs,
+            tags=self.tags,
+            hook_defs=self.hook_defs,
+            solid_retry_policy=self._solid_retry_policy,
+            graph_def=subset_pipeline_def.graph,
+            version_strategy=self.version_strategy,
+            _op_selection_data=OpSelectionData(
+                resolved_op_selection=solids_to_execute, ignored_solids=ignored_solids
+            ),
         )
 
     def get_pipeline_subset_def(

@@ -17,7 +17,7 @@ from dagster_test.graph_job_op_toys.log_file import log_file_job
 from dagster_test.graph_job_op_toys.log_s3 import log_s3_job
 from dagster_test.graph_job_op_toys.log_spew import log_spew
 from dagster_test.graph_job_op_toys.longitudinal import longitudinal_job
-from dagster_test.graph_job_op_toys.many_events import many_events
+from dagster_test.graph_job_op_toys.many_events import many_events, many_events_subset_job
 from dagster_test.graph_job_op_toys.notebooks import hello_world_notebook_pipeline
 from dagster_test.graph_job_op_toys.retries import retry_job
 from dagster_test.graph_job_op_toys.sleepy import sleepy_job
@@ -56,6 +56,7 @@ def toys_repository():
             log_spew,
             longitudinal_job,
             many_events,
+            many_events_subset_job,
             sleepy_job,
             retry_job,
             branch_job,

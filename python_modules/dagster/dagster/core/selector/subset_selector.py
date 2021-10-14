@@ -1,9 +1,9 @@
 import re
 import sys
 from collections import defaultdict
-from typing import TYPE_CHECKING, List, NamedTuple, Optional
+from typing import TYPE_CHECKING, AbstractSet, List, NamedTuple, Optional
 
-from dagster.core.definitions.dependency import DependencyStructure
+from dagster.core.definitions.dependency import DependencyStructure, Node
 from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
 from dagster.utils import check
 
@@ -14,20 +14,22 @@ if TYPE_CHECKING:
     from dagster.core.execution.plan.plan import ExecutionPlan
 
 
-class UnresolvedOpSelection(
+class OpSelectionData(
     NamedTuple(
-        "_UnresolvedOpSelection",
+        "_OpSelectionData",
         [
-            ("selection_scope", Optional[List[str]]),
-            ("selection", Optional[List[str]]),
+            ("resolved_op_selection", Optional[AbstractSet[str]]),
+            ("ignored_solids", Optional[List[Node]]),
         ],
     )
 ):
-    def __new__(cls, selection_scope=None, selection=None):
-        return super(UnresolvedOpSelection, cls).__new__(
+    def __new__(cls, resolved_op_selection=None, ignored_solids=None):
+        return super(OpSelectionData, cls).__new__(
             cls,
-            selection_scope=check.opt_list_param(selection_scope, "selection_scope", str),
-            selection=check.opt_list_param(selection, "selection", str),
+            resolved_op_selection=check.opt_set_param(
+                resolved_op_selection, "resolved_op_selection", str
+            ),
+            ignored_solids=check.opt_list_param(ignored_solids, "ignored_solids", Node),
         )
 
 
@@ -277,20 +279,3 @@ def parse_step_selection(step_deps, step_selection):
         steps_set.update(subset)
 
     return frozenset(steps_set)
-
-
-def resolve_op_selection_to_step_keys_to_execute(
-    execution_plan: "ExecutionPlan", step_selection: List[str]
-) -> List[str]:
-
-    from dagster.core.execution.plan.plan import ExecutionPlan
-
-    check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
-    check.list_param(step_selection, "step_selection", of_type=str)
-
-    # special case: select all
-    if len(step_selection) == 1 and step_selection[0] == "*":
-        return execution_plan.step_keys_to_execute
-
-    steps_set = parse_step_selection(execution_plan.get_all_step_deps(), step_selection)
-    return list(steps_set) if steps_set else []

@@ -110,7 +110,13 @@ class ReconstructablePipeline(
         defn = self.repository.get_definition().get_pipeline(self.pipeline_name)
 
         if isinstance(defn, JobDefinition):
-            return self.repository.get_definition().get_pipeline(self.pipeline_name)
+            return (
+                self.repository.get_definition()
+                .get_pipeline(self.pipeline_name)
+                .get_job_subset_def(
+                    list(self.solids_to_execute) if self.solids_to_execute else None
+                )
+            )
         else:
             return (
                 self.repository.get_definition()
@@ -156,7 +162,6 @@ class ReconstructablePipeline(
         solids_to_execute = (
             self._resolve_solid_selection(solid_selection) if solid_selection else None
         )
-
         return self._subset_for_execution(solids_to_execute, solid_selection)
 
     def subset_for_execution_from_existing_pipeline(self, solids_to_execute):
