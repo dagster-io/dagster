@@ -1,5 +1,4 @@
-import masterNavigation from "../../content/_navigation.json";
-import cragNavigation from "../../content-crag/_navigation.json";
+import masterNavigation from "../../content-crag/_navigation.json";
 import { useVersion } from "./useVersion";
 import versionedNavigation from "../.versioned_content/_versioned_navigation.json";
 
@@ -20,7 +19,7 @@ export const useNavigation = () => {
   const { version } = useVersion();
 
   if (version === "master") {
-    return __IS_CRAG__ ? cragNavigation : masterNavigation; // CRAG
+    return masterNavigation;
   }
 
   return versionedNavigation[version];

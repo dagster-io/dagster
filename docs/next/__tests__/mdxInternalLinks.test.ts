@@ -4,8 +4,7 @@ import fg from "fast-glob";
 import { Node } from "hast";
 import visit from "unist-util-visit";
 import { flatten } from "../util/useNavigation";
-import masterNavigation from "../../content/_navigation.json";
-import cragNavigation from "../../content-crag/_navigation.json";
+import masterNavigation from "../../content-crag/_navigation.json";
 import generateToc from "mdast-util-toc";
 import { getItems, getIds } from "../components/mdx/SidebarNavigation";
 import matter from "gray-matter";
@@ -15,10 +14,7 @@ import mdx from "remark-mdx";
 import remark from "remark";
 
 const ROOT_DIR = path.resolve(__dirname, "../../");
-const DOCS_DIR = path.resolve(
-  ROOT_DIR,
-  process.env.IS_CRAG ? "content-crag" : "content"
-);
+const DOCS_DIR = path.resolve(ROOT_DIR, "content-crag");
 interface LinkElement extends Node {
   type: "link" | "image";
   url: string;
@@ -26,23 +22,21 @@ interface LinkElement extends Node {
 
 test("No dead navs", async () => {
   const deadNavLinks: Array<{ title: string; deadLink: string }> = [];
-  flatten(process.env.IS_CRAG ? cragNavigation : masterNavigation).forEach(
-    (elem) => {
-      if (elem.path == null) {
-        return;
-      }
-      if (elem.path.startsWith("/_apidocs")) {
-        // TODO: Validate links to API Docs
-        return;
-      }
-      if (elem.path && !fileExists(path.join(DOCS_DIR, elem.path) + ".mdx")) {
-        deadNavLinks.push({
-          title: elem.title,
-          deadLink: elem.path,
-        });
-      }
+  flatten(masterNavigation).forEach((elem) => {
+    if (elem.path == null) {
+      return;
     }
-  );
+    if (elem.path.startsWith("/_apidocs")) {
+      // TODO: Validate links to API Docs
+      return;
+    }
+    if (elem.path && !fileExists(path.join(DOCS_DIR, elem.path) + ".mdx")) {
+      deadNavLinks.push({
+        title: elem.title,
+        deadLink: elem.path,
+      });
+    }
+  });
 
   expect(deadNavLinks).toEqual([]);
 });

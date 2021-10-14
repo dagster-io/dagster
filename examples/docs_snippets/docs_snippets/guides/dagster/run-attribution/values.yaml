@@ -1,9 +1,0 @@
-dagsterDaemon:
-  runCoordinator:
-    enabled: true
-    type: CustomRunCoordinator
-    config:
-      customRunCoordinator:
-        module: run_attribution_example
-        class: CustomRunCoordinator
-        config: {}
