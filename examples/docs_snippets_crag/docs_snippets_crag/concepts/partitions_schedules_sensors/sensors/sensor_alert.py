@@ -51,13 +51,13 @@ def my_slack_on_run_success(context: RunStatusSensorContext):
 
     slack_client.chat_postMessage(
         channel="#alert-channel",
-        message=f'Pipeline "{context.pipeline_run.pipeline_name}" succeeded.',
+        message=f'Job "{context.pipeline_run.pipeline_name}" succeeded.',
     )
 
 
 # end_success_sensor_marker
 
-my_pipelines = []
+my_jobs = []
 
 # start_repo_marker
 from dagster import repository
@@ -65,7 +65,7 @@ from dagster import repository
 
 @repository
 def my_repository():
-    return my_pipelines + [my_slack_on_run_success]
+    return my_jobs + [my_slack_on_run_success]
 
 
 # end_repo_marker

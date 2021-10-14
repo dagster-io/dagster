@@ -12,7 +12,7 @@ Sensors allow you to instigate runs based on any external state change.
 | Name                                           | Description                                                                                                                                                                                                                                                           |
 | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | <PyObject object="sensor" decorator />         | The decorator used to define a sensor. The decorated function is called the `evaluation_fn`. The decorator returns a <PyObject object="SensorDefinition" />                                                                                                           |
-| <PyObject object="RunRequest" />               | The sensor evaluation function can yield one or more run requests. Each run request creates a pipeline run.                                                                                                                                                           |
+| <PyObject object="RunRequest" />               | The sensor evaluation function can yield one or more run requests. Each run request creates a job run.                                                                                                                                                                |
 | <PyObject object="SkipReason" />               | If a sensor evaluation doesn't yield any run requests, it can instead yield a skip reason to log why the evaluation was skipped or why there were no events to be processed.                                                                                          |
 | <PyObject object="SensorDefinition"  />        | Class for sensors. You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="sensor" decorator /> which returns a <PyObject object="SensorDefinition"  />                                                            |
 | <PyObject object="SensorEvaluationContext"  /> | The context object passed to a sensor evaluation function.                                                                                                                                                                                                            |
@@ -25,13 +25,13 @@ Sensors allow you to instigate runs based on any external state change.
 Sensors are definitions in Dagster that allow you to instigate runs based on some external state change automatically. For example, you can:
 
 - Launch a run whenever a file appears in an s3 bucket
-- Launch a run whenever another pipeline materializes a specific asset
+- Launch a run whenever another job materializes a specific asset
 - Launch a run whenever an external system is down
 
-Sensors have several important properties:
+Sensors have several properties:
 
-- Each sensor targets a specific pipeline
-- A sensor optionally defines tags, a mode, and a solid selection for the targeted pipeline.
+- Each sensor targets a specific job.
+- A sensor optionally defines tags for the targeted job.
 - A sensor defines an evaluation function that returns either:
   - One or more <PyObject object="RunRequest"/> objects. Each run request launches a run.
   - An optional <PyObject object="SkipReason"/>, which specifies a message which describes why no runs were requested.
@@ -42,20 +42,20 @@ The [Dagster Daemon](/deployment/dagster-daemon) runs each sensor evaluation fun
 
 To define a sensor, use the <PyObject object="sensor" decorator /> decorator. The decorated function is called the `execution_fn` and can optionally have a `context` as the first argument. The context is a <PyObject object="SensorEvaluationContext" />.
 
-Let's say you have a pipeline that logs a filename that is specified in the solid configuration of the `process_file` solid:
+Let's say you have a job that logs a filename that is specified in the op configuration of the `process_file` op:
 
-```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_sensor_pipeline_marker endbefore=end_sensor_pipeline_marker
-from dagster import solid, pipeline
+```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_sensor_job_marker endbefore=end_sensor_job_marker
+from dagster import op, job
 
 
-@solid(config_schema={"filename": str})
+@op(config_schema={"filename": str})
 def process_file(context):
-    filename = context.solid_config["filename"]
+    filename = context.op_config["filename"]
     context.log.info(filename)
 
 
-@pipeline
-def log_file_pipeline():
+@job
+def log_file_job():
     process_file()
 ```
 
@@ -66,24 +66,24 @@ import os
 from dagster import sensor, RunRequest
 
 
-@sensor(pipeline_name="log_file_pipeline")
+@sensor(job=log_file_job)
 def my_directory_sensor():
     for filename in os.listdir(MY_DIRECTORY):
         filepath = os.path.join(MY_DIRECTORY, filename)
         if os.path.isfile(filepath):
             yield RunRequest(
                 run_key=filename,
-                run_config={"solids": {"process_file": {"config": {"filename": filename}}}},
+                run_config={"ops": {"process_file": {"config": {"filename": filename}}}},
             )
 ```
 
 This sensor iterates through all the files in `MY_DIRECTORY` and `yields` a <PyObject object="RunRequest"/> for each file.
 
-Once `my_directory_sensor` is added to a <PyObject object="repository"/> with `log_file_pipeline`, it can be enabled and used.
+Once `my_directory_sensor` is added to a <PyObject object="repository"/> with `log_file_job`, it can be enabled and used.
 
 ## Idempotence and Cursors
 
-When instigating runs based on external events, you usually want to run exactly one pipeline run for each event. There are two ways to define your sensors to avoid creating duplicate runs for your events: using `run_key` and using a cursor.
+When instigating runs based on external events, you usually want to run exactly one job run for each event. There are two ways to define your sensors to avoid creating duplicate runs for your events: using `run_key` and using a cursor.
 
 ### Idempotence using run keys
 
@@ -92,7 +92,7 @@ In the example sensor above, the <PyObject object="RunRequest"/> is constructed 
 ```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_run_request_marker endbefore=end_run_request_marker
 yield RunRequest(
         run_key=filename,
-        run_config={"solids": {"process_file": {"config": {"filename": filename}}}},
+        run_config={"ops": {"process_file": {"config": {"filename": filename}}}},
     )
 ```
 
@@ -100,7 +100,7 @@ Dagster guarantees that for a given sensor, at most one run is created for each 
 
 In the example, a <PyObject object="RunRequest"/> is requested for each file during _every_ sensor evaluation. Therefore, for a given sensor evaluation, there already exists a `RunRequest` with a `run_key` for any file that existed during the previous sensor evaluation. Dagster skips processing duplicate run requests, so Dagster launches runs for only the files added since the last sensor evaluation. The result is exactly one run per file.
 
-Run keys allow you to write sensor evaluation functions that declaratively describe what pipeline runs should exist, and helps you avoid the need for more complex logic that manages state. However, when dealing with high-volume external events, some state-tracking optimizations might be necessary.
+Run keys allow you to write sensor evaluation functions that declaratively describe what job runs should exist, and helps you avoid the need for more complex logic that manages state. However, when dealing with high-volume external events, some state-tracking optimizations might be necessary.
 
 ### Sensor optimizations using cursors
 
@@ -114,7 +114,7 @@ When writing a sensor for such event sources, you can maintain a cursor that lim
 Here is a somewhat contrived example of our directory file sensor using a cursor for updated files.
 
 ```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_cursor_sensors_marker endbefore=end_cursor_sensors_marker
-@sensor(pipeline_name="log_file_pipeline")
+@sensor(job=log_file_job)
 def my_directory_sensor_cursor(context):
     last_mtime = float(context.cursor) if context.cursor else 0
 
@@ -129,7 +129,7 @@ def my_directory_sensor_cursor(context):
 
             # the run key should include mtime if we want to kick off new runs based on file modifications
             run_key = f"{filename}:{str(file_mtime)}"
-            run_config = {"solids": {"process_file": {"config": {"filename": filename}}}}
+            run_config = {"ops": {"process_file": {"config": {"filename": filename}}}}
             yield RunRequest(run_key=run_key, run_config=run_config)
             max_mtime = max(max_mtime, file_mtime)
 
@@ -147,12 +147,12 @@ It's important to note that this interval represents a minimum interval _between
 For example, here are two sensors that specify two different minimum intervals:
 
 ```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_interval_sensors_maker endbefore=end_interval_sensors_maker
-@sensor(pipeline_name="my_pipeline", minimum_interval_seconds=30)
+@sensor(job=my_job, minimum_interval_seconds=30)
 def sensor_A():
     yield RunRequest(run_key=None, run_config={})
 
 
-@sensor(pipeline_name="my_pipeline", minimum_interval_seconds=45)
+@sensor(job=my_job, minimum_interval_seconds=45)
 def sensor_B():
     yield RunRequest(run_key=None, run_config={})
 ```
@@ -166,7 +166,7 @@ For debugging purposes, it is often useful to describe why a sensor might not yi
 For example, here is our directory sensor that now provides a SkipReason when no files are encountered:
 
 ```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_skip_sensors_marker endbefore=end_skip_sensors_marker
-@sensor(pipeline_name="log_file_pipeline")
+@sensor(job=log_file_job)
 def my_directory_sensor_with_skip_reasons():
     has_files = False
     for filename in os.listdir(MY_DIRECTORY):
@@ -174,7 +174,7 @@ def my_directory_sensor_with_skip_reasons():
         if os.path.isfile(filepath):
             yield RunRequest(
                 run_key=filename,
-                run_config={"solids": {"process_file": {"config": {"filename": filename}}}},
+                run_config={"ops": {"process_file": {"config": {"filename": filename}}}},
             )
             has_files = True
     if not has_files:
@@ -191,23 +191,23 @@ In order to unit test sensors, you can invoke the sensor directly. This will ret
 from dagster import validate_run_config
 
 
-@sensor(pipeline_name="log_file_pipeline")
+@sensor(job=log_file_job)
 def sensor_to_test():
     yield RunRequest(
         run_key="foo",
-        run_config={"solids": {"process_file": {"config": {"filename": "foo"}}}},
+        run_config={"ops": {"process_file": {"config": {"filename": "foo"}}}},
     )
 
 
 def test_sensor():
     for run_request in sensor_to_test():
-        assert validate_run_config(log_file_pipeline, run_request.run_config)
+        assert validate_run_config(log_file_job, run_request.run_config)
 ```
 
 Notice that since we did not use the context argument in our sensor, we don't have to provide a context object. However, if we do in fact need the context object for our sensor, we can provide it via <PyObject object="build_sensor_context" />. Consider again the `my_directory_sensor_cursor` example.
 
 ```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_cursor_sensors_marker endbefore=end_cursor_sensors_marker
-@sensor(pipeline_name="log_file_pipeline")
+@sensor(job=log_file_job)
 def my_directory_sensor_cursor(context):
     last_mtime = float(context.cursor) if context.cursor else 0
 
@@ -222,7 +222,7 @@ def my_directory_sensor_cursor(context):
 
             # the run key should include mtime if we want to kick off new runs based on file modifications
             run_key = f"{filename}:{str(file_mtime)}"
-            run_config = {"solids": {"process_file": {"config": {"filename": filename}}}}
+            run_config = {"ops": {"process_file": {"config": {"filename": filename}}}}
             yield RunRequest(run_key=run_key, run_config=run_config)
             max_mtime = max(max_mtime, file_mtime)
 
@@ -238,7 +238,7 @@ from dagster import build_sensor_context
 def test_my_directory_sensor_cursor():
     context = build_sensor_context(cursor="0")
     for run_request in my_directory_sensor_cursor(context):
-        assert validate_run_config(log_file_pipeline, run_request.run_config)
+        assert validate_run_config(log_file_job, run_request.run_config)
 ```
 
 ## Monitoring sensors in Dagit
@@ -283,9 +283,9 @@ height={1356}
 
 ## Asset sensors
 
-A useful pattern is to create a sensor that checks for new <PyObject object="AssetMaterialization" /> events for a particular asset key. This can be used to kick off a pipeline that computes downstream assets or notifies appropriate stakeholders.
+A useful pattern is to create a sensor that checks for new <PyObject object="AssetMaterialization" /> events for a particular asset key. This can be used to kick off a job that computes downstream assets or notifies appropriate stakeholders.
 
-One benefit of this pattern is that it enables cross-pipeline and even cross-repository dependencies. Each pipeline run instigated by an asset sensor is agnostic to the pipeline event that caused it.
+One benefit of this pattern is that it enables cross-job and even cross-repository dependencies. Each job run instigated by an asset sensor is agnostic to the job  that caused it.
 
 Dagster provides a special asset sensor definition format for sensors that fire a single RunRequest based on a single asset materialization. Here is an example of a sensor that generates a RunRequest for every materialization for the asset key `my_table`:
 
@@ -293,16 +293,15 @@ Dagster provides a special asset sensor definition format for sensors that fire 
 from dagster import AssetKey, asset_sensor
 
 
-@asset_sensor(asset_key=AssetKey("my_table"), pipeline_name="my_pipeline")
+@asset_sensor(asset_key=AssetKey("my_table"), job=my_job)
 def my_asset_sensor(context, asset_event):
     yield RunRequest(
         run_key=context.cursor,
         run_config={
-            "solids": {
+            "ops": {
                 "read_materialization": {
                     "config": {
                         "asset_key": asset_event.dagster_event.asset_key.path,
-                        "pipeline": asset_event.pipeline_name,
                     }
                 }
             }
@@ -312,14 +311,14 @@ def my_asset_sensor(context, asset_event):
 
 ### Multi-asset sensors
 
-Multi-asset sensors, which can trigger pipeline executions based on some combination of states from multiple asset materialization event streams, can be handled using the base sensor definition and manual cursor management based on the asset event streams. These asset event streams can be queried using the `instance` attribute off of the <PyObject object="SensorEvaluationContext" /> object.
+Multi-asset sensors, which can trigger job executions based on some combination of states from multiple asset materialization event streams, can be handled using the base sensor definition and manual cursor management based on the asset event streams. These asset event streams can be queried using the `instance` attribute off of the <PyObject object="SensorEvaluationContext" /> object.
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_multi_asset_sensor_marker endbefore=end_multi_asset_sensor_marker
 import json
 from dagster import EventRecordsFilter, DagsterEventType
 
 
-@sensor(pipeline_name="my_pipeline")
+@sensor(job=my_job)
 def multi_asset_sensor(context):
     cursor_dict = json.loads(context.cursor) if context.cursor else {}
     a_cursor = cursor_dict.get("a")
@@ -365,9 +364,9 @@ def multi_asset_sensor(context):
 
 ## Run status sensors
 
-If you want to act on the status of a pipeline run, Dagster provides a way to create a sensor that reacts to run statuses. You can use <PyObject object="run_status_sensor" /> with a specified <PyObject object="PipelineRunStatus" /> to decorate a function that will run when the given status occurs. This can be used to send alerts to a monitoring service on pipeline failure or report a run success.
+If you want to act on the status of a job run, Dagster provides a way to create a sensor that reacts to run statuses. You can use <PyObject object="run_status_sensor" /> with a specified <PyObject object="PipelineRunStatus" /> to decorate a function that will run when the given status occurs. This can be used to send alerts to a monitoring service on job failure or report a run success.
 
-Here is an example of a sensor that reports pipeline success:
+Here is an example of a sensor that reports job success:
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_success_sensor_marker endbefore=end_success_sensor_marker
 from dagster import run_status_sensor, RunStatusSensorContext, PipelineRunStatus
@@ -379,7 +378,7 @@ def my_slack_on_run_success(context: RunStatusSensorContext):
 
     slack_client.chat_postMessage(
         channel="#alert-channel",
-        message=f'Pipeline "{context.pipeline_run.pipeline_name}" succeeded.',
+        message=f'Job "{context.pipeline_run.pipeline_name}" succeeded.',
     )
 ```
 
@@ -391,7 +390,7 @@ from dagster import repository
 
 @repository
 def my_repository():
-    return my_pipelines + [my_slack_on_run_success]
+    return my_jobs + [my_slack_on_run_success]
 ```
 
 ### Job failure sensor
@@ -441,13 +440,13 @@ email_on_run_failure = make_email_on_run_failure_sensor(
 )
 ```
 
-Besides, if you would like to set up success or failure handling policies on solids, you can find more information on the [Solid Hooks](/concepts/solids-pipelines/solid-hooks) page.
+Besides, if you would like to set up success or failure handling policies on ops, you can find more information on the [Op Hooks](/concepts/solids-pipelines/solid-hooks) page.
 
 ## Examples
 
 ### S3 sensors
 
-For pipelines that should initiate new runs for new paths in an s3 bucket, the `dagster-aws` package provides the useful helper function `get_s3_keys`.
+For jobs that should initiate new runs for new paths in an s3 bucket, the `dagster-aws` package provides the useful helper function `get_s3_keys`.
 
 Here is an example of a sensor that listens to a particular s3 bucket `my_s3_bucket`:
 
@@ -455,7 +454,7 @@ Here is an example of a sensor that listens to a particular s3 bucket `my_s3_buc
 from dagster_aws.s3.sensor import get_s3_keys
 
 
-@sensor(pipeline_name="my_pipeline")
+@sensor(job=my_job)
 def my_s3_sensor(context):
     new_s3_keys = get_s3_keys("my_s3_bucket", since_key=context.last_run_key)
     if not new_s3_keys:
