@@ -65,8 +65,8 @@ def define_multiple_output_job():
         }
     )
     def return_two_outputs():
-        yield Output(5, "foo")
         yield Output(10, "foobar")
+        yield Output(5, "foo")
 
     @job(resource_defs={"io_manager": s3_pickle_io_manager, "s3": test_s3_resource})
     def output_prefix_execution_plan():
