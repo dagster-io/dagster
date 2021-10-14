@@ -32,7 +32,7 @@ export const SidebarComponent: React.FC<IPluginSidebarProps> = (props) => {
       <DialogWIP
         icon="info"
         onClose={() => setOpen(false)}
-        style={{width: '80vw', maxWidth: 900, height: 615}}
+        style={{width: '80vw', maxWidth: 900}}
         title={notebookPath.value.split('/').pop()}
         usePortal={true}
         isOpen={open}

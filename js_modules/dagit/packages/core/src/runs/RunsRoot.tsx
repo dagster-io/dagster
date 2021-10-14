@@ -151,11 +151,13 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
           {({pipelineRunsOrError}) => {
             if (pipelineRunsOrError.__typename !== 'PipelineRuns') {
               return (
-                <NonIdealState
-                  icon="error"
-                  title="Query Error"
-                  description={pipelineRunsOrError.message}
-                />
+                <Box padding={{vertical: 64}}>
+                  <NonIdealState
+                    icon="error"
+                    title="Query Error"
+                    description={pipelineRunsOrError.message}
+                  />
+                </Box>
               );
             }
 

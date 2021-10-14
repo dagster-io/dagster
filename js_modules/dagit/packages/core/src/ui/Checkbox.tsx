@@ -1,15 +1,15 @@
 import {uniqueId} from 'lodash';
 import * as React from 'react';
 import {useRef} from 'react';
-import styled from 'styled-components/macro';
+import styled, {css} from 'styled-components/macro';
 
 import {ColorsWIP} from './Colors';
 
 const DISABLED_COLOR = ColorsWIP.Gray300;
 
-type Props = React.DetailedHTMLProps<
-  React.InputHTMLAttributes<HTMLInputElement>,
-  HTMLInputElement
+type Props = Omit<
+  React.DetailedHTMLProps<React.InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>,
+  'size'
 > & {
   checked: boolean;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -17,6 +17,7 @@ type Props = React.DetailedHTMLProps<
   indeterminate?: boolean;
   format?: 'check' | 'star' | 'switch';
   fillColor?: string;
+  size?: 'small' | 'large';
 };
 
 interface IconProps {
@@ -159,6 +160,7 @@ const Base = ({
   indeterminate = false,
   fillColor = ColorsWIP.Blue500,
   children, // not passed to input
+  size,
   ...rest
 }: Props) => {
   const uid = useRef(id || uniqueId('checkbox-'));
@@ -197,7 +199,15 @@ export const Checkbox = styled(Base)`
   gap: 8px;
 
   svg {
-    margin: -3px;
+    ${({size}) =>
+      size === 'small'
+        ? css`
+            margin: -6px -12px;
+            transform: scale(0.5);
+          `
+        : css`
+            margin: -3px;
+          `}
   }
 
   input[type='checkbox'] {

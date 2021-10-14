@@ -104,6 +104,7 @@ export const SolidSelector = (props: ISolidSelectorProps) => {
   };
 
   const {flagPipelineModeTuples} = useFeatureFlags();
+  const inputRef = React.useRef<HTMLInputElement>(null);
 
   const {data, loading} = useQuery<SolidSelectorQuery>(SOLID_SELECTOR_QUERY, {
     variables: {selector},
@@ -177,7 +178,11 @@ export const SolidSelector = (props: ISolidSelectorProps) => {
           />
         }
       >
-        <ShortcutHandler shortcutLabel="⌥S" shortcutFilter={(e) => e.keyCode === 83 && e.altKey}>
+        <ShortcutHandler
+          shortcutLabel="⌥S"
+          shortcutFilter={(e) => e.code === 'KeyS' && e.altKey}
+          onShortcut={() => inputRef.current?.focus()}
+        >
           <GraphQueryInput
             width={(pending !== '*' && pending !== '') || focused ? 350 : 90}
             intent={errorMessage ? 'danger' : 'none'}
@@ -200,6 +205,7 @@ export const SolidSelector = (props: ISolidSelectorProps) => {
                 e.currentTarget.blur();
               }
             }}
+            ref={inputRef}
           />
         </ShortcutHandler>
       </Popover>

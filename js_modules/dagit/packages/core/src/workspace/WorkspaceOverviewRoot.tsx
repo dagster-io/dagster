@@ -29,7 +29,7 @@ export const WorkspaceOverviewRoot = () => {
 
     if (error) {
       return (
-        <Box padding={{vertical: 32}}>
+        <Box padding={{vertical: 64}}>
           <NonIdealState
             icon="error"
             title="Error loading repositories"
@@ -41,7 +41,7 @@ export const WorkspaceOverviewRoot = () => {
 
     if (!options.length) {
       return (
-        <Box padding={{vertical: 32}}>
+        <Box padding={{vertical: 64}}>
           <NonIdealState
             icon="folder"
             title="No repositories"

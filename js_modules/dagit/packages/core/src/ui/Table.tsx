@@ -28,6 +28,7 @@ export const Table = styled(HTMLTable)<TableProps>`
     white-space: nowrap;
     vertical-align: bottom;
   }
+
   & tr th:first-child {
     padding-left: ${({$compact}) => ($compact ? '8px' : ' 24px')};
   }
@@ -38,6 +39,7 @@ export const Table = styled(HTMLTable)<TableProps>`
     font-size: 16px;
     padding: ${({$compact}) => ($compact ? '8px' : '12px')};
   }
+
   & tr td:first-child {
     padding-left: ${({$compact}) => ($compact ? '8px' : ' 24px')};
   }

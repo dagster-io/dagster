@@ -5,9 +5,9 @@ import {TickTag} from '../instigation/InstigationTick';
 import {InstigatedRunStatus} from '../instigation/InstigationUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {InstigationStatus, InstigationType} from '../types/globalTypes';
+import {Box} from '../ui/Box';
 import {ButtonWIP} from '../ui/Button';
 import {ColorsWIP} from '../ui/Colors';
-import {Group} from '../ui/Group';
 import {IconWIP} from '../ui/Icon';
 import {MenuItemWIP, MenuWIP} from '../ui/Menu';
 import {Popover} from '../ui/Popover';
@@ -49,30 +49,30 @@ export const SchedulesTable: React.FC<{
           <th style={{width: '60px'}}></th>
           <th style={{minWidth: '300px'}}>Schedule Name</th>
           <th style={{minWidth: '150px'}}>Schedule</th>
-          <th style={{width: '160px'}}>Next Tick</th>
+          <th style={{minWidth: '170px'}}>Next Tick</th>
           <th style={{width: '120px'}}>
-            <Group direction="row" spacing={8} alignItems="center">
+            <Box flex={{gap: 8, alignItems: 'end'}}>
               Last Tick
               <Tooltip position="top" content={lastTick}>
                 <IconWIP name="info" color={ColorsWIP.Gray400} />
               </Tooltip>
-            </Group>
+            </Box>
           </th>
           <th>
-            <Group direction="row" spacing={8} alignItems="center">
+            <Box flex={{gap: 8, alignItems: 'end'}}>
               Last Run
               <Tooltip position="top" content={lastRun}>
                 <IconWIP name="info" color={ColorsWIP.Gray400} />
               </Tooltip>
-            </Group>
+            </Box>
           </th>
           <th>
-            <Group direction="row" spacing={8} alignItems="center">
+            <Box flex={{gap: 8, alignItems: 'end'}}>
               Partition
               <Tooltip position="top" content={partitionStatus}>
                 <IconWIP name="info" color={ColorsWIP.Gray400} />
               </Tooltip>
-            </Group>
+            </Box>
           </th>
           <th />
         </tr>
@@ -116,7 +116,7 @@ const errorDisplay = (
       popoverClassName="bp3-popover-content-sizing"
       position="right"
       content={
-        <Group direction="column" spacing={8} padding={12}>
+        <Box flex={{direction: 'column', gap: 8}} padding={12}>
           <strong>There are errors with this schedule.</strong>
           <div>Errors:</div>
           <ul>
@@ -128,7 +128,7 @@ const errorDisplay = (
             To resolve, click <ReconcileButton repoAddress={repoAddress} /> or run{' '}
             <Code>dagster schedule up</Code>
           </div>
-        </Group>
+        </Box>
       }
     >
       <TagWIP fill interactive intent="danger">
@@ -160,13 +160,13 @@ const ScheduleRow: React.FC<{
   return (
     <tr key={name}>
       <td>
-        <Group direction="column" spacing={4}>
+        <Box flex={{direction: 'column', gap: 4}}>
           <ScheduleSwitch repoAddress={repoAddress} schedule={schedule} />
           {errorDisplay(status, runningScheduleCount, repoAddress)}
-        </Group>
+        </Box>
       </td>
       <td>
-        <Group direction="column" spacing={4}>
+        <Box flex={{direction: 'column', gap: 4}}>
           <span style={{fontWeight: 500}}>
             <Link to={workspacePathFromAddress(repoAddress, `/schedules/${name}`)}>{name}</Link>
           </span>
@@ -177,7 +177,7 @@ const ScheduleRow: React.FC<{
             pipelineHrefContext={repoAddress}
             mode={mode}
           />
-        </Group>
+        </Box>
       </td>
       <td>
         {cronSchedule ? (
