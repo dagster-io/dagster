@@ -106,19 +106,41 @@ class ConfiguredDefinitionConfigSchema(IDefinitionConfigSchema):
         return self._current_field
 
     def _invoke_user_config_fn(self, processed_config: Dict[str, Any]) -> Dict[str, Any]:
+        from .graph import GraphDefinition
+        from .solid import CompositeSolidDefinition
+
         with user_code_error_boundary(
             DagsterConfigMappingFunctionError,
             _get_user_code_error_str_lambda(self.parent_def),
         ):
-            return {"config": self._config_fn(processed_config.get("config", {}))}
+            # config-mapped graphs don't have an extra layer of indirection `config: blah`
+            if isinstance(self.parent_def, GraphDefinition) and not isinstance(
+                self.parent_def, CompositeSolidDefinition
+            ):
+                return self._config_fn(processed_config)
+            else:
+                return {"config": self._config_fn(processed_config.get("config", {}))}
 
-    def resolve_config(self, processed_config: Dict[str, Any]) -> EvaluateValueResult:
-        check.dict_param(processed_config, "processed_config")
+    def resolve_config(self, processed_config: Any) -> EvaluateValueResult:
         # Validate resolved config against the inner definitions's config_schema (on self).
-        config_evr = process_config(
-            {"config": self.parent_def.config_field or {}},
-            self._invoke_user_config_fn(processed_config),
-        )
+        from .graph import GraphDefinition
+        from .solid import CompositeSolidDefinition
+
+        # config-mapped graphs don't have an extra layer of indirection `config: blah`
+        if isinstance(self.parent_def, GraphDefinition) and not isinstance(
+            self.parent_def, CompositeSolidDefinition
+        ):
+            # Assumes that config_field exists on graph definition. It is guaranteed to because in
+            # order to use configured with a graph, a config_mapping must exist.
+            config_evr = process_config(
+                self.parent_def.get_config_field().config_type,
+                self._invoke_user_config_fn(processed_config),
+            )
+        else:
+            config_evr = process_config(
+                {"config": self.parent_def.config_field or {}},
+                self._invoke_user_config_fn(processed_config),
+            )
         if config_evr.success:
             return self.parent_def.apply_config_mapping(config_evr.value)  # Recursive step
         else:

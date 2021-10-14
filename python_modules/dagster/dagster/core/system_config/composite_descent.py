@@ -62,7 +62,7 @@ def composite_descent(pipeline_def, solids_config, resource_defs):
 
     Args:
         pipeline_def (PipelineDefintion): PipelineDefinition
-        solids_config (dict): Configuration for the solids in the pipeline. The "solids" entry
+        solids_config (Any): Configuration for the solids in the pipeline. The "solids" entry
             of the run_config. Assumed to have already been validated.
 
     Returns:
@@ -72,7 +72,6 @@ def composite_descent(pipeline_def, solids_config, resource_defs):
     """
 
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
-    check.dict_param(solids_config, "solids_config")
     check.dict_param(resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition)
 
     # If top-level graph has config mapping, apply that config mapping before descending.
@@ -194,37 +193,37 @@ def _descend_composite_solid(
 
 
 def _descend_graph(
-    solid,
+    node,
     current_handle,
-    current_solid_config,
+    current_node_config,
     current_stack,
     resource_defs,
     is_using_graph_job_op_apis,
 ):
-    graph_def = solid.definition
+    graph_def = node.definition.ensure_graph_def()
 
     yield SolidConfigEntry(
         current_handle,
         SolidConfig.from_dict({}),
     )
 
-    # If there is a config mapping, invoke it and get the descendent solids
+    # If there is a config mapping, invoke it and get the descendent nodes
     # config that way. Else just grabs the solids entry of the current config
-    solids_dict = (
-        _get_mapped_solids_dict(
-            solid,
+    inner_node_config = (
+        _get_mapped_nodes_dict(
+            node,
             graph_def,
             current_stack,
-            current_solid_config,
+            current_node_config,
             resource_defs,
             is_using_graph_job_op_apis,
         )
         if graph_def.has_config_mapping
-        else current_solid_config
+        else current_node_config
     )
 
     yield from _composite_descent(
-        current_stack, solids_dict, resource_defs, is_using_graph_job_op_apis
+        current_stack, inner_node_config, resource_defs, is_using_graph_job_op_apis
     )
 
 
@@ -252,7 +251,7 @@ def _apply_top_level_config_mapping(
             DagsterConfigMappingFunctionError, _get_top_level_error_lambda(pipeline_def)
         ):
             mapped_graph_config = graph_def.config_mapping.resolve_from_validated_config(
-                mapped_config_evr.value.get("config", {})
+                mapped_config_evr.value
             )
 
         # Dynamically construct the type that the output of the config mapping function will
@@ -284,6 +283,7 @@ def _get_mapped_solids_dict(
     resource_defs,
     is_using_graph_job_op_apis,
 ):
+    # LEGACY. Only used for composite solids.
     # the spec of the config mapping function is that it takes the dictionary at:
     # solid_name:
     #    config: {dict_passed_to_user}
@@ -330,6 +330,62 @@ def _get_mapped_solids_dict(
 
     if not evr.success:
         raise_composite_descent_config_error(current_stack, mapped_solids_config, evr)
+
+    return evr.value
+
+
+def _get_mapped_nodes_dict(
+    composite,
+    graph_def,
+    current_stack,
+    current_node_config,
+    resource_defs,
+    is_using_graph_job_op_apis,
+):
+    # the spec of the config mapping function is that it takes the config at:
+    # node_name: config_passed_to_user
+
+    # and it returns the dictionary rooted at solids
+    # node_name: return_value_of_config_fn
+
+    # We must call the config mapping function and then validate it against
+    # the child schema.
+
+    # apply @configured config mapping to the composite's incoming config before we get to the
+    # composite's own config mapping process
+    config_mapped_node_config_evr = graph_def.apply_config_mapping(current_node_config)
+    if not config_mapped_node_config_evr.success:
+        raise DagsterInvalidConfigError(
+            "Error in config for graph {}".format(composite.name),
+            config_mapped_node_config_evr.errors,
+            config_mapped_node_config_evr,
+        )
+
+    with user_code_error_boundary(
+        DagsterConfigMappingFunctionError, _get_error_lambda(current_stack)
+    ):
+        mapped_inner_config = graph_def.config_mapping.resolve_from_validated_config(
+            config_mapped_node_config_evr.value
+        )
+
+    # Dynamically construct the type that the output of the config mapping function will
+    # be evaluated against
+
+    type_to_evaluate_against = define_node_dictionary_cls(
+        nodes=graph_def.nodes,
+        ignored_nodes=None,
+        dependency_structure=graph_def.dependency_structure,
+        parent_handle=current_stack.handle,
+        resource_defs=resource_defs,
+        is_using_graph_job_op_apis=is_using_graph_job_op_apis,
+    )
+
+    # process against that new type
+
+    evr = process_config(type_to_evaluate_against, mapped_inner_config)
+
+    if not evr.success:
+        raise_composite_descent_config_error(current_stack, mapped_inner_config, evr)
 
     return evr.value
 

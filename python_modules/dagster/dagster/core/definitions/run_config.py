@@ -152,7 +152,7 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
 
     if creation_data.graph_def.has_config_mapping:
         config_schema = cast(IDefinitionConfigSchema, creation_data.graph_def.config_schema)
-        nodes_field = Field({"config": config_schema.as_field()})
+        nodes_field = config_schema.as_field()
     else:
         nodes_field = Field(
             define_node_dictionary_cls(
@@ -397,21 +397,7 @@ def define_inode_field(
             is_using_graph_job_op_apis,
         )
 
-    graph_def = node.definition.ensure_graph_def()
-    if graph_def.has_config_mapping:
-        # has_config_mapping covers cases 2 & 4 from above (only config mapped composite solids can
-        # be `configured`)...
-        return construct_leaf_node_config(
-            node=node,
-            dependency_structure=graph_def.dependency_structure,
-            # ...and in both cases, the correct schema for 'config' key is exposed by this property:
-            config_schema=graph_def.config_schema,
-            resource_defs=resource_defs,
-            ignored=ignored,
-            is_using_graph_job_op_apis=is_using_graph_job_op_apis,
-        )
-
-    elif isinstance(graph_def, CompositeSolidDefinition):
+    elif isinstance(node.definition, CompositeSolidDefinition):
         return composite_solid_config_field(
             node=node,
             top_level_dependency_structure=dependency_structure,
@@ -434,6 +420,20 @@ def composite_solid_config_field(
     node, top_level_dependency_structure, resource_defs, handle, ignored, is_using_graph_job_op_apis
 ):
     composite_solid_def = node.definition.ensure_graph_def()
+
+    if composite_solid_def.has_config_mapping:
+        # has_config_mapping covers cases 2 & 4 from above (only config mapped composite solids can
+        # be `configured`)...
+        return construct_leaf_node_config(
+            node=node,
+            dependency_structure=composite_solid_def.dependency_structure,
+            # ...and in both cases, the correct schema for 'config' key is exposed by this property:
+            config_schema=composite_solid_def.config_schema,
+            resource_defs=resource_defs,
+            ignored=ignored,
+            is_using_graph_job_op_apis=is_using_graph_job_op_apis,
+        )
+
     fields = {
         "inputs": get_inputs_field(
             node,
@@ -463,6 +463,9 @@ def graph_config_field(
     node, top_level_dependency_structure, resource_defs, handle, is_using_graph_job_op_apis
 ):
     graph_def = node.definition.ensure_graph_def()
+
+    if graph_def.has_config_mapping:
+        return graph_def.config_schema.as_field()
     return Field(
         define_node_dictionary_cls(
             nodes=graph_def.nodes,

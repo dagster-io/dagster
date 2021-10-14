@@ -10,6 +10,7 @@ from dagster import (
     Out,
     Permissive,
     Shape,
+    config_mapping,
     graph,
     logger,
     op,
@@ -741,12 +742,12 @@ def test_top_level_config_mapping_config_schema():
     def my_graph():
         my_op()
 
-    result = my_graph.to_job().execute_in_process(run_config={"graph": {"config": "foo"}})
+    result = my_graph.to_job().execute_in_process(run_config={"graph": "foo"})
 
     assert result.success
     assert result.output_for_node("my_op") == "foo"
 
-    my_job = my_graph.to_job(config={"graph": {"config": "foo"}})
+    my_job = my_graph.to_job(config={"graph": "foo"})
     result = my_job.execute_in_process()
     assert result.success
     assert result.output_for_node("my_op") == "foo"
@@ -765,13 +766,13 @@ def test_nested_graph_config_mapping():
         my_op()
 
     def _config_fn(outer):
-        return {"my_nested_graph": {"config": outer}}
+        return {"my_nested_graph": outer}
 
     @graph(config=ConfigMapping(config_fn=_config_fn, config_schema=str))
     def my_graph():
         my_nested_graph()
 
-    result = my_graph.to_job().execute_in_process(run_config={"graph": {"config": "foo"}})
+    result = my_graph.to_job().execute_in_process(run_config={"graph": "foo"})
 
     assert result.success
     assert result.output_for_node("my_nested_graph.my_op") == "foo"
@@ -808,10 +809,10 @@ def test_top_level_graph_outer_config_failure():
     def my_graph():
         my_op()
 
-    with pytest.raises(DagsterInvalidConfigError, match="Invalid scalar at path root:graph:config"):
+    with pytest.raises(DagsterInvalidConfigError, match="Invalid scalar at path root:graph"):
         my_graph.to_job().execute_in_process(run_config={"graph": {"config": {"bad_type": "foo"}}})
 
-    with pytest.raises(DagsterInvalidConfigError, match="Invalid scalar at path root:config"):
+    with pytest.raises(DagsterInvalidConfigError, match="Invalid default_value for Field"):
         my_graph.to_job(config={"graph": {"config": {"bad_type": "foo"}}})
 
 
@@ -854,7 +855,7 @@ def test_graph_with_configured():
             name="my_graph", config_or_config_fn=_configured_use_fn, config_schema=str
         )
         .to_job()
-        .execute_in_process(run_config={"graph": {"config": "foo"}})
+        .execute_in_process(run_config={"graph": "foo"})
     )
 
     assert result.success
@@ -935,6 +936,29 @@ def test_nested_graph_config():
     result = nests_again.execute_in_process(
         run_config={"graph": {"nests": {"nested": {"requires_config": {"config": "foo"}}}}}
     )
+
+    assert result.success
+    assert result.output_value() == "foo"
+
+
+def test_configured_empty_config_schema():
+    @op(config_schema=str)
+    def my_op(context):
+        return context.op_config
+
+    @config_mapping
+    def basic(_):
+        return {"my_op": {"config": "foo"}}
+
+    @graph(config=basic)
+    def my_graph():
+        return my_op()
+
+    result = my_graph.execute_in_process()
+    assert result.success
+    assert result.output_value() == "foo"
+
+    result = my_graph.configured(name="blah", config_or_config_fn=None).execute_in_process()
 
     assert result.success
     assert result.output_value() == "foo"
