@@ -3,7 +3,6 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {useFeatureFlags} from '../app/Flags';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {ColorsWIP} from '../ui/Colors';
 import {Group} from '../ui/Group';
@@ -16,31 +15,27 @@ import {workspacePathFromAddress} from '../workspace/workspacePath';
 import {PipelineReference} from './PipelineReference';
 import {PipelineTableFragment} from './types/PipelineTableFragment';
 
-type PipelineForTable = {pipeline: PipelineTableFragment; repoAddress: RepoAddress; mode?: string};
+type PipelineForTable = {
+  pipelineOrJob: PipelineTableFragment;
+  repoAddress: RepoAddress;
+};
 
 interface Props {
-  pipelines: PipelineForTable[];
+  pipelinesOrJobs: PipelineForTable[];
   showRepo: boolean;
 }
 
 export const PipelineTable: React.FC<Props> = (props) => {
-  const {pipelines, showRepo} = props;
-  const {flagPipelineModeTuples} = useFeatureFlags();
+  const {pipelinesOrJobs, showRepo} = props;
 
-  let items = pipelines;
-  if (flagPipelineModeTuples) {
-    items = [];
-    for (const item of pipelines) {
-      items.push(...item.pipeline.modes.map((mode) => ({...item, mode: mode.name})));
-    }
-  }
+  const anyPipelines = pipelinesOrJobs.some(({pipelineOrJob}) => !pipelineOrJob.isJob);
 
   return (
     <Table>
       <thead>
         <tr>
           <th style={{width: '50%', minWidth: '400px'}}>
-            {flagPipelineModeTuples ? 'Job' : 'Pipeline'}
+            {anyPipelines ? 'Job or Pipeline' : 'Job'}
           </th>
           <th>Schedules</th>
           <th>Sensors</th>
@@ -48,57 +43,46 @@ export const PipelineTable: React.FC<Props> = (props) => {
         </tr>
       </thead>
       <tbody>
-        {items.map(({pipeline, repoAddress, mode}) => (
-          <tr key={`${pipeline.name}-${repoAddressAsString(repoAddress)}`}>
+        {pipelinesOrJobs.map(({pipelineOrJob, repoAddress}) => (
+          <tr key={`${pipelineOrJob.name}-${repoAddressAsString(repoAddress)}`}>
             <td>
               <Group direction="column" spacing={4}>
                 <PipelineReference
-                  pipelineName={pipeline.name}
-                  mode={mode || pipeline.modes[0].name}
+                  isJob={pipelineOrJob.isJob}
+                  pipelineName={pipelineOrJob.name}
                   pipelineHrefContext={repoAddress}
                 />
                 {showRepo ? <Caption>{repoAddressAsString(repoAddress)}</Caption> : null}
-                <Description>{pipeline.description}</Description>
+                <Description>{pipelineOrJob.description}</Description>
               </Group>
             </td>
             <td>
-              {pipeline.schedules?.length ? (
+              {pipelineOrJob.schedules?.length ? (
                 <Group direction="column" spacing={2}>
-                  {pipeline.schedules
-                    .filter((s) => !mode || s.mode === mode)
-                    .map((schedule) => (
-                      <Link
-                        key={schedule.name}
-                        to={workspacePathFromAddress(repoAddress, `/schedules/${schedule.name}`)}
-                      >
-                        {schedule.name}
-                      </Link>
-                    ))}
+                  {pipelineOrJob.schedules.map((schedule) => (
+                    <Link
+                      key={schedule.name}
+                      to={workspacePathFromAddress(repoAddress, `/schedules/${schedule.name}`)}
+                    >
+                      {schedule.name}
+                    </Link>
+                  ))}
                 </Group>
               ) : (
                 <div style={{color: ColorsWIP.Gray200}}>None</div>
               )}
             </td>
             <td>
-              {pipeline.sensors?.length ? (
+              {pipelineOrJob.sensors?.length ? (
                 <Group direction="column" spacing={2}>
-                  {pipeline.sensors
-                    .filter(
-                      (s) =>
-                        !mode ||
-                        s.targets?.some(
-                          (target) =>
-                            target.mode === mode && target?.pipelineName === pipeline.name,
-                        ),
-                    )
-                    .map((sensor) => (
-                      <Link
-                        key={sensor.name}
-                        to={workspacePathFromAddress(repoAddress, `/sensors/${sensor.name}`)}
-                      >
-                        {sensor.name}
-                      </Link>
-                    ))}
+                  {pipelineOrJob.sensors.map((sensor) => (
+                    <Link
+                      key={sensor.name}
+                      to={workspacePathFromAddress(repoAddress, `/sensors/${sensor.name}`)}
+                    >
+                      {sensor.name}
+                    </Link>
+                  ))}
                 </Group>
               ) : (
                 <div style={{color: ColorsWIP.Gray200}}>None</div>
@@ -106,7 +90,7 @@ export const PipelineTable: React.FC<Props> = (props) => {
             </td>
             <td>
               <Group direction="row" spacing={4} alignItems="center">
-                {pipeline.runs.map((run) => (
+                {pipelineOrJob.runs.map((run) => (
                   <RunStatusWithStats
                     key={run.id}
                     runId={run.runId}
@@ -132,6 +116,7 @@ export const PIPELINE_TABLE_FRAGMENT = gql`
   fragment PipelineTableFragment on Pipeline {
     id
     description
+    isJob
     name
     modes {
       id

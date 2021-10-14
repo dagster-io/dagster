@@ -1,7 +1,7 @@
 import * as React from 'react';
 import {RouteComponentProps, useHistory, useLocation} from 'react-router-dom';
 
-import {useFeatureFlags} from '../app/Flags';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -23,9 +23,11 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
   const history = useHistory();
   const location = useLocation();
   const explorerPath = explorerPathFromString(match.params['0']);
-  const {flagPipelineModeTuples} = useFeatureFlags();
 
-  useJobTitle(explorerPath);
+  const repo = useRepository(repoAddress);
+  const isJob = isThisThingAJob(repo, explorerPath.pipelineName);
+
+  useJobTitle(explorerPath, isJob);
   useStripSnapshotFromPath({pipelinePath: explorerPathToString(explorerPath)});
 
   const onChangeExplorerPath = React.useCallback(
@@ -34,11 +36,11 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
         search: location.search,
         pathname: workspacePathFromAddress(
           repoAddress,
-          `/${flagPipelineModeTuples ? 'jobs' : 'pipelines'}/${explorerPathToString(path)}`,
+          `/${isJob ? 'jobs' : 'pipelines'}/${explorerPathToString(path)}`,
         ),
       });
     },
-    [location, history, repoAddress, flagPipelineModeTuples],
+    [history, location.search, repoAddress, isJob],
   );
 
   return (

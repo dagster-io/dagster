@@ -1,20 +1,18 @@
 import * as React from 'react';
 
-import {useFeatureFlags} from '../app/Flags';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 
 import {PipelineExplorerPath} from './PipelinePathUtils';
 
-export const useJobTitle = (explorerPath: PipelineExplorerPath) => {
-  const {flagPipelineModeTuples} = useFeatureFlags();
-  const {pipelineName, pipelineMode} = explorerPath;
+export const useJobTitle = (explorerPath: PipelineExplorerPath, isJob: boolean) => {
+  const {pipelineName} = explorerPath;
 
   const value = React.useMemo(() => {
-    if (flagPipelineModeTuples) {
-      return `Job: ${pipelineName}${pipelineMode === 'default' ? '' : `:${pipelineMode}`}`;
+    if (isJob) {
+      return `Job: ${pipelineName}`;
     }
     return `Pipeline: ${pipelineName}`;
-  }, [flagPipelineModeTuples, pipelineMode, pipelineName]);
+  }, [isJob, pipelineName]);
 
   useDocumentTitle(value);
 };

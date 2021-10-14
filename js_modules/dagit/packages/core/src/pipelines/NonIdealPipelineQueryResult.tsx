@@ -1,9 +1,9 @@
 import React from 'react';
 
-import {useFeatureFlags} from '../app/Flags';
 import {NonIdealState} from '../ui/NonIdealState';
 
-export const NonIdealPipelineQueryResult: React.FC<{
+interface Props {
+  isGraph: boolean;
   result:
     | {
         __typename: 'PipelineSnapshotNotFoundError';
@@ -21,13 +21,14 @@ export const NonIdealPipelineQueryResult: React.FC<{
         __typename: 'PythonError';
         message: string;
       };
-}> = ({result}) => {
-  const {flagPipelineModeTuples} = useFeatureFlags();
+}
+
+export const NonIdealPipelineQueryResult: React.FC<Props> = ({isGraph, result}) => {
   if (result.__typename === 'PipelineSnapshotNotFoundError') {
     return (
       <NonIdealState
         icon="error"
-        title={flagPipelineModeTuples ? 'Job snapshot not found' : 'Pipeline snapshot not found'}
+        title={isGraph ? 'Graph snapshot not found' : 'Pipeline snapshot not found'}
         description={result.message}
       />
     );
@@ -36,7 +37,7 @@ export const NonIdealPipelineQueryResult: React.FC<{
     return (
       <NonIdealState
         icon="error"
-        title={flagPipelineModeTuples ? 'Job not found' : 'Pipeline not found'}
+        title={isGraph ? 'Graph not found' : 'Pipeline not found'}
         description={result.message}
       />
     );

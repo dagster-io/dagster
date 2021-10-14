@@ -5,7 +5,6 @@ import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
-import {useFeatureFlags} from '../app/Flags';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {errorStackToYamlPath} from '../configeditor/ConfigEditorUtils';
 import {
@@ -190,7 +189,6 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
     runConfigSchema,
   } = props;
   const [errorsOnly, setErrorsOnly] = React.useState(false);
-  const {flagPipelineModeTuples} = useFeatureFlags();
 
   const rootCompositeChildren = React.useMemo(() => {
     if (!runConfigSchema) {
@@ -389,7 +387,7 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
               )}
             </RuntimeAndResourcesSection>
             <Section>
-              <SectionTitle>{flagPipelineModeTuples ? 'Ops' : 'Solids'}</SectionTitle>
+              <SectionTitle>Ops</SectionTitle>
               <ItemSet>{itemsIn(['solids'], solids?.fields || [])}</ItemSet>
             </Section>
             <div style={{height: 50}} />

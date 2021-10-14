@@ -11,7 +11,9 @@ import {Popover} from '../ui/Popover';
 import {TagWIP} from '../ui/TagWIP';
 import {Heading} from '../ui/Text';
 import {FontFamily} from '../ui/styles';
+import {isThisThingAJob} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 
 import {Run} from './Run';
 import {RunConfigDialog, RunDetails} from './RunDetails';
@@ -31,14 +33,16 @@ export const RunRoot = (props: RouteComponentProps<{runId: string}>) => {
   const run =
     data?.pipelineRunOrError.__typename === 'PipelineRun' ? data.pipelineRunOrError : null;
   const snapshotID = run?.pipelineSnapshotId;
-  const repoAddress = React.useMemo(() => {
-    const repositoryOrigin = run?.repositoryOrigin;
-    if (repositoryOrigin) {
-      const {repositoryLocationName, repositoryName} = repositoryOrigin;
-      return buildRepoAddress(repositoryName, repositoryLocationName);
-    }
-    return null;
-  }, [run]);
+
+  const repoMatch = useRepositoryForRun(run);
+  const repoAddress = repoMatch?.match
+    ? buildRepoAddress(repoMatch.match.repository.name, repoMatch.match.repositoryLocation.name)
+    : null;
+
+  const isJob = React.useMemo(
+    () => !!(run && repoMatch && isThisThingAJob(repoMatch.match, run.pipeline.name)),
+    [run, repoMatch],
+  );
 
   return (
     <div
@@ -84,15 +88,15 @@ export const RunRoot = (props: RouteComponentProps<{runId: string}>) => {
                     pipelineName={run?.pipeline.name}
                     pipelineHrefContext={repoAddress || 'repo-unknown'}
                     snapshotId={snapshotID}
-                    mode={run?.mode}
                     size="small"
+                    isJob={isJob}
                   />
                 </TagWIP>
                 <RunStatusTag status={run.status} />
               </>
             ) : null
           }
-          right={run ? <RunConfigDialog run={run} /> : null}
+          right={run ? <RunConfigDialog run={run} isJob={isJob} /> : null}
         />
       </Box>
       <RunById data={data} runId={runId} />

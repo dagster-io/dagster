@@ -1,7 +1,6 @@
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {useFeatureFlags} from '../app/Flags';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {ButtonWIP} from '../ui/Button';
 import {IconWIP} from '../ui/Icon';
@@ -17,7 +16,6 @@ interface SolidJumpBarProps {
 }
 
 export const SolidJumpBar: React.FC<SolidJumpBarProps> = (props) => {
-  const {flagPipelineModeTuples} = useFeatureFlags();
   const {solids, selectedSolid, onChange} = props;
   const button = React.useRef<HTMLButtonElement | null>(null);
 
@@ -35,11 +33,7 @@ export const SolidJumpBar: React.FC<SolidJumpBarProps> = (props) => {
         onItemSelect={(name) => onChange(solids.find((s) => s.name === name)!)}
       >
         <SelectButton ref={button} rightIcon={<IconWIP name="unfold_more" />}>
-          {selectedSolid
-            ? selectedSolid.name
-            : flagPipelineModeTuples
-            ? 'Select an op…'
-            : 'Select a solid…'}
+          {selectedSolid ? selectedSolid.name : 'Select an op…'}
         </SelectButton>
       </SelectWIP>
     </ShortcutHandler>

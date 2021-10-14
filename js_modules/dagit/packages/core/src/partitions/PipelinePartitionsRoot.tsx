@@ -7,6 +7,7 @@ import {useJobTitle} from '../pipelines/useJobTitle';
 import {Box} from '../ui/Box';
 import {Loading} from '../ui/Loading';
 import {NonIdealState} from '../ui/NonIdealState';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -24,8 +25,12 @@ interface Props {
 export const PipelinePartitionsRoot: React.FC<Props> = (props) => {
   const {pipelinePath, repoAddress} = props;
   const explorerPath = explorerPathFromString(pipelinePath);
-  const {pipelineMode, pipelineName} = explorerPath;
-  useJobTitle(explorerPath);
+  const {pipelineName} = explorerPath;
+
+  const repo = useRepository(repoAddress);
+  const isJob = isThisThingAJob(repo, pipelineName);
+
+  useJobTitle(explorerPath, isJob);
   useStripSnapshotFromPath(props);
 
   const repositorySelector = repoAddressToSelector(repoAddress);
@@ -64,7 +69,8 @@ export const PipelinePartitionsRoot: React.FC<Props> = (props) => {
                 title="Partitions"
                 description={
                   <p>
-                    There are no partition sets defined for pipeline <code>{pipelineName}</code>.
+                    There are no partition sets defined for {isJob ? 'job' : 'pipeline'}{' '}
+                    <code>{pipelineName}</code>.
                   </p>
                 }
               />
@@ -85,7 +91,6 @@ export const PipelinePartitionsRoot: React.FC<Props> = (props) => {
             partitionSets={partitionSetsOrError.results}
             onChangePartitionSet={(x) => setSelected(x.name)}
             pipelineName={pipelineName}
-            pipelineMode={pipelineMode}
             repoAddress={repoAddress}
           />
         );

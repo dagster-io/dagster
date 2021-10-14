@@ -2,7 +2,6 @@ import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {useFeatureFlags} from '../app/Flags';
 import {timingStringForStatus} from '../runs/RunDetails';
 import {RunStatus} from '../runs/RunStatusDots';
 import {RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
@@ -34,13 +33,11 @@ import {RunMetadataFragment} from './types/RunMetadataFragment';
 
 interface Props {
   pipelineName: string;
-  pipelineMode: string;
   repoAddress: RepoAddress;
 }
 
 export const JobMetadata: React.FC<Props> = (props) => {
-  const {pipelineName, pipelineMode, repoAddress} = props;
-  const {flagPipelineModeTuples} = useFeatureFlags();
+  const {pipelineName, repoAddress} = props;
 
   const {data} = useQuery<JobMetadataQuery>(JOB_METADATA_QUERY, {
     variables: {
@@ -51,7 +48,6 @@ export const JobMetadata: React.FC<Props> = (props) => {
       },
       runsFilter: {
         pipelineName,
-        mode: flagPipelineModeTuples ? pipelineMode : undefined,
       },
     },
   });
@@ -74,42 +70,32 @@ export const JobMetadata: React.FC<Props> = (props) => {
 
   return (
     <>
-      {job ? <ScheduleOrSensorTag job={job} mode={pipelineMode} repoAddress={repoAddress} /> : null}
+      {job ? <ScheduleOrSensorTag job={job} repoAddress={repoAddress} /> : null}
       {lastRun ? <LatestRunTag run={lastRun} /> : null}
       {runs.length ? <RelatedAssetsTag runs={runs} /> : null}
     </>
   );
 };
 
-const ScheduleOrSensorTag: React.FC<{job: Job; mode: string; repoAddress: RepoAddress}> = ({
+const ScheduleOrSensorTag: React.FC<{job: Job; repoAddress: RepoAddress}> = ({
   job,
-  mode,
   repoAddress,
 }) => {
-  const {flagPipelineModeTuples} = useFeatureFlags();
   const [open, setOpen] = React.useState(false);
 
   const matchingSchedules = React.useMemo(() => {
     if (job?.__typename === 'Pipeline' && job.schedules.length) {
-      return flagPipelineModeTuples
-        ? job.schedules.filter((schedule) => schedule.mode === mode)
-        : job.schedules;
+      return job.schedules;
     }
     return [];
-  }, [flagPipelineModeTuples, job, mode]);
+  }, [job]);
 
   const matchingSensors = React.useMemo(() => {
     if (job?.__typename === 'Pipeline' && job.sensors.length) {
-      return flagPipelineModeTuples
-        ? job.sensors.filter((sensor) =>
-            sensor.targets?.some(
-              (target) => target.mode === mode && target.pipelineName === job.name,
-            ),
-          )
-        : job.sensors;
+      return job.sensors;
     }
     return [];
-  }, [flagPipelineModeTuples, job, mode]);
+  }, [job]);
 
   const scheduleCount = matchingSchedules.length;
   const sensorCount = matchingSensors.length;
@@ -382,6 +368,7 @@ const JOB_METADATA_QUERY = gql`
     pipelineOrError(params: $params) {
       ... on Pipeline {
         id
+        isJob
         name
         schedules {
           id

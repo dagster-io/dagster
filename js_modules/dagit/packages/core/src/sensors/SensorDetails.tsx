@@ -1,6 +1,5 @@
 import * as React from 'react';
 
-import {useFeatureFlags} from '../app/Flags';
 import {TickTag} from '../instigation/InstigationTick';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {PipelineReference} from '../pipelines/PipelineReference';
@@ -14,6 +13,7 @@ import {PageHeader} from '../ui/PageHeader';
 import {RefreshableCountdown} from '../ui/RefreshableCountdown';
 import {TagWIP} from '../ui/TagWIP';
 import {Heading} from '../ui/Text';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
 import {SensorSwitch} from './SensorSwitch';
@@ -53,8 +53,11 @@ export const SensorDetails: React.FC<{
   const {
     name,
     sensorState: {status, ticks},
+    targets,
   } = sensor;
-  const {flagPipelineModeTuples} = useFeatureFlags();
+
+  const repo = useRepository(repoAddress);
+  const pipelinesAndJobs = repo?.repository.pipelines;
 
   const timeRemaining = useCountdown({
     duration: countdownDuration,
@@ -65,7 +68,25 @@ export const SensorDetails: React.FC<{
   const seconds = Math.floor(timeRemaining / 1000);
 
   const latestTick = ticks.length ? ticks[0] : null;
-  const hasMultipleTargets = sensor.targets && sensor.targets.length > 1;
+  const targetCount = targets?.length || 0;
+
+  const targetNames = React.useMemo(
+    () => new Set((targets || []).map((target) => target.pipelineName)),
+    [targets],
+  );
+
+  const anyPipelines = React.useMemo(() => {
+    return (pipelinesAndJobs || []).some(
+      (pipelineOrJob) => !pipelineOrJob.isJob && targetNames.has(pipelineOrJob.name),
+    );
+  }, [pipelinesAndJobs, targetNames]);
+
+  const pipelineOrJobLabel = React.useMemo(() => {
+    if (anyPipelines) {
+      return targetCount > 1 ? 'Jobs / Pipelines' : 'Pipeline';
+    }
+    return targetCount > 1 ? 'Jobs' : 'Job';
+  }, [anyPipelines, targetCount]);
 
   return (
     <>
@@ -124,25 +145,17 @@ export const SensorDetails: React.FC<{
             </td>
           </tr>
           <tr>
-            <td>
-              {flagPipelineModeTuples
-                ? hasMultipleTargets
-                  ? 'Jobs'
-                  : 'Job'
-                : hasMultipleTargets
-                ? 'Pipelines'
-                : 'Pipeline'}
-            </td>
+            <td>{pipelineOrJobLabel}</td>
             <td>
               {sensor.targets && sensor.targets.length ? (
                 <Group direction="column" spacing={2}>
                   {sensor.targets.map((target) =>
                     target.pipelineName ? (
                       <PipelineReference
-                        key={`${target.pipelineName}:${target.mode}`}
+                        key={target.pipelineName}
                         pipelineName={target.pipelineName}
                         pipelineHrefContext={repoAddress}
-                        mode={target.mode}
+                        isJob={!!(repo && isThisThingAJob(repo, target.pipelineName))}
                       />
                     ) : null,
                   )}

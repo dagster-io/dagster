@@ -28,7 +28,12 @@ export const TypeListContainer: React.FunctionComponent<ITypeListContainerProps>
     <Loading queryResult={queryResult}>
       {(data) => {
         if (data.pipelineOrError.__typename === 'Pipeline') {
-          return <TypeList types={data.pipelineOrError.dagsterTypes} />;
+          return (
+            <TypeList
+              types={data.pipelineOrError.dagsterTypes}
+              isGraph={data.pipelineOrError.isJob}
+            />
+          );
         } else {
           return null;
         }
@@ -43,6 +48,7 @@ const TYPE_LIST_CONTAINER_QUERY = gql`
       __typename
       ... on Pipeline {
         id
+        isJob
         name
         dagsterTypes {
           ...TypeListFragment

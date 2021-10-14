@@ -48,6 +48,7 @@ export interface PipelineTableFragment {
   __typename: "Pipeline";
   id: string;
   description: string | null;
+  isJob: boolean;
   name: string;
   modes: PipelineTableFragment_modes[];
   runs: PipelineTableFragment_runs[];

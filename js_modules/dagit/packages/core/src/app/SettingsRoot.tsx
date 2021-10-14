@@ -70,16 +70,6 @@ const SettingsRoot = () => {
               ),
             },
             {
-              key: 'Experimental Core APIs (Job & Graph)',
-              value: (
-                <Checkbox
-                  format="switch"
-                  checked={flags.includes(FeatureFlag.flagPipelineModeTuples)}
-                  onChange={() => toggleFlag(FeatureFlag.flagPipelineModeTuples)}
-                />
-              ),
-            },
-            {
               key: 'Experimental Asset APIs',
               value: (
                 <Checkbox

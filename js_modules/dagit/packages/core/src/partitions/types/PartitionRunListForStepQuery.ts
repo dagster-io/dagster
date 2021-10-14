@@ -10,6 +10,18 @@ import { PipelineRunsFilter, PipelineRunStatus } from "./../../types/globalTypes
 // GraphQL query operation: PartitionRunListForStepQuery
 // ====================================================
 
+export interface PartitionRunListForStepQuery_pipelineRunsOrError_PipelineRuns_results_pipeline {
+  __typename: "PipelineSnapshot" | "UnknownPipeline";
+  name: string;
+}
+
+export interface PartitionRunListForStepQuery_pipelineRunsOrError_PipelineRuns_results_repositoryOrigin {
+  __typename: "RepositoryOrigin";
+  id: string;
+  repositoryName: string;
+  repositoryLocationName: string;
+}
+
 export interface PartitionRunListForStepQuery_pipelineRunsOrError_PipelineRuns_results_tags {
   __typename: "PipelineTag";
   key: string;
@@ -50,8 +62,10 @@ export interface PartitionRunListForStepQuery_pipelineRunsOrError_PipelineRuns_r
   mode: string;
   rootRunId: string | null;
   parentRunId: string | null;
+  pipeline: PartitionRunListForStepQuery_pipelineRunsOrError_PipelineRuns_results_pipeline;
   pipelineSnapshotId: string | null;
   pipelineName: string;
+  repositoryOrigin: PartitionRunListForStepQuery_pipelineRunsOrError_PipelineRuns_results_repositoryOrigin | null;
   solidSelection: string[] | null;
   tags: PartitionRunListForStepQuery_pipelineRunsOrError_PipelineRuns_results_tags[];
   stats: PartitionRunListForStepQuery_pipelineRunsOrError_PipelineRuns_results_stats;

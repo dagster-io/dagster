@@ -335,6 +335,11 @@ const ASSET_MATERIALIZATIONS_QUERY = gql`
         id
         runId
         mode
+        repositoryOrigin {
+          id
+          repositoryName
+          repositoryLocationName
+        }
         status
         pipelineName
         pipelineSnapshotId

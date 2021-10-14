@@ -3,7 +3,6 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {useFeatureFlags} from '../app/Flags';
 import {usePermissions} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
@@ -17,7 +16,14 @@ import {NonIdealState} from '../ui/NonIdealState';
 import {Table} from '../ui/Table';
 import {Mono} from '../ui/Text';
 import {TokenizingFieldValue} from '../ui/TokenizingField';
-import {workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
+import {
+  findRepositoryAmongOptions,
+  isThisThingAJob,
+  useRepositoryOptions,
+} from '../workspace/WorkspaceContext';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
+import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
 import {RunActionsMenu, RunBulkActionsMenu} from './RunActionsMenu';
 import {RunStatusTagWithStats} from './RunStatusTag';
@@ -37,7 +43,6 @@ interface RunTableProps {
 }
 
 export const RunTable = (props: RunTableProps) => {
-  const {flagPipelineModeTuples} = useFeatureFlags();
   const {runs, onSetFilter, nonIdealState, highlightedIds, actionBarComponents} = props;
   const allIds = runs.map((r) => r.runId);
 
@@ -45,6 +50,8 @@ export const RunTable = (props: RunTableProps) => {
 
   const {canTerminatePipelineExecution, canDeletePipelineRun} = usePermissions();
   const canTerminateOrDelete = canTerminatePipelineExecution || canDeletePipelineRun;
+
+  const {options} = useRepositoryOptions();
 
   if (runs.length === 0) {
     return (
@@ -61,6 +68,22 @@ export const RunTable = (props: RunTableProps) => {
         </Box>
       </div>
     );
+  }
+
+  let anyPipelines = false;
+  for (const run of runs) {
+    const {repositoryOrigin} = run;
+    if (repositoryOrigin) {
+      const repoAddress = buildRepoAddress(
+        repositoryOrigin.repositoryName,
+        repositoryOrigin.repositoryLocationName,
+      );
+      const repo = findRepositoryAmongOptions(options, repoAddress);
+      if (!repo || !isThisThingAJob(repo, run.pipelineName)) {
+        anyPipelines = true;
+        break;
+      }
+    }
   }
 
   const selectedFragments = runs.filter((run) => checkedIds.has(run.runId));
@@ -94,7 +117,7 @@ export const RunTable = (props: RunTableProps) => {
             </th>
             <th>Status</th>
             <th>Run ID</th>
-            <th>{flagPipelineModeTuples ? 'Job' : 'Pipeline'}</th>
+            <th>{anyPipelines ? 'Job / Pipeline' : 'Job'}</th>
             <th style={{width: 120, minWidth: 120}}>Snapshot ID</th>
             <th style={{width: 180}}>Timing</th>
             {props.additionalColumnHeaders}
@@ -130,8 +153,16 @@ export const RUN_TABLE_RUN_FRAGMENT = gql`
     mode
     rootRunId
     parentRunId
+    pipeline {
+      name
+    }
     pipelineSnapshotId
     pipelineName
+    repositoryOrigin {
+      id
+      repositoryName
+      repositoryLocationName
+    }
     solidSelection
     status
     tags {
@@ -162,6 +193,18 @@ const RunRow: React.FC<{
   additionalColumns,
   isHighlighted,
 }) => {
+  const {pipelineName} = run;
+  const repo = useRepositoryForRun(run);
+
+  const isJob = React.useMemo(() => {
+    if (repo) {
+      const pipelinesAndJobs = repo.match.repository.pipelines;
+      const match = pipelinesAndJobs.find((pipelineOrJob) => pipelineOrJob.name === pipelineName);
+      return !!match?.isJob;
+    }
+    return false;
+  }, [repo, pipelineName]);
+
   const onChange = (e: React.FormEvent<HTMLInputElement>) => {
     if (e.target instanceof HTMLInputElement) {
       const {checked} = e.target;
@@ -190,21 +233,31 @@ const RunRow: React.FC<{
         <Box flex={{direction: 'column', gap: 5}}>
           <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
             <PipelineReference
-              mode={run.mode}
+              isJob={isJob}
               pipelineName={run.pipelineName}
               pipelineHrefContext="no-link"
             />
-            <Link to={workspacePipelinePathGuessRepo(run.pipelineName, run.mode)}>
+            <Link
+              to={
+                repo
+                  ? workspacePipelinePath({
+                      repoName: repo.match.repository.name,
+                      repoLocation: repo.match.repositoryLocation.name,
+                      pipelineName: run.pipelineName,
+                      isJob,
+                    })
+                  : workspacePipelinePathGuessRepo(run.pipelineName)
+              }
+            >
               <IconWIP name="open_in_new" color={ColorsWIP.Blue500} />
             </Link>
           </Box>
-          <RunTags tags={run.tags} onSetFilter={onSetFilter} />
+          <RunTags tags={run.tags} mode={isJob ? null : run.mode} onSetFilter={onSetFilter} />
         </Box>
       </td>
       <td>
         <PipelineSnapshotLink
           snapshotId={run.pipelineSnapshotId || ''}
-          pipelineMode={run.mode}
           pipelineName={run.pipelineName}
           size="normal"
         />
